@@ -1713,20 +1713,28 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
 
         const normalizedRemote = normalizeWatchlistsStatePayload(remoteState);
-        const nextWatchlists = normalizedRemote.watchlists.length > 0 ? normalizedRemote.watchlists : localWatchlists;
-        const nextActiveWatchlistId = normalizedRemote.watchlists.length > 0
-          ? normalizedRemote.activeWatchlistId
-          : localActiveWatchlistId;
+        const hasRemoteData = normalizedRemote.watchlists.length > 0;
+        
+        let nextWatchlists = localWatchlists;
+        let nextActiveWatchlistId = localActiveWatchlistId;
+
+        if (hasRemoteData) {
+          nextWatchlists = normalizedRemote.watchlists;
+          nextActiveWatchlistId = normalizedRemote.activeWatchlistId;
+        }
 
         setWatchlists(nextWatchlists);
         setActiveWatchlistId(nextActiveWatchlistId);
+
+        // Update the server signature so we don't immediately try to "re-sync" what we just loaded.
+        // If we are using local data because the server was empty, we will push it back below.
         watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(
-          normalizedRemote.watchlists,
-          normalizedRemote.activeWatchlistId,
+          hasRemoteData ? normalizedRemote.watchlists : [],
+          hasRemoteData ? normalizedRemote.activeWatchlistId : null,
         );
         watchlistsSyncReadyRef.current[activeMarket] = true;
 
-        if (normalizedRemote.watchlists.length === 0 && localWatchlists.length > 0) {
+        if (!hasRemoteData && localWatchlists.length > 0) {
           const localPayload = {
             watchlists: localWatchlists,
             active_watchlist_id: localActiveWatchlistId,

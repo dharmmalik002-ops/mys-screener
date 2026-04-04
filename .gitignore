@@ -7,6 +7,12 @@ dist/
 .env
 backend/.env
 backend/data/live_universe.json
+backend/data/watchlists_state.json
+backend/data/watchlists_state_us.json
+backend/data/free_snapshots.json
+backend/data/free_snapshots_us.json
+backend/data/industry_groups_cache.json
+backend/data/industry_groups_cache_us.json
 
 backend/data/free_snapshots.json
 backend/data/free_snapshots_us.json
