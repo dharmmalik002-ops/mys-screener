@@ -1418,7 +1418,7 @@ class FreeMarketDataProvider:
             for row in rows
         ]
 
-    async def get_chart(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
+    async def get_chart(self, symbol: str, timeframe: str, bars: int = 520) -> list[ChartBar]:
         cached_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars)
         min_required_bars = min(120, max(2, bars)) if timeframe == "1D" else 2
         cache_has_enough_data = len(cached_bars) >= min_required_bars

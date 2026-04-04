@@ -5518,6 +5518,8 @@ button {
   inset: 0;
   z-index: 9999;
   display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(6, 8, 13, 0.95);
   backdrop-filter: blur(10px);
 }
@@ -5529,8 +5531,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: rgba(6, 8, 13, 0.7);
+  background: rgba(6, 8, 13, 0.95);
   backdrop-filter: blur(10px);
 }
 

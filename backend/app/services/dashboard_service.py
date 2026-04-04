@@ -4005,12 +4005,7 @@ class DashboardService:
                 latest_close = None
         if latest_close not in (None, 0):
             payload["last_price"] = round(latest_close, 2)
-            reference_previous_close = previous_close
-            
-            # If we're on a daily chart and have at least 2 bars, 
-            # the second-to-last bar is definitively the previous session's close.
-            # This is more reliable for the chart summary than the snapshot's previous_close
-            # if there's any lag in snapshot updates.
+            # Use the definitively correct T-1 close from history (second to last bar)
             if len(bars) >= 2:
                 try:
                     bar_prev_close = float(bars[-2].close)

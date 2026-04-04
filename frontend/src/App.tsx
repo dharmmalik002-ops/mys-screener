@@ -2028,7 +2028,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
         setScanResults(payload);
         setScanSectorSummaries(payload.sector_summaries ?? []);
-        setSelectedSymbol((current) => (current && payload.items.some((item) => item.symbol === current) ? current : payload.items[0]?.symbol ?? null));
+        setSelectedSymbol((current) => {
+          if (current && payload.items.some((item) => item.symbol === current)) {
+            return current;
+          }
+          return payload.items[0]?.symbol ?? null;
+        });
         setError(null);
       } catch (loadError) {
         if (active && scanRequestIdRef.current === requestId) {
@@ -2998,6 +3003,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeMarket, activePage, selectedSymbol, timeframe, visibleSymbolsKey]);
 
   useEffect(() => {
+    // When switching TO the watchlists page, only set a default selection if NONE exists.
+    // We want to avoid resetting the user's selection just because they visited the watchlist page.
     if (activePage !== "watchlists" || !activeWatchlist) {
       return;
     }
@@ -3006,10 +3013,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    if (!selectedSymbol || !activeWatchlist.symbols.includes(selectedSymbol)) {
+    // Only force a change if there's no selection at all. 
+    // If the user already has a selection, we let them keep it, 
+    // even if it's not in the currently active watchlist (they might have just added it to another one).
+    if (!selectedSymbol) {
       setSelectedSymbol(activeWatchlist.symbols[0]);
     }
-  }, [activePage, activeWatchlist, selectedSymbol]);
+  }, [activePage, activeWatchlist]);
 
   useEffect(() => {
     if (activePage !== "groups" && !chartOpen) {
