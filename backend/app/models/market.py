@@ -1271,7 +1271,7 @@ class WatchlistItem(BaseModel):
 
 class WatchlistsStateResponse(BaseModel):
     market: Literal["india", "us"]
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: int | None = None
     active_watchlist_id: str | None = None
     watchlists: list[WatchlistItem] = Field(default_factory=list)
 

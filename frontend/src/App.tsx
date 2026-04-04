@@ -1077,14 +1077,14 @@ function readActiveWatchlistId(watchlists: LocalWatchlist[], market: MarketKey):
 }
 
 function normalizeWatchlistsStatePayload(
-  payload: Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id">,
-): { watchlists: LocalWatchlist[]; activeWatchlistId: string | null } {
+  payload: Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id" | "updated_at">,
+): { watchlists: LocalWatchlist[]; activeWatchlistId: string | null; updatedAt: number | null } {
   const watchlists = sanitizeWatchlists(payload.watchlists);
   const activeWatchlistId =
     watchlists.some((watchlist) => watchlist.id === payload.active_watchlist_id)
       ? payload.active_watchlist_id
       : watchlists[0]?.id ?? null;
-  return { watchlists, activeWatchlistId };
+  return { watchlists, activeWatchlistId, updatedAt: payload.updated_at ?? null };
 }
 
 function watchlistsStateSignature(watchlists: LocalWatchlist[], activeWatchlistId: string | null) {
@@ -1360,6 +1360,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [showScannerSettings, setShowScannerSettings] = useState(true);
   const [theme, setTheme] = useState<ThemeKey>(readTheme);
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
+  const [isWatchlistsHydrated, setIsWatchlistsHydrated] = useState(false);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
@@ -1714,30 +1715,46 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
         const normalizedRemote = normalizeWatchlistsStatePayload(remoteState);
         const hasRemoteData = normalizedRemote.watchlists.length > 0;
+        const remoteTimestamp = normalizedRemote.updatedAt ?? 0;
         
+        // Find newest local timestamp across all watchlists as a proxy for most recent local edit.
+        const localTimestamp = Math.max(0, ...localWatchlists.map(w => w.updated_at ?? 0));
+
         let nextWatchlists = localWatchlists;
         let nextActiveWatchlistId = localActiveWatchlistId;
 
-        if (hasRemoteData) {
+        // "Smart Restore" Logic: 
+        // 1. If server HAS data and it's NEWER than local, we download it (Multi-computer sync).
+        // 2. If server has data but it's OLDER than local, we stick to local (it will be pushed below).
+        // 3. If server is EMPTY but local is NOT, we stick to local (Update/Wipe recovery).
+        const shouldPreferRemote = hasRemoteData && remoteTimestamp > localTimestamp;
+        
+        if (shouldPreferRemote) {
           nextWatchlists = normalizedRemote.watchlists;
           nextActiveWatchlistId = normalizedRemote.activeWatchlistId;
         }
 
         setWatchlists(nextWatchlists);
         setActiveWatchlistId(nextActiveWatchlistId);
+        setIsWatchlistsHydrated(true);
 
-        // Update the server signature so we don't immediately try to "re-sync" what we just loaded.
-        // If we are using local data because the server was empty, we will push it back below.
+        // Update technical signatures to avoid redundant syncs.
         watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(
           hasRemoteData ? normalizedRemote.watchlists : [],
           hasRemoteData ? normalizedRemote.activeWatchlistId : null,
         );
         watchlistsSyncReadyRef.current[activeMarket] = true;
 
-        if (!hasRemoteData && localWatchlists.length > 0) {
+        // Trigger a force-push back to server if:
+        // - The server was empty but we had local data.
+        // - Our local data is newer than what we just saw on the server.
+        const needsRestoration = (!hasRemoteData && localWatchlists.length > 0) || (hasRemoteData && localTimestamp > remoteTimestamp);
+        
+        if (needsRestoration) {
           const localPayload = {
-            watchlists: localWatchlists,
-            active_watchlist_id: localActiveWatchlistId,
+            watchlists: nextWatchlists,
+            active_watchlist_id: nextActiveWatchlistId,
+            updated_at: localTimestamp || Date.now(),
           };
           const savedState = await saveWatchlistsState(localPayload, activeMarket);
           if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
@@ -1749,13 +1766,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             normalizedSaved.activeWatchlistId,
           );
         }
-      } catch {
+      } catch (err) {
         if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
           return;
         }
 
+        // Catch-all safety: ensure LocalStorage data is AT LEAST loaded locally.
         setWatchlists(localWatchlists);
         setActiveWatchlistId(localActiveWatchlistId);
+        setIsWatchlistsHydrated(true);
         watchlistsServerSignatureRef.current[activeMarket] = null;
         watchlistsSyncReadyRef.current[activeMarket] = true;
       }
@@ -2326,7 +2345,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [theme]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (typeof window === "undefined" || !isWatchlistsHydrated) {
       return;
     }
 
@@ -3355,6 +3374,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       name: trimmed,
       color: DEFAULT_WATCHLIST_COLORS[watchlists.length % DEFAULT_WATCHLIST_COLORS.length],
       symbols: symbol ? [symbol] : [],
+      updated_at: Date.now(),
     };
     setWatchlists((current) => [...current, nextWatchlist]);
     setActiveWatchlistId(nextWatchlist.id);
@@ -3367,7 +3387,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
     setWatchlists((current) =>
-      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, name: trimmed } : watchlist)),
+      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, name: trimmed, updated_at: Date.now() } : watchlist)),
     );
   };
 
@@ -3384,7 +3404,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const handleSetWatchlistColor = (watchlistId: string, color: string) => {
     const normalizedColor = normalizeWatchlistColor(color, DEFAULT_WATCHLIST_COLORS[0]);
     setWatchlists((current) =>
-      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, color: normalizedColor } : watchlist)),
+      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, color: normalizedColor, updated_at: Date.now() } : watchlist)),
     );
   };
 
@@ -3397,7 +3417,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       current.map((watchlist) =>
         watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
           ? watchlist
-          : { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol] },
+          : { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol], updated_at: Date.now() },
       ),
     );
     setActiveWatchlistId(watchlistId);
@@ -3412,7 +3432,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setWatchlists((current) =>
       current.map((watchlist) =>
         watchlist.id === watchlistId
-          ? { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol) }
+          ? { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol), updated_at: Date.now() }
           : watchlist,
       ),
     );
@@ -3456,7 +3476,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
 
         return watchlist;
-      });
+      }).map(w => (w.id === fromWatchlistId || w.id === toWatchlistId ? { ...w, updated_at: Date.now() } : w));
     });
 
     setActiveWatchlistId(toWatchlistId);

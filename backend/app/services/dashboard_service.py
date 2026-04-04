@@ -3565,10 +3565,17 @@ class DashboardService:
         return "india" if str(default_exchange or "").upper() in {"NSE", "BSE"} else "us"
 
     def _watchlists_state_path(self) -> Path:
-        backend_root = getattr(self.provider, "backend_root", None)
-        if backend_root is None:
-            backend_root = Path(__file__).resolve().parents[2]
-        data_dir = Path(backend_root) / "data"
+        # Hugging Face Persistent Storage Tier mounts a volume at /data
+        # If it exists, we use it to ensure the watchlist survives updates/restarts.
+        persistent_root = Path("/data")
+        if persistent_root.exists() and persistent_root.is_dir():
+            data_dir = persistent_root
+        else:
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                backend_root = Path(__file__).resolve().parents[2]
+            data_dir = Path(backend_root) / "data"
+            
         filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
         return data_dir / filename
 

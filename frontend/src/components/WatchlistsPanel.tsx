@@ -15,6 +15,7 @@ export type LocalWatchlist = {
   name: string;
   color: string;
   symbols: string[];
+  updated_at?: number | null;
 };
 
 type WatchlistsPanelProps = {

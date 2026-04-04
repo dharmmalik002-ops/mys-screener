@@ -141,7 +141,7 @@ export type WatchlistItem = {
 
 export type WatchlistsStateResponse = {
   market: MarketKey;
-  updated_at: string;
+  updated_at?: number | null;
   active_watchlist_id: string | null;
   watchlists: WatchlistItem[];
 };
