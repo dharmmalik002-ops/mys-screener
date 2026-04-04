@@ -1,0 +1,8380 @@
+{
+  "asOfDate": "2026-04-04",
+  "benchmark": "US Market Proxy",
+  "filters": {
+    "minMarketCapCr": 800.0,
+    "minAvgDailyValueCr": 1.0
+  },
+  "master": [
+    {
+      "groupId": "aerospace",
+      "groupName": "Aerospace",
+      "parentSector": "Industrials",
+      "description": "US listed aerospace stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "AIR",
+        "AVAV",
+        "BA",
+        "BETA",
+        "EMBJ",
+        "HEI",
+        "HON",
+        "RTX",
+        "SARO",
+        "SOLS",
+        "TXT"
+      ]
+    },
+    {
+      "groupId": "air-freight-delivery-services",
+      "groupName": "Air Freight/Delivery Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed air freight/delivery services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "ALGT",
+        "ALK",
+        "CPA",
+        "DAL",
+        "FDX",
+        "LTM",
+        "LUV",
+        "RYAAY",
+        "SKYW",
+        "SNCY",
+        "UAL"
+      ]
+    },
+    {
+      "groupId": "apparel",
+      "groupName": "Apparel",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed apparel stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "AS",
+        "COLM",
+        "CPRI",
+        "CRI",
+        "GIII",
+        "GIL",
+        "LEVI",
+        "LULU",
+        "TPR"
+      ]
+    },
+    {
+      "groupId": "auto-manufacturing",
+      "groupName": "Auto Manufacturing",
+      "parentSector": "Industrials",
+      "description": "US listed auto manufacturing stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "FSS",
+        "GM",
+        "HMC",
+        "LI",
+        "OSK",
+        "RACE",
+        "TSLA",
+        "XPEV"
+      ]
+    },
+    {
+      "groupId": "auto-parts-o-e-m",
+      "groupName": "Auto Parts:O.E.M.",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed auto parts:o.e.m. stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 15,
+      "symbols": [
+        "ADNT",
+        "ALSN",
+        "ALV",
+        "APTV",
+        "ATMU",
+        "BWA",
+        "DAN",
+        "GNTX",
+        "GTX",
+        "LEA",
+        "MGA",
+        "MOD",
+        "PATK",
+        "TT",
+        "VC"
+      ]
+    },
+    {
+      "groupId": "basic-materials-others",
+      "groupName": "Basic Materials Others",
+      "parentSector": "Basic Materials",
+      "description": "US listed basic materials others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "ALM",
+        "CCJ",
+        "FBIN",
+        "IP",
+        "LPX",
+        "TREX"
+      ]
+    },
+    {
+      "groupId": "beverages-production-distribution",
+      "groupName": "Beverages (Production/Distribution)",
+      "parentSector": "Consumer Staples",
+      "description": "US listed beverages (production/distribution) stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "BUD",
+        "CCEP",
+        "CELH",
+        "COCO",
+        "COKE",
+        "DEO",
+        "KDP",
+        "KO",
+        "MNST",
+        "PEP",
+        "PRMB",
+        "STZ",
+        "TAP"
+      ]
+    },
+    {
+      "groupId": "biotechnology-biological-products-no-diagnostic-substances",
+      "groupName": "Biotechnology: Biological Products (No Diagnostic Substances)",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: biological products (no diagnostic substances) stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 28,
+      "symbols": [
+        "ACLX",
+        "AMGN",
+        "APGE",
+        "BEAM",
+        "BIIB",
+        "BNTX",
+        "CGON",
+        "CRSP",
+        "DNLI",
+        "EXEL",
+        "GILD",
+        "GLUE",
+        "HALO",
+        "IMCR",
+        "IMVT",
+        "KOD",
+        "KYMR",
+        "MAZE",
+        "MRNA",
+        "NBIX",
+        "QGEN",
+        "RGEN",
+        "RVMD",
+        "SRRK",
+        "TECH",
+        "TWST",
+        "VCEL",
+        "VOR"
+      ]
+    },
+    {
+      "groupId": "biotechnology-electromedical-electrotherapeutic-apparatus",
+      "groupName": "Biotechnology: Electromedical & Electrotherapeutic Apparatus",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: electromedical & electrotherapeutic apparatus stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "AXGN",
+        "ITGR",
+        "LIVN",
+        "MASI",
+        "MDT",
+        "PRKS",
+        "SLNO",
+        "TMDX"
+      ]
+    },
+    {
+      "groupId": "biotechnology-in-vitro-in-vivo-diagnostic-substances",
+      "groupName": "Biotechnology: In Vitro & In Vivo Diagnostic Substances",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: in vitro & in vivo diagnostic substances stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "CLDX",
+        "IDXX",
+        "LNTH",
+        "ORKA",
+        "QDEL"
+      ]
+    },
+    {
+      "groupId": "biotechnology-laboratory-analytical-instruments",
+      "groupName": "Biotechnology: Laboratory Analytical Instruments",
+      "parentSector": "Industrials",
+      "description": "US listed biotechnology: laboratory analytical instruments stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "A",
+        "BRKR",
+        "RVTY",
+        "TXG",
+        "WAT"
+      ]
+    },
+    {
+      "groupId": "biotechnology-pharmaceutical-preparations",
+      "groupName": "Biotechnology: Pharmaceutical Preparations",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: pharmaceutical preparations stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 113,
+      "symbols": [
+        "ABBV",
+        "ABT",
+        "ABVX",
+        "ACAD",
+        "AGIO",
+        "ALKS",
+        "ALMS",
+        "ALNY",
+        "AMPH",
+        "ANAB",
+        "ANIP",
+        "APLS",
+        "ARQT",
+        "ARWR",
+        "ASND",
+        "AUPH",
+        "AVBP",
+        "AVTX",
+        "AXSM",
+        "AZN",
+        "BBIO",
+        "BCAX",
+        "BIOA",
+        "BMRN",
+        "BMY",
+        "CAPR",
+        "CNTA",
+        "COGT",
+        "COLL",
+        "CORT",
+        "CPRX",
+        "CRNX",
+        "CYTK",
+        "DAWN",
+        "DNTH",
+        "DYN",
+        "ELAN",
+        "ELVN",
+        "ERAS",
+        "EWTX",
+        "GMAB",
+        "GPCR",
+        "GSK",
+        "HRMY",
+        "HROW",
+        "IDYA",
+        "IMNM",
+        "INDV",
+        "INSM",
+        "INVA",
+        "IONS",
+        "IRON",
+        "JAZZ",
+        "JNJ",
+        "KALV",
+        "KNSA",
+        "LEGN",
+        "LLY",
+        "LQDA",
+        "MANE",
+        "MBX",
+        "MDGL",
+        "MIRM",
+        "MLTX",
+        "MLYS",
+        "MRK",
+        "NAMS",
+        "NKTR",
+        "NRIX",
+        "NUVL",
+        "NVO",
+        "NVS",
+        "OLMA",
+        "PBH",
+        "PCRX",
+        "PCVX",
+        "PFE",
+        "PRAX",
+        "PTCT",
+        "PTGX",
+        "QURE",
+        "RARE",
+        "RCUS",
+        "REGN",
+        "ROIV",
+        "RPRX",
+        "RYTM",
+        "SION",
+        "SMMT",
+        "SNDX",
+        "SNY",
+        "SRPT",
+        "STOK",
+        "SUPN",
+        "SYRE",
+        "TAK",
+        "TBPH",
+        "TERN",
+        "TEVA",
+        "TGTX",
+        "TNGX",
+        "TVTX",
+        "TYRA",
+        "URGN",
+        "UTHR",
+        "VERA",
+        "VKTX",
+        "VRTX",
+        "XENE",
+        "ZBIO",
+        "ZLAB",
+        "ZTS",
+        "ZYME"
+      ]
+    },
+    {
+      "groupId": "broadcasting",
+      "groupName": "Broadcasting",
+      "parentSector": "Industrials",
+      "description": "US listed broadcasting stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "FOX",
+        "FOXA",
+        "FWONK",
+        "NXST",
+        "SIRI",
+        "SPOT",
+        "VSNT"
+      ]
+    },
+    {
+      "groupId": "cable-other-pay-television-services",
+      "groupName": "Cable & Other Pay Television Services",
+      "parentSector": "Telecommunications",
+      "description": "US listed cable & other pay television services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "CHTR",
+        "CMCSA",
+        "GLIBK",
+        "LBRDK",
+        "RCI",
+        "ROKU"
+      ]
+    },
+    {
+      "groupId": "catalog-specialty-distribution",
+      "groupName": "Catalog/Specialty Distribution",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed catalog/specialty distribution stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "AMZN",
+        "CHWY",
+        "CPNG",
+        "GCT",
+        "RVLV",
+        "VIPS",
+        "W"
+      ]
+    },
+    {
+      "groupId": "clothing-shoe-accessory-stores",
+      "groupName": "Clothing/Shoe/Accessory Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed clothing/shoe/accessory stores stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "AEO",
+        "ANF",
+        "BBWI",
+        "BOOT",
+        "GAP",
+        "ROST",
+        "TJX",
+        "URBN",
+        "VSCO"
+      ]
+    },
+    {
+      "groupId": "coal-mining",
+      "groupName": "Coal Mining",
+      "parentSector": "Energy",
+      "description": "US listed coal mining stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "BHP",
+        "BTU",
+        "CNR",
+        "HCC",
+        "HNRG"
+      ]
+    },
+    {
+      "groupId": "commercial-banks",
+      "groupName": "Commercial Banks",
+      "parentSector": "Finance",
+      "description": "US listed commercial banks stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 14,
+      "symbols": [
+        "BBAR",
+        "BBVA",
+        "BCS",
+        "BMO",
+        "CM",
+        "GGAL",
+        "HDB",
+        "IBN",
+        "ING",
+        "MUFG",
+        "NWG",
+        "RY",
+        "SMFG",
+        "TD"
+      ]
+    },
+    {
+      "groupId": "computer-communications-equipment",
+      "groupName": "Computer Communications Equipment",
+      "parentSector": "Telecommunications",
+      "description": "US listed computer communications equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "ANET",
+        "ATEN",
+        "CSCO",
+        "EXTR",
+        "FFIV"
+      ]
+    },
+    {
+      "groupId": "computer-manufacturing",
+      "groupName": "Computer Manufacturing",
+      "parentSector": "Technology",
+      "description": "US listed computer manufacturing stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "AAPL",
+        "DELL",
+        "HPQ",
+        "IBM",
+        "SMCI"
+      ]
+    },
+    {
+      "groupId": "computer-software-prepackaged-software",
+      "groupName": "Computer Software: Prepackaged Software",
+      "parentSector": "Technology",
+      "description": "US listed computer software: prepackaged software stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 79,
+      "symbols": [
+        "ACIW",
+        "ADBE",
+        "ADEA",
+        "ADSK",
+        "ALKT",
+        "APPF",
+        "BL",
+        "BLKB",
+        "BOX",
+        "BRZE",
+        "BSY",
+        "CDNS",
+        "CHKP",
+        "CNXC",
+        "CRM",
+        "CRWD",
+        "CRWV",
+        "CVLT",
+        "CWAN",
+        "DBX",
+        "DDOG",
+        "DOCU",
+        "DT",
+        "DUOL",
+        "ESTC",
+        "FIG",
+        "FROG",
+        "FSLY",
+        "GEN",
+        "GLBE",
+        "GTLB",
+        "GWRE",
+        "HUBS",
+        "INTA",
+        "INTU",
+        "KVYO",
+        "MANH",
+        "MDB",
+        "MNDY",
+        "MSFT",
+        "MSTR",
+        "NCNO",
+        "NET",
+        "NOW",
+        "NTNX",
+        "OKTA",
+        "ORCL",
+        "OS",
+        "PAYC",
+        "PCOR",
+        "PCTY",
+        "PLTR",
+        "PRGS",
+        "PTC",
+        "QLYS",
+        "QTWO",
+        "RBLX",
+        "RBRK",
+        "SAP",
+        "SHOP",
+        "SNOW",
+        "SNPS",
+        "SPSC",
+        "SSNC",
+        "STRC",
+        "TDC",
+        "TEAM",
+        "TENB",
+        "TTAN",
+        "TWLO",
+        "TYL",
+        "U",
+        "VEEV",
+        "VIA",
+        "VRNS",
+        "WK",
+        "XYZ",
+        "YOU",
+        "ZETA"
+      ]
+    },
+    {
+      "groupId": "computer-software-programming-data-processing",
+      "groupName": "Computer Software: Programming Data Processing",
+      "parentSector": "Technology",
+      "description": "US listed computer software: programming data processing stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 19,
+      "symbols": [
+        "APP",
+        "BIDU",
+        "DOCN",
+        "FDS",
+        "FLUT",
+        "GDS",
+        "GOOG",
+        "GOOGL",
+        "IAC",
+        "META",
+        "MTCH",
+        "NBIS",
+        "PINS",
+        "ROP",
+        "SRAD",
+        "TEM",
+        "TTD",
+        "WIX",
+        "ZM"
+      ]
+    },
+    {
+      "groupId": "consumer-discretionary-others",
+      "groupName": "Consumer Discretionary Others",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed consumer discretionary others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 40,
+      "symbols": [
+        "AAP",
+        "AMCR",
+        "ASH",
+        "AXTA",
+        "AYI",
+        "BBY",
+        "CAR",
+        "CLX",
+        "CNK",
+        "CNM",
+        "CSWC",
+        "DLX",
+        "FOXF",
+        "GME",
+        "GPC",
+        "HAS",
+        "HNI",
+        "HOG",
+        "KVUE",
+        "LKQ",
+        "MNRO",
+        "NFLX",
+        "NWS",
+        "NWSA",
+        "NYT",
+        "OMC",
+        "ORLY",
+        "PCAR",
+        "PPG",
+        "RPM",
+        "SCHL",
+        "SIG",
+        "SITE",
+        "TPB",
+        "TPC",
+        "TRI",
+        "TTC",
+        "WLY",
+        "WPP",
+        "YETI"
+      ]
+    },
+    {
+      "groupId": "consumer-electronics-appliances",
+      "groupName": "Consumer Electronics/Appliances",
+      "parentSector": "Technology",
+      "description": "US listed consumer electronics/appliances stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "AOS",
+        "EMR",
+        "GE",
+        "KN",
+        "OTIS",
+        "SN",
+        "SONY",
+        "WHR"
+      ]
+    },
+    {
+      "groupId": "consumer-staples-others",
+      "groupName": "Consumer Staples Others",
+      "parentSector": "Consumer Staples",
+      "description": "US listed consumer staples others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "ACI",
+        "CALM",
+        "CTVA",
+        "CVS",
+        "GRDN",
+        "HSY",
+        "KR",
+        "SFM",
+        "TBBB"
+      ]
+    },
+    {
+      "groupId": "containers-packaging",
+      "groupName": "Containers/Packaging",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed containers/packaging stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "AVY",
+        "BALL",
+        "CCK",
+        "KMB",
+        "PKG",
+        "REYN",
+        "SLGN",
+        "SON",
+        "SW",
+        "WMS"
+      ]
+    },
+    {
+      "groupId": "department-specialty-retail-stores",
+      "groupName": "Department/Specialty Retail Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed department/specialty retail stores stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "BJ",
+        "BURL",
+        "COST",
+        "DG",
+        "DLTR",
+        "FIVE",
+        "M",
+        "OLLI",
+        "TGT",
+        "WMT"
+      ]
+    },
+    {
+      "groupId": "diversified-commercial-services",
+      "groupName": "Diversified Commercial Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed diversified commercial services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 18,
+      "symbols": [
+        "ABM",
+        "ABNB",
+        "ADP",
+        "AER",
+        "AL",
+        "ALLE",
+        "EQPT",
+        "FTDR",
+        "KFY",
+        "NVRI",
+        "PAYX",
+        "PRG",
+        "PYPL",
+        "ROL",
+        "UPBD",
+        "URI",
+        "VRSK",
+        "VVX"
+      ]
+    },
+    {
+      "groupId": "edp-services",
+      "groupName": "EDP Services",
+      "parentSector": "Technology",
+      "description": "US listed edp services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 36,
+      "symbols": [
+        "BILI",
+        "BILL",
+        "CARG",
+        "CSGS",
+        "CTSH",
+        "DASH",
+        "DOCS",
+        "DOX",
+        "EPAM",
+        "FIVN",
+        "GDDY",
+        "GLOB",
+        "HNGE",
+        "INOD",
+        "IONQ",
+        "IOT",
+        "IREN",
+        "ISSC",
+        "JKHY",
+        "LDOS",
+        "LIF",
+        "NEE",
+        "NTCT",
+        "OTEX",
+        "PDD",
+        "PEGA",
+        "PSN",
+        "RAMP",
+        "RDDT",
+        "RNG",
+        "SAIC",
+        "TOST",
+        "VRSN",
+        "WAY",
+        "WDAY",
+        "ZS"
+      ]
+    },
+    {
+      "groupId": "etf",
+      "groupName": "ETF",
+      "parentSector": "Exchange Traded Funds",
+      "description": "US listed etf stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 34,
+      "symbols": [
+        "DIA",
+        "GLD",
+        "IVV",
+        "IWB",
+        "IWF",
+        "IWM",
+        "IWO",
+        "IWV",
+        "KORU",
+        "MDY",
+        "MGK",
+        "OEF",
+        "OIH",
+        "QQQ",
+        "SMH",
+        "SOXX",
+        "SPY",
+        "VB",
+        "VBK",
+        "VCR",
+        "VGT",
+        "VHT",
+        "VIS",
+        "VO",
+        "VONE",
+        "VOO",
+        "VOOG",
+        "VOT",
+        "VTHR",
+        "VTI",
+        "VUG",
+        "VV",
+        "XAR",
+        "XSD"
+      ]
+    },
+    {
+      "groupId": "electric-utilities-central",
+      "groupName": "Electric Utilities: Central",
+      "parentSector": "Utilities",
+      "description": "US listed electric utilities: central stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 30,
+      "symbols": [
+        "AEP",
+        "BEP",
+        "BEPC",
+        "BKH",
+        "CEG",
+        "CNP",
+        "CWEN",
+        "D",
+        "DTE",
+        "EIX",
+        "EMA",
+        "ES",
+        "ETR",
+        "FE",
+        "FTS",
+        "HE",
+        "IDA",
+        "NNE",
+        "NRG",
+        "OGE",
+        "OKLO",
+        "ORA",
+        "PAM",
+        "PNW",
+        "POR",
+        "PPL",
+        "SO",
+        "TLN",
+        "TXNM",
+        "VST"
+      ]
+    },
+    {
+      "groupId": "electrical-products",
+      "groupName": "Electrical Products",
+      "parentSector": "Technology",
+      "description": "US listed electrical products stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 15,
+      "symbols": [
+        "AEHR",
+        "APH",
+        "CLS",
+        "COHU",
+        "FLEX",
+        "HUBB",
+        "ITRI",
+        "JBL",
+        "MRCY",
+        "OLED",
+        "SANM",
+        "TER",
+        "TTMI",
+        "VLTO",
+        "VSH"
+      ]
+    },
+    {
+      "groupId": "electronic-components",
+      "groupName": "Electronic Components",
+      "parentSector": "Technology",
+      "description": "US listed electronic components stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "AVT",
+        "CAMT",
+        "COHR",
+        "KLAC",
+        "NTAP",
+        "PSTG",
+        "SNDK",
+        "STX",
+        "TEL",
+        "WDC"
+      ]
+    },
+    {
+      "groupId": "energy-others",
+      "groupName": "Energy Others",
+      "parentSector": "Energy",
+      "description": "US listed energy others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 1,
+      "symbols": [
+        "WKC"
+      ]
+    },
+    {
+      "groupId": "engineering-construction",
+      "groupName": "Engineering & Construction",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed engineering & construction stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "AGX",
+        "AMRC",
+        "APG",
+        "BLD",
+        "FIX",
+        "LGN",
+        "PWR"
+      ]
+    },
+    {
+      "groupId": "environmental-services",
+      "groupName": "Environmental Services",
+      "parentSector": "Utilities",
+      "description": "US listed environmental services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "CWST",
+        "GFL",
+        "RSG",
+        "WCN",
+        "WM"
+      ]
+    },
+    {
+      "groupId": "finance-others",
+      "groupName": "Finance Others",
+      "parentSector": "Finance",
+      "description": "US listed finance others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "AFL",
+        "BBT",
+        "BKU",
+        "CNO",
+        "EBC",
+        "HASI",
+        "HSBC",
+        "MAIN",
+        "PDI",
+        "PFG",
+        "PFS",
+        "UNM"
+      ]
+    },
+    {
+      "groupId": "finance-consumer-services",
+      "groupName": "Finance: Consumer Services",
+      "parentSector": "Finance",
+      "description": "US listed finance: consumer services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 25,
+      "symbols": [
+        "AFRM",
+        "APLD",
+        "ARCC",
+        "AXP",
+        "BLSH",
+        "BMNR",
+        "CHYM",
+        "COIN",
+        "CORZ",
+        "CRCL",
+        "DAVE",
+        "EFX",
+        "FIGR",
+        "GPGI",
+        "HUT",
+        "MCO",
+        "OMF",
+        "PWP",
+        "SEZL",
+        "SLM",
+        "SOFI",
+        "SPGI",
+        "SYF",
+        "TRU",
+        "UPST"
+      ]
+    },
+    {
+      "groupId": "fluid-controls",
+      "groupName": "Fluid Controls",
+      "parentSector": "Industrials",
+      "description": "US listed fluid controls stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "FLS",
+        "GGG",
+        "IEX",
+        "ITT",
+        "XYL"
+      ]
+    },
+    {
+      "groupId": "food-distributors",
+      "groupName": "Food Distributors",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed food distributors stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "CHEF",
+        "DPZ",
+        "PFGC",
+        "SYY",
+        "UNFI",
+        "USFD"
+      ]
+    },
+    {
+      "groupId": "garments-and-clothing",
+      "groupName": "Garments and Clothing",
+      "parentSector": "Industrials",
+      "description": "US listed garments and clothing stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "CTAS",
+        "KTB",
+        "OXM",
+        "PVH",
+        "RL",
+        "VFC"
+      ]
+    },
+    {
+      "groupId": "health-care-others",
+      "groupName": "Health Care Others",
+      "parentSector": "Health Care",
+      "description": "US listed health care others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 22,
+      "symbols": [
+        "BTI",
+        "BTSG",
+        "CAH",
+        "COR",
+        "CRL",
+        "DFTX",
+        "DVA",
+        "FMS",
+        "GEHC",
+        "HIMS",
+        "HOLX",
+        "ICLR",
+        "INCY",
+        "IQV",
+        "MCK",
+        "MO",
+        "OPCH",
+        "PGNY",
+        "PHG",
+        "PM",
+        "PRVA",
+        "ULS"
+      ]
+    },
+    {
+      "groupId": "home-furnishings",
+      "groupName": "Home Furnishings",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed home furnishings stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "FUL",
+        "MHK",
+        "SGI",
+        "TILE",
+        "WSM"
+      ]
+    },
+    {
+      "groupId": "homebuilding",
+      "groupName": "Homebuilding",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed homebuilding stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 15,
+      "symbols": [
+        "BZH",
+        "DHI",
+        "ECG",
+        "GEO",
+        "KBH",
+        "LEN",
+        "LGIH",
+        "MTH",
+        "PHM",
+        "SKY",
+        "THO",
+        "TMHC",
+        "TOL",
+        "TPH",
+        "WGO"
+      ]
+    },
+    {
+      "groupId": "hospital-nursing-management",
+      "groupName": "Hospital/Nursing Management",
+      "parentSector": "Health Care",
+      "description": "US listed hospital/nursing management stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "EHC",
+        "ENSG",
+        "HCA",
+        "HCSG",
+        "MD",
+        "PACS",
+        "SEM",
+        "SNDA",
+        "THC",
+        "UHS"
+      ]
+    },
+    {
+      "groupId": "hotels-resorts",
+      "groupName": "Hotels/Resorts",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed hotels/resorts stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 20,
+      "symbols": [
+        "ATAT",
+        "BYD",
+        "CHH",
+        "CZR",
+        "H",
+        "HGV",
+        "HLT",
+        "HTHT",
+        "IHG",
+        "LTH",
+        "LVS",
+        "MAR",
+        "MGM",
+        "OSW",
+        "PENN",
+        "PLNT",
+        "RRR",
+        "TNL",
+        "WH",
+        "WYNN"
+      ]
+    },
+    {
+      "groupId": "industrial-machinery-components",
+      "groupName": "Industrial Machinery/Components",
+      "parentSector": "Industrials",
+      "description": "US listed industrial machinery/components stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 72,
+      "symbols": [
+        "AAON",
+        "ACLS",
+        "ACMR",
+        "AEIS",
+        "AGCO",
+        "ALH",
+        "AME",
+        "AMPX",
+        "ASML",
+        "AZTA",
+        "BC",
+        "BE",
+        "BWXT",
+        "CAE",
+        "CARR",
+        "CGNX",
+        "CMI",
+        "CW",
+        "DE",
+        "DHR",
+        "DOV",
+        "DRS",
+        "EFXT",
+        "ENR",
+        "EPAC",
+        "ESAB",
+        "ETN",
+        "FPS",
+        "FTV",
+        "GRMN",
+        "GTES",
+        "HSAI",
+        "IMAX",
+        "IR",
+        "ITW",
+        "JBTM",
+        "JCI",
+        "KEYS",
+        "KMT",
+        "LHX",
+        "LRCX",
+        "LUNR",
+        "MIDD",
+        "MIR",
+        "MKSI",
+        "MSM",
+        "NN",
+        "NOC",
+        "NVT",
+        "NXT",
+        "OC",
+        "ONTO",
+        "OUST",
+        "PI",
+        "PNR",
+        "PSIX",
+        "RAL",
+        "ROK",
+        "SPXC",
+        "ST",
+        "SWK",
+        "SYM",
+        "TMO",
+        "TRMB",
+        "VECO",
+        "VICR",
+        "VNT",
+        "VRT",
+        "WSO",
+        "WWD",
+        "ZBRA",
+        "ZWS"
+      ]
+    },
+    {
+      "groupId": "industrial-specialties",
+      "groupName": "Industrial Specialties",
+      "parentSector": "Health Care",
+      "description": "US listed industrial specialties stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "ALGN",
+        "CDRE",
+        "ENOV",
+        "ESTA",
+        "EW",
+        "ISRG",
+        "MAS",
+        "PII",
+        "POOL",
+        "SNN",
+        "STE",
+        "TRS",
+        "ZBH"
+      ]
+    },
+    {
+      "groupId": "industrials-others",
+      "groupName": "Industrials Others",
+      "parentSector": "Industrials",
+      "description": "US listed industrials others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 26,
+      "symbols": [
+        "AA",
+        "AMRZ",
+        "AXON",
+        "BCO",
+        "CAT",
+        "CENX",
+        "CF",
+        "CHRW",
+        "CRH",
+        "DCI",
+        "DY",
+        "ENTG",
+        "EXP",
+        "EXPD",
+        "FTAI",
+        "HRI",
+        "HUBG",
+        "JHX",
+        "MOS",
+        "MTZ",
+        "NTR",
+        "PRIM",
+        "REZI",
+        "SMG",
+        "TEX",
+        "WSC"
+      ]
+    },
+    {
+      "groupId": "integrated-oil-companies",
+      "groupName": "Integrated oil Companies",
+      "parentSector": "Energy",
+      "description": "US listed integrated oil companies stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 17,
+      "symbols": [
+        "BP",
+        "CLMT",
+        "COP",
+        "CVI",
+        "CVX",
+        "DK",
+        "EQNR",
+        "IMO",
+        "MPC",
+        "PBF",
+        "PSX",
+        "SU",
+        "SUN",
+        "SUNC",
+        "VLO",
+        "XOM",
+        "YPF"
+      ]
+    },
+    {
+      "groupId": "investment-bankers-brokers-service",
+      "groupName": "Investment Bankers/Brokers/Service",
+      "parentSector": "Finance",
+      "description": "US listed investment bankers/brokers/service stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 28,
+      "symbols": [
+        "BLK",
+        "CBOE",
+        "CME",
+        "EEFT",
+        "ETOR",
+        "FUTU",
+        "GLXY",
+        "GS",
+        "HOOD",
+        "IBKR",
+        "ICE",
+        "JEF",
+        "LPLA",
+        "MIAX",
+        "MKTX",
+        "MRX",
+        "MS",
+        "NDAQ",
+        "PIPR",
+        "RJF",
+        "SCHW",
+        "SEIC",
+        "SF",
+        "SNEX",
+        "TROW",
+        "TW",
+        "VIRT",
+        "XP"
+      ]
+    },
+    {
+      "groupId": "investment-managers",
+      "groupName": "Investment Managers",
+      "parentSector": "Finance",
+      "description": "US listed investment managers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 22,
+      "symbols": [
+        "AAMI",
+        "AMP",
+        "APAM",
+        "APO",
+        "ARES",
+        "BEN",
+        "BX",
+        "CG",
+        "EVR",
+        "FHI",
+        "HLI",
+        "HLNE",
+        "IVZ",
+        "JHG",
+        "KKR",
+        "LAZ",
+        "MC",
+        "MORN",
+        "STEP",
+        "TPG",
+        "TSLX",
+        "VCTR"
+      ]
+    },
+    {
+      "groupId": "life-insurance",
+      "groupName": "Life Insurance",
+      "parentSector": "Finance",
+      "description": "US listed life insurance stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "AIG",
+        "BHF",
+        "CRBG",
+        "FG",
+        "GL",
+        "JXN",
+        "LNC",
+        "MET",
+        "MFC",
+        "PRU",
+        "PUK",
+        "SLF",
+        "VOYA"
+      ]
+    },
+    {
+      "groupId": "major-banks",
+      "groupName": "Major Banks",
+      "parentSector": "Finance",
+      "description": "US listed major banks stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 68,
+      "symbols": [
+        "ABCB",
+        "ALLY",
+        "ASB",
+        "AUB",
+        "BAC",
+        "BANC",
+        "BK",
+        "BNS",
+        "BOH",
+        "BPOP",
+        "BUSE",
+        "C",
+        "CBSH",
+        "CFG",
+        "CFR",
+        "COF",
+        "COLB",
+        "CVBF",
+        "DB",
+        "EWBC",
+        "FBK",
+        "FBP",
+        "FCF",
+        "FFBC",
+        "FFIN",
+        "FHB",
+        "FHN",
+        "FIBK",
+        "FITB",
+        "FNB",
+        "FULT",
+        "GBCI",
+        "HBAN",
+        "HOMB",
+        "HWC",
+        "IBOC",
+        "JPM",
+        "KEY",
+        "MTB",
+        "NTRS",
+        "OCFC",
+        "ONB",
+        "OZK",
+        "PB",
+        "PNC",
+        "PNFP",
+        "RF",
+        "RNST",
+        "SBCF",
+        "SFNC",
+        "SSB",
+        "STEL",
+        "STT",
+        "TCBI",
+        "TFC",
+        "TRMK",
+        "UBS",
+        "UBSI",
+        "UCB",
+        "UMBF",
+        "USB",
+        "WAFD",
+        "WAL",
+        "WBS",
+        "WFC",
+        "WSBC",
+        "WTFC",
+        "ZION"
+      ]
+    },
+    {
+      "groupId": "major-chemicals",
+      "groupName": "Major Chemicals",
+      "parentSector": "Industrials",
+      "description": "US listed major chemicals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 23,
+      "symbols": [
+        "ALB",
+        "APD",
+        "ASIX",
+        "AVNT",
+        "CC",
+        "CE",
+        "DD",
+        "DOW",
+        "EMN",
+        "ESI",
+        "FMC",
+        "GPRE",
+        "HXL",
+        "IFF",
+        "LIN",
+        "LYB",
+        "MEOH",
+        "OLN",
+        "PRM",
+        "SEE",
+        "SXT",
+        "VVV",
+        "WLK"
+      ]
+    },
+    {
+      "groupId": "marine-transportation",
+      "groupName": "Marine Transportation",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed marine transportation stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 20,
+      "symbols": [
+        "ASC",
+        "BIP",
+        "CCL",
+        "CUK",
+        "DHT",
+        "FLNG",
+        "FRO",
+        "GD",
+        "GLNG",
+        "HII",
+        "INSW",
+        "KEX",
+        "NCLH",
+        "RCL",
+        "SBLK",
+        "STNG",
+        "TDW",
+        "TRMD",
+        "VIK",
+        "ZIM"
+      ]
+    },
+    {
+      "groupId": "meat-poultry-fish",
+      "groupName": "Meat/Poultry/Fish",
+      "parentSector": "Consumer Staples",
+      "description": "US listed meat/poultry/fish stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "HRL",
+        "JBS",
+        "PPC",
+        "SFD",
+        "TSN"
+      ]
+    },
+    {
+      "groupId": "medical-specialities",
+      "groupName": "Medical Specialities",
+      "parentSector": "Health Care",
+      "description": "US listed medical specialities stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 24,
+      "symbols": [
+        "ACHC",
+        "ALHC",
+        "BLLN",
+        "CAI",
+        "CDNA",
+        "CELC",
+        "CI",
+        "CNC",
+        "CON",
+        "DGX",
+        "ELV",
+        "GH",
+        "GRAL",
+        "HSIC",
+        "HUM",
+        "ILMN",
+        "LH",
+        "MOH",
+        "NTRA",
+        "RDNT",
+        "TRUP",
+        "UNH",
+        "VCYT",
+        "VRDN"
+      ]
+    },
+    {
+      "groupId": "medical-dental-instruments",
+      "groupName": "Medical/Dental Instruments",
+      "parentSector": "Health Care",
+      "description": "US listed medical/dental instruments stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 24,
+      "symbols": [
+        "AORT",
+        "ATRC",
+        "BAX",
+        "BDX",
+        "BSX",
+        "DXCM",
+        "GKOS",
+        "GMED",
+        "HTFL",
+        "INSP",
+        "IRTC",
+        "MDLN",
+        "MMM",
+        "MMSI",
+        "NVST",
+        "PEN",
+        "PODD",
+        "PRCT",
+        "RMD",
+        "SOLV",
+        "SYK",
+        "TFX",
+        "TNDM",
+        "WST"
+      ]
+    },
+    {
+      "groupId": "metal-fabrications",
+      "groupName": "Metal Fabrications",
+      "parentSector": "Industrials",
+      "description": "US listed metal fabrications stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "AMSC",
+        "CR",
+        "CSTM",
+        "CXT",
+        "GNRC",
+        "GTLS",
+        "HLIO",
+        "HWM",
+        "MLI",
+        "MWA",
+        "PH",
+        "RRX",
+        "TKR"
+      ]
+    },
+    {
+      "groupId": "metal-mining",
+      "groupName": "Metal Mining",
+      "parentSector": "Basic Materials",
+      "description": "US listed metal mining stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "BVN",
+        "ERO",
+        "FCX",
+        "HBM",
+        "MP",
+        "RIO",
+        "SCCO",
+        "SOMN",
+        "VALE"
+      ]
+    },
+    {
+      "groupId": "military-government-technical",
+      "groupName": "Military/Government/Technical",
+      "parentSector": "Industrials",
+      "description": "US listed military/government/technical stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 21,
+      "symbols": [
+        "ACM",
+        "ATRO",
+        "CDNL",
+        "FER",
+        "FLR",
+        "FLY",
+        "GLDD",
+        "J",
+        "KBR",
+        "KRMN",
+        "KTOS",
+        "LMT",
+        "LOAR",
+        "MWH",
+        "RKLB",
+        "STRL",
+        "TDG",
+        "TTEK",
+        "VOYG",
+        "VSEC",
+        "YSS"
+      ]
+    },
+    {
+      "groupId": "mining-quarrying-of-nonmetallic-minerals-no-fuels",
+      "groupName": "Mining & Quarrying of Nonmetallic Minerals (No Fuels)",
+      "parentSector": "Industrials",
+      "description": "US listed mining & quarrying of nonmetallic minerals (no fuels) stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "CMP",
+        "HL",
+        "KNF",
+        "LEU",
+        "MDU",
+        "SQM",
+        "TECK",
+        "UUUU",
+        "VMC"
+      ]
+    },
+    {
+      "groupId": "miscellaneous",
+      "groupName": "Miscellaneous",
+      "parentSector": "Unclassified",
+      "description": "US listed miscellaneous stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "AAUC",
+        "ARIS",
+        "AUGO",
+        "BF-B",
+        "BRK-B",
+        "CBC",
+        "DEC",
+        "GEV"
+      ]
+    },
+    {
+      "groupId": "miscellaneous-others",
+      "groupName": "Miscellaneous Others",
+      "parentSector": "Miscellaneous",
+      "description": "US listed miscellaneous others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 3,
+      "symbols": [
+        "DLB",
+        "FERG",
+        "NATL"
+      ]
+    },
+    {
+      "groupId": "natural-gas-distribution",
+      "groupName": "Natural Gas Distribution",
+      "parentSector": "Utilities",
+      "description": "US listed natural gas distribution stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 22,
+      "symbols": [
+        "AM",
+        "AROC",
+        "DINO",
+        "DTM",
+        "ENB",
+        "EPD",
+        "ET",
+        "KGS",
+        "KMI",
+        "KNTK",
+        "MPLX",
+        "NGG",
+        "PAA",
+        "PAGP",
+        "SOBO",
+        "SRE",
+        "TGS",
+        "TRGP",
+        "TRP",
+        "UGI",
+        "WES",
+        "WMB"
+      ]
+    },
+    {
+      "groupId": "oil-gas-production",
+      "groupName": "Oil & Gas Production",
+      "parentSector": "Energy",
+      "description": "US listed oil & gas production stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 46,
+      "symbols": [
+        "APA",
+        "AR",
+        "BIPC",
+        "BKV",
+        "CHRD",
+        "CNQ",
+        "CNX",
+        "CRC",
+        "CRK",
+        "CTRA",
+        "CTRI",
+        "CVE",
+        "DVN",
+        "E",
+        "EOG",
+        "EQT",
+        "EXE",
+        "FANG",
+        "GPOR",
+        "HESM",
+        "HP",
+        "LB",
+        "MGY",
+        "MTDR",
+        "MUR",
+        "NBR",
+        "NE",
+        "NOG",
+        "OKE",
+        "OVV",
+        "OXY",
+        "PARR",
+        "PBA",
+        "PBR",
+        "PR",
+        "REPX",
+        "RRC",
+        "SDRL",
+        "SHEL",
+        "SM",
+        "TPL",
+        "TTE",
+        "VAL",
+        "VIST",
+        "VNOM",
+        "WDS"
+      ]
+    },
+    {
+      "groupId": "oil-and-gas-field-machinery",
+      "groupName": "Oil and Gas Field Machinery",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed oil and gas field machinery stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "BKR",
+        "FLOC",
+        "FTI",
+        "INVX",
+        "NOV",
+        "SEI",
+        "WFRD",
+        "WHD"
+      ]
+    },
+    {
+      "groupId": "oil-gas-transmission",
+      "groupName": "Oil/Gas Transmission",
+      "parentSector": "Utilities",
+      "description": "US listed oil/gas transmission stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "ATO",
+        "EE",
+        "LNG",
+        "NFG",
+        "NJR",
+        "OGS"
+      ]
+    },
+    {
+      "groupId": "oilfield-services-equipment",
+      "groupName": "Oilfield Services/Equipment",
+      "parentSector": "Energy",
+      "description": "US listed oilfield services/equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "HAL",
+        "LBRT",
+        "NESR",
+        "OII",
+        "SLB",
+        "WBI",
+        "WTTR",
+        "XPRO"
+      ]
+    },
+    {
+      "groupId": "ophthalmic-goods",
+      "groupName": "Ophthalmic Goods",
+      "parentSector": "Health Care",
+      "description": "US listed ophthalmic goods stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "ALC",
+        "COO",
+        "EYE",
+        "STAA",
+        "WRBY"
+      ]
+    },
+    {
+      "groupId": "other-consumer-services",
+      "groupName": "Other Consumer Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed other consumer services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 14,
+      "symbols": [
+        "BAM",
+        "BFAM",
+        "EDU",
+        "HRB",
+        "IT",
+        "LAUR",
+        "LINC",
+        "LRN",
+        "PRDO",
+        "RTO",
+        "SCI",
+        "SE",
+        "UTI",
+        "YELP"
+      ]
+    },
+    {
+      "groupId": "other-specialty-stores",
+      "groupName": "Other Specialty Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed other specialty stores stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "ASO",
+        "DKS",
+        "EZPW",
+        "GOLD",
+        "JD",
+        "RH",
+        "ULTA"
+      ]
+    },
+    {
+      "groupId": "package-goods-cosmetics",
+      "groupName": "Package Goods/Cosmetics",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed package goods/cosmetics stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "CHD",
+        "CL",
+        "ECL",
+        "EL",
+        "ELF",
+        "EPC",
+        "PG",
+        "UL"
+      ]
+    },
+    {
+      "groupId": "packaged-foods",
+      "groupName": "Packaged Foods",
+      "parentSector": "Consumer Staples",
+      "description": "US listed packaged foods stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 16,
+      "symbols": [
+        "ADM",
+        "BG",
+        "BRBR",
+        "CAG",
+        "CPB",
+        "DAR",
+        "FRPT",
+        "GIS",
+        "INGR",
+        "KHC",
+        "LW",
+        "MDLZ",
+        "MKC",
+        "OFRM",
+        "POST",
+        "SJM"
+      ]
+    },
+    {
+      "groupId": "power-generation",
+      "groupName": "Power Generation",
+      "parentSector": "Utilities",
+      "description": "US listed power generation stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 14,
+      "symbols": [
+        "AEE",
+        "AVA",
+        "CMS",
+        "DUK",
+        "ED",
+        "EVRG",
+        "EXC",
+        "LNT",
+        "NI",
+        "NWE",
+        "PCG",
+        "PEG",
+        "WEC",
+        "XEL"
+      ]
+    },
+    {
+      "groupId": "precious-metals",
+      "groupName": "Precious Metals",
+      "parentSector": "Basic Materials",
+      "description": "US listed precious metals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 27,
+      "symbols": [
+        "AEM",
+        "AG",
+        "AGI",
+        "AU",
+        "B",
+        "CDE",
+        "CGAU",
+        "DRD",
+        "EGO",
+        "FNV",
+        "GFI",
+        "HMY",
+        "HYMC",
+        "IAG",
+        "KGC",
+        "MUX",
+        "NEM",
+        "OR",
+        "ORLA",
+        "PAAS",
+        "PPTA",
+        "RGLD",
+        "SA",
+        "SKE",
+        "SSRM",
+        "TFPM",
+        "WPM"
+      ]
+    },
+    {
+      "groupId": "professional-services",
+      "groupName": "Professional Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed professional services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "AMN",
+        "ASGN",
+        "BAH",
+        "G",
+        "GIB",
+        "MAN",
+        "NSP",
+        "RHI"
+      ]
+    },
+    {
+      "groupId": "property-casualty-insurers",
+      "groupName": "Property-Casualty Insurers",
+      "parentSector": "Finance",
+      "description": "US listed property-casualty insurers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 24,
+      "symbols": [
+        "ACGL",
+        "AFG",
+        "ALL",
+        "AXS",
+        "CB",
+        "CINF",
+        "ESNT",
+        "HG",
+        "HIG",
+        "KMPR",
+        "L",
+        "LMND",
+        "MTG",
+        "ORI",
+        "PGR",
+        "PRA",
+        "RDN",
+        "RLI",
+        "SIGI",
+        "SKWD",
+        "SLDE",
+        "SPNT",
+        "TRV",
+        "WRB"
+      ]
+    },
+    {
+      "groupId": "retail-building-materials",
+      "groupName": "RETAIL: Building Materials",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed retail: building materials stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "BLDR",
+        "FAST",
+        "FND",
+        "HD",
+        "LOW",
+        "QXO",
+        "SHW",
+        "TSCO"
+      ]
+    },
+    {
+      "groupId": "radio-and-television-broadcasting-and-communications-equipment",
+      "groupName": "Radio And Television Broadcasting And Communications Equipment",
+      "parentSector": "Technology",
+      "description": "US listed radio and television broadcasting and communications equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "BKSY",
+        "GILT",
+        "MSI",
+        "PL",
+        "QCOM",
+        "VISN",
+        "VSAT"
+      ]
+    },
+    {
+      "groupId": "railroads",
+      "groupName": "Railroads",
+      "parentSector": "Industrials",
+      "description": "US listed railroads stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "CNI",
+        "CP",
+        "CSX",
+        "NSC",
+        "TRN",
+        "UNP",
+        "WAB"
+      ]
+    },
+    {
+      "groupId": "real-estate",
+      "groupName": "Real Estate",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 43,
+      "symbols": [
+        "ACN",
+        "AKAM",
+        "AMTM",
+        "ANDG",
+        "BABA",
+        "BFH",
+        "BR",
+        "CART",
+        "CBRE",
+        "CBZ",
+        "CPAY",
+        "CSGP",
+        "CURB",
+        "EBAY",
+        "ETSY",
+        "EXLS",
+        "FIS",
+        "FISV",
+        "FOUR",
+        "GPN",
+        "GTY",
+        "HQY",
+        "INVH",
+        "JLL",
+        "MA",
+        "MELI",
+        "MMS",
+        "MRP",
+        "PAY",
+        "RBA",
+        "RELX",
+        "RELY",
+        "TCOM",
+        "TNET",
+        "TRNO",
+        "UBER",
+        "UE",
+        "V",
+        "VAC",
+        "WEX",
+        "XMTR",
+        "Z",
+        "ZG"
+      ]
+    },
+    {
+      "groupId": "real-estate-investment-trusts",
+      "groupName": "Real Estate Investment Trusts",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate investment trusts stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 77,
+      "symbols": [
+        "ADC",
+        "AHR",
+        "AKR",
+        "AMH",
+        "AMT",
+        "ARE",
+        "ARR",
+        "AVB",
+        "BNL",
+        "BRX",
+        "BXMT",
+        "BXP",
+        "CCI",
+        "CDP",
+        "CPT",
+        "CTRE",
+        "CUBE",
+        "CUZ",
+        "CXW",
+        "DBRG",
+        "DLR",
+        "DOC",
+        "EGP",
+        "ELS",
+        "EPR",
+        "EPRT",
+        "EQIX",
+        "EQR",
+        "ESS",
+        "EXR",
+        "FCPT",
+        "FR",
+        "FRT",
+        "GLPI",
+        "HHH",
+        "HIW",
+        "HR",
+        "HST",
+        "IRM",
+        "KIM",
+        "KRC",
+        "KRG",
+        "LAMR",
+        "LINE",
+        "LXP",
+        "MAA",
+        "MAC",
+        "NLY",
+        "NNN",
+        "NSA",
+        "NTST",
+        "O",
+        "OHI",
+        "OUT",
+        "PECO",
+        "PLD",
+        "PSA",
+        "REG",
+        "REXR",
+        "RYN",
+        "SBAC",
+        "SBRA",
+        "SKT",
+        "SLG",
+        "SMA",
+        "SPG",
+        "STAG",
+        "STWD",
+        "SUI",
+        "UDR",
+        "VICI",
+        "VNO",
+        "VRE",
+        "VTR",
+        "WELL",
+        "WPC",
+        "WY"
+      ]
+    },
+    {
+      "groupId": "real-estate-others",
+      "groupName": "Real Estate Others",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 1,
+      "symbols": [
+        "BN"
+      ]
+    },
+    {
+      "groupId": "restaurants",
+      "groupName": "Restaurants",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed restaurants stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 17,
+      "symbols": [
+        "ARMK",
+        "BROS",
+        "CAKE",
+        "CAVA",
+        "CBRL",
+        "CMG",
+        "DRI",
+        "EAT",
+        "MCD",
+        "PZZA",
+        "QSR",
+        "SBUX",
+        "SHAK",
+        "TXRH",
+        "WING",
+        "YUM",
+        "YUMC"
+      ]
+    },
+    {
+      "groupId": "retail-auto-dealers-and-gas-stations",
+      "groupName": "Retail-Auto Dealers and Gas Stations",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed retail-auto dealers and gas stations stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "CASY",
+        "CPRT",
+        "CVNA",
+        "KMX",
+        "OPLN",
+        "RUSHA"
+      ]
+    },
+    {
+      "groupId": "retail-computer-software-peripheral-equipment",
+      "groupName": "Retail: Computer Software & Peripheral Equipment",
+      "parentSector": "Technology",
+      "description": "US listed retail: computer software & peripheral equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "CDW",
+        "HPE",
+        "INGM",
+        "SNX",
+        "WGS"
+      ]
+    },
+    {
+      "groupId": "semiconductors",
+      "groupName": "Semiconductors",
+      "parentSector": "Technology",
+      "description": "US listed semiconductors stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 53,
+      "symbols": [
+        "AAOI",
+        "ADI",
+        "ALAB",
+        "ALGM",
+        "AMAT",
+        "AMBA",
+        "AMBQ",
+        "AMD",
+        "AMKR",
+        "ARM",
+        "ASX",
+        "AVGO",
+        "AXTI",
+        "CRDO",
+        "CRUS",
+        "DIOD",
+        "ENPH",
+        "FORM",
+        "FSLR",
+        "GFS",
+        "ICHR",
+        "INTC",
+        "LASR",
+        "LSCC",
+        "MCHP",
+        "MPWR",
+        "MRVL",
+        "MTSI",
+        "MU",
+        "MXL",
+        "NVDA",
+        "NXPI",
+        "ON",
+        "PENG",
+        "PLAB",
+        "POWI",
+        "Q",
+        "QRVO",
+        "RMBS",
+        "SEDG",
+        "SIMO",
+        "SKYT",
+        "SLAB",
+        "SMTC",
+        "STM",
+        "SWKS",
+        "SYNA",
+        "TSEM",
+        "TSM",
+        "TXN",
+        "UCTT",
+        "VIAV",
+        "WOLF"
+      ]
+    },
+    {
+      "groupId": "services-misc-amusement-recreation",
+      "groupName": "Services-Misc. Amusement & Recreation",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed services-misc. amusement & recreation stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "CHDN",
+        "DIS",
+        "DKNG",
+        "EA",
+        "FUN",
+        "LYV",
+        "MTN",
+        "RSI",
+        "SPHR",
+        "TKO",
+        "TTWO",
+        "WBD",
+        "WMG"
+      ]
+    },
+    {
+      "groupId": "shoe-manufacturing",
+      "groupName": "Shoe Manufacturing",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed shoe manufacturing stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "BIRK",
+        "CROX",
+        "DECK",
+        "NKE",
+        "ONON",
+        "SHOO",
+        "WWW"
+      ]
+    },
+    {
+      "groupId": "specialty-insurers",
+      "groupName": "Specialty Insurers",
+      "parentSector": "Finance",
+      "description": "US listed specialty insurers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "AJG",
+        "AON",
+        "BRO",
+        "BWIN",
+        "EQH",
+        "FAF",
+        "FNF",
+        "MRSH",
+        "NP",
+        "RYAN",
+        "WTW"
+      ]
+    },
+    {
+      "groupId": "steel-iron-ore",
+      "groupName": "Steel/Iron Ore",
+      "parentSector": "Industrials",
+      "description": "US listed steel/iron ore stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "ATI",
+        "CMC",
+        "CRS",
+        "MT",
+        "NUE",
+        "STLD",
+        "TS"
+      ]
+    },
+    {
+      "groupId": "technology-others",
+      "groupName": "Technology Others",
+      "parentSector": "Technology",
+      "description": "US listed technology others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 3,
+      "symbols": [
+        "FTNT",
+        "LOGI",
+        "PANW"
+      ]
+    },
+    {
+      "groupId": "telecommunications-equipment",
+      "groupName": "Telecommunications Equipment",
+      "parentSector": "Telecommunications",
+      "description": "US listed telecommunications equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 27,
+      "symbols": [
+        "AMX",
+        "ASTS",
+        "BCE",
+        "CALX",
+        "CCOI",
+        "CIEN",
+        "ESE",
+        "FN",
+        "GLW",
+        "GSAT",
+        "IRDM",
+        "KT",
+        "LITE",
+        "NTGR",
+        "SATS",
+        "SKM",
+        "T",
+        "TDS",
+        "TIGO",
+        "TIMB",
+        "TLK",
+        "TMUS",
+        "VIV",
+        "VOD",
+        "VZ",
+        "WCC",
+        "ZD"
+      ]
+    },
+    {
+      "groupId": "transportation-services",
+      "groupName": "Transportation Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed transportation services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "EXPE",
+        "GXO",
+        "LIND",
+        "MMYT",
+        "RXO",
+        "XPO"
+      ]
+    },
+    {
+      "groupId": "trucking-freight-courier-services",
+      "groupName": "Trucking Freight/Courier Services",
+      "parentSector": "Industrials",
+      "description": "US listed trucking freight/courier services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "JBHT",
+        "KNX",
+        "LSTR",
+        "ODFL",
+        "SAIA",
+        "SNDR",
+        "UPS",
+        "WERN",
+        "ZTO"
+      ]
+    },
+    {
+      "groupId": "utilities-others",
+      "groupName": "Utilities Others",
+      "parentSector": "Utilities",
+      "description": "US listed utilities others stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 4,
+      "symbols": [
+        "AWK",
+        "HTO",
+        "SBS",
+        "WTRG"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "rank": 1,
+      "rankLabel": "#1",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "integrated-oil-companies",
+      "groupName": "Integrated oil Companies",
+      "parentSector": "Energy",
+      "description": "US listed integrated oil companies stocks passing the working liquidity and market-cap filter.",
+      "score": 94.29,
+      "returns": {
+        "1m": 14.43,
+        "3m": 44.54,
+        "6m": 45.53
+      },
+      "relativeReturns": {
+        "1m": 17.02,
+        "3m": 41.16,
+        "6m": 37.77
+      },
+      "breadth": {
+        "above50dma": 100.0,
+        "above200dma": 94.12,
+        "positive3m": 97.06,
+        "positive6m": 94.12
+      },
+      "stockCount": 17,
+      "leaders": [
+        "CLMT",
+        "PBF",
+        "DK"
+      ],
+      "laggards": [
+        "SUNC",
+        "CVI",
+        "SUN"
+      ],
+      "symbols": [
+        "CLMT",
+        "PBF",
+        "DK",
+        "EQNR",
+        "SU",
+        "VLO",
+        "IMO",
+        "MPC",
+        "BP",
+        "YPF",
+        "XOM",
+        "PSX",
+        "COP",
+        "CVX",
+        "SUN",
+        "CVI",
+        "SUNC"
+      ]
+    },
+    {
+      "rank": 2,
+      "rankLabel": "#2",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "oil-gas-production",
+      "groupName": "Oil & Gas Production",
+      "parentSector": "Energy",
+      "description": "US listed oil & gas production stocks passing the working liquidity and market-cap filter.",
+      "score": 91.64,
+      "returns": {
+        "1m": 9.38,
+        "3m": 35.27,
+        "6m": 40.9
+      },
+      "relativeReturns": {
+        "1m": 11.97,
+        "3m": 31.89,
+        "6m": 33.14
+      },
+      "breadth": {
+        "above50dma": 84.78,
+        "above200dma": 93.48,
+        "positive3m": 90.76,
+        "positive6m": 93.48
+      },
+      "stockCount": 46,
+      "leaders": [
+        "PARR",
+        "VAL",
+        "APA"
+      ],
+      "laggards": [
+        "CRK",
+        "EXE",
+        "BIPC"
+      ],
+      "symbols": [
+        "PARR",
+        "VAL",
+        "APA",
+        "NBR",
+        "NE",
+        "E",
+        "PBR",
+        "CVE",
+        "VIST",
+        "WDS",
+        "PR",
+        "HP",
+        "SDRL",
+        "OVV",
+        "CRC",
+        "TTE",
+        "CNQ",
+        "MUR",
+        "CHRD",
+        "OXY",
+        "DVN",
+        "MTDR",
+        "REPX",
+        "CTRI",
+        "SM",
+        "CTRA",
+        "MGY",
+        "TPL",
+        "FANG",
+        "SHEL",
+        "EOG",
+        "LB",
+        "VNOM",
+        "NOG",
+        "RRC",
+        "PBA",
+        "OKE",
+        "BKV",
+        "CNX",
+        "AR",
+        "HESM",
+        "EQT",
+        "GPOR",
+        "BIPC",
+        "EXE",
+        "CRK"
+      ]
+    },
+    {
+      "rank": 3,
+      "rankLabel": "#3",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "oilfield-services-equipment",
+      "groupName": "Oilfield Services/Equipment",
+      "parentSector": "Energy",
+      "description": "US listed oilfield services/equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 90.26,
+      "returns": {
+        "1m": 2.6,
+        "3m": 37.02,
+        "6m": 63.86
+      },
+      "relativeReturns": {
+        "1m": 5.19,
+        "3m": 33.64,
+        "6m": 56.1
+      },
+      "breadth": {
+        "above50dma": 87.5,
+        "above200dma": 87.5,
+        "positive3m": 96.88,
+        "positive6m": 87.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "NESR",
+        "LBRT",
+        "HAL"
+      ],
+      "laggards": [
+        "WBI",
+        "SLB",
+        "XPRO"
+      ],
+      "symbols": [
+        "NESR",
+        "LBRT",
+        "HAL",
+        "OII",
+        "WTTR",
+        "XPRO",
+        "SLB",
+        "WBI"
+      ]
+    },
+    {
+      "rank": 4,
+      "rankLabel": "#4",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "major-chemicals",
+      "groupName": "Major Chemicals",
+      "parentSector": "Industrials",
+      "description": "US listed major chemicals stocks passing the working liquidity and market-cap filter.",
+      "score": 83.71,
+      "returns": {
+        "1m": 9.87,
+        "3m": 32.69,
+        "6m": 33.74
+      },
+      "relativeReturns": {
+        "1m": 12.46,
+        "3m": 29.31,
+        "6m": 25.98
+      },
+      "breadth": {
+        "above50dma": 73.91,
+        "above200dma": 86.96,
+        "positive3m": 86.96,
+        "positive6m": 82.61
+      },
+      "stockCount": 23,
+      "leaders": [
+        "GPRE",
+        "ALB",
+        "CC"
+      ],
+      "laggards": [
+        "FMC",
+        "VVV",
+        "SXT"
+      ],
+      "symbols": [
+        "GPRE",
+        "ALB",
+        "CC",
+        "DOW",
+        "MEOH",
+        "LYB",
+        "WLK",
+        "PRM",
+        "ESI",
+        "CE",
+        "DD",
+        "OLN",
+        "ASIX",
+        "HXL",
+        "SEE",
+        "LIN",
+        "APD",
+        "EMN",
+        "AVNT",
+        "IFF",
+        "SXT",
+        "VVV",
+        "FMC"
+      ]
+    },
+    {
+      "rank": 5,
+      "rankLabel": "#5",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "electronic-components",
+      "groupName": "Electronic Components",
+      "parentSector": "Technology",
+      "description": "US listed electronic components stocks passing the working liquidity and market-cap filter.",
+      "score": 81.59,
+      "returns": {
+        "1m": 6.33,
+        "3m": 30.16,
+        "6m": 59.71
+      },
+      "relativeReturns": {
+        "1m": 8.92,
+        "3m": 26.78,
+        "6m": 51.95
+      },
+      "breadth": {
+        "above50dma": 80.0,
+        "above200dma": 70.0,
+        "positive3m": 70.0,
+        "positive6m": 70.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "SNDK",
+        "WDC",
+        "COHR"
+      ],
+      "laggards": [
+        "NTAP",
+        "PSTG",
+        "TEL"
+      ],
+      "symbols": [
+        "SNDK",
+        "WDC",
+        "COHR",
+        "STX",
+        "CAMT",
+        "KLAC",
+        "AVT",
+        "TEL",
+        "PSTG",
+        "NTAP"
+      ]
+    },
+    {
+      "rank": 6,
+      "rankLabel": "#6",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "oil-and-gas-field-machinery",
+      "groupName": "Oil and Gas Field Machinery",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed oil and gas field machinery stocks passing the working liquidity and market-cap filter.",
+      "score": 81.19,
+      "returns": {
+        "1m": -1.07,
+        "3m": 19.47,
+        "6m": 36.06
+      },
+      "relativeReturns": {
+        "1m": 1.52,
+        "3m": 16.09,
+        "6m": 28.3
+      },
+      "breadth": {
+        "above50dma": 37.5,
+        "above200dma": 100.0,
+        "positive3m": 100.0,
+        "positive6m": 100.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "FTI",
+        "SEI",
+        "WFRD"
+      ],
+      "laggards": [
+        "WHD",
+        "FLOC",
+        "INVX"
+      ],
+      "symbols": [
+        "FTI",
+        "SEI",
+        "WFRD",
+        "BKR",
+        "NOV",
+        "INVX",
+        "FLOC",
+        "WHD"
+      ]
+    },
+    {
+      "rank": 7,
+      "rankLabel": "#7",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "natural-gas-distribution",
+      "groupName": "Natural Gas Distribution",
+      "parentSector": "Utilities",
+      "description": "US listed natural gas distribution stocks passing the working liquidity and market-cap filter.",
+      "score": 80.43,
+      "returns": {
+        "1m": -0.01,
+        "3m": 20.02,
+        "6m": 23.71
+      },
+      "relativeReturns": {
+        "1m": 2.58,
+        "3m": 16.64,
+        "6m": 15.95
+      },
+      "breadth": {
+        "above50dma": 86.36,
+        "above200dma": 100.0,
+        "positive3m": 97.72,
+        "positive6m": 100.0
+      },
+      "stockCount": 22,
+      "leaders": [
+        "KGS",
+        "DINO",
+        "TRGP"
+      ],
+      "laggards": [
+        "UGI",
+        "WES",
+        "MPLX"
+      ],
+      "symbols": [
+        "KGS",
+        "DINO",
+        "TRGP",
+        "AROC",
+        "TGS",
+        "PAGP",
+        "PAA",
+        "AM",
+        "SOBO",
+        "DTM",
+        "TRP",
+        "SRE",
+        "EPD",
+        "NGG",
+        "WMB",
+        "KMI",
+        "KNTK",
+        "ENB",
+        "ET",
+        "MPLX",
+        "WES",
+        "UGI"
+      ]
+    },
+    {
+      "rank": 8,
+      "rankLabel": "#8",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "oil-gas-transmission",
+      "groupName": "Oil/Gas Transmission",
+      "parentSector": "Utilities",
+      "description": "US listed oil/gas transmission stocks passing the working liquidity and market-cap filter.",
+      "score": 80.07,
+      "returns": {
+        "1m": -1.43,
+        "3m": 17.7,
+        "6m": 14.33
+      },
+      "relativeReturns": {
+        "1m": 1.16,
+        "3m": 14.32,
+        "6m": 6.57
+      },
+      "breadth": {
+        "above50dma": 83.33,
+        "above200dma": 100.0,
+        "positive3m": 95.83,
+        "positive6m": 83.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "LNG",
+        "NJR",
+        "EE"
+      ],
+      "laggards": [
+        "NFG",
+        "ATO",
+        "OGS"
+      ],
+      "symbols": [
+        "LNG",
+        "NJR",
+        "EE",
+        "OGS",
+        "ATO",
+        "NFG"
+      ]
+    },
+    {
+      "rank": 9,
+      "rankLabel": "#9",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "utilities-others",
+      "groupName": "Utilities Others",
+      "parentSector": "Utilities",
+      "description": "US listed utilities others stocks passing the working liquidity and market-cap filter.",
+      "score": 79.58,
+      "returns": {
+        "1m": 4.38,
+        "3m": 15.36,
+        "6m": 12.91
+      },
+      "relativeReturns": {
+        "1m": 6.97,
+        "3m": 11.98,
+        "6m": 5.15
+      },
+      "breadth": {
+        "above50dma": 100.0,
+        "above200dma": 100.0,
+        "positive3m": 87.5,
+        "positive6m": 50.0
+      },
+      "stockCount": 4,
+      "leaders": [
+        "SBS",
+        "HTO",
+        "WTRG"
+      ],
+      "laggards": [
+        "AWK",
+        "WTRG",
+        "HTO"
+      ],
+      "symbols": [
+        "SBS",
+        "HTO",
+        "WTRG",
+        "AWK"
+      ]
+    },
+    {
+      "rank": 10,
+      "rankLabel": "#10",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Stable",
+      "groupId": "engineering-construction",
+      "groupName": "Engineering & Construction",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed engineering & construction stocks passing the working liquidity and market-cap filter.",
+      "score": 78.27,
+      "returns": {
+        "1m": -1.28,
+        "3m": 20.2,
+        "6m": 41.89
+      },
+      "relativeReturns": {
+        "1m": 1.31,
+        "3m": 16.82,
+        "6m": 34.13
+      },
+      "breadth": {
+        "above50dma": 57.14,
+        "above200dma": 57.14,
+        "positive3m": 71.43,
+        "positive6m": 71.43
+      },
+      "stockCount": 7,
+      "leaders": [
+        "AGX",
+        "FIX",
+        "PWR"
+      ],
+      "laggards": [
+        "BLD",
+        "AMRC",
+        "APG"
+      ],
+      "symbols": [
+        "AGX",
+        "FIX",
+        "PWR",
+        "LGN",
+        "APG",
+        "AMRC",
+        "BLD"
+      ]
+    },
+    {
+      "rank": 11,
+      "rankLabel": "#11",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "miscellaneous",
+      "groupName": "Miscellaneous",
+      "parentSector": "Unclassified",
+      "description": "US listed miscellaneous stocks passing the working liquidity and market-cap filter.",
+      "score": 77.7,
+      "returns": {
+        "1m": 0.96,
+        "3m": 18.89,
+        "6m": 43.63
+      },
+      "relativeReturns": {
+        "1m": 3.55,
+        "3m": 15.51,
+        "6m": 35.87
+      },
+      "breadth": {
+        "above50dma": 37.5,
+        "above200dma": 50.0,
+        "positive3m": 75.0,
+        "positive6m": 62.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "AUGO",
+        "ARIS",
+        "AAUC"
+      ],
+      "laggards": [
+        "BRK-B",
+        "BF-B",
+        "CBC"
+      ],
+      "symbols": [
+        "AUGO",
+        "ARIS",
+        "AAUC",
+        "GEV",
+        "DEC",
+        "CBC",
+        "BF-B",
+        "BRK-B"
+      ]
+    },
+    {
+      "rank": 12,
+      "rankLabel": "#12",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "marine-transportation",
+      "groupName": "Marine Transportation",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed marine transportation stocks passing the working liquidity and market-cap filter.",
+      "score": 77.64,
+      "returns": {
+        "1m": -3.67,
+        "3m": 26.88,
+        "6m": 32.32
+      },
+      "relativeReturns": {
+        "1m": -1.08,
+        "3m": 23.5,
+        "6m": 24.56
+      },
+      "breadth": {
+        "above50dma": 65.0,
+        "above200dma": 80.0,
+        "positive3m": 77.5,
+        "positive6m": 75.0
+      },
+      "stockCount": 20,
+      "leaders": [
+        "INSW",
+        "FRO",
+        "TDW"
+      ],
+      "laggards": [
+        "NCLH",
+        "CCL",
+        "RCL"
+      ],
+      "symbols": [
+        "INSW",
+        "FRO",
+        "TDW",
+        "DHT",
+        "TRMD",
+        "STNG",
+        "ZIM",
+        "ASC",
+        "HII",
+        "GLNG",
+        "SBLK",
+        "FLNG",
+        "KEX",
+        "VIK",
+        "BIP",
+        "GD",
+        "CUK",
+        "RCL",
+        "CCL",
+        "NCLH"
+      ]
+    },
+    {
+      "rank": 13,
+      "rankLabel": "#13",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "radio-and-television-broadcasting-and-communications-equipment",
+      "groupName": "Radio And Television Broadcasting And Communications Equipment",
+      "parentSector": "Technology",
+      "description": "US listed radio and television broadcasting and communications equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 77.49,
+      "returns": {
+        "1m": 11.07,
+        "3m": 30.8,
+        "6m": 36.97
+      },
+      "relativeReturns": {
+        "1m": 13.66,
+        "3m": 27.42,
+        "6m": 29.21
+      },
+      "breadth": {
+        "above50dma": 57.14,
+        "above200dma": 85.71,
+        "positive3m": 75.0,
+        "positive6m": 71.43
+      },
+      "stockCount": 7,
+      "leaders": [
+        "PL",
+        "VSAT",
+        "BKSY"
+      ],
+      "laggards": [
+        "QCOM",
+        "MSI",
+        "GILT"
+      ],
+      "symbols": [
+        "PL",
+        "VSAT",
+        "BKSY",
+        "VISN",
+        "GILT",
+        "MSI",
+        "QCOM"
+      ]
+    },
+    {
+      "rank": 14,
+      "rankLabel": "#14",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "coal-mining",
+      "groupName": "Coal Mining",
+      "parentSector": "Energy",
+      "description": "US listed coal mining stocks passing the working liquidity and market-cap filter.",
+      "score": 76.5,
+      "returns": {
+        "1m": 0.29,
+        "3m": 8.03,
+        "6m": 22.38
+      },
+      "relativeReturns": {
+        "1m": 2.88,
+        "3m": 4.65,
+        "6m": 14.62
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 80.0,
+        "positive3m": 80.0,
+        "positive6m": 80.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "BTU",
+        "HCC",
+        "BHP"
+      ],
+      "laggards": [
+        "HNRG",
+        "CNR",
+        "BHP"
+      ],
+      "symbols": [
+        "BTU",
+        "HCC",
+        "BHP",
+        "CNR",
+        "HNRG"
+      ]
+    },
+    {
+      "rank": 15,
+      "rankLabel": "#15",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "steel-iron-ore",
+      "groupName": "Steel/Iron Ore",
+      "parentSector": "Industrials",
+      "description": "US listed steel/iron ore stocks passing the working liquidity and market-cap filter.",
+      "score": 76.23,
+      "returns": {
+        "1m": -6.58,
+        "3m": 15.53,
+        "6m": 45.54
+      },
+      "relativeReturns": {
+        "1m": -3.99,
+        "3m": 12.15,
+        "6m": 37.78
+      },
+      "breadth": {
+        "above50dma": 42.86,
+        "above200dma": 85.71,
+        "positive3m": 92.85,
+        "positive6m": 100.0
+      },
+      "stockCount": 7,
+      "leaders": [
+        "ATI",
+        "TS",
+        "CRS"
+      ],
+      "laggards": [
+        "CMC",
+        "NUE",
+        "STLD"
+      ],
+      "symbols": [
+        "ATI",
+        "TS",
+        "CRS",
+        "MT",
+        "STLD",
+        "NUE",
+        "CMC"
+      ]
+    },
+    {
+      "rank": 16,
+      "rankLabel": "#16",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "metal-mining",
+      "groupName": "Metal Mining",
+      "parentSector": "Basic Materials",
+      "description": "US listed metal mining stocks passing the working liquidity and market-cap filter.",
+      "score": 75.99,
+      "returns": {
+        "1m": -6.94,
+        "3m": 13.49,
+        "6m": 38.96
+      },
+      "relativeReturns": {
+        "1m": -4.35,
+        "3m": 10.11,
+        "6m": 31.2
+      },
+      "breadth": {
+        "above50dma": 44.44,
+        "above200dma": 77.78,
+        "positive3m": 80.56,
+        "positive6m": 77.78
+      },
+      "stockCount": 9,
+      "leaders": [
+        "BVN",
+        "HBM",
+        "SCCO"
+      ],
+      "laggards": [
+        "SOMN",
+        "MP",
+        "FCX"
+      ],
+      "symbols": [
+        "BVN",
+        "HBM",
+        "SCCO",
+        "VALE",
+        "RIO",
+        "ERO",
+        "FCX",
+        "MP",
+        "SOMN"
+      ]
+    },
+    {
+      "rank": 17,
+      "rankLabel": "#17",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "telecommunications-equipment",
+      "groupName": "Telecommunications Equipment",
+      "parentSector": "Telecommunications",
+      "description": "US listed telecommunications equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 74.19,
+      "returns": {
+        "1m": 3.14,
+        "3m": 25.28,
+        "6m": 34.89
+      },
+      "relativeReturns": {
+        "1m": 5.73,
+        "3m": 21.9,
+        "6m": 27.13
+      },
+      "breadth": {
+        "above50dma": 70.37,
+        "above200dma": 81.48,
+        "positive3m": 79.63,
+        "positive6m": 74.07
+      },
+      "stockCount": 27,
+      "leaders": [
+        "LITE",
+        "CIEN",
+        "GSAT"
+      ],
+      "laggards": [
+        "CCOI",
+        "NTGR",
+        "TMUS"
+      ],
+      "symbols": [
+        "LITE",
+        "CIEN",
+        "GSAT",
+        "SATS",
+        "ASTS",
+        "GLW",
+        "TIGO",
+        "FN",
+        "IRDM",
+        "ESE",
+        "VIV",
+        "AMX",
+        "TIMB",
+        "SKM",
+        "VOD",
+        "WCC",
+        "ZD",
+        "VZ",
+        "TDS",
+        "KT",
+        "BCE",
+        "T",
+        "TLK",
+        "CALX",
+        "TMUS",
+        "NTGR",
+        "CCOI"
+      ]
+    },
+    {
+      "rank": 18,
+      "rankLabel": "#18",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "power-generation",
+      "groupName": "Power Generation",
+      "parentSector": "Utilities",
+      "description": "US listed power generation stocks passing the working liquidity and market-cap filter.",
+      "score": 73.73,
+      "returns": {
+        "1m": -0.01,
+        "3m": 11.17,
+        "6m": 10.06
+      },
+      "relativeReturns": {
+        "1m": 2.58,
+        "3m": 7.79,
+        "6m": 2.3
+      },
+      "breadth": {
+        "above50dma": 92.86,
+        "above200dma": 100.0,
+        "positive3m": 91.07,
+        "positive6m": 78.57
+      },
+      "stockCount": 14,
+      "leaders": [
+        "NWE",
+        "EVRG",
+        "NI"
+      ],
+      "laggards": [
+        "PEG",
+        "AVA",
+        "WEC"
+      ],
+      "symbols": [
+        "NWE",
+        "EVRG",
+        "NI",
+        "ED",
+        "PCG",
+        "LNT",
+        "EXC",
+        "AEE",
+        "DUK",
+        "XEL",
+        "CMS",
+        "WEC",
+        "AVA",
+        "PEG"
+      ]
+    },
+    {
+      "rank": 19,
+      "rankLabel": "#19",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "electrical-products",
+      "groupName": "Electrical Products",
+      "parentSector": "Technology",
+      "description": "US listed electrical products stocks passing the working liquidity and market-cap filter.",
+      "score": 73.59,
+      "returns": {
+        "1m": -0.46,
+        "3m": 13.27,
+        "6m": 18.82
+      },
+      "relativeReturns": {
+        "1m": 2.13,
+        "3m": 9.89,
+        "6m": 11.06
+      },
+      "breadth": {
+        "above50dma": 46.67,
+        "above200dma": 73.33,
+        "positive3m": 63.33,
+        "positive6m": 66.67
+      },
+      "stockCount": 15,
+      "leaders": [
+        "AEHR",
+        "TER",
+        "TTMI"
+      ],
+      "laggards": [
+        "OLED",
+        "ITRI",
+        "VLTO"
+      ],
+      "symbols": [
+        "AEHR",
+        "TER",
+        "TTMI",
+        "CLS",
+        "COHU",
+        "FLEX",
+        "JBL",
+        "APH",
+        "VSH",
+        "MRCY",
+        "HUBB",
+        "SANM",
+        "VLTO",
+        "ITRI",
+        "OLED"
+      ]
+    },
+    {
+      "rank": 20,
+      "rankLabel": "#20",
+      "rankChange1w": -16,
+      "scoreChange1w": 18.34,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "semiconductors",
+      "groupName": "Semiconductors",
+      "parentSector": "Technology",
+      "description": "US listed semiconductors stocks passing the working liquidity and market-cap filter.",
+      "score": 73.59,
+      "returns": {
+        "1m": 2.48,
+        "3m": 25.08,
+        "6m": 41.97
+      },
+      "relativeReturns": {
+        "1m": 5.07,
+        "3m": 21.7,
+        "6m": 34.21
+      },
+      "breadth": {
+        "above50dma": 50.94,
+        "above200dma": 71.7,
+        "positive3m": 71.69,
+        "positive6m": 67.92
+      },
+      "stockCount": 53,
+      "leaders": [
+        "AXTI",
+        "AAOI",
+        "VIAV"
+      ],
+      "laggards": [
+        "AMBA",
+        "SWKS",
+        "NXPI"
+      ],
+      "symbols": [
+        "AXTI",
+        "AAOI",
+        "VIAV",
+        "TSEM",
+        "LASR",
+        "FORM",
+        "ICHR",
+        "UCTT",
+        "MU",
+        "SKYT",
+        "ASX",
+        "SEDG",
+        "MTSI",
+        "AMAT",
+        "AMKR",
+        "INTC",
+        "PLAB",
+        "SLAB",
+        "SIMO",
+        "SMTC",
+        "LSCC",
+        "AMD",
+        "TSM",
+        "MPWR",
+        "DIOD",
+        "MRVL",
+        "STM",
+        "ADI",
+        "CRUS",
+        "ON",
+        "POWI",
+        "ARM",
+        "RMBS",
+        "MXL",
+        "Q",
+        "GFS",
+        "AVGO",
+        "ALGM",
+        "CRDO",
+        "NVDA",
+        "MCHP",
+        "TXN",
+        "SYNA",
+        "ALAB",
+        "FSLR",
+        "PENG",
+        "AMBQ",
+        "QRVO",
+        "WOLF",
+        "ENPH",
+        "NXPI",
+        "SWKS",
+        "AMBA"
+      ]
+    },
+    {
+      "rank": 21,
+      "rankLabel": "#21",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "meat-poultry-fish",
+      "groupName": "Meat/Poultry/Fish",
+      "parentSector": "Consumer Staples",
+      "description": "US listed meat/poultry/fish stocks passing the working liquidity and market-cap filter.",
+      "score": 73.37,
+      "returns": {
+        "1m": 1.59,
+        "3m": 9.47,
+        "6m": 9.09
+      },
+      "relativeReturns": {
+        "1m": 4.18,
+        "3m": 6.09,
+        "6m": 1.33
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 60.0,
+        "positive3m": 60.0,
+        "positive6m": 60.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "SFD",
+        "JBS",
+        "TSN"
+      ],
+      "laggards": [
+        "HRL",
+        "PPC",
+        "TSN"
+      ],
+      "symbols": [
+        "SFD",
+        "JBS",
+        "TSN",
+        "PPC",
+        "HRL"
+      ]
+    },
+    {
+      "rank": 22,
+      "rankLabel": "#22",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "trucking-freight-courier-services",
+      "groupName": "Trucking Freight/Courier Services",
+      "parentSector": "Industrials",
+      "description": "US listed trucking freight/courier services stocks passing the working liquidity and market-cap filter.",
+      "score": 70.0,
+      "returns": {
+        "1m": -6.37,
+        "3m": 9.08,
+        "6m": 32.48
+      },
+      "relativeReturns": {
+        "1m": -3.78,
+        "3m": 5.7,
+        "6m": 24.72
+      },
+      "breadth": {
+        "above50dma": 44.44,
+        "above200dma": 100.0,
+        "positive3m": 88.89,
+        "positive6m": 100.0
+      },
+      "stockCount": 9,
+      "leaders": [
+        "JBHT",
+        "KNX",
+        "ZTO"
+      ],
+      "laggards": [
+        "UPS",
+        "WERN",
+        "SAIA"
+      ],
+      "symbols": [
+        "JBHT",
+        "KNX",
+        "ZTO",
+        "ODFL",
+        "LSTR",
+        "SNDR",
+        "SAIA",
+        "WERN",
+        "UPS"
+      ]
+    },
+    {
+      "rank": 23,
+      "rankLabel": "#23",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "biotechnology-in-vitro-in-vivo-diagnostic-substances",
+      "groupName": "Biotechnology: In Vitro & In Vivo Diagnostic Substances",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: in vitro & in vivo diagnostic substances stocks passing the working liquidity and market-cap filter.",
+      "score": 68.19,
+      "returns": {
+        "1m": 7.27,
+        "3m": 11.3,
+        "6m": 38.76
+      },
+      "relativeReturns": {
+        "1m": 9.86,
+        "3m": 7.92,
+        "6m": 31.0
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 60.0,
+        "positive3m": 60.0,
+        "positive6m": 60.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "ORKA",
+        "CLDX",
+        "LNTH"
+      ],
+      "laggards": [
+        "QDEL",
+        "IDXX",
+        "LNTH"
+      ],
+      "symbols": [
+        "ORKA",
+        "CLDX",
+        "LNTH",
+        "IDXX",
+        "QDEL"
+      ]
+    },
+    {
+      "rank": 24,
+      "rankLabel": "#24",
+      "rankChange1w": -21,
+      "scoreChange1w": 3.81,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "biotechnology-pharmaceutical-preparations",
+      "groupName": "Biotechnology: Pharmaceutical Preparations",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: pharmaceutical preparations stocks passing the working liquidity and market-cap filter.",
+      "score": 67.67,
+      "returns": {
+        "1m": 6.56,
+        "3m": 6.18,
+        "6m": 38.76
+      },
+      "relativeReturns": {
+        "1m": 9.15,
+        "3m": 2.8,
+        "6m": 31.0
+      },
+      "breadth": {
+        "above50dma": 57.52,
+        "above200dma": 73.45,
+        "positive3m": 62.17,
+        "positive6m": 72.57
+      },
+      "stockCount": 113,
+      "leaders": [
+        "ERAS",
+        "TERN",
+        "TNGX"
+      ],
+      "laggards": [
+        "MANE",
+        "CORT",
+        "NVO"
+      ],
+      "symbols": [
+        "ERAS",
+        "TERN",
+        "TNGX",
+        "ABVX",
+        "PRAX",
+        "ALMS",
+        "DAWN",
+        "BIOA",
+        "TYRA",
+        "COGT",
+        "DNTH",
+        "NKTR",
+        "CAPR",
+        "SYRE",
+        "ARWR",
+        "ELVN",
+        "MBX",
+        "CNTA",
+        "OLMA",
+        "STOK",
+        "ANAB",
+        "ROIV",
+        "IMNM",
+        "LQDA",
+        "GPCR",
+        "APLS",
+        "RCUS",
+        "AVTX",
+        "SION",
+        "EWTX",
+        "SNDX",
+        "PTGX",
+        "INDV",
+        "BCAX",
+        "KALV",
+        "ZYME",
+        "MIRM",
+        "KNSA",
+        "PCVX",
+        "DYN",
+        "XENE",
+        "AUPH",
+        "UTHR",
+        "IONS",
+        "TEVA",
+        "BBIO",
+        "ZBIO",
+        "CYTK",
+        "ELAN",
+        "RPRX",
+        "JAZZ",
+        "JNJ",
+        "INSM",
+        "MRK",
+        "AXSM",
+        "GSK",
+        "TVTX",
+        "IDYA",
+        "VERA",
+        "MDGL",
+        "NAMS",
+        "AZN",
+        "AVBP",
+        "NVS",
+        "SUPN",
+        "TAK",
+        "ARQT",
+        "NUVL",
+        "ASND",
+        "VKTX",
+        "TBPH",
+        "INVA",
+        "NRIX",
+        "REGN",
+        "BMY",
+        "ALKS",
+        "MLYS",
+        "MLTX",
+        "PFE",
+        "URGN",
+        "AGIO",
+        "PTCT",
+        "CPRX",
+        "RYTM",
+        "GMAB",
+        "LLY",
+        "IRON",
+        "ACAD",
+        "SMMT",
+        "SRPT",
+        "TGTX",
+        "VRTX",
+        "ANIP",
+        "ABBV",
+        "SNY",
+        "CRNX",
+        "BMRN",
+        "HROW",
+        "QURE",
+        "PCRX",
+        "COLL",
+        "ALNY",
+        "HRMY",
+        "ZTS",
+        "ZLAB",
+        "ABT",
+        "RARE",
+        "AMPH",
+        "PBH",
+        "LEGN",
+        "NVO",
+        "CORT",
+        "MANE"
+      ]
+    },
+    {
+      "rank": 25,
+      "rankLabel": "#25",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "department-specialty-retail-stores",
+      "groupName": "Department/Specialty Retail Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed department/specialty retail stores stocks passing the working liquidity and market-cap filter.",
+      "score": 67.67,
+      "returns": {
+        "1m": -1.7,
+        "3m": 5.25,
+        "6m": 17.62
+      },
+      "relativeReturns": {
+        "1m": 0.89,
+        "3m": 1.87,
+        "6m": 9.86
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 70.0,
+        "positive3m": 70.0,
+        "positive6m": 70.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "FIVE",
+        "BURL",
+        "TGT"
+      ],
+      "laggards": [
+        "OLLI",
+        "BJ",
+        "DG"
+      ],
+      "symbols": [
+        "FIVE",
+        "BURL",
+        "TGT",
+        "WMT",
+        "M",
+        "COST",
+        "DLTR",
+        "DG",
+        "BJ",
+        "OLLI"
+      ]
+    },
+    {
+      "rank": 26,
+      "rankLabel": "#26",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "electric-utilities-central",
+      "groupName": "Electric Utilities: Central",
+      "parentSector": "Utilities",
+      "description": "US listed electric utilities: central stocks passing the working liquidity and market-cap filter.",
+      "score": 67.6,
+      "returns": {
+        "1m": -0.22,
+        "3m": 7.58,
+        "6m": 10.19
+      },
+      "relativeReturns": {
+        "1m": 2.37,
+        "3m": 4.2,
+        "6m": 2.43
+      },
+      "breadth": {
+        "above50dma": 66.67,
+        "above200dma": 80.0,
+        "positive3m": 70.0,
+        "positive6m": 56.67
+      },
+      "stockCount": 30,
+      "leaders": [
+        "BEP",
+        "CWEN",
+        "HE"
+      ],
+      "laggards": [
+        "NNE",
+        "CEG",
+        "VST"
+      ],
+      "symbols": [
+        "BEP",
+        "CWEN",
+        "HE",
+        "EIX",
+        "ETR",
+        "BEPC",
+        "POR",
+        "ORA",
+        "AEP",
+        "FE",
+        "PAM",
+        "IDA",
+        "CNP",
+        "FTS",
+        "PNW",
+        "BKH",
+        "EMA",
+        "DTE",
+        "OGE",
+        "PPL",
+        "D",
+        "SO",
+        "NRG",
+        "ES",
+        "TLN",
+        "TXNM",
+        "OKLO",
+        "VST",
+        "CEG",
+        "NNE"
+      ]
+    },
+    {
+      "rank": 27,
+      "rankLabel": "#27",
+      "rankChange1w": -17,
+      "scoreChange1w": 47.72,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "consumer-staples-others",
+      "groupName": "Consumer Staples Others",
+      "parentSector": "Consumer Staples",
+      "description": "US listed consumer staples others stocks passing the working liquidity and market-cap filter.",
+      "score": 62.55,
+      "returns": {
+        "1m": -0.99,
+        "3m": 8.9,
+        "6m": 9.42
+      },
+      "relativeReturns": {
+        "1m": 1.6,
+        "3m": 5.52,
+        "6m": 1.66
+      },
+      "breadth": {
+        "above50dma": 55.56,
+        "above200dma": 55.56,
+        "positive3m": 55.56,
+        "positive6m": 55.56
+      },
+      "stockCount": 9,
+      "leaders": [
+        "GRDN",
+        "CTVA",
+        "TBBB"
+      ],
+      "laggards": [
+        "SFM",
+        "CALM",
+        "ACI"
+      ],
+      "symbols": [
+        "GRDN",
+        "CTVA",
+        "TBBB",
+        "HSY",
+        "KR",
+        "CVS",
+        "ACI",
+        "CALM",
+        "SFM"
+      ]
+    },
+    {
+      "rank": 28,
+      "rankLabel": "#28",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "finance-others",
+      "groupName": "Finance Others",
+      "parentSector": "Finance",
+      "description": "US listed finance others stocks passing the working liquidity and market-cap filter.",
+      "score": 62.25,
+      "returns": {
+        "1m": -0.47,
+        "3m": 4.22,
+        "6m": 9.82
+      },
+      "relativeReturns": {
+        "1m": 2.12,
+        "3m": 0.84,
+        "6m": 2.06
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 75.0,
+        "positive3m": 60.42,
+        "positive6m": 58.33
+      },
+      "stockCount": 12,
+      "leaders": [
+        "HSBC",
+        "HASI",
+        "BBT"
+      ],
+      "laggards": [
+        "MAIN",
+        "UNM",
+        "PDI"
+      ],
+      "symbols": [
+        "HSBC",
+        "HASI",
+        "BBT",
+        "BKU",
+        "PFS",
+        "EBC",
+        "PFG",
+        "AFL",
+        "CNO",
+        "PDI",
+        "UNM",
+        "MAIN"
+      ]
+    },
+    {
+      "rank": 29,
+      "rankLabel": "#29",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "biotechnology-biological-products-no-diagnostic-substances",
+      "groupName": "Biotechnology: Biological Products (No Diagnostic Substances)",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: biological products (no diagnostic substances) stocks passing the working liquidity and market-cap filter.",
+      "score": 62.22,
+      "returns": {
+        "1m": -0.78,
+        "3m": 11.98,
+        "6m": 33.0
+      },
+      "relativeReturns": {
+        "1m": 1.81,
+        "3m": 8.6,
+        "6m": 25.24
+      },
+      "breadth": {
+        "above50dma": 39.29,
+        "above200dma": 60.71,
+        "positive3m": 58.03,
+        "positive6m": 60.71
+      },
+      "stockCount": 28,
+      "leaders": [
+        "KOD",
+        "GLUE",
+        "RVMD"
+      ],
+      "laggards": [
+        "RGEN",
+        "VCEL",
+        "QGEN"
+      ],
+      "symbols": [
+        "KOD",
+        "GLUE",
+        "RVMD",
+        "CGON",
+        "KYMR",
+        "APGE",
+        "MRNA",
+        "ACLX",
+        "TWST",
+        "MAZE",
+        "DNLI",
+        "SRRK",
+        "IMVT",
+        "GILD",
+        "BIIB",
+        "AMGN",
+        "BEAM",
+        "EXEL",
+        "VOR",
+        "CRSP",
+        "NBIX",
+        "HALO",
+        "TECH",
+        "BNTX",
+        "IMCR",
+        "QGEN",
+        "VCEL",
+        "RGEN"
+      ]
+    },
+    {
+      "rank": 30,
+      "rankLabel": "#30",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "railroads",
+      "groupName": "Railroads",
+      "parentSector": "Industrials",
+      "description": "US listed railroads stocks passing the working liquidity and market-cap filter.",
+      "score": 62.01,
+      "returns": {
+        "1m": -6.02,
+        "3m": 10.2,
+        "6m": 12.02
+      },
+      "relativeReturns": {
+        "1m": -3.43,
+        "3m": 6.82,
+        "6m": 4.26
+      },
+      "breadth": {
+        "above50dma": 57.14,
+        "above200dma": 100.0,
+        "positive3m": 78.57,
+        "positive6m": 57.14
+      },
+      "stockCount": 7,
+      "leaders": [
+        "WAB",
+        "TRN",
+        "CSX"
+      ],
+      "laggards": [
+        "UNP",
+        "NSC",
+        "CP"
+      ],
+      "symbols": [
+        "WAB",
+        "TRN",
+        "CSX",
+        "CNI",
+        "CP",
+        "NSC",
+        "UNP"
+      ]
+    },
+    {
+      "rank": 31,
+      "rankLabel": "#31",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "mining-quarrying-of-nonmetallic-minerals-no-fuels",
+      "groupName": "Mining & Quarrying of Nonmetallic Minerals (No Fuels)",
+      "parentSector": "Industrials",
+      "description": "US listed mining & quarrying of nonmetallic minerals (no fuels) stocks passing the working liquidity and market-cap filter.",
+      "score": 59.4,
+      "returns": {
+        "1m": -6.66,
+        "3m": 7.77,
+        "6m": 19.13
+      },
+      "relativeReturns": {
+        "1m": -4.07,
+        "3m": 4.39,
+        "6m": 11.37
+      },
+      "breadth": {
+        "above50dma": 22.22,
+        "above200dma": 66.67,
+        "positive3m": 63.89,
+        "positive6m": 66.67
+      },
+      "stockCount": 9,
+      "leaders": [
+        "HL",
+        "UUUU",
+        "SQM"
+      ],
+      "laggards": [
+        "KNF",
+        "VMC",
+        "MDU"
+      ],
+      "symbols": [
+        "HL",
+        "UUUU",
+        "SQM",
+        "CMP",
+        "TECK",
+        "LEU",
+        "MDU",
+        "VMC",
+        "KNF"
+      ]
+    },
+    {
+      "rank": 32,
+      "rankLabel": "#32",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "auto-parts-o-e-m",
+      "groupName": "Auto Parts:O.E.M.",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed auto parts:o.e.m. stocks passing the working liquidity and market-cap filter.",
+      "score": 58.58,
+      "returns": {
+        "1m": -5.55,
+        "3m": 7.66,
+        "6m": 12.2
+      },
+      "relativeReturns": {
+        "1m": -2.96,
+        "3m": 4.28,
+        "6m": 4.44
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 66.67,
+        "positive3m": 65.0,
+        "positive6m": 60.0
+      },
+      "stockCount": 15,
+      "leaders": [
+        "MOD",
+        "DAN",
+        "GTX"
+      ],
+      "laggards": [
+        "APTV",
+        "GNTX",
+        "ALV"
+      ],
+      "symbols": [
+        "MOD",
+        "DAN",
+        "GTX",
+        "BWA",
+        "ATMU",
+        "MGA",
+        "ALSN",
+        "LEA",
+        "PATK",
+        "ADNT",
+        "TT",
+        "VC",
+        "ALV",
+        "GNTX",
+        "APTV"
+      ]
+    },
+    {
+      "rank": 33,
+      "rankLabel": "#33",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "commercial-banks",
+      "groupName": "Commercial Banks",
+      "parentSector": "Finance",
+      "description": "US listed commercial banks stocks passing the working liquidity and market-cap filter.",
+      "score": 56.72,
+      "returns": {
+        "1m": -2.15,
+        "3m": -5.05,
+        "6m": 16.85
+      },
+      "relativeReturns": {
+        "1m": 0.44,
+        "3m": -8.43,
+        "6m": 9.09
+      },
+      "breadth": {
+        "above50dma": 7.14,
+        "above200dma": 85.71,
+        "positive3m": 53.57,
+        "positive6m": 64.29
+      },
+      "stockCount": 14,
+      "leaders": [
+        "CM",
+        "BBVA",
+        "TD"
+      ],
+      "laggards": [
+        "HDB",
+        "IBN",
+        "GGAL"
+      ],
+      "symbols": [
+        "CM",
+        "BBVA",
+        "TD",
+        "SMFG",
+        "MUFG",
+        "BMO",
+        "RY",
+        "BBAR",
+        "ING",
+        "NWG",
+        "BCS",
+        "GGAL",
+        "IBN",
+        "HDB"
+      ]
+    },
+    {
+      "rank": 34,
+      "rankLabel": "#34",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "computer-communications-equipment",
+      "groupName": "Computer Communications Equipment",
+      "parentSector": "Telecommunications",
+      "description": "US listed computer communications equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 56.12,
+      "returns": {
+        "1m": 7.08,
+        "3m": 8.08,
+        "6m": 1.01
+      },
+      "relativeReturns": {
+        "1m": 9.67,
+        "3m": 4.7,
+        "6m": -6.75
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 60.0,
+        "positive3m": 45.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "ATEN",
+        "CSCO",
+        "ANET"
+      ],
+      "laggards": [
+        "EXTR",
+        "FFIV",
+        "ANET"
+      ],
+      "symbols": [
+        "ATEN",
+        "CSCO",
+        "ANET",
+        "FFIV",
+        "EXTR"
+      ]
+    },
+    {
+      "rank": 35,
+      "rankLabel": "#35",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "precious-metals",
+      "groupName": "Precious Metals",
+      "parentSector": "Basic Materials",
+      "description": "US listed precious metals stocks passing the working liquidity and market-cap filter.",
+      "score": 56.07,
+      "returns": {
+        "1m": -11.43,
+        "3m": 14.56,
+        "6m": 34.46
+      },
+      "relativeReturns": {
+        "1m": -8.84,
+        "3m": 11.18,
+        "6m": 26.7
+      },
+      "breadth": {
+        "above50dma": 14.81,
+        "above200dma": 96.3,
+        "positive3m": 87.97,
+        "positive6m": 88.89
+      },
+      "stockCount": 27,
+      "leaders": [
+        "HYMC",
+        "AG",
+        "CGAU"
+      ],
+      "laggards": [
+        "HMY",
+        "OR",
+        "WPM"
+      ],
+      "symbols": [
+        "HYMC",
+        "AG",
+        "CGAU",
+        "SSRM",
+        "SKE",
+        "IAG",
+        "AU",
+        "PPTA",
+        "MUX",
+        "CDE",
+        "KGC",
+        "PAAS",
+        "NEM",
+        "SA",
+        "ORLA",
+        "GFI",
+        "DRD",
+        "B",
+        "AEM",
+        "AGI",
+        "EGO",
+        "FNV",
+        "RGLD",
+        "TFPM",
+        "WPM",
+        "OR",
+        "HMY"
+      ]
+    },
+    {
+      "rank": 36,
+      "rankLabel": "#36",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "metal-fabrications",
+      "groupName": "Metal Fabrications",
+      "parentSector": "Industrials",
+      "description": "US listed metal fabrications stocks passing the working liquidity and market-cap filter.",
+      "score": 55.24,
+      "returns": {
+        "1m": -7.32,
+        "3m": 12.75,
+        "6m": 8.7
+      },
+      "relativeReturns": {
+        "1m": -4.73,
+        "3m": 9.37,
+        "6m": 0.94
+      },
+      "breadth": {
+        "above50dma": 15.38,
+        "above200dma": 76.92,
+        "positive3m": 71.15,
+        "positive6m": 69.23
+      },
+      "stockCount": 13,
+      "leaders": [
+        "CSTM",
+        "HLIO",
+        "GNRC"
+      ],
+      "laggards": [
+        "CXT",
+        "CR",
+        "AMSC"
+      ],
+      "symbols": [
+        "CSTM",
+        "HLIO",
+        "GNRC",
+        "RRX",
+        "HWM",
+        "TKR",
+        "PH",
+        "MLI",
+        "GTLS",
+        "MWA",
+        "AMSC",
+        "CR",
+        "CXT"
+      ]
+    },
+    {
+      "rank": 37,
+      "rankLabel": "#37",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "major-banks",
+      "groupName": "Major Banks",
+      "parentSector": "Finance",
+      "description": "US listed major banks stocks passing the working liquidity and market-cap filter.",
+      "score": 52.14,
+      "returns": {
+        "1m": -1.48,
+        "3m": -0.04,
+        "6m": 4.51
+      },
+      "relativeReturns": {
+        "1m": 1.11,
+        "3m": -3.42,
+        "6m": -3.25
+      },
+      "breadth": {
+        "above50dma": 17.65,
+        "above200dma": 73.53,
+        "positive3m": 46.32,
+        "positive6m": 32.35
+      },
+      "stockCount": 68,
+      "leaders": [
+        "STEL",
+        "CFG",
+        "C"
+      ],
+      "laggards": [
+        "COF",
+        "PNFP",
+        "WAL"
+      ],
+      "symbols": [
+        "STEL",
+        "CFG",
+        "C",
+        "WBS",
+        "BK",
+        "BPOP",
+        "STT",
+        "BNS",
+        "NTRS",
+        "UBSI",
+        "ABCB",
+        "FFBC",
+        "TRMK",
+        "TCBI",
+        "BUSE",
+        "KEY",
+        "FULT",
+        "BOH",
+        "USB",
+        "CFR",
+        "WSBC",
+        "FITB",
+        "PNC",
+        "FCF",
+        "MTB",
+        "FNB",
+        "COLB",
+        "BANC",
+        "AUB",
+        "HWC",
+        "FIBK",
+        "WTFC",
+        "RF",
+        "ZION",
+        "UCB",
+        "FHN",
+        "ASB",
+        "CVBF",
+        "FBP",
+        "WAFD",
+        "TFC",
+        "EWBC",
+        "SBCF",
+        "OCFC",
+        "RNST",
+        "UMBF",
+        "FBK",
+        "UBS",
+        "SFNC",
+        "IBOC",
+        "ONB",
+        "FHB",
+        "GBCI",
+        "JPM",
+        "BAC",
+        "OZK",
+        "SSB",
+        "ALLY",
+        "PB",
+        "HOMB",
+        "WFC",
+        "HBAN",
+        "DB",
+        "FFIN",
+        "CBSH",
+        "WAL",
+        "PNFP",
+        "COF"
+      ]
+    },
+    {
+      "rank": 38,
+      "rankLabel": "#38",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "fluid-controls",
+      "groupName": "Fluid Controls",
+      "parentSector": "Industrials",
+      "description": "US listed fluid controls stocks passing the working liquidity and market-cap filter.",
+      "score": 51.7,
+      "returns": {
+        "1m": -6.04,
+        "3m": 3.05,
+        "6m": 10.57
+      },
+      "relativeReturns": {
+        "1m": -3.45,
+        "3m": -0.33,
+        "6m": 2.81
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 60.0,
+        "positive3m": 70.0,
+        "positive6m": 60.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "FLS",
+        "ITT",
+        "IEX"
+      ],
+      "laggards": [
+        "XYL",
+        "GGG",
+        "IEX"
+      ],
+      "symbols": [
+        "FLS",
+        "ITT",
+        "IEX",
+        "GGG",
+        "XYL"
+      ]
+    },
+    {
+      "rank": 39,
+      "rankLabel": "#39",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "military-government-technical",
+      "groupName": "Military/Government/Technical",
+      "parentSector": "Industrials",
+      "description": "US listed military/government/technical stocks passing the working liquidity and market-cap filter.",
+      "score": 51.04,
+      "returns": {
+        "1m": -4.09,
+        "3m": 7.09,
+        "6m": 5.94
+      },
+      "relativeReturns": {
+        "1m": -1.5,
+        "3m": 3.71,
+        "6m": -1.82
+      },
+      "breadth": {
+        "above50dma": 19.05,
+        "above200dma": 42.86,
+        "positive3m": 50.0,
+        "positive6m": 52.38
+      },
+      "stockCount": 21,
+      "leaders": [
+        "ATRO",
+        "STRL",
+        "RKLB"
+      ],
+      "laggards": [
+        "YSS",
+        "MWH",
+        "LOAR"
+      ],
+      "symbols": [
+        "ATRO",
+        "STRL",
+        "RKLB",
+        "CDNL",
+        "KRMN",
+        "GLDD",
+        "LMT",
+        "FLY",
+        "KTOS",
+        "VSEC",
+        "FER",
+        "FLR",
+        "J",
+        "TTEK",
+        "TDG",
+        "KBR",
+        "ACM",
+        "VOYG",
+        "LOAR",
+        "MWH",
+        "YSS"
+      ]
+    },
+    {
+      "rank": 40,
+      "rankLabel": "#40",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "retail-computer-software-peripheral-equipment",
+      "groupName": "Retail: Computer Software & Peripheral Equipment",
+      "parentSector": "Technology",
+      "description": "US listed retail: computer software & peripheral equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 50.49,
+      "returns": {
+        "1m": 3.87,
+        "3m": -4.04,
+        "6m": -5.79
+      },
+      "relativeReturns": {
+        "1m": 6.46,
+        "3m": -7.42,
+        "6m": -13.55
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 60.0,
+        "positive3m": 50.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "SNX",
+        "INGM",
+        "HPE"
+      ],
+      "laggards": [
+        "WGS",
+        "CDW",
+        "HPE"
+      ],
+      "symbols": [
+        "SNX",
+        "INGM",
+        "HPE",
+        "CDW",
+        "WGS"
+      ]
+    },
+    {
+      "rank": 41,
+      "rankLabel": "#41",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "industrial-machinery-components",
+      "groupName": "Industrial Machinery/Components",
+      "parentSector": "Industrials",
+      "description": "US listed industrial machinery/components stocks passing the working liquidity and market-cap filter.",
+      "score": 49.23,
+      "returns": {
+        "1m": -6.12,
+        "3m": 7.4,
+        "6m": 12.24
+      },
+      "relativeReturns": {
+        "1m": -3.53,
+        "3m": 4.02,
+        "6m": 4.48
+      },
+      "breadth": {
+        "above50dma": 27.78,
+        "above200dma": 55.56,
+        "positive3m": 54.17,
+        "positive6m": 44.44
+      },
+      "stockCount": 72,
+      "leaders": [
+        "BE",
+        "AMPX",
+        "VICR"
+      ],
+      "laggards": [
+        "FPS",
+        "AZTA",
+        "ENR"
+      ],
+      "symbols": [
+        "BE",
+        "AMPX",
+        "VICR",
+        "LUNR",
+        "AEIS",
+        "VRT",
+        "MKSI",
+        "EFXT",
+        "LRCX",
+        "NXT",
+        "ONTO",
+        "KEYS",
+        "KMT",
+        "WWD",
+        "ASML",
+        "CW",
+        "NVT",
+        "BWXT",
+        "CGNX",
+        "CMI",
+        "VECO",
+        "LHX",
+        "SYM",
+        "PSIX",
+        "ACLS",
+        "NOC",
+        "IMAX",
+        "JCI",
+        "ACMR",
+        "DRS",
+        "DE",
+        "BC",
+        "ST",
+        "AME",
+        "SPXC",
+        "DOV",
+        "ETN",
+        "OUST",
+        "NN",
+        "AGCO",
+        "GRMN",
+        "ZWS",
+        "ROK",
+        "MSM",
+        "FTV",
+        "ITW",
+        "AAON",
+        "GTES",
+        "HSAI",
+        "TMO",
+        "IR",
+        "SWK",
+        "VNT",
+        "CARR",
+        "WSO",
+        "MIR",
+        "CAE",
+        "JBTM",
+        "ALH",
+        "MIDD",
+        "DHR",
+        "RAL",
+        "EPAC",
+        "ESAB",
+        "TRMB",
+        "PNR",
+        "OC",
+        "PI",
+        "ZBRA",
+        "ENR",
+        "AZTA",
+        "FPS"
+      ]
+    },
+    {
+      "rank": 42,
+      "rankLabel": "#42",
+      "rankChange1w": -31,
+      "scoreChange1w": 48.62,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "industrials-others",
+      "groupName": "Industrials Others",
+      "parentSector": "Industrials",
+      "description": "US listed industrials others stocks passing the working liquidity and market-cap filter.",
+      "score": 48.62,
+      "returns": {
+        "1m": -6.73,
+        "3m": 6.73,
+        "6m": 12.82
+      },
+      "relativeReturns": {
+        "1m": -4.14,
+        "3m": 3.35,
+        "6m": 5.06
+      },
+      "breadth": {
+        "above50dma": 23.08,
+        "above200dma": 61.54,
+        "positive3m": 56.73,
+        "positive6m": 57.69
+      },
+      "stockCount": 26,
+      "leaders": [
+        "CENX",
+        "AA",
+        "MTZ"
+      ],
+      "laggards": [
+        "AXON",
+        "HRI",
+        "WSC"
+      ],
+      "symbols": [
+        "CENX",
+        "AA",
+        "MTZ",
+        "CAT",
+        "FTAI",
+        "CF",
+        "PRIM",
+        "DY",
+        "CHRW",
+        "ENTG",
+        "NTR",
+        "REZI",
+        "TEX",
+        "EXPD",
+        "SMG",
+        "DCI",
+        "AMRZ",
+        "BCO",
+        "CRH",
+        "HUBG",
+        "MOS",
+        "EXP",
+        "JHX",
+        "WSC",
+        "HRI",
+        "AXON"
+      ]
+    },
+    {
+      "rank": 43,
+      "rankLabel": "#43",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "miscellaneous-others",
+      "groupName": "Miscellaneous Others",
+      "parentSector": "Miscellaneous",
+      "description": "US listed miscellaneous others stocks passing the working liquidity and market-cap filter.",
+      "score": 47.71,
+      "returns": {
+        "1m": -6.15,
+        "3m": 4.28,
+        "6m": 1.0
+      },
+      "relativeReturns": {
+        "1m": -3.56,
+        "3m": 0.9,
+        "6m": -6.76
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 66.67,
+        "positive3m": 58.34,
+        "positive6m": 33.33
+      },
+      "stockCount": 3,
+      "leaders": [
+        "NATL",
+        "FERG",
+        "DLB"
+      ],
+      "laggards": [
+        "DLB",
+        "FERG",
+        "NATL"
+      ],
+      "symbols": [
+        "NATL",
+        "FERG",
+        "DLB"
+      ]
+    },
+    {
+      "rank": 44,
+      "rankLabel": "#44",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "hotels-resorts",
+      "groupName": "Hotels/Resorts",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed hotels/resorts stocks passing the working liquidity and market-cap filter.",
+      "score": 46.99,
+      "returns": {
+        "1m": -1.53,
+        "3m": -1.76,
+        "6m": 1.81
+      },
+      "relativeReturns": {
+        "1m": 1.06,
+        "3m": -5.14,
+        "6m": -5.95
+      },
+      "breadth": {
+        "above50dma": 50.0,
+        "above200dma": 50.0,
+        "positive3m": 40.0,
+        "positive6m": 30.0
+      },
+      "stockCount": 20,
+      "leaders": [
+        "HTHT",
+        "TNL",
+        "MAR"
+      ],
+      "laggards": [
+        "PLNT",
+        "PENN",
+        "WYNN"
+      ],
+      "symbols": [
+        "HTHT",
+        "TNL",
+        "MAR",
+        "OSW",
+        "HLT",
+        "IHG",
+        "LVS",
+        "MGM",
+        "ATAT",
+        "BYD",
+        "CZR",
+        "WH",
+        "RRR",
+        "H",
+        "LTH",
+        "HGV",
+        "CHH",
+        "WYNN",
+        "PENN",
+        "PLNT"
+      ]
+    },
+    {
+      "rank": 45,
+      "rankLabel": "#45",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "real-estate-investment-trusts",
+      "groupName": "Real Estate Investment Trusts",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate investment trusts stocks passing the working liquidity and market-cap filter.",
+      "score": 46.8,
+      "returns": {
+        "1m": -4.62,
+        "3m": 2.03,
+        "6m": 1.47
+      },
+      "relativeReturns": {
+        "1m": -2.03,
+        "3m": -1.35,
+        "6m": -6.29
+      },
+      "breadth": {
+        "above50dma": 33.77,
+        "above200dma": 62.34,
+        "positive3m": 51.3,
+        "positive6m": 32.47
+      },
+      "stockCount": 77,
+      "leaders": [
+        "OUT",
+        "DBRG",
+        "NSA"
+      ],
+      "laggards": [
+        "ARE",
+        "SLG",
+        "VNO"
+      ],
+      "symbols": [
+        "OUT",
+        "DBRG",
+        "NSA",
+        "EQIX",
+        "VRE",
+        "AHR",
+        "HST",
+        "WELL",
+        "VTR",
+        "CTRE",
+        "PLD",
+        "DLR",
+        "IRM",
+        "CDP",
+        "NTST",
+        "OHI",
+        "ARR",
+        "MAC",
+        "BNL",
+        "WPC",
+        "FR",
+        "SBRA",
+        "FRT",
+        "BRX",
+        "KRG",
+        "NLY",
+        "O",
+        "EGP",
+        "REG",
+        "KIM",
+        "SPG",
+        "PECO",
+        "ADC",
+        "LAMR",
+        "SKT",
+        "NNN",
+        "HR",
+        "ELS",
+        "LXP",
+        "SUI",
+        "EPRT",
+        "STAG",
+        "CXW",
+        "BXMT",
+        "PSA",
+        "SBAC",
+        "AKR",
+        "EPR",
+        "GLPI",
+        "EXR",
+        "CUBE",
+        "FCPT",
+        "WY",
+        "DOC",
+        "STWD",
+        "EQR",
+        "RYN",
+        "SMA",
+        "VICI",
+        "CPT",
+        "ESS",
+        "UDR",
+        "CCI",
+        "AMT",
+        "REXR",
+        "MAA",
+        "AMH",
+        "AVB",
+        "LINE",
+        "CUZ",
+        "HHH",
+        "KRC",
+        "HIW",
+        "BXP",
+        "VNO",
+        "SLG",
+        "ARE"
+      ]
+    },
+    {
+      "rank": 46,
+      "rankLabel": "#46",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "retail-auto-dealers-and-gas-stations",
+      "groupName": "Retail-Auto Dealers and Gas Stations",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed retail-auto dealers and gas stations stocks passing the working liquidity and market-cap filter.",
+      "score": 45.68,
+      "returns": {
+        "1m": -2.58,
+        "3m": 0.25,
+        "6m": -0.02
+      },
+      "relativeReturns": {
+        "1m": 0.01,
+        "3m": -3.13,
+        "6m": -7.78
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 50.0,
+        "positive3m": 45.83,
+        "positive6m": 33.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "CASY",
+        "RUSHA",
+        "OPLN"
+      ],
+      "laggards": [
+        "CPRT",
+        "KMX",
+        "CVNA"
+      ],
+      "symbols": [
+        "CASY",
+        "RUSHA",
+        "OPLN",
+        "CVNA",
+        "KMX",
+        "CPRT"
+      ]
+    },
+    {
+      "rank": 47,
+      "rankLabel": "#47",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "restaurants",
+      "groupName": "Restaurants",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed restaurants stocks passing the working liquidity and market-cap filter.",
+      "score": 45.63,
+      "returns": {
+        "1m": -4.06,
+        "3m": 3.39,
+        "6m": -0.53
+      },
+      "relativeReturns": {
+        "1m": -1.47,
+        "3m": 0.01,
+        "6m": -8.29
+      },
+      "breadth": {
+        "above50dma": 23.53,
+        "above200dma": 41.18,
+        "positive3m": 54.41,
+        "positive6m": 35.29
+      },
+      "stockCount": 17,
+      "leaders": [
+        "CAVA",
+        "QSR",
+        "ARMK"
+      ],
+      "laggards": [
+        "WING",
+        "CMG",
+        "BROS"
+      ],
+      "symbols": [
+        "CAVA",
+        "QSR",
+        "ARMK",
+        "CAKE",
+        "YUMC",
+        "YUM",
+        "SBUX",
+        "MCD",
+        "DRI",
+        "EAT",
+        "SHAK",
+        "TXRH",
+        "PZZA",
+        "CBRL",
+        "BROS",
+        "CMG",
+        "WING"
+      ]
+    },
+    {
+      "rank": 48,
+      "rankLabel": "#48",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "garments-and-clothing",
+      "groupName": "Garments and Clothing",
+      "parentSector": "Industrials",
+      "description": "US listed garments and clothing stocks passing the working liquidity and market-cap filter.",
+      "score": 42.79,
+      "returns": {
+        "1m": -5.76,
+        "3m": 3.6,
+        "6m": -1.86
+      },
+      "relativeReturns": {
+        "1m": -3.17,
+        "3m": 0.22,
+        "6m": -9.62
+      },
+      "breadth": {
+        "above50dma": 50.0,
+        "above200dma": 66.67,
+        "positive3m": 45.83,
+        "positive6m": 33.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "RL",
+        "VFC",
+        "PVH"
+      ],
+      "laggards": [
+        "CTAS",
+        "OXM",
+        "KTB"
+      ],
+      "symbols": [
+        "RL",
+        "VFC",
+        "PVH",
+        "KTB",
+        "OXM",
+        "CTAS"
+      ]
+    },
+    {
+      "rank": 49,
+      "rankLabel": "#49",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "other-specialty-stores",
+      "groupName": "Other Specialty Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed other specialty stores stocks passing the working liquidity and market-cap filter.",
+      "score": 42.42,
+      "returns": {
+        "1m": -11.0,
+        "3m": 5.29,
+        "6m": 7.01
+      },
+      "relativeReturns": {
+        "1m": -8.41,
+        "3m": 1.91,
+        "6m": -0.75
+      },
+      "breadth": {
+        "above50dma": 42.86,
+        "above200dma": 42.86,
+        "positive3m": 42.86,
+        "positive6m": 42.86
+      },
+      "stockCount": 7,
+      "leaders": [
+        "EZPW",
+        "GOLD",
+        "ASO"
+      ],
+      "laggards": [
+        "RH",
+        "JD",
+        "DKS"
+      ],
+      "symbols": [
+        "EZPW",
+        "GOLD",
+        "ASO",
+        "ULTA",
+        "DKS",
+        "JD",
+        "RH"
+      ]
+    },
+    {
+      "rank": 50,
+      "rankLabel": "#50",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "beverages-production-distribution",
+      "groupName": "Beverages (Production/Distribution)",
+      "parentSector": "Consumer Staples",
+      "description": "US listed beverages (production/distribution) stocks passing the working liquidity and market-cap filter.",
+      "score": 41.45,
+      "returns": {
+        "1m": -9.51,
+        "3m": 0.66,
+        "6m": 4.07
+      },
+      "relativeReturns": {
+        "1m": -6.92,
+        "3m": -2.72,
+        "6m": -3.69
+      },
+      "breadth": {
+        "above50dma": 15.38,
+        "above200dma": 61.54,
+        "positive3m": 53.84,
+        "positive6m": 46.15
+      },
+      "stockCount": 13,
+      "leaders": [
+        "COKE",
+        "COCO",
+        "PEP"
+      ],
+      "laggards": [
+        "CELH",
+        "DEO",
+        "PRMB"
+      ],
+      "symbols": [
+        "COKE",
+        "COCO",
+        "PEP",
+        "BUD",
+        "KO",
+        "MNST",
+        "CCEP",
+        "STZ",
+        "TAP",
+        "KDP",
+        "PRMB",
+        "DEO",
+        "CELH"
+      ]
+    },
+    {
+      "rank": 51,
+      "rankLabel": "#51",
+      "rankChange1w": -45,
+      "scoreChange1w": -9.51,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "health-care-others",
+      "groupName": "Health Care Others",
+      "parentSector": "Health Care",
+      "description": "US listed health care others stocks passing the working liquidity and market-cap filter.",
+      "score": 41.4,
+      "returns": {
+        "1m": -3.48,
+        "3m": -5.38,
+        "6m": 4.54
+      },
+      "relativeReturns": {
+        "1m": -0.89,
+        "3m": -8.76,
+        "6m": -3.22
+      },
+      "breadth": {
+        "above50dma": 27.27,
+        "above200dma": 45.45,
+        "positive3m": 45.45,
+        "positive6m": 45.45
+      },
+      "stockCount": 22,
+      "leaders": [
+        "DFTX",
+        "BTSG",
+        "CAH"
+      ],
+      "laggards": [
+        "HIMS",
+        "ICLR",
+        "PGNY"
+      ],
+      "symbols": [
+        "DFTX",
+        "BTSG",
+        "CAH",
+        "ULS",
+        "INCY",
+        "BTI",
+        "MCK",
+        "MO",
+        "DVA",
+        "HOLX",
+        "COR",
+        "PHG",
+        "CRL",
+        "PM",
+        "PRVA",
+        "IQV",
+        "GEHC",
+        "FMS",
+        "OPCH",
+        "PGNY",
+        "ICLR",
+        "HIMS"
+      ]
+    },
+    {
+      "rank": 52,
+      "rankLabel": "#52",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "property-casualty-insurers",
+      "groupName": "Property-Casualty Insurers",
+      "parentSector": "Finance",
+      "description": "US listed property-casualty insurers stocks passing the working liquidity and market-cap filter.",
+      "score": 40.77,
+      "returns": {
+        "1m": -3.26,
+        "3m": -5.19,
+        "6m": 1.27
+      },
+      "relativeReturns": {
+        "1m": -0.67,
+        "3m": -8.57,
+        "6m": -6.49
+      },
+      "breadth": {
+        "above50dma": 41.67,
+        "above200dma": 58.33,
+        "positive3m": 28.12,
+        "positive6m": 20.83
+      },
+      "stockCount": 24,
+      "leaders": [
+        "HG",
+        "LMND",
+        "SPNT"
+      ],
+      "laggards": [
+        "KMPR",
+        "PGR",
+        "SKWD"
+      ],
+      "symbols": [
+        "HG",
+        "LMND",
+        "SPNT",
+        "SLDE",
+        "CB",
+        "L",
+        "TRV",
+        "HIG",
+        "PRA",
+        "ORI",
+        "ACGL",
+        "CINF",
+        "ALL",
+        "AXS",
+        "AFG",
+        "MTG",
+        "RDN",
+        "ESNT",
+        "WRB",
+        "SIGI",
+        "RLI",
+        "SKWD",
+        "PGR",
+        "KMPR"
+      ]
+    },
+    {
+      "rank": 53,
+      "rankLabel": "#53",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "other-consumer-services",
+      "groupName": "Other Consumer Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed other consumer services stocks passing the working liquidity and market-cap filter.",
+      "score": 40.17,
+      "returns": {
+        "1m": 3.88,
+        "3m": 0.56,
+        "6m": -9.39
+      },
+      "relativeReturns": {
+        "1m": 6.47,
+        "3m": -2.82,
+        "6m": -17.15
+      },
+      "breadth": {
+        "above50dma": 57.14,
+        "above200dma": 50.0,
+        "positive3m": 41.07,
+        "positive6m": 21.43
+      },
+      "stockCount": 14,
+      "leaders": [
+        "LINC",
+        "UTI",
+        "RTO"
+      ],
+      "laggards": [
+        "IT",
+        "SE",
+        "HRB"
+      ],
+      "symbols": [
+        "LINC",
+        "UTI",
+        "RTO",
+        "PRDO",
+        "LAUR",
+        "EDU",
+        "SCI",
+        "LRN",
+        "BAM",
+        "YELP",
+        "BFAM",
+        "HRB",
+        "SE",
+        "IT"
+      ]
+    },
+    {
+      "rank": 54,
+      "rankLabel": "#54",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "environmental-services",
+      "groupName": "Environmental Services",
+      "parentSector": "Utilities",
+      "description": "US listed environmental services stocks passing the working liquidity and market-cap filter.",
+      "score": 40.16,
+      "returns": {
+        "1m": -3.43,
+        "3m": -1.41,
+        "6m": -2.83
+      },
+      "relativeReturns": {
+        "1m": -0.84,
+        "3m": -4.79,
+        "6m": -10.59
+      },
+      "breadth": {
+        "above50dma": 60.0,
+        "above200dma": 20.0,
+        "positive3m": 30.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "WM",
+        "RSG",
+        "GFL"
+      ],
+      "laggards": [
+        "CWST",
+        "WCN",
+        "GFL"
+      ],
+      "symbols": [
+        "WM",
+        "RSG",
+        "GFL",
+        "WCN",
+        "CWST"
+      ]
+    },
+    {
+      "rank": 55,
+      "rankLabel": "#55",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "air-freight-delivery-services",
+      "groupName": "Air Freight/Delivery Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed air freight/delivery services stocks passing the working liquidity and market-cap filter.",
+      "score": 40.07,
+      "returns": {
+        "1m": -9.7,
+        "3m": -5.17,
+        "6m": 13.26
+      },
+      "relativeReturns": {
+        "1m": -7.11,
+        "3m": -8.55,
+        "6m": 5.5
+      },
+      "breadth": {
+        "above50dma": 18.18,
+        "above200dma": 54.55,
+        "positive3m": 36.36,
+        "positive6m": 54.55
+      },
+      "stockCount": 11,
+      "leaders": [
+        "FDX",
+        "SNCY",
+        "ALGT"
+      ],
+      "laggards": [
+        "ALK",
+        "SKYW",
+        "RYAAY"
+      ],
+      "symbols": [
+        "FDX",
+        "SNCY",
+        "ALGT",
+        "DAL",
+        "LTM",
+        "CPA",
+        "LUV",
+        "UAL",
+        "RYAAY",
+        "SKYW",
+        "ALK"
+      ]
+    },
+    {
+      "rank": 56,
+      "rankLabel": "#56",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "biotechnology-laboratory-analytical-instruments",
+      "groupName": "Biotechnology: Laboratory Analytical Instruments",
+      "parentSector": "Industrials",
+      "description": "US listed biotechnology: laboratory analytical instruments stocks passing the working liquidity and market-cap filter.",
+      "score": 39.64,
+      "returns": {
+        "1m": -4.02,
+        "3m": -6.11,
+        "6m": 19.59
+      },
+      "relativeReturns": {
+        "1m": -1.43,
+        "3m": -9.49,
+        "6m": 11.83
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 20.0,
+        "positive3m": 40.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "TXG",
+        "RVTY",
+        "A"
+      ],
+      "laggards": [
+        "WAT",
+        "BRKR",
+        "A"
+      ],
+      "symbols": [
+        "TXG",
+        "RVTY",
+        "A",
+        "BRKR",
+        "WAT"
+      ]
+    },
+    {
+      "rank": 57,
+      "rankLabel": "#57",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "transportation-services",
+      "groupName": "Transportation Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed transportation services stocks passing the working liquidity and market-cap filter.",
+      "score": 38.22,
+      "returns": {
+        "1m": -11.3,
+        "3m": -2.99,
+        "6m": 2.08
+      },
+      "relativeReturns": {
+        "1m": -8.71,
+        "3m": -6.37,
+        "6m": -5.68
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 33.33,
+        "positive3m": 54.17,
+        "positive6m": 33.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "XPO",
+        "LIND",
+        "GXO"
+      ],
+      "laggards": [
+        "MMYT",
+        "RXO",
+        "EXPE"
+      ],
+      "symbols": [
+        "XPO",
+        "LIND",
+        "GXO",
+        "EXPE",
+        "RXO",
+        "MMYT"
+      ]
+    },
+    {
+      "rank": 58,
+      "rankLabel": "#58",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "life-insurance",
+      "groupName": "Life Insurance",
+      "parentSector": "Finance",
+      "description": "US listed life insurance stocks passing the working liquidity and market-cap filter.",
+      "score": 37.41,
+      "returns": {
+        "1m": -0.97,
+        "3m": -9.25,
+        "6m": -2.18
+      },
+      "relativeReturns": {
+        "1m": 1.62,
+        "3m": -12.63,
+        "6m": -9.94
+      },
+      "breadth": {
+        "above50dma": 15.38,
+        "above200dma": 46.15,
+        "positive3m": 19.23,
+        "positive6m": 15.38
+      },
+      "stockCount": 13,
+      "leaders": [
+        "PUK",
+        "JXN",
+        "MFC"
+      ],
+      "laggards": [
+        "CRBG",
+        "FG",
+        "MET"
+      ],
+      "symbols": [
+        "PUK",
+        "JXN",
+        "MFC",
+        "GL",
+        "SLF",
+        "BHF",
+        "VOYA",
+        "PRU",
+        "AIG",
+        "LNC",
+        "MET",
+        "FG",
+        "CRBG"
+      ]
+    },
+    {
+      "rank": 59,
+      "rankLabel": "#59",
+      "rankChange1w": -50,
+      "scoreChange1w": 7.62,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "consumer-discretionary-others",
+      "groupName": "Consumer Discretionary Others",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed consumer discretionary others stocks passing the working liquidity and market-cap filter.",
+      "score": 36.12,
+      "returns": {
+        "1m": -4.72,
+        "3m": 0.28,
+        "6m": -4.55
+      },
+      "relativeReturns": {
+        "1m": -2.13,
+        "3m": -3.1,
+        "6m": -12.31
+      },
+      "breadth": {
+        "above50dma": 30.0,
+        "above200dma": 32.5,
+        "positive3m": 36.88,
+        "positive6m": 30.0
+      },
+      "stockCount": 40,
+      "leaders": [
+        "TPC",
+        "SCHL",
+        "CAR"
+      ],
+      "laggards": [
+        "TRI",
+        "WPP",
+        "HNI"
+      ],
+      "symbols": [
+        "TPC",
+        "SCHL",
+        "CAR",
+        "DLX",
+        "NYT",
+        "TTC",
+        "HAS",
+        "AAP",
+        "PCAR",
+        "CNK",
+        "CSWC",
+        "SIG",
+        "WLY",
+        "GME",
+        "SITE",
+        "ASH",
+        "YETI",
+        "PPG",
+        "ORLY",
+        "OMC",
+        "CNM",
+        "NFLX",
+        "MNRO",
+        "BBY",
+        "KVUE",
+        "AMCR",
+        "RPM",
+        "NWS",
+        "HOG",
+        "CLX",
+        "NWSA",
+        "AXTA",
+        "TPB",
+        "LKQ",
+        "GPC",
+        "AYI",
+        "FOXF",
+        "HNI",
+        "WPP",
+        "TRI"
+      ]
+    },
+    {
+      "rank": 60,
+      "rankLabel": "#60",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "aerospace",
+      "groupName": "Aerospace",
+      "parentSector": "Industrials",
+      "description": "US listed aerospace stocks passing the working liquidity and market-cap filter.",
+      "score": 35.07,
+      "returns": {
+        "1m": -10.54,
+        "3m": 0.38,
+        "6m": -1.65
+      },
+      "relativeReturns": {
+        "1m": -7.95,
+        "3m": -3.0,
+        "6m": -9.41
+      },
+      "breadth": {
+        "above50dma": 9.09,
+        "above200dma": 45.45,
+        "positive3m": 40.91,
+        "positive6m": 36.36
+      },
+      "stockCount": 11,
+      "leaders": [
+        "AIR",
+        "SOLS",
+        "RTX"
+      ],
+      "laggards": [
+        "BETA",
+        "HEI",
+        "AVAV"
+      ],
+      "symbols": [
+        "AIR",
+        "SOLS",
+        "RTX",
+        "HON",
+        "EMBJ",
+        "TXT",
+        "BA",
+        "SARO",
+        "AVAV",
+        "HEI",
+        "BETA"
+      ]
+    },
+    {
+      "rank": 61,
+      "rankLabel": "#61",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "cable-other-pay-television-services",
+      "groupName": "Cable & Other Pay Television Services",
+      "parentSector": "Telecommunications",
+      "description": "US listed cable & other pay television services stocks passing the working liquidity and market-cap filter.",
+      "score": 34.25,
+      "returns": {
+        "1m": -6.41,
+        "3m": -0.95,
+        "6m": -7.57
+      },
+      "relativeReturns": {
+        "1m": -3.82,
+        "3m": -4.33,
+        "6m": -15.33
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 16.67,
+        "positive3m": 29.17,
+        "positive6m": 0.0
+      },
+      "stockCount": 6,
+      "leaders": [
+        "RCI",
+        "GLIBK",
+        "ROKU"
+      ],
+      "laggards": [
+        "CHTR",
+        "LBRDK",
+        "CMCSA"
+      ],
+      "symbols": [
+        "RCI",
+        "GLIBK",
+        "ROKU",
+        "CMCSA",
+        "LBRDK",
+        "CHTR"
+      ]
+    },
+    {
+      "rank": 62,
+      "rankLabel": "#62",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "investment-bankers-brokers-service",
+      "groupName": "Investment Bankers/Brokers/Service",
+      "parentSector": "Finance",
+      "description": "US listed investment bankers/brokers/service stocks passing the working liquidity and market-cap filter.",
+      "score": 34.02,
+      "returns": {
+        "1m": -3.78,
+        "3m": -4.43,
+        "6m": -4.29
+      },
+      "relativeReturns": {
+        "1m": -1.19,
+        "3m": -7.81,
+        "6m": -12.05
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 35.71,
+        "positive3m": 29.46,
+        "positive6m": 25.0
+      },
+      "stockCount": 28,
+      "leaders": [
+        "SNEX",
+        "VIRT",
+        "MRX"
+      ],
+      "laggards": [
+        "GLXY",
+        "JEF",
+        "ETOR"
+      ],
+      "symbols": [
+        "SNEX",
+        "VIRT",
+        "MRX",
+        "CBOE",
+        "IBKR",
+        "GS",
+        "CME",
+        "MS",
+        "XP",
+        "PIPR",
+        "TW",
+        "SCHW",
+        "MIAX",
+        "FUTU",
+        "SF",
+        "NDAQ",
+        "ICE",
+        "SEIC",
+        "TROW",
+        "BLK",
+        "RJF",
+        "MKTX",
+        "LPLA",
+        "HOOD",
+        "EEFT",
+        "ETOR",
+        "JEF",
+        "GLXY"
+      ]
+    },
+    {
+      "rank": 63,
+      "rankLabel": "#63",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "hospital-nursing-management",
+      "groupName": "Hospital/Nursing Management",
+      "parentSector": "Health Care",
+      "description": "US listed hospital/nursing management stocks passing the working liquidity and market-cap filter.",
+      "score": 33.07,
+      "returns": {
+        "1m": -9.51,
+        "3m": -4.34,
+        "6m": 9.94
+      },
+      "relativeReturns": {
+        "1m": -6.92,
+        "3m": -7.72,
+        "6m": 2.18
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 70.0,
+        "positive3m": 45.0,
+        "positive6m": 70.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "PACS",
+        "ENSG",
+        "MD"
+      ],
+      "laggards": [
+        "UHS",
+        "EHC",
+        "THC"
+      ],
+      "symbols": [
+        "PACS",
+        "ENSG",
+        "MD",
+        "HCSG",
+        "SNDA",
+        "HCA",
+        "SEM",
+        "THC",
+        "EHC",
+        "UHS"
+      ]
+    },
+    {
+      "rank": 64,
+      "rankLabel": "#64",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "containers-packaging",
+      "groupName": "Containers/Packaging",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed containers/packaging stocks passing the working liquidity and market-cap filter.",
+      "score": 31.53,
+      "returns": {
+        "1m": -10.52,
+        "3m": 0.13,
+        "6m": 1.02
+      },
+      "relativeReturns": {
+        "1m": -7.93,
+        "3m": -3.25,
+        "6m": -6.74
+      },
+      "breadth": {
+        "above50dma": 10.0,
+        "above200dma": 30.0,
+        "positive3m": 27.5,
+        "positive6m": 20.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "SON",
+        "BALL",
+        "WMS"
+      ],
+      "laggards": [
+        "KMB",
+        "SLGN",
+        "REYN"
+      ],
+      "symbols": [
+        "SON",
+        "BALL",
+        "WMS",
+        "CCK",
+        "PKG",
+        "AVY",
+        "SW",
+        "REYN",
+        "SLGN",
+        "KMB"
+      ]
+    },
+    {
+      "rank": 65,
+      "rankLabel": "#65",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "etf",
+      "groupName": "ETF",
+      "parentSector": "Exchange Traded Funds",
+      "description": "US listed etf stocks passing the working liquidity and market-cap filter.",
+      "score": 31.09,
+      "returns": {
+        "1m": -3.46,
+        "3m": -1.76,
+        "6m": 2.63
+      },
+      "relativeReturns": {
+        "1m": -0.87,
+        "3m": -5.14,
+        "6m": -5.13
+      },
+      "breadth": {
+        "above50dma": 2.94,
+        "above200dma": 47.06,
+        "positive3m": 29.41,
+        "positive6m": 17.65
+      },
+      "stockCount": 34,
+      "leaders": [
+        "KORU",
+        "OIH",
+        "SOXX"
+      ],
+      "laggards": [
+        "VOT",
+        "VCR",
+        "IWF"
+      ],
+      "symbols": [
+        "KORU",
+        "OIH",
+        "SOXX",
+        "SMH",
+        "GLD",
+        "XAR",
+        "XSD",
+        "VIS",
+        "IWM",
+        "VB",
+        "VBK",
+        "MDY",
+        "IWO",
+        "VGT",
+        "QQQ",
+        "VTI",
+        "VTHR",
+        "IWV",
+        "VO",
+        "IVV",
+        "VOO",
+        "SPY",
+        "VONE",
+        "IWB",
+        "VV",
+        "DIA",
+        "VHT",
+        "VOOG",
+        "OEF",
+        "MGK",
+        "VUG",
+        "IWF",
+        "VCR",
+        "VOT"
+      ]
+    },
+    {
+      "rank": 66,
+      "rankLabel": "#66",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "biotechnology-electromedical-electrotherapeutic-apparatus",
+      "groupName": "Biotechnology: Electromedical & Electrotherapeutic Apparatus",
+      "parentSector": "Health Care",
+      "description": "US listed biotechnology: electromedical & electrotherapeutic apparatus stocks passing the working liquidity and market-cap filter.",
+      "score": 30.98,
+      "returns": {
+        "1m": -2.04,
+        "3m": -2.1,
+        "6m": -4.86
+      },
+      "relativeReturns": {
+        "1m": 0.55,
+        "3m": -5.48,
+        "6m": -12.62
+      },
+      "breadth": {
+        "above50dma": 50.0,
+        "above200dma": 37.5,
+        "positive3m": 40.62,
+        "positive6m": 37.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "AXGN",
+        "LIVN",
+        "MASI"
+      ],
+      "laggards": [
+        "SLNO",
+        "PRKS",
+        "ITGR"
+      ],
+      "symbols": [
+        "AXGN",
+        "LIVN",
+        "MASI",
+        "TMDX",
+        "MDT",
+        "ITGR",
+        "PRKS",
+        "SLNO"
+      ]
+    },
+    {
+      "rank": 67,
+      "rankLabel": "#67",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "computer-manufacturing",
+      "groupName": "Computer Manufacturing",
+      "parentSector": "Technology",
+      "description": "US listed computer manufacturing stocks passing the working liquidity and market-cap filter.",
+      "score": 30.46,
+      "returns": {
+        "1m": -0.36,
+        "3m": -4.38,
+        "6m": -12.87
+      },
+      "relativeReturns": {
+        "1m": 2.23,
+        "3m": -7.76,
+        "6m": -20.63
+      },
+      "breadth": {
+        "above50dma": 40.0,
+        "above200dma": 40.0,
+        "positive3m": 25.0,
+        "positive6m": 20.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "DELL",
+        "AAPL",
+        "IBM"
+      ],
+      "laggards": [
+        "SMCI",
+        "HPQ",
+        "IBM"
+      ],
+      "symbols": [
+        "DELL",
+        "AAPL",
+        "IBM",
+        "HPQ",
+        "SMCI"
+      ]
+    },
+    {
+      "rank": 68,
+      "rankLabel": "#68",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "food-distributors",
+      "groupName": "Food Distributors",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed food distributors stocks passing the working liquidity and market-cap filter.",
+      "score": 30.04,
+      "returns": {
+        "1m": -8.51,
+        "3m": 1.18,
+        "6m": -1.92
+      },
+      "relativeReturns": {
+        "1m": -5.92,
+        "3m": -2.2,
+        "6m": -9.68
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 33.33,
+        "positive3m": 33.33,
+        "positive6m": 33.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "UNFI",
+        "USFD",
+        "CHEF"
+      ],
+      "laggards": [
+        "DPZ",
+        "PFGC",
+        "SYY"
+      ],
+      "symbols": [
+        "UNFI",
+        "USFD",
+        "CHEF",
+        "SYY",
+        "PFGC",
+        "DPZ"
+      ]
+    },
+    {
+      "rank": 69,
+      "rankLabel": "#69",
+      "rankChange1w": -64,
+      "scoreChange1w": -23.96,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "technology-others",
+      "groupName": "Technology Others",
+      "parentSector": "Technology",
+      "description": "US listed technology others stocks passing the working liquidity and market-cap filter.",
+      "score": 29.87,
+      "returns": {
+        "1m": 2.26,
+        "3m": -6.71,
+        "6m": -12.61
+      },
+      "relativeReturns": {
+        "1m": 4.85,
+        "3m": -10.09,
+        "6m": -20.37
+      },
+      "breadth": {
+        "above50dma": 100.0,
+        "above200dma": 0.0,
+        "positive3m": 8.33,
+        "positive6m": 0.0
+      },
+      "stockCount": 3,
+      "leaders": [
+        "LOGI",
+        "FTNT",
+        "PANW"
+      ],
+      "laggards": [
+        "PANW",
+        "FTNT",
+        "LOGI"
+      ],
+      "symbols": [
+        "LOGI",
+        "FTNT",
+        "PANW"
+      ]
+    },
+    {
+      "rank": 70,
+      "rankLabel": "#70",
+      "rankChange1w": -63,
+      "scoreChange1w": -9.1,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "energy-others",
+      "groupName": "Energy Others",
+      "parentSector": "Energy",
+      "description": "US listed energy others stocks passing the working liquidity and market-cap filter.",
+      "score": 28.69,
+      "returns": {
+        "1m": -3.38,
+        "3m": 0.1,
+        "6m": -8.06
+      },
+      "relativeReturns": {
+        "1m": -0.79,
+        "3m": -3.28,
+        "6m": -15.82
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 25.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 1,
+      "leaders": [
+        "WKC"
+      ],
+      "laggards": [
+        "WKC"
+      ],
+      "symbols": [
+        "WKC"
+      ]
+    },
+    {
+      "rank": 71,
+      "rankLabel": "#71",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "apparel",
+      "groupName": "Apparel",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed apparel stocks passing the working liquidity and market-cap filter.",
+      "score": 28.26,
+      "returns": {
+        "1m": -8.38,
+        "3m": -8.4,
+        "6m": 2.03
+      },
+      "relativeReturns": {
+        "1m": -5.79,
+        "3m": -11.78,
+        "6m": -5.73
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 33.33,
+        "positive3m": 27.77,
+        "positive6m": 22.22
+      },
+      "stockCount": 9,
+      "leaders": [
+        "TPR",
+        "CRI",
+        "GIII"
+      ],
+      "laggards": [
+        "LULU",
+        "CPRI",
+        "COLM"
+      ],
+      "symbols": [
+        "TPR",
+        "CRI",
+        "GIII",
+        "GIL",
+        "LEVI",
+        "AS",
+        "COLM",
+        "CPRI",
+        "LULU"
+      ]
+    },
+    {
+      "rank": 72,
+      "rankLabel": "#72",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "services-misc-amusement-recreation",
+      "groupName": "Services-Misc. Amusement & Recreation",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed services-misc. amusement & recreation stocks passing the working liquidity and market-cap filter.",
+      "score": 28.2,
+      "returns": {
+        "1m": -1.61,
+        "3m": -4.73,
+        "6m": -3.03
+      },
+      "relativeReturns": {
+        "1m": 0.98,
+        "3m": -8.11,
+        "6m": -10.79
+      },
+      "breadth": {
+        "above50dma": 30.77,
+        "above200dma": 46.15,
+        "positive3m": 32.69,
+        "positive6m": 23.08
+      },
+      "stockCount": 13,
+      "leaders": [
+        "SPHR",
+        "WBD",
+        "RSI"
+      ],
+      "laggards": [
+        "DKNG",
+        "FUN",
+        "TTWO"
+      ],
+      "symbols": [
+        "SPHR",
+        "WBD",
+        "RSI",
+        "EA",
+        "TKO",
+        "LYV",
+        "MTN",
+        "DIS",
+        "WMG",
+        "CHDN",
+        "TTWO",
+        "FUN",
+        "DKNG"
+      ]
+    },
+    {
+      "rank": 73,
+      "rankLabel": "#73",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "broadcasting",
+      "groupName": "Broadcasting",
+      "parentSector": "Industrials",
+      "description": "US listed broadcasting stocks passing the working liquidity and market-cap filter.",
+      "score": 27.97,
+      "returns": {
+        "1m": 0.79,
+        "3m": -15.03,
+        "6m": -11.12
+      },
+      "relativeReturns": {
+        "1m": 3.38,
+        "3m": -18.41,
+        "6m": -18.88
+      },
+      "breadth": {
+        "above50dma": 42.86,
+        "above200dma": 14.29,
+        "positive3m": 10.72,
+        "positive6m": 0.0
+      },
+      "stockCount": 7,
+      "leaders": [
+        "SIRI",
+        "VSNT",
+        "NXST"
+      ],
+      "laggards": [
+        "SPOT",
+        "FWONK",
+        "FOX"
+      ],
+      "symbols": [
+        "SIRI",
+        "VSNT",
+        "NXST",
+        "FOXA",
+        "FOX",
+        "FWONK",
+        "SPOT"
+      ]
+    },
+    {
+      "rank": 74,
+      "rankLabel": "#74",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "clothing-shoe-accessory-stores",
+      "groupName": "Clothing/Shoe/Accessory Stores",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed clothing/shoe/accessory stores stocks passing the working liquidity and market-cap filter.",
+      "score": 27.63,
+      "returns": {
+        "1m": -12.23,
+        "3m": -12.55,
+        "6m": 8.87
+      },
+      "relativeReturns": {
+        "1m": -9.64,
+        "3m": -15.93,
+        "6m": 1.11
+      },
+      "breadth": {
+        "above50dma": 22.22,
+        "above200dma": 55.56,
+        "positive3m": 38.89,
+        "positive6m": 55.56
+      },
+      "stockCount": 9,
+      "leaders": [
+        "VSCO",
+        "ROST",
+        "TJX"
+      ],
+      "laggards": [
+        "BBWI",
+        "BOOT",
+        "URBN"
+      ],
+      "symbols": [
+        "VSCO",
+        "ROST",
+        "TJX",
+        "AEO",
+        "GAP",
+        "ANF",
+        "URBN",
+        "BOOT",
+        "BBWI"
+      ]
+    },
+    {
+      "rank": 75,
+      "rankLabel": "#75",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "package-goods-cosmetics",
+      "groupName": "Package Goods/Cosmetics",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed package goods/cosmetics stocks passing the working liquidity and market-cap filter.",
+      "score": 25.45,
+      "returns": {
+        "1m": -15.15,
+        "3m": -3.38,
+        "6m": -6.01
+      },
+      "relativeReturns": {
+        "1m": -12.56,
+        "3m": -6.76,
+        "6m": -13.77
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 37.5,
+        "positive3m": 37.5,
+        "positive6m": 12.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "CL",
+        "CHD",
+        "EPC"
+      ],
+      "laggards": [
+        "ELF",
+        "EL",
+        "UL"
+      ],
+      "symbols": [
+        "CL",
+        "CHD",
+        "EPC",
+        "ECL",
+        "PG",
+        "UL",
+        "EL",
+        "ELF"
+      ]
+    },
+    {
+      "rank": 76,
+      "rankLabel": "#76",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "professional-services",
+      "groupName": "Professional Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed professional services stocks passing the working liquidity and market-cap filter.",
+      "score": 22.75,
+      "returns": {
+        "1m": -0.0,
+        "3m": -11.65,
+        "6m": -16.67
+      },
+      "relativeReturns": {
+        "1m": 2.59,
+        "3m": -15.03,
+        "6m": -24.43
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 0.0,
+        "positive3m": 6.25,
+        "positive6m": 0.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "AMN",
+        "BAH",
+        "G"
+      ],
+      "laggards": [
+        "NSP",
+        "RHI",
+        "ASGN"
+      ],
+      "symbols": [
+        "AMN",
+        "BAH",
+        "G",
+        "MAN",
+        "GIB",
+        "ASGN",
+        "RHI",
+        "NSP"
+      ]
+    },
+    {
+      "rank": 77,
+      "rankLabel": "#77",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "medical-specialities",
+      "groupName": "Medical Specialities",
+      "parentSector": "Health Care",
+      "description": "US listed medical specialities stocks passing the working liquidity and market-cap filter.",
+      "score": 21.62,
+      "returns": {
+        "1m": -4.33,
+        "3m": -10.63,
+        "6m": -2.46
+      },
+      "relativeReturns": {
+        "1m": -1.74,
+        "3m": -14.01,
+        "6m": -10.22
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 41.67,
+        "positive3m": 26.04,
+        "positive6m": 25.0
+      },
+      "stockCount": 24,
+      "leaders": [
+        "CELC",
+        "GH",
+        "ILMN"
+      ],
+      "laggards": [
+        "TRUP",
+        "MOH",
+        "CAI"
+      ],
+      "symbols": [
+        "CELC",
+        "GH",
+        "ILMN",
+        "ACHC",
+        "NTRA",
+        "DGX",
+        "GRAL",
+        "LH",
+        "ALHC",
+        "CDNA",
+        "HSIC",
+        "CON",
+        "VRDN",
+        "VCYT",
+        "BLLN",
+        "CI",
+        "RDNT",
+        "ELV",
+        "CNC",
+        "UNH",
+        "HUM",
+        "CAI",
+        "MOH",
+        "TRUP"
+      ]
+    },
+    {
+      "rank": 78,
+      "rankLabel": "#78",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "auto-manufacturing",
+      "groupName": "Auto Manufacturing",
+      "parentSector": "Industrials",
+      "description": "US listed auto manufacturing stocks passing the working liquidity and market-cap filter.",
+      "score": 19.14,
+      "returns": {
+        "1m": -4.39,
+        "3m": -7.54,
+        "6m": -12.24
+      },
+      "relativeReturns": {
+        "1m": -1.8,
+        "3m": -10.92,
+        "6m": -20.0
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 25.0,
+        "positive3m": 25.0,
+        "positive6m": 25.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "OSK",
+        "GM",
+        "FSS"
+      ],
+      "laggards": [
+        "RACE",
+        "HMC",
+        "XPEV"
+      ],
+      "symbols": [
+        "OSK",
+        "GM",
+        "FSS",
+        "TSLA",
+        "LI",
+        "XPEV",
+        "HMC",
+        "RACE"
+      ]
+    },
+    {
+      "rank": 79,
+      "rankLabel": "#79",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "industrial-specialties",
+      "groupName": "Industrial Specialties",
+      "parentSector": "Health Care",
+      "description": "US listed industrial specialties stocks passing the working liquidity and market-cap filter.",
+      "score": 18.24,
+      "returns": {
+        "1m": -9.98,
+        "3m": -10.35,
+        "6m": -3.01
+      },
+      "relativeReturns": {
+        "1m": -7.39,
+        "3m": -13.73,
+        "6m": -10.77
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 30.77,
+        "positive3m": 19.23,
+        "positive6m": 15.38
+      },
+      "stockCount": 13,
+      "leaders": [
+        "ESTA",
+        "TRS",
+        "ALGN"
+      ],
+      "laggards": [
+        "ENOV",
+        "POOL",
+        "ISRG"
+      ],
+      "symbols": [
+        "ESTA",
+        "TRS",
+        "ALGN",
+        "PII",
+        "SNN",
+        "EW",
+        "ZBH",
+        "CDRE",
+        "STE",
+        "MAS",
+        "ISRG",
+        "POOL",
+        "ENOV"
+      ]
+    },
+    {
+      "rank": 80,
+      "rankLabel": "#80",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "packaged-foods",
+      "groupName": "Packaged Foods",
+      "parentSector": "Consumer Staples",
+      "description": "US listed packaged foods stocks passing the working liquidity and market-cap filter.",
+      "score": 17.64,
+      "returns": {
+        "1m": -9.48,
+        "3m": -0.81,
+        "6m": -3.43
+      },
+      "relativeReturns": {
+        "1m": -6.89,
+        "3m": -4.19,
+        "6m": -11.19
+      },
+      "breadth": {
+        "above50dma": 18.75,
+        "above200dma": 18.75,
+        "positive3m": 28.12,
+        "positive6m": 25.0
+      },
+      "stockCount": 16,
+      "leaders": [
+        "DAR",
+        "BG",
+        "ADM"
+      ],
+      "laggards": [
+        "OFRM",
+        "BRBR",
+        "MKC"
+      ],
+      "symbols": [
+        "DAR",
+        "BG",
+        "ADM",
+        "MDLZ",
+        "INGR",
+        "POST",
+        "SJM",
+        "FRPT",
+        "KHC",
+        "CAG",
+        "LW",
+        "GIS",
+        "CPB",
+        "MKC",
+        "BRBR",
+        "OFRM"
+      ]
+    },
+    {
+      "rank": 81,
+      "rankLabel": "#81",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "consumer-electronics-appliances",
+      "groupName": "Consumer Electronics/Appliances",
+      "parentSector": "Technology",
+      "description": "US listed consumer electronics/appliances stocks passing the working liquidity and market-cap filter.",
+      "score": 17.05,
+      "returns": {
+        "1m": -9.8,
+        "3m": -9.21,
+        "6m": -10.15
+      },
+      "relativeReturns": {
+        "1m": -7.21,
+        "3m": -12.59,
+        "6m": -17.91
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 12.5,
+        "positive3m": 18.75,
+        "positive6m": 12.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "KN",
+        "GE",
+        "EMR"
+      ],
+      "laggards": [
+        "WHR",
+        "SONY",
+        "OTIS"
+      ],
+      "symbols": [
+        "KN",
+        "GE",
+        "EMR",
+        "SN",
+        "AOS",
+        "OTIS",
+        "SONY",
+        "WHR"
+      ]
+    },
+    {
+      "rank": 82,
+      "rankLabel": "#82",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "homebuilding",
+      "groupName": "Homebuilding",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed homebuilding stocks passing the working liquidity and market-cap filter.",
+      "score": 16.97,
+      "returns": {
+        "1m": -11.13,
+        "3m": -1.29,
+        "6m": -7.77
+      },
+      "relativeReturns": {
+        "1m": -8.54,
+        "3m": -4.67,
+        "6m": -15.53
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 13.33,
+        "positive3m": 16.66,
+        "positive6m": 13.33
+      },
+      "stockCount": 15,
+      "leaders": [
+        "ECG",
+        "TPH",
+        "TOL"
+      ],
+      "laggards": [
+        "LGIH",
+        "LEN",
+        "THO"
+      ],
+      "symbols": [
+        "ECG",
+        "TPH",
+        "TOL",
+        "PHM",
+        "DHI",
+        "TMHC",
+        "SKY",
+        "BZH",
+        "GEO",
+        "MTH",
+        "KBH",
+        "WGO",
+        "THO",
+        "LEN",
+        "LGIH"
+      ]
+    },
+    {
+      "rank": 83,
+      "rankLabel": "#83",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "medical-dental-instruments",
+      "groupName": "Medical/Dental Instruments",
+      "parentSector": "Health Care",
+      "description": "US listed medical/dental instruments stocks passing the working liquidity and market-cap filter.",
+      "score": 16.42,
+      "returns": {
+        "1m": -8.78,
+        "3m": -13.55,
+        "6m": -5.59
+      },
+      "relativeReturns": {
+        "1m": -6.19,
+        "3m": -16.93,
+        "6m": -13.35
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 33.33,
+        "positive3m": 21.88,
+        "positive6m": 25.0
+      },
+      "stockCount": 24,
+      "leaders": [
+        "NVST",
+        "GMED",
+        "PEN"
+      ],
+      "laggards": [
+        "INSP",
+        "BSX",
+        "PRCT"
+      ],
+      "symbols": [
+        "NVST",
+        "GMED",
+        "PEN",
+        "GKOS",
+        "TNDM",
+        "WST",
+        "BDX",
+        "MDLN",
+        "AORT",
+        "TFX",
+        "MMM",
+        "RMD",
+        "SYK",
+        "DXCM",
+        "HTFL",
+        "SOLV",
+        "ATRC",
+        "IRTC",
+        "MMSI",
+        "PODD",
+        "BAX",
+        "PRCT",
+        "BSX",
+        "INSP"
+      ]
+    },
+    {
+      "rank": 84,
+      "rankLabel": "#84",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "real-estate",
+      "groupName": "Real Estate",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate stocks passing the working liquidity and market-cap filter.",
+      "score": 14.94,
+      "returns": {
+        "1m": -4.96,
+        "3m": -12.52,
+        "6m": -14.74
+      },
+      "relativeReturns": {
+        "1m": -2.37,
+        "3m": -15.9,
+        "6m": -22.5
+      },
+      "breadth": {
+        "above50dma": 25.58,
+        "above200dma": 25.58,
+        "positive3m": 22.68,
+        "positive6m": 16.28
+      },
+      "stockCount": 43,
+      "leaders": [
+        "AKAM",
+        "ANDG",
+        "BFH"
+      ],
+      "laggards": [
+        "FISV",
+        "CSGP",
+        "CBZ"
+      ],
+      "symbols": [
+        "AKAM",
+        "ANDG",
+        "BFH",
+        "GTY",
+        "EBAY",
+        "CURB",
+        "AMTM",
+        "VAC",
+        "TRNO",
+        "UE",
+        "JLL",
+        "XMTR",
+        "WEX",
+        "RELY",
+        "MRP",
+        "ETSY",
+        "CPAY",
+        "CART",
+        "RBA",
+        "CBRE",
+        "HQY",
+        "MA",
+        "BABA",
+        "INVH",
+        "V",
+        "PAY",
+        "UBER",
+        "MELI",
+        "MMS",
+        "GPN",
+        "ACN",
+        "RELX",
+        "TCOM",
+        "EXLS",
+        "BR",
+        "FIS",
+        "TNET",
+        "FOUR",
+        "ZG",
+        "Z",
+        "CBZ",
+        "CSGP",
+        "FISV"
+      ]
+    },
+    {
+      "rank": 85,
+      "rankLabel": "#85",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "catalog-specialty-distribution",
+      "groupName": "Catalog/Specialty Distribution",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed catalog/specialty distribution stocks passing the working liquidity and market-cap filter.",
+      "score": 13.43,
+      "returns": {
+        "1m": -1.78,
+        "3m": -18.76,
+        "6m": -15.01
+      },
+      "relativeReturns": {
+        "1m": 0.81,
+        "3m": -22.14,
+        "6m": -22.77
+      },
+      "breadth": {
+        "above50dma": 42.86,
+        "above200dma": 14.29,
+        "positive3m": 17.86,
+        "positive6m": 14.29
+      },
+      "stockCount": 7,
+      "leaders": [
+        "GCT",
+        "W",
+        "AMZN"
+      ],
+      "laggards": [
+        "CPNG",
+        "CHWY",
+        "VIPS"
+      ],
+      "symbols": [
+        "GCT",
+        "W",
+        "AMZN",
+        "RVLV",
+        "VIPS",
+        "CHWY",
+        "CPNG"
+      ]
+    },
+    {
+      "rank": 86,
+      "rankLabel": "#86",
+      "rankChange1w": -78,
+      "scoreChange1w": -18.74,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "real-estate-others",
+      "groupName": "Real Estate Others",
+      "parentSector": "Real Estate",
+      "description": "US listed real estate others stocks passing the working liquidity and market-cap filter.",
+      "score": 13.26,
+      "returns": {
+        "1m": -4.71,
+        "3m": -11.49,
+        "6m": -10.26
+      },
+      "relativeReturns": {
+        "1m": -2.12,
+        "3m": -14.87,
+        "6m": -18.02
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 0.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 1,
+      "leaders": [
+        "BN"
+      ],
+      "laggards": [
+        "BN"
+      ],
+      "symbols": [
+        "BN"
+      ]
+    },
+    {
+      "rank": 87,
+      "rankLabel": "#87",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "investment-managers",
+      "groupName": "Investment Managers",
+      "parentSector": "Finance",
+      "description": "US listed investment managers stocks passing the working liquidity and market-cap filter.",
+      "score": 13.08,
+      "returns": {
+        "1m": -4.68,
+        "3m": -14.73,
+        "6m": -14.48
+      },
+      "relativeReturns": {
+        "1m": -2.09,
+        "3m": -18.11,
+        "6m": -22.24
+      },
+      "breadth": {
+        "above50dma": 13.64,
+        "above200dma": 18.18,
+        "positive3m": 15.91,
+        "positive6m": 13.64
+      },
+      "stockCount": 22,
+      "leaders": [
+        "AAMI",
+        "JHG",
+        "FHI"
+      ],
+      "laggards": [
+        "ARES",
+        "TPG",
+        "HLNE"
+      ],
+      "symbols": [
+        "AAMI",
+        "JHG",
+        "FHI",
+        "IVZ",
+        "EVR",
+        "BEN",
+        "VCTR",
+        "APAM",
+        "AMP",
+        "MC",
+        "LAZ",
+        "TSLX",
+        "CG",
+        "STEP",
+        "HLI",
+        "APO",
+        "BX",
+        "KKR",
+        "MORN",
+        "HLNE",
+        "TPG",
+        "ARES"
+      ]
+    },
+    {
+      "rank": 88,
+      "rankLabel": "#88",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "home-furnishings",
+      "groupName": "Home Furnishings",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed home furnishings stocks passing the working liquidity and market-cap filter.",
+      "score": 12.77,
+      "returns": {
+        "1m": -11.97,
+        "3m": -8.48,
+        "6m": -10.89
+      },
+      "relativeReturns": {
+        "1m": -9.38,
+        "3m": -11.86,
+        "6m": -18.65
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 20.0,
+        "positive3m": 10.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "WSM",
+        "FUL",
+        "TILE"
+      ],
+      "laggards": [
+        "MHK",
+        "SGI",
+        "TILE"
+      ],
+      "symbols": [
+        "WSM",
+        "FUL",
+        "TILE",
+        "SGI",
+        "MHK"
+      ]
+    },
+    {
+      "rank": 89,
+      "rankLabel": "#89",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "diversified-commercial-services",
+      "groupName": "Diversified Commercial Services",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed diversified commercial services stocks passing the working liquidity and market-cap filter.",
+      "score": 12.59,
+      "returns": {
+        "1m": -7.94,
+        "3m": -9.14,
+        "6m": -12.1
+      },
+      "relativeReturns": {
+        "1m": -5.35,
+        "3m": -12.52,
+        "6m": -19.86
+      },
+      "breadth": {
+        "above50dma": 22.22,
+        "above200dma": 22.22,
+        "positive3m": 18.06,
+        "positive6m": 16.67
+      },
+      "stockCount": 18,
+      "leaders": [
+        "NVRI",
+        "VVX",
+        "AER"
+      ],
+      "laggards": [
+        "EQPT",
+        "PYPL",
+        "VRSK"
+      ],
+      "symbols": [
+        "NVRI",
+        "VVX",
+        "AER",
+        "AL",
+        "FTDR",
+        "ABNB",
+        "PRG",
+        "ROL",
+        "URI",
+        "KFY",
+        "ALLE",
+        "ABM",
+        "UPBD",
+        "PAYX",
+        "ADP",
+        "VRSK",
+        "PYPL",
+        "EQPT"
+      ]
+    },
+    {
+      "rank": 90,
+      "rankLabel": "#90",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "ophthalmic-goods",
+      "groupName": "Ophthalmic Goods",
+      "parentSector": "Health Care",
+      "description": "US listed ophthalmic goods stocks passing the working liquidity and market-cap filter.",
+      "score": 12.07,
+      "returns": {
+        "1m": -11.26,
+        "3m": -10.04,
+        "6m": -13.5
+      },
+      "relativeReturns": {
+        "1m": -8.67,
+        "3m": -13.42,
+        "6m": -21.26
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 0.0,
+        "positive3m": 10.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "EYE",
+        "STAA",
+        "WRBY"
+      ],
+      "laggards": [
+        "ALC",
+        "COO",
+        "WRBY"
+      ],
+      "symbols": [
+        "EYE",
+        "STAA",
+        "WRBY",
+        "COO",
+        "ALC"
+      ]
+    },
+    {
+      "rank": 91,
+      "rankLabel": "#91",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "retail-building-materials",
+      "groupName": "RETAIL: Building Materials",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed retail: building materials stocks passing the working liquidity and market-cap filter.",
+      "score": 9.8,
+      "returns": {
+        "1m": -13.23,
+        "3m": -10.38,
+        "6m": -16.93
+      },
+      "relativeReturns": {
+        "1m": -10.64,
+        "3m": -13.76,
+        "6m": -24.69
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 12.5,
+        "positive3m": 6.25,
+        "positive6m": 0.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "FAST",
+        "QXO",
+        "LOW"
+      ],
+      "laggards": [
+        "FND",
+        "BLDR",
+        "TSCO"
+      ],
+      "symbols": [
+        "FAST",
+        "QXO",
+        "LOW",
+        "SHW",
+        "HD",
+        "TSCO",
+        "BLDR",
+        "FND"
+      ]
+    },
+    {
+      "rank": 92,
+      "rankLabel": "#92",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "computer-software-programming-data-processing",
+      "groupName": "Computer Software: Programming Data Processing",
+      "parentSector": "Technology",
+      "description": "US listed computer software: programming data processing stocks passing the working liquidity and market-cap filter.",
+      "score": 9.42,
+      "returns": {
+        "1m": -0.36,
+        "3m": -14.32,
+        "6m": -18.16
+      },
+      "relativeReturns": {
+        "1m": 2.23,
+        "3m": -17.7,
+        "6m": -25.92
+      },
+      "breadth": {
+        "above50dma": 36.84,
+        "above200dma": 36.84,
+        "positive3m": 21.05,
+        "positive6m": 21.05
+      },
+      "stockCount": 19,
+      "leaders": [
+        "DOCN",
+        "NBIS",
+        "GOOGL"
+      ],
+      "laggards": [
+        "FLUT",
+        "TTD",
+        "WIX"
+      ],
+      "symbols": [
+        "DOCN",
+        "NBIS",
+        "GOOGL",
+        "GOOG",
+        "GDS",
+        "IAC",
+        "ZM",
+        "BIDU",
+        "MTCH",
+        "META",
+        "APP",
+        "TEM",
+        "ROP",
+        "FDS",
+        "SRAD",
+        "PINS",
+        "WIX",
+        "TTD",
+        "FLUT"
+      ]
+    },
+    {
+      "rank": 93,
+      "rankLabel": "#93",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "specialty-insurers",
+      "groupName": "Specialty Insurers",
+      "parentSector": "Finance",
+      "description": "US listed specialty insurers stocks passing the working liquidity and market-cap filter.",
+      "score": 8.98,
+      "returns": {
+        "1m": -6.33,
+        "3m": -14.13,
+        "6m": -18.83
+      },
+      "relativeReturns": {
+        "1m": -3.74,
+        "3m": -17.51,
+        "6m": -26.59
+      },
+      "breadth": {
+        "above50dma": 18.18,
+        "above200dma": 0.0,
+        "positive3m": 2.27,
+        "positive6m": 0.0
+      },
+      "stockCount": 11,
+      "leaders": [
+        "NP",
+        "FAF",
+        "AON"
+      ],
+      "laggards": [
+        "RYAN",
+        "BRO",
+        "BWIN"
+      ],
+      "symbols": [
+        "NP",
+        "FAF",
+        "AON",
+        "WTW",
+        "MRSH",
+        "FNF",
+        "EQH",
+        "AJG",
+        "BWIN",
+        "BRO",
+        "RYAN"
+      ]
+    },
+    {
+      "rank": 94,
+      "rankLabel": "#94",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "finance-consumer-services",
+      "groupName": "Finance: Consumer Services",
+      "parentSector": "Finance",
+      "description": "US listed finance: consumer services stocks passing the working liquidity and market-cap filter.",
+      "score": 8.69,
+      "returns": {
+        "1m": -4.65,
+        "3m": -15.9,
+        "6m": -19.61
+      },
+      "relativeReturns": {
+        "1m": -2.06,
+        "3m": -19.28,
+        "6m": -27.37
+      },
+      "breadth": {
+        "above50dma": 8.0,
+        "above200dma": 12.0,
+        "positive3m": 11.0,
+        "positive6m": 4.0
+      },
+      "stockCount": 25,
+      "leaders": [
+        "HUT",
+        "APLD",
+        "CORZ"
+      ],
+      "laggards": [
+        "UPST",
+        "COIN",
+        "AFRM"
+      ],
+      "symbols": [
+        "HUT",
+        "APLD",
+        "CORZ",
+        "GPGI",
+        "DAVE",
+        "SEZL",
+        "SYF",
+        "CRCL",
+        "OMF",
+        "PWP",
+        "FIGR",
+        "AXP",
+        "BMNR",
+        "ARCC",
+        "MCO",
+        "BLSH",
+        "SPGI",
+        "TRU",
+        "SOFI",
+        "SLM",
+        "EFX",
+        "CHYM",
+        "AFRM",
+        "COIN",
+        "UPST"
+      ]
+    },
+    {
+      "rank": 95,
+      "rankLabel": "#95",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "edp-services",
+      "groupName": "EDP Services",
+      "parentSector": "Technology",
+      "description": "US listed edp services stocks passing the working liquidity and market-cap filter.",
+      "score": 8.64,
+      "returns": {
+        "1m": -6.21,
+        "3m": -17.82,
+        "6m": -19.29
+      },
+      "relativeReturns": {
+        "1m": -3.62,
+        "3m": -21.2,
+        "6m": -27.05
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 16.67,
+        "positive3m": 17.36,
+        "positive6m": 13.89
+      },
+      "stockCount": 36,
+      "leaders": [
+        "IREN",
+        "ISSC",
+        "RNG"
+      ],
+      "laggards": [
+        "DOCS",
+        "ZS",
+        "WDAY"
+      ],
+      "symbols": [
+        "IREN",
+        "ISSC",
+        "RNG",
+        "NTCT",
+        "NEE",
+        "CSGS",
+        "VRSN",
+        "BILI",
+        "CARG",
+        "SAIC",
+        "LDOS",
+        "RAMP",
+        "JKHY",
+        "PDD",
+        "IOT",
+        "PSN",
+        "HNGE",
+        "PEGA",
+        "CTSH",
+        "DOX",
+        "RDDT",
+        "EPAM",
+        "INOD",
+        "BILL",
+        "IONQ",
+        "OTEX",
+        "TOST",
+        "DASH",
+        "WAY",
+        "FIVN",
+        "LIF",
+        "GLOB",
+        "GDDY",
+        "WDAY",
+        "ZS",
+        "DOCS"
+      ]
+    },
+    {
+      "rank": 96,
+      "rankLabel": "#96",
+      "rankChange1w": -94,
+      "scoreChange1w": -59.73,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "basic-materials-others",
+      "groupName": "Basic Materials Others",
+      "parentSector": "Basic Materials",
+      "description": "US listed basic materials others stocks passing the working liquidity and market-cap filter.",
+      "score": 7.77,
+      "returns": {
+        "1m": -17.07,
+        "3m": -0.79,
+        "6m": -5.76
+      },
+      "relativeReturns": {
+        "1m": -14.48,
+        "3m": -4.17,
+        "6m": -13.52
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 33.33,
+        "positive3m": 37.5,
+        "positive6m": 33.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "ALM",
+        "CCJ",
+        "LPX"
+      ],
+      "laggards": [
+        "FBIN",
+        "TREX",
+        "IP"
+      ],
+      "symbols": [
+        "ALM",
+        "CCJ",
+        "LPX",
+        "IP",
+        "TREX",
+        "FBIN"
+      ]
+    },
+    {
+      "rank": 97,
+      "rankLabel": "#97",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "shoe-manufacturing",
+      "groupName": "Shoe Manufacturing",
+      "parentSector": "Consumer Discretionary",
+      "description": "US listed shoe manufacturing stocks passing the working liquidity and market-cap filter.",
+      "score": 1.83,
+      "returns": {
+        "1m": -13.61,
+        "3m": -16.12,
+        "6m": -17.12
+      },
+      "relativeReturns": {
+        "1m": -11.02,
+        "3m": -19.5,
+        "6m": -24.88
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 7.14,
+        "positive6m": 0.0
+      },
+      "stockCount": 7,
+      "leaders": [
+        "SHOO",
+        "DECK",
+        "CROX"
+      ],
+      "laggards": [
+        "NKE",
+        "ONON",
+        "BIRK"
+      ],
+      "symbols": [
+        "SHOO",
+        "DECK",
+        "CROX",
+        "WWW",
+        "BIRK",
+        "ONON",
+        "NKE"
+      ]
+    },
+    {
+      "rank": 98,
+      "rankLabel": "#98",
+      "rankChange1w": null,
+      "scoreChange1w": null,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "computer-software-prepackaged-software",
+      "groupName": "Computer Software: Prepackaged Software",
+      "parentSector": "Technology",
+      "description": "US listed computer software: prepackaged software stocks passing the working liquidity and market-cap filter.",
+      "score": 0.0,
+      "returns": {
+        "1m": -4.69,
+        "3m": -26.03,
+        "6m": -29.56
+      },
+      "relativeReturns": {
+        "1m": -2.1,
+        "3m": -29.41,
+        "6m": -37.32
+      },
+      "breadth": {
+        "above50dma": 22.78,
+        "above200dma": 11.39,
+        "positive3m": 9.81,
+        "positive6m": 10.13
+      },
+      "stockCount": 79,
+      "leaders": [
+        "FSLY",
+        "YOU",
+        "ADEA"
+      ],
+      "laggards": [
+        "DUOL",
+        "VIA",
+        "MNDY"
+      ],
+      "symbols": [
+        "FSLY",
+        "YOU",
+        "ADEA",
+        "NET",
+        "OS",
+        "TWLO",
+        "CRWV",
+        "FROG",
+        "STRC",
+        "PLTR",
+        "CWAN",
+        "TDC",
+        "DDOG",
+        "MDB",
+        "XYZ",
+        "CDNS",
+        "SHOP",
+        "ZETA",
+        "CRWD",
+        "OKTA",
+        "GLBE",
+        "DBX",
+        "SNPS",
+        "ACIW",
+        "PCOR",
+        "MSFT",
+        "PTC",
+        "DT",
+        "SSNC",
+        "ADSK",
+        "BSY",
+        "BOX",
+        "WK",
+        "SNOW",
+        "ORCL",
+        "BRZE",
+        "CHKP",
+        "MANH",
+        "U",
+        "CRM",
+        "GWRE",
+        "VEEV",
+        "RBLX",
+        "GEN",
+        "RBRK",
+        "ADBE",
+        "BL",
+        "DOCU",
+        "QLYS",
+        "ALKT",
+        "PCTY",
+        "TYL",
+        "SAP",
+        "PAYC",
+        "APPF",
+        "NTNX",
+        "KVYO",
+        "QTWO",
+        "NCNO",
+        "TTAN",
+        "INTU",
+        "TENB",
+        "CNXC",
+        "ESTC",
+        "BLKB",
+        "NOW",
+        "INTA",
+        "PRGS",
+        "SPSC",
+        "HUBS",
+        "GTLB",
+        "TEAM",
+        "CVLT",
+        "FIG",
+        "VRNS",
+        "MSTR",
+        "MNDY",
+        "VIA",
+        "DUOL"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Mr. Malik Scanner — Professional NSE/BSE stock screener with real-time data, sector heatmaps, and technical analysis." />
+    <meta name="theme-color" content="#0c1021" />
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%234c9aff'/%3E%3Cstop offset='100%25' stop-color='%236c5ce7'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='32' height='32' rx='8' fill='url(%23g)'/%3E%3Ctext x='16' y='22' font-family='system-ui' font-weight='800' font-size='16' fill='white' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <script>
+      (function () {
+        var perf = typeof window !== "undefined" ? window.performance : null;
+        if (!perf) {
+          return;
+        }
+
+        var noop = function () {};
+        var patchMethod = function (name) {
+          if (typeof perf[name] === "function") {
+            return;
+          }
+          try {
+            Object.defineProperty(perf, name, {
+              configurable: true,
+              writable: true,
+              value: noop,
+            });
+          } catch (_error) {
+            try {
+              perf[name] = noop;
+            } catch (_ignored) {}
+          }
+        };
+
+        patchMethod("clearMarks");
+        patchMethod("clearMeasures");
+      })();
+    </script>
+    <title>Mr. Malik Scanner</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,6224 @@
+[
+  {
+    "rank": 1,
+    "groupId": "sugar",
+    "groupName": "Sugar",
+    "score": 93.87,
+    "return1m": 21.22,
+    "return3m": 10.75,
+    "return6m": 0.36,
+    "relativeReturn1m": 30.16,
+    "relativeReturn3m": 21.54,
+    "relativeReturn6m": 12.42,
+    "above50dma": 100.0,
+    "above200dma": 66.67,
+    "breadthScore": 77.78,
+    "leaders": [
+      "AVADHSUGAR",
+      "DWARKESH",
+      "DALMIASUG"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "AVADHSUGAR",
+        "company_name": "Avadh Sugar & Energy Limited",
+        "rs_rating": 85,
+        "return_1m": 44.6,
+        "return_3m": 26.49,
+        "return_6m": 8.35,
+        "relative_return_3m": 37.28,
+        "relative_return_6m": 20.41
+      },
+      {
+        "symbol": "DWARKESH",
+        "company_name": "Dwarikesh Sugar Industries Limited",
+        "rs_rating": 84,
+        "return_1m": 28.91,
+        "return_3m": 21.42,
+        "return_6m": 5.72,
+        "relative_return_3m": 32.21,
+        "relative_return_6m": 17.78
+      },
+      {
+        "symbol": "DALMIASUG",
+        "company_name": "Dalmia Bharat Sugar and Industries Limited",
+        "rs_rating": 83,
+        "return_1m": 31.31,
+        "return_3m": 25.69,
+        "return_6m": 2.42,
+        "relative_return_3m": 36.48,
+        "relative_return_6m": 14.48
+      },
+      {
+        "symbol": "DHAMPURSUG",
+        "company_name": "Dhampur Sugar Mills Limited",
+        "rs_rating": 78,
+        "return_1m": 21.33,
+        "return_3m": 13.26,
+        "return_6m": -0.68,
+        "relative_return_3m": 24.05,
+        "relative_return_6m": 11.38
+      },
+      {
+        "symbol": "TRIVENI",
+        "company_name": "Triveni Engineering & Industries Limited",
+        "rs_rating": 75,
+        "return_1m": 1.01,
+        "return_3m": -2.38,
+        "return_6m": 11.56,
+        "relative_return_3m": 8.41,
+        "relative_return_6m": 23.62
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 10.63,
+    "rankChange1w": 2
+  },
+  {
+    "rank": 2,
+    "groupId": "non-ferrous-metals",
+    "groupName": "Non-Ferrous Metals",
+    "score": 92.35,
+    "return1m": -0.07,
+    "return3m": 14.15,
+    "return6m": 39.88,
+    "relativeReturn1m": 8.87,
+    "relativeReturn3m": 24.94,
+    "relativeReturn6m": 51.94,
+    "above50dma": 62.5,
+    "above200dma": 62.5,
+    "breadthScore": 90.62,
+    "leaders": [
+      "NATIONALUM",
+      "HINDCOPPER",
+      "PRECWIRE"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "NATIONALUM",
+        "company_name": "National Aluminium Company Limited",
+        "rs_rating": 98,
+        "return_1m": 11.6,
+        "return_3m": 32.5,
+        "return_6m": 100.26,
+        "relative_return_3m": 43.29,
+        "relative_return_6m": 112.32
+      },
+      {
+        "symbol": "HINDCOPPER",
+        "company_name": "Hindustan Copper Limited",
+        "rs_rating": 97,
+        "return_1m": -15.92,
+        "return_3m": 3.75,
+        "return_6m": 59.84,
+        "relative_return_3m": 14.54,
+        "relative_return_6m": 71.9
+      },
+      {
+        "symbol": "PRECWIRE",
+        "company_name": "Precision Wires India Limited",
+        "rs_rating": 97,
+        "return_1m": -0.45,
+        "return_3m": 26.92,
+        "return_6m": 59.4,
+        "relative_return_3m": 37.71,
+        "relative_return_6m": 71.46
+      },
+      {
+        "symbol": "ARFIN",
+        "company_name": "Arfin India Limited",
+        "rs_rating": 95,
+        "return_1m": 7.42,
+        "return_3m": 10.76,
+        "return_6m": 60.65,
+        "relative_return_3m": 21.55,
+        "relative_return_6m": 72.71
+      },
+      {
+        "symbol": "KSHINTL",
+        "company_name": "KSH International Limited",
+        "rs_rating": 91,
+        "return_1m": 23.89,
+        "return_3m": 30.56,
+        "return_6m": 26.3,
+        "relative_return_3m": 41.35,
+        "relative_return_6m": 38.36
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -2.31,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 3,
+    "groupId": "castings-forgings",
+    "groupName": "Castings & Forgings",
+    "score": 89.23,
+    "return1m": -3.17,
+    "return3m": 0.36,
+    "return6m": 0.38,
+    "relativeReturn1m": 5.77,
+    "relativeReturn3m": 11.15,
+    "relativeReturn6m": 12.44,
+    "above50dma": 40.0,
+    "above200dma": 60.0,
+    "breadthScore": 65.0,
+    "leaders": [
+      "HAPPYFORGE",
+      "STEELCAS",
+      "NELCAST"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "HAPPYFORGE",
+        "company_name": "Happy Forgings Limited",
+        "rs_rating": 89,
+        "return_1m": -11.85,
+        "return_3m": 7.93,
+        "return_6m": 20.98,
+        "relative_return_3m": 18.72,
+        "relative_return_6m": 33.04
+      },
+      {
+        "symbol": "STEELCAS",
+        "company_name": "Steelcast Limited",
+        "rs_rating": 84,
+        "return_1m": 0.01,
+        "return_3m": 14.04,
+        "return_6m": 7.33,
+        "relative_return_3m": 24.83,
+        "relative_return_6m": 19.39
+      },
+      {
+        "symbol": "NELCAST",
+        "company_name": "Nelcast Limited",
+        "rs_rating": 82,
+        "return_1m": 5.52,
+        "return_3m": 16.3,
+        "return_6m": -14.53,
+        "relative_return_3m": 27.09,
+        "relative_return_6m": -2.47
+      },
+      {
+        "symbol": "AIAENG",
+        "company_name": "AIA Engineering Limited",
+        "rs_rating": 80,
+        "return_1m": -6.09,
+        "return_3m": -6.8,
+        "return_6m": 20.23,
+        "relative_return_3m": 3.99,
+        "relative_return_6m": 32.29
+      },
+      {
+        "symbol": "BALUFORGE",
+        "company_name": "Balu Forge Industries Limited",
+        "rs_rating": 12,
+        "return_1m": -3.43,
+        "return_3m": -29.66,
+        "return_6m": -32.13,
+        "relative_return_3m": -18.87,
+        "relative_return_6m": -20.07
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 5.02,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 4,
+    "groupId": "oil-upstream-services",
+    "groupName": "Oil Upstream & Services",
+    "score": 76.36,
+    "return1m": -1.44,
+    "return3m": 0.13,
+    "return6m": -8.31,
+    "relativeReturn1m": 7.5,
+    "relativeReturn3m": 10.92,
+    "relativeReturn6m": 3.75,
+    "above50dma": 44.44,
+    "above200dma": 22.22,
+    "breadthScore": 44.44,
+    "leaders": [
+      "ONGC",
+      "OIL",
+      "ANTELOPUS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ONGC",
+        "company_name": "Oil & Natural Gas Corporation Limited",
+        "rs_rating": 91,
+        "return_1m": 3.12,
+        "return_3m": 24.86,
+        "return_6m": 25.78,
+        "relative_return_3m": 35.65,
+        "relative_return_6m": 37.84
+      },
+      {
+        "symbol": "OIL",
+        "company_name": "Oil India Limited",
+        "rs_rating": 89,
+        "return_1m": 1.24,
+        "return_3m": 20.02,
+        "return_6m": 19.85,
+        "relative_return_3m": 30.81,
+        "relative_return_6m": 31.91
+      },
+      {
+        "symbol": "ANTELOPUS",
+        "company_name": "Antelopus Selan Energy Limited",
+        "rs_rating": 84,
+        "return_1m": 8.7,
+        "return_3m": 37.54,
+        "return_6m": 4.41,
+        "relative_return_3m": 48.33,
+        "relative_return_6m": 16.47
+      },
+      {
+        "symbol": "DOLPHIN",
+        "company_name": "Dolphin Offshore Enterprises (India) Limited",
+        "rs_rating": 84,
+        "return_1m": 0.75,
+        "return_3m": -1.45,
+        "return_6m": 3.13,
+        "relative_return_3m": 9.34,
+        "relative_return_6m": 15.19
+      },
+      {
+        "symbol": "DEEPINDS",
+        "company_name": "Deep Industries Limited",
+        "rs_rating": 62,
+        "return_1m": 23.37,
+        "return_3m": -1.44,
+        "return_6m": -18.81,
+        "relative_return_3m": 9.35,
+        "relative_return_6m": -6.75
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 10.73,
+    "rankChange1w": 11
+  },
+  {
+    "rank": 5,
+    "groupId": "power-utilities-grids",
+    "groupName": "Power Utilities & Grids",
+    "score": 75.4,
+    "return1m": -4.74,
+    "return3m": -7.06,
+    "return6m": -14.4,
+    "relativeReturn1m": 4.2,
+    "relativeReturn3m": 3.73,
+    "relativeReturn6m": -2.34,
+    "above50dma": 53.85,
+    "above200dma": 30.77,
+    "breadthScore": 48.08,
+    "leaders": [
+      "ADANIPOWER",
+      "POWERGRID",
+      "ADANIENSOL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ADANIPOWER",
+        "company_name": "Adani Power Limited",
+        "rs_rating": 92,
+        "return_1m": 13.67,
+        "return_3m": 12.35,
+        "return_6m": 10.55,
+        "relative_return_3m": 23.14,
+        "relative_return_6m": 22.61
+      },
+      {
+        "symbol": "POWERGRID",
+        "company_name": "Power Grid Corporation of India Limited",
+        "rs_rating": 80,
+        "return_1m": -5.31,
+        "return_3m": 10.84,
+        "return_6m": 2.0,
+        "relative_return_3m": 21.63,
+        "relative_return_6m": 14.06
+      },
+      {
+        "symbol": "ADANIENSOL",
+        "company_name": "Adani Energy Solutions Limited",
+        "rs_rating": 78,
+        "return_1m": -6.71,
+        "return_3m": -5.17,
+        "return_6m": 2.15,
+        "relative_return_3m": 5.62,
+        "relative_return_6m": 14.21
+      },
+      {
+        "symbol": "PTC",
+        "company_name": "PTC India Limited",
+        "rs_rating": 78,
+        "return_1m": -0.11,
+        "return_3m": 4.73,
+        "return_6m": -2.03,
+        "relative_return_3m": 15.52,
+        "relative_return_6m": 10.03
+      },
+      {
+        "symbol": "TORNTPOWER",
+        "company_name": "Torrent Power Limited",
+        "rs_rating": 73,
+        "return_1m": -14.54,
+        "return_3m": 4.05,
+        "return_6m": 6.93,
+        "relative_return_3m": 14.84,
+        "relative_return_6m": 18.99
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 3.18,
+    "rankChange1w": 4
+  },
+  {
+    "rank": 6,
+    "groupId": "mining-coal-alloys",
+    "groupName": "Mining, Coal & Alloys",
+    "score": 74.07,
+    "return1m": -3.64,
+    "return3m": -7.71,
+    "return6m": 1.66,
+    "relativeReturn1m": 5.3,
+    "relativeReturn3m": 3.08,
+    "relativeReturn6m": 13.72,
+    "above50dma": 25.0,
+    "above200dma": 25.0,
+    "breadthScore": 45.83,
+    "leaders": [
+      "VEDL",
+      "SGMART",
+      "IMFA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "VEDL",
+        "company_name": "Vedanta Limited",
+        "rs_rating": 95,
+        "return_1m": -5.67,
+        "return_3m": 14.24,
+        "return_6m": 53.08,
+        "relative_return_3m": 25.03,
+        "relative_return_6m": 65.14
+      },
+      {
+        "symbol": "SGMART",
+        "company_name": "SG Mart Limited",
+        "rs_rating": 94,
+        "return_1m": 14.19,
+        "return_3m": 31.93,
+        "return_6m": 32.0,
+        "relative_return_3m": 42.72,
+        "relative_return_6m": 44.06
+      },
+      {
+        "symbol": "IMFA",
+        "company_name": "Indian Metals & Ferro Alloys Limited",
+        "rs_rating": 92,
+        "return_1m": -1.87,
+        "return_3m": -12.25,
+        "return_6m": 6.64,
+        "relative_return_3m": -1.46,
+        "relative_return_6m": 18.7
+      },
+      {
+        "symbol": "JAINREC",
+        "company_name": "Jain Resource Recycling Limited",
+        "rs_rating": 89,
+        "return_1m": 22.46,
+        "return_3m": 12.82,
+        "return_6m": 45.81,
+        "relative_return_3m": 23.61,
+        "relative_return_6m": 57.87
+      },
+      {
+        "symbol": "COALINDIA",
+        "company_name": "Coal India Limited",
+        "rs_rating": 88,
+        "return_1m": 2.44,
+        "return_3m": 13.2,
+        "return_6m": 19.02,
+        "relative_return_3m": 23.99,
+        "relative_return_6m": 31.08
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -4.13,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 7,
+    "groupId": "capital-goods-electrical",
+    "groupName": "Capital Goods Electrical",
+    "score": 73.52,
+    "return1m": -3.26,
+    "return3m": -2.25,
+    "return6m": -12.43,
+    "relativeReturn1m": 5.68,
+    "relativeReturn3m": 8.54,
+    "relativeReturn6m": -0.37,
+    "above50dma": 42.55,
+    "above200dma": 23.4,
+    "breadthScore": 44.68,
+    "leaders": [
+      "TDPOWERSYS",
+      "POWERINDIA",
+      "GVT&D"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TDPOWERSYS",
+        "company_name": "TD Power Systems Limited",
+        "rs_rating": 97,
+        "return_1m": -1.24,
+        "return_3m": 22.15,
+        "return_6m": 51.36,
+        "relative_return_3m": 32.94,
+        "relative_return_6m": 63.42
+      },
+      {
+        "symbol": "POWERINDIA",
+        "company_name": "Hitachi Energy India Limited",
+        "rs_rating": 96,
+        "return_1m": 1.46,
+        "return_3m": 38.15,
+        "return_6m": 33.44,
+        "relative_return_3m": 48.94,
+        "relative_return_6m": 45.5
+      },
+      {
+        "symbol": "GVT&D",
+        "company_name": "GE Vernova T&D India Limited",
+        "rs_rating": 96,
+        "return_1m": -1.17,
+        "return_3m": 22.71,
+        "return_6m": 24.75,
+        "relative_return_3m": 33.5,
+        "relative_return_6m": 36.81
+      },
+      {
+        "symbol": "QPOWER",
+        "company_name": "Quality Power Electrical Equipments Limited",
+        "rs_rating": 95,
+        "return_1m": -2.72,
+        "return_3m": 17.96,
+        "return_6m": -10.0,
+        "relative_return_3m": 28.75,
+        "relative_return_6m": 2.06
+      },
+      {
+        "symbol": "ATLANTAELE",
+        "company_name": "Atlanta Electricals Limited",
+        "rs_rating": 94,
+        "return_1m": 35.69,
+        "return_3m": 27.6,
+        "return_6m": 45.75,
+        "relative_return_3m": 38.39,
+        "relative_return_6m": 57.81
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 5.08,
+    "rankChange1w": 4
+  },
+  {
+    "rank": 8,
+    "groupId": "agri-commodities",
+    "groupName": "Agri Commodities",
+    "score": 72.0,
+    "return1m": -6.01,
+    "return3m": -2.61,
+    "return6m": -3.19,
+    "relativeReturn1m": 2.93,
+    "relativeReturn3m": 8.18,
+    "relativeReturn6m": 8.87,
+    "above50dma": 45.45,
+    "above200dma": 27.27,
+    "breadthScore": 47.73,
+    "leaders": [
+      "AVANTIFEED",
+      "GAEL",
+      "GRMOVER"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "AVANTIFEED",
+        "company_name": "Avanti Feeds Limited",
+        "rs_rating": 97,
+        "return_1m": -10.37,
+        "return_3m": 47.94,
+        "return_6m": 76.5,
+        "relative_return_3m": 58.73,
+        "relative_return_6m": 88.56
+      },
+      {
+        "symbol": "GAEL",
+        "company_name": "Gujarat Ambuja Exports Limited",
+        "rs_rating": 90,
+        "return_1m": -2.32,
+        "return_3m": 12.14,
+        "return_6m": 30.53,
+        "relative_return_3m": 22.93,
+        "relative_return_6m": 42.59
+      },
+      {
+        "symbol": "GRMOVER",
+        "company_name": "GRM Overseas Limited",
+        "rs_rating": 90,
+        "return_1m": -5.44,
+        "return_3m": -7.23,
+        "return_6m": 29.58,
+        "relative_return_3m": 3.56,
+        "relative_return_6m": 41.64
+      },
+      {
+        "symbol": "GULPOLY",
+        "company_name": "Gulshan Polyols Limited",
+        "rs_rating": 65,
+        "return_1m": -2.82,
+        "return_3m": 4.91,
+        "return_6m": -3.31,
+        "relative_return_3m": 15.7,
+        "relative_return_6m": 8.75
+      },
+      {
+        "symbol": "LTFOODS",
+        "company_name": "LT Foods Limited",
+        "rs_rating": 65,
+        "return_1m": -5.75,
+        "return_3m": -4.47,
+        "return_6m": -10.2,
+        "relative_return_3m": 6.32,
+        "relative_return_6m": 1.86
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 5.71,
+    "rankChange1w": 6
+  },
+  {
+    "rank": 9,
+    "groupId": "steel-steel-products",
+    "groupName": "Steel & Steel Products",
+    "score": 69.65,
+    "return1m": -7.01,
+    "return3m": -3.48,
+    "return6m": -11.73,
+    "relativeReturn1m": 1.93,
+    "relativeReturn3m": 7.31,
+    "relativeReturn6m": 0.33,
+    "above50dma": 34.15,
+    "above200dma": 24.39,
+    "breadthScore": 45.73,
+    "leaders": [
+      "JAYNECOIND",
+      "AEROFLEX",
+      "GPIL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "JAYNECOIND",
+        "company_name": "Jayaswal Neco Industries Limited",
+        "rs_rating": 96,
+        "return_1m": 2.0,
+        "return_3m": -1.46,
+        "return_6m": 9.67,
+        "relative_return_3m": 9.33,
+        "relative_return_6m": 21.73
+      },
+      {
+        "symbol": "AEROFLEX",
+        "company_name": "Aeroflex Industries Limited",
+        "rs_rating": 93,
+        "return_1m": 11.18,
+        "return_3m": 25.72,
+        "return_6m": 36.05,
+        "relative_return_3m": 36.51,
+        "relative_return_6m": 48.11
+      },
+      {
+        "symbol": "GPIL",
+        "company_name": "Godawari Power And Ispat limited",
+        "rs_rating": 91,
+        "return_1m": 1.51,
+        "return_3m": 8.91,
+        "return_6m": 3.29,
+        "relative_return_3m": 19.7,
+        "relative_return_6m": 15.35
+      },
+      {
+        "symbol": "SAIL",
+        "company_name": "Steel Authority of India Limited",
+        "rs_rating": 90,
+        "return_1m": -6.38,
+        "return_3m": 16.69,
+        "return_6m": 13.25,
+        "relative_return_3m": 27.48,
+        "relative_return_6m": 25.31
+      },
+      {
+        "symbol": "TATASTEEL",
+        "company_name": "Tata Steel Limited",
+        "rs_rating": 88,
+        "return_1m": -9.85,
+        "return_3m": 14.42,
+        "return_6m": 12.07,
+        "relative_return_3m": 25.21,
+        "relative_return_6m": 24.13
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 2.57,
+    "rankChange1w": 3
+  },
+  {
+    "rank": 10,
+    "groupId": "abrasives-bearings",
+    "groupName": "Abrasives & Bearings",
+    "score": 69.35,
+    "return1m": -5.61,
+    "return3m": -6.09,
+    "return6m": -12.18,
+    "relativeReturn1m": 3.33,
+    "relativeReturn3m": 4.7,
+    "relativeReturn6m": -0.12,
+    "above50dma": 40.0,
+    "above200dma": 20.0,
+    "breadthScore": 40.0,
+    "leaders": [
+      "TIMKEN",
+      "CARBORUNIV",
+      "SKFINDUS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TIMKEN",
+        "company_name": "Timken India Limited",
+        "rs_rating": 83,
+        "return_1m": -0.65,
+        "return_3m": 7.88,
+        "return_6m": 8.63,
+        "relative_return_3m": 18.67,
+        "relative_return_6m": 20.69
+      },
+      {
+        "symbol": "CARBORUNIV",
+        "company_name": "Carborundum Universal Limited",
+        "rs_rating": 63,
+        "return_1m": 2.11,
+        "return_3m": 0.5,
+        "return_6m": -12.23,
+        "relative_return_3m": 11.29,
+        "relative_return_6m": -0.17
+      },
+      {
+        "symbol": "SKFINDUS",
+        "company_name": "SKF India (Industrial) Limited",
+        "rs_rating": 55,
+        "return_1m": -9.57,
+        "return_3m": -9.54,
+        "return_6m": -13.99,
+        "relative_return_3m": 1.25,
+        "relative_return_6m": -1.93
+      },
+      {
+        "symbol": "GRINDWELL",
+        "company_name": "Grindwell Norton Limited",
+        "rs_rating": 47,
+        "return_1m": -15.71,
+        "return_3m": -10.56,
+        "return_6m": -13.14,
+        "relative_return_3m": 0.23,
+        "relative_return_6m": -1.08
+      },
+      {
+        "symbol": "WENDT",
+        "company_name": "Wendt (India) Limited",
+        "rs_rating": 22,
+        "return_1m": -4.23,
+        "return_3m": -18.75,
+        "return_6m": -30.19,
+        "relative_return_3m": -7.96,
+        "relative_return_6m": -18.13
+      }
+    ],
+    "strengthBucket": "Top 10",
+    "trendLabel": "Improving",
+    "scoreChange1w": 7.16,
+    "rankChange1w": 9
+  },
+  {
+    "rank": 11,
+    "groupId": "shipping-ports",
+    "groupName": "Shipping & Ports",
+    "score": 68.11,
+    "return1m": -7.07,
+    "return3m": 1.92,
+    "return6m": 13.02,
+    "relativeReturn1m": 1.87,
+    "relativeReturn3m": 12.71,
+    "relativeReturn6m": 25.08,
+    "above50dma": 16.67,
+    "above200dma": 41.67,
+    "breadthScore": 56.25,
+    "leaders": [
+      "SWANDEF",
+      "SEAMECLTD",
+      "GESHIP"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SWANDEF",
+        "company_name": "SWAN DEFENCE AND HEAVY INDUSTRIES LIMITED",
+        "rs_rating": 99,
+        "return_1m": -16.05,
+        "return_3m": 380.22,
+        "return_6m": 70131.82,
+        "relative_return_3m": 391.01,
+        "relative_return_6m": 70143.88
+      },
+      {
+        "symbol": "SEAMECLTD",
+        "company_name": "Seamec Limited",
+        "rs_rating": 97,
+        "return_1m": 11.6,
+        "return_3m": 46.79,
+        "return_6m": 58.23,
+        "relative_return_3m": 57.58,
+        "relative_return_6m": 70.29
+      },
+      {
+        "symbol": "GESHIP",
+        "company_name": "The Great Eastern Shipping Company Limited",
+        "rs_rating": 95,
+        "return_1m": 6.85,
+        "return_3m": 32.18,
+        "return_6m": 41.77,
+        "relative_return_3m": 42.97,
+        "relative_return_6m": 53.83
+      },
+      {
+        "symbol": "KMEW",
+        "company_name": "Knowledge Marine & Engineering Works Limited",
+        "rs_rating": 94,
+        "return_1m": -2.87,
+        "return_3m": -12.77,
+        "return_6m": 23.82,
+        "relative_return_3m": -1.98,
+        "relative_return_6m": 35.88
+      },
+      {
+        "symbol": "DREDGECORP",
+        "company_name": "Dredging Corporation of India Limited",
+        "rs_rating": 84,
+        "return_1m": -8.76,
+        "return_3m": -15.83,
+        "return_6m": 25.33,
+        "relative_return_3m": -5.04,
+        "relative_return_6m": 37.39
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -12.56,
+    "rankChange1w": -7
+  },
+  {
+    "rank": 12,
+    "groupId": "private-banks",
+    "groupName": "Private Banks",
+    "score": 67.34,
+    "return1m": -13.19,
+    "return3m": -6.35,
+    "return6m": 6.76,
+    "relativeReturn1m": -4.25,
+    "relativeReturn3m": 4.44,
+    "relativeReturn6m": 18.82,
+    "above50dma": 15.79,
+    "above200dma": 42.11,
+    "breadthScore": 59.21,
+    "leaders": [
+      "TMB",
+      "KARURVYSYA",
+      "RBLBANK"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TMB",
+        "company_name": "Tamilnad Mercantile Bank Limited",
+        "rs_rating": 94,
+        "return_1m": -9.31,
+        "return_3m": 21.82,
+        "return_6m": 45.04,
+        "relative_return_3m": 32.61,
+        "relative_return_6m": 57.1
+      },
+      {
+        "symbol": "KARURVYSYA",
+        "company_name": "Karur Vysya Bank Limited",
+        "rs_rating": 92,
+        "return_1m": -18.82,
+        "return_3m": 4.05,
+        "return_6m": 28.81,
+        "relative_return_3m": 14.84,
+        "relative_return_6m": 40.87
+      },
+      {
+        "symbol": "RBLBANK",
+        "company_name": "RBL Bank Limited",
+        "rs_rating": 91,
+        "return_1m": -8.52,
+        "return_3m": -0.51,
+        "return_6m": 11.6,
+        "relative_return_3m": 10.28,
+        "relative_return_6m": 23.66
+      },
+      {
+        "symbol": "FEDERALBNK",
+        "company_name": "The Federal Bank  Limited",
+        "rs_rating": 90,
+        "return_1m": -11.23,
+        "return_3m": 1.34,
+        "return_6m": 37.15,
+        "relative_return_3m": 12.13,
+        "relative_return_6m": 49.21
+      },
+      {
+        "symbol": "KTKBANK",
+        "company_name": "The Karnataka Bank Limited",
+        "rs_rating": 89,
+        "return_1m": 10.51,
+        "return_3m": 12.66,
+        "return_6m": 31.17,
+        "relative_return_3m": 23.45,
+        "relative_return_6m": 43.23
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -10.13,
+    "rankChange1w": -5
+  },
+  {
+    "rank": 13,
+    "groupId": "two-wheeler-oems",
+    "groupName": "Two-Wheeler OEMs",
+    "score": 67.03,
+    "return1m": -6.92,
+    "return3m": -9.02,
+    "return6m": -10.4,
+    "relativeReturn1m": 2.02,
+    "relativeReturn3m": 1.77,
+    "relativeReturn6m": 1.66,
+    "above50dma": 33.33,
+    "above200dma": 16.67,
+    "breadthScore": 50.0,
+    "leaders": [
+      "ATHERENERG",
+      "TVSMOTOR",
+      "HEROMOTOCO"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ATHERENERG",
+        "company_name": "Ather Energy Limited",
+        "rs_rating": 97,
+        "return_1m": 7.49,
+        "return_3m": 6.94,
+        "return_6m": 30.48,
+        "relative_return_3m": 17.73,
+        "relative_return_6m": 42.54
+      },
+      {
+        "symbol": "TVSMOTOR",
+        "company_name": "TVS Motor Company Limited",
+        "rs_rating": 82,
+        "return_1m": -13.73,
+        "return_3m": -6.66,
+        "return_6m": -1.77,
+        "relative_return_3m": 4.13,
+        "relative_return_6m": 10.29
+      },
+      {
+        "symbol": "HEROMOTOCO",
+        "company_name": "Hero MotoCorp Limited",
+        "rs_rating": 82,
+        "return_1m": -12.53,
+        "return_3m": -9.24,
+        "return_6m": -3.04,
+        "relative_return_3m": 1.55,
+        "relative_return_6m": 9.02
+      },
+      {
+        "symbol": "EICHERMOT",
+        "company_name": "Eicher Motors Limited",
+        "rs_rating": 79,
+        "return_1m": -16.83,
+        "return_3m": -9.07,
+        "return_6m": -5.01,
+        "relative_return_3m": 1.72,
+        "relative_return_6m": 7.05
+      },
+      {
+        "symbol": "BAJAJ-AUTO",
+        "company_name": "Bajaj Auto Limited",
+        "rs_rating": 76,
+        "return_1m": -13.44,
+        "return_3m": -3.58,
+        "return_6m": -1.12,
+        "relative_return_3m": 7.21,
+        "relative_return_6m": 10.94
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -11.35,
+    "rankChange1w": -8
+  },
+  {
+    "rank": 14,
+    "groupId": "electrodes-refractories",
+    "groupName": "Electrodes & Refractories",
+    "score": 65.36,
+    "return1m": -11.7,
+    "return3m": -10.29,
+    "return6m": -5.22,
+    "relativeReturn1m": -2.76,
+    "relativeReturn3m": 0.5,
+    "relativeReturn6m": 6.84,
+    "above50dma": 20.0,
+    "above200dma": 40.0,
+    "breadthScore": 50.0,
+    "leaders": [
+      "GRAPHITE",
+      "HEG",
+      "VESUVIUS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GRAPHITE",
+        "company_name": "Graphite India Limited",
+        "rs_rating": 87,
+        "return_1m": -11.58,
+        "return_3m": 9.13,
+        "return_6m": 11.19,
+        "relative_return_3m": 19.92,
+        "relative_return_6m": 23.25
+      },
+      {
+        "symbol": "HEG",
+        "company_name": "HEG Limited",
+        "rs_rating": 82,
+        "return_1m": -4.98,
+        "return_3m": -1.75,
+        "return_6m": 5.38,
+        "relative_return_3m": 9.04,
+        "relative_return_6m": 17.44
+      },
+      {
+        "symbol": "VESUVIUS",
+        "company_name": "Vesuvius India Limited",
+        "rs_rating": 62,
+        "return_1m": -11.91,
+        "return_3m": -4.68,
+        "return_6m": -11.41,
+        "relative_return_3m": 6.11,
+        "relative_return_6m": 0.65
+      },
+      {
+        "symbol": "RPEL",
+        "company_name": "Raghav Productivity Enhancers Limited",
+        "rs_rating": 43,
+        "return_1m": -13.73,
+        "return_3m": -35.21,
+        "return_6m": -10.26,
+        "relative_return_3m": -24.42,
+        "relative_return_6m": 1.8
+      },
+      {
+        "symbol": "RHIM",
+        "company_name": "RHI MAGNESITA INDIA LIMITED",
+        "rs_rating": 32,
+        "return_1m": -16.29,
+        "return_3m": -18.94,
+        "return_6m": -21.02,
+        "relative_return_3m": -8.15,
+        "relative_return_6m": -8.96
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 12.41,
+    "rankChange1w": 16
+  },
+  {
+    "rank": 15,
+    "groupId": "psu-banks",
+    "groupName": "PSU Banks",
+    "score": 64.98,
+    "return1m": -16.34,
+    "return3m": -3.53,
+    "return6m": 1.54,
+    "relativeReturn1m": -7.4,
+    "relativeReturn3m": 7.26,
+    "relativeReturn6m": 13.6,
+    "above50dma": 0.0,
+    "above200dma": 41.67,
+    "breadthScore": 54.16,
+    "leaders": [
+      "INDIANB",
+      "UNIONBANK",
+      "MAHABANK"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "INDIANB",
+        "company_name": "Indian Bank",
+        "rs_rating": 93,
+        "return_1m": -11.55,
+        "return_3m": 11.76,
+        "return_6m": 22.85,
+        "relative_return_3m": 22.55,
+        "relative_return_6m": 34.91
+      },
+      {
+        "symbol": "UNIONBANK",
+        "company_name": "Union Bank of India",
+        "rs_rating": 91,
+        "return_1m": -13.36,
+        "return_3m": 14.95,
+        "return_6m": 24.08,
+        "relative_return_3m": 25.74,
+        "relative_return_6m": 36.14
+      },
+      {
+        "symbol": "MAHABANK",
+        "company_name": "Bank of Maharashtra",
+        "rs_rating": 90,
+        "return_1m": -13.4,
+        "return_3m": 14.28,
+        "return_6m": 15.61,
+        "relative_return_3m": 25.07,
+        "relative_return_6m": 27.67
+      },
+      {
+        "symbol": "SBIN",
+        "company_name": "State Bank of India",
+        "rs_rating": 88,
+        "return_1m": -15.17,
+        "return_3m": 5.35,
+        "return_6m": 17.52,
+        "relative_return_3m": 16.14,
+        "relative_return_6m": 29.58
+      },
+      {
+        "symbol": "BANKINDIA",
+        "company_name": "Bank of India",
+        "rs_rating": 86,
+        "return_1m": -20.63,
+        "return_3m": -0.3,
+        "return_6m": 15.17,
+        "relative_return_3m": 10.49,
+        "relative_return_6m": 27.23
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -10.2,
+    "rankChange1w": -7
+  },
+  {
+    "rank": 16,
+    "groupId": "asset-managers",
+    "groupName": "Asset Managers",
+    "score": 63.78,
+    "return1m": -10.96,
+    "return3m": -6.68,
+    "return6m": -9.12,
+    "relativeReturn1m": -2.02,
+    "relativeReturn3m": 4.11,
+    "relativeReturn6m": 2.94,
+    "above50dma": 16.67,
+    "above200dma": 16.67,
+    "breadthScore": 41.66,
+    "leaders": [
+      "ABSLAMC",
+      "NAM-INDIA",
+      "ICICIAMC"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ABSLAMC",
+        "company_name": "Aditya Birla Sun Life AMC Limited",
+        "rs_rating": 91,
+        "return_1m": 0.49,
+        "return_3m": 18.89,
+        "return_6m": 12.79,
+        "relative_return_3m": 29.68,
+        "relative_return_6m": 24.85
+      },
+      {
+        "symbol": "NAM-INDIA",
+        "company_name": "Nippon Life India Asset Management Limited",
+        "rs_rating": 82,
+        "return_1m": -15.14,
+        "return_3m": -4.51,
+        "return_6m": -1.76,
+        "relative_return_3m": 6.28,
+        "relative_return_6m": 10.3
+      },
+      {
+        "symbol": "ICICIAMC",
+        "company_name": "ICICI Prudential Asset Management Company Limited",
+        "rs_rating": 73,
+        "return_1m": -8.77,
+        "return_3m": 8.41,
+        "return_6m": 10.25,
+        "relative_return_3m": 19.2,
+        "relative_return_6m": 22.31
+      },
+      {
+        "symbol": "HDFCAMC",
+        "company_name": "HDFC Asset Management Company Limited",
+        "rs_rating": 65,
+        "return_1m": -14.08,
+        "return_3m": -10.94,
+        "return_6m": -18.57,
+        "relative_return_3m": -0.15,
+        "relative_return_6m": -6.51
+      },
+      {
+        "symbol": "CRAMC",
+        "company_name": "Canara Robeco Asset Management Company Limited",
+        "rs_rating": 40,
+        "return_1m": -8.91,
+        "return_3m": -24.99,
+        "return_6m": -22.73,
+        "relative_return_3m": -14.2,
+        "relative_return_6m": -10.67
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -7.13,
+    "rankChange1w": -6
+  },
+  {
+    "rank": 17,
+    "groupId": "power-generation",
+    "groupName": "Power Generation",
+    "score": 63.72,
+    "return1m": -3.24,
+    "return3m": -6.27,
+    "return6m": -18.48,
+    "relativeReturn1m": 5.7,
+    "relativeReturn3m": 4.52,
+    "relativeReturn6m": -6.42,
+    "above50dma": 29.41,
+    "above200dma": 17.65,
+    "breadthScore": 33.82,
+    "leaders": [
+      "ACMESOLAR",
+      "NLCINDIA",
+      "NTPC"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ACMESOLAR",
+        "company_name": "Acme Solar Holdings Limited",
+        "rs_rating": 87,
+        "return_1m": 17.13,
+        "return_3m": 18.66,
+        "return_6m": -3.42,
+        "relative_return_3m": 29.45,
+        "relative_return_6m": 8.64
+      },
+      {
+        "symbol": "NLCINDIA",
+        "company_name": "NLC India Limited",
+        "rs_rating": 85,
+        "return_1m": 6.0,
+        "return_3m": 13.32,
+        "return_6m": 1.03,
+        "relative_return_3m": 24.11,
+        "relative_return_6m": 13.09
+      },
+      {
+        "symbol": "NTPC",
+        "company_name": "NTPC Limited",
+        "rs_rating": 82,
+        "return_1m": -6.76,
+        "return_3m": 11.57,
+        "return_6m": 4.91,
+        "relative_return_3m": 22.36,
+        "relative_return_6m": 16.97
+      },
+      {
+        "symbol": "NAVA",
+        "company_name": "NAVA LIMITED",
+        "rs_rating": 72,
+        "return_1m": -4.51,
+        "return_3m": 0.28,
+        "return_6m": -20.35,
+        "relative_return_3m": 11.07,
+        "relative_return_6m": -8.29
+      },
+      {
+        "symbol": "NTPCGREEN",
+        "company_name": "NTPC Green Energy Limited",
+        "rs_rating": 71,
+        "return_1m": 8.29,
+        "return_3m": 5.08,
+        "return_6m": -4.52,
+        "relative_return_3m": 15.87,
+        "relative_return_6m": 7.54
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 5.47,
+    "rankChange1w": 7
+  },
+  {
+    "rank": 18,
+    "groupId": "pharma",
+    "groupName": "Pharma",
+    "score": 63.69,
+    "return1m": -3.99,
+    "return3m": -6.24,
+    "return6m": -10.19,
+    "relativeReturn1m": 4.95,
+    "relativeReturn3m": 4.55,
+    "relativeReturn6m": 1.87,
+    "above50dma": 36.9,
+    "above200dma": 30.95,
+    "breadthScore": 42.26,
+    "leaders": [
+      "VENUSREM",
+      "NGLFINE",
+      "BLISSGVS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "VENUSREM",
+        "company_name": "Venus Remedies Limited",
+        "rs_rating": 98,
+        "return_1m": 30.78,
+        "return_3m": 11.84,
+        "return_6m": 96.02,
+        "relative_return_3m": 22.63,
+        "relative_return_6m": 108.08
+      },
+      {
+        "symbol": "NGLFINE",
+        "company_name": "NGL Fine-Chem Limited",
+        "rs_rating": 98,
+        "return_1m": -4.9,
+        "return_3m": 61.19,
+        "return_6m": 47.81,
+        "relative_return_3m": 71.98,
+        "relative_return_6m": 59.87
+      },
+      {
+        "symbol": "BLISSGVS",
+        "company_name": "Bliss GVS Pharma Limited",
+        "rs_rating": 97,
+        "return_1m": 6.84,
+        "return_3m": 40.66,
+        "return_6m": 54.74,
+        "relative_return_3m": 51.45,
+        "relative_return_6m": 66.8
+      },
+      {
+        "symbol": "ACUTAAS",
+        "company_name": "Acutaas Chemicals Limited",
+        "rs_rating": 96,
+        "return_1m": -2.92,
+        "return_3m": 27.18,
+        "return_6m": 45.0,
+        "relative_return_3m": 37.97,
+        "relative_return_6m": 57.06
+      },
+      {
+        "symbol": "SAKAR",
+        "company_name": "Sakar Healthcare Limited",
+        "rs_rating": 96,
+        "return_1m": -1.65,
+        "return_3m": 20.84,
+        "return_6m": 39.21,
+        "relative_return_3m": 31.63,
+        "relative_return_6m": 51.27
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": 0.57,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 19,
+    "groupId": "industrial-machinery",
+    "groupName": "Industrial Machinery",
+    "score": 60.04,
+    "return1m": -6.34,
+    "return3m": -7.62,
+    "return6m": -16.63,
+    "relativeReturn1m": 2.6,
+    "relativeReturn3m": 3.17,
+    "relativeReturn6m": -4.57,
+    "above50dma": 41.67,
+    "above200dma": 25.0,
+    "breadthScore": 43.75,
+    "leaders": [
+      "KIRLOSENG",
+      "CUMMINSIND",
+      "KSB"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "KIRLOSENG",
+        "company_name": "Kirloskar Oil Engines Limited",
+        "rs_rating": 95,
+        "return_1m": -2.05,
+        "return_3m": 9.32,
+        "return_6m": 44.88,
+        "relative_return_3m": 20.11,
+        "relative_return_6m": 56.94
+      },
+      {
+        "symbol": "CUMMINSIND",
+        "company_name": "Cummins India Limited",
+        "rs_rating": 92,
+        "return_1m": -5.45,
+        "return_3m": 7.48,
+        "return_6m": 17.11,
+        "relative_return_3m": 18.27,
+        "relative_return_6m": 29.17
+      },
+      {
+        "symbol": "KSB",
+        "company_name": "Ksb Limited",
+        "rs_rating": 81,
+        "return_1m": 16.72,
+        "return_3m": 10.13,
+        "return_6m": -2.31,
+        "relative_return_3m": 20.92,
+        "relative_return_6m": 9.75
+      },
+      {
+        "symbol": "INGERRAND",
+        "company_name": "Ingersoll Rand (India) Limited",
+        "rs_rating": 77,
+        "return_1m": -7.79,
+        "return_3m": 8.23,
+        "return_6m": -6.99,
+        "relative_return_3m": 19.02,
+        "relative_return_6m": 5.07
+      },
+      {
+        "symbol": "ELGIEQUIP",
+        "company_name": "Elgi Equipments Limited",
+        "rs_rating": 71,
+        "return_1m": -12.1,
+        "return_3m": 3.5,
+        "return_6m": -4.37,
+        "relative_return_3m": 14.29,
+        "relative_return_6m": 7.69
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": -1.38,
+    "rankChange1w": 1
+  },
+  {
+    "rank": 20,
+    "groupId": "edible-oils",
+    "groupName": "Edible Oils",
+    "score": 58.27,
+    "return1m": -3.08,
+    "return3m": -8.86,
+    "return6m": -15.06,
+    "relativeReturn1m": 5.86,
+    "relativeReturn3m": 1.93,
+    "relativeReturn6m": -3.0,
+    "above50dma": 20.0,
+    "above200dma": 40.0,
+    "breadthScore": 35.0,
+    "leaders": [
+      "GOKULAGRO",
+      "MARICO",
+      "PATANJALI"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GOKULAGRO",
+        "company_name": "Gokul Agro Resources Limited",
+        "rs_rating": 88,
+        "return_1m": 14.11,
+        "return_3m": 6.31,
+        "return_6m": -4.78,
+        "relative_return_3m": 17.1,
+        "relative_return_6m": 7.28
+      },
+      {
+        "symbol": "MARICO",
+        "company_name": "Marico Limited",
+        "rs_rating": 82,
+        "return_1m": -5.73,
+        "return_3m": 2.27,
+        "return_6m": 7.43,
+        "relative_return_3m": 13.06,
+        "relative_return_6m": 19.49
+      },
+      {
+        "symbol": "PATANJALI",
+        "company_name": "Patanjali Foods Limited",
+        "rs_rating": 41,
+        "return_1m": -9.98,
+        "return_3m": -14.55,
+        "return_6m": -22.04,
+        "relative_return_3m": -3.76,
+        "relative_return_6m": -9.98
+      },
+      {
+        "symbol": "SUNDROP",
+        "company_name": "Sundrop Brands Limited",
+        "rs_rating": 26,
+        "return_1m": -10.1,
+        "return_3m": -15.83,
+        "return_6m": -28.54,
+        "relative_return_3m": -5.04,
+        "relative_return_6m": -16.48
+      },
+      {
+        "symbol": "AWL",
+        "company_name": "AWL Agri Business Limited",
+        "rs_rating": 19,
+        "return_1m": -3.71,
+        "return_3m": -22.49,
+        "return_6m": -27.35,
+        "relative_return_3m": -11.7,
+        "relative_return_6m": -15.29
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 1.73,
+    "rankChange1w": 7
+  },
+  {
+    "rank": 21,
+    "groupId": "special-situations-sme-leaders",
+    "groupName": "Special Situations & SME Leaders",
+    "score": 58.01,
+    "return1m": -7.81,
+    "return3m": -8.31,
+    "return6m": -1.96,
+    "relativeReturn1m": 1.13,
+    "relativeReturn3m": 2.48,
+    "relativeReturn6m": 10.1,
+    "above50dma": 28.07,
+    "above200dma": 31.58,
+    "breadthScore": 39.03,
+    "leaders": [
+      "COLAB",
+      "TITANBIO",
+      "MIDWEST"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "COLAB",
+        "company_name": "COLAB PLATFORMS LIMITED",
+        "rs_rating": 99,
+        "return_1m": -18.77,
+        "return_3m": 85.8,
+        "return_6m": 352.61,
+        "relative_return_3m": 96.59,
+        "relative_return_6m": 364.67
+      },
+      {
+        "symbol": "TITANBIO",
+        "company_name": "Titan Bio-Tech Ltd.",
+        "rs_rating": 99,
+        "return_1m": 96.45,
+        "return_3m": 128.77,
+        "return_6m": 152.94,
+        "relative_return_3m": 139.56,
+        "relative_return_6m": 165.0
+      },
+      {
+        "symbol": "MIDWEST",
+        "company_name": "Midwest Gold Ltd",
+        "rs_rating": 99,
+        "return_1m": 2.16,
+        "return_3m": 1.22,
+        "return_6m": 75.21,
+        "relative_return_3m": 12.01,
+        "relative_return_6m": 87.27
+      },
+      {
+        "symbol": "MODINSU",
+        "company_name": "Modern Insulators Ltd.",
+        "rs_rating": 98,
+        "return_1m": -3.14,
+        "return_3m": 28.78,
+        "return_6m": 84.72,
+        "relative_return_3m": 39.57,
+        "relative_return_6m": 96.78
+      },
+      {
+        "symbol": "ONIXSOLAR",
+        "company_name": "ONIX SOLAR ENERGY LIMITED",
+        "rs_rating": 98,
+        "return_1m": 65.03,
+        "return_3m": 150.73,
+        "return_6m": 67.69,
+        "relative_return_3m": 161.52,
+        "relative_return_6m": 79.75
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 0.66,
+    "rankChange1w": 4
+  },
+  {
+    "rank": 22,
+    "groupId": "cables-wires",
+    "groupName": "Cables & Wires",
+    "score": 57.23,
+    "return1m": -7.37,
+    "return3m": -13.23,
+    "return6m": -14.64,
+    "relativeReturn1m": 1.57,
+    "relativeReturn3m": -2.44,
+    "relativeReturn6m": -2.58,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 31.25,
+    "leaders": [
+      "KEI",
+      "RRKABEL",
+      "POLYCAB"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "KEI",
+        "company_name": "KEI Industries Limited",
+        "rs_rating": 80,
+        "return_1m": -18.25,
+        "return_3m": -7.35,
+        "return_6m": -0.81,
+        "relative_return_3m": 3.44,
+        "relative_return_6m": 11.25
+      },
+      {
+        "symbol": "RRKABEL",
+        "company_name": "R R Kabel Limited",
+        "rs_rating": 79,
+        "return_1m": -11.62,
+        "return_3m": -11.09,
+        "return_6m": 3.4,
+        "relative_return_3m": -0.3,
+        "relative_return_6m": 15.46
+      },
+      {
+        "symbol": "POLYCAB",
+        "company_name": "Polycab India Limited",
+        "rs_rating": 78,
+        "return_1m": -17.63,
+        "return_3m": -8.99,
+        "return_6m": -8.7,
+        "relative_return_3m": 1.8,
+        "relative_return_6m": 3.36
+      },
+      {
+        "symbol": "FINCABLES",
+        "company_name": "Finolex Cables Limited",
+        "rs_rating": 70,
+        "return_1m": -3.61,
+        "return_3m": 3.85,
+        "return_6m": -3.63,
+        "relative_return_3m": 14.64,
+        "relative_return_6m": 8.43
+      },
+      {
+        "symbol": "UNIVCABLES",
+        "company_name": "Universal Cables Limited",
+        "rs_rating": 63,
+        "return_1m": -0.82,
+        "return_3m": -23.88,
+        "return_6m": -10.74,
+        "relative_return_3m": -13.09,
+        "relative_return_6m": 1.32
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -7.04,
+    "rankChange1w": -6
+  },
+  {
+    "rank": 23,
+    "groupId": "auto-ancillaries",
+    "groupName": "Auto Ancillaries",
+    "score": 56.95,
+    "return1m": -11.7,
+    "return3m": -8.65,
+    "return6m": -9.0,
+    "relativeReturn1m": -2.76,
+    "relativeReturn3m": 2.14,
+    "relativeReturn6m": 3.06,
+    "above50dma": 19.7,
+    "above200dma": 30.3,
+    "breadthScore": 38.26,
+    "leaders": [
+      "SEDEMAC",
+      "LUMAXTECH",
+      "SANSERA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SEDEMAC",
+        "company_name": "SEDEMAC Mechatronics Limited",
+        "rs_rating": 97,
+        "return_1m": 24.25,
+        "return_3m": 7.97,
+        "return_6m": 38.25,
+        "relative_return_3m": 18.76,
+        "relative_return_6m": 50.31
+      },
+      {
+        "symbol": "LUMAXTECH",
+        "company_name": "Lumax Auto Technologies Limited",
+        "rs_rating": 97,
+        "return_1m": -6.37,
+        "return_3m": 3.64,
+        "return_6m": 36.82,
+        "relative_return_3m": 14.43,
+        "relative_return_6m": 48.88
+      },
+      {
+        "symbol": "SANSERA",
+        "company_name": "Sansera Engineering Limited",
+        "rs_rating": 95,
+        "return_1m": -10.05,
+        "return_3m": 24.62,
+        "return_6m": 41.14,
+        "relative_return_3m": 35.41,
+        "relative_return_6m": 53.2
+      },
+      {
+        "symbol": "RACLGEAR",
+        "company_name": "RACL Geartech Limited",
+        "rs_rating": 95,
+        "return_1m": -10.44,
+        "return_3m": 19.65,
+        "return_6m": 35.95,
+        "relative_return_3m": 30.44,
+        "relative_return_6m": 48.01
+      },
+      {
+        "symbol": "BELRISE",
+        "company_name": "Belrise Industries Limited",
+        "rs_rating": 94,
+        "return_1m": 3.35,
+        "return_3m": 6.58,
+        "return_6m": 18.38,
+        "relative_return_3m": 17.37,
+        "relative_return_6m": 30.44
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -2.71,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 24,
+    "groupId": "paper",
+    "groupName": "Paper",
+    "score": 56.29,
+    "return1m": -4.62,
+    "return3m": -11.63,
+    "return6m": -20.17,
+    "relativeReturn1m": 4.32,
+    "relativeReturn3m": -0.84,
+    "relativeReturn6m": -8.11,
+    "above50dma": 20.0,
+    "above200dma": 0.0,
+    "breadthScore": 30.0,
+    "leaders": [
+      "WSTCSTPAPR",
+      "JKPAPER",
+      "TNPL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "WSTCSTPAPR",
+        "company_name": "West Coast Paper Mills Limited",
+        "rs_rating": 68,
+        "return_1m": 5.2,
+        "return_3m": 2.33,
+        "return_6m": -9.77,
+        "relative_return_3m": 13.12,
+        "relative_return_6m": 2.29
+      },
+      {
+        "symbol": "JKPAPER",
+        "company_name": "JK Paper Limited",
+        "rs_rating": 62,
+        "return_1m": -3.18,
+        "return_3m": -9.3,
+        "return_6m": -13.72,
+        "relative_return_3m": 1.49,
+        "relative_return_6m": -1.66
+      },
+      {
+        "symbol": "TNPL",
+        "company_name": "Tamil Nadu Newsprint & Papers Limited",
+        "rs_rating": 57,
+        "return_1m": -3.46,
+        "return_3m": -9.23,
+        "return_6m": -15.51,
+        "relative_return_3m": 1.56,
+        "relative_return_6m": -3.45
+      },
+      {
+        "symbol": "ANDHRAPAP",
+        "company_name": "ANDHRA PAPER LIMITED",
+        "rs_rating": 40,
+        "return_1m": -12.23,
+        "return_3m": -9.95,
+        "return_6m": -23.83,
+        "relative_return_3m": 0.84,
+        "relative_return_6m": -11.77
+      },
+      {
+        "symbol": "ABREL",
+        "company_name": "Aditya Birla Real Estate Limited",
+        "rs_rating": 5,
+        "return_1m": -9.42,
+        "return_3m": -32.0,
+        "return_6m": -38.03,
+        "relative_return_3m": -21.21,
+        "relative_return_6m": -25.97
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -2.92,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 25,
+    "groupId": "omcs-refining",
+    "groupName": "OMCs & Refining",
+    "score": 55.1,
+    "return1m": -12.63,
+    "return3m": -9.71,
+    "return6m": -6.16,
+    "relativeReturn1m": -3.69,
+    "relativeReturn3m": 1.08,
+    "relativeReturn6m": 5.9,
+    "above50dma": 8.33,
+    "above200dma": 16.67,
+    "breadthScore": 33.34,
+    "leaders": [
+      "CHENNPETRO",
+      "MRPL",
+      "IOC"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CHENNPETRO",
+        "company_name": "Chennai Petroleum Corporation Limited",
+        "rs_rating": 95,
+        "return_1m": 12.73,
+        "return_3m": 24.77,
+        "return_6m": 37.2,
+        "relative_return_3m": 35.56,
+        "relative_return_6m": 49.26
+      },
+      {
+        "symbol": "MRPL",
+        "company_name": "Mangalore Refinery and Petrochemicals Limited",
+        "rs_rating": 93,
+        "return_1m": -9.17,
+        "return_3m": 25.34,
+        "return_6m": 42.59,
+        "relative_return_3m": 36.13,
+        "relative_return_6m": 54.65
+      },
+      {
+        "symbol": "IOC",
+        "company_name": "Indian Oil Corporation Limited",
+        "rs_rating": 66,
+        "return_1m": -25.59,
+        "return_3m": -15.04,
+        "return_6m": -4.36,
+        "relative_return_3m": -4.25,
+        "relative_return_6m": 7.7
+      },
+      {
+        "symbol": "RELIANCE",
+        "company_name": "Reliance Industries Limited",
+        "rs_rating": 64,
+        "return_1m": -3.4,
+        "return_3m": -13.36,
+        "return_6m": -2.32,
+        "relative_return_3m": -2.57,
+        "relative_return_6m": 9.74
+      },
+      {
+        "symbol": "CASTROLIND",
+        "company_name": "Castrol India Limited",
+        "rs_rating": 59,
+        "return_1m": -2.03,
+        "return_3m": -5.4,
+        "return_6m": -9.72,
+        "relative_return_3m": 5.39,
+        "relative_return_6m": 2.34
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -1.61,
+    "rankChange1w": 1
+  },
+  {
+    "rank": 26,
+    "groupId": "textiles",
+    "groupName": "Textiles",
+    "score": 54.46,
+    "return1m": -6.51,
+    "return3m": -8.39,
+    "return6m": -14.89,
+    "relativeReturn1m": 2.43,
+    "relativeReturn3m": 2.4,
+    "relativeReturn6m": -2.83,
+    "above50dma": 23.81,
+    "above200dma": 28.57,
+    "breadthScore": 32.14,
+    "leaders": [
+      "SPORTKING",
+      "VTL",
+      "LEMERITE"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SPORTKING",
+        "company_name": "Sportking India Limited",
+        "rs_rating": 94,
+        "return_1m": 11.11,
+        "return_3m": 43.3,
+        "return_6m": 17.22,
+        "relative_return_3m": 54.09,
+        "relative_return_6m": 29.28
+      },
+      {
+        "symbol": "VTL",
+        "company_name": "Vardhman Textiles Limited",
+        "rs_rating": 90,
+        "return_1m": -2.2,
+        "return_3m": 19.35,
+        "return_6m": 28.2,
+        "relative_return_3m": 30.14,
+        "relative_return_6m": 40.26
+      },
+      {
+        "symbol": "LEMERITE",
+        "company_name": "Le Merite Exports Limited",
+        "rs_rating": 87,
+        "return_1m": -1.49,
+        "return_3m": -12.44,
+        "return_6m": 12.65,
+        "relative_return_3m": -1.65,
+        "relative_return_6m": 24.71
+      },
+      {
+        "symbol": "NITINSPIN",
+        "company_name": "Nitin Spinners Limited",
+        "rs_rating": 84,
+        "return_1m": -2.81,
+        "return_3m": 18.17,
+        "return_6m": 9.25,
+        "relative_return_3m": 28.96,
+        "relative_return_6m": 21.31
+      },
+      {
+        "symbol": "MAYURUNIQ",
+        "company_name": "Mayur Uniquoters Ltd",
+        "rs_rating": 79,
+        "return_1m": -2.43,
+        "return_3m": 7.78,
+        "return_6m": 1.3,
+        "relative_return_3m": 18.57,
+        "relative_return_6m": 13.36
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 17.76,
+    "rankChange1w": 23
+  },
+  {
+    "rank": 27,
+    "groupId": "insurance",
+    "groupName": "Insurance",
+    "score": 54.4,
+    "return1m": -11.79,
+    "return3m": -10.57,
+    "return6m": -11.49,
+    "relativeReturn1m": -2.85,
+    "relativeReturn3m": 0.22,
+    "relativeReturn6m": 0.57,
+    "above50dma": 20.0,
+    "above200dma": 20.0,
+    "breadthScore": 36.67,
+    "leaders": [
+      "ANANDRATHI",
+      "STARHEALTH",
+      "CANHLIFE"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ANANDRATHI",
+        "company_name": "Anand Rathi Wealth Limited",
+        "rs_rating": 93,
+        "return_1m": 4.72,
+        "return_3m": 4.49,
+        "return_6m": 7.85,
+        "relative_return_3m": 15.28,
+        "relative_return_6m": 19.91
+      },
+      {
+        "symbol": "STARHEALTH",
+        "company_name": "Star Health and Allied Insurance Company Limited",
+        "rs_rating": 83,
+        "return_1m": -0.46,
+        "return_3m": 5.01,
+        "return_6m": 2.06,
+        "relative_return_3m": 15.8,
+        "relative_return_6m": 14.12
+      },
+      {
+        "symbol": "CANHLIFE",
+        "company_name": "Canara HSBC Life Insurance Company Limited",
+        "rs_rating": 79,
+        "return_1m": -3.92,
+        "return_3m": -0.91,
+        "return_6m": 29.33,
+        "relative_return_3m": 9.88,
+        "relative_return_6m": 41.39
+      },
+      {
+        "symbol": "GICRE",
+        "company_name": "General Insurance Corporation of India",
+        "rs_rating": 72,
+        "return_1m": -3.5,
+        "return_3m": 1.67,
+        "return_6m": 4.02,
+        "relative_return_3m": 12.46,
+        "relative_return_6m": 16.08
+      },
+      {
+        "symbol": "SBILIFE",
+        "company_name": "SBI Life Insurance Company Limited",
+        "rs_rating": 69,
+        "return_1m": -14.58,
+        "return_3m": -12.27,
+        "return_6m": -2.52,
+        "relative_return_3m": -1.48,
+        "relative_return_6m": 9.54
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -8.87,
+    "rankChange1w": -10
+  },
+  {
+    "rank": 28,
+    "groupId": "trading-houses-distribution",
+    "groupName": "Trading Houses & Distribution",
+    "score": 52.23,
+    "return1m": -9.88,
+    "return3m": -9.4,
+    "return6m": -10.15,
+    "relativeReturn1m": -0.94,
+    "relativeReturn3m": 1.39,
+    "relativeReturn6m": 1.91,
+    "above50dma": 20.0,
+    "above200dma": 0.0,
+    "breadthScore": 25.0,
+    "leaders": [
+      "VINCOFE",
+      "MMTC",
+      "MSTCLTD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "VINCOFE",
+        "company_name": "Vintage Coffee And Beverages Limited",
+        "rs_rating": 78,
+        "return_1m": -9.57,
+        "return_3m": -13.26,
+        "return_6m": -11.17,
+        "relative_return_3m": -2.47,
+        "relative_return_6m": 0.89
+      },
+      {
+        "symbol": "MMTC",
+        "company_name": "MMTC Limited",
+        "rs_rating": 49,
+        "return_1m": -11.12,
+        "return_3m": -13.92,
+        "return_6m": -18.97,
+        "relative_return_3m": -3.13,
+        "relative_return_6m": -6.91
+      },
+      {
+        "symbol": "MSTCLTD",
+        "company_name": "Mstc Limited",
+        "rs_rating": 35,
+        "return_1m": -10.43,
+        "return_3m": -19.24,
+        "return_6m": -19.14,
+        "relative_return_3m": -8.45,
+        "relative_return_6m": -7.08
+      },
+      {
+        "symbol": "REDINGTON",
+        "company_name": "Redington Limited",
+        "rs_rating": 21,
+        "return_1m": -17.05,
+        "return_3m": -25.74,
+        "return_6m": -26.59,
+        "relative_return_3m": -14.95,
+        "relative_return_6m": -14.53
+      },
+      {
+        "symbol": "BUILDPRO",
+        "company_name": "Shankara Buildpro Limited",
+        "rs_rating": null,
+        "return_1m": -1.24,
+        "return_3m": 25.14,
+        "return_6m": 25.14,
+        "relative_return_3m": 35.93,
+        "relative_return_6m": 37.2
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -8.73,
+    "rankChange1w": -7
+  },
+  {
+    "rank": 29,
+    "groupId": "telecom-infra-equipment",
+    "groupName": "Telecom Infra & Equipment",
+    "score": 52.18,
+    "return1m": -2.89,
+    "return3m": -7.68,
+    "return6m": -14.68,
+    "relativeReturn1m": 6.05,
+    "relativeReturn3m": 3.11,
+    "relativeReturn6m": -2.62,
+    "above50dma": 33.33,
+    "above200dma": 22.22,
+    "breadthScore": 33.33,
+    "leaders": [
+      "STLTECH",
+      "INDUSTOWER",
+      "HFCL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "STLTECH",
+        "company_name": "Sterlite Technologies Limited",
+        "rs_rating": 98,
+        "return_1m": 6.44,
+        "return_3m": 71.83,
+        "return_6m": 43.59,
+        "relative_return_3m": 82.62,
+        "relative_return_6m": 55.65
+      },
+      {
+        "symbol": "INDUSTOWER",
+        "company_name": "Indus Towers Limited",
+        "rs_rating": 83,
+        "return_1m": -7.68,
+        "return_3m": 1.46,
+        "return_6m": 18.94,
+        "relative_return_3m": 12.25,
+        "relative_return_6m": 31.0
+      },
+      {
+        "symbol": "HFCL",
+        "company_name": "HFCL Limited",
+        "rs_rating": 72,
+        "return_1m": 1.71,
+        "return_3m": 16.24,
+        "return_6m": -5.58,
+        "relative_return_3m": 27.03,
+        "relative_return_6m": 6.48
+      },
+      {
+        "symbol": "ITI",
+        "company_name": "ITI Limited",
+        "rs_rating": 42,
+        "return_1m": -6.13,
+        "return_3m": -19.03,
+        "return_6m": -19.71,
+        "relative_return_3m": -8.24,
+        "relative_return_6m": -7.65
+      },
+      {
+        "symbol": "PACEDIGITK",
+        "company_name": "Pace Digitek Limited",
+        "rs_rating": 30,
+        "return_1m": -12.75,
+        "return_3m": -19.74,
+        "return_6m": -29.07,
+        "relative_return_3m": -8.95,
+        "relative_return_6m": -17.01
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 4.74,
+    "rankChange1w": 9
+  },
+  {
+    "rank": 30,
+    "groupId": "logistics",
+    "groupName": "Logistics",
+    "score": 51.71,
+    "return1m": -9.3,
+    "return3m": -7.14,
+    "return6m": -18.3,
+    "relativeReturn1m": -0.36,
+    "relativeReturn3m": 3.65,
+    "relativeReturn6m": -6.24,
+    "above50dma": 14.29,
+    "above200dma": 7.14,
+    "breadthScore": 30.36,
+    "leaders": [
+      "DELHIVERY",
+      "MAHLOG",
+      "SINDHUTRAD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "DELHIVERY",
+        "company_name": "Delhivery Limited",
+        "rs_rating": 86,
+        "return_1m": -3.08,
+        "return_3m": 4.63,
+        "return_6m": -6.56,
+        "relative_return_3m": 15.42,
+        "relative_return_6m": 5.5
+      },
+      {
+        "symbol": "MAHLOG",
+        "company_name": "Mahindra Logistics Limited",
+        "rs_rating": 83,
+        "return_1m": -13.02,
+        "return_3m": 8.17,
+        "return_6m": -1.29,
+        "relative_return_3m": 18.96,
+        "relative_return_6m": 10.77
+      },
+      {
+        "symbol": "SINDHUTRAD",
+        "company_name": "Sindhu Trade Links Limited",
+        "rs_rating": 76,
+        "return_1m": -13.73,
+        "return_3m": 12.24,
+        "return_6m": -22.73,
+        "relative_return_3m": 23.03,
+        "relative_return_6m": -10.67
+      },
+      {
+        "symbol": "TCI",
+        "company_name": "Transport Corporation of India Limited",
+        "rs_rating": 62,
+        "return_1m": -2.27,
+        "return_3m": -4.32,
+        "return_6m": -14.82,
+        "relative_return_3m": 6.47,
+        "relative_return_6m": -2.76
+      },
+      {
+        "symbol": "GATEWAY",
+        "company_name": "Gateway Distriparks Limited",
+        "rs_rating": 59,
+        "return_1m": -7.64,
+        "return_3m": -7.82,
+        "return_6m": -11.36,
+        "relative_return_3m": 2.97,
+        "relative_return_6m": 0.7
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 11.06,
+    "rankChange1w": 13
+  },
+  {
+    "rank": 31,
+    "groupId": "financial-institutions",
+    "groupName": "Financial Institutions",
+    "score": 51.44,
+    "return1m": -8.29,
+    "return3m": -10.37,
+    "return6m": -15.68,
+    "relativeReturn1m": 0.65,
+    "relativeReturn3m": 0.42,
+    "relativeReturn6m": -3.62,
+    "above50dma": 27.27,
+    "above200dma": 18.18,
+    "breadthScore": 34.09,
+    "leaders": [
+      "TFCILTD",
+      "PFC",
+      "PRIMESECU"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TFCILTD",
+        "company_name": "Tourism Finance Corporation of India Limited",
+        "rs_rating": 93,
+        "return_1m": -13.85,
+        "return_3m": 0.8,
+        "return_6m": -11.32,
+        "relative_return_3m": 11.59,
+        "relative_return_6m": 0.74
+      },
+      {
+        "symbol": "PFC",
+        "company_name": "Power Finance Corporation Limited",
+        "rs_rating": 80,
+        "return_1m": -4.42,
+        "return_3m": 15.31,
+        "return_6m": 0.57,
+        "relative_return_3m": 26.1,
+        "relative_return_6m": 12.63
+      },
+      {
+        "symbol": "PRIMESECU",
+        "company_name": "Prime Securities Limited",
+        "rs_rating": 78,
+        "return_1m": -0.52,
+        "return_3m": -5.34,
+        "return_6m": 7.05,
+        "relative_return_3m": 5.45,
+        "relative_return_6m": 19.11
+      },
+      {
+        "symbol": "IFCI",
+        "company_name": "IFCI Limited",
+        "rs_rating": 70,
+        "return_1m": -10.14,
+        "return_3m": -1.82,
+        "return_6m": -6.95,
+        "relative_return_3m": 8.97,
+        "relative_return_6m": 5.11
+      },
+      {
+        "symbol": "CENTRUM",
+        "company_name": "Centrum Capital Limited",
+        "rs_rating": 64,
+        "return_1m": 15.7,
+        "return_3m": -1.36,
+        "return_6m": -24.51,
+        "relative_return_3m": 9.43,
+        "relative_return_6m": -12.45
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -3.71,
+    "rankChange1w": -3
+  },
+  {
+    "rank": 32,
+    "groupId": "brokerages-wealth",
+    "groupName": "Brokerages & Wealth",
+    "score": 51.42,
+    "return1m": -7.29,
+    "return3m": -16.08,
+    "return6m": -6.9,
+    "relativeReturn1m": 1.65,
+    "relativeReturn3m": -5.29,
+    "relativeReturn6m": 5.16,
+    "above50dma": 13.04,
+    "above200dma": 13.04,
+    "breadthScore": 26.09,
+    "leaders": [
+      "MCX",
+      "BSE",
+      "INDOTHAI"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "MCX",
+        "company_name": "Multi Commodity Exchange of India Limited",
+        "rs_rating": 96,
+        "return_1m": -0.49,
+        "return_3m": 10.26,
+        "return_6m": 53.18,
+        "relative_return_3m": 21.05,
+        "relative_return_6m": 65.24
+      },
+      {
+        "symbol": "BSE",
+        "company_name": "BSE Limited",
+        "rs_rating": 92,
+        "return_1m": 3.01,
+        "return_3m": 7.82,
+        "return_6m": 37.55,
+        "relative_return_3m": 18.61,
+        "relative_return_6m": 49.61
+      },
+      {
+        "symbol": "INDOTHAI",
+        "company_name": "Indo Thai Securities Limited",
+        "rs_rating": 90,
+        "return_1m": 10.92,
+        "return_3m": -11.21,
+        "return_6m": 21.25,
+        "relative_return_3m": -0.42,
+        "relative_return_6m": 33.31
+      },
+      {
+        "symbol": "GROWW",
+        "company_name": "Billionbrains Garage Ventures Limited",
+        "rs_rating": 81,
+        "return_1m": 0.37,
+        "return_3m": -0.11,
+        "return_6m": 25.68,
+        "relative_return_3m": 10.68,
+        "relative_return_6m": 37.74
+      },
+      {
+        "symbol": "CARERATING",
+        "company_name": "CARE Ratings Limited",
+        "rs_rating": 75,
+        "return_1m": -7.18,
+        "return_3m": -6.73,
+        "return_6m": -3.13,
+        "relative_return_3m": 4.06,
+        "relative_return_6m": 8.93
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": 1.17,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 33,
+    "groupId": "industrial-minerals",
+    "groupName": "Industrial Minerals",
+    "score": 49.23,
+    "return1m": -7.1,
+    "return3m": -17.62,
+    "return6m": -11.56,
+    "relativeReturn1m": 1.84,
+    "relativeReturn3m": -6.83,
+    "relativeReturn6m": 0.5,
+    "above50dma": 28.57,
+    "above200dma": 42.86,
+    "breadthScore": 32.14,
+    "leaders": [
+      "GMDCLTD",
+      "NMDC",
+      "LLOYDSME"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GMDCLTD",
+        "company_name": "Gujarat Mineral Development Corporation Limited",
+        "rs_rating": 93,
+        "return_1m": 3.06,
+        "return_3m": -1.2,
+        "return_6m": -4.0,
+        "relative_return_3m": 9.59,
+        "relative_return_6m": 8.06
+      },
+      {
+        "symbol": "NMDC",
+        "company_name": "NMDC Limited",
+        "rs_rating": 81,
+        "return_1m": -4.72,
+        "return_3m": -2.71,
+        "return_6m": 4.11,
+        "relative_return_3m": 8.08,
+        "relative_return_6m": 16.17
+      },
+      {
+        "symbol": "LLOYDSME",
+        "company_name": "Lloyds Metals And Energy Limited",
+        "rs_rating": 75,
+        "return_1m": 10.66,
+        "return_3m": 1.13,
+        "return_6m": 6.33,
+        "relative_return_3m": 11.92,
+        "relative_return_6m": 18.39
+      },
+      {
+        "symbol": "ASHAPURMIN",
+        "company_name": "Ashapura Minechem Limited",
+        "rs_rating": 50,
+        "return_1m": -10.43,
+        "return_3m": -45.26,
+        "return_6m": -23.38,
+        "relative_return_3m": -34.47,
+        "relative_return_6m": -11.32
+      },
+      {
+        "symbol": "MOIL",
+        "company_name": "MOIL Limited",
+        "rs_rating": 40,
+        "return_1m": -5.01,
+        "return_3m": -19.05,
+        "return_6m": -18.12,
+        "relative_return_3m": -8.26,
+        "relative_return_6m": -6.06
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -17.54,
+    "rankChange1w": -20
+  },
+  {
+    "rank": 34,
+    "groupId": "housing-finance",
+    "groupName": "Housing Finance",
+    "score": 49.04,
+    "return1m": -9.51,
+    "return3m": -13.02,
+    "return6m": -14.92,
+    "relativeReturn1m": -0.57,
+    "relativeReturn3m": -2.23,
+    "relativeReturn6m": -2.86,
+    "above50dma": 27.27,
+    "above200dma": 9.09,
+    "breadthScore": 27.27,
+    "leaders": [
+      "SAMMAANCAP",
+      "CANFINHOME",
+      "REPCOHOME"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SAMMAANCAP",
+        "company_name": "Sammaan Capital Limited",
+        "rs_rating": 82,
+        "return_1m": -7.24,
+        "return_3m": 4.73,
+        "return_6m": 8.28,
+        "relative_return_3m": 15.52,
+        "relative_return_6m": 20.34
+      },
+      {
+        "symbol": "CANFINHOME",
+        "company_name": "Can Fin Homes Limited",
+        "rs_rating": 76,
+        "return_1m": -8.03,
+        "return_3m": -11.71,
+        "return_6m": 5.85,
+        "relative_return_3m": -0.92,
+        "relative_return_6m": 17.91
+      },
+      {
+        "symbol": "REPCOHOME",
+        "company_name": "Repco Home Finance Limited",
+        "rs_rating": 64,
+        "return_1m": -5.59,
+        "return_3m": -10.69,
+        "return_6m": -0.57,
+        "relative_return_3m": 0.1,
+        "relative_return_6m": 11.49
+      },
+      {
+        "symbol": "AADHARHFC",
+        "company_name": "Aadhar Housing Finance Limited",
+        "rs_rating": 63,
+        "return_1m": -4.43,
+        "return_3m": -9.71,
+        "return_6m": -19.05,
+        "relative_return_3m": 1.08,
+        "relative_return_6m": -6.99
+      },
+      {
+        "symbol": "LICHSGFIN",
+        "company_name": "LIC Housing Finance Limited",
+        "rs_rating": 60,
+        "return_1m": -5.65,
+        "return_3m": -4.33,
+        "return_6m": -11.13,
+        "relative_return_3m": 6.46,
+        "relative_return_6m": 0.93
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -3.97,
+    "rankChange1w": -5
+  },
+  {
+    "rank": 35,
+    "groupId": "tyres-rubber",
+    "groupName": "Tyres & Rubber",
+    "score": 49.02,
+    "return1m": -12.35,
+    "return3m": -14.36,
+    "return6m": -8.44,
+    "relativeReturn1m": -3.41,
+    "relativeReturn3m": -3.57,
+    "relativeReturn6m": 3.62,
+    "above50dma": 11.11,
+    "above200dma": 11.11,
+    "breadthScore": 30.55,
+    "leaders": [
+      "TVSSRICHAK",
+      "JKTYRE",
+      "PIXTRANS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TVSSRICHAK",
+        "company_name": "TVS Srichakra Limited",
+        "rs_rating": 79,
+        "return_1m": -13.58,
+        "return_3m": -13.85,
+        "return_6m": 4.42,
+        "relative_return_3m": -3.06,
+        "relative_return_6m": 16.48
+      },
+      {
+        "symbol": "JKTYRE",
+        "company_name": "JK Tyre & Industries Limited",
+        "rs_rating": 74,
+        "return_1m": -27.49,
+        "return_3m": -21.92,
+        "return_6m": 3.53,
+        "relative_return_3m": -11.13,
+        "relative_return_6m": 15.59
+      },
+      {
+        "symbol": "PIXTRANS",
+        "company_name": "Pix Transmissions Limited",
+        "rs_rating": 69,
+        "return_1m": 0.39,
+        "return_3m": 1.67,
+        "return_6m": 1.29,
+        "relative_return_3m": 12.46,
+        "relative_return_6m": 13.35
+      },
+      {
+        "symbol": "CEATLTD",
+        "company_name": "CEAT Limited",
+        "rs_rating": 69,
+        "return_1m": -10.39,
+        "return_3m": -12.9,
+        "return_6m": -2.75,
+        "relative_return_3m": -2.11,
+        "relative_return_6m": 9.31
+      },
+      {
+        "symbol": "APCOTEXIND",
+        "company_name": "Apcotex Industries Limited",
+        "rs_rating": 66,
+        "return_1m": -5.2,
+        "return_3m": -6.89,
+        "return_6m": -12.83,
+        "relative_return_3m": 3.9,
+        "relative_return_6m": -0.77
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": -0.25,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 36,
+    "groupId": "defence",
+    "groupName": "Defence",
+    "score": 48.22,
+    "return1m": -5.95,
+    "return3m": -7.82,
+    "return6m": -17.78,
+    "relativeReturn1m": 2.99,
+    "relativeReturn3m": 2.97,
+    "relativeReturn6m": -5.72,
+    "above50dma": 27.27,
+    "above200dma": 27.27,
+    "breadthScore": 32.95,
+    "leaders": [
+      "MTARTECH",
+      "ROSSTECH",
+      "AXISCADES"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "MTARTECH",
+        "company_name": "Mtar Technologies Limited",
+        "rs_rating": 98,
+        "return_1m": -3.25,
+        "return_3m": 48.78,
+        "return_6m": 84.64,
+        "relative_return_3m": 59.57,
+        "relative_return_6m": 96.7
+      },
+      {
+        "symbol": "ROSSTECH",
+        "company_name": "Rossell Techsys Limited",
+        "rs_rating": 97,
+        "return_1m": 8.37,
+        "return_3m": 14.14,
+        "return_6m": -8.81,
+        "relative_return_3m": 24.93,
+        "relative_return_6m": 3.25
+      },
+      {
+        "symbol": "AXISCADES",
+        "company_name": "AXISCADES Technologies Limited",
+        "rs_rating": 92,
+        "return_1m": 9.26,
+        "return_3m": 23.7,
+        "return_6m": -2.86,
+        "relative_return_3m": 34.49,
+        "relative_return_6m": 9.2
+      },
+      {
+        "symbol": "DATAPATTNS",
+        "company_name": "Data Patterns (India) Limited",
+        "rs_rating": 91,
+        "return_1m": -0.67,
+        "return_3m": 13.9,
+        "return_6m": 11.4,
+        "relative_return_3m": 24.69,
+        "relative_return_6m": 23.46
+      },
+      {
+        "symbol": "BEL",
+        "company_name": "Bharat Electronics Limited",
+        "rs_rating": 86,
+        "return_1m": -3.62,
+        "return_3m": 6.26,
+        "return_6m": 7.07,
+        "relative_return_3m": 17.05,
+        "relative_return_6m": 19.13
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": 0.78,
+    "rankChange1w": 1
+  },
+  {
+    "rank": 37,
+    "groupId": "industrial-plastics",
+    "groupName": "Industrial Plastics",
+    "score": 48.2,
+    "return1m": -10.51,
+    "return3m": -4.41,
+    "return6m": -16.92,
+    "relativeReturn1m": -1.57,
+    "relativeReturn3m": 6.38,
+    "relativeReturn6m": -4.86,
+    "above50dma": 18.18,
+    "above200dma": 36.36,
+    "breadthScore": 43.18,
+    "leaders": [
+      "APOLLOPIPE",
+      "KINGFA",
+      "ASTRAL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "APOLLOPIPE",
+        "company_name": "Apollo Pipes Limited",
+        "rs_rating": 91,
+        "return_1m": 27.81,
+        "return_3m": 44.69,
+        "return_6m": 14.94,
+        "relative_return_3m": 55.48,
+        "relative_return_6m": 27.0
+      },
+      {
+        "symbol": "KINGFA",
+        "company_name": "Kingfa Science & Technology (India) Limited",
+        "rs_rating": 88,
+        "return_1m": -6.02,
+        "return_3m": 1.9,
+        "return_6m": -3.71,
+        "relative_return_3m": 12.69,
+        "relative_return_6m": 8.35
+      },
+      {
+        "symbol": "ASTRAL",
+        "company_name": "Astral Limited",
+        "rs_rating": 85,
+        "return_1m": -6.73,
+        "return_3m": 12.95,
+        "return_6m": 9.14,
+        "relative_return_3m": 23.74,
+        "relative_return_6m": 21.2
+      },
+      {
+        "symbol": "GRWRHITECH",
+        "company_name": "Garware Hi-Tech Films Limited",
+        "rs_rating": 80,
+        "return_1m": -8.31,
+        "return_3m": 17.69,
+        "return_6m": 16.56,
+        "relative_return_3m": 28.48,
+        "relative_return_6m": 28.62
+      },
+      {
+        "symbol": "SUPREMEIND",
+        "company_name": "Supreme Industries Limited",
+        "rs_rating": 73,
+        "return_1m": -9.93,
+        "return_3m": 11.52,
+        "return_6m": -15.83,
+        "relative_return_3m": 22.31,
+        "relative_return_6m": -3.77
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 4.38,
+    "rankChange1w": 4
+  },
+  {
+    "rank": 38,
+    "groupId": "plywood-laminates",
+    "groupName": "Plywood & Laminates",
+    "score": 48.08,
+    "return1m": -7.68,
+    "return3m": -14.81,
+    "return6m": -14.7,
+    "relativeReturn1m": 1.26,
+    "relativeReturn3m": -4.02,
+    "relativeReturn6m": -2.64,
+    "above50dma": 0.0,
+    "above200dma": 20.0,
+    "breadthScore": 25.0,
+    "leaders": [
+      "STYLAMIND",
+      "CENTURYPLY",
+      "GREENLAM"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "STYLAMIND",
+        "company_name": "Stylam Industries Limited",
+        "rs_rating": 88,
+        "return_1m": -1.55,
+        "return_3m": -1.62,
+        "return_6m": 25.96,
+        "relative_return_3m": 9.17,
+        "relative_return_6m": 38.02
+      },
+      {
+        "symbol": "CENTURYPLY",
+        "company_name": "Century Plyboards (India) Limited",
+        "rs_rating": 62,
+        "return_1m": -3.97,
+        "return_3m": -13.14,
+        "return_6m": -11.13,
+        "relative_return_3m": -2.35,
+        "relative_return_6m": 0.93
+      },
+      {
+        "symbol": "GREENLAM",
+        "company_name": "Greenlam Industries Limited",
+        "rs_rating": 50,
+        "return_1m": -8.02,
+        "return_3m": -9.9,
+        "return_6m": -13.39,
+        "relative_return_3m": 0.89,
+        "relative_return_6m": -1.33
+      },
+      {
+        "symbol": "GREENPANEL",
+        "company_name": "Greenpanel Industries Limited",
+        "rs_rating": 19,
+        "return_1m": -11.97,
+        "return_3m": -22.58,
+        "return_6m": -36.35,
+        "relative_return_3m": -11.79,
+        "relative_return_6m": -24.29
+      },
+      {
+        "symbol": "GREENPLY",
+        "company_name": "Greenply Industries Limited",
+        "rs_rating": 10,
+        "return_1m": -12.89,
+        "return_3m": -26.83,
+        "return_6m": -38.61,
+        "relative_return_3m": -16.04,
+        "relative_return_6m": -26.55
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Improving",
+    "scoreChange1w": 11.01,
+    "rankChange1w": 9
+  },
+  {
+    "rank": 39,
+    "groupId": "fmcg-foods",
+    "groupName": "FMCG Foods",
+    "score": 46.72,
+    "return1m": -7.65,
+    "return3m": -11.07,
+    "return6m": -14.37,
+    "relativeReturn1m": 1.29,
+    "relativeReturn3m": -0.28,
+    "relativeReturn6m": -2.31,
+    "above50dma": 26.92,
+    "above200dma": 15.38,
+    "breadthScore": 30.77,
+    "leaders": [
+      "APEX",
+      "CCL",
+      "GODAVARIB"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "APEX",
+        "company_name": "Apex Frozen Foods Limited",
+        "rs_rating": 96,
+        "return_1m": -10.33,
+        "return_3m": 36.55,
+        "return_6m": 63.22,
+        "relative_return_3m": 47.34,
+        "relative_return_6m": 75.28
+      },
+      {
+        "symbol": "CCL",
+        "company_name": "CCL Products (India) Limited",
+        "rs_rating": 93,
+        "return_1m": 5.29,
+        "return_3m": 15.96,
+        "return_6m": 18.98,
+        "relative_return_3m": 26.75,
+        "relative_return_6m": 31.04
+      },
+      {
+        "symbol": "GODAVARIB",
+        "company_name": "Godavari Biorefineries Limited",
+        "rs_rating": 93,
+        "return_1m": 12.57,
+        "return_3m": 7.58,
+        "return_6m": 15.27,
+        "relative_return_3m": 18.37,
+        "relative_return_6m": 27.33
+      },
+      {
+        "symbol": "ZYDUSWELL",
+        "company_name": "Zydus Wellness Limited",
+        "rs_rating": 81,
+        "return_1m": 11.9,
+        "return_3m": 3.81,
+        "return_6m": -9.3,
+        "relative_return_3m": 14.6,
+        "relative_return_6m": 2.76
+      },
+      {
+        "symbol": "FLAIR",
+        "company_name": "Flair Writing Industries Limited",
+        "rs_rating": 80,
+        "return_1m": -5.01,
+        "return_3m": -2.18,
+        "return_6m": -6.64,
+        "relative_return_3m": 8.61,
+        "relative_return_6m": 5.42
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -3.14,
+    "rankChange1w": -6
+  },
+  {
+    "rank": 40,
+    "groupId": "small-finance-banks",
+    "groupName": "Small Finance Banks",
+    "score": 45.95,
+    "return1m": -10.91,
+    "return3m": -13.1,
+    "return6m": -14.23,
+    "relativeReturn1m": -1.97,
+    "relativeReturn3m": -2.31,
+    "relativeReturn6m": -2.17,
+    "above50dma": 11.11,
+    "above200dma": 22.22,
+    "breadthScore": 33.33,
+    "leaders": [
+      "UJJIVANSFB",
+      "AUBANK",
+      "SURYODAY"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "UJJIVANSFB",
+        "company_name": "Ujjivan Small Finance Bank Limited",
+        "rs_rating": 89,
+        "return_1m": -9.85,
+        "return_3m": 4.07,
+        "return_6m": 22.62,
+        "relative_return_3m": 14.86,
+        "relative_return_6m": 34.68
+      },
+      {
+        "symbol": "AUBANK",
+        "company_name": "AU Small Finance Bank Limited",
+        "rs_rating": 85,
+        "return_1m": -11.42,
+        "return_3m": -10.77,
+        "return_6m": 18.18,
+        "relative_return_3m": 0.02,
+        "relative_return_6m": 30.24
+      },
+      {
+        "symbol": "SURYODAY",
+        "company_name": "Suryoday Small Finance Bank Limited",
+        "rs_rating": 66,
+        "return_1m": 7.53,
+        "return_3m": -12.27,
+        "return_6m": -7.58,
+        "relative_return_3m": -1.48,
+        "relative_return_6m": 4.48
+      },
+      {
+        "symbol": "EQUITASBNK",
+        "company_name": "Equitas Small Finance Bank Limited",
+        "rs_rating": 55,
+        "return_1m": -17.52,
+        "return_3m": -12.51,
+        "return_6m": -6.37,
+        "relative_return_3m": -1.72,
+        "relative_return_6m": 5.69
+      },
+      {
+        "symbol": "CAPITALSFB",
+        "company_name": "Capital Small Finance Bank Limited",
+        "rs_rating": 50,
+        "return_1m": -9.19,
+        "return_3m": -9.21,
+        "return_6m": -16.13,
+        "relative_return_3m": 1.58,
+        "relative_return_6m": -4.07
+      }
+    ],
+    "strengthBucket": "Top 40",
+    "trendLabel": "Stable",
+    "scoreChange1w": -0.51,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 41,
+    "groupId": "hospitals",
+    "groupName": "Hospitals",
+    "score": 45.58,
+    "return1m": -7.68,
+    "return3m": -11.82,
+    "return6m": -17.09,
+    "relativeReturn1m": 1.26,
+    "relativeReturn3m": -1.03,
+    "relativeReturn6m": -5.03,
+    "above50dma": 18.52,
+    "above200dma": 3.7,
+    "breadthScore": 23.15,
+    "leaders": [
+      "PARKHOSPS",
+      "ASTERDM",
+      "YATHARTH"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "PARKHOSPS",
+        "company_name": "Park Medi World Limited",
+        "rs_rating": 90,
+        "return_1m": 3.23,
+        "return_3m": 34.05,
+        "return_6m": 31.8,
+        "relative_return_3m": 44.84,
+        "relative_return_6m": 43.86
+      },
+      {
+        "symbol": "ASTERDM",
+        "company_name": "Aster DM Healthcare Limited",
+        "rs_rating": 87,
+        "return_1m": 1.93,
+        "return_3m": 6.0,
+        "return_6m": 3.53,
+        "relative_return_3m": 16.79,
+        "relative_return_6m": 15.59
+      },
+      {
+        "symbol": "YATHARTH",
+        "company_name": "Yatharth Hospital & Trauma Care Services Limited",
+        "rs_rating": 85,
+        "return_1m": -3.6,
+        "return_3m": -2.03,
+        "return_6m": -14.4,
+        "relative_return_3m": 8.76,
+        "relative_return_6m": -2.34
+      },
+      {
+        "symbol": "APOLLOHOSP",
+        "company_name": "Apollo Hospitals Enterprise Limited",
+        "rs_rating": 77,
+        "return_1m": -6.22,
+        "return_3m": 2.13,
+        "return_6m": -4.38,
+        "relative_return_3m": 12.92,
+        "relative_return_6m": 7.68
+      },
+      {
+        "symbol": "THYROCARE",
+        "company_name": "Thyrocare Technologies Limited",
+        "rs_rating": 77,
+        "return_1m": -9.52,
+        "return_3m": -20.77,
+        "return_6m": -8.74,
+        "relative_return_3m": -9.98,
+        "relative_return_6m": 3.32
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -5.56,
+    "rankChange1w": -10
+  },
+  {
+    "rank": 42,
+    "groupId": "apparel-fashion",
+    "groupName": "Apparel & Fashion",
+    "score": 44.91,
+    "return1m": -6.78,
+    "return3m": -11.33,
+    "return6m": -14.66,
+    "relativeReturn1m": 2.16,
+    "relativeReturn3m": -0.54,
+    "relativeReturn6m": -2.6,
+    "above50dma": 23.08,
+    "above200dma": 23.08,
+    "breadthScore": 34.62,
+    "leaders": [
+      "SBC",
+      "ARVIND",
+      "PGIL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SBC",
+        "company_name": "SBC Exports Limited",
+        "rs_rating": 97,
+        "return_1m": -4.79,
+        "return_3m": 8.09,
+        "return_6m": 42.1,
+        "relative_return_3m": 18.88,
+        "relative_return_6m": 54.16
+      },
+      {
+        "symbol": "ARVIND",
+        "company_name": "Arvind Limited",
+        "rs_rating": 84,
+        "return_1m": 1.51,
+        "return_3m": 16.75,
+        "return_6m": 14.37,
+        "relative_return_3m": 27.54,
+        "relative_return_6m": 26.43
+      },
+      {
+        "symbol": "PGIL",
+        "company_name": "Pearl Global Industries Limited",
+        "rs_rating": 78,
+        "return_1m": -2.55,
+        "return_3m": -5.74,
+        "return_6m": 11.31,
+        "relative_return_3m": 5.05,
+        "relative_return_6m": 23.37
+      },
+      {
+        "symbol": "SPAL",
+        "company_name": "S. P. Apparels Limited",
+        "rs_rating": 72,
+        "return_1m": 3.07,
+        "return_3m": 2.65,
+        "return_6m": 0.45,
+        "relative_return_3m": 13.44,
+        "relative_return_6m": 12.51
+      },
+      {
+        "symbol": "CANTABIL",
+        "company_name": "Cantabil Retail India Limited",
+        "rs_rating": 58,
+        "return_1m": -12.6,
+        "return_3m": -7.41,
+        "return_6m": -12.63,
+        "relative_return_3m": 3.38,
+        "relative_return_6m": -0.57
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 8.62,
+    "rankChange1w": 8
+  },
+  {
+    "rank": 43,
+    "groupId": "building-materials",
+    "groupName": "Building Materials",
+    "score": 44.14,
+    "return1m": -6.37,
+    "return3m": -13.45,
+    "return6m": -19.43,
+    "relativeReturn1m": 2.57,
+    "relativeReturn3m": -2.66,
+    "relativeReturn6m": -7.37,
+    "above50dma": 25.0,
+    "above200dma": 0.0,
+    "breadthScore": 22.92,
+    "leaders": [
+      "KAJARIACER",
+      "POKARNA",
+      "MIDWESTLTD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "KAJARIACER",
+        "company_name": "Kajaria Ceramics Limited",
+        "rs_rating": 66,
+        "return_1m": 1.42,
+        "return_3m": -0.87,
+        "return_6m": -19.84,
+        "relative_return_3m": 9.92,
+        "relative_return_6m": -7.78
+      },
+      {
+        "symbol": "POKARNA",
+        "company_name": "Pokarna Limited",
+        "rs_rating": 62,
+        "return_1m": -5.66,
+        "return_3m": 5.26,
+        "return_6m": 3.78,
+        "relative_return_3m": 16.05,
+        "relative_return_6m": 15.84
+      },
+      {
+        "symbol": "MIDWESTLTD",
+        "company_name": "Midwest Limited",
+        "rs_rating": 61,
+        "return_1m": -6.19,
+        "return_3m": -27.83,
+        "return_6m": 6.77,
+        "relative_return_3m": -17.04,
+        "relative_return_6m": 18.83
+      },
+      {
+        "symbol": "ASIANTILES",
+        "company_name": "Asian Granito India Limited",
+        "rs_rating": 61,
+        "return_1m": -21.54,
+        "return_3m": -24.36,
+        "return_6m": -5.52,
+        "relative_return_3m": -13.57,
+        "relative_return_6m": 6.54
+      },
+      {
+        "symbol": "SOMANYCERA",
+        "company_name": "Somany Ceramics Limited",
+        "rs_rating": 49,
+        "return_1m": -2.6,
+        "return_3m": -5.29,
+        "return_6m": -17.92,
+        "relative_return_3m": 5.5,
+        "relative_return_6m": -5.86
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 19.81,
+    "rankChange1w": 18
+  },
+  {
+    "rank": 44,
+    "groupId": "fertilizers",
+    "groupName": "Fertilizers",
+    "score": 42.64,
+    "return1m": -3.58,
+    "return3m": -13.26,
+    "return6m": -19.34,
+    "relativeReturn1m": 5.36,
+    "relativeReturn3m": -2.47,
+    "relativeReturn6m": -7.28,
+    "above50dma": 30.0,
+    "above200dma": 20.0,
+    "breadthScore": 22.5,
+    "leaders": [
+      "MBAPL",
+      "KRISHANA",
+      "FACT"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "MBAPL",
+        "company_name": "Madhya Bharat Agro Products Limited",
+        "rs_rating": 95,
+        "return_1m": 16.12,
+        "return_3m": 29.28,
+        "return_6m": 26.96,
+        "relative_return_3m": 40.07,
+        "relative_return_6m": 39.02
+      },
+      {
+        "symbol": "KRISHANA",
+        "company_name": "Krishana Phoschem Limited",
+        "rs_rating": 92,
+        "return_1m": 10.18,
+        "return_3m": 2.16,
+        "return_6m": 1.85,
+        "relative_return_3m": 12.95,
+        "relative_return_6m": 13.91
+      },
+      {
+        "symbol": "FACT",
+        "company_name": "Fertilizers and Chemicals Travancore Limited",
+        "rs_rating": 55,
+        "return_1m": 2.4,
+        "return_3m": -12.79,
+        "return_6m": -20.28,
+        "relative_return_3m": -2.0,
+        "relative_return_6m": -8.22
+      },
+      {
+        "symbol": "CHAMBLFERT",
+        "company_name": "Chambal Fertilizers & Chemicals Limited",
+        "rs_rating": 51,
+        "return_1m": -1.33,
+        "return_3m": -4.36,
+        "return_6m": -14.09,
+        "relative_return_3m": 6.43,
+        "relative_return_6m": -2.03
+      },
+      {
+        "symbol": "COROMANDEL",
+        "company_name": "Coromandel International Limited",
+        "rs_rating": 44,
+        "return_1m": -18.88,
+        "return_3m": -20.08,
+        "return_6m": -15.64,
+        "relative_return_3m": -9.29,
+        "relative_return_6m": -3.58
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 9.69,
+    "rankChange1w": 10
+  },
+  {
+    "rank": 45,
+    "groupId": "hardware-peripherals",
+    "groupName": "Hardware & Peripherals",
+    "score": 42.61,
+    "return1m": -6.4,
+    "return3m": -11.54,
+    "return6m": -19.52,
+    "relativeReturn1m": 2.54,
+    "relativeReturn3m": -0.75,
+    "relativeReturn6m": -7.46,
+    "above50dma": 28.57,
+    "above200dma": 14.29,
+    "breadthScore": 28.57,
+    "leaders": [
+      "EBGNG",
+      "RPTECH",
+      "DLINKINDIA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "EBGNG",
+        "company_name": "GNG Electronics Limited",
+        "rs_rating": 91,
+        "return_1m": 0.63,
+        "return_3m": 16.07,
+        "return_6m": -1.38,
+        "relative_return_3m": 26.86,
+        "relative_return_6m": 10.68
+      },
+      {
+        "symbol": "RPTECH",
+        "company_name": "Rashi Peripherals Limited",
+        "rs_rating": 85,
+        "return_1m": 6.95,
+        "return_3m": 2.17,
+        "return_6m": 12.13,
+        "relative_return_3m": 12.96,
+        "relative_return_6m": 24.19
+      },
+      {
+        "symbol": "DLINKINDIA",
+        "company_name": "D-Link (India) Limited",
+        "rs_rating": 54,
+        "return_1m": -3.12,
+        "return_3m": -8.07,
+        "return_6m": -15.94,
+        "relative_return_3m": 2.72,
+        "relative_return_6m": -3.88
+      },
+      {
+        "symbol": "MOSCHIP",
+        "company_name": "Moschip Technologies Limited",
+        "rs_rating": 46,
+        "return_1m": -14.33,
+        "return_3m": -18.91,
+        "return_6m": -32.5,
+        "relative_return_3m": -8.12,
+        "relative_return_6m": -20.44
+      },
+      {
+        "symbol": "IVALUE",
+        "company_name": "Ivalue Infosolutions Limited",
+        "rs_rating": 36,
+        "return_1m": -3.82,
+        "return_3m": -19.97,
+        "return_6m": -22.57,
+        "relative_return_3m": -9.18,
+        "relative_return_6m": -10.51
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -7.07,
+    "rankChange1w": -11
+  },
+  {
+    "rank": 46,
+    "groupId": "education-staffing-retail-services",
+    "groupName": "Education, Staffing & Retail Services",
+    "score": 40.78,
+    "return1m": -3.12,
+    "return3m": -16.35,
+    "return6m": -21.02,
+    "relativeReturn1m": 5.82,
+    "relativeReturn3m": -5.56,
+    "relativeReturn6m": -8.96,
+    "above50dma": 25.0,
+    "above200dma": 25.0,
+    "breadthScore": 25.0,
+    "leaders": [
+      "ENTERO",
+      "MEDPLUS",
+      "SIS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ENTERO",
+        "company_name": "Entero Healthcare Solutions Limited",
+        "rs_rating": 88,
+        "return_1m": 17.82,
+        "return_3m": 31.23,
+        "return_6m": 14.61,
+        "relative_return_3m": 42.02,
+        "relative_return_6m": 26.67
+      },
+      {
+        "symbol": "MEDPLUS",
+        "company_name": "Medplus Health Services Limited",
+        "rs_rating": 77,
+        "return_1m": -2.68,
+        "return_3m": 1.41,
+        "return_6m": 2.94,
+        "relative_return_3m": 12.2,
+        "relative_return_6m": 15.0
+      },
+      {
+        "symbol": "SIS",
+        "company_name": "SIS LIMITED",
+        "rs_rating": 48,
+        "return_1m": -1.81,
+        "return_3m": -13.46,
+        "return_6m": -14.04,
+        "relative_return_3m": -2.67,
+        "relative_return_6m": -1.98
+      },
+      {
+        "symbol": "JARO",
+        "company_name": "Jaro Institute of Technology Management and Research Limited",
+        "rs_rating": 37,
+        "return_1m": -3.1,
+        "return_3m": -19.0,
+        "return_6m": -41.24,
+        "relative_return_3m": -8.21,
+        "relative_return_6m": -29.18
+      },
+      {
+        "symbol": "PWL",
+        "company_name": "Physicswallah Limited",
+        "rs_rating": 30,
+        "return_1m": -2.07,
+        "return_3m": -32.13,
+        "return_6m": -42.09,
+        "relative_return_3m": -21.34,
+        "relative_return_6m": -30.03
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 11.77,
+    "rankChange1w": 12
+  },
+  {
+    "rank": 47,
+    "groupId": "packaging",
+    "groupName": "Packaging",
+    "score": 39.84,
+    "return1m": -3.21,
+    "return3m": -10.86,
+    "return6m": -23.64,
+    "relativeReturn1m": 5.73,
+    "relativeReturn3m": -0.07,
+    "relativeReturn6m": -11.58,
+    "above50dma": 30.0,
+    "above200dma": 20.0,
+    "breadthScore": 30.0,
+    "leaders": [
+      "JINDALPOLY",
+      "EPL",
+      "XPROINDIA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "JINDALPOLY",
+        "company_name": "Jindal Poly Films Limited",
+        "rs_rating": 95,
+        "return_1m": 21.05,
+        "return_3m": 60.16,
+        "return_6m": 30.83,
+        "relative_return_3m": 70.95,
+        "relative_return_6m": 42.89
+      },
+      {
+        "symbol": "EPL",
+        "company_name": "EPL Limited",
+        "rs_rating": 75,
+        "return_1m": -0.9,
+        "return_3m": 0.15,
+        "return_6m": 1.04,
+        "relative_return_3m": 10.94,
+        "relative_return_6m": 13.1
+      },
+      {
+        "symbol": "XPROINDIA",
+        "company_name": "Xpro India Limited",
+        "rs_rating": 63,
+        "return_1m": 19.21,
+        "return_3m": 4.87,
+        "return_6m": -13.72,
+        "relative_return_3m": 15.66,
+        "relative_return_6m": -1.66
+      },
+      {
+        "symbol": "MOLDTKPAC",
+        "company_name": "Mold-Tek Packaging Limited",
+        "rs_rating": 48,
+        "return_1m": -7.2,
+        "return_3m": -13.96,
+        "return_6m": -34.75,
+        "relative_return_3m": -3.17,
+        "relative_return_6m": -22.69
+      },
+      {
+        "symbol": "POLYPLEX",
+        "company_name": "Polyplex Corporation Limited",
+        "rs_rating": 33,
+        "return_1m": -3.68,
+        "return_3m": -1.95,
+        "return_6m": -26.96,
+        "relative_return_3m": 8.84,
+        "relative_return_6m": -14.9
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 11.92,
+    "rankChange1w": 12
+  },
+  {
+    "rank": 48,
+    "groupId": "nbfcs",
+    "groupName": "NBFCs",
+    "score": 39.37,
+    "return1m": -13.48,
+    "return3m": -14.88,
+    "return6m": -12.29,
+    "relativeReturn1m": -4.54,
+    "relativeReturn3m": -4.09,
+    "relativeReturn6m": -0.23,
+    "above50dma": 6.06,
+    "above200dma": 6.06,
+    "breadthScore": 29.54,
+    "leaders": [
+      "SGFIN",
+      "SHRIRAMFIN",
+      "MUFIN"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SGFIN",
+        "company_name": "SG Finserve Limited",
+        "rs_rating": 90,
+        "return_1m": 14.81,
+        "return_3m": 12.06,
+        "return_6m": 21.19,
+        "relative_return_3m": 22.85,
+        "relative_return_6m": 33.25
+      },
+      {
+        "symbol": "SHRIRAMFIN",
+        "company_name": "Shriram Finance Limited",
+        "rs_rating": 89,
+        "return_1m": -17.87,
+        "return_3m": -7.13,
+        "return_6m": 43.52,
+        "relative_return_3m": 3.66,
+        "relative_return_6m": 55.58
+      },
+      {
+        "symbol": "MUFIN",
+        "company_name": "Mufin Green Finance Limited",
+        "rs_rating": 84,
+        "return_1m": -14.62,
+        "return_3m": -12.99,
+        "return_6m": 12.36,
+        "relative_return_3m": -2.2,
+        "relative_return_6m": 24.42
+      },
+      {
+        "symbol": "PIRAMALFIN",
+        "company_name": "Piramal Finance Limited",
+        "rs_rating": 81,
+        "return_1m": -1.54,
+        "return_3m": 7.11,
+        "return_6m": 31.9,
+        "relative_return_3m": 17.9,
+        "relative_return_6m": 43.96
+      },
+      {
+        "symbol": "FEDFINA",
+        "company_name": "Fedbank Financial Services Limited",
+        "rs_rating": 81,
+        "return_1m": 0.62,
+        "return_3m": -8.02,
+        "return_6m": -10.12,
+        "relative_return_3m": 2.77,
+        "relative_return_6m": 1.94
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -9.79,
+    "rankChange1w": -12
+  },
+  {
+    "rank": 49,
+    "groupId": "capital-goods-industrial",
+    "groupName": "Capital Goods Industrial",
+    "score": 38.84,
+    "return1m": -7.17,
+    "return3m": -13.15,
+    "return6m": -19.83,
+    "relativeReturn1m": 1.77,
+    "relativeReturn3m": -2.36,
+    "relativeReturn6m": -7.77,
+    "above50dma": 26.53,
+    "above200dma": 12.24,
+    "breadthScore": 22.96,
+    "leaders": [
+      "CPPLUS",
+      "CENTUM",
+      "SYRMA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CPPLUS",
+        "company_name": "Aditya Infotech Limited",
+        "rs_rating": 94,
+        "return_1m": 14.11,
+        "return_3m": 19.64,
+        "return_6m": 30.73,
+        "relative_return_3m": 30.43,
+        "relative_return_6m": 42.79
+      },
+      {
+        "symbol": "CENTUM",
+        "company_name": "Centum Electronics Limited",
+        "rs_rating": 93,
+        "return_1m": 5.67,
+        "return_3m": 18.28,
+        "return_6m": 1.5,
+        "relative_return_3m": 29.07,
+        "relative_return_6m": 13.56
+      },
+      {
+        "symbol": "SYRMA",
+        "company_name": "Syrma SGS Technology Limited",
+        "rs_rating": 91,
+        "return_1m": -4.74,
+        "return_3m": 7.69,
+        "return_6m": -7.46,
+        "relative_return_3m": 18.48,
+        "relative_return_6m": 4.6
+      },
+      {
+        "symbol": "DYNAMATECH",
+        "company_name": "Dynamatic Technologies Limited",
+        "rs_rating": 90,
+        "return_1m": -6.0,
+        "return_3m": -2.18,
+        "return_6m": 35.08,
+        "relative_return_3m": 8.61,
+        "relative_return_6m": 47.14
+      },
+      {
+        "symbol": "DEEDEV",
+        "company_name": "DEE Development Engineers Limited",
+        "rs_rating": 89,
+        "return_1m": -0.05,
+        "return_3m": 35.92,
+        "return_6m": 7.07,
+        "relative_return_3m": 46.71,
+        "relative_return_6m": 19.13
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 3.08,
+    "rankChange1w": 2
+  },
+  {
+    "rank": 50,
+    "groupId": "personal-care",
+    "groupName": "Personal Care",
+    "score": 37.81,
+    "return1m": -12.96,
+    "return3m": -11.27,
+    "return6m": -9.3,
+    "relativeReturn1m": -4.02,
+    "relativeReturn3m": -0.48,
+    "relativeReturn6m": 2.76,
+    "above50dma": 27.27,
+    "above200dma": 27.27,
+    "breadthScore": 27.27,
+    "leaders": [
+      "CUPID",
+      "BAJAJCON",
+      "HONASA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CUPID",
+        "company_name": "Cupid Limited",
+        "rs_rating": 99,
+        "return_1m": 6.41,
+        "return_3m": -8.4,
+        "return_6m": 97.9,
+        "relative_return_3m": 2.39,
+        "relative_return_6m": 109.96
+      },
+      {
+        "symbol": "BAJAJCON",
+        "company_name": "Bajaj Consumer Care Limited",
+        "rs_rating": 97,
+        "return_1m": -9.17,
+        "return_3m": 37.73,
+        "return_6m": 46.34,
+        "relative_return_3m": 48.52,
+        "relative_return_6m": 58.4
+      },
+      {
+        "symbol": "HONASA",
+        "company_name": "Honasa Consumer Limited",
+        "rs_rating": 83,
+        "return_1m": -0.43,
+        "return_3m": 10.16,
+        "return_6m": 0.68,
+        "relative_return_3m": 20.95,
+        "relative_return_6m": 12.74
+      },
+      {
+        "symbol": "GILLETTE",
+        "company_name": "Gillette India Limited",
+        "rs_rating": 49,
+        "return_1m": -9.87,
+        "return_3m": -8.62,
+        "return_6m": -21.37,
+        "relative_return_3m": 2.17,
+        "relative_return_6m": -9.31
+      },
+      {
+        "symbol": "GODREJCP",
+        "company_name": "Godrej Consumer Products Limited",
+        "rs_rating": 46,
+        "return_1m": -19.61,
+        "return_3m": -17.17,
+        "return_6m": -15.39,
+        "relative_return_3m": -6.38,
+        "relative_return_6m": -3.33
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -5.46,
+    "rankChange1w": -8
+  },
+  {
+    "rank": 51,
+    "groupId": "commodity-chemicals",
+    "groupName": "Commodity Chemicals",
+    "score": 37.62,
+    "return1m": -6.12,
+    "return3m": -13.05,
+    "return6m": -23.32,
+    "relativeReturn1m": 2.82,
+    "relativeReturn3m": -2.26,
+    "relativeReturn6m": -11.26,
+    "above50dma": 20.0,
+    "above200dma": 13.33,
+    "breadthScore": 18.33,
+    "leaders": [
+      "GUJALKALI",
+      "SPLPETRO",
+      "ANDHRSUGAR"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GUJALKALI",
+        "company_name": "Gujarat Alkalies and Chemicals Limited",
+        "rs_rating": 85,
+        "return_1m": 26.43,
+        "return_3m": 18.87,
+        "return_6m": 2.94,
+        "relative_return_3m": 29.66,
+        "relative_return_6m": 15.0
+      },
+      {
+        "symbol": "SPLPETRO",
+        "company_name": "Supreme Petrochem Limited",
+        "rs_rating": 77,
+        "return_1m": 13.31,
+        "return_3m": 14.26,
+        "return_6m": -14.53,
+        "relative_return_3m": 25.05,
+        "relative_return_6m": -2.47
+      },
+      {
+        "symbol": "ANDHRSUGAR",
+        "company_name": "The Andhra Sugars Limited",
+        "rs_rating": 71,
+        "return_1m": 1.48,
+        "return_3m": -1.66,
+        "return_6m": -2.88,
+        "relative_return_3m": 9.13,
+        "relative_return_6m": 9.18
+      },
+      {
+        "symbol": "HSCL",
+        "company_name": "Himadri Speciality Chemical Limited",
+        "rs_rating": 68,
+        "return_1m": -7.26,
+        "return_3m": -7.16,
+        "return_6m": -4.24,
+        "relative_return_3m": 3.63,
+        "relative_return_6m": 7.82
+      },
+      {
+        "symbol": "JGCHEM",
+        "company_name": "J.G.Chemicals Limited",
+        "rs_rating": 59,
+        "return_1m": -4.88,
+        "return_3m": -4.97,
+        "return_6m": -20.0,
+        "relative_return_3m": 5.82,
+        "relative_return_6m": -7.94
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 16.11,
+    "rankChange1w": 12
+  },
+  {
+    "rank": 52,
+    "groupId": "alcoholic-beverages",
+    "groupName": "Alcoholic Beverages",
+    "score": 37.5,
+    "return1m": -7.48,
+    "return3m": -17.86,
+    "return6m": -18.23,
+    "relativeReturn1m": 1.46,
+    "relativeReturn3m": -7.07,
+    "relativeReturn6m": -6.17,
+    "above50dma": 16.67,
+    "above200dma": 8.33,
+    "breadthScore": 20.84,
+    "leaders": [
+      "GMBREW",
+      "TI",
+      "INDIAGLYCO"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GMBREW",
+        "company_name": "GM Breweries Limited",
+        "rs_rating": 92,
+        "return_1m": 5.36,
+        "return_3m": -11.82,
+        "return_6m": 46.83,
+        "relative_return_3m": -1.03,
+        "relative_return_6m": 58.89
+      },
+      {
+        "symbol": "TI",
+        "company_name": "Tilaknagar Industries Limited",
+        "rs_rating": 84,
+        "return_1m": -4.04,
+        "return_3m": -9.11,
+        "return_6m": -8.16,
+        "relative_return_3m": 1.68,
+        "relative_return_6m": 3.9
+      },
+      {
+        "symbol": "INDIAGLYCO",
+        "company_name": "India Glycols Limited",
+        "rs_rating": 81,
+        "return_1m": -2.67,
+        "return_3m": -12.04,
+        "return_6m": 3.3,
+        "relative_return_3m": -1.25,
+        "relative_return_6m": 15.36
+      },
+      {
+        "symbol": "RADICO",
+        "company_name": "Radico Khaitan Limited",
+        "rs_rating": 61,
+        "return_1m": -3.82,
+        "return_3m": -20.74,
+        "return_6m": -11.51,
+        "relative_return_3m": -9.95,
+        "relative_return_6m": 0.55
+      },
+      {
+        "symbol": "PICCADIL",
+        "company_name": "Piccadily Agro Industries Limited",
+        "rs_rating": 61,
+        "return_1m": -6.29,
+        "return_3m": -3.81,
+        "return_6m": -24.55,
+        "relative_return_3m": 6.98,
+        "relative_return_6m": -12.49
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -8.16,
+    "rankChange1w": -12
+  },
+  {
+    "rank": 53,
+    "groupId": "jewellery",
+    "groupName": "Jewellery",
+    "score": 37.15,
+    "return1m": -11.89,
+    "return3m": -12.71,
+    "return6m": -14.86,
+    "relativeReturn1m": -2.95,
+    "relativeReturn3m": -1.92,
+    "relativeReturn6m": -2.8,
+    "above50dma": 11.11,
+    "above200dma": 16.67,
+    "breadthScore": 25.0,
+    "leaders": [
+      "THANGAMAYL",
+      "TITAN",
+      "SKYGOLD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "THANGAMAYL",
+        "company_name": "Thangamayil Jewellery Limited",
+        "rs_rating": 96,
+        "return_1m": -7.79,
+        "return_3m": 10.15,
+        "return_6m": 72.08,
+        "relative_return_3m": 20.94,
+        "relative_return_6m": 84.14
+      },
+      {
+        "symbol": "TITAN",
+        "company_name": "Titan Company Limited",
+        "rs_rating": 85,
+        "return_1m": -5.71,
+        "return_3m": 2.15,
+        "return_6m": 19.3,
+        "relative_return_3m": 12.94,
+        "relative_return_6m": 31.36
+      },
+      {
+        "symbol": "SKYGOLD",
+        "company_name": "SKY GOLD AND DIAMONDS LIMITED",
+        "rs_rating": 79,
+        "return_1m": -6.08,
+        "return_3m": 2.12,
+        "return_6m": 19.36,
+        "relative_return_3m": 12.91,
+        "relative_return_6m": 31.42
+      },
+      {
+        "symbol": "PNGJL",
+        "company_name": "P N Gadgil Jewellers Limited",
+        "rs_rating": 70,
+        "return_1m": 4.2,
+        "return_3m": -6.9,
+        "return_6m": -10.08,
+        "relative_return_3m": 3.89,
+        "relative_return_6m": 1.98
+      },
+      {
+        "symbol": "SENCO",
+        "company_name": "Senco Gold Limited",
+        "rs_rating": 58,
+        "return_1m": -8.69,
+        "return_3m": -8.93,
+        "return_6m": -17.8,
+        "relative_return_3m": 1.86,
+        "relative_return_6m": -5.74
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": 0.11,
+    "rankChange1w": -5
+  },
+  {
+    "rank": 54,
+    "groupId": "cvs-tractors-ce",
+    "groupName": "CVs, Tractors & CE",
+    "score": 33.44,
+    "return1m": -15.87,
+    "return3m": -15.92,
+    "return6m": -13.01,
+    "relativeReturn1m": -6.93,
+    "relativeReturn3m": -5.13,
+    "relativeReturn6m": -0.95,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 27.5,
+    "leaders": [
+      "ASHOKLEY",
+      "VSTTILLERS",
+      "SMLMAH"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "ASHOKLEY",
+        "company_name": "Ashok Leyland Limited",
+        "rs_rating": 82,
+        "return_1m": -29.87,
+        "return_3m": -15.04,
+        "return_6m": 5.02,
+        "relative_return_3m": -4.25,
+        "relative_return_6m": 17.08
+      },
+      {
+        "symbol": "VSTTILLERS",
+        "company_name": "V.S.T Tillers Tractors Limited",
+        "rs_rating": 80,
+        "return_1m": -14.72,
+        "return_3m": -17.13,
+        "return_6m": -2.94,
+        "relative_return_3m": -6.34,
+        "relative_return_6m": 9.12
+      },
+      {
+        "symbol": "SMLMAH",
+        "company_name": "SML Mahindra Limited",
+        "rs_rating": 76,
+        "return_1m": -17.45,
+        "return_3m": 9.42,
+        "return_6m": 33.94,
+        "relative_return_3m": 20.21,
+        "relative_return_6m": 46.0
+      },
+      {
+        "symbol": "TMCV",
+        "company_name": "Tata Motors Limited",
+        "rs_rating": 64,
+        "return_1m": -19.37,
+        "return_3m": -5.32,
+        "return_6m": 17.44,
+        "relative_return_3m": 5.47,
+        "relative_return_6m": 29.5
+      },
+      {
+        "symbol": "ATULAUTO",
+        "company_name": "Atul Auto Limited",
+        "rs_rating": 56,
+        "return_1m": -14.4,
+        "return_3m": -6.55,
+        "return_6m": -19.46,
+        "relative_return_3m": 4.24,
+        "relative_return_6m": -7.4
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -6.49,
+    "rankChange1w": -10
+  },
+  {
+    "rank": 55,
+    "groupId": "media-broadcasting",
+    "groupName": "Media & Broadcasting",
+    "score": 31.29,
+    "return1m": -9.11,
+    "return3m": -12.47,
+    "return6m": -21.37,
+    "relativeReturn1m": -0.17,
+    "relativeReturn3m": -1.68,
+    "relativeReturn6m": -9.31,
+    "above50dma": 18.75,
+    "above200dma": 12.5,
+    "breadthScore": 26.56,
+    "leaders": [
+      "PFOCUS",
+      "SUNTV",
+      "SIGNPOST"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "PFOCUS",
+        "company_name": "Prime Focus Limited",
+        "rs_rating": 98,
+        "return_1m": 21.86,
+        "return_3m": 36.71,
+        "return_6m": 68.71,
+        "relative_return_3m": 47.5,
+        "relative_return_6m": 80.77
+      },
+      {
+        "symbol": "SUNTV",
+        "company_name": "Sun TV Network Limited",
+        "rs_rating": 77,
+        "return_1m": -1.63,
+        "return_3m": 4.26,
+        "return_6m": 10.58,
+        "relative_return_3m": 15.05,
+        "relative_return_6m": 22.64
+      },
+      {
+        "symbol": "SIGNPOST",
+        "company_name": "Signpost India Limited",
+        "rs_rating": 75,
+        "return_1m": -7.85,
+        "return_3m": 3.7,
+        "return_6m": -20.09,
+        "relative_return_3m": 14.49,
+        "relative_return_6m": -8.03
+      },
+      {
+        "symbol": "PVRINOX",
+        "company_name": "PVR INOX Limited",
+        "rs_rating": 61,
+        "return_1m": -9.39,
+        "return_3m": -8.43,
+        "return_6m": -15.89,
+        "relative_return_3m": 2.36,
+        "relative_return_6m": -3.83
+      },
+      {
+        "symbol": "TIPSMUSIC",
+        "company_name": "Tips Music Limited",
+        "rs_rating": 59,
+        "return_1m": -4.88,
+        "return_3m": 1.02,
+        "return_6m": -7.65,
+        "relative_return_3m": 11.81,
+        "relative_return_6m": 4.41
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -4.35,
+    "rankChange1w": -3
+  },
+  {
+    "rank": 56,
+    "groupId": "specialty-chemicals",
+    "groupName": "Specialty Chemicals",
+    "score": 30.77,
+    "return1m": -7.48,
+    "return3m": -13.23,
+    "return6m": -22.47,
+    "relativeReturn1m": 1.46,
+    "relativeReturn3m": -2.44,
+    "relativeReturn6m": -10.41,
+    "above50dma": 18.75,
+    "above200dma": 14.58,
+    "breadthScore": 26.56,
+    "leaders": [
+      "AETHER",
+      "PRIVISCL",
+      "NAVINFLUOR"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "AETHER",
+        "company_name": "Aether Industries Limited",
+        "rs_rating": 94,
+        "return_1m": 13.43,
+        "return_3m": 30.08,
+        "return_6m": 49.47,
+        "relative_return_3m": 40.87,
+        "relative_return_6m": 61.53
+      },
+      {
+        "symbol": "PRIVISCL",
+        "company_name": "Privi Speciality Chemicals Limited",
+        "rs_rating": 90,
+        "return_1m": -0.78,
+        "return_3m": -12.35,
+        "return_6m": 20.48,
+        "relative_return_3m": -1.56,
+        "relative_return_6m": 32.54
+      },
+      {
+        "symbol": "NAVINFLUOR",
+        "company_name": "Navin Fluorine International Limited",
+        "rs_rating": 88,
+        "return_1m": -8.69,
+        "return_3m": -0.03,
+        "return_6m": 25.29,
+        "relative_return_3m": 10.76,
+        "relative_return_6m": 37.35
+      },
+      {
+        "symbol": "LINDEINDIA",
+        "company_name": "Linde India Limited",
+        "rs_rating": 88,
+        "return_1m": 8.05,
+        "return_3m": 24.31,
+        "return_6m": 11.9,
+        "relative_return_3m": 35.1,
+        "relative_return_6m": 23.96
+      },
+      {
+        "symbol": "ANURAS",
+        "company_name": "Anupam Rasayan India Limited",
+        "rs_rating": 87,
+        "return_1m": -0.35,
+        "return_3m": -4.22,
+        "return_6m": 13.92,
+        "relative_return_3m": 6.57,
+        "relative_return_6m": 25.98
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -7.4,
+    "rankChange1w": -11
+  },
+  {
+    "rank": 57,
+    "groupId": "value-retail",
+    "groupName": "Value Retail",
+    "score": 30.4,
+    "return1m": -4.08,
+    "return3m": -13.67,
+    "return6m": -28.86,
+    "relativeReturn1m": 4.86,
+    "relativeReturn3m": -2.88,
+    "relativeReturn6m": -16.8,
+    "above50dma": 20.0,
+    "above200dma": 20.0,
+    "breadthScore": 20.0,
+    "leaders": [
+      "DMART",
+      "VMM",
+      "EMIL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "DMART",
+        "company_name": "Avenue Supermarts Limited",
+        "rs_rating": 80,
+        "return_1m": 11.44,
+        "return_3m": 14.41,
+        "return_6m": -6.73,
+        "relative_return_3m": 25.2,
+        "relative_return_6m": 5.33
+      },
+      {
+        "symbol": "VMM",
+        "company_name": "Vishal Mega Mart Limited",
+        "rs_rating": 42,
+        "return_1m": -12.34,
+        "return_3m": -20.89,
+        "return_6m": -26.89,
+        "relative_return_3m": -10.1,
+        "relative_return_6m": -14.83
+      },
+      {
+        "symbol": "EMIL",
+        "company_name": "Electronics Mart India Limited",
+        "rs_rating": 28,
+        "return_1m": -5.25,
+        "return_3m": -8.23,
+        "return_6m": -38.93,
+        "relative_return_3m": 2.56,
+        "relative_return_6m": -26.87
+      },
+      {
+        "symbol": "VMART",
+        "company_name": "V-Mart Retail Limited",
+        "rs_rating": 14,
+        "return_1m": -6.62,
+        "return_3m": -27.8,
+        "return_6m": -25.62,
+        "relative_return_3m": -17.01,
+        "relative_return_6m": -13.56
+      },
+      {
+        "symbol": "SHOPERSTOP",
+        "company_name": "Shoppers Stop Limited",
+        "rs_rating": 7,
+        "return_1m": -7.64,
+        "return_3m": -25.82,
+        "return_6m": -46.13,
+        "relative_return_3m": -15.03,
+        "relative_return_6m": -34.07
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 10.44,
+    "rankChange1w": 8
+  },
+  {
+    "rank": 58,
+    "groupId": "dairy",
+    "groupName": "Dairy",
+    "score": 29.57,
+    "return1m": -5.03,
+    "return3m": -19.38,
+    "return6m": -26.01,
+    "relativeReturn1m": 3.91,
+    "relativeReturn3m": -8.59,
+    "relativeReturn6m": -13.95,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 12.5,
+    "leaders": [
+      "HATSUN",
+      "KWIL",
+      "PARAGMILK"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "HATSUN",
+        "company_name": "Hatsun Agro Product Limited",
+        "rs_rating": 66,
+        "return_1m": 0.69,
+        "return_3m": -7.37,
+        "return_6m": -0.25,
+        "relative_return_3m": 3.42,
+        "relative_return_6m": 11.81
+      },
+      {
+        "symbol": "KWIL",
+        "company_name": "Kwality Wall's (India) Limited",
+        "rs_rating": 61,
+        "return_1m": -3.62,
+        "return_3m": -10.48,
+        "return_6m": -15.62,
+        "relative_return_3m": 0.31,
+        "relative_return_6m": -3.56
+      },
+      {
+        "symbol": "PARAGMILK",
+        "company_name": "Parag Milk Foods Limited",
+        "rs_rating": 39,
+        "return_1m": 0.08,
+        "return_3m": -33.25,
+        "return_6m": -31.13,
+        "relative_return_3m": -22.46,
+        "relative_return_6m": -19.07
+      },
+      {
+        "symbol": "VADILALIND",
+        "company_name": "Vadilal Industries Limited",
+        "rs_rating": 37,
+        "return_1m": -12.02,
+        "return_3m": -14.26,
+        "return_6m": -27.47,
+        "relative_return_3m": -3.47,
+        "relative_return_6m": -15.41
+      },
+      {
+        "symbol": "DODLA",
+        "company_name": "Dodla Dairy Limited",
+        "rs_rating": 36,
+        "return_1m": -10.17,
+        "return_3m": -16.28,
+        "return_6m": -25.81,
+        "relative_return_3m": -5.49,
+        "relative_return_6m": -13.75
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Stable",
+    "scoreChange1w": 0.24,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 59,
+    "groupId": "it-enabled-services",
+    "groupName": "IT Enabled Services",
+    "score": 29.19,
+    "return1m": -6.23,
+    "return3m": -22.2,
+    "return6m": -22.37,
+    "relativeReturn1m": 2.71,
+    "relativeReturn3m": -11.41,
+    "relativeReturn6m": -10.31,
+    "above50dma": 6.67,
+    "above200dma": 6.67,
+    "breadthScore": 16.67,
+    "leaders": [
+      "NETWEB",
+      "RPSGVENT",
+      "BBOX"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "NETWEB",
+        "company_name": "Netweb Technologies India Limited",
+        "rs_rating": 93,
+        "return_1m": -12.89,
+        "return_3m": 0.46,
+        "return_6m": -7.45,
+        "relative_return_3m": 11.25,
+        "relative_return_6m": 4.61
+      },
+      {
+        "symbol": "RPSGVENT",
+        "company_name": "RPSG VENTURES LIMITED",
+        "rs_rating": 91,
+        "return_1m": 57.08,
+        "return_3m": 35.27,
+        "return_6m": 20.18,
+        "relative_return_3m": 46.06,
+        "relative_return_6m": 32.24
+      },
+      {
+        "symbol": "BBOX",
+        "company_name": "Black Box Limited",
+        "rs_rating": 72,
+        "return_1m": -13.47,
+        "return_3m": -14.32,
+        "return_6m": -1.27,
+        "relative_return_3m": -3.53,
+        "relative_return_6m": 10.79
+      },
+      {
+        "symbol": "AURUM",
+        "company_name": "Aurum PropTech Limited",
+        "rs_rating": 67,
+        "return_1m": -4.29,
+        "return_3m": -6.95,
+        "return_6m": 4.63,
+        "relative_return_3m": 3.84,
+        "relative_return_6m": 16.69
+      },
+      {
+        "symbol": "DATAMATICS",
+        "company_name": "Datamatics Global Services Limited",
+        "rs_rating": 66,
+        "return_1m": -10.4,
+        "return_3m": -15.7,
+        "return_6m": -22.7,
+        "relative_return_3m": -4.91,
+        "relative_return_6m": -10.64
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Improving",
+    "scoreChange1w": 17.03,
+    "rankChange1w": 12
+  },
+  {
+    "rank": 60,
+    "groupId": "paints",
+    "groupName": "Paints",
+    "score": 28.7,
+    "return1m": -10.46,
+    "return3m": -21.25,
+    "return6m": -20.14,
+    "relativeReturn1m": -1.52,
+    "relativeReturn3m": -10.46,
+    "relativeReturn6m": -8.08,
+    "above50dma": 16.67,
+    "above200dma": 0.0,
+    "breadthScore": 8.34,
+    "leaders": [
+      "SIRCA",
+      "AKZOINDIA",
+      "ASIANPAINT"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SIRCA",
+        "company_name": "Sirca Paints India Limited",
+        "rs_rating": 79,
+        "return_1m": -8.11,
+        "return_3m": -13.19,
+        "return_6m": -16.84,
+        "relative_return_3m": -2.4,
+        "relative_return_6m": -4.78
+      },
+      {
+        "symbol": "AKZOINDIA",
+        "company_name": "Akzo Nobel India Limited",
+        "rs_rating": 63,
+        "return_1m": -4.19,
+        "return_3m": -5.2,
+        "return_6m": -12.65,
+        "relative_return_3m": 5.59,
+        "relative_return_6m": -0.59
+      },
+      {
+        "symbol": "ASIANPAINT",
+        "company_name": "Asian Paints Limited",
+        "rs_rating": 52,
+        "return_1m": -10.18,
+        "return_3m": -20.98,
+        "return_6m": -11.53,
+        "relative_return_3m": -10.19,
+        "relative_return_6m": 0.53
+      },
+      {
+        "symbol": "BERGEPAINT",
+        "company_name": "Berger Paints (I) Limited",
+        "rs_rating": 32,
+        "return_1m": -7.15,
+        "return_3m": -21.88,
+        "return_6m": -20.97,
+        "relative_return_3m": -11.09,
+        "relative_return_6m": -8.91
+      },
+      {
+        "symbol": "KANSAINER",
+        "company_name": "Kansai Nerolac Paints Limited",
+        "rs_rating": 20,
+        "return_1m": -11.33,
+        "return_3m": -26.55,
+        "return_6m": -27.74,
+        "relative_return_3m": -15.76,
+        "relative_return_6m": -15.68
+      }
+    ],
+    "strengthBucket": "Mid",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -1.54,
+    "rankChange1w": -4
+  },
+  {
+    "rank": 61,
+    "groupId": "gas-utilities",
+    "groupName": "Gas Utilities",
+    "score": 24.27,
+    "return1m": -13.93,
+    "return3m": -14.85,
+    "return6m": -19.27,
+    "relativeReturn1m": -4.99,
+    "relativeReturn3m": -4.06,
+    "relativeReturn6m": -7.21,
+    "above50dma": 12.5,
+    "above200dma": 12.5,
+    "breadthScore": 21.88,
+    "leaders": [
+      "CONFIPET",
+      "PETRONET",
+      "ATGL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CONFIPET",
+        "company_name": "Confidence Petroleum India Limited",
+        "rs_rating": 88,
+        "return_1m": 67.77,
+        "return_3m": 42.71,
+        "return_6m": 13.15,
+        "relative_return_3m": 53.5,
+        "relative_return_6m": 25.21
+      },
+      {
+        "symbol": "PETRONET",
+        "company_name": "Petronet LNG Limited",
+        "rs_rating": 58,
+        "return_1m": -19.4,
+        "return_3m": -10.19,
+        "return_6m": -4.22,
+        "relative_return_3m": 0.6,
+        "relative_return_6m": 7.84
+      },
+      {
+        "symbol": "ATGL",
+        "company_name": "Adani Total Gas Limited",
+        "rs_rating": 46,
+        "return_1m": 0.94,
+        "return_3m": -8.74,
+        "return_6m": -22.07,
+        "relative_return_3m": 2.05,
+        "relative_return_6m": -10.01
+      },
+      {
+        "symbol": "GAIL",
+        "company_name": "GAIL (India) Limited",
+        "rs_rating": 42,
+        "return_1m": -16.59,
+        "return_3m": -14.5,
+        "return_6m": -16.88,
+        "relative_return_3m": -3.71,
+        "relative_return_6m": -4.82
+      },
+      {
+        "symbol": "GSPL",
+        "company_name": "Gujarat State Petronet Limited",
+        "rs_rating": 32,
+        "return_1m": -21.71,
+        "return_3m": -19.47,
+        "return_6m": -26.11,
+        "relative_return_3m": -8.68,
+        "relative_return_6m": -14.05
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Stable",
+    "scoreChange1w": -1.09,
+    "rankChange1w": -1
+  },
+  {
+    "rank": 62,
+    "groupId": "home-appliances",
+    "groupName": "Home Appliances",
+    "score": 22.73,
+    "return1m": -12.6,
+    "return3m": -17.34,
+    "return6m": -26.03,
+    "relativeReturn1m": -3.66,
+    "relativeReturn3m": -6.55,
+    "relativeReturn6m": -13.97,
+    "above50dma": 5.26,
+    "above200dma": 0.0,
+    "breadthScore": 13.16,
+    "leaders": [
+      "CARYSIL",
+      "VGUARD",
+      "VOLTAS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CARYSIL",
+        "company_name": "CARYSIL LIMITED",
+        "rs_rating": 68,
+        "return_1m": -12.87,
+        "return_3m": -9.13,
+        "return_6m": -9.76,
+        "relative_return_3m": 1.66,
+        "relative_return_6m": 2.3
+      },
+      {
+        "symbol": "VGUARD",
+        "company_name": "V-Guard Industries Limited",
+        "rs_rating": 62,
+        "return_1m": 3.53,
+        "return_3m": -1.13,
+        "return_6m": -11.35,
+        "relative_return_3m": 9.66,
+        "relative_return_6m": 0.71
+      },
+      {
+        "symbol": "VOLTAS",
+        "company_name": "Voltas Limited",
+        "rs_rating": 58,
+        "return_1m": -18.75,
+        "return_3m": -10.43,
+        "return_6m": -9.86,
+        "relative_return_3m": 0.36,
+        "relative_return_6m": 2.2
+      },
+      {
+        "symbol": "AMBER",
+        "company_name": "Amber Enterprises India Limited",
+        "rs_rating": 56,
+        "return_1m": -22.03,
+        "return_3m": -5.71,
+        "return_6m": -25.42,
+        "relative_return_3m": 5.08,
+        "relative_return_6m": -13.36
+      },
+      {
+        "symbol": "BUTTERFLY",
+        "company_name": "Butterfly Gandhimathi Appliances Limited",
+        "rs_rating": 51,
+        "return_1m": -1.08,
+        "return_3m": -10.51,
+        "return_6m": -16.64,
+        "relative_return_3m": 0.28,
+        "relative_return_6m": -4.58
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -15.08,
+    "rankChange1w": -16
+  },
+  {
+    "rank": 63,
+    "groupId": "it-services",
+    "groupName": "IT Services",
+    "score": 22.2,
+    "return1m": -6.67,
+    "return3m": -27.2,
+    "return6m": -25.66,
+    "relativeReturn1m": 2.27,
+    "relativeReturn3m": -16.41,
+    "relativeReturn6m": -13.6,
+    "above50dma": 3.7,
+    "above200dma": 0.0,
+    "breadthScore": 11.11,
+    "leaders": [
+      "INFOBEAN",
+      "TECHM",
+      "PERSISTENT"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "INFOBEAN",
+        "company_name": "InfoBeans Technologies Limited",
+        "rs_rating": 87,
+        "return_1m": -29.61,
+        "return_3m": -27.72,
+        "return_6m": 8.73,
+        "relative_return_3m": -16.93,
+        "relative_return_6m": 20.79
+      },
+      {
+        "symbol": "TECHM",
+        "company_name": "Tech Mahindra Limited",
+        "rs_rating": 65,
+        "return_1m": 5.67,
+        "return_3m": -10.75,
+        "return_6m": 0.11,
+        "relative_return_3m": 0.04,
+        "relative_return_6m": 12.17
+      },
+      {
+        "symbol": "PERSISTENT",
+        "company_name": "Persistent Systems Limited",
+        "rs_rating": 59,
+        "return_1m": 10.46,
+        "return_3m": -16.76,
+        "return_6m": 1.02,
+        "relative_return_3m": -5.97,
+        "relative_return_6m": 13.08
+      },
+      {
+        "symbol": "RATEGAIN",
+        "company_name": "Rategain Travel Technologies Limited",
+        "rs_rating": 57,
+        "return_1m": -3.41,
+        "return_3m": -24.35,
+        "return_6m": -26.1,
+        "relative_return_3m": -13.56,
+        "relative_return_6m": -14.04
+      },
+      {
+        "symbol": "HCLTECH",
+        "company_name": "HCL Technologies Limited",
+        "rs_rating": 55,
+        "return_1m": 1.22,
+        "return_3m": -15.4,
+        "return_6m": -1.8,
+        "relative_return_3m": -4.61,
+        "relative_return_6m": 10.26
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 13.13,
+    "rankChange1w": 13
+  },
+  {
+    "rank": 64,
+    "groupId": "agro-chemicals",
+    "groupName": "Agro Chemicals",
+    "score": 21.97,
+    "return1m": -8.12,
+    "return3m": -16.56,
+    "return6m": -27.13,
+    "relativeReturn1m": 0.82,
+    "relativeReturn3m": -5.77,
+    "relativeReturn6m": -15.07,
+    "above50dma": 14.29,
+    "above200dma": 0.0,
+    "breadthScore": 12.5,
+    "leaders": [
+      "SHARDACROP",
+      "BAYERCROP",
+      "NACLIND"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "SHARDACROP",
+        "company_name": "Sharda Cropchem Limited",
+        "rs_rating": 86,
+        "return_1m": -25.65,
+        "return_3m": 3.61,
+        "return_6m": 3.96,
+        "relative_return_3m": 14.4,
+        "relative_return_6m": 16.02
+      },
+      {
+        "symbol": "BAYERCROP",
+        "company_name": "Bayer Cropscience Limited",
+        "rs_rating": 70,
+        "return_1m": -0.32,
+        "return_3m": 3.57,
+        "return_6m": -4.47,
+        "relative_return_3m": 14.36,
+        "relative_return_6m": 7.59
+      },
+      {
+        "symbol": "NACLIND",
+        "company_name": "NACL Industries Limited",
+        "rs_rating": 51,
+        "return_1m": 4.05,
+        "return_3m": -18.2,
+        "return_6m": -37.09,
+        "relative_return_3m": -7.41,
+        "relative_return_6m": -25.03
+      },
+      {
+        "symbol": "UPL",
+        "company_name": "UPL Limited",
+        "rs_rating": 45,
+        "return_1m": -5.6,
+        "return_3m": -23.63,
+        "return_6m": -12.57,
+        "relative_return_3m": -12.84,
+        "relative_return_6m": -0.51
+      },
+      {
+        "symbol": "RALLIS",
+        "company_name": "Rallis India Limited",
+        "rs_rating": 45,
+        "return_1m": -15.13,
+        "return_3m": -14.94,
+        "return_6m": -26.39,
+        "relative_return_3m": -4.15,
+        "relative_return_6m": -14.33
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 12.44,
+    "rankChange1w": 11
+  },
+  {
+    "rank": 65,
+    "groupId": "medical-devices",
+    "groupName": "Medical Devices",
+    "score": 21.66,
+    "return1m": -0.47,
+    "return3m": -20.26,
+    "return6m": -46.02,
+    "relativeReturn1m": 8.47,
+    "relativeReturn3m": -9.47,
+    "relativeReturn6m": -33.96,
+    "above50dma": 25.0,
+    "above200dma": 0.0,
+    "breadthScore": 6.25,
+    "leaders": [
+      "FISCHER",
+      "POLYMED",
+      "TARSONS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "FISCHER",
+        "company_name": "Fischer Medical Ventures Limited",
+        "rs_rating": 36,
+        "return_1m": 5.78,
+        "return_3m": -4.65,
+        "return_6m": -64.96,
+        "relative_return_3m": 6.14,
+        "relative_return_6m": -52.9
+      },
+      {
+        "symbol": "POLYMED",
+        "company_name": "Poly Medicure Limited",
+        "rs_rating": 9,
+        "return_1m": 1.99,
+        "return_3m": -24.58,
+        "return_6m": -33.19,
+        "relative_return_3m": -13.79,
+        "relative_return_6m": -21.13
+      },
+      {
+        "symbol": "TARSONS",
+        "company_name": "Tarsons Products Limited",
+        "rs_rating": 7,
+        "return_1m": -6.0,
+        "return_3m": -21.3,
+        "return_6m": -40.75,
+        "relative_return_3m": -10.51,
+        "relative_return_6m": -28.69
+      },
+      {
+        "symbol": "LAXMIDENTL",
+        "company_name": "Laxmi Dental Limited",
+        "rs_rating": 2,
+        "return_1m": -3.67,
+        "return_3m": -30.52,
+        "return_6m": -45.2,
+        "relative_return_3m": -19.73,
+        "relative_return_6m": -33.14
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 10.04,
+    "rankChange1w": 7
+  },
+  {
+    "rank": 66,
+    "groupId": "retail-specialty",
+    "groupName": "Retail Specialty",
+    "score": 20.48,
+    "return1m": -8.5,
+    "return3m": -18.93,
+    "return6m": -26.69,
+    "relativeReturn1m": 0.44,
+    "relativeReturn3m": -8.14,
+    "relativeReturn6m": -14.63,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 18.18,
+    "leaders": [
+      "LENSKART",
+      "STYLEBAAZA",
+      "AVL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "LENSKART",
+        "company_name": "Lenskart Solutions Limited",
+        "rs_rating": 82,
+        "return_1m": -4.44,
+        "return_3m": 7.08,
+        "return_6m": 19.82,
+        "relative_return_3m": 17.87,
+        "relative_return_6m": 31.88
+      },
+      {
+        "symbol": "STYLEBAAZA",
+        "company_name": "Baazar Style Retail Limited",
+        "rs_rating": 81,
+        "return_1m": -4.84,
+        "return_3m": 10.55,
+        "return_6m": -16.7,
+        "relative_return_3m": 21.34,
+        "relative_return_6m": -4.64
+      },
+      {
+        "symbol": "AVL",
+        "company_name": "Aditya Vision Limited",
+        "rs_rating": 69,
+        "return_1m": -4.76,
+        "return_3m": -9.96,
+        "return_6m": -18.13,
+        "relative_return_3m": 0.83,
+        "relative_return_6m": -6.07
+      },
+      {
+        "symbol": "V2RETAIL",
+        "company_name": "V2 Retail Limited",
+        "rs_rating": 67,
+        "return_1m": -2.86,
+        "return_3m": -20.0,
+        "return_6m": -3.0,
+        "relative_return_3m": -9.21,
+        "relative_return_6m": 9.06
+      },
+      {
+        "symbol": "ARVINDFASN",
+        "company_name": "Arvind Fashions Limited",
+        "rs_rating": 56,
+        "return_1m": 0.13,
+        "return_3m": -14.92,
+        "return_6m": -20.09,
+        "relative_return_3m": -4.13,
+        "relative_return_6m": -8.03
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 6.28,
+    "rankChange1w": 2
+  },
+  {
+    "rank": 67,
+    "groupId": "software-products",
+    "groupName": "Software Products",
+    "score": 17.87,
+    "return1m": -9.01,
+    "return3m": -24.8,
+    "return6m": -30.8,
+    "relativeReturn1m": -0.07,
+    "relativeReturn3m": -14.01,
+    "relativeReturn6m": -18.74,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 3.57,
+    "leaders": [
+      "OFSS",
+      "CAPILLARY",
+      "NUCLEUS"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "OFSS",
+        "company_name": "Oracle Financial Services Software Limited",
+        "rs_rating": 48,
+        "return_1m": 5.49,
+        "return_3m": -10.31,
+        "return_6m": -21.83,
+        "relative_return_3m": 0.48,
+        "relative_return_6m": -9.77
+      },
+      {
+        "symbol": "CAPILLARY",
+        "company_name": "Capillary Technologies India Limited",
+        "rs_rating": 46,
+        "return_1m": -5.07,
+        "return_3m": -27.84,
+        "return_6m": -18.77,
+        "relative_return_3m": -17.05,
+        "relative_return_6m": -6.71
+      },
+      {
+        "symbol": "NUCLEUS",
+        "company_name": "Nucleus Software Exports Limited",
+        "rs_rating": 42,
+        "return_1m": -1.04,
+        "return_3m": -14.03,
+        "return_6m": -21.94,
+        "relative_return_3m": -3.24,
+        "relative_return_6m": -9.88
+      },
+      {
+        "symbol": "RAMCOSYS",
+        "company_name": "Ramco Systems Limited",
+        "rs_rating": 38,
+        "return_1m": -20.48,
+        "return_3m": -36.55,
+        "return_6m": -24.33,
+        "relative_return_3m": -25.76,
+        "relative_return_6m": -12.27
+      },
+      {
+        "symbol": "TANLA",
+        "company_name": "Tanla Platforms Limited",
+        "rs_rating": 19,
+        "return_1m": -4.33,
+        "return_3m": -21.56,
+        "return_6m": -42.91,
+        "relative_return_3m": -10.77,
+        "relative_return_6m": -30.85
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 12.96,
+    "rankChange1w": 15
+  },
+  {
+    "rank": 68,
+    "groupId": "investment-holdings",
+    "groupName": "Investment Holdings",
+    "score": 17.83,
+    "return1m": -14.16,
+    "return3m": -18.01,
+    "return6m": -21.18,
+    "relativeReturn1m": -5.22,
+    "relativeReturn3m": -7.22,
+    "relativeReturn6m": -9.12,
+    "above50dma": 3.7,
+    "above200dma": 7.41,
+    "breadthScore": 13.89,
+    "leaders": [
+      "JPOLYINVST",
+      "TVSHLTD",
+      "ABCAPITAL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "JPOLYINVST",
+        "company_name": "Jindal Poly Investment and Finance Company Limited",
+        "rs_rating": 89,
+        "return_1m": -15.99,
+        "return_3m": 1.94,
+        "return_6m": 13.95,
+        "relative_return_3m": 12.73,
+        "relative_return_6m": 26.01
+      },
+      {
+        "symbol": "TVSHLTD",
+        "company_name": "TVS Holdings Limited",
+        "rs_rating": 89,
+        "return_1m": -7.27,
+        "return_3m": -0.28,
+        "return_6m": 7.44,
+        "relative_return_3m": 10.51,
+        "relative_return_6m": 19.5
+      },
+      {
+        "symbol": "ABCAPITAL",
+        "company_name": "Aditya Birla Capital Limited",
+        "rs_rating": 82,
+        "return_1m": -15.32,
+        "return_3m": -14.12,
+        "return_6m": 2.41,
+        "relative_return_3m": -3.33,
+        "relative_return_6m": 14.47
+      },
+      {
+        "symbol": "LTF",
+        "company_name": "L&T Finance Limited",
+        "rs_rating": 81,
+        "return_1m": -20.22,
+        "return_3m": -19.68,
+        "return_6m": -1.95,
+        "relative_return_3m": -8.89,
+        "relative_return_6m": 10.11
+      },
+      {
+        "symbol": "JINDALPHOT",
+        "company_name": "Jindal Photo Limited",
+        "rs_rating": 76,
+        "return_1m": -19.79,
+        "return_3m": -29.25,
+        "return_6m": -3.64,
+        "relative_return_3m": -18.46,
+        "relative_return_6m": 8.42
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -13.61,
+    "rankChange1w": -13
+  },
+  {
+    "rank": 69,
+    "groupId": "travel-aviation",
+    "groupName": "Travel & Aviation",
+    "score": 17.12,
+    "return1m": -9.82,
+    "return3m": -21.89,
+    "return6m": -28.16,
+    "relativeReturn1m": -0.88,
+    "relativeReturn3m": -11.1,
+    "relativeReturn6m": -16.1,
+    "above50dma": 16.67,
+    "above200dma": 0.0,
+    "breadthScore": 8.33,
+    "leaders": [
+      "GMRAIRPORT",
+      "WONDERLA",
+      "YATRA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "GMRAIRPORT",
+        "company_name": "GMR AIRPORTS LIMITED",
+        "rs_rating": 72,
+        "return_1m": -12.99,
+        "return_3m": -13.14,
+        "return_6m": -0.07,
+        "relative_return_3m": -2.35,
+        "relative_return_6m": 11.99
+      },
+      {
+        "symbol": "WONDERLA",
+        "company_name": "Wonderla Holidays Limited",
+        "rs_rating": 57,
+        "return_1m": 9.61,
+        "return_3m": 1.8,
+        "return_6m": -16.73,
+        "relative_return_3m": 12.59,
+        "relative_return_6m": -4.67
+      },
+      {
+        "symbol": "YATRA",
+        "company_name": "Yatra Online Limited",
+        "rs_rating": 42,
+        "return_1m": -13.32,
+        "return_3m": -44.54,
+        "return_6m": -33.56,
+        "relative_return_3m": -33.75,
+        "relative_return_6m": -21.5
+      },
+      {
+        "symbol": "IXIGO",
+        "company_name": "Le Travenues Technology Limited",
+        "rs_rating": 36,
+        "return_1m": 1.13,
+        "return_3m": -34.99,
+        "return_6m": -39.82,
+        "relative_return_3m": -24.2,
+        "relative_return_6m": -27.76
+      },
+      {
+        "symbol": "INDIGO",
+        "company_name": "InterGlobe Aviation Limited",
+        "rs_rating": 32,
+        "return_1m": -15.71,
+        "return_3m": -17.82,
+        "return_6m": -26.66,
+        "relative_return_3m": -7.03,
+        "relative_return_6m": -14.6
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 11.15,
+    "rankChange1w": 9
+  },
+  {
+    "rank": 70,
+    "groupId": "cement",
+    "groupName": "Cement",
+    "score": 16.88,
+    "return1m": -13.6,
+    "return3m": -17.0,
+    "return6m": -24.1,
+    "relativeReturn1m": -4.66,
+    "relativeReturn3m": -6.21,
+    "relativeReturn6m": -12.04,
+    "above50dma": 0.0,
+    "above200dma": 4.55,
+    "breadthScore": 13.64,
+    "leaders": [
+      "MANGLMCEM",
+      "INDIACEM",
+      "JSWCEMENT"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "MANGLMCEM",
+        "company_name": "Mangalam Cement Limited",
+        "rs_rating": 80,
+        "return_1m": -12.71,
+        "return_3m": 4.12,
+        "return_6m": 8.51,
+        "relative_return_3m": 14.91,
+        "relative_return_6m": 20.57
+      },
+      {
+        "symbol": "INDIACEM",
+        "company_name": "The India Cements Limited",
+        "rs_rating": 70,
+        "return_1m": -15.73,
+        "return_3m": -19.33,
+        "return_6m": -7.89,
+        "relative_return_3m": -8.54,
+        "relative_return_6m": 4.17
+      },
+      {
+        "symbol": "JSWCEMENT",
+        "company_name": "JSW Cement Limited",
+        "rs_rating": 64,
+        "return_1m": -7.28,
+        "return_3m": -2.43,
+        "return_6m": -20.9,
+        "relative_return_3m": 8.36,
+        "relative_return_6m": -8.84
+      },
+      {
+        "symbol": "GRASIM",
+        "company_name": "Grasim Industries Limited",
+        "rs_rating": 63,
+        "return_1m": -11.31,
+        "return_3m": -9.4,
+        "return_6m": -9.07,
+        "relative_return_3m": 1.39,
+        "relative_return_6m": 2.99
+      },
+      {
+        "symbol": "RAMCOCEM",
+        "company_name": "The Ramco Cements Limited",
+        "rs_rating": 61,
+        "return_1m": -19.92,
+        "return_3m": -13.05,
+        "return_6m": -11.77,
+        "relative_return_3m": -2.26,
+        "relative_return_6m": 0.29
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -4.86,
+    "rankChange1w": -8
+  },
+  {
+    "rank": 71,
+    "groupId": "consumer-electronics",
+    "groupName": "Consumer Electronics",
+    "score": 16.19,
+    "return1m": -11.39,
+    "return3m": -21.34,
+    "return6m": -26.47,
+    "relativeReturn1m": -2.45,
+    "relativeReturn3m": -10.55,
+    "relativeReturn6m": -14.41,
+    "above50dma": 12.5,
+    "above200dma": 12.5,
+    "breadthScore": 15.62,
+    "leaders": [
+      "MIRCELECTR",
+      "SHAILY",
+      "VIPIND"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "MIRCELECTR",
+        "company_name": "MIRC Electronics Limited",
+        "rs_rating": 95,
+        "return_1m": -1.34,
+        "return_3m": 2.09,
+        "return_6m": 3.64,
+        "relative_return_3m": 12.88,
+        "relative_return_6m": 15.7
+      },
+      {
+        "symbol": "SHAILY",
+        "company_name": "Shaily Engineering Plastics Limited",
+        "rs_rating": 76,
+        "return_1m": 6.52,
+        "return_3m": -11.45,
+        "return_6m": -10.92,
+        "relative_return_3m": -0.66,
+        "relative_return_6m": 1.14
+      },
+      {
+        "symbol": "VIPIND",
+        "company_name": "VIP Industries Limited",
+        "rs_rating": 37,
+        "return_1m": -12.81,
+        "return_3m": -22.84,
+        "return_6m": -28.36,
+        "relative_return_3m": -12.05,
+        "relative_return_6m": -16.3
+      },
+      {
+        "symbol": "HAVELLS",
+        "company_name": "Havells India Limited",
+        "rs_rating": 34,
+        "return_1m": -16.69,
+        "return_3m": -16.47,
+        "return_6m": -23.3,
+        "relative_return_3m": -5.68,
+        "relative_return_6m": -11.24
+      },
+      {
+        "symbol": "DIXON",
+        "company_name": "Dixon Technologies (India) Limited",
+        "rs_rating": 14,
+        "return_1m": -4.79,
+        "return_3m": -19.78,
+        "return_6m": -45.54,
+        "relative_return_3m": -8.99,
+        "relative_return_6m": -33.48
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -4.98,
+    "rankChange1w": -7
+  },
+  {
+    "rank": 72,
+    "groupId": "e-commerce",
+    "groupName": "E-Commerce",
+    "score": 15.77,
+    "return1m": -4.52,
+    "return3m": -21.82,
+    "return6m": -28.89,
+    "relativeReturn1m": 4.42,
+    "relativeReturn3m": -11.03,
+    "relativeReturn6m": -16.83,
+    "above50dma": 7.69,
+    "above200dma": 7.69,
+    "breadthScore": 9.62,
+    "leaders": [
+      "NYKAA",
+      "MEESHO",
+      "URBANCO"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "NYKAA",
+        "company_name": "FSN E-Commerce Ventures Limited",
+        "rs_rating": 84,
+        "return_1m": -7.25,
+        "return_3m": -4.69,
+        "return_6m": 4.32,
+        "relative_return_3m": 6.1,
+        "relative_return_6m": 16.38
+      },
+      {
+        "symbol": "MEESHO",
+        "company_name": "Meesho Limited",
+        "rs_rating": 60,
+        "return_1m": -6.9,
+        "return_3m": -25.12,
+        "return_6m": -12.9,
+        "relative_return_3m": -14.33,
+        "relative_return_6m": -0.84
+      },
+      {
+        "symbol": "URBANCO",
+        "company_name": "Urban Company Limited",
+        "rs_rating": 58,
+        "return_1m": 12.3,
+        "return_3m": -5.62,
+        "return_6m": -30.91,
+        "relative_return_3m": 5.17,
+        "relative_return_6m": -18.85
+      },
+      {
+        "symbol": "INDIAMART",
+        "company_name": "Indiamart Intermesh Limited",
+        "rs_rating": 52,
+        "return_1m": -8.36,
+        "return_3m": -9.26,
+        "return_6m": -15.39,
+        "relative_return_3m": 1.53,
+        "relative_return_6m": -3.33
+      },
+      {
+        "symbol": "ETERNAL",
+        "company_name": "ETERNAL LIMITED",
+        "rs_rating": 46,
+        "return_1m": -7.28,
+        "return_3m": -18.56,
+        "return_6m": -31.43,
+        "relative_return_3m": -7.77,
+        "relative_return_6m": -19.37
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -1.59,
+    "rankChange1w": -6
+  },
+  {
+    "rank": 73,
+    "groupId": "passenger-vehicle-oems",
+    "groupName": "Passenger Vehicle OEMs",
+    "score": 14.96,
+    "return1m": -17.28,
+    "return3m": -19.32,
+    "return6m": -25.41,
+    "relativeReturn1m": -8.34,
+    "relativeReturn3m": -8.53,
+    "relativeReturn6m": -13.35,
+    "above50dma": 16.67,
+    "above200dma": 16.67,
+    "breadthScore": 16.67,
+    "leaders": [
+      "FORCEMOT",
+      "M&M",
+      "MARUTI"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "FORCEMOT",
+        "company_name": "FORCE MOTORS LTD",
+        "rs_rating": 96,
+        "return_1m": -16.44,
+        "return_3m": 14.27,
+        "return_6m": 17.0,
+        "relative_return_3m": 25.06,
+        "relative_return_6m": 29.06
+      },
+      {
+        "symbol": "M&M",
+        "company_name": "Mahindra & Mahindra Limited",
+        "rs_rating": 58,
+        "return_1m": -13.87,
+        "return_3m": -17.0,
+        "return_6m": -15.89,
+        "relative_return_3m": -6.21,
+        "relative_return_6m": -3.83
+      },
+      {
+        "symbol": "MARUTI",
+        "company_name": "Maruti Suzuki India Limited",
+        "rs_rating": 52,
+        "return_1m": -16.46,
+        "return_3m": -24.14,
+        "return_6m": -22.52,
+        "relative_return_3m": -13.35,
+        "relative_return_6m": -10.46
+      },
+      {
+        "symbol": "TMPV",
+        "company_name": "Tata Motors Passenger Vehicles Limited",
+        "rs_rating": 36,
+        "return_1m": -20.52,
+        "return_3m": -15.51,
+        "return_6m": -22.35,
+        "relative_return_3m": -4.72,
+        "relative_return_6m": -10.29
+      },
+      {
+        "symbol": "OLECTRA",
+        "company_name": "Olectra Greentech Limited",
+        "rs_rating": 33,
+        "return_1m": 1.08,
+        "return_3m": -17.43,
+        "return_6m": -37.87,
+        "relative_return_3m": -6.64,
+        "relative_return_6m": -25.81
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -19.53,
+    "rankChange1w": -20
+  },
+  {
+    "rank": 74,
+    "groupId": "business-services",
+    "groupName": "Business Services",
+    "score": 14.47,
+    "return1m": -8.7,
+    "return3m": -22.68,
+    "return6m": -29.06,
+    "relativeReturn1m": 0.24,
+    "relativeReturn3m": -11.89,
+    "relativeReturn6m": -17.0,
+    "above50dma": 17.65,
+    "above200dma": 0.0,
+    "breadthScore": 7.35,
+    "leaders": [
+      "BLACKBUCK",
+      "TEXINFRA",
+      "IGIL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "BLACKBUCK",
+        "company_name": "BLACKBUCK LIMITED",
+        "rs_rating": 80,
+        "return_1m": -4.77,
+        "return_3m": -14.82,
+        "return_6m": -2.9,
+        "relative_return_3m": -4.03,
+        "relative_return_6m": 9.16
+      },
+      {
+        "symbol": "TEXINFRA",
+        "company_name": "Texmaco Infrastructure & Holdings Limited",
+        "rs_rating": 69,
+        "return_1m": 1.99,
+        "return_3m": -4.35,
+        "return_6m": 3.53,
+        "relative_return_3m": 6.44,
+        "relative_return_6m": 15.59
+      },
+      {
+        "symbol": "IGIL",
+        "company_name": "International Gemmological Institute (India) Limited",
+        "rs_rating": 67,
+        "return_1m": -3.52,
+        "return_3m": -1.8,
+        "return_6m": -12.59,
+        "relative_return_3m": 8.99,
+        "relative_return_6m": -0.53
+      },
+      {
+        "symbol": "NESCO",
+        "company_name": "Nesco Limited",
+        "rs_rating": 63,
+        "return_1m": -7.45,
+        "return_3m": -14.33,
+        "return_6m": -28.11,
+        "relative_return_3m": -3.54,
+        "relative_return_6m": -16.05
+      },
+      {
+        "symbol": "KERNEX",
+        "company_name": "Kernex Microsystems (India) Limited",
+        "rs_rating": 55,
+        "return_1m": -11.29,
+        "return_3m": -22.57,
+        "return_6m": -13.35,
+        "relative_return_3m": -11.78,
+        "relative_return_6m": -1.29
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": 0.49,
+    "rankChange1w": -5
+  },
+  {
+    "rank": 75,
+    "groupId": "telecom-services",
+    "groupName": "Telecom Services",
+    "score": 12.98,
+    "return1m": -12.56,
+    "return3m": -26.29,
+    "return6m": -24.14,
+    "relativeReturn1m": -3.62,
+    "relativeReturn3m": -15.5,
+    "relativeReturn6m": -12.08,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 9.38,
+    "leaders": [
+      "IDEA",
+      "BHARTIARTL",
+      "BHARTIHEXA"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "IDEA",
+        "company_name": "Vodafone Idea Limited",
+        "rs_rating": 66,
+        "return_1m": -20.32,
+        "return_3m": -28.39,
+        "return_6m": -0.47,
+        "relative_return_3m": -17.6,
+        "relative_return_6m": 11.59
+      },
+      {
+        "symbol": "BHARTIARTL",
+        "company_name": "Bharti Airtel Limited",
+        "rs_rating": 61,
+        "return_1m": -6.34,
+        "return_3m": -14.89,
+        "return_6m": -7.2,
+        "relative_return_3m": -4.1,
+        "relative_return_6m": 4.86
+      },
+      {
+        "symbol": "BHARTIHEXA",
+        "company_name": "Bharti Hexacom Limited",
+        "rs_rating": 57,
+        "return_1m": -8.95,
+        "return_3m": -17.51,
+        "return_6m": -10.64,
+        "relative_return_3m": -6.72,
+        "relative_return_6m": 1.42
+      },
+      {
+        "symbol": "TATACOMM",
+        "company_name": "Tata Communications Limited",
+        "rs_rating": 38,
+        "return_1m": -15.26,
+        "return_3m": -22.31,
+        "return_6m": -16.54,
+        "relative_return_3m": -11.52,
+        "relative_return_6m": -4.48
+      },
+      {
+        "symbol": "RAILTEL",
+        "company_name": "Railtel Corporation Of India Limited",
+        "rs_rating": 16,
+        "return_1m": -16.57,
+        "return_3m": -29.96,
+        "return_6m": -29.0,
+        "relative_return_3m": -19.17,
+        "relative_return_6m": -16.94
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": 0.1,
+    "rankChange1w": -5
+  },
+  {
+    "rank": 76,
+    "groupId": "home-furnishings",
+    "groupName": "Home Furnishings",
+    "score": 11.93,
+    "return1m": -12.45,
+    "return3m": -20.63,
+    "return6m": -29.03,
+    "relativeReturn1m": -3.51,
+    "relativeReturn3m": -9.84,
+    "relativeReturn6m": -16.97,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 6.25,
+    "leaders": [
+      "EUROPRATIK",
+      "WAKEFIT",
+      "ALLTIME"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "EUROPRATIK",
+        "company_name": "Euro Pratik Sales Limited",
+        "rs_rating": 46,
+        "return_1m": -12.09,
+        "return_3m": -25.74,
+        "return_6m": -10.19,
+        "relative_return_3m": -14.95,
+        "relative_return_6m": 1.87
+      },
+      {
+        "symbol": "WAKEFIT",
+        "company_name": "Wakefit Innovations Limited",
+        "rs_rating": 36,
+        "return_1m": -23.76,
+        "return_3m": -21.09,
+        "return_6m": -23.06,
+        "relative_return_3m": -10.3,
+        "relative_return_6m": -11.0
+      },
+      {
+        "symbol": "ALLTIME",
+        "company_name": "All Time Plastics Limited",
+        "rs_rating": 35,
+        "return_1m": -17.69,
+        "return_3m": -23.12,
+        "return_6m": -26.63,
+        "relative_return_3m": -12.33,
+        "relative_return_6m": -14.57
+      },
+      {
+        "symbol": "BIRLANU",
+        "company_name": "BirlaNu Limited",
+        "rs_rating": 26,
+        "return_1m": -8.55,
+        "return_3m": -7.66,
+        "return_6m": -29.68,
+        "relative_return_3m": 3.13,
+        "relative_return_6m": -17.62
+      },
+      {
+        "symbol": "SFL",
+        "company_name": "Sheela Foam Limited",
+        "rs_rating": 24,
+        "return_1m": -9.67,
+        "return_3m": -13.79,
+        "return_6m": -27.55,
+        "relative_return_3m": -3.0,
+        "relative_return_6m": -15.49
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": 1.16,
+    "rankChange1w": -3
+  },
+  {
+    "rank": 77,
+    "groupId": "restaurants-qsr",
+    "groupName": "Restaurants & QSR",
+    "score": 8.43,
+    "return1m": -14.69,
+    "return3m": -18.51,
+    "return6m": -35.87,
+    "relativeReturn1m": -5.75,
+    "relativeReturn3m": -7.72,
+    "relativeReturn6m": -23.81,
+    "above50dma": 16.67,
+    "above200dma": 0.0,
+    "breadthScore": 16.67,
+    "leaders": [
+      "TRAVELFOOD",
+      "RBA",
+      "JUBLFOOD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "TRAVELFOOD",
+        "company_name": "Travel Food Services Limited",
+        "rs_rating": 83,
+        "return_1m": 3.97,
+        "return_3m": 9.34,
+        "return_6m": -4.86,
+        "relative_return_3m": 20.13,
+        "relative_return_6m": 7.2
+      },
+      {
+        "symbol": "RBA",
+        "company_name": "Restaurant Brands Asia Limited",
+        "rs_rating": 53,
+        "return_1m": -4.62,
+        "return_3m": -1.03,
+        "return_6m": -26.78,
+        "relative_return_3m": 9.76,
+        "relative_return_6m": -14.72
+      },
+      {
+        "symbol": "JUBLFOOD",
+        "company_name": "Jubilant Foodworks Limited",
+        "rs_rating": 16,
+        "return_1m": -14.67,
+        "return_3m": -21.05,
+        "return_6m": -29.89,
+        "relative_return_3m": -10.26,
+        "relative_return_6m": -17.83
+      },
+      {
+        "symbol": "WESTLIFE",
+        "company_name": "WESTLIFE FOODWORLD LIMITED",
+        "rs_rating": 15,
+        "return_1m": -9.22,
+        "return_3m": -15.54,
+        "return_6m": -36.19,
+        "relative_return_3m": -4.75,
+        "relative_return_6m": -24.13
+      },
+      {
+        "symbol": "DEVYANI",
+        "company_name": "Devyani International Limited",
+        "rs_rating": 6,
+        "return_1m": -26.37,
+        "return_3m": -33.12,
+        "return_6m": -45.27,
+        "relative_return_3m": -22.33,
+        "relative_return_6m": -33.21
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 1.61,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 78,
+    "groupId": "hotels-resorts",
+    "groupName": "Hotels & Resorts",
+    "score": 8.22,
+    "return1m": -12.15,
+    "return3m": -20.86,
+    "return6m": -29.76,
+    "relativeReturn1m": -3.21,
+    "relativeReturn3m": -10.07,
+    "relativeReturn6m": -17.7,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 3.12,
+    "leaders": [
+      "THELEELA",
+      "BRIGHOTEL",
+      "CHALET"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "THELEELA",
+        "company_name": "Leela Palaces Hotels & Resorts Limited",
+        "rs_rating": 67,
+        "return_1m": -5.66,
+        "return_3m": -1.41,
+        "return_6m": -3.94,
+        "relative_return_3m": 9.38,
+        "relative_return_6m": 8.12
+      },
+      {
+        "symbol": "BRIGHOTEL",
+        "company_name": "Brigade Hotel Ventures Limited",
+        "rs_rating": 41,
+        "return_1m": -6.29,
+        "return_3m": -16.6,
+        "return_6m": -29.89,
+        "relative_return_3m": -5.81,
+        "relative_return_6m": -17.83
+      },
+      {
+        "symbol": "CHALET",
+        "company_name": "Chalet Hotels Limited",
+        "rs_rating": 37,
+        "return_1m": -12.72,
+        "return_3m": -16.5,
+        "return_6m": -28.41,
+        "relative_return_3m": -5.71,
+        "relative_return_6m": -16.35
+      },
+      {
+        "symbol": "EIHOTEL",
+        "company_name": "EIH Limited",
+        "rs_rating": 30,
+        "return_1m": -8.97,
+        "return_3m": -21.03,
+        "return_6m": -24.4,
+        "relative_return_3m": -10.24,
+        "relative_return_6m": -12.34
+      },
+      {
+        "symbol": "VENTIVE",
+        "company_name": "Ventive Hospitality Limited",
+        "rs_rating": 28,
+        "return_1m": -19.72,
+        "return_3m": -20.88,
+        "return_6m": -24.55,
+        "relative_return_3m": -10.09,
+        "relative_return_6m": -12.49
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -1.56,
+    "rankChange1w": -4
+  },
+  {
+    "rank": 79,
+    "groupId": "epc-construction",
+    "groupName": "EPC & Construction",
+    "score": 8.13,
+    "return1m": -11.92,
+    "return3m": -21.67,
+    "return6m": -28.91,
+    "relativeReturn1m": -2.98,
+    "relativeReturn3m": -10.88,
+    "relativeReturn6m": -16.85,
+    "above50dma": 6.67,
+    "above200dma": 4.44,
+    "breadthScore": 11.11,
+    "leaders": [
+      "CEIGALL",
+      "ABINFRA",
+      "ENGINERSIN"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CEIGALL",
+        "company_name": "Ceigall India Limited",
+        "rs_rating": 82,
+        "return_1m": -3.84,
+        "return_3m": 10.09,
+        "return_6m": -1.32,
+        "relative_return_3m": 20.88,
+        "relative_return_6m": 10.74
+      },
+      {
+        "symbol": "ABINFRA",
+        "company_name": "A B Infrabuild Limited",
+        "rs_rating": 81,
+        "return_1m": -11.69,
+        "return_3m": -10.86,
+        "return_6m": -14.17,
+        "relative_return_3m": -0.07,
+        "relative_return_6m": -2.11
+      },
+      {
+        "symbol": "ENGINERSIN",
+        "company_name": "Engineers India Limited",
+        "rs_rating": 75,
+        "return_1m": -8.8,
+        "return_3m": -2.38,
+        "return_6m": -0.58,
+        "relative_return_3m": 8.41,
+        "relative_return_6m": 11.48
+      },
+      {
+        "symbol": "IRB",
+        "company_name": "IRB Infrastructure Developers Limited",
+        "rs_rating": 73,
+        "return_1m": 6.67,
+        "return_3m": 4.2,
+        "return_6m": 4.04,
+        "relative_return_3m": 14.99,
+        "relative_return_6m": 16.1
+      },
+      {
+        "symbol": "LT",
+        "company_name": "Larsen & Toubro Limited",
+        "rs_rating": 68,
+        "return_1m": -16.02,
+        "return_3m": -10.8,
+        "return_6m": -1.74,
+        "relative_return_3m": -0.01,
+        "relative_return_6m": 10.32
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Improving",
+    "scoreChange1w": 2.41,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 80,
+    "groupId": "fintech",
+    "groupName": "Fintech",
+    "score": 7.32,
+    "return1m": -12.84,
+    "return3m": -24.04,
+    "return6m": -28.37,
+    "relativeReturn1m": -3.9,
+    "relativeReturn3m": -13.25,
+    "relativeReturn6m": -16.31,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 8.34,
+    "leaders": [
+      "PAYTM",
+      "POLICYBZR",
+      "STYL"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "PAYTM",
+        "company_name": "One 97 Communications Limited",
+        "rs_rating": 69,
+        "return_1m": -11.49,
+        "return_3m": -23.75,
+        "return_6m": -13.7,
+        "relative_return_3m": -12.96,
+        "relative_return_6m": -1.64
+      },
+      {
+        "symbol": "POLICYBZR",
+        "company_name": "PB Fintech Limited",
+        "rs_rating": 32,
+        "return_1m": -6.21,
+        "return_3m": -25.63,
+        "return_6m": -20.9,
+        "relative_return_3m": -14.84,
+        "relative_return_6m": -8.84
+      },
+      {
+        "symbol": "STYL",
+        "company_name": "Seshaasai Technologies Limited",
+        "rs_rating": 26,
+        "return_1m": -4.31,
+        "return_3m": -16.13,
+        "return_6m": -44.2,
+        "relative_return_3m": -5.34,
+        "relative_return_6m": -32.14
+      },
+      {
+        "symbol": "PINELABS",
+        "company_name": "Pine Labs Limited",
+        "rs_rating": 11,
+        "return_1m": -23.01,
+        "return_3m": -35.59,
+        "return_6m": -39.02,
+        "relative_return_3m": -24.8,
+        "relative_return_6m": -26.96
+      },
+      {
+        "symbol": "MOBIKWIK",
+        "company_name": "One Mobikwik Systems Limited",
+        "rs_rating": 9,
+        "return_1m": -16.26,
+        "return_3m": -27.03,
+        "return_6m": -38.69,
+        "relative_return_3m": -16.24,
+        "relative_return_6m": -26.63
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -7.46,
+    "rankChange1w": -13
+  },
+  {
+    "rank": 81,
+    "groupId": "footwear",
+    "groupName": "Footwear",
+    "score": 6.38,
+    "return1m": -14.74,
+    "return3m": -21.22,
+    "return6m": -31.2,
+    "relativeReturn1m": -5.8,
+    "relativeReturn3m": -10.43,
+    "relativeReturn6m": -19.14,
+    "above50dma": 0.0,
+    "above200dma": 0.0,
+    "breadthScore": 5.0,
+    "leaders": [
+      "CAMPUS",
+      "REDTAPE",
+      "METROBRAND"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "CAMPUS",
+        "company_name": "Campus Activewear Limited",
+        "rs_rating": 51,
+        "return_1m": -12.88,
+        "return_3m": -12.33,
+        "return_6m": -15.0,
+        "relative_return_3m": -1.54,
+        "relative_return_6m": -2.94
+      },
+      {
+        "symbol": "REDTAPE",
+        "company_name": "Redtape Limited",
+        "rs_rating": 44,
+        "return_1m": -7.77,
+        "return_3m": -7.62,
+        "return_6m": -27.44,
+        "relative_return_3m": 3.17,
+        "relative_return_6m": -15.38
+      },
+      {
+        "symbol": "METROBRAND",
+        "company_name": "Metro Brands Limited",
+        "rs_rating": 32,
+        "return_1m": -10.55,
+        "return_3m": -21.17,
+        "return_6m": -27.86,
+        "relative_return_3m": -10.38,
+        "relative_return_6m": -15.8
+      },
+      {
+        "symbol": "RELAXO",
+        "company_name": "Relaxo Footwears Limited",
+        "rs_rating": 6,
+        "return_1m": -25.13,
+        "return_3m": -34.28,
+        "return_6m": -40.02,
+        "relative_return_3m": -23.49,
+        "relative_return_6m": -27.96
+      },
+      {
+        "symbol": "BATAINDIA",
+        "company_name": "Bata India Limited",
+        "rs_rating": 4,
+        "return_1m": -17.37,
+        "return_3m": -30.68,
+        "return_6m": -45.7,
+        "relative_return_3m": -19.89,
+        "relative_return_6m": -33.64
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Stable",
+    "scoreChange1w": 0.85,
+    "rankChange1w": 0
+  },
+  {
+    "rank": 82,
+    "groupId": "realty-developers",
+    "groupName": "Realty Developers",
+    "score": 3.26,
+    "return1m": -13.24,
+    "return3m": -22.75,
+    "return6m": -29.18,
+    "relativeReturn1m": -4.3,
+    "relativeReturn3m": -11.96,
+    "relativeReturn6m": -17.12,
+    "above50dma": 5.71,
+    "above200dma": 2.86,
+    "breadthScore": 7.86,
+    "leaders": [
+      "AGIIL",
+      "ASHIANA",
+      "PHOENIXLTD"
+    ],
+    "topConstituents": [
+      {
+        "symbol": "AGIIL",
+        "company_name": "Agi Infra Limited",
+        "rs_rating": 94,
+        "return_1m": -2.72,
+        "return_3m": 18.93,
+        "return_6m": 20.8,
+        "relative_return_3m": 29.72,
+        "relative_return_6m": 32.86
+      },
+      {
+        "symbol": "ASHIANA",
+        "company_name": "Ashiana Housing Limited",
+        "rs_rating": 74,
+        "return_1m": -5.24,
+        "return_3m": 4.17,
+        "return_6m": 1.4,
+        "relative_return_3m": 14.96,
+        "relative_return_6m": 13.46
+      },
+      {
+        "symbol": "PHOENIXLTD",
+        "company_name": "The Phoenix Mills Limited",
+        "rs_rating": 57,
+        "return_1m": -9.98,
+        "return_3m": -17.72,
+        "return_6m": -6.25,
+        "relative_return_3m": -6.93,
+        "relative_return_6m": 5.81
+      },
+      {
+        "symbol": "OBEROIRLTY",
+        "company_name": "Oberoi Realty Limited",
+        "rs_rating": 54,
+        "return_1m": -0.42,
+        "return_3m": -9.93,
+        "return_6m": -6.45,
+        "relative_return_3m": 0.86,
+        "relative_return_6m": 5.61
+      },
+      {
+        "symbol": "MAHLIFE",
+        "company_name": "Mahindra Lifespace Developers Limited",
+        "rs_rating": 47,
+        "return_1m": -14.7,
+        "return_3m": -19.17,
+        "return_6m": -14.55,
+        "relative_return_3m": -8.38,
+        "relative_return_6m": -2.49
+      }
+    ],
+    "strengthBucket": "Weak",
+    "trendLabel": "Weakening",
+    "scoreChange1w": -2.45,
+    "rankChange1w": -2
+  }
+]

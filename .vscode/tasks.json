@@ -1,0 +1,17 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run Backend",
+			"type": "shell",
+			"command": "cd backend && PYTHONPATH=. \"/Users/dharmender/Desktop/Website/Stock Scanner c/.venv/bin/python\" -m uvicorn app.main:app --reload --reload-dir app --host 0.0.0.0 --port 8000",
+			"isBackground": true
+		},
+		{
+			"label": "Run Frontend",
+			"type": "shell",
+			"command": "cd frontend && npm run dev -- --host 0.0.0.0 --port 5173",
+			"isBackground": true
+		}
+	]
+}

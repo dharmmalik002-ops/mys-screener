@@ -1,0 +1,12 @@
+.DS_Store
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+dist/
+.env
+backend/.env
+backend/data/live_universe.json
+
+backend/data/free_snapshots.json
+backend/data/free_snapshots_us.json

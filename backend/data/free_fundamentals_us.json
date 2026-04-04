@@ -1,0 +1,5019 @@
+{
+  "VIAV": {
+    "symbol": "VIAV",
+    "name": "Viavi Solutions Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:05:39.862692Z",
+    "about": "Viavi Solutions Inc. provides network test, monitoring, and assurance solutions for telecommunications, cloud, enterprises, first responders, military, aerospace, and critical infrastructures in the Americas, the Asia-Pacific, Europe, the Middle East, and Africa. It operates in two segments, Network and Service Enablement (NSE) and Optical Security and Performance Products (OSP). The NSE segment provides testing, monitoring, assurance, and security solutions that address lab and production environments, network management, service assurance, and AIOps for wireless, wireline, cloud, satellite, public safety, military, and infrastructure networks. This segment also offers instruments, microprobes, and perpetual software licenses that support the development, production, maintenance, and optimization of network systems, as well as product support and professional services comprising repair, calibration, software support, and technical assistance for its products. Its OSP segment leverages its core optical coating technologies and volume manufacturing capability to design, manufacture, and sell technologies for the anti-counterfeiting, 3D sensing, government and aerospace, automotive, and industrial markets. The company has a strategic partnership with QuNu Labs Pvt. Ltd. for the development of quantum security and advanced network intelligence technologies. The company was formerly known as JDS Uniphase Corporation. Viavi Solutions Inc. was founded in 1923 and is headquartered in Chandler, Arizona.",
+    "business_summary": null,
+    "company_website": "https://www.viavisolutions.com",
+    "headquarters": "Chandler, United States",
+    "quarterly_results": [
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 2.34,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 1.86,
+        "net_profit_crore": 0.91,
+        "eps": 0.04,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 0.82,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 0.32,
+        "net_profit_crore": 1.95,
+        "eps": 0.09,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 1.51,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 0.96,
+        "net_profit_crore": 0.8,
+        "eps": 0.04,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 0.73,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -0.23,
+        "net_profit_crore": -2.14,
+        "eps": -0.1,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 1.13,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -3.87,
+        "net_profit_crore": -4.81,
+        "eps": -0.21,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Jun 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": 0.2,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jun 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 18.49,
+        "operating_margin_pct": null,
+        "net_profit_crore": 1.55,
+        "eps": 0.07,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jun 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 9.45,
+        "operating_margin_pct": null,
+        "net_profit_crore": 2.55,
+        "eps": 0.11,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jun 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 3.44,
+        "operating_margin_pct": null,
+        "net_profit_crore": -2.58,
+        "eps": -0.12,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 5.82,
+        "operating_margin_pct": null,
+        "net_profit_crore": 3.48,
+        "eps": null,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Jun 2025",
+        "total_assets_crore": 199.38,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 121.36,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 78.02,
+        "debt_crore": 69.23,
+        "cash_and_equivalents_crore": 42.36,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jun 2024",
+        "total_assets_crore": 173.63,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 105.47,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 68.16,
+        "debt_crore": 68.72,
+        "cash_and_equivalents_crore": 47.13,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jun 2023",
+        "total_assets_crore": 185.05,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 115.97,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 69.08,
+        "debt_crore": 78.1,
+        "cash_and_equivalents_crore": 50.65,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jun 2022",
+        "total_assets_crore": 182.79,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 115.62,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 67.17,
+        "debt_crore": 74.45,
+        "cash_and_equivalents_crore": 55.99,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Jun 2025",
+        "operating_cash_flow_crore": 8.98,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 6.200000000000001,
+        "capital_expenditure_crore": 2.78,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jun 2024",
+        "operating_cash_flow_crore": 11.64,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 9.690000000000001,
+        "capital_expenditure_crore": 1.95,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jun 2023",
+        "operating_cash_flow_crore": 11.41,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 6.3,
+        "capital_expenditure_crore": 5.11,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jun 2022",
+        "operating_cash_flow_crore": 17.81,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 10.559999999999999,
+        "capital_expenditure_crore": 7.25,
+        "dividends_paid_crore": null
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": -5.54,
+        "roa_pct": 2.71,
+        "roce_pct": null,
+        "current_ratio": 2.61,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 1.59,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 124.77,
+      "profit_yoy_pct": -628.57,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 66527.21,
+      "pe_ratio": null,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": -5.5370003,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed -628.57% YoY and 124.77% QoQ in the latest reported quarter.",
+        "tone": "watch"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "SIEBERT KEVIN CHRISTOPHER",
+        "position": "General Counsel",
+        "transaction_type": "sell",
+        "quantity": 7264,
+        "price_per_share": 34.78,
+        "total_value_crore": 0.0253,
+        "date": "2026-03-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "MCNAB PAUL A",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 3551,
+        "price_per_share": 32.89,
+        "total_value_crore": 0.0117,
+        "date": "2026-03-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "COLVIN DONALD A",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 25000,
+        "price_per_share": 29.23,
+        "total_value_crore": 0.0731,
+        "date": "2026-02-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "BELLUZZO RICHARD E",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 15775,
+        "price_per_share": 26.85,
+        "total_value_crore": 0.0424,
+        "date": "2026-02-18",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "BELLUZZO RICHARD E",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 13058,
+        "price_per_share": 26.45,
+        "total_value_crore": 0.0345,
+        "date": "2026-02-17",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SCRIVANICH LUKE MATTHEW",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 13901,
+        "price_per_share": 26.59,
+        "total_value_crore": 0.037,
+        "date": "2026-02-13",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "KHAYKIN OLEG",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 62767,
+        "price_per_share": 27.5,
+        "total_value_crore": 0.1726,
+        "date": "2026-02-10",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "KHAYKIN OLEG",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 73250,
+        "price_per_share": 26.25,
+        "total_value_crore": 0.1923,
+        "date": "2026-02-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "KHAYKIN OLEG",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 70566,
+        "price_per_share": 26.27,
+        "total_value_crore": 0.1854,
+        "date": "2026-02-06",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "KHAYKIN OLEG",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 70000,
+        "price_per_share": 24.5,
+        "total_value_crore": 0.1715,
+        "date": "2026-02-05",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "FIVE": {
+    "symbol": "FIVE",
+    "name": "Five Below Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Discretionary",
+    "sub_sector": "Department/Specialty Retail Stores",
+    "fetched_at": "2026-04-03T04:05:43.541699Z",
+    "about": "Five Below, Inc. operates as a specialty value retailer in the United States. It offers assortment of classic and novelty candy bars, movie-size box candy, seasonal-related candy, gum, and snack food products, as well as sells chilled drinks through coolers; socks, jewelry, hair accessories, cozy loungewear, and t-shirts; personal care essentials, skincare, fragrance, and branded cosmetics; and party goods, decorations, gag gifts, greeting cards, and every day and special occasion merchandise products. The company also provides personalized living space products, such as lamps, posters, frames, fleece blankets, plush items, pillows, candles, incense, lighting, novelty d\u00e9cor, accent furniture, and related items, as well as provides storage options; assortment of craft activity kits with various arts and crafts supplies, such as markers, paint, canvas, compounds, slime, beads, and stickers; and supplies craft activities and school products. In addition, it offers cell phone cables and chargers, power banks, phone cases and accessories, screen protectors, auto phone accessories, and computer and tablet accessories, as well as earbuds, headphones, and speakers. Further, the company provides assortment of sport balls, sports accessories and fitness products, including hand weights and yoga mats; toys, including brand name board games, puzzles, action figures, construction sets, remote control, collectibles, novelty toys, and plush products; and outdoor toys for the pool and beach. Additionally, it offers seasonally relevant items to use for the occasions and milestones, such as Holiday, Easter, Halloween, Summer, and Back to School. The company was formerly known as Cheap Holdings, Inc. and changed its name to Five Below, Inc. in August 2002. Five Below, Inc. was incorporated in 2002 and is headquartered in Philadelphia, Pennsylvania.",
+    "business_summary": null,
+    "company_website": "https://www.fivebelow.com",
+    "headquarters": "Philadelphia, United States",
+    "quarterly_results": [
+      {
+        "period": "Oct 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Jan 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 24.68,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 25.08,
+        "net_profit_crore": 18.75,
+        "eps": 3.39,
+        "result_document_url": null
+      },
+      {
+        "period": "Apr 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 5.08,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 5.65,
+        "net_profit_crore": 4.11,
+        "eps": 0.75,
+        "result_document_url": null
+      },
+      {
+        "period": "Jul 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 5.24,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 5.79,
+        "net_profit_crore": 4.28,
+        "eps": 0.77,
+        "result_document_url": null
+      },
+      {
+        "period": "Oct 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 4.33,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 4.91,
+        "net_profit_crore": 3.65,
+        "eps": 0.66,
+        "result_document_url": null
+      },
+      {
+        "period": "Jan 2026",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 31.09,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 31.69,
+        "net_profit_crore": 23.82,
+        "eps": 4.28,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Jan 2022",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 34.5,
+        "operating_margin_pct": null,
+        "net_profit_crore": 26.15,
+        "eps": 4.69,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 38.56,
+        "operating_margin_pct": null,
+        "net_profit_crore": 30.11,
+        "eps": 5.41,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 32.38,
+        "operating_margin_pct": null,
+        "net_profit_crore": 25.36,
+        "eps": 4.6,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2026",
+        "sales_crore": null,
+        "operating_profit_crore": 45.74,
+        "operating_margin_pct": null,
+        "net_profit_crore": 35.86,
+        "eps": 6.47,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Jan 2026",
+        "total_assets_crore": 493.7019,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 274.3729,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 219.329,
+        "debt_crore": 203.2189,
+        "cash_and_equivalents_crore": 72.3699,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2025",
+        "total_assets_crore": 433.9574,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 253.1247,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 180.8327,
+        "debt_crore": 198.1567,
+        "cash_and_equivalents_crore": 33.1718,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2024",
+        "total_assets_crore": 387.2037,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 228.7081,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 158.4956,
+        "debt_crore": 173.855,
+        "cash_and_equivalents_crore": 17.9749,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2023",
+        "total_assets_crore": 332.4911,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 196.2982,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 136.1929,
+        "debt_crore": 149.6751,
+        "cash_and_equivalents_crore": 33.2324,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Jan 2026",
+        "operating_cash_flow_crore": 58.6428,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 41.1687,
+        "capital_expenditure_crore": 17.4741,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jan 2025",
+        "operating_cash_flow_crore": 43.0648,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 10.665399999999998,
+        "capital_expenditure_crore": 32.3994,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jan 2024",
+        "operating_cash_flow_crore": 49.9619,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 16.456899999999997,
+        "capital_expenditure_crore": 33.505,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Jan 2023",
+        "operating_cash_flow_crore": 31.4926,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 6.2972,
+        "capital_expenditure_crore": 25.1954,
+        "dividends_paid_crore": null
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 17.92,
+        "roa_pct": 6.16,
+        "roce_pct": null,
+        "current_ratio": 2.01,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.93,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Jan 2026",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 552.6,
+      "profit_yoy_pct": 27.04,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 101653.96,
+      "pe_ratio": 36.381763,
+      "peg_ratio": 3.28,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 17.924999,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 27.04% YoY and 552.60% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "MARKEE RICHARD L",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 3000,
+        "price_per_share": 232.04,
+        "total_value_crore": 0.0696,
+        "date": "2026-03-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SARGENT RONALD L",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 20000,
+        "price_per_share": 231.51,
+        "total_value_crore": 0.463,
+        "date": "2026-03-24",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "BULL KENNETH R",
+        "position": "Chief Operating Officer",
+        "transaction_type": "sell",
+        "quantity": 10000,
+        "price_per_share": 234.14,
+        "total_value_crore": 0.2341,
+        "date": "2026-03-20",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "PAA": {
+    "symbol": "PAA",
+    "name": "Plains All American Pipeline L.P. Common Units representing Limited Partner Interests",
+    "exchange": "NASDAQ",
+    "sector": "Energy",
+    "sub_sector": "Natural Gas Distribution",
+    "fetched_at": "2026-04-03T04:05:46.671059Z",
+    "about": "Plains All American Pipeline, L.P., through its subsidiaries, engages in the pipeline transportation, terminalling, storage, and gathering of crude oil and natural gas liquids (NGL) in the United States and Canada. The company operates through two segments, Crude Oil and NGL. The Crude Oil segment offers gathering and transporting crude oil through pipelines, trucks, and on barges or railcars. This segment provides terminalling, storage, and other related services, as well as merchant activities. The NGL segment is involved in natural gas processing and NGL fractionation, storage, transportation, and terminaling. This segment also includes ethane, propane, normal butane, iso-butane, and natural gasoline derived from natural gas production and processing activities, as well as crude oil refining processes. Its NGL components are used for various applications, such as heating, engine, and industrial fuels.The company was founded in 1981 and is headquartered in Houston, Texas. Plains All American Pipeline, L.P. operates as a subsidiary of Plains GP Holdings, L.P.",
+    "business_summary": null,
+    "company_website": "https://www.plains.com",
+    "headquarters": "Houston, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 24.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 16.5,
+        "net_profit_crore": 3.6,
+        "eps": -0.04,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 52.0,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 56.6,
+        "net_profit_crore": 44.3,
+        "eps": 0.49,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 28.1,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 23.1,
+        "net_profit_crore": 21.0,
+        "eps": 0.21,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 39.2,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 45.9,
+        "net_profit_crore": 44.1,
+        "eps": 0.55,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 36.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 32.3,
+        "net_profit_crore": 34.2,
+        "eps": 0.41,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 156.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 103.7,
+        "eps": 1.19,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 110.6,
+        "operating_margin_pct": null,
+        "net_profit_crore": 123.0,
+        "eps": 1.4,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 102.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 77.2,
+        "eps": 0.73,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 138.0,
+        "operating_margin_pct": null,
+        "net_profit_crore": 139.2,
+        "eps": 1.66,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 3016.9,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1708.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 0.0,
+        "debt_crore": 1146.1,
+        "cash_and_equivalents_crore": 32.8,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 2656.2,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1346.6,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 0.0,
+        "debt_crore": 781.0,
+        "cash_and_equivalents_crore": 34.8,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 2735.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1362.3,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 0.0,
+        "debt_crore": 802.5,
+        "cash_and_equivalents_crore": 45.0,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 2789.2,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1456.7,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 0.0,
+        "debt_crore": 875.4,
+        "cash_and_equivalents_crore": 40.1,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 293.6,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 229.3,
+        "capital_expenditure_crore": 64.3,
+        "dividends_paid_crore": -107.0
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 249.0,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 204.2,
+        "capital_expenditure_crore": 44.8,
+        "dividends_paid_crore": -89.1
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 272.7,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 231.89999999999998,
+        "capital_expenditure_crore": 40.8,
+        "dividends_paid_crore": -74.8
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 240.8,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 195.3,
+        "capital_expenditure_crore": 45.5,
+        "dividends_paid_crore": -58.4
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 10.59,
+        "roa_pct": 3.06,
+        "roce_pct": null,
+        "current_ratio": 0.96,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.88,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -22.45,
+      "profit_yoy_pct": 850.0,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 131406.69,
+      "pe_ratio": 19.767857,
+      "peg_ratio": 1.92,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 10.5900005,
+      "dividend_yield_pct": 754.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 850.00% YoY and -22.45% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "GOOGL": {
+    "symbol": "GOOGL",
+    "name": "Alphabet Inc. Class A Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Computer Software: Programming Data Processing",
+    "fetched_at": "2026-04-03T04:05:50.035059Z",
+    "about": "Alphabet Inc. offers various products and platforms in the United States, Europe, the Middle East, Africa, the Asia-Pacific, Canada, and Latin America. It operates through Google Services, Google Cloud, and Other Bets segments. The Google Services segment provides products and services, including ads, Android, Chrome, devices, Gmail, Google Drive, Google Maps, Google Photos, Google Play, Search, and YouTube. It is also involved in the sale of apps and in-app purchases and digital content in Google Play and YouTube; and devices, as well as the provision of YouTube consumer subscription services, such as YouTube TV, YouTube Music and Premium, NFL Sunday Ticket, and Google One. The Google Cloud segment offers consumption-based fees and subscriptions for AI solutions, including AI infrastructure, Vertex AI platform, and Gemini enterprise. It also provides cybersecurity, and data and analytics services; Google Workspace that include cloud-based communication and collaboration tools for enterprises, such as Calendar, Gmail, Docs, Drive, and Meet; and other enterprise services. The Other Bets segment sells transportation and internet services. Alphabet Inc. was incorporated in 1998 and is headquartered in Mountain View, California.",
+    "business_summary": null,
+    "company_website": "https://abc.xyz",
+    "headquarters": "Mountain View, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 3097.2,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 3224.3,
+        "net_profit_crore": 2653.6,
+        "eps": 2.15,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 3060.6,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 4178.9,
+        "net_profit_crore": 3454.0,
+        "eps": 2.81,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 3127.1,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 3393.3,
+        "net_profit_crore": 2819.6,
+        "eps": 2.31,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 3122.8,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 4398.7,
+        "net_profit_crore": 3497.9,
+        "eps": 2.87,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 3593.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 3911.7,
+        "net_profit_crore": 3445.5,
+        "eps": 2.82,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 7484.2,
+        "operating_margin_pct": null,
+        "net_profit_crore": 5997.2,
+        "eps": 4.56,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 8429.3,
+        "operating_margin_pct": null,
+        "net_profit_crore": 7379.5,
+        "eps": 5.8,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 11239.0,
+        "operating_margin_pct": null,
+        "net_profit_crore": 10011.8,
+        "eps": 8.04,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 12903.9,
+        "operating_margin_pct": null,
+        "net_profit_crore": 13217.0,
+        "eps": 10.81,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 59528.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 18001.6,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 41526.5,
+        "debt_crore": 5929.1,
+        "cash_and_equivalents_crore": 3070.8,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 45025.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 12517.2,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 32508.4,
+        "debt_crore": 2257.4,
+        "cash_and_equivalents_crore": 2346.6,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 40239.2,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 11901.3,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 28337.9,
+        "debt_crore": 2712.1,
+        "cash_and_equivalents_crore": 2404.8,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 36526.4,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 10912.0,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 25614.4,
+        "debt_crore": 2967.9,
+        "cash_and_equivalents_crore": 2187.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 16471.3,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 7326.5999999999985,
+        "capital_expenditure_crore": 9144.7,
+        "dividends_paid_crore": -1004.9
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 12529.9,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 7276.4,
+        "capital_expenditure_crore": 5253.5,
+        "dividends_paid_crore": -736.3
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 10174.6,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 6949.5,
+        "capital_expenditure_crore": 3225.1,
+        "dividends_paid_crore": 0.0
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 9149.5,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 6001.0,
+        "capital_expenditure_crore": 3148.5,
+        "dividends_paid_crore": 0.0
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 35.71,
+        "roa_pct": 15.43,
+        "roce_pct": null,
+        "current_ratio": 2.0,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.16,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -1.5,
+      "profit_yoy_pct": 29.84,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 27545135.13,
+      "pe_ratio": 27.38611,
+      "peg_ratio": 0.91,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 35.705003000000005,
+      "dividend_yield_pct": 28.000000000000004
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 29.84% YoY and -1.50% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "HENNESSY JOHN L",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 600,
+        "price_per_share": 306.73,
+        "total_value_crore": 0.0184,
+        "date": "2026-02-13",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "HENNESSY JOHN L",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 600,
+        "price_per_share": 337.52,
+        "total_value_crore": 0.0203,
+        "date": "2026-01-13",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SHRIRAM KAVITARK RAM",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 26000,
+        "price_per_share": 205.0,
+        "total_value_crore": 0.533,
+        "date": "2025-08-15",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SHRIRAM KAVITARK RAM",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 33566,
+        "price_per_share": 185.76,
+        "total_value_crore": 0.6235,
+        "date": "2025-07-18",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SHRIRAM KAVITARK RAM",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 19500,
+        "price_per_share": 175.0,
+        "total_value_crore": 0.3412,
+        "date": "2025-05-22",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SHRIRAM KAVITARK RAM",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 53066,
+        "price_per_share": 184.87,
+        "total_value_crore": 0.9811,
+        "date": "2025-02-18",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SHRIRAM KAVITARK RAM",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 26000,
+        "price_per_share": 205.0,
+        "total_value_crore": 0.533,
+        "date": "2025-01-31",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "AMD": {
+    "symbol": "AMD",
+    "name": "Advanced Micro Devices Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:05:53.262912Z",
+    "about": "Advanced Micro Devices, Inc. operates as a semiconductor company internationally. It operates in three segments: Data Center, Client and Gaming, and Embedded. The company offers artificial intelligence (AI) accelerators, microprocessors, and graphics processing units (GPUs) as standalone devices or as incorporated into accelerated processing units, chipsets, and data center and professional GPUs; and embedded processors and semi-custom system-on-chip (SoC) products, microprocessor and SoC development services and technology, data processing units, field programmable gate arrays (FPGA), system on modules, AI network interface cards, and adaptive SoC products. It provides processors under the AMD Ryzen, AMD Ryzen AI, AMD Ryzen PRO, AMD Ryzen Threadripper, AMD Ryzen Threadripper PRO, AMD Athlon, and AMD PRO A-Series brands; graphics under the AMD Radeon graphics and AMD Embedded Radeon graphics; professional graphics under the AMD Radeon Pro graphics brand; and AI and general-purpose compute infrastructure for hyperscale providers. The company offers data center graphics under the AMD Instinct accelerators and Radeon PRO V-series brands; server microprocessors under the AMD EPYC brand; low power solutions under the AMD Athlon, AMD Geode, AMD Ryzen, AMD EPYC, and AMD R-Series and G-Series brands; FPGA products under the Virtex-6, Virtex-7, Virtex UltraScale+, Kintex-7, Kintex UltraScale, Kintex UltraScale+, Artix-7, Artix UltraScale+, Spartan-6, and Spartan-7 brands; adaptive SOCs under the Zynq-7000, Zynq UltraScale+ MPSoC, Zynq UltraScale+ RFSoCs, Versal HBM, Versal Premium, Versal Prime, Versal AI Core, Versal AI Edge, Vitis, and Vivado brands; and compute and network acceleration board products under the Alveo and Pensando brands. It serves original equipment and design manufacturers, public cloud service providers, system integrators, distributors, and add-in-board manufacturers. The company was incorporated in 1969 and is headquartered in Santa Clara, California.",
+    "business_summary": null,
+    "company_website": "https://www.amd.com",
+    "headquarters": "Santa Clara, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 105.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 88.9,
+        "net_profit_crore": 48.2,
+        "eps": 0.29,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 80.6,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 82.5,
+        "net_profit_crore": 70.9,
+        "eps": 0.44,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -13.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -7.4,
+        "net_profit_crore": 87.2,
+        "eps": 0.54,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 127.0,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 131.5,
+        "net_profit_crore": 124.3,
+        "eps": 0.75,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 175.2,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 207.4,
+        "net_profit_crore": 151.1,
+        "eps": 0.92,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 126.4,
+        "operating_margin_pct": null,
+        "net_profit_crore": 132.0,
+        "eps": 0.84,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 40.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 85.4,
+        "eps": 0.53,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 208.6,
+        "operating_margin_pct": null,
+        "net_profit_crore": 164.1,
+        "eps": 1.0,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 369.4,
+        "operating_margin_pct": null,
+        "net_profit_crore": 433.5,
+        "eps": 2.65,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 7692.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1392.7,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 6299.9,
+        "debt_crore": 384.7,
+        "cash_and_equivalents_crore": 553.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 6922.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1165.8,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 5756.8,
+        "debt_crore": 221.2,
+        "cash_and_equivalents_crore": 378.7,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 6788.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1199.3,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 5589.2,
+        "debt_crore": 300.3,
+        "cash_and_equivalents_crore": 393.3,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 6758.0,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 1283.0,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 5475.0,
+        "debt_crore": 286.3,
+        "cash_and_equivalents_crore": 483.5,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 770.9,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 673.5,
+        "capital_expenditure_crore": 97.4,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 304.1,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 240.50000000000003,
+        "capital_expenditure_crore": 63.6,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 166.7,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 112.1,
+        "capital_expenditure_crore": 54.6,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 356.5,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 311.5,
+        "capital_expenditure_crore": 45.0,
+        "dividends_paid_crore": null
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 7.08,
+        "roa_pct": 3.2,
+        "roce_pct": null,
+        "current_ratio": 2.85,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.06,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 21.56,
+      "profit_yoy_pct": 213.49,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 2733411.5,
+      "pe_ratio": 83.333336,
+      "peg_ratio": 1.71,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 7.081999999999999,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 213.49% YoY and 21.56% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "SU LISA T",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 85000,
+        "price_per_share": 198.77,
+        "total_value_crore": 1.6895,
+        "date": "2026-03-12",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "GRASBY PAUL DARREN",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 7500,
+        "price_per_share": 204.87,
+        "total_value_crore": 0.1537,
+        "date": "2026-03-11",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "PAPERMASTER MARK D",
+        "position": "Chief Technology Officer",
+        "transaction_type": "sell",
+        "quantity": 3034,
+        "price_per_share": 200.0,
+        "total_value_crore": 0.0607,
+        "date": "2026-03-04",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "HAHN AVA M",
+        "position": "General Counsel",
+        "transaction_type": "sell",
+        "quantity": 286,
+        "price_per_share": 198.65,
+        "total_value_crore": 0.0057,
+        "date": "2026-02-18",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "HU JEAN X",
+        "position": "Chief Financial Officer",
+        "transaction_type": "sell",
+        "quantity": 19956,
+        "price_per_share": 201.62,
+        "total_value_crore": 0.4024,
+        "date": "2026-02-17",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "TSM": {
+    "symbol": "TSM",
+    "name": "Taiwan Semiconductor Manufacturing Company Ltd.",
+    "exchange": "NYSE",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:05:56.396581Z",
+    "about": "Taiwan Semiconductor Manufacturing Company Limited, together with its subsidiaries, manufactures, packages, tests, and sells integrated circuits and other semiconductor devices in Taiwan, China, Europe, the Middle East, Africa, Japan, the United States, and internationally. It provides various wafer fabrication processes, such as processes to manufacture complementary metal- oxide-semiconductor (CMOS) logic, mixed-signal, radio frequency, embedded memory, bipolar CMOS mixed-signal, and others. The company also involved in providing customer and engineering support services; manufacturing of masks; investment in technology start-up companies; research, designing, developing, manufacturing, packaging, testing, and sale of color filters; and investment activities. Its products are used in high performance computing, smartphones, Internet of things, automotive, and digital consumer electronics. The company was incorporated in 1987 and is headquartered in Hsinchu City, Taiwan.",
+    "business_summary": null,
+    "company_website": "https://www.tsmc.com",
+    "headquarters": "Hsinchu City, Taiwan",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 42569.82,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 44879.94,
+        "net_profit_crore": 35979.22,
+        "eps": 72.240746,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 40708.92,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 43089.54,
+        "net_profit_crore": 36073.27,
+        "eps": 69.7,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 46342.3,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 49303.52,
+        "net_profit_crore": 39827.31,
+        "eps": 76.8,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 50068.48,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 52536.9,
+        "net_profit_crore": 45230.14,
+        "eps": 87.2,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 56488.92,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 59236.32,
+        "net_profit_crore": 50574.4,
+        "eps": 97.5,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 112122.65,
+        "operating_margin_pct": null,
+        "net_profit_crore": 99292.34,
+        "eps": 196.0,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 92142.99,
+        "operating_margin_pct": null,
+        "net_profit_crore": 85174.0,
+        "eps": 161.7,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 132201.54,
+        "operating_margin_pct": null,
+        "net_profit_crore": 117326.77,
+        "eps": 226.25,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 193607.85,
+        "operating_margin_pct": null,
+        "net_profit_crore": 171788.26,
+        "eps": 331.25,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 793302.3878,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 247222.8595,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 541959.5994,
+        "debt_crore": 106458.2701,
+        "cash_and_equivalents_crore": 276785.6402,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 669193.8,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 236836.2135,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 428854.5167,
+        "debt_crore": 104704.2113,
+        "cash_and_equivalents_crore": 212762.7043,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 553219.66,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 207833.01,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 342952.24,
+        "debt_crore": 95625.79,
+        "cash_and_equivalents_crore": 146542.78,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 496445.91,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 204662.67,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 290301.97,
+        "debt_crore": 88817.44,
+        "cash_and_equivalents_crore": 134281.41,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 227497.5625,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 99237.8314,
+        "capital_expenditure_crore": 128259.7311,
+        "dividends_paid_crore": -46677.9199
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 182617.7068,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 86119.54450000002,
+        "capital_expenditure_crore": 96498.1623,
+        "dividends_paid_crore": -36305.5226
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 124196.73,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 28656.89,
+        "capital_expenditure_crore": 95539.84,
+        "dividends_paid_crore": -29172.1852
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 161059.92,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 52097.28000000001,
+        "capital_expenditure_crore": 108962.64,
+        "dividends_paid_crore": -28523.42
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 35.06,
+        "roa_pct": 16.56,
+        "roce_pct": null,
+        "current_ratio": 2.62,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.2,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 11.82,
+      "profit_yoy_pct": 40.57,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 14065613.69,
+      "pe_ratio": 32.694313,
+      "peg_ratio": 1.63,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 35.064,
+      "dividend_yield_pct": 104.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 40.57% YoY and 11.82% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "BURNS URSULA M",
+        "position": "Director",
+        "transaction_type": "buy",
+        "quantity": 1000,
+        "price_per_share": 322.05,
+        "total_value_crore": 0.0322,
+        "date": "2026-03-31",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "INTC": {
+    "symbol": "INTC",
+    "name": "Intel Corporation Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:06:00.042792Z",
+    "about": "Intel Corporation designs, develops, manufactures, markets, sells, and services computing and related end products and services in the United States, Ireland, Israel, and internationally. It operates through three segments: CCG, DCAI, and Intel Foundry. The company offers client computing group products, including client and commercial CPUs, discrete client GPUs, edge computing, and connectivity products; data center and AI products, such as server CPUs, discrete GPUs, and networking products; and semiconductors comprising wafer fabrication, substrates, and other related products and services. It also provides driving assistance and self-driving solutions; and develops and manufactures multi-beam mask writing tools. The company sells its products through sales organizations, distributors, resellers, retailers, and OEM partners. It serves original equipment manufacturers, original design manufacturers, cloud service providers, and other manufacturers and service providers. Intel Corporation has a strategic collaboration with Infosys Limited to develop a multi-layer AI fabric that unifies infrastructure, models, data, applications, and workflows into a composable and agent-ready ecosystem. The company was incorporated in 1968 and is headquartered in Santa Clara, California.",
+    "business_summary": null,
+    "company_website": "https://www.intel.com",
+    "headquarters": "Santa Clara, United States",
+    "quarterly_results": [
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 46.9,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 59.9,
+        "net_profit_crore": -12.6,
+        "eps": -0.03,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -14.5,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -58.6,
+        "net_profit_crore": -82.1,
+        "eps": -0.19,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -128.6,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -276.9,
+        "net_profit_crore": -291.8,
+        "eps": -0.67,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 85.8,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 457.4,
+        "net_profit_crore": 406.3,
+        "eps": 0.9,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 55.0,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 33.8,
+        "net_profit_crore": -59.1,
+        "eps": -0.12,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 233.6,
+        "operating_margin_pct": null,
+        "net_profit_crore": 801.4,
+        "eps": 1.94,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 3.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 168.9,
+        "eps": 0.4,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": -470.8,
+        "operating_margin_pct": null,
+        "net_profit_crore": -1875.6,
+        "eps": -4.38,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": -2.3,
+        "operating_margin_pct": null,
+        "net_profit_crore": -26.7,
+        "eps": -0.06,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 21142.9,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 8506.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 11428.1,
+        "debt_crore": 4658.5,
+        "cash_and_equivalents_crore": 1426.5,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 19648.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 9145.3,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 9927.0,
+        "debt_crore": 5001.1,
+        "cash_and_equivalents_crore": 824.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 19157.2,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 8160.7,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 10559.0,
+        "debt_crore": 4926.6,
+        "cash_and_equivalents_crore": 707.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 18210.3,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 7881.7,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 10142.3,
+        "debt_crore": 4200.7,
+        "cash_and_equivalents_crore": 1114.4,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 969.7,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -494.89999999999986,
+        "capital_expenditure_crore": 1464.6,
+        "dividends_paid_crore": 0.0
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 828.8,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -1565.6000000000001,
+        "capital_expenditure_crore": 2394.4,
+        "dividends_paid_crore": -159.9
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 1147.1,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -1427.9,
+        "capital_expenditure_crore": 2575.0,
+        "dividends_paid_crore": -308.8
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 1543.3,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -941.1000000000001,
+        "capital_expenditure_crore": 2484.4,
+        "dividends_paid_crore": -599.7
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 0.02,
+        "roa_pct": 0.28,
+        "roce_pct": null,
+        "current_ratio": 2.02,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.37,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -114.55,
+      "profit_yoy_pct": 369.05,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 1794665.2,
+      "pe_ratio": null,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 0.022000000000000002,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 369.05% YoY and -114.55% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "MILLER BOISE APRIL",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 20000,
+        "price_per_share": 49.05,
+        "total_value_crore": 0.0981,
+        "date": "2026-02-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "ZINSNER DAVID A",
+        "position": "Chief Financial Officer",
+        "transaction_type": "buy",
+        "quantity": 5882,
+        "price_per_share": 42.5,
+        "total_value_crore": 0.025,
+        "date": "2026-01-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "SOXX": {
+    "symbol": "SOXX",
+    "name": "iShares PHLX SOX Semiconductor Sector Index Fund",
+    "exchange": "NASDAQ",
+    "sector": "Exchange Traded Funds",
+    "sub_sector": "ETF",
+    "fetched_at": "2026-04-03T04:06:03.212761Z",
+    "about": "The fund generally will invest at least 80% of its assets in the component securities of its index and in investments that have economic characteristics that are substantially identical to the component securities of its index and may invest up to 20% of its assets in certain futures, options and swap contracts, cash and cash equivalents. The fund is non-diversified.",
+    "business_summary": null,
+    "company_website": null,
+    "headquarters": null,
+    "quarterly_results": [],
+    "profit_loss": [],
+    "balance_sheet": [],
+    "cash_flow": [],
+    "financial_ratios": [],
+    "growth": null,
+    "valuation": {
+      "market_cap_crore": 1073.95,
+      "pe_ratio": 41.639854,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": null,
+      "dividend_yield_pct": 49.0
+    },
+    "growth_drivers": [],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Quarterly results are currently unavailable for this symbol.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "MRVL": {
+    "symbol": "MRVL",
+    "name": "Marvell Technology Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:06:06.278081Z",
+    "about": "Marvell Technology, Inc., together with its subsidiaries, provides data infrastructure semiconductor solutions and spanning the data center core to network edge in the United States, Argentina, China, India, Israel, Japan, Singapore, South Korea, Taiwan, Vietnam, and internationally. The company develops and scales system-on-a-chip architectures, integrating analog, mixed-signal, and digital signal processing functionality. It offers a portfolio of ethernet solutions, including spanning controllers, network adapters, physical transceivers, and switches; single or multiple core processors; and custom application specific integrated circuits, interconnects, fibre channel adapters, and processors. The company also provides interconnect products, including pulse amplitude modulation, coherent and coherent-lite digital signal processors (DSPs), laser drivers, trans-impedance amplifiers, silicon photonics, co-packaged optics, linear pluggable optics chipsets, data center interconnect, active electrical cable DSPs and peripheral component interconnect express retimer solutions; fibre channel products comprising host bus adapters and controllers for server and storage system connectivity; storage controllers for hard disk drives and solid-state-drives; host system interfaces, including serial advanced technology attachment and serial attached SCSI, peripheral component interconnect express, compute express link switches, non-volatile memory express (NVMe), and NVMe over fabrics; and develops ultra accelerator linkTM switches and ethernet for scale-up networking switches. The company serves data centers, communications, and other markets. It offers its products through direct customers and distributors. Marvell Technology, Inc. was incorporated in 1995 and is headquartered in Wilmington, Delaware.",
+    "business_summary": null,
+    "company_website": "https://www.marvell.com",
+    "headquarters": "Wilmington, United States",
+    "quarterly_results": [
+      {
+        "period": "Jul 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Jan 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 22.27,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 19.98,
+        "net_profit_crore": 20.02,
+        "eps": 0.23,
+        "result_document_url": null
+      },
+      {
+        "period": "Apr 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 25.83,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 21.59,
+        "net_profit_crore": 17.79,
+        "eps": 0.2,
+        "result_document_url": null
+      },
+      {
+        "period": "Jul 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 29.88,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 23.37,
+        "net_profit_crore": 19.48,
+        "eps": 0.22,
+        "result_document_url": null
+      },
+      {
+        "period": "Oct 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 36.74,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 221.54,
+        "net_profit_crore": 190.13,
+        "eps": 2.2,
+        "result_document_url": null
+      },
+      {
+        "period": "Jan 2026",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 41.39,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 38.16,
+        "net_profit_crore": 39.61,
+        "eps": 0.46,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Jan 2022",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 35.96,
+        "operating_margin_pct": null,
+        "net_profit_crore": -16.35,
+        "eps": -0.19,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2024",
+        "sales_crore": null,
+        "operating_profit_crore": -43.66,
+        "operating_margin_pct": null,
+        "net_profit_crore": -93.34,
+        "eps": -1.08,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2025",
+        "sales_crore": null,
+        "operating_profit_crore": -36.64,
+        "operating_margin_pct": null,
+        "net_profit_crore": -88.5,
+        "eps": -1.02,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Jan 2026",
+        "sales_crore": null,
+        "operating_profit_crore": 133.84,
+        "operating_margin_pct": null,
+        "net_profit_crore": 267.01,
+        "eps": 3.07,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Jan 2026",
+        "total_assets_crore": 2228.53,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 797.69,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1430.84,
+        "debt_crore": 479.03,
+        "cash_and_equivalents_crore": 263.88,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2025",
+        "total_assets_crore": 2020.45,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 677.75,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1342.7,
+        "debt_crore": 434.31,
+        "cash_and_equivalents_crore": 94.83,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2024",
+        "total_assets_crore": 2122.85,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 639.71,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1483.14,
+        "debt_crore": 440.13,
+        "cash_and_equivalents_crore": 95.08,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Jan 2023",
+        "total_assets_crore": 2252.21,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 688.49,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1563.72,
+        "debt_crore": 473.75,
+        "cash_and_equivalents_crore": 91.1,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Jan 2026",
+        "operating_cash_flow_crore": 175.05,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 139.19,
+        "capital_expenditure_crore": 35.86,
+        "dividends_paid_crore": -20.51
+      },
+      {
+        "period": "Jan 2025",
+        "operating_cash_flow_crore": 168.12,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 138.96,
+        "capital_expenditure_crore": 29.16,
+        "dividends_paid_crore": -20.75
+      },
+      {
+        "period": "Jan 2024",
+        "operating_cash_flow_crore": 137.05,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 102.03,
+        "capital_expenditure_crore": 35.02,
+        "dividends_paid_crore": -20.68
+      },
+      {
+        "period": "Jan 2023",
+        "operating_cash_flow_crore": 128.88,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 107.14999999999999,
+        "capital_expenditure_crore": 21.73,
+        "dividends_paid_crore": -20.44
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 19.25,
+        "roa_pct": 3.94,
+        "roce_pct": null,
+        "current_ratio": 2.01,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.33,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Jan 2026",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -79.17,
+      "profit_yoy_pct": 97.85,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 688639.37,
+      "pe_ratio": 34.88925,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 19.253999,
+      "dividend_yield_pct": 22.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 97.85% YoY and -79.17% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "BHARATHI SANDEEP",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 44414,
+        "price_per_share": 99.61,
+        "total_value_crore": 0.4424,
+        "date": "2026-03-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "MURPHY MATTHEW JOSEPH",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 30000,
+        "price_per_share": 98.7,
+        "total_value_crore": 0.2961,
+        "date": "2026-03-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "CASPER MARK JOHN",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 5000,
+        "price_per_share": 93.08,
+        "total_value_crore": 0.0465,
+        "date": "2026-01-05",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "COST": {
+    "symbol": "COST",
+    "name": "Costco Wholesale Corporation Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Discretionary",
+    "sub_sector": "Department/Specialty Retail Stores",
+    "fetched_at": "2026-04-03T04:06:08.959741Z",
+    "about": "Costco Wholesale Corporation, together with its subsidiaries, engages in the operation of membership warehouses in the United States, Puerto Rico, Canada, Mexico, Japan, the United Kingdom, Korea, Australia, Taiwan, China, Spain, France, Iceland, New Zealand, and Sweden. It offers merchandise, including sundries, dry groceries, candies, coolers, freezers, deli, liquor, and tobacco; non-food merchandise comprising appliances, small electronics, health and beauty aids, hardware, lawn and garden, sporting goods, tires, toys and seasonal, automotive, stamps, tickets, apparel, furniture, domestics, housewares, special order kiosks, and jewelry; and fresh food, such as meat, produce, service deli, and bakery products. The company is also involved in warehouse ancillary operations, which include gasoline, pharmacies, optical, food courts, hearing-aid centers, and tire installation centers. In addition, it engages in e-commerce, business centers, travel, and other businesses. The company was formerly known as Costco Companies, Inc. and changed its name to Costco Wholesale Corporation in August 1999. Costco Wholesale Corporation was founded in 1976 and is based in Issaquah, Washington.",
+    "business_summary": null,
+    "company_website": "https://www.costco.com",
+    "headquarters": "Issaquah, United States",
+    "quarterly_results": [
+      {
+        "period": "Aug 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Nov 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Feb 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 231.6,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 242.2,
+        "net_profit_crore": 178.8,
+        "eps": 4.02,
+        "result_document_url": null
+      },
+      {
+        "period": "May 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 253.0,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 258.0,
+        "net_profit_crore": 190.3,
+        "eps": 4.28,
+        "result_document_url": null
+      },
+      {
+        "period": "Aug 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 334.1,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 351.0,
+        "net_profit_crore": 261.0,
+        "eps": 5.87,
+        "result_document_url": null
+      },
+      {
+        "period": "Nov 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 246.3,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 258.3,
+        "net_profit_crore": 200.1,
+        "eps": 4.5,
+        "result_document_url": null
+      },
+      {
+        "period": "Feb 2026",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 260.6,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 272.1,
+        "net_profit_crore": 203.5,
+        "eps": 4.58,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Aug 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Aug 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 779.3,
+        "operating_margin_pct": null,
+        "net_profit_crore": 584.4,
+        "eps": 13.14,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Aug 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 811.4,
+        "operating_margin_pct": null,
+        "net_profit_crore": 629.2,
+        "eps": 14.16,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Aug 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 928.5,
+        "operating_margin_pct": null,
+        "net_profit_crore": 736.7,
+        "eps": 16.56,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Aug 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 1038.3,
+        "operating_margin_pct": null,
+        "net_profit_crore": 809.9,
+        "eps": 18.21,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Aug 2025",
+        "total_assets_crore": 7709.9,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4793.5,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 2916.4,
+        "debt_crore": 817.3,
+        "cash_and_equivalents_crore": 1416.1,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Aug 2024",
+        "total_assets_crore": 6983.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4620.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 2362.2,
+        "debt_crore": 816.9,
+        "cash_and_equivalents_crore": 990.6,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Aug 2023",
+        "total_assets_crore": 6899.4,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4393.6,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 2505.8,
+        "debt_crore": 888.4,
+        "cash_and_equivalents_crore": 1370.0,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Aug 2022",
+        "total_assets_crore": 6416.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4351.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 2064.2,
+        "debt_crore": 903.9,
+        "cash_and_equivalents_crore": 1020.3,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Aug 2025",
+        "operating_cash_flow_crore": 1333.5,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 783.7,
+        "capital_expenditure_crore": 549.8,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Aug 2024",
+        "operating_cash_flow_crore": 1133.9,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 662.9000000000001,
+        "capital_expenditure_crore": 471.0,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Aug 2023",
+        "operating_cash_flow_crore": 1106.8,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 674.5,
+        "capital_expenditure_crore": 432.3,
+        "dividends_paid_crore": -125.1
+      },
+      {
+        "period": "Aug 2022",
+        "operating_cash_flow_crore": 739.2,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 350.1,
+        "capital_expenditure_crore": 389.1,
+        "dividends_paid_crore": -149.8
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 29.65,
+        "roa_pct": 8.72,
+        "roce_pct": null,
+        "current_ratio": 1.06,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.6,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Feb 2026",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 1.7,
+      "profit_yoy_pct": 13.81,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 3622883.5,
+      "pe_ratio": 52.91762,
+      "peg_ratio": 4.61,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 29.650998,
+      "dividend_yield_pct": 51.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 13.81% YoY and 1.70% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "FRATES CATON",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 700,
+        "price_per_share": 993.0,
+        "total_value_crore": 0.0695,
+        "date": "2026-04-01",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "ADAMO CLAUDINE",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 730,
+        "price_per_share": 1003.02,
+        "total_value_crore": 0.0732,
+        "date": "2026-03-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "JONES TERESA A",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 850,
+        "price_per_share": 986.26,
+        "total_value_crore": 0.0838,
+        "date": "2026-01-21",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "DECKER SUSAN LYNNE",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 458,
+        "price_per_share": 955.0,
+        "total_value_crore": 0.0437,
+        "date": "2026-01-16",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "KLAUER JAMES C",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 1500,
+        "price_per_share": 939.0,
+        "total_value_crore": 0.1409,
+        "date": "2026-01-14",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "MILLER RUSSELL D",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 1500,
+        "price_per_share": 916.32,
+        "total_value_crore": 0.1374,
+        "date": "2026-01-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "POLIT JAVIER",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 2607,
+        "price_per_share": 866.38,
+        "total_value_crore": 0.2259,
+        "date": "2025-12-30",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "ABBV": {
+    "symbol": "ABBV",
+    "name": "AbbVie Inc. Common Stock",
+    "exchange": "NYSE",
+    "sector": "Health Care",
+    "sub_sector": "Biotechnology: Pharmaceutical Preparations",
+    "fetched_at": "2026-04-03T04:06:12.091520Z",
+    "about": "AbbVie Inc., a research-based biopharmaceutical company, engages in the research and development, manufacturing, commercializing, and sale of medicines and therapies worldwide. The company offers Skyrizi to treat autoimmune diseases; Rinvoq to treat inflammatory diseases; Imbruvica for the treatment of adult patients with blood cancers; Venclexta to treat blood cancers; Elahere to treat various cancer; and Epkinly to treat lymphoma; and Emrelis for the treatment of lung cancer. It also provides facial injectables, plastics and regenerative medicine, body contouring, and skincare products; botox Cosmetic for the treatment of glabellar lines, crow's feet, forehead lines, and platysma bands; Juvederm Collection to treat volume loss in the temples, undereye, cheeks, chin, lips and lower face; Vraylar to treat schizophrenia, bipolar disorder, and depressive disorder; Duodopa to treat Parkinson's disease; Ubrelvy to treat migraine; Qulipta for episodic and chronic migraine; and Vyalev for the treatment of motor fluctuations, as well as Botox Therapeutic to treat chronic migraine, overactive bladder, spasticity, cervical dystonia, and other conditions. In addition, the company offers Ozurdex for visual impairment; Lumigan/Ganfort and Alphagan/Combigan for the reduction of elevated intraocular pressure in patients with open angle glaucoma or ocular hypertension; and other eye care products, including Refresh/Optive, Xen, Durysta, and Restasis. Further, it provides Mavyret to treat chronic hepatitis C virus genotype 1-6 infection; Creon, a pancreatic enzyme therapy; and Linzess/Constella to treat irritable bowel syndrome with constipation and chronic idiopathic constipation. The company was incorporated in 2012 and is headquartered in North Chicago, Illinois.",
+    "business_summary": null,
+    "company_website": "https://www.abbvie.com",
+    "headquarters": "North Chicago, United States",
+    "quarterly_results": [
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 8.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -226.9,
+        "net_profit_crore": -2.2,
+        "eps": -0.02,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 398.1,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 166.1,
+        "net_profit_crore": 128.6,
+        "eps": 0.72,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 571.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 155.4,
+        "net_profit_crore": 93.8,
+        "eps": 0.52,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 458.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 71.4,
+        "net_profit_crore": 18.6,
+        "eps": 0.1,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 580.9,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 266.8,
+        "net_profit_crore": 181.6,
+        "eps": 1.02,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 1881.4,
+        "operating_margin_pct": null,
+        "net_profit_crore": 1183.6,
+        "eps": 6.63,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 1353.5,
+        "operating_margin_pct": null,
+        "net_profit_crore": 486.3,
+        "eps": 2.72,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 1189.4,
+        "operating_margin_pct": null,
+        "net_profit_crore": 427.8,
+        "eps": 2.39,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 2009.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 422.6,
+        "eps": 2.37,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 13396.0,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 13718.8,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": -327.0,
+        "debt_crore": 6749.6,
+        "cash_and_equivalents_crore": 522.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 13516.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 13179.7,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 332.5,
+        "debt_crore": 6714.4,
+        "cash_and_equivalents_crore": 552.4,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 13471.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 12431.4,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1036.0,
+        "debt_crore": 5938.5,
+        "cash_and_equivalents_crore": 1281.4,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 13880.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 12151.8,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1725.4,
+        "debt_crore": 6327.1,
+        "cash_and_equivalents_crore": 920.1,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 1903.0,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 1781.6,
+        "capital_expenditure_crore": 121.4,
+        "dividends_paid_crore": -1165.7
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 1880.6,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 1783.1999999999998,
+        "capital_expenditure_crore": 97.4,
+        "dividends_paid_crore": -1102.5
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 2283.9,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 2206.2000000000003,
+        "capital_expenditure_crore": 77.7,
+        "dividends_paid_crore": -1053.9
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 2494.3,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 2424.8,
+        "capital_expenditure_crore": 69.5,
+        "dividends_paid_crore": -1004.3
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 6225.0,
+        "roa_pct": 9.81,
+        "roce_pct": null,
+        "current_ratio": 0.67,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": null,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": 876.34,
+      "profit_yoy_pct": -8354.55,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 3074144.39,
+      "pe_ratio": 88.49153,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 6225.0,
+      "dividend_yield_pct": 331.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed -8354.55% YoY and 876.34% QoQ in the latest reported quarter.",
+        "tone": "watch"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "PURDUE DAVID R.",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 5230,
+        "price_per_share": 233.56,
+        "total_value_crore": 0.1222,
+        "date": "2026-03-04",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SIATIS PERRY C.",
+        "position": "General Counsel",
+        "transaction_type": "sell",
+        "quantity": 18668,
+        "price_per_share": 234.39,
+        "total_value_crore": 0.4376,
+        "date": "2026-03-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SIATIS PERRY C.",
+        "position": "General Counsel",
+        "transaction_type": "sell",
+        "quantity": 22381,
+        "price_per_share": 230.0,
+        "total_value_crore": 0.5148,
+        "date": "2026-02-25",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "XBI": {
+    "symbol": "XBI",
+    "name": "State Street SPDR S&P Biotech ETF",
+    "exchange": "NYSE",
+    "sector": "Exchange Traded Funds",
+    "sub_sector": "ETF",
+    "fetched_at": "2026-04-03T04:06:15.732550Z",
+    "about": "In seeking to track the performance of the S&P Biotechnology Select Industry Index (the \"index\"), the fund employs a sampling strategy. It generally invests substantially all, but at least 80%, of its total assets in the securities comprising the index. The index represents the biotechnology segment of the S&P Total Market Index (\"S&P TMI\").",
+    "business_summary": null,
+    "company_website": null,
+    "headquarters": null,
+    "quarterly_results": [],
+    "profit_loss": [],
+    "balance_sheet": [],
+    "cash_flow": [],
+    "financial_ratios": [],
+    "growth": null,
+    "valuation": {
+      "market_cap_crore": 397.04,
+      "pe_ratio": null,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": null,
+      "dividend_yield_pct": 35.0
+    },
+    "growth_drivers": [],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Quarterly results are currently unavailable for this symbol.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "AAOI": {
+    "symbol": "AAOI",
+    "name": "Applied Optoelectronics Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Technology",
+    "sub_sector": "Semiconductors",
+    "fetched_at": "2026-04-03T04:06:18.823170Z",
+    "about": "Applied Optoelectronics, Inc. engages in the design, manufacture, and sale of fiber-optic networking products in the United States, Taiwan, and China. The company offers optical modules, optical filters, lasers, laser components, subassemblies, transmitters and transceivers, turn-key equipment, headend, node, and distribution equipment, as well as amplifiers. It sells its products to internet data center operators, cable television, telecom equipment manufacturers, fiber-to-the-home, and internet service providers through its direct and indirect sales channels. Applied Optoelectronics, Inc. was incorporated in 1997 and is headquartered in Sugar Land, Texas.",
+    "business_summary": null,
+    "company_website": "https://www.ao-inc.com",
+    "headquarters": "Sugar Land, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -0.64,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -11.97,
+        "net_profit_crore": -11.97,
+        "eps": -2.6,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -0.88,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -0.92,
+        "net_profit_crore": -0.92,
+        "eps": -0.18,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -1.47,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -0.91,
+        "net_profit_crore": -0.91,
+        "eps": -0.16,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -1.5,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -1.79,
+        "net_profit_crore": -1.79,
+        "eps": -0.28,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -1.14,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -1.05,
+        "net_profit_crore": -0.2,
+        "eps": -0.03,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": -5.88,
+        "operating_margin_pct": null,
+        "net_profit_crore": -6.64,
+        "eps": -2.38,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": -4.04,
+        "operating_margin_pct": null,
+        "net_profit_crore": -5.6,
+        "eps": -1.75,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": -7.05,
+        "operating_margin_pct": null,
+        "net_profit_crore": -18.67,
+        "eps": -4.5,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": -4.97,
+        "operating_margin_pct": null,
+        "net_profit_crore": -3.82,
+        "eps": -0.64,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 116.8423,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 43.4505,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 73.3918,
+        "debt_crore": 24.8082,
+        "cash_and_equivalents_crore": 20.614,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 54.7032,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 31.792,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 22.9112,
+        "debt_crore": 19.086,
+        "cash_and_equivalents_crore": 6.7428,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 38.9186,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 17.4317,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 21.4869,
+        "debt_crore": 12.1073,
+        "cash_and_equivalents_crore": 4.5366,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 40.8263,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 22.3593,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 18.467,
+        "debt_crore": 15.5526,
+        "cash_and_equivalents_crore": 2.4685,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": -17.4428,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -35.3955,
+        "capital_expenditure_crore": 17.9527,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": -6.9526,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -11.343800000000002,
+        "capital_expenditure_crore": 4.3912,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": -0.7929,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -1.7596,
+        "capital_expenditure_crore": 0.9667,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": -1.4022,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -1.773,
+        "capital_expenditure_crore": 0.3708,
+        "dividends_paid_crore": null
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": -7.94,
+        "roa_pct": -3.98,
+        "roce_pct": null,
+        "current_ratio": 2.63,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.34,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -88.83,
+      "profit_yoy_pct": -98.33,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 61297.79,
+      "pe_ratio": null,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": -7.9390004,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed -98.33% YoY and -88.83% QoQ in the latest reported quarter.",
+        "tone": "watch"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "KUO DAVID C.",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 29000,
+        "price_per_share": 100.13,
+        "total_value_crore": 0.2904,
+        "date": "2026-03-19",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "CHANG HUNG-LUN FRED",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 36400,
+        "price_per_share": 100.25,
+        "total_value_crore": 0.3649,
+        "date": "2026-03-16",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "MURRY STEFAN J",
+        "position": "Chief Financial Officer",
+        "transaction_type": "sell",
+        "quantity": 4000,
+        "price_per_share": 112.76,
+        "total_value_crore": 0.0451,
+        "date": "2026-03-10",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "YEH SHU-HUA JOSHUA",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 50000,
+        "price_per_share": 97.1,
+        "total_value_crore": 0.4855,
+        "date": "2026-03-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "YEH WILLIAM H",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 15000,
+        "price_per_share": 105.76,
+        "total_value_crore": 0.1586,
+        "date": "2026-03-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "CHEN MIN-CHU MIKE",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 11335,
+        "price_per_share": 106.13,
+        "total_value_crore": 0.1203,
+        "date": "2026-03-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "BLACK RICHARD B",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 3231,
+        "price_per_share": 95.0,
+        "total_value_crore": 0.0307,
+        "date": "2026-03-05",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "DELANEY CYNTHIA",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 21000,
+        "price_per_share": 98.02,
+        "total_value_crore": 0.2058,
+        "date": "2026-03-04",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "LOBOA ELIZABETH G",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 102347,
+        "price_per_share": 95.76,
+        "total_value_crore": 0.9801,
+        "date": "2026-03-03",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "MURRY STEFAN J",
+        "position": "Chief Financial Officer",
+        "transaction_type": "sell",
+        "quantity": 5980,
+        "price_per_share": 50.15,
+        "total_value_crore": 0.03,
+        "date": "2026-02-20",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "ASTS": {
+    "symbol": "ASTS",
+    "name": "AST SpaceMobile Inc. Class A Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Consumer Discretionary",
+    "sub_sector": "Telecommunications Equipment",
+    "fetched_at": "2026-04-03T04:06:22.229269Z",
+    "about": "AST SpaceMobile, Inc., together with its subsidiaries, designs and develops the constellation of BlueBird satellites in the United States. The company provides a cellular broadband network in space to be accessible directly by smartphones for commercial use and other applications, as well as for government use. Its SpaceMobile service provides cellular broadband services to end-users who are out of terrestrial cellular coverage. The company was founded in 2017 and is headquartered in Midland, Texas.",
+    "business_summary": null,
+    "company_website": "https://ast-science.com",
+    "headquarters": "Midland, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": -1.1,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -5.87,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -5.19,
+        "net_profit_crore": -3.59,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -6.3,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -6.35,
+        "net_profit_crore": -4.57,
+        "eps": -0.2,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -7.28,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -13.52,
+        "net_profit_crore": -9.94,
+        "eps": -0.41,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -7.97,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -16.35,
+        "net_profit_crore": -12.29,
+        "eps": -0.45,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": -7.23,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -9.5,
+        "net_profit_crore": -7.4,
+        "eps": -0.26,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": -14.58,
+        "operating_margin_pct": null,
+        "net_profit_crore": -3.16,
+        "eps": -0.58,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": -22.24,
+        "operating_margin_pct": null,
+        "net_profit_crore": -8.76,
+        "eps": -1.07,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": -24.28,
+        "operating_margin_pct": null,
+        "net_profit_crore": -30.01,
+        "eps": -1.94,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": -28.77,
+        "operating_margin_pct": null,
+        "net_profit_crore": -34.19,
+        "eps": -1.34,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 501.4387,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 262.2062,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 184.1475,
+        "debt_crore": 223.951,
+        "cash_and_equivalents_crore": 233.5683,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 95.4561,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 28.5415,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 47.9115,
+        "debt_crore": 17.3,
+        "cash_and_equivalents_crore": 56.4988,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 36.0892,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 14.7333,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 9.8991,
+        "debt_crore": 7.2872,
+        "cash_and_equivalents_crore": 8.5622,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 43.8372,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 7.8546,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 13.3532,
+        "debt_crore": 1.2768,
+        "cash_and_equivalents_crore": 23.8588,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": -7.1517,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -119.2655,
+        "capital_expenditure_crore": 112.1138,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": -12.6143,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -30.027,
+        "capital_expenditure_crore": 17.4127,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": -14.8942,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -26.7749,
+        "capital_expenditure_crore": 11.8807,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": -15.6464,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -21.3748,
+        "capital_expenditure_crore": 5.7284,
+        "dividends_paid_crore": null
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": -30.12,
+        "roa_pct": -6.02,
+        "roce_pct": null,
+        "current_ratio": 16.35,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.94,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -39.79,
+      "profit_yoy_pct": 106.13,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 249441.05,
+      "pe_ratio": null,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": -30.117,
+      "dividend_yield_pct": null
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 106.13% YoY and -39.79% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "YAO HUIWEN",
+        "position": "Chief Technology Officer",
+        "transaction_type": "sell",
+        "quantity": 40000,
+        "price_per_share": 88.88,
+        "total_value_crore": 0.3555,
+        "date": "2026-03-23",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "LARSON KEITH R",
+        "position": "Director",
+        "transaction_type": "buy",
+        "quantity": 625,
+        "price_per_share": 80.0,
+        "total_value_crore": 0.005,
+        "date": "2025-12-24",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "LARSON KEITH R",
+        "position": "Director",
+        "transaction_type": "buy",
+        "quantity": 715,
+        "price_per_share": 70.02,
+        "total_value_crore": 0.005,
+        "date": "2025-12-17",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "LARSON KEITH R",
+        "position": "Director",
+        "transaction_type": "buy",
+        "quantity": 675,
+        "price_per_share": 72.71,
+        "total_value_crore": 0.0049,
+        "date": "2025-12-10",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "GUPTA SHANTI B.",
+        "position": "Chief Operating Officer",
+        "transaction_type": "sell",
+        "quantity": 10000,
+        "price_per_share": 77.34,
+        "total_value_crore": 0.0773,
+        "date": "2025-12-10",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "PFE": {
+    "symbol": "PFE",
+    "name": "Pfizer Inc. Common Stock",
+    "exchange": "NYSE",
+    "sector": "Health Care",
+    "sub_sector": "Biotechnology: Pharmaceutical Preparations",
+    "fetched_at": "2026-04-03T04:06:25.061861Z",
+    "about": "Pfizer Inc. discovers, develops, manufactures, markets, distributes, and sells biopharmaceutical products in the United States and internationally. It operates in three segments: Biopharma, PC1, and Pfizer Ignite. The company offers internal medicine products, including cardiovascular metabolic diseases products under the Eliquis brand; migraine products under the Nurtec ODT/Vydura and Zavzpret brand; vaccines under the Prevnar family, Abrysvo, Nimenrix, FSME/IMMUN-TicoVac, and Trumenba brands; and Paxlovid for the treatment of COVID-19. It also provides inflammation and immunology products, such as Xeljanz, Enbrel, Cibinqo, Litfulo, Eucrisa, and Velsipity; rare disease products for therapeutic areas comprising amyloidosis, hemophilia, and endocrine diseases under the Vyndaqel family, Genotropin, BeneFIX, Xyntha, Somavert, Ngenla, and Hympavzi brands; and anti-infective and immunoglobulin medicines under the Zavicefta, Octagam, and Panzyga brands. In addition, the company offers oncology products comprising ADCs, small molecules, bispecific, and other immunotherapies for the treatment of cancers, including breast cancer, genitourinary cancer, and hematologic malignancies, as well as melanoma, gastrointestinal, gynecological, and lung cancer under the Ibrance, Xtandi, Padcev, Adcetris, Inlyta, Lorbrena, Bosulif, Tukysa, Braftovi, Mektovi, Orgovyx, Elrexfio, Tivdak, and Talzenna brands. Further, it provides biosimilars under the Inflectra brand; oncology biosimilars comprising Retacrit, Ruxience, Zirabev, Trazimera and Nivestym, and other biosimilars; and sterile injectables, such as Sulperazon, Atgam, Fragmin, Solu Medrol, Solu Cortef, and Bicillin. The company has collaboration agreements with Bristol-Myers Squibb Company; Astellas Pharma US, Inc.; Merck KGaA; and BioNTech SE, as well as a strategic collaboration with Boltz, PBC to develop and deploy biomolecular AI foundation models. Pfizer Inc. was founded in 1849 and is headquartered in New York, New York.",
+    "business_summary": null,
+    "company_website": "https://www.pfizer.com",
+    "headquarters": "New York, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 318.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -1.0,
+        "net_profit_crore": 41.0,
+        "eps": 0.07,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 442.5,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 278.5,
+        "net_profit_crore": 296.7,
+        "eps": 0.52,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 376.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 304.4,
+        "net_profit_crore": 291.0,
+        "eps": 0.51,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 552.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 333.4,
+        "net_profit_crore": 354.1,
+        "eps": 0.62,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 368.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -164.2,
+        "net_profit_crore": -164.8,
+        "eps": -0.29,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 3811.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 3137.2,
+        "eps": 5.47,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 441.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 211.9,
+        "eps": 0.37,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 1493.8,
+        "operating_margin_pct": null,
+        "net_profit_crore": 803.1,
+        "eps": 1.41,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 1740.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 777.1,
+        "eps": 1.36,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 20816.0,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 12138.5,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 8647.6,
+        "debt_crore": 6396.1,
+        "cash_and_equivalents_crore": 114.2,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 21339.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 12489.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 8820.3,
+        "debt_crore": 6364.9,
+        "cash_and_equivalents_crore": 104.3,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 22650.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 13721.3,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 8901.4,
+        "debt_crore": 7084.5,
+        "cash_and_equivalents_crore": 285.3,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 19720.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 10128.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 9566.1,
+        "debt_crore": 3485.9,
+        "cash_and_equivalents_crore": 41.6,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 1170.4,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 907.5000000000001,
+        "capital_expenditure_crore": 262.9,
+        "dividends_paid_crore": -977.1
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 1274.4,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 983.5000000000001,
+        "capital_expenditure_crore": 290.9,
+        "dividends_paid_crore": -951.2
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 870.0,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 479.3,
+        "capital_expenditure_crore": 390.7,
+        "dividends_paid_crore": -924.7
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 2926.7,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 2603.1,
+        "capital_expenditure_crore": 323.6,
+        "dividends_paid_crore": -898.3
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 8.89,
+        "roa_pct": 5.68,
+        "roce_pct": null,
+        "current_ratio": 1.16,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 0.78,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -146.54,
+      "profit_yoy_pct": -501.95,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 1276649.14,
+      "pe_ratio": 20.823528,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 8.886,
+      "dividend_yield_pct": 607.0
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed -501.95% YoY and -146.54% QoQ in the latest reported quarter.",
+        "tone": "watch"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "DAMICO JENNIFER B.",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 2500,
+        "price_per_share": 25.93,
+        "total_value_crore": 0.0065,
+        "date": "2025-03-04",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "DAL": {
+    "symbol": "DAL",
+    "name": "Delta Air Lines Inc. Common Stock",
+    "exchange": "NYSE",
+    "sector": "Consumer Discretionary",
+    "sub_sector": "Air Freight/Delivery Services",
+    "fetched_at": "2026-04-03T04:06:28.225861Z",
+    "about": "Delta Air Lines, Inc. provides scheduled air transportation for passengers and cargo in the United States and internationally. The company operates through two segments, Airline and Refinery. Its domestic network centered on core hubs in Atlanta, Detroit, Minneapolis-St. Paul, and Salt Lake City, as well as coastal hub positions in Boston, Los Angeles, New York-LaGuardia, New York-JFK, and Seattle; and international network centered on hubs and market presence in Amsterdam, Bogota, Lima, Mexico City, London-Heathrow, Paris-Charles de Gaulle, Santiago (Chile), Sao Paulo, Seoul-Incheon, and Tokyo. It also provides aircraft maintenance and engineering support, repair, and overhaul services; and vacation packages. The company operates through a fleet of approximately 1,314 aircraft. Delta Air Lines, Inc. was founded in 1924 and is headquartered in Atlanta, Georgia.",
+    "business_summary": null,
+    "company_website": "https://www.delta.com",
+    "headquarters": "Atlanta, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 171.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 120.2,
+        "net_profit_crore": 84.3,
+        "eps": 1.29,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 56.9,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 32.0,
+        "net_profit_crore": 24.0,
+        "eps": 0.37,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 210.2,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 257.4,
+        "net_profit_crore": 213.0,
+        "eps": 3.27,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 168.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 177.7,
+        "net_profit_crore": 141.7,
+        "eps": 2.17,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 146.7,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 151.3,
+        "net_profit_crore": 121.9,
+        "eps": 1.86,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 366.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 131.8,
+        "eps": 2.06,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 552.1,
+        "operating_margin_pct": null,
+        "net_profit_crore": 460.9,
+        "eps": 7.17,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 599.5,
+        "operating_margin_pct": null,
+        "net_profit_crore": 345.7,
+        "eps": 5.33,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 582.2,
+        "operating_margin_pct": null,
+        "net_profit_crore": 500.5,
+        "eps": 7.66,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 8131.7,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 6046.4,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 2085.3,
+        "debt_crore": 2027.4,
+        "cash_and_equivalents_crore": 431.0,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 7537.2,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 6007.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1529.3,
+        "debt_crore": 2277.1,
+        "cash_and_equivalents_crore": 306.9,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 7364.4,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 6253.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1110.5,
+        "debt_crore": 2728.1,
+        "cash_and_equivalents_crore": 274.1,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 7228.8,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 6570.6,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 658.2,
+        "debt_crore": 3061.0,
+        "cash_and_equivalents_crore": 326.6,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 834.2,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 384.30000000000007,
+        "capital_expenditure_crore": 449.9,
+        "dividends_paid_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 802.5,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 288.5,
+        "capital_expenditure_crore": 514.0,
+        "dividends_paid_crore": -32.1
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 646.4,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 114.10000000000002,
+        "capital_expenditure_crore": 532.3,
+        "dividends_paid_crore": -12.8
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 636.3,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": -0.3000000000000682,
+        "capital_expenditure_crore": 636.6,
+        "dividends_paid_crore": 0.0
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 27.69,
+        "roa_pct": 4.5,
+        "roce_pct": null,
+        "current_ratio": 0.4,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 1.02,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -13.97,
+      "profit_yoy_pct": 44.6,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 351442.45,
+      "pe_ratio": 8.715405,
+      "peg_ratio": 0.16,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 27.693,
+      "dividend_yield_pct": 112.00000000000001
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed 44.60% YoY and -13.97% QoQ in the latest reported quarter.",
+        "tone": "positive"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "BASTIAN EDWARD H",
+        "position": "Chief Executive Officer",
+        "transaction_type": "sell",
+        "quantity": 100000,
+        "price_per_share": 70.26,
+        "total_value_crore": 0.7026,
+        "date": "2026-02-26",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "HAUENSTEIN GLEN W",
+        "position": "President",
+        "transaction_type": "sell",
+        "quantity": 426933,
+        "price_per_share": 73.47,
+        "total_value_crore": 3.1365,
+        "date": "2026-02-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "BELLEMARE ALAIN",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 35212,
+        "price_per_share": 75.2,
+        "total_value_crore": 0.2648,
+        "date": "2026-02-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SEAR STEVEN M",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 38600,
+        "price_per_share": 75.05,
+        "total_value_crore": 0.2897,
+        "date": "2026-02-09",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "CARTER PETER W",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 27000,
+        "price_per_share": 74.82,
+        "total_value_crore": 0.202,
+        "date": "2026-02-06",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "HAUENSTEIN GLEN W",
+        "position": "President",
+        "transaction_type": "sell",
+        "quantity": 13576,
+        "price_per_share": 71.0,
+        "total_value_crore": 0.0964,
+        "date": "2026-02-05",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "SAMANT RAHUL D",
+        "position": "Chief Technology Officer",
+        "transaction_type": "sell",
+        "quantity": 62528,
+        "price_per_share": 70.18,
+        "total_value_crore": 0.4388,
+        "date": "2026-02-05",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  },
+  "HON": {
+    "symbol": "HON",
+    "name": "Honeywell International Inc. Common Stock",
+    "exchange": "NASDAQ",
+    "sector": "Industrials",
+    "sub_sector": "Aerospace",
+    "fetched_at": "2026-04-03T04:06:31.427338Z",
+    "about": "Honeywell International Inc. engages in the aerospace technologies, industrial automation, building automation, and energy and sustainable solutions businesses in the United States, Europe, and internationally. The company's Aerospace Technologies segment offers auxiliary power units, propulsion engines, integrated avionics, connectivity services, electric power systems, management and technical services, environmental control and electric power systems, engine controls, flight safety, communications, navigation hardware, data and software applications, radar and surveillance systems, aircraft lighting, advanced systems and instruments, satellite and space components, and aircraft wheels and brakes; thermal systems; and spare parts; repair, overhaul, and maintenance services. Its Industrial Automation segment provides automation control and instrumentation products and services; smart energy products; sensing technologies with custom-engineered sensors and services; gas detection technologies and personal protective equipment; and system design automation equipment, as well as software and analytics for manufacturing, distribution, and fulfillment operations. Its Building Automation segment provides software applications for building control and optimization; sensors, switches, control systems, and instruments for energy management; access control; video surveillance; fire products; and installation, maintenance, and upgrade of systems. The company's Energy and Sustainability Solutions segment, through its UOP business, delivers licensed process technology, equipment, engineering, catalysts, adsorbents, and services for refining, petrochemicals, low-carbon energy, gas and LNG, and industrial solutions; as well as connectivity, data integration and software solutions. Honeywell International Inc. was founded in 1885 and is headquartered in Charlotte, North Carolina.",
+    "business_summary": null,
+    "company_website": "https://www.honeywell.com",
+    "headquarters": "Charlotte, United States",
+    "quarterly_results": [
+      {
+        "period": "Sep 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": null,
+        "net_profit_crore": null,
+        "eps": null,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 183.9,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 154.4,
+        "net_profit_crore": 128.5,
+        "eps": 1.96,
+        "result_document_url": null
+      },
+      {
+        "period": "Mar 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 198.5,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 188.4,
+        "net_profit_crore": 144.9,
+        "eps": 2.22,
+        "result_document_url": null
+      },
+      {
+        "period": "Jun 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 211.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 187.1,
+        "net_profit_crore": 157.0,
+        "eps": 2.45,
+        "result_document_url": null
+      },
+      {
+        "period": "Sep 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 175.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": 222.2,
+        "net_profit_crore": 182.5,
+        "eps": 2.86,
+        "result_document_url": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "expenses_crore": null,
+        "operating_profit_crore": 71.4,
+        "operating_margin_pct": null,
+        "profit_before_tax_crore": -50.1,
+        "net_profit_crore": -11.5,
+        "eps": 0.46,
+        "result_document_url": null
+      }
+    ],
+    "profit_loss": [
+      {
+        "period": "Dec 2021",
+        "sales_crore": null,
+        "operating_profit_crore": null,
+        "operating_margin_pct": null,
+        "net_profit_crore": null,
+        "eps": 7.91,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2022",
+        "sales_crore": null,
+        "operating_profit_crore": 642.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 496.6,
+        "eps": 7.27,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2023",
+        "sales_crore": null,
+        "operating_profit_crore": 611.0,
+        "operating_margin_pct": null,
+        "net_profit_crore": 565.8,
+        "eps": 8.47,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2024",
+        "sales_crore": null,
+        "operating_profit_crore": 666.8,
+        "operating_margin_pct": null,
+        "net_profit_crore": 570.5,
+        "eps": 8.71,
+        "dividend_payout_pct": null
+      },
+      {
+        "period": "Dec 2025",
+        "sales_crore": null,
+        "operating_profit_crore": 656.7,
+        "operating_margin_pct": null,
+        "net_profit_crore": 472.9,
+        "eps": null,
+        "dividend_payout_pct": null
+      }
+    ],
+    "balance_sheet": [
+      {
+        "period": "Dec 2025",
+        "total_assets_crore": 7368.1,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 5865.1,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1390.4,
+        "debt_crore": 3556.3,
+        "cash_and_equivalents_crore": 1248.7,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2024",
+        "total_assets_crore": 7519.6,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 5603.5,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1861.9,
+        "debt_crore": 3207.7,
+        "cash_and_equivalents_crore": 990.6,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2023",
+        "total_assets_crore": 6152.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4508.4,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1585.6,
+        "debt_crore": 2153.6,
+        "cash_and_equivalents_crore": 792.5,
+        "inventory_crore": null,
+        "receivables_crore": null
+      },
+      {
+        "period": "Dec 2022",
+        "total_assets_crore": 6227.5,
+        "current_assets_crore": null,
+        "total_liabilities_crore": 4494.9,
+        "current_liabilities_crore": null,
+        "shareholders_equity_crore": 1669.7,
+        "debt_crore": 2053.7,
+        "cash_and_equivalents_crore": 962.7,
+        "inventory_crore": null,
+        "receivables_crore": null
+      }
+    ],
+    "cash_flow": [
+      {
+        "period": "Dec 2025",
+        "operating_cash_flow_crore": 640.8,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 542.1999999999999,
+        "capital_expenditure_crore": 98.6,
+        "dividends_paid_crore": -297.6
+      },
+      {
+        "period": "Dec 2024",
+        "operating_cash_flow_crore": 609.7,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 522.6,
+        "capital_expenditure_crore": 87.1,
+        "dividends_paid_crore": -290.2
+      },
+      {
+        "period": "Dec 2023",
+        "operating_cash_flow_crore": 534.0,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 459.9,
+        "capital_expenditure_crore": 74.1,
+        "dividends_paid_crore": -285.5
+      },
+      {
+        "period": "Dec 2022",
+        "operating_cash_flow_crore": 527.4,
+        "investing_cash_flow_crore": null,
+        "financing_cash_flow_crore": null,
+        "free_cash_flow_crore": 450.79999999999995,
+        "capital_expenditure_crore": 76.6,
+        "dividends_paid_crore": -271.9
+      }
+    ],
+    "financial_ratios": [
+      {
+        "period": "TTM",
+        "roe_pct": 26.14,
+        "roa_pct": 5.95,
+        "roce_pct": null,
+        "current_ratio": 1.3,
+        "quick_ratio": null,
+        "debt_to_equity_ratio": 2.37,
+        "debt_to_assets_ratio": null,
+        "interest_coverage": null,
+        "asset_turnover": null
+      }
+    ],
+    "growth": {
+      "latest_period": "Dec 2025",
+      "sales_qoq_pct": null,
+      "sales_yoy_pct": null,
+      "profit_qoq_pct": -106.3,
+      "profit_yoy_pct": -108.95,
+      "operating_margin_latest_pct": null,
+      "operating_margin_previous_pct": null,
+      "net_margin_latest_pct": null,
+      "net_margin_previous_pct": null
+    },
+    "valuation": {
+      "market_cap_crore": 1177205.29,
+      "pe_ratio": 33.10967,
+      "peg_ratio": null,
+      "operating_margin_pct": null,
+      "net_margin_pct": null,
+      "roce_pct": null,
+      "roe_pct": 26.136,
+      "dividend_yield_pct": 206.99999999999997
+    },
+    "growth_drivers": [
+      {
+        "title": "Recent profit trend",
+        "detail": "Net profit changed -108.95% YoY and -106.30% QoQ in the latest reported quarter.",
+        "tone": "watch"
+      }
+    ],
+    "management_team": [],
+    "management_guidance": [],
+    "strategy_and_outlook": null,
+    "competitive_position": null,
+    "business_segments": [],
+    "geographic_presence": [],
+    "risks_and_opportunities": [],
+    "recent_updates": [],
+    "detailed_news": [],
+    "shareholding_pattern": [],
+    "shareholding_delta": null,
+    "ai_news_summary": null,
+    "business_triggers": [],
+    "insider_transactions": [
+      {
+        "person_name": "CURRIER JAMES E",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 2248,
+        "price_per_share": 243.65,
+        "total_value_crore": 0.0548,
+        "date": "2026-03-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "WEST KENNETH J",
+        "position": "Officer",
+        "transaction_type": "sell",
+        "quantity": 873,
+        "price_per_share": 242.7,
+        "total_value_crore": 0.0212,
+        "date": "2026-03-02",
+        "pct_of_holding_change": null,
+        "remarks": null
+      },
+      {
+        "person_name": "LIEBLEIN GRACE D",
+        "position": "Director",
+        "transaction_type": "sell",
+        "quantity": 5847,
+        "price_per_share": 243.73,
+        "total_value_crore": 0.1425,
+        "date": "2026-02-23",
+        "pct_of_holding_change": null,
+        "remarks": null
+      }
+    ],
+    "last_news_update": null,
+    "latest_earnings_key_metrics": {},
+    "upcoming_events": [],
+    "data_warnings": [
+      "Quarterly tables and shareholding pattern could not be refreshed from the company page right now.",
+      "Recent company updates/news are currently unavailable for this symbol.",
+      "Latest promoter/FII/DII changes are currently unavailable for this symbol."
+    ],
+    "cache_version": 10
+  }
+}

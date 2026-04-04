@@ -1,0 +1,601 @@
+{
+  "2026-03-31": {
+    "recommendation_date": "2026-03-31",
+    "generated_at": "2026-03-31T14:28:08.380518Z",
+    "next_update_at": "2026-03-31T20:30:00Z",
+    "consolidating_ideas": [
+      {
+        "symbol": "ACLX",
+        "name": "Arcellx Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "consolidation",
+        "last_price": 114.77,
+        "change_pct": 0.17,
+        "market_cap_crore": 55610.27,
+        "rs_rating": 94,
+        "relative_volume": 0.83,
+        "stock_return_20d": 0.86,
+        "stock_return_60d": 74.66,
+        "stock_return_12m": 67.52,
+        "pct_from_52w_high": 0.12,
+        "pct_from_ath": 0.12,
+        "pullback_depth_pct": 0.12,
+        "setup_score": 135.49,
+        "setup_summary": "Strong prior move with +74.7% over 3 months, now only 0.1% below the 52-week high and consolidating with a 0.1% pullback.",
+        "thesis": "ACLX has already shown institutional-style momentum, but the recent 1-month move of +0.9% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +23.4%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +23.4%.",
+        "valuation_summary": "ROE -53.4%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W -0.2% and 1M -8.9%; 46/237 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 23.35% YoY and 4.12% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +23.4%."
+        ],
+        "risk_flags": [
+          "Clinical trial failures or delays in regulatory approval for product candidates.",
+          "Significant ongoing research and development expenses leading to substantial net losses.",
+          "Competition from other biotechnology companies developing similar immunotherapies.",
+          "Challenges in manufacturing and scaling up complex cell therapies."
+        ],
+        "key_metrics": {
+          "Price": 114.77,
+          "3M Return": "+74.7%",
+          "1Y Return": "+67.5%",
+          "RS Rating": 94.0,
+          "Profit YoY": "+23.4%"
+        }
+      },
+      {
+        "symbol": "CGON",
+        "name": "CG Oncology Inc. Common stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "consolidation",
+        "last_price": 63.96,
+        "change_pct": -1.02,
+        "market_cap_crore": 45286.48,
+        "rs_rating": 96,
+        "relative_volume": 0.58,
+        "stock_return_20d": 8.78,
+        "stock_return_60d": 60.54,
+        "stock_return_12m": 137.42,
+        "pct_from_52w_high": 7.77,
+        "pct_from_ath": 7.77,
+        "pullback_depth_pct": 7.77,
+        "setup_score": 102.85,
+        "setup_summary": "Strong prior move with +60.5% over 3 months, now only 7.8% below the 52-week high and consolidating with a 7.8% pullback.",
+        "thesis": "CGON has already shown institutional-style momentum, but the recent 1-month move of +8.8% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +29.9%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +29.9%.",
+        "valuation_summary": "ROE -21.7%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W -0.2% and 1M -8.9%; 46/237 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 29.87% YoY and -5.71% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +29.9%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 63.96,
+          "3M Return": "+60.5%",
+          "1Y Return": "+137.4%",
+          "RS Rating": 96.0,
+          "Profit YoY": "+29.9%"
+        }
+      },
+      {
+        "symbol": "PAA",
+        "name": "Plains All American Pipeline L.P. Common Units representing Limited Partner Interests",
+        "exchange": "NASDAQ",
+        "sector": "Energy",
+        "sub_sector": "Natural Gas Distribution",
+        "recommendation_type": "consolidation",
+        "last_price": 22.47,
+        "change_pct": 0.13,
+        "market_cap_crore": 131406.69,
+        "rs_rating": 83,
+        "relative_volume": 0.56,
+        "stock_return_20d": 7.46,
+        "stock_return_60d": 30.07,
+        "stock_return_12m": 21.96,
+        "pct_from_52w_high": 1.4,
+        "pct_from_ath": 1.4,
+        "pullback_depth_pct": 1.4,
+        "setup_score": 89.19,
+        "setup_summary": "Strong prior move with +30.1% over 3 months, now only 1.4% below the 52-week high and consolidating with a 1.4% pullback.",
+        "thesis": "PAA has already shown institutional-style momentum, but the recent 1-month move of +7.5% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +850.0%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +850.0%.",
+        "valuation_summary": "PE 20.2x, PEG 1.96, ROE 10.6%, yield 743.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Energy: weighted 1W +4.0% and 1M +13.2%; 68/86 stocks are positive over 1M. Stronger peers include PARR, BE."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 850.00% YoY and -22.45% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +850.0%."
+        ],
+        "risk_flags": [
+          "Volatility in crude oil and NGL prices can impact profitability and demand for services.",
+          "Pipeline integrity and operational disruptions can lead to service interruptions and financial losses.",
+          "Changes in environmental regulations or energy policies could affect operations and costs."
+        ],
+        "key_metrics": {
+          "Price": 22.47,
+          "3M Return": "+30.1%",
+          "1Y Return": "+22.0%",
+          "RS Rating": 83.0,
+          "PE": 20.17,
+          "PEG": 1.96,
+          "Profit YoY": "+850.0%"
+        }
+      },
+      {
+        "symbol": "SOLS",
+        "name": "Solstice Advanced Materials Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Industrials",
+        "sub_sector": "Aerospace",
+        "recommendation_type": "consolidation",
+        "last_price": 72.4,
+        "change_pct": -3.51,
+        "market_cap_crore": 98859.87,
+        "rs_rating": 81,
+        "relative_volume": 0.55,
+        "stock_return_20d": -7.78,
+        "stock_return_60d": 45.61,
+        "stock_return_12m": 49.73,
+        "pct_from_52w_high": 14.18,
+        "pct_from_ath": 14.18,
+        "pullback_depth_pct": 5.97,
+        "setup_score": 69.1,
+        "setup_summary": "Strong prior move with +45.6% over 3 months, now only 14.2% below the 52-week high and consolidating with a 6.0% pullback.",
+        "thesis": "SOLS has already shown institutional-style momentum, but the recent 1-month move of -7.8% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Solstice Advanced Materials, Inc. operates as a specialty chemicals and advanced materials company in the United States and internationally. It operates in two segments: Refrigerants & Applied Solutions (RAS), and Electronic & Specialty Materials (ESM). The RAS segment manufactures and sells low global warming potential (LGWP) refrigerants, blowing agents, solvents, and aerosol materials; and provides, aerosol propellants, cleaning solvents, pharmaceutical packaging materials, and alternative energy services under the Solstice, Genetron, and Aclar brands. The ESM segment offers electronic materials, fibers and laboratory life science chemicals for semiconductor, defense, pharmaceutical, and construction markets. This segment provides sputtering targets, lightweight high-strength fibers, and high-purity life science solutions under the Spectra, Fluka, and Hydranal brands. Solstice Advanced Materials, Inc. was incorporated in 2025 and is headquartered in Morris Plains, New Jersey.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was 15 crore.",
+        "valuation_summary": "PE 49.8x, ROE 12.5%, yield 41.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Industrials: weighted 1W -3.5% and 1M -10.5%; 27/237 stocks are positive over 1M. Stronger peers include GPRE, CENX."
+        ],
+        "growth_drivers": [],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 72.4,
+          "3M Return": "+45.6%",
+          "1Y Return": "+49.7%",
+          "RS Rating": 81.0,
+          "PE": 49.77
+        }
+      }
+    ],
+    "value_ideas": [
+      {
+        "symbol": "CVNA",
+        "name": "Carvana Co. Class A Common Stock",
+        "exchange": "NYSE",
+        "sector": "Consumer Discretionary",
+        "sub_sector": "Retail-Auto Dealers and Gas Stations",
+        "recommendation_type": "value",
+        "last_price": 290.8,
+        "change_pct": -3.72,
+        "market_cap_crore": 549276.92,
+        "rs_rating": 19,
+        "relative_volume": 1.37,
+        "stock_return_20d": -12.98,
+        "stock_return_60d": -33.68,
+        "stock_return_12m": 42.58,
+        "pct_from_52w_high": 40.27,
+        "pct_from_ath": 40.27,
+        "pullback_depth_pct": 12.42,
+        "setup_score": 812.83,
+        "setup_summary": "PE 34.1x, ROE 67.9%",
+        "thesis": "CVNA combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +984.8%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +984.8%.",
+        "valuation_summary": "PE 34.1x, ROE 67.9%",
+        "recent_developments": [
+          "Sector context \u00b7 Consumer Discretionary: weighted 1W -1.8% and 1M -7.7%; 44/313 stocks are positive over 1M. Stronger peers include SCI, AGX."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 984.81% YoY and 467.55% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +984.8%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 290.8,
+          "3M Return": "-33.7%",
+          "1Y Return": "+42.6%",
+          "RS Rating": 19.0,
+          "PE": 34.15,
+          "Profit YoY": "+984.8%"
+        }
+      },
+      {
+        "symbol": "NVDA",
+        "name": "NVIDIA Corporation Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Technology",
+        "sub_sector": "Semiconductors",
+        "recommendation_type": "value",
+        "last_price": 165.17,
+        "change_pct": -1.4,
+        "market_cap_crore": 33787108.8,
+        "rs_rating": 53,
+        "relative_volume": 1.03,
+        "stock_return_20d": -6.78,
+        "stock_return_60d": -13.31,
+        "stock_return_12m": 48.26,
+        "pct_from_52w_high": 22.15,
+        "pct_from_ath": 22.15,
+        "pullback_depth_pct": 12.55,
+        "setup_score": 144.4,
+        "setup_summary": "PE 34.7x, PEG 0.17, ROE 101.5%, yield 2.0%",
+        "thesis": "NVDA combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +94.5%.",
+        "recent_quarter_summary": "Jan 2025 sales were NA crore and net profit was 2209 crore. Growth snapshot: profit YoY +94.5%.",
+        "valuation_summary": "PE 34.7x, PEG 0.17, ROE 101.5%, yield 2.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Technology: weighted 1W -7.0% and 1M -9.5%; 59/249 stocks are positive over 1M. Stronger peers include AXTI, SNDK."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 94.47% YoY and 34.63% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +94.5%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 165.17,
+          "3M Return": "-13.3%",
+          "1Y Return": "+48.3%",
+          "RS Rating": 53.0,
+          "PE": 34.74,
+          "PEG": 0.17,
+          "Profit YoY": "+94.5%"
+        }
+      },
+      {
+        "symbol": "AMGN",
+        "name": "Amgen Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "value",
+        "last_price": 349.0,
+        "change_pct": 0.07,
+        "market_cap_crore": 1560488.25,
+        "rs_rating": 75,
+        "relative_volume": 0.98,
+        "stock_return_20d": -10.09,
+        "stock_return_60d": 5.55,
+        "stock_return_12m": 17.72,
+        "pct_from_52w_high": 10.81,
+        "pct_from_ath": 10.81,
+        "pullback_depth_pct": 8.19,
+        "setup_score": 142.67,
+        "setup_summary": "PE 24.6x, PEG 4.42, ROE 106.1%, yield 289.0%",
+        "thesis": "AMGN combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +112.6%.",
+        "recent_quarter_summary": "Dec 2024 sales were NA crore and net profit was 63 crore. Growth snapshot: profit YoY +112.6%.",
+        "valuation_summary": "PE 24.6x, PEG 4.42, ROE 106.1%, yield 289.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W -0.2% and 1M -8.9%; 46/237 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 112.60% YoY and -58.55% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +112.6%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 349.0,
+          "3M Return": "+5.5%",
+          "1Y Return": "+17.7%",
+          "RS Rating": 75.0,
+          "PE": 24.64,
+          "PEG": 4.42,
+          "Profit YoY": "+112.6%"
+        }
+      }
+    ],
+    "ai_model": null
+  },
+  "2026-04-02": {
+    "recommendation_date": "2026-04-02",
+    "generated_at": "2026-04-03T04:06:31.448461Z",
+    "next_update_at": "2026-04-03T20:30:00Z",
+    "consolidating_ideas": [
+      {
+        "symbol": "VIAV",
+        "name": "Viavi Solutions Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Technology",
+        "sub_sector": "Semiconductors",
+        "recommendation_type": "consolidation",
+        "last_price": 36.89,
+        "change_pct": 4.53,
+        "market_cap_crore": 66527.21,
+        "rs_rating": 98,
+        "relative_volume": 0.69,
+        "stock_return_20d": 11.65,
+        "stock_return_60d": 104.83,
+        "stock_return_12m": 229.67,
+        "pct_from_52w_high": 3.12,
+        "pct_from_ath": 3.12,
+        "pullback_depth_pct": 3.13,
+        "setup_score": 152.93,
+        "setup_summary": "Strong prior move with +104.8% over 3 months, now only 3.1% below the 52-week high and consolidating with a 3.1% pullback.",
+        "thesis": "VIAV has already shown institutional-style momentum, but the recent 1-month move of +11.7% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY -628.6%.",
+        "recent_quarter_summary": "Dec 2024 sales were NA crore and net profit was 1 crore. Growth snapshot: profit YoY -628.6%.",
+        "valuation_summary": "ROE -5.5%",
+        "recent_developments": [
+          "Sector context \u00b7 Technology: weighted 1W -0.3% and 1M -2.4%; 102/247 stocks are positive over 1M. Stronger peers include AXTI, SNDK."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed -628.57% YoY and 124.77% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY -628.6%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 36.89,
+          "3M Return": "+104.8%",
+          "1Y Return": "+229.7%",
+          "RS Rating": 98.0,
+          "Profit YoY": "-628.6%"
+        }
+      },
+      {
+        "symbol": "UCTT",
+        "name": "Ultra Clean Holdings Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Technology",
+        "sub_sector": "Semiconductors",
+        "recommendation_type": "consolidation",
+        "last_price": 63.15,
+        "change_pct": -0.54,
+        "market_cap_crore": 22227.39,
+        "rs_rating": 97,
+        "relative_volume": 0.48,
+        "stock_return_20d": 5.96,
+        "stock_return_60d": 145.05,
+        "stock_return_12m": 194.96,
+        "pct_from_52w_high": 14.43,
+        "pct_from_ath": 14.43,
+        "pullback_depth_pct": 6.14,
+        "setup_score": 146.17,
+        "setup_summary": "Strong prior move with +145.1% over 3 months, now only 14.4% below the 52-week high and consolidating with a 6.1% pullback.",
+        "thesis": "UCTT has already shown institutional-style momentum, but the recent 1-month move of +6.0% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY -120.2%.",
+        "recent_quarter_summary": "Dec 2024 sales were NA crore and net profit was 2 crore. Growth snapshot: profit YoY -120.2%.",
+        "valuation_summary": "ROE -20.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Technology: weighted 1W -0.3% and 1M -2.4%; 102/247 stocks are positive over 1M. Stronger peers include AXTI, SNDK."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed -120.25% YoY and -69.72% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY -120.2%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 63.15,
+          "3M Return": "+145.1%",
+          "1Y Return": "+195.0%",
+          "RS Rating": 97.0,
+          "Profit YoY": "-120.2%"
+        }
+      },
+      {
+        "symbol": "ACLX",
+        "name": "Arcellx Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "consolidation",
+        "last_price": 114.8,
+        "change_pct": 0.05,
+        "market_cap_crore": 55610.27,
+        "rs_rating": 92,
+        "relative_volume": 0.66,
+        "stock_return_20d": 0.66,
+        "stock_return_60d": 80.5,
+        "stock_return_12m": 75.0,
+        "pct_from_52w_high": 0.12,
+        "pct_from_ath": 0.12,
+        "pullback_depth_pct": 0.12,
+        "setup_score": 138.63,
+        "setup_summary": "Strong prior move with +80.5% over 3 months, now only 0.1% below the 52-week high and consolidating with a 0.1% pullback.",
+        "thesis": "ACLX has already shown institutional-style momentum, but the recent 1-month move of +0.7% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +23.4%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +23.4%.",
+        "valuation_summary": "ROE -53.4%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W +1.2% and 1M -4.0%; 115/261 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 23.35% YoY and 4.12% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +23.4%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 114.8,
+          "3M Return": "+80.5%",
+          "1Y Return": "+75.0%",
+          "RS Rating": 92.0,
+          "Profit YoY": "+23.4%"
+        }
+      },
+      {
+        "symbol": "CGON",
+        "name": "CG Oncology Inc. Common stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "consolidation",
+        "last_price": 67.45,
+        "change_pct": 0.94,
+        "market_cap_crore": 45286.48,
+        "rs_rating": 96,
+        "relative_volume": 0.61,
+        "stock_return_20d": 11.4,
+        "stock_return_60d": 67.91,
+        "stock_return_12m": 175.42,
+        "pct_from_52w_high": 2.74,
+        "pct_from_ath": 2.74,
+        "pullback_depth_pct": 2.74,
+        "setup_score": 126.74,
+        "setup_summary": "Strong prior move with +67.9% over 3 months, now only 2.7% below the 52-week high and consolidating with a 2.7% pullback.",
+        "thesis": "CGON has already shown institutional-style momentum, but the recent 1-month move of +11.4% suggests digestion rather than blow-off action.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +29.9%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +29.9%.",
+        "valuation_summary": "ROE -21.7%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W +1.2% and 1M -4.0%; 115/261 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 29.87% YoY and -5.71% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +29.9%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 67.45,
+          "3M Return": "+67.9%",
+          "1Y Return": "+175.4%",
+          "RS Rating": 96.0,
+          "Profit YoY": "+29.9%"
+        }
+      }
+    ],
+    "value_ideas": [
+      {
+        "symbol": "NVDA",
+        "name": "NVIDIA Corporation Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Technology",
+        "sub_sector": "Semiconductors",
+        "recommendation_type": "value",
+        "last_price": 177.4,
+        "change_pct": 0.91,
+        "market_cap_crore": 33787108.8,
+        "rs_rating": 64,
+        "relative_volume": 0.7,
+        "stock_return_20d": -1.47,
+        "stock_return_60d": -5.4,
+        "stock_return_12m": 63.72,
+        "pct_from_52w_high": 16.39,
+        "pct_from_ath": 16.39,
+        "pullback_depth_pct": 6.08,
+        "setup_score": 143.86,
+        "setup_summary": "PE 36.2x, PEG 0.18, ROE 101.5%, yield 2.0%",
+        "thesis": "NVDA combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +94.5%.",
+        "recent_quarter_summary": "Jan 2025 sales were NA crore and net profit was 2209 crore. Growth snapshot: profit YoY +94.5%.",
+        "valuation_summary": "PE 36.2x, PEG 0.18, ROE 101.5%, yield 2.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Technology: weighted 1W -0.3% and 1M -2.4%; 102/247 stocks are positive over 1M. Stronger peers include AXTI, SNDK."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 94.47% YoY and 34.63% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +94.5%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 177.4,
+          "3M Return": "-5.4%",
+          "1Y Return": "+63.7%",
+          "RS Rating": 64.0,
+          "PE": 36.2,
+          "PEG": 0.18,
+          "Profit YoY": "+94.5%"
+        }
+      },
+      {
+        "symbol": "AMGN",
+        "name": "Amgen Inc. Common Stock",
+        "exchange": "NASDAQ",
+        "sector": "Health Care",
+        "sub_sector": "Biotechnology: Biological Products (No Diagnostic Substances)",
+        "recommendation_type": "value",
+        "last_price": 348.01,
+        "change_pct": -1.51,
+        "market_cap_crore": 1560488.25,
+        "rs_rating": 67,
+        "relative_volume": 0.42,
+        "stock_return_20d": -7.69,
+        "stock_return_60d": 6.61,
+        "stock_return_12m": 15.21,
+        "pct_from_52w_high": 11.06,
+        "pct_from_ath": 11.06,
+        "pullback_depth_pct": 8.45,
+        "setup_score": 142.74,
+        "setup_summary": "PE 24.5x, PEG 4.38, ROE 106.1%, yield 290.0%",
+        "thesis": "AMGN combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +112.6%.",
+        "recent_quarter_summary": "Dec 2024 sales were NA crore and net profit was 63 crore. Growth snapshot: profit YoY +112.6%.",
+        "valuation_summary": "PE 24.5x, PEG 4.38, ROE 106.1%, yield 290.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Health Care: weighted 1W +1.2% and 1M -4.0%; 115/261 stocks are positive over 1M. Stronger peers include TNGX, KOD."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 112.60% YoY and -58.55% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +112.6%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 348.01,
+          "3M Return": "+6.6%",
+          "1Y Return": "+15.2%",
+          "RS Rating": 67.0,
+          "PE": 24.45,
+          "PEG": 4.38,
+          "Profit YoY": "+112.6%"
+        }
+      },
+      {
+        "symbol": "DAL",
+        "name": "Delta Air Lines Inc. Common Stock",
+        "exchange": "NYSE",
+        "sector": "Consumer Discretionary",
+        "sub_sector": "Air Freight/Delivery Services",
+        "recommendation_type": "value",
+        "last_price": 66.76,
+        "change_pct": -1.24,
+        "market_cap_crore": 351442.45,
+        "rs_rating": 73,
+        "relative_volume": 0.62,
+        "stock_return_20d": 3.34,
+        "stock_return_60d": -3.46,
+        "stock_return_12m": 55.0,
+        "pct_from_52w_high": 12.37,
+        "pct_from_ath": 12.37,
+        "pullback_depth_pct": 2.68,
+        "setup_score": 115.29,
+        "setup_summary": "PE 8.7x, PEG 0.16, ROE 27.7%, yield 112.0%",
+        "thesis": "DAL combines still-positive business growth with a valuation profile that remains reasonable for the current profitability and capital efficiency levels.",
+        "future_growth_summary": "Fresh management or news commentary is limited; the latest reported quarter showed profit YoY +44.6%.",
+        "recent_quarter_summary": "Sep 2024 sales were NA crore and net profit was NA crore. Growth snapshot: profit YoY +44.6%.",
+        "valuation_summary": "PE 8.7x, PEG 0.16, ROE 27.7%, yield 112.0%",
+        "recent_developments": [
+          "Sector context \u00b7 Consumer Discretionary: weighted 1W -0.1% and 1M -3.9%; 74/312 stocks are positive over 1M. Stronger peers include AGX, GSAT."
+        ],
+        "growth_drivers": [
+          "Recent profit trend: Net profit changed 44.60% YoY and -13.97% QoQ in the latest reported quarter.",
+          "Latest reported quarter: profit YoY +44.6%."
+        ],
+        "risk_flags": [],
+        "key_metrics": {
+          "Price": 66.76,
+          "3M Return": "-3.5%",
+          "1Y Return": "+55.0%",
+          "RS Rating": 73.0,
+          "PE": 8.72,
+          "PEG": 0.16,
+          "Profit YoY": "+44.6%"
+        }
+      }
+    ],
+    "ai_model": null
+  }
+}

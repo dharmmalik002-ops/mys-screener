@@ -1,0 +1,25 @@
+{
+  "cache_version": 4,
+  "generated_at": "2026-04-03T06:09:52.598537+00:00",
+  "symbol": "^CNXSC",
+  "timeframe": "1D",
+  "ticker": "^CNXSC",
+  "bars": [
+    {
+      "time": 1775088000,
+      "open": 15475.7,
+      "high": 15696.05,
+      "low": 15183.55,
+      "close": 15650.5,
+      "volume": 0
+    },
+    {
+      "time": 1775174400,
+      "open": 14749.52,
+      "high": 14749.52,
+      "low": 14724.45,
+      "close": 14724.45,
+      "volume": 0
+    }
+  ]
+}

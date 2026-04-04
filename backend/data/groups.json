@@ -1,0 +1,6902 @@
+{
+  "asOfDate": "2026-04-04",
+  "benchmark": "NIFTY 500",
+  "filters": {
+    "minMarketCapCr": 800.0,
+    "minAvgDailyValueCr": 1.0
+  },
+  "master": [
+    {
+      "groupId": "abrasives-bearings",
+      "groupName": "Abrasives & Bearings",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed abrasives & bearings stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "CARBORUNIV",
+        "GRINDWELL",
+        "SKFINDUS",
+        "TIMKEN",
+        "WENDT"
+      ]
+    },
+    {
+      "groupId": "agri-commodities",
+      "groupName": "Agri Commodities",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed agri commodities stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "AVANTIFEED",
+        "CLSEL",
+        "GAEL",
+        "GODREJAGRO",
+        "GRMOVER",
+        "GULPOLY",
+        "KRBL",
+        "KSCL",
+        "LTFOODS",
+        "SANSTAR",
+        "TRUALT"
+      ]
+    },
+    {
+      "groupId": "agro-chemicals",
+      "groupName": "Agro Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed agro chemicals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 14,
+      "symbols": [
+        "ASTEC",
+        "BAYERCROP",
+        "BHAGCHEM",
+        "BHARATRAS",
+        "DHANUKA",
+        "INSECTICID",
+        "IPL",
+        "MOL",
+        "NACLIND",
+        "PIIND",
+        "RALLIS",
+        "SHARDACROP",
+        "SUMICHEM",
+        "UPL"
+      ]
+    },
+    {
+      "groupId": "alcoholic-beverages",
+      "groupName": "Alcoholic Beverages",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed alcoholic beverages stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "ABDL",
+        "ASALCBR",
+        "GLOBUSSPR",
+        "GMBREW",
+        "INDIAGLYCO",
+        "PICCADIL",
+        "RADICO",
+        "SDBL",
+        "SULA",
+        "TI",
+        "UBL",
+        "UNITDSPR"
+      ]
+    },
+    {
+      "groupId": "apparel-fashion",
+      "groupName": "Apparel & Fashion",
+      "parentSector": "Textiles",
+      "description": "Indian listed apparel & fashion stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "ARVIND",
+        "CANTABIL",
+        "DOLLAR",
+        "GOKEX",
+        "KITEX",
+        "KKCL",
+        "LUXIND",
+        "MONTECARLO",
+        "PAGEIND",
+        "PGIL",
+        "RUPA",
+        "SBC",
+        "SPAL"
+      ]
+    },
+    {
+      "groupId": "asset-managers",
+      "groupName": "Asset Managers",
+      "parentSector": "Financial Services",
+      "description": "Indian listed asset managers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "ABSLAMC",
+        "CRAMC",
+        "HDFCAMC",
+        "ICICIAMC",
+        "NAM-INDIA",
+        "UTIAMC"
+      ]
+    },
+    {
+      "groupId": "auto-ancillaries",
+      "groupName": "Auto Ancillaries",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed auto ancillaries stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 66,
+      "symbols": [
+        "ARE&M",
+        "ASAHIINDIA",
+        "ASKAUTOLTD",
+        "AUTOAXLES",
+        "BANCOINDIA",
+        "BELRISE",
+        "BHARATFORG",
+        "BHARATSE",
+        "BOSCHLTD",
+        "CARRARO",
+        "CIEINDIA",
+        "CRAFTSMAN",
+        "DIVGIITTS",
+        "ENDURANCE",
+        "EXIDEIND",
+        "FIEMIND",
+        "FMGOETZE",
+        "GABRIEL",
+        "GNA",
+        "IGARASHI",
+        "INDNIPPON",
+        "JAMNAAUTO",
+        "JAYBARMARU",
+        "JBMA",
+        "JTEKTINDIA",
+        "KROSS",
+        "LANDMARK",
+        "LGBBROSLTD",
+        "LUMAXIND",
+        "LUMAXTECH",
+        "MINDACORP",
+        "MMFL",
+        "MOTHERSON",
+        "MSUMI",
+        "NDRAUTO",
+        "NRBBEARING",
+        "PRECAM",
+        "PRICOLLTD",
+        "RACLGEAR",
+        "RAJRATAN",
+        "RICOAUTO",
+        "RKFORGE",
+        "RML",
+        "ROLEXRINGS",
+        "SANDHAR",
+        "SANSERA",
+        "SCHAEFFLER",
+        "SEDEMAC",
+        "SHARDAMOTR",
+        "SHRIPISTON",
+        "SJS",
+        "SKFINDIA",
+        "SONACOMS",
+        "SSWL",
+        "STUDDS",
+        "SUNCLAY",
+        "SUNDRMFAST",
+        "SUPRAJIT",
+        "TALBROAUTO",
+        "TENNIND",
+        "TIINDIA",
+        "UNIPARTS",
+        "UNOMINDA",
+        "VARROC",
+        "WHEELS",
+        "ZFCVINDIA"
+      ]
+    },
+    {
+      "groupId": "brokerages-wealth",
+      "groupName": "Brokerages & Wealth",
+      "parentSector": "Financial Services",
+      "description": "Indian listed brokerages & wealth stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 23,
+      "symbols": [
+        "360ONE",
+        "5PAISA",
+        "ANGELONE",
+        "ARSSBL",
+        "BSE",
+        "CAMS",
+        "CARERATING",
+        "CDSL",
+        "DAMCAPITAL",
+        "DOLATALGO",
+        "GEOJITFSL",
+        "GROWW",
+        "ICRA",
+        "IEX",
+        "IIFLCAPS",
+        "INDOTHAI",
+        "KFINTECH",
+        "MCX",
+        "MONARCH",
+        "MOTILALOFS",
+        "NUVAMA",
+        "SHAREINDIA",
+        "SMCGLOBAL"
+      ]
+    },
+    {
+      "groupId": "building-materials",
+      "groupName": "Building Materials",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed building materials stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "ASIANTILES",
+        "BORORENEW",
+        "BOROSCI",
+        "CERA",
+        "HINDWAREAP",
+        "KAJARIACER",
+        "LAOPALA",
+        "MIDWESTLTD",
+        "NITCO",
+        "POKARNA",
+        "RAMCOIND",
+        "SOMANYCERA"
+      ]
+    },
+    {
+      "groupId": "business-services",
+      "groupName": "Business Services",
+      "parentSector": "Services",
+      "description": "Indian listed business services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 17,
+      "symbols": [
+        "AWFIS",
+        "BLACKBUCK",
+        "CMSINFO",
+        "EFCIL",
+        "HEMIPROP",
+        "IBULLSLTD",
+        "IGIL",
+        "INOXGREEN",
+        "KERNEX",
+        "NESCO",
+        "QUESS",
+        "SANGHVIMOV",
+        "SMARTWORKS",
+        "TEAMLEASE",
+        "TEXINFRA",
+        "UDS",
+        "WEWORK"
+      ]
+    },
+    {
+      "groupId": "cvs-tractors-ce",
+      "groupName": "CVs, Tractors & CE",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed cvs, tractors & ce stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "ACE",
+        "AJAXENGG",
+        "ASHOKLEY",
+        "ATULAUTO",
+        "BEML",
+        "ESCORTS",
+        "SMLMAH",
+        "TIL",
+        "TMCV",
+        "VSTTILLERS"
+      ]
+    },
+    {
+      "groupId": "cables-wires",
+      "groupName": "Cables & Wires",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed cables & wires stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "DYCL",
+        "FINCABLES",
+        "KEI",
+        "PARACABLES",
+        "POLYCAB",
+        "QUADFUTURE",
+        "RRKABEL",
+        "UNIVCABLES"
+      ]
+    },
+    {
+      "groupId": "capital-goods-electrical",
+      "groupName": "Capital Goods Electrical",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed capital goods electrical stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 47,
+      "symbols": [
+        "ABB",
+        "ADVAIT",
+        "APARINDS",
+        "ATLANTAELE",
+        "AVALON",
+        "AZAD",
+        "BAJEL",
+        "BBL",
+        "BHEL",
+        "CGPOWER",
+        "DIACABS",
+        "ELECON",
+        "EMMVEE",
+        "ENRIN",
+        "EXICOM",
+        "GENUSPOWER",
+        "GVPIL",
+        "GVT&D",
+        "INDOTECH",
+        "INOXWIND",
+        "JYOTISTRUC",
+        "POWERINDIA",
+        "PREMIERENE",
+        "QPOWER",
+        "RAMRAT",
+        "RELTD",
+        "RISHABH",
+        "SAATVIKGL",
+        "SALZERELEC",
+        "SCHNEIDER",
+        "SERVOTECH",
+        "SHILCTECH",
+        "SIEMENS",
+        "SKIPPER",
+        "SOLEX",
+        "SUZLON",
+        "TARIL",
+        "TDPOWERSYS",
+        "THERMAX",
+        "TRANSRAILL",
+        "TRITURBINE",
+        "UTLSOLAR",
+        "VIKRAMSOLR",
+        "VOLTAMP",
+        "WAAREEENER",
+        "WAAREERTL",
+        "WEBELSOLAR"
+      ]
+    },
+    {
+      "groupId": "capital-goods-industrial",
+      "groupName": "Capital Goods Industrial",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed capital goods industrial stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 49,
+      "symbols": [
+        "ADOR",
+        "ANUP",
+        "CENTUM",
+        "CPPLUS",
+        "DEEDEV",
+        "DIFFNKG",
+        "DYNAMATECH",
+        "EIMCOELECO",
+        "EKC",
+        "EPACKPEB",
+        "ESABINDIA",
+        "GALAPREC",
+        "GMMPFAUDLR",
+        "HARSHA",
+        "HBLENGINE",
+        "HIRECT",
+        "HLEGLAS",
+        "HONAUT",
+        "HONDAPOWER",
+        "HPL",
+        "ICEMAKE",
+        "INDIANHUME",
+        "INOXINDIA",
+        "JASH",
+        "JNKINDIA",
+        "JWL",
+        "JYOTICNC",
+        "KAYNES",
+        "KIRLOSIND",
+        "KRN",
+        "LLOYDSENGG",
+        "LMW",
+        "MARINE",
+        "PENIND",
+        "PITTIENG",
+        "PRAJIND",
+        "PTCIL",
+        "RAJOOENG",
+        "SALASAR",
+        "SETL",
+        "SHANTIGEAR",
+        "SUBROS",
+        "SYRMA",
+        "TEGA",
+        "TEXRAIL",
+        "THEJO",
+        "TITAGARH",
+        "WALCHANNAG",
+        "WINDMACHIN"
+      ]
+    },
+    {
+      "groupId": "castings-forgings",
+      "groupName": "Castings & Forgings",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed castings & forgings stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "AIAENG",
+        "BALUFORGE",
+        "HAPPYFORGE",
+        "NELCAST",
+        "STEELCAS"
+      ]
+    },
+    {
+      "groupId": "cement",
+      "groupName": "Cement",
+      "parentSector": "Construction Materials",
+      "description": "Indian listed cement stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 22,
+      "symbols": [
+        "ACC",
+        "AMBUJACEM",
+        "BIRLACORPN",
+        "DALBHARAT",
+        "GRASIM",
+        "HEIDELBERG",
+        "INDIACEM",
+        "JKCEMENT",
+        "JKLAKSHMI",
+        "JSWCEMENT",
+        "KCP",
+        "MANGLMCEM",
+        "NUVOCO",
+        "ORIENTCEM",
+        "PRSMJOHNSN",
+        "RAMCOCEM",
+        "SAGCEM",
+        "SANGHIIND",
+        "SHREDIGCEM",
+        "SHREECEM",
+        "STARCEMENT",
+        "ULTRACEMCO"
+      ]
+    },
+    {
+      "groupId": "commodity-chemicals",
+      "groupName": "Commodity Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed commodity chemicals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 15,
+      "symbols": [
+        "ANDHRSUGAR",
+        "DCW",
+        "DEEPAKFERT",
+        "GHCL",
+        "GNFC",
+        "GUJALKALI",
+        "HSCL",
+        "IGPL",
+        "JGCHEM",
+        "PCBL",
+        "RAIN",
+        "SPLPETRO",
+        "SWANCORP",
+        "TATACHEM",
+        "TIRUMALCHM"
+      ]
+    },
+    {
+      "groupId": "consumer-electronics",
+      "groupName": "Consumer Electronics",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed consumer electronics stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "DIXON",
+        "HAVELLS",
+        "IKIO",
+        "MIRCELECTR",
+        "PGEL",
+        "SAFARI",
+        "SHAILY",
+        "VIPIND"
+      ]
+    },
+    {
+      "groupId": "dairy",
+      "groupName": "Dairy",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed dairy stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "DODLA",
+        "HATSUN",
+        "HERITGFOOD",
+        "KWIL",
+        "PARAGMILK",
+        "VADILALIND"
+      ]
+    },
+    {
+      "groupId": "defence",
+      "groupName": "Defence",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed defence stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 22,
+      "symbols": [
+        "AEQUS",
+        "APOLLO",
+        "ASTRAMICRO",
+        "AVANTEL",
+        "AXISCADES",
+        "BDL",
+        "BEL",
+        "CYIENTDLM",
+        "DATAPATTNS",
+        "DCXINDIA",
+        "GRSE",
+        "HAL",
+        "IDEAFORGE",
+        "JAYKAY",
+        "KRISHNADEF",
+        "MIDHANI",
+        "MTARTECH",
+        "NIBE",
+        "PARAS",
+        "ROSSTECH",
+        "UNIMECH",
+        "ZENTEC"
+      ]
+    },
+    {
+      "groupId": "e-commerce",
+      "groupName": "E-Commerce",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed e-commerce stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "CARTRADE",
+        "CRIZAC",
+        "ETERNAL",
+        "FIRSTCRY",
+        "INDIAMART",
+        "JUSTDIAL",
+        "MATRIMONY",
+        "MEESHO",
+        "NAUKRI",
+        "NYKAA",
+        "RTNINDIA",
+        "SWIGGY",
+        "URBANCO"
+      ]
+    },
+    {
+      "groupId": "epc-construction",
+      "groupName": "EPC & Construction",
+      "parentSector": "Construction",
+      "description": "Indian listed epc & construction stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 45,
+      "symbols": [
+        "ABINFRA",
+        "AFCONS",
+        "AHLUCONT",
+        "ASHOKA",
+        "BLKASHYAP",
+        "CAPACITE",
+        "CEIGALL",
+        "CEMPRO",
+        "DBL",
+        "ENGINERSIN",
+        "GARUDA",
+        "GKENERGY",
+        "GPTINFRA",
+        "GRINFRA",
+        "HCC",
+        "HGINFRA",
+        "INTERARCH",
+        "IRB",
+        "IRCON",
+        "ISGEC",
+        "JKIL",
+        "KEC",
+        "KNRCON",
+        "KPIL",
+        "LT",
+        "MANINFRA",
+        "MBEL",
+        "NBCC",
+        "NCC",
+        "PATELENG",
+        "PNCINFRA",
+        "POWERMECH",
+        "PSPPROJECT",
+        "RAMKY",
+        "RITES",
+        "RVNL",
+        "SEPC",
+        "SIMPLEXINF",
+        "SOLARWORLD",
+        "SPMLINFRA",
+        "SRM",
+        "SWSOLAR",
+        "TECHNOE",
+        "VIKRAN",
+        "WELENT"
+      ]
+    },
+    {
+      "groupId": "edible-oils",
+      "groupName": "Edible Oils",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed edible oils stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "AWL",
+        "GOKULAGRO",
+        "MARICO",
+        "PATANJALI",
+        "SUNDROP"
+      ]
+    },
+    {
+      "groupId": "education-staffing-retail-services",
+      "groupName": "Education, Staffing & Retail Services",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed education, staffing & retail services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "ENTERO",
+        "JARO",
+        "MEDPLUS",
+        "MPSLTD",
+        "NIITMTS",
+        "PWL",
+        "SIS",
+        "VERANDA"
+      ]
+    },
+    {
+      "groupId": "electrodes-refractories",
+      "groupName": "Electrodes & Refractories",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed electrodes & refractories stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "GRAPHITE",
+        "HEG",
+        "RHIM",
+        "RPEL",
+        "VESUVIUS"
+      ]
+    },
+    {
+      "groupId": "fmcg-foods",
+      "groupName": "FMCG Foods",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed fmcg foods stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 26,
+      "symbols": [
+        "ADFFOODS",
+        "APEX",
+        "BBTC",
+        "BECTORFOOD",
+        "BIKAJI",
+        "BRITANNIA",
+        "CCL",
+        "DIAMONDYD",
+        "DOMS",
+        "EIDPARRY",
+        "FLAIR",
+        "GODAVARIB",
+        "GODFRYPHLP",
+        "GOPAL",
+        "HINDUNILVR",
+        "HNDFDS",
+        "ITC",
+        "MANORAMA",
+        "NESTLEIND",
+        "ORKLAINDIA",
+        "TASTYBITE",
+        "TATACONSUM",
+        "VBL",
+        "VENKEYS",
+        "VSTIND",
+        "ZYDUSWELL"
+      ]
+    },
+    {
+      "groupId": "fertilizers",
+      "groupName": "Fertilizers",
+      "parentSector": "Chemicals",
+      "description": "Indian listed fertilizers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "CHAMBLFERT",
+        "COROMANDEL",
+        "FACT",
+        "GSFC",
+        "KRISHANA",
+        "MBAPL",
+        "NFL",
+        "PARADEEP",
+        "RCF",
+        "SPIC"
+      ]
+    },
+    {
+      "groupId": "financial-institutions",
+      "groupName": "Financial Institutions",
+      "parentSector": "Financial Services",
+      "description": "Indian listed financial institutions stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "ALGOQUANT",
+        "CENTRUM",
+        "CRISIL",
+        "HUDCO",
+        "IFCI",
+        "IREDA",
+        "IRFC",
+        "PFC",
+        "PRIMESECU",
+        "RECLTD",
+        "TFCILTD"
+      ]
+    },
+    {
+      "groupId": "fintech",
+      "groupName": "Fintech",
+      "parentSector": "Financial Services",
+      "description": "Indian listed fintech stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "CCAVENUE",
+        "MOBIKWIK",
+        "PAYTM",
+        "PINELABS",
+        "POLICYBZR",
+        "STYL"
+      ]
+    },
+    {
+      "groupId": "footwear",
+      "groupName": "Footwear",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed footwear stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "BATAINDIA",
+        "CAMPUS",
+        "METROBRAND",
+        "REDTAPE",
+        "RELAXO"
+      ]
+    },
+    {
+      "groupId": "gas-utilities",
+      "groupName": "Gas Utilities",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed gas utilities stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "ATGL",
+        "CONFIPET",
+        "GAIL",
+        "GSPL",
+        "GUJGASLTD",
+        "IGL",
+        "MGL",
+        "PETRONET"
+      ]
+    },
+    {
+      "groupId": "hardware-peripherals",
+      "groupName": "Hardware & Peripherals",
+      "parentSector": "Information Technology",
+      "description": "Indian listed hardware & peripherals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "CONTROLPR",
+        "DLINKINDIA",
+        "EBGNG",
+        "IVALUE",
+        "MOSCHIP",
+        "NELCO",
+        "RPTECH"
+      ]
+    },
+    {
+      "groupId": "home-appliances",
+      "groupName": "Home Appliances",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed home appliances stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 19,
+      "symbols": [
+        "AMBER",
+        "BAJAJELEC",
+        "BLUESTARCO",
+        "BOSCH-HCIL",
+        "BUTTERFLY",
+        "CARYSIL",
+        "CROMPTON",
+        "EPACK",
+        "EUREKAFORB",
+        "IFBIND",
+        "LGEINDIA",
+        "ORIENTELEC",
+        "STOVEKRAFT",
+        "SYMPHONY",
+        "TTKPRESTIG",
+        "VGUARD",
+        "VOLTAS",
+        "WEL",
+        "WHIRLPOOL"
+      ]
+    },
+    {
+      "groupId": "home-furnishings",
+      "groupName": "Home Furnishings",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed home furnishings stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "ALLTIME",
+        "BIRLANU",
+        "BOROLTD",
+        "CELLO",
+        "EUROPRATIK",
+        "RESPONIND",
+        "SFL",
+        "WAKEFIT"
+      ]
+    },
+    {
+      "groupId": "hospitals",
+      "groupName": "Hospitals",
+      "parentSector": "Healthcare",
+      "description": "Indian listed hospitals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 27,
+      "symbols": [
+        "AGARWALEYE",
+        "APOLLOHOSP",
+        "ARTEMISMED",
+        "ASTERDM",
+        "FORTIS",
+        "GPTHEALTH",
+        "HCG",
+        "INDGN",
+        "INDRAMEDCO",
+        "JLHL",
+        "KIMS",
+        "KRSNAA",
+        "LALPATHLAB",
+        "MAXHEALTH",
+        "MEDANTA",
+        "METROPOLIS",
+        "NEPHROPLUS",
+        "NH",
+        "PARKHOSPS",
+        "RAINBOW",
+        "SHALBY",
+        "SUVEN",
+        "SYNGENE",
+        "THYROCARE",
+        "VIJAYA",
+        "VIMTALABS",
+        "YATHARTH"
+      ]
+    },
+    {
+      "groupId": "hotels-resorts",
+      "groupName": "Hotels & Resorts",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed hotels & resorts stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 16,
+      "symbols": [
+        "BRIGHOTEL",
+        "CHALET",
+        "DBREALTY",
+        "EIHOTEL",
+        "INDHOTEL",
+        "ITCHOTELS",
+        "ITDC",
+        "JUNIPER",
+        "LEMONTREE",
+        "MHRIL",
+        "ORIENTHOT",
+        "PARKHOTELS",
+        "SAMHI",
+        "TAJGVK",
+        "THELEELA",
+        "VENTIVE"
+      ]
+    },
+    {
+      "groupId": "housing-finance",
+      "groupName": "Housing Finance",
+      "parentSector": "Financial Services",
+      "description": "Indian listed housing finance stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "AADHARHFC",
+        "AAVAS",
+        "APTUS",
+        "BAJAJHFL",
+        "CANFINHOME",
+        "HOMEFIRST",
+        "INDIASHLTR",
+        "LICHSGFIN",
+        "PNBHOUSING",
+        "REPCOHOME",
+        "SAMMAANCAP"
+      ]
+    },
+    {
+      "groupId": "it-enabled-services",
+      "groupName": "IT Enabled Services",
+      "parentSector": "Information Technology",
+      "description": "Indian listed it enabled services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 30,
+      "symbols": [
+        "AFFLE",
+        "ALLDIGI",
+        "AMAGI",
+        "AURUM",
+        "BBOX",
+        "BLSE",
+        "CIGNITITEC",
+        "CYIENT",
+        "DATAMATICS",
+        "DIGITIDE",
+        "DSSL",
+        "ECLERX",
+        "EMUDHRA",
+        "EXPLEOSOL",
+        "FSL",
+        "GENESYS",
+        "HGS",
+        "IKS",
+        "LTTS",
+        "NETWEB",
+        "NPST",
+        "ONEPOINT",
+        "ORIENTTECH",
+        "PROTEAN",
+        "RPSGVENT",
+        "RSYSTEMS",
+        "SAGILITY",
+        "SASKEN",
+        "TATATECH",
+        "ZAGGLE"
+      ]
+    },
+    {
+      "groupId": "it-services",
+      "groupName": "IT Services",
+      "parentSector": "Information Technology",
+      "description": "Indian listed it services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 27,
+      "symbols": [
+        "63MOONS",
+        "ACCELYA",
+        "AURIONPRO",
+        "BSOFT",
+        "COFORGE",
+        "HAPPSTMNDS",
+        "HCLTECH",
+        "HEXT",
+        "INFOBEAN",
+        "INFY",
+        "INTELLECT",
+        "KPITTECH",
+        "LATENTVIEW",
+        "MASTEK",
+        "MCLOUD",
+        "MPHASIS",
+        "NEWGEN",
+        "PERSISTENT",
+        "RATEGAIN",
+        "SAKSOFT",
+        "SILVERTUC",
+        "SONATSOFTW",
+        "TATAELXSI",
+        "TCS",
+        "TECHM",
+        "WIPRO",
+        "ZENSARTECH"
+      ]
+    },
+    {
+      "groupId": "industrial-machinery",
+      "groupName": "Industrial Machinery",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed industrial machinery stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "CUMMINSIND",
+        "ELGIEQUIP",
+        "GREAVESCOT",
+        "INGERRAND",
+        "KIRLOSBROS",
+        "KIRLOSENG",
+        "KIRLPNU",
+        "KSB",
+        "OSWALPUMPS",
+        "ROTO",
+        "SHAKTIPUMP",
+        "SWARAJENG"
+      ]
+    },
+    {
+      "groupId": "industrial-minerals",
+      "groupName": "Industrial Minerals",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed industrial minerals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "ASHAPURMIN",
+        "GMDCLTD",
+        "GRAVITA",
+        "LLOYDSME",
+        "MOIL",
+        "NMDC",
+        "ORISSAMINE"
+      ]
+    },
+    {
+      "groupId": "industrial-plastics",
+      "groupName": "Industrial Plastics",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed industrial plastics stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "APOLLOPIPE",
+        "ASTRAL",
+        "FINPIPE",
+        "GRWRHITECH",
+        "JAICORPLTD",
+        "JISLJALEQS",
+        "KINGFA",
+        "PRINCEPIPE",
+        "RMDRIP",
+        "SUPREMEIND",
+        "TIMETECHNO"
+      ]
+    },
+    {
+      "groupId": "insurance",
+      "groupName": "Insurance",
+      "parentSector": "Financial Services",
+      "description": "Indian listed insurance stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 15,
+      "symbols": [
+        "ANANDRATHI",
+        "CANHLIFE",
+        "GICRE",
+        "GODIGIT",
+        "HDFCLIFE",
+        "ICICIGI",
+        "ICICIPRULI",
+        "LICI",
+        "MEDIASSIST",
+        "MFSL",
+        "NIACL",
+        "NIVABUPA",
+        "PRUDENT",
+        "SBILIFE",
+        "STARHEALTH"
+      ]
+    },
+    {
+      "groupId": "investment-holdings",
+      "groupName": "Investment Holdings",
+      "parentSector": "Financial Services",
+      "description": "Indian listed investment holdings stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 27,
+      "symbols": [
+        "3MINDIA",
+        "ABCAPITAL",
+        "BAJAJFINSV",
+        "BAJAJHLDNG",
+        "BALMLAWRIE",
+        "CHOICEIN",
+        "CHOLAHLDNG",
+        "DCMSHRIRAM",
+        "EDELWEISS",
+        "GODREJIND",
+        "JINDALPHOT",
+        "JIOFIN",
+        "JMFINANCIL",
+        "JPOLYINVST",
+        "JSWHL",
+        "LTF",
+        "MAHSCOOTER",
+        "NSIL",
+        "PILANIINVS",
+        "PNBGILTS",
+        "RANEHOLDIN",
+        "RELIGARE",
+        "SCILAL",
+        "SUMMITSEC",
+        "TATAINVEST",
+        "TSFINV",
+        "TVSHLTD"
+      ]
+    },
+    {
+      "groupId": "jewellery",
+      "groupName": "Jewellery",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed jewellery stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 18,
+      "symbols": [
+        "BLUESTONE",
+        "DPABHUSHAN",
+        "ETHOSLTD",
+        "GOLDIAM",
+        "KALYANKJIL",
+        "KDDL",
+        "LGHL",
+        "MOTISONS",
+        "PCJEWELLER",
+        "PNGJL",
+        "RGL",
+        "SENCO",
+        "SHANTIGOLD",
+        "SHRINGARMS",
+        "SKYGOLD",
+        "THANGAMAYL",
+        "TITAN",
+        "VAIBHAVGBL"
+      ]
+    },
+    {
+      "groupId": "logistics",
+      "groupName": "Logistics",
+      "parentSector": "Services",
+      "description": "Indian listed logistics stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 14,
+      "symbols": [
+        "ALLCARGO",
+        "BLUEDART",
+        "CONCOR",
+        "DELHIVERY",
+        "GATEWAY",
+        "MAHLOG",
+        "NAVKARCORP",
+        "RIIL",
+        "SHADOWFAX",
+        "SINDHUTRAD",
+        "TCI",
+        "TCIEXP",
+        "TVSSCS",
+        "VRLLOG"
+      ]
+    },
+    {
+      "groupId": "media-broadcasting",
+      "groupName": "Media & Broadcasting",
+      "parentSector": "Media Entertainment & Publication",
+      "description": "Indian listed media & broadcasting stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 16,
+      "symbols": [
+        "AQYLON",
+        "BALAJITELE",
+        "DBCORP",
+        "DEN",
+        "HATHWAY",
+        "JAGRAN",
+        "NAVNETEDUL",
+        "NAZARA",
+        "NETWORK18",
+        "PFOCUS",
+        "PVRINOX",
+        "SAREGAMA",
+        "SIGNPOST",
+        "SUNTV",
+        "TIPSMUSIC",
+        "ZEEL"
+      ]
+    },
+    {
+      "groupId": "medical-devices",
+      "groupName": "Medical Devices",
+      "parentSector": "Healthcare",
+      "description": "Indian listed medical devices stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 4,
+      "symbols": [
+        "FISCHER",
+        "LAXMIDENTL",
+        "POLYMED",
+        "TARSONS"
+      ]
+    },
+    {
+      "groupId": "mining-coal-alloys",
+      "groupName": "Mining, Coal & Alloys",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed mining, coal & alloys stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "ADANIENT",
+        "BHARATCOAL",
+        "COALINDIA",
+        "IMFA",
+        "JAINREC",
+        "KIOCL",
+        "LLOYDSENT",
+        "MAITHANALL",
+        "POCL",
+        "SANDUMA",
+        "SGMART",
+        "VEDL"
+      ]
+    },
+    {
+      "groupId": "nbfcs",
+      "groupName": "NBFCs",
+      "parentSector": "Financial Services",
+      "description": "Indian listed nbfcs stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 33,
+      "symbols": [
+        "AIIL",
+        "ARMANFIN",
+        "BAJFINANCE",
+        "CGCL",
+        "CHOLAFIN",
+        "CIFL",
+        "CREDITACC",
+        "FEDFINA",
+        "FIVESTAR",
+        "FUSION",
+        "HDBFS",
+        "IIFL",
+        "INDOSTAR",
+        "M&MFIN",
+        "MANAPPURAM",
+        "MASFIN",
+        "MUFIN",
+        "MUTHOOTFIN",
+        "MUTHOOTMF",
+        "NORTHARC",
+        "PAISALO",
+        "PFS",
+        "PIRAMALFIN",
+        "POONAWALLA",
+        "SATIN",
+        "SBFC",
+        "SBICARD",
+        "SGFIN",
+        "SHRIRAMFIN",
+        "SPANDANA",
+        "SUNDARMFIN",
+        "TATACAP",
+        "UGROCAP"
+      ]
+    },
+    {
+      "groupId": "non-ferrous-metals",
+      "groupName": "Non-Ferrous Metals",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed non-ferrous metals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "ARFIN",
+        "HINDALCO",
+        "HINDCOPPER",
+        "HINDZINC",
+        "KSHINTL",
+        "NATIONALUM",
+        "PRECWIRE",
+        "VIDYAWIRES"
+      ]
+    },
+    {
+      "groupId": "omcs-refining",
+      "groupName": "OMCs & Refining",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed omcs & refining stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "AEGISLOG",
+        "BPCL",
+        "CASTROLIND",
+        "CHENNPETRO",
+        "GANDHAR",
+        "GULFOILLUB",
+        "HINDPETRO",
+        "IOC",
+        "MRPL",
+        "PANAMAPET",
+        "RELIANCE",
+        "VEEDOL"
+      ]
+    },
+    {
+      "groupId": "oil-upstream-services",
+      "groupName": "Oil Upstream & Services",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed oil upstream & services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "AEGISVOPAK",
+        "ANTELOPUS",
+        "ASIANENE",
+        "DEEPINDS",
+        "DOLPHIN",
+        "HINDOILEXP",
+        "JINDRILL",
+        "OIL",
+        "ONGC"
+      ]
+    },
+    {
+      "groupId": "psu-banks",
+      "groupName": "PSU Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed psu banks stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "BANKBARODA",
+        "BANKINDIA",
+        "CANBK",
+        "CENTRALBK",
+        "INDIANB",
+        "IOB",
+        "MAHABANK",
+        "PNB",
+        "PSB",
+        "SBIN",
+        "UCOBANK",
+        "UNIONBANK"
+      ]
+    },
+    {
+      "groupId": "packaging",
+      "groupName": "Packaging",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed packaging stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 10,
+      "symbols": [
+        "AGI",
+        "COSMOFIRST",
+        "EPL",
+        "HUHTAMAKI",
+        "JINDALPOLY",
+        "MOLDTKPAC",
+        "POLYPLEX",
+        "TCPLPACK",
+        "UFLEX",
+        "XPROINDIA"
+      ]
+    },
+    {
+      "groupId": "paints",
+      "groupName": "Paints",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed paints stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "AKZOINDIA",
+        "ASIANPAINT",
+        "BERGEPAINT",
+        "INDIGOPNTS",
+        "KANSAINER",
+        "SIRCA"
+      ]
+    },
+    {
+      "groupId": "paper",
+      "groupName": "Paper",
+      "parentSector": "Forest Materials",
+      "description": "Indian listed paper stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "ABREL",
+        "ANDHRAPAP",
+        "JKPAPER",
+        "TNPL",
+        "WSTCSTPAPR"
+      ]
+    },
+    {
+      "groupId": "passenger-vehicle-oems",
+      "groupName": "Passenger Vehicle OEMs",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed passenger vehicle oems stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "FORCEMOT",
+        "HYUNDAI",
+        "M&M",
+        "MARUTI",
+        "OLECTRA",
+        "TMPV"
+      ]
+    },
+    {
+      "groupId": "personal-care",
+      "groupName": "Personal Care",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed personal care stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "BAJAJCON",
+        "COLPAL",
+        "CUPID",
+        "DABUR",
+        "EMAMILTD",
+        "EVEREADY",
+        "GILLETTE",
+        "GODREJCP",
+        "HONASA",
+        "JYOTHYLAB",
+        "PGHH"
+      ]
+    },
+    {
+      "groupId": "pharma",
+      "groupName": "Pharma",
+      "parentSector": "Healthcare",
+      "description": "Indian listed pharma stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 84,
+      "symbols": [
+        "AARTIDRUGS",
+        "AARTIPHARM",
+        "ABBOTINDIA",
+        "ACUTAAS",
+        "ADVENZYMES",
+        "AJANTPHARM",
+        "AKUMS",
+        "ALIVUS",
+        "ALKEM",
+        "ANTHEM",
+        "APLLTD",
+        "ASTRAZEN",
+        "AUROPHARMA",
+        "BAJAJHCARE",
+        "BETA",
+        "BIOCON",
+        "BLISSGVS",
+        "BLUEJET",
+        "CAPLIPOINT",
+        "CIPLA",
+        "COHANCE",
+        "CONCORDBIO",
+        "CORONA",
+        "DCAL",
+        "DIVISLAB",
+        "DRREDDY",
+        "EMCURE",
+        "ERIS",
+        "FDC",
+        "GLAND",
+        "GLAXO",
+        "GLENMARK",
+        "GRANULES",
+        "GUFICBIO",
+        "GUJTHEM",
+        "HIKAL",
+        "INDOCO",
+        "INDSWFTLAB",
+        "INNOVACAP",
+        "IOLCP",
+        "IPCALAB",
+        "JAGSNPHARM",
+        "JBCHEPHARM",
+        "JSLL",
+        "JUBLPHARMA",
+        "LAURUSLABS",
+        "LINCOLN",
+        "LUPIN",
+        "MANKIND",
+        "MARKSANS",
+        "MOREPENLAB",
+        "NATCOPHARM",
+        "NEULANDLAB",
+        "NGLFINE",
+        "ONESOURCE",
+        "ORCHPHARMA",
+        "PANACEABIO",
+        "PFIZER",
+        "PGHL",
+        "PPLPHARMA",
+        "RPGLIFE",
+        "RUBICON",
+        "SAILIFE",
+        "SAKAR",
+        "SANOFI",
+        "SANOFICONR",
+        "SENORES",
+        "SHILPAMED",
+        "SMSPHARMA",
+        "SOLARA",
+        "SPARC",
+        "STAR",
+        "SUDEEPPHRM",
+        "SUNPHARMA",
+        "SUPRIYA",
+        "SYNCOMF",
+        "TORNTPHARM",
+        "UNICHEMLAB",
+        "VENUSREM",
+        "VIYASH",
+        "WINDLAS",
+        "WOCKPHARMA",
+        "ZOTA",
+        "ZYDUSLIFE"
+      ]
+    },
+    {
+      "groupId": "plywood-laminates",
+      "groupName": "Plywood & Laminates",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed plywood & laminates stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "CENTURYPLY",
+        "GREENLAM",
+        "GREENPANEL",
+        "GREENPLY",
+        "STYLAMIND"
+      ]
+    },
+    {
+      "groupId": "power-generation",
+      "groupName": "Power Generation",
+      "parentSector": "Power",
+      "description": "Indian listed power generation stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 17,
+      "symbols": [
+        "ACMESOLAR",
+        "ADANIGREEN",
+        "GIPCL",
+        "GMRP&UI",
+        "GREENPOWER",
+        "JPPOWER",
+        "JSWENERGY",
+        "KPEL",
+        "KPIGREEN",
+        "NAVA",
+        "NHPC",
+        "NLCINDIA",
+        "NTPC",
+        "NTPCGREEN",
+        "RPOWER",
+        "RTNPOWER",
+        "SJVN"
+      ]
+    },
+    {
+      "groupId": "power-utilities-grids",
+      "groupName": "Power Utilities & Grids",
+      "parentSector": "Power",
+      "description": "Indian listed power utilities & grids stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 13,
+      "symbols": [
+        "ADANIENSOL",
+        "ADANIPOWER",
+        "AWHCL",
+        "CESC",
+        "EIEL",
+        "EMSLIMITED",
+        "IONEXCHANG",
+        "POWERGRID",
+        "PTC",
+        "RELINFRA",
+        "TATAPOWER",
+        "TORNTPOWER",
+        "WABAG"
+      ]
+    },
+    {
+      "groupId": "private-banks",
+      "groupName": "Private Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed private banks stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 19,
+      "symbols": [
+        "AXISBANK",
+        "BANDHANBNK",
+        "CSBBANK",
+        "CUB",
+        "DCBBANK",
+        "FEDERALBNK",
+        "HDFCBANK",
+        "ICICIBANK",
+        "IDBI",
+        "IDFCFIRSTB",
+        "INDUSINDBK",
+        "J&KBANK",
+        "KARURVYSYA",
+        "KOTAKBANK",
+        "KTKBANK",
+        "RBLBANK",
+        "SOUTHBANK",
+        "TMB",
+        "YESBANK"
+      ]
+    },
+    {
+      "groupId": "realty-developers",
+      "groupName": "Realty Developers",
+      "parentSector": "Realty",
+      "description": "Indian listed realty developers stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 35,
+      "symbols": [
+        "AGIIL",
+        "AJMERA",
+        "ALEMBICLTD",
+        "ANANTRAJ",
+        "ARIHANTSUP",
+        "ARKADE",
+        "ARVSMART",
+        "ASHIANA",
+        "BRIGADE",
+        "DLF",
+        "GANESHHOU",
+        "GODREJPROP",
+        "HUBTOWN",
+        "KALPATARU",
+        "KOLTEPATIL",
+        "LODHA",
+        "LOTUSDEV",
+        "MAHLIFE",
+        "MARATHON",
+        "MAXESTATES",
+        "OBEROIRLTY",
+        "OMAXE",
+        "PHOENIXLTD",
+        "PRESTIGE",
+        "PURVA",
+        "RAYMOND",
+        "RAYMONDREL",
+        "RUSTOMJEE",
+        "SHRIRAMPPS",
+        "SIGNATURE",
+        "SOBHA",
+        "SUNTECK",
+        "SURAJEST",
+        "TARC",
+        "UNITECH"
+      ]
+    },
+    {
+      "groupId": "restaurants-qsr",
+      "groupName": "Restaurants & QSR",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed restaurants & qsr stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "DEVYANI",
+        "JUBLFOOD",
+        "RBA",
+        "SAPPHIRE",
+        "TRAVELFOOD",
+        "WESTLIFE"
+      ]
+    },
+    {
+      "groupId": "retail-specialty",
+      "groupName": "Retail Specialty",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed retail specialty stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 11,
+      "symbols": [
+        "ABFRL",
+        "ABLBL",
+        "ARVINDFASN",
+        "AVL",
+        "GOCOLORS",
+        "KALAMANDIR",
+        "LENSKART",
+        "MANYAVAR",
+        "STYLEBAAZA",
+        "TRENT",
+        "V2RETAIL"
+      ]
+    },
+    {
+      "groupId": "shipping-ports",
+      "groupName": "Shipping & Ports",
+      "parentSector": "Services",
+      "description": "Indian listed shipping & ports stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "ADANIPORTS",
+        "COCHINSHIP",
+        "DREDGECORP",
+        "GESHIP",
+        "GPPL",
+        "JSWINFRA",
+        "KMEW",
+        "MAZDOCK",
+        "SCI",
+        "SEAMECLTD",
+        "SHREEJISPG",
+        "SWANDEF"
+      ]
+    },
+    {
+      "groupId": "small-finance-banks",
+      "groupName": "Small Finance Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed small finance banks stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "AUBANK",
+        "CAPITALSFB",
+        "EQUITASBNK",
+        "ESAFSFB",
+        "FINOPB",
+        "JSFB",
+        "SURYODAY",
+        "UJJIVANSFB",
+        "UTKARSHBNK"
+      ]
+    },
+    {
+      "groupId": "software-products",
+      "groupName": "Software Products",
+      "parentSector": "Information Technology",
+      "description": "Indian listed software products stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 7,
+      "symbols": [
+        "CAPILLARY",
+        "MAPMYINDIA",
+        "NUCLEUS",
+        "OFSS",
+        "RAMCOSYS",
+        "TANLA",
+        "UNIECOM"
+      ]
+    },
+    {
+      "groupId": "special-situations-sme-leaders",
+      "groupName": "Special Situations & SME Leaders",
+      "parentSector": "Unclassified",
+      "description": "Indian listed special situations & sme leaders stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 57,
+      "symbols": [
+        "3BBLACKBIO",
+        "AAYUSHBULL",
+        "AFCOM",
+        "AMIC",
+        "ASHIKA",
+        "ASMTEC",
+        "BLUECLOUDS",
+        "BONDADA",
+        "CFF",
+        "CIANAGRO",
+        "CNCRD",
+        "COCKERILL",
+        "COLAB",
+        "CPML",
+        "DECNGOLD",
+        "ELANTAS",
+        "ELITECON",
+        "FREDUN",
+        "FRONTSP",
+        "GNRL",
+        "GRAUWEIL",
+        "HAWKINCOOK",
+        "JYOTIRES",
+        "KALIND",
+        "KAMAHOLD",
+        "KESAR",
+        "KHAZANCHI",
+        "KIRLFER",
+        "KLBRENG-B",
+        "KOVAI",
+        "KPGEL",
+        "KPL",
+        "KSSMART",
+        "MIDWEST",
+        "MIIL",
+        "MODINSU",
+        "NIRLON",
+        "NOVARTIND",
+        "NSDL",
+        "NWIL",
+        "ONEGLOBAL",
+        "ONIXSOLAR",
+        "PERVASIVE",
+        "RAJESH",
+        "RIR",
+        "SEIL",
+        "SIKA",
+        "SPICEJET",
+        "TANFACIND",
+        "TGVSL",
+        "TIMEX",
+        "TITANBIO",
+        "ULTRAMAR",
+        "VALIANT",
+        "WELSPLSOL",
+        "WPIL",
+        "YASHHV"
+      ]
+    },
+    {
+      "groupId": "specialty-chemicals",
+      "groupName": "Specialty Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed specialty chemicals stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 48,
+      "symbols": [
+        "AARTIIND",
+        "ACI",
+        "AETHER",
+        "ALKYLAMINE",
+        "ANURAS",
+        "ATUL",
+        "BALAMINES",
+        "BASF",
+        "BEPL",
+        "CAMLINFINE",
+        "CHEMPLASTS",
+        "CLEAN",
+        "DDEVPLSTIK",
+        "DEEPAKNTR",
+        "ELLEN",
+        "EPIGRAL",
+        "EXCELINDUS",
+        "FCL",
+        "FINEORG",
+        "FLUOROCHEM",
+        "FOSECOIND",
+        "GALAXYSURF",
+        "GOCLCORP",
+        "JUBLCPL",
+        "JUBLINGREA",
+        "KIRIINDUS",
+        "LINDEINDIA",
+        "LXCHEM",
+        "NAVINFLUOR",
+        "NEOGEN",
+        "NOCIL",
+        "PIDILITIND",
+        "PLATIND",
+        "PREMEXPLN",
+        "PRIVISCL",
+        "REFEX",
+        "ROSSARI",
+        "SHK",
+        "SHREEPUSHK",
+        "SOLARINDS",
+        "SRF",
+        "STALLION",
+        "STYRENIX",
+        "SUDARSCHEM",
+        "TATVA",
+        "VINATIORGA",
+        "VISHNU",
+        "YASHO"
+      ]
+    },
+    {
+      "groupId": "steel-steel-products",
+      "groupName": "Steel & Steel Products",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed steel & steel products stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 41,
+      "symbols": [
+        "AEROFLEX",
+        "APLAPOLLO",
+        "BANSALWIRE",
+        "BHARATWIRE",
+        "ELECTCAST",
+        "GALLANTT",
+        "GANDHITUBE",
+        "GOODLUCK",
+        "GPIL",
+        "HARIOMPIPE",
+        "HITECH",
+        "JAIBALAJI",
+        "JAYNECOIND",
+        "JINDALSAW",
+        "JINDALSTEL",
+        "JSL",
+        "JSWSTEEL",
+        "JTLIND",
+        "KSL",
+        "MAHSEAMLES",
+        "MANAKCOAT",
+        "MANINDS",
+        "MSPL",
+        "MUKANDLTD",
+        "NSLNISP",
+        "PRAKASH",
+        "RATNAMANI",
+        "RATNAVEER",
+        "RHETAN",
+        "SAIL",
+        "SAMBHV",
+        "SARDAEN",
+        "SBCL",
+        "SHYAMMETL",
+        "SUNFLAG",
+        "SURYAROSNI",
+        "TATASTEEL",
+        "TIIL",
+        "USHAMART",
+        "VENUSPIPES",
+        "WELCORP"
+      ]
+    },
+    {
+      "groupId": "sugar",
+      "groupName": "Sugar",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed sugar stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "AVADHSUGAR",
+        "BAJAJHIND",
+        "BALRAMCHIN",
+        "DALMIASUG",
+        "DHAMPURSUG",
+        "DWARKESH",
+        "RENUKA",
+        "TRIVENI",
+        "UTTAMSUGAR"
+      ]
+    },
+    {
+      "groupId": "telecom-infra-equipment",
+      "groupName": "Telecom Infra & Equipment",
+      "parentSector": "Telecommunication",
+      "description": "Indian listed telecom infra & equipment stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "GTLINFRA",
+        "HFCL",
+        "INDUSTOWER",
+        "ITI",
+        "OPTIEMUS",
+        "PACEDIGITK",
+        "STLTECH",
+        "TEJASNET",
+        "VINDHYATEL"
+      ]
+    },
+    {
+      "groupId": "telecom-services",
+      "groupName": "Telecom Services",
+      "parentSector": "Telecommunication",
+      "description": "Indian listed telecom services stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 8,
+      "symbols": [
+        "BHARTIARTL",
+        "BHARTIHEXA",
+        "IDEA",
+        "MTNL",
+        "RAILTEL",
+        "ROUTE",
+        "TATACOMM",
+        "TTML"
+      ]
+    },
+    {
+      "groupId": "textiles",
+      "groupName": "Textiles",
+      "parentSector": "Textiles",
+      "description": "Indian listed textiles stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 21,
+      "symbols": [
+        "ALOKINDS",
+        "BOMDYEING",
+        "FILATEX",
+        "GANECOS",
+        "GARFIBRES",
+        "HIMATSEIDE",
+        "ICIL",
+        "JINDWORLD",
+        "KPRMILL",
+        "LEMERITE",
+        "MAYURUNIQ",
+        "NITINSPIN",
+        "PDSL",
+        "RAYMONDLSL",
+        "SANATHAN",
+        "SANGAMIND",
+        "SIYSIL",
+        "SPORTKING",
+        "TRIDENT",
+        "VTL",
+        "WELSPUNLIV"
+      ]
+    },
+    {
+      "groupId": "trading-houses-distribution",
+      "groupName": "Trading Houses & Distribution",
+      "parentSector": "Services",
+      "description": "Indian listed trading houses & distribution stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "BUILDPRO",
+        "MMTC",
+        "MSTCLTD",
+        "REDINGTON",
+        "VINCOFE"
+      ]
+    },
+    {
+      "groupId": "travel-aviation",
+      "groupName": "Travel & Aviation",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed travel & aviation stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 12,
+      "symbols": [
+        "BLS",
+        "DELTACORP",
+        "EASEMYTRIP",
+        "GMRAIRPORT",
+        "IMAGICAA",
+        "INDIGO",
+        "IRCTC",
+        "IXIGO",
+        "TBOTEK",
+        "THOMASCOOK",
+        "WONDERLA",
+        "YATRA"
+      ]
+    },
+    {
+      "groupId": "two-wheeler-oems",
+      "groupName": "Two-Wheeler OEMs",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed two-wheeler oems stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 6,
+      "symbols": [
+        "ATHERENERG",
+        "BAJAJ-AUTO",
+        "EICHERMOT",
+        "HEROMOTOCO",
+        "OLAELEC",
+        "TVSMOTOR"
+      ]
+    },
+    {
+      "groupId": "tyres-rubber",
+      "groupName": "Tyres & Rubber",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed tyres & rubber stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 9,
+      "symbols": [
+        "APCOTEXIND",
+        "APOLLOTYRE",
+        "BALKRISIND",
+        "CEATLTD",
+        "JKTYRE",
+        "MRF",
+        "PIXTRANS",
+        "TINNARUBR",
+        "TVSSRICHAK"
+      ]
+    },
+    {
+      "groupId": "value-retail",
+      "groupName": "Value Retail",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed value retail stocks passing the working liquidity and market-cap filter.",
+      "stockCount": 5,
+      "symbols": [
+        "DMART",
+        "EMIL",
+        "SHOPERSTOP",
+        "VMART",
+        "VMM"
+      ]
+    }
+  ],
+  "groups": [
+    {
+      "rank": 1,
+      "rankLabel": "#1",
+      "rankChange1w": 2,
+      "scoreChange1w": 10.63,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "sugar",
+      "groupName": "Sugar",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed sugar stocks passing the working liquidity and market-cap filter.",
+      "score": 93.87,
+      "returns": {
+        "1m": 21.22,
+        "3m": 10.75,
+        "6m": 0.36
+      },
+      "relativeReturns": {
+        "1m": 30.16,
+        "3m": 21.54,
+        "6m": 12.42
+      },
+      "breadth": {
+        "above50dma": 100.0,
+        "above200dma": 66.67,
+        "positive3m": 77.78,
+        "positive6m": 88.89
+      },
+      "stockCount": 9,
+      "leaders": [
+        "AVADHSUGAR",
+        "DWARKESH",
+        "DALMIASUG"
+      ],
+      "laggards": [
+        "BAJAJHIND",
+        "UTTAMSUGAR",
+        "RENUKA"
+      ],
+      "symbols": [
+        "AVADHSUGAR",
+        "DWARKESH",
+        "DALMIASUG",
+        "DHAMPURSUG",
+        "TRIVENI",
+        "BALRAMCHIN",
+        "RENUKA",
+        "UTTAMSUGAR",
+        "BAJAJHIND"
+      ]
+    },
+    {
+      "rank": 2,
+      "rankLabel": "#2",
+      "rankChange1w": -1,
+      "scoreChange1w": -2.31,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Weakening",
+      "groupId": "non-ferrous-metals",
+      "groupName": "Non-Ferrous Metals",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed non-ferrous metals stocks passing the working liquidity and market-cap filter.",
+      "score": 92.35,
+      "returns": {
+        "1m": -0.07,
+        "3m": 14.15,
+        "6m": 39.88
+      },
+      "relativeReturns": {
+        "1m": 8.87,
+        "3m": 24.94,
+        "6m": 51.94
+      },
+      "breadth": {
+        "above50dma": 62.5,
+        "above200dma": 62.5,
+        "positive3m": 90.62,
+        "positive6m": 100.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "NATIONALUM",
+        "HINDCOPPER",
+        "PRECWIRE"
+      ],
+      "laggards": [
+        "HINDZINC",
+        "VIDYAWIRES",
+        "HINDALCO"
+      ],
+      "symbols": [
+        "NATIONALUM",
+        "HINDCOPPER",
+        "PRECWIRE",
+        "ARFIN",
+        "KSHINTL",
+        "HINDALCO",
+        "VIDYAWIRES",
+        "HINDZINC"
+      ]
+    },
+    {
+      "rank": 3,
+      "rankLabel": "#3",
+      "rankChange1w": -1,
+      "scoreChange1w": 5.02,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "castings-forgings",
+      "groupName": "Castings & Forgings",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed castings & forgings stocks passing the working liquidity and market-cap filter.",
+      "score": 89.23,
+      "returns": {
+        "1m": -3.17,
+        "3m": 0.36,
+        "6m": 0.38
+      },
+      "relativeReturns": {
+        "1m": 5.77,
+        "3m": 11.15,
+        "6m": 12.44
+      },
+      "breadth": {
+        "above50dma": 40.0,
+        "above200dma": 60.0,
+        "positive3m": 65.0,
+        "positive6m": 60.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "HAPPYFORGE",
+        "STEELCAS",
+        "NELCAST"
+      ],
+      "laggards": [
+        "BALUFORGE",
+        "AIAENG",
+        "NELCAST"
+      ],
+      "symbols": [
+        "HAPPYFORGE",
+        "STEELCAS",
+        "NELCAST",
+        "AIAENG",
+        "BALUFORGE"
+      ]
+    },
+    {
+      "rank": 4,
+      "rankLabel": "#4",
+      "rankChange1w": 11,
+      "scoreChange1w": 10.73,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "oil-upstream-services",
+      "groupName": "Oil Upstream & Services",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed oil upstream & services stocks passing the working liquidity and market-cap filter.",
+      "score": 76.36,
+      "returns": {
+        "1m": -1.44,
+        "3m": 0.13,
+        "6m": -8.31
+      },
+      "relativeReturns": {
+        "1m": 7.5,
+        "3m": 10.92,
+        "6m": 3.75
+      },
+      "breadth": {
+        "above50dma": 44.44,
+        "above200dma": 22.22,
+        "positive3m": 44.44,
+        "positive6m": 44.44
+      },
+      "stockCount": 9,
+      "leaders": [
+        "ONGC",
+        "OIL",
+        "ANTELOPUS"
+      ],
+      "laggards": [
+        "AEGISVOPAK",
+        "HINDOILEXP",
+        "JINDRILL"
+      ],
+      "symbols": [
+        "ONGC",
+        "OIL",
+        "ANTELOPUS",
+        "DOLPHIN",
+        "DEEPINDS",
+        "ASIANENE",
+        "JINDRILL",
+        "HINDOILEXP",
+        "AEGISVOPAK"
+      ]
+    },
+    {
+      "rank": 5,
+      "rankLabel": "#5",
+      "rankChange1w": 4,
+      "scoreChange1w": 3.18,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "power-utilities-grids",
+      "groupName": "Power Utilities & Grids",
+      "parentSector": "Power",
+      "description": "Indian listed power utilities & grids stocks passing the working liquidity and market-cap filter.",
+      "score": 75.4,
+      "returns": {
+        "1m": -4.74,
+        "3m": -7.06,
+        "6m": -14.4
+      },
+      "relativeReturns": {
+        "1m": 4.2,
+        "3m": 3.73,
+        "6m": -2.34
+      },
+      "breadth": {
+        "above50dma": 53.85,
+        "above200dma": 30.77,
+        "positive3m": 48.08,
+        "positive6m": 53.85
+      },
+      "stockCount": 13,
+      "leaders": [
+        "ADANIPOWER",
+        "POWERGRID",
+        "ADANIENSOL"
+      ],
+      "laggards": [
+        "RELINFRA",
+        "EMSLIMITED",
+        "EIEL"
+      ],
+      "symbols": [
+        "ADANIPOWER",
+        "POWERGRID",
+        "ADANIENSOL",
+        "PTC",
+        "TORNTPOWER",
+        "TATAPOWER",
+        "CESC",
+        "WABAG",
+        "IONEXCHANG",
+        "AWHCL",
+        "EIEL",
+        "EMSLIMITED",
+        "RELINFRA"
+      ]
+    },
+    {
+      "rank": 6,
+      "rankLabel": "#6",
+      "rankChange1w": 0,
+      "scoreChange1w": -4.13,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Weakening",
+      "groupId": "mining-coal-alloys",
+      "groupName": "Mining, Coal & Alloys",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed mining, coal & alloys stocks passing the working liquidity and market-cap filter.",
+      "score": 74.07,
+      "returns": {
+        "1m": -3.64,
+        "3m": -7.71,
+        "6m": 1.66
+      },
+      "relativeReturns": {
+        "1m": 5.3,
+        "3m": 3.08,
+        "6m": 13.72
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 25.0,
+        "positive3m": 45.83,
+        "positive6m": 58.33
+      },
+      "stockCount": 12,
+      "leaders": [
+        "VEDL",
+        "SGMART",
+        "IMFA"
+      ],
+      "laggards": [
+        "BHARATCOAL",
+        "LLOYDSENT",
+        "ADANIENT"
+      ],
+      "symbols": [
+        "VEDL",
+        "SGMART",
+        "IMFA",
+        "JAINREC",
+        "COALINDIA",
+        "POCL",
+        "KIOCL",
+        "SANDUMA",
+        "MAITHANALL",
+        "ADANIENT",
+        "LLOYDSENT",
+        "BHARATCOAL"
+      ]
+    },
+    {
+      "rank": 7,
+      "rankLabel": "#7",
+      "rankChange1w": 4,
+      "scoreChange1w": 5.08,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "capital-goods-electrical",
+      "groupName": "Capital Goods Electrical",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed capital goods electrical stocks passing the working liquidity and market-cap filter.",
+      "score": 73.52,
+      "returns": {
+        "1m": -3.26,
+        "3m": -2.25,
+        "6m": -12.43
+      },
+      "relativeReturns": {
+        "1m": 5.68,
+        "3m": 8.54,
+        "6m": -0.37
+      },
+      "breadth": {
+        "above50dma": 42.55,
+        "above200dma": 23.4,
+        "positive3m": 44.68,
+        "positive6m": 51.06
+      },
+      "stockCount": 47,
+      "leaders": [
+        "TDPOWERSYS",
+        "POWERINDIA",
+        "GVT&D"
+      ],
+      "laggards": [
+        "ADVAIT",
+        "INOXWIND",
+        "EXICOM"
+      ],
+      "symbols": [
+        "TDPOWERSYS",
+        "POWERINDIA",
+        "GVT&D",
+        "QPOWER",
+        "ATLANTAELE",
+        "GVPIL",
+        "APARINDS",
+        "SCHNEIDER",
+        "VOLTAMP",
+        "RISHABH",
+        "ABB",
+        "EMMVEE",
+        "SHILCTECH",
+        "AVALON",
+        "WAAREEENER",
+        "THERMAX",
+        "CGPOWER",
+        "UTLSOLAR",
+        "DIACABS",
+        "BHEL",
+        "RAMRAT",
+        "AZAD",
+        "SIEMENS",
+        "SAATVIKGL",
+        "PREMIERENE",
+        "ENRIN",
+        "WAAREERTL",
+        "RELTD",
+        "SOLEX",
+        "TRITURBINE",
+        "TRANSRAILL",
+        "BAJEL",
+        "JYOTISTRUC",
+        "BBL",
+        "SKIPPER",
+        "GENUSPOWER",
+        "ELECON",
+        "WEBELSOLAR",
+        "SUZLON",
+        "VIKRAMSOLR",
+        "TARIL",
+        "INDOTECH",
+        "SALZERELEC",
+        "SERVOTECH",
+        "EXICOM",
+        "INOXWIND",
+        "ADVAIT"
+      ]
+    },
+    {
+      "rank": 8,
+      "rankLabel": "#8",
+      "rankChange1w": 6,
+      "scoreChange1w": 5.71,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "agri-commodities",
+      "groupName": "Agri Commodities",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed agri commodities stocks passing the working liquidity and market-cap filter.",
+      "score": 72.0,
+      "returns": {
+        "1m": -6.01,
+        "3m": -2.61,
+        "6m": -3.19
+      },
+      "relativeReturns": {
+        "1m": 2.93,
+        "3m": 8.18,
+        "6m": 8.87
+      },
+      "breadth": {
+        "above50dma": 45.45,
+        "above200dma": 27.27,
+        "positive3m": 47.73,
+        "positive6m": 45.45
+      },
+      "stockCount": 11,
+      "leaders": [
+        "AVANTIFEED",
+        "GAEL",
+        "GRMOVER"
+      ],
+      "laggards": [
+        "KSCL",
+        "CLSEL",
+        "SANSTAR"
+      ],
+      "symbols": [
+        "AVANTIFEED",
+        "GAEL",
+        "GRMOVER",
+        "GULPOLY",
+        "LTFOODS",
+        "TRUALT",
+        "KRBL",
+        "GODREJAGRO",
+        "SANSTAR",
+        "CLSEL",
+        "KSCL"
+      ]
+    },
+    {
+      "rank": 9,
+      "rankLabel": "#9",
+      "rankChange1w": 3,
+      "scoreChange1w": 2.57,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "steel-steel-products",
+      "groupName": "Steel & Steel Products",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed steel & steel products stocks passing the working liquidity and market-cap filter.",
+      "score": 69.65,
+      "returns": {
+        "1m": -7.01,
+        "3m": -3.48,
+        "6m": -11.73
+      },
+      "relativeReturns": {
+        "1m": 1.93,
+        "3m": 7.31,
+        "6m": 0.33
+      },
+      "breadth": {
+        "above50dma": 34.15,
+        "above200dma": 24.39,
+        "positive3m": 45.73,
+        "positive6m": 48.78
+      },
+      "stockCount": 41,
+      "leaders": [
+        "JAYNECOIND",
+        "AEROFLEX",
+        "GPIL"
+      ],
+      "laggards": [
+        "JAIBALAJI",
+        "JTLIND",
+        "BANSALWIRE"
+      ],
+      "symbols": [
+        "JAYNECOIND",
+        "AEROFLEX",
+        "GPIL",
+        "SAIL",
+        "TATASTEEL",
+        "JINDALSTEL",
+        "GALLANTT",
+        "APLAPOLLO",
+        "GANDHITUBE",
+        "JSWSTEEL",
+        "GOODLUCK",
+        "USHAMART",
+        "RHETAN",
+        "SAMBHV",
+        "SARDAEN",
+        "WELCORP",
+        "MUKANDLTD",
+        "JSL",
+        "MSPL",
+        "MAHSEAMLES",
+        "MANINDS",
+        "JINDALSAW",
+        "RATNAVEER",
+        "SHYAMMETL",
+        "TIIL",
+        "RATNAMANI",
+        "SBCL",
+        "BHARATWIRE",
+        "NSLNISP",
+        "MANAKCOAT",
+        "ELECTCAST",
+        "PRAKASH",
+        "KSL",
+        "SUNFLAG",
+        "HARIOMPIPE",
+        "SURYAROSNI",
+        "VENUSPIPES",
+        "HITECH",
+        "BANSALWIRE",
+        "JTLIND",
+        "JAIBALAJI"
+      ]
+    },
+    {
+      "rank": 10,
+      "rankLabel": "#10",
+      "rankChange1w": 9,
+      "scoreChange1w": 7.16,
+      "strengthBucket": "Top 10",
+      "trendLabel": "Improving",
+      "groupId": "abrasives-bearings",
+      "groupName": "Abrasives & Bearings",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed abrasives & bearings stocks passing the working liquidity and market-cap filter.",
+      "score": 69.35,
+      "returns": {
+        "1m": -5.61,
+        "3m": -6.09,
+        "6m": -12.18
+      },
+      "relativeReturns": {
+        "1m": 3.33,
+        "3m": 4.7,
+        "6m": -0.12
+      },
+      "breadth": {
+        "above50dma": 40.0,
+        "above200dma": 20.0,
+        "positive3m": 40.0,
+        "positive6m": 20.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "TIMKEN",
+        "CARBORUNIV",
+        "SKFINDUS"
+      ],
+      "laggards": [
+        "WENDT",
+        "GRINDWELL",
+        "SKFINDUS"
+      ],
+      "symbols": [
+        "TIMKEN",
+        "CARBORUNIV",
+        "SKFINDUS",
+        "GRINDWELL",
+        "WENDT"
+      ]
+    },
+    {
+      "rank": 11,
+      "rankLabel": "#11",
+      "rankChange1w": -7,
+      "scoreChange1w": -12.56,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "shipping-ports",
+      "groupName": "Shipping & Ports",
+      "parentSector": "Services",
+      "description": "Indian listed shipping & ports stocks passing the working liquidity and market-cap filter.",
+      "score": 68.11,
+      "returns": {
+        "1m": -7.07,
+        "3m": 1.92,
+        "6m": 13.02
+      },
+      "relativeReturns": {
+        "1m": 1.87,
+        "3m": 12.71,
+        "6m": 25.08
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 41.67,
+        "positive3m": 56.25,
+        "positive6m": 75.0
+      },
+      "stockCount": 12,
+      "leaders": [
+        "SWANDEF",
+        "SEAMECLTD",
+        "GESHIP"
+      ],
+      "laggards": [
+        "COCHINSHIP",
+        "JSWINFRA",
+        "MAZDOCK"
+      ],
+      "symbols": [
+        "SWANDEF",
+        "SEAMECLTD",
+        "GESHIP",
+        "KMEW",
+        "DREDGECORP",
+        "SCI",
+        "SHREEJISPG",
+        "ADANIPORTS",
+        "GPPL",
+        "MAZDOCK",
+        "JSWINFRA",
+        "COCHINSHIP"
+      ]
+    },
+    {
+      "rank": 12,
+      "rankLabel": "#12",
+      "rankChange1w": -5,
+      "scoreChange1w": -10.13,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "private-banks",
+      "groupName": "Private Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed private banks stocks passing the working liquidity and market-cap filter.",
+      "score": 67.34,
+      "returns": {
+        "1m": -13.19,
+        "3m": -6.35,
+        "6m": 6.76
+      },
+      "relativeReturns": {
+        "1m": -4.25,
+        "3m": 4.44,
+        "6m": 18.82
+      },
+      "breadth": {
+        "above50dma": 15.79,
+        "above200dma": 42.11,
+        "positive3m": 59.21,
+        "positive6m": 78.95
+      },
+      "stockCount": 19,
+      "leaders": [
+        "TMB",
+        "KARURVYSYA",
+        "RBLBANK"
+      ],
+      "laggards": [
+        "IDBI",
+        "HDFCBANK",
+        "IDFCFIRSTB"
+      ],
+      "symbols": [
+        "TMB",
+        "KARURVYSYA",
+        "RBLBANK",
+        "FEDERALBNK",
+        "KTKBANK",
+        "SOUTHBANK",
+        "DCBBANK",
+        "J&KBANK",
+        "CUB",
+        "AXISBANK",
+        "INDUSINDBK",
+        "CSBBANK",
+        "BANDHANBNK",
+        "ICICIBANK",
+        "YESBANK",
+        "KOTAKBANK",
+        "IDFCFIRSTB",
+        "HDFCBANK",
+        "IDBI"
+      ]
+    },
+    {
+      "rank": 13,
+      "rankLabel": "#13",
+      "rankChange1w": -8,
+      "scoreChange1w": -11.35,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "two-wheeler-oems",
+      "groupName": "Two-Wheeler OEMs",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed two-wheeler oems stocks passing the working liquidity and market-cap filter.",
+      "score": 67.03,
+      "returns": {
+        "1m": -6.92,
+        "3m": -9.02,
+        "6m": -10.4
+      },
+      "relativeReturns": {
+        "1m": 2.02,
+        "3m": 1.77,
+        "6m": 1.66
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 16.67,
+        "positive3m": 50.0,
+        "positive6m": 83.33
+      },
+      "stockCount": 6,
+      "leaders": [
+        "ATHERENERG",
+        "TVSMOTOR",
+        "HEROMOTOCO"
+      ],
+      "laggards": [
+        "OLAELEC",
+        "BAJAJ-AUTO",
+        "EICHERMOT"
+      ],
+      "symbols": [
+        "ATHERENERG",
+        "TVSMOTOR",
+        "HEROMOTOCO",
+        "EICHERMOT",
+        "BAJAJ-AUTO",
+        "OLAELEC"
+      ]
+    },
+    {
+      "rank": 14,
+      "rankLabel": "#14",
+      "rankChange1w": 16,
+      "scoreChange1w": 12.41,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "electrodes-refractories",
+      "groupName": "Electrodes & Refractories",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed electrodes & refractories stocks passing the working liquidity and market-cap filter.",
+      "score": 65.36,
+      "returns": {
+        "1m": -11.7,
+        "3m": -10.29,
+        "6m": -5.22
+      },
+      "relativeReturns": {
+        "1m": -2.76,
+        "3m": 0.5,
+        "6m": 6.84
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 40.0,
+        "positive3m": 50.0,
+        "positive6m": 80.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "GRAPHITE",
+        "HEG",
+        "VESUVIUS"
+      ],
+      "laggards": [
+        "RHIM",
+        "RPEL",
+        "VESUVIUS"
+      ],
+      "symbols": [
+        "GRAPHITE",
+        "HEG",
+        "VESUVIUS",
+        "RPEL",
+        "RHIM"
+      ]
+    },
+    {
+      "rank": 15,
+      "rankLabel": "#15",
+      "rankChange1w": -7,
+      "scoreChange1w": -10.2,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "psu-banks",
+      "groupName": "PSU Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed psu banks stocks passing the working liquidity and market-cap filter.",
+      "score": 64.98,
+      "returns": {
+        "1m": -16.34,
+        "3m": -3.53,
+        "6m": 1.54
+      },
+      "relativeReturns": {
+        "1m": -7.4,
+        "3m": 7.26,
+        "6m": 13.6
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 41.67,
+        "positive3m": 54.16,
+        "positive6m": 75.0
+      },
+      "stockCount": 12,
+      "leaders": [
+        "INDIANB",
+        "UNIONBANK",
+        "MAHABANK"
+      ],
+      "laggards": [
+        "PSB",
+        "UCOBANK",
+        "CENTRALBK"
+      ],
+      "symbols": [
+        "INDIANB",
+        "UNIONBANK",
+        "MAHABANK",
+        "SBIN",
+        "BANKINDIA",
+        "CANBK",
+        "BANKBARODA",
+        "PNB",
+        "IOB",
+        "CENTRALBK",
+        "UCOBANK",
+        "PSB"
+      ]
+    },
+    {
+      "rank": 16,
+      "rankLabel": "#16",
+      "rankChange1w": -6,
+      "scoreChange1w": -7.13,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "asset-managers",
+      "groupName": "Asset Managers",
+      "parentSector": "Financial Services",
+      "description": "Indian listed asset managers stocks passing the working liquidity and market-cap filter.",
+      "score": 63.78,
+      "returns": {
+        "1m": -10.96,
+        "3m": -6.68,
+        "6m": -9.12
+      },
+      "relativeReturns": {
+        "1m": -2.02,
+        "3m": 4.11,
+        "6m": 2.94
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 16.67,
+        "positive3m": 41.66,
+        "positive6m": 50.0
+      },
+      "stockCount": 6,
+      "leaders": [
+        "ABSLAMC",
+        "NAM-INDIA",
+        "ICICIAMC"
+      ],
+      "laggards": [
+        "UTIAMC",
+        "CRAMC",
+        "HDFCAMC"
+      ],
+      "symbols": [
+        "ABSLAMC",
+        "NAM-INDIA",
+        "ICICIAMC",
+        "HDFCAMC",
+        "CRAMC",
+        "UTIAMC"
+      ]
+    },
+    {
+      "rank": 17,
+      "rankLabel": "#17",
+      "rankChange1w": 7,
+      "scoreChange1w": 5.47,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "power-generation",
+      "groupName": "Power Generation",
+      "parentSector": "Power",
+      "description": "Indian listed power generation stocks passing the working liquidity and market-cap filter.",
+      "score": 63.72,
+      "returns": {
+        "1m": -3.24,
+        "3m": -6.27,
+        "6m": -18.48
+      },
+      "relativeReturns": {
+        "1m": 5.7,
+        "3m": 4.52,
+        "6m": -6.42
+      },
+      "breadth": {
+        "above50dma": 29.41,
+        "above200dma": 17.65,
+        "positive3m": 33.82,
+        "positive6m": 35.29
+      },
+      "stockCount": 17,
+      "leaders": [
+        "ACMESOLAR",
+        "NLCINDIA",
+        "NTPC"
+      ],
+      "laggards": [
+        "RPOWER",
+        "KPEL",
+        "GREENPOWER"
+      ],
+      "symbols": [
+        "ACMESOLAR",
+        "NLCINDIA",
+        "NTPC",
+        "NAVA",
+        "NTPCGREEN",
+        "JSWENERGY",
+        "NHPC",
+        "JPPOWER",
+        "GMRP&UI",
+        "KPIGREEN",
+        "ADANIGREEN",
+        "SJVN",
+        "RTNPOWER",
+        "GIPCL",
+        "GREENPOWER",
+        "KPEL",
+        "RPOWER"
+      ]
+    },
+    {
+      "rank": 18,
+      "rankLabel": "#18",
+      "rankChange1w": 0,
+      "scoreChange1w": 0.57,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "pharma",
+      "groupName": "Pharma",
+      "parentSector": "Healthcare",
+      "description": "Indian listed pharma stocks passing the working liquidity and market-cap filter.",
+      "score": 63.69,
+      "returns": {
+        "1m": -3.99,
+        "3m": -6.24,
+        "6m": -10.19
+      },
+      "relativeReturns": {
+        "1m": 4.95,
+        "3m": 4.55,
+        "6m": 1.87
+      },
+      "breadth": {
+        "above50dma": 36.9,
+        "above200dma": 30.95,
+        "positive3m": 42.26,
+        "positive6m": 45.24
+      },
+      "stockCount": 84,
+      "leaders": [
+        "VENUSREM",
+        "NGLFINE",
+        "BLISSGVS"
+      ],
+      "laggards": [
+        "VIYASH",
+        "COHANCE",
+        "BLUEJET"
+      ],
+      "symbols": [
+        "VENUSREM",
+        "NGLFINE",
+        "BLISSGVS",
+        "ACUTAAS",
+        "SAKAR",
+        "SMSPHARMA",
+        "INDSWFTLAB",
+        "LAURUSLABS",
+        "EMCURE",
+        "NATCOPHARM",
+        "LINCOLN",
+        "SAILIFE",
+        "AUROPHARMA",
+        "STAR",
+        "SENORES",
+        "TORNTPHARM",
+        "GLENMARK",
+        "GRANULES",
+        "JBCHEPHARM",
+        "RUBICON",
+        "LUPIN",
+        "SHILPAMED",
+        "IPCALAB",
+        "AJANTPHARM",
+        "AKUMS",
+        "ALIVUS",
+        "ALKEM",
+        "SUNPHARMA",
+        "CORONA",
+        "PFIZER",
+        "GLAND",
+        "ANTHEM",
+        "BIOCON",
+        "DRREDDY",
+        "SANOFICONR",
+        "ZOTA",
+        "DIVISLAB",
+        "SUDEEPPHRM",
+        "IOLCP",
+        "ZYDUSLIFE",
+        "NEULANDLAB",
+        "ADVENZYMES",
+        "ASTRAZEN",
+        "WINDLAS",
+        "ABBOTINDIA",
+        "INNOVACAP",
+        "JAGSNPHARM",
+        "SPARC",
+        "ERIS",
+        "MARKSANS",
+        "PGHL",
+        "SUPRIYA",
+        "MANKIND",
+        "GLAXO",
+        "JSLL",
+        "GUFICBIO",
+        "WOCKPHARMA",
+        "AARTIDRUGS",
+        "SOLARA",
+        "BETA",
+        "AARTIPHARM",
+        "RPGLIFE",
+        "JUBLPHARMA",
+        "CIPLA",
+        "ONESOURCE",
+        "MOREPENLAB",
+        "FDC",
+        "PANACEABIO",
+        "CAPLIPOINT",
+        "INDOCO",
+        "PPLPHARMA",
+        "APLLTD",
+        "GUJTHEM",
+        "ORCHPHARMA",
+        "SYNCOMF",
+        "SANOFI",
+        "CONCORDBIO",
+        "BAJAJHCARE",
+        "HIKAL",
+        "UNICHEMLAB",
+        "DCAL",
+        "BLUEJET",
+        "COHANCE",
+        "VIYASH"
+      ]
+    },
+    {
+      "rank": 19,
+      "rankLabel": "#19",
+      "rankChange1w": 1,
+      "scoreChange1w": -1.38,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "industrial-machinery",
+      "groupName": "Industrial Machinery",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed industrial machinery stocks passing the working liquidity and market-cap filter.",
+      "score": 60.04,
+      "returns": {
+        "1m": -6.34,
+        "3m": -7.62,
+        "6m": -16.63
+      },
+      "relativeReturns": {
+        "1m": 2.6,
+        "3m": 3.17,
+        "6m": -4.57
+      },
+      "breadth": {
+        "above50dma": 41.67,
+        "above200dma": 25.0,
+        "positive3m": 43.75,
+        "positive6m": 50.0
+      },
+      "stockCount": 12,
+      "leaders": [
+        "KIRLOSENG",
+        "CUMMINSIND",
+        "KSB"
+      ],
+      "laggards": [
+        "OSWALPUMPS",
+        "SHAKTIPUMP",
+        "GREAVESCOT"
+      ],
+      "symbols": [
+        "KIRLOSENG",
+        "CUMMINSIND",
+        "KSB",
+        "INGERRAND",
+        "ELGIEQUIP",
+        "KIRLPNU",
+        "SWARAJENG",
+        "KIRLOSBROS",
+        "ROTO",
+        "GREAVESCOT",
+        "SHAKTIPUMP",
+        "OSWALPUMPS"
+      ]
+    },
+    {
+      "rank": 20,
+      "rankLabel": "#20",
+      "rankChange1w": 7,
+      "scoreChange1w": 1.73,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "edible-oils",
+      "groupName": "Edible Oils",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed edible oils stocks passing the working liquidity and market-cap filter.",
+      "score": 58.27,
+      "returns": {
+        "1m": -3.08,
+        "3m": -8.86,
+        "6m": -15.06
+      },
+      "relativeReturns": {
+        "1m": 5.86,
+        "3m": 1.93,
+        "6m": -3.0
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 40.0,
+        "positive3m": 35.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "GOKULAGRO",
+        "MARICO",
+        "PATANJALI"
+      ],
+      "laggards": [
+        "AWL",
+        "SUNDROP",
+        "PATANJALI"
+      ],
+      "symbols": [
+        "GOKULAGRO",
+        "MARICO",
+        "PATANJALI",
+        "SUNDROP",
+        "AWL"
+      ]
+    },
+    {
+      "rank": 21,
+      "rankLabel": "#21",
+      "rankChange1w": 4,
+      "scoreChange1w": 0.66,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "special-situations-sme-leaders",
+      "groupName": "Special Situations & SME Leaders",
+      "parentSector": "Unclassified",
+      "description": "Indian listed special situations & sme leaders stocks passing the working liquidity and market-cap filter.",
+      "score": 58.01,
+      "returns": {
+        "1m": -7.81,
+        "3m": -8.31,
+        "6m": -1.96
+      },
+      "relativeReturns": {
+        "1m": 1.13,
+        "3m": 2.48,
+        "6m": 10.1
+      },
+      "breadth": {
+        "above50dma": 28.07,
+        "above200dma": 31.58,
+        "positive3m": 39.03,
+        "positive6m": 45.61
+      },
+      "stockCount": 57,
+      "leaders": [
+        "COLAB",
+        "TITANBIO",
+        "MIDWEST"
+      ],
+      "laggards": [
+        "SPICEJET",
+        "KSSMART",
+        "RIR"
+      ],
+      "symbols": [
+        "COLAB",
+        "TITANBIO",
+        "MIDWEST",
+        "MODINSU",
+        "ONIXSOLAR",
+        "GNRL",
+        "VALIANT",
+        "ONEGLOBAL",
+        "FREDUN",
+        "KESAR",
+        "KPL",
+        "CNCRD",
+        "YASHHV",
+        "SEIL",
+        "NWIL",
+        "NOVARTIND",
+        "AAYUSHBULL",
+        "FRONTSP",
+        "CPML",
+        "COCKERILL",
+        "CFF",
+        "PERVASIVE",
+        "NIRLON",
+        "TANFACIND",
+        "KHAZANCHI",
+        "MIIL",
+        "TIMEX",
+        "ASMTEC",
+        "WELSPLSOL",
+        "KLBRENG-B",
+        "SIKA",
+        "AMIC",
+        "CIANAGRO",
+        "AFCOM",
+        "WPIL",
+        "HAWKINCOOK",
+        "ULTRAMAR",
+        "KOVAI",
+        "KAMAHOLD",
+        "NSDL",
+        "TGVSL",
+        "DECNGOLD",
+        "3BBLACKBIO",
+        "ELANTAS",
+        "KPGEL",
+        "ASHIKA",
+        "BLUECLOUDS",
+        "KIRLFER",
+        "RAJESH",
+        "GRAUWEIL",
+        "KALIND",
+        "BONDADA",
+        "ELITECON",
+        "JYOTIRES",
+        "RIR",
+        "KSSMART",
+        "SPICEJET"
+      ]
+    },
+    {
+      "rank": 22,
+      "rankLabel": "#22",
+      "rankChange1w": -6,
+      "scoreChange1w": -7.04,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "cables-wires",
+      "groupName": "Cables & Wires",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed cables & wires stocks passing the working liquidity and market-cap filter.",
+      "score": 57.23,
+      "returns": {
+        "1m": -7.37,
+        "3m": -13.23,
+        "6m": -14.64
+      },
+      "relativeReturns": {
+        "1m": 1.57,
+        "3m": -2.44,
+        "6m": -2.58
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 31.25,
+        "positive6m": 62.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "KEI",
+        "RRKABEL",
+        "POLYCAB"
+      ],
+      "laggards": [
+        "QUADFUTURE",
+        "PARACABLES",
+        "DYCL"
+      ],
+      "symbols": [
+        "KEI",
+        "RRKABEL",
+        "POLYCAB",
+        "FINCABLES",
+        "UNIVCABLES",
+        "DYCL",
+        "PARACABLES",
+        "QUADFUTURE"
+      ]
+    },
+    {
+      "rank": 23,
+      "rankLabel": "#23",
+      "rankChange1w": -1,
+      "scoreChange1w": -2.71,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "auto-ancillaries",
+      "groupName": "Auto Ancillaries",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed auto ancillaries stocks passing the working liquidity and market-cap filter.",
+      "score": 56.95,
+      "returns": {
+        "1m": -11.7,
+        "3m": -8.65,
+        "6m": -9.0
+      },
+      "relativeReturns": {
+        "1m": -2.76,
+        "3m": 2.14,
+        "6m": 3.06
+      },
+      "breadth": {
+        "above50dma": 19.7,
+        "above200dma": 30.3,
+        "positive3m": 38.26,
+        "positive6m": 50.0
+      },
+      "stockCount": 66,
+      "leaders": [
+        "SEDEMAC",
+        "LUMAXTECH",
+        "SANSERA"
+      ],
+      "laggards": [
+        "SKFINDIA",
+        "IGARASHI",
+        "PRECAM"
+      ],
+      "symbols": [
+        "SEDEMAC",
+        "LUMAXTECH",
+        "SANSERA",
+        "RACLGEAR",
+        "BELRISE",
+        "WHEELS",
+        "BHARATSE",
+        "BHARATFORG",
+        "LUMAXIND",
+        "UNIPARTS",
+        "SJS",
+        "MMFL",
+        "LGBBROSLTD",
+        "GNA",
+        "SHRIPISTON",
+        "JAMNAAUTO",
+        "RICOAUTO",
+        "CRAFTSMAN",
+        "CIEINDIA",
+        "DIVGIITTS",
+        "SONACOMS",
+        "FIEMIND",
+        "ZFCVINDIA",
+        "CARRARO",
+        "GABRIEL",
+        "MOTHERSON",
+        "PRICOLLTD",
+        "TENNIND",
+        "ASAHIINDIA",
+        "JAYBARMARU",
+        "SCHAEFFLER",
+        "BOSCHLTD",
+        "RAJRATAN",
+        "INDNIPPON",
+        "SANDHAR",
+        "AUTOAXLES",
+        "FMGOETZE",
+        "BANCOINDIA",
+        "TIINDIA",
+        "MINDACORP",
+        "ENDURANCE",
+        "SUPRAJIT",
+        "NRBBEARING",
+        "SSWL",
+        "ASKAUTOLTD",
+        "JTEKTINDIA",
+        "JBMA",
+        "MSUMI",
+        "UNOMINDA",
+        "ROLEXRINGS",
+        "TALBROAUTO",
+        "VARROC",
+        "RML",
+        "STUDDS",
+        "RKFORGE",
+        "LANDMARK",
+        "KROSS",
+        "EXIDEIND",
+        "SHARDAMOTR",
+        "SUNCLAY",
+        "SUNDRMFAST",
+        "ARE&M",
+        "NDRAUTO",
+        "PRECAM",
+        "IGARASHI",
+        "SKFINDIA"
+      ]
+    },
+    {
+      "rank": 24,
+      "rankLabel": "#24",
+      "rankChange1w": -1,
+      "scoreChange1w": -2.92,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "paper",
+      "groupName": "Paper",
+      "parentSector": "Forest Materials",
+      "description": "Indian listed paper stocks passing the working liquidity and market-cap filter.",
+      "score": 56.29,
+      "returns": {
+        "1m": -4.62,
+        "3m": -11.63,
+        "6m": -20.17
+      },
+      "relativeReturns": {
+        "1m": 4.32,
+        "3m": -0.84,
+        "6m": -8.11
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 0.0,
+        "positive3m": 30.0,
+        "positive6m": 20.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "WSTCSTPAPR",
+        "JKPAPER",
+        "TNPL"
+      ],
+      "laggards": [
+        "ABREL",
+        "ANDHRAPAP",
+        "TNPL"
+      ],
+      "symbols": [
+        "WSTCSTPAPR",
+        "JKPAPER",
+        "TNPL",
+        "ANDHRAPAP",
+        "ABREL"
+      ]
+    },
+    {
+      "rank": 25,
+      "rankLabel": "#25",
+      "rankChange1w": 1,
+      "scoreChange1w": -1.61,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "omcs-refining",
+      "groupName": "OMCs & Refining",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed omcs & refining stocks passing the working liquidity and market-cap filter.",
+      "score": 55.1,
+      "returns": {
+        "1m": -12.63,
+        "3m": -9.71,
+        "6m": -6.16
+      },
+      "relativeReturns": {
+        "1m": -3.69,
+        "3m": 1.08,
+        "6m": 5.9
+      },
+      "breadth": {
+        "above50dma": 8.33,
+        "above200dma": 16.67,
+        "positive3m": 33.34,
+        "positive6m": 66.67
+      },
+      "stockCount": 12,
+      "leaders": [
+        "CHENNPETRO",
+        "MRPL",
+        "IOC"
+      ],
+      "laggards": [
+        "GULFOILLUB",
+        "AEGISLOG",
+        "HINDPETRO"
+      ],
+      "symbols": [
+        "CHENNPETRO",
+        "MRPL",
+        "IOC",
+        "RELIANCE",
+        "CASTROLIND",
+        "BPCL",
+        "PANAMAPET",
+        "GANDHAR",
+        "VEEDOL",
+        "HINDPETRO",
+        "AEGISLOG",
+        "GULFOILLUB"
+      ]
+    },
+    {
+      "rank": 26,
+      "rankLabel": "#26",
+      "rankChange1w": 23,
+      "scoreChange1w": 17.76,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "textiles",
+      "groupName": "Textiles",
+      "parentSector": "Textiles",
+      "description": "Indian listed textiles stocks passing the working liquidity and market-cap filter.",
+      "score": 54.46,
+      "returns": {
+        "1m": -6.51,
+        "3m": -8.39,
+        "6m": -14.89
+      },
+      "relativeReturns": {
+        "1m": 2.43,
+        "3m": 2.4,
+        "6m": -2.83
+      },
+      "breadth": {
+        "above50dma": 23.81,
+        "above200dma": 28.57,
+        "positive3m": 32.14,
+        "positive6m": 38.1
+      },
+      "stockCount": 21,
+      "leaders": [
+        "SPORTKING",
+        "VTL",
+        "LEMERITE"
+      ],
+      "laggards": [
+        "JINDWORLD",
+        "HIMATSEIDE",
+        "BOMDYEING"
+      ],
+      "symbols": [
+        "SPORTKING",
+        "VTL",
+        "LEMERITE",
+        "NITINSPIN",
+        "MAYURUNIQ",
+        "SANGAMIND",
+        "GANECOS",
+        "SANATHAN",
+        "ICIL",
+        "TRIDENT",
+        "WELSPUNLIV",
+        "KPRMILL",
+        "FILATEX",
+        "GARFIBRES",
+        "PDSL",
+        "SIYSIL",
+        "ALOKINDS",
+        "RAYMONDLSL",
+        "BOMDYEING",
+        "HIMATSEIDE",
+        "JINDWORLD"
+      ]
+    },
+    {
+      "rank": 27,
+      "rankLabel": "#27",
+      "rankChange1w": -10,
+      "scoreChange1w": -8.87,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "insurance",
+      "groupName": "Insurance",
+      "parentSector": "Financial Services",
+      "description": "Indian listed insurance stocks passing the working liquidity and market-cap filter.",
+      "score": 54.4,
+      "returns": {
+        "1m": -11.79,
+        "3m": -10.57,
+        "6m": -11.49
+      },
+      "relativeReturns": {
+        "1m": -2.85,
+        "3m": 0.22,
+        "6m": 0.57
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 20.0,
+        "positive3m": 36.67,
+        "positive6m": 60.0
+      },
+      "stockCount": 15,
+      "leaders": [
+        "ANANDRATHI",
+        "STARHEALTH",
+        "CANHLIFE"
+      ],
+      "laggards": [
+        "MEDIASSIST",
+        "NIACL",
+        "HDFCLIFE"
+      ],
+      "symbols": [
+        "ANANDRATHI",
+        "STARHEALTH",
+        "CANHLIFE",
+        "GICRE",
+        "SBILIFE",
+        "MFSL",
+        "GODIGIT",
+        "NIVABUPA",
+        "ICICIGI",
+        "LICI",
+        "PRUDENT",
+        "ICICIPRULI",
+        "HDFCLIFE",
+        "NIACL",
+        "MEDIASSIST"
+      ]
+    },
+    {
+      "rank": 28,
+      "rankLabel": "#28",
+      "rankChange1w": -7,
+      "scoreChange1w": -8.73,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "trading-houses-distribution",
+      "groupName": "Trading Houses & Distribution",
+      "parentSector": "Services",
+      "description": "Indian listed trading houses & distribution stocks passing the working liquidity and market-cap filter.",
+      "score": 52.23,
+      "returns": {
+        "1m": -9.88,
+        "3m": -9.4,
+        "6m": -10.15
+      },
+      "relativeReturns": {
+        "1m": -0.94,
+        "3m": 1.39,
+        "6m": 1.91
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 0.0,
+        "positive3m": 25.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "VINCOFE",
+        "MMTC",
+        "MSTCLTD"
+      ],
+      "laggards": [
+        "BUILDPRO",
+        "REDINGTON",
+        "MSTCLTD"
+      ],
+      "symbols": [
+        "VINCOFE",
+        "MMTC",
+        "MSTCLTD",
+        "REDINGTON",
+        "BUILDPRO"
+      ]
+    },
+    {
+      "rank": 29,
+      "rankLabel": "#29",
+      "rankChange1w": 9,
+      "scoreChange1w": 4.74,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "telecom-infra-equipment",
+      "groupName": "Telecom Infra & Equipment",
+      "parentSector": "Telecommunication",
+      "description": "Indian listed telecom infra & equipment stocks passing the working liquidity and market-cap filter.",
+      "score": 52.18,
+      "returns": {
+        "1m": -2.89,
+        "3m": -7.68,
+        "6m": -14.68
+      },
+      "relativeReturns": {
+        "1m": 6.05,
+        "3m": 3.11,
+        "6m": -2.62
+      },
+      "breadth": {
+        "above50dma": 33.33,
+        "above200dma": 22.22,
+        "positive3m": 33.33,
+        "positive6m": 33.33
+      },
+      "stockCount": 9,
+      "leaders": [
+        "STLTECH",
+        "INDUSTOWER",
+        "HFCL"
+      ],
+      "laggards": [
+        "OPTIEMUS",
+        "GTLINFRA",
+        "TEJASNET"
+      ],
+      "symbols": [
+        "STLTECH",
+        "INDUSTOWER",
+        "HFCL",
+        "ITI",
+        "PACEDIGITK",
+        "VINDHYATEL",
+        "TEJASNET",
+        "GTLINFRA",
+        "OPTIEMUS"
+      ]
+    },
+    {
+      "rank": 30,
+      "rankLabel": "#30",
+      "rankChange1w": 13,
+      "scoreChange1w": 11.06,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "logistics",
+      "groupName": "Logistics",
+      "parentSector": "Services",
+      "description": "Indian listed logistics stocks passing the working liquidity and market-cap filter.",
+      "score": 51.71,
+      "returns": {
+        "1m": -9.3,
+        "3m": -7.14,
+        "6m": -18.3
+      },
+      "relativeReturns": {
+        "1m": -0.36,
+        "3m": 3.65,
+        "6m": -6.24
+      },
+      "breadth": {
+        "above50dma": 14.29,
+        "above200dma": 7.14,
+        "positive3m": 30.36,
+        "positive6m": 28.57
+      },
+      "stockCount": 14,
+      "leaders": [
+        "DELHIVERY",
+        "MAHLOG",
+        "SINDHUTRAD"
+      ],
+      "laggards": [
+        "SHADOWFAX",
+        "ALLCARGO",
+        "TCIEXP"
+      ],
+      "symbols": [
+        "DELHIVERY",
+        "MAHLOG",
+        "SINDHUTRAD",
+        "TCI",
+        "GATEWAY",
+        "VRLLOG",
+        "BLUEDART",
+        "TVSSCS",
+        "CONCOR",
+        "RIIL",
+        "NAVKARCORP",
+        "TCIEXP",
+        "ALLCARGO",
+        "SHADOWFAX"
+      ]
+    },
+    {
+      "rank": 31,
+      "rankLabel": "#31",
+      "rankChange1w": -3,
+      "scoreChange1w": -3.71,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "financial-institutions",
+      "groupName": "Financial Institutions",
+      "parentSector": "Financial Services",
+      "description": "Indian listed financial institutions stocks passing the working liquidity and market-cap filter.",
+      "score": 51.44,
+      "returns": {
+        "1m": -8.29,
+        "3m": -10.37,
+        "6m": -15.68
+      },
+      "relativeReturns": {
+        "1m": 0.65,
+        "3m": 0.42,
+        "6m": -3.62
+      },
+      "breadth": {
+        "above50dma": 27.27,
+        "above200dma": 18.18,
+        "positive3m": 34.09,
+        "positive6m": 45.45
+      },
+      "stockCount": 11,
+      "leaders": [
+        "TFCILTD",
+        "PFC",
+        "PRIMESECU"
+      ],
+      "laggards": [
+        "ALGOQUANT",
+        "IRFC",
+        "IREDA"
+      ],
+      "symbols": [
+        "TFCILTD",
+        "PFC",
+        "PRIMESECU",
+        "IFCI",
+        "CENTRUM",
+        "RECLTD",
+        "CRISIL",
+        "HUDCO",
+        "IREDA",
+        "IRFC",
+        "ALGOQUANT"
+      ]
+    },
+    {
+      "rank": 32,
+      "rankLabel": "#32",
+      "rankChange1w": 0,
+      "scoreChange1w": 1.17,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "brokerages-wealth",
+      "groupName": "Brokerages & Wealth",
+      "parentSector": "Financial Services",
+      "description": "Indian listed brokerages & wealth stocks passing the working liquidity and market-cap filter.",
+      "score": 51.42,
+      "returns": {
+        "1m": -7.29,
+        "3m": -16.08,
+        "6m": -6.9
+      },
+      "relativeReturns": {
+        "1m": 1.65,
+        "3m": -5.29,
+        "6m": 5.16
+      },
+      "breadth": {
+        "above50dma": 13.04,
+        "above200dma": 13.04,
+        "positive3m": 26.09,
+        "positive6m": 47.83
+      },
+      "stockCount": 23,
+      "leaders": [
+        "MCX",
+        "BSE",
+        "INDOTHAI"
+      ],
+      "laggards": [
+        "DAMCAPITAL",
+        "GEOJITFSL",
+        "SHAREINDIA"
+      ],
+      "symbols": [
+        "MCX",
+        "BSE",
+        "INDOTHAI",
+        "GROWW",
+        "CARERATING",
+        "ANGELONE",
+        "IIFLCAPS",
+        "NUVAMA",
+        "360ONE",
+        "CAMS",
+        "SMCGLOBAL",
+        "MOTILALOFS",
+        "MONARCH",
+        "DOLATALGO",
+        "ICRA",
+        "CDSL",
+        "KFINTECH",
+        "IEX",
+        "5PAISA",
+        "ARSSBL",
+        "SHAREINDIA",
+        "GEOJITFSL",
+        "DAMCAPITAL"
+      ]
+    },
+    {
+      "rank": 33,
+      "rankLabel": "#33",
+      "rankChange1w": -20,
+      "scoreChange1w": -17.54,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "industrial-minerals",
+      "groupName": "Industrial Minerals",
+      "parentSector": "Metals & Mining",
+      "description": "Indian listed industrial minerals stocks passing the working liquidity and market-cap filter.",
+      "score": 49.23,
+      "returns": {
+        "1m": -7.1,
+        "3m": -17.62,
+        "6m": -11.56
+      },
+      "relativeReturns": {
+        "1m": 1.84,
+        "3m": -6.83,
+        "6m": 0.5
+      },
+      "breadth": {
+        "above50dma": 28.57,
+        "above200dma": 42.86,
+        "positive3m": 32.14,
+        "positive6m": 42.86
+      },
+      "stockCount": 7,
+      "leaders": [
+        "GMDCLTD",
+        "NMDC",
+        "LLOYDSME"
+      ],
+      "laggards": [
+        "ORISSAMINE",
+        "GRAVITA",
+        "MOIL"
+      ],
+      "symbols": [
+        "GMDCLTD",
+        "NMDC",
+        "LLOYDSME",
+        "ASHAPURMIN",
+        "MOIL",
+        "GRAVITA",
+        "ORISSAMINE"
+      ]
+    },
+    {
+      "rank": 34,
+      "rankLabel": "#34",
+      "rankChange1w": -5,
+      "scoreChange1w": -3.97,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "housing-finance",
+      "groupName": "Housing Finance",
+      "parentSector": "Financial Services",
+      "description": "Indian listed housing finance stocks passing the working liquidity and market-cap filter.",
+      "score": 49.04,
+      "returns": {
+        "1m": -9.51,
+        "3m": -13.02,
+        "6m": -14.92
+      },
+      "relativeReturns": {
+        "1m": -0.57,
+        "3m": -2.23,
+        "6m": -2.86
+      },
+      "breadth": {
+        "above50dma": 27.27,
+        "above200dma": 9.09,
+        "positive3m": 27.27,
+        "positive6m": 36.36
+      },
+      "stockCount": 11,
+      "leaders": [
+        "SAMMAANCAP",
+        "CANFINHOME",
+        "REPCOHOME"
+      ],
+      "laggards": [
+        "APTUS",
+        "AAVAS",
+        "BAJAJHFL"
+      ],
+      "symbols": [
+        "SAMMAANCAP",
+        "CANFINHOME",
+        "REPCOHOME",
+        "AADHARHFC",
+        "LICHSGFIN",
+        "INDIASHLTR",
+        "PNBHOUSING",
+        "HOMEFIRST",
+        "BAJAJHFL",
+        "AAVAS",
+        "APTUS"
+      ]
+    },
+    {
+      "rank": 35,
+      "rankLabel": "#35",
+      "rankChange1w": 0,
+      "scoreChange1w": -0.25,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "tyres-rubber",
+      "groupName": "Tyres & Rubber",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed tyres & rubber stocks passing the working liquidity and market-cap filter.",
+      "score": 49.02,
+      "returns": {
+        "1m": -12.35,
+        "3m": -14.36,
+        "6m": -8.44
+      },
+      "relativeReturns": {
+        "1m": -3.41,
+        "3m": -3.57,
+        "6m": 3.62
+      },
+      "breadth": {
+        "above50dma": 11.11,
+        "above200dma": 11.11,
+        "positive3m": 30.55,
+        "positive6m": 44.44
+      },
+      "stockCount": 9,
+      "leaders": [
+        "TVSSRICHAK",
+        "JKTYRE",
+        "PIXTRANS"
+      ],
+      "laggards": [
+        "TINNARUBR",
+        "BALKRISIND",
+        "APOLLOTYRE"
+      ],
+      "symbols": [
+        "TVSSRICHAK",
+        "JKTYRE",
+        "PIXTRANS",
+        "CEATLTD",
+        "APCOTEXIND",
+        "MRF",
+        "APOLLOTYRE",
+        "BALKRISIND",
+        "TINNARUBR"
+      ]
+    },
+    {
+      "rank": 36,
+      "rankLabel": "#36",
+      "rankChange1w": 1,
+      "scoreChange1w": 0.78,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "defence",
+      "groupName": "Defence",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed defence stocks passing the working liquidity and market-cap filter.",
+      "score": 48.22,
+      "returns": {
+        "1m": -5.95,
+        "3m": -7.82,
+        "6m": -17.78
+      },
+      "relativeReturns": {
+        "1m": 2.99,
+        "3m": 2.97,
+        "6m": -5.72
+      },
+      "breadth": {
+        "above50dma": 27.27,
+        "above200dma": 27.27,
+        "positive3m": 32.95,
+        "positive6m": 36.36
+      },
+      "stockCount": 22,
+      "leaders": [
+        "MTARTECH",
+        "ROSSTECH",
+        "AXISCADES"
+      ],
+      "laggards": [
+        "CYIENTDLM",
+        "DCXINDIA",
+        "UNIMECH"
+      ],
+      "symbols": [
+        "MTARTECH",
+        "ROSSTECH",
+        "AXISCADES",
+        "DATAPATTNS",
+        "BEL",
+        "KRISHNADEF",
+        "ASTRAMICRO",
+        "PARAS",
+        "GRSE",
+        "APOLLO",
+        "ZENTEC",
+        "AEQUS",
+        "AVANTEL",
+        "MIDHANI",
+        "JAYKAY",
+        "HAL",
+        "IDEAFORGE",
+        "BDL",
+        "NIBE",
+        "UNIMECH",
+        "DCXINDIA",
+        "CYIENTDLM"
+      ]
+    },
+    {
+      "rank": 37,
+      "rankLabel": "#37",
+      "rankChange1w": 4,
+      "scoreChange1w": 4.38,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "industrial-plastics",
+      "groupName": "Industrial Plastics",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed industrial plastics stocks passing the working liquidity and market-cap filter.",
+      "score": 48.2,
+      "returns": {
+        "1m": -10.51,
+        "3m": -4.41,
+        "6m": -16.92
+      },
+      "relativeReturns": {
+        "1m": -1.57,
+        "3m": 6.38,
+        "6m": -4.86
+      },
+      "breadth": {
+        "above50dma": 18.18,
+        "above200dma": 36.36,
+        "positive3m": 43.18,
+        "positive6m": 36.36
+      },
+      "stockCount": 11,
+      "leaders": [
+        "APOLLOPIPE",
+        "KINGFA",
+        "ASTRAL"
+      ],
+      "laggards": [
+        "JISLJALEQS",
+        "RMDRIP",
+        "PRINCEPIPE"
+      ],
+      "symbols": [
+        "APOLLOPIPE",
+        "KINGFA",
+        "ASTRAL",
+        "GRWRHITECH",
+        "SUPREMEIND",
+        "FINPIPE",
+        "TIMETECHNO",
+        "JAICORPLTD",
+        "PRINCEPIPE",
+        "RMDRIP",
+        "JISLJALEQS"
+      ]
+    },
+    {
+      "rank": 38,
+      "rankLabel": "#38",
+      "rankChange1w": 9,
+      "scoreChange1w": 11.01,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Improving",
+      "groupId": "plywood-laminates",
+      "groupName": "Plywood & Laminates",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed plywood & laminates stocks passing the working liquidity and market-cap filter.",
+      "score": 48.08,
+      "returns": {
+        "1m": -7.68,
+        "3m": -14.81,
+        "6m": -14.7
+      },
+      "relativeReturns": {
+        "1m": 1.26,
+        "3m": -4.02,
+        "6m": -2.64
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 20.0,
+        "positive3m": 25.0,
+        "positive6m": 40.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "STYLAMIND",
+        "CENTURYPLY",
+        "GREENLAM"
+      ],
+      "laggards": [
+        "GREENPLY",
+        "GREENPANEL",
+        "GREENLAM"
+      ],
+      "symbols": [
+        "STYLAMIND",
+        "CENTURYPLY",
+        "GREENLAM",
+        "GREENPANEL",
+        "GREENPLY"
+      ]
+    },
+    {
+      "rank": 39,
+      "rankLabel": "#39",
+      "rankChange1w": -6,
+      "scoreChange1w": -3.14,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Weakening",
+      "groupId": "fmcg-foods",
+      "groupName": "FMCG Foods",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed fmcg foods stocks passing the working liquidity and market-cap filter.",
+      "score": 46.72,
+      "returns": {
+        "1m": -7.65,
+        "3m": -11.07,
+        "6m": -14.37
+      },
+      "relativeReturns": {
+        "1m": 1.29,
+        "3m": -0.28,
+        "6m": -2.31
+      },
+      "breadth": {
+        "above50dma": 26.92,
+        "above200dma": 15.38,
+        "positive3m": 30.77,
+        "positive6m": 46.15
+      },
+      "stockCount": 26,
+      "leaders": [
+        "APEX",
+        "CCL",
+        "GODAVARIB"
+      ],
+      "laggards": [
+        "GODFRYPHLP",
+        "BECTORFOOD",
+        "ITC"
+      ],
+      "symbols": [
+        "APEX",
+        "CCL",
+        "GODAVARIB",
+        "ZYDUSWELL",
+        "FLAIR",
+        "NESTLEIND",
+        "ORKLAINDIA",
+        "BRITANNIA",
+        "MANORAMA",
+        "TATACONSUM",
+        "HNDFDS",
+        "DOMS",
+        "HINDUNILVR",
+        "DIAMONDYD",
+        "BIKAJI",
+        "VBL",
+        "VSTIND",
+        "EIDPARRY",
+        "GOPAL",
+        "VENKEYS",
+        "ADFFOODS",
+        "TASTYBITE",
+        "BBTC",
+        "ITC",
+        "BECTORFOOD",
+        "GODFRYPHLP"
+      ]
+    },
+    {
+      "rank": 40,
+      "rankLabel": "#40",
+      "rankChange1w": -1,
+      "scoreChange1w": -0.51,
+      "strengthBucket": "Top 40",
+      "trendLabel": "Stable",
+      "groupId": "small-finance-banks",
+      "groupName": "Small Finance Banks",
+      "parentSector": "Financial Services",
+      "description": "Indian listed small finance banks stocks passing the working liquidity and market-cap filter.",
+      "score": 45.95,
+      "returns": {
+        "1m": -10.91,
+        "3m": -13.1,
+        "6m": -14.23
+      },
+      "relativeReturns": {
+        "1m": -1.97,
+        "3m": -2.31,
+        "6m": -2.17
+      },
+      "breadth": {
+        "above50dma": 11.11,
+        "above200dma": 22.22,
+        "positive3m": 33.33,
+        "positive6m": 44.44
+      },
+      "stockCount": 9,
+      "leaders": [
+        "UJJIVANSFB",
+        "AUBANK",
+        "SURYODAY"
+      ],
+      "laggards": [
+        "FINOPB",
+        "UTKARSHBNK",
+        "JSFB"
+      ],
+      "symbols": [
+        "UJJIVANSFB",
+        "AUBANK",
+        "SURYODAY",
+        "EQUITASBNK",
+        "CAPITALSFB",
+        "ESAFSFB",
+        "JSFB",
+        "UTKARSHBNK",
+        "FINOPB"
+      ]
+    },
+    {
+      "rank": 41,
+      "rankLabel": "#41",
+      "rankChange1w": -10,
+      "scoreChange1w": -5.56,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "hospitals",
+      "groupName": "Hospitals",
+      "parentSector": "Healthcare",
+      "description": "Indian listed hospitals stocks passing the working liquidity and market-cap filter.",
+      "score": 45.58,
+      "returns": {
+        "1m": -7.68,
+        "3m": -11.82,
+        "6m": -17.09
+      },
+      "relativeReturns": {
+        "1m": 1.26,
+        "3m": -1.03,
+        "6m": -5.03
+      },
+      "breadth": {
+        "above50dma": 18.52,
+        "above200dma": 3.7,
+        "positive3m": 23.15,
+        "positive6m": 29.63
+      },
+      "stockCount": 27,
+      "leaders": [
+        "PARKHOSPS",
+        "ASTERDM",
+        "YATHARTH"
+      ],
+      "laggards": [
+        "SYNGENE",
+        "SHALBY",
+        "VIMTALABS"
+      ],
+      "symbols": [
+        "PARKHOSPS",
+        "ASTERDM",
+        "YATHARTH",
+        "APOLLOHOSP",
+        "THYROCARE",
+        "NEPHROPLUS",
+        "KIMS",
+        "FORTIS",
+        "LALPATHLAB",
+        "METROPOLIS",
+        "INDRAMEDCO",
+        "AGARWALEYE",
+        "SUVEN",
+        "NH",
+        "VIJAYA",
+        "GPTHEALTH",
+        "HCG",
+        "INDGN",
+        "ARTEMISMED",
+        "JLHL",
+        "RAINBOW",
+        "MAXHEALTH",
+        "MEDANTA",
+        "KRSNAA",
+        "VIMTALABS",
+        "SHALBY",
+        "SYNGENE"
+      ]
+    },
+    {
+      "rank": 42,
+      "rankLabel": "#42",
+      "rankChange1w": 8,
+      "scoreChange1w": 8.62,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "apparel-fashion",
+      "groupName": "Apparel & Fashion",
+      "parentSector": "Textiles",
+      "description": "Indian listed apparel & fashion stocks passing the working liquidity and market-cap filter.",
+      "score": 44.91,
+      "returns": {
+        "1m": -6.78,
+        "3m": -11.33,
+        "6m": -14.66
+      },
+      "relativeReturns": {
+        "1m": 2.16,
+        "3m": -0.54,
+        "6m": -2.6
+      },
+      "breadth": {
+        "above50dma": 23.08,
+        "above200dma": 23.08,
+        "positive3m": 34.62,
+        "positive6m": 30.77
+      },
+      "stockCount": 13,
+      "leaders": [
+        "SBC",
+        "ARVIND",
+        "PGIL"
+      ],
+      "laggards": [
+        "RUPA",
+        "DOLLAR",
+        "LUXIND"
+      ],
+      "symbols": [
+        "SBC",
+        "ARVIND",
+        "PGIL",
+        "SPAL",
+        "CANTABIL",
+        "KKCL",
+        "PAGEIND",
+        "KITEX",
+        "MONTECARLO",
+        "GOKEX",
+        "LUXIND",
+        "DOLLAR",
+        "RUPA"
+      ]
+    },
+    {
+      "rank": 43,
+      "rankLabel": "#43",
+      "rankChange1w": 18,
+      "scoreChange1w": 19.81,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "building-materials",
+      "groupName": "Building Materials",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed building materials stocks passing the working liquidity and market-cap filter.",
+      "score": 44.14,
+      "returns": {
+        "1m": -6.37,
+        "3m": -13.45,
+        "6m": -19.43
+      },
+      "relativeReturns": {
+        "1m": 2.57,
+        "3m": -2.66,
+        "6m": -7.37
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 0.0,
+        "positive3m": 22.92,
+        "positive6m": 25.0
+      },
+      "stockCount": 12,
+      "leaders": [
+        "KAJARIACER",
+        "POKARNA",
+        "MIDWESTLTD"
+      ],
+      "laggards": [
+        "BORORENEW",
+        "HINDWAREAP",
+        "NITCO"
+      ],
+      "symbols": [
+        "KAJARIACER",
+        "POKARNA",
+        "MIDWESTLTD",
+        "ASIANTILES",
+        "SOMANYCERA",
+        "RAMCOIND",
+        "BOROSCI",
+        "CERA",
+        "LAOPALA",
+        "NITCO",
+        "HINDWAREAP",
+        "BORORENEW"
+      ]
+    },
+    {
+      "rank": 44,
+      "rankLabel": "#44",
+      "rankChange1w": 10,
+      "scoreChange1w": 9.69,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "fertilizers",
+      "groupName": "Fertilizers",
+      "parentSector": "Chemicals",
+      "description": "Indian listed fertilizers stocks passing the working liquidity and market-cap filter.",
+      "score": 42.64,
+      "returns": {
+        "1m": -3.58,
+        "3m": -13.26,
+        "6m": -19.34
+      },
+      "relativeReturns": {
+        "1m": 5.36,
+        "3m": -2.47,
+        "6m": -7.28
+      },
+      "breadth": {
+        "above50dma": 30.0,
+        "above200dma": 20.0,
+        "positive3m": 22.5,
+        "positive6m": 20.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "MBAPL",
+        "KRISHANA",
+        "FACT"
+      ],
+      "laggards": [
+        "SPIC",
+        "NFL",
+        "PARADEEP"
+      ],
+      "symbols": [
+        "MBAPL",
+        "KRISHANA",
+        "FACT",
+        "CHAMBLFERT",
+        "COROMANDEL",
+        "GSFC",
+        "RCF",
+        "PARADEEP",
+        "NFL",
+        "SPIC"
+      ]
+    },
+    {
+      "rank": 45,
+      "rankLabel": "#45",
+      "rankChange1w": -11,
+      "scoreChange1w": -7.07,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "hardware-peripherals",
+      "groupName": "Hardware & Peripherals",
+      "parentSector": "Information Technology",
+      "description": "Indian listed hardware & peripherals stocks passing the working liquidity and market-cap filter.",
+      "score": 42.61,
+      "returns": {
+        "1m": -6.4,
+        "3m": -11.54,
+        "6m": -19.52
+      },
+      "relativeReturns": {
+        "1m": 2.54,
+        "3m": -0.75,
+        "6m": -7.46
+      },
+      "breadth": {
+        "above50dma": 28.57,
+        "above200dma": 14.29,
+        "positive3m": 28.57,
+        "positive6m": 28.57
+      },
+      "stockCount": 7,
+      "leaders": [
+        "EBGNG",
+        "RPTECH",
+        "DLINKINDIA"
+      ],
+      "laggards": [
+        "NELCO",
+        "CONTROLPR",
+        "IVALUE"
+      ],
+      "symbols": [
+        "EBGNG",
+        "RPTECH",
+        "DLINKINDIA",
+        "MOSCHIP",
+        "IVALUE",
+        "CONTROLPR",
+        "NELCO"
+      ]
+    },
+    {
+      "rank": 46,
+      "rankLabel": "#46",
+      "rankChange1w": 12,
+      "scoreChange1w": 11.77,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "education-staffing-retail-services",
+      "groupName": "Education, Staffing & Retail Services",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed education, staffing & retail services stocks passing the working liquidity and market-cap filter.",
+      "score": 40.78,
+      "returns": {
+        "1m": -3.12,
+        "3m": -16.35,
+        "6m": -21.02
+      },
+      "relativeReturns": {
+        "1m": 5.82,
+        "3m": -5.56,
+        "6m": -8.96
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 25.0,
+        "positive3m": 25.0,
+        "positive6m": 25.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "ENTERO",
+        "MEDPLUS",
+        "SIS"
+      ],
+      "laggards": [
+        "NIITMTS",
+        "MPSLTD",
+        "VERANDA"
+      ],
+      "symbols": [
+        "ENTERO",
+        "MEDPLUS",
+        "SIS",
+        "JARO",
+        "PWL",
+        "VERANDA",
+        "MPSLTD",
+        "NIITMTS"
+      ]
+    },
+    {
+      "rank": 47,
+      "rankLabel": "#47",
+      "rankChange1w": 12,
+      "scoreChange1w": 11.92,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "packaging",
+      "groupName": "Packaging",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed packaging stocks passing the working liquidity and market-cap filter.",
+      "score": 39.84,
+      "returns": {
+        "1m": -3.21,
+        "3m": -10.86,
+        "6m": -23.64
+      },
+      "relativeReturns": {
+        "1m": 5.73,
+        "3m": -0.07,
+        "6m": -11.58
+      },
+      "breadth": {
+        "above50dma": 30.0,
+        "above200dma": 20.0,
+        "positive3m": 30.0,
+        "positive6m": 20.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "JINDALPOLY",
+        "EPL",
+        "XPROINDIA"
+      ],
+      "laggards": [
+        "AGI",
+        "TCPLPACK",
+        "UFLEX"
+      ],
+      "symbols": [
+        "JINDALPOLY",
+        "EPL",
+        "XPROINDIA",
+        "MOLDTKPAC",
+        "POLYPLEX",
+        "COSMOFIRST",
+        "HUHTAMAKI",
+        "UFLEX",
+        "TCPLPACK",
+        "AGI"
+      ]
+    },
+    {
+      "rank": 48,
+      "rankLabel": "#48",
+      "rankChange1w": -12,
+      "scoreChange1w": -9.79,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "nbfcs",
+      "groupName": "NBFCs",
+      "parentSector": "Financial Services",
+      "description": "Indian listed nbfcs stocks passing the working liquidity and market-cap filter.",
+      "score": 39.37,
+      "returns": {
+        "1m": -13.48,
+        "3m": -14.88,
+        "6m": -12.29
+      },
+      "relativeReturns": {
+        "1m": -4.54,
+        "3m": -4.09,
+        "6m": -0.23
+      },
+      "breadth": {
+        "above50dma": 6.06,
+        "above200dma": 6.06,
+        "positive3m": 29.54,
+        "positive6m": 48.48
+      },
+      "stockCount": 33,
+      "leaders": [
+        "SGFIN",
+        "SHRIRAMFIN",
+        "MUFIN"
+      ],
+      "laggards": [
+        "UGROCAP",
+        "FIVESTAR",
+        "CIFL"
+      ],
+      "symbols": [
+        "SGFIN",
+        "SHRIRAMFIN",
+        "MUFIN",
+        "PIRAMALFIN",
+        "FEDFINA",
+        "MUTHOOTFIN",
+        "PAISALO",
+        "SATIN",
+        "MASFIN",
+        "MUTHOOTMF",
+        "CREDITACC",
+        "ARMANFIN",
+        "CGCL",
+        "NORTHARC",
+        "IIFL",
+        "SUNDARMFIN",
+        "M&MFIN",
+        "MANAPPURAM",
+        "POONAWALLA",
+        "TATACAP",
+        "BAJFINANCE",
+        "FUSION",
+        "AIIL",
+        "CHOLAFIN",
+        "SBFC",
+        "HDBFS",
+        "SPANDANA",
+        "PFS",
+        "INDOSTAR",
+        "SBICARD",
+        "CIFL",
+        "FIVESTAR",
+        "UGROCAP"
+      ]
+    },
+    {
+      "rank": 49,
+      "rankLabel": "#49",
+      "rankChange1w": 2,
+      "scoreChange1w": 3.08,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "capital-goods-industrial",
+      "groupName": "Capital Goods Industrial",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed capital goods industrial stocks passing the working liquidity and market-cap filter.",
+      "score": 38.84,
+      "returns": {
+        "1m": -7.17,
+        "3m": -13.15,
+        "6m": -19.83
+      },
+      "relativeReturns": {
+        "1m": 1.77,
+        "3m": -2.36,
+        "6m": -7.77
+      },
+      "breadth": {
+        "above50dma": 26.53,
+        "above200dma": 12.24,
+        "positive3m": 22.96,
+        "positive6m": 28.57
+      },
+      "stockCount": 49,
+      "leaders": [
+        "CPPLUS",
+        "CENTUM",
+        "SYRMA"
+      ],
+      "laggards": [
+        "SETL",
+        "TEXRAIL",
+        "RAJOOENG"
+      ],
+      "symbols": [
+        "CPPLUS",
+        "CENTUM",
+        "SYRMA",
+        "DYNAMATECH",
+        "DEEDEV",
+        "INOXINDIA",
+        "KRN",
+        "HIRECT",
+        "TEGA",
+        "ESABINDIA",
+        "HBLENGINE",
+        "PTCIL",
+        "SHANTIGEAR",
+        "JNKINDIA",
+        "EIMCOELECO",
+        "GALAPREC",
+        "ADOR",
+        "DIFFNKG",
+        "ICEMAKE",
+        "THEJO",
+        "HARSHA",
+        "EKC",
+        "PRAJIND",
+        "MARINE",
+        "HONDAPOWER",
+        "SUBROS",
+        "INDIANHUME",
+        "LMW",
+        "PITTIENG",
+        "KIRLOSIND",
+        "GMMPFAUDLR",
+        "HONAUT",
+        "WINDMACHIN",
+        "JYOTICNC",
+        "JASH",
+        "WALCHANNAG",
+        "JWL",
+        "SALASAR",
+        "LLOYDSENGG",
+        "KAYNES",
+        "ANUP",
+        "TITAGARH",
+        "PENIND",
+        "HPL",
+        "HLEGLAS",
+        "EPACKPEB",
+        "RAJOOENG",
+        "TEXRAIL",
+        "SETL"
+      ]
+    },
+    {
+      "rank": 50,
+      "rankLabel": "#50",
+      "rankChange1w": -8,
+      "scoreChange1w": -5.46,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "personal-care",
+      "groupName": "Personal Care",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed personal care stocks passing the working liquidity and market-cap filter.",
+      "score": 37.81,
+      "returns": {
+        "1m": -12.96,
+        "3m": -11.27,
+        "6m": -9.3
+      },
+      "relativeReturns": {
+        "1m": -4.02,
+        "3m": -0.48,
+        "6m": 2.76
+      },
+      "breadth": {
+        "above50dma": 27.27,
+        "above200dma": 27.27,
+        "positive3m": 27.27,
+        "positive6m": 27.27
+      },
+      "stockCount": 11,
+      "leaders": [
+        "CUPID",
+        "BAJAJCON",
+        "HONASA"
+      ],
+      "laggards": [
+        "JYOTHYLAB",
+        "EMAMILTD",
+        "PGHH"
+      ],
+      "symbols": [
+        "CUPID",
+        "BAJAJCON",
+        "HONASA",
+        "GILLETTE",
+        "GODREJCP",
+        "DABUR",
+        "EVEREADY",
+        "COLPAL",
+        "PGHH",
+        "EMAMILTD",
+        "JYOTHYLAB"
+      ]
+    },
+    {
+      "rank": 51,
+      "rankLabel": "#51",
+      "rankChange1w": 12,
+      "scoreChange1w": 16.11,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "commodity-chemicals",
+      "groupName": "Commodity Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed commodity chemicals stocks passing the working liquidity and market-cap filter.",
+      "score": 37.62,
+      "returns": {
+        "1m": -6.12,
+        "3m": -13.05,
+        "6m": -23.32
+      },
+      "relativeReturns": {
+        "1m": 2.82,
+        "3m": -2.26,
+        "6m": -11.26
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 13.33,
+        "positive3m": 18.33,
+        "positive6m": 20.0
+      },
+      "stockCount": 15,
+      "leaders": [
+        "GUJALKALI",
+        "SPLPETRO",
+        "ANDHRSUGAR"
+      ],
+      "laggards": [
+        "DCW",
+        "TIRUMALCHM",
+        "SWANCORP"
+      ],
+      "symbols": [
+        "GUJALKALI",
+        "SPLPETRO",
+        "ANDHRSUGAR",
+        "HSCL",
+        "JGCHEM",
+        "IGPL",
+        "RAIN",
+        "GNFC",
+        "GHCL",
+        "TATACHEM",
+        "DEEPAKFERT",
+        "PCBL",
+        "SWANCORP",
+        "TIRUMALCHM",
+        "DCW"
+      ]
+    },
+    {
+      "rank": 52,
+      "rankLabel": "#52",
+      "rankChange1w": -12,
+      "scoreChange1w": -8.16,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "alcoholic-beverages",
+      "groupName": "Alcoholic Beverages",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed alcoholic beverages stocks passing the working liquidity and market-cap filter.",
+      "score": 37.5,
+      "returns": {
+        "1m": -7.48,
+        "3m": -17.86,
+        "6m": -18.23
+      },
+      "relativeReturns": {
+        "1m": 1.46,
+        "3m": -7.07,
+        "6m": -6.17
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 8.33,
+        "positive3m": 20.84,
+        "positive6m": 41.67
+      },
+      "stockCount": 12,
+      "leaders": [
+        "GMBREW",
+        "TI",
+        "INDIAGLYCO"
+      ],
+      "laggards": [
+        "SDBL",
+        "SULA",
+        "ASALCBR"
+      ],
+      "symbols": [
+        "GMBREW",
+        "TI",
+        "INDIAGLYCO",
+        "RADICO",
+        "PICCADIL",
+        "ABDL",
+        "UNITDSPR",
+        "GLOBUSSPR",
+        "UBL",
+        "ASALCBR",
+        "SULA",
+        "SDBL"
+      ]
+    },
+    {
+      "rank": 53,
+      "rankLabel": "#53",
+      "rankChange1w": -5,
+      "scoreChange1w": 0.11,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "jewellery",
+      "groupName": "Jewellery",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed jewellery stocks passing the working liquidity and market-cap filter.",
+      "score": 37.15,
+      "returns": {
+        "1m": -11.89,
+        "3m": -12.71,
+        "6m": -14.86
+      },
+      "relativeReturns": {
+        "1m": -2.95,
+        "3m": -1.92,
+        "6m": -2.8
+      },
+      "breadth": {
+        "above50dma": 11.11,
+        "above200dma": 16.67,
+        "positive3m": 25.0,
+        "positive6m": 27.78
+      },
+      "stockCount": 18,
+      "leaders": [
+        "THANGAMAYL",
+        "TITAN",
+        "SKYGOLD"
+      ],
+      "laggards": [
+        "DPABHUSHAN",
+        "MOTISONS",
+        "PCJEWELLER"
+      ],
+      "symbols": [
+        "THANGAMAYL",
+        "TITAN",
+        "SKYGOLD",
+        "PNGJL",
+        "SENCO",
+        "KDDL",
+        "RGL",
+        "LGHL",
+        "ETHOSLTD",
+        "BLUESTONE",
+        "VAIBHAVGBL",
+        "KALYANKJIL",
+        "GOLDIAM",
+        "SHANTIGOLD",
+        "SHRINGARMS",
+        "PCJEWELLER",
+        "MOTISONS",
+        "DPABHUSHAN"
+      ]
+    },
+    {
+      "rank": 54,
+      "rankLabel": "#54",
+      "rankChange1w": -10,
+      "scoreChange1w": -6.49,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "cvs-tractors-ce",
+      "groupName": "CVs, Tractors & CE",
+      "parentSector": "Capital Goods",
+      "description": "Indian listed cvs, tractors & ce stocks passing the working liquidity and market-cap filter.",
+      "score": 33.44,
+      "returns": {
+        "1m": -15.87,
+        "3m": -15.92,
+        "6m": -13.01
+      },
+      "relativeReturns": {
+        "1m": -6.93,
+        "3m": -5.13,
+        "6m": -0.95
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 27.5,
+        "positive6m": 40.0
+      },
+      "stockCount": 10,
+      "leaders": [
+        "ASHOKLEY",
+        "VSTTILLERS",
+        "SMLMAH"
+      ],
+      "laggards": [
+        "TIL",
+        "AJAXENGG",
+        "ACE"
+      ],
+      "symbols": [
+        "ASHOKLEY",
+        "VSTTILLERS",
+        "SMLMAH",
+        "TMCV",
+        "ATULAUTO",
+        "ESCORTS",
+        "BEML",
+        "ACE",
+        "AJAXENGG",
+        "TIL"
+      ]
+    },
+    {
+      "rank": 55,
+      "rankLabel": "#55",
+      "rankChange1w": -3,
+      "scoreChange1w": -4.35,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "media-broadcasting",
+      "groupName": "Media & Broadcasting",
+      "parentSector": "Media Entertainment & Publication",
+      "description": "Indian listed media & broadcasting stocks passing the working liquidity and market-cap filter.",
+      "score": 31.29,
+      "returns": {
+        "1m": -9.11,
+        "3m": -12.47,
+        "6m": -21.37
+      },
+      "relativeReturns": {
+        "1m": -0.17,
+        "3m": -1.68,
+        "6m": -9.31
+      },
+      "breadth": {
+        "above50dma": 18.75,
+        "above200dma": 12.5,
+        "positive3m": 26.56,
+        "positive6m": 18.75
+      },
+      "stockCount": 16,
+      "leaders": [
+        "PFOCUS",
+        "SUNTV",
+        "SIGNPOST"
+      ],
+      "laggards": [
+        "AQYLON",
+        "NETWORK18",
+        "ZEEL"
+      ],
+      "symbols": [
+        "PFOCUS",
+        "SUNTV",
+        "SIGNPOST",
+        "PVRINOX",
+        "TIPSMUSIC",
+        "NAVNETEDUL",
+        "NAZARA",
+        "JAGRAN",
+        "BALAJITELE",
+        "DBCORP",
+        "SAREGAMA",
+        "DEN",
+        "HATHWAY",
+        "ZEEL",
+        "NETWORK18",
+        "AQYLON"
+      ]
+    },
+    {
+      "rank": 56,
+      "rankLabel": "#56",
+      "rankChange1w": -11,
+      "scoreChange1w": -7.4,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "specialty-chemicals",
+      "groupName": "Specialty Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed specialty chemicals stocks passing the working liquidity and market-cap filter.",
+      "score": 30.77,
+      "returns": {
+        "1m": -7.48,
+        "3m": -13.23,
+        "6m": -22.47
+      },
+      "relativeReturns": {
+        "1m": 1.46,
+        "3m": -2.44,
+        "6m": -10.41
+      },
+      "breadth": {
+        "above50dma": 18.75,
+        "above200dma": 14.58,
+        "positive3m": 26.56,
+        "positive6m": 27.08
+      },
+      "stockCount": 48,
+      "leaders": [
+        "AETHER",
+        "PRIVISCL",
+        "NAVINFLUOR"
+      ],
+      "laggards": [
+        "ELLEN",
+        "CAMLINFINE",
+        "EPIGRAL"
+      ],
+      "symbols": [
+        "AETHER",
+        "PRIVISCL",
+        "NAVINFLUOR",
+        "LINDEINDIA",
+        "ANURAS",
+        "TATVA",
+        "AARTIIND",
+        "ATUL",
+        "SOLARINDS",
+        "ACI",
+        "FINEORG",
+        "VISHNU",
+        "FOSECOIND",
+        "NOCIL",
+        "JUBLCPL",
+        "STALLION",
+        "BEPL",
+        "SHREEPUSHK",
+        "EXCELINDUS",
+        "FLUOROCHEM",
+        "PIDILITIND",
+        "GOCLCORP",
+        "FCL",
+        "YASHO",
+        "NEOGEN",
+        "PREMEXPLN",
+        "BALAMINES",
+        "JUBLINGREA",
+        "SRF",
+        "VINATIORGA",
+        "STYRENIX",
+        "BASF",
+        "GALAXYSURF",
+        "ALKYLAMINE",
+        "DDEVPLSTIK",
+        "CHEMPLASTS",
+        "DEEPAKNTR",
+        "PLATIND",
+        "SUDARSCHEM",
+        "ROSSARI",
+        "CLEAN",
+        "LXCHEM",
+        "KIRIINDUS",
+        "REFEX",
+        "SHK",
+        "EPIGRAL",
+        "CAMLINFINE",
+        "ELLEN"
+      ]
+    },
+    {
+      "rank": 57,
+      "rankLabel": "#57",
+      "rankChange1w": 8,
+      "scoreChange1w": 10.44,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "value-retail",
+      "groupName": "Value Retail",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed value retail stocks passing the working liquidity and market-cap filter.",
+      "score": 30.4,
+      "returns": {
+        "1m": -4.08,
+        "3m": -13.67,
+        "6m": -28.86
+      },
+      "relativeReturns": {
+        "1m": 4.86,
+        "3m": -2.88,
+        "6m": -16.8
+      },
+      "breadth": {
+        "above50dma": 20.0,
+        "above200dma": 20.0,
+        "positive3m": 20.0,
+        "positive6m": 20.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "DMART",
+        "VMM",
+        "EMIL"
+      ],
+      "laggards": [
+        "SHOPERSTOP",
+        "VMART",
+        "EMIL"
+      ],
+      "symbols": [
+        "DMART",
+        "VMM",
+        "EMIL",
+        "VMART",
+        "SHOPERSTOP"
+      ]
+    },
+    {
+      "rank": 58,
+      "rankLabel": "#58",
+      "rankChange1w": -1,
+      "scoreChange1w": 0.24,
+      "strengthBucket": "Mid",
+      "trendLabel": "Stable",
+      "groupId": "dairy",
+      "groupName": "Dairy",
+      "parentSector": "Fast Moving Consumer Goods",
+      "description": "Indian listed dairy stocks passing the working liquidity and market-cap filter.",
+      "score": 29.57,
+      "returns": {
+        "1m": -5.03,
+        "3m": -19.38,
+        "6m": -26.01
+      },
+      "relativeReturns": {
+        "1m": 3.91,
+        "3m": -8.59,
+        "6m": -13.95
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 12.5,
+        "positive6m": 16.67
+      },
+      "stockCount": 6,
+      "leaders": [
+        "HATSUN",
+        "KWIL",
+        "PARAGMILK"
+      ],
+      "laggards": [
+        "HERITGFOOD",
+        "DODLA",
+        "VADILALIND"
+      ],
+      "symbols": [
+        "HATSUN",
+        "KWIL",
+        "PARAGMILK",
+        "VADILALIND",
+        "DODLA",
+        "HERITGFOOD"
+      ]
+    },
+    {
+      "rank": 59,
+      "rankLabel": "#59",
+      "rankChange1w": 12,
+      "scoreChange1w": 17.03,
+      "strengthBucket": "Mid",
+      "trendLabel": "Improving",
+      "groupId": "it-enabled-services",
+      "groupName": "IT Enabled Services",
+      "parentSector": "Information Technology",
+      "description": "Indian listed it enabled services stocks passing the working liquidity and market-cap filter.",
+      "score": 29.19,
+      "returns": {
+        "1m": -6.23,
+        "3m": -22.2,
+        "6m": -22.37
+      },
+      "relativeReturns": {
+        "1m": 2.71,
+        "3m": -11.41,
+        "6m": -10.31
+      },
+      "breadth": {
+        "above50dma": 6.67,
+        "above200dma": 6.67,
+        "positive3m": 16.67,
+        "positive6m": 30.0
+      },
+      "stockCount": 30,
+      "leaders": [
+        "NETWEB",
+        "RPSGVENT",
+        "BBOX"
+      ],
+      "laggards": [
+        "AMAGI",
+        "DIGITIDE",
+        "GENESYS"
+      ],
+      "symbols": [
+        "NETWEB",
+        "RPSGVENT",
+        "BBOX",
+        "AURUM",
+        "DATAMATICS",
+        "ALLDIGI",
+        "SAGILITY",
+        "ONEPOINT",
+        "DSSL",
+        "BLSE",
+        "IKS",
+        "SASKEN",
+        "ORIENTTECH",
+        "TATATECH",
+        "AFFLE",
+        "ECLERX",
+        "LTTS",
+        "CIGNITITEC",
+        "HGS",
+        "EXPLEOSOL",
+        "RSYSTEMS",
+        "CYIENT",
+        "NPST",
+        "ZAGGLE",
+        "FSL",
+        "EMUDHRA",
+        "PROTEAN",
+        "GENESYS",
+        "DIGITIDE",
+        "AMAGI"
+      ]
+    },
+    {
+      "rank": 60,
+      "rankLabel": "#60",
+      "rankChange1w": -4,
+      "scoreChange1w": -1.54,
+      "strengthBucket": "Mid",
+      "trendLabel": "Weakening",
+      "groupId": "paints",
+      "groupName": "Paints",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed paints stocks passing the working liquidity and market-cap filter.",
+      "score": 28.7,
+      "returns": {
+        "1m": -10.46,
+        "3m": -21.25,
+        "6m": -20.14
+      },
+      "relativeReturns": {
+        "1m": -1.52,
+        "3m": -10.46,
+        "6m": -8.08
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 0.0,
+        "positive3m": 8.34,
+        "positive6m": 16.67
+      },
+      "stockCount": 6,
+      "leaders": [
+        "SIRCA",
+        "AKZOINDIA",
+        "ASIANPAINT"
+      ],
+      "laggards": [
+        "INDIGOPNTS",
+        "KANSAINER",
+        "BERGEPAINT"
+      ],
+      "symbols": [
+        "SIRCA",
+        "AKZOINDIA",
+        "ASIANPAINT",
+        "BERGEPAINT",
+        "KANSAINER",
+        "INDIGOPNTS"
+      ]
+    },
+    {
+      "rank": 61,
+      "rankLabel": "#61",
+      "rankChange1w": -1,
+      "scoreChange1w": -1.09,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "gas-utilities",
+      "groupName": "Gas Utilities",
+      "parentSector": "Oil Gas & Consumable Fuels",
+      "description": "Indian listed gas utilities stocks passing the working liquidity and market-cap filter.",
+      "score": 24.27,
+      "returns": {
+        "1m": -13.93,
+        "3m": -14.85,
+        "6m": -19.27
+      },
+      "relativeReturns": {
+        "1m": -4.99,
+        "3m": -4.06,
+        "6m": -7.21
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 12.5,
+        "positive3m": 21.88,
+        "positive6m": 25.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "CONFIPET",
+        "PETRONET",
+        "ATGL"
+      ],
+      "laggards": [
+        "IGL",
+        "GUJGASLTD",
+        "MGL"
+      ],
+      "symbols": [
+        "CONFIPET",
+        "PETRONET",
+        "ATGL",
+        "GAIL",
+        "GSPL",
+        "MGL",
+        "GUJGASLTD",
+        "IGL"
+      ]
+    },
+    {
+      "rank": 62,
+      "rankLabel": "#62",
+      "rankChange1w": -16,
+      "scoreChange1w": -15.08,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "home-appliances",
+      "groupName": "Home Appliances",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed home appliances stocks passing the working liquidity and market-cap filter.",
+      "score": 22.73,
+      "returns": {
+        "1m": -12.6,
+        "3m": -17.34,
+        "6m": -26.03
+      },
+      "relativeReturns": {
+        "1m": -3.66,
+        "3m": -6.55,
+        "6m": -13.97
+      },
+      "breadth": {
+        "above50dma": 5.26,
+        "above200dma": 0.0,
+        "positive3m": 13.16,
+        "positive6m": 15.79
+      },
+      "stockCount": 19,
+      "leaders": [
+        "CARYSIL",
+        "VGUARD",
+        "VOLTAS"
+      ],
+      "laggards": [
+        "WEL",
+        "IFBIND",
+        "BAJAJELEC"
+      ],
+      "symbols": [
+        "CARYSIL",
+        "VGUARD",
+        "VOLTAS",
+        "AMBER",
+        "BUTTERFLY",
+        "LGEINDIA",
+        "BLUESTARCO",
+        "ORIENTELEC",
+        "BOSCH-HCIL",
+        "CROMPTON",
+        "EUREKAFORB",
+        "WHIRLPOOL",
+        "SYMPHONY",
+        "STOVEKRAFT",
+        "TTKPRESTIG",
+        "EPACK",
+        "BAJAJELEC",
+        "IFBIND",
+        "WEL"
+      ]
+    },
+    {
+      "rank": 63,
+      "rankLabel": "#63",
+      "rankChange1w": 13,
+      "scoreChange1w": 13.13,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "it-services",
+      "groupName": "IT Services",
+      "parentSector": "Information Technology",
+      "description": "Indian listed it services stocks passing the working liquidity and market-cap filter.",
+      "score": 22.2,
+      "returns": {
+        "1m": -6.67,
+        "3m": -27.2,
+        "6m": -25.66
+      },
+      "relativeReturns": {
+        "1m": 2.27,
+        "3m": -16.41,
+        "6m": -13.6
+      },
+      "breadth": {
+        "above50dma": 3.7,
+        "above200dma": 0.0,
+        "positive3m": 11.11,
+        "positive6m": 22.22
+      },
+      "stockCount": 27,
+      "leaders": [
+        "INFOBEAN",
+        "TECHM",
+        "PERSISTENT"
+      ],
+      "laggards": [
+        "SILVERTUC",
+        "MCLOUD",
+        "NEWGEN"
+      ],
+      "symbols": [
+        "INFOBEAN",
+        "TECHM",
+        "PERSISTENT",
+        "RATEGAIN",
+        "HCLTECH",
+        "BSOFT",
+        "ACCELYA",
+        "INFY",
+        "MPHASIS",
+        "WIPRO",
+        "TATAELXSI",
+        "TCS",
+        "LATENTVIEW",
+        "ZENSARTECH",
+        "COFORGE",
+        "HAPPSTMNDS",
+        "INTELLECT",
+        "MASTEK",
+        "AURIONPRO",
+        "SAKSOFT",
+        "SONATSOFTW",
+        "63MOONS",
+        "HEXT",
+        "KPITTECH",
+        "NEWGEN",
+        "MCLOUD",
+        "SILVERTUC"
+      ]
+    },
+    {
+      "rank": 64,
+      "rankLabel": "#64",
+      "rankChange1w": 11,
+      "scoreChange1w": 12.44,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "agro-chemicals",
+      "groupName": "Agro Chemicals",
+      "parentSector": "Chemicals",
+      "description": "Indian listed agro chemicals stocks passing the working liquidity and market-cap filter.",
+      "score": 21.97,
+      "returns": {
+        "1m": -8.12,
+        "3m": -16.56,
+        "6m": -27.13
+      },
+      "relativeReturns": {
+        "1m": 0.82,
+        "3m": -5.77,
+        "6m": -15.07
+      },
+      "breadth": {
+        "above50dma": 14.29,
+        "above200dma": 0.0,
+        "positive3m": 12.5,
+        "positive6m": 14.29
+      },
+      "stockCount": 14,
+      "leaders": [
+        "SHARDACROP",
+        "BAYERCROP",
+        "NACLIND"
+      ],
+      "laggards": [
+        "BHARATRAS",
+        "MOL",
+        "DHANUKA"
+      ],
+      "symbols": [
+        "SHARDACROP",
+        "BAYERCROP",
+        "NACLIND",
+        "UPL",
+        "RALLIS",
+        "INSECTICID",
+        "PIIND",
+        "BHAGCHEM",
+        "IPL",
+        "SUMICHEM",
+        "ASTEC",
+        "DHANUKA",
+        "MOL",
+        "BHARATRAS"
+      ]
+    },
+    {
+      "rank": 65,
+      "rankLabel": "#65",
+      "rankChange1w": 7,
+      "scoreChange1w": 10.04,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "medical-devices",
+      "groupName": "Medical Devices",
+      "parentSector": "Healthcare",
+      "description": "Indian listed medical devices stocks passing the working liquidity and market-cap filter.",
+      "score": 21.66,
+      "returns": {
+        "1m": -0.47,
+        "3m": -20.26,
+        "6m": -46.02
+      },
+      "relativeReturns": {
+        "1m": 8.47,
+        "3m": -9.47,
+        "6m": -33.96
+      },
+      "breadth": {
+        "above50dma": 25.0,
+        "above200dma": 0.0,
+        "positive3m": 6.25,
+        "positive6m": 0.0
+      },
+      "stockCount": 4,
+      "leaders": [
+        "FISCHER",
+        "POLYMED",
+        "TARSONS"
+      ],
+      "laggards": [
+        "LAXMIDENTL",
+        "TARSONS",
+        "POLYMED"
+      ],
+      "symbols": [
+        "FISCHER",
+        "POLYMED",
+        "TARSONS",
+        "LAXMIDENTL"
+      ]
+    },
+    {
+      "rank": 66,
+      "rankLabel": "#66",
+      "rankChange1w": 2,
+      "scoreChange1w": 6.28,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "retail-specialty",
+      "groupName": "Retail Specialty",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed retail specialty stocks passing the working liquidity and market-cap filter.",
+      "score": 20.48,
+      "returns": {
+        "1m": -8.5,
+        "3m": -18.93,
+        "6m": -26.69
+      },
+      "relativeReturns": {
+        "1m": 0.44,
+        "3m": -8.14,
+        "6m": -14.63
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 18.18,
+        "positive6m": 18.18
+      },
+      "stockCount": 11,
+      "leaders": [
+        "LENSKART",
+        "STYLEBAAZA",
+        "AVL"
+      ],
+      "laggards": [
+        "GOCOLORS",
+        "MANYAVAR",
+        "ABFRL"
+      ],
+      "symbols": [
+        "LENSKART",
+        "STYLEBAAZA",
+        "AVL",
+        "V2RETAIL",
+        "ARVINDFASN",
+        "TRENT",
+        "ABLBL",
+        "KALAMANDIR",
+        "ABFRL",
+        "MANYAVAR",
+        "GOCOLORS"
+      ]
+    },
+    {
+      "rank": 67,
+      "rankLabel": "#67",
+      "rankChange1w": 15,
+      "scoreChange1w": 12.96,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "software-products",
+      "groupName": "Software Products",
+      "parentSector": "Information Technology",
+      "description": "Indian listed software products stocks passing the working liquidity and market-cap filter.",
+      "score": 17.87,
+      "returns": {
+        "1m": -9.01,
+        "3m": -24.8,
+        "6m": -30.8
+      },
+      "relativeReturns": {
+        "1m": -0.07,
+        "3m": -14.01,
+        "6m": -18.74
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 3.57,
+        "positive6m": 0.0
+      },
+      "stockCount": 7,
+      "leaders": [
+        "OFSS",
+        "CAPILLARY",
+        "NUCLEUS"
+      ],
+      "laggards": [
+        "MAPMYINDIA",
+        "UNIECOM",
+        "TANLA"
+      ],
+      "symbols": [
+        "OFSS",
+        "CAPILLARY",
+        "NUCLEUS",
+        "RAMCOSYS",
+        "TANLA",
+        "UNIECOM",
+        "MAPMYINDIA"
+      ]
+    },
+    {
+      "rank": 68,
+      "rankLabel": "#68",
+      "rankChange1w": -13,
+      "scoreChange1w": -13.61,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "investment-holdings",
+      "groupName": "Investment Holdings",
+      "parentSector": "Financial Services",
+      "description": "Indian listed investment holdings stocks passing the working liquidity and market-cap filter.",
+      "score": 17.83,
+      "returns": {
+        "1m": -14.16,
+        "3m": -18.01,
+        "6m": -21.18
+      },
+      "relativeReturns": {
+        "1m": -5.22,
+        "3m": -7.22,
+        "6m": -9.12
+      },
+      "breadth": {
+        "above50dma": 3.7,
+        "above200dma": 7.41,
+        "positive3m": 13.89,
+        "positive6m": 25.93
+      },
+      "stockCount": 27,
+      "leaders": [
+        "JPOLYINVST",
+        "TVSHLTD",
+        "ABCAPITAL"
+      ],
+      "laggards": [
+        "JSWHL",
+        "RANEHOLDIN",
+        "SUMMITSEC"
+      ],
+      "symbols": [
+        "JPOLYINVST",
+        "TVSHLTD",
+        "ABCAPITAL",
+        "LTF",
+        "JINDALPHOT",
+        "EDELWEISS",
+        "3MINDIA",
+        "DCMSHRIRAM",
+        "RELIGARE",
+        "PILANIINVS",
+        "CHOICEIN",
+        "JMFINANCIL",
+        "BALMLAWRIE",
+        "MAHSCOOTER",
+        "BAJAJFINSV",
+        "SCILAL",
+        "TATAINVEST",
+        "JIOFIN",
+        "NSIL",
+        "CHOLAHLDNG",
+        "GODREJIND",
+        "BAJAJHLDNG",
+        "PNBGILTS",
+        "TSFINV",
+        "SUMMITSEC",
+        "RANEHOLDIN",
+        "JSWHL"
+      ]
+    },
+    {
+      "rank": 69,
+      "rankLabel": "#69",
+      "rankChange1w": 9,
+      "scoreChange1w": 11.15,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "travel-aviation",
+      "groupName": "Travel & Aviation",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed travel & aviation stocks passing the working liquidity and market-cap filter.",
+      "score": 17.12,
+      "returns": {
+        "1m": -9.82,
+        "3m": -21.89,
+        "6m": -28.16
+      },
+      "relativeReturns": {
+        "1m": -0.88,
+        "3m": -11.1,
+        "6m": -16.1
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 0.0,
+        "positive3m": 8.33,
+        "positive6m": 8.33
+      },
+      "stockCount": 12,
+      "leaders": [
+        "GMRAIRPORT",
+        "WONDERLA",
+        "YATRA"
+      ],
+      "laggards": [
+        "THOMASCOOK",
+        "DELTACORP",
+        "IRCTC"
+      ],
+      "symbols": [
+        "GMRAIRPORT",
+        "WONDERLA",
+        "YATRA",
+        "IXIGO",
+        "INDIGO",
+        "BLS",
+        "IMAGICAA",
+        "TBOTEK",
+        "EASEMYTRIP",
+        "IRCTC",
+        "DELTACORP",
+        "THOMASCOOK"
+      ]
+    },
+    {
+      "rank": 70,
+      "rankLabel": "#70",
+      "rankChange1w": -8,
+      "scoreChange1w": -4.86,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "cement",
+      "groupName": "Cement",
+      "parentSector": "Construction Materials",
+      "description": "Indian listed cement stocks passing the working liquidity and market-cap filter.",
+      "score": 16.88,
+      "returns": {
+        "1m": -13.6,
+        "3m": -17.0,
+        "6m": -24.1
+      },
+      "relativeReturns": {
+        "1m": -4.66,
+        "3m": -6.21,
+        "6m": -12.04
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 4.55,
+        "positive3m": 13.64,
+        "positive6m": 18.18
+      },
+      "stockCount": 22,
+      "leaders": [
+        "MANGLMCEM",
+        "INDIACEM",
+        "JSWCEMENT"
+      ],
+      "laggards": [
+        "ORIENTCEM",
+        "KCP",
+        "ACC"
+      ],
+      "symbols": [
+        "MANGLMCEM",
+        "INDIACEM",
+        "JSWCEMENT",
+        "GRASIM",
+        "RAMCOCEM",
+        "ULTRACEMCO",
+        "STARCEMENT",
+        "JKCEMENT",
+        "DALBHARAT",
+        "PRSMJOHNSN",
+        "SHREECEM",
+        "SANGHIIND",
+        "SHREDIGCEM",
+        "NUVOCO",
+        "HEIDELBERG",
+        "BIRLACORPN",
+        "SAGCEM",
+        "AMBUJACEM",
+        "JKLAKSHMI",
+        "ACC",
+        "KCP",
+        "ORIENTCEM"
+      ]
+    },
+    {
+      "rank": 71,
+      "rankLabel": "#71",
+      "rankChange1w": -7,
+      "scoreChange1w": -4.98,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "consumer-electronics",
+      "groupName": "Consumer Electronics",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed consumer electronics stocks passing the working liquidity and market-cap filter.",
+      "score": 16.19,
+      "returns": {
+        "1m": -11.39,
+        "3m": -21.34,
+        "6m": -26.47
+      },
+      "relativeReturns": {
+        "1m": -2.45,
+        "3m": -10.55,
+        "6m": -14.41
+      },
+      "breadth": {
+        "above50dma": 12.5,
+        "above200dma": 12.5,
+        "positive3m": 15.62,
+        "positive6m": 25.0
+      },
+      "stockCount": 8,
+      "leaders": [
+        "MIRCELECTR",
+        "SHAILY",
+        "VIPIND"
+      ],
+      "laggards": [
+        "IKIO",
+        "SAFARI",
+        "PGEL"
+      ],
+      "symbols": [
+        "MIRCELECTR",
+        "SHAILY",
+        "VIPIND",
+        "HAVELLS",
+        "DIXON",
+        "PGEL",
+        "SAFARI",
+        "IKIO"
+      ]
+    },
+    {
+      "rank": 72,
+      "rankLabel": "#72",
+      "rankChange1w": -6,
+      "scoreChange1w": -1.59,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "e-commerce",
+      "groupName": "E-Commerce",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed e-commerce stocks passing the working liquidity and market-cap filter.",
+      "score": 15.77,
+      "returns": {
+        "1m": -4.52,
+        "3m": -21.82,
+        "6m": -28.89
+      },
+      "relativeReturns": {
+        "1m": 4.42,
+        "3m": -11.03,
+        "6m": -16.83
+      },
+      "breadth": {
+        "above50dma": 7.69,
+        "above200dma": 7.69,
+        "positive3m": 9.62,
+        "positive6m": 7.69
+      },
+      "stockCount": 13,
+      "leaders": [
+        "NYKAA",
+        "MEESHO",
+        "URBANCO"
+      ],
+      "laggards": [
+        "RTNINDIA",
+        "JUSTDIAL",
+        "FIRSTCRY"
+      ],
+      "symbols": [
+        "NYKAA",
+        "MEESHO",
+        "URBANCO",
+        "INDIAMART",
+        "ETERNAL",
+        "MATRIMONY",
+        "CARTRADE",
+        "CRIZAC",
+        "NAUKRI",
+        "SWIGGY",
+        "FIRSTCRY",
+        "JUSTDIAL",
+        "RTNINDIA"
+      ]
+    },
+    {
+      "rank": 73,
+      "rankLabel": "#73",
+      "rankChange1w": -20,
+      "scoreChange1w": -19.53,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "passenger-vehicle-oems",
+      "groupName": "Passenger Vehicle OEMs",
+      "parentSector": "Automobile and Auto Components",
+      "description": "Indian listed passenger vehicle oems stocks passing the working liquidity and market-cap filter.",
+      "score": 14.96,
+      "returns": {
+        "1m": -17.28,
+        "3m": -19.32,
+        "6m": -25.41
+      },
+      "relativeReturns": {
+        "1m": -8.34,
+        "3m": -8.53,
+        "6m": -13.35
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 16.67,
+        "positive3m": 16.67,
+        "positive6m": 16.67
+      },
+      "stockCount": 6,
+      "leaders": [
+        "FORCEMOT",
+        "M&M",
+        "MARUTI"
+      ],
+      "laggards": [
+        "HYUNDAI",
+        "OLECTRA",
+        "TMPV"
+      ],
+      "symbols": [
+        "FORCEMOT",
+        "M&M",
+        "MARUTI",
+        "TMPV",
+        "OLECTRA",
+        "HYUNDAI"
+      ]
+    },
+    {
+      "rank": 74,
+      "rankLabel": "#74",
+      "rankChange1w": -5,
+      "scoreChange1w": 0.49,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "business-services",
+      "groupName": "Business Services",
+      "parentSector": "Services",
+      "description": "Indian listed business services stocks passing the working liquidity and market-cap filter.",
+      "score": 14.47,
+      "returns": {
+        "1m": -8.7,
+        "3m": -22.68,
+        "6m": -29.06
+      },
+      "relativeReturns": {
+        "1m": 0.24,
+        "3m": -11.89,
+        "6m": -17.0
+      },
+      "breadth": {
+        "above50dma": 17.65,
+        "above200dma": 0.0,
+        "positive3m": 7.35,
+        "positive6m": 11.76
+      },
+      "stockCount": 17,
+      "leaders": [
+        "BLACKBUCK",
+        "TEXINFRA",
+        "IGIL"
+      ],
+      "laggards": [
+        "AWFIS",
+        "UDS",
+        "TEAMLEASE"
+      ],
+      "symbols": [
+        "BLACKBUCK",
+        "TEXINFRA",
+        "IGIL",
+        "NESCO",
+        "KERNEX",
+        "SANGHVIMOV",
+        "IBULLSLTD",
+        "INOXGREEN",
+        "HEMIPROP",
+        "SMARTWORKS",
+        "WEWORK",
+        "CMSINFO",
+        "EFCIL",
+        "QUESS",
+        "TEAMLEASE",
+        "UDS",
+        "AWFIS"
+      ]
+    },
+    {
+      "rank": 75,
+      "rankLabel": "#75",
+      "rankChange1w": -5,
+      "scoreChange1w": 0.1,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "telecom-services",
+      "groupName": "Telecom Services",
+      "parentSector": "Telecommunication",
+      "description": "Indian listed telecom services stocks passing the working liquidity and market-cap filter.",
+      "score": 12.98,
+      "returns": {
+        "1m": -12.56,
+        "3m": -26.29,
+        "6m": -24.14
+      },
+      "relativeReturns": {
+        "1m": -3.62,
+        "3m": -15.5,
+        "6m": -12.08
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 9.38,
+        "positive6m": 37.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "IDEA",
+        "BHARTIARTL",
+        "BHARTIHEXA"
+      ],
+      "laggards": [
+        "ROUTE",
+        "MTNL",
+        "TTML"
+      ],
+      "symbols": [
+        "IDEA",
+        "BHARTIARTL",
+        "BHARTIHEXA",
+        "TATACOMM",
+        "RAILTEL",
+        "TTML",
+        "MTNL",
+        "ROUTE"
+      ]
+    },
+    {
+      "rank": 76,
+      "rankLabel": "#76",
+      "rankChange1w": -3,
+      "scoreChange1w": 1.16,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "home-furnishings",
+      "groupName": "Home Furnishings",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed home furnishings stocks passing the working liquidity and market-cap filter.",
+      "score": 11.93,
+      "returns": {
+        "1m": -12.45,
+        "3m": -20.63,
+        "6m": -29.03
+      },
+      "relativeReturns": {
+        "1m": -3.51,
+        "3m": -9.84,
+        "6m": -16.97
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 6.25,
+        "positive6m": 12.5
+      },
+      "stockCount": 8,
+      "leaders": [
+        "EUROPRATIK",
+        "WAKEFIT",
+        "ALLTIME"
+      ],
+      "laggards": [
+        "RESPONIND",
+        "CELLO",
+        "BOROLTD"
+      ],
+      "symbols": [
+        "EUROPRATIK",
+        "WAKEFIT",
+        "ALLTIME",
+        "BIRLANU",
+        "SFL",
+        "BOROLTD",
+        "CELLO",
+        "RESPONIND"
+      ]
+    },
+    {
+      "rank": 77,
+      "rankLabel": "#77",
+      "rankChange1w": 0,
+      "scoreChange1w": 1.61,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "restaurants-qsr",
+      "groupName": "Restaurants & QSR",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed restaurants & qsr stocks passing the working liquidity and market-cap filter.",
+      "score": 8.43,
+      "returns": {
+        "1m": -14.69,
+        "3m": -18.51,
+        "6m": -35.87
+      },
+      "relativeReturns": {
+        "1m": -5.75,
+        "3m": -7.72,
+        "6m": -23.81
+      },
+      "breadth": {
+        "above50dma": 16.67,
+        "above200dma": 0.0,
+        "positive3m": 16.67,
+        "positive6m": 16.67
+      },
+      "stockCount": 6,
+      "leaders": [
+        "TRAVELFOOD",
+        "RBA",
+        "JUBLFOOD"
+      ],
+      "laggards": [
+        "SAPPHIRE",
+        "DEVYANI",
+        "WESTLIFE"
+      ],
+      "symbols": [
+        "TRAVELFOOD",
+        "RBA",
+        "JUBLFOOD",
+        "WESTLIFE",
+        "DEVYANI",
+        "SAPPHIRE"
+      ]
+    },
+    {
+      "rank": 78,
+      "rankLabel": "#78",
+      "rankChange1w": -4,
+      "scoreChange1w": -1.56,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "hotels-resorts",
+      "groupName": "Hotels & Resorts",
+      "parentSector": "Consumer Services",
+      "description": "Indian listed hotels & resorts stocks passing the working liquidity and market-cap filter.",
+      "score": 8.22,
+      "returns": {
+        "1m": -12.15,
+        "3m": -20.86,
+        "6m": -29.76
+      },
+      "relativeReturns": {
+        "1m": -3.21,
+        "3m": -10.07,
+        "6m": -17.7
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 3.12,
+        "positive6m": 6.25
+      },
+      "stockCount": 16,
+      "leaders": [
+        "THELEELA",
+        "BRIGHOTEL",
+        "CHALET"
+      ],
+      "laggards": [
+        "DBREALTY",
+        "ITDC",
+        "LEMONTREE"
+      ],
+      "symbols": [
+        "THELEELA",
+        "BRIGHOTEL",
+        "CHALET",
+        "EIHOTEL",
+        "VENTIVE",
+        "INDHOTEL",
+        "MHRIL",
+        "JUNIPER",
+        "SAMHI",
+        "PARKHOTELS",
+        "ORIENTHOT",
+        "ITCHOTELS",
+        "TAJGVK",
+        "LEMONTREE",
+        "ITDC",
+        "DBREALTY"
+      ]
+    },
+    {
+      "rank": 79,
+      "rankLabel": "#79",
+      "rankChange1w": 0,
+      "scoreChange1w": 2.41,
+      "strengthBucket": "Weak",
+      "trendLabel": "Improving",
+      "groupId": "epc-construction",
+      "groupName": "EPC & Construction",
+      "parentSector": "Construction",
+      "description": "Indian listed epc & construction stocks passing the working liquidity and market-cap filter.",
+      "score": 8.13,
+      "returns": {
+        "1m": -11.92,
+        "3m": -21.67,
+        "6m": -28.91
+      },
+      "relativeReturns": {
+        "1m": -2.98,
+        "3m": -10.88,
+        "6m": -16.85
+      },
+      "breadth": {
+        "above50dma": 6.67,
+        "above200dma": 4.44,
+        "positive3m": 11.11,
+        "positive6m": 13.33
+      },
+      "stockCount": 45,
+      "leaders": [
+        "CEIGALL",
+        "ABINFRA",
+        "ENGINERSIN"
+      ],
+      "laggards": [
+        "SEPC",
+        "HGINFRA",
+        "SIMPLEXINF"
+      ],
+      "symbols": [
+        "CEIGALL",
+        "ABINFRA",
+        "ENGINERSIN",
+        "IRB",
+        "LT",
+        "KPIL",
+        "GARUDA",
+        "ISGEC",
+        "GPTINFRA",
+        "SRM",
+        "INTERARCH",
+        "TECHNOE",
+        "SPMLINFRA",
+        "WELENT",
+        "DBL",
+        "PSPPROJECT",
+        "RAMKY",
+        "BLKASHYAP",
+        "GRINFRA",
+        "POWERMECH",
+        "RITES",
+        "NCC",
+        "NBCC",
+        "MBEL",
+        "CEMPRO",
+        "AHLUCONT",
+        "JKIL",
+        "CAPACITE",
+        "IRCON",
+        "RVNL",
+        "PATELENG",
+        "SOLARWORLD",
+        "SWSOLAR",
+        "AFCONS",
+        "KEC",
+        "GKENERGY",
+        "HCC",
+        "PNCINFRA",
+        "ASHOKA",
+        "VIKRAN",
+        "MANINFRA",
+        "KNRCON",
+        "SIMPLEXINF",
+        "HGINFRA",
+        "SEPC"
+      ]
+    },
+    {
+      "rank": 80,
+      "rankLabel": "#80",
+      "rankChange1w": -13,
+      "scoreChange1w": -7.46,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "fintech",
+      "groupName": "Fintech",
+      "parentSector": "Financial Services",
+      "description": "Indian listed fintech stocks passing the working liquidity and market-cap filter.",
+      "score": 7.32,
+      "returns": {
+        "1m": -12.84,
+        "3m": -24.04,
+        "6m": -28.37
+      },
+      "relativeReturns": {
+        "1m": -3.9,
+        "3m": -13.25,
+        "6m": -16.31
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 8.34,
+        "positive6m": 16.67
+      },
+      "stockCount": 6,
+      "leaders": [
+        "PAYTM",
+        "POLICYBZR",
+        "STYL"
+      ],
+      "laggards": [
+        "CCAVENUE",
+        "MOBIKWIK",
+        "PINELABS"
+      ],
+      "symbols": [
+        "PAYTM",
+        "POLICYBZR",
+        "STYL",
+        "PINELABS",
+        "MOBIKWIK",
+        "CCAVENUE"
+      ]
+    },
+    {
+      "rank": 81,
+      "rankLabel": "#81",
+      "rankChange1w": 0,
+      "scoreChange1w": 0.85,
+      "strengthBucket": "Weak",
+      "trendLabel": "Stable",
+      "groupId": "footwear",
+      "groupName": "Footwear",
+      "parentSector": "Consumer Durables",
+      "description": "Indian listed footwear stocks passing the working liquidity and market-cap filter.",
+      "score": 6.38,
+      "returns": {
+        "1m": -14.74,
+        "3m": -21.22,
+        "6m": -31.2
+      },
+      "relativeReturns": {
+        "1m": -5.8,
+        "3m": -10.43,
+        "6m": -19.14
+      },
+      "breadth": {
+        "above50dma": 0.0,
+        "above200dma": 0.0,
+        "positive3m": 5.0,
+        "positive6m": 0.0
+      },
+      "stockCount": 5,
+      "leaders": [
+        "CAMPUS",
+        "REDTAPE",
+        "METROBRAND"
+      ],
+      "laggards": [
+        "BATAINDIA",
+        "RELAXO",
+        "METROBRAND"
+      ],
+      "symbols": [
+        "CAMPUS",
+        "REDTAPE",
+        "METROBRAND",
+        "RELAXO",
+        "BATAINDIA"
+      ]
+    },
+    {
+      "rank": 82,
+      "rankLabel": "#82",
+      "rankChange1w": -2,
+      "scoreChange1w": -2.45,
+      "strengthBucket": "Weak",
+      "trendLabel": "Weakening",
+      "groupId": "realty-developers",
+      "groupName": "Realty Developers",
+      "parentSector": "Realty",
+      "description": "Indian listed realty developers stocks passing the working liquidity and market-cap filter.",
+      "score": 3.26,
+      "returns": {
+        "1m": -13.24,
+        "3m": -22.75,
+        "6m": -29.18
+      },
+      "relativeReturns": {
+        "1m": -4.3,
+        "3m": -11.96,
+        "6m": -17.12
+      },
+      "breadth": {
+        "above50dma": 5.71,
+        "above200dma": 2.86,
+        "positive3m": 7.86,
+        "positive6m": 11.43
+      },
+      "stockCount": 35,
+      "leaders": [
+        "AGIIL",
+        "ASHIANA",
+        "PHOENIXLTD"
+      ],
+      "laggards": [
+        "AJMERA",
+        "ARIHANTSUP",
+        "LODHA"
+      ],
+      "symbols": [
+        "AGIIL",
+        "ASHIANA",
+        "PHOENIXLTD",
+        "OBEROIRLTY",
+        "MAHLIFE",
+        "OMAXE",
+        "ARVSMART",
+        "SOBHA",
+        "HUBTOWN",
+        "ANANTRAJ",
+        "SHRIRAMPPS",
+        "KALPATARU",
+        "TARC",
+        "KOLTEPATIL",
+        "PRESTIGE",
+        "ALEMBICLTD",
+        "MAXESTATES",
+        "MARATHON",
+        "SUNTECK",
+        "RAYMONDREL",
+        "GODREJPROP",
+        "BRIGADE",
+        "DLF",
+        "GANESHHOU",
+        "RUSTOMJEE",
+        "LOTUSDEV",
+        "PURVA",
+        "SURAJEST",
+        "SIGNATURE",
+        "ARKADE",
+        "UNITECH",
+        "RAYMOND",
+        "LODHA",
+        "ARIHANTSUP",
+        "AJMERA"
+      ]
+    }
+  ]
+}

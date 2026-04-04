@@ -1,0 +1,165 @@
+{
+  "2026-W13": {
+    "week_key": "2026-W13",
+    "week_start": "2026-03-23",
+    "generated_at": "2026-04-03T04:09:41.619315Z",
+    "inflows": [
+      {
+        "name": "Basic Materials",
+        "sentiment": "bullish",
+        "reason": "Basic Materials led with +6.8% over 1W and -5.6% over 1M across 43 stocks.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Consumer Staples",
+        "sentiment": "bullish",
+        "reason": "Consumer Staples led with +2.0% over 1W and -4.1% over 1M across 45 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Miscellaneous",
+        "sentiment": "bullish",
+        "reason": "Miscellaneous led with +1.8% over 1W and -4.2% over 1M across 7 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Utilities led with +1.5% over 1W and +0.2% over 1M across 82 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Health Care",
+        "sentiment": "bullish",
+        "reason": "Health Care led with +1.2% over 1W and -4.0% over 1M across 261 stocks.",
+        "magnitude": "mild"
+      }
+    ],
+    "outflows": [
+      {
+        "name": "Telecommunications",
+        "sentiment": "bearish",
+        "reason": "Telecommunications lagged with -2.3% over 1W and -1.3% over 1M, showing broad pressure across 28 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Industrials",
+        "sentiment": "bearish",
+        "reason": "Industrials lagged with -1.2% over 1W and -5.3% over 1M, showing broad pressure across 224 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Energy",
+        "sentiment": "bearish",
+        "reason": "Energy lagged with -0.3% over 1W and +9.6% over 1M, showing broad pressure across 85 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Technology",
+        "sentiment": "bearish",
+        "reason": "Technology lagged with -0.3% over 1W and -2.4% over 1M, showing broad pressure across 247 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Unclassified",
+        "sentiment": "bearish",
+        "reason": "Unclassified lagged with -0.1% over 1W and +0.6% over 1M, showing broad pressure across 12 stocks.",
+        "magnitude": "mild"
+      }
+    ],
+    "sector_performance": [
+      {
+        "name": "Basic Materials",
+        "sentiment": "bullish",
+        "reason": "Basic Materials led with +6.8% over 1W and -5.6% over 1M across 43 stocks.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Consumer Staples",
+        "sentiment": "bullish",
+        "reason": "Consumer Staples led with +2.0% over 1W and -4.1% over 1M across 45 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Miscellaneous",
+        "sentiment": "bullish",
+        "reason": "Miscellaneous led with +1.8% over 1W and -4.2% over 1M across 7 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Utilities led with +1.5% over 1W and +0.2% over 1M across 82 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Health Care",
+        "sentiment": "bullish",
+        "reason": "Health Care led with +1.2% over 1W and -4.0% over 1M across 261 stocks.",
+        "magnitude": "mild"
+      }
+    ],
+    "short_term_headwinds": [
+      {
+        "name": "Industrials",
+        "sentiment": "bearish",
+        "reason": "Industrials lagged with -1.2% over 1W and -5.3% over 1M, showing broad pressure across 224 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Miscellaneous",
+        "sentiment": "bearish",
+        "reason": "Miscellaneous lagged with +1.8% over 1W and -4.2% over 1M, showing broad pressure across 7 stocks.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Health Care",
+        "sentiment": "bearish",
+        "reason": "Health Care lagged with +1.2% over 1W and -4.0% over 1M, showing broad pressure across 261 stocks.",
+        "magnitude": "mild"
+      }
+    ],
+    "short_term_tailwinds": [
+      {
+        "name": "Energy",
+        "sentiment": "bullish",
+        "reason": "Energy moved +1.1% on the day, -0.3% over 1W, and +9.6% over 1M.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Utilities moved +1.0% on the day, +1.5% over 1W, and +0.2% over 1M.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Real Estate",
+        "sentiment": "bullish",
+        "reason": "Real Estate moved +0.8% on the day, +0.5% over 1W, and -5.0% over 1M.",
+        "magnitude": "mild"
+      }
+    ],
+    "long_term_tailwinds": [
+      {
+        "name": "Energy",
+        "sentiment": "bullish",
+        "reason": "Energy is sustaining +37.2% over 3M with +9.6% over 1M, keeping the intermediate trend constructive.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Basic Materials",
+        "sentiment": "bullish",
+        "reason": "Basic Materials is sustaining +16.0% over 3M with -5.6% over 1M, keeping the intermediate trend constructive.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Utilities is sustaining +13.8% over 3M with +0.2% over 1M, keeping the intermediate trend constructive.",
+        "magnitude": "strong"
+      }
+    ],
+    "macro_summary": "Rule-based fallback summary: 8/14 sectors closed positive over 1W, with an average 1W move of +0.8%. Leaders were Basic Materials, Consumer Staples, Miscellaneous; laggards were Telecommunications, Industrials, Energy.",
+    "ai_model": "fallback-rules"
+  }
+}
