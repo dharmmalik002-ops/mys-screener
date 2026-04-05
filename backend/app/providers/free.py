@@ -61,7 +61,7 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
-SNAPSHOT_CACHE_VERSION = 12
+SNAPSHOT_CACHE_VERSION = 13
 CHART_CACHE_VERSION = 4
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
@@ -3433,6 +3433,7 @@ class FreeMarketDataProvider:
                     group_by="ticker" if len(batch) > 1 else "column",
                     progress=False,
                     threads=True,
+                    auto_adjust=False,
                 )
             except Exception:
                 continue
