@@ -1,5 +1,5 @@
 from datetime import date, datetime, timezone
-from typing import Literal
+from typing import Literal, Any
 
 from pydantic import BaseModel, Field
 
@@ -501,7 +501,7 @@ class BusinessSegment(BaseModel):
     revenue_crore: float | None = None
     revenue_pct: float | None = None
     growth_pct: float | None = None
-    period: str
+    period: str | None = None
 
 
 class DetailedNews(BaseModel):
@@ -514,7 +514,7 @@ class DetailedNews(BaseModel):
     source_type: Literal["Editorial News", "Company Release", "Exchange Filing", "Transcript", "Analyst Report"] = "Editorial News"
     is_editorial: bool = True
     url: str | None = None
-    published_date: str
+    published_date: str | None = None
     impact_area: str | None = None  # Revenue, Margin, EPS, Capex, Order Book, Regulatory
     why_it_matters: str | None = None
     detailed_points: list[str] = Field(default_factory=list)
