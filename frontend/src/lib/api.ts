@@ -341,6 +341,22 @@ export type CompanyFundamentals = {
   insider_transactions: InsiderTransaction[];
   last_news_update: string | null;
   latest_earnings_key_metrics: Record<string, number | string>;
+  results_summary?: {
+    beat_miss: string;
+    highlights: string[];
+    segment_performance: string;
+  } | null;
+  guidance_tracker?: Array<{
+    date: string;
+    previous: string;
+    current: string;
+    reason: string;
+  }>;
+  growth_trends?: {
+    revenue_trend: string;
+    profit_trend: string;
+    margin_trend: string;
+  } | null;
   upcoming_events: Array<{ date: string; event: string; impact?: string }>;
 };
 
@@ -388,7 +404,10 @@ export type ManagementGuidance = {
   capex_guidance_crore: number | null;
   guidance_date: string | null;
   guidance_source: string | null;
+  guidance_type?: string | null;
+  confidence_score?: number | null;
   key_guidance_points: string[];
+  analyst_concerns?: string[];
 };
 
 export type CompetitivePosition = {
@@ -412,9 +431,15 @@ export type DetailedNews = {
   impact_category: string;
   sentiment: string;
   source: string;
+  source_type?: string;
+  is_editorial?: boolean;
+  url?: string | null;
   published_date: string;
+  impact_area?: string | null;
+  why_it_matters?: string | null;
   detailed_points: string[];
   relevance_score: number;
+  connection_to_guidance?: string | null;
 };
 
 export type RiskAnalysis = {

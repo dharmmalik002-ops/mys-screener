@@ -149,10 +149,31 @@ Based on all the above data, provide a comprehensive analysis in this EXACT JSON
       "revenue_growth_guidance_pct": null,
       "ebitda_guidance_pct": null,
       "capex_guidance_crore": null,
-      "key_guidance_points": ["point1", "point2"]
+      "guidance_type": "Explicit|Qualitative",
+      "confidence_score": 0.8,
+      "key_guidance_points": ["point1", "point2"],
+      "analyst_concerns": ["concern1", "concern2"]
     }}
   ],
   "strategy_and_outlook": "2-3 sentence management strategy and outlook based on recent data",
+  "results_summary": {{
+    "beat_miss": "Beat/Miss vs expectations on Revenue and Profit",
+    "highlights": ["point1", "point2"],
+    "segment_performance": "Key segment performance summary"
+  }},
+  "guidance_tracker": [
+    {{
+      "date": "YYYY-MM-DD", 
+      "previous": "previous guidance summary",
+      "current": "current guidance summary",
+      "reason": "reason for change"
+    }}
+  ],
+  "growth_trends": {{
+    "revenue_trend": "Improving|Stable|Declining description",
+    "profit_trend": "Improving|Stable|Declining description",
+    "margin_trend": "Improving|Stable|Declining description"
+  }},
   "competitive_position": {{
     "market_position": "e.g. Market leader in X segment",
     "competitive_advantages": ["advantage1", "advantage2"],
@@ -183,9 +204,14 @@ Based on all the above data, provide a comprehensive analysis in this EXACT JSON
       "impact_category": "earnings|strategic|regulatory|market|operational",
       "sentiment": "positive|negative|neutral",
       "source": "source name",
+      "source_type": "Editorial News|Company Release|Exchange Filing|Transcript|Analyst Report",
+      "is_editorial": true,
       "published_date": "YYYY-MM-DD",
+      "impact_area": "Revenue|Margin|EPS|Capex|Order Book|Regulatory",
+      "why_it_matters": "Why this specific news is critical for the stock",
       "detailed_points": ["point1", "point2"],
-      "relevance_score": 0.8
+      "relevance_score": 0.8,
+      "connection_to_guidance": "How this news confirms or contradicts previous guidance"
     }}
   ],
   "ai_news_summary": {{
@@ -229,19 +255,23 @@ Based on all the above data, provide a comprehensive analysis in this EXACT JSON
     }}
   ]
 }}
-
-RULES:
+}}RULES:
 - Use ONLY data provided above. Do not hallucinate numbers not present in the input.
-- For insider_transactions: only include if mentioned in news. If no insider data, return empty array.
-- For management_guidance: prefer the latest dated earnings call / concall / management commentary. Do not rely on stale or undated boilerplate. Use null for unknown numeric fields.
-- When transcript-derived management guidance or source-derived detailed news is already present in the input, preserve and sharpen that latest commentary instead of replacing it with generic text.
-- For latest_earnings_key_metrics: compute from the quarterly results provided.
-- For upcoming_events: infer likely next quarter results date, AGM, etc.
+- For detailed_news: 
+  - Strictly classify source_type as "Editorial News" ONLY for credible multi-journalist outlets (Reuters, Bloomberg, LiveMint, Economic Times, Moneycontrol, etc.). 
+  - Use "Company Release" for PR wire services (PR Newswire, Business Wire, etc.). 
+  - is_editorial must be true ONLY for Editorial News.
+- For management_guidance: 
+  - guidance_type should be "Explicit" if numbers/ranges are given, otherwise "Qualitative".
+  - confidence_score should reflect management's tone and track record if discernible.
+- For results_summary: summarize the latest quarter's performance vs market expectations.
+- For guidance_tracker: if multiple dates of guidance are provided, show how it changed.
 - For detailed_news: include only recent, credible, company-specific items that are likely to impact revenue, profit, margin, sales, demand, capacity, pricing, or valuation.
 - Ignore routine compliance items such as generic Regulation 30 / SEBI (LODR) filings, transcripts, audio links, newspaper publications, and similar boilerplate unless the filing clearly contains financially material information. If such a filing is material, summarize only the financially relevant part.
 - For strategy_and_outlook and growth-oriented commentary, prioritize the latest management guidance about revenue, profit, margin, sales, demand, capex, order book, and business outlook.
 - Keep all text concise and actionable for traders following {equities_label}.
-- Return ONLY the JSON object, no other text."""
+- Return ONLY the JSON object, no other text.
+t."""
 
 
 def _build_company_question_prompt(fundamentals: CompanyFundamentals, question: str) -> str:
@@ -351,6 +381,19 @@ class AIAnalysisService:
         # Generate fresh analysis
         try:
             result = self._generate_analysis(fundamentals)
+            
+            # Post-processing: Enhance with NewsProcessor if needed
+            from app.services.news_processor import NewsProcessor
+            
+            # Ensure detailed_news fields are correctly typed and classified
+            if "detailed_news" in result:
+                for news in result["detailed_news"]:
+                    guessed_type, guessed_editorial = NewsProcessor.classify_source(news.get("source", ""), news.get("url"))
+                    news["source_type"] = news.get("source_type", guessed_type)
+                    news["is_editorial"] = news.get("is_editorial", guessed_editorial)
+                    if not news.get("impact_area"):
+                        news["impact_area"] = NewsProcessor.identify_impact_area(news.get("title", ""), news.get("summary", ""))
+
             cache_entry = {
                 "data": result,
                 "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -668,7 +711,10 @@ def parse_ai_management_guidance(raw: list[dict[str, Any]]) -> list[ManagementGu
                 capex_guidance_crore=item.get("capex_guidance_crore"),
                 guidance_date=item.get("guidance_date"),
                 guidance_source=item.get("guidance_source"),
+                guidance_type=item.get("guidance_type"),
+                confidence_score=item.get("confidence_score"),
                 key_guidance_points=item.get("key_guidance_points") or [],
+                analyst_concerns=item.get("analyst_concerns") or [],
             ))
         except Exception:
             continue
@@ -730,9 +776,15 @@ def parse_ai_detailed_news(raw: list[dict[str, Any]]) -> list[DetailedNews]:
                 impact_category=str(item.get("impact_category", "market")),
                 sentiment=str(item.get("sentiment", "neutral")),
                 source=str(item.get("source", "AI Analysis")),
+                source_type=str(item.get("source_type", "Editorial News")),
+                is_editorial=bool(item.get("is_editorial", True)),
+                url=item.get("url"),
                 published_date=str(item.get("published_date", "")),
+                impact_area=item.get("impact_area"),
+                why_it_matters=item.get("why_it_matters"),
                 detailed_points=item.get("detailed_points") or [],
                 relevance_score=float(item.get("relevance_score", 0.5)),
+                connection_to_guidance=item.get("connection_to_guidance"),
             ))
         except Exception:
             continue
@@ -876,6 +928,15 @@ def enrich_fundamentals_with_ai(
 
     if ai_data.get("latest_earnings_key_metrics"):
         updates["latest_earnings_key_metrics"] = ai_data["latest_earnings_key_metrics"]
+
+    if ai_data.get("results_summary"):
+        updates["results_summary"] = parse_ai_results_summary(ai_data["results_summary"])
+
+    if ai_data.get("guidance_tracker"):
+        updates["guidance_tracker"] = parse_ai_guidance_tracker(ai_data["guidance_tracker"])
+
+    if ai_data.get("growth_trends"):
+        updates["growth_trends"] = parse_ai_growth_trends(ai_data["growth_trends"])
 
     if ai_data.get("upcoming_events"):
         updates["upcoming_events"] = ai_data["upcoming_events"]

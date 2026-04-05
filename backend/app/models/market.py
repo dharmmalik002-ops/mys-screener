@@ -481,7 +481,10 @@ class ManagementGuidance(BaseModel):
     capex_guidance_crore: float | None = None
     guidance_date: str | None = None
     guidance_source: str | None = None
+    guidance_type: Literal["Explicit", "Qualitative"] | None = None
+    confidence_score: float | None = None
     key_guidance_points: list[str] = Field(default_factory=list)
+    analyst_concerns: list[str] = Field(default_factory=list)
 
 
 class CompetitivePosition(BaseModel):
@@ -506,11 +509,17 @@ class DetailedNews(BaseModel):
     title: str
     summary: str  # Full detailed summary, not just 1-2 sentences
     impact_category: str  # earnings, strategic, regulatory, market, etc.
-    sentiment: str  # positive, negative, neutral
+    sentiment: Literal["positive", "negative", "neutral"] = "neutral"
     source: str
+    source_type: Literal["Editorial News", "Company Release", "Exchange Filing", "Transcript", "Analyst Report"] = "Editorial News"
+    is_editorial: bool = True
+    url: str | None = None
     published_date: str
+    impact_area: str | None = None  # Revenue, Margin, EPS, Capex, Order Book, Regulatory
+    why_it_matters: str | None = None
     detailed_points: list[str] = Field(default_factory=list)
     relevance_score: float  # 0-1, how relevant to stock price
+    connection_to_guidance: str | None = None
 
 
 class RiskAnalysis(BaseModel):
@@ -574,6 +583,9 @@ class CompanyFundamentals(BaseModel):
     
     # Recent Performance & Catalysts
     latest_earnings_key_metrics: dict[str, float | str] = Field(default_factory=dict)
+    results_summary: dict[str, Any] | None = None  # {beat_miss, highlights, segment_performance}
+    guidance_tracker: list[dict[str, Any]] = Field(default_factory=list)  # [{date, previous, current, reason}]
+    growth_trends: dict[str, Any] | None = None  # {revenue_trend, profit_trend, margin_trend}
     upcoming_events: list[dict[str, str]] = Field(default_factory=list)  # [{date, event, impact}]
     
     data_warnings: list[str] = Field(default_factory=list)
