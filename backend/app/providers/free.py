@@ -3533,7 +3533,7 @@ class FreeMarketDataProvider:
 
         for row in missing_rows:
             symbol = str(row.get("symbol") or "").upper()
-            ticker = str(row.get("instrument_key") or f"{symbol}.NS").upper()
+            ticker = str(row.get("instrument_key") or (f"{symbol}.NS" if str(row.get("exchange") or "").upper() == "NSE" else symbol)).upper()
             quote = yahoo_quotes.get(ticker) or yahoo_quotes.get(symbol)
             if not quote:
                 continue
@@ -3671,6 +3671,11 @@ class FreeMarketDataProvider:
         previous_close = self._quote_number(quote, "regularMarketPreviousClose") or float(row.get("previous_close") or row.get("last_price") or current_price)
         session_high = self._quote_number(quote, "regularMarketDayHigh") or current_price
         session_low = self._quote_number(quote, "regularMarketDayLow") or current_price
+        
+        # Candle sanity: ensure current price is within high/low bounds
+        session_high = max(session_high, current_price)
+        session_low = min(session_low, current_price)
+        
         session_open = self._quote_number(quote, "regularMarketOpen") or previous_close or current_price
         session_volume = int(self._quote_number(quote, "regularMarketVolume") or row.get("volume") or 0)
         high_52w = self._quote_number(quote, "fiftyTwoWeekHigh") or float(row.get("high_52w") or session_high)
