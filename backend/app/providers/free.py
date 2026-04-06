@@ -678,6 +678,11 @@ class FreeMarketDataProvider:
         if latest_close in (None, 0):
             return False
 
+        # Reject cache if it contains unhandled corporate-action price gaps (bonus issues,
+        # reverse splits, etc.) that make the chart visually broken/incorrect.
+        if self._chart_bars_have_price_gap(bars):
+            return False
+
         scale = self._chart_symbol_scale_lookup().get(str(symbol or "").strip().upper()) or {}
         references = [
             self._to_float(scale.get("last_price")),
@@ -691,6 +696,24 @@ class FreeMarketDataProvider:
             return False
 
         return self._bar_matches_snapshot_session(symbol, bars[-1])
+
+    @staticmethod
+    def _chart_bars_have_price_gap(bars: list[ChartBar]) -> bool:
+        """Return True if consecutive bars contain a single-day price ratio >= 1.8x or <= 0.55x.
+        Such ratios can't occur in normal trading (India's 20% circuit rule) and indicate an
+        unhandled corporate action (bonus issue, split, demerger) in the cached data.
+        Only check the most recent 400 bars (most likely to have recent corporate actions).
+        """
+        recent = bars[-400:] if len(bars) > 400 else bars
+        for i in range(1, len(recent)):
+            prev = float(getattr(recent[i - 1], "close", 0) or 0)
+            curr = float(getattr(recent[i], "close", 0) or 0)
+            if prev <= 0 or curr <= 0:
+                continue
+            ratio = curr / prev
+            if ratio >= 1.8 or ratio <= 0.55:
+                return True
+        return False
 
     def _chart_cache_covers_snapshot_session(self, symbol: str, timeframe: str, bars: list[ChartBar]) -> bool:
         if not bars or str(timeframe or "").strip().upper() not in {"1D", "1W"}:
@@ -5040,7 +5063,45 @@ class FreeMarketDataProvider:
         if "Adj Close" in adjusted.columns:
             adjusted["Adj Close"] = pd.to_numeric(adjusted["Adj Close"], errors="coerce").fillna(adjusted["Close"])
 
+        # Second pass: normalize any large single-day gaps that yfinance's Stock Splits
+        # column failed to capture (common for Indian bonus issues and consolidations).
+        adjusted = self._normalize_chart_price_gaps(adjusted)
+
         return adjusted
+
+    def _normalize_chart_price_gaps(self, history: pd.DataFrame) -> pd.DataFrame:
+        """Normalize large single-day price gaps caused by corporate actions (bonus issues,
+        reverse splits, demergers) that are not reported in yfinance's Stock Splits column.
+
+        India's exchange circuit breakers cap daily moves at 20%, so any gap >= 1.8x or
+        <= 0.55x must be a corporate action.  We multiply all bars before the gap by the
+        gap ratio so the series becomes continuous, producing correct adjusted prices.
+        """
+        if history.empty or "Close" not in history.columns:
+            return history
+
+        df = history.copy()
+        for _ in range(20):  # at most 20 corporate actions per series
+            closes = df["Close"].fillna(0).astype(float).tolist()
+            gap_idx: int | None = None
+            # Scan backward so the most recent gap is fixed first (proper cumulative order)
+            for i in range(len(closes) - 1, 0, -1):
+                prev = closes[i - 1]
+                curr = closes[i]
+                if prev <= 0 or curr <= 0:
+                    continue
+                ratio = curr / prev
+                if ratio >= 1.8 or ratio <= 0.55:
+                    gap_idx = i
+                    break  # fix the outermost gap first, then re-scan
+            if gap_idx is None:
+                break
+            factor = float(closes[gap_idx]) / float(closes[gap_idx - 1])
+            for col in ("Open", "High", "Low", "Close"):
+                if col in df.columns:
+                    col_loc = df.columns.get_loc(col)
+                    df.iloc[:gap_idx, col_loc] = df.iloc[:gap_idx, col_loc].astype(float) * factor
+        return df
 
     def _build_chart_grid_points(
         self,
