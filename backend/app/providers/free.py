@@ -374,13 +374,34 @@ class FreeMarketDataProvider:
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
             return cached[2]
 
-        cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
-        if cached_rows:
-            snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
-            self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
-            return snapshots
+        # Single-flight + cancellation-safe: one background task loads and materialises
+        # the snapshot cache; all callers await it via asyncio.shield so that a
+        # client-disconnect cancel does NOT kill the underlying load task.  Without
+        # this protection every cancelled request leaves a zombie thread running and
+        # the next request spawns another, causing GIL-contention death spirals on
+        # slow hosts (e.g. HF free tier) where a single load takes > request timeout.
+        existing = self._snapshot_request_tasks.get(cache_key)
+        if existing is not None and not existing.done():
+            return await asyncio.shield(existing)
 
-        return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore)
+        async def _load_and_cache() -> list[StockSnapshot]:
+            rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
+            if rows:
+                snaps = await asyncio.to_thread(self._materialize_snapshot_rows, rows)
+                self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snaps)
+                return snaps
+            # Disk cache empty / invalid → full rebuild (yfinance etc.)
+            return await self._load_snapshots_with_fallback(market_cap_min_crore, False)
+
+        task: asyncio.Task[list[StockSnapshot]] = asyncio.create_task(_load_and_cache())
+        self._snapshot_request_tasks[cache_key] = task
+
+        def _clear(t: asyncio.Task[list[StockSnapshot]]) -> None:
+            if self._snapshot_request_tasks.get(cache_key) is t:
+                self._snapshot_request_tasks.pop(cache_key, None)
+
+        task.add_done_callback(_clear)
+        return await asyncio.shield(task)
 
     async def get_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
         if not symbols:
@@ -468,7 +489,9 @@ class FreeMarketDataProvider:
         return [row for row in rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
 
     def _materialize_snapshot_rows(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
-        return [StockSnapshot.model_validate(self._with_snapshot_fallbacks(row)) for row in rows]
+        # model_construct skips Pydantic validation (~3x faster); data is already
+        # validated / normalised by _load_valid_cached_snapshot_rows / _build_snapshot_cache.
+        return [StockSnapshot.model_construct(**self._with_snapshot_fallbacks(row)) for row in rows]
 
     async def _load_snapshots_with_fallback(
         self,
