@@ -7266,6 +7266,19 @@ button {
   flex-shrink: 0;
 }
 
+.warmup-retry-btn {
+  background: none;
+  border: 1px solid currentColor;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 8px;
+}
+.warmup-retry-btn:hover { opacity: 0.8; }
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }

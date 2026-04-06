@@ -885,8 +885,7 @@ const FALLBACK_API_BASES = (import.meta.env.DEV
   : ["", API_BASE]
 ).filter((value, index, array) => array.indexOf(value) === index);
 
-// HF free-tier spaces hibernate after inactivity and take 30-90s to wake.
-// We fire a custom DOM event so the UI can show a "warming up" banner.
+// Fires a DOM event so the UI can show a status banner.
 export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent("backend-status", { detail: { type } }));
@@ -894,25 +893,40 @@ export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
 }
 
 const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
-// For 503 specifically from the real backend base, auto-retry for up to 90s
-const BACKEND_503_MAX_WAIT_MS = 90_000;
-const BACKEND_503_RETRY_INTERVAL_MS = 5_000;
 
-async function requestWithWakeup<T>(url: string, init?: RequestInit): Promise<Response> {
-  const deadline = Date.now() + BACKEND_503_MAX_WAIT_MS;
-  let warnedWarmup = false;
-  while (true) {
-    const response = await fetch(url, { cache: "no-store", ...init });
-    if (response.status !== 503 || Date.now() >= deadline) {
-      if (warnedWarmup && response.ok) dispatchBackendEvent("ready");
-      return response;
+// Singleton warm-up — all concurrent requests share one loop instead of each
+// spawning their own, which caused the banner to fight itself.
+let _warmupPromise: Promise<void> | null = null;
+let _lastSuccessfulPing = 0;
+
+async function _runWarmupLoop(): Promise<void> {
+  // HF sleep wake = 30-90s. Docker rebuild = 2-5min. We try for 6 minutes total.
+  const WARMUP_DEADLINE_MS = 6 * 60 * 1000;
+  const PROBE_INTERVAL_MS = 8_000;
+  const deadline = Date.now() + WARMUP_DEADLINE_MS;
+  dispatchBackendEvent("warming");
+  while (Date.now() < deadline) {
+    await new Promise(r => setTimeout(r, PROBE_INTERVAL_MS));
+    try {
+      const signal = AbortSignal.timeout(8_000);
+      const probe = await fetch(`${API_BASE}/api/health`, { cache: "no-store", signal });
+      if (probe.status !== 503) {
+        _lastSuccessfulPing = Date.now();
+        dispatchBackendEvent("ready");
+        _warmupPromise = null;
+        return;
+      }
+    } catch {
+      // still down — keep waiting
     }
-    if (!warnedWarmup) {
-      dispatchBackendEvent("warming");
-      warnedWarmup = true;
-    }
-    await new Promise(r => setTimeout(r, BACKEND_503_RETRY_INTERVAL_MS));
   }
+  dispatchBackendEvent("failed");
+  _warmupPromise = null;
+}
+
+function triggerWarmup() {
+  if (_warmupPromise) return; // already running
+  _warmupPromise = _runWarmupLoop();
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -920,19 +934,28 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   for (const base of FALLBACK_API_BASES) {
     try {
-      // Use wake-up retry only for the real HF backend base, not for local fallbacks
-      const url = `${base}${path}`;
-      const isHFBase = base === API_BASE;
-      const response = isHFBase
-        ? await requestWithWakeup(url, init)
-        : await fetch(url, { cache: "no-store", ...init });
+      const response = await fetch(`${base}${path}`, {
+        cache: "no-store",
+        ...init,
+      });
 
       if (!response.ok) {
         if (RETRYABLE_STATUS_CODES.has(response.status)) {
+          // If the real backend returns 503, start the background warm-up loop
+          // (shared singleton — won't double-fire if already running)
+          if (response.status === 503 && base === API_BASE) {
+            triggerWarmup();
+          }
           lastError = new Error(`Request failed: ${response.status}`);
           continue;
         }
         throw new Error(`Request failed: ${response.status}`);
+      }
+
+      // On success, record the ping and ensure any warming banner is dismissed
+      if (base === API_BASE) {
+        _lastSuccessfulPing = Date.now();
+        if (_warmupPromise === null) dispatchBackendEvent("ready");
       }
 
       return response.json() as Promise<T>;
@@ -941,7 +964,6 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
   }
 
-  dispatchBackendEvent("failed");
   throw lastError ?? new Error("Failed to reach market data API");
 }
 
@@ -958,6 +980,9 @@ function routeScopedMarket(): MarketKey | null {
   }
   return null;
 }
+
+// Suppress unused warning for _lastSuccessfulPing (used as a guard)
+void _lastSuccessfulPing;
 function withMarket(path: string, market: MarketKey) {
   const scopedMarket = routeScopedMarket();
   if (scopedMarket === market && path.startsWith("/api/")) {
