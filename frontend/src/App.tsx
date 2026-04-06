@@ -840,8 +840,8 @@ function macroIndexFallbackSymbol(cardName: string, market: MarketKey): string |
   if (normalizedName === "NIFTY 50") {
     return "^NSEI";
   }
-  if (normalizedName === "NIFTY SMALLCAP 250") {
-    return "^CNXSC";
+  if (normalizedName === "BANK NIFTY" || normalizedName === "NIFTY BANK") {
+    return "^NSEBANK";
   }
   if (normalizedName === "NIFTY MIDCAP 50") {
     return "^NSEMDCP50";

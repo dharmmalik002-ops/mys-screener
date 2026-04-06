@@ -49,6 +49,9 @@ class USFreeMarketDataProvider(FreeMarketDataProvider):
     def _benchmark_symbol(self) -> str:
         return "^GSPC"
 
+    def _market_locale(self) -> str:
+        return "US"
+
     async def get_index_quotes(self, symbols: list[str]):
         normalized_symbols = [symbol.strip() for symbol in symbols if symbol.strip()]
         if not normalized_symbols:
@@ -709,6 +712,63 @@ class USFreeMarketDataProvider(FreeMarketDataProvider):
             "fiftyTwoWeekHigh": last_price,
             "fiftyTwoWeekLow": last_price,
         }
+
+    def get_market_overview(self) -> list[dict[str, Any]]:
+        """Fetch US market indices for the macro strip: crude oil + S&P 500, Nasdaq, Dow."""
+        results: list[dict[str, Any]] = []
+        snapshot_only_mode = not self._is_us_market_open()
+
+        def history_close_summary(symbol: str) -> tuple[float | None, float | None]:
+            try:
+                bars = self._fetch_chart_bars(symbol, "1D", 5)
+            except Exception:
+                return None, None
+            if len(bars) < 2:
+                return None, None
+            latest_price = float(bars[-1].close or 0)
+            previous_close = float(bars[-2].close or 0)
+            if latest_price <= 0 or previous_close <= 0:
+                return None, None
+            return round(latest_price, 2), round(((latest_price / previous_close) - 1) * 100, 2)
+
+        us_targets = [
+            ("CL=F", "Crude Oil WTI", "USD"),
+            ("^GSPC", "S&P 500", "USD"),
+            ("^IXIC", "Nasdaq", "USD"),
+            ("^DJI", "Dow Jones", "USD"),
+        ]
+
+        for symbol, label, currency in us_targets:
+            if snapshot_only_mode:
+                price, change_pct = history_close_summary(symbol)
+                results.append({"symbol": symbol, "label": label, "price": price, "change_pct": change_pct, "trailing_pe": None, "currency": currency})
+                continue
+            try:
+                tkr = yf.Ticker(symbol)
+                info = tkr.fast_info
+                price = float(info.last_price) if info.last_price else None
+                prev_close = float(info.previous_close) if info.previous_close else None
+                change_pct = round(((price / prev_close) - 1) * 100, 2) if price and prev_close else None
+                results.append({
+                    "symbol": symbol,
+                    "label": label,
+                    "price": round(price, 2) if price else None,
+                    "change_pct": change_pct,
+                    "trailing_pe": None,
+                    "currency": currency,
+                })
+            except Exception:
+                price, change_pct = history_close_summary(symbol)
+                results.append({"symbol": symbol, "label": label, "price": price, "change_pct": change_pct, "trailing_pe": None, "currency": currency})
+
+        return results
+
+    def _is_us_market_open(self) -> bool:
+        now = datetime.now(timezone.utc).astimezone(US_ET)
+        if now.weekday() >= 5:
+            return False
+        total_minutes = (now.hour * 60) + now.minute
+        return US_MARKET_OPEN_MINUTES <= total_minutes <= US_MARKET_CLOSE_MINUTES
 
     def _load_or_refresh_snapshots(self, market_cap_min_crore: float, force_refresh: bool) -> list[dict[str, Any]]:
         rows = super()._load_or_refresh_snapshots(market_cap_min_crore, force_refresh)

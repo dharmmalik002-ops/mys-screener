@@ -8,11 +8,13 @@ import os
 import re
 import subprocess
 import time
+import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
+from email.utils import parsedate_to_datetime
 from html import unescape
 from pathlib import Path
 from typing import Any
-from urllib.parse import urljoin, urlparse
+from urllib.parse import quote_plus, urljoin, urlparse
 
 import httpx
 import holidays
@@ -61,7 +63,7 @@ SCREENER_URL = "https://www.screener.in/company"
 SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
-FUNDAMENTALS_CACHE_VERSION = 10
+FUNDAMENTALS_CACHE_VERSION = 11
 SNAPSHOT_CACHE_VERSION = 14
 CHART_CACHE_VERSION = 6
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -78,7 +80,7 @@ UNIVERSE_CACHE_VERSION = 3
 UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS = 2
 SNAPSHOT_HISTORY_PERIOD = "3y"
 RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache"}
-MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^CNXSC", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
+MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^NSEBANK", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
 RS_LOOKBACKS: tuple[tuple[int, float], ...] = ((63, 0.4), (126, 0.2), (189, 0.2), (252, 0.2))
 RETURN_1W_BARS = 5
 RETURN_1M_BARS = 21
@@ -1690,6 +1692,22 @@ class FreeMarketDataProvider:
             recent_updates,
             yahoo_payload.get("company_website"),
         )
+
+        # Supplement with Google News RSS headlines
+        company_display_name = (
+            (snapshot.name if snapshot else None)
+            or screener_payload.get("name")
+            or yahoo_payload.get("name")
+            or symbol
+        )
+        google_news = self._fetch_google_news_rss(company_display_name)
+        if google_news:
+            existing_titles = {item.title.lower() for item in detailed_news}
+            for gnews_item in google_news:
+                if gnews_item.title.lower() not in existing_titles:
+                    detailed_news.append(gnews_item)
+                    existing_titles.add(gnews_item.title.lower())
+
         growth_drivers = self._build_growth_drivers(
             growth=growth,
             shareholding_delta=shareholding_delta,
@@ -2226,7 +2244,9 @@ class FreeMarketDataProvider:
                     kind=self._classify_update_kind(title),
                 )
             )
-        return updates[:10]
+        # Sort newest-first before truncating so old archived items don't crowd out recent ones
+        updates.sort(key=lambda item: item.published_at or "", reverse=True)
+        return updates[:15]
 
     def _derive_link_update_title(self, title: str, context_text: str) -> str:
         cleaned_title = self._clean_text(title)
@@ -3961,6 +3981,63 @@ class FreeMarketDataProvider:
         except (TypeError, ValueError):
             return None
 
+    def _market_locale(self) -> str:
+        """Return 'IN' for India provider, overridden by US provider to return 'US'."""
+        return "IN"
+
+    def _fetch_google_news_rss(self, company_name: str) -> list[DetailedNews]:
+        """Fetch recent news headlines from Google News RSS for a company."""
+        locale = self._market_locale()
+        try:
+            query = quote_plus(f'"{company_name}"')
+            if locale == "US":
+                url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
+            else:
+                url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
+
+            with httpx.Client(timeout=10, headers={"User-Agent": USER_AGENT}, follow_redirects=True) as client:
+                resp = client.get(url)
+                resp.raise_for_status()
+
+            root = ET.fromstring(resp.content)
+            news_items: list[DetailedNews] = []
+            for item_el in root.findall(".//item")[:8]:
+                title_el = item_el.find("title")
+                link_el = item_el.find("link")
+                pub_date_el = item_el.find("pubDate")
+                source_el = item_el.find("source")
+
+                title = self._clean_text(title_el.text or "") if title_el is not None else ""
+                if not title or len(title) < 10:
+                    continue
+                link = (link_el.text or "").strip() if link_el is not None else None
+                source = self._clean_text(source_el.text or "Google News") if source_el is not None else "Google News"
+
+                pub_date_str: str | None = None
+                if pub_date_el is not None and pub_date_el.text:
+                    try:
+                        pub_date_str = parsedate_to_datetime(pub_date_el.text.strip()).date().isoformat()
+                    except Exception:
+                        pass
+
+                news_items.append(DetailedNews(
+                    title=title,
+                    summary=title,
+                    impact_category="market",
+                    sentiment="neutral",
+                    source=source,
+                    domain=source.lower().replace(" ", ""),
+                    source_type="Editorial News",
+                    classification="editorial_news",
+                    is_editorial=True,
+                    url=link,
+                    published_date=pub_date_str,
+                    relevance_score=0.70,
+                ))
+            return news_items
+        except Exception:
+            return []
+
     def get_market_overview(self) -> list[dict[str, Any]]:
         """Fetch crude oil price + NSE index levels with P/E for the market macro strip."""
         results: list[dict[str, Any]] = []
@@ -4012,7 +4089,7 @@ class FreeMarketDataProvider:
         # ── NSE Indices (price + P/E via allIndices) ───────────────────────────
         nse_targets = [
             ("^NSEI", "Nifty 50", "NIFTY 50"),
-            ("^CNXSC", "Nifty SmallCap 250", "NIFTY SMALLCAP 250"),
+            ("^NSEBANK", "Bank Nifty", "NIFTY BANK"),
             ("^NSEMDCP50", "Nifty Midcap 50", "NIFTY MIDCAP 50"),
         ]
         nse_rows: dict[str, dict[str, Any]] = {}
@@ -4064,7 +4141,7 @@ class FreeMarketDataProvider:
     # symbol → NSE index name used in the PE-history API
     _PE_HISTORY_INDEX_MAP = {
         "^NSEI": "NIFTY 50",
-        "^CNXSC": "NIFTY SMALLCAP 250",
+        "^NSEBANK": "NIFTY BANK",
         "^NSEMDCP50": "NIFTY MIDCAP 50",
     }
 

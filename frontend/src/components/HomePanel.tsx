@@ -820,7 +820,7 @@ export function HomePanel({ activeMarket, dashboard, sectors, groups, onPickSymb
       const bars = sparklineToBars(card.sparkline ?? []);
       const nameUpper = card.sector.toUpperCase();
       if (nameUpper.includes("NIFTY 50")) map["^NSEI"] = bars;
-      if (nameUpper.includes("SMALLCAP 250")) map["^CNXSC"] = bars;
+      if (nameUpper.includes("BANK NIFTY") || nameUpper.includes("NIFTY BANK")) map["^NSEBANK"] = bars;
       if (nameUpper.includes("MIDCAP 50")) map["^NSEMDCP50"] = bars;
     }
     return map;
