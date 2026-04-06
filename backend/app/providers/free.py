@@ -1492,11 +1492,11 @@ class FreeMarketDataProvider:
         if timeframe == "1h":
             return age_seconds < 15 * 60
         if timeframe == "1D":
-            # 5 mins if open, but only 2 hours if closed (ensures we get the 'official' close data quickly)
-            return age_seconds < (5 * 60 if self._is_market_open_ist() else 2 * 60 * 60)
+            # 15 mins if open, but only 4 hours if closed (ensures we get the 'official' close data quickly)
+            return age_seconds < (15 * 60 if self._is_market_open_ist() else 4 * 60 * 60)
         if timeframe == "1W":
-            return age_seconds < (10 * 60 if self._is_market_open_ist() else 2 * 60 * 60)
-        return age_seconds < 2 * 60 * 60
+            return age_seconds < (30 * 60 if self._is_market_open_ist() else 12 * 60 * 60)
+        return age_seconds < 4 * 60 * 60
 
     def _refresh_cached_daily_chart_from_quote(self, symbol: str, bars: int) -> list[ChartBar]:
         cached_daily = self._read_chart_cache(symbol, "1D", max(bars, 520))
@@ -4890,16 +4890,8 @@ class FreeMarketDataProvider:
         if history.empty:
             return pd.Series(dtype=float)
 
-        adjusted_close = history.get("Adj Close")
-        close = history.get("Close")
-        if adjusted_close is not None and close is not None:
-            close_series = pd.to_numeric(close, errors="coerce").replace(0, pd.NA)
-            adjusted_close_series = pd.to_numeric(adjusted_close, errors="coerce")
-            factors = (adjusted_close_series / close_series).replace([pd.NA, pd.NaT], pd.NA)
-            factors = factors.replace([float("inf"), float("-inf")], pd.NA)
-            if factors.notna().any():
-                return factors.ffill().bfill().fillna(1.0).astype(float)
-
+        # FOR "TRUE" CANDLES: We only adjust for STOCK SPLITS, not Dividends.
+        # Yahoo's "Adj Close" includes both, which distorts technical chart patterns.
         return self._split_adjustment_factors(history).fillna(1.0)
 
     def _split_adjusted_history(self, history: pd.DataFrame) -> pd.DataFrame:
@@ -6124,13 +6116,28 @@ class FreeMarketDataProvider:
         return adaptive_lookbacks
 
     def _weighted_rs_score(self, series: pd.Series, offset: int) -> float:
+        """
+        Relative Strength Rating calculation based on MarketSmith IBD methodology:
+        (0.4 x 3m Performance) + (0.2 x 6m Performance) + (0.2 x 9m Performance) + (0.2 x 12m Performance)
+        """
         lookbacks = self._adaptive_rs_lookbacks(series, offset)
         if not lookbacks:
             return 0.0
 
         score = 0.0
+        total_weight = 0.0
         for lookback, weight in lookbacks:
-            score += self._return_pct_as_of(series, lookback, offset, allow_partial=False) * weight
+            try:
+                ret = self._return_pct_as_of(series, lookback, offset, allow_partial=True)
+                score += ret * weight
+                total_weight += weight
+            except Exception:
+                continue
+                
+        # Normalize score if we have partial history (less than 1 year)
+        if total_weight > 0 and total_weight < 1.0:
+            score = score / total_weight
+            
         return score
 
     def _weighted_rs_score_from_price(self, row: dict[str, Any], current_price: float) -> float:
