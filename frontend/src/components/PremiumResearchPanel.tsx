@@ -465,73 +465,26 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
       case 'results': return renderResults();
       case 'news': return renderNews();
       case 'guidance': return renderGuidance();
-      case 'fundamentals':
+      case 'fundamentals': {
+        const latestCF = fundamentals.cash_flow?.[0];
+        const latestBS = fundamentals.balance_sheet?.[0];
+        const latestSH = fundamentals.shareholding_pattern?.[0];
         return (
           <div className="fade-in">
             {/* Valuation Snapshot */}
-            <section className="research-card">
-              <h3>Valuation Snapshot</h3>
-              <div className="kpi-row-compact">
-                {[
-                  { label: 'P/E', value: fundamentals.valuation?.pe_ratio?.toFixed(1) },
-                  { label: 'P/B', value: fundamentals.valuation?.pb_ratio?.toFixed(2) },
-                  { label: 'EV/EBITDA', value: fundamentals.valuation?.ev_ebitda?.toFixed(1) },
-                  { label: 'Mkt Cap', value: fundamentals.valuation?.market_cap ? formatCurrency(fundamentals.valuation.market_cap) : null },
-                  { label: 'Div Yield', value: fundamentals.valuation?.dividend_yield_pct != null ? `${fundamentals.valuation.dividend_yield_pct.toFixed(2)}%` : null },
-                  { label: 'EV/Revenue', value: fundamentals.valuation?.ev_revenue?.toFixed(2) },
-                ].map(({ label, value }) => value ? (
-                  <div key={label} className="kpi-compact-block">
-                    <span className="kpi-compact-label">{label}</span>
-                    <span className="kpi-compact-value">{value}</span>
-                  </div>
-                ) : null)}
-              </div>
-            </section>
-
-            {/* Key Ratios History */}
-            <section className="research-card">
-              <h3>Key Ratios History</h3>
-              <div className="fundamentals-table-wrap">
-                <table className="fundamentals-table">
-                  <thead>
-                    <tr>
-                      <th>Period</th>
-                      <th>ROE %</th>
-                      <th>ROCE %</th>
-                      <th>D/E Ratio</th>
-                      <th>Current Ratio</th>
-                      <th>Int. Coverage</th>
-                      <th>Asset Turnover</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {fundamentals.financial_ratios.map(r => (
-                      <tr key={r.period}>
-                        <td style={{ fontWeight: 600 }}>{r.period}</td>
-                        <td className={r.roe_pct && r.roe_pct >= 15 ? 'text-uptrend' : ''}>{formatPercent(r.roe_pct)}</td>
-                        <td className={r.roce_pct && r.roce_pct >= 15 ? 'text-uptrend' : ''}>{formatPercent(r.roce_pct)}</td>
-                        <td className={r.debt_to_equity_ratio && r.debt_to_equity_ratio > 1 ? 'text-downtrend' : ''}>{r.debt_to_equity_ratio?.toFixed(2) ?? '—'}</td>
-                        <td>{r.current_ratio?.toFixed(2) ?? '—'}</td>
-                        <td>{r.interest_coverage_ratio?.toFixed(1) ?? '—'}</td>
-                        <td>{r.asset_turnover_ratio?.toFixed(2) ?? '—'}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-
-            {/* Cash Flow Summary */}
-            {fundamentals.cash_flow_summary && (
+            {fundamentals.valuation && (
               <section className="research-card">
-                <h3>Cash Flow Summary</h3>
+                <h3>Valuation Snapshot</h3>
                 <div className="kpi-row-compact">
                   {[
-                    { label: 'Operating CFO', value: fundamentals.cash_flow_summary.operating_cfo ? formatCurrency(fundamentals.cash_flow_summary.operating_cfo) : null },
-                    { label: 'Capex', value: fundamentals.cash_flow_summary.capex ? formatCurrency(fundamentals.cash_flow_summary.capex) : null },
-                    { label: 'Free Cash Flow', value: fundamentals.cash_flow_summary.free_cash_flow ? formatCurrency(fundamentals.cash_flow_summary.free_cash_flow) : null },
-                    { label: 'FCF Yield', value: fundamentals.cash_flow_summary.fcf_yield_pct != null ? `${fundamentals.cash_flow_summary.fcf_yield_pct.toFixed(2)}%` : null },
-                    { label: 'Cash Conversion', value: fundamentals.cash_flow_summary.cash_conversion_cycle ? `${fundamentals.cash_flow_summary.cash_conversion_cycle.toFixed(0)}d` : null },
+                    { label: 'P/E', value: fundamentals.valuation.pe_ratio?.toFixed(1) },
+                    { label: 'PEG', value: fundamentals.valuation.peg_ratio?.toFixed(2) },
+                    { label: 'Mkt Cap', value: fundamentals.valuation.market_cap_crore ? formatCurrency(fundamentals.valuation.market_cap_crore) : null },
+                    { label: 'ROE %', value: fundamentals.valuation.roe_pct != null ? `${fundamentals.valuation.roe_pct.toFixed(1)}%` : null },
+                    { label: 'ROCE %', value: fundamentals.valuation.roce_pct != null ? `${fundamentals.valuation.roce_pct.toFixed(1)}%` : null },
+                    { label: 'Div Yield', value: fundamentals.valuation.dividend_yield_pct != null ? `${fundamentals.valuation.dividend_yield_pct.toFixed(2)}%` : null },
+                    { label: 'OPM %', value: fundamentals.valuation.operating_margin_pct != null ? `${fundamentals.valuation.operating_margin_pct.toFixed(1)}%` : null },
+                    { label: 'Net Margin', value: fundamentals.valuation.net_margin_pct != null ? `${fundamentals.valuation.net_margin_pct.toFixed(1)}%` : null },
                   ].map(({ label, value }) => value ? (
                     <div key={label} className="kpi-compact-block">
                       <span className="kpi-compact-label">{label}</span>
@@ -542,46 +495,97 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
               </section>
             )}
 
-            {/* Shareholding */}
-            {fundamentals.shareholding_pattern && (
+            {/* Key Ratios History */}
+            {fundamentals.financial_ratios.length > 0 && (
               <section className="research-card">
-                <h3>Shareholding Pattern</h3>
+                <h3>Key Ratios History</h3>
+                <div className="fundamentals-table-wrap">
+                  <table className="fundamentals-table">
+                    <thead>
+                      <tr>
+                        <th>Period</th>
+                        <th>ROE %</th>
+                        <th>ROCE %</th>
+                        <th>D/E Ratio</th>
+                        <th>Current Ratio</th>
+                        <th>Int. Coverage</th>
+                        <th>Asset Turnover</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fundamentals.financial_ratios.map(r => (
+                        <tr key={r.period}>
+                          <td style={{ fontWeight: 600 }}>{r.period}</td>
+                          <td className={r.roe_pct && r.roe_pct >= 15 ? 'text-uptrend' : ''}>{formatPercent(r.roe_pct)}</td>
+                          <td className={r.roce_pct && r.roce_pct >= 15 ? 'text-uptrend' : ''}>{formatPercent(r.roce_pct)}</td>
+                          <td className={r.debt_to_equity_ratio && r.debt_to_equity_ratio > 1 ? 'text-downtrend' : ''}>{r.debt_to_equity_ratio?.toFixed(2) ?? '—'}</td>
+                          <td>{r.current_ratio?.toFixed(2) ?? '—'}</td>
+                          <td>{r.interest_coverage?.toFixed(1) ?? '—'}</td>
+                          <td>{r.asset_turnover?.toFixed(2) ?? '—'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+            )}
+
+            {/* Cash Flow (most recent year) */}
+            {latestCF && (
+              <section className="research-card">
+                <h3>Cash Flow — {latestCF.period}</h3>
+                <div className="kpi-row-compact">
+                  {[
+                    { label: 'Operating CFO', value: latestCF.operating_cash_flow_crore != null ? formatCurrency(latestCF.operating_cash_flow_crore) : null },
+                    { label: 'Capex', value: latestCF.capital_expenditure_crore != null ? formatCurrency(latestCF.capital_expenditure_crore) : null },
+                    { label: 'Free Cash Flow', value: latestCF.free_cash_flow_crore != null ? formatCurrency(latestCF.free_cash_flow_crore) : null },
+                    { label: 'Investing', value: latestCF.investing_cash_flow_crore != null ? formatCurrency(latestCF.investing_cash_flow_crore) : null },
+                    { label: 'Financing', value: latestCF.financing_cash_flow_crore != null ? formatCurrency(latestCF.financing_cash_flow_crore) : null },
+                  ].map(({ label, value }) => value ? (
+                    <div key={label} className="kpi-compact-block">
+                      <span className="kpi-compact-label">{label}</span>
+                      <span className="kpi-compact-value">{value}</span>
+                    </div>
+                  ) : null)}
+                </div>
+              </section>
+            )}
+
+            {/* Shareholding Pattern */}
+            {latestSH && (
+              <section className="research-card">
+                <h3>Shareholding Pattern — {latestSH.period}</h3>
                 <div className="shareholding-grid">
                   {[
-                    { label: 'Promoter', pct: fundamentals.shareholding_pattern.promoter_pct },
-                    { label: 'FII / FPI', pct: fundamentals.shareholding_pattern.fii_pct },
-                    { label: 'DII / Mutual Fund', pct: fundamentals.shareholding_pattern.dii_pct },
-                    { label: 'Public', pct: fundamentals.shareholding_pattern.public_pct },
+                    { label: 'Promoter', pct: latestSH.promoter_pct },
+                    { label: 'FII / FPI', pct: latestSH.fii_pct },
+                    { label: 'DII / Mutual Fund', pct: latestSH.dii_pct },
+                    { label: 'Public', pct: latestSH.public_pct },
                   ].map(({ label, pct }) => pct != null ? (
                     <div key={label} className="shareholding-row">
                       <span className="sh-label">{label}</span>
                       <div className="sh-bar-wrap">
-                        <div className="sh-bar" style={{ width: `${pct}%` }} />
+                        <div className="sh-bar" style={{ width: `${Math.min(pct, 100)}%` }} />
                       </div>
                       <span className="sh-pct">{pct.toFixed(1)}%</span>
                     </div>
                   ) : null)}
                 </div>
-                {fundamentals.shareholding_pattern.promoter_pledge_pct != null && (
-                  <div className={`pledge-warning ${fundamentals.shareholding_pattern.promoter_pledge_pct > 10 ? 'pledge-high' : ''}`}>
-                    Promoter Pledge: {fundamentals.shareholding_pattern.promoter_pledge_pct.toFixed(1)}%
-                    {fundamentals.shareholding_pattern.promoter_pledge_pct > 10 ? ' ⚠️ Elevated pledge' : ''}
-                  </div>
-                )}
               </section>
             )}
 
-            {/* Balance Sheet Snapshot */}
-            {fundamentals.balance_sheet_summary && (
+            {/* Balance Sheet (most recent year) */}
+            {latestBS && (
               <section className="research-card">
-                <h3>Balance Sheet Snapshot</h3>
+                <h3>Balance Sheet — {latestBS.period}</h3>
                 <div className="kpi-row-compact">
                   {[
-                    { label: 'Total Assets', value: formatCurrency(fundamentals.balance_sheet_summary.total_assets) },
-                    { label: 'Total Debt', value: formatCurrency(fundamentals.balance_sheet_summary.total_debt) },
-                    { label: 'Net Worth', value: formatCurrency(fundamentals.balance_sheet_summary.net_worth) },
-                    { label: 'Cash & Equiv.', value: formatCurrency(fundamentals.balance_sheet_summary.cash_equivalents) },
-                    { label: 'Book Value/Share', value: fundamentals.balance_sheet_summary.book_value_per_share?.toFixed(2) },
+                    { label: 'Total Assets', value: latestBS.total_assets_crore != null ? formatCurrency(latestBS.total_assets_crore) : null },
+                    { label: 'Total Debt', value: latestBS.debt_crore != null ? formatCurrency(latestBS.debt_crore) : null },
+                    { label: "Equity", value: latestBS.shareholders_equity_crore != null ? formatCurrency(latestBS.shareholders_equity_crore) : null },
+                    { label: 'Cash & Equiv.', value: latestBS.cash_and_equivalents_crore != null ? formatCurrency(latestBS.cash_and_equivalents_crore) : null },
+                    { label: 'Inventory', value: latestBS.inventory_crore != null ? formatCurrency(latestBS.inventory_crore) : null },
+                    { label: 'Receivables', value: latestBS.receivables_crore != null ? formatCurrency(latestBS.receivables_crore) : null },
                   ].map(({ label, value }) => value ? (
                     <div key={label} className="kpi-compact-block">
                       <span className="kpi-compact-label">{label}</span>
@@ -593,6 +597,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
             )}
           </div>
         );
+      }
       case 'risks':
         return (
           <div className="fade-in">
