@@ -555,6 +555,19 @@ class RiskAnalysis(BaseModel):
     mitigation_strategy: str | None = None
 
 
+class GrowthTrigger(BaseModel):
+    """Forward-looking business development that could drive growth"""
+    title: str
+    category: str  # order book, expansion, new product, etc.
+    why_it_matters: str
+    evidence_source: str
+    source_date: str | None = None
+    confidence_score: float = 0.8
+    impact_area: Literal["revenue", "eps", "profit", "margin", "cash flow", "any"] = "any"
+    horizon: Literal["near-term", "medium-term", "multi-year"] = "medium-term"
+    is_new: bool = True
+
+
 class CompanyFundamentals(BaseModel):
     symbol: str
     name: str
@@ -620,19 +633,6 @@ class CompanyFundamentals(BaseModel):
     upcoming_events: list[dict[str, str]] = Field(default_factory=list)  # [{date, event, impact}]
     
     data_warnings: list[str] = Field(default_factory=list)
-
-
-class GrowthTrigger(BaseModel):
-    """Forward-looking business development that could drive growth"""
-    title: str
-    category: str  # order book, expansion, new product, etc.
-    why_it_matters: str
-    evidence_source: str
-    source_date: str | None = None
-    confidence_score: float = 0.8
-    impact_area: Literal["revenue", "eps", "profit", "margin", "cash flow", "any"] = "any"
-    horizon: Literal["near-term", "medium-term", "multi-year"] = "medium-term"
-    is_new: bool = True
 
 
 class ScanDescriptor(BaseModel):
