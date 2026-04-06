@@ -52,6 +52,7 @@ import {
   type SectorTabResponse,
   type ScanResultsResponse,
   type WatchlistsStateResponse,
+  dispatchBackendEvent,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
@@ -1292,6 +1293,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const initialScannerSettings = readScannerSettings(bootstrapMarket);
   const initialSavedScanners = readSavedScanners(bootstrapMarket);
   const initialSavedDrawings = readSavedDrawings(bootstrapMarket);
+  const [backendStatus, setBackendStatus] = useState<"ok" | "warming" | "failed">("ok");
+  const [warmupSecondsLeft, setWarmupSecondsLeft] = useState(0);
   const [activeMarket, setActiveMarket] = useState<MarketKey>(bootstrapMarket);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [universeCatalog, setUniverseCatalog] = useState<ScanMatch[]>([]);
@@ -3825,10 +3828,59 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   );
   const brandEyebrow = activeMarket === "india" ? "NSE / BSE Stock Scanner" : "NYSE / Nasdaq Stock Scanner";
   const floorMetricLabel = activeMarket === "india" ? "Floor" : "US Filter";
+
+  // Backend warm-up detection: listen to status events dispatched by api.ts
+  useEffect(() => {
+    let countdownTimer: ReturnType<typeof setInterval> | null = null;
+    const handle = (e: Event) => {
+      const type = (e as CustomEvent<{ type: string }>).detail.type;
+      if (type === "warming") {
+        setBackendStatus("warming");
+        setWarmupSecondsLeft(90);
+        countdownTimer = setInterval(() => {
+          setWarmupSecondsLeft(s => {
+            if (s <= 1) {
+              clearInterval(countdownTimer!);
+              return 0;
+            }
+            return s - 1;
+          });
+        }, 1000);
+      } else if (type === "ready") {
+        setBackendStatus("ok");
+        if (countdownTimer) clearInterval(countdownTimer);
+      } else if (type === "failed") {
+        setBackendStatus("failed");
+        if (countdownTimer) clearInterval(countdownTimer);
+      }
+    };
+    window.addEventListener("backend-status", handle);
+    return () => {
+      window.removeEventListener("backend-status", handle);
+      if (countdownTimer) clearInterval(countdownTimer);
+    };
+  }, []);
+
+  // Silence unused import warning
+  void dispatchBackendEvent;
   const floorMetricValue = activeMarket === "india" ? `${dashboard?.market_cap_min_crore ?? 800} Cr+` : ">$15 · 400K+ ADV";
 
   return (
     <div className="app-shell app-shell-simple">
+      {backendStatus === "warming" && (
+        <div className="backend-warmup-banner">
+          <span className="warmup-spinner" />
+          <span>
+            Backend is starting up — this takes up to 60 seconds on the free tier.
+            {warmupSecondsLeft > 0 ? ` Retrying (${warmupSecondsLeft}s)…` : " Connecting…"}
+          </span>
+        </div>
+      )}
+      {backendStatus === "failed" && (
+        <div className="backend-warmup-banner backend-warmup-banner--failed">
+          Backend unreachable. Please refresh the page in a minute.
+        </div>
+      )}
       <div className="ticker-ribbon">
         <div className="ticker-ribbon-track">
           {[...tickerTapeItems, ...tickerTapeItems].map((item, index) => (

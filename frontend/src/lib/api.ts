@@ -885,21 +885,34 @@ const FALLBACK_API_BASES = (import.meta.env.DEV
   : ["", API_BASE]
 ).filter((value, index, array) => array.indexOf(value) === index);
 
+// HF free-tier spaces hibernate after inactivity and take 30-90s to wake.
+// We fire a custom DOM event so the UI can show a "warming up" banner.
+export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("backend-status", { detail: { type } }));
+  }
+}
+
 const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
+// For 503 specifically from the real backend base, auto-retry for up to 90s
+const BACKEND_503_MAX_WAIT_MS = 90_000;
+const BACKEND_503_RETRY_INTERVAL_MS = 5_000;
 
-function routeScopedMarket(): MarketKey | null {
-  if (typeof window === "undefined") {
-    return null;
+async function requestWithWakeup<T>(url: string, init?: RequestInit): Promise<Response> {
+  const deadline = Date.now() + BACKEND_503_MAX_WAIT_MS;
+  let warnedWarmup = false;
+  while (true) {
+    const response = await fetch(url, { cache: "no-store", ...init });
+    if (response.status !== 503 || Date.now() >= deadline) {
+      if (warnedWarmup && response.ok) dispatchBackendEvent("ready");
+      return response;
+    }
+    if (!warnedWarmup) {
+      dispatchBackendEvent("warming");
+      warnedWarmup = true;
+    }
+    await new Promise(r => setTimeout(r, BACKEND_503_RETRY_INTERVAL_MS));
   }
-
-  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-  if (pathname === "/us" || pathname.startsWith("/us/")) {
-    return "us";
-  }
-  if (pathname === "/india" || pathname.startsWith("/india/")) {
-    return "india";
-  }
-  return null;
 }
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -907,10 +920,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
   for (const base of FALLBACK_API_BASES) {
     try {
-      const response = await fetch(`${base}${path}`, {
-        cache: "no-store",
-        ...init,
-      });
+      // Use wake-up retry only for the real HF backend base, not for local fallbacks
+      const url = `${base}${path}`;
+      const isHFBase = base === API_BASE;
+      const response = isHFBase
+        ? await requestWithWakeup(url, init)
+        : await fetch(url, { cache: "no-store", ...init });
 
       if (!response.ok) {
         if (RETRYABLE_STATUS_CODES.has(response.status)) {
@@ -926,9 +941,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
   }
 
+  dispatchBackendEvent("failed");
   throw lastError ?? new Error("Failed to reach market data API");
 }
 
+function routeScopedMarket(): MarketKey | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+  const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
+  if (pathname === "/us" || pathname.startsWith("/us/")) {
+    return "us";
+  }
+  if (pathname === "/india" || pathname.startsWith("/india/")) {
+    return "india";
+  }
+  return null;
+}
 function withMarket(path: string, market: MarketKey) {
   const scopedMarket = routeScopedMarket();
   if (scopedMarket === market && path.startsWith("/api/")) {

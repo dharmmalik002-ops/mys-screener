@@ -62,7 +62,7 @@ YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
 SNAPSHOT_CACHE_VERSION = 14
-CHART_CACHE_VERSION = 5
+CHART_CACHE_VERSION = 6
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -5630,6 +5630,12 @@ class FreeMarketDataProvider:
             raise RuntimeError(f"No chart history for {symbol}")
 
         history = history.tail(bars)
+        # Clip history to start after any major corporate restructuring event
+        # (demerger, spin-off) that causes a 40%+ one-day price change.
+        # Such events make pre-event historical prices appear 2-3x the current price.
+        # Genuine splits/bonuses are already handled by _split_adjusted_history.
+        if not symbol.startswith("^"):  # don't clip index histories
+            history = self._clip_history_at_corporate_action(history)
         chart_bars = self._history_to_chart_bars(history)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
@@ -5941,6 +5947,43 @@ class FreeMarketDataProvider:
         """Return True if bar_date is not a valid trading day for this market.
         Override in market-specific subclasses to use the correct holiday calendar."""
         return not self._is_trading_day_ist(bar_date)
+
+    @staticmethod
+    def _clip_history_at_corporate_action(history: pd.DataFrame, threshold: float = 0.40) -> pd.DataFrame:
+        """Return history starting from after the most recent large one-day price
+        change caused by a demerger, spin-off, or scheme of arrangement.
+
+        A legitimate split/bonus is already handled via _split_adjusted_history.
+        A demerger causes a REAL permanent price drop (>40%) that makes pre-event
+        history misleading (old prices appear 2-3x higher than current price).
+        We keep only the post-event series so the chart is internally consistent.
+        """
+        if len(history) < 2:
+            return history
+        closes = history["Close"].astype(float)
+        # Walk forward and find the MOST RECENT bar whose single-day change
+        # exceeds the threshold AND where the stock's splits column is 0/NaN
+        # (to avoid re-clipping already-adjusted splits).
+        split_col = history.get("Stock Splits")
+        cut_idx = None
+        for i in range(1, len(closes)):
+            prev = float(closes.iloc[i - 1])
+            curr = float(closes.iloc[i])
+            if prev <= 0:
+                continue
+            chg = abs(curr - prev) / prev
+            if chg < threshold:
+                continue
+            # Skip if Yahoo already tagged this as a split event
+            if split_col is not None:
+                split_val = float(split_col.iloc[i] or 0)
+                if split_val not in (0.0, 1.0):
+                    continue  # real split — already handled by _split_adjusted_history
+            # Real demerger / corporate restructuring: clip here
+            cut_idx = i
+        if cut_idx is not None:
+            return history.iloc[cut_idx:].copy()
+        return history
 
     def _history_to_chart_bars(self, history: pd.DataFrame) -> list[ChartBar]:
         bars: list[ChartBar] = []
