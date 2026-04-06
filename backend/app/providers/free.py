@@ -489,9 +489,7 @@ class FreeMarketDataProvider:
         return [row for row in rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
 
     def _materialize_snapshot_rows(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
-        # model_construct skips Pydantic validation (~3x faster); data is already
-        # validated / normalised by _load_valid_cached_snapshot_rows / _build_snapshot_cache.
-        return [StockSnapshot.model_construct(**self._with_snapshot_fallbacks(row)) for row in rows]
+        return [StockSnapshot.model_validate(self._with_snapshot_fallbacks(row)) for row in rows]
 
     async def _load_snapshots_with_fallback(
         self,
