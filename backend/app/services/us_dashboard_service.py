@@ -67,27 +67,17 @@ class USDashboardService(DashboardService):
 
     async def warm_startup_views(self) -> None:
         # For the US market (5800+ stocks) the base-class warm_startup_views
-        # awaits get_sector_tab() which runs a 40-60 s pandas computation.
-        # That blocks startup and causes every request to time out.
+        # awaits asyncio.gather(get_sector_tab x2, get_industry_groups, ...)
+        # which blocks for 40-90 s while running heavy pandas and scan_catalog
+        # computations.  Firing them as background tasks is no better: the
+        # concurrent GIL contention starves India's warmup threads, causing both
+        # markets' dashboards to timeout at 60 s.
         #
-        # Override: do only the fast synchronous work (load snapshots into the
-        # in-memory cache via build_dashboard), then fire ALL expensive views
-        # as background tasks.  The first real user request that hits any of
-        # these endpoints will either get the cached result (if the background
-        # task finished) or wait for the task to finish — which is fine because
-        # at that point the event loop is free to serve other requests normally.
+        # Solution: only warm the lightweight dashboard cache.  All other heavy
+        # views (sector tab, scan counts, industry groups, etc.) compute lazily
+        # on the first real user request via their existing asyncio.Task caches,
+        # without blocking startup or causing cross-market interference.
         await self.build_dashboard()
-        for coro, name in [
-            (self.get_sector_tab("1D", "desc"), "us-startup-sector-tab-1d"),
-            (self.get_sector_tab("1M", "desc"), "us-startup-sector-tab-1m"),
-            (self.get_industry_groups(), "us-startup-industry-groups"),
-            (self.get_market_health(), "us-startup-market-health"),
-            (self.get_sector_rotation(), "us-startup-sector-rotation"),
-            (self.get_money_flow_history(), "us-startup-money-flow"),
-            (self.get_money_flow_stock_ideas_history(), "us-startup-money-flow-ideas"),
-            (self.get_scan_counts(), "us-startup-scan-counts"),
-        ]:
-            asyncio.create_task(coro, name=name)
 
     @staticmethod
     def _normalize_us_symbol(value: str) -> str:
