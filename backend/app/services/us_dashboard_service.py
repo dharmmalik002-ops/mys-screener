@@ -67,7 +67,11 @@ class USDashboardService(DashboardService):
 
     async def warm_startup_views(self) -> None:
         await super().warm_startup_views()
-        await self.get_scan_counts()
+        # Kick off scan counts as a background task — do NOT await it.
+        # scan_catalog_with_counts on 5800 US stocks takes 90+ seconds.
+        # The US dashboard shows zero hit counts initially and loads the real
+        # counts via a separate /api/scan-counts follow-up call.
+        asyncio.create_task(self.get_scan_counts(), name="us-startup-scan-counts")
 
     @staticmethod
     def _normalize_us_symbol(value: str) -> str:

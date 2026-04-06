@@ -155,10 +155,12 @@ async def daily_money_flow_stock_job(market_name: str, market_service: Dashboard
 
 async def warm_startup_cache(market_name: str, service_obj) -> None:
     try:
-        refresh_strategy_method = getattr(service_obj.provider, "preferred_refresh_strategy", None)
-        refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
-        if refresh_strategy in {"historical", "background-historical"}:
-            await service_obj.refresh_market_data()
+        # Load in-memory caches from whatever data is on disk (even stale).
+        # This ensures the server can respond to all endpoints immediately.
+        # Never trigger a full historical data download at startup — for the US
+        # market that downloads 5800+ stocks and the background thread exhausts
+        # CPU/GIL, starving the asyncio event loop and hanging all requests.
+        # The scheduled daily jobs (4:00 PM IST / 4:15 PM ET) handle data refresh.
         warm_views = getattr(service_obj, "warm_startup_views", None)
         if callable(warm_views):
             await warm_views()
