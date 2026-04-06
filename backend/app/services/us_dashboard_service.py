@@ -286,7 +286,7 @@ class USDashboardService(DashboardService):
             normalized_sort_order,
         )
 
-    async def _build_sector_tab_response(
+    def _build_sector_tab_response_sync(
         self,
         snapshots: list[StockSnapshot],
         snapshot_updated_at: datetime,
@@ -387,14 +387,19 @@ class USDashboardService(DashboardService):
         ):
             return await current_task
 
-        task = asyncio.create_task(
-            self._build_sector_tab_response(
+        # Run _build_sector_tab_response in a thread — it uses heavy pandas
+        # operations (pd.concat on 5800 sparkline series) that would block
+        # the asyncio event loop for 60+ seconds if run directly.
+        async def build_in_thread() -> SectorTabResponse:
+            return await asyncio.to_thread(
+                self._build_sector_tab_response_sync,
                 snapshots,
                 snapshot_updated_at,
                 sort_by,
                 normalized_sort_order,
             )
-        )
+
+        task = asyncio.create_task(build_in_thread())
         self._sector_tab_tasks[cache_key] = task
         self._sector_tab_task_updated_at[cache_key] = snapshot_updated_at
 
