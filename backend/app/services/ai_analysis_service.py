@@ -29,7 +29,7 @@ from app.models.market import (
 logger = logging.getLogger(__name__)
 
 IST = timezone(timedelta(hours=5, minutes=30))
-AI_CACHE_VERSION = 4
+AI_CACHE_VERSION = 5
 
 
 def _equity_market_labels(fundamentals: CompanyFundamentals) -> tuple[str, str, str]:
@@ -253,25 +253,55 @@ Based on all the above data, provide a comprehensive analysis in this EXACT JSON
       "event": "event description",
       "impact": "expected impact"
     }}
+  ],
+  "future_growth_triggers": [
+    {{
+      "title": "Short title for this trigger (e.g. Order Book at Record ₹8,000 Cr)",
+      "category": "order book growth|capacity expansion|new product launch|pricing power|margin expansion|export recovery|market share gain|capex pipeline|acquisition synergy|operating leverage|regulation tailwind|debt reduction|recurring revenue growth|user growth|ai efficiency",
+      "why_it_matters": "1-2 sentence investor-relevant explanation of why this drives future earnings",
+      "evidence_source": "Source reference (e.g. Q3 FY26 Concall, Annual Report FY26, ET Article Mar 2026)",
+      "source_date": "YYYY-MM-DD or null",
+      "confidence_score": 0.8,
+      "impact_area": "revenue|eps|profit|margin|cash flow|any",
+      "horizon": "near-term|medium-term|multi-year",
+      "is_new": true
+    }}
+  ],
+  "growth_risks": [
+    {{
+      "risk_category": "execution delay|demand weakness|pricing pressure|margin pressure|capex delay|customer concentration|regulatory headwind|debt burden|management vagueness|raw material inflation|order conversion delay|competition",
+      "description": "Specific risk description with context",
+      "severity": "high|medium|low",
+      "mitigation_strategy": "Management mitigation or null if unaddressed"
+    }}
   ]
 }}
-}}RULES:
+RULES:
 - Use ONLY data provided above. Do not hallucinate numbers not present in the input.
-- For detailed_news: 
-  - Strictly classify source_type as "Editorial News" ONLY for credible multi-journalist outlets (Reuters, Bloomberg, LiveMint, Economic Times, Moneycontrol, etc.). 
-  - Use "Company Release" for PR wire services (PR Newswire, Business Wire, etc.). 
-  - is_editorial must be true ONLY for Editorial News.
-- For management_guidance: 
+- CURRENT DATE CONTEXT: It is April 2026. FY2026 is the current fiscal year ending March 2026.
+- For management_guidance:
   - guidance_type should be "Explicit" if numbers/ranges are given, otherwise "Qualitative".
   - confidence_score should reflect management's tone and track record if discernible.
-- For results_summary: summarize the latest quarter's performance vs market expectations.
-- For guidance_tracker: if multiple dates of guidance are provided, show how it changed.
-- For detailed_news: include only recent, credible, company-specific items that are likely to impact revenue, profit, margin, sales, demand, capacity, pricing, or valuation.
-- Ignore routine compliance items such as generic Regulation 30 / SEBI (LODR) filings, transcripts, audio links, newspaper publications, and similar boilerplate unless the filing clearly contains financially material information. If such a filing is material, summarize only the financially relevant part.
+  - CRITICAL GUIDANCE VALIDITY: Any guidance referencing FY2025 (FY25) or earlier is STALE as of April 2026 because FY2025 ended in March 2025 and full-year results have already been reported. Such items must be set is_stale=true and validity_banner="Stale". Only FY2026 (FY26) and FY2027 (FY27) forward guidance is active. If no active guidance exists, do not fabricate it.
+- For results_summary: summarize the latest quarter's performance vs market expectations. Include margins_analysis as a 1-2 sentence margin trend summary.
+- For detailed_news:
+  - Strictly classify source_type as "Editorial News" ONLY for credible independent multi-journalist outlets (Reuters, Bloomberg, LiveMint, Economic Times, Moneycontrol, CNBC, etc.).
+  - Use "Company Release" for PR wire services (PR Newswire, Business Wire, GlobeNewswire, Newsvoir, etc.).
+  - Use "Exchange Filing" for anything from NSE/BSE/SEC portals.
+  - is_editorial must be true ONLY for Editorial News — never for Company Release or Exchange Filing.
+  - Do not include routine boilerplate filings (Regulation 30 SEBI LODR, audio/transcript links, newspaper publications) unless they contain material financial data.
+- For future_growth_triggers:
+  - Extract 5-10 specific, evidence-backed forward-looking business triggers from concall/results/news.
+  - Every trigger must have a clear evidence_source from the provided data.
+  - Categorise each trigger using the exact category values listed in the schema.
+  - near-term = within 2 quarters, medium-term = within 4-6 quarters, multi-year = beyond 18 months.
+  - Mark is_new=true only if this trigger first appeared in the most recent reporting period.
+- For growth_risks:
+  - Extract 3-8 specific risks or failure scenarios from the data — execution delays, demand softness, margin pressure, etc.
+  - Do not list generic market risk; each risk must be company-specific and evidence-backed.
 - For strategy_and_outlook and growth-oriented commentary, prioritize the latest management guidance about revenue, profit, margin, sales, demand, capex, order book, and business outlook.
 - Keep all text concise and actionable for traders following {equities_label}.
-- Return ONLY the JSON object, no other text.
-t."""
+- Return ONLY the JSON object, no other text."""
 
 
 def _build_company_question_prompt(fundamentals: CompanyFundamentals, question: str) -> str:
@@ -381,61 +411,92 @@ class AIAnalysisService:
         # Generate fresh analysis
         try:
             result = self._generate_analysis(fundamentals)
-            
-            # Post-processing: Enhance with NewsPipeline and Guidance Validity Engine
+
+            # ── Post-processing ─────────────────────────────────────────────
             from app.services.news_logic import NewsPipeline
-            
-            # 1. Process News
+
+            # 1. Process News: run through the hard-rule pipeline to enforce
+            #    editorial vs official separation.
             if "detailed_news" in result:
-                processed_news = []
-                input_news = []
-                for news in result["detailed_news"]:
-                    # Convert dict to NewsPipeline format if needed
-                    input_news.append({
-                        "title": news.get("title", ""),
-                        "url": news.get("url", ""),
-                        "source": news.get("source", ""),
-                        "summary": news.get("summary", ""),
-                        "published_date": news.get("published_date") or news.get("published_at"),
-                        "impact_category": news.get("impact_category", "market"),
-                        "sentiment": news.get("sentiment", "neutral"),
-                        "relevance_score": news.get("relevance_score", 0.5),
-                        "impact_tags": news.get("impact_tags", [])
-                    })
-                
+                input_news = [
+                    {
+                        "title": n.get("title", ""),
+                        "url": n.get("url", ""),
+                        "source": n.get("source", ""),
+                        "source_type": n.get("source_type", ""),
+                        "summary": n.get("summary", ""),
+                        "published_date": n.get("published_date") or n.get("published_at"),
+                        "impact_category": n.get("impact_category", "market"),
+                        "sentiment": n.get("sentiment", "neutral"),
+                        "relevance_score": n.get("relevance_score", 0.5),
+                        "impact_area": n.get("impact_area"),
+                        "why_it_matters": n.get("why_it_matters"),
+                        "detailed_points": n.get("detailed_points") or [],
+                        "impact_tags": n.get("impact_tags") or [],
+                        "connection_to_guidance": n.get("connection_to_guidance"),
+                    }
+                    for n in result["detailed_news"]
+                ]
                 editorial, official = NewsPipeline.process_and_split(input_news)
                 result["latest_editorial_news"] = [n.model_dump() for n in editorial]
                 result["official_updates"] = [n.model_dump() for n in official]
                 result["detailed_news"] = [n.model_dump() for n in editorial + official]
 
-            # 2. Validate Guidance
+            # 2. Guidance Validity Engine
+            #    Current date: April 2026.  FY2026 = Apr 2025 – Mar 2026 (India).
+            #    Any guidance whose fiscal period ended before the current date is STALE.
+            #    Constants capture the "latest fully-reported" fiscal year.
+            LATEST_COMPLETED_FY_INT = 2025   # FY2025 ended March 2025 → fully reported
+            CURRENT_FY_INT = 2026            # FY2026 ends March 2026 → in-progress / just closed
+
+            def _extract_fy_int(period_str: str) -> int | None:
+                """Extract fiscal year integer from strings like FY26, FY2026, FY25, 2025, etc."""
+                s = period_str.upper().replace("FY", "").strip()
+                try:
+                    n = int(s)
+                    if n < 100:
+                        n += 2000   # FY26 → 2026
+                    return n
+                except ValueError:
+                    # Try extracting first 4-digit number
+                    import re as _re
+                    m = _re.search(r"\b(20\d{2})\b", s)
+                    return int(m.group(1)) if m else None
+
             if "management_guidance" in result:
-                for g in result["management_guidance"]:
-                    g_period = str(g.get("fiscal_period") or g.get("fiscal_year", "")).upper()
-                    # Hard-coded April 2026 logic: FY2025 is stale if FY2026/27 exists
+                guidance_list = result["management_guidance"]
+                # Detect the highest FY referenced in the whole guidance set
+                all_fy = [
+                    _extract_fy_int(str(g.get("fiscal_period") or g.get("fiscal_year") or ""))
+                    for g in guidance_list
+                ]
+                all_fy_valid = [fy for fy in all_fy if fy is not None]
+                max_fy_in_set = max(all_fy_valid) if all_fy_valid else None
+
+                for g in guidance_list:
+                    g_period_raw = str(g.get("fiscal_period") or g.get("fiscal_year") or "")
+                    fy = _extract_fy_int(g_period_raw)
                     is_stale = False
                     banner = "Valid"
-                    
-                    has_newer = any(
-                        "FY2026" in str(x.get("fiscal_year", "")).upper() or 
-                        "FY2027" in str(x.get("fiscal_year", "")).upper() or
-                        "FY26" in str(x.get("fiscal_year", "")).upper() or
-                        "FY27" in str(x.get("fiscal_year", "")).upper()
-                        for x in result["management_guidance"]
-                    )
-                    
-                    if ("FY2025" in g_period or "FY25" in g_period) and has_newer:
-                        is_stale = True
+
+                    if fy is not None:
+                        # Mark stale if:
+                        # a) FY has fully completed (≤ latest completed), OR
+                        # b) A newer FY exists in the same guidance set AND this one is older
+                        if fy <= LATEST_COMPLETED_FY_INT:
+                            is_stale = True
+                        elif max_fy_in_set and fy < max_fy_in_set:
+                            is_stale = True
+
+                    if is_stale:
                         banner = "Stale"
-                    
+
                     g["is_stale"] = is_stale
                     g["validity_banner"] = banner
 
-            # 3. Handle Future Growth Triggers
-            if "future_growth_triggers" not in result:
-                result["future_growth_triggers"] = []
-            if "growth_risks" not in result:
-                result["growth_risks"] = []
+            # 3. Ensure required keys exist
+            result.setdefault("future_growth_triggers", [])
+            result.setdefault("growth_risks", [])
 
             cache_entry = {
                 "data": result,
@@ -847,7 +908,35 @@ def parse_ai_summary(raw: dict[str, Any] | None) -> AISummary | None:
         return None
 
 
-def parse_ai_business_triggers(raw: list[dict[str, Any]]) -> list[BusinessTrigger]:
+def parse_ai_growth_triggers(raw: list[dict[str, Any]]) -> list:
+    """Parse AI-generated future growth trigger list into GrowthTrigger models."""
+    from app.models.market import GrowthTrigger
+    result = []
+    for item in (raw or []):
+        try:
+            impact_raw = str(item.get("impact_area") or "any").lower().strip()
+            valid_impact = {"revenue", "eps", "profit", "margin", "cash flow", "any"}
+            impact = impact_raw if impact_raw in valid_impact else "any"
+            horizon_raw = str(item.get("horizon") or "medium-term").lower().strip()
+            valid_horizon = {"near-term", "medium-term", "multi-year"}
+            horizon = horizon_raw if horizon_raw in valid_horizon else "medium-term"
+            result.append(GrowthTrigger(
+                title=str(item.get("title") or ""),
+                category=str(item.get("category") or "business update"),
+                why_it_matters=str(item.get("why_it_matters") or item.get("description") or ""),
+                evidence_source=str(item.get("evidence_source") or item.get("source") or "Management Commentary"),
+                source_date=item.get("source_date") or item.get("date"),
+                confidence_score=float(item.get("confidence_score") or item.get("likelihood_to_impact") or 0.7),
+                impact_area=impact,  # type: ignore[arg-type]
+                horizon=horizon,  # type: ignore[arg-type]
+                is_new=bool(item.get("is_new", True)),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+
     result = []
     for item in (raw or []):
         try:
@@ -983,6 +1072,18 @@ def enrich_fundamentals_with_ai(
 
     if ai_data.get("upcoming_events"):
         updates["upcoming_events"] = ai_data["upcoming_events"]
+
+    if ai_data.get("growth_risks"):
+        updates["growth_risks"] = parse_ai_risks(ai_data["growth_risks"])
+
+    if ai_data.get("future_growth_triggers"):
+        updates["future_growth_triggers"] = parse_ai_growth_triggers(ai_data["future_growth_triggers"])
+
+    if ai_data.get("latest_editorial_news"):
+        updates["latest_editorial_news"] = parse_ai_detailed_news(ai_data["latest_editorial_news"])
+
+    if ai_data.get("official_updates"):
+        updates["official_updates"] = parse_ai_detailed_news(ai_data["official_updates"])
 
     if updates:
         return fundamentals.model_copy(update=updates)

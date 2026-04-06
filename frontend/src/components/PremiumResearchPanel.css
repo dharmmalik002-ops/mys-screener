@@ -416,3 +416,221 @@
 @media (max-width: 600px) {
   .grid-2 { grid-template-columns: 1fr; }
 }
+
+/* =========================================================
+   Results Tab: KPI headline strip
+   ========================================================= */
+.results-headline-strip {
+  background: var(--bg-secondary);
+}
+
+.results-kpi-row, .kpi-row-compact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.kpi-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 100px;
+}
+
+.kpi-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.kpi-value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.kpi-positive { color: var(--uptrend, #4caf50); }
+.kpi-negative { color: var(--downtrend, #f44336); }
+.kpi-neutral  { color: var(--text-primary); }
+
+/* Compact KPI rows (for valuation/cashflow cards) */
+.kpi-compact-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 90px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.kpi-compact-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.kpi-compact-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* Beat/Miss slim badge */
+.badge-slim {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.badge-slim.badge-beat, .badge-slim.badge-Beat { background: rgba(76,175,80,0.15); color: #4caf50; }
+.badge-slim.badge-miss, .badge-slim.badge-Miss { background: rgba(244,67,54,0.12); color: #f44336; }
+.badge-slim.badge-inline { background: rgba(255,255,255,0.05); color: var(--text-secondary); }
+
+/* =========================================================
+   News Quality Separation
+   ========================================================= */
+.news-section-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: rgba(0,210,255,0.08);
+  color: var(--accent-blue, #00d2ff);
+  border: 1px solid rgba(0,210,255,0.2);
+  margin-left: 8px;
+  vertical-align: middle;
+}
+
+.editorial-fallback {
+  padding: 20px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px dashed var(--border-color);
+  text-align: center;
+}
+
+.news-read-link {
+  font-size: 12px;
+  color: var(--accent-blue, #00d2ff);
+  text-decoration: none;
+  font-weight: 600;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.news-read-link:hover { text-decoration: underline; }
+
+.relevance-score {
+  font-size: 10px;
+  color: var(--text-secondary);
+  padding: 1px 6px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  margin-left: auto;
+}
+
+/* =========================================================
+   Guidance Tab: Active vs Stale separation
+   ========================================================= */
+.guidance-valid {
+  border-left: 3px solid var(--uptrend, #4caf50) !important;
+}
+
+.guidance-stale {
+  border-left: 3px solid #888 !important;
+  opacity: 0.75;
+}
+
+.validity-banner {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 10px;
+  border-radius: 12px;
+  letter-spacing: 0.08em;
+}
+
+.banner-valid   { background: rgba(76,175,80,0.12); color: #4caf50; border: 1px solid rgba(76,175,80,0.3); }
+.banner-stale   { background: rgba(244,67,54,0.1);  color: #f44336; border: 1px solid rgba(244,67,54,0.25); }
+.banner-current { background: rgba(0,210,255,0.08); color: var(--accent-blue, #00d2ff); }
+
+.guidance-banner-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stale-guidance-section {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+}
+
+.stale-guidance-toggle {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 6px 0;
+  list-style: none;
+  user-select: none;
+}
+
+.stale-guidance-toggle:hover { color: var(--text-primary); }
+
+/* =========================================================
+   Fundamentals Tab: Shareholding bars
+   ========================================================= */
+.shareholding-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.shareholding-row {
+  display: grid;
+  grid-template-columns: 120px 1fr 50px;
+  align-items: center;
+  gap: 12px;
+}
+
+.sh-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.sh-bar-wrap {
+  height: 7px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.sh-bar {
+  height: 100%;
+  background: var(--accent-blue, #00d2ff);
+  border-radius: 4px;
+  transition: width 0.4s ease;
+}
+
+.sh-pct {
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+
+.pledge-warning {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.03);
+}
+
+.pledge-high {
+  color: #ff9800;
+  background: rgba(255,152,0,0.08);
+  border: 1px solid rgba(255,152,0,0.2);
+}

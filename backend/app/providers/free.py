@@ -5851,6 +5851,22 @@ class FreeMarketDataProvider:
         if not timestamps:
             return pd.DataFrame()
 
+        # Build a date-keyed split lookup as a robust fallback.
+        # Yahoo sometimes keys split events by the effective-date timestamp which may
+        # not byte-match the bar timestamp, but the calendar date will always match.
+        _date_splits: dict[str, float] = {}
+        for _ts_key, _sp in split_events.items():
+            if not isinstance(_sp, dict):
+                continue
+            try:
+                _dt = datetime.fromtimestamp(int(_ts_key), tz=timezone.utc)
+                _num = self._to_float(_sp.get("numerator"))
+                _den = self._to_float(_sp.get("denominator"))
+                if _num not in (None, 0) and _den not in (None, 0):
+                    _date_splits[_dt.date().isoformat()] = float(_num) / float(_den)
+            except (ValueError, TypeError, OSError):
+                continue
+
         records: list[dict[str, Any]] = []
         index_values: list[datetime] = []
         opens = quote.get("open") or []
@@ -5865,12 +5881,20 @@ class FreeMarketDataProvider:
             if close in (None, ""):
                 continue
             split_ratio = 0.0
+            # Primary: exact timestamp match
             split_payload = split_events.get(str(timestamp_value)) or split_events.get(timestamp_value)
             if isinstance(split_payload, dict):
                 numerator = self._to_float(split_payload.get("numerator"))
                 denominator = self._to_float(split_payload.get("denominator"))
                 if numerator not in (None, 0) and denominator not in (None, 0):
                     split_ratio = float(numerator) / float(denominator)
+            # Fallback: date-based match (handles timestamp misalignment between bar and split event)
+            if split_ratio == 0.0 and _date_splits:
+                try:
+                    _bar_date = datetime.fromtimestamp(int(timestamp_value), tz=timezone.utc).date().isoformat()
+                    split_ratio = _date_splits.get(_bar_date, 0.0)
+                except (ValueError, TypeError, OSError):
+                    pass
             records.append(
                 {
                     "Open": opens[index] if index < len(opens) else close,
@@ -5913,6 +5937,11 @@ class FreeMarketDataProvider:
         weekly.index.name = history.index.name
         return weekly.dropna(subset=["Close"]).sort_index()
 
+    def _should_skip_zero_volume_bar(self, bar_date: date) -> bool:
+        """Return True if bar_date is not a valid trading day for this market.
+        Override in market-specific subclasses to use the correct holiday calendar."""
+        return not self._is_trading_day_ist(bar_date)
+
     def _history_to_chart_bars(self, history: pd.DataFrame) -> list[ChartBar]:
         bars: list[ChartBar] = []
         prev_close = None
@@ -5928,17 +5957,24 @@ class FreeMarketDataProvider:
             if h <= 0 or c <= 0:
                 continue
 
-            # Filtering for holidays and weekends to prevent "flat" holiday candles
+            # Filter zero-volume flat bars on non-trading days (holiday/weekend placeholders).
+            # Uses market-specific calendar via _should_skip_zero_volume_bar.
             bar_timestamp = index.to_pydatetime()
             bar_date = bar_timestamp.date()
-            if not self._is_trading_day_ist(bar_date):
-                # If it's a non-trading day and price is flat relative to prev close, skip it.
+            if self._should_skip_zero_volume_bar(bar_date):
                 if v == 0 and (prev_close is None or abs(c - prev_close) < 0.01):
                     continue
 
+            # Normalise timestamp to UTC midnight so the chart library receives a
+            # consistent date-aligned epoch regardless of the source timezone.
+            if bar_timestamp.tzinfo is not None:
+                utc_midnight = bar_timestamp.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+            else:
+                utc_midnight = bar_timestamp.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+
             bars.append(
                 ChartBar(
-                    time=int(bar_timestamp.replace(tzinfo=timezone.utc).timestamp()),
+                    time=int(utc_midnight.timestamp()),
                     open=o,
                     high=h,
                     low=l,

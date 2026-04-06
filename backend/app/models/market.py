@@ -600,6 +600,10 @@ class CompanyFundamentals(BaseModel):
     shareholding_pattern: list[ShareholdingPatternItem] = Field(default_factory=list)
     shareholding_delta: ShareholdingDelta | None = None
     
+    # Pre-split news lists (populated by NewsPipeline after AI analysis)
+    latest_editorial_news: list[DetailedNews] = Field(default_factory=list)
+    official_updates: list[DetailedNews] = Field(default_factory=list)
+
     # AI-generated insights
     ai_news_summary: AISummary | None = None
     business_triggers: list[BusinessTrigger] = Field(default_factory=list)
