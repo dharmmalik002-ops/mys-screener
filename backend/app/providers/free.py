@@ -2,6 +2,7 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import io
+import gzip
 import json
 import os
 import re
@@ -1826,10 +1827,42 @@ class FreeMarketDataProvider:
             return {}
 
     def _load_json_rows(self, path: Path) -> list[dict[str, Any]]:
+        # If the primary .json file is missing, try fallback sources:
+        # 1. A single gzip seed: <name>.json.gz (local dev convenience)
+        # 2. Numbered seed chunks: <name>_seed_0.json, _seed_1.json … (HF deploy)
+        #    HF git rejects files > 10 MiB, so the 63 MB US snapshot is split
+        #    into ~9 chunks of ≤ 8 MB each that ARE accepted.  On first boot the
+        #    chunks are loaded and merged; the scheduled refresh then writes the
+        #    merged .json so subsequent cold-starts skip the chunk loading.
+        load_path = path
         if not path.exists():
-            return []
+            gz_path = path.with_name(path.name + ".gz")
+            if gz_path.exists():
+                load_path = gz_path
+            else:
+                # Try numbered seed chunks: free_snapshots_us_seed_0.json …
+                stem = path.stem        # e.g. "free_snapshots_us"
+                parent = path.parent
+                all_rows: list[dict[str, Any]] = []
+                for i in range(50):
+                    chunk_path = parent / f"{stem}_seed_{i}.json"
+                    if not chunk_path.exists():
+                        break
+                    try:
+                        raw = json.loads(chunk_path.read_text(encoding="utf-8"))
+                        if isinstance(raw, list):
+                            all_rows.extend(raw)
+                    except Exception:
+                        pass
+                if all_rows:
+                    return all_rows
+                return []
         try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
+            if load_path.suffix == ".gz":
+                with gzip.open(load_path, "rt", encoding="utf-8") as fh:
+                    raw = json.loads(fh.read())
+            else:
+                raw = json.loads(load_path.read_text(encoding="utf-8"))
             return raw if isinstance(raw, list) else []
         except Exception:
             return []
