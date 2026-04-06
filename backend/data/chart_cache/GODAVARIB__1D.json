@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:23:05.252620+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.472908+00:00",
   "symbol": "GODAVARIB",
   "timeframe": "1D",
   "ticker": "GODAVARIB.NS",
@@ -993,7 +993,7 @@
       "time": 1746144000,
       "open": 167.18,
       "high": 170.0,
-      "low": 167.5,
+      "low": 167.18,
       "close": 167.5,
       "volume": 186
     },
@@ -2815,19 +2815,19 @@
     },
     {
       "time": 1775001600,
-      "open": 303.05,
-      "high": 315.0,
+      "open": 303.0,
+      "high": 318.65,
       "low": 303.0,
-      "close": 313.8,
-      "volume": 75626
+      "close": 314.05,
+      "volume": 199870
     },
     {
       "time": 1775088000,
-      "open": 314.05,
+      "open": 314.0,
       "high": 314.5,
-      "low": 305.85,
+      "low": 305.8,
       "close": 312.15,
-      "volume": 129596
+      "volume": 133138
     }
   ]
 }

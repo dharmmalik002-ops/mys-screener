@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.514605+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:13.388555+00:00",
+  "symbol": "COHANCE",
+  "timeframe": "1D",
+  "ticker": "COHANCE.NS",
   "bars": [
     {
       "time": 1746662400,
@@ -1787,20 +1790,20 @@
       "volume": 689963
     },
     {
-      "time": 1774915200,
-      "open": 301.1,
-      "high": 304.5,
-      "low": 294.15,
-      "close": 302.85,
-      "volume": 689963
-    },
-    {
       "time": 1775001600,
       "open": 308.95,
-      "high": 315.9,
+      "high": 317.5,
       "low": 304.0,
-      "close": 310.75,
-      "volume": 234883
+      "close": 311.95,
+      "volume": 497644
+    },
+    {
+      "time": 1775088000,
+      "open": 309.6,
+      "high": 309.65,
+      "low": 300.3,
+      "close": 307.25,
+      "volume": 280167
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.028566+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:39.452598+00:00",
+  "symbol": "GREENLAM",
+  "timeframe": "1D",
+  "ticker": "GREENLAM.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 275.76,
-      "high": 275.76,
-      "low": 261.35,
-      "close": 263.91,
-      "volume": 80468
-    },
     {
       "time": 1708560000,
       "open": 261.25,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 216.99,
+      "open": 212.3,
       "high": 222.7,
       "low": 210.1,
-      "close": 212.14,
-      "volume": 0
+      "close": 218.5,
+      "volume": 34112
+    },
+    {
+      "time": 1775088000,
+      "open": 221.8,
+      "high": 224.98,
+      "low": 215.81,
+      "close": 220.02,
+      "volume": 53533
     }
   ]
 }

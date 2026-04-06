@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.744797+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:45.850044+00:00",
+  "symbol": "BLUECLOUDS",
+  "timeframe": "1D",
+  "ticker": "BLUECLOUDS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 30.52,
-      "high": 30.52,
-      "low": 28.27,
-      "close": 28.6,
-      "volume": 43542
-    },
     {
       "time": 1708560000,
       "open": 28.25,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 19.0,
+      "open": 18.98,
       "high": 19.5,
-      "low": 18.9,
-      "close": 19.24,
-      "volume": 463833
+      "low": 18.89,
+      "close": 19.26,
+      "volume": 785675
+    },
+    {
+      "time": 1775088000,
+      "open": 19.19,
+      "high": 19.24,
+      "low": 18.8,
+      "close": 19.17,
+      "volume": 499757
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.834719+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:10.525112+00:00",
+  "symbol": "TITAGARH",
+  "timeframe": "1D",
+  "ticker": "TITAGARH.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1691976
     },
     {
-      "time": 1774915200,
-      "open": 590.0,
-      "high": 591.85,
-      "low": 568.7,
-      "close": 571.9,
-      "volume": 1691976
-    },
-    {
       "time": 1775001600,
       "open": 595.95,
       "high": 618.75,
       "low": 586.35,
-      "close": 608.35,
-      "volume": 426043
+      "close": 609.0,
+      "volume": 896156
+    },
+    {
+      "time": 1775088000,
+      "open": 594.8,
+      "high": 618.6,
+      "low": 584.6,
+      "close": 614.9,
+      "volume": 595969
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.251213+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:13.685624+00:00",
+  "symbol": "ROSSARI",
+  "timeframe": "1D",
+  "ticker": "ROSSARI.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 770.0,
-      "high": 776.14,
-      "low": 755.66,
-      "close": 771.09,
-      "volume": 43988
-    },
     {
       "time": 1708646400,
       "open": 774.94,
@@ -4159,8 +4154,16 @@
       "open": 398.6,
       "high": 406.05,
       "low": 386.5,
-      "close": 400.75,
-      "volume": 20870
+      "close": 404.3,
+      "volume": 53279
+    },
+    {
+      "time": 1775088000,
+      "open": 404.0,
+      "high": 464.45,
+      "low": 392.55,
+      "close": 428.1,
+      "volume": 508284
     }
   ]
 }

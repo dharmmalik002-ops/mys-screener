@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.856451+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:50.253285+00:00",
+  "symbol": "JGCHEM",
+  "timeframe": "1D",
+  "ticker": "JGCHEM.NS",
   "bars": [
     {
       "time": 1710288000,
@@ -4052,11 +4055,19 @@
     },
     {
       "time": 1775001600,
-      "open": 320.0,
-      "high": 333.6,
+      "open": 315.9,
+      "high": 337.6,
       "low": 315.9,
-      "close": 330.6,
-      "volume": 36695
+      "close": 335.25,
+      "volume": 79055
+    },
+    {
+      "time": 1775088000,
+      "open": 334.0,
+      "high": 340.0,
+      "low": 322.0,
+      "close": 337.3,
+      "volume": 42390
     }
   ]
 }

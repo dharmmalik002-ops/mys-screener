@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.267558+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.618180+00:00",
+  "symbol": "PREMEXPLN",
+  "timeframe": "1D",
+  "ticker": "PREMEXPLN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 286.95,
-      "high": 307.45,
-      "low": 277.97,
-      "close": 305.14,
-      "volume": 614970
-    },
     {
       "time": 1708646400,
       "open": 305.46,
@@ -797,7 +792,7 @@
     {
       "time": 1721692800,
       "open": 613.91,
-      "high": 643.65,
+      "high": 643.66,
       "low": 583.96,
       "close": 629.13,
       "volume": 208228
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 400.1,
-      "high": 419.0,
+      "open": 399.9,
+      "high": 422.95,
       "low": 399.2,
-      "close": 410.05,
-      "volume": 156803
+      "close": 419.65,
+      "volume": 338951
+    },
+    {
+      "time": 1775088000,
+      "open": 410.0,
+      "high": 430.2,
+      "low": 401.0,
+      "close": 425.7,
+      "volume": 279904
     }
   ]
 }

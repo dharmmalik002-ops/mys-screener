@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T09:52:24.254229+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:23.908813+00:00",
+  "symbol": "ARIS",
+  "timeframe": "1D",
+  "ticker": "ARIS.NS",
   "bars": [
     {
       "time": 1769644800,
@@ -326,9 +329,25 @@
       "time": 1774828800,
       "open": 100.75,
       "high": 100.76,
-      "low": 95.72,
-      "close": 96.25,
-      "volume": 550998
+      "low": 94.35,
+      "close": 96.54,
+      "volume": 664671
+    },
+    {
+      "time": 1775001600,
+      "open": 99.0,
+      "high": 104.87,
+      "low": 97.71,
+      "close": 103.08,
+      "volume": 617440
+    },
+    {
+      "time": 1775088000,
+      "open": 102.0,
+      "high": 104.75,
+      "low": 100.67,
+      "close": 103.52,
+      "volume": 582150
     }
   ]
 }

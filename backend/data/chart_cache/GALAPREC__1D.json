@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.206989+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.380092+00:00",
+  "symbol": "GALAPREC",
+  "timeframe": "1D",
+  "ticker": "GALAPREC.NS",
   "bars": [
     {
       "time": 1725840000,
@@ -3092,11 +3095,19 @@
     },
     {
       "time": 1775001600,
-      "open": 717.45,
+      "open": 702.45,
       "high": 733.1,
       "low": 695.95,
-      "close": 701.0,
-      "volume": 37852
+      "close": 711.2,
+      "volume": 54265
+    },
+    {
+      "time": 1775088000,
+      "open": 709.8,
+      "high": 737.5,
+      "low": 696.0,
+      "close": 733.2,
+      "volume": 22395
     }
   ]
 }

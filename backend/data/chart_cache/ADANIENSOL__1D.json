@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.510000+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:22.719420+00:00",
+  "symbol": "ADANIENSOL",
+  "timeframe": "1D",
+  "ticker": "ADANIENSOL.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 1714851
     },
     {
-      "time": 1774915200,
-      "open": 950.2,
-      "high": 957.6,
-      "low": 930.3,
-      "close": 932.4,
-      "volume": 1714851
-    },
-    {
       "time": 1775001600,
       "open": 953.95,
       "high": 982.45,
-      "low": 953.95,
-      "close": 972.85,
-      "volume": 572916
+      "low": 947.1,
+      "close": 956.6,
+      "volume": 1333686
+    },
+    {
+      "time": 1775088000,
+      "open": 940.0,
+      "high": 946.55,
+      "low": 903.15,
+      "close": 941.6,
+      "volume": 1748061
     }
   ]
 }

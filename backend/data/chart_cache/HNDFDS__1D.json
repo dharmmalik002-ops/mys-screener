@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.103095+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:29.801073+00:00",
+  "symbol": "HNDFDS",
+  "timeframe": "1D",
+  "ticker": "HNDFDS.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 532.6,
-      "high": 538.45,
-      "low": 524.3,
-      "close": 525.75,
-      "volume": 143843
-    },
     {
       "time": 1708300800,
       "open": 527.95,
@@ -4158,9 +4153,17 @@
       "time": 1775001600,
       "open": 510.0,
       "high": 513.95,
-      "low": 502.0,
-      "close": 502.95,
-      "volume": 0
+      "low": 490.0,
+      "close": 493.85,
+      "volume": 95630
+    },
+    {
+      "time": 1775088000,
+      "open": 495.1,
+      "high": 495.1,
+      "low": 481.0,
+      "close": 490.45,
+      "volume": 24216
     }
   ]
 }

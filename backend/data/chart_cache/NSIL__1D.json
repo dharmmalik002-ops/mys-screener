@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.127342+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:12.298190+00:00",
+  "symbol": "NSIL",
+  "timeframe": "1D",
+  "ticker": "NSIL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 3371.0,
-      "high": 3442.0,
-      "low": 3302.0,
-      "close": 3317.75,
-      "volume": 12362
-    },
     {
       "time": 1708560000,
       "open": 3350.9,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 5129.0,
+      "open": 4999.9,
       "high": 5278.0,
       "low": 4802.5,
-      "close": 5148.3,
-      "volume": 3467
+      "close": 5091.4,
+      "volume": 5924
+    },
+    {
+      "time": 1775088000,
+      "open": 5020.0,
+      "high": 5105.2,
+      "low": 4890.0,
+      "close": 5089.0,
+      "volume": 2984
     }
   ]
 }

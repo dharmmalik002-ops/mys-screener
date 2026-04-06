@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:49:32.152953+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.267323+00:00",
   "symbol": "UTTAMSUGAR",
   "timeframe": "1D",
   "ticker": "UTTAMSUGAR.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 256.02,
+      "open": 258.41,
       "high": 268.8,
-      "low": 252.5,
-      "close": 254.79,
-      "volume": 251691
+      "low": 243.0,
+      "close": 244.53,
+      "volume": 457943
     },
     {
       "time": 1775088000,
-      "open": 244.53,
-      "high": 250.95,
+      "open": 240.65,
+      "high": 251.37,
       "low": 236.31,
-      "close": 248.1,
-      "volume": 237773
+      "close": 247.66,
+      "volume": 233848
     }
   ]
 }

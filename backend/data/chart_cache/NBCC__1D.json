@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.992405+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:12.626207+00:00",
+  "symbol": "NBCC",
+  "timeframe": "1D",
+  "ticker": "NBCC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -215,7 +218,7 @@
       "open": 84.57,
       "high": 85.12,
       "low": 81.09,
-      "close": 83.03,
+      "close": 83.02,
       "volume": 15348202
     },
     {
@@ -4147,20 +4150,20 @@
       "volume": 14774475
     },
     {
-      "time": 1774915200,
-      "open": 79.5,
-      "high": 80.66,
-      "low": 77.18,
-      "close": 77.74,
-      "volume": 14774475
-    },
-    {
       "time": 1775001600,
       "open": 81.1,
-      "high": 83.13,
+      "high": 84.09,
       "low": 80.11,
-      "close": 82.11,
-      "volume": 7526218
+      "close": 82.79,
+      "volume": 15853541
+    },
+    {
+      "time": 1775088000,
+      "open": 80.5,
+      "high": 83.5,
+      "low": 79.29,
+      "close": 83.09,
+      "volume": 11834423
     }
   ]
 }

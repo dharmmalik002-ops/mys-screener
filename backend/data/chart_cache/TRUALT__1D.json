@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.402141+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:58.292249+00:00",
+  "symbol": "TRUALT",
+  "timeframe": "1D",
+  "ticker": "TRUALT.NS",
   "bars": [
     {
       "time": 1759449600,
@@ -956,11 +959,19 @@
     },
     {
       "time": 1775001600,
-      "open": 413.65,
-      "high": 414.4,
+      "open": 414.0,
+      "high": 417.6,
       "low": 408.0,
-      "close": 412.0,
-      "volume": 36131
+      "close": 410.75,
+      "volume": 120490
+    },
+    {
+      "time": 1775088000,
+      "open": 409.0,
+      "high": 418.0,
+      "low": 399.0,
+      "close": 414.2,
+      "volume": 108018
     }
   ]
 }

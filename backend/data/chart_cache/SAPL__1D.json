@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:24:53.451242+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.244346+00:00",
+  "symbol": "SAPL",
+  "timeframe": "1D",
+  "ticker": "SAPL.NS",
   "bars": [
     {
       "time": 1735516800,

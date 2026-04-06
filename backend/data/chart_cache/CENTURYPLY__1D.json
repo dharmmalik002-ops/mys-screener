@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:49.733625+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:56.560059+00:00",
   "symbol": "CENTURYPLY",
   "timeframe": "1D",
   "ticker": "CENTURYPLY.NS",
   "bars": [
+    {
+      "time": 1708560000,
+      "open": 717.19,
+      "high": 737.34,
+      "low": 712.81,
+      "close": 719.24,
+      "volume": 80630
+    },
     {
       "time": 1708646400,
       "open": 723.08,
@@ -434,7 +442,7 @@
       "open": 668.27,
       "high": 675.8,
       "low": 663.63,
-      "close": 669.26,
+      "close": 669.27,
       "volume": 1133559
     },
     {
@@ -520,7 +528,7 @@
     {
       "time": 1717372800,
       "open": 658.34,
-      "high": 669.26,
+      "high": 669.27,
       "low": 655.7,
       "close": 662.63,
       "volume": 255804
@@ -4142,27 +4150,19 @@
       "volume": 76195
     },
     {
-      "time": 1774915200,
-      "open": 699.95,
-      "high": 710.45,
-      "low": 693.0,
-      "close": 696.0,
-      "volume": 76195
-    },
-    {
       "time": 1775001600,
       "open": 724.2,
       "high": 735.0,
-      "low": 699.1,
-      "close": 699.95,
-      "volume": 15315
+      "low": 699.0,
+      "close": 714.95,
+      "volume": 57178
     },
     {
       "time": 1775088000,
-      "open": 714.95,
+      "open": 706.0,
       "high": 725.0,
       "low": 700.0,
-      "close": 720.05,
+      "close": 722.6,
       "volume": 53370
     }
   ]

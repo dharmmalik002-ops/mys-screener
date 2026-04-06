@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.285186+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:35.942341+00:00",
+  "symbol": "CROMPTON",
+  "timeframe": "1D",
+  "ticker": "CROMPTON.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -270,7 +273,7 @@
       "time": 1713225600,
       "open": 286.41,
       "high": 289.71,
-      "low": 282.91,
+      "low": 282.92,
       "close": 284.93,
       "volume": 2331311
     },
@@ -4147,20 +4150,20 @@
       "volume": 4419666
     },
     {
-      "time": 1774915200,
-      "open": 230.0,
-      "high": 230.05,
-      "low": 222.15,
-      "close": 224.3,
-      "volume": 4419666
-    },
-    {
       "time": 1775001600,
       "open": 228.7,
-      "high": 232.44,
+      "high": 233.31,
       "low": 228.0,
-      "close": 229.08,
-      "volume": 785497
+      "close": 232.59,
+      "volume": 2989782
+    },
+    {
+      "time": 1775088000,
+      "open": 228.01,
+      "high": 232.8,
+      "low": 224.85,
+      "close": 231.91,
+      "volume": 2043088
     }
   ]
 }

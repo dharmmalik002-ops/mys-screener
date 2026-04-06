@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.124325+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:00.432481+00:00",
+  "symbol": "HGINFRA",
+  "timeframe": "1D",
+  "ticker": "HGINFRA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 453168
     },
     {
-      "time": 1774915200,
-      "open": 455.0,
-      "high": 456.3,
-      "low": 429.5,
-      "close": 432.6,
-      "volume": 453168
-    },
-    {
       "time": 1775001600,
       "open": 453.4,
-      "high": 471.6,
+      "high": 485.0,
       "low": 442.0,
-      "close": 465.85,
-      "volume": 167787
+      "close": 477.55,
+      "volume": 407471
+    },
+    {
+      "time": 1775088000,
+      "open": 466.8,
+      "high": 484.95,
+      "low": 456.1,
+      "close": 482.4,
+      "volume": 167834
     }
   ]
 }

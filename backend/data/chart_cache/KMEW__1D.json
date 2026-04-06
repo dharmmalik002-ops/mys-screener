@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.846966+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:50.412098+00:00",
+  "symbol": "KMEW",
+  "timeframe": "1D",
+  "ticker": "KMEW.NS",
   "bars": [
     {
       "time": 1731542400,
@@ -2716,11 +2719,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1534.0,
-      "high": 1585.0,
+      "open": 1535.5,
+      "high": 1604.0,
       "low": 1507.7,
-      "close": 1566.6,
-      "volume": 27133
+      "close": 1578.1,
+      "volume": 64329
+    },
+    {
+      "time": 1775088000,
+      "open": 1549.9,
+      "high": 1595.0,
+      "low": 1508.8,
+      "close": 1585.9,
+      "volume": 45598
     }
   ]
 }

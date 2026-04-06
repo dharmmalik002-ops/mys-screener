@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.685440+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:59.177298+00:00",
+  "symbol": "HOMEFIRST",
+  "timeframe": "1D",
+  "ticker": "HOMEFIRST.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 361691
     },
     {
-      "time": 1774915200,
-      "open": 915.7,
-      "high": 925.0,
-      "low": 893.7,
-      "close": 911.0,
-      "volume": 361691
-    },
-    {
       "time": 1775001600,
       "open": 930.0,
-      "high": 945.2,
+      "high": 954.0,
       "low": 923.5,
-      "close": 940.45,
-      "volume": 99605
+      "close": 950.45,
+      "volume": 280515
+    },
+    {
+      "time": 1775088000,
+      "open": 935.0,
+      "high": 964.15,
+      "low": 921.35,
+      "close": 959.25,
+      "volume": 247952
     }
   ]
 }

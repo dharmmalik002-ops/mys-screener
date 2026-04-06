@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.977629+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:37.980227+00:00",
+  "symbol": "WAKEFIT",
+  "timeframe": "1D",
+  "ticker": "WAKEFIT.NS",
   "bars": [
     {
       "time": 1765756800,
@@ -571,20 +574,20 @@
       "volume": 305100
     },
     {
-      "time": 1774915200,
-      "open": 153.0,
-      "high": 153.99,
-      "low": 147.5,
-      "close": 152.0,
-      "volume": 305100
-    },
-    {
       "time": 1775001600,
       "open": 151.95,
       "high": 158.5,
-      "low": 151.95,
-      "close": 155.72,
-      "volume": 53770
+      "low": 145.78,
+      "close": 147.69,
+      "volume": 270529
+    },
+    {
+      "time": 1775088000,
+      "open": 147.0,
+      "high": 148.59,
+      "low": 142.23,
+      "close": 147.25,
+      "volume": 120843
     }
   ]
 }

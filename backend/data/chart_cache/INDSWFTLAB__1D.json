@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.005076+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:01.683043+00:00",
+  "symbol": "INDSWFTLAB",
+  "timeframe": "1D",
+  "ticker": "INDSWFTLAB.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 111.9,
-      "high": 112.0,
-      "low": 106.85,
-      "close": 108.95,
-      "volume": 179540
-    },
     {
       "time": 1708560000,
       "open": 110.4,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 138.83,
-      "high": 140.34,
+      "open": 135.0,
+      "high": 140.49,
       "low": 135.0,
-      "close": 137.85,
-      "volume": 201915
+      "close": 138.17,
+      "volume": 409230
+    },
+    {
+      "time": 1775088000,
+      "open": 136.0,
+      "high": 139.48,
+      "low": 133.25,
+      "close": 138.85,
+      "volume": 144731
     }
   ]
 }

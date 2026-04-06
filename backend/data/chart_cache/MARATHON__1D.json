@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.466748+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.872179+00:00",
+  "symbol": "MARATHON",
+  "timeframe": "1D",
+  "ticker": "MARATHON.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 460.53,
-      "high": 460.53,
-      "low": 434.21,
-      "close": 439.3,
-      "volume": 654755
-    },
     {
       "time": 1708646400,
       "open": 441.64,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 399.65,
-      "high": 407.9,
+      "open": 390.0,
+      "high": 409.0,
       "low": 389.9,
-      "close": 399.65,
-      "volume": 51856
+      "close": 395.75,
+      "volume": 131692
+    },
+    {
+      "time": 1775088000,
+      "open": 394.8,
+      "high": 420.0,
+      "low": 385.0,
+      "close": 410.85,
+      "volume": 67628
     }
   ]
 }

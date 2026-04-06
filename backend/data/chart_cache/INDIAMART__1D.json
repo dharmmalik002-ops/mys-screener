@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.501456+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:52.051420+00:00",
+  "symbol": "INDIAMART",
+  "timeframe": "1D",
+  "ticker": "INDIAMART.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 132268
     },
     {
-      "time": 1774915200,
-      "open": 1960.0,
-      "high": 2006.7,
-      "low": 1925.6,
-      "close": 1961.2,
-      "volume": 132268
-    },
-    {
       "time": 1775001600,
       "open": 2004.0,
       "high": 2078.0,
       "low": 1971.1,
-      "close": 2032.2,
-      "volume": 66451
+      "close": 2038.8,
+      "volume": 155604
+    },
+    {
+      "time": 1775088000,
+      "open": 2033.3,
+      "high": 2037.7,
+      "low": 1984.2,
+      "close": 2018.9,
+      "volume": 95276
     }
   ]
 }

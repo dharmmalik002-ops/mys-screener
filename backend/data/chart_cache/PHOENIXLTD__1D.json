@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.599852+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:42.751117+00:00",
+  "symbol": "PHOENIXLTD",
+  "timeframe": "1D",
+  "ticker": "PHOENIXLTD.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -877,7 +880,7 @@
     {
       "time": 1722902400,
       "open": 1653.97,
-      "high": 1717.77,
+      "high": 1717.78,
       "low": 1607.36,
       "close": 1618.48,
       "volume": 982506
@@ -4147,20 +4150,20 @@
       "volume": 1275726
     },
     {
-      "time": 1774915200,
-      "open": 1477.0,
-      "high": 1523.6,
-      "low": 1475.0,
-      "close": 1500.0,
-      "volume": 1275726
-    },
-    {
       "time": 1775001600,
       "open": 1529.5,
       "high": 1544.0,
-      "low": 1502.9,
-      "close": 1506.1,
-      "volume": 389058
+      "low": 1494.0,
+      "close": 1517.6,
+      "volume": 699773
+    },
+    {
+      "time": 1775088000,
+      "open": 1508.1,
+      "high": 1533.3,
+      "low": 1466.2,
+      "close": 1525.2,
+      "volume": 440360
     }
   ]
 }

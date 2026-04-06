@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.473725+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:53.194434+00:00",
+  "symbol": "OLAELEC",
+  "timeframe": "1D",
+  "ticker": "OLAELEC.NS",
   "bars": [
     {
       "time": 1723161600,
@@ -3259,20 +3262,20 @@
       "volume": 65284041
     },
     {
-      "time": 1774915200,
-      "open": 24.1,
-      "high": 24.12,
-      "low": 22.52,
-      "close": 22.62,
-      "volume": 65284041
-    },
-    {
       "time": 1775001600,
       "open": 23.99,
-      "high": 25.02,
+      "high": 26.36,
       "low": 23.17,
-      "close": 24.49,
-      "volume": 43585453
+      "close": 25.89,
+      "volume": 247154058
+    },
+    {
+      "time": 1775088000,
+      "open": 25.62,
+      "high": 28.62,
+      "low": 25.06,
+      "close": 28.34,
+      "volume": 456246744
     }
   ]
 }

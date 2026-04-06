@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.211064+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:04.067539+00:00",
+  "symbol": "VGUARD",
+  "timeframe": "1D",
+  "ticker": "VGUARD.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 243244
     },
     {
-      "time": 1774915200,
-      "open": 315.95,
-      "high": 318.0,
-      "low": 307.6,
-      "close": 314.0,
-      "volume": 243244
-    },
-    {
       "time": 1775001600,
       "open": 325.05,
       "high": 325.05,
-      "low": 315.45,
-      "close": 316.2,
-      "volume": 60876
+      "low": 312.0,
+      "close": 315.7,
+      "volume": 149805
+    },
+    {
+      "time": 1775088000,
+      "open": 312.0,
+      "high": 325.2,
+      "low": 309.0,
+      "close": 322.7,
+      "volume": 187240
     }
   ]
 }

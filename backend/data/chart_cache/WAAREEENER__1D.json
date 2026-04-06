@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.381148+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:35.675190+00:00",
+  "symbol": "WAAREEENER",
+  "timeframe": "1D",
+  "ticker": "WAAREEENER.NS",
   "bars": [
     {
       "time": 1730073600,
@@ -2827,20 +2830,20 @@
       "volume": 1799109
     },
     {
-      "time": 1774915200,
-      "open": 3052.0,
-      "high": 3143.4,
-      "low": 3014.0,
-      "close": 3110.0,
-      "volume": 1799109
-    },
-    {
       "time": 1775001600,
       "open": 3220.0,
       "high": 3220.0,
-      "low": 3050.0,
-      "close": 3061.0,
-      "volume": 1066318
+      "low": 3041.1,
+      "close": 3089.2,
+      "volume": 2210451
+    },
+    {
+      "time": 1775088000,
+      "open": 3066.0,
+      "high": 3084.7,
+      "low": 2980.8,
+      "close": 3070.7,
+      "volume": 1222615
     }
   ]
 }

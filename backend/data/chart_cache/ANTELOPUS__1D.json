@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:27:01.157728+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.491528+00:00",
+  "symbol": "ANTELOPUS",
+  "timeframe": "1D",
+  "ticker": "ANTELOPUS.NS",
   "bars": [
     {
       "time": 1757548800,
@@ -1076,11 +1079,19 @@
     },
     {
       "time": 1775001600,
-      "open": 565.0,
+      "open": 567.95,
       "high": 598.8,
       "low": 554.3,
-      "close": 587.2,
-      "volume": 236369
+      "close": 587.5,
+      "volume": 359264
+    },
+    {
+      "time": 1775088000,
+      "open": 580.0,
+      "high": 599.0,
+      "low": 562.5,
+      "close": 591.0,
+      "volume": 181295
     }
   ]
 }

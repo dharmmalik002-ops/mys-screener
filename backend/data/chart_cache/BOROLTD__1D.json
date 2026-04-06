@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.053279+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:03.235612+00:00",
+  "symbol": "BOROLTD",
+  "timeframe": "1D",
+  "ticker": "BOROLTD.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 388.55,
-      "high": 395.25,
-      "low": 384.7,
-      "close": 392.85,
-      "volume": 149965
-    },
     {
       "time": 1708646400,
       "open": 395.4,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 220.0,
-      "high": 229.5,
+      "open": 219.2,
+      "high": 248.89,
       "low": 219.2,
-      "close": 227.7,
-      "volume": 19626
+      "close": 241.79,
+      "volume": 162749
+    },
+    {
+      "time": 1775088000,
+      "open": 232.3,
+      "high": 242.45,
+      "low": 224.66,
+      "close": 239.39,
+      "volume": 136857
     }
   ]
 }

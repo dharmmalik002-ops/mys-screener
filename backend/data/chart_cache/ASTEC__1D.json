@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.868038+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:54.726088+00:00",
+  "symbol": "ASTEC",
+  "timeframe": "1D",
+  "ticker": "ASTEC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 912.3,
-      "high": 918.0,
-      "low": 895.0,
-      "close": 911.55,
-      "volume": 23630
-    },
     {
       "time": 1708646400,
       "open": 915.75,
@@ -4159,8 +4154,16 @@
       "open": 564.0,
       "high": 574.1,
       "low": 551.0,
-      "close": 559.55,
-      "volume": 44463
+      "close": 557.85,
+      "volume": 79549
+    },
+    {
+      "time": 1775088000,
+      "open": 550.0,
+      "high": 555.0,
+      "low": 538.35,
+      "close": 543.0,
+      "volume": 56171
     }
   ]
 }

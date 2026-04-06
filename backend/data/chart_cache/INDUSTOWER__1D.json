@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:48:03.118448+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:28.110648+00:00",
   "symbol": "INDUSTOWER",
   "timeframe": "1D",
   "ticker": "INDUSTOWER.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 231.65,
+      "high": 245.5,
+      "low": 231.1,
+      "close": 241.15,
+      "volume": 77810544
+    },
     {
       "time": 1708905600,
       "open": 245.0,
@@ -4142,27 +4150,19 @@
       "volume": 8737012
     },
     {
-      "time": 1774915200,
-      "open": 425.05,
-      "high": 429.0,
-      "low": 415.5,
-      "close": 415.5,
-      "volume": 8737012
-    },
-    {
       "time": 1775001600,
       "open": 436.8,
       "high": 436.8,
-      "low": 424.4,
-      "close": 427.1,
-      "volume": 1256477
+      "low": 420.85,
+      "close": 423.25,
+      "volume": 4689273
     },
     {
       "time": 1775088000,
-      "open": 423.25,
+      "open": 417.7,
       "high": 426.35,
       "low": 409.55,
-      "close": 426.0,
+      "close": 424.85,
       "volume": 3693968
     }
   ]

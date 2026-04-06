@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.422107+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:35.651719+00:00",
+  "symbol": "STUDDS",
+  "timeframe": "1D",
+  "ticker": "STUDDS.NS",
   "bars": [
     {
       "time": 1762473600,
@@ -788,11 +791,19 @@
     },
     {
       "time": 1775001600,
-      "open": 458.65,
+      "open": 450.9,
       "high": 472.0,
-      "low": 450.9,
-      "close": 453.95,
-      "volume": 9775
+      "low": 448.2,
+      "close": 452.05,
+      "volume": 33426
+    },
+    {
+      "time": 1775088000,
+      "open": 448.2,
+      "high": 459.95,
+      "low": 444.15,
+      "close": 450.25,
+      "volume": 17455
     }
   ]
 }

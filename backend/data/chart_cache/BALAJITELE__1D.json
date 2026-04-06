@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.259441+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:09.302026+00:00",
+  "symbol": "BALAJITELE",
+  "timeframe": "1D",
+  "ticker": "BALAJITELE.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 139.4,
-      "high": 140.0,
-      "low": 132.65,
-      "close": 133.3,
-      "volume": 808886
-    },
     {
       "time": 1708560000,
       "open": 132.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 74.32,
-      "high": 77.5,
+      "open": 74.89,
+      "high": 81.0,
       "low": 72.1,
-      "close": 77.06,
-      "volume": 75153
+      "close": 79.68,
+      "volume": 232981
+    },
+    {
+      "time": 1775088000,
+      "open": 80.0,
+      "high": 85.0,
+      "low": 75.76,
+      "close": 84.11,
+      "volume": 383273
     }
   ]
 }

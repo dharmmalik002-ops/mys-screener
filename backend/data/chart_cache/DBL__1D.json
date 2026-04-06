@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.903253+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:24.444401+00:00",
+  "symbol": "DBL",
+  "timeframe": "1D",
+  "ticker": "DBL.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 799397
     },
     {
-      "time": 1774915200,
-      "open": 389.05,
-      "high": 398.7,
-      "low": 382.15,
-      "close": 387.7,
-      "volume": 799397
-    },
-    {
       "time": 1775001600,
       "open": 396.0,
-      "high": 409.7,
+      "high": 413.85,
       "low": 394.1,
-      "close": 401.7,
-      "volume": 108241
+      "close": 406.6,
+      "volume": 221385
+    },
+    {
+      "time": 1775088000,
+      "open": 393.25,
+      "high": 409.6,
+      "low": 389.25,
+      "close": 406.35,
+      "volume": 165309
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:58:34.867397+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:09.306473+00:00",
+  "symbol": "GENESYS",
+  "timeframe": "1D",
+  "ticker": "GENESYS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 518.95,
-      "high": 520.05,
-      "low": 500.0,
-      "close": 504.2,
-      "volume": 205401
-    },
     {
       "time": 1708646400,
       "open": 504.25,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 223.94,
-      "high": 247.7,
+      "open": 220.0,
+      "high": 248.88,
       "low": 216.0,
-      "close": 244.7,
-      "volume": 983893
+      "close": 238.6,
+      "volume": 1766994
+    },
+    {
+      "time": 1775088000,
+      "open": 230.0,
+      "high": 239.99,
+      "low": 223.5,
+      "close": 236.91,
+      "volume": 558319
     }
   ]
 }

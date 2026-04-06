@@ -328,22 +328,39 @@ class ChartLineMarker(BaseModel):
 
 
 class QuarterlyResultItem(BaseModel):
+    """Financial results for a single quarter"""
     period: str
     sales_crore: float | None = None
     expenses_crore: float | None = None
     operating_profit_crore: float | None = None
     operating_margin_pct: float | None = None
+    ebitda_crore: float | None = None
+    ebitda_margin_pct: float | None = None
+    gross_margin_pct: float | None = None
+    other_income_crore: float | None = None
+    interest_crore: float | None = None
+    depreciation_crore: float | None = None
     profit_before_tax_crore: float | None = None
+    tax_pct: float | None = None
     net_profit_crore: float | None = None
     eps: float | None = None
+    yoy_change_pct: float | None = None
+    qoq_change_pct: float | None = None
+    beat_miss: Literal["beat", "miss", "in-line"] | None = None
+    segment_performance: list[dict[str, Any]] = Field(default_factory=list)
+    result_date: str | None = None
     result_document_url: str | None = None
 
 
 class ProfitLossItem(BaseModel):
+    """Annual profit and loss metrics"""
     period: str
     sales_crore: float | None = None
+    expenses_crore: float | None = None
     operating_profit_crore: float | None = None
     operating_margin_pct: float | None = None
+    ebitda_crore: float | None = None
+    ebitda_margin_pct: float | None = None
     net_profit_crore: float | None = None
     eps: float | None = None
     dividend_payout_pct: float | None = None
@@ -475,6 +492,7 @@ class FinancialRatios(BaseModel):
 class ManagementGuidance(BaseModel):
     """Forward-looking guidance from management"""
     fiscal_year: str
+    quarter: str | None = None
     revenue_growth_guidance_pct: float | None = None
     ebitda_guidance_pct: float | None = None
     eps_guidance: float | None = None
@@ -485,6 +503,10 @@ class ManagementGuidance(BaseModel):
     confidence_score: float | None = None
     key_guidance_points: list[str] = Field(default_factory=list)
     analyst_concerns: list[str] = Field(default_factory=list)
+    is_stale: bool = False
+    validity_banner: Literal["Valid", "Stale", "Withdrawn", "Not Provided"] = "Valid"
+    fiscal_period: str | None = None  # e.g., "FY2026", "Q1 FY2027"
+    source_date: str | None = None
 
 
 class CompetitivePosition(BaseModel):
@@ -511,7 +533,9 @@ class DetailedNews(BaseModel):
     impact_category: str  # earnings, strategic, regulatory, market, etc.
     sentiment: Literal["positive", "negative", "neutral"] = "neutral"
     source: str
-    source_type: Literal["Editorial News", "Company Release", "Exchange Filing", "Transcript", "Analyst Report"] = "Editorial News"
+    domain: str | None = None
+    source_type: str = "Editorial News"  # Editorial News, Company Release, etc.
+    classification: Literal["editorial_news", "company_release", "exchange_filing", "regulatory_filing", "transcript", "investor_presentation", "duplicate", "low_quality", "rumor"] = "editorial_news"
     is_editorial: bool = True
     url: str | None = None
     published_date: str | None = None
@@ -520,6 +544,7 @@ class DetailedNews(BaseModel):
     detailed_points: list[str] = Field(default_factory=list)
     relevance_score: float  # 0-1, how relevant to stock price
     connection_to_guidance: str | None = None
+    impact_tags: list[str] = Field(default_factory=list)
 
 
 class RiskAnalysis(BaseModel):
@@ -578,6 +603,8 @@ class CompanyFundamentals(BaseModel):
     # AI-generated insights
     ai_news_summary: AISummary | None = None
     business_triggers: list[BusinessTrigger] = Field(default_factory=list)
+    future_growth_triggers: list[GrowthTrigger] = Field(default_factory=list)
+    growth_risks: list[RiskAnalysis] = Field(default_factory=list)
     insider_transactions: list[InsiderTransaction] = Field(default_factory=list)
     last_news_update: datetime | None = None
     
@@ -589,6 +616,19 @@ class CompanyFundamentals(BaseModel):
     upcoming_events: list[dict[str, str]] = Field(default_factory=list)  # [{date, event, impact}]
     
     data_warnings: list[str] = Field(default_factory=list)
+
+
+class GrowthTrigger(BaseModel):
+    """Forward-looking business development that could drive growth"""
+    title: str
+    category: str  # order book, expansion, new product, etc.
+    why_it_matters: str
+    evidence_source: str
+    source_date: str | None = None
+    confidence_score: float = 0.8
+    impact_area: Literal["revenue", "eps", "profit", "margin", "cash flow", "any"] = "any"
+    horizon: Literal["near-term", "medium-term", "multi-year"] = "medium-term"
+    is_new: bool = True
 
 
 class ScanDescriptor(BaseModel):

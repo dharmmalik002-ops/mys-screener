@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.418432+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:50.566220+00:00",
+  "symbol": "CONCORDBIO",
+  "timeframe": "1D",
+  "ticker": "CONCORDBIO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 309562
     },
     {
-      "time": 1774915200,
-      "open": 1001.0,
-      "high": 1036.8,
-      "low": 990.6,
-      "close": 1025.0,
-      "volume": 309562
-    },
-    {
       "time": 1775001600,
       "open": 1065.0,
       "high": 1069.3,
       "low": 1010.7,
-      "close": 1014.1,
-      "volume": 120172
+      "close": 1020.0,
+      "volume": 219258
+    },
+    {
+      "time": 1775088000,
+      "open": 1016.0,
+      "high": 1030.0,
+      "low": 987.0,
+      "close": 1025.1,
+      "volume": 202540
     }
   ]
 }

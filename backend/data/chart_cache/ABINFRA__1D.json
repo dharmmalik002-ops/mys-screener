@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.085414+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:05.943076+00:00",
+  "symbol": "ABINFRA",
+  "timeframe": "1D",
+  "ticker": "ABINFRA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 4.19,
-      "high": 4.19,
-      "low": 4.19,
-      "close": 4.19,
-      "volume": 192589
-    },
     {
       "time": 1708560000,
       "open": 4.24,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 16.0,
+      "open": 16.3,
       "high": 16.3,
-      "low": 15.86,
-      "close": 15.86,
-      "volume": 60760
+      "low": 15.8,
+      "close": 15.89,
+      "volume": 224741
+    },
+    {
+      "time": 1775088000,
+      "open": 16.0,
+      "high": 16.29,
+      "low": 15.79,
+      "close": 16.17,
+      "volume": 808441
     }
   ]
 }

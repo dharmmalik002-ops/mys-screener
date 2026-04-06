@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.189873+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.934368+00:00",
+  "symbol": "PRIMESECU",
+  "timeframe": "1D",
+  "ticker": "PRIMESECU.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 188.35,
-      "high": 190.48,
-      "low": 179.64,
-      "close": 180.09,
-      "volume": 22913
-    },
     {
       "time": 1708560000,
       "open": 178.5,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 275.0,
-      "high": 275.0,
+      "high": 280.0,
       "low": 269.6,
-      "close": 274.8,
-      "volume": 4216
+      "close": 277.2,
+      "volume": 8808
+    },
+    {
+      "time": 1775088000,
+      "open": 276.75,
+      "high": 285.05,
+      "low": 264.15,
+      "close": 276.45,
+      "volume": 32786
     }
   ]
 }

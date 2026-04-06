@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.683718+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:41.725562+00:00",
+  "symbol": "VIPIND",
+  "timeframe": "1D",
+  "ticker": "VIPIND.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 349499
     },
     {
-      "time": 1774915200,
-      "open": 319.05,
-      "high": 319.05,
-      "low": 300.1,
-      "close": 301.0,
-      "volume": 349499
-    },
-    {
       "time": 1775001600,
       "open": 306.95,
       "high": 322.9,
       "low": 306.95,
-      "close": 319.4,
-      "volume": 67510
+      "close": 316.25,
+      "volume": 192240
+    },
+    {
+      "time": 1775088000,
+      "open": 308.25,
+      "high": 320.8,
+      "low": 304.9,
+      "close": 316.55,
+      "volume": 94407
     }
   ]
 }

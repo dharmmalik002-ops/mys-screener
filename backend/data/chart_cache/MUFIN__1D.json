@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.486995+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:40.428898+00:00",
+  "symbol": "MUFIN",
+  "timeframe": "1D",
+  "ticker": "MUFIN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 225.8,
-      "high": 225.8,
-      "low": 212.75,
-      "close": 220.25,
-      "volume": 291878
-    },
     {
       "time": 1708646400,
       "open": 222.9,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 99.45,
-      "high": 101.73,
+      "high": 104.4,
       "low": 98.87,
-      "close": 100.49,
-      "volume": 631921
+      "close": 101.89,
+      "volume": 1376425
+    },
+    {
+      "time": 1775088000,
+      "open": 101.0,
+      "high": 102.01,
+      "low": 98.5,
+      "close": 99.94,
+      "volume": 1522300
     }
   ]
 }

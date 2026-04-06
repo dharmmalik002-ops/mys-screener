@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.853585+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:01.340815+00:00",
+  "symbol": "BENARAS",
+  "timeframe": "1D",
+  "ticker": "BENARAS.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2487,8 +2490,16 @@
       "open": 9400.0,
       "high": 9500.0,
       "low": 9400.0,
-      "close": 9420.95,
-      "volume": 150
+      "close": 9425.75,
+      "volume": 311
+    },
+    {
+      "time": 1775088000,
+      "open": 9454.05,
+      "high": 9495.0,
+      "low": 9402.0,
+      "close": 9453.85,
+      "volume": 166
     }
   ]
 }

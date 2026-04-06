@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.396654+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:32.489677+00:00",
+  "symbol": "LAOPALA",
+  "timeframe": "1D",
+  "ticker": "LAOPALA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 334.01,
-      "high": 335.24,
-      "low": 330.69,
-      "close": 333.77,
-      "volume": 57643
-    },
     {
       "time": 1708646400,
       "open": 333.77,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 167.95,
-      "high": 175.0,
+      "open": 164.5,
+      "high": 175.77,
       "low": 164.5,
-      "close": 174.69,
-      "volume": 27872
+      "close": 173.21,
+      "volume": 80356
+    },
+    {
+      "time": 1775088000,
+      "open": 166.5,
+      "high": 177.99,
+      "low": 166.5,
+      "close": 177.15,
+      "volume": 59424
     }
   ]
 }

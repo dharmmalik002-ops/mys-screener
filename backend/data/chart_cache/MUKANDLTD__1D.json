@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.436814+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:33.448588+00:00",
+  "symbol": "MUKANDLTD",
+  "timeframe": "1D",
+  "ticker": "MUKANDLTD.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 169.07,
-      "high": 170.54,
-      "low": 164.79,
-      "close": 166.49,
-      "volume": 126502
-    },
     {
       "time": 1708646400,
       "open": 167.42,
@@ -4159,8 +4154,16 @@
       "open": 123.96,
       "high": 126.23,
       "low": 122.33,
-      "close": 124.0,
-      "volume": 25301
+      "close": 124.58,
+      "volume": 72663
+    },
+    {
+      "time": 1775088000,
+      "open": 123.99,
+      "high": 123.99,
+      "low": 120.05,
+      "close": 122.6,
+      "volume": 48563
     }
   ]
 }

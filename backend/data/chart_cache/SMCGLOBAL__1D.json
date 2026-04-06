@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.928400+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:50.309266+00:00",
+  "symbol": "SMCGLOBAL",
+  "timeframe": "1D",
+  "ticker": "SMCGLOBAL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 65.33,
-      "high": 66.44,
-      "low": 63.9,
-      "close": 64.8,
-      "volume": 878670
-    },
     {
       "time": 1708560000,
       "open": 65.5,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 58.6,
+      "open": 59.0,
       "high": 60.0,
       "low": 57.63,
-      "close": 59.08,
-      "volume": 175865
+      "close": 59.54,
+      "volume": 480413
+    },
+    {
+      "time": 1775088000,
+      "open": 58.0,
+      "high": 63.58,
+      "low": 56.82,
+      "close": 61.77,
+      "volume": 1071897
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.847153+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:56.789240+00:00",
+  "symbol": "MOBIKWIK",
+  "timeframe": "1D",
+  "ticker": "MOBIKWIK.NS",
   "bars": [
     {
       "time": 1734480000,
@@ -2548,11 +2551,19 @@
     },
     {
       "time": 1775001600,
-      "open": 163.56,
-      "high": 168.68,
+      "open": 163.22,
+      "high": 171.2,
       "low": 160.22,
-      "close": 167.7,
-      "volume": 668798
+      "close": 169.41,
+      "volume": 1519052
+    },
+    {
+      "time": 1775088000,
+      "open": 166.0,
+      "high": 172.25,
+      "low": 160.8,
+      "close": 170.06,
+      "volume": 896711
     }
   ]
 }

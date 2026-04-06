@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.285194+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.789197+00:00",
+  "symbol": "PANORAMA",
+  "timeframe": "1D",
+  "ticker": "PANORAMA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 40.5,
-      "high": 42.0,
-      "low": 38.68,
-      "close": 41.92,
-      "volume": 2131412
-    },
     {
       "time": 1708560000,
       "open": 42.27,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 33.89,
-      "high": 35.0,
+      "open": 33.9,
+      "high": 36.0,
       "low": 33.89,
-      "close": 34.97,
-      "volume": 10399
+      "close": 35.65,
+      "volume": 46029
+    },
+    {
+      "time": 1775088000,
+      "open": 35.8,
+      "high": 37.0,
+      "low": 33.26,
+      "close": 36.43,
+      "volume": 18523
     }
   ]
 }

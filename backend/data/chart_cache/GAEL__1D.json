@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:24.561541+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.176594+00:00",
   "symbol": "GAEL",
   "timeframe": "1D",
   "ticker": "GAEL.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 203.07,
+      "high": 206.95,
+      "low": 201.66,
+      "close": 203.47,
+      "volume": 2159602
+    },
     {
       "time": 1708905600,
       "open": 204.44,
@@ -4142,28 +4150,20 @@
       "volume": 1339219
     },
     {
-      "time": 1774915200,
-      "open": 132.0,
-      "high": 136.99,
-      "low": 130.0,
-      "close": 135.52,
-      "volume": 1339219
-    },
-    {
       "time": 1775001600,
       "open": 137.0,
       "high": 141.4,
       "low": 136.59,
-      "close": 139.19,
-      "volume": 437583
+      "close": 139.37,
+      "volume": 761729
     },
     {
       "time": 1775088000,
-      "open": 139.37,
+      "open": 134.89,
       "high": 141.63,
       "low": 134.22,
-      "close": 140.75,
-      "volume": 646002
+      "close": 140.35,
+      "volume": 662859
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.307446+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:42.065072+00:00",
+  "symbol": "HYUNDAI",
+  "timeframe": "1D",
+  "ticker": "HYUNDAI.NS",
   "bars": [
     {
       "time": 1729555200,
@@ -2859,20 +2862,20 @@
       "volume": 1078720
     },
     {
-      "time": 1774915200,
-      "open": 1785.1,
-      "high": 1797.0,
-      "low": 1734.1,
-      "close": 1779.0,
-      "volume": 1078720
-    },
-    {
       "time": 1775001600,
       "open": 1828.0,
       "high": 1828.8,
-      "low": 1738.3,
-      "close": 1745.6,
-      "volume": 1546996
+      "low": 1699.0,
+      "close": 1716.2,
+      "volume": 4291001
+    },
+    {
+      "time": 1775088000,
+      "open": 1715.0,
+      "high": 1719.9,
+      "low": 1660.1,
+      "close": 1711.5,
+      "volume": 1163380
     }
   ]
 }

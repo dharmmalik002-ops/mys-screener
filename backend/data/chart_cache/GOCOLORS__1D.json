@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.784584+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:46.504224+00:00",
+  "symbol": "GOCOLORS",
+  "timeframe": "1D",
+  "ticker": "GOCOLORS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1168.9,
-      "high": 1168.9,
-      "low": 1141.0,
-      "close": 1161.1,
-      "volume": 17430
-    },
     {
       "time": 1708646400,
       "open": 1157.7,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 257.17,
-      "high": 267.0,
+      "high": 269.69,
       "low": 255.26,
-      "close": 264.34,
-      "volume": 53061
+      "close": 266.69,
+      "volume": 122503
+    },
+    {
+      "time": 1775088000,
+      "open": 264.0,
+      "high": 277.34,
+      "low": 257.82,
+      "close": 273.58,
+      "volume": 220234
     }
   ]
 }

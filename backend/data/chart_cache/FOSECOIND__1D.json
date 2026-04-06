@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.881428+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:55.451907+00:00",
+  "symbol": "FOSECOIND",
+  "timeframe": "1D",
+  "ticker": "FOSECOIND.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 3683.11,
-      "high": 3775.86,
-      "low": 3599.75,
-      "close": 3733.41,
-      "volume": 5464
-    },
     {
       "time": 1708646400,
       "open": 3815.34,
@@ -4158,9 +4153,17 @@
       "time": 1775001600,
       "open": 4750.0,
       "high": 4925.0,
-      "low": 4750.0,
-      "close": 4826.0,
-      "volume": 995
+      "low": 4530.0,
+      "close": 4620.7,
+      "volume": 7067
+    },
+    {
+      "time": 1775088000,
+      "open": 4516.0,
+      "high": 4650.0,
+      "low": 4512.0,
+      "close": 4624.4,
+      "volume": 946
     }
   ]
 }

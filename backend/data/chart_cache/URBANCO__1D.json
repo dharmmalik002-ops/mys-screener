@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:17:36.076295+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:16.575497+00:00",
   "symbol": "URBANCO",
   "timeframe": "1D",
   "ticker": "URBANCO.NS",
@@ -1062,27 +1062,19 @@
       "volume": 30536917
     },
     {
-      "time": 1774915200,
-      "open": 114.0,
-      "high": 123.29,
-      "low": 111.5,
-      "close": 118.2,
-      "volume": 30536917
-    },
-    {
       "time": 1775001600,
       "open": 121.83,
-      "high": 124.2,
+      "high": 125.34,
       "low": 121.24,
-      "close": 123.88,
-      "volume": 2627542
+      "close": 123.79,
+      "volume": 5992568
     },
     {
       "time": 1775088000,
-      "open": 122.36,
+      "open": 120.84,
       "high": 122.36,
       "low": 119.74,
-      "close": 121.19,
+      "close": 121.8,
       "volume": 2566178
     }
   ]

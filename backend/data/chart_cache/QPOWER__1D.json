@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.918002+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.815838+00:00",
+  "symbol": "QPOWER",
+  "timeframe": "1D",
+  "ticker": "QPOWER.NS",
   "bars": [
     {
       "time": 1740355200,
@@ -2163,20 +2166,20 @@
       "volume": 1402465
     },
     {
-      "time": 1774915200,
-      "open": 853.8,
-      "high": 853.8,
-      "low": 792.1,
-      "close": 811.0,
-      "volume": 1402465
-    },
-    {
       "time": 1775001600,
       "open": 834.0,
-      "high": 863.95,
+      "high": 877.65,
       "low": 829.0,
-      "close": 861.5,
-      "volume": 540037
+      "close": 866.8,
+      "volume": 1096268
+    },
+    {
+      "time": 1775088000,
+      "open": 844.95,
+      "high": 876.05,
+      "low": 820.0,
+      "close": 871.65,
+      "volume": 937315
     }
   ]
 }

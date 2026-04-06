@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.716069+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:42.669122+00:00",
+  "symbol": "GODREJPROP",
+  "timeframe": "1D",
+  "ticker": "GODREJPROP.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1403012
     },
     {
-      "time": 1774915200,
-      "open": 1489.0,
-      "high": 1512.6,
-      "low": 1466.0,
-      "close": 1470.0,
-      "volume": 1403012
-    },
-    {
       "time": 1775001600,
       "open": 1516.8,
       "high": 1538.4,
-      "low": 1505.9,
-      "close": 1519.1,
-      "volume": 571844
+      "low": 1499.1,
+      "close": 1508.1,
+      "volume": 1101747
+    },
+    {
+      "time": 1775088000,
+      "open": 1480.0,
+      "high": 1516.8,
+      "low": 1434.0,
+      "close": 1508.3,
+      "volume": 1187230
     }
   ]
 }

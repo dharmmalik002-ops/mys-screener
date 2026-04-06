@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:30.387642+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:03.200874+00:00",
   "symbol": "TFCILTD",
   "timeframe": "1D",
   "ticker": "TFCILTD.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 65.14,
+      "open": 66.39,
       "high": 66.39,
       "low": 64.26,
-      "close": 65.14,
-      "volume": 633758
+      "close": 65.75,
+      "volume": 8254436
     },
     {
       "time": 1775088000,
-      "open": 64.97,
-      "high": 64.97,
-      "low": 63.9,
+      "open": 64.26,
+      "high": 65.0,
+      "low": 63.8,
       "close": 64.65,
-      "volume": 4914203
+      "volume": 4921014
     }
   ]
 }

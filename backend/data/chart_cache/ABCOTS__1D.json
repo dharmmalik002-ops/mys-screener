@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:30:40.388549+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.112527+00:00",
+  "symbol": "ABCOTS",
+  "timeframe": "1D",
+  "ticker": "ABCOTS.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 345.75,
-      "high": 345.75,
-      "low": 345.75,
-      "close": 345.75,
-      "volume": 0
-    },
     {
       "time": 1708473600,
       "open": 381.15,
@@ -1414,7 +1409,7 @@
       "time": 1731024000,
       "open": 340.9,
       "high": 341.0,
-      "low": 340.95,
+      "low": 340.9,
       "close": 340.95,
       "volume": 1000
     },
@@ -4158,9 +4153,17 @@
       "time": 1775001600,
       "open": 409.75,
       "high": 409.75,
-      "low": 402.1,
-      "close": 405.2,
-      "volume": 0
+      "low": 395.5,
+      "close": 402.65,
+      "volume": 9556
+    },
+    {
+      "time": 1775088000,
+      "open": 401.75,
+      "high": 407.05,
+      "low": 399.75,
+      "close": 404.0,
+      "volume": 29285
     }
   ]
 }

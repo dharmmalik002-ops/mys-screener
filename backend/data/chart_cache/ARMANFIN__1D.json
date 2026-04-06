@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.716582+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:36.883042+00:00",
+  "symbol": "ARMANFIN",
+  "timeframe": "1D",
+  "ticker": "ARMANFIN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 2274.95,
-      "high": 2279.95,
-      "low": 2230.05,
-      "close": 2254.35,
-      "volume": 12916
-    },
     {
       "time": 1708646400,
       "open": 2276.9,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1370.0,
-      "high": 1433.6,
+      "high": 1523.5,
       "low": 1355.3,
-      "close": 1432.0,
-      "volume": 11292
+      "close": 1484.8,
+      "volume": 45756
+    },
+    {
+      "time": 1775088000,
+      "open": 1450.0,
+      "high": 1520.0,
+      "low": 1426.1,
+      "close": 1476.7,
+      "volume": 45161
     }
   ]
 }

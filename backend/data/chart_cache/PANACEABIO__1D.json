@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.405583+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.306281+00:00",
+  "symbol": "PANACEABIO",
+  "timeframe": "1D",
+  "ticker": "PANACEABIO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 159.0,
-      "high": 162.2,
-      "low": 156.4,
-      "close": 160.55,
-      "volume": 85256
-    },
     {
       "time": 1708646400,
       "open": 160.2,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 311.8,
-      "high": 327.3,
+      "open": 307.0,
+      "high": 333.25,
       "low": 307.0,
-      "close": 325.4,
-      "volume": 61907
+      "close": 325.3,
+      "volume": 151206
+    },
+    {
+      "time": 1775088000,
+      "open": 327.0,
+      "high": 327.0,
+      "low": 315.0,
+      "close": 323.4,
+      "volume": 60123
     }
   ]
 }

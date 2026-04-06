@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.915391+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:33.845912+00:00",
+  "symbol": "AVALON",
+  "timeframe": "1D",
+  "ticker": "AVALON.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 134723
     },
     {
-      "time": 1774915200,
-      "open": 963.1,
-      "high": 965.2,
-      "low": 911.2,
-      "close": 917.0,
-      "volume": 134723
-    },
-    {
       "time": 1775001600,
       "open": 933.45,
       "high": 974.5,
-      "low": 932.0,
-      "close": 956.95,
-      "volume": 58425
+      "low": 927.3,
+      "close": 936.85,
+      "volume": 214518
+    },
+    {
+      "time": 1775088000,
+      "open": 935.0,
+      "high": 949.0,
+      "low": 910.0,
+      "close": 937.65,
+      "volume": 109580
     }
   ]
 }

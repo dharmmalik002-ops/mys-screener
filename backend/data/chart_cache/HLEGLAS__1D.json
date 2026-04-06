@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.434043+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:37.177204+00:00",
+  "symbol": "HLEGLAS",
+  "timeframe": "1D",
+  "ticker": "HLEGLAS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 512.49,
-      "high": 512.94,
-      "low": 501.55,
-      "close": 503.39,
-      "volume": 46106
-    },
     {
       "time": 1708646400,
       "open": 503.54,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 259.0,
+      "open": 256.0,
       "high": 276.05,
       "low": 255.0,
-      "close": 273.4,
-      "volume": 122892
+      "close": 269.2,
+      "volume": 246481
+    },
+    {
+      "time": 1775088000,
+      "open": 265.0,
+      "high": 270.5,
+      "low": 256.35,
+      "close": 267.0,
+      "volume": 328022
     }
   ]
 }

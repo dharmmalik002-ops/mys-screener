@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.052220+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:57.580153+00:00",
+  "symbol": "CENTRALBK",
+  "timeframe": "1D",
+  "ticker": "CENTRALBK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 10644904
     },
     {
-      "time": 1774915200,
-      "open": 32.71,
-      "high": 32.79,
-      "low": 31.3,
-      "close": 31.41,
-      "volume": 10644904
-    },
-    {
       "time": 1775001600,
       "open": 32.6,
-      "high": 32.7,
+      "high": 33.4,
       "low": 32.14,
-      "close": 32.5,
-      "volume": 2570494
+      "close": 33.08,
+      "volume": 6403299
+    },
+    {
+      "time": 1775088000,
+      "open": 32.5,
+      "high": 33.44,
+      "low": 32.01,
+      "close": 33.29,
+      "volume": 5240478
     }
   ]
 }

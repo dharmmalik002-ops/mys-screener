@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:08.752683+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:58.355098+00:00",
   "symbol": "ABSLAMC",
   "timeframe": "1D",
   "ticker": "ABSLAMC.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 475.42,
+      "high": 475.42,
+      "low": 471.22,
+      "close": 472.7,
+      "volume": 92225
+    },
     {
       "time": 1708905600,
       "open": 472.65,
@@ -4142,28 +4150,20 @@
       "volume": 281184
     },
     {
-      "time": 1774915200,
-      "open": 895.0,
-      "high": 899.7,
-      "low": 867.1,
-      "close": 869.15,
-      "volume": 281184
-    },
-    {
       "time": 1775001600,
       "open": 910.0,
       "high": 915.0,
-      "low": 892.1,
-      "close": 893.95,
-      "volume": 70590
+      "low": 891.0,
+      "close": 901.4,
+      "volume": 153583
     },
     {
       "time": 1775088000,
-      "open": 901.4,
+      "open": 895.0,
       "high": 934.0,
       "low": 872.4,
-      "close": 915.0,
-      "volume": 349336
+      "close": 917.15,
+      "volume": 356975
     }
   ]
 }

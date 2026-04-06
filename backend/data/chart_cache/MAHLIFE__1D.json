@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.088570+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:26.818477+00:00",
+  "symbol": "MAHLIFE",
+  "timeframe": "1D",
+  "ticker": "MAHLIFE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 591.07,
-      "high": 607.87,
-      "low": 587.12,
-      "close": 596.9,
-      "volume": 725296
-    },
     {
       "time": 1708646400,
       "open": 596.01,
@@ -559,7 +554,7 @@
       "open": 573.28,
       "high": 592.06,
       "low": 569.92,
-      "close": 589.09,
+      "close": 589.1,
       "volume": 386388
     },
     {
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 297.0,
-      "high": 307.0,
+      "open": 296.1,
+      "high": 318.0,
       "low": 296.1,
-      "close": 304.9,
-      "volume": 0
+      "close": 315.4,
+      "volume": 200751
+    },
+    {
+      "time": 1775088000,
+      "open": 312.0,
+      "high": 323.9,
+      "low": 302.5,
+      "close": 319.45,
+      "volume": 111190
     }
   ]
 }

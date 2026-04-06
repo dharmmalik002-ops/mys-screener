@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.568789+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:04.687352+00:00",
+  "symbol": "INDIACEM",
+  "timeframe": "1D",
+  "ticker": "INDIACEM.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 224027
     },
     {
-      "time": 1774915200,
-      "open": 352.85,
-      "high": 356.65,
-      "low": 342.35,
-      "close": 342.75,
-      "volume": 224027
-    },
-    {
       "time": 1775001600,
       "open": 347.95,
       "high": 359.5,
       "low": 347.95,
-      "close": 353.0,
-      "volume": 40284
+      "close": 357.2,
+      "volume": 194859
+    },
+    {
+      "time": 1775088000,
+      "open": 353.0,
+      "high": 361.85,
+      "low": 347.5,
+      "close": 358.95,
+      "volume": 194873
     }
   ]
 }

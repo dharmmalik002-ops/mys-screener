@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.838067+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:55.331914+00:00",
+  "symbol": "SDBL",
+  "timeframe": "1D",
+  "ticker": "SDBL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 100.68,
-      "high": 101.64,
-      "low": 99.14,
-      "close": 100.82,
-      "volume": 614217
-    },
     {
       "time": 1708646400,
       "open": 101.82,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 65.58,
-      "high": 68.12,
+      "open": 64.5,
+      "high": 69.5,
       "low": 64.0,
-      "close": 67.93,
-      "volume": 476805
+      "close": 69.14,
+      "volume": 930769
+    },
+    {
+      "time": 1775088000,
+      "open": 67.2,
+      "high": 70.21,
+      "low": 65.69,
+      "close": 69.52,
+      "volume": 710986
     }
   ]
 }

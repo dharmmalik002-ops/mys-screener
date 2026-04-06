@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:35:37.327035+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.759094+00:00",
   "symbol": "ARFIN",
   "timeframe": "1D",
   "ticker": "ARFIN.NS",
@@ -1370,16 +1370,16 @@
       "open": 75.1,
       "high": 76.85,
       "low": 74.31,
-      "close": 75.91,
-      "volume": 90735
+      "close": 75.94,
+      "volume": 703998
     },
     {
       "time": 1775088000,
-      "open": 75.94,
+      "open": 76.45,
       "high": 77.4,
       "low": 74.01,
       "close": 76.15,
-      "volume": 798349
+      "volume": 793941
     }
   ]
 }

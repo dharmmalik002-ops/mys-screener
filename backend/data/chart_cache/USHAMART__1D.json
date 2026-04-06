@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.493785+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:09.261107+00:00",
+  "symbol": "USHAMART",
+  "timeframe": "1D",
+  "ticker": "USHAMART.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 361473
     },
     {
-      "time": 1774915200,
-      "open": 400.0,
-      "high": 405.05,
-      "low": 389.0,
-      "close": 391.3,
-      "volume": 361473
-    },
-    {
       "time": 1775001600,
       "open": 410.15,
       "high": 410.2,
       "low": 399.05,
-      "close": 405.0,
-      "volume": 70049
+      "close": 406.65,
+      "volume": 203044
+    },
+    {
+      "time": 1775088000,
+      "open": 404.0,
+      "high": 407.25,
+      "low": 390.0,
+      "close": 405.55,
+      "volume": 291215
     }
   ]
 }

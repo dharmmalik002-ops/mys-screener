@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.444260+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:35.831941+00:00",
+  "symbol": "AUROPHARMA",
+  "timeframe": "1D",
+  "ticker": "AUROPHARMA.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 2474751
     },
     {
-      "time": 1774915200,
-      "open": 1300.0,
-      "high": 1320.0,
-      "low": 1298.1,
-      "close": 1301.1,
-      "volume": 2474751
-    },
-    {
       "time": 1775001600,
       "open": 1332.2,
       "high": 1359.9,
       "low": 1325.9,
-      "close": 1329.0,
-      "volume": 1181463
+      "close": 1342.1,
+      "volume": 2595497
+    },
+    {
+      "time": 1775088000,
+      "open": 1335.5,
+      "high": 1338.9,
+      "low": 1266.1,
+      "close": 1333.7,
+      "volume": 1870240
     }
   ]
 }

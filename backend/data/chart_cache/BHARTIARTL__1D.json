@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T05:41:50.168833+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:27.719973+00:00",
   "symbol": "BHARTIARTL",
   "timeframe": "1D",
   "ticker": "BHARTIARTL.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 1111.46,
+      "high": 1116.25,
+      "low": 1099.92,
+      "close": 1110.23,
+      "volume": 6709844
+    },
     {
       "time": 1708905600,
       "open": 1102.69,
@@ -4142,28 +4150,20 @@
       "volume": 14240129
     },
     {
-      "time": 1774915200,
-      "open": 1818.0,
-      "high": 1824.5,
-      "low": 1774.5,
-      "close": 1789.2,
-      "volume": 14240129
-    },
-    {
       "time": 1775001600,
       "open": 1811.0,
       "high": 1817.3,
-      "low": 1792.0,
-      "close": 1796.6,
-      "volume": 2865594
+      "low": 1776.5,
+      "close": 1781.9,
+      "volume": 10694662
     },
     {
       "time": 1775088000,
-      "open": 1777.0,
-      "high": 1777.0,
-      "low": 1750.0,
-      "close": 1756.7,
-      "volume": 2318867
+      "open": 1765.0,
+      "high": 1799.4,
+      "low": 1746.9,
+      "close": 1789.7,
+      "volume": 10857093
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.268438+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:10.825705+00:00",
+  "symbol": "HARIOMPIPE",
+  "timeframe": "1D",
+  "ticker": "HARIOMPIPE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 531.05,
-      "high": 536.68,
-      "low": 516.07,
-      "close": 524.01,
-      "volume": 64220
-    },
     {
       "time": 1708646400,
       "open": 531.89,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 284.95,
-      "high": 296.8,
+      "high": 309.0,
       "low": 282.15,
-      "close": 295.2,
-      "volume": 99852
+      "close": 304.1,
+      "volume": 209618
+    },
+    {
+      "time": 1775088000,
+      "open": 296.5,
+      "high": 316.0,
+      "low": 291.5,
+      "close": 312.45,
+      "volume": 126808
     }
   ]
 }

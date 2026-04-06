@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.153332+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.134609+00:00",
+  "symbol": "SHREDIGCEM",
+  "timeframe": "1D",
+  "ticker": "SHREDIGCEM.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 105.4,
-      "high": 106.12,
-      "low": 103.92,
-      "close": 104.49,
-      "volume": 293166
-    },
     {
       "time": 1708646400,
       "open": 105.12,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 61.29,
-      "high": 62.43,
+      "open": 60.0,
+      "high": 64.9,
       "low": 58.62,
-      "close": 62.19,
-      "volume": 145245
+      "close": 63.98,
+      "volume": 451365
+    },
+    {
+      "time": 1775088000,
+      "open": 63.5,
+      "high": 66.94,
+      "low": 60.87,
+      "close": 66.13,
+      "volume": 227181
     }
   ]
 }

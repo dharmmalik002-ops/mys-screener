@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.017641+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:37.482173+00:00",
+  "symbol": "SHREEJISPG",
+  "timeframe": "1D",
+  "ticker": "SHREEJISPG.NS",
   "bars": [
     {
       "time": 1756166400,
@@ -1180,11 +1183,19 @@
     },
     {
       "time": 1775001600,
-      "open": 333.0,
-      "high": 336.6,
+      "open": 330.5,
+      "high": 339.65,
       "low": 327.5,
-      "close": 333.25,
-      "volume": 0
+      "close": 337.15,
+      "volume": 354255
+    },
+    {
+      "time": 1775088000,
+      "open": 330.0,
+      "high": 337.4,
+      "low": 320.4,
+      "close": 334.3,
+      "volume": 371453
     }
   ]
 }

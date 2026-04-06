@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.904591+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:52.679801+00:00",
+  "symbol": "JTEKTINDIA",
+  "timeframe": "1D",
+  "ticker": "JTEKTINDIA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 146.71,
-      "high": 147.75,
-      "low": 144.18,
-      "close": 145.42,
-      "volume": 106071
-    },
     {
       "time": 1708646400,
       "open": 146.32,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 118.59,
-      "high": 123.19,
+      "high": 126.0,
       "low": 118.59,
-      "close": 122.0,
-      "volume": 37237
+      "close": 125.34,
+      "volume": 99470
+    },
+    {
+      "time": 1775088000,
+      "open": 121.8,
+      "high": 128.49,
+      "low": 120.5,
+      "close": 127.14,
+      "volume": 74045
     }
   ]
 }

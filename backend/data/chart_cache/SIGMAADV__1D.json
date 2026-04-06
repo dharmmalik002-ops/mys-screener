@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:24:52.289659+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:10.387542+00:00",
+  "symbol": "SIGMAADV",
+  "timeframe": "1D",
+  "ticker": "SIGMAADV.NS",
   "bars": [
-    {
-      "time": 1707955200,
-      "open": 67.98,
-      "high": 67.98,
-      "low": 65.5,
-      "close": 67.0,
-      "volume": 10300
-    },
-    {
-      "time": 1708041600,
-      "open": 67.0,
-      "high": 70.35,
-      "low": 66.51,
-      "close": 70.04,
-      "volume": 86721
-    },
     {
       "time": 1708300800,
       "open": 78.39,
@@ -4161,6 +4148,22 @@
       "low": 145.4,
       "close": 145.5,
       "volume": 24291
+    },
+    {
+      "time": 1775001600,
+      "open": 146.0,
+      "high": 152.75,
+      "low": 146.0,
+      "close": 152.75,
+      "volume": 17475
+    },
+    {
+      "time": 1775088000,
+      "open": 156.55,
+      "high": 159.95,
+      "low": 149.0,
+      "close": 157.95,
+      "volume": 14205
     }
   ]
 }

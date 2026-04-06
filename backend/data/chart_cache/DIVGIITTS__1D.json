@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.357441+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.900382+00:00",
+  "symbol": "DIVGIITTS",
+  "timeframe": "1D",
+  "ticker": "DIVGIITTS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 872.22,
-      "high": 872.22,
-      "low": 839.57,
-      "close": 847.71,
-      "volume": 15437
-    },
     {
       "time": 1708560000,
       "open": 847.71,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 630.05,
-      "high": 655.35,
-      "low": 627.6,
-      "close": 646.45,
-      "volume": 40121
+      "open": 645.0,
+      "high": 664.45,
+      "low": 623.35,
+      "close": 631.85,
+      "volume": 68080
+    },
+    {
+      "time": 1775088000,
+      "open": 624.5,
+      "high": 638.05,
+      "low": 610.0,
+      "close": 633.8,
+      "volume": 17048
     }
   ]
 }

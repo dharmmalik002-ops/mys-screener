@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:15:37.087062+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:13.234272+00:00",
   "symbol": "THANGAMAYL",
   "timeframe": "1D",
   "ticker": "THANGAMAYL.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 1313.26,
+      "high": 1325.54,
+      "low": 1311.88,
+      "close": 1317.87,
+      "volume": 6950
+    },
     {
       "time": 1708905600,
       "open": 1336.38,
@@ -369,7 +377,7 @@
       "time": 1715040000,
       "open": 1239.55,
       "high": 1257.37,
-      "low": 1187.23,
+      "low": 1187.22,
       "close": 1201.14,
       "volume": 23307
     },
@@ -4142,27 +4150,19 @@
       "volume": 90956
     },
     {
-      "time": 1774915200,
-      "open": 3400.0,
-      "high": 3457.0,
-      "low": 3350.0,
-      "close": 3365.0,
-      "volume": 90956
-    },
-    {
       "time": 1775001600,
       "open": 3549.7,
       "high": 3679.0,
       "low": 3500.7,
-      "close": 3605.9,
-      "volume": 53353
+      "close": 3552.4,
+      "volume": 81043
     },
     {
       "time": 1775088000,
-      "open": 3552.4,
+      "open": 3499.7,
       "high": 3568.0,
       "low": 3409.0,
-      "close": 3533.9,
+      "close": 3543.8,
       "volume": 51205
     }
   ]

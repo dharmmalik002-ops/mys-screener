@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:43:35.960614+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:24.419953+00:00",
+  "symbol": "DHARMAJ",
+  "timeframe": "1D",
+  "ticker": "DHARMAJ.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 247.45,
-      "high": 250.1,
-      "low": 240.0,
-      "close": 240.8,
-      "volume": 46272
-    },
-    {
-      "time": 1708560000,
-      "open": 242.0,
-      "high": 250.0,
-      "low": 241.0,
-      "close": 245.05,
-      "volume": 81626
-    },
     {
       "time": 1708646400,
       "open": 246.3,
@@ -4157,10 +4144,26 @@
     {
       "time": 1774828800,
       "open": 230.51,
-      "high": 231.48,
+      "high": 232.0,
       "low": 225.88,
-      "close": 230.53,
-      "volume": 38876
+      "close": 230.21,
+      "volume": 58523
+    },
+    {
+      "time": 1775001600,
+      "open": 237.44,
+      "high": 243.79,
+      "low": 235.05,
+      "close": 237.69,
+      "volume": 45144
+    },
+    {
+      "time": 1775088000,
+      "open": 237.18,
+      "high": 247.77,
+      "low": 233.62,
+      "close": 245.13,
+      "volume": 48668
     }
   ]
 }

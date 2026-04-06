@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:25.993489+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:47.144225+00:00",
   "symbol": "NETWEB",
   "timeframe": "1D",
   "ticker": "NETWEB.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 1647.35,
+      "high": 1647.35,
+      "low": 1596.65,
+      "close": 1647.35,
+      "volume": 279921
+    },
     {
       "time": 1708905600,
       "open": 1676.39,
@@ -4142,28 +4150,20 @@
       "volume": 871156
     },
     {
-      "time": 1774915200,
-      "open": 3122.6,
-      "high": 3159.7,
-      "low": 3070.3,
-      "close": 3088.9,
-      "volume": 871156
-    },
-    {
       "time": 1775001600,
       "open": 3215.0,
       "high": 3227.2,
-      "low": 3161.0,
-      "close": 3166.7,
-      "volume": 324812
+      "low": 3127.0,
+      "close": 3144.1,
+      "volume": 691654
     },
     {
       "time": 1775088000,
-      "open": 3144.1,
+      "open": 3104.1,
       "high": 3165.0,
       "low": 3043.3,
-      "close": 3152.4,
-      "volume": 577774
+      "close": 3155.0,
+      "volume": 595584
     }
   ]
 }

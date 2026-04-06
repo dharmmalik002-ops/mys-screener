@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.720448+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.234058+00:00",
+  "symbol": "IBULLSLTD",
+  "timeframe": "1D",
+  "ticker": "IBULLSLTD.NS",
   "bars": [
     {
       "time": 1761782400,
@@ -660,11 +663,19 @@
     },
     {
       "time": 1775001600,
-      "open": 9.47,
-      "high": 9.92,
+      "open": 9.25,
+      "high": 10.44,
       "low": 9.25,
-      "close": 9.87,
-      "volume": 2554765
+      "close": 10.03,
+      "volume": 6251154
+    },
+    {
+      "time": 1775088000,
+      "open": 9.92,
+      "high": 10.69,
+      "low": 9.61,
+      "close": 10.53,
+      "volume": 6804779
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.094464+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.570784+00:00",
+  "symbol": "PRICOLLTD",
+  "timeframe": "1D",
+  "ticker": "PRICOLLTD.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 362974
     },
     {
-      "time": 1774915200,
-      "open": 522.0,
-      "high": 522.0,
-      "low": 508.95,
-      "close": 512.0,
-      "volume": 362974
-    },
-    {
       "time": 1775001600,
       "open": 535.0,
-      "high": 536.8,
+      "high": 539.55,
       "low": 525.1,
-      "close": 531.15,
-      "volume": 102666
+      "close": 537.9,
+      "volume": 222428
+    },
+    {
+      "time": 1775088000,
+      "open": 532.0,
+      "high": 536.9,
+      "low": 517.5,
+      "close": 529.85,
+      "volume": 184379
     }
   ]
 }

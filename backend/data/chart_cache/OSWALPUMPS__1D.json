@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.128673+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:59.136336+00:00",
+  "symbol": "OSWALPUMPS",
+  "timeframe": "1D",
+  "ticker": "OSWALPUMPS.NS",
   "bars": [
     {
       "time": 1750377600,
@@ -1531,20 +1534,20 @@
       "volume": 878635
     },
     {
-      "time": 1774915200,
-      "open": 299.0,
-      "high": 304.65,
-      "low": 288.0,
-      "close": 290.0,
-      "volume": 878635
-    },
-    {
       "time": 1775001600,
       "open": 302.85,
       "high": 314.85,
       "low": 302.8,
-      "close": 307.45,
-      "volume": 431530
+      "close": 309.7,
+      "volume": 786450
+    },
+    {
+      "time": 1775088000,
+      "open": 302.65,
+      "high": 313.95,
+      "low": 297.0,
+      "close": 311.2,
+      "volume": 715558
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T09:51:19.068875+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:26.501758+00:00",
+  "symbol": "MAFATIND",
+  "timeframe": "1D",
+  "ticker": "MAFATIND.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2478,9 +2481,25 @@
       "time": 1774828800,
       "open": 111.1,
       "high": 113.8,
-      "low": 109.0,
-      "close": 109.95,
-      "volume": 84018
+      "low": 107.15,
+      "close": 108.2,
+      "volume": 101524
+    },
+    {
+      "time": 1775001600,
+      "open": 114.85,
+      "high": 114.85,
+      "low": 111.0,
+      "close": 112.1,
+      "volume": 43141
+    },
+    {
+      "time": 1775088000,
+      "open": 111.9,
+      "high": 116.25,
+      "low": 110.0,
+      "close": 115.7,
+      "volume": 31366
     }
   ]
 }

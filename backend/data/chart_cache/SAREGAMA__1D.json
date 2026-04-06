@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.923827+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:27.242512+00:00",
+  "symbol": "SAREGAMA",
+  "timeframe": "1D",
+  "ticker": "SAREGAMA.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 327928
     },
     {
-      "time": 1774915200,
-      "open": 321.6,
-      "high": 332.85,
-      "low": 317.1,
-      "close": 318.0,
-      "volume": 327928
-    },
-    {
       "time": 1775001600,
       "open": 332.0,
       "high": 338.0,
       "low": 322.05,
-      "close": 328.4,
-      "volume": 119815
+      "close": 327.6,
+      "volume": 395009
+    },
+    {
+      "time": 1775088000,
+      "open": 325.35,
+      "high": 325.35,
+      "low": 317.5,
+      "close": 320.5,
+      "volume": 325373
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.450709+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.074707+00:00",
+  "symbol": "SIKA",
+  "timeframe": "1D",
+  "ticker": "SIKA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 328.22,
-      "high": 342.79,
-      "low": 319.83,
-      "close": 328.4,
-      "volume": 34260
-    },
     {
       "time": 1708560000,
       "open": 329.41,
@@ -4158,9 +4153,17 @@
       "time": 1775001600,
       "open": 850.0,
       "high": 899.95,
-      "low": 849.95,
-      "close": 875.0,
-      "volume": 17126
+      "low": 840.35,
+      "close": 849.6,
+      "volume": 37570
+    },
+    {
+      "time": 1775088000,
+      "open": 840.0,
+      "high": 875.0,
+      "low": 803.0,
+      "close": 854.75,
+      "volume": 33895
     }
   ]
 }

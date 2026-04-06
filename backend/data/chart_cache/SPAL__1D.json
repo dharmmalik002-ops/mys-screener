@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.429186+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:32.725331+00:00",
+  "symbol": "SPAL",
+  "timeframe": "1D",
+  "ticker": "SPAL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 630.08,
-      "high": 634.27,
-      "low": 606.09,
-      "close": 628.38,
-      "volume": 34256
-    },
     {
       "time": 1708646400,
       "open": 634.37,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 730.0,
-      "high": 731.85,
+      "high": 733.3,
       "low": 714.1,
-      "close": 725.1,
-      "volume": 10669
+      "close": 725.0,
+      "volume": 27724
+    },
+    {
+      "time": 1775088000,
+      "open": 729.0,
+      "high": 729.0,
+      "low": 701.0,
+      "close": 717.15,
+      "volume": 10816
     }
   ]
 }

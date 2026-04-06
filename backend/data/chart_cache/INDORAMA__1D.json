@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:43:36.262107+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:22.482459+00:00",
+  "symbol": "INDORAMA",
+  "timeframe": "1D",
+  "ticker": "INDORAMA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 52.75,
-      "high": 54.85,
-      "low": 52.1,
-      "close": 52.45,
-      "volume": 721335
-    },
-    {
-      "time": 1708560000,
-      "open": 52.8,
-      "high": 52.95,
-      "low": 51.95,
-      "close": 52.35,
-      "volume": 185619
-    },
     {
       "time": 1708646400,
       "open": 52.35,
@@ -4158,9 +4145,25 @@
       "time": 1774828800,
       "open": 32.0,
       "high": 32.01,
-      "low": 30.3,
-      "close": 30.48,
-      "volume": 62476
+      "low": 30.0,
+      "close": 30.09,
+      "volume": 163487
+    },
+    {
+      "time": 1775001600,
+      "open": 30.26,
+      "high": 32.98,
+      "low": 30.26,
+      "close": 32.63,
+      "volume": 105095
+    },
+    {
+      "time": 1775088000,
+      "open": 32.64,
+      "high": 32.91,
+      "low": 31.6,
+      "close": 32.56,
+      "volume": 89640
     }
   ]
 }

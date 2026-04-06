@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:11:03.132480+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:59.670460+00:00",
   "symbol": "PARKHOSPS",
   "timeframe": "1D",
   "ticker": "PARKHOSPS.NS",
@@ -575,10 +575,10 @@
     },
     {
       "time": 1775088000,
-      "open": 198.03,
+      "open": 195.0,
       "high": 201.65,
       "low": 192.5,
-      "close": 195.0,
+      "close": 197.19,
       "volume": 569744
     }
   ]

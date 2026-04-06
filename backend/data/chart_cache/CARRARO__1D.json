@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.597128+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:10.136079+00:00",
+  "symbol": "CARRARO",
+  "timeframe": "1D",
+  "ticker": "CARRARO.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 473.1,
+      "open": 476.3,
       "high": 503.25,
-      "low": 465.05,
-      "close": 467.55,
-      "volume": 33361
+      "low": 465.0,
+      "close": 467.3,
+      "volume": 62464
+    },
+    {
+      "time": 1775088000,
+      "open": 465.0,
+      "high": 465.0,
+      "low": 443.1,
+      "close": 461.05,
+      "volume": 39186
     }
   ]
 }

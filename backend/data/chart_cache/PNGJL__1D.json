@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.706870+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:05.088748+00:00",
+  "symbol": "PNGJL",
+  "timeframe": "1D",
+  "ticker": "PNGJL.NS",
   "bars": [
     {
       "time": 1726531200,
@@ -3019,20 +3022,20 @@
       "volume": 245296
     },
     {
-      "time": 1774915200,
-      "open": 540.55,
-      "high": 550.55,
-      "low": 519.2,
-      "close": 534.95,
-      "volume": 245296
-    },
-    {
       "time": 1775001600,
       "open": 555.0,
-      "high": 563.8,
+      "high": 565.5,
       "low": 537.05,
-      "close": 560.4,
-      "volume": 192391
+      "close": 561.35,
+      "volume": 250024
+    },
+    {
+      "time": 1775088000,
+      "open": 545.0,
+      "high": 584.5,
+      "low": 541.1,
+      "close": 569.0,
+      "volume": 105692
     }
   ]
 }

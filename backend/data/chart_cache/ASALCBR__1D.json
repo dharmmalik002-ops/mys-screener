@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.809428+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:50.304416+00:00",
+  "symbol": "ASALCBR",
+  "timeframe": "1D",
+  "ticker": "ASALCBR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 468.92,
-      "high": 474.85,
-      "low": 464.44,
-      "close": 466.43,
-      "volume": 32382
-    },
     {
       "time": 1708560000,
       "open": 478.03,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 697.0,
-      "high": 710.6,
+      "high": 728.95,
       "low": 679.35,
-      "close": 708.5,
-      "volume": 15905
+      "close": 721.8,
+      "volume": 47172
+    },
+    {
+      "time": 1775088000,
+      "open": 700.0,
+      "high": 729.0,
+      "low": 699.65,
+      "close": 724.5,
+      "volume": 28940
     }
   ]
 }

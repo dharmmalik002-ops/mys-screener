@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.138652+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:55.530959+00:00",
+  "symbol": "PINELABS",
+  "timeframe": "1D",
+  "ticker": "PINELABS.NS",
   "bars": [
     {
       "time": 1763078400,
@@ -747,20 +750,20 @@
       "volume": 1710665
     },
     {
-      "time": 1774915200,
-      "open": 158.7,
-      "high": 158.7,
-      "low": 151.12,
-      "close": 155.0,
-      "volume": 1710665
-    },
-    {
       "time": 1775001600,
       "open": 159.63,
       "high": 166.06,
-      "low": 157.02,
-      "close": 157.65,
-      "volume": 272101
+      "low": 155.56,
+      "close": 156.54,
+      "volume": 715264
+    },
+    {
+      "time": 1775088000,
+      "open": 156.0,
+      "high": 156.0,
+      "low": 151.84,
+      "close": 152.77,
+      "volume": 1506228
     }
   ]
 }

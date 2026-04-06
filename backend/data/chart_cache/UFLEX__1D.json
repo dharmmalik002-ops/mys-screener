@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.133659+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:15.087773+00:00",
+  "symbol": "UFLEX",
+  "timeframe": "1D",
+  "ticker": "UFLEX.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 433.22,
-      "high": 441.66,
-      "low": 429.24,
-      "close": 430.24,
-      "volume": 47882
-    },
     {
       "time": 1708560000,
       "open": 432.18,
@@ -4159,8 +4154,16 @@
       "open": 354.95,
       "high": 379.25,
       "low": 345.0,
-      "close": 372.9,
-      "volume": 82228
+      "close": 369.25,
+      "volume": 209578
+    },
+    {
+      "time": 1775088000,
+      "open": 369.9,
+      "high": 371.5,
+      "low": 356.8,
+      "close": 368.4,
+      "volume": 64931
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.132737+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:45.084804+00:00",
+  "symbol": "AEGISVOPAK",
+  "timeframe": "1D",
+  "ticker": "AEGISVOPAK.NS",
   "bars": [
     {
       "time": 1748822400,
@@ -1659,20 +1662,20 @@
       "volume": 955701
     },
     {
-      "time": 1774915200,
-      "open": 171.0,
-      "high": 171.12,
-      "low": 158.0,
-      "close": 161.0,
-      "volume": 955701
-    },
-    {
       "time": 1775001600,
       "open": 166.0,
-      "high": 167.6,
+      "high": 171.14,
       "low": 163.08,
-      "close": 166.32,
-      "volume": 315480
+      "close": 167.87,
+      "volume": 597473
+    },
+    {
+      "time": 1775088000,
+      "open": 164.75,
+      "high": 171.0,
+      "low": 160.91,
+      "close": 169.64,
+      "volume": 676606
     }
   ]
 }

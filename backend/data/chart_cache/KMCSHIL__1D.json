@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.797653+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:55.045044+00:00",
+  "symbol": "KMCSHIL",
+  "timeframe": "1D",
+  "ticker": "KMCSHIL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 81.0,
+      "open": 81.01,
       "high": 81.75,
       "low": 78.6,
-      "close": 81.58,
-      "volume": 24361
+      "close": 81.63,
+      "volume": 44389
+    },
+    {
+      "time": 1775088000,
+      "open": 80.22,
+      "high": 84.25,
+      "low": 79.5,
+      "close": 83.69,
+      "volume": 66420
     }
   ]
 }

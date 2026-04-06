@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.986404+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:04.515493+00:00",
+  "symbol": "IDEA",
+  "timeframe": "1D",
+  "ticker": "IDEA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 490503989
     },
     {
-      "time": 1774915200,
-      "open": 8.77,
-      "high": 8.85,
-      "low": 8.5,
-      "close": 8.54,
-      "volume": 490503989
-    },
-    {
       "time": 1775001600,
       "open": 8.94,
       "high": 8.94,
-      "low": 8.72,
-      "close": 8.74,
-      "volume": 256195977
+      "low": 8.63,
+      "close": 8.64,
+      "volume": 664715028
+    },
+    {
+      "time": 1775088000,
+      "open": 8.63,
+      "high": 8.64,
+      "low": 8.13,
+      "close": 8.58,
+      "volume": 833576637
     }
   ]
 }

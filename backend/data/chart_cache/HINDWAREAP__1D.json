@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.661888+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:36.059205+00:00",
+  "symbol": "HINDWAREAP",
+  "timeframe": "1D",
+  "ticker": "HINDWAREAP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 425.57,
-      "high": 427.57,
-      "low": 417.58,
-      "close": 422.43,
-      "volume": 41551
-    },
     {
       "time": 1708646400,
       "open": 424.57,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 182.17,
-      "high": 190.89,
+      "open": 177.05,
+      "high": 197.65,
       "low": 177.05,
-      "close": 189.11,
-      "volume": 51607
+      "close": 193.0,
+      "volume": 349776
+    },
+    {
+      "time": 1775088000,
+      "open": 183.65,
+      "high": 199.24,
+      "low": 183.01,
+      "close": 197.94,
+      "volume": 161563
     }
   ]
 }

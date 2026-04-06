@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:27:12.931555+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:56.762365+00:00",
+  "symbol": "PIRAMALFIN",
+  "timeframe": "1D",
+  "ticker": "PIRAMALFIN.NS",
   "bars": [
     {
       "time": 1762473600,
@@ -772,11 +775,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1855.1,
-      "high": 1865.4,
-      "low": 1808.6,
-      "close": 1812.5,
-      "volume": 134390
+      "open": 1848.9,
+      "high": 1866.9,
+      "low": 1759.9,
+      "close": 1793.3,
+      "volume": 433193
+    },
+    {
+      "time": 1775088000,
+      "open": 1770.1,
+      "high": 1788.1,
+      "low": 1730.0,
+      "close": 1763.2,
+      "volume": 172533
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.066867+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.727800+00:00",
+  "symbol": "CLSEL",
+  "timeframe": "1D",
+  "ticker": "CLSEL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 257.25,
-      "high": 262.16,
-      "low": 248.51,
-      "close": 251.55,
-      "volume": 403062
-    },
     {
       "time": 1708560000,
       "open": 251.36,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 219.5,
-      "high": 220.2,
+      "open": 211.64,
+      "high": 232.92,
       "low": 211.64,
-      "close": 218.92,
-      "volume": 35840
+      "close": 228.99,
+      "volume": 94375
+    },
+    {
+      "time": 1775088000,
+      "open": 221.0,
+      "high": 249.0,
+      "low": 218.1,
+      "close": 242.72,
+      "volume": 197713
     }
   ]
 }

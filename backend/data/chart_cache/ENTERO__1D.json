@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-04T07:57:48.447336+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:38.665442+00:00",
   "symbol": "ENTERO",
   "timeframe": "1D",
   "ticker": "ENTERO.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 1161.95,
+      "high": 1174.9,
+      "low": 1156.05,
+      "close": 1169.15,
+      "volume": 127547
+    },
     {
       "time": 1708905600,
       "open": 1146.55,
@@ -4142,27 +4150,19 @@
       "volume": 83855
     },
     {
-      "time": 1774915200,
-      "open": 1224.0,
-      "high": 1258.0,
-      "low": 1181.5,
-      "close": 1252.4,
-      "volume": 83855
-    },
-    {
       "time": 1775001600,
       "open": 1264.9,
       "high": 1276.5,
-      "low": 1234.0,
-      "close": 1235.1,
-      "volume": 42617
+      "low": 1221.5,
+      "close": 1246.6,
+      "volume": 96811
     },
     {
       "time": 1775088000,
       "open": 1246.6,
       "high": 1257.9,
       "low": 1207.2,
-      "close": 1250.0,
+      "close": 1249.1,
       "volume": 40642
     }
   ]

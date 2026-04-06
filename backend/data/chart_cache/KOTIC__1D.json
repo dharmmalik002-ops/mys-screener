@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:25:58.027653+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:36.708829+00:00",
+  "symbol": "KOTIC",
+  "timeframe": "1D",
+  "ticker": "KOTIC.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 165.5,
+      "open": 160.75,
       "high": 165.5,
-      "low": 160.75,
-      "close": 163.9,
-      "volume": 801
+      "low": 158.65,
+      "close": 161.4,
+      "volume": 2981
+    },
+    {
+      "time": 1775088000,
+      "open": 169.0,
+      "high": 169.0,
+      "low": 155.5,
+      "close": 161.8,
+      "volume": 4337
     }
   ]
 }

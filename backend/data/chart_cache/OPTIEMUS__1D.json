@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.807171+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:13.767274+00:00",
+  "symbol": "OPTIEMUS",
+  "timeframe": "1D",
+  "ticker": "OPTIEMUS.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 388448
     },
     {
-      "time": 1774915200,
-      "open": 310.85,
-      "high": 314.6,
-      "low": 288.0,
-      "close": 293.0,
-      "volume": 388448
-    },
-    {
       "time": 1775001600,
       "open": 295.95,
-      "high": 317.75,
+      "high": 319.2,
       "low": 295.95,
-      "close": 314.1,
-      "volume": 86496
+      "close": 308.5,
+      "volume": 203026
+    },
+    {
+      "time": 1775088000,
+      "open": 308.0,
+      "high": 321.5,
+      "low": 292.0,
+      "close": 310.85,
+      "volume": 245306
     }
   ]
 }

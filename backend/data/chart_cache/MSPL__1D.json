@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.640112+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:34.843978+00:00",
+  "symbol": "MSPL",
+  "timeframe": "1D",
+  "ticker": "MSPL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 30.65,
-      "high": 31.75,
-      "low": 30.65,
-      "close": 30.65,
-      "volume": 198246
-    },
     {
       "time": 1708560000,
       "open": 30.7,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 28.21,
-      "high": 28.73,
+      "open": 28.69,
+      "high": 29.09,
       "low": 27.01,
-      "close": 28.48,
-      "volume": 267545
+      "close": 29.09,
+      "volume": 500968
+    },
+    {
+      "time": 1775088000,
+      "open": 31.78,
+      "high": 31.99,
+      "low": 29.19,
+      "close": 31.38,
+      "volume": 4846228
     }
   ]
 }

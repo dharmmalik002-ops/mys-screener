@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.870836+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:53.278013+00:00",
+  "symbol": "KRISHNADEF",
+  "timeframe": "1D",
+  "ticker": "KRISHNADEF.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 368.48,
-      "high": 368.48,
-      "low": 357.75,
-      "close": 361.94,
-      "volume": 8000
-    },
     {
       "time": 1708473600,
       "open": 364.49,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 838.4,
-      "high": 908.05,
+      "open": 835.0,
+      "high": 947.9,
       "low": 830.05,
-      "close": 894.9,
-      "volume": 77775
+      "close": 884.05,
+      "volume": 296215
+    },
+    {
+      "time": 1775088000,
+      "open": 911.3,
+      "high": 911.3,
+      "low": 838.7,
+      "close": 880.0,
+      "volume": 106179
     }
   ]
 }

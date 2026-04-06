@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.348028+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:11.311566+00:00",
+  "symbol": "JSWHL",
+  "timeframe": "1D",
+  "ticker": "JSWHL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 6615.0,
-      "high": 6943.95,
-      "low": 6615.0,
-      "close": 6755.3,
-      "volume": 14640
-    },
     {
       "time": 1708646400,
       "open": 6708.05,
@@ -4159,8 +4154,16 @@
       "open": 11699.0,
       "high": 11867.0,
       "low": 11542.0,
-      "close": 11850.0,
-      "volume": 0
+      "close": 11762.0,
+      "volume": 6190
+    },
+    {
+      "time": 1775088000,
+      "open": 11501.0,
+      "high": 11995.0,
+      "low": 11351.0,
+      "close": 11916.0,
+      "volume": 3685
     }
   ]
 }

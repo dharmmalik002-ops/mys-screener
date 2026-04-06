@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:28.829692+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:55.820008+00:00",
   "symbol": "KRISHANA",
   "timeframe": "1D",
   "ticker": "KRISHANA.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 479.95,
-      "high": 491.8,
+      "open": 484.95,
+      "high": 503.7,
       "low": 475.65,
-      "close": 491.15,
-      "volume": 20161
+      "close": 498.3,
+      "volume": 78426
     },
     {
       "time": 1775088000,
-      "open": 498.3,
+      "open": 494.0,
       "high": 545.0,
       "low": 482.0,
-      "close": 545.0,
-      "volume": 429371
+      "close": 539.2,
+      "volume": 428423
     }
   ]
 }

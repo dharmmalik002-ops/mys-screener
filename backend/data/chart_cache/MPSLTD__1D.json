@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.477536+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:03.834755+00:00",
+  "symbol": "MPSLTD",
+  "timeframe": "1D",
+  "ticker": "MPSLTD.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1416.74,
-      "high": 1452.77,
-      "low": 1408.99,
-      "close": 1440.0,
-      "volume": 15001
-    },
     {
       "time": 1708560000,
       "open": 1455.04,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1619.0,
-      "high": 1620.0,
+      "open": 1551.4,
+      "high": 1641.7,
       "low": 1513.1,
-      "close": 1589.7,
-      "volume": 14553
+      "close": 1627.1,
+      "volume": 29734
+    },
+    {
+      "time": 1775088000,
+      "open": 1602.7,
+      "high": 1679.7,
+      "low": 1575.1,
+      "close": 1659.3,
+      "volume": 17515
     }
   ]
 }

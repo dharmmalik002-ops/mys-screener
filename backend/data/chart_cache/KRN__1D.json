@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.628479+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:42.861515+00:00",
+  "symbol": "KRN",
+  "timeframe": "1D",
+  "ticker": "KRN.NS",
   "bars": [
     {
       "time": 1727913600,
@@ -2963,20 +2966,20 @@
       "volume": 405376
     },
     {
-      "time": 1774915200,
-      "open": 868.0,
-      "high": 876.45,
-      "low": 847.55,
-      "close": 857.0,
-      "volume": 405376
-    },
-    {
       "time": 1775001600,
       "open": 880.0,
       "high": 921.8,
       "low": 877.3,
-      "close": 888.35,
-      "volume": 525456
+      "close": 891.2,
+      "volume": 787086
+    },
+    {
+      "time": 1775088000,
+      "open": 878.0,
+      "high": 878.0,
+      "low": 844.05,
+      "close": 867.85,
+      "volume": 741569
     }
   ]
 }

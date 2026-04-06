@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T07:12:13.184538+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:57.936518+00:00",
+  "symbol": "MEDPLUS",
+  "timeframe": "1D",
+  "ticker": "MEDPLUS.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 166972
     },
     {
-      "time": 1774915200,
-      "open": 820.0,
-      "high": 850.0,
-      "low": 810.0,
-      "close": 823.0,
-      "volume": 166972
-    },
-    {
       "time": 1775001600,
       "open": 844.05,
       "high": 856.75,
-      "low": 819.85,
-      "close": 839.95,
-      "volume": 73154
+      "low": 819.0,
+      "close": 827.95,
+      "volume": 108552
+    },
+    {
+      "time": 1775088000,
+      "open": 827.95,
+      "high": 839.0,
+      "low": 814.0,
+      "close": 836.05,
+      "volume": 23018
     }
   ]
 }

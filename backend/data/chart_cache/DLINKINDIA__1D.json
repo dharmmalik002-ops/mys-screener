@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.761750+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.312737+00:00",
+  "symbol": "DLINKINDIA",
+  "timeframe": "1D",
+  "ticker": "DLINKINDIA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 277.79,
-      "high": 279.71,
-      "low": 274.95,
-      "close": 275.65,
-      "volume": 92826
-    },
     {
       "time": 1708646400,
       "open": 283.26,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 391.0,
-      "high": 398.9,
+      "open": 390.0,
+      "high": 400.4,
       "low": 388.0,
-      "close": 393.0,
-      "volume": 38028
+      "close": 395.55,
+      "volume": 94480
+    },
+    {
+      "time": 1775088000,
+      "open": 394.0,
+      "high": 402.8,
+      "low": 385.65,
+      "close": 400.0,
+      "volume": 51887
     }
   ]
 }

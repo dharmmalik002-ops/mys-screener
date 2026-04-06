@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.168439+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:12.545449+00:00",
+  "symbol": "FERMENTA",
+  "timeframe": "1D",
+  "ticker": "FERMENTA.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 330.1,
-      "high": 338.9,
-      "low": 330.1,
-      "close": 336.05,
-      "volume": 1913
+      "open": 330.0,
+      "high": 345.0,
+      "low": 323.5,
+      "close": 327.85,
+      "volume": 18313
+    },
+    {
+      "time": 1775088000,
+      "open": 325.05,
+      "high": 340.0,
+      "low": 320.0,
+      "close": 337.25,
+      "volume": 9046
     }
   ]
 }

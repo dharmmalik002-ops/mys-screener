@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.074200+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:10.560262+00:00",
+  "symbol": "MARKSANS",
+  "timeframe": "1D",
+  "ticker": "MARKSANS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 950095
     },
     {
-      "time": 1774915200,
-      "open": 160.57,
-      "high": 165.3,
-      "low": 155.0,
-      "close": 157.0,
-      "volume": 950095
-    },
-    {
       "time": 1775001600,
       "open": 165.0,
-      "high": 169.3,
+      "high": 171.48,
       "low": 160.82,
-      "close": 167.23,
-      "volume": 405667
+      "close": 168.04,
+      "volume": 917509
+    },
+    {
+      "time": 1775088000,
+      "open": 163.66,
+      "high": 169.17,
+      "low": 160.6,
+      "close": 168.15,
+      "volume": 550727
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.098649+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:49.264343+00:00",
+  "symbol": "TVSSCS",
+  "timeframe": "1D",
+  "ticker": "TVSSCS.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 60335
     },
     {
-      "time": 1774915200,
-      "open": 95.0,
-      "high": 95.79,
-      "low": 90.32,
-      "close": 90.8,
-      "volume": 544537
+      "time": 1775001600,
+      "open": 94.2,
+      "high": 95.6,
+      "low": 92.15,
+      "close": 95.6,
+      "volume": 39538
     },
     {
-      "time": 1775001600,
-      "open": 92.26,
-      "high": 95.51,
-      "low": 92.26,
-      "close": 95.51,
-      "volume": 64867
+      "time": 1775088000,
+      "open": 95.4,
+      "high": 100.35,
+      "low": 92.0,
+      "close": 99.92,
+      "volume": 37299
     }
   ]
 }

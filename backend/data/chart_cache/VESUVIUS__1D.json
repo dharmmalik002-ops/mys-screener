@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.614470+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:03.194815+00:00",
+  "symbol": "VESUVIUS",
+  "timeframe": "1D",
+  "ticker": "VESUVIUS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 347.63,
-      "high": 348.54,
-      "low": 340.2,
-      "close": 341.68,
-      "volume": 60000
-    },
     {
       "time": 1708560000,
       "open": 342.68,
@@ -4159,8 +4154,16 @@
       "open": 440.35,
       "high": 455.6,
       "low": 439.3,
-      "close": 441.9,
-      "volume": 0
+      "close": 443.65,
+      "volume": 127048
+    },
+    {
+      "time": 1775088000,
+      "open": 441.3,
+      "high": 463.05,
+      "low": 436.15,
+      "close": 458.5,
+      "volume": 173108
     }
   ]
 }

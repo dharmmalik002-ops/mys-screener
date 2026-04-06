@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.664529+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:36.187385+00:00",
+  "symbol": "WAAREEINDO",
+  "timeframe": "1D",
+  "ticker": "WAAREEINDO.NS",
   "bars": [
     {
       "time": 1750291200,
@@ -932,11 +935,19 @@
     },
     {
       "time": 1775001600,
-      "open": 384.0,
+      "open": 384.35,
       "high": 384.4,
       "low": 373.2,
-      "close": 384.4,
-      "volume": 6028
+      "close": 384.35,
+      "volume": 10952
+    },
+    {
+      "time": 1775088000,
+      "open": 375.95,
+      "high": 394.9,
+      "low": 370.0,
+      "close": 385.75,
+      "volume": 4687
     }
   ]
 }

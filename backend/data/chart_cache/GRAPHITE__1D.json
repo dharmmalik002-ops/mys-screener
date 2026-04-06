@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.488700+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:01.836720+00:00",
+  "symbol": "GRAPHITE",
+  "timeframe": "1D",
+  "ticker": "GRAPHITE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -245,7 +248,7 @@
     {
       "time": 1712707200,
       "open": 643.45,
-      "high": 668.22,
+      "high": 668.21,
       "low": 640.27,
       "close": 655.23,
       "volume": 4892766
@@ -4147,20 +4150,20 @@
       "volume": 2888144
     },
     {
-      "time": 1774915200,
-      "open": 626.05,
-      "high": 659.45,
-      "low": 611.2,
-      "close": 620.0,
-      "volume": 2888144
-    },
-    {
       "time": 1775001600,
       "open": 632.55,
       "high": 656.85,
       "low": 629.7,
-      "close": 652.3,
-      "volume": 794410
+      "close": 643.2,
+      "volume": 1451265
+    },
+    {
+      "time": 1775088000,
+      "open": 635.0,
+      "high": 641.75,
+      "low": 618.35,
+      "close": 637.75,
+      "volume": 815698
     }
   ]
 }

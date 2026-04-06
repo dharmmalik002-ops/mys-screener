@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.200037+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:15.780791+00:00",
+  "symbol": "63MOONS",
+  "timeframe": "1D",
+  "ticker": "63MOONS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 495.6,
-      "high": 508.37,
-      "low": 459.98,
-      "close": 508.22,
-      "volume": 400961
-    },
     {
       "time": 1708646400,
       "open": 506.73,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 490.35,
-      "high": 511.5,
+      "open": 494.75,
+      "high": 512.0,
       "low": 476.35,
-      "close": 503.3,
-      "volume": 89584
+      "close": 504.3,
+      "volume": 177776
+    },
+    {
+      "time": 1775088000,
+      "open": 489.4,
+      "high": 499.8,
+      "low": 486.05,
+      "close": 495.65,
+      "volume": 230611
     }
   ]
 }

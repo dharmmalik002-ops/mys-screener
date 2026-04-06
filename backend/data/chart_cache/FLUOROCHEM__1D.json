@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.817690+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:55.215918+00:00",
+  "symbol": "FLUOROCHEM",
+  "timeframe": "1D",
+  "ticker": "FLUOROCHEM.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 98115
     },
     {
-      "time": 1774915200,
-      "open": 3054.7,
-      "high": 3054.7,
-      "low": 2925.1,
-      "close": 3002.0,
-      "volume": 98115
-    },
-    {
       "time": 1775001600,
       "open": 3150.0,
-      "high": 3162.4,
+      "high": 3249.8,
       "low": 3033.0,
-      "close": 3123.8,
-      "volume": 30202
+      "close": 3234.8,
+      "volume": 76130
+    },
+    {
+      "time": 1775088000,
+      "open": 3175.0,
+      "high": 3224.7,
+      "low": 3110.0,
+      "close": 3203.5,
+      "volume": 35497
     }
   ]
 }

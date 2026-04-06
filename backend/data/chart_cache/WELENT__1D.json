@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.578368+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:29.648920+00:00",
+  "symbol": "WELENT",
+  "timeframe": "1D",
+  "ticker": "WELENT.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 174393
     },
     {
-      "time": 1774915200,
-      "open": 431.75,
-      "high": 432.45,
-      "low": 412.0,
-      "close": 412.0,
-      "volume": 174393
-    },
-    {
       "time": 1775001600,
       "open": 425.5,
-      "high": 436.6,
+      "high": 441.45,
       "low": 425.5,
-      "close": 435.15,
-      "volume": 30740
+      "close": 438.9,
+      "volume": 57096
+    },
+    {
+      "time": 1775088000,
+      "open": 431.9,
+      "high": 441.9,
+      "low": 427.4,
+      "close": 438.7,
+      "volume": 37162
     }
   ]
 }

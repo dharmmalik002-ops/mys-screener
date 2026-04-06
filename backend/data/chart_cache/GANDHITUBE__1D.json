@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.182671+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:21.277991+00:00",
+  "symbol": "GANDHITUBE",
+  "timeframe": "1D",
+  "ticker": "GANDHITUBE.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 810.34,
-      "high": 810.58,
-      "low": 785.28,
-      "close": 790.54,
-      "volume": 7538
-    },
     {
       "time": 1708560000,
       "open": 800.44,
@@ -4159,8 +4154,16 @@
       "open": 764.95,
       "high": 814.9,
       "low": 764.95,
-      "close": 805.05,
-      "volume": 2244
+      "close": 808.1,
+      "volume": 4886
+    },
+    {
+      "time": 1775088000,
+      "open": 805.9,
+      "high": 818.5,
+      "low": 788.95,
+      "close": 805.7,
+      "volume": 3883
     }
   ]
 }

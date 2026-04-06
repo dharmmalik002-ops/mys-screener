@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:05:30.737807+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:43.726166+00:00",
   "symbol": "CPPLUS",
   "timeframe": "1D",
   "ticker": "CPPLUS.NS",
@@ -1294,27 +1294,19 @@
       "volume": 297627
     },
     {
-      "time": 1774915200,
-      "open": 1835.0,
-      "high": 1840.0,
-      "low": 1755.5,
-      "close": 1797.2,
-      "volume": 297627
-    },
-    {
       "time": 1775001600,
       "open": 1908.1,
       "high": 1949.4,
-      "low": 1810.0,
-      "close": 1815.5,
-      "volume": 358619
+      "low": 1771.5,
+      "close": 1790.3,
+      "volume": 658090
     },
     {
       "time": 1775088000,
-      "open": 1790.3,
+      "open": 1794.5,
       "high": 1877.5,
       "low": 1762.0,
-      "close": 1798.0,
+      "close": 1799.6,
       "volume": 899163
     }
   ]

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.750327+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:41.141038+00:00",
+  "symbol": "KPL",
+  "timeframe": "1D",
+  "ticker": "KPL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2485,10 +2488,18 @@
     {
       "time": 1775001600,
       "open": 1350.0,
-      "high": 1416.9,
+      "high": 1425.0,
       "low": 1350.0,
-      "close": 1390.0,
-      "volume": 12616
+      "close": 1404.1,
+      "volume": 26327
+    },
+    {
+      "time": 1775088000,
+      "open": 1371.0,
+      "high": 1430.0,
+      "low": 1335.55,
+      "close": 1424.05,
+      "volume": 22418
     }
   ]
 }

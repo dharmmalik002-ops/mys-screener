@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:32.900782+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:46.776653+00:00",
   "symbol": "CENTUM",
   "timeframe": "1D",
   "ticker": "CENTUM.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 2811.0,
+      "open": 2890.1,
       "high": 2935.3,
       "low": 2811.0,
-      "close": 2857.9,
-      "volume": 20370
+      "close": 2865.7,
+      "volume": 42778
     },
     {
       "time": 1775088000,
-      "open": 2851.0,
-      "high": 2851.0,
+      "open": 2820.1,
+      "high": 2855.0,
       "low": 2730.0,
       "close": 2836.5,
-      "volume": 33595
+      "volume": 35384
     }
   ]
 }

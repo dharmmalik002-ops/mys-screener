@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.870358+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:49.174911+00:00",
+  "symbol": "BANSALWIRE",
+  "timeframe": "1D",
+  "ticker": "BANSALWIRE.NS",
   "bars": [
     {
       "time": 1720569600,
@@ -3388,11 +3391,19 @@
     },
     {
       "time": 1775001600,
-      "open": 236.0,
+      "open": 238.99,
       "high": 238.99,
       "low": 230.88,
-      "close": 236.18,
-      "volume": 25104
+      "close": 234.79,
+      "volume": 56745
+    },
+    {
+      "time": 1775088000,
+      "open": 234.79,
+      "high": 258.26,
+      "low": 227.41,
+      "close": 252.17,
+      "volume": 557660
     }
   ]
 }

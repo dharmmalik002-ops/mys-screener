@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.902497+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.394858+00:00",
+  "symbol": "NORTHARC",
+  "timeframe": "1D",
+  "ticker": "NORTHARC.NS",
   "bars": [
     {
       "time": 1727136000,
@@ -3012,11 +3015,19 @@
     },
     {
       "time": 1775001600,
-      "open": 215.0,
-      "high": 219.66,
+      "open": 213.95,
+      "high": 220.52,
       "low": 213.05,
-      "close": 214.65,
-      "volume": 239301
+      "close": 216.95,
+      "volume": 631735
+    },
+    {
+      "time": 1775088000,
+      "open": 213.0,
+      "high": 221.15,
+      "low": 208.11,
+      "close": 220.04,
+      "volume": 302903
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.873485+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.948586+00:00",
+  "symbol": "ABFRL",
+  "timeframe": "1D",
+  "ticker": "ABFRL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 7473955
     },
     {
-      "time": 1774915200,
-      "open": 56.0,
-      "high": 57.15,
-      "low": 53.51,
-      "close": 53.85,
-      "volume": 7473955
-    },
-    {
       "time": 1775001600,
       "open": 55.5,
-      "high": 57.8,
+      "high": 58.38,
       "low": 55.33,
-      "close": 57.28,
-      "volume": 2647730
+      "close": 58.05,
+      "volume": 4589120
+    },
+    {
+      "time": 1775088000,
+      "open": 56.35,
+      "high": 58.05,
+      "low": 55.22,
+      "close": 57.66,
+      "volume": 3563992
     }
   ]
 }

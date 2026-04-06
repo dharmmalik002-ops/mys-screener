@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.865102+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.605672+00:00",
+  "symbol": "BFINVEST",
+  "timeframe": "1D",
+  "ticker": "BFINVEST.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 568.05,
-      "high": 576.6,
-      "low": 549.0,
-      "close": 553.6,
-      "volume": 108592
-    },
     {
       "time": 1708560000,
       "open": 555.6,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 336.0,
-      "high": 342.05,
+      "high": 349.0,
       "low": 333.0,
-      "close": 340.25,
-      "volume": 7580
+      "close": 346.55,
+      "volume": 22181
+    },
+    {
+      "time": 1775088000,
+      "open": 344.45,
+      "high": 352.0,
+      "low": 335.0,
+      "close": 350.9,
+      "volume": 12097
     }
   ]
 }

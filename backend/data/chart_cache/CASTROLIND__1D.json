@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.169184+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:56.853275+00:00",
+  "symbol": "CASTROLIND",
+  "timeframe": "1D",
+  "ticker": "CASTROLIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 2330191
     },
     {
-      "time": 1774915200,
-      "open": 174.99,
-      "high": 175.21,
-      "low": 173.3,
-      "close": 173.66,
-      "volume": 2330191
-    },
-    {
       "time": 1775001600,
       "open": 176.1,
       "high": 178.4,
       "low": 174.9,
-      "close": 175.36,
-      "volume": 724561
+      "close": 176.32,
+      "volume": 1568599
+    },
+    {
+      "time": 1775088000,
+      "open": 174.97,
+      "high": 178.4,
+      "low": 173.52,
+      "close": 177.92,
+      "volume": 1160615
     }
   ]
 }

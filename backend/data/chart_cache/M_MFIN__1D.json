@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.745004+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:58.614111+00:00",
+  "symbol": "M&MFIN",
+  "timeframe": "1D",
+  "ticker": "M&MFIN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 2389392
     },
     {
-      "time": 1774915200,
-      "open": 296.3,
-      "high": 300.0,
-      "low": 284.05,
-      "close": 286.3,
-      "volume": 2389392
-    },
-    {
       "time": 1775001600,
       "open": 291.15,
       "high": 302.0,
-      "low": 291.15,
-      "close": 292.9,
-      "volume": 492436
+      "low": 288.0,
+      "close": 289.7,
+      "volume": 1894150
+    },
+    {
+      "time": 1775088000,
+      "open": 284.1,
+      "high": 287.05,
+      "low": 276.05,
+      "close": 285.15,
+      "volume": 2160703
     }
   ]
 }

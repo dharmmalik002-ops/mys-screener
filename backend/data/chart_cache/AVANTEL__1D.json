@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.898028+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.319677+00:00",
+  "symbol": "AVANTEL",
+  "timeframe": "1D",
+  "ticker": "AVANTEL.NS",
   "bars": [
     {
       "time": 1722384000,
@@ -3284,11 +3287,19 @@
     },
     {
       "time": 1775001600,
-      "open": 132.09,
+      "open": 132.95,
       "high": 136.57,
       "low": 128.5,
-      "close": 133.0,
-      "volume": 1582976
+      "close": 134.28,
+      "volume": 2730189
+    },
+    {
+      "time": 1775088000,
+      "open": 131.5,
+      "high": 135.27,
+      "low": 129.4,
+      "close": 134.09,
+      "volume": 1255209
     }
   ]
 }

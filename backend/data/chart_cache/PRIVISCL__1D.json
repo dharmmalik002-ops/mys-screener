@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-04T08:39:35.879775+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:52.192538+00:00",
   "symbol": "PRIVISCL",
   "timeframe": "1D",
   "ticker": "PRIVISCL.NS",
   "bars": [
+    {
+      "time": 1708560000,
+      "open": 1191.01,
+      "high": 1259.73,
+      "low": 1176.01,
+      "close": 1249.06,
+      "volume": 62518
+    },
     {
       "time": 1708646400,
       "open": 1264.16,
@@ -4142,27 +4150,19 @@
       "volume": 30356
     },
     {
-      "time": 1774915200,
-      "open": 2911.0,
-      "high": 2937.2,
-      "low": 2888.0,
-      "close": 2900.0,
-      "volume": 30356
-    },
-    {
       "time": 1775001600,
       "open": 2920.0,
       "high": 2991.5,
       "low": 2920.0,
-      "close": 2954.0,
-      "volume": 25614
+      "close": 2931.0,
+      "volume": 51603
     },
     {
       "time": 1775088000,
-      "open": 2931.0,
+      "open": 2929.9,
       "high": 2962.8,
       "low": 2865.7,
-      "close": 2945.0,
+      "close": 2941.1,
       "volume": 75207
     }
   ]

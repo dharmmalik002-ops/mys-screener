@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:17:37.657648+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.583980+00:00",
   "symbol": "ARVINDFASN",
   "timeframe": "1D",
   "ticker": "ARVINDFASN.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 465.25,
+      "high": 479.27,
+      "low": 458.39,
+      "close": 474.65,
+      "volume": 328285
+    },
     {
       "time": 1708905600,
       "open": 470.37,
@@ -447,7 +455,7 @@
     },
     {
       "time": 1716336000,
-      "open": 491.0,
+      "open": 491.01,
       "high": 494.73,
       "low": 472.31,
       "close": 485.29,
@@ -4142,27 +4150,19 @@
       "volume": 878937
     },
     {
-      "time": 1774915200,
-      "open": 380.0,
-      "high": 414.4,
-      "low": 366.2,
-      "close": 405.0,
-      "volume": 878937
-    },
-    {
       "time": 1775001600,
       "open": 405.0,
-      "high": 418.0,
+      "high": 419.9,
       "low": 395.15,
-      "close": 415.55,
-      "volume": 151154
+      "close": 411.35,
+      "volume": 242061
     },
     {
       "time": 1775088000,
-      "open": 411.35,
+      "open": 406.95,
       "high": 447.0,
       "low": 395.1,
-      "close": 440.1,
+      "close": 437.8,
       "volume": 611834
     }
   ]

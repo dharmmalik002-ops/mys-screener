@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.779705+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:02.089478+00:00",
+  "symbol": "WAAREERTL",
+  "timeframe": "1D",
+  "ticker": "WAAREERTL.NS",
   "bars": [
     {
       "time": 1744156800,
@@ -1923,20 +1926,20 @@
       "volume": 398210
     },
     {
-      "time": 1774915200,
-      "open": 795.1,
-      "high": 804.15,
-      "low": 779.5,
-      "close": 781.15,
-      "volume": 398210
-    },
-    {
       "time": 1775001600,
       "open": 815.95,
-      "high": 827.3,
+      "high": 844.0,
       "low": 802.7,
-      "close": 818.9,
-      "volume": 130152
+      "close": 838.55,
+      "volume": 321884
+    },
+    {
+      "time": 1775088000,
+      "open": 815.0,
+      "high": 859.0,
+      "low": 810.1,
+      "close": 854.3,
+      "volume": 337365
     }
   ]
 }

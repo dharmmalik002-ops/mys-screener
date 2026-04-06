@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.504484+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:55.583367+00:00",
+  "symbol": "GABRIEL",
+  "timeframe": "1D",
+  "ticker": "GABRIEL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -156,7 +159,7 @@
     },
     {
       "time": 1711065600,
-      "open": 332.56,
+      "open": 332.55,
       "high": 334.73,
       "low": 328.61,
       "close": 332.16,
@@ -4147,20 +4150,20 @@
       "volume": 453441
     },
     {
-      "time": 1774915200,
-      "open": 815.0,
-      "high": 830.0,
-      "low": 795.7,
-      "close": 828.0,
-      "volume": 453441
-    },
-    {
       "time": 1775001600,
       "open": 851.7,
-      "high": 869.2,
+      "high": 871.95,
       "low": 841.35,
-      "close": 853.35,
-      "volume": 265272
+      "close": 866.2,
+      "volume": 446722
+    },
+    {
+      "time": 1775088000,
+      "open": 857.4,
+      "high": 892.0,
+      "low": 835.8,
+      "close": 876.7,
+      "volume": 372320
     }
   ]
 }

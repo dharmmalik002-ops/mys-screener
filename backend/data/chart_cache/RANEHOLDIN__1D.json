@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.711549+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:43.288780+00:00",
+  "symbol": "RANEHOLDIN",
+  "timeframe": "1D",
+  "ticker": "RANEHOLDIN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1077.89,
-      "high": 1103.76,
-      "low": 1067.32,
-      "close": 1095.44,
-      "volume": 9024
-    },
     {
       "time": 1708646400,
       "open": 1103.76,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 992.8,
-      "high": 1048.95,
+      "high": 1060.0,
       "low": 992.8,
-      "close": 1047.45,
-      "volume": 1384
+      "close": 1044.5,
+      "volume": 5446
+    },
+    {
+      "time": 1775088000,
+      "open": 1040.6,
+      "high": 1050.0,
+      "low": 1010.1,
+      "close": 1017.65,
+      "volume": 5517
     }
   ]
 }

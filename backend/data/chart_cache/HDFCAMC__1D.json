@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.975777+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:53.373379+00:00",
+  "symbol": "HDFCAMC",
+  "timeframe": "1D",
+  "ticker": "HDFCAMC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 2088678
     },
     {
-      "time": 1774915200,
-      "open": 2255.1,
-      "high": 2313.5,
-      "low": 2205.6,
-      "close": 2211.2,
-      "volume": 2088678
-    },
-    {
       "time": 1775001600,
       "open": 2285.0,
-      "high": 2323.9,
+      "high": 2369.0,
       "low": 2275.2,
-      "close": 2289.8,
-      "volume": 494020
+      "close": 2340.5,
+      "volume": 2438152
+    },
+    {
+      "time": 1775088000,
+      "open": 2298.0,
+      "high": 2358.3,
+      "low": 2241.2,
+      "close": 2348.6,
+      "volume": 1124725
     }
   ]
 }

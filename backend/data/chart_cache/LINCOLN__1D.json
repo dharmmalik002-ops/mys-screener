@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.959448+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:50.526883+00:00",
+  "symbol": "LINCOLN",
+  "timeframe": "1D",
+  "ticker": "LINCOLN.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 692.14,
-      "high": 697.76,
-      "low": 676.38,
-      "close": 682.54,
-      "volume": 167828
-    },
     {
       "time": 1708560000,
       "open": 688.66,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 589.95,
-      "high": 592.8,
+      "open": 575.0,
+      "high": 603.0,
       "low": 569.1,
-      "close": 585.75,
-      "volume": 6097
+      "close": 594.85,
+      "volume": 16538
+    },
+    {
+      "time": 1775088000,
+      "open": 594.85,
+      "high": 614.4,
+      "low": 585.45,
+      "close": 604.9,
+      "volume": 46365
     }
   ]
 }

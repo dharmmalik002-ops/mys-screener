@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:58.452742+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:37.950729+00:00",
   "symbol": "SAATVIKGL",
   "timeframe": "1D",
   "ticker": "SAATVIKGL.NS",
@@ -990,27 +990,19 @@
       "volume": 146968
     },
     {
-      "time": 1774915200,
-      "open": 371.0,
-      "high": 384.75,
-      "low": 371.0,
-      "close": 377.1,
-      "volume": 146968
-    },
-    {
       "time": 1775001600,
       "open": 388.45,
-      "high": 397.5,
+      "high": 402.0,
       "low": 381.0,
-      "close": 392.75,
-      "volume": 63260
+      "close": 399.55,
+      "volume": 124080
     },
     {
       "time": 1775088000,
-      "open": 399.55,
+      "open": 395.05,
       "high": 406.7,
       "low": 386.95,
-      "close": 404.95,
+      "close": 403.8,
       "volume": 151721
     }
   ]

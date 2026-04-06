@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T03:04:03.417679+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.890565+00:00",
+  "symbol": "SMTEL",
+  "timeframe": "1D",
+  "ticker": "SMTEL.NS",
   "bars": [
     {
       "time": 1752192000,
@@ -1321,6 +1324,22 @@
       "low": 395.0,
       "close": 409.15,
       "volume": 56427
+    },
+    {
+      "time": 1775001600,
+      "open": 389.0,
+      "high": 429.6,
+      "low": 388.7,
+      "close": 427.5,
+      "volume": 917
+    },
+    {
+      "time": 1775088000,
+      "open": 406.15,
+      "high": 448.8,
+      "low": 406.15,
+      "close": 445.8,
+      "volume": 1727
     }
   ]
 }

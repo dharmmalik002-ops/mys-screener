@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.297206+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.620154+00:00",
+  "symbol": "ARIHANTSUP",
+  "timeframe": "1D",
+  "ticker": "ARIHANTSUP.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 372.12,
-      "high": 372.12,
-      "low": 357.53,
-      "close": 359.26,
-      "volume": 32965
-    },
     {
       "time": 1708560000,
       "open": 364.28,
@@ -126,7 +121,7 @@
       "time": 1710374400,
       "open": 273.03,
       "high": 325.06,
-      "low": 271.59,
+      "low": 271.6,
       "close": 320.24,
       "volume": 232382
     },
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 197.75,
-      "high": 206.75,
+      "high": 207.3,
       "low": 195.05,
-      "close": 203.78,
-      "volume": 3216
+      "close": 203.04,
+      "volume": 12012
+    },
+    {
+      "time": 1775088000,
+      "open": 203.93,
+      "high": 214.0,
+      "low": 198.84,
+      "close": 208.21,
+      "volume": 7231
     }
   ]
 }

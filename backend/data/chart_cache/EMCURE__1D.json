@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:48.137310+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:02.909010+00:00",
   "symbol": "EMCURE",
   "timeframe": "1D",
   "ticker": "EMCURE.NS",
@@ -3390,28 +3390,20 @@
       "volume": 275328
     },
     {
-      "time": 1774915200,
-      "open": 1654.9,
-      "high": 1662.0,
-      "low": 1584.2,
-      "close": 1594.0,
-      "volume": 275328
-    },
-    {
       "time": 1775001600,
       "open": 1660.0,
       "high": 1664.0,
-      "low": 1633.1,
-      "close": 1638.4,
-      "volume": 82087
+      "low": 1573.1,
+      "close": 1590.1,
+      "volume": 388105
     },
     {
       "time": 1775088000,
       "open": 1585.5,
       "high": 1585.5,
       "low": 1457.0,
-      "close": 1544.4,
-      "volume": 404461
+      "close": 1547.6,
+      "volume": 414990
     }
   ]
 }

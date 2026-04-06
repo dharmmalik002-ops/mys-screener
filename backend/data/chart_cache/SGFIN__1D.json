@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:48.199155+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.337259+00:00",
   "symbol": "SGFIN",
   "timeframe": "1D",
   "ticker": "SGFIN.NS",
@@ -1287,11 +1287,11 @@
     },
     {
       "time": 1775001600,
-      "open": 428.1,
-      "high": 436.25,
+      "open": 427.0,
+      "high": 455.0,
       "low": 420.15,
-      "close": 428.25,
-      "volume": 68098
+      "close": 450.0,
+      "volume": 409655
     },
     {
       "time": 1775088000,
@@ -1299,7 +1299,7 @@
       "high": 460.0,
       "low": 427.35,
       "close": 452.4,
-      "volume": 325249
+      "volume": 325325
     }
   ]
 }

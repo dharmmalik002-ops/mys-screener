@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.458504+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:21.819665+00:00",
+  "symbol": "TATACAP",
+  "timeframe": "1D",
+  "ticker": "TATACAP.NS",
   "bars": [
     {
       "time": 1760313600,
@@ -923,20 +926,20 @@
       "volume": 2491353
     },
     {
-      "time": 1774915200,
-      "open": 313.6,
-      "high": 317.8,
-      "low": 303.0,
-      "close": 305.0,
-      "volume": 2491353
-    },
-    {
       "time": 1775001600,
       "open": 311.5,
       "high": 314.15,
-      "low": 306.9,
-      "close": 307.05,
-      "volume": 1933868
+      "low": 305.05,
+      "close": 305.9,
+      "volume": 2958821
+    },
+    {
+      "time": 1775088000,
+      "open": 305.0,
+      "high": 310.4,
+      "low": 300.15,
+      "close": 308.55,
+      "volume": 906030
     }
   ]
 }

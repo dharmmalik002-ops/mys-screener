@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.667757+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:20.301823+00:00",
+  "symbol": "CORONA",
+  "timeframe": "1D",
+  "ticker": "CORONA.NS",
   "bars": [
     {
       "time": 1765756800,
@@ -579,20 +582,20 @@
       "volume": 33741
     },
     {
-      "time": 1774915200,
-      "open": 1560.2,
-      "high": 1575.1,
-      "low": 1535.0,
-      "close": 1550.0,
-      "volume": 33741
-    },
-    {
       "time": 1775001600,
       "open": 1595.0,
       "high": 1611.8,
-      "low": 1576.3,
-      "close": 1578.0,
-      "volume": 5878
+      "low": 1526.8,
+      "close": 1541.0,
+      "volume": 21724
+    },
+    {
+      "time": 1775088000,
+      "open": 1541.0,
+      "high": 1568.0,
+      "low": 1485.5,
+      "close": 1499.2,
+      "volume": 30605
     }
   ]
 }

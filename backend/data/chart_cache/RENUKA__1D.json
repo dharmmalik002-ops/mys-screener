@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:49:33.593292+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.468741+00:00",
   "symbol": "RENUKA",
   "timeframe": "1D",
   "ticker": "RENUKA.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 49.4,
+      "high": 49.8,
+      "low": 48.15,
+      "close": 48.45,
+      "volume": 7221547
+    },
     {
       "time": 1708905600,
       "open": 48.1,
@@ -4142,27 +4150,19 @@
       "volume": 52555870
     },
     {
-      "time": 1774915200,
-      "open": 26.41,
-      "high": 28.59,
-      "low": 26.22,
-      "close": 27.44,
-      "volume": 52555870
-    },
-    {
       "time": 1775001600,
       "open": 28.0,
       "high": 28.93,
       "low": 27.43,
-      "close": 28.35,
-      "volume": 9756046
+      "close": 28.09,
+      "volume": 17124320
     },
     {
       "time": 1775088000,
-      "open": 28.09,
+      "open": 27.62,
       "high": 28.55,
       "low": 27.05,
-      "close": 28.0,
+      "close": 28.12,
       "volume": 11240883
     }
   ]

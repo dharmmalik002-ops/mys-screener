@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.979228+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:21.194899+00:00",
+  "symbol": "MAXHEALTH",
+  "timeframe": "1D",
+  "ticker": "MAXHEALTH.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -733,7 +736,7 @@
     {
       "time": 1720656000,
       "open": 905.44,
-      "high": 905.99,
+      "high": 905.98,
       "low": 883.6,
       "close": 894.77,
       "volume": 2215017
@@ -4147,20 +4150,20 @@
       "volume": 4941358
     },
     {
-      "time": 1774915200,
-      "open": 965.0,
-      "high": 969.9,
-      "low": 944.0,
-      "close": 960.0,
-      "volume": 4941358
-    },
-    {
       "time": 1775001600,
       "open": 966.2,
       "high": 981.5,
-      "low": 956.5,
-      "close": 962.9,
-      "volume": 641848
+      "low": 952.3,
+      "close": 958.9,
+      "volume": 2467966
+    },
+    {
+      "time": 1775088000,
+      "open": 954.0,
+      "high": 958.3,
+      "low": 929.05,
+      "close": 944.6,
+      "volume": 1889808
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.368502+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:35.224810+00:00",
+  "symbol": "LGEINDIA",
+  "timeframe": "1D",
+  "ticker": "LGEINDIA.NS",
   "bars": [
     {
       "time": 1760400000,
@@ -915,20 +918,20 @@
       "volume": 1308127
     },
     {
-      "time": 1774915200,
-      "open": 1500.0,
-      "high": 1507.5,
-      "low": 1413.7,
-      "close": 1427.9,
-      "volume": 1308127
-    },
-    {
       "time": 1775001600,
       "open": 1454.0,
       "high": 1466.1,
-      "low": 1446.0,
-      "close": 1447.4,
-      "volume": 265593
+      "low": 1380.1,
+      "close": 1386.8,
+      "volume": 1225000
+    },
+    {
+      "time": 1775088000,
+      "open": 1385.0,
+      "high": 1385.0,
+      "low": 1304.1,
+      "close": 1318.8,
+      "volume": 1787774
     }
   ]
 }

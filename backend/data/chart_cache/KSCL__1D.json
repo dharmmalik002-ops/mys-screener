@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.101079+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:43.809117+00:00",
+  "symbol": "KSCL",
+  "timeframe": "1D",
+  "ticker": "KSCL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 230825
     },
     {
-      "time": 1774915200,
-      "open": 780.0,
-      "high": 805.15,
-      "low": 768.0,
-      "close": 795.0,
-      "volume": 230825
-    },
-    {
       "time": 1775001600,
       "open": 795.0,
-      "high": 816.0,
+      "high": 841.95,
       "low": 795.0,
-      "close": 808.5,
-      "volume": 71974
+      "close": 833.95,
+      "volume": 251939
+    },
+    {
+      "time": 1775088000,
+      "open": 827.15,
+      "high": 842.0,
+      "low": 805.05,
+      "close": 835.4,
+      "volume": 139048
     }
   ]
 }

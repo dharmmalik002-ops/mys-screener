@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.797802+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:57.693505+00:00",
+  "symbol": "RADICO",
+  "timeframe": "1D",
+  "ticker": "RADICO.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 432760
     },
     {
-      "time": 1774915200,
-      "open": 2621.0,
-      "high": 2657.9,
-      "low": 2568.1,
-      "close": 2601.0,
-      "volume": 432760
-    },
-    {
       "time": 1775001600,
       "open": 2679.9,
-      "high": 2680.4,
+      "high": 2705.0,
       "low": 2619.5,
-      "close": 2656.2,
-      "volume": 151775
+      "close": 2684.0,
+      "volume": 342760
+    },
+    {
+      "time": 1775088000,
+      "open": 2642.5,
+      "high": 2664.5,
+      "low": 2587.2,
+      "close": 2623.2,
+      "volume": 322074
     }
   ]
 }

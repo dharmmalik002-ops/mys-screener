@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.748127+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.508240+00:00",
+  "symbol": "RBA",
+  "timeframe": "1D",
+  "ticker": "RBA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 3352622
     },
     {
-      "time": 1774915200,
-      "open": 58.19,
-      "high": 58.67,
-      "low": 57.15,
-      "close": 57.95,
-      "volume": 3352622
-    },
-    {
       "time": 1775001600,
       "open": 59.3,
-      "high": 59.4,
+      "high": 59.49,
       "low": 58.39,
       "close": 59.1,
-      "volume": 537146
+      "volume": 890171
+    },
+    {
+      "time": 1775088000,
+      "open": 58.1,
+      "high": 61.5,
+      "low": 58.01,
+      "close": 61.05,
+      "volume": 1767233
     }
   ]
 }

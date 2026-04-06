@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:17:41.105922+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:12.105756+00:00",
   "symbol": "DIFFNKG",
   "timeframe": "1D",
   "ticker": "DIFFNKG.NS",
@@ -2952,18 +2952,18 @@
     {
       "time": 1775001600,
       "open": 264.0,
-      "high": 264.13,
+      "high": 271.9,
       "low": 251.37,
-      "close": 257.41,
-      "volume": 28492
+      "close": 269.57,
+      "volume": 75932
     },
     {
       "time": 1775088000,
-      "open": 268.61,
+      "open": 268.99,
       "high": 283.51,
       "low": 259.3,
-      "close": 281.99,
-      "volume": 97154
+      "close": 281.13,
+      "volume": 94944
     }
   ]
 }

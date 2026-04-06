@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.865843+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:20.564173+00:00",
+  "symbol": "RELIGARE",
+  "timeframe": "1D",
+  "ticker": "RELIGARE.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 2466977
     },
     {
-      "time": 1774915200,
-      "open": 215.0,
-      "high": 219.56,
-      "low": 201.0,
-      "close": 201.3,
-      "volume": 2466977
-    },
-    {
       "time": 1775001600,
       "open": 208.5,
-      "high": 217.32,
+      "high": 221.0,
       "low": 206.5,
-      "close": 212.9,
-      "volume": 300001
+      "close": 219.53,
+      "volume": 772363
+    },
+    {
+      "time": 1775088000,
+      "open": 210.26,
+      "high": 225.0,
+      "low": 209.2,
+      "close": 223.88,
+      "volume": 666039
     }
   ]
 }

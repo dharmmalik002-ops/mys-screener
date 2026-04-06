@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:22.434037+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.209815+00:00",
+  "symbol": "AMIC",
+  "timeframe": "1D",
+  "ticker": "AMIC.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2481,6 +2484,22 @@
       "low": 1250.0,
       "close": 1285.45,
       "volume": 12900
+    },
+    {
+      "time": 1775001600,
+      "open": 1294.95,
+      "high": 1350.0,
+      "low": 1272.4,
+      "close": 1312.0,
+      "volume": 10100
+    },
+    {
+      "time": 1775088000,
+      "open": 1300.0,
+      "high": 1350.0,
+      "low": 1300.0,
+      "close": 1344.8,
+      "volume": 5500
     }
   ]
 }

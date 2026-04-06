@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.401571+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.658490+00:00",
+  "symbol": "JINDWORLD",
+  "timeframe": "1D",
+  "ticker": "JINDWORLD.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 75.96,
-      "high": 76.1,
-      "low": 71.9,
-      "close": 72.29,
-      "volume": 1570165
-    },
     {
       "time": 1708646400,
       "open": 72.46,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 18.5,
-      "high": 19.76,
+      "high": 20.46,
       "low": 18.5,
-      "close": 19.59,
-      "volume": 440668
+      "close": 20.18,
+      "volume": 997614
+    },
+    {
+      "time": 1775088000,
+      "open": 20.08,
+      "high": 20.33,
+      "low": 19.19,
+      "close": 20.14,
+      "volume": 585226
     }
   ]
 }

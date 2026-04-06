@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:35:37.338116+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:41.659076+00:00",
   "symbol": "PRECWIRE",
   "timeframe": "1D",
   "ticker": "PRECWIRE.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 299.9,
-      "high": 309.2,
+      "open": 296.0,
+      "high": 312.0,
       "low": 296.0,
-      "close": 305.6,
-      "volume": 0
+      "close": 308.1,
+      "volume": 548154
     },
     {
       "time": 1775088000,
-      "open": 305.9,
+      "open": 305.0,
       "high": 305.9,
       "low": 290.55,
-      "close": 301.0,
-      "volume": 215262
+      "close": 300.05,
+      "volume": 768759
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.380340+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.213653+00:00",
+  "symbol": "MOREPENLAB",
+  "timeframe": "1D",
+  "ticker": "MOREPENLAB.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 53.07,
-      "high": 53.27,
-      "low": 51.78,
-      "close": 52.97,
-      "volume": 3565014
-    },
     {
       "time": 1708646400,
       "open": 53.67,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 35.35,
-      "high": 36.75,
+      "open": 34.56,
+      "high": 37.4,
       "low": 34.56,
-      "close": 36.52,
-      "volume": 2229856
+      "close": 37.2,
+      "volume": 5571907
+    },
+    {
+      "time": 1775088000,
+      "open": 35.85,
+      "high": 38.27,
+      "low": 35.17,
+      "close": 37.81,
+      "volume": 3831585
     }
   ]
 }

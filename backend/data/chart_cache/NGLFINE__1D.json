@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T15:59:48.024343+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.468455+00:00",
   "symbol": "NGLFINE",
   "timeframe": "1D",
   "ticker": "NGLFINE.NS",
@@ -10,7 +10,7 @@
       "open": 2111.38,
       "high": 2184.22,
       "low": 2111.38,
-      "close": 2143.8,
+      "close": 2143.81,
       "volume": 3177
     },
     {
@@ -696,7 +696,7 @@
     {
       "time": 1720051200,
       "open": 2361.93,
-      "high": 2408.72,
+      "high": 2408.73,
       "low": 2359.78,
       "close": 2395.3,
       "volume": 2859
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 2120.0,
+      "open": 2100.0,
       "high": 2194.9,
-      "low": 2085.3,
-      "close": 2172.8,
-      "volume": 5906
+      "low": 2062.0,
+      "close": 2081.2,
+      "volume": 11407
     },
     {
       "time": 1775088000,
-      "open": 2081.2,
+      "open": 2059.1,
       "high": 2149.9,
       "low": 2021.3,
       "close": 2132.6,
-      "volume": 3100
+      "volume": 2994
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.453525+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.372626+00:00",
+  "symbol": "VIMTALABS",
+  "timeframe": "1D",
+  "ticker": "VIMTALABS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 241.83,
-      "high": 246.43,
-      "low": 240.06,
-      "close": 243.52,
-      "volume": 59296
-    },
     {
       "time": 1708646400,
       "open": 243.54,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 397.0,
-      "high": 411.85,
+      "high": 413.6,
       "low": 392.2,
-      "close": 408.65,
-      "volume": 126488
+      "close": 408.2,
+      "volume": 211902
+    },
+    {
+      "time": 1775088000,
+      "open": 397.2,
+      "high": 412.2,
+      "low": 391.8,
+      "close": 408.95,
+      "volume": 135060
     }
   ]
 }

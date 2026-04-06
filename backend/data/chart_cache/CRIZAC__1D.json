@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.135359+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:54.412555+00:00",
+  "symbol": "CRIZAC",
+  "timeframe": "1D",
+  "ticker": "CRIZAC.NS",
   "bars": [
     {
       "time": 1752019200,
@@ -1443,20 +1446,20 @@
       "volume": 569076
     },
     {
-      "time": 1774915200,
-      "open": 188.61,
-      "high": 191.0,
-      "low": 173.35,
-      "close": 176.0,
-      "volume": 569076
-    },
-    {
       "time": 1775001600,
       "open": 184.8,
       "high": 194.6,
       "low": 180.03,
       "close": 192.59,
-      "volume": 147594
+      "volume": 246556
+    },
+    {
+      "time": 1775088000,
+      "open": 189.0,
+      "high": 194.66,
+      "low": 181.9,
+      "close": 193.49,
+      "volume": 183717
     }
   ]
 }

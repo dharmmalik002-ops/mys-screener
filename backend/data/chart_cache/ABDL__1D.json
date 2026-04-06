@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.539425+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:04.898663+00:00",
+  "symbol": "ABDL",
+  "timeframe": "1D",
+  "ticker": "ABDL.NS",
   "bars": [
     {
       "time": 1719878400,
@@ -3475,20 +3478,20 @@
       "volume": 1446683
     },
     {
-      "time": 1774915200,
-      "open": 395.1,
-      "high": 414.7,
-      "low": 388.0,
-      "close": 396.9,
-      "volume": 1446683
-    },
-    {
       "time": 1775001600,
       "open": 405.1,
-      "high": 419.95,
+      "high": 424.5,
       "low": 404.05,
-      "close": 416.0,
-      "volume": 293154
+      "close": 421.55,
+      "volume": 528378
+    },
+    {
+      "time": 1775088000,
+      "open": 410.0,
+      "high": 428.2,
+      "low": 406.3,
+      "close": 423.85,
+      "volume": 351760
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.979581+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:01.400436+00:00",
+  "symbol": "DEN",
+  "timeframe": "1D",
+  "ticker": "DEN.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 60.2,
-      "high": 60.65,
-      "low": 58.1,
-      "close": 58.6,
-      "volume": 2062772
-    },
     {
       "time": 1708560000,
       "open": 58.8,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 23.84,
-      "high": 24.45,
+      "open": 23.51,
+      "high": 25.28,
       "low": 23.5,
-      "close": 24.2,
-      "volume": 303813
+      "close": 24.85,
+      "volume": 727082
+    },
+    {
+      "time": 1775088000,
+      "open": 24.25,
+      "high": 25.19,
+      "low": 23.88,
+      "close": 25.01,
+      "volume": 647433
     }
   ]
 }

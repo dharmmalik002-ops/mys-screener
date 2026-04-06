@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.181613+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:15.216586+00:00",
+  "symbol": "BHAGCHEM",
+  "timeframe": "1D",
+  "ticker": "BHAGCHEM.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 175.83,
-      "high": 175.86,
-      "low": 172.26,
-      "close": 174.41,
-      "volume": 63060
-    },
     {
       "time": 1708560000,
       "open": 172.56,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 176.96,
-      "high": 190.02,
+      "high": 198.5,
       "low": 175.0,
-      "close": 189.0,
-      "volume": 87057
+      "close": 195.5,
+      "volume": 192433
+    },
+    {
+      "time": 1775088000,
+      "open": 191.0,
+      "high": 198.8,
+      "low": 185.4,
+      "close": 197.24,
+      "volume": 73002
     }
   ]
 }

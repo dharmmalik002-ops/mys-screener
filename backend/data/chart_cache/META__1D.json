@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.666194+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.393853+00:00",
+  "symbol": "META",
+  "timeframe": "1D",
+  "ticker": "META.NS",
   "bars": [
     {
       "time": 1747612800,
@@ -916,11 +919,19 @@
     },
     {
       "time": 1775001600,
-      "open": 104.0,
+      "open": 103.9,
       "high": 114.7,
       "low": 103.8,
       "close": 114.7,
-      "volume": 260826
+      "volume": 281247
+    },
+    {
+      "time": 1775088000,
+      "open": 115.0,
+      "high": 120.4,
+      "low": 115.0,
+      "close": 120.3,
+      "volume": 202992
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.234074+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:02.615315+00:00",
+  "symbol": "ZYDUSWELL",
+  "timeframe": "1D",
+  "ticker": "ZYDUSWELL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -76,7 +79,7 @@
     },
     {
       "time": 1709769600,
-      "open": 313.71,
+      "open": 313.72,
       "high": 317.69,
       "low": 311.34,
       "close": 314.87,
@@ -4147,20 +4150,20 @@
       "volume": 334233
     },
     {
-      "time": 1774915200,
-      "open": 442.1,
-      "high": 442.15,
-      "low": 423.0,
-      "close": 425.0,
-      "volume": 334233
-    },
-    {
       "time": 1775001600,
       "open": 445.0,
       "high": 445.0,
-      "low": 431.45,
-      "close": 431.95,
-      "volume": 83562
+      "low": 431.1,
+      "close": 435.75,
+      "volume": 194848
+    },
+    {
+      "time": 1775088000,
+      "open": 430.0,
+      "high": 449.0,
+      "low": 420.3,
+      "close": 443.05,
+      "volume": 312212
     }
   ]
 }

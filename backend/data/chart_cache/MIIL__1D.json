@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:25:58.636346+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:54.605335+00:00",
+  "symbol": "MIIL",
+  "timeframe": "1D",
+  "ticker": "MIIL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 122.47,
-      "high": 123.92,
-      "low": 119.08,
-      "close": 122.18,
-      "volume": 36480
-    },
     {
       "time": 1708560000,
       "open": 122.67,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 544.95,
+      "open": 540.0,
       "high": 557.0,
-      "low": 539.85,
-      "close": 555.95,
-      "volume": 7765
+      "low": 536.0,
+      "close": 544.45,
+      "volume": 39106
+    },
+    {
+      "time": 1775088000,
+      "open": 550.0,
+      "high": 550.0,
+      "low": 525.0,
+      "close": 536.8,
+      "volume": 61067
     }
   ]
 }

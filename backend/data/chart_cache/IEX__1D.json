@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.444496+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:53.135054+00:00",
+  "symbol": "IEX",
+  "timeframe": "1D",
+  "ticker": "IEX.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 10966801
     },
     {
-      "time": 1774915200,
-      "open": 117.9,
-      "high": 118.56,
-      "low": 114.6,
-      "close": 115.1,
-      "volume": 10966801
-    },
-    {
       "time": 1775001600,
       "open": 117.0,
-      "high": 119.9,
+      "high": 121.0,
       "low": 117.0,
-      "close": 118.86,
-      "volume": 2065484
+      "close": 119.95,
+      "volume": 4171559
+    },
+    {
+      "time": 1775088000,
+      "open": 118.45,
+      "high": 119.91,
+      "low": 116.0,
+      "close": 119.42,
+      "volume": 3916113
     }
   ]
 }

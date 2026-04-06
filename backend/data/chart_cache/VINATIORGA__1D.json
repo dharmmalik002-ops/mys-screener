@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.218320+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:48.131590+00:00",
+  "symbol": "VINATIORGA",
+  "timeframe": "1D",
+  "ticker": "VINATIORGA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1698.48,
-      "high": 1710.08,
-      "low": 1677.69,
-      "close": 1682.11,
-      "volume": 14586
-    },
     {
       "time": 1708646400,
       "open": 1686.52,
@@ -4159,8 +4154,16 @@
       "open": 1350.0,
       "high": 1364.0,
       "low": 1330.3,
-      "close": 1353.4,
-      "volume": 0
+      "close": 1342.2,
+      "volume": 31640
+    },
+    {
+      "time": 1775088000,
+      "open": 1339.9,
+      "high": 1339.9,
+      "low": 1306.0,
+      "close": 1309.0,
+      "volume": 38384
     }
   ]
 }

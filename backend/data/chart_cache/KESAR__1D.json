@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:20:13.644699+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:05.608397+00:00",
+  "symbol": "KESAR",
+  "timeframe": "1D",
+  "ticker": "KESAR.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2313,6 +2316,22 @@
       "low": 1089.0,
       "close": 1135.0,
       "volume": 9200
+    },
+    {
+      "time": 1775001600,
+      "open": 1165.1,
+      "high": 1169.8,
+      "low": 1165.1,
+      "close": 1169.8,
+      "volume": 2000
+    },
+    {
+      "time": 1775088000,
+      "open": 1165.0,
+      "high": 1165.0,
+      "low": 1135.0,
+      "close": 1159.8,
+      "volume": 5000
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.720033+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:46.995411+00:00",
+  "symbol": "SERVOTECH",
+  "timeframe": "1D",
+  "ticker": "SERVOTECH.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 99.93,
-      "high": 100.93,
-      "low": 95.54,
-      "close": 96.14,
-      "volume": 667050
-    },
     {
       "time": 1708300800,
       "open": 99.68,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 64.5,
+      "open": 64.1,
       "high": 68.54,
       "low": 64.1,
-      "close": 67.67,
-      "volume": 718186
+      "close": 68.45,
+      "volume": 1064696
+    },
+    {
+      "time": 1775088000,
+      "open": 66.75,
+      "high": 69.39,
+      "low": 65.01,
+      "close": 68.88,
+      "volume": 685643
     }
   ]
 }

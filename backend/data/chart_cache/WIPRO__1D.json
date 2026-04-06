@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.850359+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:27.291140+00:00",
+  "symbol": "WIPRO",
+  "timeframe": "1D",
+  "ticker": "WIPRO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 27946986
     },
     {
-      "time": 1774915200,
-      "open": 189.99,
-      "high": 191.63,
-      "low": 186.5,
-      "close": 187.0,
-      "volume": 27946986
-    },
-    {
       "time": 1775001600,
       "open": 191.51,
       "high": 194.49,
-      "low": 190.64,
-      "close": 193.01,
-      "volume": 6029708
+      "low": 190.41,
+      "close": 191.18,
+      "volume": 11769673
+    },
+    {
+      "time": 1775088000,
+      "open": 190.5,
+      "high": 195.34,
+      "low": 188.58,
+      "close": 194.91,
+      "volume": 16623045
     }
   ]
 }

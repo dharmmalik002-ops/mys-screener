@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.943928+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:10.296711+00:00",
+  "symbol": "PWL",
+  "timeframe": "1D",
+  "ticker": "PWL.NS",
   "bars": [
     {
       "time": 1763424000,
@@ -723,20 +726,20 @@
       "volume": 5231885
     },
     {
-      "time": 1774915200,
-      "open": 87.5,
-      "high": 88.79,
-      "low": 85.5,
-      "close": 86.0,
-      "volume": 5231885
-    },
-    {
       "time": 1775001600,
       "open": 87.98,
       "high": 89.9,
       "low": 86.51,
-      "close": 86.84,
-      "volume": 2048341
+      "close": 89.0,
+      "volume": 5192147
+    },
+    {
+      "time": 1775088000,
+      "open": 87.5,
+      "high": 90.5,
+      "low": 85.95,
+      "close": 89.97,
+      "volume": 2898130
     }
   ]
 }

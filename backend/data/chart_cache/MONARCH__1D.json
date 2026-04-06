@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.312546+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:21.803036+00:00",
+  "symbol": "MONARCH",
+  "timeframe": "1D",
+  "ticker": "MONARCH.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 324.62,
-      "high": 326.01,
-      "low": 312.2,
-      "close": 316.35,
-      "volume": 70176
-    },
     {
       "time": 1708560000,
       "open": 318.59,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 261.0,
-      "high": 264.25,
+      "open": 260.99,
+      "high": 267.0,
       "low": 251.0,
-      "close": 263.77,
-      "volume": 93274
+      "close": 266.02,
+      "volume": 232344
+    },
+    {
+      "time": 1775088000,
+      "open": 255.0,
+      "high": 267.02,
+      "low": 255.0,
+      "close": 265.32,
+      "volume": 44452
     }
   ]
 }

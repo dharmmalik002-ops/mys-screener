@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.770112+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:58.818517+00:00",
+  "symbol": "RPOWER",
+  "timeframe": "1D",
+  "ticker": "RPOWER.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 70358268
     },
     {
-      "time": 1774915200,
-      "open": 21.15,
-      "high": 21.63,
-      "low": 20.17,
-      "close": 20.37,
-      "volume": 70358268
-    },
-    {
       "time": 1775001600,
       "open": 21.65,
-      "high": 21.88,
+      "high": 22.67,
       "low": 21.08,
-      "close": 21.81,
-      "volume": 30843451
+      "close": 22.35,
+      "volume": 78570171
+    },
+    {
+      "time": 1775088000,
+      "open": 21.68,
+      "high": 22.89,
+      "low": 21.18,
+      "close": 22.64,
+      "volume": 64121713
     }
   ]
 }

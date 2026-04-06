@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.303244+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.254710+00:00",
+  "symbol": "TIRUMALCHM",
+  "timeframe": "1D",
+  "ticker": "TIRUMALCHM.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 241.1,
-      "high": 256.05,
-      "low": 235.97,
-      "close": 244.29,
-      "volume": 2591566
-    },
     {
       "time": 1708560000,
       "open": 246.34,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 168.24,
-      "high": 179.5,
+      "high": 184.93,
       "low": 168.24,
-      "close": 175.71,
-      "volume": 211861
+      "close": 180.07,
+      "volume": 552818
+    },
+    {
+      "time": 1775088000,
+      "open": 175.0,
+      "high": 177.74,
+      "low": 171.46,
+      "close": 174.08,
+      "volume": 384206
     }
   ]
 }

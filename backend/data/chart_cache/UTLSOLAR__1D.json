@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.110323+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.817508+00:00",
+  "symbol": "UTLSOLAR",
+  "timeframe": "1D",
+  "ticker": "UTLSOLAR.NS",
   "bars": [
     {
       "time": 1763596800,
@@ -707,20 +710,20 @@
       "volume": 316455
     },
     {
-      "time": 1774915200,
-      "open": 198.42,
-      "high": 202.0,
-      "low": 194.55,
-      "close": 198.0,
-      "volume": 316455
-    },
-    {
       "time": 1775001600,
       "open": 202.56,
-      "high": 203.5,
+      "high": 204.0,
       "low": 200.41,
-      "close": 201.9,
-      "volume": 45429
+      "close": 203.21,
+      "volume": 198371
+    },
+    {
+      "time": 1775088000,
+      "open": 200.0,
+      "high": 203.5,
+      "low": 199.06,
+      "close": 202.3,
+      "volume": 90249
     }
   ]
 }

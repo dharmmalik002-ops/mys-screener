@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.642611+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:37.449894+00:00",
+  "symbol": "FIEMIND",
+  "timeframe": "1D",
+  "ticker": "FIEMIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 80259
     },
     {
-      "time": 1774915200,
-      "open": 1967.9,
-      "high": 1975.0,
-      "low": 1870.1,
-      "close": 1892.0,
-      "volume": 80259
-    },
-    {
       "time": 1775001600,
       "open": 1970.1,
-      "high": 1998.5,
+      "high": 2015.7,
       "low": 1952.0,
-      "close": 1970.4,
-      "volume": 21290
+      "close": 1974.7,
+      "volume": 51954
+    },
+    {
+      "time": 1775088000,
+      "open": 1965.0,
+      "high": 1995.0,
+      "low": 1903.2,
+      "close": 1985.3,
+      "volume": 38863
     }
   ]
 }

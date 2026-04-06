@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:40:37.800823+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:43.886477+00:00",
   "symbol": "AVANTIFEED",
   "timeframe": "1D",
   "ticker": "AVANTIFEED.NS",
   "bars": [
+    {
+      "time": 1708560000,
+      "open": 487.51,
+      "high": 489.76,
+      "low": 476.66,
+      "close": 483.06,
+      "volume": 316714
+    },
     {
       "time": 1708646400,
       "open": 484.09,
@@ -4142,28 +4150,20 @@
       "volume": 331555
     },
     {
-      "time": 1774915200,
-      "open": 1200.0,
-      "high": 1228.9,
-      "low": 1162.0,
-      "close": 1174.0,
-      "volume": 331555
-    },
-    {
       "time": 1775001600,
       "open": 1209.9,
       "high": 1258.0,
       "low": 1209.9,
-      "close": 1226.5,
-      "volume": 220933
+      "close": 1223.6,
+      "volume": 455958
     },
     {
       "time": 1775088000,
-      "open": 1210.0,
-      "high": 1220.0,
-      "low": 1169.8,
+      "open": 1221.7,
+      "high": 1222.0,
+      "low": 1169.4,
       "close": 1213.9,
-      "volume": 326848
+      "volume": 344383
     }
   ]
 }

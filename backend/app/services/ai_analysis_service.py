@@ -382,17 +382,60 @@ class AIAnalysisService:
         try:
             result = self._generate_analysis(fundamentals)
             
-            # Post-processing: Enhance with NewsProcessor if needed
-            from app.services.news_processor import NewsProcessor
+            # Post-processing: Enhance with NewsPipeline and Guidance Validity Engine
+            from app.services.news_logic import NewsPipeline
             
-            # Ensure detailed_news fields are correctly typed and classified
+            # 1. Process News
             if "detailed_news" in result:
+                processed_news = []
+                input_news = []
                 for news in result["detailed_news"]:
-                    guessed_type, guessed_editorial = NewsProcessor.classify_source(news.get("source", ""), news.get("url"))
-                    news["source_type"] = news.get("source_type", guessed_type)
-                    news["is_editorial"] = news.get("is_editorial", guessed_editorial)
-                    if not news.get("impact_area"):
-                        news["impact_area"] = NewsProcessor.identify_impact_area(news.get("title", ""), news.get("summary", ""))
+                    # Convert dict to NewsPipeline format if needed
+                    input_news.append({
+                        "title": news.get("title", ""),
+                        "url": news.get("url", ""),
+                        "source": news.get("source", ""),
+                        "summary": news.get("summary", ""),
+                        "published_date": news.get("published_date") or news.get("published_at"),
+                        "impact_category": news.get("impact_category", "market"),
+                        "sentiment": news.get("sentiment", "neutral"),
+                        "relevance_score": news.get("relevance_score", 0.5),
+                        "impact_tags": news.get("impact_tags", [])
+                    })
+                
+                editorial, official = NewsPipeline.process_and_split(input_news)
+                result["latest_editorial_news"] = [n.model_dump() for n in editorial]
+                result["official_updates"] = [n.model_dump() for n in official]
+                result["detailed_news"] = [n.model_dump() for n in editorial + official]
+
+            # 2. Validate Guidance
+            if "management_guidance" in result:
+                for g in result["management_guidance"]:
+                    g_period = str(g.get("fiscal_period") or g.get("fiscal_year", "")).upper()
+                    # Hard-coded April 2026 logic: FY2025 is stale if FY2026/27 exists
+                    is_stale = False
+                    banner = "Valid"
+                    
+                    has_newer = any(
+                        "FY2026" in str(x.get("fiscal_year", "")).upper() or 
+                        "FY2027" in str(x.get("fiscal_year", "")).upper() or
+                        "FY26" in str(x.get("fiscal_year", "")).upper() or
+                        "FY27" in str(x.get("fiscal_year", "")).upper()
+                        for x in result["management_guidance"]
+                    )
+                    
+                    if ("FY2025" in g_period or "FY25" in g_period) and has_newer:
+                        is_stale = True
+                        banner = "Stale"
+                    
+                    g["is_stale"] = is_stale
+                    g["validity_banner"] = banner
+
+            # 3. Handle Future Growth Triggers
+            if "future_growth_triggers" not in result:
+                result["future_growth_triggers"] = []
+            if "growth_risks" not in result:
+                result["growth_risks"] = []
 
             cache_entry = {
                 "data": result,

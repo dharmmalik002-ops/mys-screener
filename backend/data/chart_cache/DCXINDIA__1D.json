@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.445539+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.698869+00:00",
+  "symbol": "DCXINDIA",
+  "timeframe": "1D",
+  "ticker": "DCXINDIA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 320.2,
-      "high": 329.0,
-      "low": 317.2,
-      "close": 322.45,
-      "volume": 593226
-    },
     {
       "time": 1708646400,
       "open": 327.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 159.34,
-      "high": 165.2,
+      "open": 159.4,
+      "high": 166.2,
       "low": 158.11,
-      "close": 162.5,
-      "volume": 726031
+      "close": 164.96,
+      "volume": 1667967
+    },
+    {
+      "time": 1775088000,
+      "open": 160.48,
+      "high": 167.0,
+      "low": 158.15,
+      "close": 165.92,
+      "volume": 1190595
     }
   ]
 }

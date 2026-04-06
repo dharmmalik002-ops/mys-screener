@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.885583+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:31.669777+00:00",
+  "symbol": "VIKRAMSOLR",
+  "timeframe": "1D",
+  "ticker": "VIKRAMSOLR.NS",
   "bars": [
     {
       "time": 1756166400,
@@ -1179,20 +1182,20 @@
       "volume": 2801286
     },
     {
-      "time": 1774915200,
-      "open": 189.0,
-      "high": 190.0,
-      "low": 175.13,
-      "close": 176.35,
-      "volume": 2801286
-    },
-    {
       "time": 1775001600,
       "open": 185.7,
-      "high": 185.7,
+      "high": 189.18,
       "low": 180.75,
-      "close": 182.61,
-      "volume": 890708
+      "close": 183.18,
+      "volume": 2240416
+    },
+    {
+      "time": 1775088000,
+      "open": 179.84,
+      "high": 186.48,
+      "low": 176.5,
+      "close": 185.5,
+      "volume": 1531530
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:22:33.754042+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:09.639197+00:00",
+  "symbol": "MMWL",
+  "timeframe": "1D",
+  "ticker": "MMWL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 9.01,
-      "high": 9.45,
-      "low": 8.8,
-      "close": 9.01,
-      "volume": 0
+      "open": 8.63,
+      "high": 9.59,
+      "low": 8.63,
+      "close": 9.35,
+      "volume": 1492207
+    },
+    {
+      "time": 1775088000,
+      "open": 9.4,
+      "high": 9.7,
+      "low": 8.85,
+      "close": 9.44,
+      "volume": 41174
     }
   ]
 }

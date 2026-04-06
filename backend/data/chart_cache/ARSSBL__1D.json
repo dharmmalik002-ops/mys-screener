@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.048914+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:03.532596+00:00",
+  "symbol": "ARSSBL",
+  "timeframe": "1D",
+  "ticker": "ARSSBL.NS",
   "bars": [
     {
       "time": 1759190400,
@@ -988,11 +991,19 @@
     },
     {
       "time": 1775001600,
-      "open": 444.9,
-      "high": 452.0,
+      "open": 433.1,
+      "high": 455.4,
       "low": 433.1,
-      "close": 437.7,
-      "volume": 200457
+      "close": 450.15,
+      "volume": 612677
+    },
+    {
+      "time": 1775088000,
+      "open": 438.0,
+      "high": 455.0,
+      "low": 429.9,
+      "close": 451.55,
+      "volume": 294803
     }
   ]
 }

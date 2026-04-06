@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.906995+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:35.169528+00:00",
+  "symbol": "PRSMJOHNSN",
+  "timeframe": "1D",
+  "ticker": "PRSMJOHNSN.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 192379
     },
     {
-      "time": 1774915200,
-      "open": 125.0,
-      "high": 126.09,
-      "low": 122.95,
-      "close": 125.0,
-      "volume": 192379
-    },
-    {
       "time": 1775001600,
       "open": 125.53,
       "high": 127.35,
-      "low": 125.53,
-      "close": 126.04,
-      "volume": 39731
+      "low": 124.05,
+      "close": 124.69,
+      "volume": 102705
+    },
+    {
+      "time": 1775088000,
+      "open": 124.0,
+      "high": 124.7,
+      "low": 120.25,
+      "close": 123.68,
+      "volume": 161435
     }
   ]
 }

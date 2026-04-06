@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.047732+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:43.286956+00:00",
+  "symbol": "ELECTCAST",
+  "timeframe": "1D",
+  "ticker": "ELECTCAST.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4247843
     },
     {
-      "time": 1774915200,
-      "open": 78.89,
-      "high": 80.69,
-      "low": 72.55,
-      "close": 73.98,
-      "volume": 4247843
-    },
-    {
       "time": 1775001600,
       "open": 77.36,
-      "high": 81.65,
+      "high": 81.84,
       "low": 76.0,
-      "close": 79.07,
-      "volume": 2656433
+      "close": 81.15,
+      "volume": 5106122
+    },
+    {
+      "time": 1775088000,
+      "open": 79.11,
+      "high": 81.9,
+      "low": 76.61,
+      "close": 79.97,
+      "volume": 3738221
     }
   ]
 }

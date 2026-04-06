@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.120697+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.120792+00:00",
+  "symbol": "HUBTOWN",
+  "timeframe": "1D",
+  "ticker": "HUBTOWN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 149.0,
-      "high": 159.3,
-      "low": 148.5,
-      "close": 159.3,
-      "volume": 562700
-    },
     {
       "time": 1708646400,
       "open": 165.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 177.89,
-      "high": 186.8,
+      "open": 177.0,
+      "high": 189.0,
       "low": 177.0,
-      "close": 184.13,
-      "volume": 189815
+      "close": 186.31,
+      "volume": 472775
+    },
+    {
+      "time": 1775088000,
+      "open": 181.1,
+      "high": 187.56,
+      "low": 179.0,
+      "close": 185.63,
+      "volume": 362041
     }
   ]
 }

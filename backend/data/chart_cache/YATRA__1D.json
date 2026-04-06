@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.703443+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:37.386054+00:00",
+  "symbol": "YATRA",
+  "timeframe": "1D",
+  "ticker": "YATRA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 172.85,
-      "high": 173.75,
-      "low": 168.7,
-      "close": 171.55,
-      "volume": 171760
-    },
     {
       "time": 1708646400,
       "open": 172.45,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 96.42,
-      "high": 98.77,
+      "open": 94.79,
+      "high": 99.17,
       "low": 93.4,
-      "close": 96.9,
-      "volume": 1176784
+      "close": 98.39,
+      "volume": 2645569
+    },
+    {
+      "time": 1775088000,
+      "open": 97.95,
+      "high": 100.98,
+      "low": 92.5,
+      "close": 99.19,
+      "volume": 2191428
     }
   ]
 }

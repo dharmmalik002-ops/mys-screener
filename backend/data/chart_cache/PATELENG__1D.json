@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.187591+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:19.793705+00:00",
+  "symbol": "PATELENG",
+  "timeframe": "1D",
+  "ticker": "PATELENG.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 71.2,
-      "high": 71.55,
-      "low": 68.85,
-      "close": 70.65,
-      "volume": 6147681
-    },
     {
       "time": 1708646400,
       "open": 70.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 23.32,
-      "high": 24.0,
+      "open": 23.3,
+      "high": 24.14,
       "low": 23.1,
-      "close": 23.55,
-      "volume": 4145479
+      "close": 24.03,
+      "volume": 9163261
+    },
+    {
+      "time": 1775088000,
+      "open": 23.7,
+      "high": 24.62,
+      "low": 22.7,
+      "close": 24.39,
+      "volume": 6617899
     }
   ]
 }

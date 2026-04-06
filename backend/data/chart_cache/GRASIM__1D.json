@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.299773+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:32.283312+00:00",
+  "symbol": "GRASIM",
+  "timeframe": "1D",
+  "ticker": "GRASIM.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1978678
     },
     {
-      "time": 1774915200,
-      "open": 2620.1,
-      "high": 2620.1,
-      "low": 2540.0,
-      "close": 2541.0,
-      "volume": 1978678
-    },
-    {
       "time": 1775001600,
       "open": 2602.0,
       "high": 2613.3,
-      "low": 2577.2,
-      "close": 2577.9,
-      "volume": 186674
+      "low": 2576.0,
+      "close": 2592.8,
+      "volume": 651446
+    },
+    {
+      "time": 1775088000,
+      "open": 2574.9,
+      "high": 2574.9,
+      "low": 2514.2,
+      "close": 2564.1,
+      "volume": 522088
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.164148+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:48.132259+00:00",
+  "symbol": "EIHOTEL",
+  "timeframe": "1D",
+  "ticker": "EIHOTEL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 465052
     },
     {
-      "time": 1774915200,
-      "open": 283.0,
-      "high": 284.25,
-      "low": 271.85,
-      "close": 272.9,
-      "volume": 465052
-    },
-    {
       "time": 1775001600,
       "open": 281.6,
       "high": 289.85,
-      "low": 280.7,
-      "close": 280.75,
-      "volume": 150324
+      "low": 278.35,
+      "close": 280.0,
+      "volume": 722376
+    },
+    {
+      "time": 1775088000,
+      "open": 277.0,
+      "high": 289.9,
+      "low": 271.15,
+      "close": 288.2,
+      "volume": 313903
     }
   ]
 }

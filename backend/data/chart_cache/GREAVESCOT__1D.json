@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.126743+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:08.489032+00:00",
+  "symbol": "GREAVESCOT",
+  "timeframe": "1D",
+  "ticker": "GREAVESCOT.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1955379
     },
     {
-      "time": 1774915200,
-      "open": 127.07,
-      "high": 129.1,
-      "low": 119.99,
-      "close": 120.58,
-      "volume": 1955379
-    },
-    {
       "time": 1775001600,
       "open": 125.9,
-      "high": 130.39,
+      "high": 132.35,
       "low": 125.35,
-      "close": 128.52,
-      "volume": 658148
+      "close": 131.34,
+      "volume": 1407667
+    },
+    {
+      "time": 1775088000,
+      "open": 126.71,
+      "high": 132.8,
+      "low": 125.01,
+      "close": 132.05,
+      "volume": 1084745
     }
   ]
 }

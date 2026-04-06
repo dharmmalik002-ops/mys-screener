@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.082887+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:06.593332+00:00",
+  "symbol": "EXCELINDUS",
+  "timeframe": "1D",
+  "ticker": "EXCELINDUS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 828.46,
-      "high": 845.52,
-      "low": 828.46,
-      "close": 834.18,
-      "volume": 9750
-    },
     {
       "time": 1708560000,
       "open": 834.72,
@@ -765,7 +760,7 @@
     {
       "time": 1721001600,
       "open": 1232.03,
-      "high": 1236.95,
+      "high": 1236.96,
       "low": 1184.13,
       "close": 1200.83,
       "volume": 31467
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 825.0,
-      "high": 850.0,
+      "open": 849.0,
+      "high": 896.0,
       "low": 825.0,
-      "close": 845.0,
-      "volume": 5534
+      "close": 882.2,
+      "volume": 12718
+    },
+    {
+      "time": 1775088000,
+      "open": 872.0,
+      "high": 889.4,
+      "low": 846.7,
+      "close": 880.45,
+      "volume": 7409
     }
   ]
 }

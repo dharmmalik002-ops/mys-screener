@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:47.104009+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:13.772352+00:00",
+  "symbol": "ASTAR",
+  "timeframe": "1D",
+  "ticker": "ASTAR.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2289,6 +2292,22 @@
       "low": 610.0,
       "close": 610.0,
       "volume": 1
+    },
+    {
+      "time": 1775001600,
+      "open": 601.0,
+      "high": 624.0,
+      "low": 575.0,
+      "close": 624.0,
+      "volume": 55
+    },
+    {
+      "time": 1775088000,
+      "open": 624.0,
+      "high": 629.4,
+      "low": 624.0,
+      "close": 628.3,
+      "volume": 20
     }
   ]
 }

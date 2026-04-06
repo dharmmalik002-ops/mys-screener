@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.015400+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:55.675564+00:00",
+  "symbol": "ASAHIINDIA",
+  "timeframe": "1D",
+  "ticker": "ASAHIINDIA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 163988
     },
     {
-      "time": 1774915200,
-      "open": 806.0,
-      "high": 818.4,
-      "low": 776.0,
-      "close": 785.25,
-      "volume": 163988
-    },
-    {
       "time": 1775001600,
       "open": 814.0,
-      "high": 827.85,
+      "high": 828.4,
       "low": 800.1,
-      "close": 816.4,
-      "volume": 32365
+      "close": 822.7,
+      "volume": 90611
+    },
+    {
+      "time": 1775088000,
+      "open": 814.95,
+      "high": 824.0,
+      "low": 790.75,
+      "close": 821.6,
+      "volume": 72258
     }
   ]
 }

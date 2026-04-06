@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.100442+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:56.838098+00:00",
+  "symbol": "CREDITACC",
+  "timeframe": "1D",
+  "ticker": "CREDITACC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 287081
     },
     {
-      "time": 1774915200,
-      "open": 1148.8,
-      "high": 1186.0,
-      "low": 1144.1,
-      "close": 1160.0,
-      "volume": 287081
-    },
-    {
       "time": 1775001600,
       "open": 1174.0,
-      "high": 1194.9,
+      "high": 1209.9,
       "low": 1162.1,
-      "close": 1181.5,
-      "volume": 54032
+      "close": 1192.0,
+      "volume": 137170
+    },
+    {
+      "time": 1775088000,
+      "open": 1168.0,
+      "high": 1189.0,
+      "low": 1158.1,
+      "close": 1177.9,
+      "volume": 216183
     }
   ]
 }

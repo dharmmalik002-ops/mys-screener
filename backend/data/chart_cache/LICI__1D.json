@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.540263+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:35.873283+00:00",
+  "symbol": "LICI",
+  "timeframe": "1D",
+  "ticker": "LICI.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 3174107
     },
     {
-      "time": 1774915200,
-      "open": 760.0,
-      "high": 760.05,
-      "low": 722.65,
-      "close": 726.3,
-      "volume": 3174107
-    },
-    {
       "time": 1775001600,
       "open": 745.0,
-      "high": 751.7,
+      "high": 758.05,
       "low": 736.55,
-      "close": 749.8,
-      "volume": 622469
+      "close": 746.0,
+      "volume": 1461768
+    },
+    {
+      "time": 1775088000,
+      "open": 738.0,
+      "high": 738.0,
+      "low": 721.5,
+      "close": 734.85,
+      "volume": 1574617
     }
   ]
 }

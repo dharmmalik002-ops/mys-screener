@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.477492+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:27.972563+00:00",
+  "symbol": "DLF",
+  "timeframe": "1D",
+  "ticker": "DLF.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 6410832
     },
     {
-      "time": 1774915200,
-      "open": 518.0,
-      "high": 522.4,
-      "low": 502.1,
-      "close": 503.8,
-      "volume": 6410832
-    },
-    {
       "time": 1775001600,
       "open": 519.95,
       "high": 524.55,
-      "low": 514.1,
-      "close": 515.85,
-      "volume": 1406832
+      "low": 507.0,
+      "close": 509.75,
+      "volume": 6453918
+    },
+    {
+      "time": 1775088000,
+      "open": 501.0,
+      "high": 524.45,
+      "low": 489.4,
+      "close": 522.25,
+      "volume": 7852289
     }
   ]
 }

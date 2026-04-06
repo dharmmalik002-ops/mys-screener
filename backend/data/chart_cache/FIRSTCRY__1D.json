@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.561659+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:14.456412+00:00",
+  "symbol": "FIRSTCRY",
+  "timeframe": "1D",
+  "ticker": "FIRSTCRY.NS",
   "bars": [
     {
       "time": 1723507200,
@@ -3243,20 +3246,20 @@
       "volume": 3901251
     },
     {
-      "time": 1774915200,
-      "open": 221.1,
-      "high": 221.1,
-      "low": 207.25,
-      "close": 208.95,
-      "volume": 3901251
-    },
-    {
       "time": 1775001600,
       "open": 215.0,
       "high": 225.3,
       "low": 212.54,
-      "close": 219.46,
-      "volume": 1525716
+      "close": 220.67,
+      "volume": 2425134
+    },
+    {
+      "time": 1775088000,
+      "open": 217.0,
+      "high": 225.11,
+      "low": 212.0,
+      "close": 224.33,
+      "volume": 1731691
     }
   ]
 }

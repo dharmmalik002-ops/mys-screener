@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:57.291909+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.679345+00:00",
+  "symbol": "ROBU",
+  "timeframe": "1D",
+  "ticker": "ROBU.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 377.27,
-      "high": 382.73,
-      "low": 370.0,
-      "close": 370.23,
-      "volume": 12539
-    },
-    {
-      "time": 1708300800,
-      "open": 357.36,
-      "high": 372.73,
-      "low": 357.36,
-      "close": 370.0,
-      "volume": 10229
-    },
     {
       "time": 1708387200,
       "open": 377.27,
@@ -4161,6 +4148,22 @@
       "low": 781.55,
       "close": 823.75,
       "volume": 4455
+    },
+    {
+      "time": 1775001600,
+      "open": 803.0,
+      "high": 830.0,
+      "low": 803.0,
+      "close": 829.5,
+      "volume": 1155
+    },
+    {
+      "time": 1775088000,
+      "open": 820.0,
+      "high": 820.0,
+      "low": 815.0,
+      "close": 815.0,
+      "volume": 825
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.185062+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:12.542945+00:00",
+  "symbol": "BOROSCI",
+  "timeframe": "1D",
+  "ticker": "BOROSCI.NS",
   "bars": [
     {
       "time": 1717718400,
@@ -3564,11 +3567,19 @@
     },
     {
       "time": 1775001600,
-      "open": 103.14,
-      "high": 106.08,
+      "open": 103.0,
+      "high": 113.89,
       "low": 103.0,
-      "close": 105.0,
-      "volume": 20837
+      "close": 110.78,
+      "volume": 171827
+    },
+    {
+      "time": 1775088000,
+      "open": 110.8,
+      "high": 112.7,
+      "low": 105.83,
+      "close": 111.19,
+      "volume": 89556
     }
   ]
 }

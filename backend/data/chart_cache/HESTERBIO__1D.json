@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.002233+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:53.936159+00:00",
+  "symbol": "HESTERBIO",
+  "timeframe": "1D",
+  "ticker": "HESTERBIO.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1437.83,
-      "high": 1437.83,
-      "low": 1408.7,
-      "close": 1412.08,
-      "volume": 7321
-    },
     {
       "time": 1708560000,
       "open": 1419.19,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1358.5,
+      "open": 1275.0,
       "high": 1379.9,
       "low": 1275.0,
-      "close": 1371.2,
-      "volume": 2032
+      "close": 1365.6,
+      "volume": 3432
+    },
+    {
+      "time": 1775088000,
+      "open": 1370.0,
+      "high": 1427.9,
+      "low": 1332.4,
+      "close": 1419.4,
+      "volume": 2761
     }
   ]
 }

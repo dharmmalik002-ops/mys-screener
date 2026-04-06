@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T03:04:01.244528+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:27.323211+00:00",
+  "symbol": "UFBL",
+  "timeframe": "1D",
+  "ticker": "UFBL.NS",
   "bars": [
     {
       "time": 1759449600,
@@ -961,6 +964,22 @@
       "low": 195.3,
       "close": 195.3,
       "volume": 56731
+    },
+    {
+      "time": 1775001600,
+      "open": 207.0,
+      "high": 214.83,
+      "low": 201.71,
+      "close": 204.41,
+      "volume": 61249
+    },
+    {
+      "time": 1775088000,
+      "open": 191.0,
+      "high": 219.0,
+      "low": 191.0,
+      "close": 212.62,
+      "volume": 89455
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.210352+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:18.643134+00:00",
+  "symbol": "GULPOLY",
+  "timeframe": "1D",
+  "ticker": "GULPOLY.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 198.98,
-      "high": 217.72,
-      "low": 198.38,
-      "close": 210.4,
-      "volume": 1166132
-    },
     {
       "time": 1708560000,
       "open": 212.04,
@@ -4159,8 +4154,16 @@
       "open": 149.0,
       "high": 154.85,
       "low": 146.57,
-      "close": 153.91,
-      "volume": 95486
+      "close": 148.62,
+      "volume": 188225
+    },
+    {
+      "time": 1775088000,
+      "open": 148.62,
+      "high": 150.99,
+      "low": 145.18,
+      "close": 150.13,
+      "volume": 130198
     }
   ]
 }

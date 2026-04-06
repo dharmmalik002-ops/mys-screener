@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.717710+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:48.570994+00:00",
+  "symbol": "DATAMATICS",
+  "timeframe": "1D",
+  "ticker": "DATAMATICS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -398,7 +401,7 @@
       "time": 1715299200,
       "open": 551.18,
       "high": 559.18,
-      "low": 539.0,
+      "low": 538.99,
       "close": 550.64,
       "volume": 73924
     },
@@ -4147,20 +4150,20 @@
       "volume": 107349
     },
     {
-      "time": 1774915200,
-      "open": 666.0,
-      "high": 672.1,
-      "low": 632.0,
-      "close": 633.0,
-      "volume": 107349
-    },
-    {
       "time": 1775001600,
       "open": 671.15,
-      "high": 689.4,
+      "high": 708.0,
       "low": 651.25,
-      "close": 683.15,
-      "volume": 43154
+      "close": 692.95,
+      "volume": 118347
+    },
+    {
+      "time": 1775088000,
+      "open": 680.1,
+      "high": 711.0,
+      "low": 651.3,
+      "close": 705.4,
+      "volume": 140085
     }
   ]
 }

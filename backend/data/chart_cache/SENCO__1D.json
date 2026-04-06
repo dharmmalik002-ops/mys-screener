@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.042710+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.103847+00:00",
+  "symbol": "SENCO",
+  "timeframe": "1D",
+  "ticker": "SENCO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 772117
     },
     {
-      "time": 1774915200,
-      "open": 290.4,
-      "high": 295.0,
-      "low": 276.0,
-      "close": 279.9,
-      "volume": 772117
-    },
-    {
       "time": 1775001600,
       "open": 283.0,
-      "high": 289.9,
+      "high": 290.75,
       "low": 283.0,
-      "close": 285.5,
-      "volume": 205880
+      "close": 288.6,
+      "volume": 503251
+    },
+    {
+      "time": 1775088000,
+      "open": 285.0,
+      "high": 291.0,
+      "low": 279.45,
+      "close": 288.8,
+      "volume": 242201
     }
   ]
 }

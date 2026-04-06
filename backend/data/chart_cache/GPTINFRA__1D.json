@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.840467+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:52.076133+00:00",
+  "symbol": "GPTINFRA",
+  "timeframe": "1D",
+  "ticker": "GPTINFRA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 89.06,
-      "high": 92.36,
-      "low": 86.81,
-      "close": 90.11,
-      "volume": 112898
-    },
     {
       "time": 1708646400,
       "open": 90.11,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 101.7,
-      "high": 103.9,
+      "open": 98.98,
+      "high": 104.65,
       "low": 98.98,
-      "close": 103.53,
-      "volume": 120261
+      "close": 103.47,
+      "volume": 241610
+    },
+    {
+      "time": 1775088000,
+      "open": 102.5,
+      "high": 104.95,
+      "low": 99.5,
+      "close": 104.46,
+      "volume": 258395
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.851849+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:12.912142+00:00",
+  "symbol": "DELHIVERY",
+  "timeframe": "1D",
+  "ticker": "DELHIVERY.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1313323
     },
     {
-      "time": 1774915200,
-      "open": 423.7,
-      "high": 423.7,
-      "low": 411.45,
-      "close": 412.0,
-      "volume": 1313323
-    },
-    {
       "time": 1775001600,
       "open": 427.0,
       "high": 441.0,
       "low": 427.0,
-      "close": 430.4,
-      "volume": 1402625
+      "close": 431.4,
+      "volume": 2796488
+    },
+    {
+      "time": 1775088000,
+      "open": 425.0,
+      "high": 428.65,
+      "low": 415.55,
+      "close": 426.25,
+      "volume": 1423697
     }
   ]
 }

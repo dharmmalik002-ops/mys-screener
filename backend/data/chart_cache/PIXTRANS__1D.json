@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.317935+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:26.100136+00:00",
+  "symbol": "PIXTRANS",
+  "timeframe": "1D",
+  "ticker": "PIXTRANS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1247.24,
-      "high": 1311.58,
-      "low": 1247.24,
-      "close": 1289.26,
-      "volume": 19793
-    },
     {
       "time": 1708560000,
       "open": 1294.75,
@@ -4159,8 +4154,16 @@
       "open": 1459.8,
       "high": 1478.7,
       "low": 1430.0,
-      "close": 1475.0,
-      "volume": 9270
+      "close": 1462.1,
+      "volume": 16035
+    },
+    {
+      "time": 1775088000,
+      "open": 1462.2,
+      "high": 1462.2,
+      "low": 1434.4,
+      "close": 1458.4,
+      "volume": 4967
     }
   ]
 }

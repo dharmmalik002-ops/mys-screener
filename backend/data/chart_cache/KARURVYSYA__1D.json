@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:56.020156+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:02.796954+00:00",
   "symbol": "KARURVYSYA",
   "timeframe": "1D",
   "ticker": "KARURVYSYA.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 147.78,
+      "high": 148.03,
+      "low": 144.19,
+      "close": 146.56,
+      "volume": 5352849
+    },
     {
       "time": 1708905600,
       "open": 146.93,
@@ -4142,28 +4150,20 @@
       "volume": 4047271
     },
     {
-      "time": 1774915200,
-      "open": 290.9,
-      "high": 291.55,
-      "low": 281.3,
-      "close": 290.0,
-      "volume": 4047271
-    },
-    {
       "time": 1775001600,
       "open": 299.4,
       "high": 299.4,
       "low": 288.0,
-      "close": 288.55,
-      "volume": 766472
+      "close": 291.85,
+      "volume": 3009101
     },
     {
       "time": 1775088000,
       "open": 288.9,
       "high": 288.9,
       "low": 270.0,
-      "close": 272.55,
-      "volume": 8298774
+      "close": 272.65,
+      "volume": 8583223
     }
   ]
 }

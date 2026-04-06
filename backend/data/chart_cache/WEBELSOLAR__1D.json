@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.792059+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:53.871770+00:00",
+  "symbol": "WEBELSOLAR",
+  "timeframe": "1D",
+  "ticker": "WEBELSOLAR.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 7697263
     },
     {
-      "time": 1774915200,
-      "open": 68.8,
-      "high": 71.25,
-      "low": 63.7,
-      "close": 65.25,
-      "volume": 7697263
-    },
-    {
       "time": 1775001600,
       "open": 68.8,
       "high": 71.34,
       "low": 67.26,
       "close": 71.34,
-      "volume": 3182631
+      "volume": 3352485
+    },
+    {
+      "time": 1775088000,
+      "open": 70.4,
+      "high": 77.5,
+      "low": 69.68,
+      "close": 76.36,
+      "volume": 18418708
     }
   ]
 }

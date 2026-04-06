@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.605887+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:38.919376+00:00",
+  "symbol": "SUZLON",
+  "timeframe": "1D",
+  "ticker": "SUZLON.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 126591848
     },
     {
-      "time": 1774915200,
-      "open": 40.0,
-      "high": 40.81,
-      "low": 39.1,
-      "close": 39.61,
-      "volume": 126591848
-    },
-    {
       "time": 1775001600,
       "open": 41.39,
       "high": 41.59,
       "low": 40.8,
-      "close": 41.0,
-      "volume": 27727953
+      "close": 41.12,
+      "volume": 58512083
+    },
+    {
+      "time": 1775088000,
+      "open": 40.5,
+      "high": 40.98,
+      "low": 39.77,
+      "close": 40.78,
+      "volume": 64825364
     }
   ]
 }

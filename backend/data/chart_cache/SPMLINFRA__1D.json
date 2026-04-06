@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.904386+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:00.337330+00:00",
+  "symbol": "SPMLINFRA",
+  "timeframe": "1D",
+  "ticker": "SPMLINFRA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 112.0,
-      "high": 112.6,
-      "low": 109.5,
-      "close": 112.0,
-      "volume": 58551
-    },
     {
       "time": 1708646400,
       "open": 112.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 162.04,
-      "high": 168.0,
+      "open": 160.0,
+      "high": 175.0,
       "low": 158.12,
-      "close": 167.22,
-      "volume": 204077
+      "close": 169.4,
+      "volume": 465363
+    },
+    {
+      "time": 1775088000,
+      "open": 165.0,
+      "high": 174.0,
+      "low": 161.15,
+      "close": 171.98,
+      "volume": 432758
     }
   ]
 }

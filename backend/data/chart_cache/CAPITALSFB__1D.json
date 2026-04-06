@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.094887+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:05.697316+00:00",
+  "symbol": "CAPITALSFB",
+  "timeframe": "1D",
+  "ticker": "CAPITALSFB.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 416.94,
-      "high": 430.76,
-      "low": 410.65,
-      "close": 421.17,
-      "volume": 508447
-    },
     {
       "time": 1708560000,
       "open": 425.74,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 227.0,
-      "high": 227.97,
+      "open": 221.9,
+      "high": 231.0,
       "low": 221.9,
-      "close": 227.34,
-      "volume": 7163
+      "close": 228.43,
+      "volume": 23412
+    },
+    {
+      "time": 1775088000,
+      "open": 231.0,
+      "high": 239.34,
+      "low": 216.43,
+      "close": 238.79,
+      "volume": 30485
     }
   ]
 }

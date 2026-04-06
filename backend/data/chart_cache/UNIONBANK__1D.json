@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:52.912867+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:57.120883+00:00",
   "symbol": "UNIONBANK",
   "timeframe": "1D",
   "ticker": "UNIONBANK.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 140.6,
+      "high": 140.6,
+      "low": 136.73,
+      "close": 137.49,
+      "volume": 18645495
+    },
     {
       "time": 1708905600,
       "open": 136.64,
@@ -4142,28 +4150,20 @@
       "volume": 26845178
     },
     {
-      "time": 1774915200,
-      "open": 172.0,
-      "high": 173.29,
-      "low": 163.08,
-      "close": 163.99,
-      "volume": 26845178
-    },
-    {
       "time": 1775001600,
       "open": 171.0,
-      "high": 171.0,
+      "high": 173.1,
       "low": 167.33,
-      "close": 168.79,
-      "volume": 5510432
+      "close": 171.64,
+      "volume": 15095865
     },
     {
       "time": 1775088000,
-      "open": 171.64,
-      "high": 172.77,
+      "open": 168.5,
+      "high": 172.8,
       "low": 164.2,
-      "close": 172.0,
-      "volume": 14259989
+      "close": 171.99,
+      "volume": 14715599
     }
   ]
 }

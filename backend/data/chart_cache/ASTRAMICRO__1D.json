@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.794771+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:56.832455+00:00",
+  "symbol": "ASTRAMICRO",
+  "timeframe": "1D",
+  "ticker": "ASTRAMICRO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 541613
     },
     {
-      "time": 1774915200,
-      "open": 870.0,
-      "high": 910.0,
-      "low": 851.0,
-      "close": 855.0,
-      "volume": 541613
-    },
-    {
       "time": 1775001600,
       "open": 880.0,
       "high": 924.0,
       "low": 870.0,
-      "close": 896.45,
-      "volume": 342001
+      "close": 897.15,
+      "volume": 530141
+    },
+    {
+      "time": 1775088000,
+      "open": 897.0,
+      "high": 961.8,
+      "low": 872.55,
+      "close": 952.65,
+      "volume": 850462
     }
   ]
 }

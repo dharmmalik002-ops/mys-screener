@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.162940+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:18.402122+00:00",
+  "symbol": "GREENPLY",
+  "timeframe": "1D",
+  "ticker": "GREENPLY.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 236.46,
-      "high": 239.0,
-      "low": 231.77,
-      "close": 234.57,
-      "volume": 133341
-    },
     {
       "time": 1708646400,
       "open": 237.91,
@@ -4159,8 +4154,16 @@
       "open": 187.0,
       "high": 193.19,
       "low": 185.26,
-      "close": 187.99,
-      "volume": 95542
+      "close": 187.63,
+      "volume": 214084
+    },
+    {
+      "time": 1775088000,
+      "open": 187.5,
+      "high": 195.9,
+      "low": 181.2,
+      "close": 194.77,
+      "volume": 224053
     }
   ]
 }

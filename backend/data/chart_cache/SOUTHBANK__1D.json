@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.598594+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:55.750721+00:00",
+  "symbol": "SOUTHBANK",
+  "timeframe": "1D",
+  "ticker": "SOUTHBANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 24928905
     },
     {
-      "time": 1774915200,
-      "open": 34.61,
-      "high": 35.34,
-      "low": 34.0,
-      "close": 34.49,
-      "volume": 24928905
-    },
-    {
       "time": 1775001600,
       "open": 35.88,
-      "high": 36.78,
+      "high": 37.2,
       "low": 35.3,
-      "close": 36.54,
-      "volume": 9047135
+      "close": 36.36,
+      "volume": 21315930
+    },
+    {
+      "time": 1775088000,
+      "open": 36.25,
+      "high": 36.98,
+      "low": 35.21,
+      "close": 36.74,
+      "volume": 18759192
     }
   ]
 }

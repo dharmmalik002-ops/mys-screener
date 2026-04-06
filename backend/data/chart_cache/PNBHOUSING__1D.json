@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.021225+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:34.761711+00:00",
+  "symbol": "PNBHOUSING",
+  "timeframe": "1D",
+  "ticker": "PNBHOUSING.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1471638
     },
     {
-      "time": 1774915200,
-      "open": 785.0,
-      "high": 785.9,
-      "low": 749.0,
-      "close": 760.0,
-      "volume": 1471638
-    },
-    {
       "time": 1775001600,
       "open": 786.85,
-      "high": 795.2,
-      "low": 777.6,
-      "close": 780.95,
-      "volume": 605743
+      "high": 795.75,
+      "low": 773.7,
+      "close": 780.05,
+      "volume": 1257172
+    },
+    {
+      "time": 1775088000,
+      "open": 775.0,
+      "high": 787.5,
+      "low": 754.3,
+      "close": 784.4,
+      "volume": 1071725
     }
   ]
 }

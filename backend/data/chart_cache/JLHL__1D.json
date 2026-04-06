@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.061136+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:18.995213+00:00",
+  "symbol": "JLHL",
+  "timeframe": "1D",
+  "ticker": "JLHL.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 152147
     },
     {
-      "time": 1774915200,
-      "open": 1269.9,
-      "high": 1313.7,
-      "low": 1216.0,
-      "close": 1260.0,
-      "volume": 152147
-    },
-    {
       "time": 1775001600,
       "open": 1290.8,
       "high": 1290.8,
-      "low": 1244.9,
-      "close": 1246.2,
-      "volume": 12642
+      "low": 1242.0,
+      "close": 1246.9,
+      "volume": 25073
+    },
+    {
+      "time": 1775088000,
+      "open": 1246.9,
+      "high": 1254.9,
+      "low": 1222.5,
+      "close": 1229.1,
+      "volume": 18915
     }
   ]
 }

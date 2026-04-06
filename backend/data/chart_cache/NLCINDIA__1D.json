@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:00:47.503579+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:10.005123+00:00",
   "symbol": "NLCINDIA",
   "timeframe": "1D",
   "ticker": "NLCINDIA.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 241.68,
+      "high": 247.63,
+      "low": 236.06,
+      "close": 237.32,
+      "volume": 2971116
+    },
     {
       "time": 1708905600,
       "open": 236.26,
@@ -1544,7 +1552,7 @@
     {
       "time": 1733702400,
       "open": 262.85,
-      "high": 268.79,
+      "high": 268.78,
       "low": 258.95,
       "close": 260.61,
       "volume": 2535208
@@ -4142,27 +4150,19 @@
       "volume": 3477969
     },
     {
-      "time": 1774915200,
-      "open": 270.4,
-      "high": 276.0,
-      "low": 265.0,
-      "close": 267.0,
-      "volume": 3477969
-    },
-    {
       "time": 1775001600,
       "open": 274.8,
-      "high": 278.2,
+      "high": 285.85,
       "low": 270.8,
-      "close": 274.7,
-      "volume": 1054119
+      "close": 283.2,
+      "volume": 4676372
     },
     {
       "time": 1775088000,
       "open": 280.0,
       "high": 280.0,
       "low": 272.35,
-      "close": 279.25,
+      "close": 278.6,
       "volume": 2159290
     }
   ]

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.677477+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:07.635814+00:00",
+  "symbol": "HYPERSOFT",
+  "timeframe": "1D",
+  "ticker": "HYPERSOFT.NS",
   "bars": [
     {
       "time": 1736121600,
@@ -1660,11 +1663,19 @@
     },
     {
       "time": 1775001600,
-      "open": 121.35,
-      "high": 124.0,
+      "open": 124.8,
+      "high": 124.8,
       "low": 113.0,
-      "close": 123.95,
-      "volume": 1733
+      "close": 120.85,
+      "volume": 2368
+    },
+    {
+      "time": 1775088000,
+      "open": 118.0,
+      "high": 121.0,
+      "low": 114.85,
+      "close": 118.45,
+      "volume": 1411
     }
   ]
 }

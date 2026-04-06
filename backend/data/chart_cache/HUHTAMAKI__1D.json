@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.952630+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:58.079074+00:00",
+  "symbol": "HUHTAMAKI",
+  "timeframe": "1D",
+  "ticker": "HUHTAMAKI.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 340.56,
-      "high": 347.39,
-      "low": 334.8,
-      "close": 345.19,
-      "volume": 201523
-    },
     {
       "time": 1708646400,
       "open": 347.49,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 153.05,
-      "high": 160.79,
+      "high": 162.0,
       "low": 153.05,
-      "close": 159.46,
-      "volume": 40145
+      "close": 161.45,
+      "volume": 97100
+    },
+    {
+      "time": 1775088000,
+      "open": 161.45,
+      "high": 164.38,
+      "low": 156.1,
+      "close": 163.22,
+      "volume": 65614
     }
   ]
 }

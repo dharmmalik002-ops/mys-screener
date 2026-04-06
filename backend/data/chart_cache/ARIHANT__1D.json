@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.137741+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:16.417295+00:00",
+  "symbol": "ARIHANT",
+  "timeframe": "1D",
+  "ticker": "ARIHANT.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 963.0,
+      "open": 936.0,
       "high": 986.9,
-      "low": 943.6,
-      "close": 950.05,
-      "volume": 922
+      "low": 919.95,
+      "close": 951.55,
+      "volume": 1603
+    },
+    {
+      "time": 1775088000,
+      "open": 912.1,
+      "high": 973.45,
+      "low": 912.1,
+      "close": 924.4,
+      "volume": 610
     }
   ]
 }

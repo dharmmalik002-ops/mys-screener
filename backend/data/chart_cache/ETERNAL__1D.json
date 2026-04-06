@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.945575+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:42.086281+00:00",
+  "symbol": "ETERNAL",
+  "timeframe": "1D",
+  "ticker": "ETERNAL.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 49774520
     },
     {
-      "time": 1774915200,
-      "open": 225.79,
-      "high": 231.58,
-      "low": 225.19,
-      "close": 229.2,
-      "volume": 49774525
-    },
-    {
       "time": 1775001600,
       "open": 233.22,
-      "high": 239.0,
+      "high": 240.17,
       "low": 233.22,
-      "close": 234.73,
-      "volume": 15116702
+      "close": 236.52,
+      "volume": 34530650
+    },
+    {
+      "time": 1775088000,
+      "open": 230.95,
+      "high": 232.5,
+      "low": 223.74,
+      "close": 231.72,
+      "volume": 66556150
     }
   ]
 }

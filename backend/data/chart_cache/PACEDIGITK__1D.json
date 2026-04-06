@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.960944+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:56.930713+00:00",
+  "symbol": "PACEDIGITK",
+  "timeframe": "1D",
+  "ticker": "PACEDIGITK.NS",
   "bars": [
     {
       "time": 1759708800,
@@ -967,8 +970,16 @@
       "open": 149.9,
       "high": 158.7,
       "low": 149.0,
-      "close": 154.5,
-      "volume": 1996446
+      "close": 153.62,
+      "volume": 3186966
+    },
+    {
+      "time": 1775088000,
+      "open": 152.51,
+      "high": 156.65,
+      "low": 150.5,
+      "close": 154.62,
+      "volume": 1426008
     }
   ]
 }

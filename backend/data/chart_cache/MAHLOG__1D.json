@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.614087+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:58.835901+00:00",
+  "symbol": "MAHLOG",
+  "timeframe": "1D",
+  "ticker": "MAHLOG.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 388.0,
-      "high": 392.05,
-      "low": 383.84,
-      "close": 385.97,
-      "volume": 132138
-    },
     {
       "time": 1708646400,
       "open": 385.13,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 349.25,
-      "high": 351.05,
+      "open": 347.3,
+      "high": 352.9,
       "low": 341.4,
-      "close": 348.55,
-      "volume": 39822
+      "close": 348.4,
+      "volume": 94730
+    },
+    {
+      "time": 1775088000,
+      "open": 343.2,
+      "high": 350.0,
+      "low": 333.05,
+      "close": 347.95,
+      "volume": 72901
     }
   ]
 }

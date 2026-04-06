@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.281079+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:21.432197+00:00",
+  "symbol": "KIRIINDUS",
+  "timeframe": "1D",
+  "ticker": "KIRIINDUS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 415.85,
-      "high": 425.0,
-      "low": 410.0,
-      "close": 413.5,
-      "volume": 771786
-    },
     {
       "time": 1708646400,
       "open": 416.35,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 355.05,
-      "high": 364.0,
+      "open": 352.5,
+      "high": 373.2,
       "low": 350.0,
-      "close": 361.5,
-      "volume": 226263
+      "close": 364.95,
+      "volume": 512796
+    },
+    {
+      "time": 1775088000,
+      "open": 355.0,
+      "high": 378.0,
+      "low": 350.05,
+      "close": 375.1,
+      "volume": 361514
     }
   ]
 }

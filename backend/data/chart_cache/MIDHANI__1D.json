@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.955301+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:38.078856+00:00",
+  "symbol": "MIDHANI",
+  "timeframe": "1D",
+  "ticker": "MIDHANI.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1039536
     },
     {
-      "time": 1774915200,
-      "open": 282.0,
-      "high": 290.0,
-      "low": 266.65,
-      "close": 266.65,
-      "volume": 1039536
-    },
-    {
       "time": 1775001600,
       "open": 284.05,
       "high": 296.65,
       "low": 280.95,
-      "close": 290.4,
-      "volume": 795968
+      "close": 289.1,
+      "volume": 1512120
+    },
+    {
+      "time": 1775088000,
+      "open": 285.0,
+      "high": 293.8,
+      "low": 277.0,
+      "close": 292.55,
+      "volume": 978559
     }
   ]
 }

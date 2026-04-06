@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.040127+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:42.936492+00:00",
+  "symbol": "RAYMONDLSL",
+  "timeframe": "1D",
+  "ticker": "RAYMONDLSL.NS",
   "bars": [
     {
       "time": 1725494400,
@@ -3083,20 +3086,20 @@
       "volume": 296059
     },
     {
-      "time": 1774915200,
-      "open": 758.0,
-      "high": 770.35,
-      "low": 725.2,
-      "close": 762.0,
-      "volume": 296059
-    },
-    {
       "time": 1775001600,
       "open": 770.0,
       "high": 804.0,
       "low": 770.0,
-      "close": 783.75,
-      "volume": 81288
+      "close": 786.45,
+      "volume": 166436
+    },
+    {
+      "time": 1775088000,
+      "open": 770.6,
+      "high": 786.45,
+      "low": 749.55,
+      "close": 778.5,
+      "volume": 94661
     }
   ]
 }

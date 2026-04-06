@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.707910+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:52.031292+00:00",
+  "symbol": "BAJAJELEC",
+  "timeframe": "1D",
+  "ticker": "BAJAJELEC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 165108
     },
     {
-      "time": 1774915200,
-      "open": 350.0,
-      "high": 353.0,
-      "low": 330.0,
-      "close": 334.8,
-      "volume": 165108
-    },
-    {
       "time": 1775001600,
       "open": 345.0,
       "high": 352.0,
       "low": 343.0,
-      "close": 343.8,
-      "volume": 44502
+      "close": 345.65,
+      "volume": 107606
+    },
+    {
+      "time": 1775088000,
+      "open": 343.95,
+      "high": 352.0,
+      "low": 335.7,
+      "close": 349.25,
+      "volume": 96572
     }
   ]
 }

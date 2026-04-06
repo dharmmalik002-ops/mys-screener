@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.248798+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.568453+00:00",
+  "symbol": "GREENPANEL",
+  "timeframe": "1D",
+  "ticker": "GREENPANEL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 363.94,
-      "high": 365.64,
-      "low": 357.7,
-      "close": 362.79,
-      "volume": 92956
-    },
     {
       "time": 1708646400,
       "open": 361.65,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 173.5,
-      "high": 179.1,
+      "open": 171.79,
+      "high": 183.9,
       "low": 171.79,
-      "close": 176.89,
-      "volume": 32109
+      "close": 179.73,
+      "volume": 106498
+    },
+    {
+      "time": 1775088000,
+      "open": 179.1,
+      "high": 183.38,
+      "low": 173.8,
+      "close": 181.91,
+      "volume": 59014
     }
   ]
 }

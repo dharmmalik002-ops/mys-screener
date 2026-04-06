@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.685103+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:21.135450+00:00",
+  "symbol": "JSWINFRA",
+  "timeframe": "1D",
+  "ticker": "JSWINFRA.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 1818371
     },
     {
-      "time": 1774915200,
-      "open": 248.75,
-      "high": 248.75,
-      "low": 239.7,
-      "close": 242.05,
-      "volume": 1818371
-    },
-    {
       "time": 1775001600,
       "open": 250.71,
       "high": 250.71,
       "low": 244.35,
-      "close": 245.48,
-      "volume": 763324
+      "close": 247.95,
+      "volume": 1860993
+    },
+    {
+      "time": 1775088000,
+      "open": 243.01,
+      "high": 243.98,
+      "low": 237.76,
+      "close": 241.25,
+      "volume": 2177764
     }
   ]
 }

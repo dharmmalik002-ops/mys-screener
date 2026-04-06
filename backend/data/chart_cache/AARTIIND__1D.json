@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.291813+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:36.439283+00:00",
+  "symbol": "AARTIIND",
+  "timeframe": "1D",
+  "ticker": "AARTIIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1152413
     },
     {
-      "time": 1774915200,
-      "open": 413.5,
-      "high": 413.5,
-      "low": 397.0,
-      "close": 398.65,
-      "volume": 1152413
-    },
-    {
       "time": 1775001600,
       "open": 406.15,
       "high": 416.9,
       "low": 405.0,
-      "close": 411.65,
-      "volume": 199952
+      "close": 411.4,
+      "volume": 447997
+    },
+    {
+      "time": 1775088000,
+      "open": 404.4,
+      "high": 410.6,
+      "low": 395.9,
+      "close": 408.7,
+      "volume": 981591
     }
   ]
 }

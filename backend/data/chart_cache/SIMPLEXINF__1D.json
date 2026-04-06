@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.976552+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:51.784693+00:00",
+  "symbol": "SIMPLEXINF",
+  "timeframe": "1D",
+  "ticker": "SIMPLEXINF.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 111.35,
-      "high": 111.35,
-      "low": 111.35,
-      "close": 111.35,
-      "volume": 427795
-    },
     {
       "time": 1708560000,
       "open": 113.55,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 149.0,
-      "high": 158.22,
+      "open": 149.41,
+      "high": 160.8,
       "low": 142.4,
-      "close": 155.3,
-      "volume": 389555
+      "close": 158.97,
+      "volume": 525931
+    },
+    {
+      "time": 1775088000,
+      "open": 154.83,
+      "high": 157.99,
+      "low": 148.73,
+      "close": 156.08,
+      "volume": 207485
     }
   ]
 }

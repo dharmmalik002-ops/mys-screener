@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.202291+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.887147+00:00",
+  "symbol": "ROTO",
+  "timeframe": "1D",
+  "ticker": "ROTO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 66.49,
-      "high": 67.05,
-      "low": 65.21,
-      "close": 65.38,
-      "volume": 539748
-    },
     {
       "time": 1708646400,
       "open": 65.44,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 49.18,
+      "open": 48.35,
       "high": 52.45,
       "low": 48.35,
-      "close": 50.88,
-      "volume": 177435
+      "close": 50.21,
+      "volume": 840866
+    },
+    {
+      "time": 1775088000,
+      "open": 49.81,
+      "high": 53.0,
+      "low": 48.0,
+      "close": 52.59,
+      "volume": 517156
     }
   ]
 }

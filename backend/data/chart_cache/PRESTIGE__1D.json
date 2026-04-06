@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.701549+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:36.596383+00:00",
+  "symbol": "PRESTIGE",
+  "timeframe": "1D",
+  "ticker": "PRESTIGE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1468626
     },
     {
-      "time": 1774915200,
-      "open": 1159.9,
-      "high": 1159.9,
-      "low": 1115.0,
-      "close": 1128.0,
-      "volume": 1468626
-    },
-    {
       "time": 1775001600,
       "open": 1150.0,
       "high": 1168.5,
       "low": 1137.3,
-      "close": 1140.4,
-      "volume": 267959
+      "close": 1144.9,
+      "volume": 2010817
+    },
+    {
+      "time": 1775088000,
+      "open": 1145.0,
+      "high": 1158.6,
+      "low": 1090.0,
+      "close": 1152.0,
+      "volume": 2135711
     }
   ]
 }

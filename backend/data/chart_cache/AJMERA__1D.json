@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.320612+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:28.884185+00:00",
+  "symbol": "AJMERA",
+  "timeframe": "1D",
+  "ticker": "AJMERA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 145.41,
-      "high": 147.85,
-      "low": 142.06,
-      "close": 146.34,
-      "volume": 954925
-    },
     {
       "time": 1708646400,
       "open": 147.83,
@@ -4159,8 +4154,16 @@
       "open": 104.18,
       "high": 108.07,
       "low": 102.5,
-      "close": 106.82,
-      "volume": 105493
+      "close": 104.97,
+      "volume": 436258
+    },
+    {
+      "time": 1775088000,
+      "open": 104.25,
+      "high": 109.87,
+      "low": 100.57,
+      "close": 108.69,
+      "volume": 238011
     }
   ]
 }

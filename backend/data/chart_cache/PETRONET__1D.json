@@ -1,13 +1,16 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.792115+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:12.997799+00:00",
+  "symbol": "PETRONET",
+  "timeframe": "1D",
+  "ticker": "PETRONET.NS",
   "bars": [
     {
       "time": 1708646400,
       "open": 266.17,
       "high": 269.69,
       "low": 263.59,
-      "close": 266.88,
+      "close": 266.87,
       "volume": 4293379
     },
     {
@@ -221,7 +224,7 @@
     {
       "time": 1712275200,
       "open": 259.47,
-      "high": 261.48,
+      "high": 261.49,
       "low": 255.72,
       "close": 260.27,
       "volume": 3367832
@@ -4147,20 +4150,20 @@
       "volume": 6195343
     },
     {
-      "time": 1774915200,
-      "open": 242.1,
-      "high": 253.65,
-      "low": 240.75,
-      "close": 248.0,
-      "volume": 6195343
-    },
-    {
       "time": 1775001600,
       "open": 256.1,
       "high": 263.2,
       "low": 253.0,
-      "close": 259.94,
-      "volume": 2979164
+      "close": 257.88,
+      "volume": 7092013
+    },
+    {
+      "time": 1775088000,
+      "open": 256.0,
+      "high": 256.0,
+      "low": 247.09,
+      "close": 254.69,
+      "volume": 2681295
     }
   ]
 }

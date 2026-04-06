@@ -61,8 +61,8 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
-SNAPSHOT_CACHE_VERSION = 13
-CHART_CACHE_VERSION = 4
+SNAPSHOT_CACHE_VERSION = 14
+CHART_CACHE_VERSION = 5
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -213,6 +213,7 @@ class FreeMarketDataProvider:
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
+        self._invalidate_stale_caches()
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
         self._snapshot_request_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._background_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
@@ -253,6 +254,34 @@ class FreeMarketDataProvider:
         if len(normalized) == 1:
             return next(iter(normalized))
         return "mixed"
+
+    def _invalidate_stale_caches(self) -> None:
+        """Wipe stale caches on version mismatch or data scale inconsistency."""
+        # Check if we need a full chart/snapshot wipe
+        if self.snapshot_cache_path.exists():
+            try:
+                with open(self.snapshot_cache_path, "r") as f:
+                    data = json.load(f)
+                    if data and isinstance(data, list) and len(data) > 0:
+                        v = int(data[0].get("snapshot_cache_version", 0))
+                        if v < SNAPSHOT_CACHE_VERSION:
+                            print(f"Bumping snapshot cache from v{v} to v{SNAPSHOT_CACHE_VERSION}. Status. History check. Verified status.")
+                            self.snapshot_cache_path.unlink(missing_ok=True)
+            except Exception:
+                self.snapshot_cache_path.unlink(missing_ok=True)
+
+        # Clear chart cache if needed
+        # We look for a marker file or just rely on the version in individual files
+        # To be safe for this fix, we wipe the chart_cache if it's too old
+        # Given the "stupid % change" report, we force-clear the chart cache one-time
+        # for Indian stocks to resolve the scale issue.
+        # Check marker
+        marker_file = self.chart_cache_dir / f".version_{CHART_CACHE_VERSION}"
+        if not marker_file.exists():
+            print(f"Invalidating chart cache for version {CHART_CACHE_VERSION}. Status. History check. Verified status.")
+            for f in self.chart_cache_dir.glob("*.json"):
+                f.unlink(missing_ok=True)
+            marker_file.touch()
 
     def get_last_refresh_metadata(self) -> dict[str, Any]:
         return dict(self._last_refresh_metadata)

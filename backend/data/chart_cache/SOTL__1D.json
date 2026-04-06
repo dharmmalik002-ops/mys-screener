@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.729367+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.910624+00:00",
+  "symbol": "SOTL",
+  "timeframe": "1D",
+  "ticker": "SOTL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 428.84,
-      "high": 466.11,
-      "low": 428.84,
-      "close": 446.1,
-      "volume": 2174487
-    },
     {
       "time": 1708646400,
       "open": 451.7,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 306.6,
-      "high": 308.55,
+      "high": 315.0,
       "low": 295.0,
-      "close": 306.75,
-      "volume": 11722
+      "close": 312.55,
+      "volume": 24746
+    },
+    {
+      "time": 1775088000,
+      "open": 314.5,
+      "high": 319.0,
+      "low": 302.5,
+      "close": 314.6,
+      "volume": 40702
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.979951+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.256787+00:00",
+  "symbol": "EMUDHRA",
+  "timeframe": "1D",
+  "ticker": "EMUDHRA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 562.73,
-      "high": 577.78,
-      "low": 548.32,
-      "close": 573.1,
-      "volume": 519663
-    },
     {
       "time": 1708646400,
       "open": 577.83,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 379.6,
+      "open": 379.9,
       "high": 402.0,
       "low": 377.85,
-      "close": 393.1,
-      "volume": 98203
+      "close": 393.25,
+      "volume": 155866
+    },
+    {
+      "time": 1775088000,
+      "open": 385.0,
+      "high": 415.0,
+      "low": 376.2,
+      "close": 411.45,
+      "volume": 1782167
     }
   ]
 }

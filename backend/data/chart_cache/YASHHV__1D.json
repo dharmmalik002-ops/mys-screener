@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.880235+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:54.974772+00:00",
+  "symbol": "YASHHV",
+  "timeframe": "1D",
+  "ticker": "YASHHV.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 440.0,
-      "high": 445.0,
+      "open": 420.0,
+      "high": 462.0,
+      "low": 420.0,
+      "close": 442.45,
+      "volume": 108000
+    },
+    {
+      "time": 1775088000,
+      "open": 434.0,
+      "high": 460.0,
       "low": 430.0,
-      "close": 437.65,
-      "volume": 24250
+      "close": 456.35,
+      "volume": 45000
     }
   ]
 }

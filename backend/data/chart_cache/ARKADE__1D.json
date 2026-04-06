@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.431748+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.147064+00:00",
+  "symbol": "ARKADE",
+  "timeframe": "1D",
+  "ticker": "ARKADE.NS",
   "bars": [
     {
       "time": 1727136000,
@@ -3012,11 +3015,19 @@
     },
     {
       "time": 1775001600,
-      "open": 97.53,
-      "high": 101.95,
+      "open": 98.96,
+      "high": 102.75,
       "low": 97.53,
-      "close": 100.79,
-      "volume": 224730
+      "close": 102.16,
+      "volume": 500161
+    },
+    {
+      "time": 1775088000,
+      "open": 100.8,
+      "high": 103.4,
+      "low": 98.32,
+      "close": 102.67,
+      "volume": 335650
     }
   ]
 }

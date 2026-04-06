@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.431244+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:23.469545+00:00",
+  "symbol": "ABCAPITAL",
+  "timeframe": "1D",
+  "ticker": "ABCAPITAL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 5990288
     },
     {
-      "time": 1774915200,
-      "open": 299.35,
-      "high": 301.85,
-      "low": 290.1,
-      "close": 295.7,
-      "volume": 5990288
-    },
-    {
       "time": 1775001600,
       "open": 303.0,
-      "high": 304.6,
-      "low": 299.55,
-      "close": 300.45,
-      "volume": 1360678
+      "high": 308.6,
+      "low": 299.35,
+      "close": 302.9,
+      "volume": 4659823
+    },
+    {
+      "time": 1775088000,
+      "open": 298.9,
+      "high": 299.55,
+      "low": 287.7,
+      "close": 298.25,
+      "volume": 3682327
     }
   ]
 }

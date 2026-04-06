@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.625928+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:35.646704+00:00",
+  "symbol": "SWIGGY",
+  "timeframe": "1D",
+  "ticker": "SWIGGY.NS",
   "bars": [
     {
       "time": 1731456000,
@@ -2731,20 +2734,20 @@
       "volume": 15216846
     },
     {
-      "time": 1774915200,
-      "open": 265.0,
-      "high": 266.8,
-      "low": 258.25,
-      "close": 263.0,
-      "volume": 15216846
-    },
-    {
       "time": 1775001600,
       "open": 270.0,
       "high": 273.0,
       "low": 262.75,
-      "close": 266.7,
-      "volume": 6557425
+      "close": 265.3,
+      "volume": 18390484
+    },
+    {
+      "time": 1775088000,
+      "open": 262.5,
+      "high": 277.0,
+      "low": 256.7,
+      "close": 275.35,
+      "volume": 10194616
     }
   ]
 }

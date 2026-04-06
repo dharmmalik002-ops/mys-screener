@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:49.830256+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:34.126083+00:00",
   "symbol": "SCHNEIDER",
   "timeframe": "1D",
-  "ticker": "SCHNEIDER.BO",
+  "ticker": "SCHNEIDER.NS",
   "bars": [
+    {
+      "time": 1708300800,
+      "open": 569.4,
+      "high": 569.95,
+      "low": 545.1,
+      "close": 563.7,
+      "volume": 8493
+    },
     {
       "time": 1708387200,
       "open": 567.0,
@@ -4142,28 +4150,20 @@
       "volume": 9662
     },
     {
-      "time": 1774915200,
-      "open": 871.0,
-      "high": 872.4,
-      "low": 832.95,
-      "close": 845.0,
-      "volume": 107286
-    },
-    {
       "time": 1775001600,
-      "open": 858.25,
-      "high": 888.05,
-      "low": 858.25,
-      "close": 888.05,
-      "volume": 39981
+      "open": 879.6,
+      "high": 886.4,
+      "low": 861.1,
+      "close": 879.8,
+      "volume": 5172
     },
     {
       "time": 1775088000,
-      "open": 876.05,
-      "high": 910.5,
-      "low": 841.5,
-      "close": 907.95,
-      "volume": 66855
+      "open": 864.0,
+      "high": 910.0,
+      "low": 844.0,
+      "close": 905.6,
+      "volume": 13548
     }
   ]
 }

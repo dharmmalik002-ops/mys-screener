@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.151708+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.417910+00:00",
+  "symbol": "XPROINDIA",
+  "timeframe": "1D",
+  "ticker": "XPROINDIA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1185.2,
-      "high": 1185.2,
-      "low": 1146.05,
-      "close": 1176.73,
-      "volume": 16473
-    },
     {
       "time": 1708646400,
       "open": 1185.7,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1018.5,
-      "high": 1044.9,
+      "open": 1013.8,
+      "high": 1067.0,
       "low": 1004.9,
-      "close": 1010.5,
-      "volume": 11472
+      "close": 1038.7,
+      "volume": 44911
+    },
+    {
+      "time": 1775088000,
+      "open": 1027.2,
+      "high": 1065.3,
+      "low": 1002.8,
+      "close": 1035.2,
+      "volume": 21645
     }
   ]
 }

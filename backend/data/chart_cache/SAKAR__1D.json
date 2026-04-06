@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T05:25:16.632582+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:58.596581+00:00",
   "symbol": "SAKAR",
   "timeframe": "1D",
   "ticker": "SAKAR.NS",
@@ -4153,17 +4153,17 @@
       "time": 1775001600,
       "open": 528.5,
       "high": 534.6,
-      "low": 515.0,
-      "close": 530.95,
-      "volume": 19844
+      "low": 510.25,
+      "close": 515.65,
+      "volume": 48291
     },
     {
-      "time": 1775174400,
-      "open": 515.65,
+      "time": 1775088000,
+      "open": 515.0,
       "high": 519.15,
       "low": 492.2,
-      "close": 512.0,
-      "volume": 52977
+      "close": 515.3,
+      "volume": 51371
     }
   ]
 }

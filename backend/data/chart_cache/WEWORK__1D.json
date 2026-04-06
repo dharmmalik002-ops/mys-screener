@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.892718+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:31.091765+00:00",
+  "symbol": "WEWORK",
+  "timeframe": "1D",
+  "ticker": "WEWORK.NS",
   "bars": [
     {
       "time": 1760054400,
@@ -923,20 +926,20 @@
       "volume": 872557
     },
     {
-      "time": 1774915200,
-      "open": 446.55,
-      "high": 499.0,
-      "low": 420.0,
-      "close": 485.0,
-      "volume": 872557
-    },
-    {
       "time": 1775001600,
       "open": 481.9,
       "high": 482.0,
       "low": 445.8,
-      "close": 461.45,
-      "volume": 186086
+      "close": 454.85,
+      "volume": 249471
+    },
+    {
+      "time": 1775088000,
+      "open": 456.7,
+      "high": 456.7,
+      "low": 440.5,
+      "close": 450.8,
+      "volume": 60213
     }
   ]
 }

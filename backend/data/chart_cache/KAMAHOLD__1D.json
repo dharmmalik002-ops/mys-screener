@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.068458+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:02.473202+00:00",
+  "symbol": "KAMAHOLD",
+  "timeframe": "1D",
+  "ticker": "KAMAHOLD.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -502,7 +505,7 @@
       "time": 1743033600,
       "open": 2558.92,
       "high": 2633.63,
-      "low": 2505.52,
+      "low": 2505.53,
       "close": 2550.8,
       "volume": 4177
     },
@@ -2452,11 +2455,19 @@
     },
     {
       "time": 1775001600,
-      "open": 2450.05,
-      "high": 2525.0,
+      "open": 2525.0,
+      "high": 2548.0,
       "low": 2426.2,
-      "close": 2500.0,
-      "volume": 3110
+      "close": 2509.8,
+      "volume": 5310
+    },
+    {
+      "time": 1775088000,
+      "open": 2489.9,
+      "high": 2495.0,
+      "low": 2435.0,
+      "close": 2438.8,
+      "volume": 5556
     }
   ]
 }

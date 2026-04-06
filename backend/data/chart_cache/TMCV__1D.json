@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.305668+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:38.969712+00:00",
+  "symbol": "TMCV",
+  "timeframe": "1D",
+  "ticker": "TMCV.NS",
   "bars": [
     {
       "time": 1762905600,
@@ -763,20 +766,20 @@
       "volume": 28762802
     },
     {
-      "time": 1774915200,
-      "open": 410.85,
-      "high": 416.1,
-      "low": 388.75,
-      "close": 394.0,
-      "volume": 28762802
-    },
-    {
       "time": 1775001600,
       "open": 414.5,
       "high": 417.85,
-      "low": 405.3,
-      "close": 405.9,
-      "volume": 6834728
+      "low": 391.0,
+      "close": 396.05,
+      "volume": 17330457
+    },
+    {
+      "time": 1775088000,
+      "open": 390.0,
+      "high": 392.65,
+      "low": 375.8,
+      "close": 388.1,
+      "volume": 21090138
     }
   ]
 }

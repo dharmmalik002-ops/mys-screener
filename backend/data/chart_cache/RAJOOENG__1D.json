@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:15:58.968513+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:11.481685+00:00",
   "symbol": "RAJOOENG",
   "timeframe": "1D",
   "ticker": "RAJOOENG.NS",
@@ -1679,19 +1679,19 @@
     },
     {
       "time": 1775001600,
-      "open": 49.11,
-      "high": 52.28,
+      "open": 48.0,
+      "high": 52.7,
       "low": 48.0,
-      "close": 51.78,
-      "volume": 580350
+      "close": 52.13,
+      "volume": 1115754
     },
     {
       "time": 1775088000,
-      "open": 52.13,
-      "high": 53.72,
-      "low": 49.51,
+      "open": 50.15,
+      "high": 54.04,
+      "low": 49.15,
       "close": 53.29,
-      "volume": 844142
+      "volume": 894028
     }
   ]
 }

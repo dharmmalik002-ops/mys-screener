@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:35:37.336410+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:39.532412+00:00",
   "symbol": "HINDZINC",
   "timeframe": "1D",
   "ticker": "HINDZINC.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 288.06,
+      "high": 289.22,
+      "low": 287.55,
+      "close": 288.48,
+      "volume": 193107
+    },
     {
       "time": 1708905600,
       "open": 288.48,
@@ -4142,28 +4150,20 @@
       "volume": 6642010
     },
     {
-      "time": 1774915200,
-      "open": 507.2,
-      "high": 515.7,
-      "low": 497.4,
-      "close": 511.0,
-      "volume": 6642010
-    },
-    {
       "time": 1775001600,
       "open": 520.0,
-      "high": 527.45,
+      "high": 530.95,
       "low": 516.55,
-      "close": 525.9,
-      "volume": 2572043
+      "close": 524.45,
+      "volume": 6207649
     },
     {
       "time": 1775088000,
-      "open": 517.7,
-      "high": 517.7,
+      "open": 510.0,
+      "high": 518.4,
       "low": 503.35,
-      "close": 517.2,
-      "volume": 4249206
+      "close": 515.75,
+      "volume": 4387980
     }
   ]
 }

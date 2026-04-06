@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.970035+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:56.118460+00:00",
+  "symbol": "DCW",
+  "timeframe": "1D",
+  "ticker": "DCW.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 59.8,
-      "high": 60.45,
-      "low": 57.91,
-      "close": 60.2,
-      "volume": 2941139
-    },
     {
       "time": 1708646400,
       "open": 60.65,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 39.06,
-      "high": 40.5,
+      "open": 39.45,
+      "high": 41.55,
       "low": 38.64,
-      "close": 40.25,
-      "volume": 716029
+      "close": 41.08,
+      "volume": 1516353
+    },
+    {
+      "time": 1775088000,
+      "open": 39.61,
+      "high": 41.09,
+      "low": 39.01,
+      "close": 40.77,
+      "volume": 1680586
     }
   ]
 }

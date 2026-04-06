@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:22:01.638724+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:23.839725+00:00",
+  "symbol": "BRIGHT",
+  "timeframe": "1D",
+  "ticker": "BRIGHT.NS",
   "bars": [
     {
       "time": 1703721600,

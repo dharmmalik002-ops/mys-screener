@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:25:59.054865+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:10.522652+00:00",
+  "symbol": "ACGL",
+  "timeframe": "1D",
+  "ticker": "ACGL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1500.0,
-      "high": 1555.0,
+      "open": 1476.0,
+      "high": 1601.0,
       "low": 1475.0,
-      "close": 1530.0,
-      "volume": 424
+      "close": 1580.35,
+      "volume": 1733
+    },
+    {
+      "time": 1775088000,
+      "open": 1526.1,
+      "high": 1578.8,
+      "low": 1506.0,
+      "close": 1571.6,
+      "volume": 364
     }
   ]
 }

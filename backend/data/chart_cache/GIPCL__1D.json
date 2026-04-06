@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.365551+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:31.636056+00:00",
+  "symbol": "GIPCL",
+  "timeframe": "1D",
+  "ticker": "GIPCL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 189.9,
-      "high": 192.45,
-      "low": 183.79,
-      "close": 190.76,
-      "volume": 465114
-    },
     {
       "time": 1708646400,
       "open": 192.64,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 125.06,
-      "high": 127.74,
+      "open": 125.07,
+      "high": 130.5,
       "low": 122.04,
-      "close": 126.88,
-      "volume": 155629
+      "close": 129.45,
+      "volume": 436170
+    },
+    {
+      "time": 1775088000,
+      "open": 129.02,
+      "high": 130.96,
+      "low": 124.8,
+      "close": 130.05,
+      "volume": 162616
     }
   ]
 }

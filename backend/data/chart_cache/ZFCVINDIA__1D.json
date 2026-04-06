@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.926685+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:00.001187+00:00",
+  "symbol": "ZFCVINDIA",
+  "timeframe": "1D",
+  "ticker": "ZFCVINDIA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 23258
     },
     {
-      "time": 1774915200,
-      "open": 13650.0,
-      "high": 14354.0,
-      "low": 13301.0,
-      "close": 13900.0,
-      "volume": 23258
-    },
-    {
       "time": 1775001600,
       "open": 13899.0,
-      "high": 14590.0,
+      "high": 14780.0,
       "low": 13807.0,
-      "close": 14197.0,
-      "volume": 5541
+      "close": 14375.0,
+      "volume": 19207
+    },
+    {
+      "time": 1775088000,
+      "open": 14797.0,
+      "high": 14797.0,
+      "low": 13863.0,
+      "close": 13974.0,
+      "volume": 19371
     }
   ]
 }

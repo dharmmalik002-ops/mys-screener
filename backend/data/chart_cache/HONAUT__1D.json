@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.866590+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:59.747401+00:00",
+  "symbol": "HONAUT",
+  "timeframe": "1D",
+  "ticker": "HONAUT.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 6607
     },
     {
-      "time": 1774915200,
-      "open": 26990.0,
-      "high": 27030.0,
-      "low": 26220.0,
-      "close": 26365.0,
-      "volume": 6607
-    },
-    {
       "time": 1775001600,
       "open": 27245.0,
-      "high": 27665.0,
+      "high": 27695.0,
       "low": 26615.0,
-      "close": 27395.0,
-      "volume": 1815
+      "close": 27290.0,
+      "volume": 3613
+    },
+    {
+      "time": 1775088000,
+      "open": 27000.0,
+      "high": 27350.0,
+      "low": 26545.0,
+      "close": 26885.0,
+      "volume": 8397
     }
   ]
 }

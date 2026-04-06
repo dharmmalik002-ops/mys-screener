@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.094736+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:35.661474+00:00",
+  "symbol": "SAGILITY",
+  "timeframe": "1D",
+  "ticker": "SAGILITY.NS",
   "bars": [
     {
       "time": 1731369600,
@@ -2739,20 +2742,20 @@
       "volume": 24229969
     },
     {
-      "time": 1774915200,
-      "open": 41.5,
-      "high": 41.72,
-      "low": 39.55,
-      "close": 39.94,
-      "volume": 24229969
-    },
-    {
       "time": 1775001600,
       "open": 41.65,
       "high": 42.22,
       "low": 41.17,
-      "close": 41.72,
-      "volume": 11592591
+      "close": 41.71,
+      "volume": 21160425
+    },
+    {
+      "time": 1775088000,
+      "open": 40.8,
+      "high": 42.38,
+      "low": 39.85,
+      "close": 41.73,
+      "volume": 19413908
     }
   ]
 }

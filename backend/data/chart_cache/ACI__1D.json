@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.704086+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:29.043037+00:00",
+  "symbol": "ACI",
+  "timeframe": "1D",
+  "ticker": "ACI.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 238014
     },
     {
-      "time": 1774915200,
-      "open": 605.0,
-      "high": 605.0,
-      "low": 577.35,
-      "close": 577.35,
-      "volume": 238014
-    },
-    {
       "time": 1775001600,
       "open": 596.35,
       "high": 603.75,
-      "low": 588.65,
-      "close": 597.5,
-      "volume": 39330
+      "low": 578.6,
+      "close": 581.2,
+      "volume": 186060
+    },
+    {
+      "time": 1775088000,
+      "open": 580.0,
+      "high": 590.95,
+      "low": 567.85,
+      "close": 583.9,
+      "volume": 98808
     }
   ]
 }

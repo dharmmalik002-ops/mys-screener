@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.144926+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:07.907844+00:00",
+  "symbol": "MANINDS",
+  "timeframe": "1D",
+  "ticker": "MANINDS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 405.8,
-      "high": 418.8,
-      "low": 393.0,
-      "close": 406.3,
-      "volume": 65282
-    },
     {
       "time": 1708646400,
       "open": 407.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 333.45,
-      "high": 349.4,
+      "open": 330.2,
+      "high": 360.0,
       "low": 330.2,
-      "close": 345.45,
-      "volume": 344167
+      "close": 347.15,
+      "volume": 1021941
+    },
+    {
+      "time": 1775088000,
+      "open": 345.95,
+      "high": 354.0,
+      "low": 326.05,
+      "close": 350.5,
+      "volume": 757204
     }
   ]
 }

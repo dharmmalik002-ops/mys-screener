@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.878921+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:51.282524+00:00",
+  "symbol": "SUNFLAG",
+  "timeframe": "1D",
+  "ticker": "SUNFLAG.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 210.0,
-      "high": 212.2,
-      "low": 206.76,
-      "close": 209.7,
-      "volume": 145716
-    },
     {
       "time": 1708646400,
       "open": 209.7,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 200.5,
-      "high": 208.94,
+      "open": 198.5,
+      "high": 216.45,
       "low": 198.5,
-      "close": 208.08,
-      "volume": 63136
+      "close": 213.13,
+      "volume": 214792
+    },
+    {
+      "time": 1775088000,
+      "open": 211.0,
+      "high": 215.8,
+      "low": 204.83,
+      "close": 214.17,
+      "volume": 371137
     }
   ]
 }

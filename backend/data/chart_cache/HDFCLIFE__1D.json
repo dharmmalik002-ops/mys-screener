@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.460818+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:37.370046+00:00",
+  "symbol": "HDFCLIFE",
+  "timeframe": "1D",
+  "ticker": "HDFCLIFE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 6294260
     },
     {
-      "time": 1774915200,
-      "open": 608.95,
-      "high": 610.0,
-      "low": 587.85,
-      "close": 592.95,
-      "volume": 6294260
-    },
-    {
       "time": 1775001600,
       "open": 600.0,
       "high": 606.15,
-      "low": 580.05,
-      "close": 582.5,
-      "volume": 2120345
+      "low": 569.0,
+      "close": 572.95,
+      "volume": 9823726
+    },
+    {
+      "time": 1775088000,
+      "open": 568.6,
+      "high": 568.9,
+      "low": 555.1,
+      "close": 566.1,
+      "volume": 5837873
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:38:50.658544+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.686053+00:00",
   "symbol": "BAJAJCON",
   "timeframe": "1D",
   "ticker": "BAJAJCON.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 351.15,
+      "open": 350.75,
       "high": 367.2,
       "low": 349.95,
-      "close": 359.15,
-      "volume": 272419
+      "close": 361.7,
+      "volume": 521038
     },
     {
       "time": 1775088000,
       "open": 355.0,
       "high": 364.0,
       "low": 348.7,
-      "close": 360.65,
-      "volume": 549768
+      "close": 360.45,
+      "volume": 555927
     }
   ]
 }

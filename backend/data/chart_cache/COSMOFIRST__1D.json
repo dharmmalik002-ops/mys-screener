@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.535302+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:42.345999+00:00",
+  "symbol": "COSMOFIRST",
+  "timeframe": "1D",
+  "ticker": "COSMOFIRST.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 533.16,
-      "high": 535.49,
-      "low": 518.91,
-      "close": 524.12,
-      "volume": 117664
-    },
     {
       "time": 1708560000,
       "open": 533.16,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 607.95,
+      "open": 602.95,
       "high": 634.65,
       "low": 602.95,
-      "close": 626.85,
-      "volume": 47647
+      "close": 623.95,
+      "volume": 75010
+    },
+    {
+      "time": 1775088000,
+      "open": 622.0,
+      "high": 622.0,
+      "low": 598.1,
+      "close": 615.6,
+      "volume": 66252
     }
   ]
 }

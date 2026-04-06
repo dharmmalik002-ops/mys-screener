@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.333260+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:26.006377+00:00",
+  "symbol": "VINCOFE",
+  "timeframe": "1D",
+  "ticker": "VINCOFE.NS",
   "bars": [
     {
       "time": 1729209600,
@@ -2876,11 +2879,19 @@
     },
     {
       "time": 1775001600,
-      "open": 138.5,
+      "open": 138.94,
       "high": 138.94,
-      "low": 134.25,
-      "close": 135.88,
-      "volume": 398941
+      "low": 134.21,
+      "close": 135.54,
+      "volume": 886606
+    },
+    {
+      "time": 1775088000,
+      "open": 134.6,
+      "high": 134.6,
+      "low": 130.3,
+      "close": 132.94,
+      "volume": 1407830
     }
   ]
 }

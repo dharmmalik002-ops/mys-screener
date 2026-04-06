@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.003990+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:24.347201+00:00",
+  "symbol": "AFFLE",
+  "timeframe": "1D",
+  "ticker": "AFFLE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 546166
     },
     {
-      "time": 1774915200,
-      "open": 1425.7,
-      "high": 1474.4,
-      "low": 1410.2,
-      "close": 1462.0,
-      "volume": 546166
-    },
-    {
       "time": 1775001600,
       "open": 1457.6,
       "high": 1478.1,
-      "low": 1445.0,
-      "close": 1448.8,
-      "volume": 121330
+      "low": 1428.0,
+      "close": 1437.4,
+      "volume": 321346
+    },
+    {
+      "time": 1775088000,
+      "open": 1432.5,
+      "high": 1436.0,
+      "low": 1400.8,
+      "close": 1421.6,
+      "volume": 209442
     }
   ]
 }

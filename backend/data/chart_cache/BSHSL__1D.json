@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T03:04:20.597780+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.454116+00:00",
+  "symbol": "BSHSL",
+  "timeframe": "1D",
+  "ticker": "BSHSL.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 240.45,
-      "high": 245.95,
-      "low": 238.0,
-      "close": 238.75,
-      "volume": 11591
-    },
-    {
-      "time": 1708473600,
-      "open": 243.0,
-      "high": 243.0,
-      "low": 236.2,
-      "close": 237.35,
-      "volume": 16184
-    },
     {
       "time": 1708560000,
       "open": 240.85,
@@ -4161,6 +4148,22 @@
       "low": 59.16,
       "close": 60.7,
       "volume": 43460
+    },
+    {
+      "time": 1775001600,
+      "open": 63.1,
+      "high": 72.84,
+      "low": 63.1,
+      "close": 72.84,
+      "volume": 28727
+    },
+    {
+      "time": 1775088000,
+      "open": 85.0,
+      "high": 87.4,
+      "low": 79.0,
+      "close": 87.4,
+      "volume": 1319167
     }
   ]
 }

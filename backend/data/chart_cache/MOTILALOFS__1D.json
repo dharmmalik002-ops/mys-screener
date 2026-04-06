@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.781130+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:53.020020+00:00",
+  "symbol": "MOTILALOFS",
+  "timeframe": "1D",
+  "ticker": "MOTILALOFS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -1343,7 +1346,7 @@
       "open": 937.46,
       "high": 939.92,
       "low": 902.61,
-      "close": 909.5,
+      "close": 909.51,
       "volume": 2256473
     },
     {
@@ -1735,7 +1738,7 @@
       "open": 887.06,
       "high": 896.02,
       "low": 856.35,
-      "close": 864.33,
+      "close": 864.32,
       "volume": 1774395
     },
     {
@@ -4147,20 +4150,20 @@
       "volume": 1389241
     },
     {
-      "time": 1774915200,
-      "open": 655.6,
-      "high": 660.0,
-      "low": 616.1,
-      "close": 633.9,
-      "volume": 1389241
-    },
-    {
       "time": 1775001600,
       "open": 663.6,
       "high": 687.05,
       "low": 656.05,
-      "close": 674.75,
-      "volume": 1059706
+      "close": 680.0,
+      "volume": 2279566
+    },
+    {
+      "time": 1775088000,
+      "open": 665.0,
+      "high": 687.3,
+      "low": 655.65,
+      "close": 684.95,
+      "volume": 892716
     }
   ]
 }

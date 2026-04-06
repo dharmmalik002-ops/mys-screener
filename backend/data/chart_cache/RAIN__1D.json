@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.730697+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:54.284201+00:00",
+  "symbol": "RAIN",
+  "timeframe": "1D",
+  "ticker": "RAIN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4760359
     },
     {
-      "time": 1774915200,
-      "open": 107.3,
-      "high": 114.34,
-      "low": 106.0,
-      "close": 106.45,
-      "volume": 4760359
-    },
-    {
       "time": 1775001600,
       "open": 110.5,
-      "high": 114.7,
+      "high": 116.44,
       "low": 109.27,
-      "close": 114.03,
-      "volume": 1550515
+      "close": 114.88,
+      "volume": 3702608
+    },
+    {
+      "time": 1775088000,
+      "open": 112.0,
+      "high": 113.85,
+      "low": 109.5,
+      "close": 113.08,
+      "volume": 2908284
     }
   ]
 }

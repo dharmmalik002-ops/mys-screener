@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.105186+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:08.551893+00:00",
+  "symbol": "GRPLTD",
+  "timeframe": "1D",
+  "ticker": "GRPLTD.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1537.37,
-      "high": 1583.74,
-      "low": 1433.23,
-      "close": 1455.32,
-      "volume": 23896
-    },
     {
       "time": 1708560000,
       "open": 1512.58,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1890.0,
+      "open": 1875.0,
       "high": 1927.6,
-      "low": 1871.9,
-      "close": 1871.9,
-      "volume": 387
+      "low": 1840.4,
+      "close": 1888.6,
+      "volume": 2239
+    },
+    {
+      "time": 1775088000,
+      "open": 1875.5,
+      "high": 1919.0,
+      "low": 1868.0,
+      "close": 1899.9,
+      "volume": 2467
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.745188+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:52.203052+00:00",
+  "symbol": "EMIL",
+  "timeframe": "1D",
+  "ticker": "EMIL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 763483
     },
     {
-      "time": 1774915200,
-      "open": 90.5,
-      "high": 90.5,
-      "low": 86.1,
-      "close": 86.55,
-      "volume": 763483
-    },
-    {
       "time": 1775001600,
       "open": 90.0,
-      "high": 93.3,
+      "high": 94.81,
       "low": 90.0,
-      "close": 91.39,
-      "volume": 217361
+      "close": 92.79,
+      "volume": 382525
+    },
+    {
+      "time": 1775088000,
+      "open": 91.3,
+      "high": 95.92,
+      "low": 89.79,
+      "close": 94.7,
+      "volume": 494325
     }
   ]
 }

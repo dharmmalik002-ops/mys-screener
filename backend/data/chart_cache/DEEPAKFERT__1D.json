@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.529304+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:53.921561+00:00",
+  "symbol": "DEEPAKFERT",
+  "timeframe": "1D",
+  "ticker": "DEEPAKFERT.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -509,7 +512,7 @@
     {
       "time": 1717113600,
       "open": 550.82,
-      "high": 574.21,
+      "high": 574.22,
       "low": 550.82,
       "close": 558.21,
       "volume": 2130087
@@ -4147,20 +4150,20 @@
       "volume": 614934
     },
     {
-      "time": 1774915200,
-      "open": 917.5,
-      "high": 942.4,
-      "low": 905.0,
-      "close": 912.0,
-      "volume": 614934
-    },
-    {
       "time": 1775001600,
       "open": 957.95,
-      "high": 975.0,
+      "high": 1005.0,
       "low": 933.6,
-      "close": 968.85,
-      "volume": 246694
+      "close": 988.35,
+      "volume": 853406
+    },
+    {
+      "time": 1775088000,
+      "open": 958.0,
+      "high": 999.0,
+      "low": 945.0,
+      "close": 992.75,
+      "volume": 453396
     }
   ]
 }

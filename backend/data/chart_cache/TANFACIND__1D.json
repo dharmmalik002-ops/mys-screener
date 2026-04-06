@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.839710+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:49.293275+00:00",
+  "symbol": "TANFACIND",
+  "timeframe": "1D",
+  "ticker": "TANFACIND.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 973.56,
-      "high": 995.97,
-      "low": 966.09,
-      "close": 983.14,
-      "volume": 12782
-    },
     {
       "time": 1708560000,
       "open": 985.96,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1892.0,
-      "high": 1969.8,
+      "high": 2020.0,
       "low": 1892.0,
-      "close": 1950.5,
-      "volume": 3716
+      "close": 1976.7,
+      "volume": 8911
+    },
+    {
+      "time": 1775088000,
+      "open": 1970.05,
+      "high": 2050.0,
+      "low": 1929.95,
+      "close": 2033.55,
+      "volume": 8483
     }
   ]
 }

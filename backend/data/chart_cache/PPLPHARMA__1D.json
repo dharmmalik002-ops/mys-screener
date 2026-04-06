@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.135158+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:58.931049+00:00",
+  "symbol": "PPLPHARMA",
+  "timeframe": "1D",
+  "ticker": "PPLPHARMA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4589871
     },
     {
-      "time": 1774915200,
-      "open": 141.01,
-      "high": 142.95,
-      "low": 136.05,
-      "close": 136.7,
-      "volume": 4589871
-    },
-    {
       "time": 1775001600,
       "open": 140.0,
       "high": 144.18,
       "low": 139.62,
-      "close": 141.82,
-      "volume": 1032277
+      "close": 142.51,
+      "volume": 2094474
+    },
+    {
+      "time": 1775088000,
+      "open": 140.0,
+      "high": 142.7,
+      "low": 136.26,
+      "close": 142.18,
+      "volume": 2299147
     }
   ]
 }

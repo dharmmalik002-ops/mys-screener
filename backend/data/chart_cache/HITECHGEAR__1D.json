@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:22:33.709808+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.742034+00:00",
+  "symbol": "HITECHGEAR",
+  "timeframe": "1D",
+  "ticker": "HITECHGEAR.NS",
   "bars": [
-    {
-      "time": 1701907200,
-      "open": 477.14,
-      "high": 497.73,
-      "low": 477.14,
-      "close": 486.57,
-      "volume": 3703
-    },
     {
       "time": 1701993600,
       "open": 492.79,
@@ -31,7 +26,7 @@
       "open": 475.16,
       "high": 475.16,
       "low": 458.03,
-      "close": 462.32,
+      "close": 462.33,
       "volume": 435
     },
     {
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 532.05,
-      "high": 532.05,
+      "high": 540.0,
       "low": 532.05,
-      "close": 532.05,
-      "volume": 86
+      "close": 540.0,
+      "volume": 136
+    },
+    {
+      "time": 1775088000,
+      "open": 566.7,
+      "high": 566.7,
+      "low": 560.0,
+      "close": 560.0,
+      "volume": 200
     }
   ]
 }

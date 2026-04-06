@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.434024+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:48.535049+00:00",
+  "symbol": "MIDWESTLTD",
+  "timeframe": "1D",
+  "ticker": "MIDWESTLTD.NS",
   "bars": [
     {
       "time": 1761264000,
@@ -860,11 +863,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1218.8,
+      "open": 1200.0,
       "high": 1228.4,
       "low": 1185.0,
-      "close": 1206.4,
-      "volume": 12443
+      "close": 1209.7,
+      "volume": 23506
+    },
+    {
+      "time": 1775088000,
+      "open": 1208.0,
+      "high": 1227.8,
+      "low": 1156.7,
+      "close": 1217.7,
+      "volume": 25655
     }
   ]
 }

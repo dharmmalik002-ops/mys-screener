@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.651721+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.400916+00:00",
+  "symbol": "FLAIR",
+  "timeframe": "1D",
+  "ticker": "FLAIR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 276.58,
-      "high": 282.46,
-      "low": 274.3,
-      "close": 276.83,
-      "volume": 402491
-    },
     {
       "time": 1708560000,
       "open": 279.92,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 288.0,
+      "open": 285.45,
       "high": 300.85,
       "low": 285.45,
-      "close": 290.6,
-      "volume": 28668
+      "close": 289.15,
+      "volume": 57810
+    },
+    {
+      "time": 1775088000,
+      "open": 286.15,
+      "high": 297.75,
+      "low": 284.05,
+      "close": 296.0,
+      "volume": 40913
     }
   ]
 }

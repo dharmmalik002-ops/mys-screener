@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.671764+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:43.932231+00:00",
+  "symbol": "NDRAUTO",
+  "timeframe": "1D",
+  "ticker": "NDRAUTO.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 382.64,
-      "high": 393.57,
-      "low": 373.79,
-      "close": 390.01,
-      "volume": 17374
-    },
     {
       "time": 1708560000,
       "open": 393.57,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 614.0,
-      "high": 664.45,
+      "open": 611.95,
+      "high": 669.0,
       "low": 611.95,
-      "close": 657.0,
-      "volume": 14696
+      "close": 664.15,
+      "volume": 30158
+    },
+    {
+      "time": 1775088000,
+      "open": 654.2,
+      "high": 668.45,
+      "low": 631.0,
+      "close": 659.5,
+      "volume": 11276
     }
   ]
 }

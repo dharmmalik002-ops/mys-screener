@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.594928+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:28.565457+00:00",
+  "symbol": "SHAKTIPUMP",
+  "timeframe": "1D",
+  "ticker": "SHAKTIPUMP.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1348912
     },
     {
-      "time": 1774915200,
-      "open": 480.0,
-      "high": 485.1,
-      "low": 456.35,
-      "close": 460.0,
-      "volume": 1348912
-    },
-    {
       "time": 1775001600,
       "open": 480.0,
-      "high": 491.9,
+      "high": 497.2,
       "low": 473.3,
-      "close": 486.2,
-      "volume": 413950
+      "close": 494.4,
+      "volume": 859318
+    },
+    {
+      "time": 1775088000,
+      "open": 480.15,
+      "high": 499.0,
+      "low": 475.15,
+      "close": 495.85,
+      "volume": 630874
     }
   ]
 }

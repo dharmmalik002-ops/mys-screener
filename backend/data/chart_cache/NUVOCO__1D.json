@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.636453+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:54.431789+00:00",
+  "symbol": "NUVOCO",
+  "timeframe": "1D",
+  "ticker": "NUVOCO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 228262
     },
     {
-      "time": 1774915200,
-      "open": 295.25,
-      "high": 297.65,
-      "low": 279.1,
-      "close": 279.1,
-      "volume": 228262
-    },
-    {
       "time": 1775001600,
       "open": 284.95,
-      "high": 291.75,
+      "high": 292.3,
       "low": 284.0,
-      "close": 286.05,
-      "volume": 113715
+      "close": 290.2,
+      "volume": 291483
+    },
+    {
+      "time": 1775088000,
+      "open": 288.0,
+      "high": 295.0,
+      "low": 279.9,
+      "close": 292.9,
+      "volume": 82178
     }
   ]
 }

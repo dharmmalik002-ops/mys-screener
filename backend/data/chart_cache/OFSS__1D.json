@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.584853+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:46.252035+00:00",
+  "symbol": "OFSS",
+  "timeframe": "1D",
+  "ticker": "OFSS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 272945
     },
     {
-      "time": 1774915200,
-      "open": 6810.5,
-      "high": 6861.5,
-      "low": 6681.0,
-      "close": 6698.5,
-      "volume": 272945
-    },
-    {
       "time": 1775001600,
       "open": 6950.0,
       "high": 7023.0,
       "low": 6836.0,
-      "close": 6953.0,
-      "volume": 75538
+      "close": 6883.0,
+      "volume": 155077
+    },
+    {
+      "time": 1775088000,
+      "open": 6800.0,
+      "high": 7019.5,
+      "low": 6705.0,
+      "close": 6992.5,
+      "volume": 157651
     }
   ]
 }

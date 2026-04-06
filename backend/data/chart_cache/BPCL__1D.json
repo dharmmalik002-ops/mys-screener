@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.489169+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:39.353499+00:00",
+  "symbol": "BPCL",
+  "timeframe": "1D",
+  "ticker": "BPCL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 14757987
     },
     {
-      "time": 1774915200,
-      "open": 274.95,
-      "high": 285.25,
-      "low": 273.1,
-      "close": 281.35,
-      "volume": 14757987
-    },
-    {
       "time": 1775001600,
       "open": 292.0,
       "high": 292.0,
-      "low": 281.15,
-      "close": 282.95,
-      "volume": 7853168
+      "low": 280.1,
+      "close": 281.25,
+      "volume": 16919233
+    },
+    {
+      "time": 1775088000,
+      "open": 275.3,
+      "high": 281.15,
+      "low": 266.6,
+      "close": 278.15,
+      "volume": 13404373
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:49:31.000004+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:26.677243+00:00",
   "symbol": "DWARKESH",
   "timeframe": "1D",
   "ticker": "DWARKESH.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 46.1,
+      "open": 45.87,
       "high": 48.51,
-      "low": 45.7,
-      "close": 46.77,
-      "volume": 2818671
+      "low": 45.32,
+      "close": 46.47,
+      "volume": 4677414
     },
     {
       "time": 1775088000,
       "open": 46.0,
       "high": 46.0,
-      "low": 44.11,
-      "close": 45.3,
-      "volume": 1757237
+      "low": 44.1,
+      "close": 45.11,
+      "volume": 1796318
     }
   ]
 }

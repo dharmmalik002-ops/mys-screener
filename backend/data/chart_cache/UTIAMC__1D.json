@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.496413+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:48.352197+00:00",
+  "symbol": "UTIAMC",
+  "timeframe": "1D",
+  "ticker": "UTIAMC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 184978
     },
     {
-      "time": 1774915200,
-      "open": 931.95,
-      "high": 943.8,
-      "low": 914.55,
-      "close": 940.0,
-      "volume": 184978
-    },
-    {
       "time": 1775001600,
       "open": 974.95,
       "high": 974.95,
-      "low": 947.95,
-      "close": 959.95,
-      "volume": 28924
+      "low": 944.0,
+      "close": 950.5,
+      "volume": 134195
+    },
+    {
+      "time": 1775088000,
+      "open": 942.2,
+      "high": 946.1,
+      "low": 926.5,
+      "close": 941.15,
+      "volume": 83676
     }
   ]
 }

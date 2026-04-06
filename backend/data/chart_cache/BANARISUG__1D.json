@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.983120+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:44.131015+00:00",
+  "symbol": "BANARISUG",
+  "timeframe": "1D",
+  "ticker": "BANARISUG.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 2633.64,
-      "high": 2690.04,
-      "low": 2571.92,
-      "close": 2679.91,
-      "volume": 9320
-    },
     {
       "time": 1708560000,
       "open": 2709.85,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 3600.0,
-      "high": 3667.1,
+      "high": 3670.0,
       "low": 3600.0,
-      "close": 3651.7,
-      "volume": 0
+      "close": 3650.6,
+      "volume": 1134
+    },
+    {
+      "time": 1775088000,
+      "open": 3656.0,
+      "high": 3711.0,
+      "low": 3605.2,
+      "close": 3691.7,
+      "volume": 263
     }
   ]
 }

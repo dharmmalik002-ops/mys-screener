@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:07:47.835052+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:56.418857+00:00",
+  "symbol": "JKTYRE",
+  "timeframe": "1D",
+  "ticker": "JKTYRE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1270559
     },
     {
-      "time": 1774915200,
-      "open": 395.0,
-      "high": 395.0,
-      "low": 378.0,
-      "close": 380.55,
-      "volume": 1270559
-    },
-    {
       "time": 1775001600,
       "open": 400.15,
       "high": 401.5,
-      "low": 392.15,
-      "close": 395.85,
-      "volume": 453664
+      "low": 390.0,
+      "close": 393.8,
+      "volume": 1135734
+    },
+    {
+      "time": 1775088000,
+      "open": 389.65,
+      "high": 391.35,
+      "low": 376.6,
+      "close": 388.95,
+      "volume": 744322
     }
   ]
 }

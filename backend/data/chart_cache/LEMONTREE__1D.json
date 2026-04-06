@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.802315+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:20.444107+00:00",
+  "symbol": "LEMONTREE",
+  "timeframe": "1D",
+  "ticker": "LEMONTREE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4783245
     },
     {
-      "time": 1774915200,
-      "open": 103.0,
-      "high": 104.43,
-      "low": 100.11,
-      "close": 100.89,
-      "volume": 4783245
-    },
-    {
       "time": 1775001600,
       "open": 102.92,
-      "high": 106.55,
+      "high": 108.54,
       "low": 102.8,
-      "close": 106.02,
-      "volume": 1572070
+      "close": 107.8,
+      "volume": 4799728
+    },
+    {
+      "time": 1775088000,
+      "open": 105.0,
+      "high": 111.4,
+      "low": 103.8,
+      "close": 108.24,
+      "volume": 3233281
     }
   ]
 }

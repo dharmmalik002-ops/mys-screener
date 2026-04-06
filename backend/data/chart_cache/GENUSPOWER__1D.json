@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.875944+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.631449+00:00",
+  "symbol": "GENUSPOWER",
+  "timeframe": "1D",
+  "ticker": "GENUSPOWER.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 248.0,
-      "high": 255.69,
-      "low": 241.46,
-      "close": 248.3,
-      "volume": 1512389
-    },
     {
       "time": 1708646400,
       "open": 250.58,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 225.84,
-      "high": 233.93,
+      "high": 237.0,
       "low": 222.6,
-      "close": 230.82,
-      "volume": 0
+      "close": 235.0,
+      "volume": 681683
+    },
+    {
+      "time": 1775088000,
+      "open": 229.55,
+      "high": 234.85,
+      "low": 220.77,
+      "close": 233.49,
+      "volume": 474151
     }
   ]
 }

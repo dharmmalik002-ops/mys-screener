@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:29.820056+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:53.310292+00:00",
   "symbol": "GOCLCORP",
   "timeframe": "1D",
   "ticker": "GOCLCORP.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 270.0,
+      "open": 265.55,
       "high": 279.0,
       "low": 263.05,
-      "close": 269.55,
-      "volume": 124972
+      "close": 269.65,
+      "volume": 207797
     },
     {
       "time": 1775088000,
-      "open": 269.65,
+      "open": 268.05,
       "high": 274.55,
-      "low": 259.3,
+      "low": 259.0,
       "close": 272.25,
-      "volume": 76611
+      "volume": 80987
     }
   ]
 }

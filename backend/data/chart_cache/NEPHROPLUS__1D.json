@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.956924+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.762643+00:00",
+  "symbol": "NEPHROPLUS",
+  "timeframe": "1D",
+  "ticker": "NEPHROPLUS.NS",
   "bars": [
     {
       "time": 1765929600,
@@ -564,11 +567,19 @@
     },
     {
       "time": 1775001600,
-      "open": 521.0,
+      "open": 532.4,
       "high": 541.95,
       "low": 521.0,
-      "close": 539.2,
-      "volume": 0
+      "close": 528.3,
+      "volume": 54931
+    },
+    {
+      "time": 1775088000,
+      "open": 522.6,
+      "high": 533.0,
+      "low": 506.2,
+      "close": 528.6,
+      "volume": 36825
     }
   ]
 }

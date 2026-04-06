@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:25:39.024466+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.330984+00:00",
+  "symbol": "AWHCL",
+  "timeframe": "1D",
+  "ticker": "AWHCL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 537.95,
-      "high": 539.8,
-      "low": 516.65,
-      "close": 532.85,
-      "volume": 211988
-    },
     {
       "time": 1708646400,
       "open": 538.9,
@@ -4159,8 +4154,16 @@
       "open": 395.2,
       "high": 412.5,
       "low": 388.0,
-      "close": 408.2,
-      "volume": 175393
+      "close": 404.35,
+      "volume": 272413
+    },
+    {
+      "time": 1775088000,
+      "open": 399.0,
+      "high": 434.2,
+      "low": 390.0,
+      "close": 430.45,
+      "volume": 229211
     }
   ]
 }

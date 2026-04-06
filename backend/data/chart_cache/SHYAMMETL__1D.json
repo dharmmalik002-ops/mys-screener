@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.902794+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:24.532301+00:00",
+  "symbol": "SHYAMMETL",
+  "timeframe": "1D",
+  "ticker": "SHYAMMETL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 747503
     },
     {
-      "time": 1774915200,
-      "open": 763.0,
-      "high": 793.9,
-      "low": 747.95,
-      "close": 771.0,
-      "volume": 747503
-    },
-    {
       "time": 1775001600,
       "open": 789.8,
-      "high": 794.8,
+      "high": 802.95,
       "low": 772.0,
-      "close": 789.05,
-      "volume": 52112
+      "close": 797.0,
+      "volume": 157338
+    },
+    {
+      "time": 1775088000,
+      "open": 780.0,
+      "high": 795.0,
+      "low": 766.6,
+      "close": 792.65,
+      "volume": 63584
     }
   ]
 }

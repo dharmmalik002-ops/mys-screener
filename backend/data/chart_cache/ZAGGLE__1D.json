@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T09:59:18.122252+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:01.396096+00:00",
+  "symbol": "ZAGGLE",
+  "timeframe": "1D",
+  "ticker": "ZAGGLE.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 2932812
     },
     {
-      "time": 1774915200,
-      "open": 200.1,
-      "high": 200.1,
-      "low": 186.05,
-      "close": 187.83,
-      "volume": 2932812
-    },
-    {
       "time": 1775001600,
       "open": 198.97,
-      "high": 222.0,
+      "high": 223.5,
       "low": 198.0,
-      "close": 221.55,
-      "volume": 12723655
+      "close": 217.49,
+      "volume": 12937130
+    },
+    {
+      "time": 1775088000,
+      "open": 212.0,
+      "high": 239.3,
+      "low": 212.0,
+      "close": 234.92,
+      "volume": 17731570
     }
   ]
 }

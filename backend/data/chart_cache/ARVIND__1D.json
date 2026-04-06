@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.608162+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:57.738260+00:00",
+  "symbol": "ARVIND",
+  "timeframe": "1D",
+  "ticker": "ARVIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 369819
     },
     {
-      "time": 1774915200,
-      "open": 349.0,
-      "high": 349.0,
-      "low": 335.0,
-      "close": 336.5,
-      "volume": 369819
-    },
-    {
       "time": 1775001600,
       "open": 345.45,
       "high": 354.2,
       "low": 343.8,
-      "close": 344.3,
-      "volume": 88606
+      "close": 350.65,
+      "volume": 291453
+    },
+    {
+      "time": 1775088000,
+      "open": 348.95,
+      "high": 369.15,
+      "low": 339.45,
+      "close": 365.25,
+      "volume": 588499
     }
   ]
 }

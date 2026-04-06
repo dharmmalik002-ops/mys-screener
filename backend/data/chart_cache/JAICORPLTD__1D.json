@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.544186+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:35.423497+00:00",
+  "symbol": "JAICORPLTD",
+  "timeframe": "1D",
+  "ticker": "JAICORPLTD.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 309.38,
-      "high": 315.61,
-      "low": 300.97,
-      "close": 313.37,
-      "volume": 330172
-    },
     {
       "time": 1708646400,
       "open": 315.56,
@@ -950,7 +945,7 @@
       "time": 1724112000,
       "open": 358.44,
       "high": 368.71,
-      "low": 354.11,
+      "low": 354.12,
       "close": 361.01,
       "volume": 1510866
     },
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 94.0,
-      "high": 96.86,
+      "open": 93.78,
+      "high": 97.4,
       "low": 92.05,
-      "close": 95.56,
-      "volume": 444609
+      "close": 96.5,
+      "volume": 998300
+    },
+    {
+      "time": 1775088000,
+      "open": 93.53,
+      "high": 96.8,
+      "low": 92.48,
+      "close": 96.22,
+      "volume": 523157
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.384867+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:56.767092+00:00",
+  "symbol": "NIITMTS",
+  "timeframe": "1D",
+  "ticker": "NIITMTS.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 464.97,
-      "high": 481.09,
-      "low": 464.97,
-      "close": 474.38,
-      "volume": 142686
-    },
     {
       "time": 1708300800,
       "open": 476.75,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 274.5,
-      "high": 274.5,
+      "high": 278.45,
       "low": 263.7,
-      "close": 268.6,
-      "volume": 20797
+      "close": 272.65,
+      "volume": 89064
+    },
+    {
+      "time": 1775088000,
+      "open": 267.6,
+      "high": 279.0,
+      "low": 263.45,
+      "close": 274.45,
+      "volume": 304039
     }
   ]
 }

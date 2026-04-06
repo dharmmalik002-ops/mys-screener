@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.900575+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.155179+00:00",
+  "symbol": "ALKYLAMINE",
+  "timeframe": "1D",
+  "ticker": "ALKYLAMINE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 163484
     },
     {
-      "time": 1774915200,
-      "open": 1290.1,
-      "high": 1303.7,
-      "low": 1220.8,
-      "close": 1225.0,
-      "volume": 163484
-    },
-    {
       "time": 1775001600,
       "open": 1242.5,
-      "high": 1304.4,
+      "high": 1324.7,
       "low": 1242.5,
-      "close": 1282.7,
-      "volume": 53099
+      "close": 1315.4,
+      "volume": 114492
+    },
+    {
+      "time": 1775088000,
+      "open": 1296.0,
+      "high": 1325.5,
+      "low": 1243.3,
+      "close": 1319.0,
+      "volume": 75234
     }
   ]
 }

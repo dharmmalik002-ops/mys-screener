@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.914894+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.143326+00:00",
+  "symbol": "AURUM",
+  "timeframe": "1D",
+  "ticker": "AURUM.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 155.1,
-      "high": 159.4,
-      "low": 149.4,
-      "close": 153.65,
-      "volume": 87217
-    },
     {
       "time": 1708646400,
       "open": 156.85,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 161.0,
-      "high": 165.89,
+      "open": 164.0,
+      "high": 168.7,
       "low": 161.0,
-      "close": 164.99,
-      "volume": 17610
+      "close": 165.86,
+      "volume": 40093
+    },
+    {
+      "time": 1775088000,
+      "open": 166.0,
+      "high": 178.8,
+      "low": 164.0,
+      "close": 172.66,
+      "volume": 78792
     }
   ]
 }

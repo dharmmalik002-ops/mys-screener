@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.846465+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:21.636701+00:00",
+  "symbol": "V2RETAIL",
+  "timeframe": "1D",
+  "ticker": "V2RETAIL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1386451
     },
     {
-      "time": 1774915200,
-      "open": 193.4,
-      "high": 195.1,
-      "low": 184.6,
-      "close": 188.9,
-      "volume": 1386451
-    },
-    {
       "time": 1775001600,
       "open": 198.2,
       "high": 198.99,
       "low": 187.0,
-      "close": 189.26,
-      "volume": 745528
+      "close": 189.42,
+      "volume": 1959738
+    },
+    {
+      "time": 1775088000,
+      "open": 187.2,
+      "high": 193.1,
+      "low": 180.0,
+      "close": 191.71,
+      "volume": 1179189
     }
   ]
 }

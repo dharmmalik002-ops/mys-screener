@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.478674+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:41.360063+00:00",
+  "symbol": "VENKEYS",
+  "timeframe": "1D",
+  "ticker": "VENKEYS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1771.98,
-      "high": 1826.42,
-      "low": 1746.24,
-      "close": 1815.68,
-      "volume": 67608
-    },
     {
       "time": 1708560000,
       "open": 1818.5,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1210.0,
-      "high": 1222.0,
+      "high": 1231.2,
       "low": 1191.8,
-      "close": 1210.4,
-      "volume": 24967
+      "close": 1220.7,
+      "volume": 39957
+    },
+    {
+      "time": 1775088000,
+      "open": 1190.0,
+      "high": 1233.0,
+      "low": 1182.1,
+      "close": 1223.2,
+      "volume": 24810
     }
   ]
 }

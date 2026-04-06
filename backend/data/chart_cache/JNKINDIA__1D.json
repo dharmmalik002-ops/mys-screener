@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.911793+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.208261+00:00",
+  "symbol": "JNKINDIA",
+  "timeframe": "1D",
+  "ticker": "JNKINDIA.NS",
   "bars": [
     {
       "time": 1714435200,
@@ -158,7 +161,7 @@
       "time": 1716940800,
       "open": 643.05,
       "high": 646.94,
-      "low": 636.5,
+      "low": 636.51,
       "close": 640.15,
       "volume": 133303
     },
@@ -3804,11 +3807,19 @@
     },
     {
       "time": 1775001600,
-      "open": 219.97,
-      "high": 239.0,
+      "open": 218.0,
+      "high": 241.0,
       "low": 217.0,
-      "close": 236.9,
-      "volume": 739662
+      "close": 229.86,
+      "volume": 1350593
+    },
+    {
+      "time": 1775088000,
+      "open": 229.86,
+      "high": 251.86,
+      "low": 220.86,
+      "close": 247.7,
+      "volume": 981485
     }
   ]
 }

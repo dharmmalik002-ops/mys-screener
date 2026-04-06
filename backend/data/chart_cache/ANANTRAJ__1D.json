@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.279724+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:43.594755+00:00",
+  "symbol": "ANANTRAJ",
+  "timeframe": "1D",
+  "ticker": "ANANTRAJ.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4152398
     },
     {
-      "time": 1774915200,
-      "open": 429.0,
-      "high": 429.95,
-      "low": 403.0,
-      "close": 408.0,
-      "volume": 4152398
-    },
-    {
       "time": 1775001600,
       "open": 425.0,
-      "high": 444.0,
+      "high": 452.65,
       "low": 420.35,
-      "close": 438.7,
-      "volume": 2609585
+      "close": 448.2,
+      "volume": 5712979
+    },
+    {
+      "time": 1775088000,
+      "open": 429.45,
+      "high": 455.3,
+      "low": 427.1,
+      "close": 451.75,
+      "volume": 2452336
     }
   ]
 }

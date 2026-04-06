@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.136251+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:21.557370+00:00",
+  "symbol": "SPECTRUM",
+  "timeframe": "1D",
+  "ticker": "SPECTRUM.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 1804.0,
-      "high": 1804.0,
-      "low": 1784.0,
-      "close": 1800.0,
-      "volume": 625
-    },
     {
       "time": 1708473600,
       "open": 1786.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1550.0,
+      "open": 1555.0,
       "high": 1555.0,
-      "low": 1476.9,
-      "close": 1492.0,
-      "volume": 2323
+      "low": 1456.0,
+      "close": 1465.1,
+      "volume": 5678
+    },
+    {
+      "time": 1775088000,
+      "open": 1443.1,
+      "high": 1467.4,
+      "low": 1399.0,
+      "close": 1402.9,
+      "volume": 5151
     }
   ]
 }

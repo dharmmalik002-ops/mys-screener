@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.911489+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:06.020610+00:00",
+  "symbol": "APOLLOTYRE",
+  "timeframe": "1D",
+  "ticker": "APOLLOTYRE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1038467
     },
     {
-      "time": 1774915200,
-      "open": 405.1,
-      "high": 415.0,
-      "low": 402.25,
-      "close": 412.65,
-      "volume": 1038467
-    },
-    {
       "time": 1775001600,
       "open": 419.0,
       "high": 421.75,
-      "low": 415.4,
-      "close": 415.65,
-      "volume": 207204
+      "low": 414.1,
+      "close": 415.25,
+      "volume": 430083
+    },
+    {
+      "time": 1775088000,
+      "open": 413.05,
+      "high": 413.05,
+      "low": 402.65,
+      "close": 409.45,
+      "volume": 438417
     }
   ]
 }

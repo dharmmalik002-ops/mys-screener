@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.065893+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:58.306145+00:00",
+  "symbol": "UCOBANK",
+  "timeframe": "1D",
+  "ticker": "UCOBANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 12083676
     },
     {
-      "time": 1774915200,
-      "open": 23.4,
-      "high": 23.4,
-      "low": 22.22,
-      "close": 22.44,
-      "volume": 12083676
-    },
-    {
       "time": 1775001600,
       "open": 23.45,
-      "high": 23.53,
+      "high": 23.93,
       "low": 23.05,
-      "close": 23.38,
-      "volume": 3809459
+      "close": 23.68,
+      "volume": 8872623
+    },
+    {
+      "time": 1775088000,
+      "open": 23.2,
+      "high": 23.98,
+      "low": 22.83,
+      "close": 23.9,
+      "volume": 7263834
     }
   ]
 }

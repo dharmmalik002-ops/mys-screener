@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T05:41:29.661417+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:38.074488+00:00",
   "symbol": "TATASTEEL",
   "timeframe": "1D",
   "ticker": "TATASTEEL.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 140.24,
+      "high": 140.91,
+      "low": 138.9,
+      "close": 139.33,
+      "volume": 28414697
+    },
     {
       "time": 1708905600,
       "open": 139.71,
@@ -4142,28 +4150,20 @@
       "volume": 45914996
     },
     {
-      "time": 1774915200,
-      "open": 192.0,
-      "high": 194.42,
-      "low": 188.3,
-      "close": 191.59,
-      "volume": 45914996
-    },
-    {
       "time": 1775001600,
       "open": 200.0,
       "high": 200.2,
-      "low": 195.33,
-      "close": 197.19,
-      "volume": 14471293
+      "low": 194.0,
+      "close": 194.6,
+      "volume": 35813622
     },
     {
       "time": 1775088000,
-      "open": 192.96,
-      "high": 192.96,
+      "open": 192.91,
+      "high": 194.85,
       "low": 187.95,
-      "close": 188.73,
-      "volume": 10170695
+      "close": 194.14,
+      "volume": 27633959
     }
   ]
 }

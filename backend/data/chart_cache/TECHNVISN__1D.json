@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:25:02.358891+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:47.937478+00:00",
+  "symbol": "TECHNVISN",
+  "timeframe": "1D",
+  "ticker": "TECHNVISN.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2481,6 +2484,22 @@
       "low": 5389.8,
       "close": 5489.95,
       "volume": 167
+    },
+    {
+      "time": 1775001600,
+      "open": 5699.95,
+      "high": 5764.4,
+      "low": 5699.95,
+      "close": 5764.4,
+      "volume": 191
+    },
+    {
+      "time": 1775088000,
+      "open": 6049.0,
+      "high": 6049.0,
+      "low": 5905.0,
+      "close": 5939.5,
+      "volume": 47
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.607755+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:24.362299+00:00",
+  "symbol": "ALOKINDS",
+  "timeframe": "1D",
+  "ticker": "ALOKINDS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 12000083
     },
     {
-      "time": 1774915200,
-      "open": 11.86,
-      "high": 11.88,
-      "low": 11.11,
-      "close": 11.2,
-      "volume": 12000083
-    },
-    {
       "time": 1775001600,
       "open": 11.5,
-      "high": 12.34,
+      "high": 12.78,
       "low": 11.49,
-      "close": 12.14,
-      "volume": 7254874
+      "close": 12.45,
+      "volume": 19580846
+    },
+    {
+      "time": 1775088000,
+      "open": 12.2,
+      "high": 12.58,
+      "low": 11.87,
+      "close": 12.45,
+      "volume": 9667676
     }
   ]
 }

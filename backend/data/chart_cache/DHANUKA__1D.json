@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.438744+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:41.127359+00:00",
+  "symbol": "DHANUKA",
+  "timeframe": "1D",
+  "ticker": "DHANUKA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1119.9,
-      "high": 1174.39,
-      "low": 1118.5,
-      "close": 1151.15,
-      "volume": 58748
-    },
     {
       "time": 1708560000,
       "open": 1169.52,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 940.0,
-      "high": 950.0,
+      "high": 956.0,
       "low": 907.9,
-      "close": 945.2,
-      "volume": 12887
+      "close": 943.05,
+      "volume": 53737
+    },
+    {
+      "time": 1775088000,
+      "open": 940.1,
+      "high": 968.45,
+      "low": 915.15,
+      "close": 962.9,
+      "volume": 27409
     }
   ]
 }

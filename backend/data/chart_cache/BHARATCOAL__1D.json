@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.290129+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:34.159463+00:00",
+  "symbol": "BHARATCOAL",
+  "timeframe": "1D",
+  "ticker": "BHARATCOAL.NS",
   "bars": [
     {
       "time": 1768780800,
@@ -388,11 +391,19 @@
     },
     {
       "time": 1775001600,
-      "open": 31.08,
-      "high": 31.85,
+      "open": 31.0,
+      "high": 32.25,
       "low": 30.78,
-      "close": 31.55,
-      "volume": 0
+      "close": 31.98,
+      "volume": 11725101
+    },
+    {
+      "time": 1775088000,
+      "open": 31.58,
+      "high": 32.32,
+      "low": 30.93,
+      "close": 32.12,
+      "volume": 8325921
     }
   ]
 }

@@ -3819,7 +3819,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [loading]);
 
   const autoRefreshSchedule = getAutoRefreshSchedule(new Date(clockTick), activeMarket);
-  const navSearchSuggestions = buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80);
+  const navSearchSuggestions = useMemo(
+    () => buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80),
+    [universeCatalog, deferredNavSearchQuery],
+  );
   const brandEyebrow = activeMarket === "india" ? "NSE / BSE Stock Scanner" : "NYSE / Nasdaq Stock Scanner";
   const floorMetricLabel = activeMarket === "india" ? "Floor" : "US Filter";
   const floorMetricValue = activeMarket === "india" ? `${dashboard?.market_cap_min_crore ?? 800} Cr+` : ">$15 · 400K+ ADV";

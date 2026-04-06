@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:18:05.508726+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:13.149955+00:00",
   "symbol": "SPLPETRO",
   "timeframe": "1D",
   "ticker": "SPLPETRO.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 711.03,
+      "high": 737.57,
+      "low": 694.2,
+      "close": 734.05,
+      "volume": 130575
+    },
     {
       "time": 1708905600,
       "open": 734.05,
@@ -4142,27 +4150,19 @@
       "volume": 266160
     },
     {
-      "time": 1774915200,
-      "open": 748.0,
-      "high": 748.0,
-      "low": 716.0,
-      "close": 735.6,
-      "volume": 266160
-    },
-    {
       "time": 1775001600,
       "open": 749.9,
       "high": 772.9,
-      "low": 743.6,
-      "close": 745.7,
-      "volume": 63468
+      "low": 735.0,
+      "close": 738.85,
+      "volume": 103853
     },
     {
       "time": 1775088000,
-      "open": 736.9,
+      "open": 731.1,
       "high": 736.9,
       "low": 715.65,
-      "close": 732.7,
+      "close": 732.25,
       "volume": 49359
     }
   ]

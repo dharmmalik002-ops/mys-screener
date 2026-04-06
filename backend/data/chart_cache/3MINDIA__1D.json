@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.812480+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:02.998485+00:00",
+  "symbol": "3MINDIA",
+  "timeframe": "1D",
+  "ticker": "3MINDIA.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 3374
     },
     {
-      "time": 1774915200,
-      "open": 30855.0,
-      "high": 30900.0,
-      "low": 29980.0,
-      "close": 30000.0,
-      "volume": 3374
-    },
-    {
       "time": 1775001600,
       "open": 30560.0,
       "high": 31305.0,
-      "low": 30265.0,
-      "close": 30590.0,
-      "volume": 2250
+      "low": 29125.0,
+      "close": 29395.0,
+      "volume": 11036
+    },
+    {
+      "time": 1775088000,
+      "open": 29300.0,
+      "high": 30095.0,
+      "low": 28730.0,
+      "close": 29735.0,
+      "volume": 8060
     }
   ]
 }

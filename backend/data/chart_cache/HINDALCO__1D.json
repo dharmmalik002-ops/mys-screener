@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:53:56.523307+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:54.914841+00:00",
   "symbol": "HINDALCO",
   "timeframe": "1D",
   "ticker": "HINDALCO.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 517.91,
+      "high": 518.01,
+      "low": 510.31,
+      "close": 511.64,
+      "volume": 6445580
+    },
     {
       "time": 1708905600,
       "open": 512.68,
@@ -4142,27 +4150,19 @@
       "volume": 12727309
     },
     {
-      "time": 1774915200,
-      "open": 876.0,
-      "high": 913.0,
-      "low": 876.0,
-      "close": 888.0,
-      "volume": 12727309
-    },
-    {
       "time": 1775001600,
       "open": 909.0,
       "high": 922.5,
-      "low": 901.05,
-      "close": 921.35,
-      "volume": 3479387
+      "low": 900.1,
+      "close": 904.6,
+      "volume": 7777034
     },
     {
       "time": 1775088000,
-      "open": 904.6,
+      "open": 898.95,
       "high": 920.95,
       "low": 884.8,
-      "close": 919.95,
+      "close": 916.25,
       "volume": 7698211
     }
   ]

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.243616+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.281066+00:00",
+  "symbol": "CIANAGRO",
+  "timeframe": "1D",
+  "ticker": "CIANAGRO.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 739.0,
-      "high": 749.9,
+      "open": 733.1,
+      "high": 749.95,
       "low": 713.1,
       "close": 713.1,
-      "volume": 316808
+      "volume": 367686
+    },
+    {
+      "time": 1775088000,
+      "open": 677.45,
+      "high": 697.45,
+      "low": 677.45,
+      "close": 677.45,
+      "volume": 323668
     }
   ]
 }

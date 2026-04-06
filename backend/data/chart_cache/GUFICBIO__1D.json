@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.011059+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:06.591751+00:00",
+  "symbol": "GUFICBIO",
+  "timeframe": "1D",
+  "ticker": "GUFICBIO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 318.83,
-      "high": 318.83,
-      "low": 308.14,
-      "close": 313.69,
-      "volume": 131951
-    },
     {
       "time": 1708646400,
       "open": 314.59,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 297.0,
+      "open": 275.15,
       "high": 297.0,
       "low": 275.15,
-      "close": 287.7,
-      "volume": 25347
+      "close": 288.7,
+      "volume": 46971
+    },
+    {
+      "time": 1775088000,
+      "open": 283.3,
+      "high": 290.7,
+      "low": 279.3,
+      "close": 288.6,
+      "volume": 15736
     }
   ]
 }

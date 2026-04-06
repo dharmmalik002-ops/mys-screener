@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:15:36.807338+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:06.826059+00:00",
   "symbol": "ROSSTECH",
   "timeframe": "1D",
   "ticker": "ROSSTECH.NS",
@@ -2594,16 +2594,16 @@
       "open": 695.0,
       "high": 715.0,
       "low": 688.65,
-      "close": 710.95,
-      "volume": 64489
+      "close": 708.6,
+      "volume": 63367
     },
     {
       "time": 1775088000,
-      "open": 708.6,
+      "open": 705.0,
       "high": 735.45,
       "low": 685.0,
       "close": 724.1,
-      "volume": 39759
+      "volume": 38351
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.850417+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:00.469802+00:00",
+  "symbol": "LKPFIN",
+  "timeframe": "1D",
+  "ticker": "LKPFIN.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 48.78,
-      "high": 48.78,
-      "low": 47.44,
-      "close": 47.44,
-      "volume": 332710
-    },
     {
       "time": 1708560000,
       "open": 48.38,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 162.95,
+      "open": 162.0,
       "high": 169.0,
-      "low": 160.0,
-      "close": 162.75,
-      "volume": 11890
+      "low": 158.0,
+      "close": 159.95,
+      "volume": 18976
+    },
+    {
+      "time": 1775088000,
+      "open": 159.75,
+      "high": 162.7,
+      "low": 155.0,
+      "close": 159.85,
+      "volume": 12486
     }
   ]
 }

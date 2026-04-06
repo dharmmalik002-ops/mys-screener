@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:13.476483+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:45.422662+00:00",
+  "symbol": "ELPROINTL",
+  "timeframe": "1D",
+  "ticker": "ELPROINTL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2481,6 +2484,22 @@
       "low": 85.0,
       "close": 86.3,
       "volume": 26129
+    },
+    {
+      "time": 1775001600,
+      "open": 91.1,
+      "high": 91.1,
+      "low": 85.05,
+      "close": 87.88,
+      "volume": 15418
+    },
+    {
+      "time": 1775088000,
+      "open": 87.95,
+      "high": 88.0,
+      "low": 85.33,
+      "close": 87.8,
+      "volume": 23682
     }
   ]
 }

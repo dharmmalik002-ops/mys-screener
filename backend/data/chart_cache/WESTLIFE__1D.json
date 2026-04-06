@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.688385+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:27.378978+00:00",
+  "symbol": "WESTLIFE",
+  "timeframe": "1D",
+  "ticker": "WESTLIFE.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 1240049
     },
     {
-      "time": 1774915200,
-      "open": 431.0,
-      "high": 496.85,
-      "low": 429.0,
-      "close": 477.95,
-      "volume": 1240049
-    },
-    {
       "time": 1775001600,
       "open": 490.95,
       "high": 491.0,
       "low": 451.75,
-      "close": 456.8,
-      "volume": 264476
+      "close": 461.35,
+      "volume": 620251
+    },
+    {
+      "time": 1775088000,
+      "open": 461.35,
+      "high": 471.0,
+      "low": 445.2,
+      "close": 459.95,
+      "volume": 66071
     }
   ]
 }

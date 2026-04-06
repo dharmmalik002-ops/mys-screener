@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.367519+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:37.191616+00:00",
+  "symbol": "ACMESOLAR",
+  "timeframe": "1D",
+  "ticker": "ACMESOLAR.NS",
   "bars": [
     {
       "time": 1731456000,
@@ -2731,20 +2734,20 @@
       "volume": 2058259
     },
     {
-      "time": 1774915200,
-      "open": 269.31,
-      "high": 272.97,
-      "low": 258.01,
-      "close": 260.0,
-      "volume": 2058259
-    },
-    {
       "time": 1775001600,
       "open": 269.95,
-      "high": 269.95,
+      "high": 272.45,
       "low": 258.55,
-      "close": 262.75,
-      "volume": 710028
+      "close": 266.8,
+      "volume": 1830804
+    },
+    {
+      "time": 1775088000,
+      "open": 266.45,
+      "high": 276.7,
+      "low": 264.4,
+      "close": 274.65,
+      "volume": 3270668
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.246247+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:18.960020+00:00",
+  "symbol": "NRBBEARING",
+  "timeframe": "1D",
+  "ticker": "NRBBEARING.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 312.82,
-      "high": 312.82,
-      "low": 305.17,
-      "close": 310.19,
-      "volume": 82590
-    },
     {
       "time": 1708646400,
       "open": 313.59,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 225.9,
-      "high": 233.45,
+      "high": 240.0,
       "low": 223.69,
-      "close": 232.7,
-      "volume": 135610
+      "close": 237.06,
+      "volume": 287564
+    },
+    {
+      "time": 1775088000,
+      "open": 231.5,
+      "high": 236.01,
+      "low": 224.57,
+      "close": 234.5,
+      "volume": 143515
     }
   ]
 }

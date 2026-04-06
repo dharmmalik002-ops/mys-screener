@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.920824+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:27.641061+00:00",
+  "symbol": "AVL",
+  "timeframe": "1D",
+  "ticker": "AVL.NS",
   "bars": [
     {
       "time": 1730851200,
@@ -2763,20 +2766,20 @@
       "volume": 192451
     },
     {
-      "time": 1774915200,
-      "open": 480.25,
-      "high": 491.85,
-      "low": 470.0,
-      "close": 470.0,
-      "volume": 192451
-    },
-    {
       "time": 1775001600,
       "open": 487.5,
       "high": 487.5,
-      "low": 467.0,
-      "close": 467.6,
-      "volume": 64560
+      "low": 458.0,
+      "close": 468.05,
+      "volume": 245300
+    },
+    {
+      "time": 1775088000,
+      "open": 461.0,
+      "high": 465.75,
+      "low": 453.0,
+      "close": 459.85,
+      "volume": 80836
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.722714+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:40.020485+00:00",
+  "symbol": "PANAMAPET",
+  "timeframe": "1D",
+  "ticker": "PANAMAPET.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 338.98,
-      "high": 354.18,
-      "low": 332.75,
-      "close": 351.06,
-      "volume": 563215
-    },
     {
       "time": 1708646400,
       "open": 354.28,
@@ -565,7 +560,7 @@
     {
       "time": 1717977600,
       "open": 373.08,
-      "high": 379.11,
+      "high": 379.12,
       "low": 368.06,
       "close": 369.62,
       "volume": 131205
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 241.0,
-      "high": 250.0,
+      "high": 261.99,
       "low": 241.0,
-      "close": 248.66,
-      "volume": 12590
+      "close": 255.72,
+      "volume": 54159
+    },
+    {
+      "time": 1775088000,
+      "open": 256.0,
+      "high": 269.98,
+      "low": 255.0,
+      "close": 267.89,
+      "volume": 27822
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.617016+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:19.739946+00:00",
+  "symbol": "MFSL",
+  "timeframe": "1D",
+  "ticker": "MFSL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1255227
     },
     {
-      "time": 1774915200,
-      "open": 1534.0,
-      "high": 1556.8,
-      "low": 1473.6,
-      "close": 1475.7,
-      "volume": 1255227
-    },
-    {
       "time": 1775001600,
       "open": 1515.1,
       "high": 1549.6,
-      "low": 1496.6,
-      "close": 1499.1,
-      "volume": 544133
+      "low": 1468.2,
+      "close": 1477.4,
+      "volume": 1626305
+    },
+    {
+      "time": 1775088000,
+      "open": 1451.2,
+      "high": 1479.3,
+      "low": 1433.6,
+      "close": 1464.2,
+      "volume": 926587
     }
   ]
 }

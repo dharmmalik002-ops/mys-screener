@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.455812+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:33.530974+00:00",
+  "symbol": "AFCOM",
+  "timeframe": "1D",
+  "ticker": "AFCOM.NS",
   "bars": [
     {
       "time": 1723161600,
@@ -3220,11 +3223,19 @@
     },
     {
       "time": 1775001600,
-      "open": 699.0,
-      "high": 737.65,
-      "low": 690.5,
-      "close": 735.0,
-      "volume": 51000
+      "open": 689.0,
+      "high": 750.0,
+      "low": 685.0,
+      "close": 741.0,
+      "volume": 92760
+    },
+    {
+      "time": 1775088000,
+      "open": 717.0,
+      "high": 754.9,
+      "low": 704.0,
+      "close": 750.15,
+      "volume": 87960
     }
   ]
 }

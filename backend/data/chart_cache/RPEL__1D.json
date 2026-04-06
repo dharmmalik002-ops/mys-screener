@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.062437+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.291472+00:00",
+  "symbol": "RPEL",
+  "timeframe": "1D",
+  "ticker": "RPEL.NS",
   "bars": [
     {
       "time": 1723075200,
@@ -3269,10 +3272,18 @@
     {
       "time": 1775001600,
       "open": 581.05,
-      "high": 627.0,
+      "high": 635.0,
       "low": 581.05,
-      "close": 610.2,
-      "volume": 31549
+      "close": 625.65,
+      "volume": 52802
+    },
+    {
+      "time": 1775088000,
+      "open": 611.3,
+      "high": 637.2,
+      "low": 601.9,
+      "close": 626.85,
+      "volume": 28719
     }
   ]
 }

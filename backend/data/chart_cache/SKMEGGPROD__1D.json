@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T09:51:24.607148+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:21.846547+00:00",
+  "symbol": "SKMEGGPROD",
+  "timeframe": "1D",
+  "ticker": "SKMEGGPROD.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 134.51,
-      "high": 136.5,
-      "low": 130.78,
-      "close": 131.84,
-      "volume": 290428
-    },
-    {
-      "time": 1708560000,
-      "open": 134.09,
-      "high": 134.09,
-      "low": 128.69,
-      "close": 130.04,
-      "volume": 162708
-    },
     {
       "time": 1708646400,
       "open": 132.07,
@@ -4158,9 +4145,25 @@
       "time": 1774828800,
       "open": 152.49,
       "high": 156.72,
-      "low": 148.22,
-      "close": 150.35,
-      "volume": 127326
+      "low": 146.1,
+      "close": 148.16,
+      "volume": 172192
+    },
+    {
+      "time": 1775001600,
+      "open": 154.0,
+      "high": 159.5,
+      "low": 152.06,
+      "close": 157.96,
+      "volume": 107331
+    },
+    {
+      "time": 1775088000,
+      "open": 154.5,
+      "high": 161.6,
+      "low": 151.79,
+      "close": 158.73,
+      "volume": 93650
     }
   ]
 }

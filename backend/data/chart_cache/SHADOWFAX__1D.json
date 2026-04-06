@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.864323+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:30.678052+00:00",
+  "symbol": "SHADOWFAX",
+  "timeframe": "1D",
+  "ticker": "SHADOWFAX.NS",
   "bars": [
     {
       "time": 1769558400,
@@ -340,11 +343,19 @@
     },
     {
       "time": 1775001600,
-      "open": 115.31,
-      "high": 118.32,
+      "open": 115.38,
+      "high": 118.53,
       "low": 115.31,
-      "close": 117.03,
-      "volume": 0
+      "close": 117.6,
+      "volume": 726992
+    },
+    {
+      "time": 1775088000,
+      "open": 117.29,
+      "high": 118.43,
+      "low": 113.69,
+      "close": 117.04,
+      "volume": 390394
     }
   ]
 }

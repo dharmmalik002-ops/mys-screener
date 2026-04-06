@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.357370+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:19.039815+00:00",
+  "symbol": "TEGA",
+  "timeframe": "1D",
+  "ticker": "TEGA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 150111
     },
     {
-      "time": 1774915200,
-      "open": 1651.4,
-      "high": 1704.3,
-      "low": 1650.1,
-      "close": 1666.0,
-      "volume": 150111
-    },
-    {
       "time": 1775001600,
       "open": 1685.0,
       "high": 1715.4,
-      "low": 1680.9,
-      "close": 1685.2,
-      "volume": 11795
+      "low": 1674.0,
+      "close": 1693.0,
+      "volume": 41877
+    },
+    {
+      "time": 1775088000,
+      "open": 1688.4,
+      "high": 1737.4,
+      "low": 1655.0,
+      "close": 1726.9,
+      "volume": 33992
     }
   ]
 }

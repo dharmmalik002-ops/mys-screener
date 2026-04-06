@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.187368+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.592208+00:00",
+  "symbol": "SEPC",
+  "timeframe": "1D",
+  "ticker": "SEPC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 21.9,
-      "high": 22.95,
-      "low": 21.35,
-      "close": 22.95,
-      "volume": 8524380
-    },
     {
       "time": 1708646400,
       "open": 23.3,
@@ -4160,7 +4155,15 @@
       "high": 5.34,
       "low": 5.08,
       "close": 5.34,
-      "volume": 6799675
+      "volume": 9098410
+    },
+    {
+      "time": 1775088000,
+      "open": 5.25,
+      "high": 5.68,
+      "low": 5.12,
+      "close": 5.6,
+      "volume": 41932005
     }
   ]
 }

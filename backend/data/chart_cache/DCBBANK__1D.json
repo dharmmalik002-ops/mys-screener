@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.948349+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:44.533761+00:00",
+  "symbol": "DCBBANK",
+  "timeframe": "1D",
+  "ticker": "DCBBANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1905128
     },
     {
-      "time": 1774915200,
-      "open": 164.5,
-      "high": 164.7,
-      "low": 157.95,
-      "close": 158.36,
-      "volume": 1905128
-    },
-    {
       "time": 1775001600,
       "open": 166.99,
-      "high": 167.1,
+      "high": 168.75,
       "low": 162.51,
-      "close": 164.22,
-      "volume": 554985
+      "close": 166.84,
+      "volume": 1278444
+    },
+    {
+      "time": 1775088000,
+      "open": 161.69,
+      "high": 166.26,
+      "low": 158.4,
+      "close": 165.48,
+      "volume": 1229002
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.128449+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:31.724739+00:00",
+  "symbol": "CSBBANK",
+  "timeframe": "1D",
+  "ticker": "CSBBANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 759602
     },
     {
-      "time": 1774915200,
-      "open": 349.65,
-      "high": 359.3,
-      "low": 336.25,
-      "close": 339.0,
-      "volume": 759602
-    },
-    {
       "time": 1775001600,
       "open": 351.0,
-      "high": 362.25,
+      "high": 363.45,
       "low": 348.8,
-      "close": 353.5,
-      "volume": 245673
+      "close": 360.05,
+      "volume": 418242
+    },
+    {
+      "time": 1775088000,
+      "open": 353.1,
+      "high": 372.5,
+      "low": 343.05,
+      "close": 369.05,
+      "volume": 482946
     }
   ]
 }

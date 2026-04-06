@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.223379+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.417717+00:00",
+  "symbol": "RATNAVEER",
+  "timeframe": "1D",
+  "ticker": "RATNAVEER.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 144.4,
-      "high": 145.65,
-      "low": 136.5,
-      "close": 138.25,
-      "volume": 857962
-    },
     {
       "time": 1708560000,
       "open": 139.3,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 137.01,
+      "open": 137.0,
       "high": 147.15,
       "low": 136.44,
-      "close": 143.09,
-      "volume": 923745
+      "close": 138.11,
+      "volume": 1900053
+    },
+    {
+      "time": 1775088000,
+      "open": 136.5,
+      "high": 140.5,
+      "low": 134.81,
+      "close": 139.8,
+      "volume": 323638
     }
   ]
 }

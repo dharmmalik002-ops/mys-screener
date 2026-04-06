@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:25.098309+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:22.433810+00:00",
   "symbol": "ADANIPOWER",
   "timeframe": "1D",
   "ticker": "ADANIPOWER.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 112.4,
+      "high": 113.2,
+      "low": 111.02,
+      "close": 111.81,
+      "volume": 4008995
+    },
     {
       "time": 1708905600,
       "open": 111.89,
@@ -4142,28 +4150,20 @@
       "volume": 21100984
     },
     {
-      "time": 1774915200,
-      "open": 152.1,
-      "high": 156.45,
-      "low": 149.2,
-      "close": 150.3,
-      "volume": 21100984
-    },
-    {
       "time": 1775001600,
       "open": 155.0,
-      "high": 156.5,
+      "high": 158.15,
       "low": 153.44,
-      "close": 155.18,
-      "volume": 27845619
+      "close": 157.11,
+      "volume": 48215780
     },
     {
       "time": 1775088000,
-      "open": 157.11,
+      "open": 154.5,
       "high": 160.35,
       "low": 150.62,
-      "close": 159.98,
-      "volume": 56795875
+      "close": 159.97,
+      "volume": 59833120
     }
   ]
 }

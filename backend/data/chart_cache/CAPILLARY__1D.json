@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.076053+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:49.397096+00:00",
+  "symbol": "CAPILLARY",
+  "timeframe": "1D",
+  "ticker": "CAPILLARY.NS",
   "bars": [
     {
       "time": 1763683200,
@@ -707,20 +710,20 @@
       "volume": 74328
     },
     {
-      "time": 1774915200,
-      "open": 501.25,
-      "high": 505.0,
-      "low": 471.2,
-      "close": 474.0,
-      "volume": 74328
-    },
-    {
       "time": 1775001600,
       "open": 484.9,
-      "high": 495.3,
+      "high": 497.0,
       "low": 484.9,
-      "close": 495.3,
-      "volume": 18477
+      "close": 485.65,
+      "volume": 44477
+    },
+    {
+      "time": 1775088000,
+      "open": 480.6,
+      "high": 499.6,
+      "low": 475.1,
+      "close": 493.1,
+      "volume": 46053
     }
   ]
 }

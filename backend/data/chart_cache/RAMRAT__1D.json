@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.027117+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:06.082574+00:00",
+  "symbol": "RAMRAT",
+  "timeframe": "1D",
+  "ticker": "RAMRAT.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 144.59,
-      "high": 145.24,
-      "low": 142.66,
-      "close": 143.97,
-      "volume": 74914
-    },
     {
       "time": 1708560000,
       "open": 144.12,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 292.6,
-      "high": 304.85,
+      "high": 305.0,
       "low": 292.6,
-      "close": 301.2,
-      "volume": 21117
+      "close": 302.4,
+      "volume": 46140
+    },
+    {
+      "time": 1775088000,
+      "open": 296.85,
+      "high": 304.75,
+      "low": 286.6,
+      "close": 303.05,
+      "volume": 60304
     }
   ]
 }

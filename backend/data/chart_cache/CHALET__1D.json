@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.398436+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:18.485958+00:00",
+  "symbol": "CHALET",
+  "timeframe": "1D",
+  "ticker": "CHALET.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 259506
     },
     {
-      "time": 1774915200,
-      "open": 718.85,
-      "high": 718.85,
-      "low": 691.35,
-      "close": 698.95,
-      "volume": 259506
-    },
-    {
       "time": 1775001600,
       "open": 710.05,
-      "high": 725.65,
+      "high": 729.0,
       "low": 707.5,
-      "close": 712.6,
-      "volume": 39986
+      "close": 717.75,
+      "volume": 179230
+    },
+    {
+      "time": 1775088000,
+      "open": 713.0,
+      "high": 733.0,
+      "low": 696.35,
+      "close": 728.5,
+      "volume": 48865
     }
   ]
 }

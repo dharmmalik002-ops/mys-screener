@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.898521+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:54.573486+00:00",
+  "symbol": "SIGNPOST",
+  "timeframe": "1D",
+  "ticker": "SIGNPOST.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 414.93,
-      "high": 414.93,
-      "low": 376.63,
-      "close": 393.76,
-      "volume": 437725
-    },
     {
       "time": 1708560000,
       "open": 374.14,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 226.61,
-      "high": 232.18,
+      "high": 235.0,
       "low": 226.6,
-      "close": 229.17,
-      "volume": 6621
+      "close": 231.11,
+      "volume": 33890
+    },
+    {
+      "time": 1775088000,
+      "open": 230.73,
+      "high": 238.21,
+      "low": 223.35,
+      "close": 230.23,
+      "volume": 19653
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.230242+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:19.110146+00:00",
+  "symbol": "HEXATRADEX",
+  "timeframe": "1D",
+  "ticker": "HEXATRADEX.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 157.9,
-      "high": 160.15,
-      "low": 153.4,
-      "close": 155.75,
-      "volume": 9695
-    },
     {
       "time": 1708560000,
       "open": 160.2,
@@ -4159,8 +4154,16 @@
       "open": 162.99,
       "high": 162.99,
       "low": 154.09,
-      "close": 158.5,
-      "volume": 450
+      "close": 158.76,
+      "volume": 4461
+    },
+    {
+      "time": 1775088000,
+      "open": 161.0,
+      "high": 161.0,
+      "low": 155.21,
+      "close": 155.93,
+      "volume": 1101
     }
   ]
 }

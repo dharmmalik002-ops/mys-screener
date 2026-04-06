@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.895272+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:28.086227+00:00",
+  "symbol": "RAMCOCEM",
+  "timeframe": "1D",
+  "ticker": "RAMCOCEM.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 428482
     },
     {
-      "time": 1774915200,
-      "open": 906.3,
-      "high": 958.6,
-      "low": 888.0,
-      "close": 905.0,
-      "volume": 428482
-    },
-    {
       "time": 1775001600,
       "open": 932.65,
       "high": 953.25,
       "low": 927.0,
-      "close": 947.7,
-      "volume": 60079
+      "close": 943.5,
+      "volume": 183752
+    },
+    {
+      "time": 1775088000,
+      "open": 928.7,
+      "high": 934.65,
+      "low": 904.15,
+      "close": 925.15,
+      "volume": 111008
     }
   ]
 }

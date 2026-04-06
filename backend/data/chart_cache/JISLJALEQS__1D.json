@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.305972+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:20.878188+00:00",
+  "symbol": "JISLJALEQS",
+  "timeframe": "1D",
+  "ticker": "JISLJALEQS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 58.45,
-      "high": 59.05,
-      "low": 57.15,
-      "close": 58.4,
-      "volume": 2770523
-    },
     {
       "time": 1708646400,
       "open": 58.7,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 28.99,
-      "high": 29.84,
+      "high": 29.9,
       "low": 28.37,
-      "close": 29.41,
-      "volume": 1112687
+      "close": 29.42,
+      "volume": 2243736
+    },
+    {
+      "time": 1775088000,
+      "open": 28.95,
+      "high": 30.0,
+      "low": 27.8,
+      "close": 29.48,
+      "volume": 3203766
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.102682+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:06.295623+00:00",
+  "symbol": "PRECAM",
+  "timeframe": "1D",
+  "ticker": "PRECAM.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 212.72,
-      "high": 213.26,
-      "low": 209.15,
-      "close": 212.52,
-      "volume": 84008
-    },
     {
       "time": 1708646400,
       "open": 214.2,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 115.5,
-      "high": 115.85,
+      "open": 110.55,
+      "high": 119.8,
       "low": 110.55,
-      "close": 114.8,
-      "volume": 190564
+      "close": 117.51,
+      "volume": 481300
+    },
+    {
+      "time": 1775088000,
+      "open": 111.0,
+      "high": 120.18,
+      "low": 110.81,
+      "close": 119.67,
+      "volume": 422591
     }
   ]
 }

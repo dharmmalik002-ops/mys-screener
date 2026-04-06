@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.651014+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.024523+00:00",
+  "symbol": "ORIENTHOT",
+  "timeframe": "1D",
+  "ticker": "ORIENTHOT.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 129.04,
-      "high": 130.88,
-      "low": 125.17,
-      "close": 129.14,
-      "volume": 544948
-    },
     {
       "time": 1708646400,
       "open": 129.79,
@@ -543,7 +538,7 @@
       "open": 128.15,
       "high": 131.13,
       "low": 123.18,
-      "close": 130.44,
+      "close": 130.43,
       "volume": 450603
     },
     {
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 85.05,
-      "high": 88.89,
+      "high": 89.51,
       "low": 84.64,
-      "close": 88.15,
-      "volume": 93748
+      "close": 89.01,
+      "volume": 179862
+    },
+    {
+      "time": 1775088000,
+      "open": 88.0,
+      "high": 90.0,
+      "low": 86.24,
+      "close": 89.74,
+      "volume": 69675
     }
   ]
 }

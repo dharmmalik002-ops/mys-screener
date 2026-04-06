@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.557264+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:42.098379+00:00",
+  "symbol": "KHAZANCHI",
+  "timeframe": "1D",
+  "ticker": "KHAZANCHI.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2487,8 +2490,16 @@
       "open": 629.8,
       "high": 643.85,
       "low": 625.5,
-      "close": 634.8,
-      "volume": 10750
+      "close": 629.5,
+      "volume": 18000
+    },
+    {
+      "time": 1775088000,
+      "open": 632.0,
+      "high": 644.95,
+      "low": 625.0,
+      "close": 634.4,
+      "volume": 17250
     }
   ]
 }

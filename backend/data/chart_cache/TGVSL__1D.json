@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.280817+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:07.797138+00:00",
+  "symbol": "TGVSL",
+  "timeframe": "1D",
+  "ticker": "TGVSL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 81.01,
+      "open": 83.99,
       "high": 87.8,
       "low": 81.01,
-      "close": 84.52,
-      "volume": 54215
+      "close": 85.65,
+      "volume": 94760
+    },
+    {
+      "time": 1775088000,
+      "open": 83.1,
+      "high": 92.0,
+      "low": 82.47,
+      "close": 90.52,
+      "volume": 271170
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.516513+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:13.909330+00:00",
+  "symbol": "ZENTEC",
+  "timeframe": "1D",
+  "ticker": "ZENTEC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 678234
     },
     {
-      "time": 1774915200,
-      "open": 1335.6,
-      "high": 1348.2,
-      "low": 1265.0,
-      "close": 1267.2,
-      "volume": 678234
-    },
-    {
       "time": 1775001600,
       "open": 1337.9,
       "high": 1386.0,
       "low": 1296.8,
-      "close": 1331.1,
-      "volume": 307964
+      "close": 1345.4,
+      "volume": 543139
+    },
+    {
+      "time": 1775088000,
+      "open": 1314.1,
+      "high": 1370.2,
+      "low": 1295.0,
+      "close": 1367.2,
+      "volume": 329822
     }
   ]
 }

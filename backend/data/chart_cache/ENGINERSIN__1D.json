@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.457310+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:54.126893+00:00",
+  "symbol": "ENGINERSIN",
+  "timeframe": "1D",
+  "ticker": "ENGINERSIN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 2792391
     },
     {
-      "time": 1774915200,
-      "open": 186.0,
-      "high": 191.71,
-      "low": 177.5,
-      "close": 182.94,
-      "volume": 2792391
-    },
-    {
       "time": 1775001600,
       "open": 191.33,
-      "high": 193.5,
+      "high": 201.99,
       "low": 188.46,
-      "close": 191.74,
-      "volume": 1248004
+      "close": 200.98,
+      "volume": 7247679
+    },
+    {
+      "time": 1775088000,
+      "open": 194.0,
+      "high": 201.88,
+      "low": 191.61,
+      "close": 200.55,
+      "volume": 4200321
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.323302+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:20.220371+00:00",
+  "symbol": "GARGI",
+  "timeframe": "1D",
+  "ticker": "GARGI.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2487,8 +2490,16 @@
       "open": 805.85,
       "high": 807.0,
       "low": 800.0,
-      "close": 806.35,
-      "volume": 15375
+      "close": 803.25,
+      "volume": 32750
+    },
+    {
+      "time": 1775088000,
+      "open": 821.4,
+      "high": 839.0,
+      "low": 784.05,
+      "close": 838.55,
+      "volume": 9750
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.369729+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:36.607559+00:00",
+  "symbol": "GROWW",
+  "timeframe": "1D",
+  "ticker": "GROWW.NS",
   "bars": [
     {
       "time": 1762905600,
@@ -763,20 +766,20 @@
       "volume": 34564425
     },
     {
-      "time": 1774915200,
-      "open": 160.0,
-      "high": 160.0,
-      "low": 149.05,
-      "close": 149.7,
-      "volume": 34564425
-    },
-    {
       "time": 1775001600,
       "open": 158.0,
-      "high": 158.0,
+      "high": 162.5,
       "low": 154.15,
-      "close": 156.72,
-      "volume": 5827461
+      "close": 161.55,
+      "volume": 21307137
+    },
+    {
+      "time": 1775088000,
+      "open": 157.48,
+      "high": 165.4,
+      "low": 156.5,
+      "close": 164.82,
+      "volume": 24459457
     }
   ]
 }

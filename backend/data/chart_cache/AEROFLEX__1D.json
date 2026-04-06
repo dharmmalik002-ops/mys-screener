@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:09:02.615131+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:58.883658+00:00",
   "symbol": "AEROFLEX",
   "timeframe": "1D",
   "ticker": "AEROFLEX.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 248.69,
+      "open": 246.25,
       "high": 255.0,
       "low": 245.55,
-      "close": 249.07,
-      "volume": 627467
+      "close": 250.64,
+      "volume": 1418256
     },
     {
       "time": 1775088000,
-      "open": 250.64,
-      "high": 254.4,
+      "open": 244.9,
+      "high": 255.95,
       "low": 241.05,
       "close": 252.79,
-      "volume": 979888
+      "volume": 997242
     }
   ]
 }

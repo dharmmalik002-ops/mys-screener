@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.665432+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:56.627716+00:00",
+  "symbol": "JPPOWER",
+  "timeframe": "1D",
+  "ticker": "JPPOWER.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 75928085
     },
     {
-      "time": 1774915200,
-      "open": 14.52,
-      "high": 14.93,
-      "low": 13.95,
-      "close": 14.08,
-      "volume": 75928085
-    },
-    {
       "time": 1775001600,
       "open": 14.68,
-      "high": 14.9,
+      "high": 15.05,
       "low": 14.34,
-      "close": 14.81,
-      "volume": 28614473
+      "close": 14.94,
+      "volume": 66011547
+    },
+    {
+      "time": 1775088000,
+      "open": 14.76,
+      "high": 15.08,
+      "low": 14.4,
+      "close": 15.01,
+      "volume": 53988120
     }
   ]
 }

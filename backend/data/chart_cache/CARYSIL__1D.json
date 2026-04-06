@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.712916+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:20.195014+00:00",
+  "symbol": "CARYSIL",
+  "timeframe": "1D",
+  "ticker": "CARYSIL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1050.89,
-      "high": 1051.59,
-      "low": 1003.32,
-      "close": 1020.29,
-      "volume": 75626
-    },
     {
       "time": 1708646400,
       "open": 1017.05,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 779.95,
-      "high": 796.9,
+      "open": 762.0,
+      "high": 801.85,
       "low": 762.0,
-      "close": 787.25,
-      "volume": 13852
+      "close": 792.9,
+      "volume": 40797
+    },
+    {
+      "time": 1775088000,
+      "open": 783.0,
+      "high": 809.65,
+      "low": 757.2,
+      "close": 798.1,
+      "volume": 55413
     }
   ]
 }

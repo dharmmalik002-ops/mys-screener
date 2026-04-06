@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.597217+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:39.342448+00:00",
+  "symbol": "YESBANK",
+  "timeframe": "1D",
+  "ticker": "YESBANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 174192183
     },
     {
-      "time": 1774915200,
-      "open": 17.95,
-      "high": 17.96,
-      "low": 17.2,
-      "close": 17.28,
-      "volume": 174192183
-    },
-    {
       "time": 1775001600,
       "open": 17.66,
-      "high": 17.85,
+      "high": 18.1,
       "low": 17.63,
-      "close": 17.68,
-      "volume": 41821826
+      "close": 17.91,
+      "volume": 98191539
+    },
+    {
+      "time": 1775088000,
+      "open": 17.7,
+      "high": 17.94,
+      "low": 17.3,
+      "close": 17.87,
+      "volume": 98125615
     }
   ]
 }

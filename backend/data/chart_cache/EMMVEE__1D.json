@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.408635+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:18.255607+00:00",
+  "symbol": "EMMVEE",
+  "timeframe": "1D",
+  "ticker": "EMMVEE.NS",
   "bars": [
     {
       "time": 1763424000,
@@ -731,20 +734,20 @@
       "volume": 1045860
     },
     {
-      "time": 1774915200,
-      "open": 222.61,
-      "high": 222.61,
-      "low": 212.61,
-      "close": 216.0,
-      "volume": 1045860
-    },
-    {
       "time": 1775001600,
       "open": 229.0,
       "high": 229.59,
       "low": 215.2,
-      "close": 220.77,
-      "volume": 1022464
+      "close": 219.04,
+      "volume": 1706185
+    },
+    {
+      "time": 1775088000,
+      "open": 215.9,
+      "high": 218.5,
+      "low": 210.05,
+      "close": 217.54,
+      "volume": 1048315
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.080357+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.675041+00:00",
+  "symbol": "EKC",
+  "timeframe": "1D",
+  "ticker": "EKC.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 161.44,
-      "high": 161.83,
-      "low": 155.54,
-      "close": 156.43,
-      "volume": 495914
-    },
     {
       "time": 1708560000,
       "open": 157.47,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 100.91,
-      "high": 101.28,
+      "open": 93.5,
+      "high": 102.78,
       "low": 93.5,
-      "close": 100.8,
-      "volume": 427873
+      "close": 101.53,
+      "volume": 835136
+    },
+    {
+      "time": 1775088000,
+      "open": 98.3,
+      "high": 109.89,
+      "low": 96.62,
+      "close": 106.71,
+      "volume": 565285
     }
   ]
 }

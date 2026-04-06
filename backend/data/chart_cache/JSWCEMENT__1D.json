@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.409769+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:35.371047+00:00",
+  "symbol": "JSWCEMENT",
+  "timeframe": "1D",
+  "ticker": "JSWCEMENT.NS",
   "bars": [
     {
       "time": 1755129600,
@@ -1235,20 +1238,20 @@
       "volume": 1798286
     },
     {
-      "time": 1774915200,
-      "open": 113.5,
-      "high": 113.95,
-      "low": 109.6,
-      "close": 109.8,
-      "volume": 1798286
-    },
-    {
       "time": 1775001600,
       "open": 114.5,
-      "high": 114.56,
+      "high": 115.25,
       "low": 112.03,
-      "close": 113.79,
-      "volume": 465602
+      "close": 114.73,
+      "volume": 849927
+    },
+    {
+      "time": 1775088000,
+      "open": 112.8,
+      "high": 116.25,
+      "low": 111.94,
+      "close": 115.94,
+      "volume": 979144
     }
   ]
 }

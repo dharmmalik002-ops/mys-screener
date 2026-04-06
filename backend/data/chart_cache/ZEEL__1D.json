@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.738962+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:29.619558+00:00",
+  "symbol": "ZEEL",
+  "timeframe": "1D",
+  "ticker": "ZEEL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 18130263
     },
     {
-      "time": 1774915200,
-      "open": 72.0,
-      "high": 76.69,
-      "low": 71.16,
-      "close": 72.0,
-      "volume": 18130263
-    },
-    {
       "time": 1775001600,
       "open": 74.0,
-      "high": 76.7,
+      "high": 76.85,
       "low": 73.8,
-      "close": 76.09,
-      "volume": 3712169
+      "close": 76.07,
+      "volume": 7477556
+    },
+    {
+      "time": 1775088000,
+      "open": 74.24,
+      "high": 74.65,
+      "low": 72.38,
+      "close": 74.13,
+      "volume": 9198767
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.318952+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.555256+00:00",
+  "symbol": "YUKEN",
+  "timeframe": "1D",
+  "ticker": "YUKEN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 720.69,
-      "high": 743.93,
-      "low": 708.27,
-      "close": 736.55,
-      "volume": 23142
-    },
     {
       "time": 1708646400,
       "open": 729.07,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 596.0,
-      "high": 637.0,
+      "high": 639.95,
       "low": 596.0,
-      "close": 631.3,
-      "volume": 3123
+      "close": 630.9,
+      "volume": 4476
+    },
+    {
+      "time": 1775088000,
+      "open": 616.1,
+      "high": 655.3,
+      "low": 611.05,
+      "close": 637.75,
+      "volume": 4236
     }
   ]
 }

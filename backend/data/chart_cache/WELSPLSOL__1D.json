@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.253646+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.776501+00:00",
+  "symbol": "WELSPLSOL",
+  "timeframe": "1D",
+  "ticker": "WELSPLSOL.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 40.44,
-      "high": 41.0,
-      "low": 39.8,
-      "close": 40.16,
-      "volume": 117437
-    },
     {
       "time": 1708300800,
       "open": 40.59,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 34.0,
+      "open": 33.47,
       "high": 35.4,
-      "low": 33.14,
-      "close": 33.95,
-      "volume": 133892
+      "low": 33.0,
+      "close": 34.36,
+      "volume": 178655
+    },
+    {
+      "time": 1775088000,
+      "open": 34.0,
+      "high": 34.66,
+      "low": 33.15,
+      "close": 34.5,
+      "volume": 96314
     }
   ]
 }

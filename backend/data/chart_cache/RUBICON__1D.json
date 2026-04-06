@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.337944+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:52.227199+00:00",
+  "symbol": "RUBICON",
+  "timeframe": "1D",
+  "ticker": "RUBICON.NS",
   "bars": [
     {
       "time": 1760572800,
@@ -891,20 +894,20 @@
       "volume": 235675
     },
     {
-      "time": 1774915200,
-      "open": 756.25,
-      "high": 777.85,
-      "low": 755.6,
-      "close": 770.0,
-      "volume": 235675
-    },
-    {
       "time": 1775001600,
       "open": 775.55,
       "high": 797.0,
-      "low": 773.15,
-      "close": 773.15,
-      "volume": 360965
+      "low": 773.0,
+      "close": 782.1,
+      "volume": 437816
+    },
+    {
+      "time": 1775088000,
+      "open": 777.0,
+      "high": 780.0,
+      "low": 765.2,
+      "close": 774.85,
+      "volume": 71487
     }
   ]
 }

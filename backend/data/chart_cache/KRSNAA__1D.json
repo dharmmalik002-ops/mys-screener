@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.458930+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:35.584204+00:00",
+  "symbol": "KRSNAA",
+  "timeframe": "1D",
+  "ticker": "KRSNAA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 686.54,
-      "high": 686.54,
-      "low": 669.1,
-      "close": 674.37,
-      "volume": 46129
-    },
     {
       "time": 1708646400,
       "open": 675.61,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 534.85,
-      "high": 556.85,
+      "open": 530.0,
+      "high": 564.9,
       "low": 530.0,
-      "close": 553.7,
-      "volume": 23578
+      "close": 561.15,
+      "volume": 42326
+    },
+    {
+      "time": 1775088000,
+      "open": 549.0,
+      "high": 557.05,
+      "low": 536.8,
+      "close": 550.45,
+      "volume": 69214
     }
   ]
 }

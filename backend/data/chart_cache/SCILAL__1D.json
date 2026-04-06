@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.496483+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:34.287110+00:00",
+  "symbol": "SCILAL",
+  "timeframe": "1D",
+  "ticker": "SCILAL.NS",
   "bars": [
     {
       "time": 1710806400,
@@ -3980,11 +3983,19 @@
     },
     {
       "time": 1775001600,
-      "open": 35.76,
-      "high": 38.49,
+      "open": 35.71,
+      "high": 40.7,
       "low": 35.63,
-      "close": 37.51,
-      "volume": 409474
+      "close": 39.25,
+      "volume": 1838326
+    },
+    {
+      "time": 1775088000,
+      "open": 38.74,
+      "high": 40.62,
+      "low": 37.53,
+      "close": 39.92,
+      "volume": 479412
     }
   ]
 }

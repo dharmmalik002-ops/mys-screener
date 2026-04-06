@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.294544+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:53.413223+00:00",
+  "symbol": "ANURAS",
+  "timeframe": "1D",
+  "ticker": "ANURAS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 156546
     },
     {
-      "time": 1774915200,
-      "open": 1212.3,
-      "high": 1248.0,
-      "low": 1201.3,
-      "close": 1240.0,
-      "volume": 156546
-    },
-    {
       "time": 1775001600,
       "open": 1237.0,
-      "high": 1256.6,
+      "high": 1283.0,
       "low": 1232.2,
-      "close": 1242.5,
-      "volume": 20177
+      "close": 1276.4,
+      "volume": 80385
+    },
+    {
+      "time": 1775088000,
+      "open": 1251.1,
+      "high": 1270.0,
+      "low": 1236.5,
+      "close": 1265.4,
+      "volume": 231657
     }
   ]
 }

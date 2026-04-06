@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:20:41.025851+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:17.022129+00:00",
+  "symbol": "VHLTD",
+  "timeframe": "1D",
+  "ticker": "VHLTD.NS",
   "bars": [
-    {
-      "time": 1680739200,
-      "open": 2250.0,
-      "high": 2370.0,
-      "low": 2150.0,
-      "close": 2160.0,
-      "volume": 0
-    },
     {
       "time": 1681084800,
       "open": 2200.0,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 140.0,
-      "high": 140.0,
+      "high": 143.95,
       "low": 138.3,
-      "close": 140.0,
-      "volume": 778
+      "close": 141.1,
+      "volume": 1539
+    },
+    {
+      "time": 1775088000,
+      "open": 144.4,
+      "high": 144.4,
+      "low": 139.2,
+      "close": 139.2,
+      "volume": 302
     }
   ]
 }

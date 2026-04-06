@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.128760+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:24.180471+00:00",
+  "symbol": "ELANTAS",
+  "timeframe": "1D",
+  "ticker": "ELANTAS.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 8202.5,
+      "open": 8251.05,
       "high": 9099.0,
       "low": 8133.0,
-      "close": 8941.35,
-      "volume": 1379
+      "close": 8314.7,
+      "volume": 2321
+    },
+    {
+      "time": 1775088000,
+      "open": 8888.0,
+      "high": 8888.0,
+      "low": 8250.1,
+      "close": 8369.0,
+      "volume": 924
     }
   ]
 }

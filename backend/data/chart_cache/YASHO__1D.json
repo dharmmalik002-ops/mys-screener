@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.635026+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:32.985750+00:00",
+  "symbol": "YASHO",
+  "timeframe": "1D",
+  "ticker": "YASHO.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 1674.7,
-      "high": 1799.03,
-      "low": 1658.91,
-      "close": 1750.21,
-      "volume": 49880
-    },
     {
       "time": 1708300800,
       "open": 1753.06,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1309.4,
-      "high": 1343.7,
+      "high": 1399.7,
       "low": 1303.8,
-      "close": 1329.9,
-      "volume": 2956
+      "close": 1377.8,
+      "volume": 11017
+    },
+    {
+      "time": 1775088000,
+      "open": 1320.0,
+      "high": 1407.8,
+      "low": 1320.0,
+      "close": 1398.7,
+      "volume": 6188
     }
   ]
 }

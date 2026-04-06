@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.302735+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:39.615103+00:00",
+  "symbol": "PILANIINVS",
+  "timeframe": "1D",
+  "ticker": "PILANIINVS.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 3072.08,
-      "high": 3165.43,
-      "low": 3000.2,
-      "close": 3047.92,
-      "volume": 13030
-    },
     {
       "time": 1708560000,
       "open": 3052.14,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 4360.0,
+      "open": 4182.5,
       "high": 4460.0,
       "low": 4182.5,
-      "close": 4376.6,
-      "volume": 438
+      "close": 4410.5,
+      "volume": 1312
+    },
+    {
+      "time": 1775088000,
+      "open": 4357.1,
+      "high": 4437.8,
+      "low": 4228.1,
+      "close": 4408.7,
+      "volume": 2140
     }
   ]
 }

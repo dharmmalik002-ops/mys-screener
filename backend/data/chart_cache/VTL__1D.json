@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:08.193308+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:48.565581+00:00",
   "symbol": "VTL",
   "timeframe": "1D",
   "ticker": "VTL.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 426.87,
+      "high": 428.64,
+      "low": 419.13,
+      "close": 426.38,
+      "volume": 163112
+    },
     {
       "time": 1708905600,
       "open": 425.5,
@@ -4142,28 +4150,20 @@
       "volume": 701937
     },
     {
-      "time": 1774915200,
-      "open": 520.95,
-      "high": 529.0,
-      "low": 513.55,
-      "close": 520.6,
-      "volume": 701937
-    },
-    {
       "time": 1775001600,
       "open": 525.0,
-      "high": 529.9,
+      "high": 532.4,
       "low": 520.65,
-      "close": 525.3,
-      "volume": 79221
+      "close": 529.8,
+      "volume": 726645
     },
     {
       "time": 1775088000,
-      "open": 529.8,
+      "open": 528.0,
       "high": 542.9,
       "low": 520.5,
-      "close": 537.0,
-      "volume": 644480
+      "close": 536.6,
+      "volume": 658771
     }
   ]
 }

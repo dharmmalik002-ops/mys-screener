@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.262448+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.680375+00:00",
+  "symbol": "PARKHOTELS",
+  "timeframe": "1D",
+  "ticker": "PARKHOTELS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 214.33,
-      "high": 229.03,
-      "low": 206.75,
-      "close": 226.29,
-      "volume": 5246846
-    },
     {
       "time": 1708646400,
       "open": 228.58,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 100.2,
-      "high": 103.69,
+      "open": 100.0,
+      "high": 110.22,
       "low": 99.13,
-      "close": 103.1,
-      "volume": 131822
+      "close": 106.25,
+      "volume": 560349
+    },
+    {
+      "time": 1775088000,
+      "open": 103.9,
+      "high": 108.46,
+      "low": 102.22,
+      "close": 107.25,
+      "volume": 266808
     }
   ]
 }

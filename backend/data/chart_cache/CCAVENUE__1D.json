@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.035537+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:38.374289+00:00",
+  "symbol": "CCAVENUE",
+  "timeframe": "1D",
+  "ticker": "CCAVENUE.NS",
   "bars": [
     {
       "time": 1769472000,
@@ -347,20 +350,20 @@
       "volume": 17161040
     },
     {
-      "time": 1774915200,
-      "open": 13.05,
-      "high": 13.81,
-      "low": 12.92,
-      "close": 13.33,
-      "volume": 17161041
-    },
-    {
       "time": 1775001600,
       "open": 14.0,
-      "high": 14.38,
+      "high": 14.48,
       "low": 14.0,
-      "close": 14.32,
-      "volume": 4088458
+      "close": 14.35,
+      "volume": 8792506
+    },
+    {
+      "time": 1775088000,
+      "open": 14.3,
+      "high": 14.92,
+      "low": 13.86,
+      "close": 14.76,
+      "volume": 8918971
     }
   ]
 }

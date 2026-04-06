@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:04:24.208191+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:53.559345+00:00",
   "symbol": "TDPOWERSYS",
   "timeframe": "1D",
   "ticker": "TDPOWERSYS.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 268.11,
+      "high": 286.31,
+      "low": 268.11,
+      "close": 283.53,
+      "volume": 897291
+    },
     {
       "time": 1708905600,
       "open": 285.72,
@@ -72,7 +80,7 @@
     {
       "time": 1709769600,
       "open": 304.91,
-      "high": 313.22,
+      "high": 313.21,
       "low": 301.68,
       "close": 303.27,
       "volume": 386436
@@ -4142,27 +4150,19 @@
       "volume": 640775
     },
     {
-      "time": 1774915200,
-      "open": 840.0,
-      "high": 868.85,
-      "low": 836.0,
-      "close": 852.0,
-      "volume": 640775
-    },
-    {
       "time": 1775001600,
       "open": 870.05,
       "high": 886.8,
-      "low": 858.7,
-      "close": 866.3,
-      "volume": 681891
+      "low": 856.5,
+      "close": 862.6,
+      "volume": 1004726
     },
     {
       "time": 1775088000,
-      "open": 862.6,
+      "open": 850.1,
       "high": 878.0,
       "low": 826.0,
-      "close": 868.0,
+      "close": 863.4,
       "volume": 705092
     }
   ]

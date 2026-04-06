@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T09:58:52.130334+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.576167+00:00",
+  "symbol": "ANDHRAPAP",
+  "timeframe": "1D",
+  "ticker": "ANDHRAPAP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 107.76,
-      "high": 107.84,
-      "low": 105.29,
-      "close": 106.05,
-      "volume": 350680
-    },
     {
       "time": 1708646400,
       "open": 106.57,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 58.62,
-      "high": 277.55,
+      "high": 61.94,
       "low": 58.62,
-      "close": 61.0,
-      "volume": 106945
+      "close": 60.86,
+      "volume": 108357
+    },
+    {
+      "time": 1775088000,
+      "open": 60.6,
+      "high": 61.69,
+      "low": 59.16,
+      "close": 60.17,
+      "volume": 149444
     }
   ]
 }

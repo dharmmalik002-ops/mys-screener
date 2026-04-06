@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.265920+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:13.820821+00:00",
+  "symbol": "MADRASFERT",
+  "timeframe": "1D",
+  "ticker": "MADRASFERT.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 101.65,
-      "high": 103.35,
-      "low": 98.4,
-      "close": 99.6,
-      "volume": 561132
-    },
     {
       "time": 1708560000,
       "open": 100.55,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 55.0,
-      "high": 58.3,
+      "open": 54.0,
+      "high": 59.85,
       "low": 54.0,
-      "close": 57.84,
-      "volume": 88402
+      "close": 58.24,
+      "volume": 214364
+    },
+    {
+      "time": 1775088000,
+      "open": 57.9,
+      "high": 59.25,
+      "low": 55.02,
+      "close": 58.81,
+      "volume": 106883
     }
   ]
 }

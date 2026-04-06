@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:59.411005+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:06.843859+00:00",
   "symbol": "NOCIL",
   "timeframe": "1D",
   "ticker": "NOCIL.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 163.5,
-      "high": 164.8,
+      "open": 157.5,
+      "high": 165.5,
       "low": 155.5,
-      "close": 164.11,
-      "volume": 1301604
+      "close": 163.71,
+      "volume": 2537731
     },
     {
       "time": 1775088000,
-      "open": 162.85,
-      "high": 166.06,
-      "low": 156.75,
-      "close": 163.75,
-      "volume": 1285112
+      "open": 162.5,
+      "high": 166.31,
+      "low": 156.59,
+      "close": 165.13,
+      "volume": 1319758
     }
   ]
 }

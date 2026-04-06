@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:19:22.090323+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:46.124101+00:00",
   "symbol": "MBAPL",
   "timeframe": "1D",
   "ticker": "MBAPL.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 467.0,
-      "high": 486.6,
+      "open": 473.95,
+      "high": 509.95,
       "low": 467.0,
-      "close": 481.6,
-      "volume": 84721
+      "close": 504.8,
+      "volume": 781101
     },
     {
       "time": 1775088000,
-      "open": 509.95,
-      "high": 536.85,
-      "low": 494.05,
-      "close": 536.4,
-      "volume": 628440
+      "open": 504.8,
+      "high": 537.0,
+      "low": 490.25,
+      "close": 531.75,
+      "volume": 632612
     }
   ]
 }

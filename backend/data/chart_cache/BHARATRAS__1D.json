@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.285794+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:18.093203+00:00",
+  "symbol": "BHARATRAS",
+  "timeframe": "1D",
+  "ticker": "BHARATRAS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 2209.38,
-      "high": 2211.93,
-      "low": 2190.68,
-      "close": 2201.45,
-      "volume": 3208
-    },
     {
       "time": 1708646400,
       "open": 2217.96,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1242.0,
-      "high": 1310.0,
+      "open": 1235.0,
+      "high": 1325.0,
       "low": 1235.0,
-      "close": 1296.2,
-      "volume": 11649
+      "close": 1305.9,
+      "volume": 18641
+    },
+    {
+      "time": 1775088000,
+      "open": 1279.0,
+      "high": 1448.0,
+      "low": 1256.2,
+      "close": 1410.2,
+      "volume": 44778
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.328919+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:28.329292+00:00",
+  "symbol": "RHETAN",
+  "timeframe": "1D",
+  "ticker": "RHETAN.NS",
   "bars": [
     {
       "time": 1758844800,
@@ -1004,11 +1007,19 @@
     },
     {
       "time": 1775001600,
-      "open": 24.72,
+      "open": 24.85,
       "high": 24.85,
-      "low": 24.55,
-      "close": 24.66,
-      "volume": 276694
+      "low": 24.51,
+      "close": 24.6,
+      "volume": 442815
+    },
+    {
+      "time": 1775088000,
+      "open": 24.99,
+      "high": 25.11,
+      "low": 24.41,
+      "close": 24.59,
+      "volume": 640843
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.000322+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:27.912216+00:00",
+  "symbol": "SMLMAH",
+  "timeframe": "1D",
+  "ticker": "SMLMAH.NS",
   "bars": [
     {
       "time": 1761782400,
@@ -819,20 +822,20 @@
       "volume": 60641
     },
     {
-      "time": 1774915200,
-      "open": 3839.7,
-      "high": 3954.3,
-      "low": 3780.1,
-      "close": 3780.1,
-      "volume": 60641
-    },
-    {
       "time": 1775001600,
       "open": 3949.9,
       "high": 3969.7,
       "low": 3905.1,
       "close": 3969.7,
-      "volume": 19971
+      "volume": 40907
+    },
+    {
+      "time": 1775088000,
+      "open": 3870.0,
+      "high": 4155.0,
+      "low": 3805.0,
+      "close": 4061.0,
+      "volume": 79746
     }
   ]
 }

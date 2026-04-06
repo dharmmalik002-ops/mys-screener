@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.998600+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.902380+00:00",
+  "symbol": "HAPPSTMNDS",
+  "timeframe": "1D",
+  "ticker": "HAPPSTMNDS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -270,7 +273,7 @@
       "time": 1713225600,
       "open": 780.82,
       "high": 828.85,
-      "low": 780.19,
+      "low": 780.18,
       "close": 798.55,
       "volume": 937842
     },
@@ -4147,20 +4150,20 @@
       "volume": 1517291
     },
     {
-      "time": 1774915200,
-      "open": 383.85,
-      "high": 386.15,
-      "low": 358.0,
-      "close": 362.0,
-      "volume": 1517291
-    },
-    {
       "time": 1775001600,
       "open": 375.0,
-      "high": 386.85,
+      "high": 396.9,
       "low": 371.45,
-      "close": 384.35,
-      "volume": 577644
+      "close": 392.75,
+      "volume": 1529458
+    },
+    {
+      "time": 1775088000,
+      "open": 382.2,
+      "high": 397.65,
+      "low": 375.0,
+      "close": 393.15,
+      "volume": 1319920
     }
   ]
 }

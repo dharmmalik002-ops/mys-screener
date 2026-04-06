@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:37:16.068622+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:36.262875+00:00",
   "symbol": "LLOYDSME",
   "timeframe": "1D",
   "ticker": "LLOYDSME.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 572.42,
+      "high": 593.77,
+      "low": 572.42,
+      "close": 590.53,
+      "volume": 636134
+    },
     {
       "time": 1708905600,
       "open": 602.55,
@@ -4142,28 +4150,20 @@
       "volume": 473290
     },
     {
-      "time": 1774915200,
-      "open": 1260.0,
-      "high": 1296.0,
-      "low": 1234.4,
-      "close": 1271.0,
-      "volume": 473290
-    },
-    {
       "time": 1775001600,
       "open": 1315.1,
       "high": 1357.2,
       "low": 1302.2,
-      "close": 1317.5,
-      "volume": 576556
+      "close": 1347.6,
+      "volume": 1162711
     },
     {
       "time": 1775088000,
-      "open": 1317.7,
-      "high": 1397.8,
+      "open": 1328.0,
+      "high": 1398.0,
       "low": 1290.0,
-      "close": 1380.0,
-      "volume": 992765
+      "close": 1388.3,
+      "volume": 1007135
     }
   ]
 }

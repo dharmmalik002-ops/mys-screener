@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.800366+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:00.001920+00:00",
+  "symbol": "AIAENG",
+  "timeframe": "1D",
+  "ticker": "AIAENG.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 220600
     },
     {
-      "time": 1774915200,
-      "open": 3377.0,
-      "high": 3697.5,
-      "low": 3377.0,
-      "close": 3600.0,
-      "volume": 220600
-    },
-    {
       "time": 1775001600,
       "open": 3660.0,
-      "high": 3686.7,
+      "high": 3700.0,
       "low": 3600.0,
-      "close": 3641.2,
-      "volume": 21290
+      "close": 3681.0,
+      "volume": 48288
+    },
+    {
+      "time": 1775088000,
+      "open": 3611.3,
+      "high": 3690.7,
+      "low": 3555.2,
+      "close": 3676.0,
+      "volume": 26628
     }
   ]
 }

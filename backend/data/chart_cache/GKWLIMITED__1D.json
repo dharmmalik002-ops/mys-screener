@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:30:40.493580+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.870108+00:00",
+  "symbol": "GKWLIMITED",
+  "timeframe": "1D",
+  "ticker": "GKWLIMITED.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1660.75,
-      "high": 1687.45,
-      "low": 1647.0,
-      "close": 1650.15,
-      "volume": 268
-    },
     {
       "time": 1708560000,
       "open": 1660.55,
@@ -2350,7 +2345,7 @@
       "time": 1746403200,
       "open": 1900.0,
       "high": 1933.9,
-      "low": 1933.9,
+      "low": 1900.0,
       "close": 1933.9,
       "volume": 147
     },
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1407.2,
-      "high": 1499.0,
+      "high": 1500.0,
       "low": 1407.2,
-      "close": 1451.2,
-      "volume": 0
+      "close": 1494.1,
+      "volume": 207
+    },
+    {
+      "time": 1775088000,
+      "open": 1460.1,
+      "high": 1476.0,
+      "low": 1452.6,
+      "close": 1460.0,
+      "volume": 662
     }
   ]
 }

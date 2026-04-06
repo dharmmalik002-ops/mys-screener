@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.448321+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.503272+00:00",
+  "symbol": "SWARAJENG",
+  "timeframe": "1D",
+  "ticker": "SWARAJENG.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 2270.69,
-      "high": 2270.69,
-      "low": 2202.24,
-      "close": 2219.18,
-      "volume": 7115
-    },
     {
       "time": 1708560000,
       "open": 2209.32,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 3403.3,
-      "high": 3430.0,
+      "open": 3380.0,
+      "high": 3455.8,
       "low": 3326.0,
-      "close": 3423.6,
-      "volume": 11829
+      "close": 3421.4,
+      "volume": 18005
+    },
+    {
+      "time": 1775088000,
+      "open": 3400.0,
+      "high": 3565.0,
+      "low": 3352.6,
+      "close": 3543.7,
+      "volume": 16388
     }
   ]
 }

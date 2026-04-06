@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.263444+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:13.501838+00:00",
+  "symbol": "IGARASHI",
+  "timeframe": "1D",
+  "ticker": "IGARASHI.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 486.11,
-      "high": 492.07,
-      "low": 476.16,
-      "close": 488.04,
-      "volume": 41726
-    },
     {
       "time": 1708646400,
       "open": 490.78,
@@ -598,7 +593,7 @@
       "time": 1718323200,
       "open": 506.98,
       "high": 522.84,
-      "low": 504.7,
+      "low": 504.69,
       "close": 517.77,
       "volume": 97448
     },
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 287.45,
+      "open": 287.5,
       "high": 304.15,
       "low": 283.0,
-      "close": 301.0,
-      "volume": 48127
+      "close": 294.5,
+      "volume": 107242
+    },
+    {
+      "time": 1775088000,
+      "open": 285.0,
+      "high": 298.8,
+      "low": 281.0,
+      "close": 294.6,
+      "volume": 46476
     }
   ]
 }

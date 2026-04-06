@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.148580+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:14.776292+00:00",
+  "symbol": "RAJESHEXPO",
+  "timeframe": "1D",
+  "ticker": "RAJESHEXPO.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 314.25,
-      "high": 315.95,
-      "low": 300.25,
-      "close": 303.45,
-      "volume": 323241
-    },
     {
       "time": 1708300800,
       "open": 304.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 81.8,
+      "open": 82.5,
       "high": 84.63,
       "low": 80.4,
-      "close": 84.37,
-      "volume": 15342
+      "close": 83.85,
+      "volume": 38727
+    },
+    {
+      "time": 1775088000,
+      "open": 81.26,
+      "high": 88.04,
+      "low": 80.11,
+      "close": 87.41,
+      "volume": 46748
     }
   ]
 }

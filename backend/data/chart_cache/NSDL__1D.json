@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:52.571328+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:18.231435+00:00",
+  "symbol": "NSDL",
+  "timeframe": "1D",
+  "ticker": "NSDL.NS",
   "bars": [
     {
       "time": 1754438400,
@@ -1268,11 +1271,19 @@
     },
     {
       "time": 1775001600,
-      "open": 816.85,
-      "high": 840.0,
-      "low": 816.85,
-      "close": 837.4,
-      "volume": 319274
+      "open": 816.0,
+      "high": 849.0,
+      "low": 816.0,
+      "close": 844.6,
+      "volume": 629658
+    },
+    {
+      "time": 1775088000,
+      "open": 827.0,
+      "high": 865.0,
+      "low": 820.2,
+      "close": 861.55,
+      "volume": 534102
     }
   ]
 }

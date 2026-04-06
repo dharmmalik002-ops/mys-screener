@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.919622+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:59.136534+00:00",
+  "symbol": "IVALUE",
+  "timeframe": "1D",
+  "ticker": "IVALUE.NS",
   "bars": [
     {
       "time": 1758758400,
@@ -1012,11 +1015,19 @@
     },
     {
       "time": 1775001600,
-      "open": 226.0,
+      "open": 225.0,
       "high": 226.0,
-      "low": 219.03,
-      "close": 220.82,
-      "volume": 26788
+      "low": 216.16,
+      "close": 220.11,
+      "volume": 99397
+    },
+    {
+      "time": 1775088000,
+      "open": 215.0,
+      "high": 220.05,
+      "low": 212.4,
+      "close": 218.24,
+      "volume": 126778
     }
   ]
 }

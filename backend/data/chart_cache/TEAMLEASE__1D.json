@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.352108+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.826915+00:00",
+  "symbol": "TEAMLEASE",
+  "timeframe": "1D",
+  "ticker": "TEAMLEASE.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 3194.0,
-      "high": 3240.0,
-      "low": 3126.1,
-      "close": 3179.95,
-      "volume": 32939
-    },
     {
       "time": 1708560000,
       "open": 3167.05,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1128.0,
-      "high": 1164.4,
+      "open": 1109.4,
+      "high": 1170.6,
       "low": 1109.4,
-      "close": 1158.0,
-      "volume": 7649
+      "close": 1150.2,
+      "volume": 14928
+    },
+    {
+      "time": 1775088000,
+      "open": 1150.2,
+      "high": 1176.3,
+      "low": 1111.6,
+      "close": 1170.8,
+      "volume": 13579
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.112448+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:25.530279+00:00",
+  "symbol": "GARFIBRES",
+  "timeframe": "1D",
+  "ticker": "GARFIBRES.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 686.98,
-      "high": 716.39,
-      "low": 683.82,
-      "close": 707.77,
-      "volume": 91995
-    },
     {
       "time": 1708560000,
       "open": 711.31,
@@ -4159,8 +4154,16 @@
       "open": 620.0,
       "high": 620.0,
       "low": 594.0,
-      "close": 597.05,
-      "volume": 0
+      "close": 598.05,
+      "volume": 140589
+    },
+    {
+      "time": 1775088000,
+      "open": 598.05,
+      "high": 607.9,
+      "low": 582.55,
+      "close": 598.65,
+      "volume": 51281
     }
   ]
 }

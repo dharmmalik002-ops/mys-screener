@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:49:32.152877+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:20.818825+00:00",
   "symbol": "DHAMPURSUG",
   "timeframe": "1D",
   "ticker": "DHAMPURSUG.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 143.65,
+      "open": 144.25,
       "high": 147.5,
-      "low": 140.15,
-      "close": 142.83,
-      "volume": 558497
+      "low": 139.35,
+      "close": 140.73,
+      "volume": 1049971
     },
     {
       "time": 1775088000,
-      "open": 139.6,
-      "high": 139.6,
+      "open": 140.1,
+      "high": 140.72,
       "low": 135.36,
       "close": 138.29,
-      "volume": 486323
+      "volume": 496325
     }
   ]
 }

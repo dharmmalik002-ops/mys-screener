@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T15:56:34.139092+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:47.266497+00:00",
   "symbol": "GARUDA",
   "timeframe": "1D",
   "ticker": "GARUDA.NS",
@@ -2911,11 +2911,11 @@
     },
     {
       "time": 1775088000,
-      "open": 145.9,
-      "high": 152.45,
+      "open": 143.99,
+      "high": 152.95,
       "low": 138.35,
-      "close": 149.16,
-      "volume": 1365420
+      "close": 150.02,
+      "volume": 1385154
     }
   ]
 }

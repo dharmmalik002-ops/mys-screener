@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:05.665872+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:26.744011+00:00",
+  "symbol": "ELCIDIN",
+  "timeframe": "1D",
+  "ticker": "ELCIDIN.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2417,6 +2420,22 @@
       "low": 87400.05,
       "close": 87928.75,
       "volume": 154
+    },
+    {
+      "time": 1775001600,
+      "open": 87928.75,
+      "high": 93490.0,
+      "low": 87928.75,
+      "close": 91519.45,
+      "volume": 117
+    },
+    {
+      "time": 1775088000,
+      "open": 88999.95,
+      "high": 91890.0,
+      "low": 87003.0,
+      "close": 90883.15,
+      "volume": 99
     }
   ]
 }

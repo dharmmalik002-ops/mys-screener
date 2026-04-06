@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.805642+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:47.592468+00:00",
+  "symbol": "DOLLAR",
+  "timeframe": "1D",
+  "ticker": "DOLLAR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 476.81,
-      "high": 485.55,
-      "low": 472.32,
-      "close": 484.16,
-      "volume": 135252
-    },
     {
       "time": 1708560000,
       "open": 483.57,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 227.2,
-      "high": 239.0,
+      "open": 227.9,
+      "high": 244.99,
       "low": 227.2,
-      "close": 238.15,
-      "volume": 34499
+      "close": 242.45,
+      "volume": 128867
+    },
+    {
+      "time": 1775088000,
+      "open": 239.5,
+      "high": 254.7,
+      "low": 229.26,
+      "close": 251.84,
+      "volume": 116482
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.996165+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:33.648730+00:00",
+  "symbol": "BECTORFOOD",
+  "timeframe": "1D",
+  "ticker": "BECTORFOOD.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -916,7 +919,7 @@
     },
     {
       "time": 1723593600,
-      "open": 280.53,
+      "open": 280.52,
       "high": 287.86,
       "low": 278.93,
       "close": 285.68,
@@ -4147,20 +4150,20 @@
       "volume": 887045
     },
     {
-      "time": 1774915200,
-      "open": 178.01,
-      "high": 181.5,
-      "low": 176.0,
-      "close": 179.26,
-      "volume": 887045
-    },
-    {
       "time": 1775001600,
       "open": 185.0,
       "high": 192.12,
       "low": 182.95,
-      "close": 188.36,
-      "volume": 243325
+      "close": 188.82,
+      "volume": 510865
+    },
+    {
+      "time": 1775088000,
+      "open": 185.0,
+      "high": 190.31,
+      "low": 181.01,
+      "close": 189.17,
+      "volume": 456415
     }
   ]
 }

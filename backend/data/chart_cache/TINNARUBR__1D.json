@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.146371+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:11.807458+00:00",
+  "symbol": "TINNARUBR",
+  "timeframe": "1D",
+  "ticker": "TINNARUBR.NS",
   "bars": [
     {
       "time": 1744848000,
@@ -1892,11 +1895,19 @@
     },
     {
       "time": 1775001600,
-      "open": 565.0,
-      "high": 599.0,
+      "open": 543.95,
+      "high": 602.8,
       "low": 543.95,
-      "close": 593.75,
-      "volume": 23535
+      "close": 597.15,
+      "volume": 48636
+    },
+    {
+      "time": 1775088000,
+      "open": 590.0,
+      "high": 622.9,
+      "low": 575.55,
+      "close": 608.35,
+      "volume": 27608
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.011091+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:23.233948+00:00",
+  "symbol": "POLICYBZR",
+  "timeframe": "1D",
+  "ticker": "POLICYBZR.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 1866744
     },
     {
-      "time": 1774915200,
-      "open": 1440.0,
-      "high": 1452.4,
-      "low": 1416.8,
-      "close": 1424.1,
-      "volume": 1866744
-    },
-    {
       "time": 1775001600,
       "open": 1468.6,
       "high": 1492.9,
-      "low": 1445.3,
-      "close": 1466.6,
-      "volume": 437954
+      "low": 1429.5,
+      "close": 1433.1,
+      "volume": 1204079
+    },
+    {
+      "time": 1775088000,
+      "open": 1427.3,
+      "high": 1433.5,
+      "low": 1390.5,
+      "close": 1426.9,
+      "volume": 975857
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:17:50.547158+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:53.333642+00:00",
   "symbol": "INDGN",
   "timeframe": "1D",
   "ticker": "INDGN.NS",
@@ -3750,27 +3750,19 @@
       "volume": 1196127
     },
     {
-      "time": 1774915200,
-      "open": 452.0,
-      "high": 453.2,
-      "low": 432.8,
-      "close": 434.5,
-      "volume": 1196127
-    },
-    {
       "time": 1775001600,
       "open": 456.4,
-      "high": 463.0,
+      "high": 466.35,
       "low": 442.35,
-      "close": 456.45,
-      "volume": 115086
+      "close": 464.55,
+      "volume": 223596
     },
     {
       "time": 1775088000,
-      "open": 464.55,
+      "open": 462.15,
       "high": 475.95,
       "low": 448.15,
-      "close": 468.0,
+      "close": 472.6,
       "volume": 186598
     }
   ]

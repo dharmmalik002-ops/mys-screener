@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.653804+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:46.229063+00:00",
+  "symbol": "GEOJITFSL",
+  "timeframe": "1D",
+  "ticker": "GEOJITFSL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 76.75,
-      "high": 78.15,
-      "low": 75.54,
-      "close": 76.75,
-      "volume": 641593
-    },
     {
       "time": 1708560000,
       "open": 77.38,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 54.0,
-      "high": 57.7,
+      "high": 58.1,
       "low": 53.55,
-      "close": 56.84,
-      "volume": 336243
+      "close": 57.14,
+      "volume": 720317
+    },
+    {
+      "time": 1775088000,
+      "open": 55.5,
+      "high": 58.1,
+      "low": 54.4,
+      "close": 57.64,
+      "volume": 466958
     }
   ]
 }

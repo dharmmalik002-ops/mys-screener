@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.422526+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:54.981953+00:00",
+  "symbol": "BLACKBUCK",
+  "timeframe": "1D",
+  "ticker": "BLACKBUCK.NS",
   "bars": [
     {
       "time": 1732233600,
@@ -2675,20 +2678,20 @@
       "volume": 838807
     },
     {
-      "time": 1774915200,
-      "open": 585.05,
-      "high": 594.65,
-      "low": 554.15,
-      "close": 571.1,
-      "volume": 838807
-    },
-    {
       "time": 1775001600,
       "open": 580.0,
       "high": 586.15,
       "low": 563.45,
-      "close": 573.15,
-      "volume": 256280
+      "close": 575.55,
+      "volume": 513785
+    },
+    {
+      "time": 1775088000,
+      "open": 569.9,
+      "high": 576.75,
+      "low": 559.0,
+      "close": 573.45,
+      "volume": 124539
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:25:58.348699+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.991008+00:00",
+  "symbol": "BPAGRI",
+  "timeframe": "1D",
+  "ticker": "BPAGRI.NS",
   "bars": [
     {
       "time": 1682294400,
@@ -2672,7 +2675,15 @@
       "high": 24.53,
       "low": 22.22,
       "close": 22.22,
-      "volume": 13341
+      "volume": 19646
+    },
+    {
+      "time": 1775088000,
+      "open": 21.11,
+      "high": 21.11,
+      "low": 21.11,
+      "close": 21.11,
+      "volume": 12779
     }
   ]
 }

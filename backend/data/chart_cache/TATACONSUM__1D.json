@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T05:41:44.089396+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:39.121024+00:00",
   "symbol": "TATACONSUM",
   "timeframe": "1D",
   "ticker": "TATACONSUM.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 1141.61,
+      "high": 1149.1,
+      "low": 1138.85,
+      "close": 1143.88,
+      "volume": 1280859
+    },
     {
       "time": 1708905600,
       "open": 1142.6,
@@ -4142,28 +4150,20 @@
       "volume": 1801570
     },
     {
-      "time": 1774915200,
-      "open": 1038.8,
-      "high": 1047.9,
-      "low": 1010.8,
-      "close": 1013.5,
-      "volume": 1801570
-    },
-    {
       "time": 1775001600,
       "open": 1025.0,
       "high": 1036.0,
-      "low": 1017.7,
-      "close": 1020.0,
-      "volume": 372815
+      "low": 1013.0,
+      "close": 1023.8,
+      "volume": 1309809
     },
     {
       "time": 1775088000,
-      "open": 1023.8,
-      "high": 1024.9,
+      "open": 1020.0,
+      "high": 1046.1,
       "low": 1007.2,
-      "close": 1023.7,
-      "volume": 374427
+      "close": 1042.0,
+      "volume": 2586178
     }
   ]
 }

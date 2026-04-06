@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.321685+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:20.619367+00:00",
+  "symbol": "CIFL",
+  "timeframe": "1D",
+  "ticker": "CIFL.NS",
   "bars": [
     {
       "time": 1744848000,
@@ -1892,11 +1895,19 @@
     },
     {
       "time": 1775001600,
-      "open": 21.98,
+      "open": 21.1,
       "high": 22.75,
-      "low": 21.01,
-      "close": 21.68,
-      "volume": 126745
+      "low": 20.62,
+      "close": 21.09,
+      "volume": 320008
+    },
+    {
+      "time": 1775088000,
+      "open": 20.57,
+      "high": 23.0,
+      "low": 20.42,
+      "close": 22.3,
+      "volume": 164125
     }
   ]
 }

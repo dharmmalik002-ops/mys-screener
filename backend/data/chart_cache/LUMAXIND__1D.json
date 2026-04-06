@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.775435+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:43.912389+00:00",
+  "symbol": "LUMAXIND",
+  "timeframe": "1D",
+  "ticker": "LUMAXIND.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 2349.41,
-      "high": 2377.75,
-      "low": 2306.48,
-      "close": 2332.18,
-      "volume": 4536
-    },
     {
       "time": 1708646400,
       "open": 2343.49,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 4889.9,
+      "open": 4899.8,
       "high": 4910.8,
-      "low": 4771.8,
-      "close": 4803.1,
-      "volume": 6190
+      "low": 4767.8,
+      "close": 4805.4,
+      "volume": 13901
+    },
+    {
+      "time": 1775088000,
+      "open": 4795.0,
+      "high": 4805.1,
+      "low": 4620.0,
+      "close": 4785.0,
+      "volume": 13909
     }
   ]
 }

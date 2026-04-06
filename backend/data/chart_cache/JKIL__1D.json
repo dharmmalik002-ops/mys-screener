@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.910916+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:58.639622+00:00",
+  "symbol": "JKIL",
+  "timeframe": "1D",
+  "ticker": "JKIL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 655.34,
-      "high": 658.4,
-      "low": 639.77,
-      "close": 653.85,
-      "volume": 171001
-    },
     {
       "time": 1708646400,
       "open": 655.43,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 437.25,
-      "high": 449.75,
+      "open": 435.0,
+      "high": 471.75,
       "low": 435.0,
-      "close": 442.25,
-      "volume": 30165
+      "close": 455.85,
+      "volume": 425551
+    },
+    {
+      "time": 1775088000,
+      "open": 458.4,
+      "high": 458.4,
+      "low": 436.55,
+      "close": 454.4,
+      "volume": 75364
     }
   ]
 }

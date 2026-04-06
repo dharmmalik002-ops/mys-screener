@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.776084+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:47.730724+00:00",
+  "symbol": "DELTACORP",
+  "timeframe": "1D",
+  "ticker": "DELTACORP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 139.79,
-      "high": 140.57,
-      "low": 135.88,
-      "close": 139.4,
-      "volume": 1865743
-    },
     {
       "time": 1708646400,
       "open": 139.4,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 50.9,
-      "high": 52.53,
+      "high": 56.8,
       "low": 50.66,
-      "close": 52.45,
-      "volume": 710477
+      "close": 54.31,
+      "volume": 3025593
+    },
+    {
+      "time": 1775088000,
+      "open": 53.0,
+      "high": 56.94,
+      "low": 51.87,
+      "close": 55.78,
+      "volume": 1895514
     }
   ]
 }

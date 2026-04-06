@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:30:39.264995+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:11.520744+00:00",
+  "symbol": "JUBLCPL",
+  "timeframe": "1D",
+  "ticker": "JUBLCPL.NS",
   "bars": [
     {
       "time": 1739491200,
@@ -2197,10 +2200,18 @@
     {
       "time": 1775001600,
       "open": 1500.0,
-      "high": 1632.6,
+      "high": 1685.0,
       "low": 1500.0,
-      "close": 1586.2,
-      "volume": 0
+      "close": 1663.6,
+      "volume": 7902
+    },
+    {
+      "time": 1775088000,
+      "open": 1661.9,
+      "high": 1772.0,
+      "low": 1600.2,
+      "close": 1720.6,
+      "volume": 6899
     }
   ]
 }

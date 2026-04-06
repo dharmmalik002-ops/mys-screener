@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T03:04:07.010254+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:23.433658+00:00",
+  "symbol": "NAHARSPING",
+  "timeframe": "1D",
+  "ticker": "NAHARSPING.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 312.51,
-      "high": 312.7,
-      "low": 297.82,
-      "close": 300.35,
-      "volume": 70993
-    },
-    {
-      "time": 1708560000,
-      "open": 297.77,
-      "high": 307.35,
-      "low": 294.74,
-      "close": 305.21,
-      "volume": 55783
-    },
     {
       "time": 1708646400,
       "open": 306.45,
@@ -351,7 +338,7 @@
       "open": 283.83,
       "high": 290.77,
       "low": 282.83,
-      "close": 285.21,
+      "close": 285.22,
       "volume": 22882
     },
     {
@@ -4161,6 +4148,22 @@
       "low": 195.42,
       "close": 199.99,
       "volume": 37252
+    },
+    {
+      "time": 1775001600,
+      "open": 205.0,
+      "high": 218.8,
+      "low": 205.0,
+      "close": 214.31,
+      "volume": 72349
+    },
+    {
+      "time": 1775088000,
+      "open": 213.47,
+      "high": 230.0,
+      "low": 209.0,
+      "close": 227.41,
+      "volume": 76616
     }
   ]
 }

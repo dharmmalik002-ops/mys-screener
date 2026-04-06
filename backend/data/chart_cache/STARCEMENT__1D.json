@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.785304+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:01.977026+00:00",
+  "symbol": "STARCEMENT",
+  "timeframe": "1D",
+  "ticker": "STARCEMENT.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 303630
     },
     {
-      "time": 1774915200,
-      "open": 204.15,
-      "high": 204.78,
-      "low": 199.36,
-      "close": 203.45,
-      "volume": 303630
-    },
-    {
       "time": 1775001600,
       "open": 205.11,
       "high": 207.31,
-      "low": 203.59,
-      "close": 203.92,
-      "volume": 54437
+      "low": 203.45,
+      "close": 205.82,
+      "volume": 149043
+    },
+    {
+      "time": 1775088000,
+      "open": 205.0,
+      "high": 207.84,
+      "low": 200.48,
+      "close": 206.88,
+      "volume": 119982
     }
   ]
 }

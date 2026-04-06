@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:18.090162+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:00.333570+00:00",
   "symbol": "GRMOVER",
   "timeframe": "1D",
   "ticker": "GRMOVER.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 155.87,
-      "high": 157.5,
-      "low": 153.6,
-      "close": 156.16,
-      "volume": 933939
+      "open": 154.0,
+      "high": 159.64,
+      "low": 153.1,
+      "close": 155.1,
+      "volume": 1929012
     },
     {
       "time": 1775088000,
-      "open": 155.1,
+      "open": 154.1,
       "high": 157.0,
       "low": 152.22,
-      "close": 155.43,
-      "volume": 1755394
+      "close": 155.48,
+      "volume": 1755108
     }
   ]
 }

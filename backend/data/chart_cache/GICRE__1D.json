@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.022656+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:21.002091+00:00",
+  "symbol": "GICRE",
+  "timeframe": "1D",
+  "ticker": "GICRE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 668740
     },
     {
-      "time": 1774915200,
-      "open": 358.55,
-      "high": 364.35,
-      "low": 351.2,
-      "close": 363.75,
-      "volume": 668740
-    },
-    {
       "time": 1775001600,
       "open": 365.6,
-      "high": 378.0,
+      "high": 383.0,
       "low": 365.6,
-      "close": 377.0,
-      "volume": 268762
+      "close": 380.1,
+      "volume": 720984
+    },
+    {
+      "time": 1775088000,
+      "open": 371.45,
+      "high": 382.0,
+      "low": 363.15,
+      "close": 378.55,
+      "volume": 320182
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.936100+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:06.559087+00:00",
+  "symbol": "VINDHYATEL",
+  "timeframe": "1D",
+  "ticker": "VINDHYATEL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 2557.17,
-      "high": 2604.43,
-      "low": 2465.64,
-      "close": 2566.87,
-      "volume": 16190
-    },
     {
       "time": 1708646400,
       "open": 2566.87,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 998.95,
-      "high": 1059.0,
+      "open": 999.0,
+      "high": 1088.8,
       "low": 998.65,
-      "close": 1050.0,
-      "volume": 11143
+      "close": 1081.2,
+      "volume": 29954
+    },
+    {
+      "time": 1775088000,
+      "open": 1070.0,
+      "high": 1098.75,
+      "low": 1035.4,
+      "close": 1092.05,
+      "volume": 19386
     }
   ]
 }

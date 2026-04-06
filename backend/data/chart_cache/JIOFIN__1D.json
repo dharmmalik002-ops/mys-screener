@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.957231+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:41.325363+00:00",
+  "symbol": "JIOFIN",
+  "timeframe": "1D",
+  "ticker": "JIOFIN.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 25943390
     },
     {
-      "time": 1774915200,
-      "open": 228.9,
-      "high": 231.5,
-      "low": 223.3,
-      "close": 224.45,
-      "volume": 25943393
-    },
-    {
       "time": 1775001600,
       "open": 233.04,
       "high": 233.04,
       "low": 228.0,
-      "close": 228.15,
-      "volume": 10869498
+      "close": 231.93,
+      "volume": 21603790
+    },
+    {
+      "time": 1775088000,
+      "open": 227.85,
+      "high": 230.14,
+      "low": 223.55,
+      "close": 229.48,
+      "volume": 18541630
     }
   ]
 }

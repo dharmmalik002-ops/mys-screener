@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.984493+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:17.848689+00:00",
+  "symbol": "ACUTAAS",
+  "timeframe": "1D",
+  "ticker": "ACUTAAS.NS",
   "bars": [
     {
       "time": 1748822400,
@@ -1651,20 +1654,20 @@
       "volume": 407693
     },
     {
-      "time": 1774915200,
-      "open": 2515.0,
-      "high": 2572.0,
-      "low": 2496.1,
-      "close": 2565.0,
-      "volume": 407693
+      "time": 1775001600,
+      "open": 2626.0,
+      "high": 2634.8,
+      "low": 2232.7,
+      "close": 2332.1,
+      "volume": 1715994
     },
     {
-      "time": 1775001600,
-      "open": 2620.0,
-      "high": 2634.8,
-      "low": 2390.9,
-      "close": 2393.0,
-      "volume": 374103
+      "time": 1775088000,
+      "open": 2281.0,
+      "high": 2281.1,
+      "low": 2095.0,
+      "close": 2110.2,
+      "volume": 1285985
     }
   ]
 }

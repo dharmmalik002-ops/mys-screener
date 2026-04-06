@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.020658+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.765672+00:00",
+  "symbol": "PNBGILTS",
+  "timeframe": "1D",
+  "ticker": "PNBGILTS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 103.92,
-      "high": 106.13,
-      "low": 101.12,
-      "close": 105.54,
-      "volume": 587164
-    },
     {
       "time": 1708646400,
       "open": 105.59,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 62.86,
-      "high": 62.98,
+      "open": 60.55,
+      "high": 64.5,
       "low": 60.55,
-      "close": 62.76,
-      "volume": 189900
+      "close": 64.06,
+      "volume": 420219
+    },
+    {
+      "time": 1775088000,
+      "open": 63.92,
+      "high": 64.49,
+      "low": 61.8,
+      "close": 64.2,
+      "volume": 344964
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.882442+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:59.102601+00:00",
+  "symbol": "STALLION",
+  "timeframe": "1D",
+  "ticker": "STALLION.NS",
   "bars": [
     {
       "time": 1737590400,
@@ -2348,11 +2351,19 @@
     },
     {
       "time": 1775001600,
-      "open": 107.0,
+      "open": 106.9,
       "high": 107.59,
-      "low": 106.3,
-      "close": 107.59,
-      "volume": 135339
+      "low": 104.45,
+      "close": 106.98,
+      "volume": 455270
+    },
+    {
+      "time": 1775088000,
+      "open": 104.75,
+      "high": 112.32,
+      "low": 102.65,
+      "close": 111.76,
+      "volume": 1230615
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T09:58:45.948056+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.178761+00:00",
+  "symbol": "WSTCSTPAPR",
+  "timeframe": "1D",
+  "ticker": "WSTCSTPAPR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 654.43,
-      "high": 656.39,
-      "low": 629.43,
-      "close": 632.46,
-      "volume": 142791
-    },
     {
       "time": 1708560000,
       "open": 632.94,
@@ -4158,9 +4153,17 @@
       "time": 1775001600,
       "open": 414.5,
       "high": 438.0,
-      "low": 252.0,
-      "close": 252.5,
-      "volume": 19713
+      "low": 413.25,
+      "close": 434.45,
+      "volume": 91613
+    },
+    {
+      "time": 1775088000,
+      "open": 420.3,
+      "high": 435.0,
+      "low": 416.8,
+      "close": 431.95,
+      "volume": 63828
     }
   ]
 }

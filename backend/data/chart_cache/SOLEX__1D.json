@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.116074+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:11.706236+00:00",
+  "symbol": "SOLEX",
+  "timeframe": "1D",
+  "ticker": "SOLEX.NS",
   "bars": [
-    {
-      "time": 1708300800,
-      "open": 550.76,
-      "high": 583.53,
-      "low": 550.76,
-      "close": 576.09,
-      "volume": 41000
-    },
     {
       "time": 1708387200,
       "open": 591.52,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1025.0,
+      "open": 940.0,
       "high": 1039.95,
       "low": 940.0,
-      "close": 1002.95,
-      "volume": 20226
+      "close": 1009.45,
+      "volume": 43553
+    },
+    {
+      "time": 1775088000,
+      "open": 995.0,
+      "high": 1029.0,
+      "low": 975.0,
+      "close": 1016.85,
+      "volume": 28866
     }
   ]
 }

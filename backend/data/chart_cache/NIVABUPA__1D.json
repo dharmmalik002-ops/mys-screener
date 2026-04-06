@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.318582+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:59.180215+00:00",
+  "symbol": "NIVABUPA",
+  "timeframe": "1D",
+  "ticker": "NIVABUPA.NS",
   "bars": [
     {
       "time": 1731542400,
@@ -2723,20 +2726,20 @@
       "volume": 2048627
     },
     {
-      "time": 1774915200,
-      "open": 69.66,
-      "high": 70.77,
-      "low": 68.37,
-      "close": 70.7,
-      "volume": 2048627
-    },
-    {
       "time": 1775001600,
       "open": 73.2,
       "high": 73.2,
       "low": 71.0,
-      "close": 71.84,
-      "volume": 260969
+      "close": 72.36,
+      "volume": 449868
+    },
+    {
+      "time": 1775088000,
+      "open": 71.6,
+      "high": 73.0,
+      "low": 70.0,
+      "close": 72.59,
+      "volume": 270449
     }
   ]
 }

@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:12.356271+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:35.717072+00:00",
   "symbol": "FEDERALBNK",
   "timeframe": "1D",
   "ticker": "FEDERALBNK.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 153.06,
+      "high": 153.06,
+      "low": 150.19,
+      "close": 150.64,
+      "volume": 21338955
+    },
     {
       "time": 1708905600,
       "open": 150.69,
@@ -4142,28 +4150,20 @@
       "volume": 10978564
     },
     {
-      "time": 1774915200,
-      "open": 268.0,
-      "high": 268.0,
-      "low": 257.15,
-      "close": 260.3,
-      "volume": 10978564
-    },
-    {
       "time": 1775001600,
       "open": 266.45,
-      "high": 269.5,
+      "high": 270.1,
       "low": 262.9,
-      "close": 264.4,
-      "volume": 2566442
+      "close": 267.6,
+      "volume": 8296508
     },
     {
       "time": 1775088000,
-      "open": 266.95,
+      "open": 263.9,
       "high": 266.95,
       "low": 256.5,
-      "close": 265.15,
-      "volume": 5382373
+      "close": 265.55,
+      "volume": 5537579
     }
   ]
 }

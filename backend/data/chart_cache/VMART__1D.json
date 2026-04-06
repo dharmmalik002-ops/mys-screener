@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-04T07:58:21.363599+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:43.215782+00:00",
   "symbol": "VMART",
   "timeframe": "1D",
   "ticker": "VMART.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 497.26,
+      "high": 503.99,
+      "low": 492.02,
+      "close": 497.01,
+      "volume": 122304
+    },
     {
       "time": 1708905600,
       "open": 494.26,
@@ -4142,27 +4150,19 @@
       "volume": 151346
     },
     {
-      "time": 1774915200,
-      "open": 496.0,
-      "high": 496.0,
-      "low": 457.9,
-      "close": 465.0,
-      "volume": 151346
-    },
-    {
       "time": 1775001600,
       "open": 475.05,
       "high": 502.8,
       "low": 475.05,
-      "close": 485.5,
-      "volume": 49760
+      "close": 483.2,
+      "volume": 132535
     },
     {
       "time": 1775088000,
-      "open": 500.0,
+      "open": 505.0,
       "high": 568.6,
       "low": 500.0,
-      "close": 533.3,
+      "close": 544.9,
       "volume": 18304855
     }
   ]

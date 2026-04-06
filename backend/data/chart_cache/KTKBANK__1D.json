@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:10.911581+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:17.605537+00:00",
   "symbol": "KTKBANK",
   "timeframe": "1D",
   "ticker": "KTKBANK.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 231.75,
+      "high": 233.18,
+      "low": 227.43,
+      "close": 228.76,
+      "volume": 1264514
+    },
     {
       "time": 1708905600,
       "open": 228.76,
@@ -4142,28 +4150,20 @@
       "volume": 2593415
     },
     {
-      "time": 1774915200,
-      "open": 225.0,
-      "high": 231.3,
-      "low": 221.84,
-      "close": 225.0,
-      "volume": 2593415
-    },
-    {
       "time": 1775001600,
       "open": 230.0,
-      "high": 232.71,
+      "high": 233.41,
       "low": 226.0,
-      "close": 228.8,
-      "volume": 1261474
+      "close": 230.17,
+      "volume": 3961866
     },
     {
       "time": 1775088000,
-      "open": 229.99,
+      "open": 228.15,
       "high": 229.99,
       "low": 217.0,
-      "close": 227.15,
-      "volume": 3268731
+      "close": 227.47,
+      "volume": 3325136
     }
   ]
 }

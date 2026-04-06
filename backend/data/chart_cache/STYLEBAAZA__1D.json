@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:02.336456+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:21.142105+00:00",
   "symbol": "STYLEBAAZA",
   "timeframe": "1D",
   "ticker": "STYLEBAAZA.NS",
@@ -3111,19 +3111,19 @@
     },
     {
       "time": 1775001600,
-      "open": 287.15,
+      "open": 287.0,
       "high": 299.8,
       "low": 282.55,
-      "close": 297.8,
-      "volume": 257083
+      "close": 294.45,
+      "volume": 451777
     },
     {
       "time": 1775088000,
-      "open": 294.45,
-      "high": 304.05,
+      "open": 286.4,
+      "high": 304.1,
       "low": 284.05,
-      "close": 301.75,
-      "volume": 502285
+      "close": 301.5,
+      "volume": 514113
     }
   ]
 }

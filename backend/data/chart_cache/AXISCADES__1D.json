@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:24.534831+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:24.757299+00:00",
   "symbol": "AXISCADES",
   "timeframe": "1D",
   "ticker": "AXISCADES.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 678.55,
+      "high": 687.9,
+      "low": 670.4,
+      "close": 674.4,
+      "volume": 34034
+    },
     {
       "time": 1708905600,
       "open": 677.85,
@@ -4142,28 +4150,20 @@
       "volume": 276517
     },
     {
-      "time": 1774915200,
-      "open": 1450.0,
-      "high": 1532.6,
-      "low": 1386.8,
-      "close": 1532.6,
-      "volume": 276517
-    },
-    {
       "time": 1775001600,
       "open": 1590.1,
       "high": 1590.1,
       "low": 1535.0,
-      "close": 1541.8,
-      "volume": 108645
+      "close": 1583.7,
+      "volume": 243370
     },
     {
       "time": 1775088000,
-      "open": 1583.7,
-      "high": 1645.0,
+      "open": 1569.0,
+      "high": 1647.0,
       "low": 1511.0,
-      "close": 1642.1,
-      "volume": 140280
+      "close": 1628.8,
+      "volume": 151025
     }
   ]
 }

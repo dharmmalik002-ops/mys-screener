@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.603866+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:55.533561+00:00",
+  "symbol": "ORIENTELEC",
+  "timeframe": "1D",
+  "ticker": "ORIENTELEC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 200.33,
-      "high": 205.21,
-      "low": 199.24,
-      "close": 204.42,
-      "volume": 317785
-    },
     {
       "time": 1708646400,
       "open": 204.47,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 160.54,
+      "open": 158.0,
       "high": 161.54,
       "low": 158.0,
-      "close": 160.2,
-      "volume": 63897
+      "close": 160.17,
+      "volume": 136801
+    },
+    {
+      "time": 1775088000,
+      "open": 157.8,
+      "high": 159.7,
+      "low": 155.88,
+      "close": 158.93,
+      "volume": 94560
     }
   ]
 }

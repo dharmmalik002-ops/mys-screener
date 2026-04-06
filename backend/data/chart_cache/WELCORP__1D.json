@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.905490+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:24.358952+00:00",
+  "symbol": "WELCORP",
+  "timeframe": "1D",
+  "ticker": "WELCORP.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 846216
     },
     {
-      "time": 1774915200,
-      "open": 817.35,
-      "high": 849.95,
-      "low": 806.4,
-      "close": 809.95,
-      "volume": 846216
-    },
-    {
       "time": 1775001600,
       "open": 825.8,
       "high": 847.65,
-      "low": 825.8,
-      "close": 832.1,
-      "volume": 218662
+      "low": 823.5,
+      "close": 827.8,
+      "volume": 338165
+    },
+    {
+      "time": 1775088000,
+      "open": 819.9,
+      "high": 850.0,
+      "low": 805.45,
+      "close": 846.85,
+      "volume": 465528
     }
   ]
 }

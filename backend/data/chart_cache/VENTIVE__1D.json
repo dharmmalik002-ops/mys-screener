@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.335874+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:53.267463+00:00",
+  "symbol": "VENTIVE",
+  "timeframe": "1D",
+  "ticker": "VENTIVE.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2492,11 +2495,19 @@
     },
     {
       "time": 1775001600,
-      "open": 568.0,
-      "high": 571.6,
+      "open": 568.8,
+      "high": 586.95,
       "low": 555.25,
-      "close": 563.45,
-      "volume": 0
+      "close": 577.2,
+      "volume": 81933
+    },
+    {
+      "time": 1775088000,
+      "open": 565.0,
+      "high": 581.75,
+      "low": 548.4,
+      "close": 574.25,
+      "volume": 96210
     }
   ]
 }

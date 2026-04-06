@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.449960+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:16.524719+00:00",
+  "symbol": "GODREJAGRO",
+  "timeframe": "1D",
+  "ticker": "GODREJAGRO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 199882
     },
     {
-      "time": 1774915200,
-      "open": 543.35,
-      "high": 547.15,
-      "low": 530.8,
-      "close": 535.0,
-      "volume": 199882
-    },
-    {
       "time": 1775001600,
       "open": 541.1,
-      "high": 562.95,
+      "high": 580.85,
       "low": 541.1,
-      "close": 557.35,
-      "volume": 35535
+      "close": 571.1,
+      "volume": 154736
+    },
+    {
+      "time": 1775088000,
+      "open": 566.3,
+      "high": 571.75,
+      "low": 551.9,
+      "close": 569.7,
+      "volume": 83977
     }
   ]
 }

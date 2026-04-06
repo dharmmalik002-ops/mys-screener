@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.086131+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.449866+00:00",
+  "symbol": "KSL",
+  "timeframe": "1D",
+  "ticker": "KSL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 798.19,
-      "high": 803.61,
-      "low": 774.91,
-      "close": 800.14,
-      "volume": 189985
-    },
     {
       "time": 1708646400,
       "open": 802.49,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 599.9,
-      "high": 609.7,
+      "open": 589.35,
+      "high": 616.4,
       "low": 588.0,
-      "close": 605.0,
-      "volume": 17596
+      "close": 611.05,
+      "volume": 32978
+    },
+    {
+      "time": 1775088000,
+      "open": 605.2,
+      "high": 630.0,
+      "low": 593.45,
+      "close": 625.85,
+      "volume": 45523
     }
   ]
 }

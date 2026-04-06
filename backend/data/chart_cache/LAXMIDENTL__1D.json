@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.253031+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:16.513421+00:00",
+  "symbol": "LAXMIDENTL",
+  "timeframe": "1D",
+  "ticker": "LAXMIDENTL.NS",
   "bars": [
     {
       "time": 1737331200,
@@ -2372,11 +2375,19 @@
     },
     {
       "time": 1775001600,
-      "open": 163.15,
-      "high": 175.46,
+      "open": 165.0,
+      "high": 182.56,
       "low": 161.05,
-      "close": 169.71,
-      "volume": 124560
+      "close": 177.47,
+      "volume": 357920
+    },
+    {
+      "time": 1775088000,
+      "open": 171.2,
+      "high": 181.9,
+      "low": 169.1,
+      "close": 180.31,
+      "volume": 105775
     }
   ]
 }

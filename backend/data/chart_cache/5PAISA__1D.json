@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.924245+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:53.420510+00:00",
+  "symbol": "5PAISA",
+  "timeframe": "1D",
+  "ticker": "5PAISA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 582.05,
-      "high": 586.2,
-      "low": 572.0,
-      "close": 578.0,
-      "volume": 21893
-    },
     {
       "time": 1708646400,
       "open": 582.85,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 251.0,
-      "high": 271.72,
+      "high": 273.0,
       "low": 251.0,
-      "close": 268.85,
-      "volume": 43801
+      "close": 270.21,
+      "volume": 82094
+    },
+    {
+      "time": 1775088000,
+      "open": 261.0,
+      "high": 293.99,
+      "low": 253.13,
+      "close": 285.38,
+      "volume": 124929
     }
   ]
 }

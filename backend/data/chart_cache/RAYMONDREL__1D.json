@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.094777+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:05.231955+00:00",
+  "symbol": "RAYMONDREL",
+  "timeframe": "1D",
+  "ticker": "RAYMONDREL.NS",
   "bars": [
     {
       "time": 1751328000,
@@ -1477,10 +1480,18 @@
     {
       "time": 1775001600,
       "open": 392.55,
-      "high": 404.45,
+      "high": 406.5,
       "low": 385.0,
-      "close": 399.45,
-      "volume": 138870
+      "close": 399.25,
+      "volume": 275445
+    },
+    {
+      "time": 1775088000,
+      "open": 392.35,
+      "high": 419.1,
+      "low": 383.3,
+      "close": 411.2,
+      "volume": 401306
     }
   ]
 }

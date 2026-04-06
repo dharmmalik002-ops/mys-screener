@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.957600+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:00.804975+00:00",
+  "symbol": "SJVN",
+  "timeframe": "1D",
+  "ticker": "SJVN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 7455143
     },
     {
-      "time": 1774915200,
-      "open": 65.61,
-      "high": 65.98,
-      "low": 63.02,
-      "close": 63.3,
-      "volume": 7455143
-    },
-    {
       "time": 1775001600,
       "open": 65.26,
-      "high": 66.4,
+      "high": 67.99,
       "low": 64.51,
-      "close": 65.62,
-      "volume": 2732527
+      "close": 67.26,
+      "volume": 6848942
+    },
+    {
+      "time": 1775088000,
+      "open": 66.4,
+      "high": 67.62,
+      "low": 64.81,
+      "close": 67.34,
+      "volume": 4373002
     }
   ]
 }

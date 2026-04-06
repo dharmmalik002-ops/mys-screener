@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.817493+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:42.937217+00:00",
+  "symbol": "SOLARWORLD",
+  "timeframe": "1D",
+  "ticker": "SOLARWORLD.NS",
   "bars": [
     {
       "time": 1759190400,
@@ -980,11 +983,19 @@
     },
     {
       "time": 1775001600,
-      "open": 149.51,
-      "high": 158.79,
+      "open": 149.8,
+      "high": 170.0,
       "low": 147.56,
-      "close": 158.23,
-      "volume": 561106
+      "close": 165.88,
+      "volume": 2115228
+    },
+    {
+      "time": 1775088000,
+      "open": 162.12,
+      "high": 179.3,
+      "low": 158.88,
+      "close": 174.05,
+      "volume": 1552590
     }
   ]
 }

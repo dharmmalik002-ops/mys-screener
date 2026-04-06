@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.078754+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:52.846162+00:00",
+  "symbol": "IFBIND",
+  "timeframe": "1D",
+  "ticker": "IFBIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 175773
     },
     {
-      "time": 1774915200,
-      "open": 928.2,
-      "high": 938.8,
-      "low": 883.2,
-      "close": 896.6,
-      "volume": 175773
-    },
-    {
       "time": 1775001600,
       "open": 925.0,
-      "high": 952.0,
+      "high": 972.9,
       "low": 914.4,
-      "close": 943.05,
-      "volume": 21755
+      "close": 955.2,
+      "volume": 58658
+    },
+    {
+      "time": 1775088000,
+      "open": 942.0,
+      "high": 960.0,
+      "low": 911.1,
+      "close": 951.0,
+      "volume": 42589
     }
   ]
 }

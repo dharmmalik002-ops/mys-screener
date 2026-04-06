@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.698666+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:32.418594+00:00",
+  "symbol": "UPL",
+  "timeframe": "1D",
+  "ticker": "UPL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 5317081
     },
     {
-      "time": 1774915200,
-      "open": 591.75,
-      "high": 592.4,
-      "low": 565.15,
-      "close": 568.5,
-      "volume": 5317081
-    },
-    {
       "time": 1775001600,
       "open": 573.0,
-      "high": 596.4,
+      "high": 601.85,
       "low": 573.0,
-      "close": 591.35,
-      "volume": 928685
+      "close": 594.5,
+      "volume": 2182769
+    },
+    {
+      "time": 1775088000,
+      "open": 587.0,
+      "high": 594.95,
+      "low": 573.95,
+      "close": 593.0,
+      "volume": 1403119
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.217088+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:17.179766+00:00",
+  "symbol": "DREDGECORP",
+  "timeframe": "1D",
+  "ticker": "DREDGECORP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 778.85,
-      "high": 790.0,
-      "low": 745.2,
-      "close": 774.45,
-      "volume": 32279
-    },
     {
       "time": 1708646400,
       "open": 779.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 809.0,
-      "high": 825.0,
+      "open": 816.55,
+      "high": 837.8,
       "low": 794.15,
-      "close": 812.35,
-      "volume": 65717
+      "close": 829.35,
+      "volume": 148978
+    },
+    {
+      "time": 1775088000,
+      "open": 805.0,
+      "high": 852.0,
+      "low": 794.0,
+      "close": 844.5,
+      "volume": 129078
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.399091+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.954521+00:00",
+  "symbol": "UTKARSHBNK",
+  "timeframe": "1D",
+  "ticker": "UTKARSHBNK.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 53.79,
-      "high": 54.93,
-      "low": 53.15,
-      "close": 54.73,
-      "volume": 3167005
-    },
     {
       "time": 1708646400,
       "open": 55.18,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 10.72,
-      "high": 11.22,
+      "open": 10.5,
+      "high": 11.5,
       "low": 10.5,
-      "close": 11.09,
-      "volume": 4548172
+      "close": 11.44,
+      "volume": 11854746
+    },
+    {
+      "time": 1775088000,
+      "open": 11.08,
+      "high": 11.8,
+      "low": 10.86,
+      "close": 11.72,
+      "volume": 6816078
     }
   ]
 }

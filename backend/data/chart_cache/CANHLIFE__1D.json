@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.226463+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:19.338507+00:00",
+  "symbol": "CANHLIFE",
+  "timeframe": "1D",
+  "ticker": "CANHLIFE.NS",
   "bars": [
     {
       "time": 1760659200,
@@ -875,20 +878,20 @@
       "volume": 619792
     },
     {
-      "time": 1774915200,
-      "open": 140.01,
-      "high": 141.3,
-      "low": 135.61,
-      "close": 141.0,
-      "volume": 619792
-    },
-    {
       "time": 1775001600,
       "open": 142.09,
-      "high": 144.98,
+      "high": 145.75,
       "low": 142.06,
-      "close": 143.99,
-      "volume": 141854
+      "close": 144.38,
+      "volume": 731757
+    },
+    {
+      "time": 1775088000,
+      "open": 140.89,
+      "high": 145.0,
+      "low": 139.54,
+      "close": 144.68,
+      "volume": 292506
     }
   ]
 }

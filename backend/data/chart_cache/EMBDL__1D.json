@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.008238+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:32.375640+00:00",
+  "symbol": "EMBDL",
+  "timeframe": "1D",
+  "ticker": "EMBDL.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 315556
     },
     {
-      "time": 1774915200,
-      "open": 40.0,
-      "high": 40.8,
-      "low": 39.46,
-      "close": 39.46,
-      "volume": 1354703
+      "time": 1775001600,
+      "open": 40.5,
+      "high": 41.45,
+      "low": 40.41,
+      "close": 41.45,
+      "volume": 139121
     },
     {
-      "time": 1775001600,
-      "open": 41.2,
-      "high": 41.43,
-      "low": 40.1,
-      "close": 41.43,
-      "volume": 333093
+      "time": 1775088000,
+      "open": 41.0,
+      "high": 43.52,
+      "low": 39.38,
+      "close": 43.38,
+      "volume": 317467
     }
   ]
 }

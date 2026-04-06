@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:39:59.836308+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.492655+00:00",
+  "symbol": "ANDREWYU",
+  "timeframe": "1D",
+  "ticker": "ANDREWYU.NS",
   "bars": [
-    {
-      "time": 1707955200,
-      "open": 50.99,
-      "high": 53.1,
-      "low": 49.5,
-      "close": 51.05,
-      "volume": 1228185
-    },
-    {
-      "time": 1708041600,
-      "open": 52.3,
-      "high": 52.6,
-      "low": 49.72,
-      "close": 50.13,
-      "volume": 607920
-    },
     {
       "time": 1708300800,
       "open": 50.25,
@@ -4159,8 +4146,24 @@
       "open": 15.5,
       "high": 16.72,
       "low": 15.5,
-      "close": 16.19,
-      "volume": 136683
+      "close": 15.65,
+      "volume": 292674
+    },
+    {
+      "time": 1775001600,
+      "open": 16.55,
+      "high": 17.49,
+      "low": 16.02,
+      "close": 17.14,
+      "volume": 130847
+    },
+    {
+      "time": 1775088000,
+      "open": 16.88,
+      "high": 17.4,
+      "low": 16.49,
+      "close": 17.34,
+      "volume": 138989
     }
   ]
 }

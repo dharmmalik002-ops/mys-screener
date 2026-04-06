@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.425651+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:40.226070+00:00",
+  "symbol": "JSWENERGY",
+  "timeframe": "1D",
+  "ticker": "JSWENERGY.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4311729
     },
     {
-      "time": 1774915200,
-      "open": 476.3,
-      "high": 480.8,
-      "low": 468.3,
-      "close": 472.0,
-      "volume": 4311729
-    },
-    {
       "time": 1775001600,
       "open": 477.5,
-      "high": 487.15,
+      "high": 490.0,
       "low": 477.5,
-      "close": 478.8,
-      "volume": 748480
+      "close": 484.15,
+      "volume": 2188358
+    },
+    {
+      "time": 1775088000,
+      "open": 476.0,
+      "high": 493.95,
+      "low": 466.3,
+      "close": 491.1,
+      "volume": 3045902
     }
   ]
 }

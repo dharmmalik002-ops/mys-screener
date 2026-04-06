@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.870043+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:01.714856+00:00",
+  "symbol": "AWL",
+  "timeframe": "1D",
+  "ticker": "AWL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4499593
     },
     {
-      "time": 1774915200,
-      "open": 181.58,
-      "high": 185.21,
-      "low": 175.0,
-      "close": 176.65,
-      "volume": 4499593
-    },
-    {
       "time": 1775001600,
       "open": 182.99,
-      "high": 184.19,
+      "high": 187.17,
       "low": 181.15,
-      "close": 181.92,
-      "volume": 542705
+      "close": 182.63,
+      "volume": 2087071
+    },
+    {
+      "time": 1775088000,
+      "open": 179.77,
+      "high": 184.3,
+      "low": 177.2,
+      "close": 183.71,
+      "volume": 1639682
     }
   ]
 }

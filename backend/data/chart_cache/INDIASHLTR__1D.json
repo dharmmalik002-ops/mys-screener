@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:16:50.871794+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:01.435853+00:00",
   "symbol": "INDIASHLTR",
   "timeframe": "1D",
   "ticker": "INDIASHLTR.NS",
   "bars": [
+    {
+      "time": 1708560000,
+      "open": 636.3,
+      "high": 642.21,
+      "low": 619.99,
+      "close": 637.24,
+      "volume": 591411
+    },
     {
       "time": 1708646400,
       "open": 637.34,
@@ -4142,27 +4150,19 @@
       "volume": 193638
     },
     {
-      "time": 1774915200,
-      "open": 729.7,
-      "high": 759.95,
-      "low": 704.75,
-      "close": 731.85,
-      "volume": 193638
-    },
-    {
       "time": 1775001600,
       "open": 750.0,
       "high": 763.3,
       "low": 741.0,
-      "close": 746.4,
-      "volume": 67914
+      "close": 755.25,
+      "volume": 169977
     },
     {
       "time": 1775088000,
-      "open": 755.25,
+      "open": 735.0,
       "high": 770.0,
       "low": 727.05,
-      "close": 765.0,
+      "close": 763.25,
       "volume": 37369
     }
   ]

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.299604+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:21.791261+00:00",
+  "symbol": "SURAJEST",
+  "timeframe": "1D",
+  "ticker": "SURAJEST.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 349.56,
-      "high": 354.05,
-      "low": 344.66,
-      "close": 347.01,
-      "volume": 213751
-    },
     {
       "time": 1708646400,
       "open": 351.55,
@@ -4159,8 +4154,16 @@
       "open": 180.55,
       "high": 188.79,
       "low": 180.1,
-      "close": 186.06,
-      "volume": 56679
+      "close": 186.71,
+      "volume": 95245
+    },
+    {
+      "time": 1775088000,
+      "open": 182.01,
+      "high": 194.0,
+      "low": 180.35,
+      "close": 191.11,
+      "volume": 51675
     }
   ]
 }

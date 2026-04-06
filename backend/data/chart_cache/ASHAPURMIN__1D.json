@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.056112+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:46.126495+00:00",
+  "symbol": "ASHAPURMIN",
+  "timeframe": "1D",
+  "ticker": "ASHAPURMIN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 638500
     },
     {
-      "time": 1774915200,
-      "open": 481.0,
-      "high": 490.8,
-      "low": 455.1,
-      "close": 460.0,
-      "volume": 638500
-    },
-    {
       "time": 1775001600,
       "open": 482.9,
       "high": 491.4,
       "low": 473.15,
-      "close": 482.3,
-      "volume": 226972
+      "close": 486.4,
+      "volume": 403717
+    },
+    {
+      "time": 1775088000,
+      "open": 479.4,
+      "high": 492.85,
+      "low": 469.55,
+      "close": 489.65,
+      "volume": 406835
     }
   ]
 }

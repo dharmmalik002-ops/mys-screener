@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.054669+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:10.885823+00:00",
+  "symbol": "INTELLECT",
+  "timeframe": "1D",
+  "ticker": "INTELLECT.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 534089
     },
     {
-      "time": 1774915200,
-      "open": 626.0,
-      "high": 629.95,
-      "low": 595.2,
-      "close": 597.95,
-      "volume": 534089
-    },
-    {
       "time": 1775001600,
       "open": 607.95,
-      "high": 640.7,
+      "high": 644.7,
       "low": 607.95,
-      "close": 635.0,
-      "volume": 136141
+      "close": 635.9,
+      "volume": 325238
+    },
+    {
+      "time": 1775088000,
+      "open": 625.0,
+      "high": 663.4,
+      "low": 616.2,
+      "close": 657.9,
+      "volume": 266739
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.109163+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:36.924179+00:00",
+  "symbol": "IIFL",
+  "timeframe": "1D",
+  "ticker": "IIFL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1905123
     },
     {
-      "time": 1774915200,
-      "open": 440.25,
-      "high": 443.7,
-      "low": 426.0,
-      "close": 427.1,
-      "volume": 1905123
-    },
-    {
       "time": 1775001600,
       "open": 438.0,
-      "high": 445.8,
+      "high": 448.2,
       "low": 434.25,
-      "close": 439.25,
-      "volume": 485757
+      "close": 437.75,
+      "volume": 1116743
+    },
+    {
+      "time": 1775088000,
+      "open": 434.7,
+      "high": 437.25,
+      "low": 421.05,
+      "close": 434.9,
+      "volume": 920408
     }
   ]
 }

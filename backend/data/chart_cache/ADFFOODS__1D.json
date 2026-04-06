@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.315428+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.822523+00:00",
+  "symbol": "ADFFOODS",
+  "timeframe": "1D",
+  "ticker": "ADFFOODS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 190.71,
-      "high": 191.3,
-      "low": 187.8,
-      "close": 189.58,
-      "volume": 68581
-    },
     {
       "time": 1708646400,
       "open": 189.62,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 175.0,
-      "high": 179.19,
+      "open": 173.5,
+      "high": 182.54,
       "low": 170.0,
-      "close": 176.6,
-      "volume": 109960
+      "close": 179.25,
+      "volume": 223054
+    },
+    {
+      "time": 1775088000,
+      "open": 175.2,
+      "high": 179.95,
+      "low": 173.21,
+      "close": 177.95,
+      "volume": 80266
     }
   ]
 }

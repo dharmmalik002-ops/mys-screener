@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.880584+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:10.134041+00:00",
+  "symbol": "IKS",
+  "timeframe": "1D",
+  "ticker": "IKS.NS",
   "bars": [
     {
       "time": 1734566400,
@@ -2531,20 +2534,20 @@
       "volume": 317514
     },
     {
-      "time": 1774915200,
-      "open": 1327.0,
-      "high": 1360.0,
-      "low": 1317.1,
-      "close": 1331.5,
-      "volume": 317514
-    },
-    {
       "time": 1775001600,
       "open": 1376.9,
       "high": 1376.9,
-      "low": 1335.0,
-      "close": 1352.6,
-      "volume": 45933
+      "low": 1322.0,
+      "close": 1331.5,
+      "volume": 270398
+    },
+    {
+      "time": 1775088000,
+      "open": 1318.0,
+      "high": 1352.0,
+      "low": 1302.5,
+      "close": 1342.9,
+      "volume": 123432
     }
   ]
 }

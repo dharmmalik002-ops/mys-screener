@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.423995+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.667035+00:00",
+  "symbol": "KICL",
+  "timeframe": "1D",
+  "ticker": "KICL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 3907.0,
-      "high": 3990.0,
-      "low": 3825.0,
-      "close": 3855.75,
-      "volume": 4583
-    },
     {
       "time": 1708560000,
       "open": 3913.6,
@@ -4159,8 +4154,16 @@
       "open": 4144.0,
       "high": 4280.5,
       "low": 4144.0,
-      "close": 4225.2,
-      "volume": 529
+      "close": 4224.2,
+      "volume": 1856
+    },
+    {
+      "time": 1775088000,
+      "open": 4180.2,
+      "high": 4271.7,
+      "low": 4110.0,
+      "close": 4248.5,
+      "volume": 1432
     }
   ]
 }

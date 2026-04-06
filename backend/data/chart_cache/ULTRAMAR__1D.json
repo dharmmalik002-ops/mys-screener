@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.016266+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.543758+00:00",
+  "symbol": "ULTRAMAR",
+  "timeframe": "1D",
+  "ticker": "ULTRAMAR.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 385.0,
-      "high": 388.8,
+      "open": 388.9,
+      "high": 394.7,
+      "low": 378.2,
+      "close": 391.95,
+      "volume": 17050
+    },
+    {
+      "time": 1775088000,
+      "open": 387.85,
+      "high": 404.0,
       "low": 380.0,
-      "close": 385.0,
-      "volume": 5570
+      "close": 398.6,
+      "volume": 10809
     }
   ]
 }

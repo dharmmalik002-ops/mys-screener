@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:20:37.334390+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:10.441533+00:00",
+  "symbol": "IZMO",
+  "timeframe": "1D",
+  "ticker": "IZMO.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 295.0,
-      "high": 301.9,
-      "low": 294.0,
-      "close": 301.9,
-      "volume": 9795
-    },
     {
       "time": 1708300800,
       "open": 305.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 616.65,
+      "open": 612.5,
       "high": 647.45,
-      "low": 616.65,
+      "low": 612.5,
       "close": 647.45,
-      "volume": 3222
+      "volume": 3656
+    },
+    {
+      "time": 1775088000,
+      "open": 630.0,
+      "high": 679.8,
+      "low": 620.0,
+      "close": 679.8,
+      "volume": 6229
     }
   ]
 }

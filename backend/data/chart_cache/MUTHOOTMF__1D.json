@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.104397+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:11.676137+00:00",
+  "symbol": "MUTHOOTMF",
+  "timeframe": "1D",
+  "ticker": "MUTHOOTMF.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 236.0,
-      "high": 248.8,
-      "low": 235.0,
-      "close": 239.15,
-      "volume": 775768
-    },
     {
       "time": 1708300800,
       "open": 239.9,
@@ -4159,8 +4154,16 @@
       "open": 151.81,
       "high": 154.37,
       "low": 149.01,
-      "close": 151.25,
-      "volume": 84612
+      "close": 150.43,
+      "volume": 193044
+    },
+    {
+      "time": 1775088000,
+      "open": 148.1,
+      "high": 154.0,
+      "low": 145.8,
+      "close": 152.86,
+      "volume": 94030
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.742071+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:54.364058+00:00",
+  "symbol": "INDIGOPNTS",
+  "timeframe": "1D",
+  "ticker": "INDIGOPNTS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -685,7 +688,7 @@
     {
       "time": 1719964800,
       "open": 1373.9,
-      "high": 1398.46,
+      "high": 1398.47,
       "low": 1373.9,
       "close": 1380.11,
       "volume": 40082
@@ -4147,20 +4150,20 @@
       "volume": 230304
     },
     {
-      "time": 1774915200,
-      "open": 723.95,
-      "high": 734.0,
-      "low": 708.05,
-      "close": 712.9,
-      "volume": 230304
-    },
-    {
       "time": 1775001600,
       "open": 746.5,
       "high": 761.0,
       "low": 730.6,
-      "close": 746.25,
-      "volume": 54834
+      "close": 749.55,
+      "volume": 95500
+    },
+    {
+      "time": 1775088000,
+      "open": 723.4,
+      "high": 785.0,
+      "low": 720.5,
+      "close": 767.6,
+      "volume": 141351
     }
   ]
 }

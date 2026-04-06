@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.643560+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:48.983428+00:00",
+  "symbol": "HINDPETRO",
+  "timeframe": "1D",
+  "ticker": "HINDPETRO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 10584452
     },
     {
-      "time": 1774915200,
-      "open": 332.0,
-      "high": 341.6,
-      "low": 325.0,
-      "close": 335.3,
-      "volume": 10584452
-    },
-    {
       "time": 1775001600,
       "open": 350.0,
       "high": 350.0,
       "low": 333.2,
-      "close": 335.65,
-      "volume": 3985490
+      "close": 335.55,
+      "volume": 10224051
+    },
+    {
+      "time": 1775088000,
+      "open": 329.0,
+      "high": 329.65,
+      "low": 318.25,
+      "close": 326.0,
+      "volume": 7595679
     }
   ]
 }

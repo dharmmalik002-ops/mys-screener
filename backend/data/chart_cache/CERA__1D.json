@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.131992+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.790408+00:00",
+  "symbol": "CERA",
+  "timeframe": "1D",
+  "ticker": "CERA.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 22910
     },
     {
-      "time": 1774915200,
-      "open": 4600.0,
-      "high": 4620.0,
-      "low": 4518.2,
-      "close": 4580.0,
-      "volume": 22910
-    },
-    {
       "time": 1775001600,
       "open": 4565.0,
       "high": 4704.0,
       "low": 4565.0,
-      "close": 4614.4,
-      "volume": 4729
+      "close": 4667.4,
+      "volume": 9237
+    },
+    {
+      "time": 1775088000,
+      "open": 4626.0,
+      "high": 4703.7,
+      "low": 4519.0,
+      "close": 4677.3,
+      "volume": 5834
     }
   ]
 }

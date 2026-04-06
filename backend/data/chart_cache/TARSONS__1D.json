@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.220939+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:09.152561+00:00",
+  "symbol": "TARSONS",
+  "timeframe": "1D",
+  "ticker": "TARSONS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 490.7,
-      "high": 492.94,
-      "low": 481.49,
-      "close": 487.01,
-      "volume": 115778
-    },
     {
       "time": 1708646400,
       "open": 482.23,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 175.0,
-      "high": 178.22,
+      "open": 168.6,
+      "high": 181.45,
       "low": 168.6,
-      "close": 177.12,
-      "volume": 164511
+      "close": 179.88,
+      "volume": 213979
+    },
+    {
+      "time": 1775088000,
+      "open": 174.0,
+      "high": 183.34,
+      "low": 174.0,
+      "close": 181.63,
+      "volume": 109840
     }
   ]
 }

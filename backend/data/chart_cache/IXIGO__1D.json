@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.832404+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:25.832936+00:00",
+  "symbol": "IXIGO",
+  "timeframe": "1D",
+  "ticker": "IXIGO.NS",
   "bars": [
     {
       "time": 1718668800,
@@ -3555,20 +3558,20 @@
       "volume": 1684886
     },
     {
-      "time": 1774915200,
-      "open": 178.0,
-      "high": 179.88,
-      "low": 171.56,
-      "close": 173.0,
-      "volume": 1684886
-    },
-    {
       "time": 1775001600,
       "open": 181.69,
       "high": 183.46,
-      "low": 175.75,
-      "close": 182.14,
-      "volume": 523746
+      "low": 173.1,
+      "close": 175.42,
+      "volume": 2380751
+    },
+    {
+      "time": 1775088000,
+      "open": 170.62,
+      "high": 171.9,
+      "low": 163.65,
+      "close": 166.61,
+      "volume": 1997298
     }
   ]
 }

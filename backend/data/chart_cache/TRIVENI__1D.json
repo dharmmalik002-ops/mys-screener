@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:49:31.569358+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:21.102596+00:00",
   "symbol": "TRIVENI",
   "timeframe": "1D",
   "ticker": "TRIVENI.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 344.27,
+      "high": 347.97,
+      "low": 341.31,
+      "close": 342.34,
+      "volume": 194257
+    },
     {
       "time": 1708905600,
       "open": 341.26,
@@ -4142,27 +4150,19 @@
       "volume": 1015611
     },
     {
-      "time": 1774915200,
-      "open": 387.95,
-      "high": 396.8,
-      "low": 376.0,
-      "close": 376.0,
-      "volume": 1015611
-    },
-    {
       "time": 1775001600,
       "open": 388.7,
       "high": 400.4,
       "low": 383.5,
-      "close": 396.3,
-      "volume": 329831
+      "close": 392.7,
+      "volume": 578440
     },
     {
       "time": 1775088000,
-      "open": 392.7,
+      "open": 389.5,
       "high": 394.0,
       "low": 377.05,
-      "close": 389.0,
+      "close": 388.05,
       "volume": 457561
     }
   ]

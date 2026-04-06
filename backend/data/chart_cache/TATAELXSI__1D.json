@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.954861+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:04.695491+00:00",
+  "symbol": "TATAELXSI",
+  "timeframe": "1D",
+  "ticker": "TATAELXSI.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 346542
     },
     {
-      "time": 1774915200,
-      "open": 4125.0,
-      "high": 4130.0,
-      "low": 3966.2,
-      "close": 3976.0,
-      "volume": 346542
-    },
-    {
       "time": 1775001600,
       "open": 4109.3,
       "high": 4217.9,
       "low": 4051.0,
-      "close": 4173.4,
-      "volume": 158975
+      "close": 4127.1,
+      "volume": 263560
+    },
+    {
+      "time": 1775088000,
+      "open": 4100.0,
+      "high": 4254.2,
+      "low": 4023.6,
+      "close": 4241.3,
+      "volume": 282399
     }
   ]
 }

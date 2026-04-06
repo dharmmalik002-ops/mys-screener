@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.949249+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:02.595823+00:00",
+  "symbol": "PAISALO",
+  "timeframe": "1D",
+  "ticker": "PAISALO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 77.77,
-      "high": 78.92,
-      "low": 75.38,
-      "close": 76.28,
-      "volume": 3125744
-    },
     {
       "time": 1708646400,
       "open": 77.57,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 34.27,
-      "high": 34.6,
-      "low": 33.95,
-      "close": 34.34,
-      "volume": 1208592
+      "open": 33.95,
+      "high": 36.9,
+      "low": 33.91,
+      "close": 35.36,
+      "volume": 6722953
+    },
+    {
+      "time": 1775088000,
+      "open": 34.89,
+      "high": 36.75,
+      "low": 34.41,
+      "close": 35.76,
+      "volume": 7116237
     }
   ]
 }

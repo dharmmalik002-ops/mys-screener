@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.555589+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.729578+00:00",
+  "symbol": "RAMKY",
+  "timeframe": "1D",
+  "ticker": "RAMKY.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 681.5,
-      "high": 690.25,
-      "low": 650.0,
-      "close": 653.95,
-      "volume": 194983
-    },
     {
       "time": 1708560000,
       "open": 656.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 448.3,
-      "high": 453.95,
+      "open": 449.95,
+      "high": 462.0,
       "low": 435.9,
-      "close": 447.25,
-      "volume": 32170
+      "close": 456.35,
+      "volume": 90541
+    },
+    {
+      "time": 1775088000,
+      "open": 447.25,
+      "high": 453.8,
+      "low": 438.0,
+      "close": 449.3,
+      "volume": 52718
     }
   ]
 }

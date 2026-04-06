@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.211536+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.375906+00:00",
+  "symbol": "CYIENTDLM",
+  "timeframe": "1D",
+  "ticker": "CYIENTDLM.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 775.0,
-      "high": 804.8,
-      "low": 774.0,
-      "close": 796.7,
-      "volume": 248028
-    },
     {
       "time": 1708646400,
       "open": 801.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 281.5,
+      "open": 286.2,
       "high": 287.5,
       "low": 278.25,
-      "close": 283.45,
-      "volume": 145700
+      "close": 284.6,
+      "volume": 377163
+    },
+    {
+      "time": 1775088000,
+      "open": 280.6,
+      "high": 281.15,
+      "low": 269.0,
+      "close": 280.1,
+      "volume": 327752
     }
   ]
 }

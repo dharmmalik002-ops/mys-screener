@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.403134+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:40.631412+00:00",
+  "symbol": "GANESHHOU",
+  "timeframe": "1D",
+  "ticker": "GANESHHOU.NS",
   "bars": [
     {
       "time": 1757462400,
@@ -1092,11 +1095,19 @@
     },
     {
       "time": 1775001600,
-      "open": 545.65,
-      "high": 548.95,
+      "open": 530.75,
+      "high": 555.0,
       "low": 530.75,
-      "close": 546.4,
-      "volume": 35611
+      "close": 551.1,
+      "volume": 76849
+    },
+    {
+      "time": 1775088000,
+      "open": 548.1,
+      "high": 554.9,
+      "low": 522.6,
+      "close": 546.1,
+      "volume": 59601
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.731569+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:47.672371+00:00",
+  "symbol": "SANSTAR",
+  "timeframe": "1D",
+  "ticker": "SANSTAR.NS",
   "bars": [
     {
       "time": 1721952000,
@@ -3342,9 +3345,17 @@
       "time": 1775001600,
       "open": 77.0,
       "high": 79.54,
-      "low": 77.0,
-      "close": 78.17,
-      "volume": 66530
+      "low": 74.62,
+      "close": 76.16,
+      "volume": 326427
+    },
+    {
+      "time": 1775088000,
+      "open": 75.49,
+      "high": 78.58,
+      "low": 74.3,
+      "close": 77.78,
+      "volume": 148922
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.632655+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:02.897368+00:00",
+  "symbol": "GOPAL",
+  "timeframe": "1D",
+  "ticker": "GOPAL.NS",
   "bars": [
     {
       "time": 1710374400,
@@ -15,7 +18,7 @@
       "open": 372.2,
       "high": 391.01,
       "low": 368.37,
-      "close": 377.37,
+      "close": 377.38,
       "volume": 1994031
     },
     {
@@ -4037,10 +4040,18 @@
     {
       "time": 1775001600,
       "open": 256.05,
-      "high": 263.1,
+      "high": 266.0,
       "low": 255.9,
-      "close": 262.35,
-      "volume": 26961
+      "close": 265.4,
+      "volume": 58466
+    },
+    {
+      "time": 1775088000,
+      "open": 264.9,
+      "high": 264.9,
+      "low": 258.0,
+      "close": 261.25,
+      "volume": 91003
     }
   ]
 }

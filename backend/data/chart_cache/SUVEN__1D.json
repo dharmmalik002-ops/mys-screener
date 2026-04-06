@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:15:49.739739+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:53.757436+00:00",
   "symbol": "SUVEN",
   "timeframe": "1D",
   "ticker": "SUVEN.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 138.99,
-      "high": 144.82,
+      "open": 139.5,
+      "high": 148.95,
       "low": 135.5,
-      "close": 142.01,
-      "volume": 310729
+      "close": 147.43,
+      "volume": 915432
     },
     {
       "time": 1775088000,
-      "open": 147.43,
-      "high": 160.5,
+      "open": 143.43,
+      "high": 162.0,
       "low": 140.3,
-      "close": 158.0,
-      "volume": 1077825
+      "close": 157.96,
+      "volume": 1089578
     }
   ]
 }

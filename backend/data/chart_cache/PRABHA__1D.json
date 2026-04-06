@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.194566+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.158669+00:00",
+  "symbol": "PRABHA",
+  "timeframe": "1D",
+  "ticker": "PRABHA.NS",
   "bars": [
     {
       "time": 1742342400,
@@ -2028,11 +2031,19 @@
     },
     {
       "time": 1775001600,
-      "open": 151.39,
+      "open": 151.95,
       "high": 156.0,
       "low": 151.39,
-      "close": 153.83,
-      "volume": 27170
+      "close": 153.11,
+      "volume": 69393
+    },
+    {
+      "time": 1775088000,
+      "open": 148.0,
+      "high": 157.8,
+      "low": 148.0,
+      "close": 153.82,
+      "volume": 88002
     }
   ]
 }

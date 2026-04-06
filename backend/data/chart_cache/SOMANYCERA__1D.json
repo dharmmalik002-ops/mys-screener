@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.656581+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.656566+00:00",
+  "symbol": "SOMANYCERA",
+  "timeframe": "1D",
+  "ticker": "SOMANYCERA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 666.55,
-      "high": 666.9,
-      "low": 659.67,
-      "close": 660.76,
-      "volume": 16740
-    },
     {
       "time": 1708560000,
       "open": 665.26,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 365.95,
-      "high": 374.05,
-      "low": 365.0,
-      "close": 371.4,
-      "volume": 6106
+      "high": 378.7,
+      "low": 359.6,
+      "close": 363.9,
+      "volume": 31023
+    },
+    {
+      "time": 1775088000,
+      "open": 364.0,
+      "high": 393.0,
+      "low": 355.05,
+      "close": 388.2,
+      "volume": 35418
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:19.775512+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:20.341485+00:00",
   "symbol": "GMBREW",
   "timeframe": "1D",
   "ticker": "GMBREW.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1012.0,
-      "high": 1053.9,
+      "open": 1020.0,
+      "high": 1056.3,
       "low": 1005.0,
-      "close": 1047.0,
-      "volume": 50922
+      "close": 1048.9,
+      "volume": 108257
     },
     {
       "time": 1775088000,
-      "open": 1049.0,
-      "high": 1060.0,
+      "open": 1028.9,
+      "high": 1060.05,
       "low": 1001.0,
-      "close": 1055.0,
-      "volume": 98133
+      "close": 1055.15,
+      "volume": 99917
     }
   ]
 }

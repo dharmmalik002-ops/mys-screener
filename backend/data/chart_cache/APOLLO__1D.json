@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.878576+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:33.881958+00:00",
+  "symbol": "APOLLO",
+  "timeframe": "1D",
+  "ticker": "APOLLO.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 6927611
     },
     {
-      "time": 1774915200,
-      "open": 187.0,
-      "high": 196.5,
-      "low": 179.5,
-      "close": 182.5,
-      "volume": 6927611
-    },
-    {
       "time": 1775001600,
       "open": 193.0,
       "high": 200.37,
       "low": 190.22,
-      "close": 195.95,
-      "volume": 4748997
+      "close": 195.77,
+      "volume": 8336691
+    },
+    {
+      "time": 1775088000,
+      "open": 190.01,
+      "high": 198.51,
+      "low": 189.4,
+      "close": 197.13,
+      "volume": 4367296
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.578098+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.446001+00:00",
+  "symbol": "MOSCHIP",
+  "timeframe": "1D",
+  "ticker": "MOSCHIP.NS",
   "bars": [
     {
       "time": 1738713600,
@@ -2268,11 +2271,19 @@
     },
     {
       "time": 1775001600,
-      "open": 164.1,
-      "high": 164.7,
+      "open": 161.87,
+      "high": 167.39,
       "low": 155.37,
-      "close": 162.9,
-      "volume": 1760981
+      "close": 164.94,
+      "volume": 3588798
+    },
+    {
+      "time": 1775088000,
+      "open": 159.9,
+      "high": 167.5,
+      "low": 158.0,
+      "close": 166.43,
+      "volume": 1747522
     }
   ]
 }

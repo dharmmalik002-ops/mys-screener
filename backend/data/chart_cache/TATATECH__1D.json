@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.009803+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:33.741526+00:00",
+  "symbol": "TATATECH",
+  "timeframe": "1D",
+  "ticker": "TATATECH.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 2327922
     },
     {
-      "time": 1774915200,
-      "open": 537.0,
-      "high": 539.1,
-      "low": 507.4,
-      "close": 508.65,
-      "volume": 2327922
-    },
-    {
       "time": 1775001600,
       "open": 519.0,
-      "high": 538.65,
+      "high": 539.2,
       "low": 519.0,
-      "close": 533.75,
-      "volume": 620404
+      "close": 531.05,
+      "volume": 1067785
+    },
+    {
+      "time": 1775088000,
+      "open": 528.35,
+      "high": 543.0,
+      "low": 517.0,
+      "close": 541.1,
+      "volume": 958077
     }
   ]
 }

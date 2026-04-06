@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.626869+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:10.503702+00:00",
+  "symbol": "JUBLINGREA",
+  "timeframe": "1D",
+  "ticker": "JUBLINGREA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -613,7 +616,7 @@
     {
       "time": 1718841600,
       "open": 554.89,
-      "high": 556.76,
+      "high": 556.77,
       "low": 526.85,
       "close": 538.09,
       "volume": 647311
@@ -4147,20 +4150,20 @@
       "volume": 236925
     },
     {
-      "time": 1774915200,
-      "open": 560.05,
-      "high": 565.05,
-      "low": 540.0,
-      "close": 544.1,
-      "volume": 236925
-    },
-    {
       "time": 1775001600,
       "open": 551.05,
-      "high": 571.0,
+      "high": 579.9,
       "low": 551.05,
-      "close": 564.9,
-      "volume": 50458
+      "close": 573.0,
+      "volume": 108474
+    },
+    {
+      "time": 1775088000,
+      "open": 573.0,
+      "high": 582.5,
+      "low": 553.75,
+      "close": 579.15,
+      "volume": 137344
     }
   ]
 }

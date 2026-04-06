@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:07.521324+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.221611+00:00",
+  "symbol": "DISAQ",
+  "timeframe": "1D",
+  "ticker": "DISAQ.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2473,6 +2476,22 @@
       "low": 11000.0,
       "close": 11029.45,
       "volume": 569
+    },
+    {
+      "time": 1775001600,
+      "open": 11302.0,
+      "high": 11698.9,
+      "low": 11217.15,
+      "close": 11647.2,
+      "volume": 26
+    },
+    {
+      "time": 1775088000,
+      "open": 11530.0,
+      "high": 11530.0,
+      "low": 10990.0,
+      "close": 11430.05,
+      "volume": 251
     }
   ]
 }

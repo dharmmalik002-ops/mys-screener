@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.718414+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:19.103416+00:00",
+  "symbol": "RAYMOND",
+  "timeframe": "1D",
+  "ticker": "RAYMOND.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1877.6,
-      "high": 1936.27,
-      "low": 1837.81,
-      "close": 1863.51,
-      "volume": 1154769
-    },
     {
       "time": 1708646400,
       "open": 1882.58,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 331.95,
-      "high": 348.45,
+      "open": 326.1,
+      "high": 354.95,
       "low": 326.1,
-      "close": 345.55,
-      "volume": 298411
+      "close": 350.8,
+      "volume": 648889
+    },
+    {
+      "time": 1775088000,
+      "open": 348.35,
+      "high": 353.45,
+      "low": 333.95,
+      "close": 351.0,
+      "volume": 366224
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.550657+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:15.155155+00:00",
+  "symbol": "BUILDPRO",
+  "timeframe": "1D",
+  "ticker": "BUILDPRO.NS",
   "bars": [
     {
       "time": 1767916800,
@@ -428,11 +431,19 @@
     },
     {
       "time": 1775001600,
-      "open": 993.75,
-      "high": 1008.9,
+      "open": 970.0,
+      "high": 1027.8,
       "low": 966.9,
-      "close": 991.65,
-      "volume": 8128
+      "close": 1007.75,
+      "volume": 35592
+    },
+    {
+      "time": 1775088000,
+      "open": 991.0,
+      "high": 1038.6,
+      "low": 959.8,
+      "close": 1016.85,
+      "volume": 41851
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.907175+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.753035+00:00",
+  "symbol": "SULA",
+  "timeframe": "1D",
+  "ticker": "SULA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 553.4,
-      "high": 559.81,
-      "low": 541.2,
-      "close": 550.61,
-      "volume": 3150167
-    },
     {
       "time": 1708646400,
       "open": 553.35,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 145.71,
-      "high": 151.51,
+      "open": 148.8,
+      "high": 156.99,
       "low": 142.73,
-      "close": 150.5,
-      "volume": 291921
+      "close": 155.39,
+      "volume": 813692
+    },
+    {
+      "time": 1775088000,
+      "open": 153.0,
+      "high": 157.69,
+      "low": 149.1,
+      "close": 156.49,
+      "volume": 416611
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.647668+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:36.668114+00:00",
+  "symbol": "INDIANHUME",
+  "timeframe": "1D",
+  "ticker": "INDIANHUME.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 299.09,
-      "high": 301.01,
-      "low": 280.99,
-      "close": 283.85,
-      "volume": 671669
-    },
     {
       "time": 1708560000,
       "open": 287.24,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 285.7,
-      "high": 306.0,
+      "high": 313.95,
       "low": 285.7,
-      "close": 303.2,
-      "volume": 29952
+      "close": 307.2,
+      "volume": 57843
+    },
+    {
+      "time": 1775088000,
+      "open": 302.6,
+      "high": 320.0,
+      "low": 302.1,
+      "close": 314.25,
+      "volume": 27765
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.112139+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:47.286419+00:00",
+  "symbol": "SUMICHEM",
+  "timeframe": "1D",
+  "ticker": "SUMICHEM.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 325096
     },
     {
-      "time": 1774915200,
-      "open": 372.85,
-      "high": 375.0,
-      "low": 362.6,
-      "close": 365.0,
-      "volume": 325096
-    },
-    {
       "time": 1775001600,
       "open": 371.0,
-      "high": 380.6,
+      "high": 382.0,
       "low": 371.0,
-      "close": 374.45,
-      "volume": 46820
+      "close": 380.2,
+      "volume": 125240
+    },
+    {
+      "time": 1775088000,
+      "open": 371.3,
+      "high": 385.5,
+      "low": 368.85,
+      "close": 383.3,
+      "volume": 138542
     }
   ]
 }

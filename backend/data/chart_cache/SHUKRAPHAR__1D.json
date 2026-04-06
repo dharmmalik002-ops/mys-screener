@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.768649+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:47.387993+00:00",
+  "symbol": "SHUKRAPHAR",
+  "timeframe": "1D",
+  "ticker": "SHUKRAPHAR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 5.4,
-      "high": 5.4,
-      "low": 5.4,
-      "close": 5.4,
-      "volume": 862480
-    },
     {
       "time": 1708560000,
       "open": 5.67,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 30.34,
-      "high": 31.7,
+      "high": 31.85,
       "low": 30.0,
-      "close": 31.1,
-      "volume": 97168
+      "close": 31.85,
+      "volume": 212064
+    },
+    {
+      "time": 1775088000,
+      "open": 32.24,
+      "high": 32.8,
+      "low": 30.26,
+      "close": 31.89,
+      "volume": 254585
     }
   ]
 }

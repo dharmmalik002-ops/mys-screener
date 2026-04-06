@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.033246+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:51.557364+00:00",
+  "symbol": "EXICOM",
+  "timeframe": "1D",
+  "ticker": "EXICOM.NS",
   "bars": [
     {
       "time": 1709596800,
@@ -4092,11 +4095,19 @@
     },
     {
       "time": 1775001600,
-      "open": 83.38,
-      "high": 84.2,
+      "open": 78.5,
+      "high": 84.49,
       "low": 78.5,
-      "close": 82.94,
-      "volume": 460990
+      "close": 83.77,
+      "volume": 915147
+    },
+    {
+      "time": 1775088000,
+      "open": 81.0,
+      "high": 85.69,
+      "low": 80.31,
+      "close": 84.91,
+      "volume": 581415
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.219671+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:17.423409+00:00",
+  "symbol": "MAYURUNIQ",
+  "timeframe": "1D",
+  "ticker": "MAYURUNIQ.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 509.36,
-      "high": 544.68,
-      "low": 508.32,
-      "close": 534.17,
-      "volume": 247806
-    },
     {
       "time": 1708560000,
       "open": 539.5,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 520.15,
-      "high": 520.15,
+      "high": 530.05,
       "low": 506.0,
-      "close": 515.0,
-      "volume": 18031
+      "close": 518.3,
+      "volume": 48335
+    },
+    {
+      "time": 1775088000,
+      "open": 517.9,
+      "high": 531.0,
+      "low": 506.05,
+      "close": 528.9,
+      "volume": 38636
     }
   ]
 }

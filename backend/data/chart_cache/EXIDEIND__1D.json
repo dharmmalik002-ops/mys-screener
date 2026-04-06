@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.963399+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:15.395747+00:00",
+  "symbol": "EXIDEIND",
+  "timeframe": "1D",
+  "ticker": "EXIDEIND.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -741,7 +744,7 @@
     {
       "time": 1720742400,
       "open": 558.44,
-      "high": 559.88,
+      "high": 559.87,
       "low": 550.66,
       "close": 554.08,
       "volume": 1898237
@@ -4147,20 +4150,20 @@
       "volume": 2228771
     },
     {
-      "time": 1774915200,
-      "open": 296.85,
-      "high": 298.1,
-      "low": 287.0,
-      "close": 287.8,
-      "volume": 2228771
-    },
-    {
       "time": 1775001600,
       "open": 294.2,
       "high": 302.35,
       "low": 294.0,
-      "close": 298.05,
-      "volume": 629188
+      "close": 299.85,
+      "volume": 1239360
+    },
+    {
+      "time": 1775088000,
+      "open": 297.8,
+      "high": 300.45,
+      "low": 289.7,
+      "close": 299.25,
+      "volume": 2063259
     }
   ]
 }

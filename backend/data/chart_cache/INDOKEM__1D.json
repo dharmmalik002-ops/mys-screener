@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.733750+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.911372+00:00",
+  "symbol": "INDOKEM",
+  "timeframe": "1D",
+  "ticker": "INDOKEM.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 514.95,
+      "open": 470.5,
       "high": 519.05,
-      "low": 500.0,
-      "close": 519.05,
-      "volume": 2186
+      "low": 470.5,
+      "close": 507.2,
+      "volume": 7605
+    },
+    {
+      "time": 1775088000,
+      "open": 507.15,
+      "high": 514.4,
+      "low": 481.85,
+      "close": 504.65,
+      "volume": 3112
     }
   ]
 }

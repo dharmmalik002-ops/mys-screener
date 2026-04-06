@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.108706+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.993790+00:00",
+  "symbol": "LUXIND",
+  "timeframe": "1D",
+  "ticker": "LUXIND.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1205.06,
-      "high": 1210.0,
-      "low": 1191.1,
-      "close": 1206.01,
-      "volume": 18597
-    },
     {
       "time": 1708646400,
       "open": 1206.01,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 844.0,
-      "high": 900.3,
+      "open": 831.2,
+      "high": 910.0,
       "low": 831.2,
-      "close": 895.9,
-      "volume": 30750
+      "close": 907.35,
+      "volume": 67374
+    },
+    {
+      "time": 1775088000,
+      "open": 884.4,
+      "high": 919.0,
+      "low": 871.1,
+      "close": 911.55,
+      "volume": 28603
     }
   ]
 }

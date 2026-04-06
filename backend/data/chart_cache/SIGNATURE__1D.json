@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.630536+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:55.038309+00:00",
+  "symbol": "SIGNATURE",
+  "timeframe": "1D",
+  "ticker": "SIGNATURE.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 319086
     },
     {
-      "time": 1774915200,
-      "open": 742.95,
-      "high": 742.95,
-      "low": 710.5,
-      "close": 711.0,
-      "volume": 319086
-    },
-    {
       "time": 1775001600,
       "open": 729.0,
       "high": 738.2,
-      "low": 720.5,
-      "close": 721.85,
-      "volume": 95221
+      "low": 720.0,
+      "close": 723.65,
+      "volume": 221423
+    },
+    {
+      "time": 1775088000,
+      "open": 715.0,
+      "high": 757.45,
+      "low": 705.2,
+      "close": 749.5,
+      "volume": 930802
     }
   ]
 }

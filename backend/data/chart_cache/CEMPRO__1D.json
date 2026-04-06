@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.612505+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:02.469080+00:00",
+  "symbol": "CEMPRO",
+  "timeframe": "1D",
+  "ticker": "CEMPRO.NS",
   "bars": [
     {
       "time": 1757462400,
@@ -1091,20 +1094,20 @@
       "volume": 476683
     },
     {
-      "time": 1774915200,
-      "open": 520.0,
-      "high": 528.75,
-      "low": 505.45,
-      "close": 515.0,
-      "volume": 476683
-    },
-    {
       "time": 1775001600,
       "open": 523.0,
       "high": 542.0,
       "low": 519.35,
-      "close": 521.85,
-      "volume": 369624
+      "close": 532.8,
+      "volume": 657979
+    },
+    {
+      "time": 1775088000,
+      "open": 531.0,
+      "high": 543.35,
+      "low": 510.3,
+      "close": 539.35,
+      "volume": 321028
     }
   ]
 }

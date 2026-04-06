@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:52.043163+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:08.145059+00:00",
+  "symbol": "FAZE3Q",
+  "timeframe": "1D",
+  "ticker": "FAZE3Q.NS",
   "bars": [
-    {
-      "time": 1707955200,
-      "open": 415.15,
-      "high": 418.95,
-      "low": 407.15,
-      "close": 410.5,
-      "volume": 1478
-    },
-    {
-      "time": 1708041600,
-      "open": 413.0,
-      "high": 418.85,
-      "low": 404.3,
-      "close": 415.45,
-      "volume": 4072
-    },
     {
       "time": 1708300800,
       "open": 423.8,
@@ -4161,6 +4148,22 @@
       "low": 378.15,
       "close": 381.8,
       "volume": 2135
+    },
+    {
+      "time": 1775001600,
+      "open": 371.0,
+      "high": 400.85,
+      "low": 371.0,
+      "close": 400.85,
+      "volume": 2217
+    },
+    {
+      "time": 1775088000,
+      "open": 400.85,
+      "high": 420.85,
+      "low": 391.0,
+      "close": 419.15,
+      "volume": 388
     }
   ]
 }

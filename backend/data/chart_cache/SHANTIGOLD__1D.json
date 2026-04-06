@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.950688+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:52.689661+00:00",
+  "symbol": "SHANTIGOLD",
+  "timeframe": "1D",
+  "ticker": "SHANTIGOLD.NS",
   "bars": [
     {
       "time": 1754006400,
@@ -1309,10 +1312,18 @@
     {
       "time": 1775001600,
       "open": 160.0,
-      "high": 165.92,
+      "high": 167.74,
       "low": 159.76,
-      "close": 165.06,
-      "volume": 174787
+      "close": 164.62,
+      "volume": 378681
+    },
+    {
+      "time": 1775088000,
+      "open": 163.0,
+      "high": 172.04,
+      "low": 159.18,
+      "close": 169.28,
+      "volume": 285022
     }
   ]
 }

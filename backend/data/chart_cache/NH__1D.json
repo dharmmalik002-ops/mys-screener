@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.848544+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:02.425010+00:00",
+  "symbol": "NH",
+  "timeframe": "1D",
+  "ticker": "NH.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 315645
     },
     {
-      "time": 1774915200,
-      "open": 1605.0,
-      "high": 1636.4,
-      "low": 1599.6,
-      "close": 1600.1,
-      "volume": 315645
-    },
-    {
       "time": 1775001600,
       "open": 1648.6,
       "high": 1652.0,
       "low": 1603.7,
-      "close": 1613.6,
-      "volume": 137669
+      "close": 1635.2,
+      "volume": 389423
+    },
+    {
+      "time": 1775088000,
+      "open": 1629.0,
+      "high": 1634.0,
+      "low": 1589.0,
+      "close": 1625.0,
+      "volume": 273270
     }
   ]
 }

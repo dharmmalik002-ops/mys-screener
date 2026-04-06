@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.270104+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:21.490755+00:00",
+  "symbol": "DCAL",
+  "timeframe": "1D",
+  "ticker": "DCAL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 217.0,
-      "high": 241.7,
-      "low": 215.1,
-      "close": 238.8,
-      "volume": 6469943
-    },
     {
       "time": 1708646400,
       "open": 238.5,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 136.39,
-      "high": 142.37,
+      "open": 136.73,
+      "high": 147.5,
       "low": 132.2,
-      "close": 141.25,
-      "volume": 243921
+      "close": 146.14,
+      "volume": 585443
+    },
+    {
+      "time": 1775088000,
+      "open": 145.33,
+      "high": 148.51,
+      "low": 139.64,
+      "close": 147.5,
+      "volume": 500753
     }
   ]
 }

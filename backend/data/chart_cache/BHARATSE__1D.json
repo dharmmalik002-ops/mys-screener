@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.734119+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:18.851687+00:00",
+  "symbol": "BHARATSE",
+  "timeframe": "1D",
+  "ticker": "BHARATSE.NS",
   "bars": [
     {
       "time": 1742774400,
@@ -2012,11 +2015,19 @@
     },
     {
       "time": 1775001600,
-      "open": 149.4,
-      "high": 154.59,
+      "open": 144.74,
+      "high": 160.59,
       "low": 144.74,
-      "close": 152.17,
-      "volume": 118739
+      "close": 155.84,
+      "volume": 363702
+    },
+    {
+      "time": 1775088000,
+      "open": 148.64,
+      "high": 163.0,
+      "low": 146.7,
+      "close": 156.33,
+      "volume": 153321
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.347682+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:47.065424+00:00",
+  "symbol": "INNOVACAP",
+  "timeframe": "1D",
+  "ticker": "INNOVACAP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 524.4,
-      "high": 525.19,
-      "low": 515.47,
-      "close": 522.5,
-      "volume": 51432
-    },
     {
       "time": 1708646400,
       "open": 519.96,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 718.9,
-      "high": 718.9,
+      "open": 685.0,
+      "high": 722.7,
       "low": 685.0,
-      "close": 712.1,
-      "volume": 10665
+      "close": 703.95,
+      "volume": 23712
+    },
+    {
+      "time": 1775088000,
+      "open": 702.0,
+      "high": 711.35,
+      "low": 686.15,
+      "close": 704.4,
+      "volume": 9970
     }
   ]
 }

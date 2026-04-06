@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.018015+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:42.786775+00:00",
+  "symbol": "AADHARHFC",
+  "timeframe": "1D",
+  "ticker": "AADHARHFC.NS",
   "bars": [
     {
       "time": 1715731200,
@@ -3731,20 +3734,20 @@
       "volume": 419745
     },
     {
-      "time": 1774915200,
-      "open": 442.6,
-      "high": 455.95,
-      "low": 438.8,
-      "close": 444.0,
-      "volume": 419745
-    },
-    {
       "time": 1775001600,
       "open": 449.05,
       "high": 456.55,
-      "low": 447.7,
-      "close": 450.75,
-      "volume": 71603
+      "low": 445.85,
+      "close": 451.15,
+      "volume": 340024
+    },
+    {
+      "time": 1775088000,
+      "open": 448.0,
+      "high": 448.0,
+      "low": 433.25,
+      "close": 439.1,
+      "volume": 158838
     }
   ]
 }

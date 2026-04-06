@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.300113+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.832758+00:00",
+  "symbol": "SAGCEM",
+  "timeframe": "1D",
+  "ticker": "SAGCEM.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 249.41,
-      "high": 252.31,
-      "low": 243.73,
-      "close": 244.53,
-      "volume": 103478
-    },
     {
       "time": 1708560000,
       "open": 246.22,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 160.04,
-      "high": 162.74,
+      "high": 168.43,
       "low": 158.0,
-      "close": 161.83,
-      "volume": 29316
+      "close": 164.63,
+      "volume": 135494
+    },
+    {
+      "time": 1775088000,
+      "open": 160.0,
+      "high": 166.01,
+      "low": 156.02,
+      "close": 164.12,
+      "volume": 65195
     }
   ]
 }

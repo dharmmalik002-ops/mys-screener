@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.794681+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:56.187300+00:00",
+  "symbol": "AJANTPHARM",
+  "timeframe": "1D",
+  "ticker": "AJANTPHARM.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 152889
     },
     {
-      "time": 1774915200,
-      "open": 2787.4,
-      "high": 2819.9,
-      "low": 2739.1,
-      "close": 2786.0,
-      "volume": 152889
-    },
-    {
       "time": 1775001600,
       "open": 2849.9,
       "high": 2880.0,
-      "low": 2817.1,
-      "close": 2833.1,
-      "volume": 23835
+      "low": 2790.6,
+      "close": 2816.8,
+      "volume": 64876
+    },
+    {
+      "time": 1775088000,
+      "open": 2816.0,
+      "high": 2816.8,
+      "low": 2722.8,
+      "close": 2791.2,
+      "volume": 52986
     }
   ]
 }

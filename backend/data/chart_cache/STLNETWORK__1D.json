@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:43:36.251755+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:19.703777+00:00",
+  "symbol": "STLNETWORK",
+  "timeframe": "1D",
+  "ticker": "STLNETWORK.NS",
   "bars": [
     {
       "time": 1756944000,
@@ -1110,9 +1113,25 @@
       "time": 1774828800,
       "open": 16.45,
       "high": 16.64,
-      "low": 16.02,
-      "close": 16.17,
-      "volume": 1478337
+      "low": 15.75,
+      "close": 15.92,
+      "volume": 2467364
+    },
+    {
+      "time": 1775001600,
+      "open": 16.89,
+      "high": 17.79,
+      "low": 16.5,
+      "close": 17.39,
+      "volume": 1446255
+    },
+    {
+      "time": 1775088000,
+      "open": 17.15,
+      "high": 18.79,
+      "low": 16.68,
+      "close": 18.7,
+      "volume": 1445430
     }
   ]
 }

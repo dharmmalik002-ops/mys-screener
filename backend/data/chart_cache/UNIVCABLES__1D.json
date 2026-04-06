@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.706834+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:19.597846+00:00",
+  "symbol": "UNIVCABLES",
+  "timeframe": "1D",
+  "ticker": "UNIVCABLES.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 464.37,
-      "high": 470.76,
-      "low": 455.9,
-      "close": 466.35,
-      "volume": 11571
-    },
     {
       "time": 1708646400,
       "open": 464.52,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 670.0,
-      "high": 684.85,
+      "open": 652.0,
+      "high": 695.9,
       "low": 652.0,
-      "close": 680.7,
-      "volume": 17567
+      "close": 684.5,
+      "volume": 40137
+    },
+    {
+      "time": 1775088000,
+      "open": 682.0,
+      "high": 682.0,
+      "low": 647.15,
+      "close": 671.05,
+      "volume": 60965
     }
   ]
 }

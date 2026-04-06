@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.404035+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:36.626646+00:00",
+  "symbol": "GRANULES",
+  "timeframe": "1D",
+  "ticker": "GRANULES.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 1244148
     },
     {
-      "time": 1774915200,
-      "open": 622.5,
-      "high": 626.3,
-      "low": 616.2,
-      "close": 620.1,
-      "volume": 1244148
-    },
-    {
       "time": 1775001600,
       "open": 629.0,
       "high": 639.0,
-      "low": 625.45,
-      "close": 629.15,
-      "volume": 348011
+      "low": 625.0,
+      "close": 628.1,
+      "volume": 890981
+    },
+    {
+      "time": 1775088000,
+      "open": 622.0,
+      "high": 622.95,
+      "low": 602.2,
+      "close": 613.6,
+      "volume": 589731
     }
   ]
 }

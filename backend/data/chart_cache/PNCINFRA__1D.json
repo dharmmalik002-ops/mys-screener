@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.694468+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:47.779002+00:00",
+  "symbol": "PNCINFRA",
+  "timeframe": "1D",
+  "ticker": "PNCINFRA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1078060
     },
     {
-      "time": 1774915200,
-      "open": 166.81,
-      "high": 171.01,
-      "low": 158.17,
-      "close": 160.99,
-      "volume": 1078060
-    },
-    {
       "time": 1775001600,
       "open": 167.0,
-      "high": 170.46,
+      "high": 173.99,
       "low": 165.26,
-      "close": 168.89,
-      "volume": 267541
+      "close": 172.38,
+      "volume": 540119
+    },
+    {
+      "time": 1775088000,
+      "open": 169.0,
+      "high": 175.39,
+      "low": 164.15,
+      "close": 173.99,
+      "volume": 400954
     }
   ]
 }

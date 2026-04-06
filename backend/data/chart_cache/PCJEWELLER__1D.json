@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.115472+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:28.386083+00:00",
+  "symbol": "PCJEWELLER",
+  "timeframe": "1D",
+  "ticker": "PCJEWELLER.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 70035420
     },
     {
-      "time": 1774915200,
-      "open": 7.95,
-      "high": 8.05,
-      "low": 7.47,
-      "close": 7.97,
-      "volume": 70035420
-    },
-    {
       "time": 1775001600,
       "open": 7.95,
-      "high": 8.17,
+      "high": 8.31,
       "low": 7.77,
-      "close": 8.06,
-      "volume": 24872093
+      "close": 8.25,
+      "volume": 57590729
+    },
+    {
+      "time": 1775088000,
+      "open": 8.09,
+      "high": 8.36,
+      "low": 7.9,
+      "close": 8.21,
+      "volume": 42141818
     }
   ]
 }

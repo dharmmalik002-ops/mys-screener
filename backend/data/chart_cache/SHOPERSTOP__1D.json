@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.927536+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:00.465306+00:00",
+  "symbol": "SHOPERSTOP",
+  "timeframe": "1D",
+  "ticker": "SHOPERSTOP.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 740.0,
-      "high": 744.7,
-      "low": 725.0,
-      "close": 734.25,
-      "volume": 21510
-    },
     {
       "time": 1708646400,
       "open": 735.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 294.95,
-      "high": 299.65,
+      "open": 292.45,
+      "high": 300.0,
       "low": 292.45,
-      "close": 295.6,
-      "volume": 9010
+      "close": 298.35,
+      "volume": 23949
+    },
+    {
+      "time": 1775088000,
+      "open": 294.0,
+      "high": 298.0,
+      "low": 288.7,
+      "close": 295.7,
+      "volume": 25201
     }
   ]
 }

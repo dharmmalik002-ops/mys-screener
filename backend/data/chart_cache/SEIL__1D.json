@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.138634+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:13.820075+00:00",
+  "symbol": "SEIL",
+  "timeframe": "1D",
+  "ticker": "SEIL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2486,9 +2489,17 @@
       "time": 1775001600,
       "open": 157.95,
       "high": 161.1,
-      "low": 157.95,
-      "close": 159.55,
-      "volume": 88658
+      "low": 157.9,
+      "close": 160.85,
+      "volume": 163022
+    },
+    {
+      "time": 1775088000,
+      "open": 158.0,
+      "high": 161.8,
+      "low": 153.0,
+      "close": 160.0,
+      "volume": 436178
     }
   ]
 }

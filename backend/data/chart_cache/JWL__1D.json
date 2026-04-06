@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.476321+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:29.498124+00:00",
+  "symbol": "JWL",
+  "timeframe": "1D",
+  "ticker": "JWL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4776515
     },
     {
-      "time": 1774915200,
-      "open": 249.95,
-      "high": 261.95,
-      "low": 235.65,
-      "close": 237.3,
-      "volume": 4776515
-    },
-    {
       "time": 1775001600,
       "open": 250.22,
-      "high": 256.19,
+      "high": 257.87,
       "low": 244.68,
-      "close": 251.75,
-      "volume": 1341363
+      "close": 256.68,
+      "volume": 2523952
+    },
+    {
+      "time": 1775088000,
+      "open": 250.0,
+      "high": 258.0,
+      "low": 246.6,
+      "close": 256.61,
+      "volume": 1689339
     }
   ]
 }

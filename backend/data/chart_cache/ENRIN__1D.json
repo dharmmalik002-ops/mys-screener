@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.376726+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:21.332594+00:00",
+  "symbol": "ENRIN",
+  "timeframe": "1D",
+  "ticker": "ENRIN.NS",
   "bars": [
     {
       "time": 1750291200,
@@ -1539,20 +1542,20 @@
       "volume": 357797
     },
     {
-      "time": 1774915200,
-      "open": 2619.2,
-      "high": 2661.0,
-      "low": 2551.2,
-      "close": 2599.0,
-      "volume": 357797
-    },
-    {
       "time": 1775001600,
       "open": 2640.0,
-      "high": 2648.2,
+      "high": 2652.8,
       "low": 2585.0,
-      "close": 2593.2,
-      "volume": 159420
+      "close": 2613.9,
+      "volume": 438974
+    },
+    {
+      "time": 1775088000,
+      "open": 2570.0,
+      "high": 2633.5,
+      "low": 2521.7,
+      "close": 2612.0,
+      "volume": 255030
     }
   ]
 }

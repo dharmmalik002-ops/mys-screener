@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.667122+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:41.491135+00:00",
+  "symbol": "BLIL",
+  "timeframe": "1D",
+  "ticker": "BLIL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2487,8 +2490,16 @@
       "open": 66.46,
       "high": 69.0,
       "low": 66.41,
-      "close": 67.23,
-      "volume": 45089
+      "close": 67.82,
+      "volume": 79695
+    },
+    {
+      "time": 1775088000,
+      "open": 67.82,
+      "high": 69.29,
+      "low": 66.9,
+      "close": 68.73,
+      "volume": 91939
     }
   ]
 }

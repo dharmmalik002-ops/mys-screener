@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.047390+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:36.294647+00:00",
+  "symbol": "BIOCON",
+  "timeframe": "1D",
+  "ticker": "BIOCON.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 3227869
     },
     {
-      "time": 1774915200,
-      "open": 365.0,
-      "high": 369.95,
-      "low": 357.3,
-      "close": 360.0,
-      "volume": 3227869
-    },
-    {
       "time": 1775001600,
       "open": 369.0,
       "high": 371.9,
       "low": 362.0,
-      "close": 362.8,
-      "volume": 938510
+      "close": 365.2,
+      "volume": 2832071
+    },
+    {
+      "time": 1775088000,
+      "open": 362.25,
+      "high": 363.15,
+      "low": 342.1,
+      "close": 352.55,
+      "volume": 5941534
     }
   ]
 }

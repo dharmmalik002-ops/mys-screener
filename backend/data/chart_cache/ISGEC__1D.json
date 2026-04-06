@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.897210+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:33.914175+00:00",
+  "symbol": "ISGEC",
+  "timeframe": "1D",
+  "ticker": "ISGEC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 826.61,
-      "high": 858.21,
-      "low": 820.65,
-      "close": 854.64,
-      "volume": 131835
-    },
     {
       "time": 1708646400,
       "open": 854.64,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 875.05,
-      "high": 904.6,
+      "open": 875.0,
+      "high": 919.75,
       "low": 870.0,
-      "close": 895.6,
-      "volume": 0
+      "close": 909.6,
+      "volume": 119087
+    },
+    {
+      "time": 1775088000,
+      "open": 884.5,
+      "high": 918.0,
+      "low": 873.0,
+      "close": 914.0,
+      "volume": 32470
     }
   ]
 }

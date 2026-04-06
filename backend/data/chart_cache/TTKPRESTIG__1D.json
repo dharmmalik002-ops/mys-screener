@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.938352+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:31.201863+00:00",
+  "symbol": "TTKPRESTIG",
+  "timeframe": "1D",
+  "ticker": "TTKPRESTIG.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 739.73,
-      "high": 742.38,
-      "low": 729.14,
-      "close": 734.56,
-      "volume": 32069
-    },
     {
       "time": 1708646400,
       "open": 733.82,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 433.2,
-      "high": 442.85,
+      "open": 436.0,
+      "high": 449.35,
       "low": 431.85,
-      "close": 438.2,
-      "volume": 0
+      "close": 445.2,
+      "volume": 120150
+    },
+    {
+      "time": 1775088000,
+      "open": 437.8,
+      "high": 446.95,
+      "low": 431.45,
+      "close": 443.55,
+      "volume": 136880
     }
   ]
 }

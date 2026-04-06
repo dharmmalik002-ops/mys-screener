@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:22:52.635137+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:37.074748+00:00",
   "symbol": "AETHER",
   "timeframe": "1D",
   "ticker": "AETHER.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 870.0,
+      "high": 871.95,
+      "low": 862.05,
+      "close": 867.05,
+      "volume": 50850
+    },
     {
       "time": 1708905600,
       "open": 867.05,
@@ -4142,27 +4150,19 @@
       "volume": 522705
     },
     {
-      "time": 1774915200,
-      "open": 1150.5,
-      "high": 1179.0,
-      "low": 1075.6,
-      "close": 1087.0,
-      "volume": 522705
-    },
-    {
       "time": 1775001600,
       "open": 1114.9,
       "high": 1158.9,
       "low": 1102.5,
-      "close": 1110.2,
-      "volume": 111260
+      "close": 1116.0,
+      "volume": 210521
     },
     {
       "time": 1775088000,
-      "open": 1116.0,
+      "open": 1119.7,
       "high": 1119.7,
       "low": 1065.6,
-      "close": 1101.3,
+      "close": 1103.4,
       "volume": 277993
     }
   ]

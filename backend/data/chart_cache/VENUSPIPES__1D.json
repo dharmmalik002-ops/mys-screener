@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.385858+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.535112+00:00",
+  "symbol": "VENUSPIPES",
+  "timeframe": "1D",
+  "ticker": "VENUSPIPES.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1732.73,
-      "high": 1732.73,
-      "low": 1667.87,
-      "close": 1691.89,
-      "volume": 76497
-    },
     {
       "time": 1708646400,
       "open": 1704.42,
@@ -1031,7 +1026,7 @@
       "open": 2385.95,
       "high": 2410.77,
       "low": 2312.04,
-      "close": 2365.93,
+      "close": 2365.92,
       "volume": 58061
     },
     {
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 945.0,
-      "high": 970.0,
+      "high": 999.0,
       "low": 916.35,
-      "close": 964.65,
-      "volume": 23348
+      "close": 988.45,
+      "volume": 77967
+    },
+    {
+      "time": 1775088000,
+      "open": 950.0,
+      "high": 999.0,
+      "low": 940.1,
+      "close": 984.85,
+      "volume": 45854
     }
   ]
 }

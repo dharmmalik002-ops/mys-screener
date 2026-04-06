@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.697872+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:00.762243+00:00",
+  "symbol": "AKUMS",
+  "timeframe": "1D",
+  "ticker": "AKUMS.NS",
   "bars": [
     {
       "time": 1722902400,
@@ -3243,20 +3246,20 @@
       "volume": 171815
     },
     {
-      "time": 1774915200,
-      "open": 467.1,
-      "high": 472.0,
-      "low": 458.4,
-      "close": 468.9,
-      "volume": 171815
-    },
-    {
       "time": 1775001600,
       "open": 473.9,
-      "high": 493.25,
+      "high": 499.95,
       "low": 473.9,
-      "close": 486.4,
-      "volume": 63013
+      "close": 496.45,
+      "volume": 166332
+    },
+    {
+      "time": 1775088000,
+      "open": 490.0,
+      "high": 504.0,
+      "low": 479.55,
+      "close": 499.05,
+      "volume": 162549
     }
   ]
 }

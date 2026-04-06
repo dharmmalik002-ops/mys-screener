@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:16.997972+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:19.117991+00:00",
+  "symbol": "NTPCGREEN",
+  "timeframe": "1D",
+  "ticker": "NTPCGREEN.NS",
   "bars": [
     {
       "time": 1732665600,
@@ -2667,20 +2670,20 @@
       "volume": 9933742
     },
     {
-      "time": 1774915200,
-      "open": 95.06,
-      "high": 96.95,
-      "low": 90.8,
-      "close": 92.5,
-      "volume": 9933742
-    },
-    {
       "time": 1775001600,
       "open": 95.0,
-      "high": 98.1,
+      "high": 98.95,
       "low": 93.89,
-      "close": 97.85,
-      "volume": 4780415
+      "close": 98.21,
+      "volume": 10493996
+    },
+    {
+      "time": 1775088000,
+      "open": 96.9,
+      "high": 99.0,
+      "low": 95.4,
+      "close": 97.22,
+      "volume": 6485522
     }
   ]
 }

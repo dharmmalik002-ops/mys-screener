@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:15.465579+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:30.883251+00:00",
   "symbol": "APOLLOPIPE",
   "timeframe": "1D",
   "ticker": "APOLLOPIPE.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 424.85,
-      "high": 430.0,
-      "low": 414.0,
-      "close": 420.3,
-      "volume": 514614
+      "open": 421.95,
+      "high": 432.4,
+      "low": 410.5,
+      "close": 427.9,
+      "volume": 1552456
     },
     {
       "time": 1775088000,
-      "open": 426.0,
-      "high": 437.0,
+      "open": 425.75,
+      "high": 439.9,
       "low": 415.4,
       "close": 434.95,
-      "volume": 551191
+      "volume": 573033
     }
   ]
 }

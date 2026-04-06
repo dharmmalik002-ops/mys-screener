@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:24:52.025423+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:05.722015+00:00",
+  "symbol": "AXISOL",
+  "timeframe": "1D",
+  "ticker": "AXISOL.NS",
   "bars": [
     {
       "time": 1756080000,
@@ -353,6 +356,22 @@
       "low": 207.45,
       "close": 207.45,
       "volume": 16816
+    },
+    {
+      "time": 1775001600,
+      "open": 217.8,
+      "high": 217.8,
+      "low": 217.8,
+      "close": 217.8,
+      "volume": 3287
+    },
+    {
+      "time": 1775088000,
+      "open": 228.65,
+      "high": 228.65,
+      "low": 228.65,
+      "close": 228.65,
+      "volume": 2092
     }
   ]
 }

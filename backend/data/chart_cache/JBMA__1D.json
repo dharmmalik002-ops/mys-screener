@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.362730+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:12.736937+00:00",
+  "symbol": "JBMA",
+  "timeframe": "1D",
+  "ticker": "JBMA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 775372
     },
     {
-      "time": 1774915200,
-      "open": 539.0,
-      "high": 541.1,
-      "low": 512.4,
-      "close": 516.0,
-      "volume": 775372
-    },
-    {
       "time": 1775001600,
       "open": 540.0,
       "high": 584.75,
       "low": 533.55,
-      "close": 569.3,
-      "volume": 8122365
+      "close": 561.1,
+      "volume": 12366658
+    },
+    {
+      "time": 1775088000,
+      "open": 550.0,
+      "high": 571.5,
+      "low": 536.8,
+      "close": 561.7,
+      "volume": 1712195
     }
   ]
 }

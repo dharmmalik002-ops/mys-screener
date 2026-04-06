@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.405064+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:39.383020+00:00",
+  "symbol": "JUNIPER",
+  "timeframe": "1D",
+  "ticker": "JUNIPER.NS",
   "bars": [
     {
       "time": 1709078400,
@@ -4124,11 +4127,19 @@
     },
     {
       "time": 1775001600,
-      "open": 200.07,
-      "high": 205.0,
+      "open": 205.0,
+      "high": 208.0,
       "low": 196.75,
-      "close": 199.95,
-      "volume": 30467
+      "close": 203.73,
+      "volume": 90830
+    },
+    {
+      "time": 1775088000,
+      "open": 202.72,
+      "high": 204.5,
+      "low": 193.6,
+      "close": 203.77,
+      "volume": 63322
     }
   ]
 }

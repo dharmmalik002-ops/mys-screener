@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.756243+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:57.971260+00:00",
+  "symbol": "TEXRAIL",
+  "timeframe": "1D",
+  "ticker": "TEXRAIL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4879115
     },
     {
-      "time": 1774915200,
-      "open": 82.72,
-      "high": 83.24,
-      "low": 78.05,
-      "close": 78.9,
-      "volume": 4879115
-    },
-    {
       "time": 1775001600,
       "open": 83.99,
-      "high": 87.29,
+      "high": 88.99,
       "low": 82.35,
-      "close": 86.04,
-      "volume": 3994978
+      "close": 88.4,
+      "volume": 8488655
+    },
+    {
+      "time": 1775088000,
+      "open": 85.0,
+      "high": 90.5,
+      "low": 83.73,
+      "close": 89.66,
+      "volume": 3394329
     }
   ]
 }

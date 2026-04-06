@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.599124+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:24.899157+00:00",
+  "symbol": "BLUEJET",
+  "timeframe": "1D",
+  "ticker": "BLUEJET.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 912822
     },
     {
-      "time": 1774915200,
-      "open": 341.1,
-      "high": 343.0,
-      "low": 325.0,
-      "close": 325.05,
-      "volume": 912822
-    },
-    {
       "time": 1775001600,
       "open": 335.0,
-      "high": 352.0,
+      "high": 355.85,
       "low": 335.0,
-      "close": 347.95,
-      "volume": 196801
+      "close": 351.0,
+      "volume": 466192
+    },
+    {
+      "time": 1775088000,
+      "open": 344.9,
+      "high": 359.85,
+      "low": 335.0,
+      "close": 357.35,
+      "volume": 413385
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.987160+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:00.120584+00:00",
+  "symbol": "JPOLYINVST",
+  "timeframe": "1D",
+  "ticker": "JPOLYINVST.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 807.05,
-      "high": 825.0,
-      "low": 779.0,
-      "close": 782.2,
-      "volume": 22677
-    },
     {
       "time": 1708560000,
       "open": 788.75,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1092.3,
-      "high": 1096.5,
+      "open": 1050.0,
+      "high": 1116.0,
       "low": 1050.0,
-      "close": 1091.2,
-      "volume": 11636
+      "close": 1078.5,
+      "volume": 32544
+    },
+    {
+      "time": 1775088000,
+      "open": 1050.0,
+      "high": 1085.0,
+      "low": 1045.8,
+      "close": 1076.1,
+      "volume": 10437
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:20.807573+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.758769+00:00",
+  "symbol": "KPGEL",
+  "timeframe": "1D",
+  "ticker": "KPGEL.NS",
   "bars": [
     {
       "time": 1711065600,
@@ -3953,6 +3956,22 @@
       "low": 301.0,
       "close": 303.45,
       "volume": 203000
+    },
+    {
+      "time": 1775001600,
+      "open": 319.95,
+      "high": 342.0,
+      "low": 314.05,
+      "close": 338.35,
+      "volume": 86500
+    },
+    {
+      "time": 1775088000,
+      "open": 333.7,
+      "high": 373.95,
+      "low": 325.25,
+      "close": 366.4,
+      "volume": 119250
     }
   ]
 }

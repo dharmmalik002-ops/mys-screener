@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.253153+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:47.019402+00:00",
+  "symbol": "ECLERX",
+  "timeframe": "1D",
+  "ticker": "ECLERX.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 305001
     },
     {
-      "time": 1774915200,
-      "open": 1450.1,
-      "high": 1450.1,
-      "low": 1375.0,
-      "close": 1391.0,
-      "volume": 305001
-    },
-    {
       "time": 1775001600,
       "open": 1416.9,
-      "high": 1451.0,
-      "low": 1414.3,
-      "close": 1414.3,
-      "volume": 56157
+      "high": 1493.5,
+      "low": 1412.1,
+      "close": 1484.2,
+      "volume": 246271
+    },
+    {
+      "time": 1775088000,
+      "open": 1431.0,
+      "high": 1455.5,
+      "low": 1405.3,
+      "close": 1446.9,
+      "volume": 301587
     }
   ]
 }

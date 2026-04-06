@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:55.130821+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:16.179115+00:00",
+  "symbol": "INDPRUD",
+  "timeframe": "1D",
+  "ticker": "INDPRUD.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2449,6 +2452,22 @@
       "low": 5210.0,
       "close": 5468.45,
       "volume": 832
+    },
+    {
+      "time": 1775001600,
+      "open": 5450.0,
+      "high": 5455.0,
+      "low": 5410.0,
+      "close": 5455.0,
+      "volume": 37
+    },
+    {
+      "time": 1775088000,
+      "open": 5419.7,
+      "high": 5500.05,
+      "low": 5380.0,
+      "close": 5500.05,
+      "volume": 92
     }
   ]
 }

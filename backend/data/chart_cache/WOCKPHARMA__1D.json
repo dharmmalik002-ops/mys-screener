@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.092574+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:18.142205+00:00",
+  "symbol": "WOCKPHARMA",
+  "timeframe": "1D",
+  "ticker": "WOCKPHARMA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1322583
     },
     {
-      "time": 1774915200,
-      "open": 1186.0,
-      "high": 1232.0,
-      "low": 1162.1,
-      "close": 1174.7,
-      "volume": 1322583
-    },
-    {
       "time": 1775001600,
       "open": 1234.0,
-      "high": 1258.4,
+      "high": 1283.5,
       "low": 1198.4,
-      "close": 1230.2,
-      "volume": 294532
+      "close": 1267.6,
+      "volume": 949969
+    },
+    {
+      "time": 1775088000,
+      "open": 1234.0,
+      "high": 1277.9,
+      "low": 1220.6,
+      "close": 1271.5,
+      "volume": 652219
     }
   ]
 }

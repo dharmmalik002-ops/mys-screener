@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.204720+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.215283+00:00",
+  "symbol": "CREST",
+  "timeframe": "1D",
+  "ticker": "CREST.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 480.93,
-      "high": 490.13,
-      "low": 473.02,
-      "close": 478.09,
-      "volume": 27229
-    },
     {
       "time": 1708560000,
       "open": 480.68,
@@ -556,7 +551,7 @@
     },
     {
       "time": 1717632000,
-      "open": 357.23,
+      "open": 357.22,
       "high": 366.18,
       "low": 352.4,
       "close": 358.47,
@@ -4159,8 +4154,16 @@
       "open": 315.0,
       "high": 338.25,
       "low": 315.0,
-      "close": 329.0,
-      "volume": 1029
+      "close": 328.7,
+      "volume": 2798
+    },
+    {
+      "time": 1775088000,
+      "open": 322.05,
+      "high": 331.0,
+      "low": 321.3,
+      "close": 330.1,
+      "volume": 2787
     }
   ]
 }

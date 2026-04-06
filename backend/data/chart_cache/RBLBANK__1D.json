@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:01.997730+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:19.168493+00:00",
   "symbol": "RBLBANK",
   "timeframe": "1D",
   "ticker": "RBLBANK.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 273.11,
+      "high": 273.11,
+      "low": 263.36,
+      "close": 265.88,
+      "volume": 13207150
+    },
     {
       "time": 1708905600,
       "open": 266.53,
@@ -4142,28 +4150,20 @@
       "volume": 3514507
     },
     {
-      "time": 1774915200,
-      "open": 292.1,
-      "high": 295.0,
-      "low": 288.55,
-      "close": 290.0,
-      "volume": 3514507
-    },
-    {
       "time": 1775001600,
       "open": 295.0,
-      "high": 303.0,
+      "high": 304.25,
       "low": 295.0,
-      "close": 297.6,
-      "volume": 1228404
+      "close": 301.65,
+      "volume": 6314298
     },
     {
       "time": 1775088000,
-      "open": 301.65,
+      "open": 297.95,
       "high": 302.85,
       "low": 292.2,
-      "close": 301.3,
-      "volume": 7191169
+      "close": 301.0,
+      "volume": 7380124
     }
   ]
 }

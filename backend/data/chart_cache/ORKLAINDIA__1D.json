@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.792673+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:09.524113+00:00",
+  "symbol": "ORKLAINDIA",
+  "timeframe": "1D",
+  "ticker": "ORKLAINDIA.NS",
   "bars": [
     {
       "time": 1762387200,
@@ -795,20 +798,20 @@
       "volume": 154297
     },
     {
-      "time": 1774915200,
-      "open": 580.0,
-      "high": 589.7,
-      "low": 573.15,
-      "close": 585.0,
-      "volume": 154297
-    },
-    {
       "time": 1775001600,
       "open": 590.0,
-      "high": 599.3,
+      "high": 601.0,
       "low": 586.0,
-      "close": 595.15,
-      "volume": 22274
+      "close": 599.45,
+      "volume": 61147
+    },
+    {
+      "time": 1775088000,
+      "open": 589.0,
+      "high": 609.0,
+      "low": 580.55,
+      "close": 603.85,
+      "volume": 72459
     }
   ]
 }

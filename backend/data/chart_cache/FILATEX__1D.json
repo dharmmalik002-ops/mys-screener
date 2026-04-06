@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.484349+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:30.378804+00:00",
+  "symbol": "FILATEX",
+  "timeframe": "1D",
+  "ticker": "FILATEX.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 68.93,
-      "high": 69.37,
-      "low": 66.0,
-      "close": 68.13,
-      "volume": 2869031
-    },
     {
       "time": 1708646400,
       "open": 68.58,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 38.0,
-      "high": 39.99,
+      "open": 37.86,
+      "high": 41.14,
       "low": 37.86,
-      "close": 39.95,
-      "volume": 372625
+      "close": 40.41,
+      "volume": 1024224
+    },
+    {
+      "time": 1775088000,
+      "open": 40.4,
+      "high": 42.03,
+      "low": 38.85,
+      "close": 40.59,
+      "volume": 685746
     }
   ]
 }

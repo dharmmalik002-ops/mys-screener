@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.058725+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.292638+00:00",
+  "symbol": "BALUFORGE",
+  "timeframe": "1D",
+  "ticker": "BALUFORGE.NS",
   "bars": [
     {
       "time": 1714348800,
@@ -3819,20 +3822,20 @@
       "volume": 729818
     },
     {
-      "time": 1774915200,
-      "open": 408.65,
-      "high": 408.65,
-      "low": 385.0,
-      "close": 386.9,
-      "volume": 729818
-    },
-    {
       "time": 1775001600,
       "open": 410.0,
       "high": 424.8,
       "low": 399.2,
-      "close": 415.65,
-      "volume": 464130
+      "close": 424.6,
+      "volume": 631253
+    },
+    {
+      "time": 1775088000,
+      "open": 413.0,
+      "high": 432.05,
+      "low": 404.05,
+      "close": 429.8,
+      "volume": 638757
     }
   ]
 }

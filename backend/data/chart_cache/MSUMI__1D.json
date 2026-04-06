@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.960638+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:00.113936+00:00",
+  "symbol": "MSUMI",
+  "timeframe": "1D",
+  "ticker": "MSUMI.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 8487273
     },
     {
-      "time": 1774915200,
-      "open": 37.0,
-      "high": 37.44,
-      "low": 36.56,
-      "close": 36.75,
-      "volume": 8487273
-    },
-    {
       "time": 1775001600,
       "open": 37.59,
-      "high": 38.1,
+      "high": 38.33,
       "low": 37.13,
-      "close": 37.53,
-      "volume": 2760534
+      "close": 38.2,
+      "volume": 6926175
+    },
+    {
+      "time": 1775088000,
+      "open": 38.11,
+      "high": 38.11,
+      "low": 36.66,
+      "close": 37.07,
+      "volume": 14630994
     }
   ]
 }

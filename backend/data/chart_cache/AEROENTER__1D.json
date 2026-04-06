@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T03:04:05.322468+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.925505+00:00",
+  "symbol": "AEROENTER",
+  "timeframe": "1D",
+  "ticker": "AEROENTER.NS",
   "bars": [
     {
       "time": 1750032000,
@@ -1569,6 +1572,22 @@
       "low": 64.05,
       "close": 64.94,
       "volume": 509895
+    },
+    {
+      "time": 1775001600,
+      "open": 68.0,
+      "high": 70.25,
+      "low": 67.99,
+      "close": 69.7,
+      "volume": 190543
+    },
+    {
+      "time": 1775088000,
+      "open": 69.3,
+      "high": 72.0,
+      "low": 66.83,
+      "close": 71.43,
+      "volume": 316027
     }
   ]
 }

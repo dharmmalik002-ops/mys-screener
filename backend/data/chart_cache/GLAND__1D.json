@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.076189+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:15.148454+00:00",
+  "symbol": "GLAND",
+  "timeframe": "1D",
+  "ticker": "GLAND.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 105417
     },
     {
-      "time": 1774915200,
-      "open": 1719.8,
-      "high": 1719.8,
-      "low": 1666.8,
-      "close": 1700.0,
-      "volume": 105417
-    },
-    {
       "time": 1775001600,
       "open": 1701.7,
       "high": 1735.0,
       "low": 1690.2,
-      "close": 1720.5,
-      "volume": 26905
+      "close": 1706.0,
+      "volume": 70584
+    },
+    {
+      "time": 1775088000,
+      "open": 1686.0,
+      "high": 1706.6,
+      "low": 1652.0,
+      "close": 1688.6,
+      "volume": 95788
     }
   ]
 }

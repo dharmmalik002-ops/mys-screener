@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.083341+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:12.623657+00:00",
+  "symbol": "GATEWAY",
+  "timeframe": "1D",
+  "ticker": "GATEWAY.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 99.83,
-      "high": 101.08,
-      "low": 96.41,
-      "close": 97.98,
-      "volume": 1354601
-    },
     {
       "time": 1708646400,
       "open": 98.45,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 51.88,
+      "open": 50.89,
       "high": 53.8,
       "low": 50.89,
-      "close": 53.03,
-      "volume": 417642
+      "close": 52.86,
+      "volume": 907852
+    },
+    {
+      "time": 1775088000,
+      "open": 52.1,
+      "high": 54.73,
+      "low": 50.9,
+      "close": 54.31,
+      "volume": 926874
     }
   ]
 }

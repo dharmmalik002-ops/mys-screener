@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.623699+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:44.448340+00:00",
+  "symbol": "IDFCFIRSTB",
+  "timeframe": "1D",
+  "ticker": "IDFCFIRSTB.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 57394663
     },
     {
-      "time": 1774915200,
-      "open": 60.92,
-      "high": 61.2,
-      "low": 58.67,
-      "close": 58.85,
-      "volume": 57394663
-    },
-    {
       "time": 1775001600,
       "open": 60.84,
-      "high": 60.95,
+      "high": 61.2,
       "low": 59.9,
-      "close": 60.28,
-      "volume": 10267017
+      "close": 60.18,
+      "volume": 32422944
+    },
+    {
+      "time": 1775088000,
+      "open": 59.56,
+      "high": 60.55,
+      "low": 58.08,
+      "close": 60.22,
+      "volume": 25908484
     }
   ]
 }

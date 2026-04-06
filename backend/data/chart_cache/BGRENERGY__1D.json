@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.417584+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.078313+00:00",
+  "symbol": "BGRENERGY",
+  "timeframe": "1D",
+  "ticker": "BGRENERGY.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 95.0,
-      "high": 110.0,
-      "low": 92.64,
-      "close": 108.49,
-      "volume": 460276
-    },
     {
       "time": 1708300800,
       "open": 109.84,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 240.8,
+      "open": 233.5,
       "high": 257.95,
-      "low": 240.8,
-      "close": 255.6,
-      "volume": 5637
+      "low": 233.5,
+      "close": 257.95,
+      "volume": 22715
+    },
+    {
+      "time": 1775088000,
+      "open": 249.0,
+      "high": 268.0,
+      "low": 246.45,
+      "close": 265.1,
+      "volume": 8030
     }
   ]
 }

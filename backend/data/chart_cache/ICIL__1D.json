@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.969507+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:39.353098+00:00",
+  "symbol": "ICIL",
+  "timeframe": "1D",
+  "ticker": "ICIL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 429579
     },
     {
-      "time": 1774915200,
-      "open": 250.0,
-      "high": 262.75,
-      "low": 243.0,
-      "close": 249.15,
-      "volume": 429579
-    },
-    {
       "time": 1775001600,
       "open": 259.0,
       "high": 263.83,
-      "low": 248.22,
-      "close": 249.7,
-      "volume": 223628
+      "low": 245.0,
+      "close": 246.38,
+      "volume": 590333
+    },
+    {
+      "time": 1775088000,
+      "open": 243.25,
+      "high": 249.5,
+      "low": 238.15,
+      "close": 247.47,
+      "volume": 217935
     }
   ]
 }

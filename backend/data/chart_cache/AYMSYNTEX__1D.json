@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.035807+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:09.871937+00:00",
+  "symbol": "AYMSYNTEX",
+  "timeframe": "1D",
+  "ticker": "AYMSYNTEX.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 92.6,
-      "high": 92.6,
-      "low": 86.5,
-      "close": 89.95,
-      "volume": 191090
-    },
     {
       "time": 1708646400,
       "open": 90.95,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 185.0,
-      "high": 188.94,
+      "high": 189.0,
       "low": 182.0,
-      "close": 186.28,
-      "volume": 7855
+      "close": 187.2,
+      "volume": 14540
+    },
+    {
+      "time": 1775088000,
+      "open": 189.0,
+      "high": 189.0,
+      "low": 181.66,
+      "close": 183.21,
+      "volume": 8168
     }
   ]
 }

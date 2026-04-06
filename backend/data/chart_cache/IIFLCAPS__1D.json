@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.690889+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:17.829408+00:00",
+  "symbol": "IIFLCAPS",
+  "timeframe": "1D",
+  "ticker": "IIFLCAPS.NS",
   "bars": [
     {
       "time": 1732492800,
@@ -2675,20 +2678,20 @@
       "volume": 820951
     },
     {
-      "time": 1774915200,
-      "open": 258.0,
-      "high": 260.95,
-      "low": 240.4,
-      "close": 243.0,
-      "volume": 820951
-    },
-    {
       "time": 1775001600,
       "open": 263.46,
-      "high": 264.0,
+      "high": 265.0,
       "low": 246.67,
-      "close": 259.83,
-      "volume": 215136
+      "close": 260.72,
+      "volume": 445161
+    },
+    {
+      "time": 1775088000,
+      "open": 255.05,
+      "high": 269.0,
+      "low": 247.93,
+      "close": 261.05,
+      "volume": 306467
     }
   ]
 }

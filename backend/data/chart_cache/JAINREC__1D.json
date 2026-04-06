@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:44:14.390484+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:04.478104+00:00",
   "symbol": "JAINREC",
   "timeframe": "1D",
   "ticker": "JAINREC.NS",
@@ -966,28 +966,20 @@
       "volume": 1656988
     },
     {
-      "time": 1774915200,
-      "open": 454.0,
-      "high": 470.0,
-      "low": 447.35,
-      "close": 454.0,
-      "volume": 1656988
-    },
-    {
       "time": 1775001600,
       "open": 474.3,
       "high": 476.9,
       "low": 460.8,
-      "close": 469.5,
-      "volume": 675445
+      "close": 464.7,
+      "volume": 1272700
     },
     {
       "time": 1775088000,
-      "open": 464.7,
+      "open": 460.0,
       "high": 466.9,
       "low": 450.2,
-      "close": 462.85,
-      "volume": 861715
+      "close": 463.45,
+      "volume": 892839
     }
   ]
 }

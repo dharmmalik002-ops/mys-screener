@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.002253+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.715887+00:00",
+  "symbol": "INOXGREEN",
+  "timeframe": "1D",
+  "ticker": "INOXGREEN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 3327891
     },
     {
-      "time": 1774915200,
-      "open": 138.0,
-      "high": 141.26,
-      "low": 134.47,
-      "close": 135.7,
-      "volume": 3327891
-    },
-    {
       "time": 1775001600,
       "open": 140.0,
-      "high": 144.73,
+      "high": 146.9,
       "low": 140.0,
-      "close": 143.4,
-      "volume": 891836
+      "close": 144.39,
+      "volume": 1797035
+    },
+    {
+      "time": 1775088000,
+      "open": 140.0,
+      "high": 145.54,
+      "low": 135.8,
+      "close": 144.58,
+      "volume": 1181619
     }
   ]
 }

@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:21:17.360431+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.660559+00:00",
+  "symbol": "MAHASTEEL",
+  "timeframe": "1D",
+  "ticker": "MAHASTEEL.NS",
   "bars": [
-    {
-      "time": 1707782400,
-      "open": 120.5,
-      "high": 124.05,
-      "low": 120.25,
-      "close": 120.25,
-      "volume": 11814
-    },
-    {
-      "time": 1707868800,
-      "open": 117.0,
-      "high": 125.5,
-      "low": 114.25,
-      "close": 123.8,
-      "volume": 15075
-    },
     {
       "time": 1707955200,
       "open": 125.9,
@@ -4161,6 +4148,22 @@
       "low": 950.0,
       "close": 950.0,
       "volume": 4
+    },
+    {
+      "time": 1775001600,
+      "open": 950.0,
+      "high": 980.0,
+      "low": 926.0,
+      "close": 968.8,
+      "volume": 915
+    },
+    {
+      "time": 1775088000,
+      "open": 947.6,
+      "high": 957.0,
+      "low": 920.4,
+      "close": 937.5,
+      "volume": 169
     }
   ]
 }

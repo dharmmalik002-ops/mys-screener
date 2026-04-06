@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.118500+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:53.964226+00:00",
+  "symbol": "AARTIDRUGS",
+  "timeframe": "1D",
+  "ticker": "AARTIDRUGS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 195625
     },
     {
-      "time": 1774915200,
-      "open": 328.0,
-      "high": 333.0,
-      "low": 318.95,
-      "close": 319.45,
-      "volume": 195625
-    },
-    {
       "time": 1775001600,
       "open": 330.0,
-      "high": 344.45,
+      "high": 348.65,
       "low": 322.05,
-      "close": 340.35,
-      "volume": 76840
+      "close": 346.4,
+      "volume": 174275
+    },
+    {
+      "time": 1775088000,
+      "open": 340.0,
+      "high": 354.6,
+      "low": 335.55,
+      "close": 352.7,
+      "volume": 104633
     }
   ]
 }

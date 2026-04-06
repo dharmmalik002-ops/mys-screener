@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.439381+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:33.026883+00:00",
+  "symbol": "CAPACITE",
+  "timeframe": "1D",
+  "ticker": "CAPACITE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 256.8,
-      "high": 264.2,
-      "low": 250.2,
-      "close": 261.7,
-      "volume": 1598129
-    },
     {
       "time": 1708646400,
       "open": 263.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 209.86,
-      "high": 216.3,
+      "open": 210.0,
+      "high": 218.59,
       "low": 207.44,
-      "close": 214.0,
-      "volume": 176946
+      "close": 214.87,
+      "volume": 439779
+    },
+    {
+      "time": 1775088000,
+      "open": 213.0,
+      "high": 213.29,
+      "low": 204.02,
+      "close": 211.97,
+      "volume": 391517
     }
   ]
 }

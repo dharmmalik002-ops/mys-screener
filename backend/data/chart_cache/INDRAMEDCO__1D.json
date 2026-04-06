@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.883857+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:50.105609+00:00",
+  "symbol": "INDRAMEDCO",
+  "timeframe": "1D",
+  "ticker": "INDRAMEDCO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 192.77,
-      "high": 196.25,
-      "low": 189.48,
-      "close": 191.74,
-      "volume": 55737
-    },
     {
       "time": 1708646400,
       "open": 194.14,
@@ -341,7 +336,7 @@
     {
       "time": 1714348800,
       "open": 260.67,
-      "high": 271.13,
+      "high": 271.12,
       "low": 259.99,
       "close": 268.67,
       "volume": 472503
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 385.0,
-      "high": 396.45,
+      "open": 381.6,
+      "high": 401.75,
       "low": 381.6,
-      "close": 393.45,
-      "volume": 74595
+      "close": 399.7,
+      "volume": 181214
+    },
+    {
+      "time": 1775088000,
+      "open": 392.7,
+      "high": 405.05,
+      "low": 383.5,
+      "close": 399.6,
+      "volume": 233873
     }
   ]
 }

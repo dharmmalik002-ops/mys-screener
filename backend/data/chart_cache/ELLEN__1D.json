@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.789680+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.952253+00:00",
+  "symbol": "ELLEN",
+  "timeframe": "1D",
+  "ticker": "ELLEN.NS",
   "bars": [
     {
       "time": 1751328000,
@@ -1491,20 +1494,20 @@
       "volume": 483809
     },
     {
-      "time": 1774915200,
-      "open": 207.24,
-      "high": 212.01,
-      "low": 194.15,
-      "close": 196.0,
-      "volume": 483809
-    },
-    {
       "time": 1775001600,
       "open": 205.5,
       "high": 211.68,
-      "low": 204.75,
-      "close": 206.43,
-      "volume": 211654
+      "low": 200.42,
+      "close": 203.76,
+      "volume": 449769
+    },
+    {
+      "time": 1775088000,
+      "open": 202.0,
+      "high": 202.52,
+      "low": 195.56,
+      "close": 197.88,
+      "volume": 520326
     }
   ]
 }

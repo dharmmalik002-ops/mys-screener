@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.695451+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:00.831788+00:00",
+  "symbol": "MAHSEAMLES",
+  "timeframe": "1D",
+  "ticker": "MAHSEAMLES.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 348958
     },
     {
-      "time": 1774915200,
-      "open": 554.1,
-      "high": 569.7,
-      "low": 549.35,
-      "close": 561.0,
-      "volume": 348958
-    },
-    {
       "time": 1775001600,
       "open": 574.0,
-      "high": 578.2,
+      "high": 585.85,
       "low": 567.5,
-      "close": 572.55,
-      "volume": 68376
+      "close": 580.5,
+      "volume": 152502
+    },
+    {
+      "time": 1775088000,
+      "open": 567.8,
+      "high": 592.25,
+      "low": 563.6,
+      "close": 588.4,
+      "volume": 220029
     }
   ]
 }

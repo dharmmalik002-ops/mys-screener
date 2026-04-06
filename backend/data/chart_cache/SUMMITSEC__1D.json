@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.688821+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.360985+00:00",
+  "symbol": "SUMMITSEC",
+  "timeframe": "1D",
+  "ticker": "SUMMITSEC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1294.85,
-      "high": 1299.7,
-      "low": 1252.2,
-      "close": 1278.9,
-      "volume": 4786
-    },
     {
       "time": 1708646400,
       "open": 1298.0,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 1378.0,
-      "high": 1428.0,
+      "high": 1474.0,
       "low": 1378.0,
-      "close": 1421.8,
-      "volume": 4285
+      "close": 1461.6,
+      "volume": 10242
+    },
+    {
+      "time": 1775088000,
+      "open": 1469.0,
+      "high": 1510.0,
+      "low": 1412.0,
+      "close": 1488.3,
+      "volume": 6284
     }
   ]
 }

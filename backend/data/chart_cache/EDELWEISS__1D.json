@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.677118+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:01.544496+00:00",
+  "symbol": "EDELWEISS",
+  "timeframe": "1D",
+  "ticker": "EDELWEISS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 7720416
     },
     {
-      "time": 1774915200,
-      "open": 103.48,
-      "high": 103.48,
-      "low": 99.02,
-      "close": 99.6,
-      "volume": 7720416
-    },
-    {
       "time": 1775001600,
       "open": 103.99,
-      "high": 106.4,
+      "high": 107.7,
       "low": 102.77,
-      "close": 105.09,
-      "volume": 1731848
+      "close": 106.2,
+      "volume": 3599370
+    },
+    {
+      "time": 1775088000,
+      "open": 103.51,
+      "high": 106.83,
+      "low": 101.72,
+      "close": 105.96,
+      "volume": 3058261
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.142111+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:14.093383+00:00",
+  "symbol": "FRACTAL",
+  "timeframe": "1D",
+  "ticker": "FRACTAL.NS",
   "bars": [
     {
       "time": 1771200000,
@@ -224,23 +227,31 @@
       "high": 815.1,
       "low": 787.0,
       "close": 792.55,
-      "volume": 259963
+      "volume": 264646
     },
     {
       "time": 1774828800,
-      "open": 782.05,
+      "open": 782.0,
       "high": 786.9,
       "low": 743.35,
-      "close": 761.05,
-      "volume": 313219
+      "close": 759.45,
+      "volume": 317632
     },
     {
       "time": 1775001600,
-      "open": 790.0,
-      "high": 801.45,
+      "open": 793.0,
+      "high": 806.05,
       "low": 779.55,
-      "close": 793.0,
-      "volume": 0
+      "close": 798.05,
+      "volume": 191856
+    },
+    {
+      "time": 1775088000,
+      "open": 782.5,
+      "high": 802.75,
+      "low": 775.0,
+      "close": 792.65,
+      "volume": 151304
     }
   ]
 }

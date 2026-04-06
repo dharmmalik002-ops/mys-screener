@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.326647+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:29.467186+00:00",
+  "symbol": "NITINSPIN",
+  "timeframe": "1D",
+  "ticker": "NITINSPIN.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 381.29,
-      "high": 383.16,
-      "low": 359.61,
-      "close": 361.24,
-      "volume": 318992
-    },
     {
       "time": 1708560000,
       "open": 365.33,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 362.3,
-      "high": 364.0,
+      "high": 365.4,
       "low": 351.45,
-      "close": 357.95,
-      "volume": 52182
+      "close": 363.0,
+      "volume": 95643
+    },
+    {
+      "time": 1775088000,
+      "open": 363.0,
+      "high": 381.15,
+      "low": 352.55,
+      "close": 377.2,
+      "volume": 128410
     }
   ]
 }

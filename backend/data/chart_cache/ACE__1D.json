@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.610669+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:57.238395+00:00",
+  "symbol": "ACE",
+  "timeframe": "1D",
+  "ticker": "ACE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 451304
     },
     {
-      "time": 1774915200,
-      "open": 775.0,
-      "high": 779.5,
-      "low": 745.1,
-      "close": 748.5,
-      "volume": 451304
-    },
-    {
       "time": 1775001600,
       "open": 778.0,
-      "high": 804.85,
+      "high": 813.95,
       "low": 763.95,
-      "close": 792.45,
-      "volume": 95777
+      "close": 811.5,
+      "volume": 246802
+    },
+    {
+      "time": 1775088000,
+      "open": 792.0,
+      "high": 820.0,
+      "low": 776.45,
+      "close": 817.6,
+      "volume": 237221
     }
   ]
 }

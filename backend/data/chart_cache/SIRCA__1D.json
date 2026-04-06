@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T07:53:56.488464+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.170369+00:00",
   "symbol": "SIRCA",
   "timeframe": "1D",
   "ticker": "SIRCA.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 413.0,
-      "high": 429.9,
+      "open": 409.15,
+      "high": 431.8,
       "low": 409.15,
-      "close": 428.15,
-      "volume": 256688
+      "close": 422.75,
+      "volume": 432720
     },
     {
       "time": 1775088000,
-      "open": 420.8,
+      "open": 419.0,
       "high": 426.0,
-      "low": 410.25,
-      "close": 422.5,
-      "volume": 103707
+      "low": 410.2,
+      "close": 422.1,
+      "volume": 144800
     }
   ]
 }

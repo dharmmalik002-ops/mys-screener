@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.125373+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:56.741934+00:00",
+  "symbol": "KPIL",
+  "timeframe": "1D",
+  "ticker": "KPIL.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 168097
     },
     {
-      "time": 1774915200,
-      "open": 1066.1,
-      "high": 1068.4,
-      "low": 1040.1,
-      "close": 1057.0,
-      "volume": 168097
-    },
-    {
       "time": 1775001600,
       "open": 1069.5,
-      "high": 1095.3,
+      "high": 1107.5,
       "low": 1062.7,
-      "close": 1087.8,
-      "volume": 68430
+      "close": 1096.5,
+      "volume": 143892
+    },
+    {
+      "time": 1775088000,
+      "open": 1080.0,
+      "high": 1111.0,
+      "low": 1049.0,
+      "close": 1106.1,
+      "volume": 101612
     }
   ]
 }

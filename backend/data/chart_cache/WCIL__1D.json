@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T09:51:24.317251+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:22.595745+00:00",
+  "symbol": "WCIL",
+  "timeframe": "1D",
+  "ticker": "WCIL.NS",
   "bars": [
     {
       "time": 1727136000,
@@ -3006,9 +3009,25 @@
       "time": 1774828800,
       "open": 81.71,
       "high": 82.18,
-      "low": 78.0,
-      "close": 78.02,
-      "volume": 293753
+      "low": 77.02,
+      "close": 77.87,
+      "volume": 352190
+    },
+    {
+      "time": 1775001600,
+      "open": 80.0,
+      "high": 84.28,
+      "low": 79.55,
+      "close": 81.01,
+      "volume": 252644
+    },
+    {
+      "time": 1775088000,
+      "open": 80.82,
+      "high": 83.65,
+      "low": 78.24,
+      "close": 83.34,
+      "volume": 115624
     }
   ]
 }

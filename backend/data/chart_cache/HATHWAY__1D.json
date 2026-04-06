@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.530043+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.916792+00:00",
+  "symbol": "HATHWAY",
+  "timeframe": "1D",
+  "ticker": "HATHWAY.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 24.2,
-      "high": 24.3,
-      "low": 23.4,
-      "close": 24.15,
-      "volume": 8040928
-    },
     {
       "time": 1708646400,
       "open": 24.2,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 9.06,
-      "high": 9.52,
+      "open": 9.05,
+      "high": 9.75,
       "low": 8.91,
-      "close": 9.42,
-      "volume": 2092878
+      "close": 9.68,
+      "volume": 4427734
+    },
+    {
+      "time": 1775088000,
+      "open": 9.52,
+      "high": 9.86,
+      "low": 9.3,
+      "close": 9.78,
+      "volume": 2611265
     }
   ]
 }

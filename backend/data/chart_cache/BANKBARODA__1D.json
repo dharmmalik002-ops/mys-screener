@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.466369+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:29.043554+00:00",
+  "symbol": "BANKBARODA",
+  "timeframe": "1D",
+  "ticker": "BANKBARODA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 15950618
     },
     {
-      "time": 1774915200,
-      "open": 254.6,
-      "high": 256.0,
-      "low": 246.6,
-      "close": 247.1,
-      "volume": 15950618
-    },
-    {
       "time": 1775001600,
       "open": 253.0,
       "high": 256.25,
       "low": 250.4,
-      "close": 253.0,
-      "volume": 4462113
+      "close": 252.03,
+      "volume": 11199966
+    },
+    {
+      "time": 1775088000,
+      "open": 248.95,
+      "high": 250.98,
+      "low": 241.0,
+      "close": 249.56,
+      "volume": 14887386
     }
   ]
 }

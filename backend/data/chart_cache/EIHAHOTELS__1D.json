@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.489584+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:35.126851+00:00",
+  "symbol": "EIHAHOTELS",
+  "timeframe": "1D",
+  "ticker": "EIHAHOTELS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 377.87,
-      "high": 381.29,
-      "low": 361.13,
-      "close": 374.39,
-      "volume": 29186
-    },
     {
       "time": 1708646400,
       "open": 376.89,
@@ -4159,8 +4154,16 @@
       "open": 284.9,
       "high": 287.85,
       "low": 276.05,
-      "close": 283.1,
-      "volume": 11607
+      "close": 281.4,
+      "volume": 32435
+    },
+    {
+      "time": 1775088000,
+      "open": 279.0,
+      "high": 298.95,
+      "low": 275.0,
+      "close": 292.65,
+      "volume": 29012
     }
   ]
 }

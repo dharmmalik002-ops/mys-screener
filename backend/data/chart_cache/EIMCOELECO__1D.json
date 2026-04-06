@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.304496+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:25.644823+00:00",
+  "symbol": "EIMCOELECO",
+  "timeframe": "1D",
+  "ticker": "EIMCOELECO.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1422.31,
-      "high": 1437.75,
-      "low": 1388.96,
-      "close": 1407.28,
-      "volume": 2955
-    },
     {
       "time": 1708560000,
       "open": 1432.37,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1460.0,
-      "high": 1539.2,
+      "open": 1449.9,
+      "high": 1556.0,
       "low": 1449.9,
-      "close": 1525.0,
-      "volume": 6475
+      "close": 1548.5,
+      "volume": 13599
+    },
+    {
+      "time": 1775088000,
+      "open": 1515.0,
+      "high": 1576.0,
+      "low": 1502.7,
+      "close": 1554.0,
+      "volume": 5979
     }
   ]
 }

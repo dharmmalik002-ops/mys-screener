@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.283597+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:19.915415+00:00",
+  "symbol": "COCKERILL",
+  "timeframe": "1D",
+  "ticker": "COCKERILL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 4273.0,
-      "high": 4367.95,
-      "low": 4266.05,
-      "close": 4355.05,
-      "volume": 2398
+      "open": 4205.1,
+      "high": 4380.0,
+      "low": 4205.1,
+      "close": 4338.2,
+      "volume": 5539
+    },
+    {
+      "time": 1775088000,
+      "open": 4288.8,
+      "high": 4489.75,
+      "low": 4152.0,
+      "close": 4470.25,
+      "volume": 3897
     }
   ]
 }

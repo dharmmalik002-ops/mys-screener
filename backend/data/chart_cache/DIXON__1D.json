@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.034711+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:44.051841+00:00",
+  "symbol": "DIXON",
+  "timeframe": "1D",
+  "ticker": "DIXON.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 689714
     },
     {
-      "time": 1774915200,
-      "open": 9900.0,
-      "high": 9989.0,
-      "low": 9600.0,
-      "close": 9638.0,
-      "volume": 689714
-    },
-    {
       "time": 1775001600,
       "open": 10100.0,
-      "high": 10149.0,
+      "high": 10390.0,
       "low": 9904.0,
-      "close": 10025.0,
-      "volume": 242232
+      "close": 10254.0,
+      "volume": 670532
+    },
+    {
+      "time": 1775088000,
+      "open": 10010.0,
+      "high": 10345.5,
+      "low": 9732.0,
+      "close": 9920.5,
+      "volume": 1215237
     }
   ]
 }

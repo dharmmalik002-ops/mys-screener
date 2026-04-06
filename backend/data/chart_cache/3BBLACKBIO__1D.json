@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:25:58.959091+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:13.142934+00:00",
+  "symbol": "3BBLACKBIO",
+  "timeframe": "1D",
+  "ticker": "3BBLACKBIO.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1178.0,
+      "open": 1151.0,
       "high": 1216.0,
-      "low": 1162.1,
-      "close": 1211.05,
-      "volume": 2434
+      "low": 1130.0,
+      "close": 1154.4,
+      "volume": 10820
+    },
+    {
+      "time": 1775088000,
+      "open": 1144.0,
+      "high": 1254.05,
+      "low": 1110.0,
+      "close": 1228.55,
+      "volume": 11663
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.789043+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.380212+00:00",
+  "symbol": "MBEL",
+  "timeframe": "1D",
+  "ticker": "MBEL.NS",
   "bars": [
     {
       "time": 1754438400,
@@ -1284,11 +1287,19 @@
     },
     {
       "time": 1775001600,
-      "open": 237.12,
-      "high": 250.99,
+      "open": 230.0,
+      "high": 259.27,
       "low": 230.0,
-      "close": 249.23,
-      "volume": 157349
+      "close": 253.62,
+      "volume": 516619
+    },
+    {
+      "time": 1775088000,
+      "open": 244.4,
+      "high": 270.0,
+      "low": 241.0,
+      "close": 266.29,
+      "volume": 373360
     }
   ]
 }

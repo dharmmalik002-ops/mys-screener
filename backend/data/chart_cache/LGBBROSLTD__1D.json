@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.033642+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:38.912900+00:00",
+  "symbol": "LGBBROSLTD",
+  "timeframe": "1D",
+  "ticker": "LGBBROSLTD.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 1150.1,
-      "high": 1154.23,
-      "low": 1120.83,
-      "close": 1132.38,
-      "volume": 21292
-    },
     {
       "time": 1708646400,
       "open": 1138.06,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1695.4,
+      "open": 1673.0,
       "high": 1770.7,
       "low": 1673.0,
-      "close": 1726.8,
-      "volume": 0
+      "close": 1693.6,
+      "volume": 24963
+    },
+    {
+      "time": 1775088000,
+      "open": 1695.0,
+      "high": 1718.7,
+      "low": 1645.0,
+      "close": 1708.3,
+      "volume": 18283
     }
   ]
 }

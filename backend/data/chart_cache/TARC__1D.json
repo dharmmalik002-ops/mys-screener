@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.130421+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:50.616025+00:00",
+  "symbol": "TARC",
+  "timeframe": "1D",
+  "ticker": "TARC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 842000
     },
     {
-      "time": 1774915200,
-      "open": 119.49,
-      "high": 121.61,
-      "low": 109.1,
-      "close": 113.3,
-      "volume": 842000
-    },
-    {
       "time": 1775001600,
       "open": 117.39,
       "high": 121.24,
       "low": 115.51,
-      "close": 118.36,
-      "volume": 528032
+      "close": 119.6,
+      "volume": 811331
+    },
+    {
+      "time": 1775088000,
+      "open": 118.0,
+      "high": 120.35,
+      "low": 115.0,
+      "close": 119.39,
+      "volume": 297366
     }
   ]
 }

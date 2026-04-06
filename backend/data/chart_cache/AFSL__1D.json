@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.077653+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:07.937306+00:00",
+  "symbol": "AFSL",
+  "timeframe": "1D",
+  "ticker": "AFSL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 314.95,
-      "high": 319.35,
-      "low": 307.55,
-      "close": 309.2,
-      "volume": 145567
-    },
     {
       "time": 1708560000,
       "open": 310.85,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 202.01,
+      "open": 201.14,
       "high": 203.01,
-      "low": 201.14,
-      "close": 201.5,
-      "volume": 1527
+      "low": 201.0,
+      "close": 201.1,
+      "volume": 9933
+    },
+    {
+      "time": 1775088000,
+      "open": 202.0,
+      "high": 202.0,
+      "low": 201.0,
+      "close": 201.02,
+      "volume": 5127
     }
   ]
 }

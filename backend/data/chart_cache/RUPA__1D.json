@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.232904+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:22.381402+00:00",
+  "symbol": "RUPA",
+  "timeframe": "1D",
+  "ticker": "RUPA.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 279.8,
-      "high": 281.61,
-      "low": 274.54,
-      "close": 275.46,
-      "volume": 216682
-    },
     {
       "time": 1708560000,
       "open": 275.46,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 113.78,
-      "high": 117.96,
+      "open": 113.32,
+      "high": 120.89,
       "low": 113.32,
-      "close": 117.44,
-      "volume": 57901
+      "close": 119.6,
+      "volume": 177198
+    },
+    {
+      "time": 1775088000,
+      "open": 116.02,
+      "high": 123.0,
+      "low": 115.82,
+      "close": 122.41,
+      "volume": 159602
     }
   ]
 }

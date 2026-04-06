@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:30:39.914638+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:55.154620+00:00",
+  "symbol": "ASIANHOTNR",
+  "timeframe": "1D",
+  "ticker": "ASIANHOTNR.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 141.4,
-      "high": 143.1,
-      "low": 135.9,
-      "close": 136.0,
-      "volume": 23911
-    },
     {
       "time": 1708560000,
       "open": 137.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 302.0,
-      "high": 302.0,
-      "low": 297.0,
-      "close": 302.0,
-      "volume": 0
+      "open": 300.0,
+      "high": 314.0,
+      "low": 282.9,
+      "close": 289.3,
+      "volume": 80694
+    },
+    {
+      "time": 1775088000,
+      "open": 291.0,
+      "high": 296.8,
+      "low": 287.15,
+      "close": 293.45,
+      "volume": 2703
     }
   ]
 }

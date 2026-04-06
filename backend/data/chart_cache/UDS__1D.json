@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.274407+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:16.943601+00:00",
+  "symbol": "UDS",
+  "timeframe": "1D",
+  "ticker": "UDS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 341.6,
-      "high": 345.35,
-      "low": 331.1,
-      "close": 340.35,
-      "volume": 235296
-    },
     {
       "time": 1708646400,
       "open": 344.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 131.25,
-      "high": 137.0,
+      "open": 133.7,
+      "high": 137.5,
       "low": 131.25,
-      "close": 134.99,
-      "volume": 65018
+      "close": 136.81,
+      "volume": 121701
+    },
+    {
+      "time": 1775088000,
+      "open": 136.8,
+      "high": 144.9,
+      "low": 132.65,
+      "close": 139.04,
+      "volume": 181732
     }
   ]
 }

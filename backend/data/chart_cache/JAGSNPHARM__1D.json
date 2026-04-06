@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T04:59:21.338173+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:53.878833+00:00",
   "symbol": "JAGSNPHARM",
   "timeframe": "1D",
   "ticker": "JAGSNPHARM.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 123.23,
+      "high": 123.23,
+      "low": 119.75,
+      "close": 120.2,
+      "volume": 46147
+    },
     {
       "time": 1708905600,
       "open": 121.24,
@@ -4146,24 +4154,16 @@
       "open": 185.8,
       "high": 186.9,
       "low": 184.0,
-      "close": 184.44,
-      "volume": 60797
+      "close": 185.66,
+      "volume": 125489
     },
     {
       "time": 1775088000,
-      "open": 185.01,
+      "open": 185.0,
       "high": 187.0,
       "low": 184.0,
       "close": 186.22,
-      "volume": 61531
-    },
-    {
-      "time": 1775174400,
-      "open": 185.66,
-      "high": 187.0,
-      "low": 184.0,
-      "close": 186.22,
-      "volume": 61531
+      "volume": 58776
     }
   ]
 }

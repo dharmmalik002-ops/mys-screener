@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.472714+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:07.767434+00:00",
+  "symbol": "BALMLAWRIE",
+  "timeframe": "1D",
+  "ticker": "BALMLAWRIE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 232.51,
-      "high": 235.7,
-      "low": 225.8,
-      "close": 233.74,
-      "volume": 491395
-    },
     {
       "time": 1708646400,
       "open": 235.52,
@@ -2895,7 +2890,7 @@
       "open": 196.66,
       "high": 198.83,
       "low": 194.78,
-      "close": 195.45,
+      "close": 195.46,
       "volume": 112439
     },
     {
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 157.1,
-      "high": 158.5,
+      "high": 160.55,
       "low": 153.17,
-      "close": 158.35,
-      "volume": 104295
+      "close": 158.49,
+      "volume": 219798
+    },
+    {
+      "time": 1775088000,
+      "open": 156.01,
+      "high": 159.7,
+      "low": 153.0,
+      "close": 159.23,
+      "volume": 134769
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.282531+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.047305+00:00",
+  "symbol": "JYOTIRES",
+  "timeframe": "1D",
+  "ticker": "JYOTIRES.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 719.0,
+      "open": 715.2,
       "high": 786.45,
-      "low": 719.0,
-      "close": 755.75,
-      "volume": 6773
+      "low": 715.2,
+      "close": 766.5,
+      "volume": 18470
+    },
+    {
+      "time": 1775088000,
+      "open": 745.0,
+      "high": 787.0,
+      "low": 726.0,
+      "close": 779.85,
+      "volume": 13528
     }
   ]
 }

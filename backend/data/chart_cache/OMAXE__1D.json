@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.877676+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:57.046171+00:00",
+  "symbol": "OMAXE",
+  "timeframe": "1D",
+  "ticker": "OMAXE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 116.0,
-      "high": 116.4,
-      "low": 110.55,
-      "close": 111.8,
-      "volume": 342286
-    },
     {
       "time": 1708646400,
       "open": 112.9,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 65.9,
-      "high": 69.94,
+      "high": 70.29,
       "low": 65.9,
-      "close": 69.64,
-      "volume": 70121
+      "close": 69.95,
+      "volume": 131418
+    },
+    {
+      "time": 1775088000,
+      "open": 68.2,
+      "high": 74.33,
+      "low": 67.47,
+      "close": 73.14,
+      "volume": 133670
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.582486+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:04.323774+00:00",
+  "symbol": "TMB",
+  "timeframe": "1D",
+  "ticker": "TMB.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 217941
     },
     {
-      "time": 1774915200,
-      "open": 590.15,
-      "high": 596.7,
-      "low": 575.0,
-      "close": 580.0,
-      "volume": 217941
-    },
-    {
       "time": 1775001600,
       "open": 609.0,
       "high": 619.0,
       "low": 600.25,
-      "close": 602.05,
-      "volume": 87011
+      "close": 606.6,
+      "volume": 209615
+    },
+    {
+      "time": 1775088000,
+      "open": 605.0,
+      "high": 627.0,
+      "low": 597.65,
+      "close": 623.65,
+      "volume": 207239
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:32:16.984511+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:54.604011+00:00",
+  "symbol": "SMSPHARMA",
+  "timeframe": "1D",
+  "ticker": "SMSPHARMA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 146.24,
-      "high": 146.64,
-      "low": 143.3,
-      "close": 144.99,
-      "volume": 197306
-    },
     {
       "time": 1708646400,
       "open": 145.04,
@@ -4159,8 +4154,16 @@
       "open": 393.8,
       "high": 404.9,
       "low": 382.05,
-      "close": 395.1,
-      "volume": 263064
+      "close": 392.75,
+      "volume": 334936
+    },
+    {
+      "time": 1775088000,
+      "open": 385.0,
+      "high": 391.15,
+      "low": 370.25,
+      "close": 388.25,
+      "volume": 383777
     }
   ]
 }

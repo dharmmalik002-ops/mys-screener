@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:43:36.191236+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:21.667755+00:00",
+  "symbol": "DHANBANK",
+  "timeframe": "1D",
+  "ticker": "DHANBANK.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 54.2,
-      "high": 54.8,
-      "low": 50.05,
-      "close": 50.7,
-      "volume": 13250005
-    },
-    {
-      "time": 1708560000,
-      "open": 51.7,
-      "high": 52.0,
-      "low": 49.2,
-      "close": 50.8,
-      "volume": 3894253
-    },
     {
       "time": 1708646400,
       "open": 51.2,
@@ -4158,9 +4145,25 @@
       "time": 1774828800,
       "open": 20.9,
       "high": 20.99,
-      "low": 20.04,
-      "close": 20.06,
-      "volume": 710977
+      "low": 19.45,
+      "close": 19.64,
+      "volume": 1409656
+    },
+    {
+      "time": 1775001600,
+      "open": 20.6,
+      "high": 23.49,
+      "low": 20.43,
+      "close": 22.51,
+      "volume": 2768763
+    },
+    {
+      "time": 1775088000,
+      "open": 22.0,
+      "high": 23.05,
+      "low": 21.78,
+      "close": 22.72,
+      "volume": 796868
     }
   ]
 }

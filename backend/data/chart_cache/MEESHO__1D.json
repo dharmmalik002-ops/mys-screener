@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.025331+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:18.941415+00:00",
+  "symbol": "MEESHO",
+  "timeframe": "1D",
+  "ticker": "MEESHO.NS",
   "bars": [
     {
       "time": 1765324800,
@@ -603,20 +606,20 @@
       "volume": 3492718
     },
     {
-      "time": 1774915200,
-      "open": 143.31,
-      "high": 145.87,
-      "low": 139.0,
-      "close": 140.85,
-      "volume": 3492718
-    },
-    {
       "time": 1775001600,
       "open": 144.89,
-      "high": 145.21,
+      "high": 148.6,
       "low": 143.35,
-      "close": 144.12,
-      "volume": 816025
+      "close": 147.37,
+      "volume": 1996042
+    },
+    {
+      "time": 1775088000,
+      "open": 143.77,
+      "high": 148.15,
+      "low": 141.52,
+      "close": 146.61,
+      "volume": 2936613
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T07:25:43.908965+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:26.070061+00:00",
+  "symbol": "SEKURITIND",
+  "timeframe": "1D",
+  "ticker": "SEKURITIND.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2478,9 +2481,25 @@
       "time": 1774828800,
       "open": 88.49,
       "high": 88.97,
-      "low": 87.55,
-      "close": 87.79,
-      "volume": 32170
+      "low": 85.52,
+      "close": 86.03,
+      "volume": 63566
+    },
+    {
+      "time": 1775001600,
+      "open": 89.5,
+      "high": 90.77,
+      "low": 80.0,
+      "close": 89.63,
+      "volume": 69721
+    },
+    {
+      "time": 1775088000,
+      "open": 89.0,
+      "high": 90.79,
+      "low": 86.25,
+      "close": 90.26,
+      "volume": 31696
     }
   ]
 }

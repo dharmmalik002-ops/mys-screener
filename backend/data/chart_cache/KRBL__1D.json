@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.883831+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:32.604051+00:00",
+  "symbol": "KRBL",
+  "timeframe": "1D",
+  "ticker": "KRBL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 552460
     },
     {
-      "time": 1774915200,
-      "open": 292.0,
-      "high": 296.35,
-      "low": 280.75,
-      "close": 282.0,
-      "volume": 552460
-    },
-    {
       "time": 1775001600,
       "open": 287.25,
-      "high": 301.85,
+      "high": 304.2,
       "low": 287.25,
-      "close": 298.45,
-      "volume": 200508
+      "close": 302.85,
+      "volume": 602561
+    },
+    {
+      "time": 1775088000,
+      "open": 292.35,
+      "high": 308.5,
+      "low": 292.0,
+      "close": 307.5,
+      "volume": 462692
     }
   ]
 }

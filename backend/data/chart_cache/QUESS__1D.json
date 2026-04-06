@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.819509+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:14.816609+00:00",
+  "symbol": "QUESS",
+  "timeframe": "1D",
+  "ticker": "QUESS.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -727,7 +730,7 @@
       "open": 593.0,
       "high": 597.95,
       "low": 581.02,
-      "close": 594.7,
+      "close": 594.69,
       "volume": 329158
     },
     {
@@ -4147,20 +4150,20 @@
       "volume": 378381
     },
     {
-      "time": 1774915200,
-      "open": 173.5,
-      "high": 173.5,
-      "low": 166.3,
-      "close": 166.4,
-      "volume": 378381
-    },
-    {
       "time": 1775001600,
       "open": 172.7,
-      "high": 177.36,
+      "high": 178.0,
       "low": 172.7,
-      "close": 175.82,
-      "volume": 50594
+      "close": 176.3,
+      "volume": 97831
+    },
+    {
+      "time": 1775088000,
+      "open": 172.78,
+      "high": 179.9,
+      "low": 170.1,
+      "close": 178.9,
+      "volume": 115562
     }
   ]
 }

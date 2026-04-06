@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.272517+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:22.081017+00:00",
+  "symbol": "RAMCOIND",
+  "timeframe": "1D",
+  "ticker": "RAMCOIND.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 231.42,
-      "high": 232.56,
-      "low": 224.07,
-      "close": 230.52,
-      "volume": 108830
-    },
     {
       "time": 1708646400,
       "open": 229.23,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 235.0,
-      "high": 249.84,
+      "high": 255.99,
       "low": 235.0,
-      "close": 247.51,
-      "volume": 27066
+      "close": 246.83,
+      "volume": 56206
+    },
+    {
+      "time": 1775088000,
+      "open": 246.83,
+      "high": 254.94,
+      "low": 241.45,
+      "close": 253.03,
+      "volume": 60176
     }
   ]
 }

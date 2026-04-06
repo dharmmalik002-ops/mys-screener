@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.032379+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.553038+00:00",
+  "symbol": "SSWL",
+  "timeframe": "1D",
+  "ticker": "SSWL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 247.97,
-      "high": 254.16,
-      "low": 242.62,
-      "close": 245.89,
-      "volume": 353517
-    },
     {
       "time": 1708560000,
       "open": 248.41,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 179.0,
-      "high": 189.74,
+      "high": 192.85,
       "low": 177.04,
-      "close": 187.83,
-      "volume": 166453
+      "close": 187.9,
+      "volume": 570432
+    },
+    {
+      "time": 1775088000,
+      "open": 181.1,
+      "high": 190.0,
+      "low": 179.0,
+      "close": 189.25,
+      "volume": 137850
     }
   ]
 }

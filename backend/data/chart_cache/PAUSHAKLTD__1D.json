@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.270073+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.976381+00:00",
+  "symbol": "PAUSHAKLTD",
+  "timeframe": "1D",
+  "ticker": "PAUSHAKLTD.NS",
   "bars": [
     {
       "time": 1764547200,
@@ -652,11 +655,19 @@
     },
     {
       "time": 1775001600,
-      "open": 358.0,
-      "high": 384.95,
+      "open": 347.05,
+      "high": 395.95,
       "low": 347.05,
-      "close": 383.5,
-      "volume": 11352
+      "close": 383.4,
+      "volume": 36556
+    },
+    {
+      "time": 1775088000,
+      "open": 378.7,
+      "high": 408.4,
+      "low": 372.4,
+      "close": 401.75,
+      "volume": 25670
     }
   ]
 }

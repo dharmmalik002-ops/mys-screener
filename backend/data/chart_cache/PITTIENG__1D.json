@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.070139+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:10.178492+00:00",
+  "symbol": "PITTIENG",
+  "timeframe": "1D",
+  "ticker": "PITTIENG.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 692.91,
-      "high": 694.05,
-      "low": 666.68,
-      "close": 669.97,
-      "volume": 119910
-    },
     {
       "time": 1708560000,
       "open": 680.14,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 715.0,
-      "high": 734.0,
+      "open": 730.0,
+      "high": 744.0,
       "low": 705.25,
-      "close": 727.95,
-      "volume": 16726
+      "close": 736.75,
+      "volume": 46615
+    },
+    {
+      "time": 1775088000,
+      "open": 734.75,
+      "high": 744.25,
+      "low": 710.65,
+      "close": 737.95,
+      "volume": 56262
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:17:48.261894+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:51.905702+00:00",
   "symbol": "SANATHAN",
   "timeframe": "1D",
   "ticker": "SANATHAN.NS",
@@ -2503,19 +2503,19 @@
     },
     {
       "time": 1775001600,
-      "open": 367.75,
-      "high": 390.0,
+      "open": 367.65,
+      "high": 398.9,
       "low": 367.6,
-      "close": 375.0,
-      "volume": 8681
+      "close": 392.85,
+      "volume": 48801
     },
     {
       "time": 1775088000,
-      "open": 392.85,
+      "open": 399.95,
       "high": 426.0,
       "low": 382.05,
       "close": 419.2,
-      "volume": 34010
+      "volume": 33946
     }
   ]
 }

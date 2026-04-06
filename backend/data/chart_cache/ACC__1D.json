@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.858589+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:56.813946+00:00",
+  "symbol": "ACC",
+  "timeframe": "1D",
+  "ticker": "ACC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 496998
     },
     {
-      "time": 1774915200,
-      "open": 1305.1,
-      "high": 1306.5,
-      "low": 1251.7,
-      "close": 1252.7,
-      "volume": 496998
-    },
-    {
       "time": 1775001600,
       "open": 1280.1,
-      "high": 1320.6,
+      "high": 1331.9,
       "low": 1280.1,
-      "close": 1310.3,
-      "volume": 106789
+      "close": 1327.9,
+      "volume": 208873
+    },
+    {
+      "time": 1775088000,
+      "open": 1311.0,
+      "high": 1329.0,
+      "low": 1289.7,
+      "close": 1325.9,
+      "volume": 190185
     }
   ]
 }

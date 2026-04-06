@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.954447+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:59.862069+00:00",
+  "symbol": "INDOSTAR",
+  "timeframe": "1D",
+  "ticker": "INDOSTAR.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 190.95,
-      "high": 194.0,
-      "low": 184.5,
-      "close": 190.95,
-      "volume": 65829
-    },
     {
       "time": 1708646400,
       "open": 193.45,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 196.5,
+      "open": 195.82,
       "high": 199.55,
-      "low": 193.5,
-      "close": 195.37,
-      "volume": 76982
+      "low": 193.25,
+      "close": 195.14,
+      "volume": 170179
+    },
+    {
+      "time": 1775088000,
+      "open": 193.0,
+      "high": 198.8,
+      "low": 189.0,
+      "close": 195.62,
+      "volume": 65510
     }
   ]
 }

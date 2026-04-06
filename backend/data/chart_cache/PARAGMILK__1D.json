@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.165896+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:20.025876+00:00",
+  "symbol": "PARAGMILK",
+  "timeframe": "1D",
+  "ticker": "PARAGMILK.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 254.91,
-      "high": 259.73,
-      "low": 249.64,
-      "close": 258.49,
-      "volume": 608997
-    },
     {
       "time": 1708646400,
       "open": 260.43,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 187.5,
-      "high": 192.42,
+      "open": 187.84,
+      "high": 194.0,
       "low": 185.18,
-      "close": 191.03,
-      "volume": 343567
+      "close": 192.51,
+      "volume": 893828
+    },
+    {
+      "time": 1775088000,
+      "open": 191.0,
+      "high": 194.5,
+      "low": 184.49,
+      "close": 193.5,
+      "volume": 918878
     }
   ]
 }

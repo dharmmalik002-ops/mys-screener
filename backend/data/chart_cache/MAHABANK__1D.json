@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.718548+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:39.115954+00:00",
+  "symbol": "MAHABANK",
+  "timeframe": "1D",
+  "ticker": "MAHABANK.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 16152002
     },
     {
-      "time": 1774915200,
-      "open": 62.5,
-      "high": 63.34,
-      "low": 61.03,
-      "close": 61.29,
-      "volume": 16152002
-    },
-    {
       "time": 1775001600,
       "open": 64.0,
-      "high": 64.64,
+      "high": 65.5,
       "low": 63.25,
-      "close": 63.72,
-      "volume": 7239020
+      "close": 64.88,
+      "volume": 16041678
+    },
+    {
+      "time": 1775088000,
+      "open": 63.0,
+      "high": 64.22,
+      "low": 61.2,
+      "close": 63.89,
+      "volume": 19177352
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.247452+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:55.627586+00:00",
+  "symbol": "GALLANTT",
+  "timeframe": "1D",
+  "ticker": "GALLANTT.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 286774
     },
     {
-      "time": 1774915200,
-      "open": 531.5,
-      "high": 570.0,
-      "low": 521.0,
-      "close": 549.7,
-      "volume": 286774
-    },
-    {
       "time": 1775001600,
       "open": 569.0,
-      "high": 569.0,
+      "high": 569.1,
       "low": 555.15,
-      "close": 565.0,
-      "volume": 23201
+      "close": 562.85,
+      "volume": 65825
+    },
+    {
+      "time": 1775088000,
+      "open": 561.0,
+      "high": 561.0,
+      "low": 546.05,
+      "close": 555.9,
+      "volume": 36136
     }
   ]
 }

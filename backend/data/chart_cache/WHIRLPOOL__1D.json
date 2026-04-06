@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.633588+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:56.043467+00:00",
+  "symbol": "WHIRLPOOL",
+  "timeframe": "1D",
+  "ticker": "WHIRLPOOL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 476730
     },
     {
-      "time": 1774915200,
-      "open": 799.0,
-      "high": 804.6,
-      "low": 775.95,
-      "close": 787.0,
-      "volume": 476730
-    },
-    {
       "time": 1775001600,
       "open": 810.0,
-      "high": 823.55,
+      "high": 832.5,
       "low": 803.2,
-      "close": 812.4,
-      "volume": 53629
+      "close": 830.25,
+      "volume": 187059
+    },
+    {
+      "time": 1775088000,
+      "open": 819.55,
+      "high": 819.85,
+      "low": 798.4,
+      "close": 814.4,
+      "volume": 112563
     }
   ]
 }

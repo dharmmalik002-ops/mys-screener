@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:33:09.202772+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:13.866958+00:00",
+  "symbol": "PRINCEPIPE",
+  "timeframe": "1D",
+  "ticker": "PRINCEPIPE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 587.95,
-      "high": 592.14,
-      "low": 582.52,
-      "close": 583.92,
-      "volume": 114195
-    },
     {
       "time": 1708646400,
       "open": 588.1,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 212.0,
-      "high": 223.14,
+      "open": 211.0,
+      "high": 225.0,
       "low": 210.61,
-      "close": 221.68,
-      "volume": 143947
+      "close": 223.28,
+      "volume": 234389
+    },
+    {
+      "time": 1775088000,
+      "open": 221.59,
+      "high": 225.95,
+      "low": 210.0,
+      "close": 224.88,
+      "volume": 245271
     }
   ]
 }

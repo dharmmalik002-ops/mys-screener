@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T12:09:43.025661+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:51.146480+00:00",
   "symbol": "ONGC",
   "timeframe": "1D",
   "ticker": "ONGC.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 247.65,
+      "high": 248.64,
+      "low": 244.23,
+      "close": 245.22,
+      "volume": 9464646
+    },
     {
       "time": 1708905600,
       "open": 244.95,
@@ -4142,27 +4150,19 @@
       "volume": 44866906
     },
     {
-      "time": 1774915200,
-      "open": 282.75,
-      "high": 288.35,
-      "low": 281.95,
-      "close": 284.9,
-      "volume": 44866906
-    },
-    {
       "time": 1775001600,
       "open": 290.0,
       "high": 293.0,
       "low": 282.8,
-      "close": 289.4,
-      "volume": 18410184
+      "close": 288.05,
+      "volume": 31626297
     },
     {
       "time": 1775088000,
-      "open": 288.05,
+      "open": 288.5,
       "high": 288.8,
       "low": 283.5,
-      "close": 286.1,
+      "close": 287.2,
       "volume": 20935809
     }
   ]

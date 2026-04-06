@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.215781+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:16.714180+00:00",
+  "symbol": "IFGLEXPOR",
+  "timeframe": "1D",
+  "ticker": "IFGLEXPOR.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 289.54,
-      "high": 291.44,
-      "low": 274.99,
-      "close": 279.88,
-      "volume": 58832
-    },
     {
       "time": 1708646400,
       "open": 283.67,
@@ -4159,8 +4154,16 @@
       "open": 126.0,
       "high": 136.56,
       "low": 126.0,
-      "close": 131.0,
-      "volume": 32047
+      "close": 131.56,
+      "volume": 41177
+    },
+    {
+      "time": 1775088000,
+      "open": 130.0,
+      "high": 141.0,
+      "low": 127.67,
+      "close": 137.2,
+      "volume": 32135
     }
   ]
 }

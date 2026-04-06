@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.097601+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:36.053479+00:00",
+  "symbol": "NIACL",
+  "timeframe": "1D",
+  "ticker": "NIACL.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 740154
     },
     {
-      "time": 1774915200,
-      "open": 120.0,
-      "high": 121.56,
-      "low": 116.97,
-      "close": 117.6,
-      "volume": 740154
-    },
-    {
       "time": 1775001600,
       "open": 120.0,
-      "high": 123.94,
+      "high": 124.55,
       "low": 119.9,
-      "close": 122.15,
-      "volume": 219418
+      "close": 123.67,
+      "volume": 557654
+    },
+    {
+      "time": 1775088000,
+      "open": 121.0,
+      "high": 123.7,
+      "low": 118.27,
+      "close": 123.23,
+      "volume": 435389
     }
   ]
 }

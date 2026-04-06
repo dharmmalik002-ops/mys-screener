@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.648395+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:42.383102+00:00",
+  "symbol": "MAXESTATES",
+  "timeframe": "1D",
+  "ticker": "MAXESTATES.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 274.9,
-      "high": 278.0,
-      "low": 270.0,
-      "close": 272.7,
-      "volume": 67851
-    },
     {
       "time": 1708300800,
       "open": 272.7,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 318.75,
-      "high": 330.0,
+      "high": 331.05,
       "low": 313.55,
-      "close": 320.15,
-      "volume": 0
+      "close": 325.15,
+      "volume": 170119
+    },
+    {
+      "time": 1775088000,
+      "open": 325.0,
+      "high": 335.9,
+      "low": 313.0,
+      "close": 332.35,
+      "volume": 112394
     }
   ]
 }

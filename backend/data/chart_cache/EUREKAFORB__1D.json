@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.767342+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:58.038165+00:00",
+  "symbol": "EUREKAFORB",
+  "timeframe": "1D",
+  "ticker": "EUREKAFORB.NS",
   "bars": [
     {
       "time": 1726012800,
@@ -3059,20 +3062,20 @@
       "volume": 304325
     },
     {
-      "time": 1774915200,
-      "open": 453.3,
-      "high": 461.55,
-      "low": 436.6,
-      "close": 443.0,
-      "volume": 304325
-    },
-    {
       "time": 1775001600,
       "open": 450.0,
-      "high": 456.6,
+      "high": 474.3,
       "low": 447.9,
-      "close": 454.2,
-      "volume": 71247
+      "close": 459.5,
+      "volume": 199100
+    },
+    {
+      "time": 1775088000,
+      "open": 454.8,
+      "high": 468.8,
+      "low": 443.2,
+      "close": 463.35,
+      "volume": 80663
     }
   ]
 }

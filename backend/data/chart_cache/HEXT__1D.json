@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.932148+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:55.819361+00:00",
+  "symbol": "HEXT",
+  "timeframe": "1D",
+  "ticker": "HEXT.NS",
   "bars": [
     {
       "time": 1739923200,
@@ -2171,20 +2174,20 @@
       "volume": 412874
     },
     {
-      "time": 1774915200,
-      "open": 440.0,
-      "high": 441.95,
-      "low": 421.3,
-      "close": 423.1,
-      "volume": 412874
-    },
-    {
       "time": 1775001600,
       "open": 430.0,
       "high": 435.5,
       "low": 424.55,
-      "close": 433.1,
-      "volume": 541139
+      "close": 432.4,
+      "volume": 1297752
+    },
+    {
+      "time": 1775088000,
+      "open": 427.55,
+      "high": 447.0,
+      "low": 422.7,
+      "close": 443.95,
+      "volume": 3176631
     }
   ]
 }

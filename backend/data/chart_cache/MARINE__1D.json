@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.237027+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:10.769295+00:00",
+  "symbol": "MARINE",
+  "timeframe": "1D",
+  "ticker": "MARINE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 112.53,
-      "high": 115.12,
-      "low": 105.84,
-      "close": 115.07,
-      "volume": 447148
-    },
     {
       "time": 1708646400,
       "open": 117.66,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 158.0,
-      "high": 170.0,
+      "open": 157.9,
+      "high": 172.0,
       "low": 156.0,
-      "close": 167.25,
-      "volume": 365169
+      "close": 169.84,
+      "volume": 623246
+    },
+    {
+      "time": 1775088000,
+      "open": 167.9,
+      "high": 175.0,
+      "low": 162.9,
+      "close": 172.3,
+      "volume": 436534
     }
   ]
 }

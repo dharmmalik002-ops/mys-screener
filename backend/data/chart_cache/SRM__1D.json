@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.240342+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:10.379885+00:00",
+  "symbol": "SRM",
+  "timeframe": "1D",
+  "ticker": "SRM.NS",
   "bars": [
     {
       "time": 1712102400,
@@ -3949,10 +3952,18 @@
     {
       "time": 1775001600,
       "open": 400.0,
-      "high": 408.95,
+      "high": 412.0,
       "low": 395.0,
-      "close": 403.65,
-      "volume": 26162
+      "close": 404.85,
+      "volume": 122184
+    },
+    {
+      "time": 1775088000,
+      "open": 400.8,
+      "high": 422.85,
+      "low": 393.0,
+      "close": 417.8,
+      "volume": 165853
     }
   ]
 }

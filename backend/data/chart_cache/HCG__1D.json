@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.816356+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:59.887864+00:00",
+  "symbol": "HCG",
+  "timeframe": "1D",
+  "ticker": "HCG.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 938327
     },
     {
-      "time": 1774915200,
-      "open": 528.0,
-      "high": 531.6,
-      "low": 513.3,
-      "close": 520.1,
-      "volume": 938327
-    },
-    {
       "time": 1775001600,
       "open": 536.0,
       "high": 540.7,
       "low": 526.35,
-      "close": 531.2,
-      "volume": 68222
+      "close": 535.15,
+      "volume": 146195
+    },
+    {
+      "time": 1775088000,
+      "open": 533.0,
+      "high": 533.9,
+      "low": 518.2,
+      "close": 527.7,
+      "volume": 100412
     }
   ]
 }

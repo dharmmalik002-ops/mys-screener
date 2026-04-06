@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:19:08.956905+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:08.576617+00:00",
+  "symbol": "NATIONSTD",
+  "timeframe": "1D",
+  "ticker": "NATIONSTD.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2452,11 +2455,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1351.55,
-      "high": 1351.55,
+      "open": 1371.75,
+      "high": 1374.9,
       "low": 1280.05,
-      "close": 1313.85,
-      "volume": 1
+      "close": 1350.7,
+      "volume": 50
+    },
+    {
+      "time": 1775088000,
+      "open": 1395.0,
+      "high": 1418.2,
+      "low": 1300.1,
+      "close": 1318.45,
+      "volume": 172
     }
   ]
 }

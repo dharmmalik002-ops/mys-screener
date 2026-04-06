@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:33.741426+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:36.343679+00:00",
   "symbol": "GMDCLTD",
   "timeframe": "1D",
   "ticker": "GMDCLTD.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 397.08,
+      "high": 401.44,
+      "low": 393.02,
+      "close": 396.37,
+      "volume": 1634815
+    },
     {
       "time": 1708905600,
       "open": 392.06,
@@ -4142,28 +4150,20 @@
       "volume": 3614114
     },
     {
-      "time": 1774915200,
-      "open": 560.0,
-      "high": 579.4,
-      "low": 548.05,
-      "close": 565.95,
-      "volume": 3614114
-    },
-    {
       "time": 1775001600,
       "open": 582.1,
       "high": 590.95,
       "low": 575.6,
-      "close": 586.1,
-      "volume": 1123606
+      "close": 580.3,
+      "volume": 2107349
     },
     {
       "time": 1775088000,
-      "open": 580.3,
+      "open": 569.8,
       "high": 584.85,
       "low": 565.15,
-      "close": 582.3,
-      "volume": 2210071
+      "close": 582.35,
+      "volume": 2265219
     }
   ]
 }

@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:40:42.094932+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:45.664369+00:00",
   "symbol": "SBC",
   "timeframe": "1D",
   "ticker": "SBC.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 30.96,
-      "high": 31.29,
-      "low": 30.8,
-      "close": 31.16,
-      "volume": 3930512
+      "open": 30.9,
+      "high": 31.3,
+      "low": 29.5,
+      "close": 30.24,
+      "volume": 10126481
     },
     {
       "time": 1775088000,
-      "open": 30.43,
+      "open": 30.09,
       "high": 30.84,
-      "low": 29.91,
+      "low": 29.9,
       "close": 30.58,
-      "volume": 6403278
+      "volume": 7111302
     }
   ]
 }

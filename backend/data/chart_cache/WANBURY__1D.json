@@ -1,23 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-30T09:51:24.518547+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:27.581516+00:00",
+  "symbol": "WANBURY",
+  "timeframe": "1D",
+  "ticker": "WANBURY.NS",
   "bars": [
-    {
-      "time": 1707955200,
-      "open": 154.15,
-      "high": 158.95,
-      "low": 154.15,
-      "close": 158.9,
-      "volume": 11128
-    },
-    {
-      "time": 1708041600,
-      "open": 159.0,
-      "high": 162.05,
-      "low": 159.0,
-      "close": 162.05,
-      "volume": 13319
-    },
     {
       "time": 1708300800,
       "open": 165.25,
@@ -4159,8 +4146,24 @@
       "open": 220.05,
       "high": 232.0,
       "low": 220.0,
-      "close": 220.0,
-      "volume": 2153
+      "close": 222.55,
+      "volume": 3494
+    },
+    {
+      "time": 1775001600,
+      "open": 230.0,
+      "high": 233.65,
+      "low": 227.35,
+      "close": 230.75,
+      "volume": 2070
+    },
+    {
+      "time": 1775088000,
+      "open": 230.0,
+      "high": 230.4,
+      "low": 223.6,
+      "close": 230.4,
+      "volume": 1478
     }
   ]
 }

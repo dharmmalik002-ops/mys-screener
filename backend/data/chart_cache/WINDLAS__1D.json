@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.540239+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:41.864924+00:00",
+  "symbol": "WINDLAS",
+  "timeframe": "1D",
+  "ticker": "WINDLAS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 514.91,
-      "high": 551.06,
-      "low": 508.64,
-      "close": 539.9,
-      "volume": 475434
-    },
     {
       "time": 1708646400,
       "open": 551.06,
@@ -4159,8 +4154,16 @@
       "open": 747.95,
       "high": 775.0,
       "low": 743.2,
-      "close": 769.0,
-      "volume": 8673
+      "close": 767.65,
+      "volume": 22215
+    },
+    {
+      "time": 1775088000,
+      "open": 767.65,
+      "high": 788.95,
+      "low": 747.15,
+      "close": 764.5,
+      "volume": 37650
     }
   ]
 }

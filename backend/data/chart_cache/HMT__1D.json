@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:20:35.944097+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:02.253516+00:00",
+  "symbol": "HMT",
+  "timeframe": "1D",
+  "ticker": "HMT.NS",
   "bars": [
-    {
-      "time": 1708041600,
-      "open": 65.92,
-      "high": 65.92,
-      "low": 62.0,
-      "close": 62.21,
-      "volume": 10983
-    },
     {
       "time": 1708300800,
       "open": 64.0,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 59.0,
-      "high": 60.0,
-      "low": 57.75,
-      "close": 60.0,
-      "volume": 1556
+      "open": 56.61,
+      "high": 60.65,
+      "low": 56.61,
+      "close": 59.93,
+      "volume": 6435
+    },
+    {
+      "time": 1775088000,
+      "open": 61.0,
+      "high": 61.85,
+      "low": 60.11,
+      "close": 60.6,
+      "volume": 3689
     }
   ]
 }

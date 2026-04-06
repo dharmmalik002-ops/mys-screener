@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.671380+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:58.731218+00:00",
+  "symbol": "KALIND",
+  "timeframe": "1D",
+  "ticker": "KALIND.NS",
   "bars": [
-    {
-      "time": 1708300800,
-      "open": 33.06,
-      "high": 36.54,
-      "low": 33.06,
-      "close": 36.23,
-      "volume": 626
-    },
     {
       "time": 1708387200,
       "open": 38.04,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 95.0,
-      "high": 95.95,
+      "open": 94.99,
+      "high": 97.58,
       "low": 93.0,
-      "close": 95.1,
-      "volume": 72878
+      "close": 96.24,
+      "volume": 500345
+    },
+    {
+      "time": 1775088000,
+      "open": 96.25,
+      "high": 101.05,
+      "low": 96.25,
+      "close": 101.05,
+      "volume": 829082
     }
   ]
 }

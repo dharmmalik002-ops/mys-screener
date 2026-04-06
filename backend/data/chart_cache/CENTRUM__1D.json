@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.803218+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:51.592869+00:00",
+  "symbol": "CENTRUM",
+  "timeframe": "1D",
+  "ticker": "CENTRUM.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 35.95,
-      "high": 38.4,
-      "low": 35.0,
-      "close": 38.05,
-      "volume": 1966681
-    },
     {
       "time": 1708646400,
       "open": 38.15,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 29.36,
+      "open": 29.37,
       "high": 29.9,
       "low": 28.0,
-      "close": 29.0,
-      "volume": 95953
+      "close": 28.52,
+      "volume": 334096
+    },
+    {
+      "time": 1775088000,
+      "open": 28.37,
+      "high": 28.38,
+      "low": 27.02,
+      "close": 27.63,
+      "volume": 202434
     }
   ]
 }

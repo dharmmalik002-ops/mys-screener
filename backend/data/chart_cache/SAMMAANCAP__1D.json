@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:47:36.054330+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:45.863815+00:00",
   "symbol": "SAMMAANCAP",
   "timeframe": "1D",
   "ticker": "SAMMAANCAP.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 186.31,
+      "high": 206.26,
+      "low": 184.64,
+      "close": 204.38,
+      "volume": 51960119
+    },
     {
       "time": 1708905600,
       "open": 204.88,
@@ -4142,27 +4150,19 @@
       "volume": 25387575
     },
     {
-      "time": 1774915200,
-      "open": 148.6,
-      "high": 151.31,
-      "low": 146.15,
-      "close": 148.75,
-      "volume": 25387575
-    },
-    {
       "time": 1775001600,
       "open": 155.0,
       "high": 156.67,
-      "low": 150.2,
-      "close": 150.42,
-      "volume": 19296762
+      "low": 146.0,
+      "close": 146.66,
+      "volume": 34313323
     },
     {
       "time": 1775088000,
-      "open": 146.66,
+      "open": 146.1,
       "high": 147.99,
       "low": 141.96,
-      "close": 146.5,
+      "close": 146.95,
       "volume": 17599888
     }
   ]

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:24:54.449065+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:04.157833+00:00",
+  "symbol": "BRRL",
+  "timeframe": "1D",
+  "ticker": "BRRL.NS",
   "bars": [
     {
       "time": 1735603200,

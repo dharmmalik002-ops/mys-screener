@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.351711+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:33.069296+00:00",
+  "symbol": "SIEMENS",
+  "timeframe": "1D",
+  "ticker": "SIEMENS.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 480280
     },
     {
-      "time": 1774915200,
-      "open": 2997.6,
-      "high": 3020.3,
-      "low": 2923.1,
-      "close": 2930.0,
-      "volume": 480280
-    },
-    {
       "time": 1775001600,
       "open": 3010.0,
-      "high": 3067.4,
+      "high": 3072.3,
       "low": 2985.7,
-      "close": 2999.5,
-      "volume": 97666
+      "close": 3017.0,
+      "volume": 276980
+    },
+    {
+      "time": 1775088000,
+      "open": 2970.0,
+      "high": 3045.0,
+      "low": 2906.0,
+      "close": 3026.6,
+      "volume": 265901
     }
   ]
 }

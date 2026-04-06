@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.115481+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.116095+00:00",
+  "symbol": "BONDADA",
+  "timeframe": "1D",
+  "ticker": "BONDADA.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2485,10 +2488,18 @@
     {
       "time": 1775001600,
       "open": 239.95,
-      "high": 244.0,
+      "high": 251.8,
       "low": 230.1,
-      "close": 241.0,
-      "volume": 143800
+      "close": 246.0,
+      "volume": 331200
+    },
+    {
+      "time": 1775088000,
+      "open": 240.0,
+      "high": 287.0,
+      "low": 235.05,
+      "close": 281.1,
+      "volume": 451000
     }
   ]
 }

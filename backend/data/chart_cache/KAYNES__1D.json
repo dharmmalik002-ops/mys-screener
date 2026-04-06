@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.873607+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:02.653523+00:00",
+  "symbol": "KAYNES",
+  "timeframe": "1D",
+  "ticker": "KAYNES.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1304022
     },
     {
-      "time": 1774915200,
-      "open": 3560.0,
-      "high": 3586.7,
-      "low": 3410.0,
-      "close": 3420.0,
-      "volume": 1304022
-    },
-    {
       "time": 1775001600,
       "open": 3629.5,
       "high": 3674.8,
-      "low": 3560.3,
-      "close": 3562.5,
-      "volume": 1030155
+      "low": 3520.8,
+      "close": 3539.9,
+      "volume": 2072395
+    },
+    {
+      "time": 1775088000,
+      "open": 3495.0,
+      "high": 3561.8,
+      "low": 3380.0,
+      "close": 3538.0,
+      "volume": 1635143
     }
   ]
 }

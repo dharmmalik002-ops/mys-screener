@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T17:11:02.291043+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:39.202796+00:00",
   "symbol": "BANKINDIA",
   "timeframe": "1D",
   "ticker": "BANKINDIA.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 132.09,
+      "high": 132.8,
+      "low": 128.32,
+      "close": 129.12,
+      "volume": 15595124
+    },
     {
       "time": 1708905600,
       "open": 129.26,
@@ -4142,28 +4150,20 @@
       "volume": 11661437
     },
     {
-      "time": 1774915200,
-      "open": 141.11,
-      "high": 142.92,
-      "low": 136.2,
-      "close": 136.67,
-      "volume": 11661437
-    },
-    {
       "time": 1775001600,
       "open": 142.81,
-      "high": 142.81,
-      "low": 139.68,
-      "close": 140.47,
-      "volume": 3973242
+      "high": 144.78,
+      "low": 139.64,
+      "close": 141.7,
+      "volume": 13202443
     },
     {
       "time": 1775088000,
-      "open": 139.39,
+      "open": 139.5,
       "high": 139.8,
-      "low": 134.53,
-      "close": 139.31,
-      "volume": 9060066
+      "low": 134.52,
+      "close": 139.16,
+      "volume": 9218922
     }
   ]
 }

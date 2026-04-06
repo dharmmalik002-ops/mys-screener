@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.780124+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:07.687372+00:00",
+  "symbol": "ASHOKA",
+  "timeframe": "1D",
+  "ticker": "ASHOKA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 2800306
     },
     {
-      "time": 1774915200,
-      "open": 107.2,
-      "high": 108.66,
-      "low": 101.0,
-      "close": 102.3,
-      "volume": 2800306
-    },
-    {
       "time": 1775001600,
       "open": 106.42,
-      "high": 109.76,
+      "high": 111.14,
       "low": 105.34,
-      "close": 108.48,
-      "volume": 634650
+      "close": 110.74,
+      "volume": 1268122
+    },
+    {
+      "time": 1775088000,
+      "open": 106.4,
+      "high": 112.95,
+      "low": 105.31,
+      "close": 111.92,
+      "volume": 1446692
     }
   ]
 }

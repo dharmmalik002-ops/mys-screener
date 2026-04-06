@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.757731+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:43.526628+00:00",
+  "symbol": "TIL",
+  "timeframe": "1D",
+  "ticker": "TIL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 519.45,
-      "high": 519.45,
-      "low": 519.45,
-      "close": 519.45,
-      "volume": 2775
-    },
     {
       "time": 1708560000,
       "open": 529.8,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 171.0,
-      "high": 171.0,
+      "high": 178.99,
       "low": 168.22,
-      "close": 170.45,
-      "volume": 20019
+      "close": 176.88,
+      "volume": 74906
+    },
+    {
+      "time": 1775088000,
+      "open": 171.8,
+      "high": 180.9,
+      "low": 169.11,
+      "close": 176.71,
+      "volume": 103378
     }
   ]
 }

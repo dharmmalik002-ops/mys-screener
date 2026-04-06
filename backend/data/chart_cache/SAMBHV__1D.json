@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.600990+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:04.215400+00:00",
+  "symbol": "SAMBHV",
+  "timeframe": "1D",
+  "ticker": "SAMBHV.NS",
   "bars": [
     {
       "time": 1751414400,
@@ -1476,11 +1479,19 @@
     },
     {
       "time": 1775001600,
-      "open": 98.96,
-      "high": 100.59,
+      "open": 92.5,
+      "high": 102.0,
       "low": 92.5,
-      "close": 98.91,
-      "volume": 1049441
+      "close": 100.86,
+      "volume": 2286129
+    },
+    {
+      "time": 1775088000,
+      "open": 97.0,
+      "high": 102.39,
+      "low": 95.01,
+      "close": 100.87,
+      "volume": 1878958
     }
   ]
 }

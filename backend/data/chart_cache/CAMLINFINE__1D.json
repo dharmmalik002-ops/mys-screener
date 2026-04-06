@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.373317+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:27.235711+00:00",
+  "symbol": "CAMLINFINE",
+  "timeframe": "1D",
+  "ticker": "CAMLINFINE.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 126.55,
-      "high": 127.2,
-      "low": 123.25,
-      "close": 123.95,
-      "volume": 781647
-    },
     {
       "time": 1708560000,
       "open": 124.15,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 100.01,
+      "open": 100.0,
       "high": 108.0,
       "low": 97.89,
-      "close": 102.08,
-      "volume": 834787
+      "close": 101.56,
+      "volume": 1640113
+    },
+    {
+      "time": 1775088000,
+      "open": 101.0,
+      "high": 103.79,
+      "low": 97.39,
+      "close": 102.96,
+      "volume": 670358
     }
   ]
 }

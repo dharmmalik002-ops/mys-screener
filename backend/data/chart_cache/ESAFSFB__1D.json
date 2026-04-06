@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.062228+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:54.520124+00:00",
+  "symbol": "ESAFSFB",
+  "timeframe": "1D",
+  "ticker": "ESAFSFB.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 64.09,
-      "high": 64.39,
-      "low": 63.3,
-      "close": 63.6,
-      "volume": 1248762
-    },
     {
       "time": 1708560000,
       "open": 63.65,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 21.67,
-      "high": 22.25,
+      "high": 22.87,
       "low": 20.5,
-      "close": 22.21,
-      "volume": 460754
+      "close": 22.43,
+      "volume": 1179644
+    },
+    {
+      "time": 1775088000,
+      "open": 22.78,
+      "high": 23.76,
+      "low": 21.72,
+      "close": 23.49,
+      "volume": 756573
     }
   ]
 }

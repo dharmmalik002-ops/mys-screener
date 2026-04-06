@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.138634+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.356571+00:00",
+  "symbol": "RATEGAIN",
+  "timeframe": "1D",
+  "ticker": "RATEGAIN.NS",
   "bars": [
     {
       "time": 1708560000,
@@ -4147,20 +4150,20 @@
       "volume": 608621
     },
     {
-      "time": 1774915200,
-      "open": 468.75,
-      "high": 468.8,
-      "low": 437.0,
-      "close": 441.0,
-      "volume": 608621
-    },
-    {
       "time": 1775001600,
       "open": 459.9,
       "high": 484.4,
       "low": 451.35,
-      "close": 478.05,
-      "volume": 195311
+      "close": 479.65,
+      "volume": 396157
+    },
+    {
+      "time": 1775088000,
+      "open": 478.0,
+      "high": 497.85,
+      "low": 460.95,
+      "close": 493.5,
+      "volume": 430786
     }
   ]
 }

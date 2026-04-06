@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-03-31T06:24:49.420670+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.041319+00:00",
+  "symbol": "CITURGIA",
+  "timeframe": "1D",
+  "ticker": "CITURGIA.NS",
   "bars": [
     {
       "time": 1770681600,
@@ -257,6 +260,22 @@
       "low": 174.4,
       "close": 174.4,
       "volume": 51
+    },
+    {
+      "time": 1775001600,
+      "open": 165.7,
+      "high": 165.7,
+      "low": 165.7,
+      "close": 165.7,
+      "volume": 1
+    },
+    {
+      "time": 1775088000,
+      "open": 157.45,
+      "high": 157.45,
+      "low": 157.45,
+      "close": 157.45,
+      "volume": 2
     }
   ]
 }

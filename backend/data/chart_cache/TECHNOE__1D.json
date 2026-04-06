@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.531769+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:33.059619+00:00",
+  "symbol": "TECHNOE",
+  "timeframe": "1D",
+  "ticker": "TECHNOE.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 329259
     },
     {
-      "time": 1774915200,
-      "open": 1019.0,
-      "high": 1027.4,
-      "low": 978.0,
-      "close": 986.1,
-      "volume": 329259
-    },
-    {
       "time": 1775001600,
       "open": 1022.45,
-      "high": 1056.85,
+      "high": 1057.0,
       "low": 1011.1,
-      "close": 1021.5,
-      "volume": 100210
+      "close": 1031.35,
+      "volume": 320490
+    },
+    {
+      "time": 1775088000,
+      "open": 1018.55,
+      "high": 1056.75,
+      "low": 993.85,
+      "close": 1049.4,
+      "volume": 186854
     }
   ]
 }

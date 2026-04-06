@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.178827+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:16.276871+00:00",
+  "symbol": "FCL",
+  "timeframe": "1D",
+  "ticker": "FCL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 43.06,
-      "high": 44.98,
-      "low": 41.61,
-      "close": 44.53,
-      "volume": 15581110
-    },
     {
       "time": 1708646400,
       "open": 44.78,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 20.73,
-      "high": 21.0,
+      "high": 21.19,
       "low": 19.75,
-      "close": 20.77,
-      "volume": 1263050
+      "close": 20.85,
+      "volume": 2686775
+    },
+    {
+      "time": 1775088000,
+      "open": 20.25,
+      "high": 21.3,
+      "low": 20.05,
+      "close": 21.19,
+      "volume": 1110350
     }
   ]
 }

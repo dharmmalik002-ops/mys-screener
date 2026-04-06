@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.790760+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.767146+00:00",
+  "symbol": "RAMCOSYS",
+  "timeframe": "1D",
+  "ticker": "RAMCOSYS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 301.95,
-      "high": 305.95,
-      "low": 299.0,
-      "close": 304.05,
-      "volume": 43880
-    },
     {
       "time": 1708646400,
       "open": 304.1,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 350.5,
-      "high": 367.9,
+      "high": 369.0,
       "low": 350.0,
-      "close": 361.9,
-      "volume": 36057
+      "close": 363.25,
+      "volume": 67082
+    },
+    {
+      "time": 1775088000,
+      "open": 360.0,
+      "high": 368.0,
+      "low": 346.55,
+      "close": 365.05,
+      "volume": 54541
     }
   ]
 }

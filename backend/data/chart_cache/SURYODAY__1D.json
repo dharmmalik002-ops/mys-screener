@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.812887+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:56.519506+00:00",
+  "symbol": "SURYODAY",
+  "timeframe": "1D",
+  "ticker": "SURYODAY.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 184.2,
-      "high": 194.5,
-      "low": 177.2,
-      "close": 192.45,
-      "volume": 2524644
-    },
     {
       "time": 1708646400,
       "open": 195.7,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 124.9,
-      "high": 125.7,
+      "open": 120.5,
+      "high": 126.9,
       "low": 120.5,
-      "close": 125.04,
-      "volume": 61099
+      "close": 125.11,
+      "volume": 199589
+    },
+    {
+      "time": 1775088000,
+      "open": 123.11,
+      "high": 127.26,
+      "low": 121.11,
+      "close": 125.9,
+      "volume": 86312
     }
   ]
 }

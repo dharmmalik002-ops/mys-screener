@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.679702+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:50.850013+00:00",
+  "symbol": "AHLUCONT",
+  "timeframe": "1D",
+  "ticker": "AHLUCONT.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -271,7 +274,7 @@
       "open": 1067.49,
       "high": 1091.26,
       "low": 1055.5,
-      "close": 1070.69,
+      "close": 1070.68,
       "volume": 75567
     },
     {
@@ -4147,20 +4150,20 @@
       "volume": 291934
     },
     {
-      "time": 1774915200,
-      "open": 669.4,
-      "high": 682.75,
-      "low": 645.15,
-      "close": 650.65,
-      "volume": 291934
-    },
-    {
       "time": 1775001600,
       "open": 677.2,
-      "high": 686.0,
+      "high": 695.0,
       "low": 662.6,
-      "close": 674.5,
-      "volume": 34614
+      "close": 679.25,
+      "volume": 85221
+    },
+    {
+      "time": 1775088000,
+      "open": 670.0,
+      "high": 698.85,
+      "low": 659.45,
+      "close": 694.3,
+      "volume": 67850
     }
   ]
 }

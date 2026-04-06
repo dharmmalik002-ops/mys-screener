@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.054685+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:17:57.509554+00:00",
+  "symbol": "ITCHOTELS",
+  "timeframe": "1D",
+  "ticker": "ITCHOTELS.NS",
   "bars": [
     {
       "time": 1738108800,
@@ -2299,20 +2302,20 @@
       "volume": 7519015
     },
     {
-      "time": 1774915200,
-      "open": 140.0,
-      "high": 141.7,
-      "low": 137.3,
-      "close": 138.04,
-      "volume": 7519015
-    },
-    {
       "time": 1775001600,
       "open": 143.01,
-      "high": 145.8,
+      "high": 148.61,
       "low": 142.38,
-      "close": 145.14,
-      "volume": 1865793
+      "close": 147.39,
+      "volume": 4096189
+    },
+    {
+      "time": 1775088000,
+      "open": 144.8,
+      "high": 148.6,
+      "low": 141.73,
+      "close": 148.09,
+      "volume": 2812224
     }
   ]
 }

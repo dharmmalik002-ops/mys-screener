@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:53:58.748803+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:04.457066+00:00",
   "symbol": "VIDYAWIRES",
   "timeframe": "1D",
   "ticker": "VIDYAWIRES.NS",
@@ -615,11 +615,11 @@
     },
     {
       "time": 1775088000,
-      "open": 52.43,
-      "high": 52.99,
+      "open": 51.9,
+      "high": 53.0,
       "low": 50.82,
-      "close": 52.4,
-      "volume": 1085032
+      "close": 52.33,
+      "volume": 1069388
     }
   ]
 }

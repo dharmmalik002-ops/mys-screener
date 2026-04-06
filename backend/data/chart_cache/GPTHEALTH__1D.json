@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.163691+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:10.679474+00:00",
+  "symbol": "GPTHEALTH",
+  "timeframe": "1D",
+  "ticker": "GPTHEALTH.NS",
   "bars": [
     {
       "time": 1709164800,
@@ -4108,11 +4111,19 @@
     },
     {
       "time": 1775001600,
-      "open": 116.5,
+      "open": 119.7,
       "high": 120.85,
       "low": 115.0,
-      "close": 120.0,
-      "volume": 33056
+      "close": 119.13,
+      "volume": 69675
+    },
+    {
+      "time": 1775088000,
+      "open": 119.0,
+      "high": 124.83,
+      "low": 116.0,
+      "close": 123.32,
+      "volume": 92658
     }
   ]
 }

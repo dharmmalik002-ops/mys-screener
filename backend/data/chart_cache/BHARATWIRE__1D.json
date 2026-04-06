@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.999318+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:12.367068+00:00",
+  "symbol": "BHARATWIRE",
+  "timeframe": "1D",
+  "ticker": "BHARATWIRE.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 327.9,
-      "high": 331.95,
-      "low": 318.0,
-      "close": 326.45,
-      "volume": 69388
-    },
     {
       "time": 1708646400,
       "open": 322.1,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 163.45,
+      "open": 160.0,
       "high": 165.78,
-      "low": 160.0,
-      "close": 162.22,
-      "volume": 66437
+      "low": 159.35,
+      "close": 161.13,
+      "volume": 112319
+    },
+    {
+      "time": 1775088000,
+      "open": 157.5,
+      "high": 163.0,
+      "low": 155.13,
+      "close": 160.5,
+      "volume": 87544
     }
   ]
 }

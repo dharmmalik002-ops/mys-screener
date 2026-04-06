@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T15:32:08.687561+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.994746+00:00",
   "symbol": "AVADHSUGAR",
   "timeframe": "1D",
   "ticker": "AVADHSUGAR.NS",
@@ -4151,11 +4151,11 @@
     },
     {
       "time": 1775001600,
-      "open": 475.85,
-      "high": 488.25,
+      "open": 474.95,
+      "high": 492.25,
       "low": 461.05,
-      "close": 473.95,
-      "volume": 93401
+      "close": 469.95,
+      "volume": 175941
     },
     {
       "time": 1775088000,
@@ -4163,7 +4163,7 @@
       "high": 474.4,
       "low": 460.0,
       "close": 468.2,
-      "volume": 92499
+      "volume": 92898
     }
   ]
 }

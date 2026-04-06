@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.962778+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:50.841402+00:00",
+  "symbol": "SPIC",
+  "timeframe": "1D",
+  "ticker": "SPIC.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 92.88,
-      "high": 94.0,
-      "low": 90.33,
-      "close": 90.76,
-      "volume": 2313222
-    },
     {
       "time": 1708560000,
       "open": 90.95,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 57.99,
-      "high": 60.14,
+      "open": 58.0,
+      "high": 62.0,
       "low": 57.3,
-      "close": 60.14,
-      "volume": 378489
+      "close": 61.03,
+      "volume": 949784
+    },
+    {
+      "time": 1775088000,
+      "open": 59.25,
+      "high": 61.99,
+      "low": 58.65,
+      "close": 61.84,
+      "volume": 475232
     }
   ]
 }

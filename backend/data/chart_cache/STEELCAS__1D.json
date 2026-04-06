@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.686133+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:12.251246+00:00",
+  "symbol": "STEELCAS",
+  "timeframe": "1D",
+  "ticker": "STEELCAS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 126.63,
-      "high": 132.33,
-      "low": 125.65,
-      "close": 131.06,
-      "volume": 121785
-    },
     {
       "time": 1708646400,
       "open": 131.35,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 239.0,
-      "high": 239.09,
+      "open": 239.09,
+      "high": 240.28,
       "low": 229.0,
-      "close": 233.6,
-      "volume": 19644
+      "close": 236.28,
+      "volume": 64284
+    },
+    {
+      "time": 1775088000,
+      "open": 231.0,
+      "high": 241.6,
+      "low": 230.0,
+      "close": 233.63,
+      "volume": 62896
     }
   ]
 }

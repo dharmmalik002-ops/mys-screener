@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.517942+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:32.165162+00:00",
+  "symbol": "JTLIND",
+  "timeframe": "1D",
+  "ticker": "JTLIND.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 129.82,
-      "high": 131.53,
-      "low": 126.45,
-      "close": 127.18,
-      "volume": 1263700
-    },
     {
       "time": 1708560000,
       "open": 127.77,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 43.42,
-      "high": 45.84,
+      "open": 43.9,
+      "high": 48.96,
       "low": 42.2,
-      "close": 45.36,
-      "volume": 1655123
+      "close": 48.58,
+      "volume": 6847967
+    },
+    {
+      "time": 1775088000,
+      "open": 47.95,
+      "high": 51.39,
+      "low": 45.57,
+      "close": 49.88,
+      "volume": 5288977
     }
   ]
 }

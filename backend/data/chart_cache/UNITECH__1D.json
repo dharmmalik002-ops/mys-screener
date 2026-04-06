@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T10:43:01.206966+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:04.238362+00:00",
   "symbol": "UNITECH",
   "timeframe": "1D",
   "ticker": "UNITECH.NS",
@@ -4151,19 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 3.39,
+      "open": 3.35,
       "high": 3.79,
       "low": 3.35,
-      "close": 3.77,
-      "volume": 13830192
+      "close": 3.79,
+      "volume": 16644359
     },
     {
-      "time": 1775174400,
-      "open": 3.79,
+      "time": 1775088000,
+      "open": 3.7,
       "high": 4.38,
-      "low": 3.69,
-      "close": 4.28,
-      "volume": 29094390
+      "low": 3.68,
+      "close": 4.29,
+      "volume": 30076807
     }
   ]
 }

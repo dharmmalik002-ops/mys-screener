@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.669010+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:46.394362+00:00",
+  "symbol": "LLOYDSENGG",
+  "timeframe": "1D",
+  "ticker": "LLOYDSENGG.NS",
   "bars": [
     {
       "time": 1708300800,
@@ -4147,20 +4150,20 @@
       "volume": 12288080
     },
     {
-      "time": 1774915200,
-      "open": 38.79,
-      "high": 39.51,
-      "low": 37.4,
-      "close": 37.6,
-      "volume": 12288081
-    },
-    {
       "time": 1775001600,
       "open": 39.8,
-      "high": 41.3,
+      "high": 41.8,
       "low": 38.88,
-      "close": 40.61,
-      "volume": 4146307
+      "close": 41.46,
+      "volume": 8133764
+    },
+    {
+      "time": 1775088000,
+      "open": 40.06,
+      "high": 42.62,
+      "low": 39.36,
+      "close": 42.09,
+      "volume": 7325940
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.090090+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:18:56.860369+00:00",
+  "symbol": "KIOCL",
+  "timeframe": "1D",
+  "ticker": "KIOCL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 516.9,
-      "high": 527.0,
-      "low": 493.15,
-      "close": 507.9,
-      "volume": 756973
-    },
     {
       "time": 1708646400,
       "open": 510.5,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 330.0,
-      "high": 344.3,
+      "open": 322.55,
+      "high": 350.0,
       "low": 322.55,
-      "close": 338.3,
-      "volume": 0
+      "close": 344.5,
+      "volume": 499551
+    },
+    {
+      "time": 1775088000,
+      "open": 342.45,
+      "high": 344.6,
+      "low": 328.0,
+      "close": 342.7,
+      "volume": 226044
     }
   ]
 }

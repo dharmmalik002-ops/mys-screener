@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.709280+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:09.441879+00:00",
+  "symbol": "JYOTHYLAB",
+  "timeframe": "1D",
+  "ticker": "JYOTHYLAB.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 669988
     },
     {
-      "time": 1774915200,
-      "open": 202.8,
-      "high": 203.85,
-      "low": 196.15,
-      "close": 198.1,
-      "volume": 669988
-    },
-    {
       "time": 1775001600,
       "open": 207.08,
-      "high": 207.22,
+      "high": 207.52,
       "low": 202.0,
-      "close": 205.18,
-      "volume": 198140
+      "close": 205.63,
+      "volume": 401186
+    },
+    {
+      "time": 1775088000,
+      "open": 199.23,
+      "high": 209.07,
+      "low": 198.43,
+      "close": 208.05,
+      "volume": 379355
     }
   ]
 }

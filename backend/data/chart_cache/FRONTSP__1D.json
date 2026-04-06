@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.669285+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.459027+00:00",
+  "symbol": "FRONTSP",
+  "timeframe": "1D",
+  "ticker": "FRONTSP.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 466.11,
-      "high": 477.77,
-      "low": 439.51,
-      "close": 467.75,
-      "volume": 6251
-    },
     {
       "time": 1708473600,
       "open": 467.75,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1282.0,
-      "high": 1320.0,
-      "low": 1280.0,
-      "close": 1293.95,
-      "volume": 11786
+      "open": 1259.0,
+      "high": 1348.6,
+      "low": 1259.0,
+      "close": 1308.55,
+      "volume": 24168
+    },
+    {
+      "time": 1775088000,
+      "open": 1292.0,
+      "high": 1316.5,
+      "low": 1261.6,
+      "close": 1307.25,
+      "volume": 8645
     }
   ]
 }

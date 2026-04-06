@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.692667+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:40.933551+00:00",
+  "symbol": "TALBROAUTO",
+  "timeframe": "1D",
+  "ticker": "TALBROAUTO.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 294.67,
-      "high": 295.17,
-      "low": 283.72,
-      "close": 290.04,
-      "volume": 48715
-    },
     {
       "time": 1708646400,
       "open": 290.64,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 244.71,
-      "high": 244.71,
+      "high": 247.39,
       "low": 236.25,
-      "close": 240.0,
-      "volume": 34296
+      "close": 243.31,
+      "volume": 95574
+    },
+    {
+      "time": 1775088000,
+      "open": 240.0,
+      "high": 251.39,
+      "low": 235.1,
+      "close": 246.66,
+      "volume": 60841
     }
   ]
 }

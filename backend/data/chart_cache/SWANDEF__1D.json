@@ -1,18 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T05:21:55.510631+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:18.377251+00:00",
   "symbol": "SWANDEF",
   "timeframe": "1D",
-  "ticker": "SWANDEF.BO",
+  "ticker": "SWANDEF.NS",
   "bars": [
-    {
-      "time": 1680220800,
-      "open": 1.68,
-      "high": 1.75,
-      "low": 1.61,
-      "close": 1.65,
-      "volume": 760375
-    },
     {
       "time": 1680480000,
       "open": 1.65,
@@ -1431,19 +1423,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1593.15,
+      "open": 1562.0,
       "high": 1669.65,
       "low": 1526.8,
-      "close": 1654.0,
-      "volume": 2192
+      "close": 1584.85,
+      "volume": 5770
     },
     {
-      "time": 1775174400,
-      "open": 1595.0,
+      "time": 1775088000,
+      "open": 1531.0,
       "high": 1664.05,
       "low": 1505.65,
       "close": 1545.1,
-      "volume": 5475
+      "volume": 5478
     }
   ]
 }

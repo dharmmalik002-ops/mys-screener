@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.791936+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:00.041086+00:00",
+  "symbol": "VIYASH",
+  "timeframe": "1D",
+  "ticker": "VIYASH.NS",
   "bars": [
     {
       "time": 1768348800,
@@ -403,20 +406,20 @@
       "volume": 798724
     },
     {
-      "time": 1774915200,
-      "open": 186.85,
-      "high": 186.85,
-      "low": 181.69,
-      "close": 182.41,
-      "volume": 798724
-    },
-    {
       "time": 1775001600,
       "open": 186.99,
-      "high": 193.18,
+      "high": 195.31,
       "low": 186.99,
-      "close": 189.4,
-      "volume": 171545
+      "close": 192.93,
+      "volume": 565164
+    },
+    {
+      "time": 1775088000,
+      "open": 188.98,
+      "high": 192.38,
+      "low": 186.0,
+      "close": 191.76,
+      "volume": 368588
     }
   ]
 }

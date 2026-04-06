@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:19.480208+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:33.383403+00:00",
+  "symbol": "MUTHOOTFIN",
+  "timeframe": "1D",
+  "ticker": "MUTHOOTFIN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -13,7 +16,7 @@
     {
       "time": 1708905600,
       "open": 1283.4,
-      "high": 1285.34,
+      "high": 1285.35,
       "low": 1270.15,
       "close": 1272.39,
       "volume": 236959
@@ -4147,20 +4150,20 @@
       "volume": 1170858
     },
     {
-      "time": 1774915200,
-      "open": 3189.0,
-      "high": 3249.9,
-      "low": 3140.0,
-      "close": 3190.0,
-      "volume": 1170858
-    },
-    {
       "time": 1775001600,
       "open": 3279.0,
       "high": 3320.0,
       "low": 3235.0,
-      "close": 3259.5,
-      "volume": 274224
+      "close": 3256.0,
+      "volume": 790724
+    },
+    {
+      "time": 1775088000,
+      "open": 3150.0,
+      "high": 3200.2,
+      "low": 3145.0,
+      "close": 3178.8,
+      "volume": 657545
     }
   ]
 }

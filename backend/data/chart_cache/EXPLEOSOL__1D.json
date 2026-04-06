@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.087867+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:02.290349+00:00",
+  "symbol": "EXPLEOSOL",
+  "timeframe": "1D",
+  "ticker": "EXPLEOSOL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 1336.82,
-      "high": 1343.34,
-      "low": 1303.95,
-      "close": 1318.42,
-      "volume": 19697
-    },
     {
       "time": 1708560000,
       "open": 1331.07,
@@ -4159,8 +4154,16 @@
       "open": 668.0,
       "high": 713.2,
       "low": 668.0,
-      "close": 707.0,
-      "volume": 17859
+      "close": 706.85,
+      "volume": 31215
+    },
+    {
+      "time": 1775088000,
+      "open": 706.85,
+      "high": 734.9,
+      "low": 690.6,
+      "close": 720.85,
+      "volume": 15260
     }
   ]
 }

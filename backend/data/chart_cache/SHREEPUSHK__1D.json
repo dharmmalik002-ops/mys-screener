@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.122104+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:15.318260+00:00",
+  "symbol": "SHREEPUSHK",
+  "timeframe": "1D",
+  "ticker": "SHREEPUSHK.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 188.07,
-      "high": 191.08,
-      "low": 184.56,
-      "close": 188.41,
-      "volume": 49441
-    },
     {
       "time": 1708646400,
       "open": 189.65,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 307.75,
-      "high": 326.0,
+      "open": 301.8,
+      "high": 332.45,
       "low": 301.8,
-      "close": 322.05,
-      "volume": 41358
+      "close": 321.05,
+      "volume": 100375
+    },
+    {
+      "time": 1775088000,
+      "open": 314.9,
+      "high": 319.5,
+      "low": 306.6,
+      "close": 311.3,
+      "volume": 57491
     }
   ]
 }

@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.613228+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:46.870067+00:00",
+  "symbol": "PASHUPATI",
+  "timeframe": "1D",
+  "ticker": "PASHUPATI.NS",
   "bars": [
-    {
-      "time": 1708387200,
-      "open": 116.05,
-      "high": 116.05,
-      "low": 101.98,
-      "close": 101.98,
-      "volume": 2400
-    },
     {
       "time": 1708473600,
       "open": 103.78,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 815.0,
+      "open": 1032.0,
       "high": 1032.0,
-      "low": 808.25,
-      "close": 993.0,
-      "volume": 476
+      "low": 979.95,
+      "close": 985.4,
+      "volume": 2816
+    },
+    {
+      "time": 1775088000,
+      "open": 967.05,
+      "high": 1012.6,
+      "low": 967.05,
+      "close": 980.9,
+      "volume": 1356
     }
   ]
 }

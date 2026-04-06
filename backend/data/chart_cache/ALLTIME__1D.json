@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.844945+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:49.040854+00:00",
+  "symbol": "ALLTIME",
+  "timeframe": "1D",
+  "ticker": "ALLTIME.NS",
   "bars": [
     {
       "time": 1755129600,
@@ -1236,11 +1239,19 @@
     },
     {
       "time": 1775001600,
-      "open": 192.01,
-      "high": 198.54,
+      "open": 192.0,
+      "high": 204.5,
       "low": 192.0,
-      "close": 196.94,
-      "volume": 23615
+      "close": 198.53,
+      "volume": 59963
+    },
+    {
+      "time": 1775088000,
+      "open": 194.12,
+      "high": 202.6,
+      "low": 190.8,
+      "close": 201.76,
+      "volume": 57175
     }
   ]
 }

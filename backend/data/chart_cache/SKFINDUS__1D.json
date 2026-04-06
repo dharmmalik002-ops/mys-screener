@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.455315+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:54.533130+00:00",
+  "symbol": "SKFINDUS",
+  "timeframe": "1D",
+  "ticker": "SKFINDUS.NS",
   "bars": [
     {
       "time": 1764892800,
@@ -619,20 +622,20 @@
       "volume": 18245
     },
     {
-      "time": 1774915200,
-      "open": 2087.2,
-      "high": 2140.0,
-      "low": 2005.0,
-      "close": 2075.1,
-      "volume": 18245
-    },
-    {
       "time": 1775001600,
       "open": 2085.1,
-      "high": 2170.1,
+      "high": 2237.6,
       "low": 2085.1,
-      "close": 2158.0,
-      "volume": 2158
+      "close": 2199.7,
+      "volume": 16563
+    },
+    {
+      "time": 1775088000,
+      "open": 2161.0,
+      "high": 2305.0,
+      "low": 2114.4,
+      "close": 2278.0,
+      "volume": 10205
     }
   ]
 }

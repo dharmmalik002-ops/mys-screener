@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-03T11:54:34.840502+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:59.738034+00:00",
   "symbol": "KSHINTL",
   "timeframe": "1D",
   "ticker": "KSHINTL.NS",
@@ -545,9 +545,9 @@
       "time": 1775088000,
       "open": 444.45,
       "high": 464.0,
-      "low": 442.5,
+      "low": 442.3,
       "close": 448.35,
-      "volume": 306228
+      "volume": 310363
     }
   ]
 }

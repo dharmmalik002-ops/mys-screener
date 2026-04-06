@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.196951+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:17.561916+00:00",
+  "symbol": "DPABHUSHAN",
+  "timeframe": "1D",
+  "ticker": "DPABHUSHAN.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 758.9,
-      "high": 759.95,
-      "low": 745.85,
-      "close": 751.2,
-      "volume": 4684
-    },
     {
       "time": 1708646400,
       "open": 752.7,
@@ -4157,10 +4152,18 @@
     {
       "time": 1775001600,
       "open": 989.9,
-      "high": 1005.0,
+      "high": 1010.0,
       "low": 966.45,
-      "close": 995.0,
-      "volume": 6713
+      "close": 1005.55,
+      "volume": 10511
+    },
+    {
+      "time": 1775088000,
+      "open": 984.0,
+      "high": 1009.9,
+      "low": 968.05,
+      "close": 1004.1,
+      "volume": 7230
     }
   ]
 }

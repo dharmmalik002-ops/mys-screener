@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.412382+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:25.374514+00:00",
+  "symbol": "MMFL",
+  "timeframe": "1D",
+  "ticker": "MMFL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 477.16,
-      "high": 480.57,
-      "low": 467.07,
-      "close": 473.85,
-      "volume": 76170
-    },
     {
       "time": 1708646400,
       "open": 474.43,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 376.55,
-      "high": 396.9,
+      "open": 377.0,
+      "high": 410.7,
       "low": 376.55,
-      "close": 393.05,
-      "volume": 24720
+      "close": 404.9,
+      "volume": 80865
+    },
+    {
+      "time": 1775088000,
+      "open": 397.0,
+      "high": 415.0,
+      "low": 388.15,
+      "close": 412.05,
+      "volume": 40317
     }
   ]
 }

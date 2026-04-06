@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.344485+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:51.624538+00:00",
+  "symbol": "SIS",
+  "timeframe": "1D",
+  "ticker": "SIS.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 431.41,
-      "high": 435.04,
-      "low": 424.36,
-      "close": 427.4,
-      "volume": 66953
-    },
     {
       "time": 1708646400,
       "open": 429.55,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 287.7,
+      "open": 295.0,
       "high": 295.0,
       "low": 284.05,
-      "close": 286.5,
-      "volume": 8008
+      "close": 287.4,
+      "volume": 42228
+    },
+    {
+      "time": 1775088000,
+      "open": 284.05,
+      "high": 289.1,
+      "low": 280.05,
+      "close": 287.85,
+      "volume": 32406
     }
   ]
 }

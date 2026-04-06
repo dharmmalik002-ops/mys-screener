@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.585390+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:34.086010+00:00",
+  "symbol": "NEWGEN",
+  "timeframe": "1D",
+  "ticker": "NEWGEN.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1088297
     },
     {
-      "time": 1774915200,
-      "open": 416.0,
-      "high": 419.15,
-      "low": 401.05,
-      "close": 403.55,
-      "volume": 1088297
-    },
-    {
       "time": 1775001600,
       "open": 420.0,
-      "high": 432.7,
+      "high": 434.75,
       "low": 415.0,
-      "close": 427.35,
-      "volume": 616391
+      "close": 431.8,
+      "volume": 1194449
+    },
+    {
+      "time": 1775088000,
+      "open": 423.05,
+      "high": 443.7,
+      "low": 414.0,
+      "close": 440.35,
+      "volume": 1127756
     }
   ]
 }

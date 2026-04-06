@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.819174+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:55.267183+00:00",
+  "symbol": "GTLINFRA",
+  "timeframe": "1D",
+  "ticker": "GTLINFRA.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 2.3,
-      "high": 2.4,
-      "low": 2.25,
-      "close": 2.25,
-      "volume": 189631451
-    },
     {
       "time": 1708646400,
       "open": 2.25,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 1.0,
+      "open": 0.99,
       "high": 1.05,
       "low": 0.99,
-      "close": 1.02,
-      "volume": 29651568
+      "close": 1.03,
+      "volume": 69134221
+    },
+    {
+      "time": 1775088000,
+      "open": 1.02,
+      "high": 1.06,
+      "low": 1.0,
+      "close": 1.04,
+      "volume": 61965470
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:21.045257+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:37.617565+00:00",
+  "symbol": "DBREALTY",
+  "timeframe": "1D",
+  "ticker": "DBREALTY.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 4061267
     },
     {
-      "time": 1774915200,
-      "open": 90.0,
-      "high": 91.2,
-      "low": 83.5,
-      "close": 84.15,
-      "volume": 4061267
-    },
-    {
       "time": 1775001600,
       "open": 88.1,
-      "high": 91.69,
+      "high": 93.49,
       "low": 87.11,
-      "close": 91.27,
-      "volume": 997354
+      "close": 91.56,
+      "volume": 2196987
+    },
+    {
+      "time": 1775088000,
+      "open": 90.01,
+      "high": 91.0,
+      "low": 85.0,
+      "close": 90.52,
+      "volume": 1298690
     }
   ]
 }

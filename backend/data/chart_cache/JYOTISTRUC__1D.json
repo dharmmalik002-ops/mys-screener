@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.028118+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:56.940706+00:00",
+  "symbol": "JYOTISTRUC",
+  "timeframe": "1D",
+  "ticker": "JYOTISTRUC.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 28.8,
-      "high": 29.25,
-      "low": 26.9,
-      "close": 28.7,
-      "volume": 2109138
-    },
     {
       "time": 1708646400,
       "open": 28.55,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 10.15,
-      "high": 10.19,
+      "open": 9.5,
+      "high": 10.55,
       "low": 9.37,
-      "close": 10.16,
-      "volume": 15109298
+      "close": 10.35,
+      "volume": 34431338
+    },
+    {
+      "time": 1775088000,
+      "open": 9.98,
+      "high": 10.59,
+      "low": 9.85,
+      "close": 10.47,
+      "volume": 14908714
     }
   ]
 }

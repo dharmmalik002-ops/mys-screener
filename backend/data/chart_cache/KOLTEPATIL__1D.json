@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.040418+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:09.733963+00:00",
+  "symbol": "KOLTEPATIL",
+  "timeframe": "1D",
+  "ticker": "KOLTEPATIL.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 486.62,
-      "high": 495.67,
-      "low": 470.89,
-      "close": 475.73,
-      "volume": 270936
-    },
     {
       "time": 1708560000,
       "open": 480.48,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 300.0,
+      "open": 301.0,
       "high": 309.4,
-      "low": 300.0,
-      "close": 304.4,
-      "volume": 6484
+      "low": 295.5,
+      "close": 297.7,
+      "volume": 158475
+    },
+    {
+      "time": 1775088000,
+      "open": 298.5,
+      "high": 307.95,
+      "low": 294.7,
+      "close": 306.2,
+      "volume": 74918
     }
   ]
 }

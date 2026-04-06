@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.216013+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:07.931897+00:00",
+  "symbol": "THELEELA",
+  "timeframe": "1D",
+  "ticker": "THELEELA.NS",
   "bars": [
     {
       "time": 1748822400,
@@ -1643,20 +1646,20 @@
       "volume": 163778
     },
     {
-      "time": 1774915200,
-      "open": 400.0,
-      "high": 412.45,
-      "low": 390.0,
-      "close": 409.1,
-      "volume": 163778
-    },
-    {
       "time": 1775001600,
       "open": 409.8,
       "high": 419.75,
       "low": 409.8,
-      "close": 416.0,
-      "volume": 62983
+      "close": 417.15,
+      "volume": 156086
+    },
+    {
+      "time": 1775088000,
+      "open": 411.05,
+      "high": 417.9,
+      "low": 407.0,
+      "close": 415.9,
+      "volume": 72436
     }
   ]
 }

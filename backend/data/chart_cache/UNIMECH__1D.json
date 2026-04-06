@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.854375+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:48.845067+00:00",
+  "symbol": "UNIMECH",
+  "timeframe": "1D",
+  "ticker": "UNIMECH.NS",
   "bars": [
     {
       "time": 1735603200,
@@ -2487,8 +2490,16 @@
       "open": 734.8,
       "high": 749.0,
       "low": 715.0,
-      "close": 720.6,
-      "volume": 50702
+      "close": 723.7,
+      "volume": 108138
+    },
+    {
+      "time": 1775088000,
+      "open": 720.0,
+      "high": 750.0,
+      "low": 701.7,
+      "close": 732.1,
+      "volume": 88465
     }
   ]
 }

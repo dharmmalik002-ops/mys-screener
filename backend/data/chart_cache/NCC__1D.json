@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.782079+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:02.938171+00:00",
+  "symbol": "NCC",
+  "timeframe": "1D",
+  "ticker": "NCC.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 5402525
     },
     {
-      "time": 1774915200,
-      "open": 135.0,
-      "high": 138.0,
-      "low": 130.0,
-      "close": 130.92,
-      "volume": 5402525
-    },
-    {
       "time": 1775001600,
       "open": 135.0,
-      "high": 139.48,
+      "high": 139.8,
       "low": 134.5,
-      "close": 137.26,
-      "volume": 1330937
+      "close": 138.59,
+      "volume": 2543175
+    },
+    {
+      "time": 1775088000,
+      "open": 135.0,
+      "high": 142.65,
+      "low": 134.47,
+      "close": 141.71,
+      "volume": 1766761
     }
   ]
 }

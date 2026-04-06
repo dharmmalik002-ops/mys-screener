@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.892334+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:55.490258+00:00",
+  "symbol": "WPIL",
+  "timeframe": "1D",
+  "ticker": "WPIL.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 362.85,
-      "high": 370.95,
-      "low": 361.0,
-      "close": 369.15,
-      "volume": 16938
+      "open": 356.0,
+      "high": 400.0,
+      "low": 356.0,
+      "close": 388.55,
+      "volume": 52283
+    },
+    {
+      "time": 1775088000,
+      "open": 372.0,
+      "high": 394.9,
+      "low": 370.2,
+      "close": 393.0,
+      "volume": 38920
     }
   ]
 }

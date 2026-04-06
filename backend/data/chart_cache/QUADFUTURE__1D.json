@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.014453+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:02.030130+00:00",
+  "symbol": "QUADFUTURE",
+  "timeframe": "1D",
+  "ticker": "QUADFUTURE.NS",
   "bars": [
     {
       "time": 1736812800,
@@ -2404,11 +2407,19 @@
     },
     {
       "time": 1775001600,
-      "open": 285.1,
-      "high": 286.9,
+      "open": 280.0,
+      "high": 288.5,
       "low": 278.95,
-      "close": 284.85,
-      "volume": 70147
+      "close": 286.1,
+      "volume": 206638
+    },
+    {
+      "time": 1775088000,
+      "open": 283.0,
+      "high": 290.0,
+      "low": 276.9,
+      "close": 286.45,
+      "volume": 156758
     }
   ]
 }

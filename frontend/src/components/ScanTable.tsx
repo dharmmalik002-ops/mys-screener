@@ -232,7 +232,7 @@ export function ScanTable({
     });
   }, [arrangementMode, sectorGroups, sortedItems, summaryBySector]);
 
-  const shouldVirtualize = hasWideTableLayout && tableEntries.length > 120;
+  const shouldVirtualize = tableEntries.length > 80;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
     items: tableEntries,
     getKey: (entry) => entry.key,

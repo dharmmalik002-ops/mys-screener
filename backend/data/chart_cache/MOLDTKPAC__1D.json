@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.532554+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:38.730192+00:00",
+  "symbol": "MOLDTKPAC",
+  "timeframe": "1D",
+  "ticker": "MOLDTKPAC.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 868.02,
-      "high": 879.66,
-      "low": 861.29,
-      "close": 868.47,
-      "volume": 23678
-    },
     {
       "time": 1708560000,
       "open": 863.27,
@@ -260,8 +255,8 @@
     },
     {
       "time": 1712707200,
-      "open": 864.9,
-      "high": 864.9,
+      "open": 864.91,
+      "high": 864.91,
       "low": 831.54,
       "close": 838.97,
       "volume": 99826
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 495.0,
-      "high": 505.0,
+      "open": 473.05,
+      "high": 506.65,
       "low": 473.05,
-      "close": 497.75,
-      "volume": 28225
+      "close": 499.45,
+      "volume": 45788
+    },
+    {
+      "time": 1775088000,
+      "open": 499.9,
+      "high": 524.4,
+      "low": 480.55,
+      "close": 522.75,
+      "volume": 52666
     }
   ]
 }

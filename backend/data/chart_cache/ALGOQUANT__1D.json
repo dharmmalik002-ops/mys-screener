@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.718264+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:39.719563+00:00",
+  "symbol": "ALGOQUANT",
+  "timeframe": "1D",
+  "ticker": "ALGOQUANT.NS",
   "bars": [
     {
       "time": 1767657600,
@@ -452,11 +455,19 @@
     },
     {
       "time": 1775001600,
-      "open": 55.16,
+      "open": 57.0,
       "high": 57.0,
-      "low": 50.62,
-      "close": 50.66,
-      "volume": 353763
+      "low": 50.05,
+      "close": 50.89,
+      "volume": 1048669
+    },
+    {
+      "time": 1775088000,
+      "open": 50.1,
+      "high": 54.4,
+      "low": 49.15,
+      "close": 52.52,
+      "volume": 1035060
     }
   ]
 }

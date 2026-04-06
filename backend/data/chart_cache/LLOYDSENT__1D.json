@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.929751+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:28.941221+00:00",
+  "symbol": "LLOYDSENT",
+  "timeframe": "1D",
+  "ticker": "LLOYDSENT.NS",
   "bars": [
     {
       "time": 1729123200,
@@ -2875,20 +2878,20 @@
       "volume": 6121607
     },
     {
-      "time": 1774915200,
-      "open": 41.5,
-      "high": 42.89,
-      "low": 40.69,
-      "close": 41.16,
-      "volume": 6121607
-    },
-    {
       "time": 1775001600,
       "open": 42.9,
-      "high": 44.5,
+      "high": 45.45,
       "low": 42.35,
-      "close": 44.18,
-      "volume": 2854004
+      "close": 44.78,
+      "volume": 4593855
+    },
+    {
+      "time": 1775088000,
+      "open": 43.99,
+      "high": 45.9,
+      "low": 42.79,
+      "close": 45.51,
+      "volume": 3328362
     }
   ]
 }

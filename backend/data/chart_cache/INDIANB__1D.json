@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:14.399061+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:16:41.151898+00:00",
   "symbol": "INDIANB",
   "timeframe": "1D",
   "ticker": "INDIANB.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 507.36,
+      "high": 511.65,
+      "low": 497.39,
+      "close": 500.83,
+      "volume": 930577
+    },
     {
       "time": 1708905600,
       "open": 496.77,
@@ -4142,28 +4150,20 @@
       "volume": 2488566
     },
     {
-      "time": 1774915200,
-      "open": 855.0,
-      "high": 865.75,
-      "low": 835.0,
-      "close": 848.0,
-      "volume": 2488566
-    },
-    {
       "time": 1775001600,
       "open": 879.35,
-      "high": 881.6,
+      "high": 890.65,
       "low": 861.4,
-      "close": 864.3,
-      "volume": 603094
+      "close": 888.0,
+      "volume": 1896842
     },
     {
       "time": 1775088000,
-      "open": 874.1,
+      "open": 870.95,
       "high": 874.1,
       "low": 844.0,
-      "close": 867.3,
-      "volume": 1534976
+      "close": 869.4,
+      "volume": 1607041
     }
   ]
 }

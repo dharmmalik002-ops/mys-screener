@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:20.559837+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:20:52.387617+00:00",
+  "symbol": "ABLBL",
+  "timeframe": "1D",
+  "ticker": "ABLBL.NS",
   "bars": [
     {
       "time": 1750636800,
@@ -1523,20 +1526,20 @@
       "volume": 2911597
     },
     {
-      "time": 1774915200,
-      "open": 91.01,
-      "high": 91.4,
-      "low": 87.91,
-      "close": 88.25,
-      "volume": 2911597
-    },
-    {
       "time": 1775001600,
       "open": 89.3,
-      "high": 93.5,
+      "high": 94.0,
       "low": 89.3,
-      "close": 92.57,
-      "volume": 302709
+      "close": 93.52,
+      "volume": 1586959
+    },
+    {
+      "time": 1775088000,
+      "open": 92.8,
+      "high": 94.0,
+      "low": 90.2,
+      "close": 93.47,
+      "volume": 806175
     }
   ]
 }

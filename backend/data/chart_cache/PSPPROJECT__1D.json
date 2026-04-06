@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:53.680026+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:11.819225+00:00",
+  "symbol": "PSPPROJECT",
+  "timeframe": "1D",
+  "ticker": "PSPPROJECT.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 725.9,
-      "high": 729.95,
-      "low": 704.9,
-      "close": 709.05,
-      "volume": 94887
-    },
     {
       "time": 1708560000,
       "open": 714.7,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 595.0,
-      "high": 633.15,
+      "open": 584.1,
+      "high": 638.9,
       "low": 584.1,
-      "close": 627.9,
-      "volume": 43479
+      "close": 621.9,
+      "volume": 116587
+    },
+    {
+      "time": 1775088000,
+      "open": 621.9,
+      "high": 634.0,
+      "low": 602.15,
+      "close": 628.95,
+      "volume": 31242
     }
   ]
 }

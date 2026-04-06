@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.702652+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:45.981215+00:00",
+  "symbol": "RTNPOWER",
+  "timeframe": "1D",
+  "ticker": "RTNPOWER.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 24847360
     },
     {
-      "time": 1774915200,
-      "open": 7.88,
-      "high": 7.93,
-      "low": 7.52,
-      "close": 7.58,
-      "volume": 24847360
-    },
-    {
       "time": 1775001600,
       "open": 7.93,
-      "high": 8.24,
+      "high": 8.34,
       "low": 7.76,
-      "close": 8.18,
-      "volume": 12994439
+      "close": 8.3,
+      "volume": 27845403
+    },
+    {
+      "time": 1775088000,
+      "open": 8.15,
+      "high": 8.32,
+      "low": 7.94,
+      "close": 8.26,
+      "volume": 16887177
     }
   ]
 }

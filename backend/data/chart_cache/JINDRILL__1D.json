@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.764631+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:48.543029+00:00",
+  "symbol": "JINDRILL",
+  "timeframe": "1D",
+  "ticker": "JINDRILL.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 693.3,
-      "high": 703.72,
-      "low": 678.28,
-      "close": 685.87,
-      "volume": 13843
-    },
     {
       "time": 1708646400,
       "open": 691.3,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 466.1,
-      "high": 480.0,
+      "open": 473.95,
+      "high": 485.0,
       "low": 466.1,
-      "close": 475.1,
-      "volume": 133748
+      "close": 475.6,
+      "volume": 332353
+    },
+    {
+      "time": 1775088000,
+      "open": 473.8,
+      "high": 493.9,
+      "low": 460.1,
+      "close": 482.45,
+      "volume": 351357
     }
   ]
 }

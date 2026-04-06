@@ -1,10 +1,18 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:03.259152+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:19:04.127461+00:00",
   "symbol": "SYRMA",
   "timeframe": "1D",
   "ticker": "SYRMA.NS",
   "bars": [
+    {
+      "time": 1708646400,
+      "open": 507.55,
+      "high": 525.5,
+      "low": 507.55,
+      "close": 522.37,
+      "volume": 578940
+    },
     {
       "time": 1708905600,
       "open": 523.07,
@@ -4142,28 +4150,20 @@
       "volume": 1093175
     },
     {
-      "time": 1774915200,
-      "open": 805.8,
-      "high": 811.6,
-      "low": 765.9,
-      "close": 770.1,
-      "volume": 1093175
-    },
-    {
       "time": 1775001600,
       "open": 809.9,
       "high": 818.9,
-      "low": 797.55,
-      "close": 804.55,
-      "volume": 341967
+      "low": 791.4,
+      "close": 797.6,
+      "volume": 1459952
     },
     {
       "time": 1775088000,
-      "open": 797.6,
+      "open": 791.0,
       "high": 799.1,
       "low": 765.2,
-      "close": 795.65,
-      "volume": 747019
+      "close": 796.3,
+      "volume": 770684
     }
   ]
 }

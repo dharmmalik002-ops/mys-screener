@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.779181+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:56.289412+00:00",
+  "symbol": "ASIANTILES",
+  "timeframe": "1D",
+  "ticker": "ASIANTILES.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 63.95,
-      "high": 64.75,
-      "low": 62.6,
-      "close": 64.3,
-      "volume": 502398
-    },
     {
       "time": 1708646400,
       "open": 64.5,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 58.71,
-      "high": 59.55,
+      "open": 58.99,
+      "high": 60.3,
       "low": 57.11,
-      "close": 58.2,
-      "volume": 1055077
+      "close": 58.42,
+      "volume": 3976660
+    },
+    {
+      "time": 1775088000,
+      "open": 58.25,
+      "high": 58.26,
+      "low": 56.35,
+      "close": 57.73,
+      "volume": 2696943
     }
   ]
 }

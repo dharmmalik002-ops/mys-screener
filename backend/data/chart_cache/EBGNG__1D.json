@@ -1,6 +1,6 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-02T16:45:03.314822+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:46.424682+00:00",
   "symbol": "EBGNG",
   "timeframe": "1D",
   "ticker": "EBGNG.NS",
@@ -1319,19 +1319,19 @@
     },
     {
       "time": 1775001600,
-      "open": 363.0,
+      "open": 369.0,
       "high": 369.65,
       "low": 353.0,
-      "close": 363.4,
-      "volume": 80394
+      "close": 362.55,
+      "volume": 160997
     },
     {
       "time": 1775088000,
-      "open": 362.05,
-      "high": 369.85,
+      "open": 355.0,
+      "high": 370.0,
       "low": 345.15,
       "close": 368.0,
-      "volume": 167807
+      "volume": 171965
     }
   ]
 }

@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.828160+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:37.908426+00:00",
+  "symbol": "AWFIS",
+  "timeframe": "1D",
+  "ticker": "AWFIS.NS",
   "bars": [
     {
       "time": 1717027200,
@@ -3651,20 +3654,20 @@
       "volume": 1230335
     },
     {
-      "time": 1774915200,
-      "open": 252.0,
-      "high": 252.0,
-      "low": 229.05,
-      "close": 231.85,
-      "volume": 1230335
-    },
-    {
       "time": 1775001600,
       "open": 242.14,
-      "high": 248.99,
+      "high": 252.99,
       "low": 237.01,
-      "close": 246.4,
-      "volume": 186714
+      "close": 250.32,
+      "volume": 572390
+    },
+    {
+      "time": 1775088000,
+      "open": 242.6,
+      "high": 261.5,
+      "low": 238.74,
+      "close": 258.33,
+      "volume": 340407
     }
   ]
 }

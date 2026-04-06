@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.071487+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:05.951493+00:00",
+  "symbol": "KROSS",
+  "timeframe": "1D",
+  "ticker": "KROSS.NS",
   "bars": [
     {
       "time": 1726444800,
@@ -3060,11 +3063,19 @@
     },
     {
       "time": 1775001600,
-      "open": 166.49,
-      "high": 168.89,
-      "low": 163.25,
-      "close": 166.75,
-      "volume": 121387
+      "open": 166.5,
+      "high": 170.79,
+      "low": 159.06,
+      "close": 161.32,
+      "volume": 902499
+    },
+    {
+      "time": 1775088000,
+      "open": 159.44,
+      "high": 161.19,
+      "low": 150.52,
+      "close": 159.89,
+      "volume": 736468
     }
   ]
 }

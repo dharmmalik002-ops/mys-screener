@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:51.055426+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:23:14.567430+00:00",
+  "symbol": "VALIANT",
+  "timeframe": "1D",
+  "ticker": "VALIANT.NS",
   "bars": [
-    {
-      "time": 1708473600,
-      "open": 283.39,
-      "high": 283.39,
-      "low": 283.39,
-      "close": 283.39,
-      "volume": 14999
-    },
     {
       "time": 1708560000,
       "open": 297.55,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 903.5,
+      "open": 904.0,
       "high": 948.8,
       "low": 903.5,
-      "close": 931.05,
-      "volume": 2429
+      "close": 930.2,
+      "volume": 6138
+    },
+    {
+      "time": 1775088000,
+      "open": 903.0,
+      "high": 940.0,
+      "low": 885.6,
+      "close": 918.1,
+      "volume": 6347
     }
   ]
 }

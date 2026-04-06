@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:45:17.664516+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:21:40.350173+00:00",
+  "symbol": "FEDFINA",
+  "timeframe": "1D",
+  "ticker": "FEDFINA.NS",
   "bars": [
     {
       "time": 1708646400,
@@ -4147,20 +4150,20 @@
       "volume": 1132487
     },
     {
-      "time": 1774915200,
-      "open": 127.54,
-      "high": 129.61,
-      "low": 123.36,
-      "close": 123.5,
-      "volume": 1132487
-    },
-    {
       "time": 1775001600,
       "open": 130.9,
-      "high": 132.57,
+      "high": 133.2,
       "low": 128.4,
-      "close": 129.81,
-      "volume": 257380
+      "close": 130.6,
+      "volume": 528120
+    },
+    {
+      "time": 1775088000,
+      "open": 129.0,
+      "high": 137.3,
+      "low": 125.85,
+      "close": 136.26,
+      "volume": 782452
     }
   ]
 }

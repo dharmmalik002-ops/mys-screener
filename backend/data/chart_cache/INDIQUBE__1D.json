@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:49.986113+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:01.856255+00:00",
+  "symbol": "INDIQUBE",
+  "timeframe": "1D",
+  "ticker": "INDIQUBE.NS",
   "bars": [
     {
       "time": 1753833600,
@@ -1317,10 +1320,18 @@
     {
       "time": 1775001600,
       "open": 140.0,
-      "high": 142.02,
-      "low": 138.78,
-      "close": 142.01,
-      "volume": 14132
+      "high": 144.51,
+      "low": 136.0,
+      "close": 137.58,
+      "volume": 38043
+    },
+    {
+      "time": 1775088000,
+      "open": 135.99,
+      "high": 150.99,
+      "low": 135.01,
+      "close": 143.4,
+      "volume": 30661
     }
   ]
 }

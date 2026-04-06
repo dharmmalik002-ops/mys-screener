@@ -1,15 +1,10 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T06:32:22.281688+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:52.939504+00:00",
+  "symbol": "APEX",
+  "timeframe": "1D",
+  "ticker": "APEX.NS",
   "bars": [
-    {
-      "time": 1708560000,
-      "open": 224.59,
-      "high": 227.1,
-      "low": 218.54,
-      "close": 219.47,
-      "volume": 129192
-    },
     {
       "time": 1708646400,
       "open": 220.85,
@@ -4156,11 +4151,19 @@
     },
     {
       "time": 1775001600,
-      "open": 379.1,
+      "open": 389.1,
       "high": 389.1,
       "low": 376.85,
-      "close": 381.7,
-      "volume": 206504
+      "close": 383.25,
+      "volume": 487458
+    },
+    {
+      "time": 1775088000,
+      "open": 375.0,
+      "high": 379.8,
+      "low": 366.0,
+      "close": 376.55,
+      "volume": 313165
     }
   ]
 }

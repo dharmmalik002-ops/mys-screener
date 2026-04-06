@@ -1,6 +1,9 @@
 {
-  "cache_version": 4,
-  "generated_at": "2026-04-01T05:33:50.471308+00:00",
+  "cache_version": 5,
+  "generated_at": "2026-04-05T16:22:30.732145+00:00",
+  "symbol": "DECNGOLD",
+  "timeframe": "1D",
+  "ticker": "DECNGOLD.NS",
   "bars": [
     {
       "time": 1735516800,
@@ -2484,11 +2487,19 @@
     },
     {
       "time": 1775001600,
-      "open": 87.43,
+      "open": 87.05,
       "high": 92.9,
-      "low": 87.43,
-      "close": 91.03,
-      "volume": 448491
+      "low": 87.05,
+      "close": 91.37,
+      "volume": 730576
+    },
+    {
+      "time": 1775088000,
+      "open": 87.6,
+      "high": 97.7,
+      "low": 87.56,
+      "close": 95.66,
+      "volume": 943691
     }
   ]
 }

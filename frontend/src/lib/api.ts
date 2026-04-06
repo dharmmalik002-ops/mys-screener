@@ -233,17 +233,32 @@ export type QuarterlyResultItem = {
   expenses_crore: number | null;
   operating_profit_crore: number | null;
   operating_margin_pct: number | null;
+  ebitda_crore: number | null;
+  ebitda_margin_pct: number | null;
+  gross_margin_pct: number | null;
+  other_income_crore: number | null;
+  interest_crore: number | null;
+  depreciation_crore: number | null;
   profit_before_tax_crore: number | null;
+  tax_pct: number | null;
   net_profit_crore: number | null;
   eps: number | null;
+  yoy_change_pct: number | null;
+  qoq_change_pct: number | null;
+  beat_miss: "beat" | "miss" | "in-line" | null;
+  segment_performance: any[];
+  result_date: string | null;
   result_document_url: string | null;
 };
 
 export type ProfitLossItem = {
   period: string;
   sales_crore: number | null;
+  expenses_crore: number | null;
   operating_profit_crore: number | null;
   operating_margin_pct: number | null;
+  ebitda_crore: number | null;
+  ebitda_margin_pct: number | null;
   net_profit_crore: number | null;
   eps: number | null;
   dividend_payout_pct: number | null;
@@ -333,11 +348,15 @@ export type CompanyFundamentals = {
   risks_and_opportunities: RiskAnalysis[];
   recent_updates: CompanyUpdateItem[];
   detailed_news: DetailedNews[];
+  latest_editorial_news?: DetailedNews[];
+  official_updates?: DetailedNews[];
   shareholding_pattern: ShareholdingPatternItem[];
   shareholding_delta: ShareholdingDelta | null;
   data_warnings: string[];
   ai_news_summary: AISummary | null;
   business_triggers: BusinessTrigger[];
+  future_growth_triggers: GrowthTrigger[];
+  growth_risks: RiskAnalysis[];
   insider_transactions: InsiderTransaction[];
   last_news_update: string | null;
   latest_earnings_key_metrics: Record<string, number | string>;
@@ -345,6 +364,7 @@ export type CompanyFundamentals = {
     beat_miss: string;
     highlights: string[];
     segment_performance: string;
+    margins_analysis?: string;
   } | null;
   guidance_tracker?: Array<{
     date: string;
@@ -398,16 +418,21 @@ export type FinancialRatios = {
 
 export type ManagementGuidance = {
   fiscal_year: string;
+  quarter: string | null;
   revenue_growth_guidance_pct: number | null;
   ebitda_guidance_pct: number | null;
   eps_guidance: number | null;
   capex_guidance_crore: number | null;
   guidance_date: string | null;
   guidance_source: string | null;
-  guidance_type?: string | null;
-  confidence_score?: number | null;
+  guidance_type: "Explicit" | "Qualitative" | null;
+  confidence_score: number | null;
   key_guidance_points: string[];
-  analyst_concerns?: string[];
+  analyst_concerns: string[];
+  is_stale: boolean;
+  validity_banner: "Valid" | "Stale" | "Withdrawn" | "Not Provided";
+  fiscal_period: string | null;
+  source_date: string | null;
 };
 
 export type CompetitivePosition = {
@@ -429,23 +454,38 @@ export type DetailedNews = {
   title: string;
   summary: string;
   impact_category: string;
-  sentiment: string;
+  sentiment: "positive" | "negative" | "neutral";
   source: string;
-  source_type?: string;
-  is_editorial?: boolean;
-  url?: string | null;
-  published_date: string;
-  impact_area?: string | null;
-  why_it_matters?: string | null;
+  domain: string | null;
+  source_type: string;
+  classification: "editorial_news" | "company_release" | "exchange_filing" | "regulatory_filing" | "transcript" | "investor_presentation" | "duplicate" | "low_quality" | "rumor";
+  is_editorial: boolean;
+  url: string | null;
+  published_date: string | null;
+  impact_area: string | null;
+  why_it_matters: string | null;
   detailed_points: string[];
   relevance_score: number;
-  connection_to_guidance?: string | null;
+  connection_to_guidance: string | null;
+  impact_tags: string[];
+};
+
+export type GrowthTrigger = {
+  title: string;
+  category: string;
+  why_it_matters: string;
+  evidence_source: string;
+  source_date: string | null;
+  confidence_score: number;
+  impact_area: "revenue" | "eps" | "profit" | "margin" | "cash flow" | "any";
+  horizon: "near-term" | "medium-term" | "multi-year";
+  is_new: boolean;
 };
 
 export type RiskAnalysis = {
   risk_category: string;
   description: string;
-  severity: string;
+  severity: "high" | "medium" | "low";
   mitigation_strategy: string | null;
 };
 
