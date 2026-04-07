@@ -557,7 +557,14 @@ export function WatchlistsPanel({
               <span className="watchlist-selection-count">{selectedSymbols.length} selected</span>
               <select
                 value={bulkTargetWatchlistId}
-                onChange={(event) => setBulkTargetWatchlistId(event.target.value)}
+                onChange={(event) => {
+                  const targetId = event.target.value;
+                  setBulkTargetWatchlistId(targetId);
+                  if (targetId && activeWatchlist && selectedSymbols.length > 0) {
+                    onMoveSymbols(activeWatchlist.id, targetId, selectedSymbols);
+                    setSelectedSymbols([]);
+                  }
+                }}
                 disabled={availableMoveTargets.length === 0}
               >
                 {availableMoveTargets.length === 0 ? <option value="">No other watchlist</option> : null}
