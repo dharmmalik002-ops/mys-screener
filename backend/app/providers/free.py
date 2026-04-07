@@ -803,11 +803,12 @@ class FreeMarketDataProvider:
         if not self._is_trading_day_ist(session_date) or market_now < refresh_cutoff:
             return self._previous_trading_day(session_date)
 
-        latest_chart_session_date = self._latest_available_chart_session_date(self._benchmark_symbol())
-        if latest_chart_session_date is not None:
-            return latest_chart_session_date
-
-        return self._previous_trading_day(session_date)
+        # Past the post-close grace period on a trading day — today's session is
+        # complete.  Do NOT use the benchmark chart cache to determine this: that
+        # cache may be stale (only written when a user views the chart) and would
+        # return yesterday's date, causing _market_close_refresh_due() to return
+        # False and the snapshot to never rebuild after close.
+        return session_date
 
     @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
