@@ -4815,7 +4815,7 @@ button {
 
 .watchlist-head,
 .watchlist-row {
-  grid-template-columns: 40px minmax(74px, 0.46fr) 0.52fr 0.56fr 0.48fr minmax(148px, 0.9fr);
+  grid-template-columns: 40px minmax(0, 100px) 0.52fr 0.56fr 0.48fr minmax(148px, 0.9fr);
   font-size: 0.68rem;
 }
 
