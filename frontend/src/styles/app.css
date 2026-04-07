@@ -4819,11 +4819,8 @@ button {
   font-size: 0.68rem;
 }
 
-.watchlist-row {
-  padding-top: 3px;
-  padding-bottom: 3px;
-  padding-left: 10px;
-  padding-right: 10px;
+.watchlists-main .scan-row.watchlist-row {
+  padding: 4px 10px;
 }
 
 .watchlist-selection-count {
@@ -4837,8 +4834,9 @@ button {
 .watchlist-row-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  gap: 4px;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .watchlist-row-actions .tool-pill,
@@ -4891,7 +4889,7 @@ button {
 }
 
 .watchlists-main .scan-table-body {
-  gap: 6px;
+  gap: 4px;
 }
 
 .watchlists-main .scan-row > span,
