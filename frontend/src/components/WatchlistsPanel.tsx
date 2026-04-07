@@ -4,9 +4,11 @@ import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type Market
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { useMinWidth, useVirtualRows } from "../lib/virtualRows";
 import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, ChartGridSortBy, ChartGridStat } from "./ChartGridModal";
+import type { ImportResult } from "./WatchlistImportModal";
 import { Panel } from "./Panel";
 
 const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })));
+const WatchlistImportModal = lazy(() => import("./WatchlistImportModal").then((module) => ({ default: module.WatchlistImportModal })));
 const WATCHLIST_SLOT_GAP = 4;
 const WATCHLIST_ROW_SLOT_HEIGHT = 46;
 
@@ -31,6 +33,7 @@ type WatchlistsPanelProps = {
   onRemoveFromWatchlist: (watchlistId: string, symbol: string) => void;
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
   onCopyToWatchlist: (watchlistId: string, symbol: string) => void;
+  onImportWatchlist: (result: ImportResult) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
@@ -100,6 +103,7 @@ export function WatchlistsPanel({
   onRemoveFromWatchlist,
   onMoveSymbols,
   onCopyToWatchlist,
+  onImportWatchlist,
   onRequestAddToWatchlist,
   onPickSymbol,
   universeItems,
@@ -121,6 +125,7 @@ export function WatchlistsPanel({
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
+  const [importOpen, setImportOpen] = useState(false);
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
@@ -408,6 +413,23 @@ export function WatchlistsPanel({
         subtitle={`${marketLabel} watchlists and saved collections`}
         className="watchlists-sidebar"
       >
+        {/* Quick-switch dropdown */}
+        <div className="wl-quick-switch">
+          <select
+            className="wl-quick-select"
+            value={activeWatchlist?.id ?? ""}
+            onChange={(e) => onSelectWatchlist(e.target.value)}
+          >
+            {watchlists.length === 0 && <option value="">No watchlists yet</option>}
+            {watchlists.map((wl) => (
+              <option key={wl.id} value={wl.id}>{wl.name} ({wl.symbols.length})</option>
+            ))}
+          </select>
+          <button type="button" className="tool-pill wl-import-btn" onClick={() => setImportOpen(true)} title="Import watchlist from file or paste">
+            Import
+          </button>
+        </div>
+
         <div className="watchlists-create">
           <input
             value={newWatchlistName}
@@ -644,6 +666,18 @@ export function WatchlistsPanel({
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGridSeries}
             onClose={() => setGridOpen(false)}
+          />
+        </Suspense>
+      ) : null}
+      {importOpen ? (
+        <Suspense fallback={null}>
+          <WatchlistImportModal
+            defaultColor="#4f8cff"
+            onConfirm={(result) => {
+              onImportWatchlist(result);
+              setImportOpen(false);
+            }}
+            onClose={() => setImportOpen(false)}
           />
         </Suspense>
       ) : null}

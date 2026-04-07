@@ -12,6 +12,7 @@ import type {
 } from "./components/ChartPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
+import type { ImportResult } from "./components/WatchlistImportModal";
 import {
   type ChartBar,
   getChart,
@@ -3383,6 +3384,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setActivePage("watchlists");
   };
 
+  const handleImportWatchlist = (result: ImportResult) => {
+    const nextWatchlist: LocalWatchlist = {
+      id: buildLocalId(),
+      name: result.name,
+      color: result.color,
+      symbols: result.symbols,
+      updated_at: Date.now(),
+    };
+    setWatchlists((current) => [...current, nextWatchlist]);
+    setActiveWatchlistId(nextWatchlist.id);
+    setActivePage("watchlists");
+  };
+
   const handleRenameWatchlist = (watchlistId: string, name: string) => {
     const trimmed = name.trim();
     if (!trimmed) {
@@ -4476,6 +4490,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   onMoveSymbols={handleMoveWatchlistSymbols}
                   onCopyToWatchlist={handleCopyToWatchlist}
+                  onImportWatchlist={handleImportWatchlist}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
