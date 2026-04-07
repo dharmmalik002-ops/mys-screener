@@ -723,7 +723,8 @@ class FreeMarketDataProvider:
         if snapshot_session_date is None:
             return True
 
-        return self._chart_bar_trade_date(bars[-1]) >= snapshot_session_date
+        snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
+        return bars[-1].time >= snapshot_ts
 
     @staticmethod
     def _history_source_is_reliable(value: Any) -> bool:
@@ -811,11 +812,21 @@ class FreeMarketDataProvider:
         return session_date
 
     @staticmethod
+    @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
         timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)
         if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
             return timestamp.date()
         return timestamp.astimezone(IST).date()
+
+    def _session_date_to_chart_timestamp(self, session_date: date) -> int:
+        # yfinance returns India bars at 18:30 UTC (= IST midnight of session_date).
+        # _history_to_chart_bars truncates that to UTC midnight of the same UTC day,
+        # which is one calendar day before session_date.  We apply the same shift so the
+        # snapshot bar aligns with its corresponding history bar key in the chart cache.
+        ist_midnight = datetime.combine(session_date, datetime.min.time(), tzinfo=IST)
+        utc_midnight = ist_midnight.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        return int(utc_midnight.timestamp())
 
     def _values_fit_snapshot_session(self, symbol: str, values: list[Any]) -> bool:
         lower, upper = self._snapshot_session_bounds(symbol)
@@ -841,8 +852,8 @@ class FreeMarketDataProvider:
         snapshot_session_date = self._snapshot_session_date(symbol)
         if snapshot_session_date is None:
             return True
-        bar_date = self._chart_bar_trade_date(bar)
-        if bar_date != snapshot_session_date:
+        snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
+        if bar.time != snapshot_ts:
             return True
         return self._values_fit_snapshot_session(symbol, [bar.open, bar.high, bar.low, bar.close])
 
@@ -859,7 +870,7 @@ class FreeMarketDataProvider:
         if high_value >= low_value:
             open_value = min(max(open_value, low_value), high_value)
         volume_value = int(self._to_float(scale.get("volume")) or 0)
-        timestamp = int(datetime.combine(session_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+        timestamp = int(self._session_date_to_chart_timestamp(session_date))
         return ChartBar(
             time=timestamp,
             open=round(float(open_value), 2),
@@ -1042,7 +1053,8 @@ class FreeMarketDataProvider:
         )
         session_volume = int(self._quote_number(quote, "regularMarketVolume") or 0)
         trade_date = quote_updated_at.astimezone(IST).date()
-        trade_timestamp = int(datetime.combine(trade_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+        trade_timestamp = self._session_date_to_chart_timestamp(trade_date)
+        trade_bar_date = self._chart_bar_trade_date(ChartBar(time=trade_timestamp, open=0, high=0, low=0, close=0, volume=0))
 
         next_bar = ChartBar(
             time=trade_timestamp,
@@ -1055,7 +1067,7 @@ class FreeMarketDataProvider:
 
         patched_bars = list(cached_bars)
         last_bar_date = self._chart_bar_trade_date(patched_bars[-1])
-        if last_bar_date == trade_date:
+        if last_bar_date == trade_bar_date:
             previous_bar = patched_bars[-1]
             patched_bars[-1] = ChartBar(
                 time=trade_timestamp,
@@ -3860,7 +3872,15 @@ class FreeMarketDataProvider:
     ) -> dict[str, Any]:
         quote_updated_at = self._quote_updated_at_from_quote(quote)
         current_price = self._quote_number(quote, "regularMarketPrice") or float(row.get("last_price") or 0)
-        previous_close = self._quote_number(quote, "regularMarketPreviousClose") or float(row.get("previous_close") or row.get("last_price") or current_price)
+        _cached_prev = float(row.get("previous_close") or row.get("last_price") or current_price)
+        _raw_prev_close = self._quote_number(quote, "regularMarketPreviousClose")
+        # Yahoo sometimes returns corrupt previous_close values (e.g. pre-split price).
+        # Validate against cached scale before trusting it; fall back to cached if it fails.
+        previous_close = (
+            _raw_prev_close
+            if _raw_prev_close and self._live_quote_matches_cached_scale(_cached_prev, _raw_prev_close)
+            else _cached_prev
+        )
         session_high = self._quote_number(quote, "regularMarketDayHigh") or current_price
         session_low = self._quote_number(quote, "regularMarketDayLow") or current_price
         

@@ -398,6 +398,11 @@ class USFreeMarketDataProvider(FreeMarketDataProvider):
     def _market_close_minutes(self) -> int:
         return US_MARKET_CLOSE_MINUTES
 
+    def _session_date_to_chart_timestamp(self, session_date: date) -> int:
+        # US: yfinance bars are at 04:00 UTC (= NYSE midnight), truncated to UTC midnight
+        # of the same UTC date — so session_date (US ET) maps directly to UTC midnight.
+        return int(datetime.combine(session_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+
     def _post_close_refresh_grace_minutes(self) -> int:
         return 15
 
