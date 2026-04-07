@@ -30,6 +30,7 @@ type WatchlistsPanelProps = {
   onSetWatchlistColor: (id: string, color: string) => void;
   onRemoveFromWatchlist: (watchlistId: string, symbol: string) => void;
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
+  onCopyToWatchlist: (watchlistId: string, symbol: string) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
@@ -98,6 +99,7 @@ export function WatchlistsPanel({
   onSetWatchlistColor,
   onRemoveFromWatchlist,
   onMoveSymbols,
+  onCopyToWatchlist,
   onRequestAddToWatchlist,
   onPickSymbol,
   universeItems,
@@ -359,31 +361,42 @@ export function WatchlistsPanel({
         >
           Remove
         </button>
-        <select
-          value={rowMoveTargets[item.symbol] || bulkTargetWatchlistId || availableMoveTargets[0]?.id || ""}
-          onChange={(event) =>
-            setRowMoveTargets((current) => ({
-              ...current,
-              [item.symbol]: event.target.value,
-            }))
-          }
-          disabled={availableMoveTargets.length === 0}
-        >
-          {availableMoveTargets.length === 0 ? <option value="">No target</option> : null}
-          {availableMoveTargets.map((watchlist) => (
-            <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
-              {watchlist.name}
-            </option>
-          ))}
-        </select>
-        <button
-          type="button"
-          className="tool-pill"
-          disabled={availableMoveTargets.length === 0}
-          onClick={() => handleMoveOne(item.symbol)}
-        >
-          Move
-        </button>
+        {availableMoveTargets.length > 0 ? (
+          <>
+            <select
+              value={rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id || ""}
+              onChange={(event) =>
+                setRowMoveTargets((current) => ({
+                  ...current,
+                  [item.symbol]: event.target.value,
+                }))
+              }
+            >
+              {availableMoveTargets.map((watchlist) => (
+                <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
+                  {watchlist.symbols.includes(item.symbol) ? `✓ ${watchlist.name}` : watchlist.name}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              className="tool-pill"
+              onClick={() => handleMoveOne(item.symbol)}
+            >
+              Move
+            </button>
+            <button
+              type="button"
+              className="tool-pill"
+              onClick={() => {
+                const targetId = rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id;
+                if (targetId) onCopyToWatchlist(targetId, item.symbol);
+              }}
+            >
+              Copy
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   );

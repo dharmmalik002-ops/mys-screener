@@ -4460,6 +4460,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSetWatchlistColor={handleSetWatchlistColor}
                   onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   onMoveSymbols={handleMoveWatchlistSymbols}
+                  onCopyToWatchlist={handleAddToWatchlist}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
