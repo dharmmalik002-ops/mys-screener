@@ -1697,8 +1697,9 @@ class FreeMarketDataProvider:
             screener_payload.get("profit_loss") or [],
             yahoo_payload.get("profit_loss") or [],
         )
+        quarterly_results = self._annotate_quarterly_yoy_qoq(quarterly_results)
         shareholding_pattern = screener_payload.get("shareholding_pattern") or yahoo_payload.get("shareholding_pattern") or []
-        growth = self._build_growth_snapshot(quarterly_results)
+        growth = self._build_growth_snapshot(quarterly_results, profit_loss)
         shareholding_delta = self._build_shareholding_delta(shareholding_pattern)
         valuation = self._build_valuation_snapshot(
             snapshot=snapshot,
@@ -1730,6 +1731,33 @@ class FreeMarketDataProvider:
                 if gnews_item.title.lower() not in existing_titles:
                     detailed_news.append(gnews_item)
                     existing_titles.add(gnews_item.title.lower())
+
+        # Fallback: promote Yahoo Finance news headlines to detailed_news
+        # when live scraping yields fewer than 3 editorial items
+        editorial_count = sum(1 for n in detailed_news if n.is_editorial)
+        if editorial_count < 3:
+            existing_titles_fb = {n.title.lower() for n in detailed_news}
+            for update in recent_updates:
+                if update.kind != "news":
+                    continue
+                if not update.title or update.title.lower() in existing_titles_fb:
+                    continue
+                pub_date = update.published_at[:10] if update.published_at else None
+                detailed_news.append(DetailedNews(
+                    title=update.title,
+                    summary=update.summary or update.title,
+                    impact_category="market",
+                    sentiment="neutral",
+                    source=update.source or "Yahoo Finance",
+                    domain=(update.source or "Yahoo Finance").lower().replace(" ", ""),
+                    source_type="Editorial News",
+                    classification="editorial_news",
+                    is_editorial=True,
+                    url=update.link,
+                    published_date=pub_date,
+                    relevance_score=0.60,
+                ))
+                existing_titles_fb.add(update.title.lower())
 
         growth_drivers = self._build_growth_drivers(
             growth=growth,
@@ -2836,20 +2864,52 @@ class FreeMarketDataProvider:
             return None
         return round(value / 10_000_000, 2)
 
-    def _build_growth_snapshot(self, quarterly_results: list[QuarterlyResultItem]) -> GrowthSnapshot | None:
+    def _annotate_quarterly_yoy_qoq(self, quarterly_results: list[QuarterlyResultItem]) -> list[QuarterlyResultItem]:
+        """Populate yoy_change_pct and qoq_change_pct on each QuarterlyResultItem."""
+        out: list[QuarterlyResultItem] = []
+        for i, item in enumerate(quarterly_results):
+            qoq_pct: float | None = None
+            yoy_pct: float | None = None
+            if i > 0:
+                qoq_pct = self._growth_pct(item.sales_crore, quarterly_results[i - 1].sales_crore)
+            if i >= 4:
+                yoy_pct = self._growth_pct(item.sales_crore, quarterly_results[i - 4].sales_crore)
+            out.append(item.model_copy(update={"qoq_change_pct": qoq_pct, "yoy_change_pct": yoy_pct}))
+        return out
+
+    def _build_growth_snapshot(self, quarterly_results: list[QuarterlyResultItem], profit_loss: list["ProfitLossItem"] | None = None) -> GrowthSnapshot | None:
         if not quarterly_results:
             return None
-        latest = quarterly_results[-1]
-        previous = quarterly_results[-2] if len(quarterly_results) >= 2 else None
-        year_ago = quarterly_results[-5] if len(quarterly_results) >= 5 else None
+        # Exclude TTM row from recency comparisons
+        real_quarters = [q for q in quarterly_results if q.period.upper() != "TTM"]
+        if not real_quarters:
+            return None
+        latest = real_quarters[-1]
+        previous = real_quarters[-2] if len(real_quarters) >= 2 else None
+        year_ago = real_quarters[-5] if len(real_quarters) >= 5 else None
         latest_net_margin = self._margin_pct(latest.net_profit_crore, latest.sales_crore)
         previous_net_margin = self._margin_pct(previous.net_profit_crore, previous.sales_crore) if previous else None
+
+        sales_yoy_pct = self._growth_pct(latest.sales_crore, year_ago.sales_crore if year_ago else None)
+        profit_yoy_pct = self._growth_pct(latest.net_profit_crore, year_ago.net_profit_crore if year_ago else None)
+
+        # Fallback: use annual profit_loss for YoY when not enough quarters
+        if (sales_yoy_pct is None or profit_yoy_pct is None) and profit_loss:
+            annual = [p for p in profit_loss if p.period.upper() != "TTM" and p.sales_crore]
+            if len(annual) >= 2:
+                latest_ann = annual[-1]
+                prev_ann = annual[-2]
+                if sales_yoy_pct is None:
+                    sales_yoy_pct = self._growth_pct(latest_ann.sales_crore, prev_ann.sales_crore)
+                if profit_yoy_pct is None:
+                    profit_yoy_pct = self._growth_pct(latest_ann.net_profit_crore, prev_ann.net_profit_crore)
+
         return GrowthSnapshot(
             latest_period=latest.period,
             sales_qoq_pct=self._growth_pct(latest.sales_crore, previous.sales_crore if previous else None),
-            sales_yoy_pct=self._growth_pct(latest.sales_crore, year_ago.sales_crore if year_ago else None),
+            sales_yoy_pct=sales_yoy_pct,
             profit_qoq_pct=self._growth_pct(latest.net_profit_crore, previous.net_profit_crore if previous else None),
-            profit_yoy_pct=self._growth_pct(latest.net_profit_crore, year_ago.net_profit_crore if year_ago else None),
+            profit_yoy_pct=profit_yoy_pct,
             operating_margin_latest_pct=latest.operating_margin_pct,
             operating_margin_previous_pct=previous.operating_margin_pct if previous else None,
             net_margin_latest_pct=latest_net_margin,
