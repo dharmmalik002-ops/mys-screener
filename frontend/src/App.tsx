@@ -3425,6 +3425,21 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setActiveWatchlistId(watchlistId);
   };
 
+  const handleCopyToWatchlist = (watchlistId: string, symbol: string) => {
+    const normalizedSymbol = symbol.trim().toUpperCase();
+    if (!normalizedSymbol) {
+      return;
+    }
+    setWatchlists((current) =>
+      current.map((watchlist) =>
+        watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
+          ? watchlist
+          : { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol], updated_at: Date.now() },
+      ),
+    );
+    // intentionally does NOT switch active watchlist
+  };
+
   const handleRemoveFromWatchlist = (watchlistId: string, symbol: string) => {
     const normalizedSymbol = symbol.trim().toUpperCase();
     if (!normalizedSymbol) {
@@ -4460,7 +4475,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSetWatchlistColor={handleSetWatchlistColor}
                   onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   onMoveSymbols={handleMoveWatchlistSymbols}
-                  onCopyToWatchlist={handleAddToWatchlist}
+                  onCopyToWatchlist={handleCopyToWatchlist}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
