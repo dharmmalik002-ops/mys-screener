@@ -5568,6 +5568,44 @@ button {
   background: transparent;
 }
 
+/* ── India index overlay controls ── */
+.index-overlay-controls {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.index-overlay-select {
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  outline: none;
+}
+
+.index-overlay-select:focus {
+  border-color: var(--accent);
+}
+
+.index-overlay-color {
+  display: flex;
+  align-items: center;
+}
+
+.index-overlay-color input[type="color"] {
+  width: 28px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  background: transparent;
+}
+
 /* ── Annotation floating edit panel ── */
 .annotation-edit-panel {
   position: absolute;

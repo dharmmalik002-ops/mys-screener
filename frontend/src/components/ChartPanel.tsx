@@ -789,6 +789,26 @@ function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: Cha
   }));
 }
 
+function buildIndexOhlcvOverlay(primaryBars: ChartBar[], indexBars: ChartBar[]): Array<{ time: UTCTimestamp; open: number; high: number; low: number; close: number }> {
+  if (primaryBars.length < 2 || indexBars.length < 2) return [];
+  const startTime = primaryBars[0]?.time;
+  const endTime = primaryBars[primaryBars.length - 1]?.time;
+  const primaryBase = primaryBars[0]?.close;
+  if (!startTime || !endTime || !primaryBase || primaryBase <= 0) return [];
+  const scopedBars = indexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0);
+  if (scopedBars.length < 2) return [];
+  const indexBase = scopedBars[0]?.close;
+  if (!indexBase || indexBase <= 0) return [];
+  const scale = primaryBase / indexBase;
+  return scopedBars.map((b) => ({
+    time: b.time as UTCTimestamp,
+    open: Number((b.open * scale).toFixed(4)),
+    high: Number((b.high * scale).toFixed(4)),
+    low: Number((b.low * scale).toFixed(4)),
+    close: Number((b.close * scale).toFixed(4)),
+  }));
+}
+
 export function ChartPanel({
   market,
   symbol,
@@ -865,6 +885,13 @@ export function ChartPanel({
   const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(null);
   const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
   const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
+  const [indexOverlaySymbol, setIndexOverlaySymbol] = useState<string | null>(null);
+  const [indexOverlayMode, setIndexOverlayMode] = useState<"overlay" | "pane">("overlay");
+  const [indexOverlayStyle, setIndexOverlayStyle] = useState<"line" | "candle" | "bars">("line");
+  const [indexOverlayColor, setIndexOverlayColor] = useState("#ffd36f");
+  const [indexBars, setIndexBars] = useState<ChartBar[] | null>(null);
+  const [indexLoading, setIndexLoading] = useState(false);
+  const indexCacheRef = useRef<Record<string, ChartBar[]>>({});
   const palette = CHART_PALETTES[chartPalette];
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
@@ -873,6 +900,7 @@ export function ChartPanel({
     [extendedHistory, rsLineMarkers],
   );
   const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
+  const safeIndexBars = useMemo(() => sanitizeChartBars(indexBars ?? []), [indexBars]);
   const futureWhitespaceTimes = useMemo(
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
@@ -955,6 +983,7 @@ export function ChartPanel({
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
     setExtendedHistory(null);
+    setIndexBars(null);
   }, [symbol, timeframe]);
 
   useEffect(() => {
@@ -1014,6 +1043,43 @@ export function ChartPanel({
       active = false;
     };
   }, [benchmarkSymbol, market, panelTab, showBenchmarkOverlay, symbol, timeframe]);
+
+  useEffect(() => {
+    if (!indexOverlaySymbol || !symbol || market !== "india" || panelTab !== "technical") {
+      setIndexBars(null);
+      setIndexLoading(false);
+      return;
+    }
+
+    const cacheKey = `india:${indexOverlaySymbol}:${timeframe}`;
+    const cached = indexCacheRef.current[cacheKey];
+    if (cached) {
+      setIndexBars(cached);
+      setIndexLoading(false);
+      return;
+    }
+
+    let active = true;
+    setIndexBars(null);
+    setIndexLoading(true);
+
+    void getChartHistory(indexOverlaySymbol, timeframe, "india")
+      .then((payload) => {
+        if (!active) return;
+        indexCacheRef.current[cacheKey] = payload.bars;
+        setIndexBars(payload.bars);
+      })
+      .catch(() => {
+        // ignore — overlay simply won't render
+      })
+      .finally(() => {
+        if (active) setIndexLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [indexOverlaySymbol, market, panelTab, symbol, timeframe]);
 
   useEffect(() => {
     setChartSearchQuery(symbol ?? "");
@@ -1235,7 +1301,11 @@ export function ChartPanel({
             borderVisible: false,
           });
     mainSeries.priceScale().applyOptions({
-      scaleMargins: safeRsLine.length ? { top: 0.04, bottom: 0.32 } : { top: 0.04, bottom: 0.18 },
+      scaleMargins: (() => {
+        const hasIndexPane = indexOverlaySymbol !== null && market === "india" && safeIndexBars.length > 0 && indexOverlayMode === "pane";
+        if (safeRsLine.length) return hasIndexPane ? { top: 0.04, bottom: 0.50 } : { top: 0.04, bottom: 0.32 };
+        return hasIndexPane ? { top: 0.04, bottom: 0.36 } : { top: 0.04, bottom: 0.18 };
+      })(),
     });
 
     const volumeSeries = chart.addHistogramSeries({
@@ -1278,6 +1348,103 @@ export function ChartPanel({
       });
       benchmarkSeries.setData(benchmarkOverlayData);
     }
+
+    // ── India index overlay ──────────────────────────────────────────────────
+    if (indexOverlaySymbol && market === "india" && safeIndexBars.length > 0) {
+      const idxColor = indexOverlayColor;
+      if (indexOverlayMode === "overlay") {
+        if (indexOverlayStyle === "line") {
+          const lineData = buildBenchmarkOverlaySeries(activeBars, safeIndexBars);
+          if (lineData.length > 0) {
+            const idxSeries = chart.addLineSeries({
+              color: idxColor,
+              lineWidth: 2,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            idxSeries.setData(lineData);
+          }
+        } else {
+          const rebasedOhlcv = buildIndexOhlcvOverlay(activeBars, safeIndexBars);
+          if (rebasedOhlcv.length > 0) {
+            if (indexOverlayStyle === "candle") {
+              const idxSeries = chart.addCandlestickSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                wickUpColor: idxColor,
+                wickDownColor: withOpacity(idxColor, 0.45),
+                borderVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false,
+              });
+              idxSeries.setData(rebasedOhlcv);
+            } else {
+              const idxSeries = chart.addBarSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                thinBars: false,
+              });
+              idxSeries.setData(rebasedOhlcv);
+            }
+          }
+        }
+      } else {
+        // Pane mode: index occupies a separate band at the bottom of the chart
+        const startTime = activeBars[0]?.time;
+        const endTime = activeBars[activeBars.length - 1]?.time;
+        const scopedBars = startTime && endTime
+          ? safeIndexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0)
+          : [];
+        if (scopedBars.length > 0) {
+          const paneScaleOpts = { visible: false, scaleMargins: { top: 0.62, bottom: 0.12 } };
+          if (indexOverlayStyle === "line") {
+            const idxSeries = chart.addLineSeries({
+              color: idxColor,
+              lineWidth: 2,
+              priceScaleId: "index-pane",
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            idxSeries.priceScale().applyOptions(paneScaleOpts);
+            idxSeries.setData(scopedBars.map((b) => ({ time: b.time as UTCTimestamp, value: b.close })));
+          } else {
+            const ohlcvPane = scopedBars.map((b) => ({
+              time: b.time as UTCTimestamp,
+              open: b.open,
+              high: b.high,
+              low: b.low,
+              close: b.close,
+            }));
+            if (indexOverlayStyle === "candle") {
+              const idxSeries = chart.addCandlestickSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                wickUpColor: idxColor,
+                wickDownColor: withOpacity(idxColor, 0.45),
+                borderVisible: false,
+                priceScaleId: "index-pane",
+                priceLineVisible: false,
+                lastValueVisible: false,
+              });
+              idxSeries.priceScale().applyOptions(paneScaleOpts);
+              idxSeries.setData(ohlcvPane);
+            } else {
+              const idxSeries = chart.addBarSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                thinBars: false,
+                priceScaleId: "index-pane",
+              });
+              idxSeries.priceScale().applyOptions(paneScaleOpts);
+              idxSeries.setData(ohlcvPane);
+            }
+          }
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
     volumeSeries.setData(
       activeBars.map((bar) => ({
         time: bar.time as UTCTimestamp,
@@ -1456,7 +1623,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2155,6 +2322,73 @@ export function ChartPanel({
           >
             {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
           </button>
+          {market === "india" ? (
+            <div className="index-overlay-controls">
+              <select
+                className="index-overlay-select"
+                value={indexOverlaySymbol ?? ""}
+                onChange={(e) => setIndexOverlaySymbol(e.target.value || null)}
+                title="Add a Nifty index overlay to this chart"
+              >
+                <option value="">Index Overlay</option>
+                <option value="^NSEI">Nifty 50</option>
+                <option value="^NSEMDCP50">Nifty Midcap 50</option>
+                <option value="^CNXSC">Nifty Smallcap</option>
+              </select>
+              {indexOverlaySymbol ? (
+                <>
+                  <button
+                    type="button"
+                    className={indexOverlayMode === "overlay" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayMode("overlay")}
+                    title="Overlay on main price scale (rebased)"
+                  >
+                    Overlay
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayMode === "pane" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayMode("pane")}
+                    title="Show in a separate pane below main chart"
+                  >
+                    Pane
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "line" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("line")}
+                    title="Line chart style"
+                  >
+                    Line
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "candle" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("candle")}
+                    title="Candlestick chart style"
+                  >
+                    Candle
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "bars" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("bars")}
+                    title="Bar chart style"
+                  >
+                    Bars
+                  </button>
+                  <label className="index-overlay-color" title="Index overlay colour">
+                    <input
+                      type="color"
+                      value={indexOverlayColor}
+                      onChange={(e) => setIndexOverlayColor(e.target.value)}
+                    />
+                  </label>
+                  {indexLoading ? <span className="chart-save-pill">Loading…</span> : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
       ) : null}
