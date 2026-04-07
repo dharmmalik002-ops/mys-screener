@@ -1539,10 +1539,11 @@ class FreeMarketDataProvider:
         if timeframe == "1h":
             return age_seconds < 15 * 60
         if timeframe == "1D":
-            # 15 mins if open, but only 4 hours if closed (ensures we get the 'official' close data quickly)
-            return age_seconds < (15 * 60 if self._is_market_open_ist() else 4 * 60 * 60)
+            # 15 mins if open; 30 mins after close so snapshot rebuilds always
+            # fetch the confirmed official close rather than reusing an intraday cache.
+            return age_seconds < (15 * 60 if self._is_market_open_ist() else 30 * 60)
         if timeframe == "1W":
-            return age_seconds < (30 * 60 if self._is_market_open_ist() else 12 * 60 * 60)
+            return age_seconds < (30 * 60 if self._is_market_open_ist() else 60 * 60)
         return age_seconds < 4 * 60 * 60
 
     def _refresh_cached_daily_chart_from_quote(self, symbol: str, bars: int) -> list[ChartBar]:
@@ -3307,7 +3308,10 @@ class FreeMarketDataProvider:
         current_session = self._current_or_previous_trading_day_ist()
         stale_days = max((current_session - session_date).days, 0)
         if force_refresh:
-            return stale_days >= 1
+            # Always rebuild when explicitly requested so the button picks up
+            # a fresh confirmed close even if the snapshot was already written
+            # earlier today with intraday / pre-close data.
+            return True
         if not self._is_trading_day_ist():
             return False
         return stale_days >= 3

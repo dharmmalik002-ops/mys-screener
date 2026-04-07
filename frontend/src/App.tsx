@@ -617,25 +617,43 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
 
   const openMinutes = market === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
   const closeMinutes = market === "us" ? 16 * 60 : 15 * 60 + 30;
+  // How long after close before we auto-refresh to pick up confirmed close data
+  const postCloseGraceMinutes = market === "us" ? 20 : 35;
   const tzLabel = market === "us" ? "ET" : "IST";
   const openLabel = market === "us" ? "09:30" : "09:15";
   const closeLabel = market === "us" ? "16:00" : "15:30";
 
   const isMarketOpen = isTradingDay && totalMinutes >= openMinutes && totalMinutes <= closeMinutes;
+  // Window just after close where we want to auto-refresh once to pick up close data
+  const isJustAfterClose = isTradingDay && totalMinutes > closeMinutes && totalMinutes < closeMinutes + postCloseGraceMinutes + 5;
+  const minutesSinceClose = isTradingDay && totalMinutes > closeMinutes ? totalMinutes - closeMinutes : null;
 
   if (isMarketOpen) {
     return {
       mode: "market-open" as const,
-      delayMs: 24 * 60 * 60_000,
+      delayMs: 0, // no auto-refresh while market is open
       label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
       detail: `Showing the last confirmed close during ${openLabel}-${closeLabel} ${tzLabel}`,
       refreshFundamentals: false,
     };
   }
 
+  // Just closed and within the post-close refresh grace window: schedule auto-refresh
+  // to fire once the confirmed close data is available
+  if (isJustAfterClose && minutesSinceClose !== null) {
+    const remainingMs = (postCloseGraceMinutes - minutesSinceClose) * 60_000;
+    return {
+      mode: "after-hours" as const,
+      delayMs: Math.max(remainingMs, 10_000), // at least 10s
+      label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
+      detail: `Auto-refreshing close snapshot — ${closeLabel} ${tzLabel} session`,
+      refreshFundamentals: false,
+    };
+  }
+
   return {
     mode: "after-hours" as const,
-    delayMs: 24 * 60 * 60_000,
+    delayMs: 0, // no auto-refresh outside the close window
     label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
     detail: `Daily cache updates after the ${closeLabel} ${tzLabel} close`,
     refreshFundamentals: false,
@@ -2252,6 +2270,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  // Auto-refresh once after market close to pick up confirmed close data
+  useEffect(() => {
+    const schedule = getAutoRefreshSchedule(new Date(), activeMarket);
+    if (schedule.delayMs <= 0) return;
+    const timerId = window.setTimeout(() => {
+      void handleRefreshRef.current("auto");
+    }, schedule.delayMs);
+    return () => window.clearTimeout(timerId);
+  }, [activeMarket, clockTick]); // clockTick drives re-evaluation every minute
 
   useEffect(() => {
     refreshingRef.current = refreshing;
