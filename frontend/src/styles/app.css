@@ -4956,30 +4956,85 @@ button {
   display: flex;
   flex-direction: column;
   gap: 5px;
-  padding: 10px 12px;
+  padding: 8px 10px 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
-  backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+  backdrop-filter: blur(8px);
   font-size: 0.68rem;
   min-width: 170px;
-  box-shadow: 0 4px 18px rgba(2, 8, 22, 0.28);
-  pointer-events: none;
+  box-shadow: 0 4px 18px rgba(2, 8, 22, 0.32);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.rvol-widget--sm { font-size: 0.58rem; min-width: 140px; gap: 3px; padding: 6px 8px 8px; }
+.rvol-widget--md { font-size: 0.68rem; }
+.rvol-widget--lg { font-size: 0.80rem; min-width: 210px; gap: 7px; padding: 10px 13px 12px; }
+
+.rvol-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: grab;
+  margin-bottom: 3px;
+}
+
+.rvol-widget-header:active {
+  cursor: grabbing;
 }
 
 .rvol-widget-title {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--text);
   letter-spacing: 0.04em;
-  margin-bottom: 2px;
 }
+
+.rvol-widget--sm .rvol-widget-title { font-size: 0.62rem; }
+.rvol-widget--lg .rvol-widget-title { font-size: 0.84rem; }
 
 .rvol-widget-subtitle {
   font-weight: 400;
-  font-size: 0.62rem;
+  font-size: 0.60rem;
   color: var(--text-soft);
-  margin-left: 4px;
+  margin-left: 3px;
+}
+
+.rvol-widget-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rvol-size-btn {
+  padding: 1px 4px;
+  font-size: 0.58rem;
+  font-weight: 600;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.rvol-size-btn.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.rvol-size-btn:hover {
+  color: var(--text);
+}
+
+.rvol-color-input {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: transparent;
 }
 
 .rvol-widget-row {
@@ -4995,7 +5050,7 @@ button {
 }
 
 .rvol-value {
-  width: 40px;
+  width: 42px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   flex-shrink: 0;
@@ -5013,14 +5068,16 @@ button {
   display: block;
   height: 100%;
   border-radius: 3px;
-  transition: width 0.2s ease;
+  transition: width 0.15s ease;
 }
 
 .rvol-widget-detail {
-  font-size: 0.60rem;
+  font-size: 0.58rem;
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
+
+.rvol-widget--lg .rvol-widget-detail { font-size: 0.68rem; }
 
 @media (max-width: 1320px) {
   .watchlists-layout {

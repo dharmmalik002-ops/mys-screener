@@ -844,6 +844,8 @@ export function ChartPanel({
   const annotationsRef = useRef(annotations);
   const onAnnotationsChangeRef = useRef(onAnnotationsChange);
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
+  const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
+  const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -860,6 +862,9 @@ export function ChartPanel({
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [showRvol, setShowRvol] = useState(false);
+  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(null);
+  const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
+  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
   const palette = CHART_PALETTES[chartPalette];
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
@@ -1486,6 +1491,41 @@ export function ChartPanel({
           },
     });
   }, [drawingTool]);
+
+  const handleRvolDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const widget = rvolWidgetRef.current;
+    const stage = stageRef.current;
+    if (!widget || !stage) return;
+    const widgetRect = widget.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    rvolDragRef.current = {
+      startPX: e.clientX,
+      startPY: e.clientY,
+      startWX: widgetRect.left - stageRect.left,
+      startWY: widgetRect.top - stageRect.top,
+    };
+    const onMove = (ev: PointerEvent) => {
+      if (!rvolDragRef.current) return;
+      const stage2 = stageRef.current;
+      if (!stage2) return;
+      const stageRect2 = stage2.getBoundingClientRect();
+      const dx = ev.clientX - rvolDragRef.current.startPX;
+      const dy = ev.clientY - rvolDragRef.current.startPY;
+      const newX = Math.max(0, Math.min(rvolDragRef.current.startWX + dx, stageRect2.width - 40));
+      const newY = Math.max(0, Math.min(rvolDragRef.current.startWY + dy, stageRect2.height - 40));
+      setRvolPos({ x: newX, y: newY });
+    };
+    const onUp = () => {
+      rvolDragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
 
   const handleLoadFullHistory = async () => {
     if (!symbol || historyLoading) return;
@@ -2207,8 +2247,25 @@ export function ChartPanel({
             </button>
           ) : null}
           {showRvol && currentRvol ? (
-            <div className="rvol-widget">
-              <div className="rvol-widget-title">RVOL <span className="rvol-widget-subtitle">vs 50d avg</span></div>
+            <div
+              ref={rvolWidgetRef}
+              className={`rvol-widget rvol-widget--${rvolScale}`}
+              style={{
+                ...(rvolPos ? { left: rvolPos.x, top: rvolPos.y, bottom: "auto" } : {}),
+                borderColor: `color-mix(in srgb, ${rvolAccentColor} 45%, transparent)`,
+              }}
+            >
+              <div className="rvol-widget-header" onPointerDown={handleRvolDragStart}>
+                <span className="rvol-widget-title" style={{ color: rvolAccentColor }}>RVOL <span className="rvol-widget-subtitle">vs 50d avg</span></span>
+                <div className="rvol-widget-controls" onPointerDown={(e) => e.stopPropagation()}>
+                  {(["sm", "md", "lg"] as const).map((s) => (
+                    <button key={s} type="button" className={`rvol-size-btn${rvolScale === s ? " active" : ""}`} onClick={() => setRvolScale(s)} style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}>
+                      {s === "sm" ? "S" : s === "md" ? "M" : "L"}
+                    </button>
+                  ))}
+                  <input type="color" className="rvol-color-input" value={rvolAccentColor} onChange={(e) => setRvolAccentColor(e.target.value)} title="Widget color" />
+                </div>
+              </div>
               <div className="rvol-widget-row">
                 <span className="rvol-label">Vol</span>
                 <span className="rvol-value" style={{ color: rvolColor(currentRvol.rvol50) }}>
