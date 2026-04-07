@@ -4820,8 +4820,10 @@ button {
 }
 
 .watchlist-row {
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 3px;
+  padding-bottom: 3px;
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 .watchlist-selection-count {

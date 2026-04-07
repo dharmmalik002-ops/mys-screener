@@ -7,8 +7,8 @@ import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, C
 import { Panel } from "./Panel";
 
 const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })));
-const WATCHLIST_SLOT_GAP = 6;
-const WATCHLIST_ROW_SLOT_HEIGHT = 64;
+const WATCHLIST_SLOT_GAP = 4;
+const WATCHLIST_ROW_SLOT_HEIGHT = 46;
 
 export type LocalWatchlist = {
   id: string;
