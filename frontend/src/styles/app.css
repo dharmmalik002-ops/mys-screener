@@ -4742,12 +4742,8 @@ button {
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 6px;
   align-items: center;
-  cursor: grab;
   border-radius: 6px;
   transition: background 0.1s;
-}
-.watchlist-link-row:active {
-  cursor: grabbing;
 }
 .watchlist-link-row.wl-drag-over {
   background: color-mix(in srgb, var(--accent, #4f8cff) 12%, transparent);
@@ -4756,12 +4752,16 @@ button {
 }
 .wl-drag-handle {
   color: var(--text-secondary, #666);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
-  padding: 0 2px;
+  padding: 4px 3px;
   user-select: none;
   flex-shrink: 0;
   cursor: grab;
+  touch-action: none;
+}
+.wl-drag-handle:hover {
+  color: var(--text-primary, #ccc);
 }
 
 .watchlist-link,

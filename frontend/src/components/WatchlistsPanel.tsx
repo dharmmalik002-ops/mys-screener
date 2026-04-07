@@ -462,16 +462,30 @@ export function WatchlistsPanel({
               key={watchlist.id}
               className={`watchlist-link-row${dragOverId === watchlist.id ? " wl-drag-over" : ""}`}
               draggable
-              onDragStart={() => { dragSrcIdRef.current = watchlist.id; }}
-              onDragOver={(e) => { e.preventDefault(); setDragOverId(watchlist.id); }}
-              onDragLeave={() => setDragOverId(null)}
-              onDrop={() => {
+              onDragStart={(e) => {
+                dragSrcIdRef.current = watchlist.id;
+                e.dataTransfer.effectAllowed = "move";
+                e.dataTransfer.setData("text/plain", watchlist.id);
+              }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+                if (dragOverId !== watchlist.id) setDragOverId(watchlist.id);
+              }}
+              onDragLeave={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setDragOverId(null);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
                 setDragOverId(null);
-                const srcId = dragSrcIdRef.current;
+                const srcId = e.dataTransfer.getData("text/plain") || dragSrcIdRef.current;
                 if (!srcId || srcId === watchlist.id) return;
                 const ids = watchlists.map((wl) => wl.id);
                 const fromIdx = ids.indexOf(srcId);
                 const toIdx = ids.indexOf(watchlist.id);
+                if (fromIdx === -1 || toIdx === -1) return;
                 const reordered = [...ids];
                 reordered.splice(fromIdx, 1);
                 reordered.splice(toIdx, 0, srcId);
@@ -482,6 +496,7 @@ export function WatchlistsPanel({
               <span className="wl-drag-handle" aria-hidden="true">⠿</span>
               <button
                 type="button"
+                draggable={false}
                 className={watchlist.id === activeWatchlist?.id ? "watchlist-link active" : "watchlist-link"}
                 style={{
                   borderLeftColor: watchlist.color,
@@ -495,7 +510,7 @@ export function WatchlistsPanel({
                   <small>{watchlist.symbols.length} stocks</small>
                 </span>
               </button>
-              <label className="watchlist-inline-color" title={`Change color for ${watchlist.name}`}>
+              <label className="watchlist-inline-color" title={`Change color for ${watchlist.name}`} draggable={false}>
                 <input
                   type="color"
                   value={watchlist.color}
