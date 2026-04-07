@@ -34,6 +34,7 @@ type WatchlistsPanelProps = {
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
   onCopyToWatchlist: (watchlistId: string, symbol: string) => void;
   onImportWatchlist: (result: ImportResult) => void;
+  onReorderWatchlists: (orderedIds: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
@@ -104,6 +105,7 @@ export function WatchlistsPanel({
   onMoveSymbols,
   onCopyToWatchlist,
   onImportWatchlist,
+  onReorderWatchlists,
   onRequestAddToWatchlist,
   onPickSymbol,
   universeItems,
@@ -126,6 +128,8 @@ export function WatchlistsPanel({
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
   const [importOpen, setImportOpen] = useState(false);
+  const dragSrcIdRef = useRef<string | null>(null);
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
@@ -454,7 +458,28 @@ export function WatchlistsPanel({
 
         <div className="watchlists-nav">
           {watchlists.map((watchlist) => (
-            <div key={watchlist.id} className="watchlist-link-row">
+            <div
+              key={watchlist.id}
+              className={`watchlist-link-row${dragOverId === watchlist.id ? " wl-drag-over" : ""}`}
+              draggable
+              onDragStart={() => { dragSrcIdRef.current = watchlist.id; }}
+              onDragOver={(e) => { e.preventDefault(); setDragOverId(watchlist.id); }}
+              onDragLeave={() => setDragOverId(null)}
+              onDrop={() => {
+                setDragOverId(null);
+                const srcId = dragSrcIdRef.current;
+                if (!srcId || srcId === watchlist.id) return;
+                const ids = watchlists.map((wl) => wl.id);
+                const fromIdx = ids.indexOf(srcId);
+                const toIdx = ids.indexOf(watchlist.id);
+                const reordered = [...ids];
+                reordered.splice(fromIdx, 1);
+                reordered.splice(toIdx, 0, srcId);
+                onReorderWatchlists(reordered);
+              }}
+              onDragEnd={() => { dragSrcIdRef.current = null; setDragOverId(null); }}
+            >
+              <span className="wl-drag-handle" aria-hidden="true">⠿</span>
               <button
                 type="button"
                 className={watchlist.id === activeWatchlist?.id ? "watchlist-link active" : "watchlist-link"}

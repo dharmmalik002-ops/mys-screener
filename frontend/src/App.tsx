@@ -3469,6 +3469,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     );
   };
 
+  const handleReorderWatchlists = (orderedIds: string[]) => {
+    setWatchlists((current) => {
+      const map = new Map(current.map((wl) => [wl.id, wl]));
+      const reordered = orderedIds.map((id) => map.get(id)).filter(Boolean) as typeof current;
+      // Append any watchlists not in orderedIds (safety)
+      const ordered = new Set(orderedIds);
+      for (const wl of current) {
+        if (!ordered.has(wl.id)) reordered.push(wl);
+      }
+      return reordered;
+    });
+  };
+
   const handleMoveWatchlistSymbols = (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => {
     if (!fromWatchlistId || !toWatchlistId || fromWatchlistId === toWatchlistId || symbols.length === 0) {
       return;
@@ -4491,6 +4504,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onMoveSymbols={handleMoveWatchlistSymbols}
                   onCopyToWatchlist={handleCopyToWatchlist}
                   onImportWatchlist={handleImportWatchlist}
+                  onReorderWatchlists={handleReorderWatchlists}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
