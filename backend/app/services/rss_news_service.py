@@ -12,15 +12,16 @@ import asyncio
 import hashlib
 import logging
 import re
+import ssl
 import time
-import urllib.error
-import urllib.request
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from html import unescape
 from typing import Any
+
+import httpx
 
 logger = logging.getLogger(__name__)
 
@@ -252,7 +253,7 @@ class RssNewsService:
     # ── Feed fetching ─────────────────────────────────────────────────────────
 
     async def _fetch_all(self) -> list[RssArticle]:
-        tasks = [asyncio.to_thread(self._fetch_feed, feed) for feed in self._feeds]
+        tasks = [self._fetch_feed_async(feed) for feed in self._feeds]
         results = await asyncio.gather(*tasks, return_exceptions=True)
         articles: list[RssArticle] = []
         seen_links: set[str] = set()
@@ -265,24 +266,28 @@ class RssNewsService:
                     articles.append(article)
         return articles
 
-    def _fetch_feed(self, feed: FeedConfig) -> list[RssArticle]:
+    async def _fetch_feed_async(self, feed: FeedConfig) -> list[RssArticle]:
         now = time.time()
         cached_ts, cached_items = self._cache.get(feed.id, (0, []))
         if cached_items and now - cached_ts < feed.ttl:
             return cached_items
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; Newsdesk/2.0; +https://github.com/MrChartist)",
+            "Accept": "application/rss+xml, application/xml, text/xml, */*",
+        }
         try:
-            req = urllib.request.Request(
-                feed.url,
-                headers={
-                    "User-Agent": "Newsdesk/2.0 (MrChartist Stock Scanner)",
-                    "Accept": "application/rss+xml, application/xml, text/xml",
-                },
-            )
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                xml_bytes = resp.read(800_000)
+            async with httpx.AsyncClient(
+                timeout=httpx.Timeout(15.0),
+                follow_redirects=True,
+                verify=False,  # some feeds have cert issues on HF
+                limits=httpx.Limits(max_connections=30, max_keepalive_connections=10),
+            ) as client:
+                resp = await client.get(feed.url, headers=headers)
+                resp.raise_for_status()
+                xml_bytes = resp.content[:800_000]
         except Exception as exc:
-            logger.debug("Feed %s fetch error: %s", feed.id, exc)
+            logger.warning("Feed %s fetch error: %s", feed.id, exc)
             return cached_items  # serve stale on error
 
         items = self._parse_feed(xml_bytes, feed)

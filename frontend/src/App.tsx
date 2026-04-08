@@ -4564,6 +4564,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
                   selectedSymbol={selectedSymbol}
+                  groupsData={groupsData}
                 />
               ) : (
                 null

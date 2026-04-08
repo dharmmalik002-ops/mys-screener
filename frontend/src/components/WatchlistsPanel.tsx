@@ -1,6 +1,6 @@
 import { Suspense, lazy, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
-import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type MarketKey, type ScanMatch } from "../lib/api";
+import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type IndustryGroupsResponse, type MarketKey, type ScanMatch } from "../lib/api";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { useMinWidth, useVirtualRows } from "../lib/virtualRows";
 import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, ChartGridSortBy, ChartGridStat } from "./ChartGridModal";
@@ -39,6 +39,7 @@ type WatchlistsPanelProps = {
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
   selectedSymbol: string | null;
+  groupsData?: IndustryGroupsResponse | null;
 };
 
 type WatchlistDisplayItem = {
@@ -110,6 +111,7 @@ export function WatchlistsPanel({
   onPickSymbol,
   universeItems,
   selectedSymbol,
+  groupsData,
 }: WatchlistsPanelProps) {
   const marketLabel = market === "india" ? "India" : "US";
   const hasWideTableLayout = useMinWidth(1180);
@@ -143,6 +145,39 @@ export function WatchlistsPanel({
     }
     return map;
   }, [universeItems]);
+
+  // Build symbol → group info lookup from groups data
+  const groupLookup = useMemo(() => {
+    type GroupInfo = { groupName: string; groupRank: number; totalGroups: number; stockRankInGroup: number; totalInGroup: number };
+    const map = new Map<string, GroupInfo>();
+    if (!groupsData) return map;
+    // group_id → rank map
+    const rankByGroupId = new Map<string, { rank: number; total: number }>();
+    for (const g of groupsData.groups) {
+      rankByGroupId.set(g.group_id, { rank: g.rank, total: groupsData.groups.length });
+    }
+    // Group stocks by group_id, sorted by rs_rating desc to get stock rank
+    const byGroupId = new Map<string, typeof groupsData.stocks>();
+    for (const s of groupsData.stocks) {
+      const arr = byGroupId.get(s.final_group_id) ?? [];
+      arr.push(s);
+      byGroupId.set(s.final_group_id, arr);
+    }
+    for (const [gid, stocks] of byGroupId) {
+      const sorted = [...stocks].sort((a, b) => (b.rs_rating ?? 0) - (a.rs_rating ?? 0));
+      const groupMeta = rankByGroupId.get(gid);
+      sorted.forEach((s, idx) => {
+        map.set(s.symbol, {
+          groupName: s.final_group_name,
+          groupRank: groupMeta?.rank ?? 0,
+          totalGroups: groupMeta?.total ?? 0,
+          stockRankInGroup: idx + 1,
+          totalInGroup: sorted.length,
+        });
+      });
+    }
+    return map;
+  }, [groupsData]);
 
   const activeItems = useMemo(
     (): WatchlistDisplayItem[] =>
@@ -331,7 +366,9 @@ export function WatchlistsPanel({
     }, {});
   }
 
-  const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => (
+  const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
+    const groupInfo = groupLookup.get(item.symbol);
+    return (
     <div
       key={`watchlist-${activeWatchlist?.id ?? "none"}-${item.symbol}`}
       className={selectedSymbol === item.symbol ? "scan-row watchlist-row active" : "scan-row watchlist-row"}
@@ -358,6 +395,21 @@ export function WatchlistsPanel({
       <span>{item.isKnown ? formatPrice(item.last_price, market) : "--"}</span>
       <span className={item.isKnown ? metricClass(item.change_pct) : ""}>{item.isKnown ? formatReturn(item.change_pct) : "--"}</span>
       <span>{item.isKnown ? item.rs_rating ?? "--" : "--"}</span>
+      {groupInfo ? (
+        <span className="wl-group-cell">
+          <span className="wl-group-name" title={groupInfo.groupName}>{groupInfo.groupName}</span>
+          <span className="wl-group-badges">
+            <span className="wl-badge wl-badge--rank" title={`Group ranked #${groupInfo.groupRank} of ${groupInfo.totalGroups}`}>
+              G#{groupInfo.groupRank}
+            </span>
+            <span className="wl-badge wl-badge--stock" title={`Ranked #${groupInfo.stockRankInGroup} in its group of ${groupInfo.totalInGroup} stocks`}>
+              #{groupInfo.stockRankInGroup}/{groupInfo.totalInGroup}
+            </span>
+          </span>
+        </span>
+      ) : (
+        <span className="wl-group-cell" style={{ color: "var(--text-muted)" }}>—</span>
+      )}
       <div className="watchlist-row-actions">
         <button
           type="button"
@@ -408,7 +460,8 @@ export function WatchlistsPanel({
         ) : null}
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="watchlists-layout">
@@ -660,7 +713,8 @@ export function WatchlistsPanel({
                 <span>Stock</span>
                 <span>Price</span>
                 <span>Change</span>
-                <span>RS Rating</span>
+                <span>RS</span>
+                <span>Group / Rank</span>
                 <span>Action</span>
               </div>
               <div ref={shouldVirtualize ? containerRef : undefined} className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}>

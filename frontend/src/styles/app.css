@@ -903,6 +903,45 @@ button {
   align-items: start;
 }
 
+/* ── Watchlist group-rank cells ─────────────────────────────────── */
+.wl-group-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.wl-group-name {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+.wl-group-badges {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.wl-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 4px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+.wl-badge--rank {
+  background: rgba(79, 140, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(79, 140, 255, 0.3);
+}
+.wl-badge--stock {
+  background: rgba(34, 217, 138, 0.12);
+  color: var(--accent-2);
+  border: 1px solid rgba(34, 217, 138, 0.25);
+}
+
 .home-macro-strip {
   display: flex;
   flex-wrap: wrap;
@@ -3675,7 +3714,7 @@ button {
 }
 
 .workspace-grid-sector {
-  grid-template-columns: minmax(540px, 1.06fr) minmax(620px, 0.94fr);
+  grid-template-columns: minmax(600px, 1.35fr) minmax(480px, 0.65fr);
 }
 
 .sector-panel .panel-body {
@@ -4868,7 +4907,7 @@ button {
 
 .watchlist-head,
 .watchlist-row {
-  grid-template-columns: 40px minmax(0, 100px) 0.52fr 0.56fr 0.48fr minmax(148px, 0.9fr);
+  grid-template-columns: 40px minmax(0, 100px) 0.52fr 0.56fr 0.48fr minmax(160px, 1.2fr) minmax(100px, 0.7fr);
   font-size: 0.68rem;
 }
 
