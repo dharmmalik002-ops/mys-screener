@@ -1466,5 +1466,5 @@ export function getCompanyLiveNews(symbol: string, market: MarketKey, limit = 30
 /** Returns the proxy URL (not a fetch—just build the URL for an iframe src). */
 export function getArticleProxyUrl(articleUrl: string) {
   const params = new URLSearchParams({ url: articleUrl });
-  return `/api/article-proxy?${params}`;
+  return `${API_BASE}/api/article-proxy?${params}`;
 }

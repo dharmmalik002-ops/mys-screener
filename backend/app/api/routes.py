@@ -747,22 +747,36 @@ def build_router(service):
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
                     "Accept-Language": "en-US,en;q=0.5",
+                    "Referer": "https://www.google.com/",
                 },
             )
             with _req.urlopen(request_obj, timeout=15) as resp:
                 html = resp.read(2_000_000).decode("utf-8", errors="replace")
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Upstream fetch failed: {exc}") from exc
+        # Strip any <meta> tags that enforce X-Frame-Options or CSP
+        # (browsers obey these even when the HTTP header is absent)
+        html = _re.sub(
+            r'<meta\s[^>]*http-equiv\s*=\s*["\']?(x-frame-options|content-security-policy)["\']?[^>]*>',
+            '',
+            html,
+            flags=_re.IGNORECASE,
+        )
         # Inject <base> tag so all relative URLs (images, CSS, JS) resolve
         # against the original article URL instead of our proxy domain.
         base_tag = f'<base href="{url}" target="_blank">'
-        html = _re.sub(r'<head([^>]*)>', rf'<head\1>{base_tag}', html, count=1, flags=_re.IGNORECASE)
+        if _re.search(r'<head', html, _re.IGNORECASE):
+            html = _re.sub(r'<head([^>]*)>', rf'<head\1>{base_tag}', html, count=1, flags=_re.IGNORECASE)
+        else:
+            html = base_tag + html
         return HTMLResponse(
             content=html,
             headers={
-                # Completely removing X-Frame-Options allows any origin to iframe
-                "X-Frame-Options": "ALLOWALL",
-                "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+                # Omit X-Frame-Options entirely — any value other than DENY/SAMEORIGIN
+                # is either ignored or causes unpredictable behaviour in Chrome.
+                # Rely on CSP frame-ancestors instead.
+                "Content-Security-Policy": "frame-ancestors *; default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+                "Access-Control-Allow-Origin": "*",
             },
         )
 
