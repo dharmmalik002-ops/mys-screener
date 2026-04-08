@@ -137,18 +137,6 @@ class USFreeMarketDataProvider(FreeMarketDataProvider):
             normalized_rows.append(next_row)
         return normalized_rows, changed
 
-    def _load_or_refresh_snapshots(self, market_cap_min_crore: float, force_refresh: bool) -> list[dict[str, Any]]:
-        rows = super()._load_or_refresh_snapshots(market_cap_min_crore, force_refresh)
-        normalized_rows, changed = self._backfill_listing_dates(rows)
-        if not changed:
-            return normalized_rows
-
-        cached_rows = self._load_json_rows(self.snapshot_cache_path)
-        normalized_cache_rows, cache_changed = self._backfill_listing_dates(cached_rows)
-        if cache_changed:
-            self._write_snapshot_rows(normalized_cache_rows)
-        return normalized_rows
-
     def _benchmark_label(self) -> str:
         return "S&P 500"
 

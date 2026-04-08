@@ -3918,13 +3918,8 @@ class DashboardService:
                         "quote_source": None,
                     }
 
-            if refresh_strategy == "cache":
-                snapshot_loader = self.provider.get_snapshots
-            else:
-                snapshot_loader = self.provider.get_snapshots
-
             snapshots = await asyncio.wait_for(
-                snapshot_loader(self.settings.market_cap_min_crore),
+                self.provider.get_snapshots(self.settings.market_cap_min_crore),
                 timeout=max(self.settings.refresh_timeout_seconds, 15),
             )
             snapshot_after = self.provider.get_snapshot_updated_at()
@@ -4032,7 +4027,9 @@ class DashboardService:
                 latest_close = None
         if latest_close not in (None, 0):
             payload["last_price"] = round(latest_close, 2)
-            # Use the definitively correct T-1 close from history (second to last bar)
+            # Use the definitively correct T-1 close from history (second to last bar).
+            # Fall back to the snapshot's previous_close when fewer than 2 bars exist.
+            reference_previous_close = previous_close
             if len(bars) >= 2:
                 try:
                     bar_prev_close = float(bars[-2].close)
