@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   getArticleProxyUrl,
   getLiveNews,
@@ -60,7 +61,7 @@ function ArticleModal({
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: "fixed",
@@ -149,7 +150,8 @@ function ArticleModal({
           sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
         />
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
