@@ -410,6 +410,8 @@ const DEFAULT_CUSTOM_FILTERS: CustomScanRequest = {
   sort_by: "rs_rating",
   sort_order: "desc",
   limit: 1500,
+  scan_date: null,
+  highest_vol_lookback_days: null,
 };
 
 const DEFAULT_NEAR_PIVOT_FILTERS: NearPivotScanRequest = {

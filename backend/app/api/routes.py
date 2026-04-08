@@ -116,7 +116,11 @@ def build_router(service):
     ):
         svc = resolve_service(market)
         parsed_custom_request = await svc.provider.ai_service.parse_natural_language_scan(request.query)
-        results = await svc.get_custom_scan_results(parsed_custom_request, include_sector_summaries=include_sector_summaries)
+        # Route to historical chart scan if a specific date or peak-volume lookback was parsed
+        if parsed_custom_request.scan_date is not None or parsed_custom_request.highest_vol_lookback_days is not None:
+            results = await svc.get_historical_chart_scan_results(parsed_custom_request)
+        else:
+            results = await svc.get_custom_scan_results(parsed_custom_request, include_sector_summaries=include_sector_summaries)
         return AiScanResponse(results=results, parsed_request=parsed_custom_request)
 
     @router.get("/gap-up-openers")
@@ -379,8 +383,12 @@ def build_router(service):
     ):
         svc = resolve_service(market_name)
         parsed_custom_request = await svc.provider.ai_service.parse_natural_language_scan(request.query)
-        results = await svc.get_custom_scan_results(parsed_custom_request, include_sector_summaries=include_sector_summaries)
+        if parsed_custom_request.scan_date is not None or parsed_custom_request.highest_vol_lookback_days is not None:
+            results = await svc.get_historical_chart_scan_results(parsed_custom_request)
+        else:
+            results = await svc.get_custom_scan_results(parsed_custom_request, include_sector_summaries=include_sector_summaries)
         return AiScanResponse(results=results, parsed_request=parsed_custom_request)
+
 
     @router.get("/{market_name}/gap-up-openers")
     async def namespaced_gap_up_openers(

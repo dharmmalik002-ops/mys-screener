@@ -1299,6 +1299,36 @@ class DashboardService:
             include_sector_summaries=include_sector_summaries,
         )
 
+    async def get_historical_chart_scan_results(
+        self,
+        request: CustomScanRequest,
+    ) -> ScanResultsResponse:
+        """Run a historical chart-data scan (date-specific RVOL/change% or peak-volume query)."""
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        items = await asyncio.to_thread(
+            self.provider.run_historical_chart_scan, request, snapshots
+        )
+        scan_date_str = request.scan_date.isoformat() if request.scan_date else None
+        if scan_date_str:
+            description = f"Historical scan for {scan_date_str}: RVOL and price-change filters applied."
+        else:
+            description = f"Stocks with highest quarterly volume in last {request.highest_vol_lookback_days} days."
+        return await self._scan_results_response(
+            scan={
+                "id": "historical-scan",
+                "name": "Historical Chart Scan",
+                "category": "AI",
+                "description": description,
+                "hit_count": len(items),
+            },
+            scan_key="historical-scan",
+            request_signature=json.dumps(request.model_dump(mode="python"), sort_keys=True, default=str),
+            snapshots=snapshots,
+            items=items,
+            historical_runner=lambda _hist: items,
+            include_sector_summaries=False,
+        )
+
     async def get_chart(self, symbol: str, timeframe: str):
         snapshot_updated_at = self._snapshot_updated_at()
         cache_key = (symbol, timeframe)

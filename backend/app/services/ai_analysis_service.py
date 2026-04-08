@@ -733,35 +733,67 @@ Rules:
         if not self._client:
             raise ValueError("AI parsing requires a Gemini API key.")
 
-        prompt = f"""
-You are an expert quantitative stock screener. Your job is to convert the following natural language query from an investor into a strict JSON payload matching the CustomScanRequest schema.
+        from datetime import date as _date
+        today_iso = _date.today().isoformat()
 
-Convert this query into parameters:
+        prompt = f"""
+You are an expert quantitative stock screener. Today's date is {today_iso}.
+
+Convert this investor query into a JSON payload matching the CustomScanRequest schema:
 "{query}"
 
-- "consolidating" or "tight stocks" -> `max_consolidation_range_pct=10.0`
-- "shakeout" -> `shakeout_21ema=true`
-- "near high" -> `near_high_period="1Y"` and `near_high_max_distance_pct=5.0`
-- "near 52 week high" -> `near_high_period="1Y"` and `near_high_max_distance_pct=5.0`
-- "VCP" or "Volatility Contraction" -> `max_consolidation_range_pct=8.0`, `minervini_trend_template=true`
-- "above 21 ema" -> `above_ema20=true`
-- "growing EPS 30%" -> `min_eps_growth_yoy=30.0`
-- "Sales growth 20%" -> `min_revenue_growth_yoy=20.0`
-- "shakeout of 21 ema" -> `shakeout_21ema=true`
-- "Minervini / Mark Minervini" -> `minervini_trend_template=true`
-- "Kullamagi / Kristjan" -> `kullamagi_setup=true`
-- "50 SMA" -> `above_ema50=true`
-- "200 SMA" -> `above_ema200=true`
-- "P/E below 20" -> `max_pe_ratio=20.0`
-- "P/E above 15" -> `min_pe_ratio=15.0`
-- Return ONLY valid JSON mapping strictly to the CustomScanRequest schema.
+MAPPING RULES (technical):
+- "consolidating" / "tight stocks" → max_consolidation_range_pct=10.0
+- "shakeout" / "shakeout of 21 ema" → shakeout_21ema=true
+- "near high" / "near 52 week high" → near_high_period="1Y", near_high_max_distance_pct=5.0
+- "VCP" / "Volatility Contraction" → max_consolidation_range_pct=8.0, minervini_trend_template=true
+- "above 21 EMA" / "above 20 EMA" → above_ema20=true
+- "above 50 EMA" / "50 SMA" → above_ema50=true
+- "above 200 SMA / EMA" → above_ema200=true
+- "Minervini" / "Mark Minervini" → minervini_trend_template=true
+- "Kullamagi" / "Kristjan" → kullamagi_setup=true
+- "RS rating above 80" → min_rs_rating=80
+- "P/E below 20" → max_pe_ratio=20.0
+- "P/E above 15" → min_pe_ratio=15.0
+
+MAPPING RULES (fundamental):
+- "EPS growth 30%" / "growing EPS > 30%" → min_eps_growth_yoy=30.0
+- "revenue/sales growth 20%" → min_revenue_growth_yoy=20.0
+- "operating margin > 15%" → min_operating_margin=15.0
+- "ROE > 20%" → min_roe=20.0
+
+MAPPING RULES (volume / RVOL):
+- "relative volume > 3" / "RVOL > 3" / "RVOL more than 3" → min_relative_volume=3.0
+- "RVOL above 2.5" → min_relative_volume=2.5
+- "price change > 6%" / "% change more than 6%" / "change more than 6" → min_change_pct=6.0
+- "price change > 5% and < 10%" → min_change_pct=5.0, max_change_pct=10.0
+
+MAPPING RULES (historical date scan):
+- "on April 7, 2026" / "for April 7" / "on today" / "for today" →
+  scan_date="{today_iso}"  (use the actual ISO date "YYYY-MM-DD"; for "today" use {today_iso})
+- When a specific date AND RVOL/change% filters are mentioned TOGETHER,
+  set scan_date AND min_relative_volume / min_change_pct at the same time.
+- Example: "RVOL > 3 and change > 6% on April 7, 2026" →
+  scan_date="2026-04-07", min_relative_volume=3.0, min_change_pct=6.0
+
+MAPPING RULES (highest quarterly volume):
+- "highest quarterly volume in last 7 days" → highest_vol_lookback_days=7
+- "highest quarterly volume in last week" → highest_vol_lookback_days=5
+- "stocks that hit quarterly-high volume recently" → highest_vol_lookback_days=5
+- "highest volume in last N days" where N ≤ 30 → highest_vol_lookback_days=N
+
+IMPORTANT:
+- Return ONLY valid JSON, NO markdown or code fences.
+- All numeric thresholds are plain numbers (not strings).
+- scan_date must be an ISO string "YYYY-MM-DD" or null.
+- Do not set both scan_date and highest_vol_lookback_days at the same time.
 """
         import asyncio
         for model in self._MODELS:
             try:
-                # We use Structured Outputs if possible, but fallback to raw JSON.
                 from google.genai import types
                 class AiScreenerSchema(BaseModel):
+                    # Fundamental filters
                     min_eps_growth_yoy: float | None = None
                     min_revenue_growth_yoy: float | None = None
                     min_operating_margin: float | None = None
@@ -770,6 +802,7 @@ Convert this query into parameters:
                     max_peg_ratio: float | None = None
                     min_pe_ratio: float | None = None
                     max_pe_ratio: float | None = None
+                    # Technical
                     minervini_trend_template: bool = False
                     kullamagi_setup: bool = False
                     shakeout_21ema: bool = False
@@ -780,8 +813,15 @@ Convert this query into parameters:
                     above_ema200: bool = False
                     min_rs_rating: int | None = None
                     min_price: float | None = None
-                    near_high_period: str | None = None  # "1M", "3M", "6M", "1Y", "ATH"
+                    near_high_period: str | None = None
                     near_high_max_distance_pct: float | None = None
+                    # Volume / price change
+                    min_relative_volume: float | None = None
+                    min_change_pct: float | None = None
+                    max_change_pct: float | None = None
+                    # Historical scan fields
+                    scan_date: str | None = None              # ISO "YYYY-MM-DD"
+                    highest_vol_lookback_days: int | None = None
 
                 result = await asyncio.to_thread(
                     self._client.models.generate_content,
@@ -799,7 +839,7 @@ Convert this query into parameters:
             except Exception as e:
                 logger.warning(f"AI Search translation failed for {model}: {e}. Trying next...")
                 continue
-                
+
         raise Exception("Natural language AI scanning is currently unavailable. No model succeeded.")
 
 

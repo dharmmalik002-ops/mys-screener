@@ -637,6 +637,9 @@ export type CustomScanRequest = {
   sort_by: CustomSortBy;
   sort_order: "asc" | "desc";
   limit: number;
+  // Historical chart scan fields
+  scan_date: string | null;
+  highest_vol_lookback_days: number | null;
 };
 
 export type SectorCompanyItem = {

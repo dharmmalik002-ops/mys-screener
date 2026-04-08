@@ -1036,6 +1036,124 @@ class FreeMarketDataProvider:
             return []
         return cached_bars[-bars:]
 
+    # ------------------------------------------------------------------ #
+    # Historical chart scan (AI screener: date-specific / peak-volume)   #
+    # ------------------------------------------------------------------ #
+
+    def run_historical_chart_scan(
+        self,
+        request: "Any",  # CustomScanRequest – typed loosely to avoid circular import
+        snapshots: "list[Any]",
+    ) -> "list[Any]":
+        """
+        Scan cached daily chart bars to answer two kinds of AI queries:
+        1. RVOL + change%-based filter for a *specific date*  (request.scan_date is set)
+        2. Stocks that recorded their highest quarterly volume in the last N days
+           (request.highest_vol_lookback_days is set)
+        Returns a list of ScanMatch objects.
+        """
+        from app.scanners.definitions import build_scan_match
+
+        scan_date = request.scan_date              # date | None
+        lookback_days = request.highest_vol_lookback_days  # int | None
+        min_rvol = request.min_relative_volume     # float | None
+        min_chg = request.min_change_pct           # float | None
+        max_chg = request.max_change_pct           # float | None
+
+        matches = []
+
+        for snapshot in snapshots:
+            symbol = snapshot.symbol
+            bars = self._read_chart_cache(symbol, "1D", 120)
+            if not bars:
+                continue
+
+            # ── Mode 1: single-date RVOL / change% scan ──────────────────
+            if scan_date is not None:
+                target_idx: int | None = None
+                for i, bar in enumerate(bars):
+                    if self._chart_bar_trade_date(bar) == scan_date:
+                        target_idx = i
+                        break
+                if target_idx is None or target_idx == 0:
+                    continue
+
+                target_bar = bars[target_idx]
+                prev_bar = bars[target_idx - 1]
+
+                change_pct = (
+                    (target_bar.close - prev_bar.close) / prev_bar.close * 100
+                    if prev_bar.close > 0
+                    else 0.0
+                )
+                prior_bars = bars[max(0, target_idx - 30):target_idx]
+                avg_vol = (
+                    sum(b.volume for b in prior_bars) / len(prior_bars)
+                    if prior_bars else 0.0
+                )
+                rvol = (target_bar.volume / avg_vol) if avg_vol > 0 else 0.0
+
+                if min_chg is not None and change_pct < min_chg:
+                    continue
+                if max_chg is not None and change_pct > max_chg:
+                    continue
+                if min_rvol is not None and rvol < min_rvol:
+                    continue
+
+                score = rvol * 10.0 + max(change_pct, 0.0) * 2.0
+                date_str = scan_date.isoformat()
+                reasons = [
+                    f"RVOL {rvol:.2f}x on {date_str}",
+                    f"Chg {change_pct:+.2f}% on {date_str}",
+                    f"Vol {target_bar.volume:,}",
+                ]
+                matches.append(
+                    build_scan_match("historical-scan", snapshot, round(score, 2), reasons, pattern="Historical")
+                )
+
+            # ── Mode 2: highest quarterly volume in last N days ───────────
+            elif lookback_days is not None:
+                n = max(1, min(lookback_days, len(bars) - 5))
+                quarter_bars = bars[-65:] if len(bars) >= 65 else bars
+                recent_bars = bars[-n:]
+                if not recent_bars or not quarter_bars:
+                    continue
+
+                max_recent_vol = max(b.volume for b in recent_bars)
+                max_quarter_vol = max(b.volume for b in quarter_bars)
+
+                if max_recent_vol < max_quarter_vol or max_quarter_vol == 0:
+                    continue
+
+                peak_bar = max(recent_bars, key=lambda b: b.volume)
+                try:
+                    peak_idx = bars.index(peak_bar)
+                except ValueError:
+                    continue
+                prior_bars_for_rvol = bars[max(0, peak_idx - 30):peak_idx]
+                avg_vol = (
+                    sum(b.volume for b in prior_bars_for_rvol) / len(prior_bars_for_rvol)
+                    if prior_bars_for_rvol else float(max_quarter_vol)
+                )
+                rvol = (peak_bar.volume / avg_vol) if avg_vol > 0 else 0.0
+
+                if min_rvol is not None and rvol < min_rvol:
+                    continue
+
+                peak_date = self._chart_bar_trade_date(peak_bar).isoformat()
+                score = rvol * 10.0 + snapshot.stock_return_20d * 0.2
+                reasons = [
+                    f"Peak Vol on {peak_date}",
+                    f"RVOL {rvol:.2f}x (qtrly high)",
+                    f"Vol {peak_bar.volume:,}",
+                ]
+                matches.append(
+                    build_scan_match("historical-scan", snapshot, round(score, 2), reasons, pattern="Vol. Peak")
+                )
+
+        matches.sort(key=lambda m: m.score, reverse=True)
+        return matches[:500]
+
     def _seed_daily_chart_cache(self, symbol: str, history: pd.DataFrame) -> None:
         series = history.dropna(subset=["Close"]).tail(520)
         if series.empty:

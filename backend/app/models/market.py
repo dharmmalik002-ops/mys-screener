@@ -938,6 +938,11 @@ class CustomScanRequest(BaseModel):
     sort_order: SortOrder = "desc"
     limit: int = Field(default=1500, ge=1, le=5000)
 
+    # Historical chart-based scan fields
+    # When set, the AI screener scans chart cache data instead of live snapshots.
+    scan_date: date | None = None  # ISO date for single-day historical scan
+    highest_vol_lookback_days: int | None = None  # Find stocks with quarterly-high vol in last N days
+
 
 class ChartResponse(BaseModel):
     symbol: str
