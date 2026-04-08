@@ -3284,7 +3284,20 @@ class FreeMarketDataProvider:
         snapshot_session_date = self._snapshot_rows_session_date(cached_rows)
         if snapshot_session_date is None:
             return True
-        return snapshot_session_date < self._latest_completed_market_session_date()
+        latest_completed = self._latest_completed_market_session_date()
+        if snapshot_session_date < latest_completed:
+            return True
+        # Session date matches but snapshot may have been captured before market close
+        # (e.g. mid-session load at 2:30 PM). If the snapshot file predates the last
+        # close time, we still need a post-close rebuild to get final EOD prices.
+        if self.snapshot_cache_path.exists():
+            last_close = self._latest_closed_session_close()
+            snapshot_mtime = datetime.fromtimestamp(
+                self.snapshot_cache_path.stat().st_mtime, tz=timezone.utc
+            )
+            if snapshot_mtime < last_close:
+                return True
+        return False
 
     def _strict_closed_session_refresh_due(self) -> bool:
         if not self._market_close_refresh_due():
