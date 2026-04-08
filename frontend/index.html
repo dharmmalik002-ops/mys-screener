@@ -38,6 +38,23 @@
         patchMethod("clearMeasures");
       })();
     </script>
+    <script>
+      (function () {
+        function showError(title, detail) {
+          var root = document.getElementById("root");
+          if (root) {
+            root.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0c1021;color:#ff6b6b;font-family:system-ui;padding:2rem;text-align:center"><div style="font-size:2rem;margin-bottom:1rem">⚠️</div><h2 style="font-size:1.1rem;font-weight:700;margin-bottom:0.5rem;color:#fff">' + title + '</h2><pre style="font-size:0.75rem;color:rgba(255,255,255,0.6);max-width:700px;overflow:auto;text-align:left;background:rgba(255,255,255,0.05);padding:1rem;border-radius:8px;margin-top:0.5rem">' + detail + '</pre></div>';
+          }
+        }
+        window.addEventListener("error", function (e) {
+          showError("JavaScript Error", (e.message || "") + "\n" + (e.filename || "") + " line " + e.lineno + "\n" + (e.error && e.error.stack ? e.error.stack : ""));
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          var reason = e.reason;
+          showError("Unhandled Promise Rejection", reason ? (reason.stack || String(reason)) : "Unknown rejection");
+        });
+      })();
+    </script>
     <title>Mr. Malik Scanner</title>
   </head>
   <body>

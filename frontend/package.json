@@ -5,13 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
     "lightweight-charts": "4.2.3",
     "react": "19.1.1",
     "react-dom": "19.1.1",
+    "react-is": "^19.0.0",
     "recharts": "^3.8.1"
   },
   "devDependencies": {
