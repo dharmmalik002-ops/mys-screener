@@ -36,6 +36,7 @@ type WatchlistsPanelProps = {
   onImportWatchlist: (result: ImportResult) => void;
   onReorderWatchlists: (orderedIds: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
+  onRequestAddToJournal?: (symbol: string, price: number) => void;
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
   selectedSymbol: string | null;
@@ -108,6 +109,7 @@ export function WatchlistsPanel({
   onImportWatchlist,
   onReorderWatchlists,
   onRequestAddToWatchlist,
+  onRequestAddToJournal,
   onPickSymbol,
   universeItems,
   selectedSymbol,
@@ -411,6 +413,17 @@ export function WatchlistsPanel({
         <span className="wl-group-cell" style={{ color: "var(--text-muted)" }}>—</span>
       )}
       <div className="watchlist-row-actions">
+        {onRequestAddToJournal && (
+          <button
+            type="button"
+            className="tool-pill small"
+            style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" }}
+            onClick={() => onRequestAddToJournal(item.symbol, item.last_price)}
+            title="Add to Trade Journal"
+          >
+            Journal
+          </button>
+        )}
         <button
           type="button"
           className="tool-pill"

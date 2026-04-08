@@ -4251,6 +4251,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
+              market={activeMarket}
               addRequest={journalAddRequest}
               onAddRequestHandled={() => setJournalAddRequest(null)}
             />
@@ -4598,6 +4599,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onImportWatchlist={handleImportWatchlist}
                   onReorderWatchlists={handleReorderWatchlists}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                  onRequestAddToJournal={(symbol, price) => { setJournalAddRequest({ symbol, suggestedPrice: price }); setActivePage("journal"); }}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
                   selectedSymbol={selectedSymbol}

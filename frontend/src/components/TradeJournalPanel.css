@@ -811,3 +811,72 @@
   margin-bottom: 16px;
   padding-right: 28px;
 }
+
+/* ─── Light theme overrides ──────────────────────────────────────────────── */
+:root[data-theme="light"] .tj-input,
+:root[data-theme="light"] .tj-select,
+:root[data-theme="light"] .tj-textarea,
+:root[data-theme="light"] .tj-equity-input {
+  background: #fff;
+  border-color: #cbd5e1;
+}
+:root[data-theme="light"] .tj-input:focus,
+:root[data-theme="light"] .tj-select:focus,
+:root[data-theme="light"] .tj-textarea:focus,
+:root[data-theme="light"] .tj-equity-input:focus {
+  border-color: var(--accent);
+  background: #fff;
+}
+:root[data-theme="light"] .tj-modal {
+  background: #fff;
+  box-shadow: 0 8px 40px rgba(15, 23, 42, 0.18);
+}
+:root[data-theme="light"] .tj-cloud-badge {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+:root[data-theme="light"] .tj-table th {
+  background: #f1f5f9;
+  color: #475569;
+}
+:root[data-theme="light"] .tj-table tbody tr:hover td {
+  background: #f8fafc;
+}
+:root[data-theme="light"] .tj-table td {
+  border-bottom-color: #e2e8f0;
+}
+:root[data-theme="light"] .tj-kcard {
+  background: #fff;
+}
+:root[data-theme="light"] .tj-card {
+  background: #fff;
+}
+:root[data-theme="light"] .tj-kcol {
+  background: #f8fafc;
+}
+:root[data-theme="light"] .tj-kpi {
+  background: #fff;
+}
+:root[data-theme="light"] .tj-sizer-box {
+  background: #f1f5f9;
+}
+:root[data-theme="light"] .tj-news-card {
+  background: #fff;
+}
+:root[data-theme="light"] .tj-chip {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+:root[data-theme="light"] .tj-kcard-setup,
+:root[data-theme="light"] .tj-kcard-qty,
+:root[data-theme="light"] .tj-kcol-badge {
+  background: #f1f5f9;
+  border-color: #e2e8f0;
+}
+:root[data-theme="light"] .tj-hm-tile.empty {
+  background: #e2e8f0;
+}
+:root[data-theme="light"] .tj-action-btn.ghost {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}

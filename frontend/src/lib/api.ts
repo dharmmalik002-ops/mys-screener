@@ -897,6 +897,8 @@ export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
 }
 
 const RETRYABLE_STATUS_CODES = new Set([404, 500, 502, 503, 504]);
+// Codes worth pausing 2.5 s and retrying once on the same base (transient HF-Space platform errors)
+const SERVER_ERROR_CODES = new Set([500, 502, 503, 504]);
 
 // Singleton warm-up — all concurrent requests share one loop instead of each
 // spawning their own, which caused the banner to fight itself.
@@ -937,34 +939,43 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let lastError: Error | null = null;
 
   for (const base of FALLBACK_API_BASES) {
-    try {
-      const response = await fetch(`${base}${path}`, {
-        cache: "no-store",
-        ...init,
-      });
+    // In production, retry once after a short delay for transient server errors
+    // (handles cold-start / platform-level 500s on HuggingFace Spaces)
+    const maxAttempts = (!import.meta.env.DEV && base === API_BASE) ? 2 : 1;
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) await new Promise<void>(r => setTimeout(r, 2_500));
+      try {
+        const response = await fetch(`${base}${path}`, {
+          cache: "no-store",
+          ...init,
+        });
 
-      if (!response.ok) {
-        if (RETRYABLE_STATUS_CODES.has(response.status)) {
-          // If the real backend returns 503, start the background warm-up loop
-          // (shared singleton — won't double-fire if already running)
-          if (response.status === 503 && base === API_BASE) {
-            triggerWarmup();
+        if (!response.ok) {
+          if (RETRYABLE_STATUS_CODES.has(response.status)) {
+            // If the real backend returns 503, start the background warm-up loop
+            // (shared singleton — won't double-fire if already running)
+            if (response.status === 503 && base === API_BASE) {
+              triggerWarmup();
+            }
+            lastError = new Error(`Request failed: ${response.status}`);
+            // Retry the same base for server errors if attempts remain
+            if (SERVER_ERROR_CODES.has(response.status) && attempt < maxAttempts - 1) continue;
+            break; // fall through to next base
           }
-          lastError = new Error(`Request failed: ${response.status}`);
-          continue;
+          throw new Error(`Request failed: ${response.status}`);
         }
-        throw new Error(`Request failed: ${response.status}`);
-      }
 
-      // On success, record the ping and ensure any warming banner is dismissed
-      if (base === API_BASE) {
-        _lastSuccessfulPing = Date.now();
-        if (_warmupPromise === null) dispatchBackendEvent("ready");
-      }
+        // On success, record the ping and ensure any warming banner is dismissed
+        if (base === API_BASE) {
+          _lastSuccessfulPing = Date.now();
+          if (_warmupPromise === null) dispatchBackendEvent("ready");
+        }
 
-      return response.json() as Promise<T>;
-    } catch (error) {
-      lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+        return response.json() as Promise<T>;
+      } catch (error) {
+        lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+        if (attempt < maxAttempts - 1) continue; // retry network-level errors too
+      }
     }
   }
 

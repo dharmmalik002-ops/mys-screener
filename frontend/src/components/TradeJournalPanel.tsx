@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getJournalData, saveJournalData } from "../lib/api";
+import { getChart, getJournalData, saveJournalData, type MarketKey } from "../lib/api";
 import "./TradeJournalPanel.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -34,6 +34,7 @@ export interface JournalAddRequest {
 
 // ─── Props ──────────────────────────────────────────────────────────────────────
 interface TradeJournalPanelProps {
+  market?: MarketKey;
   addRequest?: JournalAddRequest | null;
   onAddRequestHandled?: () => void;
 }
@@ -338,7 +339,7 @@ function Heatmap({ closed }: { closed: ClosedTrade[] }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export function TradeJournalPanel({ addRequest, onAddRequestHandled }: TradeJournalPanelProps) {
+export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
@@ -572,25 +573,17 @@ export function TradeJournalPanel({ addRequest, onAddRequestHandled }: TradeJour
   async function syncPricesSilent() {
     if (!openPositions.length) return;
     const updated = { ...posMeta };
+    const mkt: MarketKey = market ?? "india";
     for (const pos of openPositions) {
-      let ticker = updated[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
-      let price: number | null = null;
       try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`;
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-        const json = await res.json();
-        if (json.chart?.result?.[0]?.meta?.regularMarketPrice) price = json.chart.result[0].meta.regularMarketPrice;
+        const result = await getChart(pos.symbol, "1D", mkt);
+        const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
+        if (price && isFinite(price)) {
+          if (!updated[pos.symbol]) updated[pos.symbol] = {};
+          updated[pos.symbol].cmp = price;
+        }
       } catch { /* ignore */ }
-      if (!price) {
-        try {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://finance.yahoo.com/quote/${ticker}`)}`);
-          const data = await res.json();
-          const match = data.contents?.match(/"regularMarketPrice":\{"raw":([\d.]+)/);
-          if (match) price = parseFloat(match[1]);
-        } catch { /* ignore */ }
-      }
-      if (price && isFinite(price)) { if (!updated[pos.symbol]) updated[pos.symbol] = {}; updated[pos.symbol].cmp = price; }
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 100));
     }
     setPosMeta(updated); lsSet(LS_META, updated);
   }
@@ -601,26 +594,20 @@ export function TradeJournalPanel({ addRequest, onAddRequestHandled }: TradeJour
     const updated = { ...posMeta };
     const failed: string[] = [];
     let updatedCount = 0;
+    const mkt: MarketKey = market ?? "india";
     for (const pos of openPositions) {
-      let ticker = updated[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
-      let price: number | null = null;
       try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`;
-        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
-        const json = await res.json();
-        if (json.chart?.result?.[0]?.meta?.regularMarketPrice) price = json.chart.result[0].meta.regularMarketPrice;
-      } catch { /* ignore */ }
-      if (!price) {
-        try {
-          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://finance.yahoo.com/quote/${ticker}`)}`);
-          const data = await res.json();
-          const match = data.contents?.match(/"regularMarketPrice":\{"raw":([\d.]+)/);
-          if (match) price = parseFloat(match[1]);
-        } catch { /* ignore */ }
-      }
-      if (price && isFinite(price)) { if (!updated[pos.symbol]) updated[pos.symbol] = {}; updated[pos.symbol].cmp = price; updatedCount++; }
-      else failed.push(pos.symbol);
-      await new Promise(r => setTimeout(r, 200));
+        const result = await getChart(pos.symbol, "1D", mkt);
+        const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
+        if (price && isFinite(price)) {
+          if (!updated[pos.symbol]) updated[pos.symbol] = {};
+          updated[pos.symbol].cmp = price;
+          updatedCount++;
+        } else {
+          failed.push(pos.symbol);
+        }
+      } catch { failed.push(pos.symbol); }
+      await new Promise(r => setTimeout(r, 100));
     }
     setPosMeta(updated); lsSet(LS_META, updated);
     setSyncing(false);
