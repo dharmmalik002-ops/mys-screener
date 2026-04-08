@@ -426,12 +426,14 @@ export function WatchlistsPanel({
           <>
             <select
               value={rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id || ""}
-              onChange={(event) =>
-                setRowMoveTargets((current) => ({
-                  ...current,
-                  [item.symbol]: event.target.value,
-                }))
-              }
+              onChange={(event) => {
+                const targetId = event.target.value;
+                setRowMoveTargets((current) => ({ ...current, [item.symbol]: targetId }));
+                if (activeWatchlist && targetId) {
+                  onMoveSymbols(activeWatchlist.id, targetId, [item.symbol]);
+                  setSelectedSymbols((current) => current.filter((s) => s !== item.symbol));
+                }
+              }}
             >
               {availableMoveTargets.map((watchlist) => (
                 <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
@@ -439,13 +441,6 @@ export function WatchlistsPanel({
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              className="tool-pill"
-              onClick={() => handleMoveOne(item.symbol)}
-            >
-              Move
-            </button>
             <button
               type="button"
               className="tool-pill"

@@ -186,7 +186,7 @@ function NewsCard({
       onMouseLeave={(e) => {
         (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)";
       }}
-      onClick={() => onRead(item)}
+      onClick={() => window.open(item.link, "_blank", "noopener,noreferrer")}
     >
       {/* Meta row */}
       <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
