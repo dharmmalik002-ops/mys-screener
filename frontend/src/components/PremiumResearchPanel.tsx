@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { getCompanyLiveNews, type CompanyFundamentals, type LiveNewsItem, type MarketKey, type DetailedNews } from '../lib/api';
 import './PremiumResearchPanel.css';
+import { RatioTrendChart } from './fundacharts/RatioTrendChart';
+import { ShareholdingChart } from './fundacharts/ShareholdingChart';
+import { CashFlowChart } from './fundacharts/CashFlowChart';
+import { FundamentalScores } from './fundacharts/FundamentalScores';
+import { DCFCalculator } from './fundacharts/DCFCalculator';
 
 interface PremiumResearchPanelProps {
   symbol: string;
@@ -8,7 +13,7 @@ interface PremiumResearchPanelProps {
   fundamentals: CompanyFundamentals;
 }
 
-type TabKey = 'overview' | 'results' | 'fundamentals' | 'guidance' | 'news' | 'risks';
+type TabKey = 'overview' | 'results' | 'fundamentals' | 'guidance' | 'news' | 'risks' | 'charts' | 'valuation';
 
 export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
   symbol,
@@ -33,6 +38,8 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
     { key: 'guidance', label: 'Active Guidance' },
     { key: 'results', label: 'Latest Results' },
     { key: 'fundamentals', label: 'Fundamentals' },
+    { key: 'charts', label: '📊 Charts' },
+    { key: 'valuation', label: '🧮 Valuation' },
     { key: 'risks', label: 'Growth Risks' },
   ];
 
@@ -661,6 +668,42 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
           </div>
         );
       }
+      case 'charts':
+        return (
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <section className="research-card">
+              <RatioTrendChart
+                ratios={fundamentals.financial_ratios ?? []}
+                profitLoss={fundamentals.profit_loss ?? []}
+                market={market}
+              />
+            </section>
+            <section className="research-card">
+              <ShareholdingChart data={fundamentals.shareholding_pattern ?? []} />
+            </section>
+            <section className="research-card">
+              <CashFlowChart cashFlow={fundamentals.cash_flow ?? []} />
+            </section>
+          </div>
+        );
+      case 'valuation':
+        return (
+          <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+            <section className="research-card">
+              <FundamentalScores
+                balanceSheet={fundamentals.balance_sheet ?? []}
+                cashFlow={fundamentals.cash_flow ?? []}
+                profitLoss={fundamentals.profit_loss ?? []}
+                ratios={fundamentals.financial_ratios ?? []}
+                valuation={fundamentals.valuation ?? null}
+                market={market}
+              />
+            </section>
+            <section className="research-card">
+              <DCFCalculator fundamentals={fundamentals} market={market} />
+            </section>
+          </div>
+        );
       case 'risks':
         return (
           <div className="fade-in">
