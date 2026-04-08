@@ -886,7 +886,7 @@ const API_BASE = import.meta.env.VITE_API_BASE || "https://dharmmalik-stock-scan
 
 const FALLBACK_API_BASES = (import.meta.env.DEV
   ? ["", API_BASE, "http://127.0.0.1:8001", "http://localhost:8001", "http://127.0.0.1:8000", "http://localhost:8000"]
-  : ["", API_BASE]
+  : [API_BASE]
 ).filter((value, index, array) => array.indexOf(value) === index);
 
 // Fires a DOM event so the UI can show a status banner.
