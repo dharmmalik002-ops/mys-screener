@@ -210,8 +210,8 @@ const CHART_COLOR_FIELDS: Array<{ key: ChartColorFieldKey; label: string }> = [
   { key: "candleDown", label: "Down Candle" },
   { key: "volumeUp", label: "Up Volume" },
   { key: "volumeDown", label: "Down Volume" },
-  { key: "volumeHQ", label: "HQ Volume (Quarterly High)" },
-  { key: "volumeLQ", label: "LQ Volume (Quarterly Low)" },
+  { key: "volumeHQ", label: "HQ Volume (90D High)" },
+  { key: "volumeLQ", label: "LQ Volume (90D Low)" },
   { key: "rsLine", label: "RS Line" },
   { key: "rsMarker", label: "RS Circle" },
 ];
@@ -354,41 +354,32 @@ function computeVolumeSma(bars: ChartBar[], length: number) {
 }
 
 /**
- * For each calendar quarter visible in `bars`, find the bar with the
- * highest and lowest volume. Returns two Maps of `bar.time → "HQ" | "LQ"`.
- * If a quarter has only 1 bar, HQ === LQ (only HQ label is applied).
+ * For a rolling 90-day window ending at each bar, find the bar with the
+ * highest and lowest volume within that window. Returns two Sets of
+ * `bar.time` values tagged "HQ" (90-day high) and "LQ" (90-day low).
  */
 function computeQuarterlyVolExtremes(bars: ChartBar[]): {
   hqTimes: Set<number>;
   lqTimes: Set<number>;
 } {
-  // Group bars by "YYYY-Q#" key
-  const quarters = new Map<string, ChartBar[]>();
-  for (const bar of bars) {
-    const d = new Date(bar.time * 1000);
-    const year = d.getUTCFullYear();
-    const q = Math.floor(d.getUTCMonth() / 3) + 1;
-    const key = `${year}-Q${q}`;
-    let group = quarters.get(key);
-    if (!group) { group = []; quarters.set(key, group); }
-    group.push(bar);
-  }
-
+  const WINDOW_SEC = 90 * 24 * 60 * 60; // 90 days in seconds
   const hqTimes = new Set<number>();
   const lqTimes = new Set<number>();
 
-  for (const group of quarters.values()) {
-    if (group.length === 0) continue;
+  for (let i = 0; i < bars.length; i++) {
+    const end = bars[i].time;
+    const start = end - WINDOW_SEC;
+    // Collect bars in [start, end]
     let maxVol = -Infinity, minVol = Infinity;
-    let maxBar = group[0], minBar = group[0];
-    for (const bar of group) {
-      if (bar.volume > maxVol) { maxVol = bar.volume; maxBar = bar; }
-      if (bar.volume < minVol) { minVol = bar.volume; minBar = bar; }
+    let maxBar = bars[i], minBar = bars[i];
+    for (let j = i; j >= 0 && bars[j].time >= start; j--) {
+      const vol = bars[j].volume;
+      if (vol > maxVol) { maxVol = vol; maxBar = bars[j]; }
+      if (vol < minVol) { minVol = vol; minBar = bars[j]; }
     }
-    hqTimes.add(maxBar.time);
-    if (minBar.time !== maxBar.time) {
-      lqTimes.add(minBar.time);
-    }
+    // Only mark the current bar if it IS the 90-day extreme
+    if (bars[i].time === maxBar.time) hqTimes.add(bars[i].time);
+    if (bars[i].time === minBar.time && minBar.time !== maxBar.time) lqTimes.add(bars[i].time);
   }
 
   return { hqTimes, lqTimes };
