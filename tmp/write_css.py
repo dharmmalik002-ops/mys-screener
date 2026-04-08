@@ -1,3 +1,7 @@
+
+path = "/Users/dharmender/Desktop/Stock Scanner c/frontend/src/styles/premium-overrides.css"
+
+css = """\
 /* ══════════════════════════════════════════════════════════════════════════
    PREMIUM OVERRIDES — uses CSS variables; works in dark AND light themes
    ══════════════════════════════════════════════════════════════════════════ */
@@ -596,3 +600,10 @@
 ::-webkit-scrollbar-thumb:hover {
   background: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
 }
+"""
+
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(css)
+
+lines = css.count('\n')
+print(f"OK: {lines} lines written to {path}")
