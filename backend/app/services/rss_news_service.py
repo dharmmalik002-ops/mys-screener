@@ -48,7 +48,6 @@ _INDIA_FEEDS: list[FeedConfig] = [
     # ── Tier 3: 300s ─────────────────────────────────────────────────────────
     FeedConfig("livemint-news",      "Livemint News",      "https://www.livemint.com/rss/news",                                                                                                 "Headlines", 300, "#EC4327"),
     FeedConfig("livemint-money",     "Livemint Money",     "https://www.livemint.com/rss/money",                                                                                                "Money",     300, "#EC4327"),
-    FeedConfig("cnbc-economy",       "CNBC Economy",       "https://www.cnbc.com/id/20910255/device/rss/rss.html",                                                                             "Economy",   300, "#005994"),
     FeedConfig("etcfo-top",          "ET CFO",             "https://cfo.economictimes.indiatimes.com/rss/topstories",                                                                           "CFO",       300, "#0F766E"),
     FeedConfig("gn-bloomberg",       "Bloomberg",          "https://news.google.com/rss/search?q=when:1d+source:%22Bloomberg%22&hl=en-US&gl=US&ceid=US:en",                                    "Markets",   300, "#F59E0B"),
     FeedConfig("gn-reuters",         "Reuters",            "https://news.google.com/rss/search?q=when:1d+source:%22Reuters%22+India+stock+market&hl=en-IN&gl=IN&ceid=IN:en",                   "Global",    300, "#F97316"),
@@ -61,7 +60,6 @@ _INDIA_FEEDS: list[FeedConfig] = [
 _US_FEEDS: list[FeedConfig] = [
     FeedConfig("cnbc-business",      "CNBC Business",      "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147",                                               "Business",  120, "#005994"),
     FeedConfig("cnbc-world",         "CNBC World",         "https://www.cnbc.com/id/100727362/device/rss/rss.html",                                                                            "World",     300, "#005994"),
-    FeedConfig("cnbc-economy",       "CNBC Economy",       "https://www.cnbc.com/id/20910255/device/rss/rss.html",                                                                             "Economy",   300, "#005994"),
     FeedConfig("seeking-alpha",      "Seeking Alpha",      "https://seekingalpha.com/market_currents.xml",                                                                                      "Stocks",    300, "#EA580C"),
     FeedConfig("gn-bloomberg",       "Bloomberg",          "https://news.google.com/rss/search?q=when:1d+source:%22Bloomberg%22&hl=en-US&gl=US&ceid=US:en",                                    "Markets",   300, "#F59E0B"),
     FeedConfig("gn-reuters-us",      "Reuters US",         "https://news.google.com/rss/search?q=when:1d+source:%22Reuters%22+US+stock+market&hl=en-US&gl=US&ceid=US:en",                     "Global",    300, "#F97316"),
@@ -354,10 +352,12 @@ class RssNewsService:
         return items
 
     def _parse_rss_item(self, item: ET.Element, feed: FeedConfig) -> RssArticle | None:
-        title = self._text(item.find("title") or item.find("dc:title", self._NS)) or ""
+        _t = item.find("title"); _t = item.find("dc:title", self._NS) if _t is None else _t
+        title = self._text(_t) or ""
         link  = self._text(item.find("link")) or self._text(item.find("guid")) or ""
         desc  = self._text(item.find("description")) or ""
-        pub   = self._text(item.find("pubDate")) or self._text(item.find("dc:date", self._NS)) or ""
+        _p = item.find("pubDate"); _p = item.find("dc:date", self._NS) if _p is None else _p
+        pub   = self._text(_p) or ""
 
         if not title.strip() or not link.strip():
             return None
