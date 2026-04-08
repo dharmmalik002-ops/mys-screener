@@ -1826,16 +1826,24 @@ class FreeMarketDataProvider:
         screener_payload: dict[str, Any] = {}
         yahoo_payload: dict[str, Any] = {}
 
-        try:
-            screener_html = self._fetch_screener_company_page(symbol)
-            screener_payload = self._parse_screener_company_page(symbol, screener_html)
-        except Exception:
-            warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
+        # Run both slow external fetches in parallel to reduce total latency
+        def _fetch_screener():
+            html = self._fetch_screener_company_page(symbol)
+            return self._parse_screener_company_page(symbol, html)
 
-        try:
-            yahoo_payload = self._fetch_yfinance_fundamentals(symbol)
-        except Exception:
-            warnings.append("Recent headline/news fallback is unavailable right now.")
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            f_screener = executor.submit(_fetch_screener)
+            f_yahoo = executor.submit(self._fetch_yfinance_fundamentals, symbol)
+
+            try:
+                screener_payload = f_screener.result()
+            except Exception:
+                warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
+
+            try:
+                yahoo_payload = f_yahoo.result()
+            except Exception:
+                warnings.append("Recent headline/news fallback is unavailable right now.")
 
         quarterly_results = self._merge_quarterly_results(
             screener_payload.get("quarterly_results") or [],

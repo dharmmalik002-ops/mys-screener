@@ -7,6 +7,8 @@ const ShareholdingChart = lazy(() => import('./fundacharts/ShareholdingChart').t
 const CashFlowChart = lazy(() => import('./fundacharts/CashFlowChart').then(m => ({ default: m.CashFlowChart })));
 const FundamentalScores = lazy(() => import('./fundacharts/FundamentalScores').then(m => ({ default: m.FundamentalScores })));
 const DCFCalculator = lazy(() => import('./fundacharts/DCFCalculator').then(m => ({ default: m.DCFCalculator })));
+const QuarterlyChart = lazy(() => import('./fundacharts/QuarterlyChart').then(m => ({ default: m.QuarterlyChart })));
+const AnnualPLChart = lazy(() => import('./fundacharts/AnnualPLChart').then(m => ({ default: m.AnnualPLChart })));
 
 const ChartTabFallback = () => (
   <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
@@ -202,6 +204,14 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
           <ul className="news-detailed-points grid-2">
             {fundamentals.results_summary.highlights?.map((h: string, i: number) => <li key={i}>{h}</li>)}
           </ul>
+        </section>
+      )}
+
+      {fundamentals.quarterly_results.length > 0 && (
+        <section className="research-card">
+          <Suspense fallback={<ChartTabFallback />}>
+            <QuarterlyChart data={fundamentals.quarterly_results} market={market} />
+          </Suspense>
         </section>
       )}
 
@@ -692,6 +702,11 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
             <section className="research-card">
               <CashFlowChart cashFlow={fundamentals.cash_flow ?? []} />
             </section>
+            {fundamentals.profit_loss?.length > 0 && (
+              <section className="research-card">
+                <AnnualPLChart data={fundamentals.profit_loss} market={market} />
+              </section>
+            )}
           </div>
           </Suspense>
         );

@@ -2291,15 +2291,33 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [refreshing]);
 
   useEffect(() => {
-    if (!selectedSymbol || chartPanelTab !== "fundamentals" || (activePage === "home" && !chartOpen) || activePage === "market-health") {
+    // Prefetch fundamentals as soon as a stock is selected, regardless of tab.
+    // This way the data is ready instantly when the user switches to the fundamentals tab.
+    if (!selectedSymbol || activePage === "market-health") {
       setFundamentalsLoading(false);
       return;
     }
+    // Don't show loading spinner until the user is actually on the fundamentals tab,
+    // but always kick off the background fetch.
+    const onFundamentalsTab = chartPanelTab === "fundamentals" && !(activePage === "home" && !chartOpen);
 
     if (fundamentalsBySymbol[selectedSymbol]) {
       setFundamentalsError(null);
-      setFundamentalsLoading(false);
+      if (onFundamentalsTab) setFundamentalsLoading(false);
       return;
+    }
+
+    if (!onFundamentalsTab) {
+      // Background prefetch — no loading spinner, silent fetch
+      let cancelled = false;
+      getFundamentals(selectedSymbol, activeMarket)
+        .then((payload) => {
+          if (!cancelled && payload.symbol === selectedSymbol) {
+            setFundamentalsBySymbol((prev) => ({ ...prev, [payload.symbol]: payload }));
+          }
+        })
+        .catch(() => {});
+      return () => { cancelled = true; };
     }
 
     let active = true;
