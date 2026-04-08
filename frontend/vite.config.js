@@ -9,9 +9,6 @@ export default defineConfig({
                     if (!id.includes("node_modules")) {
                         return undefined;
                     }
-                    if (id.includes("react-dom") || id.includes("react/jsx-runtime") || id.includes("/react/")) {
-                        return "react-vendor";
-                    }
                     if (id.includes("lightweight-charts") || id.includes("recharts")) {
                         return "charts-vendor";
                     }
