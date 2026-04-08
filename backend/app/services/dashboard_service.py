@@ -3890,9 +3890,35 @@ class DashboardService:
         try:
             refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
             refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
+
+            # For historical (post-close EOD) rebuilds, use a non-blocking background
+            # task and return immediately with current cached data.  This avoids
+            # 2-5 minute HTTP hangs on large universes (e.g. US 5800 stocks).
             if refresh_strategy == "historical":
-                snapshot_loader = self.provider.refresh_snapshots
-            elif refresh_strategy == "cache":
+                schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
+                if callable(schedule_bg):
+                    schedule_bg(
+                        float(self.settings.market_cap_min_crore),
+                        self.settings.market_cap_min_crore,
+                        force_refresh=True,
+                    )
+                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                    snapshot_after = self.provider.get_snapshot_updated_at()
+                    snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
+                    return {
+                        "ok": True,
+                        "universe_count": len(snapshots),
+                        "market_cap_min_crore": self.settings.market_cap_min_crore,
+                        "refresh_mode": "rebuilding-background",
+                        "message": "Rebuilding EOD snapshot in the background — data will auto-update in ~2 minutes.",
+                        "snapshot_updated_at": snapshot_timestamp.isoformat(),
+                        "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
+                        "applied_quote_count": 0,
+                        "historical_rebuild": False,
+                        "quote_source": None,
+                    }
+
+            if refresh_strategy == "cache":
                 snapshot_loader = self.provider.get_snapshots
             else:
                 snapshot_loader = self.provider.get_snapshots
@@ -3902,21 +3928,15 @@ class DashboardService:
                 timeout=max(self.settings.refresh_timeout_seconds, 15),
             )
             snapshot_after = self.provider.get_snapshot_updated_at()
-            if refresh_strategy == "historical":
-                refresh_metadata = self.provider.get_last_refresh_metadata()
-            else:
-                refresh_metadata = {
-                    "applied_quote_count": 0,
-                    "historical_rebuild": False,
-                    "quote_source": None,
-                }
+            refresh_metadata = {
+                "applied_quote_count": 0,
+                "historical_rebuild": False,
+                "quote_source": None,
+            }
             applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
             historical_rebuild = bool(refresh_metadata.get("historical_rebuild", False))
             quote_source = refresh_metadata.get("quote_source")
-            if historical_rebuild:
-                refresh_mode = "historical-refresh"
-                message = "Historical market snapshot refreshed for the latest closed session."
-            elif refresh_strategy == "cache":
+            if refresh_strategy == "cache":
                 refresh_mode = "cached-current"
                 message = "Market data is already current for this session."
             else:

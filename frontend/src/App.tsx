@@ -3793,7 +3793,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (nextSelectedSymbol) {
         const shouldForceChartReload =
           nextSelectedSymbol !== selectedSymbol ||
-          refreshMode === "historical-refresh";
+          refreshMode === "historical-refresh" ||
+          refreshMode === "rebuilding-background";
         void loadChartForSelection(nextSelectedSymbol, timeframe, activeMarket, {
           forceNetwork: shouldForceChartReload,
           preferCached: true,
@@ -3832,10 +3833,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       if (refreshPayload) {
         const rp = refreshPayload as RefreshResponse;
-        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "cached-current";
+        const isBackgroundRebuild = rp.refresh_mode === "rebuilding-background";
+        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "cached-current" || isBackgroundRebuild;
         const clearableAutoRefresh = refreshSucceeded;
 
-        if (refreshSucceeded && loadWarnings.length === 0) {
+        if (isBackgroundRebuild) {
+          // EOD rebuild running in background — show info message and auto-reload in ~2 min
+          setError(rp.message ?? "Rebuilding EOD snapshot in background — data will update shortly.");
+          setTimeout(() => void handleRefreshRef.current("auto"), 120_000);
+        } else if (refreshSucceeded && loadWarnings.length === 0) {
           setError(null);
         } else if (source === "manual") {
           const snapshotLabel = rp.snapshot_updated_at

@@ -869,7 +869,8 @@ export type RefreshResponse = {
     | "cached-current"
     | "cache-fallback"
     | "timeout-fallback"
-    | "error-fallback";
+    | "error-fallback"
+    | "rebuilding-background";
   message: string | null;
   snapshot_updated_at: string;
   snapshot_age_minutes: number;
