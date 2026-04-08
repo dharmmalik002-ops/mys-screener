@@ -236,7 +236,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
               </tr>
             </thead>
             <tbody>
-              {fundamentals.quarterly_results.map(q => {
+              {[...fundamentals.quarterly_results].reverse().map(q => {
                 const netMargin = q.net_profit_crore && q.sales_crore && q.sales_crore > 0
                   ? ((q.net_profit_crore / q.sales_crore) * 100)
                   : null;

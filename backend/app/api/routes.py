@@ -672,6 +672,8 @@ def build_router(service):
             )
         except ValueError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=503, detail=f"AI chart analysis unavailable: {exc}") from exc
         return {"response": response}
 
     # ─── Live News (RSS feed aggregator) ─────────────────────────────────────
