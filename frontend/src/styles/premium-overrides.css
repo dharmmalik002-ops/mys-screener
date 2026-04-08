@@ -777,3 +777,169 @@
   color: #fff;
   box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
 }
+
+/* ── Light: metric cards ───────────────────────────────────────────────── */
+:root[data-theme="light"] .metric-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(71, 85, 105, 0.14);
+  border-left-color: rgba(37, 99, 235, 0.40);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+:root[data-theme="light"] .metric-card:hover {
+  background: rgba(255, 255, 255, 0.97);
+  border-left-color: #2563eb;
+  box-shadow: 0 8px 28px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Light: home stock rows ────────────────────────────────────────────── */
+:root[data-theme="light"] .home-stock-row {
+  background: rgba(255, 255, 255, 0.84);
+  border-color: rgba(71, 85, 105, 0.12);
+  color: #0f172a;
+}
+:root[data-theme="light"] .home-stock-row:hover {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 6px 22px rgba(37, 99, 235, 0.10);
+}
+
+/* ── Light: home group cards ───────────────────────────────────────────── */
+:root[data-theme="light"] .home-group-card {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 42%),
+    rgba(255, 255, 255, 0.88);
+  border-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+:root[data-theme="light"] .home-group-card:hover,
+:root[data-theme="light"] .home-group-card:focus-visible {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 10px 32px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Light: screener nav buttons ───────────────────────────────────────── */
+:root[data-theme="light"] .screener-nav-button {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(71, 85, 105, 0.16);
+  box-shadow: 0 1px 6px rgba(15, 23, 42, 0.07);
+  color: #0f172a;
+}
+:root[data-theme="light"] .screener-nav-button:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(37, 99, 235, 0.30);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.10);
+}
+:root[data-theme="light"] .screener-nav-button.active {
+  background: rgba(37, 99, 235, 0.08);
+  border-color: rgba(37, 99, 235, 0.40);
+  color: #1d4ed8;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Light: landing hero ───────────────────────────────────────────────── */
+:root[data-theme="light"] .landing-hero {
+  background:
+    radial-gradient(ellipse at 25% 0%, rgba(37, 99, 235, 0.08), transparent 44%),
+    rgba(255, 255, 255, 0.90);
+  border-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 4px 28px rgba(15, 23, 42, 0.08);
+}
+
+/* ── Light: chart grid card ────────────────────────────────────────────── */
+:root[data-theme="light"] .chart-grid-card {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+:root[data-theme="light"] .chart-grid-card.clickable:hover {
+  background: rgba(255, 255, 255, 0.97);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 10px 32px rgba(37, 99, 235, 0.12);
+}
+
+/* ── Light: PE modal ───────────────────────────────────────────────────── */
+:root[data-theme="light"] .pe-modal {
+  background: rgba(248, 250, 252, 0.98);
+  border-color: rgba(71, 85, 105, 0.14);
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+}
+
+/* ── Light: chart grid modal ───────────────────────────────────────────── */
+:root[data-theme="light"] .chart-grid-modal {
+  background: rgba(248, 250, 252, 0.98);
+  border-color: rgba(71, 85, 105, 0.14);
+  box-shadow: 0 28px 80px rgba(15, 23, 42, 0.14);
+  color: #0f172a;
+}
+
+/* ── Light: nav search ─────────────────────────────────────────────────── */
+:root[data-theme="light"] .nav-search input {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(71, 85, 105, 0.18);
+  color: #0f172a;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+:root[data-theme="light"] .nav-search input:focus {
+  border-color: rgba(37, 99, 235, 0.45);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.10), 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+
+/* ── Light: chip badges ────────────────────────────────────────────────── */
+:root[data-theme="light"] .chip-positive,
+:root[data-theme="light"] .badge-positive {
+  background: rgba(22, 163, 74, 0.10) !important;
+  color: #16a34a !important;
+  border-color: rgba(22, 163, 74, 0.22) !important;
+}
+:root[data-theme="light"] .chip-negative,
+:root[data-theme="light"] .badge-negative {
+  background: rgba(220, 38, 38, 0.08) !important;
+  color: #dc2626 !important;
+  border-color: rgba(220, 38, 38, 0.20) !important;
+}
+
+/* ── Light: sector heatmap cards ───────────────────────────────────────── */
+:root[data-theme="light"] .sector-heatmap-card {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 4px 14px rgba(15, 23, 42, 0.10);
+}
+:root[data-theme="light"] .sector-heatmap-card:hover {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65), 0 10px 28px rgba(15, 23, 42, 0.16);
+}
+
+/* ── Light: MF sector cards ────────────────────────────────────────────── */
+:root[data-theme="light"] .mf-sector-card--bullish {
+  border-color: rgba(22, 163, 74, 0.30);
+  background: rgba(240, 253, 244, 0.92);
+}
+:root[data-theme="light"] .mf-sector-card--bearish {
+  border-color: rgba(220, 38, 38, 0.28);
+  background: rgba(254, 242, 242, 0.90);
+}
+
+/* ── Light: MF rotation row ────────────────────────────────────────────── */
+:root[data-theme="light"] .mf-rotation-row.active {
+  border-color: rgba(37, 99, 235, 0.40);
+  background: rgba(37, 99, 235, 0.06);
+}
+:root[data-theme="light"] .mf-week-btn.active {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+/* ── Light: focus ring ─────────────────────────────────────────────────── */
+:root[data-theme="light"] :focus-visible {
+  outline-color: rgba(37, 99, 235, 0.65);
+}
+
+/* ── Light: scrollbar ──────────────────────────────────────────────────── */
+:root[data-theme="light"] ::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.22);
+}
+:root[data-theme="light"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(37, 99, 235, 0.36);
+}
