@@ -1,78 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getJournalData, saveJournalData } from "../lib/api";
 import "./TradeJournalPanel.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type OpenPosCat = "full" | "half" | "quarter";
-
-interface VCP {
-  t?: string;
-  depth?: string;
-  vol?: string;
-}
-
+interface VCP { t?: string; depth?: string; vol?: string; }
 interface Trade {
-  symbol: string;
-  type: "Buy" | "Sell" | string;
-  qty: number;
-  price: number;
-  date: string;
-  setupType: string;
-  stoploss: number;
-  target: number;
-  tags: string[];
-  remarks: string;
-  img?: string;
-  vcp?: VCP;
+  symbol: string; type: string; qty: number; price: number; date: string;
+  setupType: string; stoploss: number; target: number; tags: string[];
+  remarks: string; img?: string; vcp?: VCP;
 }
-
-interface PosMeta {
-  cmp?: number;
-  sl?: number;
-  fetchTicker?: string;
-}
-
+interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; }
 interface ClosedTrade {
-  symbol: string;
-  qty: number;
-  entryPx: number;
-  exitPx: number;
-  entryDate: string;
-  exitDate: string;
-  pnl: number;
-  perc: number;
-  setupType: string;
-  tags: string[];
-  remarks: string;
-  img?: string;
-  vcp?: VCP;
-  equitySnapshot: number;
-  posSizePct: number;
-  sellIndex: number;
-  buyIndices: number[];
+  symbol: string; qty: number; entryPx: number; exitPx: number;
+  entryDate: string; exitDate: string; pnl: number; perc: number;
+  setupType: string; tags: string[]; remarks: string; img?: string; vcp?: VCP;
+  equitySnapshot: number; posSizePct: number; sellIndex: number; buyIndices: number[];
 }
-
 interface OpenPosition {
-  symbol: string;
-  qty: number;
-  avgPx: number;
-  totalInvested: number;
-  buyIndices: number[];
-  tags: string[];
-  remarks: string;
-  img?: string;
-  setupType?: string;
+  symbol: string; qty: number; avgPx: number; totalInvested: number;
+  buyIndices: number[]; tags: string[]; remarks: string; img?: string; setupType?: string;
+}
+interface FIFOResult {
+  closedTrades: ClosedTrade[]; openPositions: OpenPosition[];
+  currentEquity: number; openLotsDict: Record<string, Trade[]>;
 }
 
-interface FIFOResult {
-  closedTrades: ClosedTrade[];
-  openPositions: OpenPosition[];
-  currentEquity: number;
-  openLotsDict: Record<string, Trade[]>;
+export interface JournalAddRequest {
+  symbol: string;
+  suggestedPrice?: number;
+}
+
+// ─── Props ──────────────────────────────────────────────────────────────────────
+interface TradeJournalPanelProps {
+  addRequest?: JournalAddRequest | null;
+  onAddRequestHandled?: () => void;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-
 const LS_DATA = "tradingJournalData";
 const LS_EQUITY = "tradingJournalEquity";
 const LS_SETUPS = "tradingJournalSetups";
@@ -82,29 +48,23 @@ const LS_META = "tradingJournalPosMeta";
 const PREDEFINED_TAGS = [
   "FOMO", "Early Entry", "Late Entry", "Perfect Entry", "Chased",
   "Held Well", "Sold Early", "Held Too Long", "Averaged Down",
-  "Followed Plan", "Broke Plan", "Emotional"
+  "Followed Plan", "Broke Plan", "Emotional",
 ];
-
 const DEFAULT_SETUPS = ["VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────
-
 function lsGet<T>(key: string, fallback: T): T {
-  try {
-    const s = localStorage.getItem(key);
-    return s ? JSON.parse(s) as T : fallback;
-  } catch { return fallback; }
+  try { const s = localStorage.getItem(key); return s ? JSON.parse(s) as T : fallback; } catch { return fallback; }
 }
 function lsSet(key: string, val: unknown) {
   try { localStorage.setItem(key, JSON.stringify(val)); } catch { /* ignore */ }
 }
 
-// ─── FIFO Calculation ──────────────────────────────────────────────────────────
-
-function getSafeTime(dateStr: string): number {
-  if (!dateStr) return 0;
-  const d = new Date(dateStr.includes("T") ? dateStr : dateStr + "T12:00:00");
-  return isNaN(d.getTime()) ? 0 : d.getTime();
+// ─── FIFO ──────────────────────────────────────────────────────────────────────
+function getSafeTime(d: string): number {
+  if (!d) return 0;
+  const t = new Date(d.includes("T") ? d : d + "T12:00:00");
+  return isNaN(t.getTime()) ? 0 : t.getTime();
 }
 
 function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
@@ -115,9 +75,7 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
     if (a.type.toLowerCase() !== "buy" && b.type.toLowerCase() === "buy") return 1;
     return 0;
   });
-
-  const originalIndex = (t: Trade) => trades.findIndex(x => x === t);
-
+  const originalIndex = (t: Trade) => trades.indexOf(t);
   const buyQueues: Record<string, Array<{ trade: Trade; remaining: number; origIdx: number }>> = {};
   const closedTrades: ClosedTrade[] = [];
   let currentEquity = startEquity;
@@ -127,16 +85,14 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
     const sym = trade.symbol.toUpperCase();
     const qty = Math.abs(Number(trade.qty) || 0);
     if (qty <= 0) return;
-
     if (trade.type.toLowerCase() === "buy") {
       if (!buyQueues[sym]) buyQueues[sym] = [];
       buyQueues[sym].push({ trade, remaining: qty, origIdx: originalIndex(trade) });
     } else {
-      if (!buyQueues[sym] || buyQueues[sym].length === 0) return;
+      if (!buyQueues[sym]?.length) return;
       let toSell = qty;
       const sellOrigIdx = originalIndex(trade);
       const buyIndices: number[] = [];
-
       while (toSell > 0 && buyQueues[sym].length > 0) {
         const lot = buyQueues[sym][0];
         const matched = Math.min(lot.remaining, toSell);
@@ -144,49 +100,33 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
         const exitPx = Number(trade.price) || 0;
         const pnl = (exitPx - entryPx) * matched;
         const perc = entryPx > 0 ? ((exitPx - entryPx) / entryPx) * 100 : 0;
-        const posSizePct = currentEquity > 0 ? ((entryPx * matched) / currentEquity) * 100 : 0;
+        const posSizePct = currentEquity > 0 ? (entryPx * matched / currentEquity) * 100 : 0;
         currentEquity += pnl;
         buyIndices.push(lot.origIdx);
         closedTrades.push({
-          symbol: sym,
-          qty: matched,
-          entryPx,
-          exitPx,
-          entryDate: lot.trade.date,
-          exitDate: trade.date,
-          pnl,
-          perc,
-          setupType: lot.trade.setupType || trade.setupType || "",
-          tags: [...(lot.trade.tags || [])],
-          remarks: lot.trade.remarks || "",
-          img: lot.trade.img,
-          vcp: lot.trade.vcp,
-          equitySnapshot: currentEquity,
-          posSizePct,
-          sellIndex: sellOrigIdx,
-          buyIndices,
+          symbol: sym, qty: matched, entryPx, exitPx,
+          entryDate: lot.trade.date, exitDate: trade.date,
+          pnl, perc, setupType: lot.trade.setupType || trade.setupType || "",
+          tags: [...(lot.trade.tags || [])], remarks: lot.trade.remarks || "",
+          img: lot.trade.img, vcp: lot.trade.vcp,
+          equitySnapshot: currentEquity, posSizePct,
+          sellIndex: sellOrigIdx, buyIndices,
         });
-        lot.remaining -= matched;
-        toSell -= matched;
+        lot.remaining -= matched; toSell -= matched;
         if (lot.remaining <= 0) buyQueues[sym].shift();
       }
     }
   });
 
-  // Build open positions
   const openPositions: OpenPosition[] = [];
   Object.entries(buyQueues).forEach(([sym, lots]) => {
     const active = lots.filter(l => l.remaining > 0);
     if (!active.length) return;
     let totalQty = 0, totalInvested = 0;
-    const buyIndices: number[] = [];
-    const tags: string[] = [];
-    let remarks = "";
-    let img: string | undefined;
-    let setupType: string | undefined;
+    const buyIndices: number[] = [], tags: string[] = [];
+    let remarks = "", img: string | undefined, setupType: string | undefined;
     active.forEach(l => {
-      totalQty += l.remaining;
-      totalInvested += l.remaining * (Number(l.trade.price) || 0);
+      totalQty += l.remaining; totalInvested += l.remaining * (Number(l.trade.price) || 0);
       buyIndices.push(l.origIdx);
       (l.trade.tags || []).forEach(t => { if (!tags.includes(t)) tags.push(t); });
       if (l.trade.remarks) remarks = l.trade.remarks;
@@ -200,149 +140,205 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
   return { closedTrades, openPositions, currentEquity, openLotsDict };
 }
 
-// ─── Format helpers ────────────────────────────────────────────────────────────
+// ─── Formatters ────────────────────────────────────────────────────────────────
+function fmt(n: number, dec = 2) { return n.toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
+function fmtPnl(n: number) { return `${n >= 0 ? "+" : "−"}₹${fmt(Math.abs(n))}`; }
+function fmtPerc(n: number) { return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`; }
 
-function fmt(n: number, dec = 2): string {
-  return n.toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec });
-}
-function fmtPnl(n: number): string {
-  return `${n >= 0 ? "+" : ""}₹${fmt(Math.abs(n))}`;
-}
-function fmtPerc(n: number): string {
-  return `${n >= 0 ? "+" : ""}${fmt(Math.abs(n))}%`;
-}
-
-// ─── Equity Chart (SVG, no D3 needed) ─────────────────────────────────────────
-
+// ─── Equity Curve ──────────────────────────────────────────────────────────────
 function EquityCurve({ closed, startEquity }: { closed: ClosedTrade[]; startEquity: number }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  useEffect(() => {
-    if (!svgRef.current || !closed.length) return;
+  const draw = useCallback(() => {
+    if (!svgRef.current || !containerRef.current) return;
+    const W = containerRef.current.clientWidth || 600, H = 240;
+    const pad = { t: 16, r: 20, b: 36, l: 70 };
+    const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
+
+    if (!closed.length) {
+      svgRef.current.innerHTML = `<text x="${W / 2}" y="${H / 2}" fill="var(--text-muted)" font-size="13" text-anchor="middle" dominant-baseline="middle">No closed trades yet</text>`;
+      svgRef.current.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      return;
+    }
+
     const sorted = [...closed].sort((a, b) => getSafeTime(a.exitDate) - getSafeTime(b.exitDate));
     let eq = startEquity;
-    const pts: Array<{ x: number; y: number; val: number }> = [{ x: 0, y: 0, val: eq }];
-    sorted.forEach(t => { eq += t.pnl; pts.push({ x: 0, y: 0, val: eq }); });
+    const pts: Array<{ x: number; y: number; val: number; date: string }> = [{ x: 0, y: 0, val: eq, date: sorted[0].entryDate }];
+    sorted.forEach(t => { eq += t.pnl; pts.push({ x: 0, y: 0, val: eq, date: t.exitDate }); });
 
-    const W = svgRef.current.clientWidth || 560, H = 220;
-    const pad = { t: 12, r: 16, b: 30, l: 52 };
-    const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
     const minV = Math.min(...pts.map(p => p.val));
     const maxV = Math.max(...pts.map(p => p.val));
-    const vRange = maxV - minV || 1;
+    const vRange = Math.max(maxV - minV, 1);
 
     pts.forEach((p, i) => {
-      p.x = pad.l + (i / (pts.length - 1 || 1)) * innerW;
+      p.x = pad.l + (i / Math.max(pts.length - 1, 1)) * innerW;
       p.y = pad.t + (1 - (p.val - minV) / vRange) * innerH;
     });
 
-    const pathD = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const areaD = pathD + ` L${pts[pts.length - 1].x.toFixed(1)},${(pad.t + innerH).toFixed(1)} L${pad.l},${(pad.t + innerH).toFixed(1)} Z`;
+    const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const areaPath = linePath + ` L${pts[pts.length - 1].x.toFixed(1)},${(pad.t + innerH).toFixed(1)} L${pad.l},${(pad.t + innerH).toFixed(1)} Z`;
 
-    const svg = svgRef.current;
-    svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-    svg.innerHTML = `
+    // Y-axis ticks
+    const yTicks = 5;
+    const yTickLines = Array.from({ length: yTicks + 1 }, (_, i) => {
+      const frac = i / yTicks;
+      const val = minV + frac * vRange;
+      const y = pad.t + (1 - frac) * innerH;
+      return `
+        <line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W - pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
+        <text x="${pad.l - 8}" y="${y.toFixed(1)}" fill="var(--text-muted)" font-size="10" text-anchor="end" dominant-baseline="middle">₹${(val / 1000).toFixed(0)}k</text>
+      `;
+    }).join("");
+
+    // X-axis date labels (up to 6)
+    const xLabelCount = Math.min(pts.length, 6);
+    const xStep = Math.floor((pts.length - 1) / Math.max(xLabelCount - 1, 1));
+    const xLabels = Array.from({ length: xLabelCount }, (_, i) => {
+      const pt = pts[Math.min(i * xStep, pts.length - 1)];
+      const label = pt.date ? pt.date.slice(0, 7) : "";
+      return `<text x="${pt.x.toFixed(1)}" y="${(pad.t + innerH + 16).toFixed(1)}" fill="var(--text-muted)" font-size="9.5" text-anchor="middle">${label}</text>`;
+    }).join("");
+
+    const finalVal = pts[pts.length - 1].val;
+    const isPositive = finalVal >= startEquity;
+
+    svgRef.current.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svgRef.current.innerHTML = `
       <defs>
         <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.35"/>
-          <stop offset="100%" stop-color="var(--accent)" stop-opacity="0.03"/>
+          <stop offset="0%" stop-color="${isPositive ? "var(--positive)" : "var(--negative)"}" stop-opacity="0.28"/>
+          <stop offset="100%" stop-color="${isPositive ? "var(--positive)" : "var(--negative)"}" stop-opacity="0.02"/>
         </linearGradient>
+        <clipPath id="eqClip">
+          <rect x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}"/>
+        </clipPath>
       </defs>
-      <path d="${areaD}" fill="url(#eqGrad)"/>
-      <path d="${pathD}" fill="none" stroke="var(--accent)" stroke-width="2"/>
-      ${pts.filter((_, i) => i === 0 || i === pts.length - 1).map(p =>
-        `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="var(--accent)"/>`
-      ).join("")}
+      <rect x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}" fill="none"/>
+      ${yTickLines}
+      <g clip-path="url(#eqClip)">
+        <path d="${areaPath}" fill="url(#eqGrad)"/>
+        <path d="${linePath}" fill="none" stroke="${isPositive ? "var(--positive)" : "var(--negative)"}" stroke-width="2"/>
+      </g>
+      ${xLabels}
       <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t + innerH}" stroke="var(--line-strong)" stroke-width="1"/>
       <line x1="${pad.l}" y1="${pad.t + innerH}" x2="${W - pad.r}" y2="${pad.t + innerH}" stroke="var(--line-strong)" stroke-width="1"/>
-      <text x="${pad.l - 4}" y="${pad.t + 4}" fill="var(--text-muted)" font-size="10" text-anchor="end">₹${fmt(maxV, 0)}</text>
-      <text x="${pad.l - 4}" y="${pad.t + innerH}" fill="var(--text-muted)" font-size="10" text-anchor="end">₹${fmt(minV, 0)}</text>
     `;
   }, [closed, startEquity]);
 
-  if (!closed.length) return <div className="tj-empty-chart">No closed trades yet</div>;
-  return <svg ref={svgRef} className="tj-equity-svg" style={{ width: "100%", height: 220 }} />;
+  useEffect(() => {
+    draw();
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(draw);
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, [draw]);
+
+  return (
+    <div ref={containerRef} style={{ width: "100%" }}>
+      <svg ref={svgRef} style={{ width: "100%", height: 240, display: "block" }} />
+    </div>
+  );
 }
 
-// ─── Bell Curve ────────────────────────────────────────────────────────────────
-
-function BellCurve({ closed }: { closed: ClosedTrade[] }) {
-  if (!closed.length) return <div className="tj-empty-chart">No data</div>;
+// ─── P&L Distribution ─────────────────────────────────────────────────────────
+function PnlDistribution({ closed }: { closed: ClosedTrade[] }) {
+  if (!closed.length) return <div className="tj-placeholder">No closed trades yet</div>;
   const percs = closed.map(c => c.perc);
-  const bins: Record<number, { count: number; positive: boolean }> = {};
-  percs.forEach(p => {
-    const bin = Math.round(p);
-    if (!bins[bin]) bins[bin] = { count: 0, positive: p >= 0 };
-    bins[bin].count++;
-  });
-  const binArr = Object.entries(bins).sort((a, b) => Number(a[0]) - Number(b[0]));
-  const maxCount = Math.max(...binArr.map(([, v]) => v.count), 1);
+  const binMap: Record<number, number> = {};
+  percs.forEach(p => { const b = Math.round(p); binMap[b] = (binMap[b] || 0) + 1; });
+  const bins = Object.entries(binMap).map(([b, c]) => ({ bin: Number(b), count: c })).sort((a, b) => a.bin - b.bin);
+  const maxCount = Math.max(...bins.map(b => b.count), 1);
+
   return (
-    <div className="tj-bell">
-      {binArr.map(([bin, { count, positive }]) => (
-        <div key={bin} className="tj-bell-col">
-          <div
-            className={`tj-bell-bar ${positive ? "win" : "loss"}`}
-            style={{ height: `${(count / maxCount) * 100}%` }}
-            title={`${bin}%: ${count} trade${count !== 1 ? "s" : ""}`}
-          />
-          <div className="tj-bell-label">{bin}%</div>
-        </div>
-      ))}
+    <div className="tj-dist-wrap">
+      <div className="tj-dist-chart">
+        {bins.map(({ bin, count }) => (
+          <div key={bin} className="tj-dist-col" title={`${bin > 0 ? "+" : ""}${bin}% : ${count} trade${count !== 1 ? "s" : ""}`}>
+            <div className="tj-dist-bar-area">
+              <div
+                className={`tj-dist-bar ${bin >= 0 ? "pos" : "neg"}`}
+                style={{ height: `${(count / maxCount) * 100}%` }}
+              />
+              {count > 0 && <span className="tj-dist-count">{count}</span>}
+            </div>
+            <div className="tj-dist-label">{bin > 0 ? "+" : ""}{bin}%</div>
+          </div>
+        ))}
+      </div>
+      <div className="tj-dist-stats">
+        <span className="tj-dist-stat pos">Winners: {closed.filter(c => c.pnl > 0).length}</span>
+        <span className="tj-dist-stat neg">Losers: {closed.filter(c => c.pnl <= 0).length}</span>
+        <span className="tj-dist-stat">Avg: {fmtPerc(percs.reduce((a, b) => a + b, 0) / percs.length)}</span>
+      </div>
     </div>
   );
 }
 
 // ─── Monthly Heatmap ───────────────────────────────────────────────────────────
-
 function Heatmap({ closed }: { closed: ClosedTrade[] }) {
   const byDay: Record<string, number> = {};
   closed.forEach(c => {
-    const d = c.exitDate?.split("T")[0] || c.exitDate;
-    if (!d) return;
-    byDay[d] = (byDay[d] || 0) + c.pnl;
+    const d = (c.exitDate || "").split("T")[0];
+    if (d) byDay[d] = (byDay[d] || 0) + c.pnl;
   });
 
   const now = new Date();
   const months = Array.from({ length: 12 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-    const year = d.getFullYear(), month = d.getMonth();
-    const label = d.toLocaleString("default", { month: "short" }) + " " + year;
+    const date = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
+    const year = date.getFullYear(), month = date.getMonth();
+    const label = date.toLocaleString("default", { month: "short", year: "2-digit" });
     const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
     const days = Array.from({ length: daysInMonth }, (_, di) => {
-      const day = String(di + 1).padStart(2, "0");
-      const key = `${year}-${String(month + 1).padStart(2, "0")}-${day}`;
-      const pnl = byDay[key];
-      return { key, pnl };
+      const dayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(di + 1).padStart(2, "0")}`;
+      return { dayStr, pnl: byDay[dayStr] };
     });
-    return { label, days };
+    return { label, days, firstDow };
   });
 
-  function dayClass(pnl: number | undefined): string {
-    if (pnl === undefined) return "tj-hm-day empty";
-    if (pnl > 0) return pnl > 5000 ? "tj-hm-day win-high" : "tj-hm-day win-low";
-    return pnl < -5000 ? "tj-hm-day loss-high" : "tj-hm-day loss-low";
+  function tileClass(pnl: number | undefined) {
+    if (pnl === undefined) return "empty";
+    if (pnl > 10000) return "win-3";
+    if (pnl > 0) return "win-1";
+    if (pnl < -10000) return "loss-3";
+    return "loss-1";
   }
 
+  const DOW_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+
   return (
-    <div className="tj-heatmap-grid">
+    <div className="tj-hm-root">
       {months.map(m => (
         <div key={m.label} className="tj-hm-month">
-          <div className="tj-hm-label">{m.label}</div>
-          <div className="tj-hm-days">
-            {m.days.map(d => (
-              <div key={d.key} className={dayClass(d.pnl)} title={d.pnl !== undefined ? `${d.key}: ₹${fmt(d.pnl)}` : d.key} />
+          <div className="tj-hm-month-title">{m.label}</div>
+          <div className="tj-hm-dow-row">{DOW_LABELS.map((d, i) => <span key={i} className="tj-hm-dow">{d}</span>)}</div>
+          <div className="tj-hm-grid">
+            {/* Empty cells before first day */}
+            {Array.from({ length: m.firstDow }, (_, i) => <div key={`e${i}`} className="tj-hm-tile empty" />)}
+            {m.days.map(({ dayStr, pnl }) => (
+              <div
+                key={dayStr}
+                className={`tj-hm-tile ${tileClass(pnl)}`}
+                title={pnl !== undefined ? `${dayStr}: ${fmtPnl(pnl)}` : dayStr}
+              />
             ))}
           </div>
         </div>
       ))}
+      <div className="tj-hm-legend">
+        <span className="tj-hm-tile win-3" /><span>High gain</span>
+        <span className="tj-hm-tile win-1" /><span>Gain</span>
+        <span className="tj-hm-tile empty" style={{ border: "1px solid var(--line)" }} /><span>No trade</span>
+        <span className="tj-hm-tile loss-1" /><span>Loss</span>
+        <span className="tj-hm-tile loss-3" /><span>High loss</span>
+      </div>
     </div>
   );
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-
-export function TradeJournalPanel() {
+export function TradeJournalPanel({ addRequest, onAddRequestHandled }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
@@ -350,10 +346,13 @@ export function TradeJournalPanel() {
   const [openPosCats, setOpenPosCats] = useState<Record<string, OpenPosCat>>(() => lsGet(LS_POSITIONS, {}));
   const [posMeta, setPosMeta] = useState<Record<string, PosMeta>>(() => lsGet(LS_META, {}));
   const [syncing, setSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [fetchingNews, setFetchingNews] = useState(false);
   const [newsItems, setNewsItems] = useState<Array<{ symbol: string; items: Array<{ title: string; link: string; summary: string; date: string }> }>>([]);
+  const [backendSyncing, setBackendSyncing] = useState(false);
+  const [equityInput, setEquityInput] = useState(String(startEquity));
 
-  // Smart Entry form state
+  // Smart Entry
   const [entrySymbol, setEntrySymbol] = useState("");
   const [entryType, setEntryType] = useState("Buy");
   const [entryQty, setEntryQty] = useState("");
@@ -371,7 +370,7 @@ export function TradeJournalPanel() {
   const [vcpVol, setVcpVol] = useState("");
   const [checkboxes, setCheckboxes] = useState<boolean[]>(Array(6).fill(false));
 
-  // Calc state
+  // Calculator
   const [calcCap, setCalcCap] = useState(String(startEquity));
   const [calcRisk, setCalcRisk] = useState("1");
   const [calcEntry, setCalcEntry] = useState("");
@@ -388,13 +387,21 @@ export function TradeJournalPanel() {
   const [sizerResultRisk, setSizerResultRisk] = useState(0);
   const [sizerResultPos, setSizerResultPos] = useState(0);
 
-  // Closed trade filters
+  // Filters
   const [filterMonth, setFilterMonth] = useState("all");
   const [filterOutcome, setFilterOutcome] = useState("all");
   const [filterSymbol, setFilterSymbol] = useState("");
 
-  // Modal
-  const [modal, setModal] = useState<null | { type: "close-pos"; symbol: string; maxQty: number; cmp: number } | { type: "edit-closed"; sellIndex: number; buyIndices: number[] } | { type: "edit-open"; symbol: string } | { type: "add-setup" }>(null);
+  // Modals
+  type ModalState =
+    | null
+    | { type: "close-pos"; symbol: string; maxQty: number; cmp: number }
+    | { type: "edit-closed"; sellIndex: number; buyIndices: number[] }
+    | { type: "edit-open"; symbol: string }
+    | { type: "add-setup"; }
+    | { type: "add-from-screener"; symbol: string; suggestedPrice?: number };
+
+  const [modal, setModal] = useState<ModalState>(null);
   const [modalClosePrice, setModalClosePrice] = useState("");
   const [modalCloseQty, setModalCloseQty] = useState("");
   const [modalCloseDate, setModalCloseDate] = useState(() => new Date().toISOString().split("T")[0]);
@@ -404,131 +411,227 @@ export function TradeJournalPanel() {
   const [modalEditRemarks, setModalEditRemarks] = useState("");
   const [modalEditImg, setModalEditImg] = useState("");
   const [modalEditCustomTags, setModalEditCustomTags] = useState("");
-  const [modalOpenAvgPx, setModalOpenAvgPx] = useState("");
   const [modalOpenSL, setModalOpenSL] = useState("");
   const [modalOpenFetchTicker, setModalOpenFetchTicker] = useState("");
   const [newSetupName, setNewSetupName] = useState("");
 
-  const [equityInput, setEquityInput] = useState(String(startEquity));
+  // Add-from-screener state
+  const [screenerQty, setScreenerQty] = useState("");
+  const [screenerPrice, setScreenerPrice] = useState("");
+  const [screenerSL, setScreenerSL] = useState("");
+  const [screenerDate, setScreenerDate] = useState(() => new Date().toISOString().split("T")[0]);
+  const [screenerSetup, setScreenerSetup] = useState(DEFAULT_SETUPS[0]);
 
-  // Drag source
   const dragSymbol = useRef<string | null>(null);
 
-  // ── Persist whenever trades change ──
+  // ── Persist & sync ──────────────────────────────────────────────────────────
+  const buildPayload = useCallback((
+    t: Trade[], se: number, su: string[], op: Record<string, OpenPosCat>, pm: Record<string, PosMeta>
+  ) => ({ trades: t, startEquity: se, setups: su, openPosCats: op, posMeta: pm }), []);
+
+  const syncToBackend = useCallback(async (
+    t: Trade[], se: number, su: string[], op: Record<string, OpenPosCat>, pm: Record<string, PosMeta>
+  ) => {
+    try {
+      setBackendSyncing(true);
+      await saveJournalData(buildPayload(t, se, su, op, pm) as Record<string, unknown>);
+    } catch { /* ignore backend errors, localStorage is source of truth */ }
+    finally { setBackendSyncing(false); }
+  }, [buildPayload]);
+
   const saveTrades = useCallback((next: Trade[]) => {
-    setTrades(next);
-    lsSet(LS_DATA, next);
+    setTrades(next); lsSet(LS_DATA, next);
+    syncToBackend(next, startEquity, setups, openPosCats, posMeta);
+  }, [startEquity, setups, openPosCats, posMeta, syncToBackend]);
+
+  // Load from backend on mount, merge with localStorage
+  useEffect(() => {
+    getJournalData().then(remote => {
+      if (!remote || typeof remote !== "object" || Object.keys(remote).length === 0) return;
+      const r = remote as Record<string, unknown>;
+      // Only restore if localStorage is empty (first load on new device)
+      const localTrades = lsGet<Trade[]>(LS_DATA, []);
+      if (localTrades.length === 0 && Array.isArray(r.trades) && (r.trades as Trade[]).length > 0) {
+        const rt = r.trades as Trade[];
+        setTrades(rt); lsSet(LS_DATA, rt);
+      }
+      if (!localTrades.length && typeof r.startEquity === "number" && r.startEquity > 0) {
+        setStartEquity(r.startEquity); setEquityInput(String(r.startEquity));
+        setSizerEquity(String(r.startEquity)); setCalcCap(String(r.startEquity));
+        lsSet(LS_EQUITY, r.startEquity);
+      }
+      if (!localTrades.length && Array.isArray(r.setups) && (r.setups as string[]).length > 0) {
+        setSetups(r.setups as string[]); lsSet(LS_SETUPS, r.setups);
+      }
+      if (!localTrades.length && r.openPosCats && typeof r.openPosCats === "object") {
+        setOpenPosCats(r.openPosCats as Record<string, OpenPosCat>); lsSet(LS_POSITIONS, r.openPosCats);
+      }
+      if (!localTrades.length && r.posMeta && typeof r.posMeta === "object") {
+        setPosMeta(r.posMeta as Record<string, PosMeta>); lsSet(LS_META, r.posMeta);
+      }
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── FIFO ──
-  const fifo = calculateFIFO(trades, startEquity);
+  // ── Handle add from screener ──────────────────────────────────────────────
+  useEffect(() => {
+    if (!addRequest) return;
+    setScreenerQty("");
+    setScreenerPrice(String(addRequest.suggestedPrice || ""));
+    setScreenerSL("");
+    setScreenerDate(new Date().toISOString().split("T")[0]);
+    setScreenerSetup(setups[0] || DEFAULT_SETUPS[0]);
+    setModal({ type: "add-from-screener", symbol: addRequest.symbol, suggestedPrice: addRequest.suggestedPrice });
+  }, [addRequest, setups]);
 
-  // ── Dashboard stats ──
+  // ── Position sizer reactive calc ─────────────────────────────────────────
+  useEffect(() => {
+    const eq = parseFloat(sizerEquity) || 0, rp = parseFloat(sizerRiskPct) || 0;
+    const en = parseFloat(sizerEntry) || 0, sp = parseFloat(sizerSLPct) || 0;
+    if (eq > 0 && rp > 0 && en > 0 && sp > 0) {
+      const riskAmt = eq * (rp / 100), slPx = en - en * (sp / 100), rps = en - slPx;
+      if (rps > 0) {
+        const qty = Math.floor(riskAmt / rps);
+        setSizerResultQty(qty); setSizerResultSL(slPx); setSizerResultRisk(riskAmt); setSizerResultPos(qty * en); return;
+      }
+    }
+    setSizerResultQty(0); setSizerResultSL(0); setSizerResultRisk(0); setSizerResultPos(0);
+  }, [sizerEquity, sizerRiskPct, sizerEntry, sizerSLPct]);
+
+  // ── Auto price sync when open-positions tab is active ────────────────────
+  const autoSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (activeTab === 2) {
+      // Sync immediately, then every 5 min
+      syncPricesSilent();
+      autoSyncRef.current = setInterval(syncPricesSilent, 5 * 60 * 1000);
+    } else {
+      if (autoSyncRef.current) clearInterval(autoSyncRef.current);
+    }
+    return () => { if (autoSyncRef.current) clearInterval(autoSyncRef.current); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
+  // ── FIFO ─────────────────────────────────────────────────────────────────
+  const fifo = calculateFIFO(trades, startEquity);
   const { closedTrades, openPositions } = fifo;
+
+  // ── Dashboard stats ───────────────────────────────────────────────────────
   const totalPnl = closedTrades.reduce((s, t) => s + t.pnl, 0);
   const winners = closedTrades.filter(t => t.pnl > 0);
   const losers = closedTrades.filter(t => t.pnl < 0);
   const winRate = closedTrades.length > 0 ? (winners.length / closedTrades.length) * 100 : 0;
   const totalInvested = openPositions.reduce((s, p) => s + p.totalInvested, 0);
   const avgPosSize = closedTrades.length > 0 ? closedTrades.reduce((s, t) => s + t.posSizePct, 0) / closedTrades.length : 0;
-
-  // ── Top 10 ──
   const top10Win = [...winners].sort((a, b) => b.perc - a.perc).slice(0, 10);
   const top10Loss = [...losers].sort((a, b) => a.perc - b.perc).slice(0, 10);
 
-  // ── Filtered closed trades ──
+  // ── Filtered closed trades ────────────────────────────────────────────────
+  const monthOptions = Array.from(new Set(closedTrades.map(t => t.exitDate?.slice(0, 7)).filter(Boolean))).sort().reverse();
   const filteredClosed = closedTrades.filter(t => {
     if (filterOutcome === "win" && t.pnl <= 0) return false;
     if (filterOutcome === "loss" && t.pnl >= 0) return false;
     if (filterSymbol && !t.symbol.toLowerCase().includes(filterSymbol.toLowerCase())) return false;
     if (filterMonth !== "all") {
       const [fy, fm] = filterMonth.split("-").map(Number);
-      const exitD = new Date(t.exitDate);
-      if (exitD.getFullYear() !== fy || exitD.getMonth() + 1 !== fm) return false;
+      const ex = new Date(t.exitDate);
+      if (ex.getFullYear() !== fy || ex.getMonth() + 1 !== fm) return false;
     }
     return true;
   });
 
-  // unique months for dropdown
-  const monthOptions = Array.from(
-    new Set(closedTrades.map(t => t.exitDate?.slice(0, 7)).filter(Boolean))
-  ).sort().reverse();
-
-  // ── Insights ──
+  // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
   closedTrades.forEach(t => {
     const s = t.setupType || "Unknown";
     if (!setupMap[s]) setupMap[s] = { wins: 0, losses: 0, pnl: 0 };
-    if (t.pnl > 0) setupMap[s].wins++;
-    else setupMap[s].losses++;
+    if (t.pnl > 0) setupMap[s].wins++; else setupMap[s].losses++;
     setupMap[s].pnl += t.pnl;
   });
-
   const tagMap: Record<string, { closedCount: number; openCount: number; realizedPnl: number; unrealizedPnl: number }> = {};
-  closedTrades.forEach(t => {
-    (t.tags || []).forEach(tag => {
-      if (!tagMap[tag]) tagMap[tag] = { closedCount: 0, openCount: 0, realizedPnl: 0, unrealizedPnl: 0 };
-      tagMap[tag].closedCount++;
-      tagMap[tag].realizedPnl += t.pnl;
-    });
-  });
+  closedTrades.forEach(t => (t.tags || []).forEach(tag => {
+    if (!tagMap[tag]) tagMap[tag] = { closedCount: 0, openCount: 0, realizedPnl: 0, unrealizedPnl: 0 };
+    tagMap[tag].closedCount++; tagMap[tag].realizedPnl += t.pnl;
+  }));
   openPositions.forEach(p => {
-    const cmp = (posMeta[p.symbol]?.cmp || p.avgPx);
+    const cmp = posMeta[p.symbol]?.cmp || p.avgPx;
     const uPnl = (cmp - p.avgPx) * p.qty;
     (p.tags || []).forEach(tag => {
       if (!tagMap[tag]) tagMap[tag] = { closedCount: 0, openCount: 0, realizedPnl: 0, unrealizedPnl: 0 };
-      tagMap[tag].openCount++;
-      tagMap[tag].unrealizedPnl += uPnl;
+      tagMap[tag].openCount++; tagMap[tag].unrealizedPnl += uPnl;
     });
   });
-
-  const allHoldTimes = closedTrades.map(t => Math.max(0, (getSafeTime(t.exitDate) - getSafeTime(t.entryDate)) / 86400000));
-  const avgHoldAll = allHoldTimes.length ? allHoldTimes.reduce((a, b) => a + b, 0) / allHoldTimes.length : 0;
+  const allHolds = closedTrades.map(t => Math.max(0, (getSafeTime(t.exitDate) - getSafeTime(t.entryDate)) / 86400000));
+  const avgHoldAll = allHolds.length ? allHolds.reduce((a, b) => a + b, 0) / allHolds.length : 0;
   const winHolds = closedTrades.filter(t => t.pnl > 0).map(t => Math.max(0, (getSafeTime(t.exitDate) - getSafeTime(t.entryDate)) / 86400000));
   const avgHoldWin = winHolds.length ? winHolds.reduce((a, b) => a + b, 0) / winHolds.length : 0;
   const lossHolds = closedTrades.filter(t => t.pnl <= 0).map(t => Math.max(0, (getSafeTime(t.exitDate) - getSafeTime(t.entryDate)) / 86400000));
   const avgHoldLoss = lossHolds.length ? lossHolds.reduce((a, b) => a + b, 0) / lossHolds.length : 0;
 
-  // ── Position sizer calc ──
-  useEffect(() => {
-    const eq = parseFloat(sizerEquity) || 0;
-    const rp = parseFloat(sizerRiskPct) || 0;
-    const en = parseFloat(sizerEntry) || 0;
-    const sp = parseFloat(sizerSLPct) || 0;
-    if (eq > 0 && rp > 0 && en > 0 && sp > 0) {
-      const riskAmt = eq * (rp / 100);
-      const slPx = en - en * (sp / 100);
-      const rps = en - slPx;
-      if (rps > 0) {
-        const qty = Math.floor(riskAmt / rps);
-        setSizerResultQty(qty);
-        setSizerResultSL(slPx);
-        setSizerResultRisk(riskAmt);
-        setSizerResultPos(qty * en);
-        return;
+  // ── Price sync (silent = no alert) ────────────────────────────────────────
+  async function syncPricesSilent() {
+    if (!openPositions.length) return;
+    const updated = { ...posMeta };
+    for (const pos of openPositions) {
+      let ticker = updated[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
+      let price: number | null = null;
+      try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`;
+        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+        const json = await res.json();
+        if (json.chart?.result?.[0]?.meta?.regularMarketPrice) price = json.chart.result[0].meta.regularMarketPrice;
+      } catch { /* ignore */ }
+      if (!price) {
+        try {
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://finance.yahoo.com/quote/${ticker}`)}`);
+          const data = await res.json();
+          const match = data.contents?.match(/"regularMarketPrice":\{"raw":([\d.]+)/);
+          if (match) price = parseFloat(match[1]);
+        } catch { /* ignore */ }
       }
+      if (price && isFinite(price)) { if (!updated[pos.symbol]) updated[pos.symbol] = {}; updated[pos.symbol].cmp = price; }
+      await new Promise(r => setTimeout(r, 200));
     }
-    setSizerResultQty(0); setSizerResultSL(0); setSizerResultRisk(0); setSizerResultPos(0);
-  }, [sizerEquity, sizerRiskPct, sizerEntry, sizerSLPct]);
-
-  // ── Quick calc ──
-  function runCalc() {
-    const cap = parseFloat(calcCap) || 0;
-    const rp = parseFloat(calcRisk) || 0;
-    const en = parseFloat(calcEntry) || 0;
-    const st = parseFloat(calcStop) || 0;
-    if (en > st && (en - st) > 0) {
-      const qty = Math.floor((cap * (rp / 100)) / (en - st));
-      setCalcQtyRes(`${qty} Qty`);
-      setEntryQty(String(qty));
-      setEntryPrice(calcEntry);
-      setEntrySL(calcStop);
-    }
+    setPosMeta(updated); lsSet(LS_META, updated);
   }
 
-  // ── Export / Import ──
+  async function syncPrices() {
+    if (!openPositions.length) { alert("No open positions."); return; }
+    setSyncing(true); setSyncStatus("Syncing prices…");
+    const updated = { ...posMeta };
+    const failed: string[] = [];
+    let updatedCount = 0;
+    for (const pos of openPositions) {
+      let ticker = updated[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
+      let price: number | null = null;
+      try {
+        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`;
+        const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+        const json = await res.json();
+        if (json.chart?.result?.[0]?.meta?.regularMarketPrice) price = json.chart.result[0].meta.regularMarketPrice;
+      } catch { /* ignore */ }
+      if (!price) {
+        try {
+          const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(`https://finance.yahoo.com/quote/${ticker}`)}`);
+          const data = await res.json();
+          const match = data.contents?.match(/"regularMarketPrice":\{"raw":([\d.]+)/);
+          if (match) price = parseFloat(match[1]);
+        } catch { /* ignore */ }
+      }
+      if (price && isFinite(price)) { if (!updated[pos.symbol]) updated[pos.symbol] = {}; updated[pos.symbol].cmp = price; updatedCount++; }
+      else failed.push(pos.symbol);
+      await new Promise(r => setTimeout(r, 200));
+    }
+    setPosMeta(updated); lsSet(LS_META, updated);
+    setSyncing(false);
+    setSyncStatus(failed.length > 0 ? `Synced ${updatedCount}/${openPositions.length} · Failed: ${failed.join(", ")}` : `All ${updatedCount} prices synced ✓`);
+    setTimeout(() => setSyncStatus(null), 5000);
+  }
+
+  // ── Export / Import ───────────────────────────────────────────────────────
   function exportJSON() {
-    const blob = new Blob([JSON.stringify({ trades, startEquity, setups, openPosCats, posMeta }, null, 2)], { type: "application/json" });
+    const payload = buildPayload(trades, startEquity, setups, openPosCats, posMeta);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `TradeJournal_${new Date().toISOString().slice(0, 10)}.json`; a.click();
   }
@@ -539,87 +642,99 @@ export function TradeJournalPanel() {
     reader.onload = ev => {
       try {
         const data = JSON.parse(ev.target?.result as string);
-
-        // Helper: value may already be parsed, or may be a JSON string (original HTML backup format)
         function unwrap<T>(val: unknown, fallback: T): T {
           if (val === undefined || val === null) return fallback;
           if (typeof val === "string") { try { return JSON.parse(val) as T; } catch { return fallback; } }
           return val as T;
         }
-
-        // Detect original TradeOS HTML backup format: keys are "tradingJournalData", etc.
         const isOriginalFormat = "tradingJournalData" in data;
-
+        let importedTrades: Trade[], importedEquity: number, importedSetups: string[];
+        let importedPositions: Record<string, OpenPosCat>, importedMeta: Record<string, PosMeta>;
         if (isOriginalFormat) {
-          // Original HTML app backup: values are raw JSON strings
-          const importedTrades = unwrap<Trade[]>(data.tradingJournalData, []);
-          const importedEquity = unwrap<number>(data.tradingJournalEquity, 100000);
-          const importedSetups = unwrap<string[]>(data.tradingJournalSetups, DEFAULT_SETUPS);
-          const importedPositions = unwrap<Record<string, OpenPosCat>>(data.tradingJournalPositions, {});
-          const importedMeta = unwrap<Record<string, PosMeta>>(data.tradingJournalPosMeta, {});
-
-          if (Array.isArray(importedTrades) && importedTrades.length > 0) saveTrades(importedTrades);
-          if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setSizerEquity(String(importedEquity)); setCalcCap(String(importedEquity)); }
-          if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(importedSetups); lsSet(LS_SETUPS, importedSetups); }
-          if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
-          if (Object.keys(importedMeta).length > 0) { setPosMeta(importedMeta); lsSet(LS_META, importedMeta); }
+          importedTrades = unwrap<Trade[]>(data.tradingJournalData, []);
+          importedEquity = unwrap<number>(data.tradingJournalEquity, 100000);
+          importedSetups = unwrap<string[]>(data.tradingJournalSetups, DEFAULT_SETUPS);
+          importedPositions = unwrap<Record<string, OpenPosCat>>(data.tradingJournalPositions, {});
+          importedMeta = unwrap<Record<string, PosMeta>>(data.tradingJournalPosMeta, {});
         } else {
-          // New format exported by this app: { trades, startEquity, setups, openPosCats, posMeta }
-          if (Array.isArray(data.trades) && data.trades.length > 0) saveTrades(data.trades);
-          if (data.startEquity > 0) { setStartEquity(data.startEquity); lsSet(LS_EQUITY, data.startEquity); setEquityInput(String(data.startEquity)); setSizerEquity(String(data.startEquity)); setCalcCap(String(data.startEquity)); }
-          if (Array.isArray(data.setups) && data.setups.length > 0) { setSetups(data.setups); lsSet(LS_SETUPS, data.setups); }
-          if (data.openPosCats) { setOpenPosCats(data.openPosCats); lsSet(LS_POSITIONS, data.openPosCats); }
-          if (data.posMeta) { setPosMeta(data.posMeta); lsSet(LS_META, data.posMeta); }
+          importedTrades = unwrap<Trade[]>(data.trades, []);
+          importedEquity = unwrap<number>(data.startEquity, 100000);
+          importedSetups = unwrap<string[]>(data.setups, DEFAULT_SETUPS);
+          importedPositions = unwrap<Record<string, OpenPosCat>>(data.openPosCats, {});
+          importedMeta = unwrap<Record<string, PosMeta>>(data.posMeta, {});
         }
-
-        alert("Journal imported successfully!");
-      } catch { alert("Invalid JSON file. Please use a TradeOS backup file (.json)."); }
+        if (Array.isArray(importedTrades) && importedTrades.length > 0) { saveTrades(importedTrades); }
+        if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setSizerEquity(String(importedEquity)); setCalcCap(String(importedEquity)); }
+        if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(importedSetups); lsSet(LS_SETUPS, importedSetups); }
+        if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
+        if (Object.keys(importedMeta).length > 0) { setPosMeta(importedMeta); lsSet(LS_META, importedMeta); }
+        // Push to backend after import
+        syncToBackend(
+          importedTrades.length ? importedTrades : trades,
+          importedEquity > 0 ? importedEquity : startEquity,
+          importedSetups.length ? importedSetups : setups,
+          Object.keys(importedPositions).length ? importedPositions : openPosCats,
+          Object.keys(importedMeta).length ? importedMeta : posMeta,
+        );
+        alert("Journal imported and saved to cloud!");
+      } catch { alert("Invalid JSON file."); }
     };
-    reader.readAsText(file);
-    e.target.value = "";
+    reader.readAsText(file); e.target.value = "";
   }
 
-  // ── Add Trade ──
+  // ── Add Trade ─────────────────────────────────────────────────────────────
   function handleAddTrade(e: React.FormEvent) {
     e.preventDefault();
     const customTags = customTagInput.split(",").map(s => s.trim()).filter(Boolean);
-    const finalTags = [...entryTags, ...customTags];
     const t: Trade = {
-      symbol: entrySymbol.trim().toUpperCase(),
-      type: entryType,
-      qty: parseFloat(entryQty) || 0,
-      price: parseFloat(entryPrice) || 0,
-      date: entryDate,
-      setupType: entrySetup,
-      stoploss: parseFloat(entrySL) || 0,
-      target: parseFloat(entryTarget) || 0,
-      tags: finalTags,
-      remarks: entryRemarks,
-      img: entryImg,
+      symbol: entrySymbol.trim().toUpperCase(), type: entryType,
+      qty: parseFloat(entryQty) || 0, price: parseFloat(entryPrice) || 0,
+      date: entryDate, setupType: entrySetup,
+      stoploss: parseFloat(entrySL) || 0, target: parseFloat(entryTarget) || 0,
+      tags: [...entryTags, ...customTags], remarks: entryRemarks, img: entryImg,
       vcp: { t: vcpT, depth: vcpDepth, vol: vcpVol },
     };
-    const next = [...trades, t];
-    saveTrades(next);
-    // Reset form
-    setEntrySymbol(""); setEntryQty(""); setEntryPrice(""); setEntrySL("");
-    setEntryTarget(""); setEntryImg(""); setEntryRemarks(""); setEntryTags(new Set());
-    setCustomTagInput(""); setVcpT(""); setVcpDepth(""); setVcpVol("");
-    setCheckboxes(Array(6).fill(false));
+    saveTrades([...trades, t]);
+    setEntrySymbol(""); setEntryQty(""); setEntryPrice(""); setEntrySL(""); setEntryTarget("");
+    setEntryImg(""); setEntryRemarks(""); setEntryTags(new Set()); setCustomTagInput("");
+    setVcpT(""); setVcpDepth(""); setVcpVol(""); setCheckboxes(Array(6).fill(false));
     alert("Trade added!");
     setActiveTab(entryType.toLowerCase() === "buy" ? 2 : 1);
   }
 
-  // ── Delete trade ──
-  function deleteTrade(idx: number) {
-    if (!confirm("Delete this trade?")) return;
-    const next = trades.filter((_, i) => i !== idx);
-    saveTrades(next);
+  // ── Add from screener ─────────────────────────────────────────────────────
+  function submitFromScreener() {
+    if (modal?.type !== "add-from-screener") return;
+    const qty = parseFloat(screenerQty), price = parseFloat(screenerPrice);
+    if (!qty || !price || !screenerDate) { alert("Please fill Qty, Price and Date."); return; }
+    const sl = parseFloat(screenerSL) || 0;
+    const t: Trade = {
+      symbol: modal.symbol.trim().toUpperCase(), type: "Buy",
+      qty, price, date: screenerDate, setupType: screenerSetup || DEFAULT_SETUPS[0],
+      stoploss: sl, target: 0, tags: [], remarks: "", vcp: {},
+    };
+    // Update posMeta with SL if provided
+    if (sl > 0) {
+      const nextMeta = { ...posMeta, [modal.symbol.toUpperCase()]: { ...posMeta[modal.symbol.toUpperCase()], sl, fetchTicker: modal.symbol.toUpperCase() + ".NS" } };
+      setPosMeta(nextMeta); lsSet(LS_META, nextMeta);
+    }
+    saveTrades([...trades, t]);
+    setModal(null);
+    onAddRequestHandled?.();
+    setTimeout(() => setActiveTab(2), 100);
+    alert(`${modal.symbol} added to Open Positions!`);
   }
 
-  // ── Close position modal ──
+  // ── Delete trade ─────────────────────────────────────────────────────────
+  function deleteTrade(idx: number) {
+    if (!confirm("Delete this trade?")) return;
+    saveTrades(trades.filter((_, i) => i !== idx));
+  }
+
+  // ── Close position modal ──────────────────────────────────────────────────
   function openCloseModal(symbol: string, maxQty: number, cmp: number) {
     setModalClosePrice(String(cmp || ""));
-    setModalCloseQty(String(maxQty));
+    setModalCloseQty(String(Math.round(maxQty)));
     setModalCloseDate(new Date().toISOString().split("T")[0]);
     setModal({ type: "close-pos", symbol, maxQty, cmp });
   }
@@ -627,34 +742,22 @@ export function TradeJournalPanel() {
   function submitClose() {
     if (modal?.type !== "close-pos") return;
     const { symbol } = modal;
-    const price = parseFloat(modalClosePrice);
-    const qty = parseFloat(modalCloseQty);
-    if (isNaN(price) || isNaN(qty) || !modalCloseDate) { alert("Please fill all fields."); return; }
-
+    const price = parseFloat(modalClosePrice), qty = parseFloat(modalCloseQty);
+    if (isNaN(price) || isNaN(qty) || !modalCloseDate) { alert("Fill all fields."); return; }
     const openLots = fifo.openLotsDict[symbol];
-    if (openLots && openLots[0]) {
-      const buyTime = getSafeTime(openLots[0].date);
-      const sellTime = getSafeTime(modalCloseDate);
-      if (sellTime < buyTime) {
-        alert(`Close date (${modalCloseDate}) is before buy date (${openLots[0].date}).\nPlease use a later date.`);
-        return;
+    if (openLots?.[0]) {
+      if (getSafeTime(modalCloseDate) < getSafeTime(openLots[0].date)) {
+        alert(`Close date (${modalCloseDate}) is before buy date (${openLots[0].date}).`); return;
       }
     }
-
     const existingTags = (fifo.openLotsDict[symbol] || []).flatMap(l => l.tags || []);
-    saveTrades([...trades, {
-      symbol, type: "Sell", qty, price, date: modalCloseDate,
-      setupType: "Close", tags: [...new Set(existingTags)], remarks: ""
-    }]);
-    setModal(null);
-    alert("Position closed!");
-    setActiveTab(1);
+    saveTrades([...trades, { symbol, type: "Sell", qty, price, date: modalCloseDate, setupType: "Close", tags: [...new Set(existingTags)], remarks: "", stoploss: 0, target: 0 }]);
+    setModal(null); alert("Position closed!"); setActiveTab(1);
   }
 
-  // ── Edit open position (review modal) ──
+  // ── Edit open position ────────────────────────────────────────────────────
   function openReviewModal(symbol: string) {
     const meta = posMeta[symbol] || {};
-    setModalOpenAvgPx(String(fifo.openPositions.find(p => p.symbol === symbol)?.avgPx.toFixed(2) || ""));
     setModalOpenSL(String(meta.sl || ""));
     setModalOpenFetchTicker(meta.fetchTicker || (symbol.includes(".") ? symbol : symbol + ".NS"));
     const tags = fifo.openPositions.find(p => p.symbol === symbol)?.tags || [];
@@ -668,25 +771,17 @@ export function TradeJournalPanel() {
     const { symbol } = modal;
     const nextMeta = { ...posMeta, [symbol]: { ...posMeta[symbol], sl: parseFloat(modalOpenSL) || 0, fetchTicker: modalOpenFetchTicker } };
     setPosMeta(nextMeta); lsSet(LS_META, nextMeta);
-
-    // Also update tags/remarks on open buy lots
     const openIdxs = fifo.openPositions.find(p => p.symbol === symbol)?.buyIndices || [];
-    const nextTrades = trades.map((t, i) => {
-      if (openIdxs.includes(i)) return { ...t, tags: [...modalEditTags], remarks: modalEditRemarks };
-      return t;
-    });
-    saveTrades(nextTrades);
-    setModal(null);
+    const nextTrades = trades.map((t, i) => openIdxs.includes(i) ? { ...t, tags: [...modalEditTags], remarks: modalEditRemarks } : t);
+    saveTrades(nextTrades); setModal(null);
   }
 
-  // ── Edit closed trade modal ──
+  // ── Edit closed trade ─────────────────────────────────────────────────────
   function openEditClosedModal(sellIndex: number, buyIndices: number[]) {
-    const sellTrade = trades[sellIndex];
-    const origTrade = trades[buyIndices[0]] || {};
+    const sellTrade = trades[sellIndex], origTrade = trades[buyIndices[0]] || {} as Trade;
     let totalQty = 0, totalInvested = 0;
     buyIndices.forEach(i => { if (trades[i]) { totalQty += trades[i].qty; totalInvested += trades[i].qty * trades[i].price; } });
-    const avgEntry = totalQty > 0 ? totalInvested / totalQty : 0;
-    setModalEditEntryPx(avgEntry.toFixed(2));
+    setModalEditEntryPx((totalQty > 0 ? totalInvested / totalQty : 0).toFixed(2));
     setModalEditExitPx(String(sellTrade?.price || ""));
     setModalEditTags(new Set(origTrade.tags || []));
     setModalEditRemarks(origTrade.remarks || "");
@@ -700,99 +795,45 @@ export function TradeJournalPanel() {
     const { sellIndex, buyIndices } = modal;
     const customTags = modalEditCustomTags.split(",").map(s => s.trim()).filter(Boolean);
     const finalTags = [...modalEditTags, ...customTags];
-    const newEntryPx = parseFloat(modalEditEntryPx);
-    const newExitPx = parseFloat(modalEditExitPx);
-
+    const newEntryPx = parseFloat(modalEditEntryPx), newExitPx = parseFloat(modalEditExitPx);
     const nextTrades = trades.map((t, i) => {
       if (buyIndices.includes(i)) return { ...t, tags: finalTags, remarks: modalEditRemarks, img: modalEditImg, ...(!isNaN(newEntryPx) && newEntryPx > 0 ? { price: newEntryPx } : {}) };
       if (i === sellIndex && !isNaN(newExitPx) && newExitPx > 0) return { ...t, price: newExitPx };
       return t;
     });
-    saveTrades(nextTrades);
-    setModal(null);
-    alert("Trade updated!");
+    saveTrades(nextTrades); setModal(null); alert("Trade updated!");
   }
 
-  // ── Drag and drop (kanban) ──
+  // ── Drag & drop ───────────────────────────────────────────────────────────
   function onDragStart(symbol: string) { dragSymbol.current = symbol; }
   function onDrop(cat: OpenPosCat) {
     if (!dragSymbol.current) return;
     const next = { ...openPosCats, [dragSymbol.current]: cat };
-    setOpenPosCats(next); lsSet(LS_POSITIONS, next);
-    dragSymbol.current = null;
+    setOpenPosCats(next); lsSet(LS_POSITIONS, next); dragSymbol.current = null;
   }
 
-  // ── Live price sync ──
-  async function syncPrices() {
-    if (!openPositions.length) { alert("No open positions."); return; }
-    setSyncing(true);
-    const updated: Record<string, PosMeta> = { ...posMeta };
-    const failed: string[] = [];
-
-    for (const pos of openPositions) {
-      let ticker = updated[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
-      let price: number | null = null;
-
-      try {
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d`;
-        const proxy = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-        const res = await fetch(proxy);
-        const json = await res.json();
-        if (json.chart?.result?.[0]?.meta?.regularMarketPrice) price = json.chart.result[0].meta.regularMarketPrice;
-      } catch { /* try fallback */ }
-
-      if (!price) {
-        try {
-          const scrapeUrl = `https://finance.yahoo.com/quote/${ticker}`;
-          const proxy2 = `https://api.allorigins.win/get?url=${encodeURIComponent(scrapeUrl)}`;
-          const res = await fetch(proxy2);
-          const data = await res.json();
-          const match = data.contents?.match(/"regularMarketPrice":\{"raw":([\d.]+)/);
-          if (match) price = parseFloat(match[1]);
-        } catch { /* ignore */ }
-      }
-
-      if (price && isFinite(price)) {
-        if (!updated[pos.symbol]) updated[pos.symbol] = {};
-        updated[pos.symbol].cmp = price;
-      } else { failed.push(pos.symbol); }
-
-      await new Promise(r => setTimeout(r, 200));
-    }
-
-    setPosMeta(updated); lsSet(LS_META, updated);
-    setSyncing(false);
-    if (failed.length) alert(`Synced ${openPositions.length - failed.length}/${openPositions.length}.\nFailed: ${failed.join(", ")}\n\nTip: Use the Review button to set Yahoo Ticker (e.g., RELIANCE.NS)`);
-    else alert(`All ${openPositions.length} prices synced!`);
-  }
-
-  // ── News fetch ──
+  // ── News fetch ────────────────────────────────────────────────────────────
   async function fetchNews() {
     if (!openPositions.length) { alert("No open positions."); return; }
-    setFetchingNews(true);
-    setNewsItems([]);
+    setFetchingNews(true); setNewsItems([]);
     const results: typeof newsItems = [];
-
     for (const pos of openPositions) {
       const ticker = posMeta[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
-      let items: Array<{ title: string; link: string; summary: string; date: string }> = [];
-
+      let items: typeof results[0]["items"] = [];
       try {
         const cb = Date.now();
         let feedUrl = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${ticker}&region=IN&lang=en-IN&cb=${cb}`;
-        let apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
-        let res = await fetch(apiUrl);
+        let res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
         let data = await res.json();
         if (data.status !== "ok" || !data.items?.length) {
           const q = encodeURIComponent(`${pos.symbol} stock india when:3d`);
           feedUrl = `https://news.google.com/rss/search?q=${q}&hl=en-IN&gl=IN&ceid=IN:en&cb=${cb}`;
-          apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`;
-          res = await fetch(apiUrl); data = await res.json();
+          res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
+          data = await res.json();
         }
         if (data.status === "ok" && data.items?.length) {
           items = data.items.slice(0, 5).map((item: { title: string; link: string; description?: string; pubDate?: string }) => {
-            let summary = (item.description || "").replace(/<[^>]*>/g, "").trim()
-              .replace(/&nbsp;/g, " ").replace(/&quot;/g, '"').replace(/&amp;/g, "&").replace(/&#39;/g, "'");
+            let summary = (item.description || "").replace(/<[^>]*>/g, "").trim().replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
             if (summary.length < 20) summary = "Click to view full article.";
             else if (summary.length > 200) summary = summary.slice(0, 200) + "…";
             let dateStr = item.pubDate || "";
@@ -801,232 +842,250 @@ export function TradeJournalPanel() {
           });
         }
       } catch { /* ignore */ }
-
       results.push({ symbol: pos.symbol, items });
       await new Promise(r => setTimeout(r, 600));
     }
-
-    setNewsItems(results);
-    setFetchingNews(false);
+    setNewsItems(results); setFetchingNews(false);
   }
 
-  // ── Kanban column data ──
-  function posForCat(cat: OpenPosCat): OpenPosition[] {
-    return openPositions.filter(p => (openPosCats[p.symbol] || "full") === cat);
+  // ── Quick calc ────────────────────────────────────────────────────────────
+  function runCalc() {
+    const cap = parseFloat(calcCap) || 0, rp = parseFloat(calcRisk) || 0;
+    const en = parseFloat(calcEntry) || 0, st = parseFloat(calcStop) || 0;
+    if (en > st && en - st > 0) {
+      const qty = Math.floor((cap * (rp / 100)) / (en - st));
+      setCalcQtyRes(`${qty} Qty`); setEntryQty(String(qty)); setEntryPrice(calcEntry); setEntrySL(calcStop);
+    }
   }
 
-  function KanbanCard({ p }: { p: OpenPosition }) {
-    const meta = posMeta[p.symbol] || {};
-    const cmp = meta.cmp || 0;
-    const sl = meta.sl || p.avgPx * 0.95;
-    const uPnl = cmp > 0 ? (cmp - p.avgPx) * p.qty : 0;
-    const uPerc = p.avgPx > 0 ? ((cmp - p.avgPx) / p.avgPx) * 100 : 0;
-    const riskAmt = (p.avgPx - sl) * p.qty;
-    const riskPct = p.avgPx > 0 ? ((p.avgPx - sl) / p.avgPx) * 100 : 0;
-    const posSize = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+  // ── Kanban data ───────────────────────────────────────────────────────────
+  function posForCat(cat: OpenPosCat) { return openPositions.filter(p => (openPosCats[p.symbol] || "full") === cat); }
+  const totalUnrealized = openPositions.reduce((s, p) => { const cmp = posMeta[p.symbol]?.cmp || p.avgPx; return s + (cmp - p.avgPx) * p.qty; }, 0);
+  const totalRisk = openPositions.reduce((s, p) => { const sl = posMeta[p.symbol]?.sl || p.avgPx * 0.92; return s + (p.avgPx - sl) * p.qty; }, 0);
 
-    return (
-      <div
-        className="tj-kanban-card"
-        draggable
-        onDragStart={() => onDragStart(p.symbol)}
-      >
-        <div className="tj-kc-header">
-          <span className="tj-kc-sym">{p.symbol}</span>
-          <span className="tj-kc-meta">{"×" + p.qty}</span>
-        </div>
-        <div className="tj-kc-row"><span className="tj-kc-label">Avg</span><span>₹{fmt(p.avgPx)}</span></div>
-        {cmp > 0 && <div className="tj-kc-row"><span className="tj-kc-label">CMP</span><span>₹{fmt(cmp)}</span></div>}
-        {cmp > 0 && <div className={`tj-kc-row tj-kc-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kc-label">P&L</span><span>{fmtPnl(uPnl)} ({fmtPerc(uPerc)})</span></div>}
-        <div className="tj-kc-row"><span className="tj-kc-label">Risk</span><span className="neg">₹{fmt(riskAmt)} ({fmt(riskPct)}%)</span></div>
-        <div className="tj-kc-row"><span className="tj-kc-label">Size</span><span>{fmt(posSize)}%</span></div>
-        {p.setupType && <div className="tj-kc-row"><span className="tj-kc-label">Setup</span><span>{p.setupType}</span></div>}
-        {p.tags.length > 0 && <div className="tj-kc-tags">{p.tags.map(t => <span key={t} className="tj-chip">{t}</span>)}</div>}
-        <div className="tj-kc-actions">
-          <button className="tj-kc-btn" onClick={() => openCloseModal(p.symbol, Math.round(p.qty), cmp)}>Close</button>
-          <button className="tj-kc-btn secondary" onClick={() => openReviewModal(p.symbol)}>Review</button>
-        </div>
-      </div>
-    );
-  }
-
-  function KanbanCol({ cat, label }: { cat: OpenPosCat; label: string }) {
-    const items = posForCat(cat);
-    return (
-      <div
-        className="tj-kanban-col"
-        onDragOver={e => e.preventDefault()}
-        onDrop={() => onDrop(cat)}
-      >
-        <div className="tj-kcol-header">{label} <span className="tj-kcol-count">{items.length}</span></div>
-        {items.map(p => <KanbanCard key={p.symbol} p={p} />)}
-        {items.length === 0 && <div className="tj-kcol-empty">Drop here</div>}
-      </div>
-    );
-  }
-
-  // ── Add Setup ──
+  // ── Save new setup ────────────────────────────────────────────────────────
   function saveNewSetup() {
     if (!newSetupName.trim()) return;
     const next = [...setups, newSetupName.trim()];
-    setSetups(next); lsSet(LS_SETUPS, next);
-    setNewSetupName(""); setModal(null);
+    setSetups(next); lsSet(LS_SETUPS, next); setNewSetupName(""); setModal(null);
   }
 
+  // ── Checklist ────────────────────────────────────────────────────────────
   const CHECKLIST_ITEMS = [
-    "Market/Index trend is favorable (Stage 2 or recovey)",
-    "Sector is in leading group or showing strength",
+    "Market/Index trend is favorable (Stage 2 or recovery)",
+    "Sector is a leading group or showing strength",
     "Stock is in confirmed Stage 2 uptrend",
     "VCP or technical pattern is properly formed",
     "Volume dry-up confirmed near pivot",
     "Entry is at or near pivot with tight risk (<8%)",
   ];
 
-  // ─── Render ───────────────────────────────────────────────────────────────────
+  // ── Kanban Card ───────────────────────────────────────────────────────────
+  function KanbanCard({ p }: { p: OpenPosition }) {
+    const meta = posMeta[p.symbol] || {};
+    const cmp = meta.cmp || 0;
+    const sl = meta.sl || p.avgPx * 0.92;
+    const uPnl = cmp > 0 ? (cmp - p.avgPx) * p.qty : 0;
+    const uPerc = p.avgPx > 0 && cmp > 0 ? ((cmp - p.avgPx) / p.avgPx) * 100 : 0;
+    const riskAmt = (p.avgPx - sl) * p.qty;
+    const riskPct = p.avgPx > 0 ? ((p.avgPx - sl) / p.avgPx) * 100 : 0;
+    const posSize = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+    const hasLive = cmp > 0;
+    return (
+      <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
+        <div className="tj-kcard-header">
+          <div className="tj-kcard-sym">
+            <span className="tj-kcard-sym-text">{p.symbol}</span>
+            {p.setupType && <span className="tj-kcard-setup">{p.setupType}</span>}
+          </div>
+          <span className="tj-kcard-qty">×{Math.round(p.qty)}</span>
+        </div>
+        <div className="tj-kcard-metrics">
+          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg</span><span>₹{fmt(p.avgPx)}</span></div>
+          {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
+          {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
+          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Risk</span><span className="neg">₹{fmt(riskAmt, 0)} <small>({riskPct.toFixed(1)}%)</small></span></div>
+          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Size</span><span>{posSize.toFixed(1)}%</span></div>
+        </div>
+        {p.tags.length > 0 && <div className="tj-chip-row">{p.tags.slice(0, 4).map(t => <span key={t} className="tj-chip sm">{t}</span>)}</div>}
+        <div className="tj-kcard-actions">
+          <button className="tj-action-btn danger-outline" onClick={() => openCloseModal(p.symbol, p.qty, cmp || p.avgPx)}>Close</button>
+          <button className="tj-action-btn ghost" onClick={() => openReviewModal(p.symbol)}>Review</button>
+        </div>
+      </div>
+    );
+  }
+
+  function KanbanCol({ cat, label, accent }: { cat: OpenPosCat; label: string; accent: string }) {
+    const items = posForCat(cat);
+    return (
+      <div className={`tj-kcol tj-kcol-${accent}`} onDragOver={e => e.preventDefault()} onDrop={() => onDrop(cat)}>
+        <div className="tj-kcol-title">
+          <span>{label}</span>
+          <span className="tj-kcol-badge">{items.length}</span>
+        </div>
+        <div className="tj-kcol-body">
+          {items.map(p => <KanbanCard key={p.symbol} p={p} />)}
+          {items.length === 0 && <div className="tj-kcol-empty">Drag here</div>}
+        </div>
+      </div>
+    );
+  }
+
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="tj-root">
-      {/* Header */}
+      {/* ── Header ── */}
       <div className="tj-header">
-        <div className="tj-header-left">
-          <span className="tj-logo">📒 TradeOS Journal</span>
-          <span className="tj-version">v11.0</span>
+        <div className="tj-header-brand">
+          <span className="tj-brand-icon">📒</span>
+          <div>
+            <div className="tj-brand-name">Trade Journal</div>
+            <div className="tj-brand-sub">TradeOS VCP Journal · {trades.length} trades · {openPositions.length} open</div>
+          </div>
         </div>
-        <div className="tj-header-right">
-          <input
-            type="number"
-            className="tj-equity-input"
-            value={equityInput}
-            onChange={e => setEquityInput(e.target.value)}
-            onBlur={() => {
-              const val = parseFloat(equityInput);
-              if (val > 0) { setStartEquity(val); lsSet(LS_EQUITY, val); setSizerEquity(String(val)); setCalcCap(String(val)); }
-            }}
-            placeholder="Starting Equity ₹"
-          />
-          <button className="tj-btn-secondary" onClick={exportJSON}>Export</button>
-          <label className="tj-btn-secondary" style={{ cursor: "pointer" }}>
-            Import
+        <div className="tj-header-controls">
+          <div className="tj-equity-wrap">
+            <label className="tj-equity-label">Starting Equity ₹</label>
+            <input
+              className="tj-equity-input"
+              type="number"
+              value={equityInput}
+              onChange={e => setEquityInput(e.target.value)}
+              onBlur={() => {
+                const val = parseFloat(equityInput);
+                if (val > 0) {
+                  setStartEquity(val); lsSet(LS_EQUITY, val);
+                  setSizerEquity(String(val)); setCalcCap(String(val));
+                  syncToBackend(trades, val, setups, openPosCats, posMeta);
+                }
+              }}
+            />
+          </div>
+          {backendSyncing && <span className="tj-cloud-badge">☁ Saving…</span>}
+          <button className="tj-btn secondary" onClick={exportJSON}>↓ Export</button>
+          <label className="tj-btn secondary" style={{ cursor: "pointer" }}>
+            ↑ Import
             <input type="file" accept=".json" style={{ display: "none" }} onChange={importJSON} />
           </label>
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="tj-tabs">
+      {/* ── Tabs ── */}
+      <div className="tj-tabbar">
         {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer", "News Radar"].map((t, i) => (
           <button
             key={t}
-            className={`tj-tab ${activeTab === i ? "active" : ""}`}
+            className={`tj-tabbtn ${activeTab === i ? "active" : ""}`}
             onClick={() => { setActiveTab(i); if (i === 6 && !fetchingNews && !newsItems.length) fetchNews(); }}
           >
             {t}
+            {i === 2 && openPositions.length > 0 && <span className="tj-tabbadge">{openPositions.length}</span>}
           </button>
         ))}
       </div>
 
-      {/* ─── Tab 0: Dashboard ─── */}
+      {/* ── Tab 0: Dashboard ── */}
       {activeTab === 0 && (
-        <div className="tj-panel">
-          <div className="tj-stat-grid">
-            <div className="tj-stat-card">
-              <div className="tj-stat-label">Total P&L</div>
-              <div className={`tj-stat-value ${totalPnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(totalPnl)}</div>
+        <div className="tj-page">
+          <div className="tj-kpis">
+            <div className={`tj-kpi ${totalPnl >= 0 ? "pos" : "neg"}`}>
+              <div className="tj-kpi-label">Total Realized P&L</div>
+              <div className="tj-kpi-value">{fmtPnl(totalPnl)}</div>
+              <div className="tj-kpi-sub">{closedTrades.length} closed trades</div>
             </div>
-            <div className="tj-stat-card">
-              <div className="tj-stat-label">Win Rate</div>
-              <div className="tj-stat-value">{fmt(winRate)}%</div>
-              <div className="tj-stat-sub">{winners.length}W / {losers.length}L / {closedTrades.length} total</div>
+            <div className="tj-kpi">
+              <div className="tj-kpi-label">Win Rate</div>
+              <div className={`tj-kpi-value ${winRate >= 50 ? "pos" : "neg"}`}>{winRate.toFixed(1)}%</div>
+              <div className="tj-kpi-sub">{winners.length} W / {losers.length} L</div>
             </div>
-            <div className="tj-stat-card">
-              <div className="tj-stat-label">Avg Position Size</div>
-              <div className="tj-stat-value">{fmt(avgPosSize)}%</div>
-              <div className="tj-stat-sub">of equity (closed)</div>
+            <div className="tj-kpi">
+              <div className="tj-kpi-label">Avg Position Size</div>
+              <div className="tj-kpi-value">{avgPosSize.toFixed(1)}%</div>
+              <div className="tj-kpi-sub">of equity per trade</div>
             </div>
-            <div className="tj-stat-card">
-              <div className="tj-stat-label">Open Invested</div>
-              <div className="tj-stat-value">₹{fmt(totalInvested, 0)}</div>
-              <div className="tj-stat-sub">{openPositions.length} position{openPositions.length !== 1 ? "s" : ""}</div>
+            <div className={`tj-kpi ${totalUnrealized >= 0 ? "pos" : "neg"}`}>
+              <div className="tj-kpi-label">Unrealized P&L</div>
+              <div className="tj-kpi-value">{fmtPnl(totalUnrealized)}</div>
+              <div className="tj-kpi-sub">₹{fmt(totalInvested, 0)} deployed</div>
             </div>
           </div>
 
-          <div className="tj-dash-row">
-            <div className="tj-card tj-chart-card">
-              <div className="tj-card-title">Equity Curve</div>
+          <div className="tj-chart-row">
+            <div className="tj-card full-width">
+              <div className="tj-card-hdr">Equity Curve</div>
               <EquityCurve closed={closedTrades} startEquity={startEquity} />
             </div>
-            <div className="tj-card tj-chart-card">
-              <div className="tj-card-title">P&L Distribution (%)</div>
-              <BellCurve closed={closedTrades} />
-            </div>
           </div>
 
-          <div className="tj-dash-row">
+          <div className="tj-chart-row two-col">
             <div className="tj-card">
-              <div className="tj-card-title">Top 10 Winners</div>
-              {top10Win.length === 0 ? <div className="tj-empty">No winners yet</div> : (
-                <div className="tj-list">
-                  {top10Win.map((t, i) => (
-                    <div key={i} className="tj-list-row">
-                      <span className="tj-list-rank">#{i + 1}</span>
-                      <span className="tj-list-sym">{t.symbol}</span>
-                      <span className="tj-list-val pos">+{fmt(t.perc)}%</span>
-                      <span className="tj-list-sub pos">{fmtPnl(t.pnl)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="tj-card-hdr">P&L Distribution</div>
+              <PnlDistribution closed={closedTrades} />
             </div>
             <div className="tj-card">
-              <div className="tj-card-title">Top 10 Losers</div>
-              {top10Loss.length === 0 ? <div className="tj-empty">No losers yet</div> : (
-                <div className="tj-list">
-                  {top10Loss.map((t, i) => (
-                    <div key={i} className="tj-list-row">
-                      <span className="tj-list-rank">#{i + 1}</span>
-                      <span className="tj-list-sym">{t.symbol}</span>
-                      <span className="tj-list-val neg">{fmt(t.perc)}%</span>
-                      <span className="tj-list-sub neg">{fmtPnl(t.pnl)}</span>
+              <div className="tj-card-hdr">Top Winners vs Losers</div>
+              <div className="tj-wl-grid">
+                <div>
+                  <div className="tj-wl-title pos">▲ Top Winners</div>
+                  {top10Win.length === 0 ? <div className="tj-empty">No winners yet</div> : top10Win.map((t, i) => (
+                    <div key={i} className="tj-wl-row">
+                      <span className="tj-wl-rank">#{i + 1}</span>
+                      <span className="tj-wl-sym">{t.symbol}</span>
+                      <span className="pos">{fmtPerc(t.perc)}</span>
+                      <span className="pos tj-wl-pnl">{fmtPnl(t.pnl)}</span>
                     </div>
                   ))}
                 </div>
-              )}
+                <div>
+                  <div className="tj-wl-title neg">▼ Top Losers</div>
+                  {top10Loss.length === 0 ? <div className="tj-empty">No losers yet</div> : top10Loss.map((t, i) => (
+                    <div key={i} className="tj-wl-row">
+                      <span className="tj-wl-rank">#{i + 1}</span>
+                      <span className="tj-wl-sym">{t.symbol}</span>
+                      <span className="neg">{fmtPerc(t.perc)}</span>
+                      <span className="neg tj-wl-pnl">{fmtPnl(t.pnl)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
           <div className="tj-card">
-            <div className="tj-card-title">Monthly Consistency Heatmap</div>
+            <div className="tj-card-hdr">Monthly Consistency</div>
             <Heatmap closed={closedTrades} />
           </div>
         </div>
       )}
 
-      {/* ─── Tab 1: Trade Log ─── */}
+      {/* ── Tab 1: Trade Log ── */}
       {activeTab === 1 && (
-        <div className="tj-panel">
-          <div className="tj-log-filters">
-            <select value={filterMonth} onChange={e => setFilterMonth(e.target.value)} className="tj-select">
+        <div className="tj-page">
+          <div className="tj-log-toolbar">
+            <select className="tj-select" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}>
               <option value="all">All Months</option>
               {monthOptions.map(m => <option key={m} value={m}>{m}</option>)}
             </select>
-            <select value={filterOutcome} onChange={e => setFilterOutcome(e.target.value)} className="tj-select">
+            <select className="tj-select" value={filterOutcome} onChange={e => setFilterOutcome(e.target.value)}>
               <option value="all">All Outcomes</option>
               <option value="win">Winners</option>
               <option value="loss">Losers</option>
             </select>
-            <input className="tj-input" placeholder="Filter by symbol…" value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)} />
-            <span className="tj-log-count">{filteredClosed.length} trades</span>
+            <input className="tj-input" placeholder="Filter by symbol…" value={filterSymbol} onChange={e => setFilterSymbol(e.target.value)} style={{ maxWidth: 180 }} />
+            <div className="tj-log-summary">
+              <span className="pos">{filteredClosed.filter(t => t.pnl > 0).length}W</span>
+              <span className="neg">{filteredClosed.filter(t => t.pnl <= 0).length}L</span>
+              <span>₹{fmt(filteredClosed.reduce((s, t) => s + t.pnl, 0))}</span>
+            </div>
           </div>
           {filteredClosed.length === 0 ? (
-            <div className="tj-empty-state">No closed trades found. Add trades in Smart Entry tab.</div>
+            <div className="tj-empty-page">No closed trades yet — add trades in the Smart Entry tab.</div>
           ) : (
             <div className="tj-table-wrap">
               <table className="tj-table">
                 <thead>
-                  <tr>
-                    <th>Symbol</th><th>Setup</th><th>Entry ₹</th><th>Exit ₹</th>
-                    <th>Entry Date</th><th>Exit Date</th><th>P&L ₹</th><th>%</th>
-                    <th>Size %</th><th>Tags</th><th>Actions</th>
-                  </tr>
+                  <tr><th>Symbol</th><th>Setup</th><th>Entry ₹</th><th>Exit ₹</th><th>Entry</th><th>Exit</th><th>P&L ₹</th><th>%</th><th>Size %</th><th>Tags</th><th></th></tr>
                 </thead>
                 <tbody>
                   {filteredClosed.map((t, i) => (
@@ -1035,15 +1094,15 @@ export function TradeJournalPanel() {
                       <td>{t.setupType || "—"}</td>
                       <td>{fmt(t.entryPx)}</td>
                       <td>{fmt(t.exitPx)}</td>
-                      <td>{t.entryDate}</td>
-                      <td>{t.exitDate}</td>
-                      <td className={t.pnl >= 0 ? "pos" : "neg"}>{fmtPnl(t.pnl)}</td>
+                      <td className="tj-date-cell">{t.entryDate}</td>
+                      <td className="tj-date-cell">{t.exitDate}</td>
+                      <td className={t.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(t.pnl)}</td>
                       <td className={t.perc >= 0 ? "pos" : "neg"}>{fmtPerc(t.perc)}</td>
-                      <td>{fmt(t.posSizePct)}%</td>
-                      <td>{(t.tags || []).map(tag => <span key={tag} className="tj-chip sm">{tag}</span>)}</td>
-                      <td>
-                        <button className="tj-kc-btn" onClick={() => openEditClosedModal(t.sellIndex, t.buyIndices)}>Edit</button>
-                        <button className="tj-kc-btn danger" style={{ marginLeft: 4 }} onClick={() => deleteTrade(t.sellIndex)}>Del</button>
+                      <td>{t.posSizePct.toFixed(1)}%</td>
+                      <td>{(t.tags || []).slice(0, 3).map(tag => <span key={tag} className="tj-chip xs">{tag}</span>)}</td>
+                      <td className="tj-action-cell">
+                        <button className="tj-action-btn ghost" onClick={() => openEditClosedModal(t.sellIndex, t.buyIndices)}>Edit</button>
+                        <button className="tj-action-btn danger" onClick={() => deleteTrade(t.sellIndex)}>×</button>
                       </td>
                     </tr>
                   ))}
@@ -1054,200 +1113,144 @@ export function TradeJournalPanel() {
         </div>
       )}
 
-      {/* ─── Tab 2: Open Positions ─── */}
+      {/* ── Tab 2: Open Positions ── */}
       {activeTab === 2 && (
-        <div className="tj-panel">
-          <div className="tj-kanban-header">
-            <div className="tj-kanban-stats">
-              <span>Invested: <strong>₹{fmt(totalInvested, 0)}</strong></span>
-              <span>Positions: <strong>{openPositions.length}</strong></span>
-              <span>Total Risk: <strong className="neg">₹{fmt(openPositions.reduce((s, p) => {
-                const sl = posMeta[p.symbol]?.sl || p.avgPx * 0.95;
-                return s + (p.avgPx - sl) * p.qty;
-              }, 0), 0)}</strong></span>
-              <span>Unrealized P&L: <strong className={openPositions.reduce((s, p) => {
-                const cmp = posMeta[p.symbol]?.cmp || p.avgPx;
-                return s + (cmp - p.avgPx) * p.qty;
-              }, 0) >= 0 ? "pos" : "neg"}>
-                {fmtPnl(openPositions.reduce((s, p) => {
-                  const cmp = posMeta[p.symbol]?.cmp || p.avgPx;
-                  return s + (cmp - p.avgPx) * p.qty;
-                }, 0))}
-              </strong></span>
+        <div className="tj-page">
+          <div className="tj-kanban-topbar">
+            <div className="tj-kanban-metrics">
+              <div className="tj-km"><span>Deployed</span><strong>₹{fmt(totalInvested, 0)}</strong></div>
+              <div className="tj-km"><span>Positions</span><strong>{openPositions.length}</strong></div>
+              <div className={`tj-km ${totalUnrealized >= 0 ? "pos" : "neg"}`}><span>Unrealized P&L</span><strong>{fmtPnl(totalUnrealized)}</strong></div>
+              <div className="tj-km neg"><span>Total Risk</span><strong>₹{fmt(totalRisk, 0)}</strong></div>
             </div>
-            <button className={`tj-btn-primary ${syncing ? "loading" : ""}`} onClick={syncPrices} disabled={syncing}>
-              {syncing ? "Syncing…" : "⟳ Sync Prices"}
-            </button>
+            <div className="tj-kanban-actions">
+              {syncStatus && <span className="tj-sync-status">{syncStatus}</span>}
+              <button className={`tj-btn primary ${syncing ? "loading" : ""}`} onClick={syncPrices} disabled={syncing}>
+                {syncing ? "Syncing…" : "⟳ Sync Prices"}
+              </button>
+            </div>
           </div>
           {openPositions.length === 0 ? (
-            <div className="tj-empty-state">No open positions. Add a Buy trade in Smart Entry.</div>
+            <div className="tj-empty-page">No open positions. Add a Buy trade in Smart Entry, or use the screener to send stocks here.</div>
           ) : (
             <div className="tj-kanban">
-              <KanbanCol cat="full" label="Full Size" />
-              <KanbanCol cat="half" label="Half Size" />
-              <KanbanCol cat="quarter" label="Pilot + Testing" />
+              <KanbanCol cat="full" label="Full Size" accent="full" />
+              <KanbanCol cat="half" label="Half Size" accent="half" />
+              <KanbanCol cat="quarter" label="Pilot + Testing" accent="quarter" />
             </div>
           )}
         </div>
       )}
 
-      {/* ─── Tab 3: Smart Entry ─── */}
+      {/* ── Tab 3: Smart Entry ── */}
       {activeTab === 3 && (
-        <div className="tj-panel">
-          <div className="tj-entry-grid">
-            {/* Left — Calculator + Tags */}
+        <div className="tj-page">
+          <div className="tj-entry-layout">
             <div className="tj-card">
-              <div className="tj-card-title">Quick Calculator</div>
-              <div className="tj-form-row">
-                <label>Account Size (₹)</label>
-                <input className="tj-input" type="number" value={calcCap} onChange={e => setCalcCap(e.target.value)} />
+              <div className="tj-card-hdr">Quick Calculator</div>
+              <div className="tj-form-stack">
+                <div className="tj-form-field"><label>Account Size (₹)</label><input className="tj-input" type="number" value={calcCap} onChange={e => setCalcCap(e.target.value)} /></div>
+                <div className="tj-form-field"><label>Risk % per Trade</label><input className="tj-input" type="number" step="0.1" value={calcRisk} onChange={e => setCalcRisk(e.target.value)} /></div>
+                <div className="tj-form-field"><label>Entry Price</label><input className="tj-input" type="number" step="any" value={calcEntry} onChange={e => setCalcEntry(e.target.value)} /></div>
+                <div className="tj-form-field"><label>Stop Loss Price</label><input className="tj-input" type="number" step="any" value={calcStop} onChange={e => setCalcStop(e.target.value)} /></div>
+                <button className="tj-btn primary" style={{ marginTop: 4 }} onClick={runCalc}>Calculate → Apply to Form</button>
+                {calcQtyRes && <div className="tj-calc-result">{calcQtyRes}</div>}
               </div>
-              <div className="tj-form-row">
-                <label>Risk % per Trade</label>
-                <input className="tj-input" type="number" value={calcRisk} onChange={e => setCalcRisk(e.target.value)} />
-              </div>
-              <div className="tj-form-row">
-                <label>Entry Price</label>
-                <input className="tj-input" type="number" value={calcEntry} onChange={e => setCalcEntry(e.target.value)} />
-              </div>
-              <div className="tj-form-row">
-                <label>Stop Loss Price</label>
-                <input className="tj-input" type="number" value={calcStop} onChange={e => setCalcStop(e.target.value)} />
-              </div>
-              <button className="tj-btn-primary" style={{ width: "100%", marginTop: 8 }} onClick={runCalc}>Calculate → Apply to Form</button>
-              {calcQtyRes && <div className="tj-calc-result">{calcQtyRes}</div>}
 
-              <div className="tj-card-title" style={{ marginTop: 20 }}>Tags & Habits</div>
-              <div className="tj-chip-container">
+              <div className="tj-card-hdr" style={{ marginTop: 24 }}>Tags & Habits</div>
+              <div className="tj-chip-row">
                 {PREDEFINED_TAGS.map(tag => (
-                  <div
-                    key={tag}
-                    className={`tj-chip clickable ${entryTags.has(tag) ? "selected" : ""}`}
-                    onClick={() => setEntryTags(prev => { const next = new Set(prev); next.has(tag) ? next.delete(tag) : next.add(tag); return next; })}
-                  >
+                  <div key={tag} className={`tj-chip clickable ${entryTags.has(tag) ? "selected" : ""}`}
+                    onClick={() => setEntryTags(prev => { const n = new Set(prev); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
                     {tag}
                   </div>
                 ))}
               </div>
               <input className="tj-input" style={{ marginTop: 8 }} placeholder="Custom tags (comma separated)…" value={customTagInput} onChange={e => setCustomTagInput(e.target.value)} />
-              <div className="tj-form-row" style={{ marginTop: 12 }}>
+              <div className="tj-form-field" style={{ marginTop: 12 }}>
                 <label>Trade Remarks</label>
-                <textarea className="tj-textarea" rows={3} placeholder="Notes on this trade…" value={entryRemarks} onChange={e => setEntryRemarks(e.target.value)} />
+                <textarea className="tj-textarea" rows={3} value={entryRemarks} onChange={e => setEntryRemarks(e.target.value)} placeholder="Notes about this trade…" />
               </div>
             </div>
 
-            {/* Right — Trade Form */}
             <div className="tj-card">
-              <div className="tj-card-title">Add Trade</div>
+              <div className="tj-card-hdr">Add Trade</div>
               <form onSubmit={handleAddTrade}>
                 <div className="tj-form-grid-2">
-                  <div className="tj-form-row">
-                    <label>Symbol</label>
-                    <input className="tj-input" required value={entrySymbol} onChange={e => setEntrySymbol(e.target.value)} placeholder="RELIANCE" />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Type</label>
+                  <div className="tj-form-field"><label>Symbol *</label><input className="tj-input" required value={entrySymbol} onChange={e => setEntrySymbol(e.target.value)} placeholder="RELIANCE" /></div>
+                  <div className="tj-form-field"><label>Type</label>
                     <select className="tj-select" value={entryType} onChange={e => setEntryType(e.target.value)}>
-                      <option value="Buy">Buy</option>
-                      <option value="Sell">Sell</option>
+                      <option value="Buy">Buy</option><option value="Sell">Sell</option>
                     </select>
                   </div>
-                  <div className="tj-form-row">
-                    <label>Quantity</label>
-                    <input className="tj-input" type="number" required value={entryQty} onChange={e => setEntryQty(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Price ₹</label>
-                    <input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Date</label>
-                    <input className="tj-input" type="date" required value={entryDate} onChange={e => setEntryDate(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
+                  <div className="tj-form-field"><label>Quantity *</label><input className="tj-input" type="number" required value={entryQty} onChange={e => setEntryQty(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Price ₹ *</label><input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Date *</label><input className="tj-input" type="date" required value={entryDate} onChange={e => setEntryDate(e.target.value)} /></div>
+                  <div className="tj-form-field">
                     <label>Setup</label>
                     <div style={{ display: "flex", gap: 6 }}>
                       <select className="tj-select" value={entrySetup} onChange={e => setEntrySetup(e.target.value)}>
                         {setups.map(s => <option key={s} value={s}>{s}</option>)}
                       </select>
-                      <button type="button" className="tj-btn-secondary" onClick={() => setModal({ type: "add-setup" })}>+</button>
+                      <button type="button" className="tj-btn secondary" onClick={() => setModal({ type: "add-setup" })}>+</button>
                     </div>
                   </div>
-                  <div className="tj-form-row">
-                    <label>Stop Loss ₹</label>
-                    <input className="tj-input" type="number" step="any" value={entrySL} onChange={e => setEntrySL(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Target ₹</label>
-                    <input className="tj-input" type="number" step="any" value={entryTarget} onChange={e => setEntryTarget(e.target.value)} />
-                  </div>
+                  <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={entrySL} onChange={e => setEntrySL(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Target ₹</label><input className="tj-input" type="number" step="any" value={entryTarget} onChange={e => setEntryTarget(e.target.value)} /></div>
                 </div>
 
-                <div className="tj-card-title" style={{ marginTop: 16 }}>VCP Specifics</div>
+                <div className="tj-card-hdr" style={{ marginTop: 18 }}>VCP Specifics</div>
                 <div className="tj-form-grid-3">
-                  <div className="tj-form-row">
-                    <label>Contractions (T)</label>
-                    <input className="tj-input" placeholder="e.g. 3T" value={vcpT} onChange={e => setVcpT(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Depth %</label>
-                    <input className="tj-input" placeholder="e.g. 3:1:0.5" value={vcpDepth} onChange={e => setVcpDepth(e.target.value)} />
-                  </div>
-                  <div className="tj-form-row">
-                    <label>Vol Dry-up</label>
-                    <input className="tj-input" placeholder="Yes/No" value={vcpVol} onChange={e => setVcpVol(e.target.value)} />
-                  </div>
+                  <div className="tj-form-field"><label>Contractions</label><input className="tj-input" placeholder="e.g. 3T" value={vcpT} onChange={e => setVcpT(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Depth %</label><input className="tj-input" placeholder="e.g. 3:1:0.5" value={vcpDepth} onChange={e => setVcpDepth(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Vol Dry-up</label><input className="tj-input" placeholder="Yes/No" value={vcpVol} onChange={e => setVcpVol(e.target.value)} /></div>
                 </div>
 
-                <div className="tj-form-row" style={{ marginTop: 12 }}>
+                <div className="tj-form-field" style={{ marginTop: 12 }}>
                   <label>Chart URL</label>
-                  <input className="tj-input" placeholder="https://…" value={entryImg} onChange={e => setEntryImg(e.target.value)} />
+                  <input className="tj-input" value={entryImg} onChange={e => setEntryImg(e.target.value)} placeholder="https://…" />
                 </div>
 
-                <div className="tj-card-title" style={{ marginTop: 16 }}>Pre-Trade Checklist</div>
+                <div className="tj-card-hdr" style={{ marginTop: 18 }}>Pre-Trade Checklist</div>
                 <div className="tj-checklist">
                   {CHECKLIST_ITEMS.map((item, i) => (
                     <label key={i} className="tj-check-row">
-                      <input type="checkbox" checked={checkboxes[i]} onChange={() => setCheckboxes(prev => prev.map((v, j) => j === i ? !v : v))} />
-                      <span>{item}</span>
+                      <input type="checkbox" checked={checkboxes[i]} onChange={() => setCheckboxes(p => p.map((v, j) => j === i ? !v : v))} />
+                      <span className={checkboxes[i] ? "checked" : ""}>{item}</span>
                     </label>
                   ))}
                 </div>
-                {checkboxes.some(c => !c) && (
-                  <div className="tj-checklist-warn">⚠ Complete all checklist items before entering</div>
-                )}
+                {checkboxes.some(c => !c) && <div className="tj-check-warn">⚠ Complete all checks before entering a trade</div>}
 
-                <button type="submit" className="tj-btn-primary" style={{ width: "100%", marginTop: 16 }}>
-                  Add Trade
-                </button>
+                <button type="submit" className="tj-btn primary" style={{ width: "100%", marginTop: 16 }}>Add Trade</button>
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── Tab 4: Trade Insights ─── */}
+      {/* ── Tab 4: Insights ── */}
       {activeTab === 4 && (
-        <div className="tj-panel">
-          <div className="tj-insights-row">
+        <div className="tj-page">
+          <div className="tj-insights-top">
             <div className="tj-card">
-              <div className="tj-card-title">Hold Time Metrics</div>
-              <div className="tj-stat-row"><span>Avg Hold (All)</span><strong>{fmt(avgHoldAll, 1)} days</strong></div>
-              <div className="tj-stat-row pos"><span>Avg Hold (Winners)</span><strong>{fmt(avgHoldWin, 1)} days</strong></div>
-              <div className="tj-stat-row neg"><span>Avg Hold (Losers)</span><strong>{fmt(avgHoldLoss, 1)} days</strong></div>
+              <div className="tj-card-hdr">Hold Time</div>
+              <div className="tj-metric-row"><span>All Trades</span><strong>{avgHoldAll.toFixed(1)} days</strong></div>
+              <div className="tj-metric-row pos"><span>Winners</span><strong>{avgHoldWin.toFixed(1)} days</strong></div>
+              <div className="tj-metric-row neg"><span>Losers</span><strong>{avgHoldLoss.toFixed(1)} days</strong></div>
             </div>
-
-            <div className="tj-card">
-              <div className="tj-card-title">Setup Performance</div>
-              {Object.keys(setupMap).length === 0 ? <div className="tj-empty">No data</div> : (
+            <div className="tj-card" style={{ flex: 2 }}>
+              <div className="tj-card-hdr">Setup Performance</div>
+              {Object.keys(setupMap).length === 0 ? <div className="tj-empty">No data yet</div> : (
                 <table className="tj-table">
                   <thead><tr><th>Setup</th><th>Wins</th><th>Losses</th><th>Win %</th><th>Net P&L</th></tr></thead>
                   <tbody>
-                    {Object.entries(setupMap).map(([s, d]) => (
+                    {Object.entries(setupMap).sort((a, b) => b[1].pnl - a[1].pnl).map(([s, d]) => (
                       <tr key={s}>
-                        <td>{s}</td><td className="pos">{d.wins}</td><td className="neg">{d.losses}</td>
-                        <td>{fmt((d.wins / (d.wins + d.losses)) * 100)}%</td>
-                        <td className={d.pnl >= 0 ? "pos" : "neg"}>{fmtPnl(d.pnl)}</td>
+                        <td><span className="tj-chip sm">{s}</span></td>
+                        <td className="pos">{d.wins}</td><td className="neg">{d.losses}</td>
+                        <td>{((d.wins / (d.wins + d.losses)) * 100).toFixed(0)}%</td>
+                        <td className={d.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(d.pnl)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1255,18 +1258,17 @@ export function TradeJournalPanel() {
               )}
             </div>
           </div>
-
           <div className="tj-card" style={{ marginTop: 16 }}>
-            <div className="tj-card-title">Tag & Habit Analysis</div>
-            {Object.keys(tagMap).length === 0 ? <div className="tj-empty">No tagged trades</div> : (
+            <div className="tj-card-hdr">Tag & Habit Analysis</div>
+            {Object.keys(tagMap).length === 0 ? <div className="tj-empty">No tagged trades yet</div> : (
               <table className="tj-table">
-                <thead><tr><th>Tag</th><th>Closed</th><th>Open</th><th>Realized P&L</th><th>Unrealized P&L</th></tr></thead>
+                <thead><tr><th>Tag</th><th>Closed Trades</th><th>Open Trades</th><th>Realized P&L</th><th>Unrealized P&L</th></tr></thead>
                 <tbody>
-                  {Object.entries(tagMap).map(([tag, d]) => (
+                  {Object.entries(tagMap).sort((a, b) => b[1].realizedPnl - a[1].realizedPnl).map(([tag, d]) => (
                     <tr key={tag}>
                       <td><span className="tj-chip sm">{tag}</span></td>
                       <td>{d.closedCount}</td><td>{d.openCount}</td>
-                      <td className={d.realizedPnl >= 0 ? "pos" : "neg"}>{fmtPnl(d.realizedPnl)}</td>
+                      <td className={d.realizedPnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(d.realizedPnl)}</td>
                       <td className={d.unrealizedPnl >= 0 ? "pos" : "neg"}>{fmtPnl(d.unrealizedPnl)}</td>
                     </tr>
                   ))}
@@ -1277,159 +1279,142 @@ export function TradeJournalPanel() {
         </div>
       )}
 
-      {/* ─── Tab 5: Position Sizer ─── */}
+      {/* ── Tab 5: Position Sizer ── */}
       {activeTab === 5 && (
-        <div className="tj-panel tj-sizer-panel">
+        <div className="tj-page tj-sizer-page">
           <div className="tj-card tj-sizer-card">
-            <div className="tj-card-title">Position Sizer</div>
+            <div className="tj-card-hdr">Position Sizer</div>
             <div className="tj-form-grid-2">
-              <div className="tj-form-row">
-                <label>Account Equity (₹)</label>
-                <input className="tj-input" type="number" value={sizerEquity} onChange={e => setSizerEquity(e.target.value)} />
-              </div>
-              <div className="tj-form-row">
-                <label>Risk per Trade (%)</label>
-                <input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} />
-              </div>
-              <div className="tj-form-row">
-                <label>Entry Price (₹)</label>
-                <input className="tj-input" type="number" step="any" value={sizerEntry} onChange={e => setSizerEntry(e.target.value)} />
-              </div>
-              <div className="tj-form-row">
-                <label>Stop Loss (%)</label>
-                <input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} />
-              </div>
+              <div className="tj-form-field"><label>Account Equity (₹)</label><input className="tj-input" type="number" value={sizerEquity} onChange={e => setSizerEquity(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Risk per Trade (%)</label><input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Entry Price (₹)</label><input className="tj-input" type="number" step="any" value={sizerEntry} onChange={e => setSizerEntry(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Stop Loss (%)</label><input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} /></div>
             </div>
-
             <div className="tj-sizer-results">
-              <div className="tj-sizer-result-card">
-                <div className="tj-sizer-result-label">Qty to Buy</div>
-                <div className="tj-sizer-result-value accent">{sizerResultQty}</div>
-              </div>
-              <div className="tj-sizer-result-card">
-                <div className="tj-sizer-result-label">SL Price</div>
-                <div className="tj-sizer-result-value neg">₹{fmt(sizerResultSL)}</div>
-              </div>
-              <div className="tj-sizer-result-card">
-                <div className="tj-sizer-result-label">Capital at Risk</div>
-                <div className="tj-sizer-result-value neg">₹{fmt(sizerResultRisk)}</div>
-              </div>
-              <div className="tj-sizer-result-card">
-                <div className="tj-sizer-result-label">Total Position Size</div>
-                <div className="tj-sizer-result-value">₹{fmt(sizerResultPos)}</div>
-              </div>
+              <div className="tj-sizer-box"><div className="tj-sizer-label">Qty to Buy</div><div className="tj-sizer-val accent">{sizerResultQty}</div></div>
+              <div className="tj-sizer-box"><div className="tj-sizer-label">SL Price</div><div className="tj-sizer-val neg">₹{fmt(sizerResultSL)}</div></div>
+              <div className="tj-sizer-box"><div className="tj-sizer-label">Capital at Risk</div><div className="tj-sizer-val neg">₹{fmt(sizerResultRisk)}</div></div>
+              <div className="tj-sizer-box"><div className="tj-sizer-label">Position Size</div><div className="tj-sizer-val">₹{fmt(sizerResultPos)}</div></div>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── Tab 6: News Radar ─── */}
+      {/* ── Tab 6: News Radar ── */}
       {activeTab === 6 && (
-        <div className="tj-panel">
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <div className="tj-card-title" style={{ margin: 0 }}>News Radar — Open Positions</div>
-            <button className={`tj-btn-primary ${fetchingNews ? "loading" : ""}`} onClick={fetchNews} disabled={fetchingNews}>
-              {fetchingNews ? "Fetching…" : "⟳ Refresh News"}
+        <div className="tj-page">
+          <div className="tj-news-topbar">
+            <span className="tj-card-hdr" style={{ margin: 0 }}>News for Open Positions</span>
+            <button className={`tj-btn primary ${fetchingNews ? "loading" : ""}`} onClick={fetchNews} disabled={fetchingNews}>
+              {fetchingNews ? "Fetching…" : "⟳ Refresh"}
             </button>
           </div>
-          {fetchingNews && <div className="tj-loading">Fetching latest headlines…</div>}
-          {!fetchingNews && newsItems.length === 0 && openPositions.length === 0 && (
-            <div className="tj-empty-state">No open positions. Add a Buy trade in Smart Entry.</div>
-          )}
-          {!fetchingNews && newsItems.length === 0 && openPositions.length > 0 && (
-            <div className="tj-empty-state">Click "Refresh News" to load headlines for your open positions.</div>
-          )}
-          {newsItems.map(n => (
-            <div key={n.symbol} className="tj-news-card">
-              <div className="tj-news-header">📰 {n.symbol}</div>
-              {n.items.length === 0 ? (
-                <div className="tj-news-empty">No recent news found.</div>
-              ) : (
-                n.items.map((item, i) => (
+          {fetchingNews && <div className="tj-loading-state">Fetching latest headlines…</div>}
+          {!fetchingNews && newsItems.length === 0 && openPositions.length === 0 && <div className="tj-empty-page">No open positions.</div>}
+          {!fetchingNews && newsItems.length === 0 && openPositions.length > 0 && <div className="tj-empty-page">Click Refresh to load headlines.</div>}
+          <div className="tj-news-grid">
+            {newsItems.map(n => (
+              <div key={n.symbol} className="tj-news-card">
+                <div className="tj-news-sym">📰 {n.symbol}</div>
+                {n.items.length === 0 ? <div className="tj-news-none">No recent news found.</div> : n.items.map((item, i) => (
                   <div key={i} className="tj-news-item">
                     <a href={item.link} target="_blank" rel="noopener noreferrer" className="tj-news-title">{item.title}</a>
                     <div className="tj-news-summary">{item.summary}</div>
                     <div className="tj-news-date">🕐 {item.date}</div>
                   </div>
-                ))
-              )}
-            </div>
-          ))}
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* ─── Modals ─── */}
+      {/* ── Modals ── */}
       {modal && (
-        <div className="tj-modal-overlay" onClick={e => { if ((e.target as HTMLElement).classList.contains("tj-modal-overlay")) setModal(null); }}>
+        <div className="tj-overlay" onClick={e => { if ((e.target as HTMLElement).classList.contains("tj-overlay")) { setModal(null); onAddRequestHandled?.(); } }}>
           <div className="tj-modal">
-            <button className="tj-modal-close" onClick={() => setModal(null)}>✕</button>
+            <button className="tj-modal-x" onClick={() => { setModal(null); onAddRequestHandled?.(); }}>✕</button>
 
-            {/* Close Position */}
+            {modal.type === "add-from-screener" && (
+              <>
+                <div className="tj-modal-title">Add to Journal: <span style={{ color: "var(--accent)" }}>{modal.symbol}</span></div>
+                <div className="tj-form-grid-2">
+                  <div className="tj-form-field"><label>Quantity *</label><input className="tj-input" type="number" autoFocus value={screenerQty} onChange={e => setScreenerQty(e.target.value)} placeholder="e.g. 50" /></div>
+                  <div className="tj-form-field"><label>Buy Price ₹ *</label><input className="tj-input" type="number" step="any" value={screenerPrice} onChange={e => setScreenerPrice(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={screenerSL} onChange={e => setScreenerSL(e.target.value)} placeholder="Optional" /></div>
+                  <div className="tj-form-field"><label>Date</label><input className="tj-input" type="date" value={screenerDate} onChange={e => setScreenerDate(e.target.value)} /></div>
+                </div>
+                <div className="tj-form-field" style={{ marginTop: 8 }}>
+                  <label>Setup Type</label>
+                  <select className="tj-select" value={screenerSetup} onChange={e => setScreenerSetup(e.target.value)}>
+                    {setups.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={submitFromScreener}>
+                  Add to Open Positions
+                </button>
+              </>
+            )}
+
             {modal.type === "close-pos" && (
               <>
                 <div className="tj-modal-title">Close Position: {modal.symbol}</div>
                 <div className="tj-form-grid-2">
-                  <div className="tj-form-row"><label>Exit Price</label><input className="tj-input" type="number" step="0.05" value={modalClosePrice} onChange={e => setModalClosePrice(e.target.value)} /></div>
-                  <div className="tj-form-row"><label>Exit Qty (max {modal.maxQty})</label><input className="tj-input" type="number" value={modalCloseQty} max={modal.maxQty} onChange={e => setModalCloseQty(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Exit Price</label><input className="tj-input" type="number" step="0.05" value={modalClosePrice} onChange={e => setModalClosePrice(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Qty (max {Math.round(modal.maxQty)})</label><input className="tj-input" type="number" value={modalCloseQty} max={modal.maxQty} onChange={e => setModalCloseQty(e.target.value)} /></div>
                 </div>
-                <div className="tj-form-row"><label>Date</label><input className="tj-input" type="date" value={modalCloseDate} onChange={e => setModalCloseDate(e.target.value)} /></div>
-                <button className="tj-btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={submitClose}>Confirm Close</button>
+                <div className="tj-form-field"><label>Date</label><input className="tj-input" type="date" value={modalCloseDate} onChange={e => setModalCloseDate(e.target.value)} /></div>
+                <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={submitClose}>Confirm Close</button>
               </>
             )}
 
-            {/* Edit Closed Trade */}
             {modal.type === "edit-closed" && (
               <>
                 <div className="tj-modal-title">Edit Closed Trade</div>
                 <div className="tj-form-grid-2">
-                  <div className="tj-form-row"><label>Avg Entry Price</label><input className="tj-input" type="number" step="any" value={modalEditEntryPx} onChange={e => setModalEditEntryPx(e.target.value)} /></div>
-                  <div className="tj-form-row"><label>Exit Price</label><input className="tj-input" type="number" step="any" value={modalEditExitPx} onChange={e => setModalEditExitPx(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Avg Entry Price</label><input className="tj-input" type="number" step="any" value={modalEditEntryPx} onChange={e => setModalEditEntryPx(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Exit Price</label><input className="tj-input" type="number" step="any" value={modalEditExitPx} onChange={e => setModalEditExitPx(e.target.value)} /></div>
                 </div>
-                <div className="tj-card-title" style={{ marginTop: 12 }}>Tags</div>
-                <div className="tj-chip-container">
+                <div className="tj-card-hdr" style={{ marginTop: 12 }}>Tags</div>
+                <div className="tj-chip-row">
                   {PREDEFINED_TAGS.map(tag => (
                     <div key={tag} className={`tj-chip clickable ${modalEditTags.has(tag) ? "selected" : ""}`}
-                      onClick={() => setModalEditTags(prev => { const n = new Set(prev); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
+                      onClick={() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
                       {tag}
                     </div>
                   ))}
                 </div>
                 <input className="tj-input" style={{ marginTop: 8 }} placeholder="Custom tags (comma separated)…" value={modalEditCustomTags} onChange={e => setModalEditCustomTags(e.target.value)} />
-                <div className="tj-form-row" style={{ marginTop: 8 }}><label>Remarks</label><textarea className="tj-textarea" rows={2} value={modalEditRemarks} onChange={e => setModalEditRemarks(e.target.value)} /></div>
-                <div className="tj-form-row"><label>Chart URL</label><input className="tj-input" value={modalEditImg} onChange={e => setModalEditImg(e.target.value)} /></div>
-                <button className="tj-btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={saveClosedEdits}>Save Changes</button>
+                <div className="tj-form-field" style={{ marginTop: 8 }}><label>Remarks</label><textarea className="tj-textarea" rows={2} value={modalEditRemarks} onChange={e => setModalEditRemarks(e.target.value)} /></div>
+                <div className="tj-form-field"><label>Chart URL</label><input className="tj-input" value={modalEditImg} onChange={e => setModalEditImg(e.target.value)} /></div>
+                <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={saveClosedEdits}>Save Changes</button>
               </>
             )}
 
-            {/* Review Open Position */}
             {modal.type === "edit-open" && (
               <>
                 <div className="tj-modal-title">Review Position: {modal.symbol}</div>
-                <div className="tj-form-grid-2">
-                  <div className="tj-form-row"><label>Avg Entry Price</label><input className="tj-input" type="number" step="any" value={modalOpenAvgPx} onChange={e => setModalOpenAvgPx(e.target.value)} /></div>
-                  <div className="tj-form-row"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={modalOpenSL} onChange={e => setModalOpenSL(e.target.value)} /></div>
-                </div>
-                <div className="tj-form-row"><label>Yahoo Finance Ticker</label><input className="tj-input" placeholder="e.g. RELIANCE.NS" value={modalOpenFetchTicker} onChange={e => setModalOpenFetchTicker(e.target.value)} /></div>
-                <div className="tj-card-title" style={{ marginTop: 12 }}>Tags</div>
-                <div className="tj-chip-container">
+                <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={modalOpenSL} onChange={e => setModalOpenSL(e.target.value)} /></div>
+                <div className="tj-form-field" style={{ marginTop: 8 }}><label>Yahoo Finance Ticker</label><input className="tj-input" placeholder="e.g. RELIANCE.NS" value={modalOpenFetchTicker} onChange={e => setModalOpenFetchTicker(e.target.value)} /></div>
+                <div className="tj-card-hdr" style={{ marginTop: 12 }}>Tags</div>
+                <div className="tj-chip-row">
                   {PREDEFINED_TAGS.map(tag => (
                     <div key={tag} className={`tj-chip clickable ${modalEditTags.has(tag) ? "selected" : ""}`}
-                      onClick={() => setModalEditTags(prev => { const n = new Set(prev); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
+                      onClick={() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
                       {tag}
                     </div>
                   ))}
                 </div>
-                <div className="tj-form-row" style={{ marginTop: 8 }}><label>Remarks</label><textarea className="tj-textarea" rows={2} value={modalEditRemarks} onChange={e => setModalEditRemarks(e.target.value)} /></div>
-                <button className="tj-btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={saveReviewEdits}>Save</button>
+                <div className="tj-form-field" style={{ marginTop: 8 }}><label>Remarks</label><textarea className="tj-textarea" rows={2} value={modalEditRemarks} onChange={e => setModalEditRemarks(e.target.value)} /></div>
+                <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={saveReviewEdits}>Save</button>
               </>
             )}
 
-            {/* Add Setup */}
             {modal.type === "add-setup" && (
               <>
-                <div className="tj-modal-title">Add New Setup Type</div>
-                <div className="tj-form-row"><label>Setup Name</label><input className="tj-input" value={newSetupName} onChange={e => setNewSetupName(e.target.value)} placeholder="e.g. Ascending Triangle" /></div>
-                <button className="tj-btn-primary" style={{ width: "100%", marginTop: 16 }} onClick={saveNewSetup}>Add Setup</button>
+                <div className="tj-modal-title">Add Setup Type</div>
+                <div className="tj-form-field"><label>Setup Name</label><input className="tj-input" autoFocus value={newSetupName} onChange={e => setNewSetupName(e.target.value)} placeholder="e.g. Ascending Triangle" /></div>
+                <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={saveNewSetup}>Add</button>
               </>
             )}
           </div>

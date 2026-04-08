@@ -1364,6 +1364,20 @@ export function saveWatchlistsState(
   });
 }
 
+// ─── Journal Data ─────────────────────────────────────────────────────────────
+
+export function getJournalData() {
+  return request<Record<string, unknown>>("/api/journal");
+}
+
+export function saveJournalData(payload: Record<string, unknown>) {
+  return request<Record<string, unknown>>("/api/journal", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
 // ─── AI Knowledge Base ────────────────────────────────────────────────────────
 
 export type KbEntry = {

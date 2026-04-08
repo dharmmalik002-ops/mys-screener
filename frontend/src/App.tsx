@@ -1390,6 +1390,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [isWatchlistsHydrated, setIsWatchlistsHydrated] = useState(false);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
+  const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
   const [activeSavedScannerId, setActiveSavedScannerId] = useState<string | null>(null);
@@ -4249,7 +4250,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <TradeJournalPanel />
+            <TradeJournalPanel
+              addRequest={journalAddRequest}
+              onAddRequestHandled={() => setJournalAddRequest(null)}
+            />
           </Suspense>
         ) : null}
         {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "ai-screener" && activePage !== "newsdesk" && activePage !== "journal" ? (
@@ -4497,6 +4501,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         sectorSummaries={scanSectorSummaries}
                         onPickSymbol={handlePickSymbol}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                        onRequestAddToJournal={(symbol, price) => { setJournalAddRequest({ symbol, suggestedPrice: price }); setActivePage("journal"); }}
                         selectedSymbol={selectedSymbol}
                         sortMode={resultSortMode}
                         onSortModeChange={setResultSortMode}

@@ -3669,6 +3669,32 @@ class DashboardService:
         path.write_text(json.dumps(state.model_dump(mode="json"), indent=2), encoding="utf-8")
         return state
 
+    def _journal_data_path(self) -> Path:
+        persistent_root = Path("/data")
+        if persistent_root.exists() and persistent_root.is_dir():
+            data_dir = persistent_root
+        else:
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                backend_root = Path(__file__).resolve().parents[2]
+            data_dir = Path(backend_root) / "data"
+        return data_dir / "journal_data.json"
+
+    def get_journal_data(self) -> dict:
+        path = self._journal_data_path()
+        if not path.exists():
+            return {}
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def save_journal_data(self, payload: dict) -> dict:
+        path = self._journal_data_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        return payload
+
     def _industry_group_file_paths(self) -> tuple[Path, Path, Path]:
         backend_root = getattr(self.provider, "backend_root", None)
         if backend_root is None:

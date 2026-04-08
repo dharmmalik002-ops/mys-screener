@@ -310,6 +310,15 @@ def build_router(service):
         normalized = payload.model_copy(update={"market": str(market or "india").strip().lower()})
         return market_service.save_watchlists_state(normalized)
 
+    # ── Journal Data (market-independent, shared across both markets) ──
+    @router.get("/journal")
+    async def get_journal():
+        return resolve_service("india").get_journal_data()
+
+    @router.put("/journal")
+    async def save_journal(payload: dict):
+        return resolve_service("india").save_journal_data(payload)
+
     @router.get("/chart/{symbol}", response_model=ChartResponse)
     async def chart(
         symbol: str,
