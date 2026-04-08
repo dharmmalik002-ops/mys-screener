@@ -3695,6 +3695,13 @@ class DashboardService:
         path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         return payload
 
+    def apply_bhavcopy_eod(self) -> dict:
+        """Delegate to provider.apply_bhavcopy_eod() if supported."""
+        fn = getattr(self.provider, "apply_bhavcopy_eod", None)
+        if callable(fn) and self._market_key() == "india":
+            return fn()
+        return {"status": "skipped", "reason": "provider_unsupported_or_not_india"}
+
     def _industry_group_file_paths(self) -> tuple[Path, Path, Path]:
         backend_root = getattr(self.provider, "backend_root", None)
         if backend_root is None:

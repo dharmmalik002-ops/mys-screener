@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Query
 
 from pydantic import BaseModel
@@ -232,6 +234,13 @@ def build_router(service):
     @router.post("/refresh")
     async def refresh_market_data(market: str = Query(default="india")):
         return await resolve_service(market).refresh_market_data()
+
+    @router.post("/apply-bhavcopy-eod")
+    async def apply_bhavcopy_eod():
+        """Apply today's NSE Bhavcopy (official EOD data) to all chart caches.
+        Call this after 6:30 PM IST on any trading day to get correct EOD prices.
+        """
+        return await asyncio.to_thread(resolve_service("india").apply_bhavcopy_eod)
 
     @router.get("/index-quotes", response_model=IndexQuotesResponse)
     async def index_quotes(

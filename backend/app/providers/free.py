@@ -1648,6 +1648,13 @@ class FreeMarketDataProvider:
         cache_covers_snapshot_session = self._chart_cache_covers_snapshot_session(symbol, timeframe, cached_bars)
         if cached_bars and cache_has_enough_data and cache_covers_snapshot_session and self._is_chart_cache_fresh(symbol, timeframe):
             return cached_bars
+        # When the market is closed and we have enough bars, try the Bhavcopy
+        # as the first refresh attempt — it gives correct IST dates + official
+        # NSE closing prices, fixing the "yesterday's date / wrong price" issue.
+        if timeframe == "1D" and cached_bars and cache_has_enough_data and not self._is_market_open_ist():
+            refreshed_bhav = await asyncio.to_thread(self._refresh_daily_chart_from_bhavcopy, symbol, bars)
+            if refreshed_bhav:
+                return refreshed_bhav
         if timeframe == "1D" and cached_bars and cache_has_enough_data:
             refreshed_bars = await asyncio.to_thread(self._refresh_cached_daily_chart_from_quote, symbol, bars)
             if refreshed_bars:
@@ -1712,6 +1719,71 @@ class FreeMarketDataProvider:
         if weekly_bars:
             self._write_chart_cache(symbol, "1W", weekly_bars)
         return weekly_bars[-bars:]
+
+    def _refresh_daily_chart_from_bhavcopy(self, symbol: str, bars: int) -> list[ChartBar]:
+        """Try to patch today's EOD bar from the NSE Bhavcopy and return refreshed bars.
+
+        This is the authoritative fix for Yahoo Finance serving yesterday's bar
+        with a UTC-shifted date.  Returns [] if bhavcopy is unavailable.
+        """
+        if self._default_exchange() != "NSE":
+            return []
+        now_ist = datetime.now(IST)
+        # Determine which trading session to look for
+        market_close_today = now_ist.replace(
+            hour=MARKET_CLOSE_MINUTES_IST // 60,
+            minute=MARKET_CLOSE_MINUTES_IST % 60,
+            second=0, microsecond=0,
+        )
+        # Only attempt if trading session is over
+        if now_ist < market_close_today:
+            return []
+        candidate = now_ist.date()
+        if candidate.weekday() >= 5:
+            days_back = candidate.weekday() - 4
+            candidate = candidate - timedelta(days=days_back)
+
+        # Check if we already have a bar for this date in cache (avoid re-download)
+        cached = self._read_chart_cache(symbol, "1D", max(bars, 520))
+        if cached:
+            last_bar_date = self._chart_bar_trade_date(cached[-1])
+            if last_bar_date == candidate:
+                return cached[-bars:]
+
+        bhavcopy = self._fetch_nse_bhavcopy(candidate)
+        if not bhavcopy:
+            # Try previous day (holiday / first publish delay)
+            prev = candidate - timedelta(days=1)
+            if prev.weekday() < 5:
+                bhavcopy = self._fetch_nse_bhavcopy(prev)
+                if bhavcopy:
+                    candidate = prev
+        if not bhavcopy:
+            return []
+
+        sym_upper = symbol.strip().upper()
+        ohlcv = bhavcopy.get(sym_upper)
+        if not ohlcv or not ohlcv.get("close"):
+            return []
+
+        if not cached:
+            return []
+
+        ts = int(datetime(candidate.year, candidate.month, candidate.day, tzinfo=timezone.utc).timestamp())
+        new_bar = ChartBar(
+            time=ts,
+            open=ohlcv.get("open") or ohlcv["close"],
+            high=ohlcv.get("high") or ohlcv["close"],
+            low=ohlcv.get("low") or ohlcv["close"],
+            close=ohlcv["close"],
+            volume=int(ohlcv.get("volume") or 0),
+        )
+        patched = [b for b in cached if b.time != ts]
+        patched.append(new_bar)
+        patched.sort(key=lambda b: b.time)
+        patched = patched[-520:]
+        self._write_chart_cache(symbol, "1D", patched)
+        return patched[-bars:]
 
     @staticmethod
     def _aggregate_weekly_chart_bars(daily_bars: list[ChartBar]) -> list[ChartBar]:
@@ -6076,6 +6148,190 @@ class FreeMarketDataProvider:
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
         return chart_bars
+
+    # ── NSE Bhavcopy (official EOD) ─────────────────────────────────────────
+
+    def _fetch_nse_bhavcopy(self, trade_date: date) -> dict[str, dict[str, float]]:
+        """Download the NSE CM Bhavcopy for *trade_date* (IST calendar date).
+        Returns {SYMBOL: {open, high, low, close, volume, prev_close}}.
+        Tries the new-format URL first (available ~6:30 PM IST) then falls
+        back to the legacy URL.  Returns {} on any failure.
+        """
+        date_str = trade_date.strftime("%Y%m%d")
+        mon_upper = trade_date.strftime("%b").upper()
+        dd = trade_date.strftime("%d")
+        year = trade_date.strftime("%Y")
+
+        urls = [
+            # New CM Bhavcopy format (introduced ~2022)
+            f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_str}_F_0000.csv.zip",
+            # Legacy format still mirrored on the archives
+            f"https://nsearchives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip",
+        ]
+
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Encoding": "gzip, deflate",
+            "Referer": "https://www.nseindia.com/",
+        }
+
+        for url in urls:
+            try:
+                resp = requests.get(url, headers=headers, timeout=20)
+                if resp.status_code != 200:
+                    continue
+                import zipfile
+                zf = zipfile.ZipFile(io.BytesIO(resp.content))
+                csv_name = zf.namelist()[0]
+                csv_bytes = zf.read(csv_name)
+                reader = csv.DictReader(io.StringIO(csv_bytes.decode("utf-8", errors="replace")))
+                rows = list(reader)
+                if not rows:
+                    continue
+
+                # Detect format by checking which column names are present
+                headers_found = set(rows[0].keys())
+                result: dict[str, dict[str, float]] = {}
+
+                if "TckrSymb" in headers_found:
+                    # New format
+                    for row in rows:
+                        if row.get("SctySrs", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
+                            continue
+                        sym = row.get("TckrSymb", "").strip()
+                        if not sym:
+                            continue
+                        try:
+                            result[sym] = {
+                                "open": float(row.get("OpnPric") or 0),
+                                "high": float(row.get("HghPric") or 0),
+                                "low": float(row.get("LwPric") or 0),
+                                "close": float(row.get("ClsPric") or 0),
+                                "volume": float(row.get("TtlTradgVol") or 0),
+                                "prev_close": float(row.get("PrvsClsgPric") or 0),
+                            }
+                        except (ValueError, TypeError):
+                            continue
+                elif "SYMBOL" in headers_found:
+                    # Legacy format
+                    for row in rows:
+                        if row.get("SERIES", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
+                            continue
+                        sym = row.get("SYMBOL", "").strip()
+                        if not sym:
+                            continue
+                        try:
+                            result[sym] = {
+                                "open": float(row.get("OPEN") or 0),
+                                "high": float(row.get("HIGH") or 0),
+                                "low": float(row.get("LOW") or 0),
+                                "close": float(row.get("CLOSE") or 0),
+                                "volume": float(row.get("TOTTRDQTY") or 0),
+                                "prev_close": float(row.get("PREVCLOSE") or 0),
+                            }
+                        except (ValueError, TypeError):
+                            continue
+
+                if result:
+                    return result
+            except Exception:
+                continue
+
+        return {}
+
+    def _apply_bhavcopy_to_chart_caches(
+        self, bhavcopy: dict[str, dict[str, float]], trade_date: date
+    ) -> int:
+        """Patch the last daily chart-cache bar for every symbol in the Bhavcopy
+        with the official NSE EOD values.  Returns the number of symbols updated.
+
+        A Bhavcopy bar is written at UTC midnight of the IST trade date (same
+        convention as the rest of the chart cache) so the downstream code that
+        reads bar timestamps will map it back to the correct IST calendar date.
+        """
+        updated = 0
+        ts = int(datetime(trade_date.year, trade_date.month, trade_date.day, tzinfo=timezone.utc).timestamp())
+
+        for symbol, ohlcv in bhavcopy.items():
+            close = ohlcv.get("close", 0)
+            if not close or close <= 0:
+                continue
+            try:
+                cached = self._read_chart_cache(symbol, "1D", 520)
+                if not cached:
+                    continue
+
+                new_bar = ChartBar(
+                    time=ts,
+                    open=ohlcv.get("open") or close,
+                    high=ohlcv.get("high") or close,
+                    low=ohlcv.get("low") or close,
+                    close=close,
+                    volume=int(ohlcv.get("volume") or 0),
+                )
+
+                # Replace bar at this timestamp or append
+                patched = [b for b in cached if b.time != ts]
+                patched.append(new_bar)
+                patched.sort(key=lambda b: b.time)
+
+                self._write_chart_cache(symbol, "1D", patched[-520:])
+                updated += 1
+            except Exception:
+                continue
+
+        return updated
+
+    def apply_bhavcopy_eod(self) -> dict[str, object]:
+        """Fetch the most-recent NSE Bhavcopy and apply it to all chart caches.
+
+        This is the authoritative fix for the "yesterday's date / today's price"
+        problem caused by Yahoo Finance's delayed and timezone-ambiguous EOD data.
+        Should be called once after 6:30 PM IST on every trading day.
+
+        Returns a status dict for logging.
+        """
+        now_ist = datetime.now(IST)
+        # Only applicable to India market
+        if self._default_exchange() != "NSE":
+            return {"status": "skipped", "reason": "not NSE market"}
+
+        # Determine the last trading date to fetch.  After market close we want
+        # today; before market close we want yesterday's official close.
+        market_close_today_ist = now_ist.replace(
+            hour=MARKET_CLOSE_MINUTES_IST // 60,
+            minute=MARKET_CLOSE_MINUTES_IST % 60,
+            second=0, microsecond=0,
+        )
+        candidate_date = now_ist.date() if now_ist > market_close_today_ist else (now_ist.date() - timedelta(days=1))
+
+        # Skip weekends
+        if candidate_date.weekday() >= 5:
+            # Walk back to Friday
+            days_back = candidate_date.weekday() - 4
+            candidate_date = candidate_date - timedelta(days=days_back)
+
+        # Skip known India holidays (approximate — the zip simply won't exist on holidays)
+        bhavcopy = self._fetch_nse_bhavcopy(candidate_date)
+        if not bhavcopy:
+            # Try the day before (handles holidays / newly listed exchanges)
+            prev = candidate_date - timedelta(days=1)
+            if prev.weekday() < 5:
+                bhavcopy = self._fetch_nse_bhavcopy(prev)
+                if bhavcopy:
+                    candidate_date = prev
+
+        if not bhavcopy:
+            return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
+
+        updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, candidate_date)
+        return {
+            "status": "ok",
+            "date": candidate_date.isoformat(),
+            "symbols_in_bhavcopy": len(bhavcopy),
+            "chart_caches_updated": updated,
+        }
 
     def _download_nse_index_chart_history(self, symbol: str) -> pd.DataFrame:
         index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
