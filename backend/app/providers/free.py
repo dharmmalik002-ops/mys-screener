@@ -889,19 +889,36 @@ class FreeMarketDataProvider:
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return
 
-        patched_bars = list(cached_bars)
-        snapshot_date = self._chart_bar_trade_date(snapshot_bar)
-        last_bar_date = self._chart_bar_trade_date(patched_bars[-1])
-        if last_bar_date == snapshot_date:
-            patched_bars[-1] = snapshot_bar
-        else:
-            patched_bars.append(snapshot_bar)
+        new_ts = snapshot_bar.time
+        # Also remove any old-style snapshot bar stored at the IST session date as a
+        # UTC midnight timestamp (the pre-ada5197 convention).  Without this, a cache
+        # that was written before the fix will contain a bar at e.g. April-8 00:00 UTC
+        # while the new snapshot bar sits at April-7 00:00 UTC — causing the append
+        # below to insert bars out of chronological order.
+        snapshot_session_date = self._snapshot_session_date(symbol)
+        old_ts: int | None = None
+        if snapshot_session_date is not None:
+            old_ts = int(
+                datetime.combine(snapshot_session_date, datetime.min.time(), tzinfo=timezone.utc).timestamp()
+            )
+
+        patched_bars = [
+            bar for bar in cached_bars
+            if bar.time != new_ts and (old_ts is None or bar.time != old_ts)
+        ]
+        patched_bars.append(snapshot_bar)
+        patched_bars.sort(key=lambda b: b.time)
 
         self._write_chart_cache(symbol, "1D", patched_bars[-520:])
 
-    def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
+    def _apply_session_bar_to_daily_history(
+        self, history: pd.DataFrame, bar: ChartBar, session_date: date | None = None
+    ) -> pd.DataFrame:
         patched = history.copy()
-        trade_date = self._chart_bar_trade_date(bar)
+        # Use the explicitly-supplied IST session date when available.  Deriving the
+        # trade date from bar.time alone loses the IST→UTC day-shift (e.g. April 8 IST
+        # session stored at April 7 00:00 UTC would give trade_date=April 7, not April 8).
+        trade_date = session_date if session_date is not None else self._chart_bar_trade_date(bar)
         row_payload = {
             "Open": float(bar.open),
             "High": float(bar.high),
@@ -931,7 +948,8 @@ class FreeMarketDataProvider:
         snapshot_bar = self._snapshot_session_bar(symbol)
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return history
-        return self._apply_session_bar_to_daily_history(history, snapshot_bar)
+        session_date = self._snapshot_session_date(symbol)
+        return self._apply_session_bar_to_daily_history(history, snapshot_bar, session_date=session_date)
 
     def _sanitize_live_quote_ohlc(
         self,
