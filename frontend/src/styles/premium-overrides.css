@@ -1,0 +1,779 @@
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PREMIUM UI OVERHAUL — Enhanced Visual Language
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Mono font for all financial data ──────────────────────────────────── */
+.positive-text,
+.negative-text,
+.scan-row strong,
+.home-stock-row strong,
+.metric-card strong,
+.home-macro-price,
+.home-macro-price strong,
+.mf-rotation-pct,
+.mf-rotation-main-value,
+.mf-rotation-stock-return,
+.chart-grid-card-foot strong,
+.pe-stat strong,
+.home-group-metrics strong,
+.sector-heatmap-card-return,
+.market-health-score-value,
+.adv-dec-stat strong,
+.chart-panel .panel-header h2 {
+  font-family: var(--font-mono) !important;
+}
+
+/* ── Vivid, distinct positive / negative colors ───────────────────────── */
+.positive-text {
+  color: #22d98a;
+  text-shadow: 0 0 14px rgba(34, 217, 138, 0.28);
+}
+
+.negative-text {
+  color: #ff6b6b;
+  text-shadow: 0 0 14px rgba(255, 107, 107, 0.26);
+}
+
+/* ── Premium change % chips / badges ──────────────────────────────────── */
+.chip-positive,
+.badge-positive {
+  background: rgba(34, 217, 138, 0.14) !important;
+  color: #22d98a !important;
+  border-color: rgba(34, 217, 138, 0.28) !important;
+}
+
+.chip-negative,
+.badge-negative {
+  background: rgba(255, 107, 107, 0.14) !important;
+  color: #ff6b6b !important;
+  border-color: rgba(255, 107, 107, 0.28) !important;
+}
+
+/* ── Elevated scan rows ─────────────────────────────────────────────────── */
+.scan-row {
+  padding: 11px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-left: 3px solid transparent;
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.028), rgba(255,255,255,0.004)),
+    rgba(14, 22, 42, 0.55);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+}
+
+.scan-row:hover {
+  background:
+    linear-gradient(180deg, rgba(79, 140, 255, 0.07), rgba(79, 140, 255, 0.02)),
+    rgba(16, 26, 52, 0.82);
+  border-color: rgba(79, 140, 255, 0.22);
+  border-left-color: rgba(79, 140, 255, 0.65);
+  transform: translateY(-1px);
+  box-shadow:
+    0 6px 28px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(79, 140, 255, 0.08) inset;
+}
+
+.scan-row.active {
+  border-color: rgba(79, 140, 255, 0.32);
+  border-left-color: #4f8cff;
+  background:
+    linear-gradient(180deg, rgba(79, 140, 255, 0.10), rgba(79, 140, 255, 0.04)),
+    rgba(16, 26, 52, 0.85);
+  box-shadow:
+    0 8px 32px rgba(79, 140, 255, 0.14),
+    0 0 0 1px rgba(79, 140, 255, 0.10) inset;
+}
+
+/* ── Premium panel container ─────────────────────────────────────────── */
+.panel {
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  border-radius: var(--radius-xl);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.040), rgba(255, 255, 255, 0.008)),
+    rgba(12, 20, 40, 0.72);
+  backdrop-filter: blur(24px) saturate(140%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.072),
+    0 20px 60px rgba(0, 0, 0, 0.42),
+    0 1px 0 rgba(255, 255, 255, 0.028);
+  transition: box-shadow 260ms ease, border-color 260ms ease;
+}
+
+.panel:hover {
+  border-color: rgba(255, 255, 255, 0.085);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.082),
+    0 24px 72px rgba(0, 0, 0, 0.46);
+}
+
+/* ── Panel header with gradient text ──────────────────────────────────── */
+.panel h2 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.018em;
+  background: linear-gradient(120deg, #edf2fa 0%, rgba(237, 242, 250, 0.72) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.panel-kicker {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  opacity: 0.82;
+}
+
+/* ── Top nav — stronger glass effect ──────────────────────────────────── */
+.top-nav {
+  background:
+    linear-gradient(180deg, rgba(8, 12, 24, 0.92), rgba(8, 12, 24, 0.78));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.055);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.038),
+    0 12px 48px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(28px) saturate(160%);
+}
+
+/* ── Brand mark — deeper gradient ─────────────────────────────────────── */
+.brand-mark {
+  background: linear-gradient(145deg, #5c9fff, #3a5fe8, #6c3fe8);
+  box-shadow:
+    0 4px 16px rgba(79, 140, 255, 0.36),
+    0 1px 0 rgba(255, 255, 255, 0.18) inset;
+}
+
+/* ── Primary button / active pill — premium gradient ─────────────────── */
+.nav-button.primary,
+.timeframe-pill.active,
+.scanner-tab.active,
+.indicator-pill.active,
+.tool-pill.active {
+  background: linear-gradient(135deg, #5c9fff 0%, #3a5fe8 60%, #6c3fe8 100%);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow:
+    0 0 0 1px rgba(79, 140, 255, 0.18),
+    0 8px 28px rgba(79, 140, 255, 0.30),
+    0 0 40px rgba(79, 140, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.18);
+}
+
+/* ── Metric cards — bigger numbers, stronger presence ────────────────── */
+.metric-card {
+  border: 1px solid rgba(255, 255, 255, 0.068);
+  border-left: 3px solid rgba(79, 140, 255, 0.5);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.042), rgba(255, 255, 255, 0.006)),
+    rgba(14, 22, 42, 0.62);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.metric-card:hover {
+  border-left-color: #4f8cff;
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 36px rgba(79, 140, 255, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.085);
+  background:
+    linear-gradient(160deg, rgba(79, 140, 255, 0.068), rgba(79, 140, 255, 0.014)),
+    rgba(14, 22, 42, 0.78);
+}
+
+.metric-card strong {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ── Home stock rows — premium card look ─────────────────────────────── */
+.home-stock-row {
+  border: 1px solid rgba(255, 255, 255, 0.058);
+  border-radius: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.032), rgba(255, 255, 255, 0.004)),
+    rgba(12, 20, 40, 0.58);
+  backdrop-filter: blur(14px);
+  transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.home-stock-row:hover {
+  border-color: rgba(79, 140, 255, 0.24);
+  transform: translateY(-2px);
+  box-shadow:
+    0 8px 30px rgba(0, 0, 0, 0.28),
+    0 0 0 1px rgba(79, 140, 255, 0.08) inset;
+  background:
+    linear-gradient(180deg, rgba(79, 140, 255, 0.058), rgba(79, 140, 255, 0.012)),
+    rgba(14, 22, 48, 0.75);
+}
+
+/* ── Home macro / index cards ────────────────────────────────────────── */
+.home-macro-card {
+  border: 1px solid rgba(255, 255, 255, 0.062);
+  border-radius: 16px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.038), rgba(255,255,255,0.006)),
+    rgba(12, 20, 40, 0.65);
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.048);
+  transition: border-color 180ms ease, background 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.home-macro-card:hover {
+  border-color: rgba(79, 140, 255, 0.32);
+  transform: translateY(-2px);
+  background:
+    linear-gradient(160deg, rgba(79, 140, 255, 0.065), rgba(79, 140, 255, 0.014)),
+    rgba(14, 22, 48, 0.80);
+  box-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.065);
+}
+
+.home-macro-price {
+  font-family: var(--font-mono);
+  font-size: 1.0rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Sector heatmap cards — richer ────────────────────────────────────── */
+.sector-heatmap-card {
+  border-radius: 18px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 4px 16px rgba(0,0,0,0.22);
+}
+
+.sector-heatmap-card:hover {
+  transform: translateY(-3px) scale(1.025);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 12px 36px rgba(0, 0, 0, 0.38);
+}
+
+.sector-heatmap-card-return {
+  font-family: var(--font-mono);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+/* ── Home hero card — deeper, more premium ──────────────────────────── */
+.home-hero-card {
+  border: 1px solid rgba(255, 255, 255, 0.072);
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(79, 140, 255, 0.12), transparent 44%),
+    radial-gradient(ellipse at 80% 100%, rgba(34, 217, 138, 0.06), transparent 44%),
+    linear-gradient(160deg, rgba(255,255,255,0.045), rgba(255,255,255,0.006)),
+    rgba(10, 16, 34, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 32px 80px rgba(0, 0, 0, 0.54);
+  backdrop-filter: blur(32px) saturate(140%);
+}
+
+/* ── Market toggle — premium pill ────────────────────────────────────── */
+.home-market-toggle {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(8, 12, 28, 0.72);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  padding: 5px;
+  gap: 4px;
+}
+
+.home-market-toggle-btn.active {
+  background: linear-gradient(135deg, #4f8cff 0%, #2d63e0 50%, #22d98a 100%);
+  color: #030710;
+  font-weight: 800;
+  box-shadow:
+    0 8px 24px rgba(79, 140, 255, 0.36),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* ── Skeleton shimmer — luxury shimmer ───────────────────────────────── */
+.skeleton-block,
+.skeleton-row {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.04) 0%,
+    rgba(255, 255, 255, 0.10) 40%,
+    rgba(255, 255, 255, 0.04) 80%
+  );
+  background-size: 400% 100%;
+  animation: skeletonPulse 1.8s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonPulse {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+/* ── Group cards — richer ────────────────────────────────────────────── */
+.home-group-card {
+  border: 1px solid rgba(255, 255, 255, 0.062);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top left, rgba(79, 140, 255, 0.10), transparent 42%),
+    linear-gradient(180deg, rgba(255,255,255,0.038), rgba(255,255,255,0.006)),
+    rgba(12, 22, 44, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.056);
+}
+
+.home-group-card:hover,
+.home-group-card:focus-visible {
+  border-color: rgba(79, 140, 255, 0.30);
+  transform: translateY(-2px);
+  box-shadow:
+    0 12px 40px rgba(79, 140, 255, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.075);
+}
+
+/* ── Screener sidebar nav buttons — more premium ─────────────────────── */
+.screener-nav-button {
+  border: 1px solid rgba(79, 140, 255, 0.20);
+  border-radius: 18px;
+  background:
+    linear-gradient(160deg, rgba(79, 140, 255, 0.08), rgba(12, 22, 50, 0.60)),
+    rgba(12, 22, 44, 0.65);
+  backdrop-filter: blur(20px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.065);
+}
+
+.screener-nav-button:hover {
+  border-color: rgba(79, 140, 255, 0.36);
+  background:
+    linear-gradient(160deg, rgba(79, 140, 255, 0.14), rgba(12, 22, 50, 0.70)),
+    rgba(12, 22, 44, 0.75);
+  transform: translateY(-1px);
+  box-shadow:
+    0 8px 24px rgba(79, 140, 255, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.075);
+}
+
+.screener-nav-button.active {
+  border-color: rgba(79, 140, 255, 0.60);
+  background:
+    linear-gradient(145deg, rgba(79, 140, 255, 0.22), rgba(45, 99, 224, 0.15)),
+    rgba(12, 22, 52, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.10),
+    0 16px 36px rgba(79, 140, 255, 0.20);
+}
+
+/* ── Ticker ribbon — richer ──────────────────────────────────────────── */
+.ticker-ribbon {
+  background:
+    linear-gradient(90deg, rgba(79, 140, 255, 0.06), transparent 25%, transparent 75%, rgba(79, 140, 255, 0.06)),
+    rgba(8, 12, 22, 0.88);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.048);
+}
+
+.ticker-ribbon-item strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* ── Nav search input — premium glass ────────────────────────────────── */
+.nav-search input {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(12, 18, 36, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045), 0 2px 8px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(20px);
+}
+
+.nav-search input:focus {
+  border-color: rgba(79, 140, 255, 0.48);
+  box-shadow:
+    0 0 0 3px rgba(79, 140, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  outline: none;
+}
+
+/* ── Landing hero ─────────────────────────────────────────────────────── */
+.landing-hero {
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  background:
+    radial-gradient(ellipse at 25% 0%, rgba(79, 140, 255, 0.13), transparent 44%),
+    linear-gradient(160deg, rgba(255,255,255,0.040), rgba(255,255,255,0.004)),
+    rgba(10, 16, 34, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.072),
+    0 28px 72px rgba(0, 0, 0, 0.52);
+  backdrop-filter: blur(28px);
+}
+
+.landing-copy h2 {
+  background: linear-gradient(130deg, #edf2fa 0%, rgba(149, 182, 255, 0.88) 60%, #22d98a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.home-market-copy h2,
+.home-hero-copy h2 {
+  background: linear-gradient(130deg, #edf2fa 0%, rgba(149, 182, 255, 0.85) 55%, #22d98a 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Status dot — more prominent ─────────────────────────────────────── */
+.status-dot {
+  width: 9px;
+  height: 9px;
+  background: #22d98a;
+  box-shadow: 0 0 16px rgba(34, 217, 138, 0.55);
+}
+
+/* ── Scrollbar — more premium ─────────────────────────────────────────── */
+::-webkit-scrollbar-thumb {
+  background: rgba(79, 140, 255, 0.22);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(79, 140, 255, 0.40);
+}
+
+/* ── Improved nav button ──────────────────────────────────────────────── */
+.nav-button {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(12, 18, 36, 0.65);
+  backdrop-filter: blur(12px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.042);
+}
+
+.nav-button:hover {
+  border-color: rgba(79, 140, 255, 0.30);
+  background: rgba(16, 24, 52, 0.80);
+  box-shadow:
+    0 4px 20px rgba(79, 140, 255, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.052);
+  transform: translateY(-2px);
+}
+
+/* ── Chart-grid stat chips ────────────────────────────────────────────── */
+.chart-grid-badge.positive {
+  background: rgba(34, 217, 138, 0.16);
+  color: #22d98a;
+  border: 1px solid rgba(34, 217, 138, 0.24);
+}
+
+.chart-grid-badge.negative {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.24);
+}
+
+/* ── Sparklines — more vivid green/red ───────────────────────────────── */
+.chart-grid-sparkline.positive .chart-grid-sparkline-area {
+  fill: rgba(34, 217, 138, 0.20);
+}
+.chart-grid-sparkline.positive .chart-grid-sparkline-line {
+  stroke: #22d98a;
+}
+.chart-grid-sparkline.negative .chart-grid-sparkline-area {
+  fill: rgba(255, 107, 107, 0.18);
+}
+.chart-grid-sparkline.negative .chart-grid-sparkline-line {
+  stroke: #ff6b6b;
+}
+
+/* ── Candles ─────────────────────────────────────────────────────────── */
+.chart-grid-candle.positive rect,
+.chart-grid-candle.positive line,
+.chart-grid-bar.positive line {
+  fill: #22d98a;
+  stroke: #22d98a;
+}
+.chart-grid-candle.negative rect,
+.chart-grid-candle.negative line,
+.chart-grid-bar.negative line {
+  fill: #ff6b6b;
+  stroke: #ff6b6b;
+}
+
+/* ── MF bull/bear badges ─────────────────────────────────────────────── */
+.mf-badge--bull {
+  background: rgba(34, 217, 138, 0.16);
+  color: #22d98a;
+  border: 1px solid rgba(34, 217, 138, 0.30);
+}
+.mf-badge--bear {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.28);
+}
+
+/* ── Sector card backgrounds ─────────────────────────────────────────── */
+.mf-sector-card--bullish {
+  border-color: rgba(34, 217, 138, 0.32);
+  background: rgba(10, 42, 22, 0.42);
+}
+.mf-sector-card--bearish {
+  border-color: rgba(255, 107, 107, 0.32);
+  background: rgba(42, 10, 10, 0.42);
+}
+
+/* ── PE modal ────────────────────────────────────────────────────────── */
+.pe-modal {
+  border: 1px solid rgba(255, 255, 255, 0.072);
+  background: rgba(10, 16, 32, 0.96);
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.64);
+  backdrop-filter: blur(32px);
+}
+
+/* ── Chart grid modal ────────────────────────────────────────────────── */
+.chart-grid-modal {
+  border: 1px solid rgba(255, 255, 255, 0.068);
+  background:
+    radial-gradient(circle at top left, rgba(79, 140, 255, 0.10), transparent 32%),
+    linear-gradient(180deg, rgba(14, 20, 36, 0.97), rgba(10, 14, 26, 0.99));
+  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.58);
+}
+
+/* ── Screener sidebar panel ──────────────────────────────────────────── */
+.screener-sidebar-panel {
+  background:
+    radial-gradient(circle at top left, rgba(79, 140, 255, 0.22), transparent 40%),
+    radial-gradient(circle at 85% 15%, rgba(45, 99, 224, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(12, 20, 42, 0.92), rgba(10, 16, 34, 0.82));
+  border: 1px solid rgba(255, 255, 255, 0.065);
+}
+
+/* ── Home heatmap section heads — gradient text ──────────────────────── */
+.home-heatmap-section-head strong {
+  background: linear-gradient(120deg, #edf2fa 0%, rgba(149, 182, 255, 0.80) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Scan rows animation ─────────────────────────────────────────────── */
+.scan-table-body .scan-row {
+  animation: scanRowIn 0.28s ease-out both;
+}
+@keyframes scanRowIn {
+  from { opacity: 0; transform: translateX(-5px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+/* ── Group card animations ───────────────────────────────────────────── */
+.home-group-card {
+  animation: homeCardIn 0.42s ease-out both;
+}
+.home-group-card:nth-child(1) { animation-delay: 0ms; }
+.home-group-card:nth-child(2) { animation-delay: 45ms; }
+.home-group-card:nth-child(3) { animation-delay: 90ms; }
+.home-group-card:nth-child(4) { animation-delay: 135ms; }
+
+@keyframes homeCardIn {
+  from { opacity: 0; transform: translateY(10px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Chart grid card ─────────────────────────────────────────────────── */
+.chart-grid-card {
+  border: 1px solid rgba(255, 255, 255, 0.065);
+  background:
+    linear-gradient(180deg, rgba(14, 18, 30, 0.96), rgba(10, 14, 24, 0.99)),
+    radial-gradient(circle at top left, rgba(79, 140, 255, 0.07), transparent 38%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+.chart-grid-card.clickable:hover {
+  border-color: rgba(79, 140, 255, 0.25);
+  box-shadow: 0 16px 44px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.055);
+  transform: translateY(-2px);
+}
+
+/* ── MF stock metric numbers in mono ────────────────────────────────── */
+.mf-stock-metric-card strong,
+.mf-key-metric-item strong,
+.mf-rotation-pct,
+.mf-rotation-main-value {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+/* ── Screener saved items ────────────────────────────────────────────── */
+.screener-saved-item {
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  background: rgba(12, 20, 42, 0.55);
+  backdrop-filter: blur(12px);
+}
+.screener-saved-item.active {
+  border-color: rgba(79, 140, 255, 0.38);
+  background: rgba(79, 140, 255, 0.08);
+}
+
+/* ── Mode switch ─────────────────────────────────────────────────────── */
+.mode-switch {
+  border: 1px solid rgba(255, 255, 255, 0.075);
+  background: rgba(8, 12, 24, 0.70);
+  backdrop-filter: blur(14px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.045);
+}
+
+/* ── MF week btn active ──────────────────────────────────────────────── */
+.mf-week-btn.active {
+  background: rgba(79, 140, 255, 0.18);
+  color: #7ab4ff;
+  font-weight: 700;
+}
+
+/* ── MF rotation row active ──────────────────────────────────────────── */
+.mf-rotation-row.active {
+  border-color: rgba(79, 140, 255, 0.42);
+  background: rgba(79, 140, 255, 0.08);
+}
+
+/* ── Focus ring ──────────────────────────────────────────────────────── */
+:focus-visible {
+  outline: 2px solid rgba(79, 140, 255, 0.65);
+  outline-offset: 3px;
+}
+
+/* ── Light theme overrides ────────────────────────────────────────────── */
+:root[data-theme="light"] .positive-text {
+  color: #16a34a;
+  text-shadow: none;
+}
+
+:root[data-theme="light"] .negative-text {
+  color: #dc2626;
+  text-shadow: none;
+}
+
+:root[data-theme="light"] .landing-copy h2,
+:root[data-theme="light"] .home-market-copy h2,
+:root[data-theme="light"] .home-hero-copy h2,
+:root[data-theme="light"] .home-heatmap-section-head strong,
+:root[data-theme="light"] .panel h2 {
+  background: linear-gradient(130deg, #0f172a 0%, #1d4ed8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+:root[data-theme="light"] .scan-row {
+  background: rgba(255, 255, 255, 0.82);
+  border-color: rgba(71, 85, 105, 0.12);
+}
+
+:root[data-theme="light"] .scan-row:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-left-color: #2563eb;
+  box-shadow: 0 4px 20px rgba(37, 99, 235, 0.10);
+}
+
+:root[data-theme="light"] .scan-row.active {
+  background: rgba(37, 99, 235, 0.06);
+  border-color: rgba(37, 99, 235, 0.28);
+  border-left-color: #2563eb;
+}
+
+:root[data-theme="light"] .panel {
+  background: rgba(255, 255, 255, 0.88);
+  border-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.07);
+}
+
+:root[data-theme="light"] .panel h2 {
+  background: linear-gradient(120deg, #0f172a 0%, #334155 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+:root[data-theme="light"] .home-hero-card {
+  background: rgba(255, 255, 255, 0.90);
+  border-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 4px 24px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="light"] .top-nav {
+  background: rgba(240, 244, 250, 0.94);
+  border-bottom-color: rgba(71, 85, 105, 0.12);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.80), 0 8px 32px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme="light"] .home-macro-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(71, 85, 105, 0.11);
+}
+
+:root[data-theme="light"] .home-macro-card:hover {
+  background: rgba(255, 255, 255, 0.96);
+  border-color: rgba(37, 99, 235, 0.30);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.08);
+}
+
+:root[data-theme="light"] .skeleton-block,
+:root[data-theme="light"] .skeleton-row {
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.10) 40%,
+    rgba(0, 0, 0, 0.05) 80%
+  );
+  background-size: 400% 100%;
+  animation: skeletonPulse 1.8s ease-in-out infinite;
+}
+
+:root[data-theme="light"] .mf-badge--bull {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+:root[data-theme="light"] .mf-badge--bear {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+:root[data-theme="light"] .chart-grid-badge.positive {
+  background: rgba(22, 163, 74, 0.12);
+  color: #16a34a;
+}
+:root[data-theme="light"] .chart-grid-badge.negative {
+  background: rgba(220, 38, 38, 0.10);
+  color: #dc2626;
+}
+:root[data-theme="light"] .nav-button {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(71, 85, 105, 0.15);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.06);
+}
+:root[data-theme="light"] .nav-button:hover {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(37, 99, 235, 0.28);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.10);
+}
+:root[data-theme="light"] .ticker-ribbon {
+  background: rgba(240, 244, 250, 0.92);
+  border-bottom-color: rgba(71, 85, 105, 0.10);
+}
+:root[data-theme="light"] .mode-switch {
+  background: rgba(255, 255, 255, 0.80);
+  border-color: rgba(71, 85, 105, 0.15);
+}
+:root[data-theme="light"] .screener-sidebar-panel {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 40%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.90), rgba(248, 250, 252, 0.82));
+  border-color: rgba(71, 85, 105, 0.12);
+}
+:root[data-theme="light"] .home-market-toggle {
+  background: rgba(255, 255, 255, 0.75);
+  border-color: rgba(71, 85, 105, 0.14);
+}
+:root[data-theme="light"] .home-market-toggle-btn.active {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.28);
+}
