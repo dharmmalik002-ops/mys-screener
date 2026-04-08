@@ -690,6 +690,31 @@ def build_router(service):
         categories = sorted({i.get("category", "General") for i in items})
         return {"items": items, "count": len(items), "categories": categories}
 
+    @router.get("/live-news/debug")
+    async def live_news_debug(market: str = Query(default="india")):
+        """Diagnostic endpoint — probe each feed and report success/failure."""
+        import asyncio, time, httpx
+        from app.services.rss_news_service import get_rss_service, _INDIA_FEEDS, _US_FEEDS
+        feeds = _INDIA_FEEDS if market.lower() == "india" else _US_FEEDS
+        results = []
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(12.0), follow_redirects=True, verify=False,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; Newsdesk/2.0)"},
+        ) as client:
+            sem = asyncio.Semaphore(4)
+            async def probe(feed):
+                t0 = time.time()
+                async with sem:
+                    try:
+                        r = await client.get(feed.url)
+                        return {"feed": feed.id, "status": r.status_code, "bytes": len(r.content), "ms": int((time.time()-t0)*1000), "ok": r.status_code == 200}
+                    except Exception as exc:
+                        return {"feed": feed.id, "status": 0, "bytes": 0, "ms": int((time.time()-t0)*1000), "ok": False, "error": str(exc)[:200]}
+            tasks = [probe(f) for f in feeds]
+            results = await asyncio.gather(*tasks)
+        svc = get_rss_service(market)
+        return {"market": market, "feeds_probed": len(feeds), "results": results, "cache_keys": list(svc._cache.keys())}
+
     @router.get("/live-news/company/{symbol}")
     async def company_live_news(
         symbol: str,

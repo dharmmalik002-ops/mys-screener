@@ -9,6 +9,7 @@ from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 
 from app.api.routes import build_router
 from app.core.config import get_settings
@@ -236,6 +237,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+app.add_middleware(GZipMiddleware, minimum_size=1000)  # compress any response ≥ 1KB
 app.add_middleware(NoCacheMiddleware)
 app.add_middleware(
     CORSMiddleware,

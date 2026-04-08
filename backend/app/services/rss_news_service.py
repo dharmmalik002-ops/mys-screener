@@ -253,8 +253,22 @@ class RssNewsService:
     # ── Feed fetching ─────────────────────────────────────────────────────────
 
     async def _fetch_all(self) -> list[RssArticle]:
-        tasks = [self._fetch_feed_async(feed) for feed in self._feeds]
-        results = await asyncio.gather(*tasks, return_exceptions=True)
+        # One shared client + semaphore for all feeds so we don't spawn 16
+        # separate connection pools simultaneously (kills HF-Space networking).
+        async with httpx.AsyncClient(
+            timeout=httpx.Timeout(18.0),
+            follow_redirects=True,
+            verify=False,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=8),
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; Newsdesk/2.0; +https://github.com/MrChartist)",
+                "Accept": "application/rss+xml, application/xml, text/xml, */*",
+            },
+        ) as client:
+            sem = asyncio.Semaphore(6)  # max 6 concurrent feed fetches
+            tasks = [self._fetch_feed_async(feed, client, sem) for feed in self._feeds]
+            results = await asyncio.gather(*tasks, return_exceptions=True)
+
         articles: list[RssArticle] = []
         seen_links: set[str] = set()
         for result in results:
@@ -266,28 +280,39 @@ class RssNewsService:
                     articles.append(article)
         return articles
 
-    async def _fetch_feed_async(self, feed: FeedConfig) -> list[RssArticle]:
+    async def _fetch_feed_async(self, feed: FeedConfig, client: httpx.AsyncClient | None = None, sem: asyncio.Semaphore | None = None) -> list[RssArticle]:
         now = time.time()
         cached_ts, cached_items = self._cache.get(feed.id, (0, []))
         if cached_items and now - cached_ts < feed.ttl:
             return cached_items
 
-        headers = {
-            "User-Agent": "Mozilla/5.0 (compatible; Newsdesk/2.0; +https://github.com/MrChartist)",
-            "Accept": "application/rss+xml, application/xml, text/xml, */*",
-        }
+        async def _do_fetch(c: httpx.AsyncClient) -> bytes:
+            resp = await c.get(feed.url)
+            resp.raise_for_status()
+            return resp.content[:800_000]
+
         try:
-            async with httpx.AsyncClient(
-                timeout=httpx.Timeout(15.0),
-                follow_redirects=True,
-                verify=False,  # some feeds have cert issues on HF
-                limits=httpx.Limits(max_connections=30, max_keepalive_connections=10),
-            ) as client:
-                resp = await client.get(feed.url, headers=headers)
-                resp.raise_for_status()
-                xml_bytes = resp.content[:800_000]
+            if client is not None:
+                # Use shared client (headers already set on client)
+                if sem is not None:
+                    async with sem:
+                        xml_bytes = await _do_fetch(client)
+                else:
+                    xml_bytes = await _do_fetch(client)
+            else:
+                # Standalone call (e.g. company news for a single feed)
+                async with httpx.AsyncClient(
+                    timeout=httpx.Timeout(15.0),
+                    follow_redirects=True,
+                    verify=False,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (compatible; Newsdesk/2.0)",
+                        "Accept": "application/rss+xml, application/xml, text/xml, */*",
+                    },
+                ) as solo_client:
+                    xml_bytes = await _do_fetch(solo_client)
         except Exception as exc:
-            logger.warning("Feed %s fetch error: %s", feed.id, exc)
+            logger.warning("Feed %s fetch error (%s): %s", feed.id, type(exc).__name__, exc)
             return cached_items  # serve stale on error
 
         items = self._parse_feed(xml_bytes, feed)
