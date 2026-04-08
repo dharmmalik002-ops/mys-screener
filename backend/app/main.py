@@ -7,7 +7,9 @@ from zoneinfo import ZoneInfo
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from fastapi import FastAPI, Request, Response
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.gzip import GZipMiddleware
 
@@ -237,6 +239,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)
+
+
+@app.exception_handler(Exception)
+async def _global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    """Convert any unhandled server exception to 503 so the frontend retries
+    instead of surfacing an opaque 'Request failed: 500' to the user."""
+    logger.exception("Unhandled exception on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=503,
+        content={"detail": f"Service temporarily unavailable: {type(exc).__name__}"},
+    )
+
+
 app.add_middleware(GZipMiddleware, minimum_size=1000)  # compress any response ≥ 1KB
 app.add_middleware(NoCacheMiddleware)
 app.add_middleware(

@@ -896,7 +896,7 @@ export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
   }
 }
 
-const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
+const RETRYABLE_STATUS_CODES = new Set([404, 500, 502, 503, 504]);
 
 // Singleton warm-up — all concurrent requests share one loop instead of each
 // spawning their own, which caused the banner to fight itself.
