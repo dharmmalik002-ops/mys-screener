@@ -23,6 +23,8 @@ export type ChartColorSettings = {
   candleDown: string;
   volumeUp: string;
   volumeDown: string;
+  volumeHQ: string;
+  volumeLQ: string;
   rsLine: string;
   rsMarker: string;
   rsMarkerSize: number;
@@ -192,6 +194,8 @@ type ChartColorFieldKey =
   | "candleDown"
   | "volumeUp"
   | "volumeDown"
+  | "volumeHQ"
+  | "volumeLQ"
   | "rsLine"
   | "rsMarker";
 
@@ -205,6 +209,8 @@ const CHART_COLOR_FIELDS: Array<{ key: ChartColorFieldKey; label: string }> = [
   { key: "candleDown", label: "Down Candle" },
   { key: "volumeUp", label: "Up Volume" },
   { key: "volumeDown", label: "Down Volume" },
+  { key: "volumeHQ", label: "HQ Volume (Quarterly High)" },
+  { key: "volumeLQ", label: "LQ Volume (Quarterly Low)" },
   { key: "rsLine", label: "RS Line" },
   { key: "rsMarker", label: "RS Circle" },
 ];
@@ -345,6 +351,48 @@ function computeVolumeSma(bars: ChartBar[], length: number) {
     };
   });
 }
+
+/**
+ * For each calendar quarter visible in `bars`, find the bar with the
+ * highest and lowest volume. Returns two Maps of `bar.time → "HQ" | "LQ"`.
+ * If a quarter has only 1 bar, HQ === LQ (only HQ label is applied).
+ */
+function computeQuarterlyVolExtremes(bars: ChartBar[]): {
+  hqTimes: Set<number>;
+  lqTimes: Set<number>;
+} {
+  // Group bars by "YYYY-Q#" key
+  const quarters = new Map<string, ChartBar[]>();
+  for (const bar of bars) {
+    const d = new Date(bar.time * 1000);
+    const year = d.getUTCFullYear();
+    const q = Math.floor(d.getUTCMonth() / 3) + 1;
+    const key = `${year}-Q${q}`;
+    let group = quarters.get(key);
+    if (!group) { group = []; quarters.set(key, group); }
+    group.push(bar);
+  }
+
+  const hqTimes = new Set<number>();
+  const lqTimes = new Set<number>();
+
+  for (const group of quarters.values()) {
+    if (group.length === 0) continue;
+    let maxVol = -Infinity, minVol = Infinity;
+    let maxBar = group[0], minBar = group[0];
+    for (const bar of group) {
+      if (bar.volume > maxVol) { maxVol = bar.volume; maxBar = bar; }
+      if (bar.volume < minVol) { minVol = bar.volume; minBar = bar; }
+    }
+    hqTimes.add(maxBar.time);
+    if (minBar.time !== maxBar.time) {
+      lqTimes.add(minBar.time);
+    }
+  }
+
+  return { hqTimes, lqTimes };
+}
+
 
 function computeVwap(bars: ChartBar[]) {
   let cumulativePriceVolume = 0;
@@ -1445,13 +1493,35 @@ export function ChartPanel({
       }
     }
     // ────────────────────────────────────────────────────────────────────────
+    const { hqTimes, lqTimes } = computeQuarterlyVolExtremes(activeBars);
     volumeSeries.setData(
-      activeBars.map((bar) => ({
-        time: bar.time as UTCTimestamp,
-        value: bar.volume,
-        color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
-      })),
+      activeBars.map((bar) => {
+        if (hqTimes.has(bar.time)) {
+          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeHQ, 0.90) };
+        }
+        if (lqTimes.has(bar.time)) {
+          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeLQ, 0.82) };
+        }
+        return {
+          time: bar.time as UTCTimestamp,
+          value: bar.volume,
+          color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
+        };
+      }),
     );
+
+    // HQ / LQ markers on volume bars
+    const volMarkers: Array<{ time: UTCTimestamp; position: "aboveBar"; shape: "arrowDown"; color: string; text: string; size: number }> = [];
+    for (const bar of activeBars) {
+      if (hqTimes.has(bar.time)) {
+        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeHQ, text: "HQ", size: 0.8 });
+      } else if (lqTimes.has(bar.time)) {
+        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeLQ, text: "LQ", size: 0.8 });
+      }
+    }
+    volMarkers.sort((a, b) => (a.time as number) - (b.time as number));
+    volumeSeries.setMarkers(volMarkers);
+
     volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
 
     let rsSeries: any = null;

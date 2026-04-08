@@ -497,6 +497,8 @@ function normalizeChartColors(value: unknown): ChartColorSettings {
     candleDown: typeof candidate.candleDown === "string" ? candidate.candleDown : DEFAULT_CHART_COLORS.candleDown,
     volumeUp: typeof candidate.volumeUp === "string" ? candidate.volumeUp : DEFAULT_CHART_COLORS.volumeUp,
     volumeDown: typeof candidate.volumeDown === "string" ? candidate.volumeDown : DEFAULT_CHART_COLORS.volumeDown,
+    volumeHQ: typeof candidate.volumeHQ === "string" ? candidate.volumeHQ : DEFAULT_CHART_COLORS.volumeHQ,
+    volumeLQ: typeof candidate.volumeLQ === "string" ? candidate.volumeLQ : DEFAULT_CHART_COLORS.volumeLQ,
     rsLine: typeof candidate.rsLine === "string" ? candidate.rsLine : DEFAULT_CHART_COLORS.rsLine,
     rsMarker: typeof candidate.rsMarker === "string" ? candidate.rsMarker : DEFAULT_CHART_COLORS.rsMarker,
     rsMarkerSize:
