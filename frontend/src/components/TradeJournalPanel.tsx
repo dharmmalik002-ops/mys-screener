@@ -539,13 +539,41 @@ export function TradeJournalPanel() {
     reader.onload = ev => {
       try {
         const data = JSON.parse(ev.target?.result as string);
-        if (Array.isArray(data.trades)) { saveTrades(data.trades); }
-        if (data.startEquity) { setStartEquity(data.startEquity); lsSet(LS_EQUITY, data.startEquity); setEquityInput(String(data.startEquity)); }
-        if (data.setups) { setSetups(data.setups); lsSet(LS_SETUPS, data.setups); }
-        if (data.openPosCats) { setOpenPosCats(data.openPosCats); lsSet(LS_POSITIONS, data.openPosCats); }
-        if (data.posMeta) { setPosMeta(data.posMeta); lsSet(LS_META, data.posMeta); }
+
+        // Helper: value may already be parsed, or may be a JSON string (original HTML backup format)
+        function unwrap<T>(val: unknown, fallback: T): T {
+          if (val === undefined || val === null) return fallback;
+          if (typeof val === "string") { try { return JSON.parse(val) as T; } catch { return fallback; } }
+          return val as T;
+        }
+
+        // Detect original TradeOS HTML backup format: keys are "tradingJournalData", etc.
+        const isOriginalFormat = "tradingJournalData" in data;
+
+        if (isOriginalFormat) {
+          // Original HTML app backup: values are raw JSON strings
+          const importedTrades = unwrap<Trade[]>(data.tradingJournalData, []);
+          const importedEquity = unwrap<number>(data.tradingJournalEquity, 100000);
+          const importedSetups = unwrap<string[]>(data.tradingJournalSetups, DEFAULT_SETUPS);
+          const importedPositions = unwrap<Record<string, OpenPosCat>>(data.tradingJournalPositions, {});
+          const importedMeta = unwrap<Record<string, PosMeta>>(data.tradingJournalPosMeta, {});
+
+          if (Array.isArray(importedTrades) && importedTrades.length > 0) saveTrades(importedTrades);
+          if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setSizerEquity(String(importedEquity)); setCalcCap(String(importedEquity)); }
+          if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(importedSetups); lsSet(LS_SETUPS, importedSetups); }
+          if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
+          if (Object.keys(importedMeta).length > 0) { setPosMeta(importedMeta); lsSet(LS_META, importedMeta); }
+        } else {
+          // New format exported by this app: { trades, startEquity, setups, openPosCats, posMeta }
+          if (Array.isArray(data.trades) && data.trades.length > 0) saveTrades(data.trades);
+          if (data.startEquity > 0) { setStartEquity(data.startEquity); lsSet(LS_EQUITY, data.startEquity); setEquityInput(String(data.startEquity)); setSizerEquity(String(data.startEquity)); setCalcCap(String(data.startEquity)); }
+          if (Array.isArray(data.setups) && data.setups.length > 0) { setSetups(data.setups); lsSet(LS_SETUPS, data.setups); }
+          if (data.openPosCats) { setOpenPosCats(data.openPosCats); lsSet(LS_POSITIONS, data.openPosCats); }
+          if (data.posMeta) { setPosMeta(data.posMeta); lsSet(LS_META, data.posMeta); }
+        }
+
         alert("Journal imported successfully!");
-      } catch { alert("Invalid JSON file."); }
+      } catch { alert("Invalid JSON file. Please use a TradeOS backup file (.json)."); }
     };
     reader.readAsText(file);
     e.target.value = "";
