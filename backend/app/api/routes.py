@@ -728,8 +728,10 @@ def build_router(service):
 
     @router.get("/article-proxy")
     async def article_proxy(url: str = Query(...)):
-        """Fetch an article's HTML and relay it without X-Frame-Options so it
-        can be displayed inside an in-app iframe.  Only http/https allowed."""
+        """Fetch article HTML, inject <base> tag so relative URLs resolve
+        correctly inside the iframe, and strip X-Frame-Options so the iframe
+        is allowed to render it.  Only http/https URLs accepted."""
+        import re as _re
         import urllib.parse as _parse
         parsed = _parse.urlparse(url)
         if parsed.scheme not in ("http", "https"):
@@ -739,16 +741,25 @@ def build_router(service):
         try:
             request_obj = _req.Request(
                 url,
-                headers={"User-Agent": "Mozilla/5.0 (compatible; StockScanner/2.0)"},
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                    "Accept-Language": "en-US,en;q=0.5",
+                },
             )
             with _req.urlopen(request_obj, timeout=15) as resp:
                 html = resp.read(2_000_000).decode("utf-8", errors="replace")
         except Exception as exc:
             raise HTTPException(status_code=502, detail=f"Upstream fetch failed: {exc}") from exc
+        # Inject <base> tag so all relative URLs (images, CSS, JS) resolve
+        # against the original article URL instead of our proxy domain.
+        base_tag = f'<base href="{url}" target="_blank">'
+        html = _re.sub(r'<head([^>]*)>', rf'<head\1>{base_tag}', html, count=1, flags=_re.IGNORECASE)
         return HTMLResponse(
             content=html,
             headers={
-                "X-Frame-Options": "SAMEORIGIN",
+                # Completely removing X-Frame-Options allows any origin to iframe
+                "X-Frame-Options": "ALLOWALL",
                 "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
             },
         )

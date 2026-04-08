@@ -2030,9 +2030,6 @@ class FreeMarketDataProvider:
     def _fundamentals_payload_fresh(self, payload: dict[str, Any], max_age_hours: int) -> bool:
         if int(payload.get("cache_version", 0) or 0) != FUNDAMENTALS_CACHE_VERSION:
             return False
-        warnings = [str(item).lower() for item in (payload.get("data_warnings") or [])]
-        if any("could not be refreshed" in warning or "currently unavailable" in warning for warning in warnings):
-            return False
         timestamp = payload.get("fetched_at")
         if not timestamp:
             return False
@@ -2040,7 +2037,14 @@ class FreeMarketDataProvider:
             fetched_at = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
         except ValueError:
             return False
-        return datetime.now(timezone.utc) - fetched_at <= timedelta(hours=max_age_hours)
+        age = datetime.now(timezone.utc) - fetched_at
+        # Partial results (warnings present) are still served up to 2 h
+        # instead of being immediately evicted — avoids constant 30 s re-fetches
+        # when one data source (screener/yfinance) is slow or rate-limited.
+        warnings = [str(item).lower() for item in (payload.get("data_warnings") or [])]
+        has_warnings = any("could not be refreshed" in w or "currently unavailable" in w for w in warnings)
+        effective_max = min(max_age_hours, 2) if has_warnings else max_age_hours
+        return age <= timedelta(hours=effective_max)
 
     def _load_json_file(self, path: Path) -> dict[str, Any]:
         if not path.exists():
