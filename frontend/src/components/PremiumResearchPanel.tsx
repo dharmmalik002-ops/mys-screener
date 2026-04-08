@@ -1,11 +1,18 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { Suspense, lazy, useEffect, useState, useMemo } from 'react';
 import { getCompanyLiveNews, type CompanyFundamentals, type LiveNewsItem, type MarketKey, type DetailedNews } from '../lib/api';
 import './PremiumResearchPanel.css';
-import { RatioTrendChart } from './fundacharts/RatioTrendChart';
-import { ShareholdingChart } from './fundacharts/ShareholdingChart';
-import { CashFlowChart } from './fundacharts/CashFlowChart';
-import { FundamentalScores } from './fundacharts/FundamentalScores';
-import { DCFCalculator } from './fundacharts/DCFCalculator';
+
+const RatioTrendChart = lazy(() => import('./fundacharts/RatioTrendChart').then(m => ({ default: m.RatioTrendChart })));
+const ShareholdingChart = lazy(() => import('./fundacharts/ShareholdingChart').then(m => ({ default: m.ShareholdingChart })));
+const CashFlowChart = lazy(() => import('./fundacharts/CashFlowChart').then(m => ({ default: m.CashFlowChart })));
+const FundamentalScores = lazy(() => import('./fundacharts/FundamentalScores').then(m => ({ default: m.FundamentalScores })));
+const DCFCalculator = lazy(() => import('./fundacharts/DCFCalculator').then(m => ({ default: m.DCFCalculator })));
+
+const ChartTabFallback = () => (
+  <div style={{ textAlign: 'center', padding: '40px 0', color: 'rgba(255,255,255,0.4)', fontSize: '0.85rem' }}>
+    Loading charts…
+  </div>
+);
 
 interface PremiumResearchPanelProps {
   symbol: string;
@@ -670,6 +677,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
       }
       case 'charts':
         return (
+          <Suspense fallback={<ChartTabFallback />}>
           <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <section className="research-card">
               <RatioTrendChart
@@ -685,9 +693,11 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
               <CashFlowChart cashFlow={fundamentals.cash_flow ?? []} />
             </section>
           </div>
+          </Suspense>
         );
       case 'valuation':
         return (
+          <Suspense fallback={<ChartTabFallback />}>
           <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <section className="research-card">
               <FundamentalScores
@@ -703,6 +713,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
               <DCFCalculator fundamentals={fundamentals} market={market} />
             </section>
           </div>
+          </Suspense>
         );
       case 'risks':
         return (
