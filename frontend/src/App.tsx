@@ -76,6 +76,7 @@ const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then
 const MarketHealthPanel = lazy(() => import("./components/MarketHealthPanel").then((module) => ({ default: module.MarketHealthPanel })));
 const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPanel").then((module) => ({ default: module.MinerviniScannerPanel })));
 const MoneyFlowPanel = lazy(() => import("./components/MoneyFlowPanel").then((module) => ({ default: module.MoneyFlowPanel })));
+const NewsTab = lazy(() => import("./components/NewsTab"));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
@@ -102,7 +103,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v1";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow";
+type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow" | "newsdesk";
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
@@ -4066,6 +4067,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             Money Flow
           </button>
 
+          <button
+            type="button"
+            className={activePage === "newsdesk" ? "nav-button primary" : "nav-button ghost"}
+            onClick={() => setActivePage("newsdesk")}
+          >
+            Newsdesk
+          </button>
+
           <form
             className="nav-search"
             onSubmit={(event) => {
@@ -4203,7 +4212,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "ai-screener" ? (
+        {!loading && activePage === "newsdesk" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            <NewsTab
+              market={activeMarket}
+              onPickSymbol={handlePickSymbol}
+            />
+          </Suspense>
+        ) : null}
+        {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "ai-screener" && activePage !== "newsdesk" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">

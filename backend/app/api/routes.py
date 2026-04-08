@@ -40,6 +40,40 @@ class NaturalLanguageScanRequest(BaseModel):
     query: str
 
 
+class KnowledgeBaseAddRequest(BaseModel):
+    type: str = "text"
+    title: str
+    content: str
+    source_url: str | None = None
+
+
+class IngestUrlRequest(BaseModel):
+    url: str
+
+
+class AiChartBarInput(BaseModel):
+    time: int
+    open: float
+    high: float
+    low: float
+    close: float
+    volume: int = 0
+
+
+class AiChatMessage(BaseModel):
+    role: str
+    content: str
+
+
+class AiChartAnalysisRequest(BaseModel):
+    symbol: str
+    timeframe: str
+    query: str
+    bars: list[AiChartBarInput] = []
+    conversation_history: list[AiChatMessage] = []
+    include_knowledge_base: bool = True
+
+
 def build_router(service):
     router = APIRouter(prefix="/api")
 
@@ -587,5 +621,111 @@ def build_router(service):
     @router.get("/{market_name}/fundamentals/{symbol}", response_model=CompanyFundamentals)
     async def namespaced_fundamentals(market_name: str, symbol: str):
         return await resolve_service(market_name).get_fundamentals(symbol=symbol.upper())
+
+    # ─── Knowledge Base (market-agnostic) ────────────────────────────────────
+
+    @router.get("/knowledge-base")
+    async def get_knowledge_base():
+        import app.services.knowledge_base_service as kb
+        return {"entries": kb.list_entries()}
+
+    @router.post("/knowledge-base")
+    async def add_knowledge_base_entry(request: KnowledgeBaseAddRequest):
+        import app.services.knowledge_base_service as kb
+        return kb.add_entry(request.type, request.title, request.content, request.source_url)
+
+    @router.delete("/knowledge-base/{entry_id}")
+    async def delete_knowledge_base_entry(entry_id: str):
+        import app.services.knowledge_base_service as kb
+        if not kb.delete_entry(entry_id):
+            raise HTTPException(status_code=404, detail="Entry not found")
+        return {"success": True}
+
+    @router.post("/knowledge-base/ingest-url")
+    async def ingest_url(request: IngestUrlRequest):
+        import asyncio as _asyncio
+        import app.services.knowledge_base_service as kb
+        try:
+            return await _asyncio.to_thread(kb.fetch_url_content, request.url)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    # ─── AI Chart Analysis ────────────────────────────────────────────────────
+
+    @router.post("/ai-chart-analysis")
+    async def ai_chart_analysis(
+        request: AiChartAnalysisRequest,
+        market: str = Query(default="india"),
+    ):
+        import app.services.knowledge_base_service as kb
+        svc = resolve_service(market)
+        kb_entries = kb.get_full_entries() if request.include_knowledge_base else []
+        try:
+            response = await svc.provider.ai_service.analyze_chart(
+                symbol=request.symbol,
+                market=market,
+                timeframe=request.timeframe,
+                query=request.query,
+                bars=[b.model_dump() for b in request.bars],
+                conversation_history=[m.model_dump() for m in request.conversation_history],
+                knowledge_base_entries=kb_entries,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        return {"response": response}
+
+    # ─── Live News (RSS feed aggregator) ─────────────────────────────────────
+
+    @router.get("/live-news")
+    async def live_news(
+        market: str = Query(default="india"),
+        category: str | None = Query(default=None),
+        limit: int = Query(default=150, le=400),
+    ):
+        from app.services.rss_news_service import get_rss_service
+        svc = get_rss_service(market)
+        items = await svc.get_all_news(limit=limit)
+        if category and category.lower() != "all":
+            items = [i for i in items if i.get("category", "").lower() == category.lower()]
+        categories = sorted({i.get("category", "General") for i in items})
+        return {"items": items, "count": len(items), "categories": categories}
+
+    @router.get("/live-news/company/{symbol}")
+    async def company_live_news(
+        symbol: str,
+        market: str = Query(default="india"),
+        limit: int = Query(default=30, le=100),
+    ):
+        from app.services.rss_news_service import get_rss_service
+        svc = get_rss_service(market)
+        items = await svc.get_company_news(symbol=symbol.upper(), limit=limit)
+        return {"items": items, "count": len(items)}
+
+    @router.get("/article-proxy")
+    async def article_proxy(url: str = Query(...)):
+        """Fetch an article's HTML and relay it without X-Frame-Options so it
+        can be displayed inside an in-app iframe.  Only http/https allowed."""
+        import urllib.parse as _parse
+        parsed = _parse.urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            raise HTTPException(status_code=400, detail="Only http/https URLs allowed")
+        import urllib.request as _req
+        from fastapi.responses import HTMLResponse
+        try:
+            request_obj = _req.Request(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (compatible; StockScanner/2.0)"},
+            )
+            with _req.urlopen(request_obj, timeout=15) as resp:
+                html = resp.read(2_000_000).decode("utf-8", errors="replace")
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Upstream fetch failed: {exc}") from exc
+        return HTMLResponse(
+            content=html,
+            headers={
+                "X-Frame-Options": "SAMEORIGIN",
+                "Content-Security-Policy": "default-src * 'unsafe-inline' 'unsafe-eval' data: blob:",
+            },
+        )
 
     return router

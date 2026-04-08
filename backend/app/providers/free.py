@@ -65,7 +65,7 @@ YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 11
 SNAPSHOT_CACHE_VERSION = 14
-CHART_CACHE_VERSION = 6
+CHART_CACHE_VERSION = 7
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -820,12 +820,10 @@ class FreeMarketDataProvider:
         return timestamp.astimezone(IST).date()
 
     def _session_date_to_chart_timestamp(self, session_date: date) -> int:
-        # yfinance returns India bars at 18:30 UTC (= IST midnight of session_date).
-        # _history_to_chart_bars truncates that to UTC midnight of the same UTC day,
-        # which is one calendar day before session_date.  We apply the same shift so the
-        # snapshot bar aligns with its corresponding history bar key in the chart cache.
-        ist_midnight = datetime.combine(session_date, datetime.min.time(), tzinfo=IST)
-        utc_midnight = ist_midnight.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        # Store snapshot bar at UTC midnight of the session date so it aligns
+        # with the corrected _history_to_chart_bars timestamps (which now use
+        # the IST trade date as the canonical date rather than the UTC date).
+        utc_midnight = datetime(session_date.year, session_date.month, session_date.day, tzinfo=timezone.utc)
         return int(utc_midnight.timestamp())
 
     def _values_fit_snapshot_session(self, symbol: str, values: list[Any]) -> bool:
@@ -6434,12 +6432,16 @@ class FreeMarketDataProvider:
                 if v == 0 and (prev_close is None or abs(c - prev_close) < 0.01):
                     continue
 
-            # Normalise timestamp to UTC midnight so the chart library receives a
-            # consistent date-aligned epoch regardless of the source timezone.
+            # Normalise timestamp to midnight UTC of the *canonical trade date*.
+            # For India (IST = UTC+5:30) yfinance returns bars at IST midnight,
+            # e.g. April 8 00:00 IST = April 7 18:30 UTC.  Truncating to UTC
+            # midnight would give April 7 — one day early.  We use the IST
+            # calendar date so the chart library always labels the bar correctly.
             if bar_timestamp.tzinfo is not None:
-                utc_midnight = bar_timestamp.astimezone(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+                trade_date = bar_timestamp.astimezone(IST).date()
             else:
-                utc_midnight = bar_timestamp.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=timezone.utc)
+                trade_date = bar_timestamp.date()
+            utc_midnight = datetime(trade_date.year, trade_date.month, trade_date.day, tzinfo=timezone.utc)
 
             bars.append(
                 ChartBar(

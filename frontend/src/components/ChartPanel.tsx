@@ -7,6 +7,7 @@ import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 import { PremiumResearchPanel } from "./PremiumResearchPanel";
+import { AiChatWindow } from "./AiChatWindow";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars";
@@ -940,6 +941,7 @@ export function ChartPanel({
   const [indexBars, setIndexBars] = useState<ChartBar[] | null>(null);
   const [indexLoading, setIndexLoading] = useState(false);
   const indexCacheRef = useRef<Record<string, ChartBar[]>>({});
+  const [aiChatOpen, setAiChatOpen] = useState(false);
   const palette = CHART_PALETTES[chartPalette];
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
@@ -2198,6 +2200,15 @@ export function ChartPanel({
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            className={aiChatOpen ? "tool-pill active" : "tool-pill"}
+            onClick={() => setAiChatOpen((prev) => !prev)}
+            disabled={!symbol}
+            title="Open AI Chart Analysis chat"
+          >
+            ✦ AI Analysis
+          </button>
           {panelTab === "technical" ? (
             <>
               <div className="timeframe-switcher">
@@ -2775,6 +2786,15 @@ export function ChartPanel({
           fundamentals={fundamentals}
         />
       )}
+      {aiChatOpen && symbol ? (
+        <AiChatWindow
+          symbol={symbol}
+          market={market}
+          timeframe={timeframe}
+          bars={(extendedHistory?.bars ?? bars).slice(-150)}
+          onClose={() => setAiChatOpen(false)}
+        />
+      ) : null}
     </Panel>
   );
 }

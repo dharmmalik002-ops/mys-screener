@@ -842,6 +842,111 @@ IMPORTANT:
 
         raise Exception("Natural language AI scanning is currently unavailable. No model succeeded.")
 
+    async def analyze_chart(
+        self,
+        symbol: str,
+        market: str,
+        timeframe: str,
+        query: str,
+        bars: list[dict],
+        conversation_history: list[dict],
+        knowledge_base_entries: list[dict],
+    ) -> str:
+        """Analyze a chart using Gemini with user knowledge base context."""
+        if not self._client:
+            raise ValueError("AI analysis requires a Gemini API key.")
+
+        # Compute key stats from bars
+        recent_bars = bars[-60:] if len(bars) > 60 else bars
+        closes = [b["close"] for b in recent_bars if b.get("close")]
+        highs = [b["high"] for b in recent_bars if b.get("high")]
+        lows = [b["low"] for b in recent_bars if b.get("low")]
+        volumes = [b.get("volume", 0) for b in recent_bars]
+
+        def _ts(ts: int) -> str:
+            from datetime import datetime, timezone as _tz
+            try:
+                return datetime.fromtimestamp(int(ts), tz=_tz.utc).strftime("%Y-%m-%d")
+            except Exception:
+                return str(ts)
+
+        current_price = closes[-1] if closes else 0
+        high_period = max(highs) if highs else 0
+        low_period = min(lows) if lows else 0
+        high_20 = max(highs[-20:]) if len(highs) >= 20 else (max(highs) if highs else 0)
+        low_20 = min(lows[-20:]) if len(lows) >= 20 else (min(lows) if lows else 0)
+        avg_vol_20 = sum(volumes[-20:]) / min(len(volumes), 20) if volumes else 0
+        current_vol = volumes[-1] if volumes else 0
+        rvol = current_vol / avg_vol_20 if avg_vol_20 > 0 else 0
+        dist_from_high_pct = ((high_period - current_price) / high_period * 100) if high_period > 0 else 0
+
+        # Format last 20 bars as table
+        table_bars = recent_bars[-20:]
+        rows = ["Date         | Open     | High     | Low      | Close    | Volume       | Chg%",
+                "-" * 80]
+        for idx, bar in enumerate(table_bars):
+            prev_close = table_bars[idx - 1]["close"] if idx > 0 else bar["close"]
+            chg = ((bar["close"] - prev_close) / prev_close * 100) if prev_close else 0
+            rows.append(
+                f"{_ts(bar['time'])} | {bar['open']:8.2f} | {bar['high']:8.2f} | "
+                f"{bar['low']:8.2f} | {bar['close']:8.2f} | "
+                f"{int(bar.get('volume', 0)):12,} | {chg:+.2f}%"
+            )
+        bars_table = "\n".join(rows)
+
+        # Knowledge base section
+        kb_text = ""
+        if knowledge_base_entries:
+            kb_parts = []
+            for entry in knowledge_base_entries[:10]:
+                kb_parts.append(f"[{entry.get('title', 'Note')}]\n{entry.get('content', '')[:1000]}")
+            kb_text = "\n\nTRADING PRINCIPLES & KNOWLEDGE BASE:\n" + "\n\n".join(kb_parts)
+
+        # Conversation history section
+        history_text = ""
+        if conversation_history:
+            lines = []
+            for msg in conversation_history[-8:]:
+                role = "User" if msg.get("role") == "user" else "Assistant"
+                lines.append(f"{role}: {msg.get('content', '')[:600]}")
+            history_text = "\n\nCONVERSATION HISTORY:\n" + "\n\n".join(lines)
+
+        prompt = (
+            f"You are an expert stock chart analyst and trading coach analyzing {symbol.upper()} "
+            f"on the {market.upper()} market.\n"
+            f"Timeframe: {timeframe}"
+            f"{kb_text}\n\n"
+            f"RECENT PRICE DATA (last {len(table_bars)} of {len(recent_bars)} bars loaded):\n"
+            f"{bars_table}\n\n"
+            f"KEY LEVELS:\n"
+            f"- Current Price: {current_price:.2f}\n"
+            f"- 20-Bar High: {high_20:.2f} | 20-Bar Low: {low_20:.2f}\n"
+            f"- Period High ({len(recent_bars)}B): {high_period:.2f} | Period Low: {low_period:.2f}\n"
+            f"- Distance from Period High: {dist_from_high_pct:.1f}%\n"
+            f"- Avg Volume 20B: {int(avg_vol_20):,}\n"
+            f"- Current Volume: {int(current_vol):,} (RVOL: {rvol:.2f}x)"
+            f"{history_text}\n\n"
+            f"USER QUESTION: {query}\n\n"
+            "Provide a detailed, actionable chart analysis. Be specific with price levels. "
+            "Apply trading principles from the knowledge base where relevant. "
+            "Structure your response clearly."
+        )
+
+        for model in self._MODELS:
+            try:
+                result = await asyncio.to_thread(
+                    self._client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                )
+                if result.text:
+                    return result.text.strip()
+            except Exception as exc:
+                logger.warning("Chart analysis failed for %s: %s. Trying next…", model, exc)
+                continue
+
+        raise Exception("AI chart analysis is currently unavailable. No model succeeded.")
+
 
 def parse_ai_management_guidance(raw: list[dict[str, Any]]) -> list[ManagementGuidance]:
     result = []

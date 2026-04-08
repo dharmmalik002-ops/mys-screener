@@ -1363,3 +1363,108 @@ export function saveWatchlistsState(
     }),
   });
 }
+
+// ─── AI Knowledge Base ────────────────────────────────────────────────────────
+
+export type KbEntry = {
+  id: string;
+  type: "text" | "url" | "youtube";
+  title: string;
+  content_preview: string;
+  source_url: string | null;
+  added_at: string;
+  content_length: number;
+};
+
+export function getKnowledgeBase() {
+  return request<{ entries: KbEntry[] }>("/api/knowledge-base");
+}
+
+export function addKnowledgeBaseEntry(body: {
+  type: string;
+  title: string;
+  content: string;
+  source_url?: string | null;
+}) {
+  return request<KbEntry>("/api/knowledge-base", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+export function deleteKnowledgeBaseEntry(id: string) {
+  return request<{ success: boolean }>(`/api/knowledge-base/${id}`, { method: "DELETE" });
+}
+
+export function ingestUrl(url: string) {
+  return request<{ title: string; content: string; source_type: string }>(
+    "/api/knowledge-base/ingest-url",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    },
+  );
+}
+
+// ─── AI Chart Analysis ────────────────────────────────────────────────────────
+
+export type AiChatMessageInput = { role: "user" | "assistant"; content: string };
+
+export function runAiChartAnalysis(
+  body: {
+    symbol: string;
+    timeframe: string;
+    query: string;
+    bars: ChartBar[];
+    conversation_history: AiChatMessageInput[];
+    include_knowledge_base: boolean;
+  },
+  market: MarketKey,
+) {
+  return request<{ response: string }>(withMarket("/api/ai-chart-analysis", market), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
+// ─── Live News (Newsdesk) ─────────────────────────────────────────────────────
+
+export type LiveNewsItem = {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  pub_date: string;
+  image: string | null;
+  category: string;
+  companies: string[];
+  source: { id: string; name: string; color: string };
+};
+
+export type LiveNewsResponse = {
+  items: LiveNewsItem[];
+  count: number;
+  categories: string[];
+};
+
+export function getLiveNews(market: MarketKey, category?: string, limit = 150) {
+  const params = new URLSearchParams({ market, limit: String(limit) });
+  if (category && category !== "all") params.set("category", category);
+  return request<LiveNewsResponse>(`/api/live-news?${params}`);
+}
+
+export function getCompanyLiveNews(symbol: string, market: MarketKey, limit = 30) {
+  const params = new URLSearchParams({ market, limit: String(limit) });
+  return request<{ items: LiveNewsItem[]; count: number }>(
+    `/api/live-news/company/${encodeURIComponent(symbol)}?${params}`,
+  );
+}
+
+/** Returns the proxy URL (not a fetch—just build the URL for an iframe src). */
+export function getArticleProxyUrl(articleUrl: string) {
+  const params = new URLSearchParams({ url: articleUrl });
+  return `/api/article-proxy?${params}`;
+}

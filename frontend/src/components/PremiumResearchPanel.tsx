@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { type CompanyFundamentals, type MarketKey, type DetailedNews } from '../lib/api';
+import React, { useEffect, useState, useMemo } from 'react';
+import { getCompanyLiveNews, type CompanyFundamentals, type LiveNewsItem, type MarketKey, type DetailedNews } from '../lib/api';
 import './PremiumResearchPanel.css';
 
 interface PremiumResearchPanelProps {
@@ -16,6 +16,16 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
   fundamentals,
 }) => {
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
+  const [liveNews, setLiveNews] = useState<LiveNewsItem[]>([]);
+
+  useEffect(() => {
+    setLiveNews([]);
+    let cancelled = false;
+    getCompanyLiveNews(symbol, market, 15)
+      .then((res) => { if (!cancelled) setLiveNews(res.items); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [symbol, market]);
 
   const tabs = [
     { key: 'overview', label: 'Growth Triggers' },
@@ -260,6 +270,59 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
 
     return (
       <div className="fade-in">
+        {/* ── Live RSS news ──────────────────────────────────────────── */}
+        {liveNews.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <div className="news-section-title" style={{ marginBottom: 10 }}>
+              <span style={{ color: '#ef4444', fontSize: '0.7rem' }}>●</span> Live News
+              <span className="news-section-badge" style={{ background: 'rgba(239,68,68,0.15)', color: '#ef4444', border: '1px solid rgba(239,68,68,0.3)' }}>RSS Feeds</span>
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {liveNews.map((item) => (
+                <div
+                  key={item.id}
+                  className="news-article-card editorial-card"
+                  style={{ borderLeft: `3px solid ${item.source.color}`, cursor: 'default' }}
+                >
+                  <div className="news-article-meta">
+                    <span
+                      className="badge badge-editorial"
+                      style={{
+                        background: `${item.source.color}22`,
+                        color: item.source.color,
+                        border: `1px solid ${item.source.color}44`,
+                      }}
+                    >
+                      {item.source.name}
+                    </span>
+                    <span className="text-secondary" style={{ fontSize: '0.7rem' }}>{item.category}</span>
+                    {item.pub_date && (
+                      <span className="news-date">
+                        {(() => {
+                          const diff = Date.now() - new Date(item.pub_date).getTime();
+                          if (isNaN(diff)) return '';
+                          const mins = Math.floor(diff / 60000);
+                          if (mins < 60) return `${mins}m ago`;
+                          const hrs = Math.floor(mins / 60);
+                          if (hrs < 24) return `${hrs}h ago`;
+                          return `${Math.floor(hrs / 24)}d ago`;
+                        })()}
+                      </span>
+                    )}
+                  </div>
+                  <h4>{item.title}</h4>
+                  {item.description && <p className="news-summary">{item.description}</p>}
+                  {item.link && (
+                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-read-link">
+                      Read →
+                    </a>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="news-feed-split">
           <div className="news-column">
             <div className="news-section-title">
