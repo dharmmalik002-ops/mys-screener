@@ -6324,13 +6324,60 @@ class FreeMarketDataProvider:
         if not bhavcopy:
             return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
 
-        updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, candidate_date)
+        chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, candidate_date)
+        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, candidate_date)
+        # Invalidate in-memory snapshot cache so next request rebuilds from patched disk file
+        if snap_updated:
+            self._snapshots_memory_cache.clear()
         return {
             "status": "ok",
             "date": candidate_date.isoformat(),
             "symbols_in_bhavcopy": len(bhavcopy),
-            "chart_caches_updated": updated,
+            "chart_caches_updated": chart_updated,
+            "snapshots_updated": snap_updated,
         }
+
+    def _apply_bhavcopy_to_snapshot_file(
+        self, bhavcopy: dict[str, dict[str, float]], trade_date: date
+    ) -> int:
+        """Patch the on-disk free_snapshots.json with official NSE EOD prices.
+        Returns the number of rows updated.  Safe to call even when the snapshot
+        file does not yet exist (returns 0).
+        """
+        if not self.snapshot_cache_path.exists():
+            return 0
+        try:
+            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
+        except Exception:
+            return 0
+        if not isinstance(rows, list) or not rows:
+            return 0
+        trade_date_str = trade_date.isoformat()
+        updated = 0
+        for row in rows:
+            sym = row.get("symbol", "")
+            ohlcv = bhavcopy.get(sym)
+            if not ohlcv or not ohlcv.get("close"):
+                continue
+            close = ohlcv["close"]
+            prev_close = ohlcv.get("prev_close") or row.get("last_price") or close
+            change_pct = ((close - prev_close) / prev_close * 100) if prev_close else 0.0
+            row["last_price"] = round(close, 4)
+            row["previous_close"] = round(prev_close, 4)
+            row["change_pct"] = round(change_pct, 4)
+            row["day_high"] = round(ohlcv.get("high") or close, 4)
+            row["day_low"] = round(ohlcv.get("low") or close, 4)
+            row["volume"] = int(ohlcv.get("volume") or 0)
+            row["history_as_of_date"] = trade_date_str
+            row["history_session_date"] = trade_date_str
+            updated += 1
+        try:
+            self.snapshot_cache_path.write_text(
+                json.dumps(rows, separators=(",", ":")), encoding="utf-8"
+            )
+        except Exception:
+            return 0
+        return updated
 
     def _download_nse_index_chart_history(self, symbol: str) -> pd.DataFrame:
         index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())

@@ -175,6 +175,26 @@ async def warm_startup_cache(market_name: str, service_obj) -> None:
         logger.warning("%s startup cache warm failed: %s", market_name.upper(), exc)
 
 
+async def apply_startup_bhavcopy(market_name: str, service_obj) -> None:
+    """After initial warmup, apply the latest NSE Bhavcopy EOD prices so that
+    chart caches and snapshot data reflect the official close — not Yahoo's
+    potentially stale/adjusted values.  Only runs for the India service."""
+    try:
+        provider = getattr(service_obj, "provider", None)
+        apply_fn = getattr(provider, "apply_bhavcopy_eod", None)
+        if not callable(apply_fn):
+            return
+        result = await asyncio.to_thread(apply_fn)
+        logger.info("Startup Bhavcopy patch (%s): %s", market_name.upper(), result)
+        if result.get("snapshots_updated", 0) > 0:
+            # Snapshot file was patched and in-memory cache cleared; rebuild
+            # dashboard so the UI gets the corrected prices immediately.
+            await service_obj.build_dashboard()
+            logger.info("%s dashboard rebuilt with corrected Bhavcopy prices", market_name.upper())
+    except Exception as exc:
+        logger.warning("Startup Bhavcopy patch (%s) failed: %s", market_name.upper(), exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler.add_job(
@@ -234,6 +254,9 @@ async def lifespan(app: FastAPI):
         )
     except TimeoutError:
         logger.warning("Startup cache warm timed out after %ds; serving with on-demand warmup", startup_warm_timeout_seconds)
+    # Apply NSE Bhavcopy EOD prices on top of Yahoo data — fire-and-forget,
+    # runs in the background so it doesn't block the server from accepting requests.
+    asyncio.ensure_future(apply_startup_bhavcopy("india", service))
     yield
     scheduler.shutdown()
 
