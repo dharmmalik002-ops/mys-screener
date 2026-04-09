@@ -3760,12 +3760,16 @@ class FreeMarketDataProvider:
         including HuggingFace US servers without crumb/cookie authentication.
         Returns a dict with regularMarketPrice, regularMarketPreviousClose, and
         regularMarketTime, or None on failure.
+
+        Falls back to yfinance Ticker.fast_info if the httpx request fails, as
+        yfinance handles crumb negotiation automatically.
         """
         headers = {
             "User-Agent": USER_AGENT,
             "Accept": "application/json,text/plain,*/*",
             "Referer": "https://finance.yahoo.com/",
         }
+        # ── Attempt 1: httpx directly to the v8 chart endpoint ────────────────
         try:
             with httpx.Client(timeout=15, headers=headers, follow_redirects=True) as client:
                 response = client.get(
@@ -3775,23 +3779,52 @@ class FreeMarketDataProvider:
                 response.raise_for_status()
                 payload = response.json()
             result = ((payload.get("chart") or {}).get("result") or [None])[0]
-            if not result:
-                return None
-            meta = result.get("meta") or {}
-            price = self._to_float(meta.get("regularMarketPrice"))
-            prev_close = self._to_float(
-                meta.get("previousClose") or meta.get("chartPreviousClose") or meta.get("regularMarketPreviousClose")
-            )
-            ts = meta.get("regularMarketTime")
-            if not price or price <= 0:
-                return None
-            return {
-                "regularMarketPrice": price,
-                "regularMarketPreviousClose": prev_close or price,
-                "regularMarketTime": ts,
-            }
+            if result:
+                meta = result.get("meta") or {}
+                price = self._to_float(meta.get("regularMarketPrice"))
+                prev_close = self._to_float(
+                    meta.get("previousClose") or meta.get("chartPreviousClose") or meta.get("regularMarketPreviousClose")
+                )
+                ts = meta.get("regularMarketTime")
+                if price and price > 0:
+                    return {
+                        "regularMarketPrice": price,
+                        "regularMarketPreviousClose": prev_close or price,
+                        "regularMarketTime": ts,
+                    }
         except Exception:
-            return None
+            pass
+
+        # ── Attempt 2: yfinance Ticker.fast_info (handles crumbs automatically) ─
+        # Uses a daemon thread with join timeout so we never block indefinitely.
+        try:
+            import threading
+            _result: list[dict[str, Any] | None] = [None]
+
+            def _yf_fetch() -> None:
+                try:
+                    t = yf.Ticker(ticker)
+                    fi = t.fast_info
+                    price = self._to_float(getattr(fi, "last_price", None))
+                    prev_close = self._to_float(getattr(fi, "previous_close", None))
+                    if price and price > 0:
+                        _result[0] = {
+                            "regularMarketPrice": price,
+                            "regularMarketPreviousClose": prev_close or price,
+                            "regularMarketTime": None,
+                        }
+                except Exception:
+                    pass
+
+            thread = threading.Thread(target=_yf_fetch, daemon=True)
+            thread.start()
+            thread.join(timeout=18)
+            if _result[0] is not None:
+                return _result[0]
+        except Exception:
+            pass
+
+        return None
 
     def _fetch_quote_batch(self, tickers: list[str]) -> dict[str, dict[str, Any]]:
         normalized_tickers = [str(ticker).strip() for ticker in tickers if str(ticker).strip()]
