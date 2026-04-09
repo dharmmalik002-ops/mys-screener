@@ -6834,13 +6834,15 @@ class FreeMarketDataProvider:
             "Referer": "https://fred.stlouisfed.org/",
         }
         try:
-            response = requests.get(FRED_WTI_HISTORY_CSV_URL, headers=headers, timeout=45)
+            # Keep commodity charts responsive even when FRED is slow from hosted
+            # environments like Hugging Face Spaces.
+            response = requests.get(FRED_WTI_HISTORY_CSV_URL, headers=headers, timeout=8)
             response.raise_for_status()
             csv_text = response.text
         except Exception:
             try:
                 proc = subprocess.run(
-                    ["curl", "-s", "-L", "--max-time", "25", FRED_WTI_HISTORY_CSV_URL],
+                    ["curl", "-s", "-L", "--max-time", "8", FRED_WTI_HISTORY_CSV_URL],
                     capture_output=True,
                     text=True,
                     check=False,
