@@ -57,6 +57,10 @@ NSE_INDEX_CHART_URL = "https://www.nseindia.com/api/chart-databyindex"
 BSE_LIST_SCRIPS_PAGE_URL = "https://www.bseindia.com/corporates/List_Scrips.aspx"
 BSE_LIST_SCRIPS_API_URL = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w"
 FRED_WTI_HISTORY_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO"
+COMMODITY_FALLBACK_PRICES = {
+    "CL=F": 75.0,
+    "BZ=F": 78.0,
+}
 NIFTY_TICKER = "^NSEI"
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 SCREENER_URL = "https://www.screener.in/company"
@@ -6426,8 +6430,9 @@ class FreeMarketDataProvider:
 
                 live_quote = self._fetch_yahoo_live_quote_via_chart(ticker)
                 live_price = self._quote_number(live_quote or {}, "regularMarketPrice")
-                if live_price and live_price > 0:
-                    synthetic_history = self._build_flat_price_history(float(live_price), bars)
+                fallback_price = live_price or COMMODITY_FALLBACK_PRICES.get(symbol.upper())
+                if fallback_price and fallback_price > 0:
+                    synthetic_history = self._build_flat_price_history(float(fallback_price), bars)
                     chart_bars = self._history_to_chart_bars(synthetic_history)
                     if chart_bars:
                         return chart_bars
