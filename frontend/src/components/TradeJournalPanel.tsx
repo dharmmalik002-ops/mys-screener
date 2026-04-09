@@ -502,21 +502,22 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
 
   // ── Auto price sync: on mount + when open-positions tab is active ─────────
   const autoSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const retryRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable ref so setInterval always calls the latest version of syncPricesSilent
+  const syncPricesSilentRef = useRef<() => Promise<void>>(async () => {});
   // Sync once on mount so CMP is fresh even before the user visits the tab
   useEffect(() => {
-    syncPricesSilent();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    syncPricesSilentRef.current();
   }, []);
   useEffect(() => {
     if (activeTab === 2) {
       // Sync immediately on tab entry, then every 5 min
-      syncPricesSilent();
-      autoSyncRef.current = setInterval(syncPricesSilent, 5 * 60 * 1000);
+      syncPricesSilentRef.current();
+      autoSyncRef.current = setInterval(() => syncPricesSilentRef.current(), 5 * 60 * 1000);
     } else {
       if (autoSyncRef.current) clearInterval(autoSyncRef.current);
     }
     return () => { if (autoSyncRef.current) clearInterval(autoSyncRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
   // ── FIFO ─────────────────────────────────────────────────────────────────
@@ -580,19 +581,32 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
     if (!openPositions.length) return;
     const updated = { ...posMeta };
     const mkt: MarketKey = market ?? "india";
+    let anyUpdated = false;
     for (const pos of openPositions) {
       try {
-        const result = await getChart(pos.symbol, "1D", mkt);
+        // Use fetchTicker override if set (e.g. LAURUS → LAURUSLABS); fall back to pos.symbol
+        const ticker = posMeta[pos.symbol]?.fetchTicker || pos.symbol;
+        const result = await getChart(ticker, "1D", mkt);
         const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
         if (price && isFinite(price)) {
           if (!updated[pos.symbol]) updated[pos.symbol] = {};
           updated[pos.symbol].cmp = price;
+          anyUpdated = true;
         }
       } catch { /* ignore */ }
       await new Promise(r => setTimeout(r, 100));
     }
     setPosMeta(updated); lsSet(LS_META, updated);
+    // If backend was sleeping (all fetches failed), retry once after 45s for cold-start
+    if (!anyUpdated && retryRef.current === null) {
+      retryRef.current = setTimeout(() => {
+        retryRef.current = null;
+        syncPricesSilentRef.current();
+      }, 45_000);
+    }
   }
+  // Keep ref in sync with the latest closure so setInterval/useEffect use fresh state
+  syncPricesSilentRef.current = syncPricesSilent;
 
   async function syncPrices() {
     if (!openPositions.length) { alert("No open positions."); return; }
