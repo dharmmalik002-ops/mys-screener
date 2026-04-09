@@ -6671,6 +6671,24 @@ class FreeMarketDataProvider:
             return 0
         return updated
 
+    def _last_applied_bhavcopy_date(self) -> date | None:
+        """Best-effort detection of the latest official Bhavcopy date already patched into snapshots."""
+        try:
+            rows = self._load_json_rows(self.snapshot_cache_path)
+        except Exception:
+            rows = []
+
+        if isinstance(rows, list):
+            for row in rows[:5]:
+                candidate = str(row.get("history_as_of_date") or row.get("history_session_date") or "").strip()
+                if not candidate:
+                    continue
+                try:
+                    return date.fromisoformat(candidate)
+                except ValueError:
+                    continue
+        return None
+
     def apply_committed_bhavcopy_patch(self) -> dict:
         """Apply the committed bhavcopy_patch.json file to snapshot data.
 

@@ -971,7 +971,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   for (const base of FALLBACK_API_BASES) {
     // In production, retry once after a short delay for transient server errors
     // (handles cold-start / platform-level 500s on HuggingFace Spaces)
-    const maxAttempts = (!import.meta.env.DEV && base === API_BASE) ? 2 : 1;
+    const maxAttempts = (!import.meta.env.DEV && base === API_BASE) ? 3 : 1;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       if (attempt > 0) await new Promise<void>(r => setTimeout(r, 2_500));
       try {
@@ -982,10 +982,20 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
         if (!response.ok) {
           if (RETRYABLE_STATUS_CODES.has(response.status)) {
-            // If the real backend returns 503, start the background warm-up loop
-            // (shared singleton — won't double-fire if already running)
+            // If the real backend returns 503, start the shared warm-up loop and
+            // give it a short window to recover before surfacing the error.
             if (response.status === 503 && base === API_BASE) {
               triggerWarmup();
+              if (_warmupPromise) {
+                try {
+                  await Promise.race([
+                    _warmupPromise,
+                    new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+                  ]);
+                } catch {
+                  // Ignore warm-up probe failures here; the normal retry path below handles them.
+                }
+              }
             }
             lastError = new Error(`Request failed: ${response.status}`);
             // Retry the same base for server errors if attempts remain

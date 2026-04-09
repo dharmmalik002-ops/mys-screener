@@ -174,6 +174,10 @@ export function GroupsPanel({
   const groupCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
+    void import("./ChartGridModal");
+  }, []);
+
+  useEffect(() => {
     setExpandedGroupIds([]);
     setGridGroupId(null);
     setMemberGridSeries({});
@@ -603,7 +607,7 @@ export function GroupsPanel({
       </div>
 
       {activeGridGroup ? (
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="chart-modal-backdrop"><div className="chart-grid-modal"><div className="empty-state">Opening group grid…</div></div></div>}>
           <ChartGridModal
             contextLabel="Group"
             title={activeGridGroup.group_name}
