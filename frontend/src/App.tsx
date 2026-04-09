@@ -2298,15 +2298,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, []); // empty — always calls the latest version via ref
 
   // Silent market-data poll — runs every 2 minutes during market hours and
-  // also through the official close-confirmation window in the evening so the
-  // home sector heatmap picks up Bhavcopy-based close updates automatically.
+  // continues later into the evening so the home sector heatmap picks up the
+  // official close snapshot when the Bhavcopy patch lands after 8:30–9:00 PM IST.
   const silentLivePollRef = useRef<() => void>(() => {});
   silentLivePollRef.current = () => {
     const { weekday, totalMinutes } = getMarketClock(activeMarket);
     const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
     const openMin = activeMarket === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
     const closeMin = activeMarket === "us" ? 16 * 60 : 15 * 60 + 30;
-    const eveningSyncEndMin = activeMarket === "us" ? 20 * 60 : 20 * 60;
+    const eveningSyncEndMin = activeMarket === "us" ? 22 * 60 : 23 * 60;
     const withinActiveWindow = totalMinutes >= openMin && totalMinutes <= closeMin;
     const withinCloseSyncWindow = totalMinutes > closeMin && totalMinutes <= eveningSyncEndMin;
     if (!isTradingDay || (!withinActiveWindow && !withinCloseSyncWindow)) return;
