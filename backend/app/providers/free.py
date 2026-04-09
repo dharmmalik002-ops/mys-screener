@@ -371,11 +371,32 @@ class FreeMarketDataProvider:
         except ValueError:
             return None
 
+    def _needs_background_live_refresh(self, cache_key: float) -> bool:
+        """Return True if a background live-price refresh should be scheduled.
+
+        Fires when the market is open AND the on-disk snapshot is stale (>120 s).
+        Also fires when only seed chunks exist on disk (primary file absent) so
+        that the first boot during market hours gets live prices promptly.
+        """
+        if not self._is_market_open_ist():
+            return False
+        # Primary file missing → seed-chunks-only state: always refresh during market hours
+        if not self.snapshot_cache_path.exists():
+            return True
+        return self._snapshot_age_seconds() >= LIVE_SNAPSHOT_MAX_AGE_SECONDS
+
     async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
         cache_key = float(market_cap_min_crore)
         cache_signature = self._snapshot_memory_signature()
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
+            # Auto-refresh: if market is open and data is stale, kick off a
+            # background live refresh so the next request gets live prices.
+            # We check _live_snapshot_refresh_tasks to avoid double-scheduling.
+            if self._needs_background_live_refresh(cache_key):
+                existing_live = self._live_snapshot_refresh_tasks.get(cache_key)
+                if existing_live is None or existing_live.done():
+                    asyncio.create_task(self.refresh_live_snapshots(market_cap_min_crore))
             return cached[2]
 
         # Single-flight + cancellation-safe: one background task loads and materialises
@@ -393,6 +414,11 @@ class FreeMarketDataProvider:
             if rows:
                 snaps = await asyncio.to_thread(self._materialize_snapshot_rows, rows)
                 self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snaps)
+                # After the initial disk load, also schedule a live refresh if needed
+                if self._needs_background_live_refresh(cache_key):
+                    existing_live = self._live_snapshot_refresh_tasks.get(cache_key)
+                    if existing_live is None or existing_live.done():
+                        asyncio.create_task(self.refresh_live_snapshots(market_cap_min_crore))
                 return snaps
             # Disk cache empty / invalid → full rebuild (yfinance etc.)
             return await self._load_snapshots_with_fallback(market_cap_min_crore, False)
