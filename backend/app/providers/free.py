@@ -4218,14 +4218,52 @@ class FreeMarketDataProvider:
 
     def _fetch_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
         items: list[IndexQuoteItem] = []
+        missing: list[str] = []
 
         for symbol in symbols:
             try:
                 chart_item = self._index_quote_from_cached_bars(symbol)
             except Exception:
                 chart_item = None
+
+            # Accept cached value only when it has a recent timestamp (< 4 hours).
+            # On a fresh HF restart the chart cache is empty, so chart_item is None
+            # and we fall through to the live Yahoo fetch below.
             if chart_item is not None:
-                items.append(chart_item)
+                age_hours = (datetime.now(timezone.utc) - chart_item.updated_at).total_seconds() / 3600
+                if age_hours < 4:
+                    items.append(chart_item)
+                    continue
+            missing.append(symbol)
+
+        if missing:
+            # Yahoo Finance accepts index tickers directly (^NSEI, ^BSESN, ^NSEBANK).
+            # This works from any server/IP and provides live intraday quotes.
+            try:
+                yahoo_quotes = self._fetch_yahoo_live_quotes(missing)
+                for symbol in missing:
+                    q = yahoo_quotes.get(symbol.upper())
+                    if not q:
+                        continue
+                    price = self._to_float(q.get("regularMarketPrice"))
+                    prev = self._to_float(q.get("regularMarketPreviousClose"))
+                    ts = q.get("regularMarketTime")
+                    if not price or price <= 0:
+                        continue
+                    change_pct = round(((price / prev) - 1) * 100, 2) if prev and prev > 0 else 0.0
+                    updated_at = (
+                        datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                        if ts
+                        else datetime.now(timezone.utc)
+                    )
+                    items.append(IndexQuoteItem(
+                        symbol=symbol,
+                        price=round(price, 2),
+                        change_pct=change_pct,
+                        updated_at=updated_at,
+                    ))
+            except Exception:
+                pass
 
         return items
 

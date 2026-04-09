@@ -500,11 +500,16 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
     setSizerResultQty(0); setSizerResultSL(0); setSizerResultRisk(0); setSizerResultPos(0);
   }, [sizerEquity, sizerRiskPct, sizerEntry, sizerSLPct]);
 
-  // ── Auto price sync when open-positions tab is active ────────────────────
+  // ── Auto price sync: on mount + when open-positions tab is active ─────────
   const autoSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Sync once on mount so CMP is fresh even before the user visits the tab
+  useEffect(() => {
+    syncPricesSilent();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     if (activeTab === 2) {
-      // Sync immediately, then every 5 min
+      // Sync immediately on tab entry, then every 5 min
       syncPricesSilent();
       autoSyncRef.current = setInterval(syncPricesSilent, 5 * 60 * 1000);
     } else {
