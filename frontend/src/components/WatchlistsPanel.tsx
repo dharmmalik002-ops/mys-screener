@@ -424,17 +424,6 @@ export function WatchlistsPanel({
             Journal
           </button>
         )}
-        <button
-          type="button"
-          className="tool-pill"
-          onClick={() => {
-            if (activeWatchlist) {
-              onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
-            }
-          }}
-        >
-          Remove
-        </button>
         {availableMoveTargets.length > 0 ? (
           <>
             <select
@@ -442,11 +431,8 @@ export function WatchlistsPanel({
               onChange={(event) => {
                 const targetId = event.target.value;
                 setRowMoveTargets((current) => ({ ...current, [item.symbol]: targetId }));
-                if (activeWatchlist && targetId) {
-                  onMoveSymbols(activeWatchlist.id, targetId, [item.symbol]);
-                  setSelectedSymbols((current) => current.filter((s) => s !== item.symbol));
-                }
               }}
+              title="Select watchlist to move or copy to"
             >
               {availableMoveTargets.map((watchlist) => (
                 <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
@@ -459,13 +445,38 @@ export function WatchlistsPanel({
               className="tool-pill"
               onClick={() => {
                 const targetId = rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id;
+                if (activeWatchlist && targetId) {
+                  onMoveSymbols(activeWatchlist.id, targetId, [item.symbol]);
+                  setSelectedSymbols((current) => current.filter((s) => s !== item.symbol));
+                }
+              }}
+            >
+              Move
+            </button>
+            <button
+              type="button"
+              className="tool-pill"
+              onClick={() => {
+                const targetId = rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id;
                 if (targetId) onCopyToWatchlist(targetId, item.symbol);
               }}
             >
               Copy
             </button>
           </>
-        ) : null}
+        ) : (
+          <button
+            type="button"
+            className="tool-pill"
+            onClick={() => {
+              if (activeWatchlist) {
+                onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
+              }
+            }}
+          >
+            Remove
+          </button>
+        )}
       </div>
     </div>
     );
