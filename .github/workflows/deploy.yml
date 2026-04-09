@@ -1,0 +1,36 @@
+name: Deploy to HuggingFace
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - "render.yaml"
+
+jobs:
+  deploy-hf:
+    name: Push backend to HuggingFace Spaces
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so HF push works cleanly
+
+      - name: Configure Git identity
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Push to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Add HF remote with token-embedded URL
+          git remote add hf \
+            "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
+
+          # Push main branch directly to HF's main branch
+          # HF only runs the backend (Docker/Python), so frontend files are harmless
+          git push hf main:main --force

@@ -1,0 +1,61 @@
+name: Daily NSE Bhavcopy Patch
+
+on:
+  # Run Mon–Fri at 16:30 IST = 11:00 UTC
+  schedule:
+    - cron: "0 11 * * 1-5"
+  # Allow manual trigger from GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  bhavcopy:
+    name: Fetch NSE EOD prices and commit patch
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Generate bhavcopy patch
+        id: patch
+        run: |
+          python backend/scripts/generate_bhavcopy_patch.py
+          # Capture whether the file changed (new date vs already current)
+          if git diff --quiet backend/data/bhavcopy_patch.json; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push if updated
+        if: steps.patch.outputs.changed == 'true'
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          DATE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(d['date'])")
+          SYMS=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(len(d['symbols']))")
+          git add backend/data/bhavcopy_patch.json
+          git commit -m "data: NSE EOD bhavcopy patch for ${DATE} (${SYMS} symbols) [skip ci]"
+          git push origin main
+
+      - name: Trigger HF deploy
+        if: steps.patch.outputs.changed == 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          git remote add hf \
+            "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
+          git push hf main:main --force
+
+      - name: Log skip
+        if: steps.patch.outputs.changed == 'false'
+        run: echo "Bhavcopy patch already current — no commit needed."
