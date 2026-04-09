@@ -1344,6 +1344,12 @@ class DashboardService:
             self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe)),
         )
         snapshot = next((item for item in snapshots if item.symbol == symbol), None)
+        # Prefix fallback: "LAURUS" must match "LAURUSLABS" when the journal
+        # stores a short alias that the provider already resolved to a ticker.
+        if snapshot is None:
+            prefix_hits = [s for s in snapshots if s.symbol.startswith(symbol)]
+            if len(prefix_hits) == 1:
+                snapshot = prefix_hits[0]
         rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars, snapshots=snapshots)
         summary = build_stock_overview(snapshot) if snapshot else None
         if summary is not None:
