@@ -23,6 +23,7 @@ Format written:
 
 from __future__ import annotations
 
+import csv
 import io
 import json
 import sys
@@ -37,8 +38,10 @@ IST = ZoneInfo("Asia/Kolkata")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_PATH = DATA_DIR / "bhavcopy_patch.json"
 
-BHAV_URL = "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_ddmmyyyy}_F_0000.csv.zip"
-BHAV_URL_ALT = "https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_ddmmyyyy}_F_0000.csv.zip"
+BHAV_URL = "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_yyyymmdd}_F_0000.csv.zip"
+BHAV_URL_ALT = "https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_yyyymmdd}_F_0000.csv.zip"
+BHAV_URL_LEGACY = "https://nsearchives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip"
+BHAV_URL_LEGACY_ALT = "https://archives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip"
 
 HEADERS = {
     "User-Agent": (
@@ -52,18 +55,39 @@ HEADERS = {
 
 
 def _fetch_bhavcopy_csv(trade_date: date) -> str | None:
-    date_str = trade_date.strftime("%d%m%Y")
-    for url_template in (BHAV_URL, BHAV_URL_ALT):
-        url = url_template.format(date_ddmmyyyy=date_str)
+    date_yyyymmdd = trade_date.strftime("%Y%m%d")
+    dd = trade_date.strftime("%d")
+    mon_upper = trade_date.strftime("%b").upper()
+    year = trade_date.strftime("%Y")
+
+    urls = [
+        BHAV_URL.format(date_yyyymmdd=date_yyyymmdd),
+        BHAV_URL_ALT.format(date_yyyymmdd=date_yyyymmdd),
+        BHAV_URL_LEGACY.format(dd=dd, mon_upper=mon_upper, year=year),
+        BHAV_URL_LEGACY_ALT.format(dd=dd, mon_upper=mon_upper, year=year),
+    ]
+
+    for url in urls:
         try:
             with requests.Session() as s:
+                s.headers.update(HEADERS)
+                # Prime cookies like a browser; harmless for archive URLs and
+                # helps when NSE tightens anti-bot checks.
                 s.get("https://www.nseindia.com", headers=HEADERS, timeout=10)
                 r = s.get(url, headers=HEADERS, timeout=30)
-            if r.status_code == 200 and r.content:
+
+            if r.status_code != 200 or not r.content:
+                continue
+
+            # NSE usually serves a ZIP, but handle a direct CSV response too.
+            is_zip = r.content[:2] == b"PK" or url.endswith(".zip")
+            if is_zip:
                 with zipfile.ZipFile(io.BytesIO(r.content)) as z:
-                    name = next((n for n in z.namelist() if n.endswith(".csv")), None)
+                    name = next((n for n in z.namelist() if n.lower().endswith(".csv")), None)
                     if name:
                         return z.read(name).decode("utf-8", errors="replace")
+            else:
+                return r.text
         except Exception as exc:
             print(f"  warn: {url} → {exc}", file=sys.stderr)
     return None
@@ -71,40 +95,52 @@ def _fetch_bhavcopy_csv(trade_date: date) -> str | None:
 
 def _parse_bhavcopy_csv(csv_text: str) -> dict[str, dict]:
     result: dict[str, dict] = {}
-    lines = csv_text.splitlines()
-    if not lines:
+    reader = csv.DictReader(io.StringIO(csv_text))
+    rows = list(reader)
+    if not rows:
         return result
-    header = [h.strip().upper() for h in lines[0].split(",")]
 
-    def col(row: list[str], *names: str) -> str:
-        for name in names:
-            if name in header:
-                idx = header.index(name)
-                if idx < len(row):
-                    return row[idx].strip()
-        return ""
+    headers_found = set(rows[0].keys())
 
-    for line in lines[1:]:
-        if not line.strip():
-            continue
-        row = [c.strip() for c in line.split(",")]
-        # Only EQ series (regular equity, not derivatives/ETFs)
-        series = col(row, "SERIES", "MKT_TYPE")
-        if series not in ("EQ", "BE", "BZ", ""):
-            continue
-        symbol = col(row, "SYMBOL", "TCKR_SYMB")
-        if not symbol:
-            continue
-        try:
-            close = float(col(row, "CLOSE_PRICE", "CLOSE", "CLS_PR"))
-            prev = float(col(row, "PREV_CL_PR", "PREV_CLOSE", "PREV_CL", "PVS_CL_PR"))
-            high = float(col(row, "HIGH_PRICE", "HIGH", "HI_PR"))
-            low = float(col(row, "LOW_PRICE", "LOW", "LO_PR"))
-            open_ = float(col(row, "OPEN_PRICE", "OPEN", "OPN_PR"))
-            vol = int(float(col(row, "TTL_TRD_QNTY", "TOTAL_TRADED_QUANTITY", "TOT_TRD_QTY", "TRDNG_SESS_QTY") or 0))
-        except (ValueError, TypeError):
-            continue
-        result[symbol.upper()] = {"o": open_, "h": high, "l": low, "c": close, "v": vol, "p": prev}
+    if "TckrSymb" in headers_found:
+        # Current NSE CM Bhavcopy format
+        for row in rows:
+            if row.get("SctySrs", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
+                continue
+            sym = row.get("TckrSymb", "").strip()
+            if not sym:
+                continue
+            try:
+                result[sym.upper()] = {
+                    "o": float(row.get("OpnPric") or 0),
+                    "h": float(row.get("HghPric") or 0),
+                    "l": float(row.get("LwPric") or 0),
+                    "c": float(row.get("ClsPric") or 0),
+                    "v": int(float(row.get("TtlTradgVol") or 0)),
+                    "p": float(row.get("PrvsClsgPric") or 0),
+                }
+            except (ValueError, TypeError):
+                continue
+    elif "SYMBOL" in headers_found:
+        # Legacy NSE Bhavcopy format
+        for row in rows:
+            if row.get("SERIES", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
+                continue
+            sym = row.get("SYMBOL", "").strip()
+            if not sym:
+                continue
+            try:
+                result[sym.upper()] = {
+                    "o": float(row.get("OPEN") or 0),
+                    "h": float(row.get("HIGH") or 0),
+                    "l": float(row.get("LOW") or 0),
+                    "c": float(row.get("CLOSE") or 0),
+                    "v": int(float(row.get("TOTTRDQTY") or 0)),
+                    "p": float(row.get("PREVCLOSE") or 0),
+                }
+            except (ValueError, TypeError):
+                continue
+
     return result
 
 
