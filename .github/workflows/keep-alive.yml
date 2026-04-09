@@ -1,6 +1,10 @@
 name: Keep HuggingFace Backend Warm
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/keep-alive.yml"
   schedule:
     # Every 5 minutes
     - cron: "*/5 * * * *"
