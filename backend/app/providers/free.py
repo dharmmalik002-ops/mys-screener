@@ -1672,6 +1672,12 @@ class FreeMarketDataProvider:
                 if len(legacy_bars) >= min_required_bars:
                     return legacy_bars
             await asyncio.to_thread(self._write_chart_cache, symbol, timeframe, chart_bars)
+            # Always apply Bhavcopy after fresh Yahoo download for daily Indian charts.
+            # This corrects the last bar's date/price without a second round-trip.
+            if timeframe == "1D":
+                bhav_refreshed = await asyncio.to_thread(self._refresh_daily_chart_from_bhavcopy, symbol, bars)
+                if bhav_refreshed:
+                    return bhav_refreshed
             return chart_bars
         except Exception:
             if cached_bars:
@@ -1721,24 +1727,15 @@ class FreeMarketDataProvider:
         return weekly_bars[-bars:]
 
     def _refresh_daily_chart_from_bhavcopy(self, symbol: str, bars: int) -> list[ChartBar]:
-        """Try to patch today's EOD bar from the NSE Bhavcopy and return refreshed bars.
-
-        This is the authoritative fix for Yahoo Finance serving yesterday's bar
-        with a UTC-shifted date.  Returns [] if bhavcopy is unavailable.
+        """Try to patch today's (or yesterday's) EOD bar from the NSE Bhavcopy
+        and return refreshed bars.  Returns [] if bhavcopy is unavailable or not
+        applicable (e.g. non-NSE provider, market currently open with no prior bhavcopy).
         """
         if self._default_exchange() != "NSE":
             return []
         now_ist = datetime.now(IST)
-        # Determine which trading session to look for
-        market_close_today = now_ist.replace(
-            hour=MARKET_CLOSE_MINUTES_IST // 60,
-            minute=MARKET_CLOSE_MINUTES_IST % 60,
-            second=0, microsecond=0,
-        )
-        # Only attempt if trading session is over
-        if now_ist < market_close_today:
-            return []
         candidate = now_ist.date()
+        # Walk back from weekends
         if candidate.weekday() >= 5:
             days_back = candidate.weekday() - 4
             candidate = candidate - timedelta(days=days_back)
@@ -1766,6 +1763,8 @@ class FreeMarketDataProvider:
         if not ohlcv or not ohlcv.get("close"):
             return []
 
+        # If cache is empty (e.g. first request after server restart), we cannot
+        # patch a non-existent bar — return [] so get_chart() falls back to Yahoo.
         if not cached:
             return []
 
