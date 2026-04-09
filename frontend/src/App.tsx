@@ -2289,6 +2289,41 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return () => window.clearInterval(ribbonIntervalId);
   }, []); // empty — always calls the latest version via ref
 
+  // Silent live-data poll — runs every 2 minutes during market hours.
+  // The backend watchdog refreshes snapshots every 90 s; this effect picks up
+  // those updates and pushes them into the sector heatmap / top-movers / groups
+  // without any loading spinner or user action.
+  const silentLivePollRef = useRef<() => void>(() => {});
+  silentLivePollRef.current = () => {
+    const { weekday, totalMinutes } = getMarketClock(activeMarket);
+    const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
+    const openMin = activeMarket === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
+    const closeMin = activeMarket === "us" ? 16 * 60 : 15 * 60 + 30;
+    if (!isTradingDay || totalMinutes < openMin || totalMinutes > closeMin) return;
+
+    // Silently fetch fresh sector data and dashboard — no loading state changes
+    void getSectorTab("1D", "desc", activeMarket)
+      .then((payload) => {
+        setSectorTabData(payload);
+        setUniverseCatalog(buildUniverseCatalogFromSectorTab(payload));
+        updateMarketViewCache(activeMarket, { sectorTabData: payload });
+      })
+      .catch(() => {});
+
+    void getDashboard(activeMarket)
+      .then((payload) => {
+        setDashboard(payload);
+        updateMarketViewCache(activeMarket, { dashboard: payload });
+      })
+      .catch(() => {});
+  };
+  useEffect(() => {
+    const liveId = window.setInterval(() => {
+      silentLivePollRef.current();
+    }, 2 * 60 * 1000); // every 2 minutes
+    return () => window.clearInterval(liveId);
+  }, []); // stable — always calls latest via ref
+
   // Auto-refresh once after market close to pick up confirmed close data
   useEffect(() => {
     const schedule = getAutoRefreshSchedule(new Date(), activeMarket);

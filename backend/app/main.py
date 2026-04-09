@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
 from fastapi import FastAPI, Request, Response
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -173,6 +174,101 @@ async def daily_money_flow_stock_job(market_name: str, market_service: Dashboard
         logger.error("Daily %s Money Flow stock ideas job failed: %s", market_name.upper(), exc)
 
 
+async def live_market_watchdog_job() -> None:
+    """24/7 watchdog — runs every 90 seconds.
+
+    Responsibilities:
+    - During India market hours (9:15–15:30 IST Mon–Fri):
+        • If snapshot is >180 s old → force a live refresh immediately.
+        • After refresh, bust the in-memory sector-tab / dashboard caches so
+          the very next request to /api/sectors or /api/dashboard returns fresh
+          data instead of the stale cached response.
+    - During US market hours (9:30–16:00 ET Mon–Fri): same for US.
+    - After India market close on a weekday:
+        • If today's Bhavcopy patch has not yet been applied → apply it now
+          and rebuild the dashboard so sector heatmap shows official EOD prices.
+    - Always: emit a brief health log so ops can confirm the watchdog is running.
+    """
+    from app.providers.free import FreeMarketDataProvider
+    from datetime import date as _date, timezone as _tz, timedelta as _td
+
+    now_utc = datetime.now(_tz.utc)
+    now_ist = now_utc.astimezone(IST)
+    now_et = now_utc.astimezone(ET)
+
+    # ── India ─────────────────────────────────────────────────────────────────
+    india_prov = service.provider
+    if isinstance(india_prov, FreeMarketDataProvider):
+        is_india_open: bool = india_prov._is_market_open_ist()
+        snap_age: float = india_prov._snapshot_age_seconds()
+
+        if is_india_open:
+            if snap_age > 180:
+                logger.warning(
+                    "WATCHDOG INDIA: snapshot stale (%.0fs > 180s) — forcing live refresh", snap_age
+                )
+                try:
+                    await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
+                    service._clear_runtime_caches()
+                    logger.info("WATCHDOG INDIA: live refresh OK, caches cleared")
+                except Exception as exc:
+                    logger.error("WATCHDOG INDIA: live refresh FAILED: %s", exc)
+            else:
+                logger.debug("WATCHDOG INDIA: snapshot fresh (%.0fs)", snap_age)
+        else:
+            # After close on a weekday: ensure bhavcopy applied for today
+            ist_weekday = now_ist.weekday()  # 0=Mon … 4=Fri
+            ist_tot_min = now_ist.hour * 60 + now_ist.minute
+            after_close = ist_tot_min >= (15 * 60 + 35)  # after 15:35 IST
+            if ist_weekday < 5 and after_close:
+                last_patch_date_fn = getattr(india_prov, "_last_applied_bhavcopy_date", None)
+                last_patch_date = last_patch_date_fn() if callable(last_patch_date_fn) else None
+                today_ist = now_ist.date()
+                if last_patch_date != today_ist:
+                    logger.info("WATCHDOG INDIA: bhavcopy not yet applied for %s — applying now", today_ist)
+                    try:
+                        patch_fn = getattr(india_prov, "apply_committed_bhavcopy_patch", None)
+                        result = {}
+                        if callable(patch_fn):
+                            result = await asyncio.to_thread(patch_fn)
+                        if result.get("snapshots_updated", 0) > 0:
+                            service._clear_runtime_caches()
+                            await service.build_dashboard()
+                        logger.info("WATCHDOG INDIA: bhavcopy patch result: %s", result)
+                    except Exception as exc:
+                        logger.error("WATCHDOG INDIA: bhavcopy patch FAILED: %s", exc)
+                else:
+                    logger.debug("WATCHDOG INDIA: bhavcopy already applied for %s", today_ist)
+
+    # ── US ────────────────────────────────────────────────────────────────────
+    us_prov = us_service.provider
+    if isinstance(us_prov, FreeMarketDataProvider):
+        is_us_open: bool = us_prov._is_market_open_ist()   # USFreeMarketDataProvider overrides this for ET
+        us_snap_age: float = us_prov._snapshot_age_seconds()
+
+        if is_us_open:
+            if us_snap_age > 180:
+                logger.warning(
+                    "WATCHDOG US: snapshot stale (%.0fs > 180s) — forcing live refresh", us_snap_age
+                )
+                try:
+                    await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
+                    us_service._clear_runtime_caches()
+                    logger.info("WATCHDOG US: live refresh OK, caches cleared")
+                except Exception as exc:
+                    logger.error("WATCHDOG US: live refresh FAILED: %s", exc)
+            else:
+                logger.debug("WATCHDOG US: snapshot fresh (%.0fs)", us_snap_age)
+
+    logger.debug(
+        "WATCHDOG heartbeat — India open=%s age=%.0fs | US open=%s age=%.0fs",
+        isinstance(india_prov, FreeMarketDataProvider) and india_prov._is_market_open_ist(),
+        india_prov._snapshot_age_seconds() if isinstance(india_prov, FreeMarketDataProvider) else -1,
+        isinstance(us_prov, FreeMarketDataProvider) and us_prov._is_market_open_ist(),
+        us_prov._snapshot_age_seconds() if isinstance(us_prov, FreeMarketDataProvider) else -1,
+    )
+
+
 async def warm_startup_cache(market_name: str, service_obj) -> None:
     try:
         # Load in-memory caches from whatever data is on disk (even stale).
@@ -229,6 +325,12 @@ async def apply_startup_bhavcopy(market_name: str, service_obj) -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    scheduler.add_job(
+        live_market_watchdog_job,
+        IntervalTrigger(seconds=90),
+        id="live_market_watchdog",
+        replace_existing=True,
+    )
     scheduler.add_job(
         daily_listed_universe_refresh_job,
         CronTrigger(hour=16, minute=0, timezone=IST),
@@ -287,7 +389,8 @@ async def lifespan(app: FastAPI):
     )
     scheduler.start()
     logger.info(
-        "Scheduler started — India: close 4:00 PM IST / stocks 6:00 PM IST / money-flow Sat 9 AM IST / fundamentals Sun 1 AM IST; "
+        "Scheduler started — Watchdog: every 90s (24/7); "
+        "India: close 4:00 PM IST / stocks 6:00 PM IST / money-flow Sat 9 AM IST / fundamentals Sun 1 AM IST; "
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET"
     )
     startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)

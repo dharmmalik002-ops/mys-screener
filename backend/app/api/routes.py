@@ -95,6 +95,33 @@ def build_router(service):
     async def health():
         return {"ok": True}
 
+    @router.get("/watchdog-status")
+    async def watchdog_status(market: str = Query(default="india")):
+        """Returns real-time data-freshness diagnostics so you can verify the watchdog is working."""
+        from datetime import timezone as _tz
+        from app.providers.free import FreeMarketDataProvider
+
+        svc = resolve_service(market)
+        prov = svc.provider
+        now_utc = __import__("datetime").datetime.now(_tz.utc)
+
+        if not isinstance(prov, FreeMarketDataProvider):
+            return {"market": market, "provider": type(prov).__name__, "watchdog": "n/a"}
+
+        snap_age = prov._snapshot_age_seconds()
+        is_open = prov._is_market_open_ist()
+        snap_updated = prov.get_snapshot_updated_at()
+
+        return {
+            "market": market,
+            "is_market_open": is_open,
+            "snapshot_age_seconds": round(snap_age, 1),
+            "snapshot_updated_at": snap_updated.isoformat() if snap_updated else None,
+            "snapshot_stale": snap_age > 180 if is_open else False,
+            "watchdog_interval_seconds": 90,
+            "server_utc": now_utc.isoformat(),
+        }
+
     @router.get("/dashboard")
     async def dashboard(market: str = Query(default="india")):
         return await resolve_service(market).build_dashboard()
