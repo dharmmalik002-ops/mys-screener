@@ -2297,19 +2297,21 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return () => window.clearInterval(ribbonIntervalId);
   }, []); // empty — always calls the latest version via ref
 
-  // Silent live-data poll — runs every 2 minutes during market hours.
-  // The backend watchdog refreshes snapshots every 90 s; this effect picks up
-  // those updates and pushes them into the sector heatmap / top-movers / groups
-  // without any loading spinner or user action.
+  // Silent market-data poll — runs every 2 minutes during market hours and
+  // also through the official close-confirmation window in the evening so the
+  // home sector heatmap picks up Bhavcopy-based close updates automatically.
   const silentLivePollRef = useRef<() => void>(() => {});
   silentLivePollRef.current = () => {
     const { weekday, totalMinutes } = getMarketClock(activeMarket);
     const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
     const openMin = activeMarket === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
     const closeMin = activeMarket === "us" ? 16 * 60 : 15 * 60 + 30;
-    if (!isTradingDay || totalMinutes < openMin || totalMinutes > closeMin) return;
+    const eveningSyncEndMin = activeMarket === "us" ? 20 * 60 : 20 * 60;
+    const withinActiveWindow = totalMinutes >= openMin && totalMinutes <= closeMin;
+    const withinCloseSyncWindow = totalMinutes > closeMin && totalMinutes <= eveningSyncEndMin;
+    if (!isTradingDay || (!withinActiveWindow && !withinCloseSyncWindow)) return;
 
-    // Silently fetch fresh sector data and dashboard — no loading state changes
+    // Silently fetch fresh sector/group data and dashboard — no loading state changes.
     void getSectorTab("1D", "desc", activeMarket)
       .then((payload) => {
         setSectorTabData(payload);
@@ -2324,6 +2326,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         updateMarketViewCache(activeMarket, { dashboard: payload });
       })
       .catch(() => {});
+
+    if (activePage === "home" || activePage === "groups") {
+      void getIndustryGroups(activeMarket)
+        .then((payload) => {
+          setGroupsData(payload);
+          updateMarketViewCache(activeMarket, { groupsData: payload });
+        })
+        .catch(() => {});
+    }
   };
   useEffect(() => {
     const liveId = window.setInterval(() => {

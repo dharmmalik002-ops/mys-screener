@@ -2552,7 +2552,13 @@ class DashboardService:
         )
         return score, setup_summary, thesis
 
-    async def _fetch_fundamentals_for_symbols(self, snapshots: list[StockSnapshot], limit: int) -> dict[str, CompanyFundamentals]:
+    async def _fetch_fundamentals_for_symbols(
+        self,
+        snapshots: list[StockSnapshot],
+        limit: int,
+        *,
+        max_age_hours: float = 72,
+    ) -> dict[str, CompanyFundamentals]:
         selected = snapshots[:limit]
         results: dict[str, CompanyFundamentals] = {}
         cached_loader = getattr(self.provider, "get_fundamentals_cached", None)
@@ -2562,13 +2568,10 @@ class DashboardService:
             fundamentals: CompanyFundamentals | None = None
             if callable(cached_loader):
                 try:
-                    # Weekly bulk fundamentals are refreshed separately, so money-flow
-                    # ideas can safely use a longer cache window instead of forcing
-                    # expensive live refetches in the middle of the week.
                     fundamentals = await cached_loader(
                         snapshot.symbol,
                         snapshot=snapshot,
-                        max_age_hours=24 * 14,
+                        max_age_hours=max_age_hours,
                     )
                 except TypeError:
                     try:
@@ -2587,15 +2590,31 @@ class DashboardService:
             return results
 
         demo_provider = getattr(self.provider, "demo", None)
+        provider_loader = getattr(self.provider, "get_fundamentals", None)
 
         async def load(snapshot: StockSnapshot):
-            if demo_provider is None:
+            if demo_provider is not None:
+                try:
+                    fallback = await demo_provider.get_fundamentals(snapshot.symbol, snapshot)
+                    if fallback is not None:
+                        return snapshot.symbol, fallback
+                except Exception:
+                    pass
+
+            if not callable(provider_loader):
                 return None
             try:
-                fallback = await demo_provider.get_fundamentals(snapshot.symbol, snapshot)
+                refreshed = await provider_loader(snapshot.symbol, snapshot=snapshot)
+            except TypeError:
+                try:
+                    refreshed = await provider_loader(snapshot.symbol, snapshot)
+                except Exception:
+                    return None
             except Exception:
                 return None
-            return snapshot.symbol, fallback
+            if refreshed is None:
+                return None
+            return snapshot.symbol, refreshed
 
         fetched = await asyncio.gather(*[load(snapshot) for snapshot in missing])
         results.update(
@@ -2667,10 +2686,17 @@ class DashboardService:
         sector_snapshot_map: dict[str, list[StockSnapshot]] = {}
         for snapshot in snapshots:
             sector_snapshot_map.setdefault(snapshot.sector or "Unknown", []).append(snapshot)
-        consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
-            [item["snapshot"] for item in consolidating_candidates],
-            limit=8,
-        )
+        try:
+            consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
+                [item["snapshot"] for item in consolidating_candidates],
+                limit=8,
+                max_age_hours=24 * 14,
+            )
+        except TypeError:
+            consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
+                [item["snapshot"] for item in consolidating_candidates],
+                limit=8,
+            )
         consolidating_ideas: list[MoneyFlowStockIdea] = []
         for candidate in consolidating_candidates:
             snapshot = candidate["snapshot"]
@@ -2708,10 +2734,17 @@ class DashboardService:
             ),
             reverse=True,
         )
-        value_fundamentals = await self._fetch_fundamentals_for_symbols(
-            value_snapshot_pool,
-            limit=self._money_flow_value_fundamentals_limit(),
-        )
+        try:
+            value_fundamentals = await self._fetch_fundamentals_for_symbols(
+                value_snapshot_pool,
+                limit=self._money_flow_value_fundamentals_limit(),
+                max_age_hours=24 * 14,
+            )
+        except TypeError:
+            value_fundamentals = await self._fetch_fundamentals_for_symbols(
+                value_snapshot_pool,
+                limit=self._money_flow_value_fundamentals_limit(),
+            )
         value_candidates: list[dict] = []
         snapshot_by_symbol = {snapshot.symbol: snapshot for snapshot in value_snapshot_pool}
         for symbol, fundamentals in value_fundamentals.items():
@@ -3989,6 +4022,32 @@ class DashboardService:
                         "applied_quote_count": 0,
                         "historical_rebuild": False,
                         "quote_source": None,
+                    }
+
+                full_refresh = getattr(self.provider, "refresh_snapshots", None)
+                if callable(full_refresh):
+                    snapshots = await asyncio.wait_for(
+                        full_refresh(self.settings.market_cap_min_crore),
+                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
+                    )
+                    snapshot_after = self.provider.get_snapshot_updated_at()
+                    refresh_metadata = self.provider.get_last_refresh_metadata()
+                    applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
+                    historical_rebuild = bool(refresh_metadata.get("historical_rebuild", True))
+                    quote_source = refresh_metadata.get("quote_source")
+                    self._clear_runtime_caches()
+                    snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
+                    return {
+                        "ok": True,
+                        "universe_count": len(snapshots),
+                        "market_cap_min_crore": self.settings.market_cap_min_crore,
+                        "refresh_mode": "historical-refresh",
+                        "message": "Rebuilt the official close snapshot for this session.",
+                        "snapshot_updated_at": snapshot_timestamp.isoformat(),
+                        "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
+                        "applied_quote_count": applied_quote_count,
+                        "historical_rebuild": historical_rebuild,
+                        "quote_source": quote_source,
                     }
 
             snapshots = await asyncio.wait_for(

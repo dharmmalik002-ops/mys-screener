@@ -5854,8 +5854,9 @@ button {
   inset: 0;
   z-index: 9999;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
   background: rgba(6, 8, 13, 0.95);
   backdrop-filter: blur(10px);
 }
@@ -5865,8 +5866,10 @@ button {
   inset: 0;
   z-index: 10001;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
   background: rgba(6, 8, 13, 0.95);
   backdrop-filter: blur(10px);
 }
@@ -7656,8 +7659,10 @@ button {
   inset: 0;
   background: rgba(0, 0, 0, 0.65);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
+  overflow-y: auto;
+  padding: 14px 16px 20px;
   z-index: 1200;
 }
 .modal-box {

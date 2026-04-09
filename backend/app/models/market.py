@@ -1,7 +1,7 @@
 from datetime import date, datetime, timezone
 from typing import Literal, Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class StockSnapshot(BaseModel):
@@ -1335,6 +1335,28 @@ class WatchlistsStateResponse(BaseModel):
     updated_at: int | None = None
     active_watchlist_id: str | None = None
     watchlists: list[WatchlistItem] = Field(default_factory=list)
+
+    @field_validator("updated_at", mode="before")
+    @classmethod
+    def _normalize_updated_at(cls, value: object) -> int | None:
+        if value is None or value == "":
+            return None
+        if isinstance(value, datetime):
+            normalized = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
+            return int(normalized.timestamp() * 1000)
+        if isinstance(value, str):
+            stripped = value.strip()
+            if not stripped:
+                return None
+            if stripped.isdigit():
+                return int(stripped)
+            try:
+                parsed = datetime.fromisoformat(stripped.replace("Z", "+00:00"))
+            except ValueError:
+                return value
+            normalized = parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
+            return int(normalized.timestamp() * 1000)
+        return value
 
 
 # ── Sector Rotation ──────────────────────────────────────────────────────────

@@ -6411,6 +6411,20 @@ class FreeMarketDataProvider:
             history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
             history = self._aggregate_weekly_history(history)
         else:
+            # Commodity macros like crude oil should open instantly and not depend
+            # on a slow Yahoo history download. Use the public FRED time series first.
+            if timeframe == "1D" and symbol.upper() in {"CL=F", "BZ=F"}:
+                commodity_history = self._history_frame_from_cached_bars(symbol)
+                if not self._history_has_minimum_bars(commodity_history):
+                    commodity_history = self._download_fred_wti_history()
+                if self._history_has_minimum_bars(commodity_history):
+                    history = commodity_history.tail(bars)
+                else:
+                    history = pd.DataFrame()
+                if not history.empty:
+                    chart_bars = self._history_to_chart_bars(history)
+                    if self._chart_bars_match_symbol_scale(symbol, chart_bars):
+                        return chart_bars
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
             history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
