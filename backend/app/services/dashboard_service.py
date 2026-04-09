@@ -430,6 +430,7 @@ class DashboardService:
         reverse: bool,
         metric_field_map: dict[str, str],
         last_price: float | None = None,
+        return_1d_override: float | None = None,
     ) -> SectorCard:
         return SectorCard(
             group_kind=group_kind,
@@ -437,7 +438,7 @@ class DashboardService:
             company_count=len(members),
             sub_sector_count=len(grouped_members),
             last_price=last_price,
-            return_1d=self._weighted_average_return(members, "change_pct"),
+            return_1d=round(float(return_1d_override), 2) if return_1d_override is not None else self._weighted_average_return(members, "change_pct"),
             return_1w=self._weighted_average_return(members, "stock_return_5d"),
             return_1m=self._weighted_average_return(members, "stock_return_20d"),
             return_3m=self._weighted_average_return(members, "stock_return_60d"),
@@ -3545,6 +3546,7 @@ class DashboardService:
                     reverse,
                     metric_field_map,
                     last_price=index_quote.price if index_quote is not None else None,
+                    return_1d_override=index_quote.change_pct if index_quote is not None else None,
                 )
             )
 

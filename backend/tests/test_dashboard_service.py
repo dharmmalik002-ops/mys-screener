@@ -210,6 +210,7 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         nifty_500 = next(card for card in response.sectors if card.sector == "Nifty 500")
         self.assertEqual(nifty_500.group_kind, "index")
         self.assertEqual(nifty_500.last_price, 20891.6)
+        self.assertEqual(nifty_500.return_1d, 0.0)
         nifty_500_symbols = {
             company.symbol
             for group in nifty_500.sub_sectors
