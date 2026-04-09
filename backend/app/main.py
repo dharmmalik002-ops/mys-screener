@@ -210,11 +210,32 @@ async def live_market_watchdog_job() -> None:
                 try:
                     await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
                     service._clear_runtime_caches()
-                    logger.info("WATCHDOG INDIA: live refresh OK, caches cleared")
+                    logger.warning("WATCHDOG INDIA: live refresh OK — caches cleared, snapshot age now %.0fs", india_prov._snapshot_age_seconds())
                 except Exception as exc:
                     logger.error("WATCHDOG INDIA: live refresh FAILED: %s", exc)
             else:
-                logger.debug("WATCHDOG INDIA: snapshot fresh (%.0fs)", snap_age)
+                # Even if mtime is fresh, validate that disk file has a parseable schema.
+                # A fresh-mtime but corrupt/empty file won't trigger the age check above,
+                # but will cause a cold-restart failure. Detect and fix proactively.
+                valid_rows = await asyncio.to_thread(india_prov._load_valid_cached_snapshot_rows)
+                if not valid_rows and india_prov.snapshot_cache_path.exists():
+                    logger.warning(
+                        "WATCHDOG INDIA: snapshot file exists but schema invalid — deleting corrupt file and rebuilding"
+                    )
+                    try:
+                        # Delete the corrupt file so get_snapshots triggers a clean rebuild,
+                        # not the complex refresh_snapshots fallback that fails on bad disk.
+                        india_prov.snapshot_cache_path.unlink(missing_ok=True)
+                        india_prov._snapshots_memory_cache.clear()
+                        india_prov._snapshot_request_tasks.clear()
+                        india_prov._live_snapshot_refresh_tasks.clear()
+                        service._clear_runtime_caches()
+                        await india_prov.get_snapshots(settings.market_cap_min_crore)
+                        logger.warning("WATCHDOG INDIA: corrupt file deleted and snapshot rebuilt OK")
+                    except Exception as exc:
+                        logger.error("WATCHDOG INDIA: corrupt file rebuild FAILED: %s", exc)
+                else:
+                    logger.debug("WATCHDOG INDIA: snapshot fresh (%.0fs)", snap_age)
         else:
             # After close on a weekday: ensure bhavcopy applied for today
             ist_weekday = now_ist.weekday()  # 0=Mon … 4=Fri
@@ -234,7 +255,7 @@ async def live_market_watchdog_job() -> None:
                         if result.get("snapshots_updated", 0) > 0:
                             service._clear_runtime_caches()
                             await service.build_dashboard()
-                        logger.info("WATCHDOG INDIA: bhavcopy patch result: %s", result)
+                        logger.warning("WATCHDOG INDIA: bhavcopy patch result: %s", result)
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: bhavcopy patch FAILED: %s", exc)
                 else:
@@ -254,11 +275,25 @@ async def live_market_watchdog_job() -> None:
                 try:
                     await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
                     us_service._clear_runtime_caches()
-                    logger.info("WATCHDOG US: live refresh OK, caches cleared")
+                    logger.warning("WATCHDOG US: live refresh OK — caches cleared, snapshot age now %.0fs", us_prov._snapshot_age_seconds())
                 except Exception as exc:
                     logger.error("WATCHDOG US: live refresh FAILED: %s", exc)
             else:
-                logger.debug("WATCHDOG US: snapshot fresh (%.0fs)", us_snap_age)
+                valid_rows_us = await asyncio.to_thread(us_prov._load_valid_cached_snapshot_rows)
+                if not valid_rows_us and us_prov.snapshot_cache_path.exists():
+                    logger.warning("WATCHDOG US: snapshot file exists but schema invalid — deleting corrupt file and rebuilding")
+                    try:
+                        us_prov.snapshot_cache_path.unlink(missing_ok=True)
+                        us_prov._snapshots_memory_cache.clear()
+                        us_prov._snapshot_request_tasks.clear()
+                        us_prov._live_snapshot_refresh_tasks.clear()
+                        us_service._clear_runtime_caches()
+                        await us_prov.get_snapshots(us_settings.market_cap_min_crore)
+                        logger.warning("WATCHDOG US: corrupt file deleted and snapshot rebuilt OK")
+                    except Exception as exc:
+                        logger.error("WATCHDOG US: corrupt file rebuild FAILED: %s", exc)
+                else:
+                    logger.debug("WATCHDOG US: snapshot fresh (%.0fs)", us_snap_age)
 
     logger.debug(
         "WATCHDOG heartbeat — India open=%s age=%.0fs | US open=%s age=%.0fs",
