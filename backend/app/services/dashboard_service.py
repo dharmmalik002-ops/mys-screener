@@ -4041,6 +4041,124 @@ class DashboardService:
             "quote_source": quote_source,
         }
 
+    async def run_watchdog_fix(self) -> dict[str, object]:
+        """Manual self-heal used by the website watchdog button.
+
+        This is intentionally stronger than the normal refresh button:
+        - deletes corrupt snapshot caches if they exist,
+        - applies Bhavcopy patch when available,
+        - forces a live refresh during market hours,
+        - queues / runs a close rebuild outside market hours,
+        - clears and re-warms the important runtime caches.
+        """
+        snapshot_before = self.provider.get_snapshot_updated_at()
+        actions: list[str] = []
+        refresh_mode = "cached-current"
+        quote_source: str | None = None
+        applied_quote_count = 0
+        historical_rebuild = False
+
+        try:
+            snapshot_path = getattr(self.provider, "snapshot_cache_path", None)
+            load_valid_cached = getattr(self.provider, "_load_valid_cached_snapshot_rows", None)
+            if snapshot_path is not None and callable(load_valid_cached):
+                valid_rows = await asyncio.to_thread(load_valid_cached)
+                if not valid_rows and snapshot_path.exists():
+                    snapshot_path.unlink(missing_ok=True)
+                    snapshot_path.with_suffix(f"{snapshot_path.suffix}.gz").unlink(missing_ok=True)
+                    actions.append("deleted_corrupt_snapshot_cache")
+
+            patch_fn = getattr(self.provider, "apply_committed_bhavcopy_patch", None)
+            if callable(patch_fn):
+                patch_result = await asyncio.to_thread(patch_fn)
+                updated = int(patch_result.get("snapshots_updated", 0) or 0)
+                if updated > 0:
+                    applied_quote_count += updated
+                    actions.append(f"applied_bhavcopy_patch:{updated}")
+
+            is_market_open_method = getattr(self.provider, "_is_market_open_ist", None)
+            is_market_open = bool(is_market_open_method()) if callable(is_market_open_method) else False
+            refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
+            refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
+
+            if is_market_open:
+                live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
+                if callable(live_refresh):
+                    snapshots = await asyncio.wait_for(
+                        live_refresh(self.settings.market_cap_min_crore),
+                        timeout=max(self.settings.refresh_timeout_seconds, 15),
+                    )
+                    refresh_mode = "live-refresh"
+                    quote_source = "watchdog-live"
+                    actions.append("refreshed_live_snapshots")
+                else:
+                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                    actions.append("reloaded_snapshots")
+            elif refresh_strategy == "historical":
+                schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
+                if callable(schedule_bg):
+                    schedule_bg(
+                        float(self.settings.market_cap_min_crore),
+                        self.settings.market_cap_min_crore,
+                        force_refresh=True,
+                    )
+                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                    refresh_mode = "rebuilding-background"
+                    actions.append("queued_historical_rebuild")
+                else:
+                    full_refresh = getattr(self.provider, "refresh_snapshots", None)
+                    if callable(full_refresh):
+                        snapshots = await full_refresh(self.settings.market_cap_min_crore)
+                        refresh_mode = "historical-refresh"
+                        historical_rebuild = True
+                        actions.append("rebuilt_close_snapshot")
+                    else:
+                        snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                        actions.append("reloaded_snapshots")
+            else:
+                snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                actions.append("reloaded_snapshots")
+
+            self._clear_runtime_caches()
+            await self.build_dashboard()
+            await self.get_sector_tab("1D", "desc")
+
+            snapshot_after = self.provider.get_snapshot_updated_at()
+            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
+            action_text = ", ".join(actions) if actions else "checked caches and refreshed runtime data"
+            return {
+                "ok": True,
+                "universe_count": len(snapshots),
+                "market_cap_min_crore": self.settings.market_cap_min_crore,
+                "refresh_mode": refresh_mode,
+                "message": f"Watchdog self-heal complete — {action_text}.",
+                "snapshot_updated_at": snapshot_timestamp.isoformat(),
+                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
+                "applied_quote_count": applied_quote_count,
+                "historical_rebuild": historical_rebuild,
+                "quote_source": quote_source,
+            }
+        except Exception as exc:
+            self._clear_runtime_caches()
+            try:
+                snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+            except Exception:
+                snapshots = []
+            snapshot_after = self.provider.get_snapshot_updated_at()
+            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
+            return {
+                "ok": False,
+                "universe_count": len(snapshots),
+                "market_cap_min_crore": self.settings.market_cap_min_crore,
+                "refresh_mode": "error-fallback",
+                "message": f"Watchdog self-heal hit {type(exc).__name__}, but the latest reachable market snapshot is still loaded.",
+                "snapshot_updated_at": snapshot_timestamp.isoformat(),
+                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
+                "applied_quote_count": applied_quote_count,
+                "historical_rebuild": historical_rebuild,
+                "quote_source": quote_source,
+            }
+
     @staticmethod
     def _weighted_average_return(items: list[StockSnapshot], field: str) -> float:
         total_weight = 0.0

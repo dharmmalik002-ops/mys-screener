@@ -31,6 +31,7 @@ import {
   getSectorTab,
   getWatchlistsState,
   refreshMarketData,
+  runWatchdogFix,
   runCustomScan,
   saveWatchlistsState,
   type ChartResponse,
@@ -1406,6 +1407,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [watchdogFixing, setWatchdogFixing] = useState(false);
   const chartRequestIdRef = useRef(0);
   const fundamentalsRequestIdRef = useRef(0);
   const scanRequestIdRef = useRef(0);
@@ -3952,6 +3954,24 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
   };
 
+  const handleWatchdogFix = async () => {
+    if (watchdogFixing || refreshingRef.current) {
+      return;
+    }
+
+    setWatchdogFixing(true);
+    setError("Running watchdog self-heal — checking caches and forcing a fresh sync...");
+    try {
+      const result = await runWatchdogFix(activeMarket);
+      await handleRefresh("manual");
+      setError(result.message ?? "Watchdog self-heal completed.");
+    } catch (watchdogError) {
+      setError(watchdogError instanceof Error ? watchdogError.message : "Watchdog self-heal failed");
+    } finally {
+      setWatchdogFixing(false);
+    }
+  };
+
   handleRefreshRef.current = handleRefresh;
 
   useEffect(() => {
@@ -4221,8 +4241,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </div>
           </div>
 
-          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing}>
+          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing || watchdogFixing}>
             {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
+          </button>
+          <button
+            type="button"
+            className="nav-button"
+            onClick={() => void handleWatchdogFix()}
+            disabled={refreshing || watchdogFixing}
+            title="Runs the stronger self-heal watchdog: checks caches, forces a fresh sync, and reloads the dashboard."
+          >
+            {watchdogFixing ? "Running Watchdog..." : "Watchdog Fix"}
           </button>
         </div>
       </header>

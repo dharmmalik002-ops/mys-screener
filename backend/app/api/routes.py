@@ -262,6 +262,10 @@ def build_router(service):
     async def refresh_market_data(market: str = Query(default="india")):
         return await resolve_service(market).refresh_market_data()
 
+    @router.post("/watchdog/fix")
+    async def watchdog_fix(market: str = Query(default="india")):
+        return await resolve_service(market).run_watchdog_fix()
+
     @router.post("/apply-bhavcopy-eod")
     async def apply_bhavcopy_eod():
         """Apply today's NSE Bhavcopy (official EOD data) to all chart caches.
@@ -544,6 +548,10 @@ def build_router(service):
     @router.post("/{market_name}/refresh")
     async def namespaced_refresh_market_data(market_name: str):
         return await resolve_service(market_name).refresh_market_data()
+
+    @router.post("/{market_name}/watchdog/fix")
+    async def namespaced_watchdog_fix(market_name: str):
+        return await resolve_service(market_name).run_watchdog_fix()
 
     @router.get("/{market_name}/index-quotes", response_model=IndexQuotesResponse)
     async def namespaced_index_quotes(

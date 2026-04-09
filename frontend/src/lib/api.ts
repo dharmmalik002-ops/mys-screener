@@ -1088,6 +1088,12 @@ export function refreshMarketData(market: MarketKey) {
   });
 }
 
+export function runWatchdogFix(market: MarketKey) {
+  return request<RefreshResponse>(withMarket("/api/watchdog/fix", market), {
+    method: "POST",
+  });
+}
+
 export function getIndexQuotes(symbols: string[], market: MarketKey) {
   return request<IndexQuotesResponse>(`/api/index-quotes?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`);
 }
