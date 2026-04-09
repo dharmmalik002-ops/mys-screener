@@ -749,7 +749,16 @@ function PeChartModal({
   );
 }
 
-export function HomePanel({ activeMarket, dashboard, sectors, groups, onPickSymbol, onOpenSectors, onOpenGroups }: HomePanelProps) {
+export function HomePanel({
+  activeMarket,
+  dashboard,
+  sectors,
+  groups,
+  onPickSymbol,
+  onOpenSectors,
+  onOpenGroups,
+  onOpenWatchdogTasks,
+}: HomePanelProps) {
   const [heatmapWindow, setHeatmapWindow] = useState<SectorSortBy>("1D");
   const [groupFilter, setGroupFilter] = useState<HomeGroupFilter>(40);
   const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("1Y");
