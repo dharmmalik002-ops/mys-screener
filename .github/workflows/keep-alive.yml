@@ -1,0 +1,30 @@
+name: Keep HuggingFace Backend Warm
+
+on:
+  schedule:
+    # Every 5 minutes
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-backend:
+    name: Ping HF health endpoint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Hit /api/health
+        run: |
+          echo "Pinging HuggingFace backend health endpoint..."
+          HTTP_CODE=$(curl -L -s -o /tmp/health.json -w "%{http_code}" --max-time 120 \
+            "https://dharmmalik-stock-scanner-backend.hf.space/api/health")
+          echo "HTTP status: $HTTP_CODE"
+          echo "Response:"
+          cat /tmp/health.json || true
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Keep-alive ping failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "Backend is awake."
