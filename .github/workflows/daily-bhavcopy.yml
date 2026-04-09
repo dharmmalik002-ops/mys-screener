@@ -66,7 +66,9 @@ jobs:
             --exclude 'backend/data/chart_cache_us' \
             --exclude 'backend/data/news_cache' \
             --exclude 'backend/data/free_snapshots.json' \
-            --exclude 'backend/data/free_snapshots_us.json'
+            --exclude 'backend/data/free_snapshots_us.json' \
+            --exclude 'backend/data/free_snapshots.json.gz' \
+            --exclude 'backend/data/free_snapshots_us.json.gz'
           cd /tmp/hf-deploy
           git init
           git checkout -b main
