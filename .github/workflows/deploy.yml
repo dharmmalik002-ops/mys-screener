@@ -23,14 +23,35 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
-      - name: Push to HuggingFace
+      - name: Build clean deploy snapshot
+        run: |
+          rm -rf /tmp/hf-deploy
+          mkdir -p /tmp/hf-deploy
+          rsync -a ./ /tmp/hf-deploy/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.venv' \
+            --exclude 'backend/.venv' \
+            --exclude 'frontend/node_modules' \
+            --exclude 'test-results' \
+            --exclude 'tmp' \
+            --exclude 'backend/data/chart_cache' \
+            --exclude 'backend/data/chart_cache_us' \
+            --exclude 'backend/data/news_cache' \
+            --exclude 'backend/data/free_snapshots.json' \
+            --exclude 'backend/data/free_snapshots_us.json'
+
+      - name: Push clean snapshot to HuggingFace
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Add HF remote with token-embedded URL
+          cd /tmp/hf-deploy
+          git init
+          git checkout -b main
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add .
+          git commit -m "Deploy from GitHub Actions ${GITHUB_SHA}"
           git remote add hf \
             "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
-
-          # Push main branch directly to HF's main branch
-          # HF only runs the backend (Docker/Python), so frontend files are harmless
           git push hf main:main --force
