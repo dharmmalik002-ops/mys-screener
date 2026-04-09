@@ -1261,6 +1261,126 @@ class FreeMarketDataProvider:
             self._bulk_fundamentals_memory_cache = {}
         return self._bulk_fundamentals_memory_cache
 
+    def _fetch_yf_bulk_info(self, yf_ticker: str) -> dict[str, Any]:
+        """Fetch key fundamental fields from yfinance for a single ticker.
+        Runs in a thread; returns an empty dict on any error.
+        """
+        try:
+            t = yf.Ticker(yf_ticker)
+            try:
+                info = t.get_info()
+            except Exception:
+                try:
+                    info = t.info
+                except Exception:
+                    return {}
+            return {
+                "eps_growth_yoy": info.get("earningsGrowth"),
+                "revenue_growth_yoy": info.get("revenueGrowth"),
+                "operating_margin": info.get("operatingMargins"),
+                "profit_margin": info.get("profitMargins"),
+                "roe": info.get("returnOnEquity"),
+                "roa": info.get("returnOnAssets"),
+                "trailing_eps": info.get("trailingEps"),
+                "forward_eps": info.get("forwardEps"),
+                "peg_ratio": info.get("pegRatio"),
+                "price_to_book": info.get("priceToBook"),
+                "debt_to_equity": info.get("debtToEquity"),
+            }
+        except Exception:
+            return {}
+
+    def update_bulk_fundamentals_cache(self, max_workers: int = 8) -> dict[str, Any]:
+        """Refresh the bulk fundamentals cache (free_fundamental_cache.json) by
+        fetching yfinance `ticker.info` for every stock in the universe.
+
+        Called weekly by the APScheduler job in main.py.  Runs synchronously in a
+        background thread so callers should use asyncio.to_thread().
+
+        Returns a summary dict: {updated, skipped, errors, duration_seconds}.
+        """
+        import time
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        t0 = time.monotonic()
+        rows = self._load_valid_cached_snapshot_rows()
+        if not rows:
+            # Fall back to universe file if snapshots not yet built
+            rows = self._load_json_rows(self.universe_cache_path)
+        if not rows:
+            return {"status": "skipped", "reason": "no universe rows found"}
+
+        # Build {symbol: yf_ticker} map
+        sym_to_yf: dict[str, str] = {}
+        for row in rows:
+            symbol = str(row.get("symbol") or "").upper()
+            if not symbol:
+                continue
+            instrument_key = str(row.get("instrument_key") or "").strip().upper()
+            yf_ticker = instrument_key if instrument_key else f"{symbol}.NS"
+            sym_to_yf[symbol] = yf_ticker
+
+        existing = {}
+        if self.bulk_fundamentals_cache_path.exists():
+            try:
+                existing = json.loads(self.bulk_fundamentals_cache_path.read_text(encoding="utf-8"))
+                if not isinstance(existing, dict):
+                    existing = {}
+            except Exception:
+                existing = {}
+
+        logger = logging.getLogger(__name__)
+        updated = 0
+        skipped = 0
+        errors = 0
+        total = len(sym_to_yf)
+
+        logger.info("Bulk fundamentals update: fetching %d symbols with %d workers", total, max_workers)
+
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            futures = {executor.submit(self._fetch_yf_bulk_info, yf_ticker): symbol
+                       for symbol, yf_ticker in sym_to_yf.items()}
+            done = 0
+            for future in as_completed(futures):
+                symbol = futures[future]
+                done += 1
+                try:
+                    data = future.result()
+                    if any(v is not None for v in data.values()):
+                        existing[symbol] = data
+                        updated += 1
+                    else:
+                        skipped += 1
+                except Exception:
+                    errors += 1
+                if done % 200 == 0 or done == total:
+                    logger.info("Bulk fundamentals: %d/%d done (%d updated, %d skip, %d err)",
+                                done, total, updated, skipped, errors)
+
+        try:
+            self.bulk_fundamentals_cache_path.write_text(
+                json.dumps(existing, indent=2), encoding="utf-8"
+            )
+            # Invalidate in-memory cache so next request picks up fresh data
+            self._bulk_fundamentals_memory_cache = None
+            # Also clear snapshot memory cache so enriched rows get rebuilt
+            self._snapshots_memory_cache.clear()
+        except Exception as exc:
+            logger.error("Failed to write bulk fundamentals cache: %s", exc)
+            return {"status": "error", "reason": str(exc)}
+
+        duration = round(time.monotonic() - t0, 1)
+        logger.info("Bulk fundamentals update complete: %d updated, %d skip, %d err in %.1fs",
+                    updated, skipped, errors, duration)
+        return {
+            "status": "ok",
+            "updated": updated,
+            "skipped": skipped,
+            "errors": errors,
+            "duration_seconds": duration,
+            "total": total,
+        }
+
     def _with_snapshot_fallbacks(self, row: dict[str, Any]) -> dict[str, Any]:
         symbol = str(row.get("symbol") or "").upper()
         funds = self._get_bulk_fundamentals().get(symbol) or {}

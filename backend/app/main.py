@@ -121,6 +121,23 @@ async def daily_listed_universe_refresh_job(market_name: str, market_service: Da
         logger.error("Scheduled %s listed-stock refresh failed: %s", market_name.upper(), exc)
 
 
+async def weekly_bulk_fundamentals_job(market_name: str, market_service: DashboardService):
+    """Refresh bulk fundamentals cache (PE/EPS/ROE screener filters) weekly.
+    Fetches yfinance ticker.info for every stock in the universe and saves to
+    free_fundamental_cache.json so screener filters reflect latest Q results.
+    """
+    from app.providers.free import FreeMarketDataProvider
+    provider_obj = market_service.provider
+    if not isinstance(provider_obj, FreeMarketDataProvider):
+        return
+    logger.info("Starting weekly %s bulk fundamentals update...", market_name.upper())
+    try:
+        result = await asyncio.to_thread(provider_obj.update_bulk_fundamentals_cache)
+        logger.info("Weekly %s bulk fundamentals update done: %s", market_name.upper(), result)
+    except Exception as exc:
+        logger.error("Weekly %s bulk fundamentals update failed: %s", market_name.upper(), exc)
+
+
 async def weekly_money_flow_job(market_name: str, market_service: DashboardService):
     """Generate weekly AI money flow report in the market's local schedule."""
     logger.info("Starting weekly %s money flow report generation...", market_name.upper())
@@ -227,6 +244,13 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
     scheduler.add_job(
+        weekly_bulk_fundamentals_job,
+        CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=IST),
+        args=["india", service],
+        id="india_weekly_bulk_fundamentals",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         daily_money_flow_stock_job,
         CronTrigger(day_of_week="mon-fri", hour=18, minute=0, timezone=IST),
         args=["india", service, IST],
@@ -248,6 +272,13 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
     scheduler.add_job(
+        weekly_bulk_fundamentals_job,
+        CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=ET),
+        args=["us", us_service],
+        id="us_weekly_bulk_fundamentals",
+        replace_existing=True,
+    )
+    scheduler.add_job(
         daily_money_flow_stock_job,
         CronTrigger(day_of_week="mon-fri", hour=16, minute=30, timezone=ET),
         args=["us", us_service, ET],
@@ -256,7 +287,8 @@ async def lifespan(app: FastAPI):
     )
     scheduler.start()
     logger.info(
-        "Scheduler started — India refresh 4:00 PM IST / stocks 6:00 PM IST / weekly Sat 9:00 AM IST; US refresh 4:15 PM ET / stocks 4:30 PM ET / weekly Sat 9:00 AM ET"
+        "Scheduler started — India: close 4:00 PM IST / stocks 6:00 PM IST / money-flow Sat 9 AM IST / fundamentals Sun 1 AM IST; "
+        "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET"
     )
     startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)
     try:
