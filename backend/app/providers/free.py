@@ -226,6 +226,7 @@ class FreeMarketDataProvider:
         self._chart_symbol_scale_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
         self._holiday_date_cache: dict[tuple[int, ...], set[date]] = {}
         self._last_refresh_metadata = self._default_refresh_metadata()
+        self._ticker_alias_map: dict[str, str] | None = None
         self.demo = DemoMarketDataProvider()
         self.ai_service = AIAnalysisService(api_key=gemini_api_key, cache_dir=self.backend_root / "data")
 
@@ -6995,14 +6996,40 @@ class FreeMarketDataProvider:
             subset = series
         return float(subset.min())
 
+    def _get_ticker_alias_map(self) -> dict[str, str]:
+        """Lazily builds a {SYMBOL → instrument_key} map from snapshot rows.
+
+        Reads seed-chunk files when the primary snapshot file is absent
+        (e.g. on HuggingFace deployments where 16 MB files are forbidden).
+        The result is cached in memory for the lifetime of this provider
+        instance so subsequent lookups are O(1).
+        """
+        if self._ticker_alias_map is not None:
+            return self._ticker_alias_map
+        rows = self._load_json_rows(self.snapshot_cache_path)
+        m: dict[str, str] = {}
+        for item in rows:
+            sym = str(item.get("symbol") or "").strip().upper()
+            key = str(item.get("instrument_key") or "").strip()
+            if sym and key:
+                m[sym] = key
+        self._ticker_alias_map = m
+        return m
+
     def _resolve_ticker(self, symbol: str) -> str:
         if symbol.startswith("^") or symbol.endswith(".NS") or symbol.endswith(".BO"):
             return symbol
-        if self.snapshot_cache_path.exists():
-            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
-            row = next((item for item in rows if item["symbol"] == symbol), None)
-            if row and row.get("instrument_key"):
-                return str(row["instrument_key"])
+        sym_upper = symbol.upper()
+        alias_map = self._get_ticker_alias_map()
+        # 1) Exact match.
+        if sym_upper in alias_map:
+            return alias_map[sym_upper]
+        # 2) Unique prefix match – handles short aliases such as "LAURUS" → "LAURUSLABS".
+        #    Only resolves when exactly one snapshot symbol starts with the given prefix,
+        #    to avoid ambiguous expansions.
+        prefix_matches = [k for k in alias_map if k.startswith(sym_upper)]
+        if len(prefix_matches) == 1:
+            return alias_map[prefix_matches[0]]
         return f"{symbol}.NS"
 
     def _extract_history(self, frame: pd.DataFrame, ticker: str) -> pd.DataFrame:

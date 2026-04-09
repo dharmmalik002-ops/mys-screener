@@ -1677,6 +1677,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeMarket, useMarketRoutes]);
   const chartResponseCacheRef = useRef<Record<string, ChartResponse>>({});
   const tickerRequestIdRef = useRef(0);
+  const refreshTickerRibbonRef = useRef<() => void>(() => {});
 
   const refreshTickerRibbon = () => {
     const requestId = tickerRequestIdRef.current + 1;
@@ -1691,6 +1692,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       })
       .catch(() => {});
   };
+
+  refreshTickerRibbonRef.current = refreshTickerRibbon;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -2277,6 +2280,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     return () => window.clearInterval(intervalId);
   }, []);
+
+  // Refresh the index ribbon (ticker tape) every 3 minutes so prices stay live.
+  useEffect(() => {
+    const ribbonIntervalId = window.setInterval(() => {
+      refreshTickerRibbonRef.current();
+    }, 3 * 60 * 1000);
+    return () => window.clearInterval(ribbonIntervalId);
+  }, []); // empty — always calls the latest version via ref
 
   // Auto-refresh once after market close to pick up confirmed close data
   useEffect(() => {
