@@ -4080,22 +4080,34 @@ class DashboardService:
             is_market_open = bool(is_market_open_method()) if callable(is_market_open_method) else False
             refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
             refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
+            live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
+            full_refresh = getattr(self.provider, "refresh_snapshots", None)
+            schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
 
             if is_market_open:
-                live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
                 if callable(live_refresh):
                     snapshots = await asyncio.wait_for(
                         live_refresh(self.settings.market_cap_min_crore),
-                        timeout=max(self.settings.refresh_timeout_seconds, 15),
+                        timeout=max(self.settings.refresh_timeout_seconds, 20),
                     )
                     refresh_mode = "live-refresh"
                     quote_source = "watchdog-live"
-                    actions.append("refreshed_live_snapshots")
+                    actions.append("forced_live_snapshot_refresh")
+                elif callable(full_refresh):
+                    snapshots = await asyncio.wait_for(
+                        full_refresh(self.settings.market_cap_min_crore),
+                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
+                    )
+                    refresh_mode = "historical-refresh"
+                    historical_rebuild = True
+                    actions.append("forced_full_snapshot_rebuild")
                 else:
                     snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
                     actions.append("reloaded_snapshots")
-            elif refresh_strategy == "historical":
-                schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
+            else:
+                # Manual button should be stronger than the normal refresh action,
+                # but it should also return promptly to the UI. Outside market
+                # hours we therefore prefer a forced background close rebuild.
                 if callable(schedule_bg):
                     schedule_bg(
                         float(self.settings.market_cap_min_crore),
@@ -4104,20 +4116,18 @@ class DashboardService:
                     )
                     snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
                     refresh_mode = "rebuilding-background"
-                    actions.append("queued_historical_rebuild")
+                    actions.append("queued_forced_close_rebuild")
+                elif callable(full_refresh):
+                    snapshots = await asyncio.wait_for(
+                        full_refresh(self.settings.market_cap_min_crore),
+                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
+                    )
+                    refresh_mode = "historical-refresh"
+                    historical_rebuild = True
+                    actions.append("forced_close_snapshot_rebuild")
                 else:
-                    full_refresh = getattr(self.provider, "refresh_snapshots", None)
-                    if callable(full_refresh):
-                        snapshots = await full_refresh(self.settings.market_cap_min_crore)
-                        refresh_mode = "historical-refresh"
-                        historical_rebuild = True
-                        actions.append("rebuilt_close_snapshot")
-                    else:
-                        snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                        actions.append("reloaded_snapshots")
-            else:
-                snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                actions.append("reloaded_snapshots")
+                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+                    actions.append("reloaded_snapshots")
 
             self._clear_runtime_caches()
             await self.build_dashboard()
@@ -4126,12 +4136,21 @@ class DashboardService:
             snapshot_after = self.provider.get_snapshot_updated_at()
             snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
             action_text = ", ".join(actions) if actions else "checked caches and refreshed runtime data"
+            if refresh_mode == "rebuilding-background":
+                user_message = "Watchdog self-heal started a full rebuild in the background — data should finish updating in about 1–3 minutes."
+            elif refresh_mode == "historical-refresh":
+                user_message = f"Watchdog self-heal complete — {action_text}."
+            elif refresh_mode == "live-refresh":
+                user_message = "Watchdog self-heal complete — live prices and caches were refreshed."
+            else:
+                user_message = f"Watchdog self-heal complete — {action_text}."
+
             return {
                 "ok": True,
                 "universe_count": len(snapshots),
                 "market_cap_min_crore": self.settings.market_cap_min_crore,
                 "refresh_mode": refresh_mode,
-                "message": f"Watchdog self-heal complete — {action_text}.",
+                "message": user_message,
                 "snapshot_updated_at": snapshot_timestamp.isoformat(),
                 "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
                 "applied_quote_count": applied_quote_count,
