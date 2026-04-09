@@ -30,6 +30,7 @@ import {
   getScanResults,
   getSectorTab,
   getWatchlistsState,
+  getWatchdogStatus,
   refreshMarketData,
   runWatchdogFix,
   runCustomScan,
@@ -53,6 +54,7 @@ import {
   type SectorSortBy,
   type SectorTabResponse,
   type ScanResultsResponse,
+  type WatchdogStatusResponse,
   type WatchlistsStateResponse,
   dispatchBackendEvent as _dispatchBackendEvent,
 } from "./lib/api";
@@ -1320,6 +1322,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const initialSavedScanners = readSavedScanners(bootstrapMarket);
   const initialSavedDrawings = readSavedDrawings(bootstrapMarket);
   const [backendStatus, setBackendStatus] = useState<"ok" | "warming" | "failed">("ok");
+  const [watchdogStatus, setWatchdogStatus] = useState<"checking" | "healthy" | "stale" | "offline">("checking");
+  const [watchdogStatusMeta, setWatchdogStatusMeta] = useState("Checking backend freshness...");
   const [activeMarket, setActiveMarket] = useState<MarketKey>(bootstrapMarket);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [universeCatalog, setUniverseCatalog] = useState<ScanMatch[]>([]);
@@ -3960,12 +3964,23 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
 
     setWatchdogFixing(true);
+    setWatchdogStatus("checking");
+    setWatchdogStatusMeta("Running self-heal now...");
     setError("Running watchdog self-heal — checking caches and forcing a fresh sync...");
     try {
       const result = await runWatchdogFix(activeMarket);
       await handleRefresh("manual");
+      try {
+        const status = await getWatchdogStatus(activeMarket);
+        applyWatchdogBadge(status);
+      } catch {
+        setWatchdogStatus("offline");
+        setWatchdogStatusMeta("Status unavailable right now.");
+      }
       setError(result.message ?? "Watchdog self-heal completed.");
     } catch (watchdogError) {
+      setWatchdogStatus("offline");
+      setWatchdogStatusMeta("Watchdog self-heal failed.");
       setError(watchdogError instanceof Error ? watchdogError.message : "Watchdog self-heal failed");
     } finally {
       setWatchdogFixing(false);
@@ -4007,8 +4022,57 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return () => window.removeEventListener("backend-status", handle);
   }, []);
 
+  const applyWatchdogBadge = (status: WatchdogStatusResponse) => {
+    const ageSeconds = Math.max(0, Math.round(status.snapshot_age_seconds ?? 0));
+    const ageLabel = ageSeconds < 90 ? `${ageSeconds}s old` : `${Math.round(ageSeconds / 60)}m old`;
+    setWatchdogStatus(status.snapshot_stale ? "stale" : "healthy");
+    setWatchdogStatusMeta(
+      `${status.is_market_open ? "Live" : "Idle"} · ${ageLabel} · checks every ${status.watchdog_interval_seconds}s`,
+    );
+  };
+
+  useEffect(() => {
+    let active = true;
+
+    async function pollWatchdogStatus() {
+      try {
+        const status = await getWatchdogStatus(activeMarket);
+        if (!active) {
+          return;
+        }
+        applyWatchdogBadge(status);
+      } catch {
+        if (!active) {
+          return;
+        }
+        setWatchdogStatus("offline");
+        setWatchdogStatusMeta("Status unavailable right now.");
+      }
+    }
+
+    void pollWatchdogStatus();
+    const intervalId = window.setInterval(() => {
+      void pollWatchdogStatus();
+    }, 60_000);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [activeMarket]);
+
   void _dispatchBackendEvent; // suppress unused import
   const floorMetricValue = activeMarket === "india" ? `${dashboard?.market_cap_min_crore ?? 800} Cr+` : ">$15 · 400K+ ADV";
+  const watchdogBadgeLabel = watchdogFixing
+    ? "Fixing"
+    : watchdogStatus === "healthy"
+      ? "Healthy"
+      : watchdogStatus === "stale"
+        ? "Needs sync"
+        : watchdogStatus === "offline"
+          ? "Offline"
+          : "Checking";
+  const watchdogBadgeTitle = watchdogFixing ? "Running watchdog self-heal now..." : watchdogStatusMeta;
 
   return (
     <div className="app-shell app-shell-simple">
@@ -4237,6 +4301,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <div className="mode-switch">
               <span className="tool-pill active" title={autoRefreshSchedule.detail}>
                 {autoRefreshSchedule.label}
+              </span>
+            </div>
+          </div>
+
+          <div className="nav-mode-toggle">
+            <span>Watchdog</span>
+            <div className="mode-switch">
+              <span
+                className={`tool-pill active watchdog-status-pill watchdog-status-pill--${watchdogStatus}`}
+                title={watchdogBadgeTitle}
+              >
+                <span className="watchdog-status-dot" />
+                {watchdogBadgeLabel}
               </span>
             </div>
           </div>

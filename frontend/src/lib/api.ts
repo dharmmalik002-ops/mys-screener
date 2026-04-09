@@ -882,6 +882,16 @@ export type RefreshResponse = {
   quote_source: string | null;
 };
 
+export type WatchdogStatusResponse = {
+  market: string;
+  is_market_open: boolean;
+  snapshot_age_seconds: number;
+  snapshot_updated_at: string | null;
+  snapshot_stale: boolean;
+  watchdog_interval_seconds: number;
+  server_utc: string;
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE || "https://dharmmalik-stock-scanner-backend.hf.space";
 
 const FALLBACK_API_BASES = (import.meta.env.DEV
@@ -1092,6 +1102,10 @@ export function runWatchdogFix(market: MarketKey) {
   return request<RefreshResponse>(withMarket("/api/watchdog/fix", market), {
     method: "POST",
   });
+}
+
+export function getWatchdogStatus(market: MarketKey) {
+  return request<WatchdogStatusResponse>(withMarket("/api/watchdog-status", market));
 }
 
 export function getIndexQuotes(symbols: string[], market: MarketKey) {

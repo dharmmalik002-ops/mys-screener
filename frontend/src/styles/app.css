@@ -411,6 +411,46 @@ button {
   box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
+.watchdog-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 108px;
+  justify-content: center;
+}
+
+.watchdog-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.watchdog-status-pill--healthy {
+  color: #0f9d58;
+  border-color: color-mix(in srgb, #10b981 45%, var(--line)) !important;
+  background: color-mix(in srgb, #10b981 12%, var(--surface-strong)) !important;
+}
+
+.watchdog-status-pill--stale {
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 45%, var(--line)) !important;
+  background: color-mix(in srgb, #f59e0b 12%, var(--surface-strong)) !important;
+}
+
+.watchdog-status-pill--offline {
+  color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 45%, var(--line)) !important;
+  background: color-mix(in srgb, #ef4444 12%, var(--surface-strong)) !important;
+}
+
+.watchdog-status-pill--checking {
+  color: #2563eb;
+  border-color: color-mix(in srgb, #3b82f6 45%, var(--line)) !important;
+  background: color-mix(in srgb, #3b82f6 12%, var(--surface-strong)) !important;
+}
+
 .nav-select {
   display: grid;
   gap: 6px;
