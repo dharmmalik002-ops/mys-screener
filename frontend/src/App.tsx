@@ -3587,7 +3587,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       }).map(w => (w.id === fromWatchlistId || w.id === toWatchlistId ? { ...w, updated_at: Date.now() } : w));
     });
 
-    setActiveWatchlistId(toWatchlistId);
+    // Stay on the current (source) watchlist after moving — do NOT switch to target.
   };
 
   const handleExportWatchlist = (watchlistId: string) => {
