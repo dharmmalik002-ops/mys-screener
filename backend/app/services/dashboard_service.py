@@ -2562,10 +2562,13 @@ class DashboardService:
             fundamentals: CompanyFundamentals | None = None
             if callable(cached_loader):
                 try:
+                    # Weekly bulk fundamentals are refreshed separately, so money-flow
+                    # ideas can safely use a longer cache window instead of forcing
+                    # expensive live refetches in the middle of the week.
                     fundamentals = await cached_loader(
                         snapshot.symbol,
                         snapshot=snapshot,
-                        max_age_hours=72,
+                        max_age_hours=24 * 14,
                     )
                 except TypeError:
                     try:
@@ -2583,15 +2586,16 @@ class DashboardService:
         if not missing:
             return results
 
-        semaphore = asyncio.Semaphore(3)
+        demo_provider = getattr(self.provider, "demo", None)
 
         async def load(snapshot: StockSnapshot):
-            async with semaphore:
-                try:
-                    fundamentals = await self.provider.get_fundamentals(symbol=snapshot.symbol, snapshot=snapshot)
-                except Exception:
-                    return None
-            return snapshot.symbol, fundamentals
+            if demo_provider is None:
+                return None
+            try:
+                fallback = await demo_provider.get_fundamentals(snapshot.symbol, snapshot)
+            except Exception:
+                return None
+            return snapshot.symbol, fallback
 
         fetched = await asyncio.gather(*[load(snapshot) for snapshot in missing])
         results.update(

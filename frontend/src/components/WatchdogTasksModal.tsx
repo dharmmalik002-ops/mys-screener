@@ -39,6 +39,12 @@ export function WatchdogTasksModal({ market, onClose }: WatchdogTasksModalProps)
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    }
+  }, []);
+
+  useEffect(() => {
     let active = true;
     let intervalId = 0;
     let midnightTimerId = 0;
@@ -110,7 +116,7 @@ export function WatchdogTasksModal({ market, onClose }: WatchdogTasksModalProps)
   }, [data]);
 
   return (
-    <div className="modal-backdrop" onClick={onClose}>
+    <div className="modal-backdrop watchdog-task-backdrop" onClick={onClose}>
       <div className="modal-box watchdog-task-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div>

@@ -261,6 +261,17 @@ async def live_market_watchdog_job() -> None:
                 else:
                     logger.debug("WATCHDOG INDIA: bhavcopy already applied for %s", today_ist)
 
+            india_money_flow_due = ist_weekday < 5 and ist_tot_min >= (18 * 60)
+            if india_money_flow_due:
+                try:
+                    payload = await service.ensure_money_flow_stock_ideas_current()
+                    if payload is not None and payload.recommendation_date == today_ist.isoformat():
+                        logger.debug("WATCHDOG INDIA: money-flow stock ideas current for %s", today_ist)
+                    else:
+                        logger.info("WATCHDOG INDIA: money-flow stock ideas still pending for %s", today_ist)
+                except Exception as exc:
+                    logger.error("WATCHDOG INDIA: money-flow stock ideas refresh FAILED: %s", exc)
+
     # ── US ────────────────────────────────────────────────────────────────────
     us_prov = us_service.provider
     if isinstance(us_prov, FreeMarketDataProvider):
@@ -294,6 +305,17 @@ async def live_market_watchdog_job() -> None:
                         logger.error("WATCHDOG US: corrupt file rebuild FAILED: %s", exc)
                 else:
                     logger.debug("WATCHDOG US: snapshot fresh (%.0fs)", us_snap_age)
+        else:
+            us_weekday = now_et.weekday()
+            us_tot_min = now_et.hour * 60 + now_et.minute
+            us_money_flow_due = us_weekday < 5 and us_tot_min >= (16 * 60 + 30)
+            if us_money_flow_due:
+                try:
+                    payload = await us_service.ensure_money_flow_stock_ideas_current()
+                    if payload is not None:
+                        logger.debug("WATCHDOG US: money-flow stock ideas current for %s", payload.recommendation_date)
+                except Exception as exc:
+                    logger.error("WATCHDOG US: money-flow stock ideas refresh FAILED: %s", exc)
 
     logger.debug(
         "WATCHDOG heartbeat — India open=%s age=%.0fs | US open=%s age=%.0fs",

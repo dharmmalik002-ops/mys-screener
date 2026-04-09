@@ -275,7 +275,6 @@ def build_router(service):
         stock_hour, stock_minute = ((16, 30) if normalized_market == "us" else (18, 0))
         stock_run = now_local.replace(hour=stock_hour, minute=stock_minute, second=0, microsecond=0)
         stock_schedule = f"Mon–Fri {stock_run.strftime('%I:%M %p').lstrip('0')} {tz_label}"
-        ai_available = bool(getattr(getattr(provider_obj, "ai_service", None), "available", True))
 
         try:
             stock_payload = await svc.get_money_flow_stock_ideas()
@@ -285,7 +284,6 @@ def build_router(service):
         stock_recommendation_date = str(getattr(stock_payload, "recommendation_date", "") or "")
         stock_generated_at = getattr(stock_payload, "generated_at", None)
         stock_idea_count = len(getattr(stock_payload, "consolidating_ideas", []) or []) + len(getattr(stock_payload, "value_ideas", []) or [])
-        stock_ai_model = getattr(stock_payload, "ai_model", None)
 
         if not is_trading_day:
             stock_status = "scheduled"
@@ -295,17 +293,13 @@ def build_router(service):
             stock_status = "scheduled"
             stock_detail = f"Scheduled for later today at {stock_run.strftime('%I:%M %p').lstrip('0')} {tz_label}."
             stock_done_today = False
-        elif stock_recommendation_date == day_key and (stock_idea_count > 0 or stock_ai_model is not None):
+        elif stock_recommendation_date == day_key and stock_generated_at is not None:
             stock_status = "done"
-            stock_detail = f"Today's money-flow stock ideas are ready with {stock_idea_count} idea entries."
+            stock_detail = f"Today's money-flow stock ideas refresh completed with {stock_idea_count} idea entries."
             stock_done_today = True
-        elif not ai_available:
-            stock_status = "attention"
-            stock_detail = "AI generation is not configured on this server, so this task cannot complete automatically yet."
-            stock_done_today = False
         else:
             stock_status = "attention"
-            stock_detail = "It is past the scheduled time, but today's money-flow stock ideas are not stored yet."
+            stock_detail = "It is past the scheduled time, but today's money-flow stock ideas are not stored yet. The watchdog will retry automatically."
             stock_done_today = False
 
         tasks.append(

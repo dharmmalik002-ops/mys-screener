@@ -7706,8 +7706,16 @@ button {
   flex-shrink: 0;
 }
 
+.watchdog-task-backdrop {
+  align-items: flex-start;
+  padding: 14px 16px 20px;
+  overflow-y: auto;
+}
+
 .watchdog-task-modal {
   width: min(760px, 96vw);
+  max-height: calc(100dvh - 34px);
+  margin-top: 0;
   background: var(--surface-strong);
   border-color: var(--line-strong);
 }
