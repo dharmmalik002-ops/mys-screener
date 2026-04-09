@@ -6379,6 +6379,70 @@ class FreeMarketDataProvider:
             return 0
         return updated
 
+    def apply_committed_bhavcopy_patch(self) -> dict:
+        """Apply the committed bhavcopy_patch.json file to snapshot data.
+
+        This file is a compact (~200 KB) map of {symbol: {o,h,l,c,v,p}} for
+        a specific trade date, generated locally and committed to the repo.
+        Unlike live NSE downloads, this works from any server (no IP restriction).
+
+        Called at startup so HuggingFace Space always serves official NSE prices
+        immediately after a cold start, without relying on a live NSE download.
+        """
+        if self._default_exchange() != "NSE":
+            return {"status": "skipped", "reason": "not NSE market"}
+
+        patch_path = self.backend_root / "data" / "bhavcopy_patch.json"
+        if not patch_path.exists():
+            return {"status": "skipped", "reason": "patch_file_missing"}
+
+        try:
+            patch_data = json.loads(patch_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            return {"status": "error", "reason": str(e)}
+
+        trade_date_str = patch_data.get("date", "")
+        symbols_map = patch_data.get("symbols", {})
+        if not symbols_map or not trade_date_str:
+            return {"status": "error", "reason": "invalid_patch_file"}
+
+        # Check if this patch is already applied (avoid re-patching same date)
+        if self.snapshot_cache_path.exists():
+            try:
+                first_row = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
+                if isinstance(first_row, list) and first_row:
+                    existing_date = first_row[0].get("history_as_of_date", "")
+                    if existing_date >= trade_date_str:
+                        return {"status": "skipped", "reason": f"already_at_{existing_date}"}
+            except Exception:
+                pass
+
+        # Convert compact format {o,h,l,c,v,p} to the format _apply_bhavcopy_to_snapshot_file expects
+        bhavcopy = {
+            sym: {
+                "open": v["o"], "high": v["h"], "low": v["l"],
+                "close": v["c"], "volume": v["v"], "prev_close": v["p"],
+            }
+            for sym, v in symbols_map.items()
+        }
+
+        try:
+            trade_date_obj = date.fromisoformat(trade_date_str)
+        except ValueError:
+            return {"status": "error", "reason": "invalid_date_in_patch"}
+
+        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, trade_date_obj)
+        chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, trade_date_obj)
+        if snap_updated:
+            self._snapshots_memory_cache.clear()
+
+        return {
+            "status": "ok",
+            "date": trade_date_str,
+            "snapshots_updated": snap_updated,
+            "chart_caches_updated": chart_updated,
+        }
+
     def _download_nse_index_chart_history(self, symbol: str) -> pd.DataFrame:
         index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
         if not index_name:

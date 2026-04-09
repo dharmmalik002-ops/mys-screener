@@ -178,19 +178,34 @@ async def warm_startup_cache(market_name: str, service_obj) -> None:
 async def apply_startup_bhavcopy(market_name: str, service_obj) -> None:
     """After initial warmup, apply the latest NSE Bhavcopy EOD prices so that
     chart caches and snapshot data reflect the official close — not Yahoo's
-    potentially stale/adjusted values.  Only runs for the India service."""
+    potentially stale/adjusted values.  Only runs for the India service.
+
+    Strategy:
+    1. Try the committed bhavcopy_patch.json (fast, no network, always works).
+    2. If that is already up-to-date or missing, fall back to a live NSE download.
+    """
     try:
         provider = getattr(service_obj, "provider", None)
+
+        # --- Step 1: committed patch file (no NSE network access needed) ---
+        patch_fn = getattr(provider, "apply_committed_bhavcopy_patch", None)
+        if callable(patch_fn):
+            result = await asyncio.to_thread(patch_fn)
+            logger.info("Startup committed Bhavcopy patch (%s): %s", market_name.upper(), result)
+            if result.get("status") == "ok" and result.get("snapshots_updated", 0) > 0:
+                await service_obj.build_dashboard()
+                logger.info("%s dashboard rebuilt with committed Bhavcopy prices", market_name.upper())
+                return  # patch applied — no need for live download
+
+        # --- Step 2: live NSE download fallback ---
         apply_fn = getattr(provider, "apply_bhavcopy_eod", None)
         if not callable(apply_fn):
             return
         result = await asyncio.to_thread(apply_fn)
-        logger.info("Startup Bhavcopy patch (%s): %s", market_name.upper(), result)
+        logger.info("Startup live Bhavcopy patch (%s): %s", market_name.upper(), result)
         if result.get("snapshots_updated", 0) > 0:
-            # Snapshot file was patched and in-memory cache cleared; rebuild
-            # dashboard so the UI gets the corrected prices immediately.
             await service_obj.build_dashboard()
-            logger.info("%s dashboard rebuilt with corrected Bhavcopy prices", market_name.upper())
+            logger.info("%s dashboard rebuilt with live Bhavcopy prices", market_name.upper())
     except Exception as exc:
         logger.warning("Startup Bhavcopy patch (%s) failed: %s", market_name.upper(), exc)
 
