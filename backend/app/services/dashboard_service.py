@@ -4080,6 +4080,8 @@ class DashboardService:
             is_market_open = bool(is_market_open_method()) if callable(is_market_open_method) else False
             refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
             refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
+            close_refresh_due_method = getattr(self.provider, "_market_close_refresh_due", None)
+            close_refresh_due = bool(close_refresh_due_method()) if callable(close_refresh_due_method) else (refresh_strategy == "historical")
             live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
             full_refresh = getattr(self.provider, "refresh_snapshots", None)
             schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
@@ -4105,10 +4107,9 @@ class DashboardService:
                     snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
                     actions.append("reloaded_snapshots")
             else:
-                # Manual button should be stronger than the normal refresh action,
-                # but it should also return promptly to the UI. Outside market
-                # hours we therefore prefer a forced background close rebuild.
-                if callable(schedule_bg):
+                # After hours, only queue a heavy rebuild if the last close is actually due.
+                # If the snapshot is already current for the session, report that clearly.
+                if close_refresh_due and callable(schedule_bg):
                     schedule_bg(
                         float(self.settings.market_cap_min_crore),
                         self.settings.market_cap_min_crore,
@@ -4117,7 +4118,7 @@ class DashboardService:
                     snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
                     refresh_mode = "rebuilding-background"
                     actions.append("queued_forced_close_rebuild")
-                elif callable(full_refresh):
+                elif close_refresh_due and callable(full_refresh):
                     snapshots = await asyncio.wait_for(
                         full_refresh(self.settings.market_cap_min_crore),
                         timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
@@ -4127,7 +4128,8 @@ class DashboardService:
                     actions.append("forced_close_snapshot_rebuild")
                 else:
                     snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                    actions.append("reloaded_snapshots")
+                    refresh_mode = "cached-current"
+                    actions.append("snapshot_already_current")
 
             self._clear_runtime_caches()
             await self.build_dashboard()
@@ -4142,6 +4144,8 @@ class DashboardService:
                 user_message = f"Watchdog self-heal complete — {action_text}."
             elif refresh_mode == "live-refresh":
                 user_message = "Watchdog self-heal complete — live prices and caches were refreshed."
+            elif refresh_mode == "cached-current":
+                user_message = "Watchdog check complete — market data is already current for this session."
             else:
                 user_message = f"Watchdog self-heal complete — {action_text}."
 

@@ -3977,7 +3977,22 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         setWatchdogStatus("offline");
         setWatchdogStatusMeta("Status unavailable right now.");
       }
-      setError(result.message ?? "Watchdog self-heal completed.");
+
+      const notice = result.message ?? "Watchdog self-heal completed.";
+      setError(notice);
+      const clearAfterMs = result.refresh_mode === "rebuilding-background" ? 180_000 : 15_000;
+      window.setTimeout(() => {
+        setError((current) => (current === notice ? null : current));
+      }, clearAfterMs);
+
+      if (result.refresh_mode === "rebuilding-background") {
+        window.setTimeout(() => {
+          void handleRefreshRef.current("auto");
+          void getWatchdogStatus(activeMarket)
+            .then((status) => applyWatchdogBadge(status))
+            .catch(() => {});
+        }, 120_000);
+      }
     } catch (watchdogError) {
       setWatchdogStatus("offline");
       setWatchdogStatusMeta("Watchdog self-heal failed.");
