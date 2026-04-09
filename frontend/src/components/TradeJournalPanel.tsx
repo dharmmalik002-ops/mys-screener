@@ -358,6 +358,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
   const [entryType, setEntryType] = useState("Buy");
   const [entryQty, setEntryQty] = useState("");
   const [entryPrice, setEntryPrice] = useState("");
+  const [fetchingEntryPrice, setFetchingEntryPrice] = useState(false);
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [entrySetup, setEntrySetup] = useState(DEFAULT_SETUPS[0]);
   const [entrySL, setEntrySL] = useState("");
@@ -669,6 +670,19 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
     reader.readAsText(file); e.target.value = "";
   }
 
+  // ── Auto-fetch current price when symbol is entered ─────────────────────
+  async function fetchEntryPrice(sym: string) {
+    const s = sym.trim().toUpperCase();
+    if (!s || entryPrice) return; // don't overwrite a manually entered price
+    setFetchingEntryPrice(true);
+    try {
+      const result = await getChart(s, "1D", market ?? "india");
+      const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
+      if (price && isFinite(price)) setEntryPrice(String(price));
+    } catch { /* ignore */ }
+    finally { setFetchingEntryPrice(false); }
+  }
+
   // ── Add Trade ─────────────────────────────────────────────────────────────
   function handleAddTrade(e: React.FormEvent) {
     e.preventDefault();
@@ -683,6 +697,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
     };
     saveTrades([...trades, t]);
     setEntrySymbol(""); setEntryQty(""); setEntryPrice(""); setEntrySL(""); setEntryTarget("");
+    setFetchingEntryPrice(false);
     setEntryImg(""); setEntryRemarks(""); setEntryTags(new Set()); setCustomTagInput("");
     setVcpT(""); setVcpDepth(""); setVcpVol(""); setCheckboxes(Array(6).fill(false));
     alert("Trade added!");
@@ -1164,14 +1179,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
               <div className="tj-card-hdr">Add Trade</div>
               <form onSubmit={handleAddTrade}>
                 <div className="tj-form-grid-2">
-                  <div className="tj-form-field"><label>Symbol *</label><input className="tj-input" required value={entrySymbol} onChange={e => setEntrySymbol(e.target.value)} placeholder="RELIANCE" /></div>
+                  <div className="tj-form-field"><label>Symbol *</label><input className="tj-input" required value={entrySymbol} onChange={e => { setEntrySymbol(e.target.value); setEntryPrice(""); }} onBlur={e => fetchEntryPrice(e.target.value)} placeholder="RELIANCE" /></div>
                   <div className="tj-form-field"><label>Type</label>
                     <select className="tj-select" value={entryType} onChange={e => setEntryType(e.target.value)}>
                       <option value="Buy">Buy</option><option value="Sell">Sell</option>
                     </select>
                   </div>
                   <div className="tj-form-field"><label>Quantity *</label><input className="tj-input" type="number" required value={entryQty} onChange={e => setEntryQty(e.target.value)} /></div>
-                  <div className="tj-form-field"><label>Price ₹ *</label><input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} /></div>
+                  <div className="tj-form-field"><label>Price ₹ {fetchingEntryPrice ? <span style={{fontWeight:400,fontSize:11,color:"var(--clr-accent)"}}>fetching…</span> : "*"}</label><input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} placeholder={fetchingEntryPrice ? "loading…" : ""} /></div>
                   <div className="tj-form-field"><label>Date *</label><input className="tj-input" type="date" required value={entryDate} onChange={e => setEntryDate(e.target.value)} /></div>
                   <div className="tj-form-field">
                     <label>Setup</label>
