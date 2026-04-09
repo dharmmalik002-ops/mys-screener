@@ -1664,7 +1664,14 @@ class FreeMarketDataProvider:
             if refreshed_weekly:
                 return refreshed_weekly
         try:
-            chart_bars = await asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars)
+            # Wrap in a 30 s timeout so that slow/blocked external downloads
+            # (e.g. yf.download hanging on HuggingFace) do not lock the worker
+            # thread forever.  A TimeoutError is treated like any other Exception
+            # below — we fall back to cached_bars or raise a clean error.
+            chart_bars = await asyncio.wait_for(
+                asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
+                timeout=30.0,
+            )
             if len(chart_bars) < min_required_bars:
                 legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
                 if len(cached_bars) >= min_required_bars:
@@ -3746,6 +3753,46 @@ class FreeMarketDataProvider:
                     }
         return quotes
 
+    def _fetch_yahoo_live_quote_via_chart(self, ticker: str) -> dict[str, Any] | None:
+        """Fetch a live quote using the Yahoo v8 chart API (no crumb required).
+
+        Unlike the v7 quote endpoint, the v8 chart endpoint works from any IP
+        including HuggingFace US servers without crumb/cookie authentication.
+        Returns a dict with regularMarketPrice, regularMarketPreviousClose, and
+        regularMarketTime, or None on failure.
+        """
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "application/json,text/plain,*/*",
+            "Referer": "https://finance.yahoo.com/",
+        }
+        try:
+            with httpx.Client(timeout=15, headers=headers, follow_redirects=True) as client:
+                response = client.get(
+                    f"{YAHOO_CHART_URL}/{ticker}",
+                    params={"range": "2d", "interval": "1d", "includePrePost": "false"},
+                )
+                response.raise_for_status()
+                payload = response.json()
+            result = ((payload.get("chart") or {}).get("result") or [None])[0]
+            if not result:
+                return None
+            meta = result.get("meta") or {}
+            price = self._to_float(meta.get("regularMarketPrice"))
+            prev_close = self._to_float(
+                meta.get("previousClose") or meta.get("chartPreviousClose") or meta.get("regularMarketPreviousClose")
+            )
+            ts = meta.get("regularMarketTime")
+            if not price or price <= 0:
+                return None
+            return {
+                "regularMarketPrice": price,
+                "regularMarketPreviousClose": prev_close or price,
+                "regularMarketTime": ts,
+            }
+        except Exception:
+            return None
+
     def _fetch_quote_batch(self, tickers: list[str]) -> dict[str, dict[str, Any]]:
         normalized_tickers = [str(ticker).strip() for ticker in tickers if str(ticker).strip()]
         if not normalized_tickers:
@@ -4237,8 +4284,9 @@ class FreeMarketDataProvider:
             missing.append(symbol)
 
         if missing:
-            # Yahoo Finance accepts index tickers directly (^NSEI, ^BSESN, ^NSEBANK).
-            # This works from any server/IP and provides live intraday quotes.
+            # Attempt 1: Yahoo v7 quote API (batch, low latency, but requires crumb).
+            # Fails silently on HF US servers due to missing crumb — v8 fallback below.
+            filled: set[str] = set()
             try:
                 yahoo_quotes = self._fetch_yahoo_live_quotes(missing)
                 for symbol in missing:
@@ -4262,8 +4310,38 @@ class FreeMarketDataProvider:
                         change_pct=change_pct,
                         updated_at=updated_at,
                     ))
+                    filled.add(symbol.upper())
             except Exception:
                 pass
+
+            # Attempt 2: Yahoo v8 chart API — no crumb required, works from any IP.
+            # Used as fallback when the v7 batch call fails (e.g. on HuggingFace).
+            still_missing = [s for s in missing if s.upper() not in filled]
+            for symbol in still_missing:
+                try:
+                    ticker = self._resolve_ticker(symbol) if not symbol.startswith("^") else symbol
+                    q = self._fetch_yahoo_live_quote_via_chart(ticker)
+                    if not q:
+                        continue
+                    price = self._to_float(q.get("regularMarketPrice"))
+                    prev = self._to_float(q.get("regularMarketPreviousClose"))
+                    ts = q.get("regularMarketTime")
+                    if not price or price <= 0:
+                        continue
+                    change_pct = round(((price / prev) - 1) * 100, 2) if prev and prev > 0 else 0.0
+                    updated_at = (
+                        datetime.fromtimestamp(int(ts), tz=timezone.utc)
+                        if ts
+                        else datetime.now(timezone.utc)
+                    )
+                    items.append(IndexQuoteItem(
+                        symbol=symbol,
+                        price=round(price, 2),
+                        change_pct=change_pct,
+                        updated_at=updated_at,
+                    ))
+                except Exception:
+                    pass
 
         return items
 
@@ -6379,16 +6457,12 @@ class FreeMarketDataProvider:
         self, bhavcopy: dict[str, dict[str, float]], trade_date: date
     ) -> int:
         """Patch the on-disk free_snapshots.json with official NSE EOD prices.
-        Returns the number of rows updated.  Safe to call even when the snapshot
-        file does not yet exist (returns 0).
+        Returns the number of rows updated.  Uses seed files as source when the
+        primary snapshot file does not yet exist (fresh HF restart with seed chunks).
         """
-        if not self.snapshot_cache_path.exists():
-            return 0
-        try:
-            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
-        except Exception:
-            return 0
-        if not isinstance(rows, list) or not rows:
+        # Load from seed chunks when the primary file is absent.
+        rows = self._load_json_rows(self.snapshot_cache_path)
+        if not rows or not isinstance(rows, list):
             return 0
         trade_date_str = trade_date.isoformat()
         updated = 0
