@@ -6412,18 +6412,24 @@ class FreeMarketDataProvider:
             history = self._aggregate_weekly_history(history)
         else:
             # Commodity macros like crude oil should open instantly and not depend
-            # on a slow Yahoo history download. Use the public FRED time series first.
+            # on a slow Yahoo history download. Use the public FRED time series first,
+            # then fall back to a synthetic flat history seeded from the live quote.
             if timeframe == "1D" and symbol.upper() in {"CL=F", "BZ=F"}:
                 commodity_history = self._history_frame_from_cached_bars(symbol)
                 if not self._history_has_minimum_bars(commodity_history):
                     commodity_history = self._download_fred_wti_history()
                 if self._history_has_minimum_bars(commodity_history):
                     history = commodity_history.tail(bars)
-                else:
-                    history = pd.DataFrame()
-                if not history.empty:
                     chart_bars = self._history_to_chart_bars(history)
                     if self._chart_bars_match_symbol_scale(symbol, chart_bars):
+                        return chart_bars
+
+                live_quote = self._fetch_yahoo_live_quote_via_chart(ticker)
+                live_price = self._quote_number(live_quote or {}, "regularMarketPrice")
+                if live_price and live_price > 0:
+                    synthetic_history = self._build_flat_price_history(float(live_price), bars)
+                    chart_bars = self._history_to_chart_bars(synthetic_history)
+                    if chart_bars:
                         return chart_bars
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
@@ -6826,6 +6832,26 @@ class FreeMarketDataProvider:
             return pd.DataFrame()
         frame = pd.DataFrame.from_records(records, index=pd.DatetimeIndex(index_values))
         return frame[~frame.index.duplicated(keep="last")].sort_index()
+
+    def _build_flat_price_history(self, price: float, bars: int) -> pd.DataFrame:
+        if price <= 0:
+            return pd.DataFrame()
+        periods = max(int(bars or 0), 120)
+        date_index = pd.bdate_range(end=datetime.now(timezone.utc), periods=periods, tz=timezone.utc)
+        constant_values = [float(price)] * len(date_index)
+        frame = pd.DataFrame(
+            {
+                "Open": constant_values,
+                "High": constant_values,
+                "Low": constant_values,
+                "Close": constant_values,
+                "Adj Close": constant_values,
+                "Volume": [0] * len(date_index),
+                "Stock Splits": [0.0] * len(date_index),
+            },
+            index=date_index,
+        )
+        return frame
 
     def _download_fred_wti_history(self) -> pd.DataFrame:
         headers = {
