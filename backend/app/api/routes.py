@@ -1,4 +1,6 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -120,6 +122,250 @@ def build_router(service):
             "snapshot_stale": snap_age > 180 if is_open else False,
             "watchdog_interval_seconds": 90,
             "server_utc": now_utc.isoformat(),
+        }
+
+    @router.get("/watchdog-tasks")
+    async def watchdog_tasks(market: str = Query(default="india")):
+        """Return today's watchdog schedule with done/pending/attention details for the home-page popup."""
+        from app.providers.free import FreeMarketDataProvider
+
+        normalized_market = str(market or "india").strip().lower()
+        svc = resolve_service(normalized_market)
+        provider_obj = svc.provider
+        now_utc = datetime.now(timezone.utc)
+        local_tz = ZoneInfo("America/New_York") if normalized_market == "us" else ZoneInfo("Asia/Kolkata")
+        tz_label = "ET" if normalized_market == "us" else "IST"
+        now_local = now_utc.astimezone(local_tz)
+        is_trading_day = now_local.weekday() < 5
+        day_key = now_local.date().isoformat()
+        next_reset_at = (
+            now_local.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        ).isoformat()
+
+        def format_local_clock(value: datetime | None) -> str | None:
+            if value is None:
+                return None
+            return value.astimezone(local_tz).strftime("%I:%M %p").lstrip("0")
+
+        def iso_or_none(value) -> str | None:
+            if value is None:
+                return None
+            return value.isoformat() if hasattr(value, "isoformat") else str(value)
+
+        def age_label(seconds) -> str:
+            if not isinstance(seconds, (int, float)) or seconds != seconds or seconds == float("inf"):
+                return "unknown age"
+            whole_seconds = max(0, int(seconds))
+            return f"{whole_seconds}s" if whole_seconds < 3600 else f"{round(whole_seconds / 60)}m"
+
+        def task_item(
+            task_id: str,
+            title: str,
+            schedule: str,
+            status: str,
+            detail: str,
+            last_event_at: str | None = None,
+            done_today: bool = False,
+            task_source: str = "backend scheduler",
+        ) -> dict:
+            return {
+                "id": task_id,
+                "title": title,
+                "source": task_source,
+                "schedule": schedule,
+                "status": status,
+                "detail": detail,
+                "last_event_at": last_event_at,
+                "done_today": done_today,
+            }
+
+        if not isinstance(provider_obj, FreeMarketDataProvider):
+            return {
+                "market": normalized_market,
+                "local_timezone": tz_label,
+                "local_time": now_local.isoformat(),
+                "day_key": day_key,
+                "next_reset_at": next_reset_at,
+                "tasks": [
+                    task_item(
+                        "watchdog_unavailable",
+                        "Watchdog task board",
+                        "Not available",
+                        "attention",
+                        f"Detailed task tracking is unavailable for provider {type(provider_obj).__name__}.",
+                    )
+                ],
+            }
+
+        snapshot_updated = provider_obj.get_snapshot_updated_at()
+        snapshot_updated_local = snapshot_updated.astimezone(local_tz) if snapshot_updated else None
+        snapshot_age_seconds = provider_obj._snapshot_age_seconds()
+        snapshot_age_text = age_label(snapshot_age_seconds)
+        is_market_open = bool(provider_obj._is_market_open_ist())
+
+        if snapshot_updated is None:
+            live_status = "attention"
+            live_detail = "No usable snapshot timestamp is available yet, so the watchdog is waiting for the first healthy refresh."
+        elif is_market_open and isinstance(snapshot_age_seconds, (int, float)) and snapshot_age_seconds > 180:
+            live_status = "attention"
+            live_detail = f"Live snapshot is {snapshot_age_text} old, so the watchdog is trying to force a refresh."
+        elif is_market_open:
+            live_status = "done"
+            live_detail = f"Live monitoring is active and the latest snapshot is {snapshot_age_text} old."
+        else:
+            live_status = "done"
+            live_detail = f"Market is closed; watchdog is idle but healthy. Latest snapshot age is {snapshot_age_text}."
+
+        tasks = [
+            task_item(
+                "live_market_watchdog",
+                "Live market watchdog",
+                "Every 90 seconds",
+                live_status,
+                live_detail,
+                iso_or_none(snapshot_updated),
+                done_today=live_status == "done",
+            ),
+            task_item(
+                "backend_keep_alive",
+                "Keep backend warm",
+                "Every 5 minutes",
+                "done",
+                "Backend is responding right now, so the keep-alive ping path is currently healthy.",
+                now_utc.isoformat(),
+                done_today=True,
+                task_source="GitHub Actions",
+            ),
+        ]
+
+        close_hour, close_minute = ((16, 15) if normalized_market == "us" else (16, 0))
+        close_run = now_local.replace(hour=close_hour, minute=close_minute, second=0, microsecond=0)
+        close_schedule = f"Mon–Fri {close_run.strftime('%I:%M %p').lstrip('0')} {tz_label}"
+        close_ready_cutoff = close_run - timedelta(minutes=45)
+
+        if not is_trading_day:
+            close_status = "scheduled"
+            close_detail = "Runs only on trading days, so it will wait for the next market session."
+            close_done_today = False
+        elif now_local < close_run:
+            close_status = "scheduled"
+            close_detail = f"Scheduled for later today at {close_run.strftime('%I:%M %p').lstrip('0')} {tz_label}."
+            close_done_today = False
+        elif snapshot_updated_local and snapshot_updated_local.date() == now_local.date() and snapshot_updated_local >= close_ready_cutoff:
+            close_status = "done"
+            close_detail = f"Today's close snapshot is available from {format_local_clock(snapshot_updated_local)} {tz_label}."
+            close_done_today = True
+        else:
+            close_status = "attention"
+            close_detail = "It is past the scheduled close refresh time, but today's refreshed close snapshot is not confirmed yet."
+            close_done_today = False
+
+        tasks.append(
+            task_item(
+                "daily_close_refresh",
+                "Daily close snapshot refresh",
+                close_schedule,
+                close_status,
+                close_detail,
+                iso_or_none(snapshot_updated),
+                done_today=close_done_today,
+            )
+        )
+
+        stock_hour, stock_minute = ((16, 30) if normalized_market == "us" else (18, 0))
+        stock_run = now_local.replace(hour=stock_hour, minute=stock_minute, second=0, microsecond=0)
+        stock_schedule = f"Mon–Fri {stock_run.strftime('%I:%M %p').lstrip('0')} {tz_label}"
+        ai_available = bool(getattr(getattr(provider_obj, "ai_service", None), "available", True))
+
+        try:
+            stock_payload = await svc.get_money_flow_stock_ideas()
+        except Exception:
+            stock_payload = None
+
+        stock_recommendation_date = str(getattr(stock_payload, "recommendation_date", "") or "")
+        stock_generated_at = getattr(stock_payload, "generated_at", None)
+        stock_idea_count = len(getattr(stock_payload, "consolidating_ideas", []) or []) + len(getattr(stock_payload, "value_ideas", []) or [])
+        stock_ai_model = getattr(stock_payload, "ai_model", None)
+
+        if not is_trading_day:
+            stock_status = "scheduled"
+            stock_detail = "Runs only on trading days, so stock ideas will refresh on the next market day."
+            stock_done_today = False
+        elif now_local < stock_run:
+            stock_status = "scheduled"
+            stock_detail = f"Scheduled for later today at {stock_run.strftime('%I:%M %p').lstrip('0')} {tz_label}."
+            stock_done_today = False
+        elif stock_recommendation_date == day_key and (stock_idea_count > 0 or stock_ai_model is not None):
+            stock_status = "done"
+            stock_detail = f"Today's money-flow stock ideas are ready with {stock_idea_count} idea entries."
+            stock_done_today = True
+        elif not ai_available:
+            stock_status = "attention"
+            stock_detail = "AI generation is not configured on this server, so this task cannot complete automatically yet."
+            stock_done_today = False
+        else:
+            stock_status = "attention"
+            stock_detail = "It is past the scheduled time, but today's money-flow stock ideas are not stored yet."
+            stock_done_today = False
+
+        tasks.append(
+            task_item(
+                "daily_money_flow_stocks",
+                "Daily money-flow stock ideas",
+                stock_schedule,
+                stock_status,
+                stock_detail,
+                iso_or_none(stock_generated_at),
+                done_today=stock_done_today,
+            )
+        )
+
+        if normalized_market == "india":
+            last_patch_date_fn = getattr(provider_obj, "_last_applied_bhavcopy_date", None)
+            last_patch_date = last_patch_date_fn() if callable(last_patch_date_fn) else None
+            first_retry = now_local.replace(hour=17, minute=40, second=0, microsecond=0)
+            final_retry = now_local.replace(hour=18, minute=55, second=0, microsecond=0)
+            if not is_trading_day:
+                bhavcopy_status = "scheduled"
+                bhavcopy_detail = "Official NSE Bhavcopy checks run only on trading days."
+                bhavcopy_done_today = False
+            elif now_local < first_retry:
+                bhavcopy_status = "scheduled"
+                bhavcopy_detail = "The NSE release window has not opened yet; retries begin at 5:40 PM IST."
+                bhavcopy_done_today = False
+            elif last_patch_date == now_local.date():
+                bhavcopy_status = "done"
+                bhavcopy_detail = f"Official NSE Bhavcopy has already been applied for {day_key}."
+                bhavcopy_done_today = True
+            elif now_local < final_retry:
+                bhavcopy_status = "scheduled"
+                bhavcopy_detail = "Waiting for the official NSE file or the next evening retry slot."
+                bhavcopy_done_today = False
+            else:
+                bhavcopy_status = "attention"
+                bhavcopy_detail = "Past the final retry window, but today's official NSE Bhavcopy is still not confirmed."
+                bhavcopy_done_today = False
+
+            tasks.append(
+                task_item(
+                    "nse_bhavcopy_patch",
+                    "Official NSE close-data patch",
+                    "Mon–Fri 5:40 / 5:55 / 6:10 / 6:25 / 6:40 / 6:55 PM IST",
+                    bhavcopy_status,
+                    bhavcopy_detail,
+                    iso_or_none(snapshot_updated),
+                    done_today=bhavcopy_done_today,
+                    task_source="GitHub Actions + backend patch",
+                )
+            )
+
+        return {
+            "market": normalized_market,
+            "local_timezone": tz_label,
+            "local_time": now_local.isoformat(),
+            "day_key": day_key,
+            "next_reset_at": next_reset_at,
+            "tasks": tasks,
         }
 
     @router.get("/dashboard")

@@ -24,7 +24,7 @@ export function WatchlistPickerModal({
   const [newWatchlistName, setNewWatchlistName] = useState("");
 
   return (
-    <div className="chart-modal-backdrop" onClick={onClose}>
+    <div className="watchlist-picker-backdrop" onClick={onClose}>
       <div className="watchlist-picker-modal" onClick={(event) => event.stopPropagation()}>
         <div className="watchlist-picker-head">
           <div>

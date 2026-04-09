@@ -892,6 +892,26 @@ export type WatchdogStatusResponse = {
   server_utc: string;
 };
 
+export type WatchdogTaskItem = {
+  id: string;
+  title: string;
+  source: string;
+  schedule: string;
+  status: "done" | "scheduled" | "attention";
+  detail: string;
+  last_event_at: string | null;
+  done_today: boolean;
+};
+
+export type WatchdogTasksResponse = {
+  market: string;
+  local_timezone: string;
+  local_time: string;
+  day_key: string;
+  next_reset_at: string;
+  tasks: WatchdogTaskItem[];
+};
+
 const API_BASE = import.meta.env.VITE_API_BASE || "https://dharmmalik-stock-scanner-backend.hf.space";
 
 const FALLBACK_API_BASES = (import.meta.env.DEV
@@ -1106,6 +1126,10 @@ export function runWatchdogFix(market: MarketKey) {
 
 export function getWatchdogStatus(market: MarketKey) {
   return request<WatchdogStatusResponse>(withMarket("/api/watchdog-status", market));
+}
+
+export function getWatchdogTasks(market: MarketKey) {
+  return request<WatchdogTasksResponse>(withMarket("/api/watchdog-tasks", market));
 }
 
 export function getIndexQuotes(symbols: string[], market: MarketKey) {

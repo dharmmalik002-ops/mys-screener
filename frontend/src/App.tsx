@@ -89,6 +89,7 @@ const ScanTable = lazy(() => import("./components/ScanTable").then((module) => (
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const SectorExplorerPanel = lazy(() => import("./components/SectorExplorerPanel").then((module) => ({ default: module.SectorExplorerPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
+const WatchdogTasksModal = lazy(() => import("./components/WatchdogTasksModal").then((module) => ({ default: module.WatchdogTasksModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
@@ -1412,6 +1413,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [watchdogFixing, setWatchdogFixing] = useState(false);
+  const [watchdogTasksOpen, setWatchdogTasksOpen] = useState(false);
   const chartRequestIdRef = useRef(0);
   const fundamentalsRequestIdRef = useRef(0);
   const scanRequestIdRef = useRef(0);
@@ -4378,6 +4380,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               onOpenGroups={(options) => {
                 void openGroupsView(options);
               }}
+              onOpenWatchdogTasks={() => setWatchdogTasksOpen(true)}
             />
           </Suspense>
         ) : null}
@@ -4823,32 +4826,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           </Suspense>
         ) : null}
 
-        {watchlistPickerSymbol ? (
+        {watchdogTasksOpen ? (
           <Suspense fallback={null}>
-            <WatchlistPickerModal
-              market={activeMarket}
-              symbol={watchlistPickerSymbol}
-              watchlists={watchlists}
-              onClose={() => setWatchlistPickerSymbol(null)}
-              onAddToWatchlist={handleAddToWatchlist}
-              onCreateWatchlist={handleCreateWatchlist}
-            />
+            <WatchdogTasksModal market={activeMarket} onClose={() => setWatchdogTasksOpen(false)} />
           </Suspense>
         ) : null}
 
-      {chartGroupModalContext ? (
-        <Suspense fallback={null}>
-          <ChartGroupModal
-            market={activeMarket}
-            context={chartGroupModalContext}
-            selectedSymbol={selectedSymbol}
-            onClose={() => setChartGroupModalContext(null)}
-            onSelectSymbol={(symbol: string) => handleSelectChartGroupSymbol(symbol, chartGroupModalContext)}
-            onAddToWatchlist={setWatchlistPickerSymbol}
-            onOpenGroupsPage={() => void handleOpenChartGroupPage(chartGroupModalContext)}
-          />
-        </Suspense>
-      ) : null}
+        {chartGroupModalContext ? (
+          <Suspense fallback={null}>
+            <ChartGroupModal
+              market={activeMarket}
+              context={chartGroupModalContext}
+              selectedSymbol={selectedSymbol}
+              onClose={() => setChartGroupModalContext(null)}
+              onSelectSymbol={(symbol: string) => handleSelectChartGroupSymbol(symbol, chartGroupModalContext)}
+              onAddToWatchlist={setWatchlistPickerSymbol}
+              onOpenGroupsPage={() => void handleOpenChartGroupPage(chartGroupModalContext)}
+            />
+          </Suspense>
+        ) : null}
       </main>
 
       {chartOpen ? (
@@ -4901,6 +4897,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </Suspense>
           </div>
         </div>
+      ) : null}
+
+      {watchlistPickerSymbol ? (
+        <Suspense fallback={null}>
+          <WatchlistPickerModal
+            market={activeMarket}
+            symbol={watchlistPickerSymbol}
+            watchlists={watchlists}
+            onClose={() => setWatchlistPickerSymbol(null)}
+            onAddToWatchlist={handleAddToWatchlist}
+            onCreateWatchlist={handleCreateWatchlist}
+          />
+        </Suspense>
       ) : null}
 
       <footer className="app-footer">

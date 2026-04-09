@@ -36,6 +36,7 @@ type HomePanelProps = {
   onPickSymbol: (symbol: string) => void;
   onOpenSectors: () => void;
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
+  onOpenWatchdogTasks: () => void;
 };
 
 type GridTarget =
@@ -1017,6 +1018,16 @@ export function HomePanel({ activeMarket, dashboard, sectors, groups, onPickSymb
                 ? "NSE and BSE screens, indices, and sector rotation in one workspace."
                 : "NYSE and Nasdaq liquid stocks and ETFs filtered for price above $15 and average daily volume above 400,000 shares."}
             </p>
+          </div>
+          <div className="home-hero-actions">
+            <button
+              type="button"
+              className="home-watchdog-button"
+              onClick={onOpenWatchdogTasks}
+              title="Open today's watchdog schedule, task status, and any pending issues."
+            >
+              Watchdog Tasks
+            </button>
           </div>
         </div>
         <div className="home-hero-metrics">

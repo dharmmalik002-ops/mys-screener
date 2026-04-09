@@ -2336,6 +2336,29 @@ button {
   line-height: 1.65;
 }
 
+.home-hero-actions {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+}
+
+.home-watchdog-button {
+  border: 1px solid color-mix(in srgb, var(--glass-border) 86%, transparent);
+  border-radius: 999px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+  color: var(--text);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.home-watchdog-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-soft));
+}
+
 .home-market-toggle {
   flex-shrink: 0;
   display: inline-flex;
@@ -5029,6 +5052,17 @@ button {
   align-self: center;
 }
 
+.watchlist-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 13, 0.58);
+  backdrop-filter: blur(8px);
+}
+
 .watchlist-picker-modal {
   width: min(520px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
@@ -7670,6 +7704,148 @@ button {
   padding: 12px 18px;
   border-top: 1px solid var(--border, #333);
   flex-shrink: 0;
+}
+
+.watchdog-task-modal {
+  width: min(760px, 96vw);
+  background: var(--surface-strong);
+  border-color: var(--line-strong);
+}
+
+.watchdog-task-subtitle {
+  margin: 4px 0 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+}
+
+.watchdog-task-body {
+  display: grid;
+  gap: 14px;
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.watchdog-task-summary-strip,
+.watchdog-task-meta-bar,
+.watchdog-task-card-footer,
+.watchdog-task-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.watchdog-task-meta-bar,
+.watchdog-task-card-footer {
+  justify-content: space-between;
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.watchdog-task-summary-pill,
+.watchdog-task-badge,
+.watchdog-task-source {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.watchdog-task-summary-pill--done,
+.watchdog-task-badge--done {
+  background: color-mix(in srgb, var(--positive) 16%, transparent);
+  color: var(--positive);
+  border: 1px solid color-mix(in srgb, var(--positive) 28%, transparent);
+}
+
+.watchdog-task-summary-pill--scheduled,
+.watchdog-task-badge--scheduled {
+  background: color-mix(in srgb, var(--amber) 14%, transparent);
+  color: var(--amber);
+  border: 1px solid color-mix(in srgb, var(--amber) 26%, transparent);
+}
+
+.watchdog-task-summary-pill--attention,
+.watchdog-task-badge--attention {
+  background: color-mix(in srgb, var(--negative) 14%, transparent);
+  color: var(--negative);
+  border: 1px solid color-mix(in srgb, var(--negative) 26%, transparent);
+}
+
+.watchdog-task-loading,
+.watchdog-task-error {
+  border-radius: 12px;
+  padding: 10px 12px;
+}
+
+.watchdog-task-loading {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-soft);
+}
+
+.watchdog-task-error {
+  background: color-mix(in srgb, var(--negative) 14%, transparent);
+  color: var(--negative);
+}
+
+.watchdog-task-list {
+  display: grid;
+  gap: 12px;
+}
+
+.watchdog-task-card {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+}
+
+.watchdog-task-card--done {
+  border-color: color-mix(in srgb, var(--positive) 22%, var(--line));
+}
+
+.watchdog-task-card--scheduled {
+  border-color: color-mix(in srgb, var(--amber) 20%, var(--line));
+}
+
+.watchdog-task-card--attention {
+  border-color: color-mix(in srgb, var(--negative) 24%, var(--line));
+}
+
+.watchdog-task-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.watchdog-task-title-row h4 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.watchdog-task-source {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.watchdog-task-schedule,
+.watchdog-task-detail {
+  margin: 0;
+}
+
+.watchdog-task-schedule {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.watchdog-task-detail {
+  color: var(--text);
 }
 
 /* ────────────────────────────────────────────────────────────────────────────
