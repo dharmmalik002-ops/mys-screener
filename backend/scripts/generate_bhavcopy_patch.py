@@ -43,6 +43,10 @@ BHAV_URL_ALT = "https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{
 BHAV_URL_LEGACY = "https://nsearchives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip"
 BHAV_URL_LEGACY_ALT = "https://archives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip"
 
+# BSE (Bombay Stock Exchange) bhavcopy — same-day authoritative data, no geo-blocking.
+# New format CSV (no zip) available from ~4 PM IST: accessible from any IP globally.
+BSE_BHAV_URL = "https://www.bseindia.com/download/BhavCopy/Equity/BhavCopy_BSE_CM_0_0_0_{date_yyyymmdd}_F_0000.CSV"
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -51,6 +55,16 @@ HEADERS = {
     ),
     "Accept": "*/*",
     "Referer": "https://www.nseindia.com/",
+}
+
+BSE_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) "
+        "Chrome/124.0.0.0 Safari/537.36"
+    ),
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "https://www.bseindia.com/",
 }
 
 
@@ -142,6 +156,61 @@ def _parse_bhavcopy_csv(csv_text: str) -> dict[str, dict]:
                 continue
 
     return result
+
+
+def _fetch_from_bse(trade_date: date) -> dict[str, dict] | None:
+    """Fetch EOD prices from BSE (Bombay Stock Exchange) bhavcopy CSV.
+
+    BSE publishes the same OHLCV data as NSE and — crucially — does NOT
+    geo-block non-Indian IPs.  The new-format CSV is available directly
+    (no zip) from ~4 PM IST the same day.
+
+    Returns the same compact symbol-dict format as _parse_bhavcopy_csv, or None.
+    """
+    date_yyyymmdd = trade_date.strftime("%Y%m%d")
+    url = BSE_BHAV_URL.format(date_yyyymmdd=date_yyyymmdd)
+    try:
+        resp = requests.get(url, headers=BSE_HEADERS, timeout=20)
+        if resp.status_code != 200 or len(resp.content) < 1000:
+            print(f"  BSE: HTTP {resp.status_code} for {url}", file=sys.stderr)
+            return None
+
+        reader = csv.DictReader(io.StringIO(resp.text))
+        rows = list(reader)
+        if not rows:
+            return None
+
+        result: dict[str, dict] = {}
+        for row in rows:
+            # Only equity series (A, B, T, XT, Z, S etc. — filter by SctySrs presence)
+            # BSE uses SctySrs values like A, B, T, Z, S, XT — all are equities
+            series = row.get("SctySrs", "").strip()
+            if not series or series in ("D", "G", "GB", "GS"):
+                # Skip debt / government securities
+                continue
+            sym = row.get("TckrSymb", "").strip().upper()
+            if not sym:
+                continue
+            try:
+                result[sym] = {
+                    "o": float(row.get("OpnPric") or 0),
+                    "h": float(row.get("HghPric") or 0),
+                    "l": float(row.get("LwPric") or 0),
+                    "c": float(row.get("ClsPric") or 0),
+                    "v": int(float(row.get("TtlTradgVol") or 0)),
+                    "p": float(row.get("PrvsClsgPric") or 0),
+                }
+            except (ValueError, TypeError):
+                continue
+
+        if not result:
+            return None
+
+        print(f"BSE fallback: fetched {len(result)} symbols for {trade_date.isoformat()}")
+        return result
+    except Exception as exc:
+        print(f"  BSE fetch failed: {exc}", file=sys.stderr)
+        return None
 
 
 def _last_trading_day() -> date:
@@ -290,9 +359,20 @@ def main() -> int:
             _write_patch(target, symbols)
             return 0
 
-    print(f"  NSE archive unavailable for {target} — trying yfinance fallback …")
+    print(f"  NSE archive unavailable for {target} — trying BSE fallback …")
 
-    # --- Phase 2: yfinance fallback for today (works from any server, any IP) ---
+    # --- Phase 2: BSE bhavcopy (authoritative, no geo-blocking, available ~4 PM IST) ---
+    bse_symbols = _fetch_from_bse(target)
+    if bse_symbols:
+        if _patch_already_current(target):
+            print(f"Patch already current for {target.isoformat()}. No update needed.")
+            return 0
+        _write_patch(target, bse_symbols)
+        return 0
+
+    print(f"  BSE also unavailable for {target} — trying yfinance fallback …", file=sys.stderr)
+
+    # --- Phase 3: yfinance fallback for today (globally accessible via Yahoo Finance) ---
     yf_symbols = _fetch_from_yfinance(target)
     if yf_symbols:
         if _patch_already_current(target):
@@ -303,7 +383,7 @@ def main() -> int:
 
     print(f"  yfinance also unavailable — trying NSE for previous trading day …", file=sys.stderr)
 
-    # --- Phase 3: last resort — NSE for the previous trading day (holiday fallback) ---
+    # --- Phase 4: last resort — NSE for the previous trading day (holiday fallback) ---
     prev = target - timedelta(days=1)
     while prev.weekday() >= 5:
         prev -= timedelta(days=1)
@@ -317,7 +397,7 @@ def main() -> int:
             _write_patch(prev, symbols)
             return 0
 
-    print("ERROR: Could not fetch Bhavcopy from NSE or yfinance for any date.", file=sys.stderr)
+    print("ERROR: Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.", file=sys.stderr)
     return 1
 
 
