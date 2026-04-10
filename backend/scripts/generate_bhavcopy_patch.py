@@ -156,44 +156,169 @@ def _last_trading_day() -> date:
     return d
 
 
+def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
+    """Fallback: fetch EOD prices via yfinance when NSE archives are geo-blocked.
+
+    GitHub Actions servers are outside India and NSE often blocks them.  Yahoo
+    Finance is globally accessible, so this ensures we always have today's data.
+    Returns the same compact symbol-dict format as _parse_bhavcopy_csv, or None.
+    """
+    try:
+        import yfinance as yf
+        import pandas as pd
+    except ImportError:
+        print("yfinance/pandas not installed; skipping yfinance fallback", file=sys.stderr)
+        return None
+
+    universe_path = DATA_DIR / "free_universe.json"
+    if not universe_path.exists():
+        print("free_universe.json not found; skipping yfinance fallback", file=sys.stderr)
+        return None
+
+    try:
+        universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        print(f"Failed to read universe: {exc}", file=sys.stderr)
+        return None
+
+    if not isinstance(universe, list):
+        return None
+
+    # Extract .NS tickers (already stored in the universe file)
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    if not tickers:
+        return None
+
+    start_str = trade_date.strftime("%Y-%m-%d")
+    end_str = (trade_date + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    result: dict[str, dict] = {}
+    CHUNK = 200  # yfinance handles ~200 tickers per batch well
+
+    for i in range(0, len(tickers), CHUNK):
+        chunk = tickers[i : i + CHUNK]
+        try:
+            df = yf.download(
+                chunk,
+                start=start_str,
+                end=end_str,
+                auto_adjust=False,
+                progress=False,
+                threads=True,
+            )
+            if df is None or df.empty:
+                continue
+
+            if isinstance(df.columns, pd.MultiIndex):
+                # Multi-ticker result: columns are (field, ticker)
+                for ticker in chunk:
+                    sym = ticker.replace(".NS", "")
+                    try:
+                        sub = df.xs(ticker, axis=1, level=1)
+                        if sub.empty:
+                            continue
+                        row = sub.iloc[-1]
+                        c = float(row.get("Close") or 0)
+                        if c <= 0:
+                            continue
+                        result[sym] = {
+                            "o": float(row.get("Open") or 0),
+                            "h": float(row.get("High") or 0),
+                            "l": float(row.get("Low") or 0),
+                            "c": c,
+                            "v": int(float(row.get("Volume") or 0)),
+                            "p": 0.0,  # prev_close not available from yfinance batch
+                        }
+                    except Exception:
+                        continue
+            else:
+                # Single-ticker result: columns are simple field names
+                sym = chunk[0].replace(".NS", "")
+                if df.empty:
+                    continue
+                row = df.iloc[-1]
+                c = float(row.get("Close") or 0)
+                if c > 0:
+                    result[sym] = {
+                        "o": float(row.get("Open") or 0),
+                        "h": float(row.get("High") or 0),
+                        "l": float(row.get("Low") or 0),
+                        "c": c,
+                        "v": int(float(row.get("Volume") or 0)),
+                        "p": 0.0,
+                    }
+        except Exception as exc:
+            print(f"yfinance chunk {i // CHUNK + 1} failed: {exc}", file=sys.stderr)
+            continue
+
+    if not result:
+        return None
+
+    print(f"yfinance fallback: fetched {len(result)} symbols for {trade_date.isoformat()}")
+    return result
+
+
+def _patch_already_current(target_date: date) -> bool:
+    """Return True if bhavcopy_patch.json already has data for target_date."""
+    if not OUTPUT_PATH.exists():
+        return False
+    try:
+        existing = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        return existing.get("date") == target_date.isoformat()
+    except Exception:
+        return False
+
+
+def _write_patch(target_date: date, symbols: dict) -> None:
+    patch = {"date": target_date.isoformat(), "symbols": symbols}
+    OUTPUT_PATH.write_text(json.dumps(patch, separators=(",", ":")), encoding="utf-8")
+    print(f"Written {OUTPUT_PATH} — date={target_date.isoformat()}, symbols={len(symbols)}")
+
+
 def main() -> int:
     target = _last_trading_day()
     print(f"Fetching NSE Bhavcopy for {target.isoformat()} …")
 
+    # --- Phase 1: try NSE archives for today's date ---
     csv_text = _fetch_bhavcopy_csv(target)
-    if not csv_text:
-        # Try one day earlier (holiday fallback)
-        prev = target - timedelta(days=1)
-        while prev.weekday() >= 5:
-            prev -= timedelta(days=1)
-        print(f"  Not found for {target}, trying {prev} …")
-        csv_text = _fetch_bhavcopy_csv(prev)
-        if csv_text:
-            target = prev
-
-    if not csv_text:
-        print("ERROR: Could not fetch Bhavcopy CSV from NSE archives.", file=sys.stderr)
-        return 1
-
-    symbols = _parse_bhavcopy_csv(csv_text)
-    if not symbols:
-        print("ERROR: Parsed 0 symbols from Bhavcopy CSV.", file=sys.stderr)
-        return 1
-
-    # Check if patch is already current
-    if OUTPUT_PATH.exists():
-        try:
-            existing = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
-            if existing.get("date") == target.isoformat():
+    if csv_text:
+        symbols = _parse_bhavcopy_csv(csv_text)
+        if symbols:
+            if _patch_already_current(target):
                 print(f"Patch already current for {target.isoformat()} ({len(symbols)} symbols). No update needed.")
                 return 0
-        except Exception:
-            pass
+            _write_patch(target, symbols)
+            return 0
 
-    patch = {"date": target.isoformat(), "symbols": symbols}
-    OUTPUT_PATH.write_text(json.dumps(patch, separators=(",", ":")), encoding="utf-8")
-    print(f"Written {OUTPUT_PATH} — date={target.isoformat()}, symbols={len(symbols)}")
-    return 0
+    print(f"  NSE archive unavailable for {target} — trying yfinance fallback …")
+
+    # --- Phase 2: yfinance fallback for today (works from any server, any IP) ---
+    yf_symbols = _fetch_from_yfinance(target)
+    if yf_symbols:
+        if _patch_already_current(target):
+            print(f"Patch already current for {target.isoformat()}. No update needed.")
+            return 0
+        _write_patch(target, yf_symbols)
+        return 0
+
+    print(f"  yfinance also unavailable — trying NSE for previous trading day …", file=sys.stderr)
+
+    # --- Phase 3: last resort — NSE for the previous trading day (holiday fallback) ---
+    prev = target - timedelta(days=1)
+    while prev.weekday() >= 5:
+        prev -= timedelta(days=1)
+    csv_text = _fetch_bhavcopy_csv(prev)
+    if csv_text:
+        symbols = _parse_bhavcopy_csv(csv_text)
+        if symbols:
+            if _patch_already_current(prev):
+                print(f"Patch already current for {prev.isoformat()} ({len(symbols)} symbols). No update needed.")
+                return 0
+            _write_patch(prev, symbols)
+            return 0
+
+    print("ERROR: Could not fetch Bhavcopy from NSE or yfinance for any date.", file=sys.stderr)
+    return 1
 
 
 if __name__ == "__main__":

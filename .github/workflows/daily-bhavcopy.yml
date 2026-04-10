@@ -3,13 +3,16 @@ name: Daily NSE Bhavcopy Patch
 on:
   # NSE often publishes the official CM Bhavcopy sometime between ~5:30–6:30 PM IST.
   # Check repeatedly through that window so the site updates much closer to publication time.
+  # NOTE: NSE archives geo-block non-Indian IPs (GitHub Actions servers are outside India).
+  #       The script now falls back to yfinance (Yahoo Finance) which is globally accessible.
   schedule:
     - cron: "10 12 * * 1-5"  # 5:40 PM IST
     - cron: "25 12 * * 1-5"  # 5:55 PM IST
     - cron: "40 12 * * 1-5"  # 6:10 PM IST
     - cron: "55 12 * * 1-5"  # 6:25 PM IST
     - cron: "10 13 * * 1-5"  # 6:40 PM IST
-    - cron: "25 13 * * 1-5"  # 6:55 PM IST final retry
+    - cron: "25 13 * * 1-5"  # 6:55 PM IST
+    - cron: "00 14 * * 1-5"  # 7:30 PM IST final retry
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 
@@ -29,7 +32,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install requests yfinance pandas
 
       - name: Generate bhavcopy patch
         id: patch
