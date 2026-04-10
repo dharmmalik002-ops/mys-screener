@@ -208,10 +208,25 @@ class USDashboardService(DashboardService):
         if cached_dashboard is not None and cached_dashboard.generated_at >= snapshot_updated_at:
             return cached_dashboard
 
-        top_gainers = sorted(snapshots, key=lambda item: item.change_pct, reverse=True)[:5]
-        top_losers = sorted(snapshots, key=lambda item: item.change_pct)[:5]
+        # Only rank snapshots from the most recent session — stale rows from
+        # older dates (e.g. carried over from a tariff-shock day weeks ago)
+        # have change_pct relative to their old session and would pollute the
+        # gainers/losers lists with irrelevant historical moves.
+        if snapshots:
+            latest_date = max(
+                (str(item.history_as_of_date or "") for item in snapshots),
+                default="",
+            )
+            current_session_snaps = [
+                item for item in snapshots if str(item.history_as_of_date or "") == latest_date
+            ] if latest_date else snapshots
+        else:
+            current_session_snaps = snapshots
+
+        top_gainers = sorted(current_session_snaps, key=lambda item: item.change_pct, reverse=True)[:5]
+        top_losers = sorted(current_session_snaps, key=lambda item: item.change_pct)[:5]
         top_volume = sorted(
-            [item for item in snapshots if item.avg_volume_20d > 0 and len(item.recent_volumes) >= 5],
+            [item for item in current_session_snaps if item.avg_volume_20d > 0 and len(item.recent_volumes) >= 5],
             key=lambda item: item.relative_volume,
             reverse=True,
         )[:5]

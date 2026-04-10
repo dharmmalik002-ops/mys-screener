@@ -4509,6 +4509,8 @@ class FreeMarketDataProvider:
         applied_quote_count = 0
         applied_sources: set[str] = set()
 
+        latest_session_date = self._latest_completed_market_session_date()
+
         for row in refreshed_rows:
             symbol = str(row.get("symbol") or "").upper()
             quote = live_prices.get(symbol)
@@ -4517,7 +4519,13 @@ class FreeMarketDataProvider:
             quote_updated_at = self._quote_updated_at_from_quote(quote)
             if not self._is_live_quote_recent(quote_updated_at):
                 continue
-            if not self._quote_matches_snapshot_session(symbol, quote):
+            # Skip session bounds check when the cached row is from a different
+            # (older) trading session — the bounds are for the old session and
+            # will incorrectly reject quotes for stocks that moved significantly
+            # (e.g. >25%) since that session (tariff shocks, earnings gaps, etc).
+            row_session_date = self._parse_row_date(row.get("history_as_of_date"))
+            row_is_current_session = (row_session_date == latest_session_date)
+            if row_is_current_session and not self._quote_matches_snapshot_session(symbol, quote):
                 continue
             patch = self._quote_to_live_snapshot_patch(row, quote, benchmark_quote)
             if not self._live_quote_matches_cached_scale(row.get("last_price"), patch.get("last_price")):

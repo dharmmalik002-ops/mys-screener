@@ -104,6 +104,7 @@ class StockSnapshot(BaseModel):
     recent_volumes: list[int] = Field(default_factory=list)
     chart_grid_points: list["ChartLinePoint"] = Field(default_factory=list)
     instrument_key: str | None = None
+    history_as_of_date: str | None = None  # ISO date of the session this snapshot reflects
     
     # Fundamental cached fields
     eps_growth_yoy: float | None = None
