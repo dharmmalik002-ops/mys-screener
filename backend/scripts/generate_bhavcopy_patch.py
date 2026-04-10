@@ -346,9 +346,20 @@ def _write_patch(target_date: date, symbols: dict) -> None:
 
 def main() -> int:
     target = _last_trading_day()
-    print(f"Fetching NSE Bhavcopy for {target.isoformat()} …")
+    print(f"Fetching EOD Bhavcopy for {target.isoformat()} …")
 
-    # --- Phase 1: try NSE archives for today's date ---
+    # --- Phase 1: BSE bhavcopy (authoritative, no geo-blocking, available ~4:24 PM IST) ---
+    bse_symbols = _fetch_from_bse(target)
+    if bse_symbols:
+        if _patch_already_current(target):
+            print(f"Patch already current for {target.isoformat()} ({len(bse_symbols)} symbols). No update needed.")
+            return 0
+        _write_patch(target, bse_symbols)
+        return 0
+
+    print(f"  BSE unavailable for {target} — trying NSE archives …")
+
+    # --- Phase 2: NSE archives (authoritative, but geo-blocked from non-Indian IPs) ---
     csv_text = _fetch_bhavcopy_csv(target)
     if csv_text:
         symbols = _parse_bhavcopy_csv(csv_text)
@@ -359,18 +370,7 @@ def main() -> int:
             _write_patch(target, symbols)
             return 0
 
-    print(f"  NSE archive unavailable for {target} — trying BSE fallback …")
-
-    # --- Phase 2: BSE bhavcopy (authoritative, no geo-blocking, available ~4 PM IST) ---
-    bse_symbols = _fetch_from_bse(target)
-    if bse_symbols:
-        if _patch_already_current(target):
-            print(f"Patch already current for {target.isoformat()}. No update needed.")
-            return 0
-        _write_patch(target, bse_symbols)
-        return 0
-
-    print(f"  BSE also unavailable for {target} — trying yfinance fallback …", file=sys.stderr)
+    print(f"  NSE also unavailable for {target} — trying yfinance fallback …", file=sys.stderr)
 
     # --- Phase 3: yfinance fallback for today (globally accessible via Yahoo Finance) ---
     yf_symbols = _fetch_from_yfinance(target)
@@ -381,12 +381,19 @@ def main() -> int:
         _write_patch(target, yf_symbols)
         return 0
 
-    print(f"  yfinance also unavailable — trying NSE for previous trading day …", file=sys.stderr)
+    print(f"  yfinance also unavailable — trying BSE for previous trading day …", file=sys.stderr)
 
-    # --- Phase 4: last resort — NSE for the previous trading day (holiday fallback) ---
+    # --- Phase 4: last resort — previous trading day via BSE then NSE (holiday fallback) ---
     prev = target - timedelta(days=1)
     while prev.weekday() >= 5:
         prev -= timedelta(days=1)
+    bse_prev = _fetch_from_bse(prev)
+    if bse_prev:
+        if _patch_already_current(prev):
+            print(f"Patch already current for {prev.isoformat()} ({len(bse_prev)} symbols). No update needed.")
+            return 0
+        _write_patch(prev, bse_prev)
+        return 0
     csv_text = _fetch_bhavcopy_csv(prev)
     if csv_text:
         symbols = _parse_bhavcopy_csv(csv_text)

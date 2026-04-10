@@ -7167,26 +7167,27 @@ class FreeMarketDataProvider:
             days_back = candidate_date.weekday() - 4
             candidate_date = candidate_date - timedelta(days=days_back)
 
-        # Phase 1: NSE archives (authoritative, but geo-blocked on non-Indian servers)
-        bhavcopy = self._fetch_nse_bhavcopy(candidate_date)
-        source = "nse"
+        # Phase 1: BSE bhavcopy — publishes at ~4:24 PM IST, no geo-blocking, globally accessible
+        bhavcopy = self._fetch_bse_bhavcopy(candidate_date)
+        source = "bse"
 
-        # Phase 2: BSE bhavcopy (same-day authoritative data, no geo-blocking, ~4:24 PM IST)
+        # Phase 2: NSE archives — publishes at ~6:30 PM IST, geo-blocked on non-Indian servers
         if not bhavcopy:
-            bhavcopy = self._fetch_bse_bhavcopy(candidate_date)
-            source = "bse"
+            bhavcopy = self._fetch_nse_bhavcopy(candidate_date)
+            source = "nse"
 
-        # Phase 3: try previous trading day (holiday fallback) — NSE then BSE
+        # Phase 3: try previous trading day (holiday fallback) — BSE then NSE
         if not bhavcopy:
             prev = candidate_date - timedelta(days=1)
             while prev.weekday() >= 5:
                 prev -= timedelta(days=1)
-            bhavcopy = self._fetch_nse_bhavcopy(prev)
+            bhavcopy = self._fetch_bse_bhavcopy(prev)
+            source = "bse-prev"
             if not bhavcopy:
-                bhavcopy = self._fetch_bse_bhavcopy(prev)
+                bhavcopy = self._fetch_nse_bhavcopy(prev)
+                source = "nse-prev"
             if bhavcopy:
                 candidate_date = prev
-                source = "bse-prev" if not self._fetch_nse_bhavcopy(prev) else "nse-prev"
 
         if not bhavcopy:
             return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
