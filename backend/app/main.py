@@ -268,7 +268,9 @@ async def live_market_watchdog_job() -> None:
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: provisional close sync FAILED: %s", exc)
 
-                first_retry_min = 17 * 60 + 40
+                # BSE publishes at ~4:24 PM IST, NSE at ~6:30 PM IST.
+                # Start retrying at 4:30 PM IST so BSE data is captured on the first attempt.
+                first_retry_min = 16 * 60 + 30
                 last_patch_date_fn = getattr(india_prov, "_last_applied_bhavcopy_date", None)
                 last_patch_date = last_patch_date_fn() if callable(last_patch_date_fn) else None
                 if ist_tot_min >= first_retry_min and last_patch_date != today_ist:

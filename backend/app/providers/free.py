@@ -7046,6 +7046,55 @@ class FreeMarketDataProvider:
 
         return {}
 
+    def _fetch_bse_bhavcopy(self, trade_date: date) -> dict[str, dict[str, float]]:
+        """Download the BSE CM Bhavcopy for *trade_date*.
+        Returns {SYMBOL: {open, high, low, close, volume, prev_close}}.
+        BSE publishes a direct CSV (no zip) at ~4:24 PM IST — earlier than NSE
+        and NOT geo-blocked, so this works from any server including HF Spaces.
+        Returns {} on any failure.
+        """
+        date_str = trade_date.strftime("%Y%m%d")
+        url = (
+            f"https://www.bseindia.com/download/BhavCopy/Equity/"
+            f"BhavCopy_BSE_CM_0_0_0_{date_str}_F_0000.CSV"
+        )
+        headers = {
+            "User-Agent": USER_AGENT,
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Referer": "https://www.bseindia.com/",
+        }
+        try:
+            resp = requests.get(url, headers=headers, timeout=20)
+            if resp.status_code != 200 or len(resp.content) < 1000:
+                return {}
+            reader = csv.DictReader(io.StringIO(resp.text))
+            rows = list(reader)
+            if not rows:
+                return {}
+            result: dict[str, dict[str, float]] = {}
+            for row in rows:
+                series = row.get("SctySrs", "").strip()
+                # Skip debt and government securities series
+                if not series or series in ("D", "G", "GB", "GS"):
+                    continue
+                sym = row.get("TckrSymb", "").strip().upper()
+                if not sym:
+                    continue
+                try:
+                    result[sym] = {
+                        "open": float(row.get("OpnPric") or 0),
+                        "high": float(row.get("HghPric") or 0),
+                        "low": float(row.get("LwPric") or 0),
+                        "close": float(row.get("ClsPric") or 0),
+                        "volume": float(row.get("TtlTradgVol") or 0),
+                        "prev_close": float(row.get("PrvsClsgPric") or 0),
+                    }
+                except (ValueError, TypeError):
+                    continue
+            return result
+        except Exception:
+            return {}
+
     def _apply_bhavcopy_to_chart_caches(
         self, bhavcopy: dict[str, dict[str, float]], trade_date: date
     ) -> int:
@@ -7118,15 +7167,26 @@ class FreeMarketDataProvider:
             days_back = candidate_date.weekday() - 4
             candidate_date = candidate_date - timedelta(days=days_back)
 
-        # Skip known India holidays (approximate — the zip simply won't exist on holidays)
+        # Phase 1: NSE archives (authoritative, but geo-blocked on non-Indian servers)
         bhavcopy = self._fetch_nse_bhavcopy(candidate_date)
+        source = "nse"
+
+        # Phase 2: BSE bhavcopy (same-day authoritative data, no geo-blocking, ~4:24 PM IST)
         if not bhavcopy:
-            # Try the day before (handles holidays / newly listed exchanges)
+            bhavcopy = self._fetch_bse_bhavcopy(candidate_date)
+            source = "bse"
+
+        # Phase 3: try previous trading day (holiday fallback) — NSE then BSE
+        if not bhavcopy:
             prev = candidate_date - timedelta(days=1)
-            if prev.weekday() < 5:
-                bhavcopy = self._fetch_nse_bhavcopy(prev)
-                if bhavcopy:
-                    candidate_date = prev
+            while prev.weekday() >= 5:
+                prev -= timedelta(days=1)
+            bhavcopy = self._fetch_nse_bhavcopy(prev)
+            if not bhavcopy:
+                bhavcopy = self._fetch_bse_bhavcopy(prev)
+            if bhavcopy:
+                candidate_date = prev
+                source = "bse-prev" if not self._fetch_nse_bhavcopy(prev) else "nse-prev"
 
         if not bhavcopy:
             return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
@@ -7139,13 +7199,14 @@ class FreeMarketDataProvider:
         if snap_updated or chart_updated:
             self._write_bhavcopy_status(
                 candidate_date,
-                source="live-download",
+                source=source,
                 snapshots_updated=snap_updated,
                 chart_caches_updated=chart_updated,
             )
         return {
             "status": "ok",
             "date": candidate_date.isoformat(),
+            "source": source,
             "symbols_in_bhavcopy": len(bhavcopy),
             "chart_caches_updated": chart_updated,
             "snapshots_updated": snap_updated,
