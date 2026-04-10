@@ -67,7 +67,7 @@ SCREENER_URL = "https://www.screener.in/company"
 SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
-FUNDAMENTALS_CACHE_VERSION = 13
+FUNDAMENTALS_CACHE_VERSION = 14
 SNAPSHOT_CACHE_VERSION = 14
 CHART_CACHE_VERSION = 7
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -2118,12 +2118,22 @@ class FreeMarketDataProvider:
             or symbol
         )
         google_news = self._fetch_google_news_rss(company_display_name)
-        if google_news:
+        google_earnings_news = self._fetch_google_news_rss(company_display_name, earnings_only=True)
+        if google_news or google_earnings_news:
             existing_titles = {item.title.lower() for item in detailed_news}
-            for gnews_item in google_news:
+            for gnews_item in [*google_news, *google_earnings_news]:
                 if gnews_item.title.lower() not in existing_titles:
                     detailed_news.append(gnews_item)
                     existing_titles.add(gnews_item.title.lower())
+
+        news_upcoming_events, news_result_updates = self._derive_earnings_signals_from_news(
+            [*google_news, *google_earnings_news]
+        )
+        if news_result_updates:
+            recent_updates = self._merge_updates(news_result_updates, recent_updates)
+        if news_upcoming_events:
+            upcoming_events = self._merge_upcoming_events(upcoming_events, news_upcoming_events)
+        quarterly_results = self._attach_result_dates_from_updates(quarterly_results, recent_updates)
 
         # Fallback: promote Yahoo Finance news headlines to detailed_news
         # when live scraping yields fewer than 3 editorial items
@@ -4865,11 +4875,233 @@ class FreeMarketDataProvider:
         """Return 'IN' for India provider, overridden by US provider to return 'US'."""
         return "IN"
 
-    def _fetch_google_news_rss(self, company_name: str) -> list[DetailedNews]:
+    def _is_earnings_related_text(self, text: str) -> bool:
+        lowered = self._clean_text(text).lower()
+        if not lowered:
+            return False
+        return any(
+            keyword in lowered
+            for keyword in (
+                "results",
+                "earnings",
+                "quarterly",
+                "q1",
+                "q2",
+                "q3",
+                "q4",
+                "board meeting",
+                "dividend",
+            )
+        )
+
+    def _extract_explicit_dates_from_text(self, text: str, reference_date: str | date | None = None) -> list[str]:
+        normalized = self._clean_text(text)
+        if not normalized:
+            return []
+        normalized = normalized.replace("–", "-").replace("—", "-")
+        normalized = re.sub(r"(\d{1,2})(st|nd|rd|th)\b", r"\1", normalized, flags=re.IGNORECASE)
+
+        if isinstance(reference_date, str):
+            base_date = date.fromisoformat(reference_date[:10]) if reference_date[:10] else self._current_ist_date()
+        elif isinstance(reference_date, date):
+            base_date = reference_date
+        else:
+            base_date = self._current_ist_date()
+
+        parsed_dates: list[date] = []
+
+        def _append_candidate(day_text: str, month_text: str, year_text: str | None) -> None:
+            year_value = int(year_text) if year_text else base_date.year
+            raw_value = f"{day_text} {month_text} {year_value}"
+            for fmt in ("%d %b %Y", "%d %B %Y"):
+                try:
+                    parsed = datetime.strptime(raw_value, fmt).date()
+                    if not year_text and parsed < (base_date - timedelta(days=45)):
+                        parsed = date(parsed.year + 1, parsed.month, parsed.day)
+                    parsed_dates.append(parsed)
+                    return
+                except ValueError:
+                    continue
+
+        for match in re.finditer(r"\b(\d{1,2})\s*[-/]\s*(\d{1,2})\s+([A-Za-z]{3,9})\s*,?\s*(20\d{2})?\b", normalized):
+            _append_candidate(match.group(2), match.group(3), match.group(4))
+
+        for match in re.finditer(r"\b(\d{1,2})\s+([A-Za-z]{3,9})\s*,?\s*(20\d{2})?\b", normalized):
+            _append_candidate(match.group(1), match.group(2), match.group(3))
+
+        for match in re.finditer(r"\b([A-Za-z]{3,9})\s+(\d{1,2})(?:,\s*|\s+)?(20\d{2})?\b", normalized):
+            _append_candidate(match.group(2), match.group(1), match.group(3))
+
+        seen: set[str] = set()
+        unique_dates: list[str] = []
+        for parsed in sorted(parsed_dates):
+            iso_date = parsed.isoformat()
+            if iso_date in seen:
+                continue
+            seen.add(iso_date)
+            unique_dates.append(iso_date)
+        return unique_dates
+
+    def _quarter_key_from_period_label(self, period: str | None) -> str | None:
+        cleaned = self._clean_text(period)
+        if not cleaned:
+            return None
+        for fmt in ("%b %Y", "%B %Y"):
+            try:
+                parsed = datetime.strptime(cleaned, fmt)
+                return self._quarter_key_from_event_date(date(parsed.year, parsed.month, 1), use_month_end=True)
+            except ValueError:
+                continue
+        return None
+
+    def _quarter_key_from_event_date(self, event_date: date, *, use_month_end: bool = False) -> str:
+        month = event_date.month
+        year = event_date.year
+        if use_month_end:
+            if month == 3:
+                return f"Q4 FY{year}"
+            if month == 6:
+                return f"Q1 FY{year + 1}"
+            if month == 9:
+                return f"Q2 FY{year + 1}"
+            if month == 12:
+                return f"Q3 FY{year + 1}"
+        if month in (4, 5, 6):
+            return f"Q4 FY{year}"
+        if month in (7, 8, 9):
+            return f"Q1 FY{year + 1}"
+        if month in (10, 11, 12):
+            return f"Q2 FY{year + 1}"
+        return f"Q3 FY{year}"
+
+    def _infer_quarter_key_from_text(self, text: str, reference_date: date | None = None) -> str | None:
+        lowered = self._clean_text(text).lower()
+        if not lowered:
+            return None
+        full_match = re.search(r"\bq([1-4])\s*fy\s*(20\d{2}|\d{2})\b", lowered)
+        if full_match:
+            fiscal_year = full_match.group(2)
+            if len(fiscal_year) == 2:
+                fiscal_year = f"20{fiscal_year}"
+            return f"Q{full_match.group(1)} FY{fiscal_year}"
+        quarter_match = re.search(r"\bq([1-4])\b", lowered)
+        if quarter_match and reference_date is not None:
+            fallback_fy = int(self._quarter_key_from_event_date(reference_date).split("FY", 1)[1])
+            quarter_no = int(quarter_match.group(1))
+            if quarter_no == 4 and reference_date.month in (1, 2, 3):
+                fallback_fy = reference_date.year
+            return f"Q{quarter_no} FY{fallback_fy}"
+        return None
+
+    def _derive_earnings_signals_from_news(
+        self,
+        news_items: list[DetailedNews],
+    ) -> tuple[list[dict[str, str]], list[CompanyUpdateItem]]:
+        if not news_items:
+            return [], []
+
+        today = self._current_ist_date()
+        derived_events: list[dict[str, str]] = []
+        derived_updates: list[CompanyUpdateItem] = []
+        seen_updates: set[str] = set()
+        schedule_markers = (
+            "results date",
+            "earnings date",
+            "to announce",
+            "will announce",
+            "date and time",
+            "announcement schedule",
+            "board meeting",
+            "expected",
+            "preview",
+            "this date",
+            "quarterly earnings on",
+            "quarterly results on",
+        )
+
+        for item in news_items:
+            combined = self._clean_text(f"{item.title}. {item.summary or ''}")
+            lowered = combined.lower()
+            if not self._is_earnings_related_text(combined):
+                continue
+            candidate_dates = self._extract_explicit_dates_from_text(combined, item.published_date)
+            published_iso = self._coerce_iso_date(item.published_date)
+            if not candidate_dates and published_iso and ("results" in lowered or "earnings" in lowered):
+                candidate_dates = [published_iso]
+            if not candidate_dates:
+                continue
+
+            is_schedule = any(marker in lowered for marker in schedule_markers)
+            for iso_date in candidate_dates:
+                event_date = date.fromisoformat(iso_date)
+                if event_date < (today - timedelta(days=400)):
+                    continue
+                is_future_event = is_schedule and event_date >= (today - timedelta(days=1))
+                label = self._build_earnings_event_label(event_date, is_reported=not is_future_event)
+                update_key = f"{iso_date}::{label.lower()}"
+                if update_key not in seen_updates:
+                    derived_updates.append(
+                        CompanyUpdateItem(
+                            title=label,
+                            source=item.source or "Google News",
+                            published_at=iso_date,
+                            summary=self._clean_text(item.title) or item.summary,
+                            link=item.url,
+                            kind="results",
+                        )
+                    )
+                    seen_updates.add(update_key)
+                if is_future_event:
+                    derived_events.append(
+                        {
+                            "date": iso_date,
+                            "event": label,
+                            "impact": self._clean_text(item.title)[:180] or "Quarterly earnings date surfaced from news coverage",
+                        }
+                    )
+
+        return self._merge_upcoming_events(derived_events), self._merge_updates(derived_updates, [])
+
+    def _attach_result_dates_from_updates(
+        self,
+        quarterly_results: list[QuarterlyResultItem],
+        recent_updates: list[CompanyUpdateItem],
+    ) -> list[QuarterlyResultItem]:
+        if not quarterly_results or not recent_updates:
+            return quarterly_results
+
+        enriched = [item for item in quarterly_results]
+        fallback_dates: list[str] = []
+        for update in recent_updates:
+            iso_date = self._coerce_iso_date(update.published_at)
+            if not iso_date:
+                continue
+            text = self._clean_text(f"{update.title}. {update.summary or ''}")
+            if not self._is_earnings_related_text(text):
+                continue
+            event_date = date.fromisoformat(iso_date)
+            quarter_hint = self._infer_quarter_key_from_text(text, event_date)
+            if quarter_hint:
+                for index, item in enumerate(enriched):
+                    if item.result_date:
+                        continue
+                    if self._quarter_key_from_period_label(item.period) == quarter_hint:
+                        enriched[index] = item.model_copy(update={"result_date": iso_date})
+                        break
+            else:
+                fallback_dates.append(iso_date)
+
+        return self._attach_earnings_result_dates(enriched, fallback_dates)
+
+    def _fetch_google_news_rss(self, company_name: str, earnings_only: bool = False) -> list[DetailedNews]:
         """Fetch recent news headlines from Google News RSS for a company."""
         locale = self._market_locale()
         try:
-            query = quote_plus(f'"{company_name}"')
+            if earnings_only:
+                query_text = f'"{company_name}" (results OR earnings OR "board meeting" OR dividend)'
+            else:
+                query_text = f'"{company_name}"'
+            query = quote_plus(query_text)
             if locale == "US":
                 url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
             else:

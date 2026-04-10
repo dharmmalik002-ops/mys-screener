@@ -644,9 +644,9 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
   if (isMarketOpen) {
     return {
       mode: "market-open" as const,
-      delayMs: 0, // no auto-refresh while market is open
-      label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
-      detail: `Showing the last confirmed close during ${openLabel}-${closeLabel} ${tzLabel}`,
+      delayMs: 0,
+      label: market === "us" ? "US Live Sync" : "India Live Sync",
+      detail: `Auto-syncing dashboard, screeners, and movers every 2 min during ${openLabel}-${closeLabel} ${tzLabel}`,
       refreshFundamentals: false,
     };
   }
@@ -1468,6 +1468,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const scanRequestIdRef = useRef(0);
   const scanSectorSummaryRequestIdRef = useRef(0);
   const refreshingRef = useRef(false);
+  const lastAutoRefreshAtRef = useRef(0);
   const handleRefreshRef = useRef<(source?: RefreshSource) => Promise<void>>(async () => {});
   const visibleSymbolsRef = useRef<string[]>([]);
   const pageVisibleSymbolsRef = useRef<string[]>([]);
@@ -2364,9 +2365,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const eveningSyncEndMin = activeMarket === "us" ? 22 * 60 : 23 * 60;
     const withinActiveWindow = totalMinutes >= openMin && totalMinutes <= closeMin;
     const withinCloseSyncWindow = totalMinutes > closeMin && totalMinutes <= eveningSyncEndMin;
-    if (!isTradingDay || (!withinActiveWindow && !withinCloseSyncWindow)) return;
+    if (!isTradingDay || (!withinActiveWindow && !withinCloseSyncWindow) || refreshingRef.current) return;
 
-    // Silently fetch fresh sector/group data and dashboard — no loading state changes.
+    // First nudge the backend to refresh the market snapshot, then silently reload
+    // whichever page the user is actively viewing so movers/screeners do not lag.
+    void refreshMarketData(activeMarket).catch(() => null);
+
     void getSectorTab("1D", "desc", activeMarket)
       .then((payload) => {
         setSectorTabData(payload);
@@ -2381,6 +2385,32 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         updateMarketViewCache(activeMarket, { dashboard: payload });
       })
       .catch(() => {});
+
+    if (activePage === "screener" && activeScanner === "improving-rs") {
+      void getImprovingRs(improvingRsWindow, activeMarket)
+        .then((payload) => {
+          setImprovingRsData(payload);
+          const preferredSymbol = selectedSymbolRef.current;
+          const nextSelected =
+            preferredSymbol && payload.items.some((item) => item.symbol === preferredSymbol)
+              ? preferredSymbol
+              : payload.items[0]?.symbol ?? null;
+          if (nextSelected) {
+            setSelectedSymbol(nextSelected);
+          }
+        })
+        .catch(() => {});
+    } else if (activePage === "screener") {
+      void requestActiveScannerResults(true)
+        .then((payload) => {
+          if (!payload) {
+            return;
+          }
+          syncSelectedSymbolFromScan(payload, selectedSymbolRef.current);
+          setScanSectorSummaries(payload.sector_summaries ?? []);
+        })
+        .catch(() => {});
+    }
 
     if (activePage === "home" || activePage === "groups") {
       void getIndustryGroups(activeMarket)
@@ -4155,9 +4185,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const applyWatchdogBadge = (status: WatchdogStatusResponse) => {
     const ageSeconds = Math.max(0, Math.round(status.snapshot_age_seconds ?? 0));
     const ageLabel = ageSeconds < 90 ? `${ageSeconds}s old` : `${Math.round(ageSeconds / 60)}m old`;
+    const freshnessLabel = status.snapshot_stale
+      ? status.close_refresh_due
+        ? "close sync due"
+        : status.snapshot_session_date && status.expected_session_date && status.snapshot_session_date !== status.expected_session_date
+          ? `${status.snapshot_session_date} snapshot loaded`
+          : ageLabel
+      : ageLabel;
     setWatchdogStatus(status.snapshot_stale ? "stale" : "healthy");
     setWatchdogStatusMeta(
-      `${status.is_market_open ? "Live" : "Idle"} · ${ageLabel} · checks every ${status.watchdog_interval_seconds}s`,
+      `${status.is_market_open ? "Live" : "Idle"} · ${freshnessLabel} · checks every ${status.watchdog_interval_seconds}s`,
     );
   };
 
@@ -4171,6 +4208,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           return;
         }
         applyWatchdogBadge(status);
+        if (status.snapshot_stale && !refreshingRef.current && !watchdogFixing) {
+          const now = Date.now();
+          if (now - lastAutoRefreshAtRef.current >= 3 * 60 * 1000) {
+            lastAutoRefreshAtRef.current = now;
+            void handleRefreshRef.current("auto");
+          }
+        }
       } catch {
         if (!active) {
           return;

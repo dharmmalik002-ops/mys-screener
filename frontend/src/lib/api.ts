@@ -888,6 +888,9 @@ export type WatchdogStatusResponse = {
   snapshot_age_seconds: number;
   snapshot_updated_at: string | null;
   snapshot_stale: boolean;
+  snapshot_session_date?: string | null;
+  expected_session_date?: string | null;
+  close_refresh_due?: boolean;
   watchdog_interval_seconds: number;
   server_utc: string;
 };

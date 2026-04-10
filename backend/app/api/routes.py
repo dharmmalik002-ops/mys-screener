@@ -113,13 +113,33 @@ def build_router(service):
         snap_age = prov._snapshot_age_seconds()
         is_open = prov._is_market_open_ist()
         snap_updated = prov.get_snapshot_updated_at()
+        cached_rows = prov._load_valid_cached_snapshot_rows()
+        snapshot_session_date = prov._snapshot_rows_session_date(cached_rows) if cached_rows else None
+        latest_session_method = getattr(prov, "_latest_completed_market_session_date", None)
+        expected_session_date = latest_session_method() if callable(latest_session_method) else None
+        close_refresh_due_method = getattr(prov, "_market_close_refresh_due", None)
+        close_refresh_due = bool(close_refresh_due_method()) if callable(close_refresh_due_method) else False
+
+        snapshot_stale = bool(
+            (is_open and snap_age > 180)
+            or close_refresh_due
+            or (snapshot_session_date is None and expected_session_date is not None)
+            or (
+                snapshot_session_date is not None
+                and expected_session_date is not None
+                and snapshot_session_date < expected_session_date
+            )
+        )
 
         return {
             "market": market,
             "is_market_open": is_open,
             "snapshot_age_seconds": round(snap_age, 1),
             "snapshot_updated_at": snap_updated.isoformat() if snap_updated else None,
-            "snapshot_stale": snap_age > 180 if is_open else False,
+            "snapshot_stale": snapshot_stale,
+            "snapshot_session_date": snapshot_session_date.isoformat() if snapshot_session_date else None,
+            "expected_session_date": expected_session_date.isoformat() if expected_session_date else None,
+            "close_refresh_due": close_refresh_due,
             "watchdog_interval_seconds": 90,
             "server_utc": now_utc.isoformat(),
         }

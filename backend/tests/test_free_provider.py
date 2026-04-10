@@ -18,7 +18,7 @@ BACKEND_ROOT = REPO_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.models.market import ChartBar, IndexQuoteItem, QuarterlyResultItem, StockSnapshot
+from app.models.market import ChartBar, DetailedNews, IndexQuoteItem, QuarterlyResultItem, StockSnapshot
 from app.providers.free import CHART_CACHE_VERSION, LIVE_SNAPSHOT_MAX_AGE_SECONDS, FreeMarketDataProvider, UNIVERSE_CACHE_VERSION
 from app.providers.us_free import USFreeMarketDataProvider
 
@@ -331,6 +331,48 @@ class FreeProviderRegressionTests(unittest.TestCase):
             fundamentals = self.provider._build_company_fundamentals("TEST", snapshot)
 
         self.assertEqual([item.result_date for item in fundamentals.quarterly_results], ["2026-01-14", "2026-04-09"])
+
+    def test_earnings_news_headline_can_seed_upcoming_event_when_calendar_is_missing(self) -> None:
+        snapshot = StockSnapshot.model_validate(self._snapshot_row(symbol="TEST"))
+        earnings_news = DetailedNews(
+            title="Infosys Q4 Results on April 23: IT earnings date, preview and dividend expectations",
+            summary="Infosys will announce Q4 FY26 earnings on April 23, 2026.",
+            impact_category="earnings",
+            source="Financial Express",
+            published_date="2026-04-07",
+            relevance_score=0.8,
+        )
+
+        with patch.object(self.provider, "_fetch_screener_company_page", return_value="<html></html>"), patch.object(
+            self.provider,
+            "_parse_screener_company_page",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": [],
+                "profit_loss": [],
+                "shareholding_pattern": [],
+                "recent_updates": [],
+            },
+        ), patch.object(
+            self.provider,
+            "_fetch_yfinance_fundamentals",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": [],
+                "historical_earnings_dates": [],
+                "profit_loss": [],
+                "recent_updates": [],
+                "upcoming_events": [],
+            },
+        ), patch.object(
+            self.provider,
+            "_fetch_google_news_rss",
+            side_effect=[[earnings_news], [earnings_news]],
+        ):
+            fundamentals = self.provider._build_company_fundamentals("TEST", snapshot)
+
+        self.assertEqual(fundamentals.upcoming_events[0]["date"], "2026-04-23")
+        self.assertIn("results", fundamentals.upcoming_events[0]["event"].lower())
 
     def test_get_index_quotes_prefers_cached_chart_bars_without_network_history_download(self) -> None:
         self.provider._write_chart_cache(
