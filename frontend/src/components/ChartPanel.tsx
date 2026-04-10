@@ -1252,6 +1252,8 @@ export function ChartPanel({
     }
     return rvolData[rvolData.length - 1];
   }, [rvolData, hoveredBar]);
+  const stageWidth = containerRef.current?.clientWidth ?? 0;
+  const stageHeight = containerRef.current?.clientHeight ?? 0;
   const reportedQuarterlyResults = useMemo(
     () => (fundamentals?.quarterly_results ?? []).filter((item) => item.period && item.period.toUpperCase() !== "TTM"),
     [fundamentals],
@@ -2178,9 +2180,6 @@ export function ChartPanel({
       setHistoryLoading(false);
     }
   };
-
-  const stageWidth = containerRef.current?.clientWidth ?? 0;
-  const stageHeight = containerRef.current?.clientHeight ?? 0;
 
   const selectAnnotation = (id: string) =>
     setSelectedAnnotationId((prev) => (prev === id ? null : id));
