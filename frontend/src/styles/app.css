@@ -5245,6 +5245,171 @@ button {
 
 .rvol-widget--lg .rvol-widget-detail { font-size: 0.68rem; }
 
+.earnings-color-control {
+  display: inline-flex;
+  align-items: center;
+}
+
+.earnings-marker-layer {
+  position: absolute;
+  top: 54px;
+  left: 10px;
+  right: 10px;
+  height: 26px;
+  z-index: 4;
+  pointer-events: none;
+}
+
+.earnings-marker {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(7, 12, 20, 0.92);
+  color: #ff78b0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+}
+
+.earnings-marker.active,
+.earnings-marker:hover {
+  transform: translateX(-50%) scale(1.06);
+}
+
+.earnings-popup {
+  position: absolute;
+  top: 56px;
+  right: 12px;
+  z-index: 5;
+  width: min(560px, calc(100% - 24px));
+  padding: 10px 12px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(7, 12, 20, 0.96);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.28);
+  display: grid;
+  gap: 10px;
+}
+
+.earnings-popup-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: grab;
+}
+
+.earnings-popup-header:active {
+  cursor: grabbing;
+}
+
+.earnings-popup-header strong,
+.earnings-popup-header span {
+  display: block;
+}
+
+.earnings-popup-header span {
+  margin-top: 2px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.earnings-popup-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.earnings-popup-close {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-soft);
+  border-radius: 999px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+}
+
+.earnings-popup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+}
+
+.earnings-popup-summary {
+  margin: 0;
+  color: var(--text);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.earnings-popup-table-wrap {
+  overflow: auto;
+  max-height: 280px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 86%, transparent);
+}
+
+.earnings-popup-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+
+.earnings-popup-table th,
+.earnings-popup-table td {
+  padding: 8px 9px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.earnings-popup-table th {
+  position: sticky;
+  top: 0;
+  background: rgba(11, 17, 28, 0.98);
+  color: var(--text-soft);
+  z-index: 1;
+}
+
+.earnings-popup-table td strong,
+.earnings-popup-table td small {
+  display: block;
+}
+
+.earnings-popup-table td small {
+  margin-top: 3px;
+  color: var(--text-soft);
+  font-size: 0.67rem;
+}
+
+.earnings-popup-table tbody tr.is-selected {
+  background: color-mix(in srgb, var(--accent) 12%, rgba(255, 255, 255, 0.01));
+}
+
+.earnings-popup-empty {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.earnings-popup-link {
+  color: var(--accent);
+  font-size: 0.76rem;
+  text-decoration: none;
+}
+
 @media (max-width: 1320px) {
   .watchlists-layout {
     grid-template-columns: 1fr;

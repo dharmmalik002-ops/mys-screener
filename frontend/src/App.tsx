@@ -798,6 +798,28 @@ function normalizeChartPanelTab(value: string | undefined): ChartPanelTab {
   return value === "fundamentals" ? "fundamentals" : "technical";
 }
 
+function normalizeRvolScale(value: string | undefined): "sm" | "md" | "lg" {
+  if (value === "sm" || value === "lg") {
+    return value;
+  }
+  return "md";
+}
+
+function normalizeWidgetPosition(
+  value: { x?: number | null; y?: number | null } | null | undefined,
+): { x: number; y: number } | null {
+  if (!value || typeof value.x !== "number" || typeof value.y !== "number") {
+    return null;
+  }
+  if (!Number.isFinite(value.x) || !Number.isFinite(value.y)) {
+    return null;
+  }
+  return {
+    x: Math.max(0, value.x),
+    y: Math.max(0, value.y),
+  };
+}
+
 function readChartPreferences(market: MarketKey): {
   chartPanelTab: ChartPanelTab;
   timeframe: ChartTimeframe;
@@ -806,17 +828,31 @@ function readChartPreferences(market: MarketKey): {
   indicatorKeys: IndicatorKey[];
   chartColors: ChartColorSettings;
   drawingColor: string;
+  showRvol: boolean;
+  rvolPos: { x: number; y: number } | null;
+  rvolAccentColor: string;
+  rvolScale: "sm" | "md" | "lg";
+  showEarningsMarkers: boolean;
+  earningsMarkerColor: string;
 } {
+  const defaults = {
+    chartPanelTab: "technical" as ChartPanelTab,
+    timeframe: "1D" as ChartTimeframe,
+    chartStyle: "candles" as ChartStyle,
+    showBenchmarkOverlay: false,
+    indicatorKeys: ["ema20", "ema50"] as IndicatorKey[],
+    chartColors: DEFAULT_CHART_COLORS,
+    drawingColor: "#00d2ff",
+    showRvol: false,
+    rvolPos: null as { x: number; y: number } | null,
+    rvolAccentColor: "#00d2ff",
+    rvolScale: "md" as const,
+    showEarningsMarkers: false,
+    earningsMarkerColor: "#ff78b0",
+  };
+
   if (typeof window === "undefined") {
-    return {
-      chartPanelTab: "technical",
-      timeframe: "1D",
-      chartStyle: "candles",
-      showBenchmarkOverlay: false,
-      indicatorKeys: ["ema20", "ema50"],
-      chartColors: DEFAULT_CHART_COLORS,
-      drawingColor: "#00d2ff",
-    };
+    return defaults;
   }
 
   try {
@@ -832,6 +868,12 @@ function readChartPreferences(market: MarketKey): {
       indicatorKeys: IndicatorKey[];
       chartColors: ChartColorSettings;
       drawingColor: string;
+      showRvol: boolean;
+      rvolPos: { x?: number | null; y?: number | null } | null;
+      rvolAccentColor: string;
+      rvolScale: "sm" | "md" | "lg";
+      showEarningsMarkers: boolean;
+      earningsMarkerColor: string;
     }>;
     return {
       chartPanelTab: normalizeChartPanelTab(parsed.chartPanelTab),
@@ -840,18 +882,16 @@ function readChartPreferences(market: MarketKey): {
       showBenchmarkOverlay: parsed.showBenchmarkOverlay === true,
       indicatorKeys: normalizeIndicatorKeys(parsed.indicatorKeys),
       chartColors: normalizeChartColors(parsed.chartColors),
-      drawingColor: normalizeHexColor(parsed.drawingColor, "#00d2ff"),
+      drawingColor: normalizeHexColor(parsed.drawingColor, defaults.drawingColor),
+      showRvol: parsed.showRvol === true,
+      rvolPos: normalizeWidgetPosition(parsed.rvolPos),
+      rvolAccentColor: normalizeHexColor(parsed.rvolAccentColor, defaults.rvolAccentColor),
+      rvolScale: normalizeRvolScale(parsed.rvolScale),
+      showEarningsMarkers: parsed.showEarningsMarkers === true,
+      earningsMarkerColor: normalizeHexColor(parsed.earningsMarkerColor, defaults.earningsMarkerColor),
     };
   } catch {
-    return {
-      chartPanelTab: "technical",
-      timeframe: "1D",
-      chartStyle: "candles",
-      showBenchmarkOverlay: false,
-      indicatorKeys: ["ema20", "ema50"],
-      chartColors: DEFAULT_CHART_COLORS,
-      drawingColor: "#00d2ff",
-    };
+    return defaults;
   }
 }
 
@@ -1348,6 +1388,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [indicatorKeys, setIndicatorKeys] = useState<IndicatorKey[]>(initialPreferences.indicatorKeys);
   const [chartColors, setChartColors] = useState<ChartColorSettings>(initialPreferences.chartColors);
   const [chartDrawingColor, setChartDrawingColor] = useState(initialPreferences.drawingColor);
+  const [showRvol, setShowRvol] = useState(initialPreferences.showRvol);
+  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(initialPreferences.rvolPos);
+  const [rvolAccentColor, setRvolAccentColor] = useState(initialPreferences.rvolAccentColor);
+  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">(initialPreferences.rvolScale);
+  const [showEarningsMarkers, setShowEarningsMarkers] = useState(initialPreferences.showEarningsMarkers);
+  const [earningsMarkerColor, setEarningsMarkerColor] = useState(initialPreferences.earningsMarkerColor);
   const [savedDrawings, setSavedDrawings] = useState<Record<string, ChartAnnotation[]>>(initialSavedDrawings);
   const [fundamentalsBySymbol, setFundamentalsBySymbol] = useState<Record<string, CompanyFundamentals>>({});
   const [chartError, setChartError] = useState<string | null>(null);
@@ -1618,6 +1664,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setIndicatorKeys(preferences.indicatorKeys);
     setChartColors(preferences.chartColors);
     setChartDrawingColor(preferences.drawingColor);
+    setShowRvol(preferences.showRvol);
+    setRvolPos(preferences.rvolPos);
+    setRvolAccentColor(preferences.rvolAccentColor);
+    setRvolScale(preferences.rvolScale);
+    setShowEarningsMarkers(preferences.showEarningsMarkers);
+    setEarningsMarkerColor(preferences.earningsMarkerColor);
   };
 
   const applyScannerSettings = (settings: PersistedScannerSettings) => {
@@ -2439,9 +2491,30 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         indicatorKeys,
         chartColors,
         drawingColor: chartDrawingColor,
+        showRvol,
+        rvolPos,
+        rvolAccentColor,
+        rvolScale,
+        showEarningsMarkers,
+        earningsMarkerColor,
       }),
     );
-  }, [activeMarket, chartColors, chartDrawingColor, chartPanelTab, chartStyle, indicatorKeys, showBenchmarkOverlay, timeframe]);
+  }, [
+    activeMarket,
+    chartColors,
+    chartDrawingColor,
+    chartPanelTab,
+    chartStyle,
+    earningsMarkerColor,
+    indicatorKeys,
+    rvolAccentColor,
+    rvolPos,
+    rvolScale,
+    showBenchmarkOverlay,
+    showEarningsMarkers,
+    showRvol,
+    timeframe,
+  ]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -4738,6 +4811,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     chartError={chartError}
                     chartLoading={chartLoading}
                     chartCacheState={chartCacheState}
+                    showRvol={showRvol}
+                    onShowRvolChange={setShowRvol}
+                    rvolPos={rvolPos}
+                    onRvolPosChange={setRvolPos}
+                    rvolAccentColor={rvolAccentColor}
+                    onRvolAccentColorChange={setRvolAccentColor}
+                    rvolScale={rvolScale}
+                    onRvolScaleChange={setRvolScale}
+                    showEarningsMarkers={showEarningsMarkers}
+                    onShowEarningsMarkersChange={setShowEarningsMarkers}
+                    earningsMarkerColor={earningsMarkerColor}
+                    onEarningsMarkerColorChange={setEarningsMarkerColor}
                     fundamentals={activeFundamentals}
                     fundamentalsLoading={fundamentalsLoading}
                     fundamentalsError={fundamentalsError}
@@ -4833,6 +4918,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   chartError={chartError}
                   chartLoading={chartLoading}
                   chartCacheState={chartCacheState}
+                  showRvol={showRvol}
+                  onShowRvolChange={setShowRvol}
+                  rvolPos={rvolPos}
+                  onRvolPosChange={setRvolPos}
+                  rvolAccentColor={rvolAccentColor}
+                  onRvolAccentColorChange={setRvolAccentColor}
+                  rvolScale={rvolScale}
+                  onRvolScaleChange={setRvolScale}
+                  showEarningsMarkers={showEarningsMarkers}
+                  onShowEarningsMarkersChange={setShowEarningsMarkers}
+                  earningsMarkerColor={earningsMarkerColor}
+                  onEarningsMarkerColorChange={setEarningsMarkerColor}
                   fundamentals={activeFundamentals}
                   fundamentalsLoading={fundamentalsLoading}
                   fundamentalsError={fundamentalsError}
@@ -4907,6 +5004,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 chartError={chartError}
                 chartLoading={chartLoading}
                 chartCacheState={chartCacheState}
+                showRvol={showRvol}
+                onShowRvolChange={setShowRvol}
+                rvolPos={rvolPos}
+                onRvolPosChange={setRvolPos}
+                rvolAccentColor={rvolAccentColor}
+                onRvolAccentColorChange={setRvolAccentColor}
+                rvolScale={rvolScale}
+                onRvolScaleChange={setRvolScale}
+                showEarningsMarkers={showEarningsMarkers}
+                onShowEarningsMarkersChange={setShowEarningsMarkers}
+                earningsMarkerColor={earningsMarkerColor}
+                onEarningsMarkerColorChange={setEarningsMarkerColor}
                 fundamentals={activeFundamentals}
                 fundamentalsLoading={fundamentalsLoading}
                 fundamentalsError={fundamentalsError}

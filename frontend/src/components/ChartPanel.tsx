@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type StockOverview } from "../lib/api";
+import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
@@ -30,6 +30,8 @@ export type ChartColorSettings = {
   rsMarker: string;
   rsMarkerSize: number;
 };
+
+export type RvolScale = "sm" | "md" | "lg";
 
 export type ChartGroupSummary = {
   groupId: string;
@@ -133,6 +135,18 @@ type ChartPanelProps = {
   chartError: string | null;
   chartLoading: boolean;
   chartCacheState: "cached" | "live" | null;
+  showRvol: boolean;
+  onShowRvolChange: (show: boolean) => void;
+  rvolPos: { x: number; y: number } | null;
+  onRvolPosChange: (position: { x: number; y: number } | null) => void;
+  rvolAccentColor: string;
+  onRvolAccentColorChange: (color: string) => void;
+  rvolScale: RvolScale;
+  onRvolScaleChange: (scale: RvolScale) => void;
+  showEarningsMarkers: boolean;
+  onShowEarningsMarkersChange: (show: boolean) => void;
+  earningsMarkerColor: string;
+  onEarningsMarkerColorChange: (color: string) => void;
   fundamentals: CompanyFundamentals | null;
   fundamentalsLoading: boolean;
   fundamentalsError: string | null;
@@ -777,6 +791,271 @@ function rvolColor(rvol: number) {
   return "#8b949e";
 }
 
+type EarningsMarkerItem = {
+  id: string;
+  kind: "reported" | "upcoming";
+  time: number;
+  period: string | null;
+  title: string;
+  description: string | null;
+  eventDate: string;
+  documentUrl: string | null;
+};
+
+function parseEventTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : null;
+}
+
+function formatEventDate(value: string | null | undefined, market: MarketKey) {
+  if (!value) {
+    return "Date unavailable";
+  }
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(market === "india" ? "en-IN" : "en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(timestamp));
+}
+
+function quarterKeyFromPeriod(period: string | null | undefined, market: MarketKey) {
+  if (!period) {
+    return null;
+  }
+
+  const directQuarterMatch = period.match(/\bQ([1-4])\s*FY\s*(\d{2,4})\b/i);
+  if (directQuarterMatch) {
+    const fiscalYear = Number(directQuarterMatch[2].length === 2 ? `20${directQuarterMatch[2]}` : directQuarterMatch[2]);
+    return `Q${directQuarterMatch[1]}:FY${fiscalYear}`;
+  }
+
+  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
+  if (!monthMatch) {
+    return null;
+  }
+
+  const monthToken = monthMatch[1].slice(0, 3).toLowerCase();
+  const year = Number(monthMatch[2]);
+  const monthToQuarterIndia: Record<string, { quarter: string; fiscalYear: number }> = {
+    mar: { quarter: "Q4", fiscalYear: year },
+    jun: { quarter: "Q1", fiscalYear: year + 1 },
+    sep: { quarter: "Q2", fiscalYear: year + 1 },
+    dec: { quarter: "Q3", fiscalYear: year + 1 },
+  };
+  const monthToQuarterUs: Record<string, { quarter: string; fiscalYear: number }> = {
+    mar: { quarter: "Q1", fiscalYear: year },
+    jun: { quarter: "Q2", fiscalYear: year },
+    sep: { quarter: "Q3", fiscalYear: year },
+    dec: { quarter: "Q4", fiscalYear: year },
+  };
+  const mapping = market === "india" ? monthToQuarterIndia[monthToken] : monthToQuarterUs[monthToken];
+  return mapping ? `${mapping.quarter}:FY${mapping.fiscalYear}` : null;
+}
+
+function quarterEndTimestamp(period: string | null | undefined) {
+  if (!period) {
+    return null;
+  }
+  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
+  if (!monthMatch) {
+    return null;
+  }
+  const monthIndex = new Date(`${monthMatch[1]} 1, ${monthMatch[2]}`).getMonth();
+  if (!Number.isFinite(monthIndex)) {
+    return null;
+  }
+  const year = Number(monthMatch[2]);
+  return Math.floor(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0) / 1000);
+}
+
+function extractQuarterHint(text: string, market: MarketKey) {
+  const quarterMatch = text.match(/\bq([1-4])\b/i);
+  if (!quarterMatch) {
+    return null;
+  }
+  const fyMatch = text.match(/\bfy\s*'?\s*(\d{2,4})\b/i);
+  if (!fyMatch) {
+    return `Q${quarterMatch[1]}`;
+  }
+  const fiscalYear = Number(fyMatch[1].length === 2 ? `20${fyMatch[1]}` : fyMatch[1]);
+  const normalizedFiscalYear = market === "india" || fiscalYear > 1900 ? fiscalYear : fiscalYear;
+  return `Q${quarterMatch[1]}:FY${normalizedFiscalYear}`;
+}
+
+function isEarningsRelatedItem(title: string | null | undefined, detail: string | null | undefined) {
+  const text = `${title ?? ""} ${detail ?? ""}`.toLowerCase();
+  return /(earnings|results|quarterly\s+results|financial\s+results|board\s+meeting.*result|conference\s+call|concall)/i.test(text);
+}
+
+function growthPct(current: number | null | undefined, previous: number | null | undefined) {
+  if (current == null || previous == null || previous === 0) {
+    return null;
+  }
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
+
+function marginDelta(current: number | null | undefined, previous: number | null | undefined) {
+  if (current == null || previous == null) {
+    return null;
+  }
+  return current - previous;
+}
+
+function buildEarningsMarkers(fundamentals: CompanyFundamentals | null, market: MarketKey): EarningsMarkerItem[] {
+  if (!fundamentals) {
+    return [];
+  }
+
+  const quarters = (fundamentals.quarterly_results ?? [])
+    .filter((item) => item.period && item.period.toUpperCase() !== "TTM")
+    .map((item, index) => ({
+      item,
+      index,
+      key: quarterKeyFromPeriod(item.period, market),
+      endTime: quarterEndTimestamp(item.period),
+    }));
+
+  const markers: EarningsMarkerItem[] = [];
+  const usedPeriods = new Set<string>();
+
+  for (const quarter of quarters) {
+    const timestamp = parseEventTimestamp(quarter.item.result_date);
+    if (!timestamp) {
+      continue;
+    }
+    usedPeriods.add(quarter.item.period);
+    markers.push({
+      id: `reported:${quarter.item.period}:${timestamp}`,
+      kind: "reported",
+      time: timestamp,
+      period: quarter.item.period,
+      title: `${quarter.item.period} results`,
+      description: null,
+      eventDate: quarter.item.result_date ?? "",
+      documentUrl: quarter.item.result_document_url ?? null,
+    });
+  }
+
+  const candidates = [
+    ...(fundamentals.recent_updates ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_at,
+      documentUrl: item.link,
+      sourceKind: item.kind,
+    })),
+    ...(fundamentals.official_updates ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+    ...(fundamentals.latest_editorial_news ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+    ...(fundamentals.detailed_news ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+  ]
+    .filter((item) => item.date && isEarningsRelatedItem(item.title, item.description))
+    .map((item) => ({
+      ...item,
+      time: parseEventTimestamp(item.date),
+      hint: extractQuarterHint(`${item.title ?? ""} ${item.description ?? ""}`, market),
+    }))
+    .filter((item): item is typeof item & { time: number } => typeof item.time === "number")
+    .sort((left, right) => left.time - right.time);
+
+  for (const candidate of candidates) {
+    let bestQuarter: (typeof quarters)[number] | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (const quarter of quarters) {
+      if (usedPeriods.has(quarter.item.period) || quarter.endTime == null) {
+        continue;
+      }
+      const diffDays = (candidate.time - quarter.endTime) / 86400;
+      if (diffDays < -10 || diffDays > 140) {
+        continue;
+      }
+      let score = diffDays;
+      if (candidate.hint) {
+        if (quarter.key === candidate.hint || quarter.key?.startsWith(candidate.hint)) {
+          score -= 50;
+        } else if (candidate.hint.startsWith("Q") && quarter.key && !quarter.key.startsWith(candidate.hint)) {
+          score += 24;
+        }
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        bestQuarter = quarter;
+      }
+    }
+
+    if (!bestQuarter) {
+      continue;
+    }
+
+    usedPeriods.add(bestQuarter.item.period);
+    markers.push({
+      id: `reported:${bestQuarter.item.period}:${candidate.time}`,
+      kind: "reported",
+      time: candidate.time,
+      period: bestQuarter.item.period,
+      title: candidate.title ?? `${bestQuarter.item.period} results`,
+      description: candidate.description ?? null,
+      eventDate: candidate.date ?? "",
+      documentUrl: bestQuarter.item.result_document_url ?? candidate.documentUrl ?? null,
+    });
+  }
+
+  for (const event of fundamentals.upcoming_events ?? []) {
+    if (!event.date || !isEarningsRelatedItem(event.event, event.impact ?? null)) {
+      continue;
+    }
+    const timestamp = parseEventTimestamp(event.date);
+    if (!timestamp) {
+      continue;
+    }
+    markers.push({
+      id: `upcoming:${event.event}:${timestamp}`,
+      kind: "upcoming",
+      time: timestamp,
+      period: null,
+      title: event.event,
+      description: event.impact ?? null,
+      eventDate: event.date,
+      documentUrl: null,
+    });
+  }
+
+  const deduped = new Map<string, EarningsMarkerItem>();
+  for (const marker of markers) {
+    const key = `${marker.kind}:${marker.period ?? marker.title}:${marker.time}`;
+    if (!deduped.has(key)) {
+      deduped.set(key, marker);
+    }
+  }
+
+  return [...deduped.values()].sort((left, right) => left.time - right.time);
+}
+
 function formatVolumeShort(v: number, market: MarketKey) {
   if (market === "india") {
     if (v >= 1e7) return `${(v / 1e7).toFixed(2)} Cr`;
@@ -861,6 +1140,18 @@ export function ChartPanel({
   chartError,
   chartLoading,
   chartCacheState,
+  showRvol,
+  onShowRvolChange,
+  rvolPos,
+  onRvolPosChange,
+  rvolAccentColor,
+  onRvolAccentColorChange,
+  rvolScale,
+  onRvolScaleChange,
+  showEarningsMarkers,
+  onShowEarningsMarkersChange,
+  earningsMarkerColor,
+  onEarningsMarkerColorChange,
   fundamentals,
   fundamentalsLoading,
   fundamentalsError,
@@ -906,6 +1197,8 @@ export function ChartPanel({
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
   const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
   const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
+  const earningsPopupRef = useRef<HTMLDivElement | null>(null);
+  const earningsPopupDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -913,7 +1206,7 @@ export function ChartPanel({
   const [hoveredBar, setHoveredBar] = useState<HoveredPriceBar | null>(null);
   const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
   const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
-  const [, setOverlayVersion] = useState(0);
+  const [overlayVersion, setOverlayVersion] = useState(0);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [draggingAnnotationHandle, setDraggingAnnotationHandle] = useState<string | null>(null);
   const [extendedHistory, setExtendedHistory] = useState<ChartResponse | null>(null);
@@ -921,10 +1214,8 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
-  const [showRvol, setShowRvol] = useState(false);
-  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(null);
-  const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
-  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
+  const [selectedEarningsMarkerId, setSelectedEarningsMarkerId] = useState<string | null>(null);
+  const [earningsPopupPos, setEarningsPopupPos] = useState<{ x: number; y: number } | null>(null);
   const [indexOverlaySymbol, setIndexOverlaySymbol] = useState<string | null>(null);
   const [indexOverlayMode, setIndexOverlayMode] = useState<"overlay" | "pane">("overlay");
   const [indexOverlayStyle, setIndexOverlayStyle] = useState<"line" | "candle" | "bars">("line");
@@ -961,6 +1252,62 @@ export function ChartPanel({
     }
     return rvolData[rvolData.length - 1];
   }, [rvolData, hoveredBar]);
+  const reportedQuarterlyResults = useMemo(
+    () => (fundamentals?.quarterly_results ?? []).filter((item) => item.period && item.period.toUpperCase() !== "TTM"),
+    [fundamentals],
+  );
+  const earningsMarkers = useMemo(() => buildEarningsMarkers(fundamentals, market), [fundamentals, market]);
+  const positionedEarningsMarkers = useMemo(() => {
+    if (!showEarningsMarkers || panelTab !== "technical" || !earningsMarkers.length || !chartRef.current) {
+      return [] as Array<EarningsMarkerItem & { x: number }>;
+    }
+
+    return earningsMarkers.flatMap((marker) => {
+      const x = chartRef.current?.timeScale().timeToCoordinate(marker.time as UTCTimestamp);
+      if (x == null || !Number.isFinite(x) || x < -18 || x > stageWidth + 18) {
+        return [];
+      }
+      return [{ ...marker, x }];
+    });
+  }, [earningsMarkers, overlayVersion, panelTab, showEarningsMarkers, stageWidth]);
+  const selectedEarningsMarker = useMemo(
+    () => earningsMarkers.find((marker) => marker.id === selectedEarningsMarkerId) ?? null,
+    [earningsMarkers, selectedEarningsMarkerId],
+  );
+  const earningsPopupRows = useMemo(() => {
+    if (!reportedQuarterlyResults.length) {
+      return [] as Array<QuarterlyResultItem & {
+        salesQoqPct: number | null;
+        salesYoyPct: number | null;
+        profitQoqPct: number | null;
+        profitYoyPct: number | null;
+        marginQoqDelta: number | null;
+        marginYoyDelta: number | null;
+      }>;
+    }
+
+    const selectedIndex = selectedEarningsMarker?.period
+      ? reportedQuarterlyResults.findIndex((item) => item.period === selectedEarningsMarker.period)
+      : reportedQuarterlyResults.length - 1;
+    const anchorIndex = selectedIndex >= 0 ? selectedIndex : reportedQuarterlyResults.length - 1;
+    const startIndex = Math.max(0, anchorIndex - 3);
+    const slice = reportedQuarterlyResults.slice(startIndex, Math.min(reportedQuarterlyResults.length, startIndex + 4));
+
+    return slice.map((item) => {
+      const index = reportedQuarterlyResults.findIndex((quarter) => quarter.period === item.period);
+      const previous = index > 0 ? reportedQuarterlyResults[index - 1] : null;
+      const yearAgo = index >= 4 ? reportedQuarterlyResults[index - 4] : null;
+      return {
+        ...item,
+        salesQoqPct: item.qoq_change_pct ?? growthPct(item.sales_crore, previous?.sales_crore),
+        salesYoyPct: item.yoy_change_pct ?? growthPct(item.sales_crore, yearAgo?.sales_crore),
+        profitQoqPct: growthPct(item.net_profit_crore, previous?.net_profit_crore),
+        profitYoyPct: growthPct(item.net_profit_crore, yearAgo?.net_profit_crore),
+        marginQoqDelta: marginDelta(item.operating_margin_pct, previous?.operating_margin_pct),
+        marginYoyDelta: marginDelta(item.operating_margin_pct, yearAgo?.operating_margin_pct),
+      };
+    });
+  }, [reportedQuarterlyResults, selectedEarningsMarker]);
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
@@ -1025,6 +1372,8 @@ export function ChartPanel({
     setDraggingAnnotationHandle(null);
     setExtendedHistory(null);
     setIndexBars(null);
+    setSelectedEarningsMarkerId(null);
+    setEarningsPopupPos(null);
   }, [symbol, timeframe]);
 
   useEffect(() => {
@@ -1746,10 +2095,64 @@ export function ChartPanel({
       const dy = ev.clientY - rvolDragRef.current.startPY;
       const newX = Math.max(0, Math.min(rvolDragRef.current.startWX + dx, stageRect2.width - 40));
       const newY = Math.max(0, Math.min(rvolDragRef.current.startWY + dy, stageRect2.height - 40));
-      setRvolPos({ x: newX, y: newY });
+      onRvolPosChange({ x: newX, y: newY });
     };
     const onUp = () => {
       rvolDragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleEarningsMarkerClick = (marker: EarningsMarkerItem) => {
+    setSelectedEarningsMarkerId(marker.id);
+    setEarningsPopupPos((current) => {
+      if (current) {
+        return current;
+      }
+      const fallbackX = Math.max(12, stageWidth - 360);
+      return { x: fallbackX, y: 54 };
+    });
+  };
+
+  const handleEarningsPopupDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const popup = earningsPopupRef.current;
+    const stage = stageRef.current;
+    if (!popup || !stage) {
+      return;
+    }
+    const popupRect = popup.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    earningsPopupDragRef.current = {
+      startPX: event.clientX,
+      startPY: event.clientY,
+      startWX: popupRect.left - stageRect.left,
+      startWY: popupRect.top - stageRect.top,
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!earningsPopupDragRef.current) {
+        return;
+      }
+      const liveStage = stageRef.current;
+      if (!liveStage) {
+        return;
+      }
+      const liveStageRect = liveStage.getBoundingClientRect();
+      const dx = moveEvent.clientX - earningsPopupDragRef.current.startPX;
+      const dy = moveEvent.clientY - earningsPopupDragRef.current.startPY;
+      const nextX = Math.max(0, Math.min(earningsPopupDragRef.current.startWX + dx, liveStageRect.width - 120));
+      const nextY = Math.max(0, Math.min(earningsPopupDragRef.current.startWY + dy, liveStageRect.height - 120));
+      setEarningsPopupPos({ x: nextX, y: nextY });
+    };
+    const onUp = () => {
+      earningsPopupDragRef.current = null;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
     };
@@ -2252,11 +2655,29 @@ export function ChartPanel({
                 <button
                   type="button"
                   className={showRvol ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => setShowRvol((v) => !v)}
+                  onClick={() => onShowRvolChange(!showRvol)}
                   title="Relative Volume vs 50-day average. Helps spot unusual activity."
                 >
                   RVOL
                 </button>
+                <button
+                  type="button"
+                  className={showEarningsMarkers ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => onShowEarningsMarkersChange(!showEarningsMarkers)}
+                  title="Show real earnings/result dates when verified company data is available."
+                >
+                  Earnings
+                </button>
+                {showEarningsMarkers ? (
+                  <label className="earnings-color-control" title="E marker colour">
+                    <input
+                      type="color"
+                      className="rvol-color-input"
+                      value={earningsMarkerColor}
+                      onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
+                    />
+                  </label>
+                ) : null}
               </div>
               {market === "us" ? (
                 <div className="chart-style-switcher">
@@ -2565,11 +2986,11 @@ export function ChartPanel({
                 <span className="rvol-widget-title" style={{ color: rvolAccentColor }}>RVOL <span className="rvol-widget-subtitle">vs 50d avg</span></span>
                 <div className="rvol-widget-controls" onPointerDown={(e) => e.stopPropagation()}>
                   {(["sm", "md", "lg"] as const).map((s) => (
-                    <button key={s} type="button" className={`rvol-size-btn${rvolScale === s ? " active" : ""}`} onClick={() => setRvolScale(s)} style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}>
+                    <button key={s} type="button" className={`rvol-size-btn${rvolScale === s ? " active" : ""}`} onClick={() => onRvolScaleChange(s)} style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}>
                       {s === "sm" ? "S" : s === "md" ? "M" : "L"}
                     </button>
                   ))}
-                  <input type="color" className="rvol-color-input" value={rvolAccentColor} onChange={(e) => setRvolAccentColor(e.target.value)} title="Widget color" />
+                  <input type="color" className="rvol-color-input" value={rvolAccentColor} onChange={(e) => onRvolAccentColorChange(e.target.value)} title="Widget color" />
                 </div>
               </div>
               <div className="rvol-widget-row">
@@ -2596,6 +3017,120 @@ export function ChartPanel({
               <div className="rvol-widget-detail">
                 {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
               </div>
+            </div>
+          ) : null}
+          {showEarningsMarkers && positionedEarningsMarkers.length > 0 ? (
+            <div className="earnings-marker-layer" aria-label="Earnings markers">
+              {positionedEarningsMarkers.map((marker) => (
+                <button
+                  key={marker.id}
+                  type="button"
+                  className={selectedEarningsMarkerId === marker.id ? "earnings-marker active" : "earnings-marker"}
+                  style={{
+                    left: marker.x,
+                    color: earningsMarkerColor,
+                    borderColor: `color-mix(in srgb, ${earningsMarkerColor} 50%, transparent)`,
+                    boxShadow: selectedEarningsMarkerId === marker.id ? `0 0 0 1px ${earningsMarkerColor}` : undefined,
+                  }}
+                  title={`${marker.kind === "upcoming" ? "Upcoming" : "Reported"}: ${marker.title} • ${formatEventDate(marker.eventDate, market)}`}
+                  onClick={() => handleEarningsMarkerClick(marker)}
+                >
+                  E
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {selectedEarningsMarker ? (
+            <div
+              ref={earningsPopupRef}
+              className="earnings-popup"
+              style={{
+                ...(earningsPopupPos ? { left: earningsPopupPos.x, top: earningsPopupPos.y, right: "auto" } : {}),
+                borderColor: `color-mix(in srgb, ${earningsMarkerColor} 46%, transparent)`,
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="earnings-popup-header" onPointerDown={handleEarningsPopupDragStart}>
+                <div>
+                  <strong style={{ color: earningsMarkerColor }}>{selectedEarningsMarker.kind === "upcoming" ? "Upcoming Earnings" : "Earnings Snapshot"}</strong>
+                  <span>{selectedEarningsMarker.period ?? selectedEarningsMarker.title}</span>
+                </div>
+                <div className="earnings-popup-actions" onPointerDown={(event) => event.stopPropagation()}>
+                  <input
+                    type="color"
+                    className="rvol-color-input"
+                    value={earningsMarkerColor}
+                    onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
+                    title="E marker colour"
+                  />
+                  <button type="button" className="earnings-popup-close" onClick={() => setSelectedEarningsMarkerId(null)}>
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="earnings-popup-meta">
+                <span>{formatEventDate(selectedEarningsMarker.eventDate, market)}</span>
+                <span>{selectedEarningsMarker.kind === "upcoming" ? "Scheduled / announced date" : "Declared date"}</span>
+              </div>
+              {selectedEarningsMarker.description ? <p className="earnings-popup-summary">{selectedEarningsMarker.description}</p> : null}
+              {earningsPopupRows.length > 0 ? (
+                <div className="earnings-popup-table-wrap">
+                  <table className="earnings-popup-table">
+                    <thead>
+                      <tr>
+                        <th>Quarter</th>
+                        <th>Sales</th>
+                        <th>QoQ</th>
+                        <th>YoY</th>
+                        <th>OPM</th>
+                        <th>QoQ Δ</th>
+                        <th>YoY Δ</th>
+                        <th>Profit</th>
+                        <th>QoQ</th>
+                        <th>YoY</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {earningsPopupRows.map((row) => (
+                        <tr key={`${selectedEarningsMarker.id}-${row.period}`} className={row.period === selectedEarningsMarker.period ? "is-selected" : ""}>
+                          <td>
+                            <strong>{row.period}</strong>
+                            {row.result_date ? <small>{formatEventDate(row.result_date, market)}</small> : null}
+                          </td>
+                          <td>{formatAmountValue(row.sales_crore)}</td>
+                          <td className={row.salesQoqPct == null ? "" : row.salesQoqPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.salesQoqPct)}
+                          </td>
+                          <td className={row.salesYoyPct == null ? "" : row.salesYoyPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.salesYoyPct)}
+                          </td>
+                          <td>{formatPercentValue(row.operating_margin_pct)}</td>
+                          <td className={row.marginQoqDelta == null ? "" : row.marginQoqDelta >= 0 ? "positive-text" : "negative-text"}>
+                            {row.marginQoqDelta == null ? "—" : `${row.marginQoqDelta >= 0 ? "+" : ""}${row.marginQoqDelta.toFixed(2)} pp`}
+                          </td>
+                          <td className={row.marginYoyDelta == null ? "" : row.marginYoyDelta >= 0 ? "positive-text" : "negative-text"}>
+                            {row.marginYoyDelta == null ? "—" : `${row.marginYoyDelta >= 0 ? "+" : ""}${row.marginYoyDelta.toFixed(2)} pp`}
+                          </td>
+                          <td>{formatAmountValue(row.net_profit_crore)}</td>
+                          <td className={row.profitQoqPct == null ? "" : row.profitQoqPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.profitQoqPct)}
+                          </td>
+                          <td className={row.profitYoyPct == null ? "" : row.profitYoyPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.profitYoyPct)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="earnings-popup-empty">No verified quarterly results were available for this marker.</div>
+              )}
+              {selectedEarningsMarker.documentUrl ? (
+                <a className="earnings-popup-link" href={selectedEarningsMarker.documentUrl} target="_blank" rel="noreferrer">
+                  Open filing ↗
+                </a>
+              ) : null}
             </div>
           ) : null}
         <div className="chart-stage-meta">
