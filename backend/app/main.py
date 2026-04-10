@@ -208,9 +208,15 @@ async def live_market_watchdog_job() -> None:
                     "WATCHDOG INDIA: snapshot stale (%.0fs > 180s) — forcing live refresh", snap_age
                 )
                 try:
-                    await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
+                    india_snapshots = await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
                     service._clear_runtime_caches()
-                    logger.warning("WATCHDOG INDIA: live refresh OK — caches cleared, snapshot age now %.0fs", india_prov._snapshot_age_seconds())
+                    prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
+                    logger.warning(
+                        "WATCHDOG INDIA: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
+                        prewarm_summary.get("section_count", 0),
+                        prewarm_summary.get("symbol_count", 0),
+                        india_prov._snapshot_age_seconds(),
+                    )
                 except Exception as exc:
                     logger.error("WATCHDOG INDIA: live refresh FAILED: %s", exc)
             else:
@@ -254,7 +260,7 @@ async def live_market_watchdog_job() -> None:
                             result = await asyncio.to_thread(patch_fn)
                         if result.get("snapshots_updated", 0) > 0:
                             service._clear_runtime_caches()
-                            await service.build_dashboard()
+                            await service.prewarm_watchdog_sections()
                         logger.warning("WATCHDOG INDIA: bhavcopy patch result: %s", result)
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: bhavcopy patch FAILED: %s", exc)
@@ -284,9 +290,15 @@ async def live_market_watchdog_job() -> None:
                     "WATCHDOG US: snapshot stale (%.0fs > 180s) — forcing live refresh", us_snap_age
                 )
                 try:
-                    await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
+                    us_snapshots = await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
                     us_service._clear_runtime_caches()
-                    logger.warning("WATCHDOG US: live refresh OK — caches cleared, snapshot age now %.0fs", us_prov._snapshot_age_seconds())
+                    prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
+                    logger.warning(
+                        "WATCHDOG US: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
+                        prewarm_summary.get("section_count", 0),
+                        prewarm_summary.get("symbol_count", 0),
+                        us_prov._snapshot_age_seconds(),
+                    )
                 except Exception as exc:
                     logger.error("WATCHDOG US: live refresh FAILED: %s", exc)
             else:

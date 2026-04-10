@@ -891,6 +891,10 @@ export type WatchdogStatusResponse = {
   snapshot_session_date?: string | null;
   expected_session_date?: string | null;
   close_refresh_due?: boolean;
+  site_systems_total?: number;
+  site_systems_ready?: number;
+  site_attention_count?: number;
+  attention_items?: string[];
   watchdog_interval_seconds: number;
   server_utc: string;
 };

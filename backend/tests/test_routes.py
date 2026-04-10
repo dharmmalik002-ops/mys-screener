@@ -161,6 +161,15 @@ class StubWatchdogProvider(FreeMarketDataProvider):
 class StubWatchdogService:
     def __init__(self, provider: FreeMarketDataProvider) -> None:
         self.provider = provider
+        self._dashboard_cache = None
+        self._scan_catalog_cache = None
+        self._sector_tab_cache = {}
+        self._industry_groups_cache = None
+        self._market_health_cache = None
+        self._sector_rotation_cache = None
+
+    async def get_money_flow_stock_ideas(self):
+        return None
 
 
 class MoneyFlowRoutesTests(unittest.TestCase):
@@ -226,3 +235,21 @@ class MoneyFlowRoutesTests(unittest.TestCase):
         self.assertTrue(payload["close_refresh_due"])
         self.assertEqual(payload["snapshot_session_date"], "2026-04-09")
         self.assertEqual(payload["expected_session_date"], "2026-04-10")
+
+    def test_watchdog_tasks_cover_broader_website_sections(self) -> None:
+        app = FastAPI()
+        watchdog_service = StubWatchdogService(
+            StubWatchdogProvider(is_open=True, snap_age=45.0, close_refresh_due=False)
+        )
+        app.include_router(build_router({"india": watchdog_service}))
+        client = TestClient(app)
+
+        response = client.get("/api/watchdog-tasks?market=india")
+
+        self.assertEqual(response.status_code, 200)
+        payload = response.json()
+        task_ids = {task["id"] for task in payload["tasks"]}
+        self.assertIn("dashboard_home_cache", task_ids)
+        self.assertIn("sector_heatmap_sync", task_ids)
+        self.assertIn("scanner_engine_sync", task_ids)
+        self.assertIn("fundamentals_earnings_sync", task_ids)

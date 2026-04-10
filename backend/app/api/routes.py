@@ -131,6 +131,29 @@ def build_router(service):
             )
         )
 
+        def generated_at_from_cache(value) -> datetime | None:
+            if value is None:
+                return None
+            if isinstance(value, tuple):
+                for item in value:
+                    if isinstance(item, datetime):
+                        return item
+                return None
+            for attr in ("generated_at", "updated_at"):
+                candidate = getattr(value, attr, None)
+                if isinstance(candidate, datetime):
+                    return candidate
+            return None
+
+        site_sections = {
+            "dashboard": generated_at_from_cache(getattr(svc, "_dashboard_cache", None)),
+            "sectors": generated_at_from_cache((getattr(svc, "_sector_tab_cache", {}) or {}).get(("1D", "desc"))),
+            "screeners": generated_at_from_cache(getattr(svc, "_scan_catalog_cache", None)),
+            "groups": generated_at_from_cache(getattr(svc, "_industry_groups_cache", None)),
+            "market_health": generated_at_from_cache(getattr(svc, "_market_health_cache", None)),
+        }
+        attention_items = [name for name, generated_at in site_sections.items() if generated_at is None]
+
         return {
             "market": market,
             "is_market_open": is_open,
@@ -140,6 +163,10 @@ def build_router(service):
             "snapshot_session_date": snapshot_session_date.isoformat() if snapshot_session_date else None,
             "expected_session_date": expected_session_date.isoformat() if expected_session_date else None,
             "close_refresh_due": close_refresh_due,
+            "site_systems_total": len(site_sections),
+            "site_systems_ready": len(site_sections) - len(attention_items),
+            "site_attention_count": len(attention_items),
+            "attention_items": attention_items,
             "watchdog_interval_seconds": 90,
             "server_utc": now_utc.isoformat(),
         }
@@ -222,6 +249,9 @@ def build_router(service):
         snapshot_age_seconds = provider_obj._snapshot_age_seconds()
         snapshot_age_text = age_label(snapshot_age_seconds)
         is_market_open = bool(provider_obj._is_market_open_ist())
+        close_refresh_due_method = getattr(provider_obj, "_market_close_refresh_due", None)
+        close_refresh_due = bool(close_refresh_due_method()) if callable(close_refresh_due_method) else False
+        snapshot_stale = bool((is_market_open and snapshot_age_seconds > 180) or close_refresh_due)
 
         if snapshot_updated is None:
             live_status = "attention"
@@ -372,6 +402,126 @@ def build_router(service):
                     task_source="GitHub Actions + backend patch",
                 )
             )
+
+        def generated_at_from_cache(value) -> datetime | None:
+            if value is None:
+                return None
+            if isinstance(value, tuple):
+                for item in value:
+                    if isinstance(item, datetime):
+                        return item
+                return None
+            for attr in ("generated_at", "updated_at"):
+                candidate = getattr(value, attr, None)
+                if isinstance(candidate, datetime):
+                    return candidate
+            return None
+
+        def add_runtime_task(
+            task_id: str,
+            title: str,
+            schedule: str,
+            generated_at: datetime | None,
+            *,
+            source: str = "full-site watchdog",
+            on_demand: bool = False,
+            missing_detail: str,
+        ) -> None:
+            if generated_at is None:
+                status = "scheduled" if on_demand else ("attention" if snapshot_stale else "scheduled")
+                detail = missing_detail
+                done_today = False
+            else:
+                behind_latest_snapshot = snapshot_updated is not None and generated_at + timedelta(minutes=5) < snapshot_updated
+                if behind_latest_snapshot:
+                    status = "attention"
+                    detail = f"Last warmed at {format_local_clock(generated_at)} {tz_label}, but it is behind the latest market snapshot and will be rebuilt automatically."
+                    done_today = False
+                else:
+                    status = "done"
+                    detail = f"Warm and synced from {format_local_clock(generated_at)} {tz_label}."
+                    done_today = generated_at.astimezone(local_tz).date().isoformat() == day_key
+            tasks.append(
+                task_item(
+                    task_id,
+                    title,
+                    schedule,
+                    status,
+                    detail,
+                    iso_or_none(generated_at),
+                    done_today=done_today,
+                    task_source=source,
+                )
+            )
+
+        add_runtime_task(
+            "dashboard_home_cache",
+            "Home dashboard and movers",
+            "Every live refresh + self-heal",
+            generated_at_from_cache(getattr(svc, "_dashboard_cache", None)),
+            missing_detail="The home dashboard cache has not been prewarmed yet. The broader watchdog will rebuild it automatically.",
+        )
+        add_runtime_task(
+            "sector_heatmap_sync",
+            "Sector heatmap and leaders",
+            "Every live refresh + self-heal",
+            generated_at_from_cache((getattr(svc, "_sector_tab_cache", {}) or {}).get(("1D", "desc"))),
+            missing_detail="The sector heatmap cache is not warm yet, so the watchdog will repopulate it on the next cycle.",
+        )
+        add_runtime_task(
+            "scanner_engine_sync",
+            "Screener engine and counts",
+            "Every live refresh + self-heal",
+            generated_at_from_cache(getattr(svc, "_scan_catalog_cache", None)),
+            missing_detail="Scanner results are recalculated from the latest snapshot and will be warmed automatically.",
+        )
+        add_runtime_task(
+            "groups_leadership_sync",
+            "Groups and leadership view",
+            "Every live refresh + on demand",
+            generated_at_from_cache(getattr(svc, "_industry_groups_cache", None)),
+            on_demand=True,
+            missing_detail="Groups and leadership data stays on-demand, but the full-site watchdog can warm it automatically during self-heal.",
+        )
+        add_runtime_task(
+            "market_health_sync",
+            "Market health and breadth",
+            "Every live refresh + on demand",
+            generated_at_from_cache(getattr(svc, "_market_health_cache", None)),
+            on_demand=True,
+            missing_detail="Market-health breadth data will refresh automatically when its cache is missing or behind.",
+        )
+
+        fundamentals_cache_path = getattr(provider_obj, "fundamentals_cache_path", None)
+        fundamentals_generated_at = None
+        if fundamentals_cache_path is not None and getattr(fundamentals_cache_path, "exists", lambda: False)():
+            fundamentals_generated_at = datetime.fromtimestamp(fundamentals_cache_path.stat().st_mtime, tz=timezone.utc)
+        add_runtime_task(
+            "fundamentals_earnings_sync",
+            "Fundamentals, news, and earnings dates",
+            "On demand + 6h refresh window",
+            fundamentals_generated_at,
+            on_demand=True,
+            missing_detail="Deep fundamentals and earnings data refresh on demand and are now included in the broader watchdog self-heal path.",
+        )
+
+        chart_cache_dir = getattr(provider_obj, "chart_cache_dir", None)
+        chart_generated_at = None
+        if chart_cache_dir is not None and getattr(chart_cache_dir, "exists", lambda: False)():
+            try:
+                chart_mtimes = [item.stat().st_mtime for item in chart_cache_dir.glob("*.json")]
+            except Exception:
+                chart_mtimes = []
+            if chart_mtimes:
+                chart_generated_at = datetime.fromtimestamp(max(chart_mtimes), tz=timezone.utc)
+        add_runtime_task(
+            "charts_prefetch_sync",
+            "Charts and background prefetch",
+            "On demand + watchdog prewarm",
+            chart_generated_at,
+            on_demand=True,
+            missing_detail="Charts stay partly on demand, but the broader watchdog now prewarms hot symbols after refreshes.",
+        )
 
         return {
             "market": normalized_market,

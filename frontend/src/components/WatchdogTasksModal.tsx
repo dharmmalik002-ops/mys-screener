@@ -120,9 +120,9 @@ export function WatchdogTasksModal({ market, onClose }: WatchdogTasksModalProps)
       <div className="modal-box watchdog-task-modal" onClick={(event) => event.stopPropagation()} role="dialog" aria-modal="true">
         <div className="modal-header">
           <div>
-            <h3>{market === "us" ? "US" : "India"} Watchdog Task Board</h3>
+            <h3>{market === "us" ? "US" : "India"} Full-Site Watchdog Board</h3>
             <p className="watchdog-task-subtitle">
-              Today&apos;s scheduled auto-heal and refresh jobs, with live status and reasons.
+              Today&apos;s auto-heal and whole-site refresh checks, with live status and reasons.
             </p>
           </div>
           <button type="button" className="modal-close" onClick={onClose}>

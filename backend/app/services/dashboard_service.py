@@ -4106,6 +4106,130 @@ class DashboardService:
             "quote_source": quote_source,
         }
 
+    async def prewarm_watchdog_sections(self, snapshots: list[StockSnapshot] | None = None) -> dict[str, object]:
+        """Warm the main website sections after a refresh so the watchdog covers more than raw snapshots."""
+        snapshots = snapshots or await self._snapshots()
+        snapshot_lookup = {item.symbol.upper(): item for item in snapshots}
+        warmed_sections: list[str] = []
+        hot_symbols: list[str] = []
+        issues: list[str] = []
+        dashboard_payload: DashboardResponse | None = None
+
+        async def _warm_section(label: str, awaitable, *, timeout_seconds: float = 20.0) -> object | None:
+            try:
+                result = await asyncio.wait_for(awaitable, timeout=timeout_seconds)
+                warmed_sections.append(label)
+                return result
+            except Exception as exc:
+                issues.append(f"{label}:{type(exc).__name__}")
+                return None
+
+        warm_jobs: list[tuple[str, object, float]] = [
+            ("dashboard", self.build_dashboard(), 25.0),
+            ("sectors", self.get_sector_tab("1D", "desc"), 25.0),
+            ("groups", self.get_industry_groups(), 20.0),
+            ("market-health", self.get_market_health(), 15.0),
+        ]
+
+        get_sector_rotation = getattr(self, "get_sector_rotation", None)
+        if callable(get_sector_rotation):
+            warm_jobs.append(("sector-rotation", get_sector_rotation(), 20.0))
+
+        warm_results = await asyncio.gather(
+            *(
+                _warm_section(label, awaitable, timeout_seconds=timeout_seconds)
+                for label, awaitable, timeout_seconds in warm_jobs
+            )
+        )
+        for (label, _, _), result in zip(warm_jobs, warm_results):
+            if label == "dashboard":
+                dashboard_payload = result if isinstance(result, DashboardResponse) else None
+
+        seen_symbols: set[str] = set()
+
+        def _remember(symbol: str | None) -> None:
+            normalized = str(symbol or "").strip().upper()
+            if normalized and normalized not in seen_symbols:
+                seen_symbols.add(normalized)
+                hot_symbols.append(normalized)
+
+        if dashboard_payload is not None:
+            for collection in (
+                getattr(dashboard_payload, "top_gainers", []),
+                getattr(dashboard_payload, "top_losers", []),
+                getattr(dashboard_payload, "top_volume_spikes", []),
+            ):
+                for item in collection[:3]:
+                    _remember(getattr(item, "symbol", None))
+        else:
+            for snapshot in sorted(snapshots, key=lambda item: abs(item.change_pct), reverse=True)[:6]:
+                _remember(snapshot.symbol)
+
+        if hot_symbols:
+            try:
+                chart_results = await asyncio.wait_for(
+                    asyncio.gather(
+                        *(self.get_chart(symbol, "1D") for symbol in hot_symbols[:6]),
+                        return_exceptions=True,
+                    ),
+                    timeout=30.0,
+                )
+            except Exception as exc:
+                chart_results = [exc]
+            if any(not isinstance(result, Exception) for result in chart_results):
+                warmed_sections.append("charts")
+            else:
+                issues.append("charts:unavailable")
+
+            get_fundamentals_cached = getattr(self.provider, "get_fundamentals_cached", None)
+            get_fundamentals = getattr(self.provider, "get_fundamentals", None)
+            fundamentals_results = []
+            if callable(get_fundamentals_cached):
+                try:
+                    fundamentals_results = await asyncio.wait_for(
+                        asyncio.gather(
+                            *(
+                                get_fundamentals_cached(
+                                    symbol,
+                                    snapshot_lookup.get(symbol),
+                                    max_age_hours=8,
+                                )
+                                for symbol in hot_symbols[:4]
+                            ),
+                            return_exceptions=True,
+                        ),
+                        timeout=12.0,
+                    )
+                except Exception:
+                    fundamentals_results = []
+            if not any(result not in (None, False) and not isinstance(result, Exception) for result in fundamentals_results) and callable(get_fundamentals):
+                try:
+                    fundamentals_results = await asyncio.wait_for(
+                        asyncio.gather(
+                            *(
+                                get_fundamentals(symbol, snapshot_lookup.get(symbol))
+                                for symbol in hot_symbols[:2]
+                            ),
+                            return_exceptions=True,
+                        ),
+                        timeout=20.0,
+                    )
+                except Exception as exc:
+                    fundamentals_results = [exc]
+            if any(result not in (None, False) and not isinstance(result, Exception) for result in fundamentals_results):
+                warmed_sections.append("fundamentals")
+            else:
+                issues.append("fundamentals:unavailable")
+
+        unique_sections = list(dict.fromkeys(warmed_sections))
+        return {
+            "sections": unique_sections,
+            "section_count": len(unique_sections),
+            "symbols": hot_symbols[:6],
+            "symbol_count": min(len(hot_symbols), 6),
+            "issues": issues,
+        }
+
     async def run_watchdog_fix(self) -> dict[str, object]:
         """Manual self-heal used by the website watchdog button.
 
@@ -4197,8 +4321,10 @@ class DashboardService:
                     actions.append("snapshot_already_current")
 
             self._clear_runtime_caches()
-            await self.build_dashboard()
-            await self.get_sector_tab("1D", "desc")
+            prewarm_summary = await self.prewarm_watchdog_sections(snapshots)
+            warmed_sections = prewarm_summary.get("sections", [])
+            if warmed_sections:
+                actions.append("warmed_site_sections:" + "+".join(str(section) for section in warmed_sections))
 
             snapshot_after = self.provider.get_snapshot_updated_at()
             snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
@@ -4208,9 +4334,15 @@ class DashboardService:
             elif refresh_mode == "historical-refresh":
                 user_message = f"Watchdog self-heal complete — {action_text}."
             elif refresh_mode == "live-refresh":
-                user_message = "Watchdog self-heal complete — live prices and caches were refreshed."
+                user_message = (
+                    f"Watchdog self-heal complete — live prices were refreshed and "
+                    f"{prewarm_summary.get('section_count', 0)} site sections were rewarmed."
+                )
             elif refresh_mode == "cached-current":
-                user_message = "Watchdog check complete — market data is already current for this session."
+                user_message = (
+                    f"Watchdog check complete — market data is already current and "
+                    f"{prewarm_summary.get('section_count', 0)} site sections were verified."
+                )
             else:
                 user_message = f"Watchdog self-heal complete — {action_text}."
 
@@ -4225,6 +4357,9 @@ class DashboardService:
                 "applied_quote_count": applied_quote_count,
                 "historical_rebuild": historical_rebuild,
                 "quote_source": quote_source,
+                "site_sections_warmed": prewarm_summary.get("sections", []),
+                "prewarmed_symbol_count": prewarm_summary.get("symbol_count", 0),
+                "prewarmed_symbols": prewarm_summary.get("symbols", []),
             }
         except Exception as exc:
             self._clear_runtime_caches()

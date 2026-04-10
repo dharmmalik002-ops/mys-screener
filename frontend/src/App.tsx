@@ -4192,9 +4192,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           ? `${status.snapshot_session_date} snapshot loaded`
           : ageLabel
       : ageLabel;
-    setWatchdogStatus(status.snapshot_stale ? "stale" : "healthy");
+    const siteCoverage =
+      typeof status.site_systems_ready === "number" && typeof status.site_systems_total === "number"
+        ? ` · ${status.site_systems_ready}/${status.site_systems_total} sections ready`
+        : "";
+    const needsAttention = status.snapshot_stale || (status.site_attention_count ?? 0) > 0;
+    setWatchdogStatus(needsAttention ? "stale" : "healthy");
     setWatchdogStatusMeta(
-      `${status.is_market_open ? "Live" : "Idle"} · ${freshnessLabel} · checks every ${status.watchdog_interval_seconds}s`,
+      `${status.is_market_open ? "Live" : "Idle"} · ${freshnessLabel}${siteCoverage} · checks every ${status.watchdog_interval_seconds}s`,
     );
   };
 
@@ -4500,7 +4505,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             className="nav-button"
             onClick={() => void handleWatchdogFix()}
             disabled={refreshing || watchdogFixing}
-            title="Runs the stronger self-heal watchdog: checks caches, forces a fresh sync, and reloads the dashboard."
+            title="Runs the broader full-site self-heal watchdog: checks dashboard, sectors, screeners, groups, fundamentals, charts, and forces a fresh sync."
           >
             {watchdogFixing ? "Running Watchdog..." : "Watchdog Fix"}
           </button>
