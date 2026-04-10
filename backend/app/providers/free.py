@@ -67,7 +67,7 @@ SCREENER_URL = "https://www.screener.in/company"
 SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
-FUNDAMENTALS_CACHE_VERSION = 11
+FUNDAMENTALS_CACHE_VERSION = 13
 SNAPSHOT_CACHE_VERSION = 14
 CHART_CACHE_VERSION = 7
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -2078,6 +2078,10 @@ class FreeMarketDataProvider:
             screener_payload.get("quarterly_results") or [],
             yahoo_payload.get("quarterly_results") or [],
         )
+        quarterly_results = self._attach_earnings_result_dates(
+            quarterly_results,
+            yahoo_payload.get("historical_earnings_dates") or [],
+        )
         profit_loss = self._merge_profit_loss_items(
             screener_payload.get("profit_loss") or [],
             yahoo_payload.get("profit_loss") or [],
@@ -2100,6 +2104,10 @@ class FreeMarketDataProvider:
         recent_updates, management_guidance, detailed_news = self._enrich_updates_from_linked_sources(
             recent_updates,
             yahoo_payload.get("company_website"),
+        )
+        upcoming_events = self._merge_upcoming_events(
+            screener_payload.get("upcoming_events") or [],
+            yahoo_payload.get("upcoming_events") or [],
         )
 
         # Supplement with Google News RSS headlines
@@ -2205,6 +2213,7 @@ class FreeMarketDataProvider:
             shareholding_pattern=shareholding_pattern[:6],
             shareholding_delta=shareholding_delta,
             insider_transactions=insider_transactions,
+            upcoming_events=upcoming_events[:6],
             last_news_update=datetime.now(timezone.utc) if detailed_news else None,
             data_warnings=warnings,
         )
@@ -2388,7 +2397,9 @@ class FreeMarketDataProvider:
         except Exception:
             annual_frame = pd.DataFrame()
 
-        recent_updates: list[CompanyUpdateItem] = []
+        earnings_result_dates, upcoming_events, earnings_updates = self._extract_yfinance_earnings_signals(ticker)
+
+        recent_updates: list[CompanyUpdateItem] = list(earnings_updates)
         try:
             for item in getattr(ticker, "news", [])[:6]:
                 title = str(item.get("title") or "").strip()
@@ -2411,7 +2422,7 @@ class FreeMarketDataProvider:
                     )
                 )
         except Exception:
-            recent_updates = []
+            recent_updates = list(earnings_updates)
 
         # --- Balance Sheet ---
         balance_sheet_items: list[dict[str, Any]] = []
@@ -2509,6 +2520,11 @@ class FreeMarketDataProvider:
         except Exception:
             pass
 
+        quarterly_results = self._attach_earnings_result_dates(
+            self._parse_yfinance_statement(quarterly_frame, quarterly=True),
+            earnings_result_dates,
+        )
+
         return {
             "name": info.get("shortName") or info.get("longName") or symbol,
             "about": info.get("longBusinessSummary"),
@@ -2523,9 +2539,11 @@ class FreeMarketDataProvider:
                 "roe_pct": (self._safe_float(info.get("returnOnEquity")) * 100 if info.get("returnOnEquity") is not None else None),
                 "dividend_yield_pct": (self._safe_float(info.get("dividendYield")) * 100 if info.get("dividendYield") is not None else None),
             },
-            "quarterly_results": self._parse_yfinance_statement(quarterly_frame, quarterly=True),
+            "quarterly_results": quarterly_results,
+            "historical_earnings_dates": earnings_result_dates,
             "profit_loss": self._parse_yfinance_statement(annual_frame, quarterly=False),
             "recent_updates": recent_updates,
+            "upcoming_events": upcoming_events,
             "balance_sheet": balance_sheet_items,
             "cash_flow": cash_flow_items,
             "financial_ratios": financial_ratios,
@@ -3151,6 +3169,7 @@ class FreeMarketDataProvider:
                 profit_before_tax_crore=item.profit_before_tax_crore if item.profit_before_tax_crore is not None else fallback.profit_before_tax_crore if fallback else None,
                 net_profit_crore=item.net_profit_crore if item.net_profit_crore is not None else fallback.net_profit_crore if fallback else None,
                 eps=item.eps if item.eps is not None else fallback.eps if fallback else None,
+                result_date=item.result_date or (fallback.result_date if fallback else None),
                 result_document_url=item.result_document_url or (fallback.result_document_url if fallback else None),
             )
         return sorted(merged.values(), key=lambda item: self._period_sort_key(item.period))
@@ -3247,6 +3266,229 @@ class FreeMarketDataProvider:
                     )
                 )
         return results
+
+    def _extract_yfinance_earnings_signals(
+        self,
+        ticker: yf.Ticker,
+    ) -> tuple[list[str], list[dict[str, str]], list[CompanyUpdateItem]]:
+        result_dates: list[str] = []
+        upcoming_events: list[dict[str, str]] = []
+        earnings_updates: list[CompanyUpdateItem] = []
+        seen_dates: set[str] = set()
+        today = self._current_ist_date()
+
+        try:
+            earnings_frame = ticker.get_earnings_dates(limit=8)
+        except Exception:
+            earnings_frame = pd.DataFrame()
+
+        if isinstance(earnings_frame, pd.DataFrame) and not earnings_frame.empty:
+            for event_index, row in earnings_frame.iterrows():
+                iso_date = self._coerce_iso_date(event_index)
+                if not iso_date or iso_date in seen_dates:
+                    continue
+                seen_dates.add(iso_date)
+                event_date = date.fromisoformat(iso_date)
+                reported_eps = self._safe_float(row.get("Reported EPS")) if hasattr(row, "get") else None
+                estimate_eps = self._safe_float(row.get("EPS Estimate")) if hasattr(row, "get") else None
+                surprise_pct = self._safe_float(row.get("Surprise(%)")) if hasattr(row, "get") else None
+                is_reported = reported_eps is not None or event_date < today
+                if is_reported:
+                    result_dates.append(iso_date)
+
+                impact_bits: list[str] = []
+                if reported_eps is not None:
+                    impact_bits.append(f"Reported EPS {reported_eps:.2f}")
+                elif estimate_eps is not None:
+                    impact_bits.append(f"Street EPS est. {estimate_eps:.2f}")
+                if surprise_pct is not None and reported_eps is not None:
+                    impact_bits.append(f"Surprise {surprise_pct:+.2f}%")
+                impact = "; ".join(impact_bits) or (
+                    "Quarterly results declared" if is_reported else "Quarterly earnings date scheduled"
+                )
+                label = self._build_earnings_event_label(event_date, is_reported=is_reported)
+
+                if event_date >= today:
+                    upcoming_events.append({
+                        "date": iso_date,
+                        "event": label,
+                        "impact": impact,
+                    })
+
+                if event_date >= (today - timedelta(days=120)):
+                    earnings_updates.append(
+                        CompanyUpdateItem(
+                            title=label,
+                            source="Yahoo Finance earnings calendar",
+                            published_at=iso_date,
+                            summary=impact,
+                            kind="results",
+                        )
+                    )
+
+        try:
+            calendar_data = getattr(ticker, "calendar", None)
+        except Exception:
+            calendar_data = None
+
+        calendar_values: list[Any] = []
+        if isinstance(calendar_data, dict):
+            earnings_value = calendar_data.get("Earnings Date")
+            if isinstance(earnings_value, (list, tuple, set)):
+                calendar_values.extend(list(earnings_value))
+            elif earnings_value is not None:
+                calendar_values.append(earnings_value)
+        elif isinstance(calendar_data, pd.DataFrame) and not calendar_data.empty:
+            for label in ("Earnings Date", "EarningsDate"):
+                if label in calendar_data.index:
+                    values = calendar_data.loc[label]
+                    if hasattr(values, "tolist"):
+                        calendar_values.extend(values.tolist())
+                    else:
+                        calendar_values.append(values)
+
+        for raw_value in calendar_values:
+            iso_date = self._coerce_iso_date(raw_value)
+            if not iso_date:
+                continue
+            event_date = date.fromisoformat(iso_date)
+            if event_date < today:
+                continue
+            if any(existing.get("date") == iso_date for existing in upcoming_events):
+                continue
+            label = self._build_earnings_event_label(event_date, is_reported=False)
+            upcoming_events.append({
+                "date": iso_date,
+                "event": label,
+                "impact": "Quarterly earnings date scheduled",
+            })
+            earnings_updates.append(
+                CompanyUpdateItem(
+                    title=label,
+                    source="Yahoo Finance earnings calendar",
+                    published_at=iso_date,
+                    summary="Quarterly earnings date scheduled",
+                    kind="results",
+                )
+            )
+
+        return sorted(set(result_dates)), self._merge_upcoming_events(upcoming_events), self._merge_updates(earnings_updates, [])
+
+    def _coerce_iso_date(self, value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, (list, tuple, set)):
+            for item in value:
+                parsed = self._coerce_iso_date(item)
+                if parsed:
+                    return parsed
+            return None
+        if isinstance(value, pd.Timestamp):
+            if pd.isna(value):
+                return None
+            return value.to_pydatetime().date().isoformat()
+        if isinstance(value, datetime):
+            return value.date().isoformat()
+        if isinstance(value, date):
+            return value.isoformat()
+        text = self._clean_text(value)
+        if not text:
+            return None
+        parsed = pd.to_datetime(text, errors="coerce")
+        if pd.isna(parsed):
+            return None
+        if isinstance(parsed, pd.Timestamp):
+            return parsed.to_pydatetime().date().isoformat()
+        return None
+
+    def _build_earnings_event_label(self, event_date: date, *, is_reported: bool) -> str:
+        if event_date.month in (4, 5, 6):
+            quarter_label = f"Q4 FY{event_date.year}"
+        elif event_date.month in (7, 8, 9):
+            quarter_label = f"Q1 FY{event_date.year + 1}"
+        elif event_date.month in (10, 11, 12):
+            quarter_label = f"Q2 FY{event_date.year + 1}"
+        else:
+            quarter_label = f"Q3 FY{event_date.year}"
+        suffix = "results declared" if is_reported else "results expected"
+        return f"{quarter_label} {suffix}"
+
+    def _attach_earnings_result_dates(
+        self,
+        quarterly_results: list[QuarterlyResultItem],
+        result_dates: list[str],
+    ) -> list[QuarterlyResultItem]:
+        if not quarterly_results or not result_dates:
+            return quarterly_results
+
+        parsed_dates = [
+            date.fromisoformat(value)
+            for value in sorted({value for value in result_dates if value})
+        ]
+        used_indexes: set[int] = set()
+        enriched: list[QuarterlyResultItem] = []
+
+        for item in sorted(quarterly_results, key=lambda quarter: self._period_sort_key(quarter.period)):
+            if item.result_date:
+                enriched.append(item)
+                continue
+            period_end = self._period_end_date(item.period)
+            if period_end is None:
+                enriched.append(item)
+                continue
+
+            best_index: int | None = None
+            best_gap: int | None = None
+            for index, event_date in enumerate(parsed_dates):
+                if index in used_indexes:
+                    continue
+                gap_days = (event_date - period_end).days
+                if gap_days < -10 or gap_days > 120:
+                    continue
+                if best_gap is None or gap_days < best_gap:
+                    best_gap = gap_days
+                    best_index = index
+
+            if best_index is None:
+                enriched.append(item)
+                continue
+
+            used_indexes.add(best_index)
+            enriched.append(item.model_copy(update={"result_date": parsed_dates[best_index].isoformat()}))
+
+        return sorted(enriched, key=lambda quarter: self._period_sort_key(quarter.period))
+
+    def _period_end_date(self, period: str) -> date | None:
+        cleaned = self._clean_text(period)
+        for fmt in ("%b %Y", "%B %Y"):
+            try:
+                parsed = datetime.strptime(cleaned, fmt)
+            except ValueError:
+                continue
+            if parsed.month == 12:
+                return date(parsed.year + 1, 1, 1) - timedelta(days=1)
+            return date(parsed.year, parsed.month + 1, 1) - timedelta(days=1)
+        return None
+
+    def _merge_upcoming_events(self, *event_groups: list[dict[str, Any]]) -> list[dict[str, str]]:
+        merged: list[dict[str, str]] = []
+        seen: set[str] = set()
+        for group in event_groups:
+            for item in group or []:
+                if not isinstance(item, dict):
+                    continue
+                iso_date = self._coerce_iso_date(item.get("date"))
+                event = self._clean_text(item.get("event"))
+                impact = self._clean_text(item.get("impact")) or "Quarterly earnings date scheduled"
+                if not iso_date or not event:
+                    continue
+                key = f"{iso_date}::{event.lower()}"
+                if key in seen:
+                    continue
+                seen.add(key)
+                merged.append({"date": iso_date, "event": event, "impact": impact})
+        merged.sort(key=lambda item: (item.get("date") or "", item.get("event") or ""))
+        return merged
 
     def _raw_value_to_crore(self, value: float | None) -> float | None:
         if value is None:

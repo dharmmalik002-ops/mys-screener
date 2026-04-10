@@ -18,7 +18,7 @@ BACKEND_ROOT = REPO_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.models.market import ChartBar, IndexQuoteItem, StockSnapshot
+from app.models.market import ChartBar, IndexQuoteItem, QuarterlyResultItem, StockSnapshot
 from app.providers.free import CHART_CACHE_VERSION, LIVE_SNAPSHOT_MAX_AGE_SECONDS, FreeMarketDataProvider, UNIVERSE_CACHE_VERSION
 from app.providers.us_free import USFreeMarketDataProvider
 
@@ -252,6 +252,85 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(live_quotes["TEST"]["regularMarketPrice"], 126.0)
         self.assertEqual(quote_sources["TEST"], "nse-direct")
         self.assertNotIn("BSETEST", live_quotes)
+
+    def test_build_company_fundamentals_preserves_earnings_dates_and_upcoming_events(self) -> None:
+        snapshot = StockSnapshot.model_validate(self._snapshot_row(symbol="TEST"))
+        screener_quarters = [
+            QuarterlyResultItem(period="Dec 2025", sales_crore=100.0, net_profit_crore=10.0),
+            QuarterlyResultItem(period="Mar 2026", sales_crore=110.0, net_profit_crore=12.0),
+        ]
+        yahoo_quarters = [
+            QuarterlyResultItem(period="Dec 2025", sales_crore=100.0, net_profit_crore=10.0, result_date="2026-01-14"),
+            QuarterlyResultItem(period="Mar 2026", sales_crore=110.0, net_profit_crore=12.0, result_date="2026-04-16"),
+        ]
+
+        with patch.object(self.provider, "_fetch_screener_company_page", return_value="<html></html>"), patch.object(
+            self.provider,
+            "_parse_screener_company_page",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": screener_quarters,
+                "profit_loss": [],
+                "shareholding_pattern": [],
+                "recent_updates": [],
+            },
+        ), patch.object(
+            self.provider,
+            "_fetch_yfinance_fundamentals",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": yahoo_quarters,
+                "profit_loss": [],
+                "recent_updates": [],
+                "upcoming_events": [
+                    {
+                        "date": "2026-07-15",
+                        "event": "Q1 FY2027 results expected",
+                        "impact": "Quarterly earnings date scheduled",
+                    }
+                ],
+            },
+        ):
+            fundamentals = self.provider._build_company_fundamentals("TEST", snapshot)
+
+        self.assertEqual([item.result_date for item in fundamentals.quarterly_results], ["2026-01-14", "2026-04-16"])
+        self.assertEqual(fundamentals.upcoming_events[0]["date"], "2026-07-15")
+        self.assertIn("results", fundamentals.upcoming_events[0]["event"].lower())
+
+    def test_build_company_fundamentals_maps_calendar_dates_onto_screener_only_latest_quarter(self) -> None:
+        snapshot = StockSnapshot.model_validate(self._snapshot_row(symbol="TEST"))
+        screener_quarters = [
+            QuarterlyResultItem(period="Dec 2025", sales_crore=100.0, net_profit_crore=10.0),
+            QuarterlyResultItem(period="Mar 2026", sales_crore=110.0, net_profit_crore=12.0),
+        ]
+
+        with patch.object(self.provider, "_fetch_screener_company_page", return_value="<html></html>"), patch.object(
+            self.provider,
+            "_parse_screener_company_page",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": screener_quarters,
+                "profit_loss": [],
+                "shareholding_pattern": [],
+                "recent_updates": [],
+            },
+        ), patch.object(
+            self.provider,
+            "_fetch_yfinance_fundamentals",
+            return_value={
+                "name": "Test Industries",
+                "quarterly_results": [
+                    QuarterlyResultItem(period="Dec 2025", sales_crore=100.0, net_profit_crore=10.0, result_date="2026-01-14"),
+                ],
+                "historical_earnings_dates": ["2026-01-14", "2026-04-09"],
+                "profit_loss": [],
+                "recent_updates": [],
+                "upcoming_events": [],
+            },
+        ):
+            fundamentals = self.provider._build_company_fundamentals("TEST", snapshot)
+
+        self.assertEqual([item.result_date for item in fundamentals.quarterly_results], ["2026-01-14", "2026-04-09"])
 
     def test_get_index_quotes_prefers_cached_chart_bars_without_network_history_download(self) -> None:
         self.provider._write_chart_cache(
