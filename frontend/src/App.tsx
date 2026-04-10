@@ -234,6 +234,9 @@ const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string;
 
 const DEFAULT_WATCHLIST_COLORS = ["#4f8cff", "#00a389", "#ff9f1c", "#ef476f", "#7c5cff", "#06b6d4", "#84cc16", "#f97316"];
 const MAX_PERSISTED_CHART_RESPONSES = 8;
+const CHART_PREFETCH_FORWARD_COUNT = 5;
+const CHART_PREFETCH_BACKWARD_COUNT = 2;
+const CHART_PREFETCH_PARALLELISM = 3;
 
 function DeferredPanelPlaceholder({ className = "workspace-pad", compact = false }: { className?: string; compact?: boolean }) {
   const blockClassName = compact ? "skeleton-block skeleton-block-sm" : "skeleton-block skeleton-block-lg";
@@ -3092,55 +3095,81 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [selectedSymbol]);
 
   useEffect(() => {
-    if (activePage !== "screener" && activePage !== "watchlists") {
+    if (!selectedSymbol || activePage === "market-health") {
       return;
     }
 
-    const orderedSymbols = selectedSymbol && visibleSymbols.includes(selectedSymbol)
+    const navigationSymbols = chartOpen
+      ? chartNavigationSymbolsRef.current?.length
+        ? chartNavigationSymbolsRef.current
+        : pageVisibleSymbols
+      : pageVisibleSymbols.length > 0
+        ? pageVisibleSymbols
+        : visibleSymbols;
+
+    if (!navigationSymbols.length) {
+      return;
+    }
+
+    const currentIndex = navigationSymbols.indexOf(selectedSymbol);
+    const forwardSymbols = currentIndex >= 0
       ? [
-          ...visibleSymbols.slice(visibleSymbols.indexOf(selectedSymbol) + 1),
-          ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
+          ...navigationSymbols.slice(currentIndex + 1),
+          ...navigationSymbols.slice(0, currentIndex),
         ]
-      : visibleSymbols;
-    const symbolsToWarm = orderedSymbols
-      .filter((symbol) => symbol && symbol !== selectedSymbol)
-      .slice(0, 4);
+      : navigationSymbols;
+    const backwardSymbols = currentIndex >= 0
+      ? [...navigationSymbols.slice(0, currentIndex)].reverse()
+      : [];
+    const symbolsToWarm = Array.from(
+      new Set([
+        ...forwardSymbols.slice(0, CHART_PREFETCH_FORWARD_COUNT),
+        ...backwardSymbols.slice(0, CHART_PREFETCH_BACKWARD_COUNT),
+      ]),
+    ).filter((symbol) => symbol && symbol !== selectedSymbol);
 
     if (symbolsToWarm.length === 0) {
       return;
     }
 
     let cancelled = false;
+
+    const warmChartSymbol = async (symbol: string) => {
+      const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
+      if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
+        return;
+      }
+
+      prewarmingChartKeysRef.current.add(cacheKey);
+      try {
+        const payload = await getChart(symbol, timeframe, activeMarket);
+        if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
+          storeCachedChart(activeMarket, symbol, timeframe, payload);
+        }
+      } catch {
+        // Ignore prewarm failures and let explicit chart loads retry on demand.
+      } finally {
+        prewarmingChartKeysRef.current.delete(cacheKey);
+      }
+    };
+
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        for (const symbol of symbolsToWarm) {
+        for (let index = 0; index < symbolsToWarm.length; index += CHART_PREFETCH_PARALLELISM) {
           if (cancelled) {
             return;
           }
-          const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
-          if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
-            continue;
-          }
-          prewarmingChartKeysRef.current.add(cacheKey);
-          try {
-            const payload = await getChart(symbol, timeframe, activeMarket);
-            if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
-              storeCachedChart(activeMarket, symbol, timeframe, payload);
-            }
-          } catch {
-            // Ignore prewarm failures and let explicit chart loads retry on demand.
-          } finally {
-            prewarmingChartKeysRef.current.delete(cacheKey);
-          }
+          const batch = symbolsToWarm.slice(index, index + CHART_PREFETCH_PARALLELISM);
+          await Promise.allSettled(batch.map((symbol) => warmChartSymbol(symbol)));
         }
       })();
-    }, 150);
+    }, chartOpen ? 80 : 150);
 
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [activeMarket, activePage, selectedSymbol, timeframe, visibleSymbolsKey]);
+  }, [activeMarket, activePage, chartOpen, pageVisibleSymbols, selectedSymbol, timeframe, visibleSymbols]);
 
   useEffect(() => {
     // When switching TO the watchlists page, only set a default selection if NONE exists.
