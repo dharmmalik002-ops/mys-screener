@@ -3999,10 +3999,40 @@ class DashboardService:
             refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
             refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
 
-            # For historical (post-close EOD) rebuilds, use a non-blocking background
-            # task and return immediately with current cached data.  This avoids
-            # 2-5 minute HTTP hangs on large universes (e.g. US 5800 stocks).
+            # For historical (post-close EOD) rebuilds, first try a fast provisional
+            # sync from the latest same-session exchange quotes. This keeps EOD movers
+            # current before the official Bhavcopy arrives later in the evening.
             if refresh_strategy == "historical":
+                live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
+                if callable(live_refresh):
+                    try:
+                        snapshots = await asyncio.wait_for(
+                            live_refresh(self.settings.market_cap_min_crore),
+                            timeout=max(self.settings.refresh_timeout_seconds, 20),
+                        )
+                        snapshot_after = self.provider.get_snapshot_updated_at()
+                        refresh_metadata = self.provider.get_last_refresh_metadata()
+                        applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
+                        historical_rebuild = bool(refresh_metadata.get("historical_rebuild", False))
+                        quote_source = refresh_metadata.get("quote_source")
+                        if applied_quote_count > 0:
+                            self._clear_runtime_caches()
+                            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
+                            return {
+                                "ok": True,
+                                "universe_count": len(snapshots),
+                                "market_cap_min_crore": self.settings.market_cap_min_crore,
+                                "refresh_mode": "live-refresh",
+                                "message": "Synced the provisional close snapshot from the latest exchange quotes.",
+                                "snapshot_updated_at": snapshot_timestamp.isoformat(),
+                                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
+                                "applied_quote_count": applied_quote_count,
+                                "historical_rebuild": historical_rebuild,
+                                "quote_source": quote_source,
+                            }
+                    except Exception:
+                        pass
+
                 schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
                 if callable(schedule_bg):
                     schedule_bg(
@@ -4257,13 +4287,19 @@ class DashboardService:
                     snapshot_path.with_suffix(f"{snapshot_path.suffix}.gz").unlink(missing_ok=True)
                     actions.append("deleted_corrupt_snapshot_cache")
 
-            patch_fn = getattr(self.provider, "apply_committed_bhavcopy_patch", None)
-            if callable(patch_fn):
-                patch_result = await asyncio.to_thread(patch_fn)
-                updated = int(patch_result.get("snapshots_updated", 0) or 0)
-                if updated > 0:
-                    applied_quote_count += updated
-                    actions.append(f"applied_bhavcopy_patch:{updated}")
+            live_patch_fn = getattr(self.provider, "apply_bhavcopy_eod", None)
+            committed_patch_fn = getattr(self.provider, "apply_committed_bhavcopy_patch", None)
+            patch_result = {}
+            if callable(live_patch_fn):
+                patch_result = await asyncio.to_thread(live_patch_fn)
+            if (patch_result.get("status") != "ok" and callable(committed_patch_fn)):
+                committed_result = await asyncio.to_thread(committed_patch_fn)
+                if committed_result.get("status") == "ok" or committed_result.get("snapshots_updated", 0) > 0:
+                    patch_result = committed_result
+            updated = int(patch_result.get("snapshots_updated", 0) or 0)
+            if updated > 0:
+                applied_quote_count += updated
+                actions.append(f"applied_bhavcopy_patch:{updated}")
 
             is_market_open_method = getattr(self.provider, "_is_market_open_ist", None)
             is_market_open = bool(is_market_open_method()) if callable(is_market_open_method) else False

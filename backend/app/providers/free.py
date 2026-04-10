@@ -218,6 +218,7 @@ class FreeMarketDataProvider:
         self.fundamentals_cache_path = self.backend_root / "data" / "free_fundamentals.json"
         self.bulk_fundamentals_cache_path = self.backend_root / "data" / "free_fundamental_cache.json"
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
+        self.bhavcopy_status_path = self.backend_root / "data" / "bhavcopy_status.json"
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
         self._invalidate_stale_caches()
@@ -572,7 +573,7 @@ class FreeMarketDataProvider:
         cache_key = float(market_cap_min_crore)
         self._snapshots_memory_cache.clear()
 
-        if not self._is_market_open_ist():
+        if not self._is_market_open_ist() and not self._allow_after_close_live_refresh():
             self._last_refresh_metadata = self._default_refresh_metadata()
             return await self.get_snapshots(market_cap_min_crore)
 
@@ -3873,6 +3874,17 @@ class FreeMarketDataProvider:
     def _post_close_refresh_grace_minutes(self) -> int:
         return 30
 
+    def _allow_after_close_live_refresh(self) -> bool:
+        market_timezone = self._market_timezone()
+        market_now = datetime.now(timezone.utc).astimezone(market_timezone)
+        session_date = market_now.date()
+        if not self._is_trading_day_ist(session_date):
+            return False
+        session_close = datetime.combine(session_date, datetime.min.time(), tzinfo=market_timezone) + timedelta(
+            minutes=self._market_close_minutes()
+        )
+        return market_now <= session_close + timedelta(hours=8)
+
     def _previous_trading_day(self, trading_date: date) -> date:
         previous = trading_date - timedelta(days=1)
         while not self._is_trading_day_ist(previous):
@@ -7124,6 +7136,13 @@ class FreeMarketDataProvider:
         # Invalidate in-memory snapshot cache so next request rebuilds from patched disk file
         if snap_updated:
             self._snapshots_memory_cache.clear()
+        if snap_updated or chart_updated:
+            self._write_bhavcopy_status(
+                candidate_date,
+                source="live-download",
+                snapshots_updated=snap_updated,
+                chart_caches_updated=chart_updated,
+            )
         return {
             "status": "ok",
             "date": candidate_date.isoformat(),
@@ -7161,6 +7180,8 @@ class FreeMarketDataProvider:
             row["volume"] = int(ohlcv.get("volume") or 0)
             row["history_as_of_date"] = trade_date_str
             row["history_session_date"] = trade_date_str
+            row["official_close_date"] = trade_date_str
+            row["official_close_source"] = "nse-bhavcopy"
             updated += 1
         try:
             self.snapshot_cache_path.write_text(
@@ -7170,17 +7191,56 @@ class FreeMarketDataProvider:
             return 0
         return updated
 
+    def _read_bhavcopy_status(self) -> dict[str, Any]:
+        try:
+            if self.bhavcopy_status_path.exists():
+                payload = json.loads(self.bhavcopy_status_path.read_text(encoding="utf-8"))
+                if isinstance(payload, dict):
+                    return payload
+        except Exception:
+            pass
+        return {}
+
+    def _write_bhavcopy_status(
+        self,
+        trade_date: date,
+        *,
+        source: str,
+        snapshots_updated: int,
+        chart_caches_updated: int,
+    ) -> None:
+        payload = {
+            "date": trade_date.isoformat(),
+            "source": source,
+            "snapshots_updated": int(snapshots_updated or 0),
+            "chart_caches_updated": int(chart_caches_updated or 0),
+            "applied_at": datetime.now(timezone.utc).isoformat(),
+        }
+        try:
+            self.bhavcopy_status_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        except Exception:
+            pass
+
     def _last_applied_bhavcopy_date(self) -> date | None:
         """Best-effort detection of the latest official Bhavcopy date already patched into snapshots."""
+        status_payload = self._read_bhavcopy_status()
+        candidate = str(status_payload.get("date") or "").strip()
+        if candidate:
+            try:
+                return date.fromisoformat(candidate)
+            except ValueError:
+                pass
+
         try:
             rows = self._load_json_rows(self.snapshot_cache_path)
         except Exception:
             rows = []
 
         if isinstance(rows, list):
-            for row in rows[:5]:
-                candidate = str(row.get("history_as_of_date") or row.get("history_session_date") or "").strip()
-                if not candidate:
+            for row in rows[:10]:
+                source = str(row.get("official_close_source") or "").strip().lower()
+                candidate = str(row.get("official_close_date") or "").strip()
+                if source != "nse-bhavcopy" or not candidate:
                     continue
                 try:
                     return date.fromisoformat(candidate)
@@ -7244,6 +7304,13 @@ class FreeMarketDataProvider:
         chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, trade_date_obj)
         if snap_updated:
             self._snapshots_memory_cache.clear()
+        if snap_updated or chart_updated:
+            self._write_bhavcopy_status(
+                trade_date_obj,
+                source="committed-patch",
+                snapshots_updated=snap_updated,
+                chart_caches_updated=chart_updated,
+            )
 
         return {
             "status": "ok",

@@ -303,7 +303,10 @@ def build_router(service):
             close_done_today = False
         elif snapshot_updated_local and snapshot_updated_local.date() == now_local.date() and snapshot_updated_local >= close_ready_cutoff:
             close_status = "done"
-            close_detail = f"Today's close snapshot is available from {format_local_clock(snapshot_updated_local)} {tz_label}."
+            close_detail = (
+                f"Today's fast close snapshot is available from {format_local_clock(snapshot_updated_local)} {tz_label}. "
+                f"The official NSE patch may still refresh it later if the exchange file arrives afterward."
+            )
             close_done_today = True
         else:
             close_status = "attention"
@@ -375,7 +378,7 @@ def build_router(service):
                 bhavcopy_done_today = False
             elif now_local < first_retry:
                 bhavcopy_status = "scheduled"
-                bhavcopy_detail = "The NSE release window has not opened yet; retries begin at 5:40 PM IST."
+                bhavcopy_detail = "The fast close snapshot is already used first; official NSE Bhavcopy retries begin at 5:40 PM IST."
                 bhavcopy_done_today = False
             elif last_patch_date == now_local.date():
                 bhavcopy_status = "done"
@@ -383,7 +386,7 @@ def build_router(service):
                 bhavcopy_done_today = True
             elif now_local < final_retry:
                 bhavcopy_status = "scheduled"
-                bhavcopy_detail = "Waiting for the official NSE file or the next evening retry slot."
+                bhavcopy_detail = "Waiting for the official NSE file or the next evening retry slot; provisional close prices stay active until then."
                 bhavcopy_done_today = False
             else:
                 bhavcopy_status = "attention"

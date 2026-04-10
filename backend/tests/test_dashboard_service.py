@@ -314,6 +314,62 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNone(service._dashboard_cache)
         self.assertEqual(response["refresh_mode"], "historical-refresh")
 
+    async def test_refresh_market_data_uses_recent_quote_patch_before_full_eod_rebuild(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="AAA",
+            name="AAA Industries",
+            sector="Information Technology",
+            sub_sector="Software",
+            market_cap_crore=18_000.0,
+            start_close=100.0,
+            step=1.4,
+        )
+
+        class RefreshProvider:
+            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
+                self.row = row
+                self.updated_at = updated_at
+                self.live_refresh_calls = 0
+                self.full_refresh_calls = 0
+                self.snapshot_calls = 0
+
+            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                self.snapshot_calls += 1
+                return [self.row]
+
+            def preferred_refresh_strategy(self) -> str:
+                return "historical"
+
+            async def refresh_live_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                self.live_refresh_calls += 1
+                self.updated_at = self.updated_at + timedelta(minutes=2)
+                return [self.row]
+
+            async def refresh_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                self.full_refresh_calls += 1
+                self.updated_at = self.updated_at + timedelta(minutes=10)
+                return [self.row]
+
+            def get_snapshot_updated_at(self) -> datetime:
+                return self.updated_at
+
+            def get_last_refresh_metadata(self) -> dict[str, object]:
+                if self.live_refresh_calls:
+                    return {"applied_quote_count": 14, "historical_rebuild": False, "quote_source": "nse-live"}
+                return {"applied_quote_count": 0, "historical_rebuild": True, "quote_source": None}
+
+        provider = RefreshProvider(snapshot, self.snapshot_updated_at)
+        service = DashboardService(provider=provider, settings=Settings())
+        service._dashboard_cache = object()
+
+        response = await service.refresh_market_data()
+
+        self.assertEqual(provider.live_refresh_calls, 1)
+        self.assertEqual(provider.full_refresh_calls, 0)
+        self.assertEqual(response["refresh_mode"], "live-refresh")
+        self.assertEqual(response["applied_quote_count"], 14)
+        self.assertEqual(response["quote_source"], "nse-live")
+
     async def test_refresh_market_data_returns_cache_fallback_for_unknown_strategy(self) -> None:
         snapshot = self._build_snapshot(
             symbol="AAA",

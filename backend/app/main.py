@@ -243,28 +243,53 @@ async def live_market_watchdog_job() -> None:
                 else:
                     logger.debug("WATCHDOG INDIA: snapshot fresh (%.0fs)", snap_age)
         else:
-            # After close on a weekday: ensure bhavcopy applied for today
+            # After close on a weekday: first sync a provisional close snapshot from
+            # same-session quotes, then keep retrying the official NSE Bhavcopy once
+            # the exchange publishes it later in the evening.
             ist_weekday = now_ist.weekday()  # 0=Mon … 4=Fri
             ist_tot_min = now_ist.hour * 60 + now_ist.minute
             after_close = ist_tot_min >= (15 * 60 + 35)  # after 15:35 IST
+            today_ist = now_ist.date()
             if ist_weekday < 5 and after_close:
+                close_refresh_due_fn = getattr(india_prov, "_market_close_refresh_due", None)
+                close_refresh_due = bool(close_refresh_due_fn()) if callable(close_refresh_due_fn) else False
+                if close_refresh_due:
+                    try:
+                        india_snapshots = await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
+                        refresh_metadata = india_prov.get_last_refresh_metadata()
+                        if int(refresh_metadata.get("applied_quote_count", 0) or 0) > 0:
+                            service._clear_runtime_caches()
+                            prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
+                            logger.info(
+                                "WATCHDOG INDIA: provisional close sync OK — applied %s recent quotes and warmed %s sections",
+                                refresh_metadata.get("applied_quote_count", 0),
+                                prewarm_summary.get("section_count", 0),
+                            )
+                    except Exception as exc:
+                        logger.error("WATCHDOG INDIA: provisional close sync FAILED: %s", exc)
+
+                first_retry_min = 17 * 60 + 40
                 last_patch_date_fn = getattr(india_prov, "_last_applied_bhavcopy_date", None)
                 last_patch_date = last_patch_date_fn() if callable(last_patch_date_fn) else None
-                today_ist = now_ist.date()
-                if last_patch_date != today_ist:
-                    logger.info("WATCHDOG INDIA: bhavcopy not yet applied for %s — applying now", today_ist)
+                if ist_tot_min >= first_retry_min and last_patch_date != today_ist:
+                    logger.info("WATCHDOG INDIA: official bhavcopy not yet applied for %s — retrying now", today_ist)
                     try:
-                        patch_fn = getattr(india_prov, "apply_committed_bhavcopy_patch", None)
+                        live_patch_fn = getattr(india_prov, "apply_bhavcopy_eod", None)
+                        fallback_patch_fn = getattr(india_prov, "apply_committed_bhavcopy_patch", None)
                         result = {}
-                        if callable(patch_fn):
-                            result = await asyncio.to_thread(patch_fn)
+                        if callable(live_patch_fn):
+                            result = await asyncio.to_thread(live_patch_fn)
+                        if result.get("status") != "ok" and callable(fallback_patch_fn):
+                            fallback_result = await asyncio.to_thread(fallback_patch_fn)
+                            if fallback_result.get("status") == "ok" or fallback_result.get("snapshots_updated", 0) > 0:
+                                result = fallback_result
                         if result.get("snapshots_updated", 0) > 0:
                             service._clear_runtime_caches()
                             await service.prewarm_watchdog_sections()
                         logger.warning("WATCHDOG INDIA: bhavcopy patch result: %s", result)
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: bhavcopy patch FAILED: %s", exc)
-                else:
+                elif last_patch_date == today_ist:
                     logger.debug("WATCHDOG INDIA: bhavcopy already applied for %s", today_ist)
 
             india_money_flow_due = ist_weekday < 5 and ist_tot_min >= (18 * 60)
