@@ -2106,8 +2106,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     async function loadInitialData() {
       const cachedView = marketViewCacheRef.current[activeMarket];
       const hadCachedDashboard = Boolean(cachedView.dashboard);
+      let loadingGuardTimeoutId: number | null = null;
       if (!hadCachedDashboard) {
         setLoading(true);
+        if (typeof window !== "undefined") {
+          loadingGuardTimeoutId = window.setTimeout(() => {
+            if (!active) {
+              return;
+            }
+            setLoading(false);
+            setError((current) => current ?? "Backend is waking up. Data can take up to a minute on first load.");
+          }, 12000);
+        }
       }
 
       try {
@@ -2115,6 +2125,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         const sectorPromise = getSectorTab("1D", "desc", activeMarket);
 
         const dashboardPayload = await dashboardPromise;
+        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
+          window.clearTimeout(loadingGuardTimeoutId);
+          loadingGuardTimeoutId = null;
+        }
         if (!active) {
           return;
         }
@@ -2166,6 +2180,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             }
           });
       } catch (loadError) {
+        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
+          window.clearTimeout(loadingGuardTimeoutId);
+          loadingGuardTimeoutId = null;
+        }
         if (active) {
           setLoading(false);
           if (!hadCachedDashboard) {
