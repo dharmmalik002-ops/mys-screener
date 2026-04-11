@@ -700,9 +700,11 @@ export type IndustryGroupTopStock = {
   symbol: string;
   company_name: string;
   rs_rating: number | null;
+  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
+  relative_return_1w: number;
   relative_return_3m: number;
   relative_return_6m: number;
 };
@@ -728,6 +730,7 @@ export type IndustryGroupStockItem = {
   final_group_name: string;
   last_price: number;
   change_pct: number;
+  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
@@ -748,12 +751,15 @@ export type IndustryGroupRankItem = {
   description: string;
   stock_count: number;
   score: number;
+  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
+  relative_return_1w: number;
   relative_return_1m: number;
   relative_return_3m: number;
   relative_return_6m: number;
+  median_return_1w: number;
   median_return_1m: number;
   median_return_3m: number;
   median_return_6m: number;

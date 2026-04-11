@@ -328,8 +328,9 @@ def _snapshot_is_eligible(snapshot: StockSnapshot, market_key: str) -> bool:
 
 def _benchmark_return_summary(benchmark_snapshots: list[StockSnapshot]) -> dict[str, float]:
     if not benchmark_snapshots:
-        return {"return_1m": 0.0, "return_3m": 0.0, "return_6m": 0.0}
+        return {"return_1w": 0.0, "return_1m": 0.0, "return_3m": 0.0, "return_6m": 0.0}
     return {
+        "return_1w": round(_winsorized_mean(snapshot.stock_return_5d for snapshot in benchmark_snapshots), 2),
         "return_1m": round(_winsorized_mean(snapshot.stock_return_20d for snapshot in benchmark_snapshots), 2),
         "return_3m": round(_winsorized_mean(snapshot.stock_return_60d for snapshot in benchmark_snapshots), 2),
         "return_6m": round(_winsorized_mean(snapshot.stock_return_126d for snapshot in benchmark_snapshots), 2),
@@ -373,6 +374,7 @@ def _build_group_payload(
                 final_group_name=group_name,
                 last_price=round(snapshot.last_price, 2),
                 change_pct=round(snapshot.change_pct, 2),
+                return_1w=round(snapshot.stock_return_5d, 2),
                 return_1m=round(snapshot.stock_return_20d, 2),
                 return_3m=round(snapshot.stock_return_60d, 2),
                 return_6m=round(snapshot.stock_return_126d, 2),
@@ -390,18 +392,23 @@ def _build_group_payload(
     for group_id, members in grouped_snapshots.items():
         group_name = stock_rows_by_group[group_id][0].final_group_name
         parent_sector = _majority_label(grouped_parent_sectors[group_id])
+        return_1w_values = [snapshot.stock_return_5d for snapshot in members]
         return_1m_values = [snapshot.stock_return_20d for snapshot in members]
         return_3m_values = [snapshot.stock_return_60d for snapshot in members]
         return_6m_values = [snapshot.stock_return_126d for snapshot in members]
+        return_1w = round(_winsorized_mean(return_1w_values), 2)
         return_1m = round(_winsorized_mean(return_1m_values), 2)
         return_3m = round(_winsorized_mean(return_3m_values), 2)
         return_6m = round(_winsorized_mean(return_6m_values), 2)
+        median_return_1w = round(float(median(return_1w_values)), 2) if return_1w_values else 0.0
         median_return_1m = round(float(median(return_1m_values)), 2) if return_1m_values else 0.0
         median_return_3m = round(float(median(return_3m_values)), 2) if return_3m_values else 0.0
         median_return_6m = round(float(median(return_6m_values)), 2) if return_6m_values else 0.0
+        relative_return_1w = round(return_1w - benchmark_returns["return_1w"], 2)
         relative_return_1m = round(return_1m - benchmark_returns["return_1m"], 2)
         relative_return_3m = round(return_3m - benchmark_returns["return_3m"], 2)
         relative_return_6m = round(return_6m - benchmark_returns["return_6m"], 2)
+        median_relative_1w = median_return_1w - benchmark_returns["return_1w"]
         median_relative_1m = median_return_1m - benchmark_returns["return_1m"]
         median_relative_3m = median_return_3m - benchmark_returns["return_3m"]
         median_relative_6m = median_return_6m - benchmark_returns["return_6m"]
@@ -439,9 +446,11 @@ def _build_group_payload(
                 symbol=snapshot.symbol,
                 company_name=snapshot.name,
                 rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
+                return_1w=round(snapshot.stock_return_5d, 2),
                 return_1m=round(snapshot.stock_return_20d, 2),
                 return_3m=round(snapshot.stock_return_60d, 2),
                 return_6m=round(snapshot.stock_return_126d, 2),
+                relative_return_1w=round(snapshot.stock_return_5d - benchmark_returns["return_1w"], 2),
                 relative_return_3m=round(snapshot.stock_return_60d - benchmark_returns["return_3m"], 2),
                 relative_return_6m=round(snapshot.stock_return_126d - benchmark_returns["return_6m"], 2),
             )
@@ -471,12 +480,15 @@ def _build_group_payload(
                 "parent_sector": parent_sector,
                 "description": _group_description(group_name, market_key),
                 "stock_count": len(members),
+                "return_1w": return_1w,
                 "return_1m": return_1m,
                 "return_3m": return_3m,
                 "return_6m": return_6m,
+                "relative_return_1w": relative_return_1w,
                 "relative_return_1m": relative_return_1m,
                 "relative_return_3m": relative_return_3m,
                 "relative_return_6m": relative_return_6m,
+                "median_return_1w": median_return_1w,
                 "median_return_1m": median_return_1m,
                 "median_return_3m": median_return_3m,
                 "median_return_6m": median_return_6m,
@@ -564,12 +576,15 @@ def build_industry_groups_response(
                 description=str(row["description"]),
                 stock_count=int(row["stock_count"]),
                 score=float(row["score"]),
+                return_1w=float(row["return_1w"]),
                 return_1m=float(row["return_1m"]),
                 return_3m=float(row["return_3m"]),
                 return_6m=float(row["return_6m"]),
+                relative_return_1w=float(row["relative_return_1w"]),
                 relative_return_1m=float(row["relative_return_1m"]),
                 relative_return_3m=float(row["relative_return_3m"]),
                 relative_return_6m=float(row["relative_return_6m"]),
+                median_return_1w=float(row["median_return_1w"]),
                 median_return_1m=float(row["median_return_1m"]),
                 median_return_3m=float(row["median_return_3m"]),
                 median_return_6m=float(row["median_return_6m"]),
@@ -642,8 +657,9 @@ def write_industry_group_files(
                 "parentSector": item.parent_sector,
                 "description": item.description,
                 "score": item.score,
-                "returns": {"1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
+                "returns": {"1w": item.return_1w, "1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
                 "relativeReturns": {
+                    "1w": item.relative_return_1w,
                     "1m": item.relative_return_1m,
                     "3m": item.relative_return_3m,
                     "6m": item.relative_return_6m,
@@ -668,9 +684,11 @@ def write_industry_group_files(
             "groupId": item.group_id,
             "groupName": item.group_name,
             "score": item.score,
+            "return1w": item.return_1w,
             "return1m": item.return_1m,
             "return3m": item.return_3m,
             "return6m": item.return_6m,
+            "relativeReturn1w": item.relative_return_1w,
             "relativeReturn1m": item.relative_return_1m,
             "relativeReturn3m": item.relative_return_3m,
             "relativeReturn6m": item.relative_return_6m,
@@ -699,6 +717,7 @@ def write_industry_group_files(
             "finalGroupName": item.final_group_name,
             "lastPrice": item.last_price,
             "changePct": item.change_pct,
+            "return1w": item.return_1w,
             "return1m": item.return_1m,
             "return3m": item.return_3m,
             "return6m": item.return_6m,

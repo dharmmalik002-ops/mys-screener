@@ -4256,10 +4256,10 @@ button {
 .group-stock-head,
 .group-stock-row {
   display: grid;
-  grid-template-columns: minmax(220px, 1.7fr) 0.8fr repeat(4, 0.68fr) 0.52fr 0.7fr;
+  grid-template-columns: minmax(220px, 1.7fr) 0.8fr repeat(5, 0.62fr) 0.52fr 0.7fr;
   gap: 12px;
   align-items: center;
-  min-width: 960px;
+  min-width: 1060px;
 }
 
 .group-stock-head {
