@@ -443,11 +443,16 @@ class AIAnalysisService:
                 result["detailed_news"] = [n.model_dump() for n in editorial + official]
 
             # 2. Guidance Validity Engine
-            #    Current date: April 2026.  FY2026 = Apr 2025 – Mar 2026 (India).
-            #    Any guidance whose fiscal period ended before the current date is STALE.
-            #    Constants capture the "latest fully-reported" fiscal year.
-            LATEST_COMPLETED_FY_INT = 2025   # FY2025 ended March 2025 → fully reported
-            CURRENT_FY_INT = 2026            # FY2026 ends March 2026 → in-progress / just closed
+            #    India FY ends in March. FY2026 = Apr 2025 – Mar 2026.
+            #    Any guidance for a FY that has fully ended is STALE.
+            #    These constants are computed from today's date so they never drift.
+            import datetime as _dt
+            _today = _dt.date.today()
+            # Indian FY runs Apr–Mar: if we are past March, FY ending this calendar year
+            # is complete; otherwise the FY ending last calendar year is the latest completed.
+            CURRENT_FY_INT = _today.year if _today.month >= 4 else _today.year - 1
+            # Add 1 for the next FY (e.g. in Apr 2026, FY2026 just closed, FY2027 is open)
+            LATEST_COMPLETED_FY_INT = CURRENT_FY_INT - 1  # last fully reported FY
 
             def _extract_fy_int(period_str: str) -> int | None:
                 """Extract fiscal year integer from strings like FY26, FY2026, FY25, 2025, etc."""

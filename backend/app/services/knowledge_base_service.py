@@ -123,10 +123,40 @@ def delete_entry(entry_id: str) -> bool:
 
 # ─────────────────────────── URL ingestion ───────────────────────────────────
 
+def _validate_fetch_url(url: str) -> None:
+    """Reject URLs that target local or internal network resources (SSRF prevention)."""
+    import urllib.parse
+    import ipaddress
+
+    parsed = urllib.parse.urlparse(url)
+    if parsed.scheme not in ("http", "https"):
+        raise ValueError(f"Only http/https URLs are allowed (got '{parsed.scheme}://')")
+
+    hostname = parsed.hostname or ""
+    if not hostname:
+        raise ValueError("URL must have a valid hostname")
+
+    # Block localhost variants
+    if hostname in ("localhost", "127.0.0.1", "::1") or hostname.endswith(".localhost"):
+        raise ValueError("Requests to localhost are not allowed")
+
+    # Block internal/private IP ranges (including cloud metadata endpoints)
+    try:
+        addr = ipaddress.ip_address(hostname)
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise ValueError("Requests to private or reserved IP addresses are not allowed")
+    except ValueError as exc:
+        # Re-raise our own validation errors; ignore non-IP hostnames
+        if "not allowed" in str(exc) or "localhost" in str(exc):
+            raise
+
+
 def fetch_url_content(url: str) -> dict:
     """Fetch and extract text from a URL (web page or YouTube)."""
     import urllib.request
     import urllib.error
+
+    _validate_fetch_url(url)
 
     yt_match = re.search(r"(?:youtube\.com/watch\?v=|youtu\.be/)([a-zA-Z0-9_\-]{11})", url)
     if yt_match:
