@@ -1,0 +1,17 @@
+{
+  "market": "india",
+  "updated_at": "2026-04-04T08:39:51.354874Z",
+  "active_watchlist_id": "b3706f84-a973-4a5b-b395-ab67927f5b5f",
+  "watchlists": [
+    {
+      "id": "b3706f84-a973-4a5b-b395-ab67927f5b5f",
+      "name": "Watching",
+      "color": "#4f8cff",
+      "symbols": [
+        "VENUSREM",
+        "MTARTECH",
+        "PRIVISCL"
+      ]
+    }
+  ]
+}

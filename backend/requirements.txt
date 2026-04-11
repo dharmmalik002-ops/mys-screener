@@ -1,0 +1,14 @@
+fastapi==0.116.1
+uvicorn[standard]==0.35.0
+pydantic==2.12.3
+pydantic-settings==2.13.1
+httpx==0.28.1
+holidays==0.93
+pandas==3.0.1
+yfinance==1.2.0
+beautifulsoup4==4.14.3
+lxml==6.0.2
+python-calamine>=0.4,<0.6
+google-genai>=1.0,<2.0
+apscheduler>=3.10,<4.0
+pypdf>=5.0,<6.0

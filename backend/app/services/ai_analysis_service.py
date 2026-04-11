@@ -1,0 +1,1253 @@
+"""AI-powered company analysis using Google Gemini."""
+
+import json
+import logging
+import time
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any
+from pydantic import BaseModel
+
+from google import genai
+
+from app.models.market import (
+    AISummary,
+    CustomScanRequest,
+    BalanceSheetItem,
+    BusinessSegment,
+    BusinessTrigger,
+    CashFlowItem,
+    CompanyFundamentals,
+    CompetitivePosition,
+    DetailedNews,
+    FinancialRatios,
+    InsiderTransaction,
+    ManagementGuidance,
+    RiskAnalysis,
+)
+
+logger = logging.getLogger(__name__)
+
+IST = timezone(timedelta(hours=5, minutes=30))
+AI_CACHE_VERSION = 5
+
+
+def _equity_market_labels(fundamentals: CompanyFundamentals) -> tuple[str, str, str]:
+    exchange = (fundamentals.exchange or "").strip().upper()
+    if exchange in {"NYSE", "NASDAQ", "AMEX", "ARCA"}:
+        return ("US stock", "US-listed company", "US equities")
+    return ("Indian stock", "Indian listed company", "Indian equities")
+
+
+def _build_analysis_prompt(fundamentals: CompanyFundamentals) -> str:
+    """Build a structured prompt for Gemini from existing fundamentals data."""
+    stock_label, _, equities_label = _equity_market_labels(fundamentals)
+    q_results = ""
+    if fundamentals.quarterly_results:
+        q_results = "\n".join(
+            f"  {q.period}: Sales={q.sales_crore}Cr, NetProfit={q.net_profit_crore}Cr, OPM={q.operating_margin_pct}%"
+            for q in fundamentals.quarterly_results[:6]
+        )
+
+    pl_data = ""
+    if fundamentals.profit_loss:
+        pl_data = "\n".join(
+            f"  {p.period}: Sales={p.sales_crore}Cr, NetProfit={p.net_profit_crore}Cr, OPM={p.operating_margin_pct}%"
+            for p in fundamentals.profit_loss[:6]
+        )
+
+    valuation_info = ""
+    if fundamentals.valuation:
+        v = fundamentals.valuation
+        valuation_info = (
+            f"MarketCap={v.market_cap_crore}Cr, PE={v.pe_ratio}, PEG={v.peg_ratio}, "
+            f"OPM={v.operating_margin_pct}%, NetMargin={v.net_margin_pct}%, "
+            f"ROE={v.roe_pct}%, ROCE={v.roce_pct}%, DivYield={v.dividend_yield_pct}%"
+        )
+
+    growth_info = ""
+    if fundamentals.growth:
+        g = fundamentals.growth
+        growth_info = (
+            f"SalesQoQ={g.sales_qoq_pct}%, SalesYoY={g.sales_yoy_pct}%, "
+            f"ProfitQoQ={g.profit_qoq_pct}%, ProfitYoY={g.profit_yoy_pct}%, "
+            f"OPM_latest={g.operating_margin_latest_pct}%, OPM_prev={g.operating_margin_previous_pct}%"
+        )
+
+    news_data = ""
+    if fundamentals.recent_updates:
+        news_data = "\n".join(
+            f"  - [{u.published_at or 'recent'}] {u.title}" + (f": {u.summary}" if u.summary else "")
+            for u in fundamentals.recent_updates[:10]
+        )
+
+    guidance_data = ""
+    if fundamentals.management_guidance:
+        guidance_data = "\n".join(
+            f"  - [{item.guidance_date or 'recent'}] {item.guidance_source or item.fiscal_year}: " + "; ".join(item.key_guidance_points[:3])
+            for item in fundamentals.management_guidance[:6]
+            if item.key_guidance_points
+        )
+
+    detailed_news_data = ""
+    if fundamentals.detailed_news:
+        detailed_news_data = "\n".join(
+            f"  - [{item.published_date}] {item.source}: {item.title}: {item.summary}"
+            for item in fundamentals.detailed_news[:6]
+        )
+
+    shareholding = ""
+    if fundamentals.shareholding_pattern:
+        shareholding = "\n".join(
+            f"  {s.period}: Promoter={s.promoter_pct}%, FII={s.fii_pct}%, DII={s.dii_pct}%, Public={s.public_pct}%"
+            for s in fundamentals.shareholding_pattern[:4]
+        )
+
+    drivers = ""
+    if fundamentals.growth_drivers:
+        drivers = "\n".join(f"  - {d.title}: {d.detail}" for d in fundamentals.growth_drivers)
+
+    return f"""Analyze this {stock_label} and return ONLY valid JSON (no markdown, no code fences).
+
+COMPANY: {fundamentals.name} ({fundamentals.symbol})
+SECTOR: {fundamentals.sector or 'Unknown'} / {fundamentals.sub_sector or 'Unknown'}
+EXCHANGE: {fundamentals.exchange or 'Unknown'}
+
+ABOUT: {fundamentals.about or 'Not available'}
+
+QUARTERLY RESULTS (recent):
+{q_results or 'Not available'}
+
+ANNUAL PROFIT & LOSS:
+{pl_data or 'Not available'}
+
+VALUATION: {valuation_info or 'Not available'}
+
+GROWTH METRICS: {growth_info or 'Not available'}
+
+SHAREHOLDING:
+{shareholding or 'Not available'}
+
+GROWTH DRIVERS:
+{drivers or 'Not available'}
+
+MANAGEMENT GUIDANCE / CONCALL NOTES:
+{guidance_data or 'Not available'}
+
+DETAILED SOURCE NEWS:
+{detailed_news_data or 'Not available'}
+
+RECENT NEWS:
+{news_data or 'Not available'}
+
+Based on all the above data, provide a comprehensive analysis in this EXACT JSON structure:
+
+{{
+  "management_guidance": [
+    {{
+      "fiscal_year": "FY25",
+      "revenue_growth_guidance_pct": null,
+      "ebitda_guidance_pct": null,
+      "capex_guidance_crore": null,
+      "guidance_type": "Explicit|Qualitative",
+      "confidence_score": 0.8,
+      "key_guidance_points": ["point1", "point2"],
+      "analyst_concerns": ["concern1", "concern2"]
+    }}
+  ],
+  "strategy_and_outlook": "2-3 sentence management strategy and outlook based on recent data",
+  "results_summary": {{
+    "beat_miss": "Beat/Miss vs expectations on Revenue and Profit",
+    "highlights": ["point1", "point2"],
+    "segment_performance": "Key segment performance summary"
+  }},
+  "guidance_tracker": [
+    {{
+      "date": "YYYY-MM-DD", 
+      "previous": "previous guidance summary",
+      "current": "current guidance summary",
+      "reason": "reason for change"
+    }}
+  ],
+  "growth_trends": {{
+    "revenue_trend": "Improving|Stable|Declining description",
+    "profit_trend": "Improving|Stable|Declining description",
+    "margin_trend": "Improving|Stable|Declining description"
+  }},
+  "competitive_position": {{
+    "market_position": "e.g. Market leader in X segment",
+    "competitive_advantages": ["advantage1", "advantage2"],
+    "market_share_estimate": null,
+    "key_competitors": ["competitor1", "competitor2"]
+  }},
+  "business_segments": [
+    {{
+      "name": "segment name",
+      "revenue_crore": null,
+      "revenue_pct": null,
+      "growth_pct": null,
+      "period": "FY24"
+    }}
+  ],
+  "risks_and_opportunities": [
+    {{
+      "risk_category": "operational|financial|regulatory|market|competitive",
+      "description": "description",
+      "severity": "high|medium|low",
+      "mitigation_strategy": "strategy or null"
+    }}
+  ],
+  "detailed_news": [
+    {{
+      "title": "news title",
+      "summary": "detailed 2-3 sentence summary of impact",
+      "impact_category": "earnings|strategic|regulatory|market|operational",
+      "sentiment": "positive|negative|neutral",
+      "source": "source name",
+      "source_type": "Editorial News|Company Release|Exchange Filing|Transcript|Analyst Report",
+      "is_editorial": true,
+      "published_date": "YYYY-MM-DD",
+      "impact_area": "Revenue|Margin|EPS|Capex|Order Book|Regulatory",
+      "why_it_matters": "Why this specific news is critical for the stock",
+      "detailed_points": ["point1", "point2"],
+      "relevance_score": 0.8,
+      "connection_to_guidance": "How this news confirms or contradicts previous guidance"
+    }}
+  ],
+  "ai_news_summary": {{
+    "summary": "2-3 sentence overall market narrative for this stock",
+    "key_points": ["key insight 1", "key insight 2", "key insight 3"],
+    "sentiment": "positive|negative|neutral"
+  }},
+  "business_triggers": [
+    {{
+      "title": "trigger title",
+      "description": "what could drive the stock",
+      "impact": "positive|negative|neutral",
+      "date": "YYYY-MM-DD or null",
+      "source": "analysis",
+      "likelihood_to_impact": 0.7
+    }}
+  ],
+  "insider_transactions": [
+    {{
+      "person_name": "name",
+      "position": "Promoter|Director|KMP",
+      "transaction_type": "buy|sell",
+      "quantity": 10000,
+      "price_per_share": 100.0,
+      "total_value_crore": 0.1,
+      "date": "YYYY-MM-DD",
+      "pct_of_holding_change": null
+    }}
+  ],
+  "latest_earnings_key_metrics": {{
+    "Revenue Growth QoQ": "15%",
+    "Net Profit Growth YoY": "20%",
+    "Operating Margin": "18%",
+    "EPS TTM": "₹25"
+  }},
+  "upcoming_events": [
+    {{
+      "date": "YYYY-MM-DD",
+      "event": "event description",
+      "impact": "expected impact"
+    }}
+  ],
+  "future_growth_triggers": [
+    {{
+      "title": "Short title for this trigger (e.g. Order Book at Record ₹8,000 Cr)",
+      "category": "order book growth|capacity expansion|new product launch|pricing power|margin expansion|export recovery|market share gain|capex pipeline|acquisition synergy|operating leverage|regulation tailwind|debt reduction|recurring revenue growth|user growth|ai efficiency",
+      "why_it_matters": "1-2 sentence investor-relevant explanation of why this drives future earnings",
+      "evidence_source": "Source reference (e.g. Q3 FY26 Concall, Annual Report FY26, ET Article Mar 2026)",
+      "source_date": "YYYY-MM-DD or null",
+      "confidence_score": 0.8,
+      "impact_area": "revenue|eps|profit|margin|cash flow|any",
+      "horizon": "near-term|medium-term|multi-year",
+      "is_new": true
+    }}
+  ],
+  "growth_risks": [
+    {{
+      "risk_category": "execution delay|demand weakness|pricing pressure|margin pressure|capex delay|customer concentration|regulatory headwind|debt burden|management vagueness|raw material inflation|order conversion delay|competition",
+      "description": "Specific risk description with context",
+      "severity": "high|medium|low",
+      "mitigation_strategy": "Management mitigation or null if unaddressed"
+    }}
+  ]
+}}
+RULES:
+- Use ONLY data provided above. Do not hallucinate numbers not present in the input.
+- CURRENT DATE CONTEXT: It is April 2026. FY2026 is the current fiscal year ending March 2026.
+- For management_guidance:
+  - guidance_type should be "Explicit" if numbers/ranges are given, otherwise "Qualitative".
+  - confidence_score should reflect management's tone and track record if discernible.
+  - CRITICAL GUIDANCE VALIDITY: Any guidance referencing FY2025 (FY25) or earlier is STALE as of April 2026 because FY2025 ended in March 2025 and full-year results have already been reported. Such items must be set is_stale=true and validity_banner="Stale". Only FY2026 (FY26) and FY2027 (FY27) forward guidance is active. If no active guidance exists, do not fabricate it.
+- For results_summary: summarize the latest quarter's performance vs market expectations. Include margins_analysis as a 1-2 sentence margin trend summary.
+- For detailed_news:
+  - Strictly classify source_type as "Editorial News" ONLY for credible independent multi-journalist outlets (Reuters, Bloomberg, LiveMint, Economic Times, Moneycontrol, CNBC, etc.).
+  - Use "Company Release" for PR wire services (PR Newswire, Business Wire, GlobeNewswire, Newsvoir, etc.).
+  - Use "Exchange Filing" for anything from NSE/BSE/SEC portals.
+  - is_editorial must be true ONLY for Editorial News — never for Company Release or Exchange Filing.
+  - Do not include routine boilerplate filings (Regulation 30 SEBI LODR, audio/transcript links, newspaper publications) unless they contain material financial data.
+- For future_growth_triggers:
+  - Extract 5-10 specific, evidence-backed forward-looking business triggers from concall/results/news.
+  - Every trigger must have a clear evidence_source from the provided data.
+  - Categorise each trigger using the exact category values listed in the schema.
+  - near-term = within 2 quarters, medium-term = within 4-6 quarters, multi-year = beyond 18 months.
+  - Mark is_new=true only if this trigger first appeared in the most recent reporting period.
+- For growth_risks:
+  - Extract 3-8 specific risks or failure scenarios from the data — execution delays, demand softness, margin pressure, etc.
+  - Do not list generic market risk; each risk must be company-specific and evidence-backed.
+- For strategy_and_outlook and growth-oriented commentary, prioritize the latest management guidance about revenue, profit, margin, sales, demand, capex, order book, and business outlook.
+- Keep all text concise and actionable for traders following {equities_label}.
+- Return ONLY the JSON object, no other text."""
+
+
+def _build_company_question_prompt(fundamentals: CompanyFundamentals, question: str) -> str:
+    _, company_label, equities_label = _equity_market_labels(fundamentals)
+    recent_updates = "\n".join(
+        f"- {item.title}" + (f": {item.summary}" if item.summary else "")
+        for item in fundamentals.recent_updates[:6]
+    ) or "Not available"
+    growth_drivers = "\n".join(
+        f"- {item.title}: {item.detail}"
+        for item in fundamentals.growth_drivers[:5]
+    ) or "Not available"
+    quarterly = "\n".join(
+        f"- {item.period}: Sales={item.sales_crore}Cr, NetProfit={item.net_profit_crore}Cr, OPM={item.operating_margin_pct}%"
+        for item in fundamentals.quarterly_results[:4]
+    ) or "Not available"
+    risks = "\n".join(
+        f"- {item.risk_category}: {item.description}"
+        for item in fundamentals.risks_and_opportunities[:4]
+    ) or "Not available"
+
+    return f"""You are answering a user question about a {company_label}.
+Use ONLY the supplied company data. If the data is insufficient, say so clearly.
+Do not mention unavailable sources or make up facts.
+
+COMPANY: {fundamentals.name} ({fundamentals.symbol})
+SECTOR: {fundamentals.sector or 'Unknown'} / {fundamentals.sub_sector or 'Unknown'}
+ABOUT: {fundamentals.business_summary or fundamentals.about or 'Not available'}
+STRATEGY: {fundamentals.strategy_and_outlook or 'Not available'}
+AI NEWS SUMMARY: {fundamentals.ai_news_summary.summary if fundamentals.ai_news_summary else 'Not available'}
+
+RECENT QUARTERS:
+{quarterly}
+
+GROWTH DRIVERS:
+{growth_drivers}
+
+RECENT DEVELOPMENTS:
+{recent_updates}
+
+RISKS:
+{risks}
+
+VALUATION:
+PE={fundamentals.valuation.pe_ratio if fundamentals.valuation else 'NA'}, PEG={fundamentals.valuation.peg_ratio if fundamentals.valuation else 'NA'}, ROE={fundamentals.valuation.roe_pct if fundamentals.valuation else 'NA'}, ROCE={fundamentals.valuation.roce_pct if fundamentals.valuation else 'NA'}
+
+QUESTION: {question}
+
+Answer in 2-4 concise paragraphs with direct reasoning. Keep it practical for an investor following {equities_label}."""
+
+
+class AIAnalysisService:
+    """Generates AI-powered company analysis using Google Gemini."""
+
+    # Models to try in order — if primary model quota is exhausted, fall back
+    _MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+    _MAX_RETRIES = 3
+    _RETRY_BASE_DELAY = 5  # seconds
+
+    def __init__(self, api_key: str | None, cache_dir: Path | None = None):
+        self._api_key = api_key
+        self._client: genai.Client | None = None
+        self._cache_dir = cache_dir or Path(__file__).resolve().parents[2] / "data"
+        self._cache_path = self._cache_dir / "ai_analysis_cache.json"
+        self._memory_cache: dict[str, dict[str, Any]] = {}
+        self._disabled_until: datetime | None = None
+
+        if api_key:
+            try:
+                self._client = genai.Client(api_key=api_key)
+                logger.info("Gemini AI client initialized (models: %s)", ", ".join(self._MODELS))
+            except Exception as exc:
+                logger.warning("Failed to initialize Gemini client: %s", exc)
+                self._client = None
+
+    @property
+    def available(self) -> bool:
+        if self._client is None:
+            return False
+        if self._disabled_until and datetime.now(timezone.utc) < self._disabled_until:
+            return False
+        return True
+
+    def _mark_quota_exhausted(self, cooldown_minutes: int = 30) -> None:
+        self._disabled_until = datetime.now(timezone.utc) + timedelta(minutes=cooldown_minutes)
+        logger.warning("Gemini AI temporarily disabled until %s after quota exhaustion", self._disabled_until.isoformat())
+
+    def analyze_company(self, fundamentals: CompanyFundamentals) -> dict[str, Any]:
+        """Run AI analysis on company fundamentals. Returns dict of AI-generated fields."""
+        if not self.available:
+            return {}
+
+        symbol = fundamentals.symbol.upper()
+        fundamentals_fetched_at = fundamentals.fetched_at.isoformat() if getattr(fundamentals, "fetched_at", None) else None
+
+        # Check memory cache
+        cached = self._memory_cache.get(symbol)
+        if cached and self._is_cache_fresh(cached, fundamentals_fetched_at=fundamentals_fetched_at):
+            return cached.get("data", {})
+
+        # Check disk cache
+        disk_cache = self._load_disk_cache()
+        cached_entry = disk_cache.get(symbol)
+        if isinstance(cached_entry, dict) and self._is_cache_fresh(cached_entry, fundamentals_fetched_at=fundamentals_fetched_at):
+            self._memory_cache[symbol] = cached_entry
+            return cached_entry.get("data", {})
+
+        # Generate fresh analysis
+        try:
+            result = self._generate_analysis(fundamentals)
+
+            # ── Post-processing ─────────────────────────────────────────────
+            from app.services.news_logic import NewsPipeline
+
+            # 1. Process News: run through the hard-rule pipeline to enforce
+            #    editorial vs official separation.
+            if "detailed_news" in result:
+                input_news = [
+                    {
+                        "title": n.get("title", ""),
+                        "url": n.get("url", ""),
+                        "source": n.get("source", ""),
+                        "source_type": n.get("source_type", ""),
+                        "summary": n.get("summary", ""),
+                        "published_date": n.get("published_date") or n.get("published_at"),
+                        "impact_category": n.get("impact_category", "market"),
+                        "sentiment": n.get("sentiment", "neutral"),
+                        "relevance_score": n.get("relevance_score", 0.5),
+                        "impact_area": n.get("impact_area"),
+                        "why_it_matters": n.get("why_it_matters"),
+                        "detailed_points": n.get("detailed_points") or [],
+                        "impact_tags": n.get("impact_tags") or [],
+                        "connection_to_guidance": n.get("connection_to_guidance"),
+                    }
+                    for n in result["detailed_news"]
+                ]
+                editorial, official = NewsPipeline.process_and_split(input_news)
+                result["latest_editorial_news"] = [n.model_dump() for n in editorial]
+                result["official_updates"] = [n.model_dump() for n in official]
+                result["detailed_news"] = [n.model_dump() for n in editorial + official]
+
+            # 2. Guidance Validity Engine
+            #    India FY ends in March. FY2026 = Apr 2025 – Mar 2026.
+            #    Any guidance for a FY that has fully ended is STALE.
+            #    These constants are computed from today's date so they never drift.
+            import datetime as _dt
+            _today = _dt.date.today()
+            # Indian FY runs Apr–Mar: if we are past March, FY ending this calendar year
+            # is complete; otherwise the FY ending last calendar year is the latest completed.
+            CURRENT_FY_INT = _today.year if _today.month >= 4 else _today.year - 1
+            # Add 1 for the next FY (e.g. in Apr 2026, FY2026 just closed, FY2027 is open)
+            LATEST_COMPLETED_FY_INT = CURRENT_FY_INT - 1  # last fully reported FY
+
+            def _extract_fy_int(period_str: str) -> int | None:
+                """Extract fiscal year integer from strings like FY26, FY2026, FY25, 2025, etc."""
+                s = period_str.upper().replace("FY", "").strip()
+                try:
+                    n = int(s)
+                    if n < 100:
+                        n += 2000   # FY26 → 2026
+                    return n
+                except ValueError:
+                    # Try extracting first 4-digit number
+                    import re as _re
+                    m = _re.search(r"\b(20\d{2})\b", s)
+                    return int(m.group(1)) if m else None
+
+            if "management_guidance" in result:
+                guidance_list = result["management_guidance"]
+                # Detect the highest FY referenced in the whole guidance set
+                all_fy = [
+                    _extract_fy_int(str(g.get("fiscal_period") or g.get("fiscal_year") or ""))
+                    for g in guidance_list
+                ]
+                all_fy_valid = [fy for fy in all_fy if fy is not None]
+                max_fy_in_set = max(all_fy_valid) if all_fy_valid else None
+
+                for g in guidance_list:
+                    g_period_raw = str(g.get("fiscal_period") or g.get("fiscal_year") or "")
+                    fy = _extract_fy_int(g_period_raw)
+                    is_stale = False
+                    banner = "Valid"
+
+                    if fy is not None:
+                        # Mark stale if:
+                        # a) FY has fully completed (≤ latest completed), OR
+                        # b) A newer FY exists in the same guidance set AND this one is older
+                        if fy <= LATEST_COMPLETED_FY_INT:
+                            is_stale = True
+                        elif max_fy_in_set and fy < max_fy_in_set:
+                            is_stale = True
+
+                    if is_stale:
+                        banner = "Stale"
+
+                    g["is_stale"] = is_stale
+                    g["validity_banner"] = banner
+
+            # 3. Ensure required keys exist
+            result.setdefault("future_growth_triggers", [])
+            result.setdefault("growth_risks", [])
+
+            cache_entry = {
+                "data": result,
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "cache_version": AI_CACHE_VERSION,
+            }
+            self._memory_cache[symbol] = cache_entry
+            disk_cache[symbol] = cache_entry
+            self._save_disk_cache(disk_cache)
+            return result
+        except Exception as exc:
+            logger.error("AI analysis failed for %s: %s", symbol, exc)
+            return {}
+
+    def _generate_analysis(self, fundamentals: CompanyFundamentals) -> dict[str, Any]:
+        """Call Gemini API with retry and model fallback."""
+        prompt = _build_analysis_prompt(fundamentals)
+
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(
+                            temperature=0.3,
+                            max_output_tokens=4096,
+                        ),
+                    )
+                    text = response.text.strip()
+                    if text.startswith("```"):
+                        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+                    if text.endswith("```"):
+                        text = text[:-3].strip()
+                    if text.startswith("json"):
+                        text = text[4:].strip()
+
+                    result = json.loads(text)
+                    logger.info("AI analysis succeeded with model %s (attempt %d)", model_name, attempt + 1)
+                    return result
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            delay = self._RETRY_BASE_DELAY * (attempt + 1)
+                            logger.warning(
+                                "Rate limited on %s (attempt %d), retrying in %ds...",
+                                model_name, attempt + 1, delay,
+                            )
+                            time.sleep(delay)
+                            continue
+                        else:
+                            logger.warning("Quota exhausted on %s, trying next model...", model_name)
+                            break  # try next model
+                    else:
+                        logger.error("AI generation error on %s: %s", model_name, exc)
+                        raise  # non-rate-limit errors should not retry
+
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All Gemini models exhausted after retries: {last_exc}")
+
+    def _is_cache_fresh(self, entry: dict[str, Any], fundamentals_fetched_at: str | None = None) -> bool:
+        if int(entry.get("cache_version", 0)) != AI_CACHE_VERSION:
+            return False
+        generated_at = entry.get("generated_at")
+        if not generated_at:
+            return False
+        try:
+            gen_time = datetime.fromisoformat(generated_at)
+            if gen_time.tzinfo is None:
+                gen_time = gen_time.replace(tzinfo=timezone.utc)
+            age_hours = (datetime.now(timezone.utc) - gen_time).total_seconds() / 3600
+            if age_hours >= 24:
+                return False
+
+            if fundamentals_fetched_at:
+                fund_time = datetime.fromisoformat(fundamentals_fetched_at.replace("Z", "+00:00"))
+                if fund_time.tzinfo is None:
+                    fund_time = fund_time.replace(tzinfo=timezone.utc)
+                if fund_time > gen_time:
+                    return False
+
+            return True
+        except Exception:
+            return False
+
+    def _load_disk_cache(self) -> dict[str, Any]:
+        if not self._cache_path.exists():
+            return {}
+        try:
+            return json.loads(self._cache_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+
+    def _save_disk_cache(self, cache: dict[str, Any]) -> None:
+        try:
+            self._cache_path.write_text(json.dumps(cache, indent=2), encoding="utf-8")
+        except Exception as exc:
+            logger.warning("Failed to save AI cache: %s", exc)
+
+    def clear_cache(self, symbol: str | None = None) -> None:
+        """Clear AI analysis cache for a symbol or all symbols."""
+        if symbol:
+            self._memory_cache.pop(symbol.upper(), None)
+            disk_cache = self._load_disk_cache()
+            disk_cache.pop(symbol.upper(), None)
+            self._save_disk_cache(disk_cache)
+        else:
+            self._memory_cache.clear()
+            self._save_disk_cache({})
+
+    def bulk_analyze(
+        self,
+        fundamentals_list: list[CompanyFundamentals],
+        delay_seconds: float = 2.0,
+    ) -> dict[str, dict[str, Any]]:
+        """Analyze multiple companies with rate limiting for the scheduler."""
+        results: dict[str, dict[str, Any]] = {}
+        for idx, fund in enumerate(fundamentals_list):
+            try:
+                result = self.analyze_company(fund)
+                results[fund.symbol] = result
+                logger.info("AI analysis %d/%d: %s done", idx + 1, len(fundamentals_list), fund.symbol)
+            except Exception as exc:
+                logger.error("AI analysis failed for %s: %s", fund.symbol, exc)
+            if idx < len(fundamentals_list) - 1:
+                time.sleep(delay_seconds)
+        return results
+
+    def generate_money_flow_report(self, sector_data: str, week_key: str) -> dict[str, Any]:
+        """Generate a weekly money flow / sector rotation report using Gemini."""
+        if not self.available:
+            return {}
+
+        prompt = f"""You are an expert Indian equity market analyst. Today is {datetime.now(IST).strftime('%d %B %Y')}.
+Based on the sector performance data below, generate a detailed weekly money flow analysis.
+
+SECTOR PERFORMANCE DATA:
+{sector_data}
+
+Return ONLY valid JSON (no markdown, no code fences) with this EXACT structure:
+{{
+  "inflows": [
+    {{"name": "Sector Name", "sentiment": "bullish", "reason": "Detailed reason why money is flowing in", "magnitude": "strong"}}
+  ],
+  "outflows": [
+    {{"name": "Sector Name", "sentiment": "bearish", "reason": "Detailed reason why money is flowing out", "magnitude": "moderate"}}
+  ],
+  "sector_performance": [
+    {{"name": "Sector Name", "sentiment": "bullish|bearish|neutral", "reason": "Key performance driver", "magnitude": "strong|moderate|mild"}}
+  ],
+  "short_term_headwinds": [
+    {{"name": "Sector Name", "sentiment": "bearish", "reason": "Why this sector faces near-term pressure (1-4 weeks)", "magnitude": "strong|moderate|mild"}}
+  ],
+  "short_term_tailwinds": [
+    {{"name": "Sector Name", "sentiment": "bullish", "reason": "Why this sector has near-term upside catalysts (1-4 weeks)", "magnitude": "strong|moderate|mild"}}
+  ],
+  "long_term_tailwinds": [
+    {{"name": "Sector Name", "sentiment": "bullish", "reason": "Structural/multi-year growth driver", "magnitude": "strong|moderate|mild"}}
+  ],
+  "macro_summary": "3-4 sentences summarising the overall market money-flow picture, dominant themes, and key risks for Indian equities this week."
+}}
+
+Rules:
+- Include 3-6 items per list; rank by conviction.
+- Use concrete reasoning (global cues, macro data, policy, earnings trends, FII/DII flows, commodities).
+- sentiment must be exactly: bullish | bearish | neutral
+- magnitude must be exactly: strong | moderate | mild
+- Return ONLY the JSON object."""
+
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=4096),
+                    )
+                    text = response.text.strip()
+                    if text.startswith("```"):
+                        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+                    if text.endswith("```"):
+                        text = text[:-3].strip()
+                    if text.startswith("json"):
+                        text = text[4:].strip()
+                    result = json.loads(text)
+                    logger.info("Money flow report generated with model %s week %s", model_name, week_key)
+                    return result
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            time.sleep(self._RETRY_BASE_DELAY * (attempt + 1))
+                            continue
+                        break
+                    raise
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All models exhausted for money flow report: {last_exc}")
+
+    def answer_company_question(self, fundamentals: CompanyFundamentals, question: str) -> str:
+        """Answer a freeform company question using Gemini and existing fundamentals context."""
+        cleaned_question = question.strip()
+        if not cleaned_question:
+            raise ValueError("Question cannot be empty")
+        if not self.available:
+            raise RuntimeError("Gemini API key not configured")
+
+        prompt = _build_company_question_prompt(fundamentals, cleaned_question)
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(
+                            temperature=0.25,
+                            max_output_tokens=1400,
+                        ),
+                    )
+                    text = response.text.strip()
+                    logger.info(
+                        "Company Q&A succeeded with model %s for %s",
+                        model_name,
+                        fundamentals.symbol,
+                    )
+                    return text
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            time.sleep(self._RETRY_BASE_DELAY * (attempt + 1))
+                            continue
+                        break
+                    raise
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All Gemini models exhausted for company Q&A: {last_exc}")
+
+    async def parse_natural_language_scan(self, query: str) -> CustomScanRequest:
+        """Parse a natural language query into a structured CustomScanRequest."""
+        if not self._client:
+            raise ValueError("AI parsing requires a Gemini API key.")
+
+        from datetime import date as _date
+        today_iso = _date.today().isoformat()
+
+        prompt = f"""
+You are an expert quantitative stock screener. Today's date is {today_iso}.
+
+Convert this investor query into a JSON payload matching the CustomScanRequest schema:
+"{query}"
+
+MAPPING RULES (technical):
+- "consolidating" / "tight stocks" → max_consolidation_range_pct=10.0
+- "shakeout" / "shakeout of 21 ema" → shakeout_21ema=true
+- "near high" / "near 52 week high" → near_high_period="1Y", near_high_max_distance_pct=5.0
+- "VCP" / "Volatility Contraction" → max_consolidation_range_pct=8.0, minervini_trend_template=true
+- "above 21 EMA" / "above 20 EMA" → above_ema20=true
+- "above 50 EMA" / "50 SMA" → above_ema50=true
+- "above 200 SMA / EMA" → above_ema200=true
+- "Minervini" / "Mark Minervini" → minervini_trend_template=true
+- "Kullamagi" / "Kristjan" → kullamagi_setup=true
+- "RS rating above 80" → min_rs_rating=80
+- "P/E below 20" → max_pe_ratio=20.0
+- "P/E above 15" → min_pe_ratio=15.0
+
+MAPPING RULES (fundamental):
+- "EPS growth 30%" / "growing EPS > 30%" → min_eps_growth_yoy=30.0
+- "revenue/sales growth 20%" → min_revenue_growth_yoy=20.0
+- "operating margin > 15%" → min_operating_margin=15.0
+- "ROE > 20%" → min_roe=20.0
+
+MAPPING RULES (volume / RVOL):
+- "relative volume > 3" / "RVOL > 3" / "RVOL more than 3" → min_relative_volume=3.0
+- "RVOL above 2.5" → min_relative_volume=2.5
+- "price change > 6%" / "% change more than 6%" / "change more than 6" → min_change_pct=6.0
+- "price change > 5% and < 10%" → min_change_pct=5.0, max_change_pct=10.0
+
+MAPPING RULES (historical date scan):
+- "on April 7, 2026" / "for April 7" / "on today" / "for today" →
+  scan_date="{today_iso}"  (use the actual ISO date "YYYY-MM-DD"; for "today" use {today_iso})
+- When a specific date AND RVOL/change% filters are mentioned TOGETHER,
+  set scan_date AND min_relative_volume / min_change_pct at the same time.
+- Example: "RVOL > 3 and change > 6% on April 7, 2026" →
+  scan_date="2026-04-07", min_relative_volume=3.0, min_change_pct=6.0
+
+MAPPING RULES (highest quarterly volume):
+- "highest quarterly volume in last 7 days" → highest_vol_lookback_days=7
+- "highest quarterly volume in last week" → highest_vol_lookback_days=5
+- "stocks that hit quarterly-high volume recently" → highest_vol_lookback_days=5
+- "highest volume in last N days" where N ≤ 30 → highest_vol_lookback_days=N
+
+IMPORTANT:
+- Return ONLY valid JSON, NO markdown or code fences.
+- All numeric thresholds are plain numbers (not strings).
+- scan_date must be an ISO string "YYYY-MM-DD" or null.
+- Do not set both scan_date and highest_vol_lookback_days at the same time.
+"""
+        import asyncio
+        for model in self._MODELS:
+            try:
+                from google.genai import types
+                class AiScreenerSchema(BaseModel):
+                    # Fundamental filters
+                    min_eps_growth_yoy: float | None = None
+                    min_revenue_growth_yoy: float | None = None
+                    min_operating_margin: float | None = None
+                    min_profit_margin: float | None = None
+                    min_roe: float | None = None
+                    max_peg_ratio: float | None = None
+                    min_pe_ratio: float | None = None
+                    max_pe_ratio: float | None = None
+                    # Technical
+                    minervini_trend_template: bool = False
+                    kullamagi_setup: bool = False
+                    shakeout_21ema: bool = False
+                    shakeout_50ema: bool = False
+                    max_consolidation_range_pct: float | None = None
+                    above_ema20: bool = False
+                    above_ema50: bool = False
+                    above_ema200: bool = False
+                    min_rs_rating: int | None = None
+                    min_price: float | None = None
+                    near_high_period: str | None = None
+                    near_high_max_distance_pct: float | None = None
+                    # Volume / price change
+                    min_relative_volume: float | None = None
+                    min_change_pct: float | None = None
+                    max_change_pct: float | None = None
+                    # Historical scan fields
+                    scan_date: str | None = None              # ISO "YYYY-MM-DD"
+                    highest_vol_lookback_days: int | None = None
+
+                result = await asyncio.to_thread(
+                    self._client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        response_mime_type="application/json",
+                        response_schema=AiScreenerSchema,
+                        temperature=0.0,
+                    ),
+                )
+                if not result.text:
+                    continue
+                return CustomScanRequest.model_validate_json(result.text, strict=False)
+            except Exception as e:
+                logger.warning(f"AI Search translation failed for {model}: {e}. Trying next...")
+                continue
+
+        raise Exception("Natural language AI scanning is currently unavailable. No model succeeded.")
+
+    async def analyze_chart(
+        self,
+        symbol: str,
+        market: str,
+        timeframe: str,
+        query: str,
+        bars: list[dict],
+        conversation_history: list[dict],
+        knowledge_base_entries: list[dict],
+    ) -> str:
+        """Analyze a chart using Gemini with user knowledge base context."""
+        if not self._client:
+            raise ValueError("AI analysis requires a Gemini API key.")
+
+        # Compute key stats from bars
+        recent_bars = bars[-60:] if len(bars) > 60 else bars
+        closes = [b["close"] for b in recent_bars if b.get("close")]
+        highs = [b["high"] for b in recent_bars if b.get("high")]
+        lows = [b["low"] for b in recent_bars if b.get("low")]
+        volumes = [b.get("volume", 0) for b in recent_bars]
+
+        def _ts(ts: int) -> str:
+            from datetime import datetime, timezone as _tz
+            try:
+                return datetime.fromtimestamp(int(ts), tz=_tz.utc).strftime("%Y-%m-%d")
+            except Exception:
+                return str(ts)
+
+        current_price = closes[-1] if closes else 0
+        high_period = max(highs) if highs else 0
+        low_period = min(lows) if lows else 0
+        high_20 = max(highs[-20:]) if len(highs) >= 20 else (max(highs) if highs else 0)
+        low_20 = min(lows[-20:]) if len(lows) >= 20 else (min(lows) if lows else 0)
+        avg_vol_20 = sum(volumes[-20:]) / min(len(volumes), 20) if volumes else 0
+        current_vol = volumes[-1] if volumes else 0
+        rvol = current_vol / avg_vol_20 if avg_vol_20 > 0 else 0
+        dist_from_high_pct = ((high_period - current_price) / high_period * 100) if high_period > 0 else 0
+
+        # Format last 20 bars as table
+        table_bars = recent_bars[-20:]
+        rows = ["Date         | Open     | High     | Low      | Close    | Volume       | Chg%",
+                "-" * 80]
+        for idx, bar in enumerate(table_bars):
+            prev_close = table_bars[idx - 1]["close"] if idx > 0 else bar["close"]
+            chg = ((bar["close"] - prev_close) / prev_close * 100) if prev_close else 0
+            rows.append(
+                f"{_ts(bar['time'])} | {bar['open']:8.2f} | {bar['high']:8.2f} | "
+                f"{bar['low']:8.2f} | {bar['close']:8.2f} | "
+                f"{int(bar.get('volume', 0)):12,} | {chg:+.2f}%"
+            )
+        bars_table = "\n".join(rows)
+
+        # Knowledge base section
+        kb_text = ""
+        if knowledge_base_entries:
+            kb_parts = []
+            for entry in knowledge_base_entries[:10]:
+                kb_parts.append(f"[{entry.get('title', 'Note')}]\n{entry.get('content', '')[:1000]}")
+            kb_text = "\n\nTRADING PRINCIPLES & KNOWLEDGE BASE:\n" + "\n\n".join(kb_parts)
+
+        # Conversation history section
+        history_text = ""
+        if conversation_history:
+            lines = []
+            for msg in conversation_history[-8:]:
+                role = "User" if msg.get("role") == "user" else "Assistant"
+                lines.append(f"{role}: {msg.get('content', '')[:600]}")
+            history_text = "\n\nCONVERSATION HISTORY:\n" + "\n\n".join(lines)
+
+        prompt = (
+            f"You are an expert stock chart analyst and trading coach analyzing {symbol.upper()} "
+            f"on the {market.upper()} market.\n"
+            f"Timeframe: {timeframe}"
+            f"{kb_text}\n\n"
+            f"RECENT PRICE DATA (last {len(table_bars)} of {len(recent_bars)} bars loaded):\n"
+            f"{bars_table}\n\n"
+            f"KEY LEVELS:\n"
+            f"- Current Price: {current_price:.2f}\n"
+            f"- 20-Bar High: {high_20:.2f} | 20-Bar Low: {low_20:.2f}\n"
+            f"- Period High ({len(recent_bars)}B): {high_period:.2f} | Period Low: {low_period:.2f}\n"
+            f"- Distance from Period High: {dist_from_high_pct:.1f}%\n"
+            f"- Avg Volume 20B: {int(avg_vol_20):,}\n"
+            f"- Current Volume: {int(current_vol):,} (RVOL: {rvol:.2f}x)"
+            f"{history_text}\n\n"
+            f"USER QUESTION: {query}\n\n"
+            "Provide a detailed, actionable chart analysis. Be specific with price levels. "
+            "Apply trading principles from the knowledge base where relevant. "
+            "Structure your response clearly."
+        )
+
+        for model in self._MODELS:
+            try:
+                result = await asyncio.to_thread(
+                    self._client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                )
+                if result.text:
+                    return result.text.strip()
+            except Exception as exc:
+                logger.warning("Chart analysis failed for %s: %s. Trying next…", model, exc)
+                continue
+
+        raise Exception("AI chart analysis is currently unavailable. No model succeeded.")
+
+
+def parse_ai_management_guidance(raw: list[dict[str, Any]]) -> list[ManagementGuidance]:
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(ManagementGuidance(
+                fiscal_year=str(item.get("fiscal_year", "Unknown")),
+                revenue_growth_guidance_pct=item.get("revenue_growth_guidance_pct"),
+                ebitda_guidance_pct=item.get("ebitda_guidance_pct"),
+                eps_guidance=item.get("eps_guidance"),
+                capex_guidance_crore=item.get("capex_guidance_crore"),
+                guidance_date=item.get("guidance_date"),
+                guidance_source=item.get("guidance_source"),
+                guidance_type=item.get("guidance_type"),
+                confidence_score=item.get("confidence_score"),
+                key_guidance_points=item.get("key_guidance_points") or [],
+                analyst_concerns=item.get("analyst_concerns") or [],
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def parse_ai_competitive_position(raw: dict[str, Any] | None) -> CompetitivePosition | None:
+    if not raw:
+        return None
+    try:
+        return CompetitivePosition(
+            market_position=raw.get("market_position"),
+            competitive_advantages=raw.get("competitive_advantages") or [],
+            market_share_estimate=raw.get("market_share_estimate"),
+            key_competitors=raw.get("key_competitors") or [],
+        )
+    except Exception:
+        return None
+
+
+def parse_ai_business_segments(raw: list[dict[str, Any]]) -> list[BusinessSegment]:
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(BusinessSegment(
+                name=str(item.get("name", "Unknown")),
+                revenue_crore=item.get("revenue_crore"),
+                revenue_pct=item.get("revenue_pct"),
+                growth_pct=item.get("growth_pct"),
+                period=str(item.get("period", "")),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def parse_ai_risks(raw: list[dict[str, Any]]) -> list[RiskAnalysis]:
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(RiskAnalysis(
+                risk_category=str(item.get("risk_category", "market")),
+                description=str(item.get("description", "")),
+                severity=str(item.get("severity", "medium")),
+                mitigation_strategy=item.get("mitigation_strategy"),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def parse_ai_detailed_news(raw: list[dict[str, Any]]) -> list[DetailedNews]:
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(DetailedNews(
+                title=str(item.get("title", "")),
+                summary=str(item.get("summary", "")),
+                impact_category=str(item.get("impact_category", "market")),
+                sentiment=str(item.get("sentiment", "neutral")),
+                source=str(item.get("source", "AI Analysis")),
+                source_type=str(item.get("source_type", "Editorial News")),
+                is_editorial=bool(item.get("is_editorial", True)),
+                url=item.get("url"),
+                published_date=str(item.get("published_date", "")),
+                impact_area=item.get("impact_area"),
+                why_it_matters=item.get("why_it_matters"),
+                detailed_points=item.get("detailed_points") or [],
+                relevance_score=float(item.get("relevance_score", 0.5)),
+                connection_to_guidance=item.get("connection_to_guidance"),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def parse_ai_summary(raw: dict[str, Any] | None) -> AISummary | None:
+    if not raw:
+        return None
+    try:
+        return AISummary(
+            summary=str(raw.get("summary", "")),
+            key_points=raw.get("key_points") or [],
+            sentiment=raw.get("sentiment", "neutral"),
+        )
+    except Exception:
+        return None
+
+
+def parse_ai_growth_triggers(raw: list[dict[str, Any]]) -> list:
+    """Parse AI-generated future growth trigger list into GrowthTrigger models."""
+    from app.models.market import GrowthTrigger
+    result = []
+    for item in (raw or []):
+        try:
+            impact_raw = str(item.get("impact_area") or "any").lower().strip()
+            valid_impact = {"revenue", "eps", "profit", "margin", "cash flow", "any"}
+            impact = impact_raw if impact_raw in valid_impact else "any"
+            horizon_raw = str(item.get("horizon") or "medium-term").lower().strip()
+            valid_horizon = {"near-term", "medium-term", "multi-year"}
+            horizon = horizon_raw if horizon_raw in valid_horizon else "medium-term"
+            result.append(GrowthTrigger(
+                title=str(item.get("title") or ""),
+                category=str(item.get("category") or "business update"),
+                why_it_matters=str(item.get("why_it_matters") or item.get("description") or ""),
+                evidence_source=str(item.get("evidence_source") or item.get("source") or "Management Commentary"),
+                source_date=item.get("source_date") or item.get("date"),
+                confidence_score=float(item.get("confidence_score") or item.get("likelihood_to_impact") or 0.7),
+                impact_area=impact,  # type: ignore[arg-type]
+                horizon=horizon,  # type: ignore[arg-type]
+                is_new=bool(item.get("is_new", True)),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(BusinessTrigger(
+                title=str(item.get("title", "")),
+                description=str(item.get("description", "")),
+                impact=item.get("impact", "neutral"),
+                date=item.get("date"),
+                source=item.get("source"),
+                likelihood_to_impact=float(item.get("likelihood_to_impact", 0.5)),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def parse_ai_insider_transactions(raw: list[dict[str, Any]]) -> list[InsiderTransaction]:
+    result = []
+    for item in (raw or []):
+        try:
+            result.append(InsiderTransaction(
+                person_name=str(item.get("person_name", "")),
+                position=str(item.get("position", "")),
+                transaction_type=item.get("transaction_type", "buy"),
+                quantity=int(item.get("quantity", 0)),
+                price_per_share=float(item.get("price_per_share", 0)),
+                total_value_crore=float(item.get("total_value_crore", 0)),
+                date=str(item.get("date", "")),
+                pct_of_holding_change=item.get("pct_of_holding_change"),
+                remarks=item.get("remarks"),
+            ))
+        except Exception:
+            continue
+    return result
+
+
+def _merge_management_guidance(
+    existing: list[ManagementGuidance],
+    generated: list[ManagementGuidance],
+) -> list[ManagementGuidance]:
+    merged = sorted(
+        [*existing, *generated],
+        key=lambda item: item.guidance_date or "",
+        reverse=True,
+    )
+    results: list[ManagementGuidance] = []
+    seen: set[str] = set()
+    for item in merged:
+        points = "|".join(point.strip().lower() for point in item.key_guidance_points[:2])
+        key = f"{(item.guidance_date or '').lower()}::{(item.guidance_source or '').lower()}::{points}"
+        if key in seen:
+            continue
+        seen.add(key)
+        results.append(item)
+    return results[:6]
+
+
+def _merge_detailed_news(
+    existing: list[DetailedNews],
+    generated: list[DetailedNews],
+) -> list[DetailedNews]:
+    merged = sorted(
+        [*existing, *generated],
+        key=lambda item: item.published_date or "",
+        reverse=True,
+    )
+    results: list[DetailedNews] = []
+    seen: set[str] = set()
+    for item in merged:
+        key = f"{item.published_date.lower()}::{item.title.strip().lower()}::{item.source.strip().lower()}"
+        if key in seen:
+            continue
+        seen.add(key)
+        results.append(item)
+    return results[:8]
+
+
+def enrich_fundamentals_with_ai(
+    fundamentals: CompanyFundamentals,
+    ai_data: dict[str, Any],
+) -> CompanyFundamentals:
+    """Merge AI-generated analysis data into CompanyFundamentals."""
+    if not ai_data:
+        return fundamentals
+
+    updates: dict[str, Any] = {}
+
+    if ai_data.get("management_guidance"):
+        updates["management_guidance"] = _merge_management_guidance(
+            fundamentals.management_guidance,
+            parse_ai_management_guidance(ai_data["management_guidance"]),
+        )
+
+    if ai_data.get("strategy_and_outlook"):
+        updates["strategy_and_outlook"] = str(ai_data["strategy_and_outlook"])
+
+    if ai_data.get("competitive_position"):
+        updates["competitive_position"] = parse_ai_competitive_position(ai_data["competitive_position"])
+
+    if ai_data.get("business_segments"):
+        updates["business_segments"] = parse_ai_business_segments(ai_data["business_segments"])
+
+    if ai_data.get("risks_and_opportunities"):
+        updates["risks_and_opportunities"] = parse_ai_risks(ai_data["risks_and_opportunities"])
+
+    if ai_data.get("detailed_news"):
+        updates["detailed_news"] = _merge_detailed_news(
+            fundamentals.detailed_news,
+            parse_ai_detailed_news(ai_data["detailed_news"]),
+        )
+
+    if ai_data.get("ai_news_summary"):
+        updates["ai_news_summary"] = parse_ai_summary(ai_data["ai_news_summary"])
+        updates["last_news_update"] = datetime.now(timezone.utc)
+
+    if ai_data.get("business_triggers"):
+        updates["business_triggers"] = parse_ai_business_triggers(ai_data["business_triggers"])
+
+    if ai_data.get("insider_transactions"):
+        updates["insider_transactions"] = parse_ai_insider_transactions(ai_data["insider_transactions"])
+
+    if ai_data.get("latest_earnings_key_metrics"):
+        updates["latest_earnings_key_metrics"] = ai_data["latest_earnings_key_metrics"]
+
+    if ai_data.get("results_summary"):
+        updates["results_summary"] = parse_ai_results_summary(ai_data["results_summary"])
+
+    if ai_data.get("guidance_tracker"):
+        updates["guidance_tracker"] = parse_ai_guidance_tracker(ai_data["guidance_tracker"])
+
+    if ai_data.get("growth_trends"):
+        updates["growth_trends"] = parse_ai_growth_trends(ai_data["growth_trends"])
+
+    if ai_data.get("upcoming_events"):
+        updates["upcoming_events"] = ai_data["upcoming_events"]
+
+    if ai_data.get("growth_risks"):
+        updates["growth_risks"] = parse_ai_risks(ai_data["growth_risks"])
+
+    if ai_data.get("future_growth_triggers"):
+        updates["future_growth_triggers"] = parse_ai_growth_triggers(ai_data["future_growth_triggers"])
+
+    if ai_data.get("latest_editorial_news"):
+        updates["latest_editorial_news"] = parse_ai_detailed_news(ai_data["latest_editorial_news"])
+
+    if ai_data.get("official_updates"):
+        updates["official_updates"] = parse_ai_detailed_news(ai_data["official_updates"])
+
+    if updates:
+        return fundamentals.model_copy(update=updates)
+    return fundamentals

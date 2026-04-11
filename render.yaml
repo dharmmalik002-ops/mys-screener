@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: stock-scanner-backend
+    env: python
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port 10000"
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DATA_MODE
+        value: free
+      - key: MARKET_CAP_MIN_CRORE
+        value: 800
+      - key: FRONTEND_ORIGIN
+        value: https://your-frontend-domain.vercel.app  # Replace with actual Vercel domain later
+      - key: REFRESH_TIMEOUT_SECONDS
+        value: 120

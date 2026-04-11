@@ -1,0 +1,3325 @@
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
+
+import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
+import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
+import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
+import { buildSymbolSuggestions } from "../lib/searchSuggestions";
+import { Panel } from "./Panel";
+import { PremiumResearchPanel } from "./PremiumResearchPanel";
+import { AiChatWindow } from "./AiChatWindow";
+
+export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
+export type ChartStyle = "candles" | "bars";
+export type ChartTimeframe = "15m" | "30m" | "1h" | "1D" | "1W";
+export type ChartPanelTab = "technical" | "fundamentals";
+export type ChartPaletteKey = "current" | "editorial";
+export type ChartColorSettings = {
+  ema10: string;
+  ema20: string;
+  ema50: string;
+  ema200: string;
+  vwap: string;
+  candleUp: string;
+  candleDown: string;
+  volumeUp: string;
+  volumeDown: string;
+  volumeHQ: string;
+  volumeLQ: string;
+  rsLine: string;
+  rsMarker: string;
+  rsMarkerSize: number;
+};
+
+export type RvolScale = "sm" | "md" | "lg";
+
+export type ChartGroupSummary = {
+  groupId: string;
+  groupName: string;
+  groupRank: number;
+  groupRankLabel: string;
+  stockRank: number;
+  stockCount: number;
+};
+
+type DrawingTool = "none" | "hline" | "vline" | "trendline" | "ray" | "rectangle" | "measure" | "text";
+
+type ChartAnchor = {
+  time: number;
+  price: number;
+};
+
+type AnnotationHandleKey = "point" | "start" | "end";
+
+type ActiveAnnotationDrag = {
+  annotationId: string;
+  handleKey: AnnotationHandleKey;
+};
+
+type HoveredPriceBar = {
+  time: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  changeValue: number | null;
+  changePct: number | null;
+};
+
+export type ChartAnnotation =
+  | {
+      id: string;
+      type: "hline";
+      point: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "vline";
+      point: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "trendline";
+      start: ChartAnchor;
+      end: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "ray";
+      start: ChartAnchor;
+      end: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "rectangle";
+      start: ChartAnchor;
+      end: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "measure";
+      start: ChartAnchor;
+      end: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
+    }
+  | {
+      id: string;
+      type: "text";
+      point: ChartAnchor;
+      text: string;
+      color?: string;
+    };
+
+export { DEFAULT_CHART_COLORS };
+
+type ChartPanelProps = {
+  market: MarketKey;
+  symbol: string | null;
+  bars: ChartBar[];
+  rsLine: ChartLinePoint[];
+  rsLineMarkers: ChartLineMarker[];
+  summary: StockOverview | null;
+  panelTab: ChartPanelTab;
+  onPanelTabChange: (tab: ChartPanelTab) => void;
+  chartError: string | null;
+  chartLoading: boolean;
+  chartCacheState: "cached" | "live" | null;
+  showRvol: boolean;
+  onShowRvolChange: (show: boolean) => void;
+  rvolPos: { x: number; y: number } | null;
+  onRvolPosChange: (position: { x: number; y: number } | null) => void;
+  rvolAccentColor: string;
+  onRvolAccentColorChange: (color: string) => void;
+  rvolScale: RvolScale;
+  onRvolScaleChange: (scale: RvolScale) => void;
+  showEarningsMarkers: boolean;
+  onShowEarningsMarkersChange: (show: boolean) => void;
+  earningsMarkerColor: string;
+  onEarningsMarkerColorChange: (color: string) => void;
+  fundamentals: CompanyFundamentals | null;
+  fundamentalsLoading: boolean;
+  fundamentalsError: string | null;
+  groupSummary?: ChartGroupSummary | null;
+  timeframe: ChartTimeframe;
+  onTimeframeChange: (timeframe: ChartTimeframe) => void;
+  chartStyle: ChartStyle;
+  onChartStyleChange: (style: ChartStyle) => void;
+  chartPalette: ChartPaletteKey;
+  onChartPaletteChange: (palette: ChartPaletteKey) => void;
+  showBenchmarkOverlay: boolean;
+  onShowBenchmarkOverlayChange: (show: boolean) => void;
+  indicatorKeys: IndicatorKey[];
+  onToggleIndicator: (indicator: IndicatorKey) => void;
+  chartColors: ChartColorSettings;
+  onChartColorsChange: (colors: ChartColorSettings) => void;
+  drawingColor: string;
+  onDrawingColorChange: (color: string) => void;
+  annotations: ChartAnnotation[];
+  onAnnotationsChange: (annotations: ChartAnnotation[]) => void;
+  onAddToWatchlist?: (symbol: string) => void;
+  searchOptions?: Array<{ symbol: string; name: string }>;
+  onSearchSymbol?: (query: string) => void;
+  onOpenGroup?: (groupId: string) => void;
+  onRefreshChart?: () => void;
+  expanded?: boolean;
+};
+
+const TIMEFRAMES: ChartTimeframe[] = ["15m", "30m", "1h", "1D", "1W"];
+const CHART_STYLES: Array<{ key: ChartStyle; label: string }> = [
+  { key: "candles", label: "Candles" },
+  { key: "bars", label: "Bars" },
+];
+type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
+
+const INDICATORS: Array<{ key: IndicatorKey; label: string; colorKey: IndicatorColorKey }> = [
+  { key: "ema10", label: "EMA10", colorKey: "ema10" },
+  { key: "ema20", label: "EMA20", colorKey: "ema20" },
+  { key: "ema50", label: "EMA50", colorKey: "ema50" },
+  { key: "ema200", label: "SMA200", colorKey: "ema200" },
+  { key: "vwap", label: "VWAP", colorKey: "vwap" },
+];
+const DRAWING_TOOLS: Array<{ key: DrawingTool; label: string }> = [
+  { key: "none", label: "Cursor" },
+  { key: "hline", label: "Horizontal Line" },
+  { key: "vline", label: "Vertical Line" },
+  { key: "trendline", label: "Trendline" },
+  { key: "ray", label: "Ray" },
+  { key: "rectangle", label: "Rectangle" },
+  { key: "measure", label: "Measure" },
+  { key: "text", label: "Text" },
+];
+type ChartColorFieldKey =
+  | "ema10"
+  | "ema20"
+  | "ema50"
+  | "ema200"
+  | "vwap"
+  | "candleUp"
+  | "candleDown"
+  | "volumeUp"
+  | "volumeDown"
+  | "volumeHQ"
+  | "volumeLQ"
+  | "rsLine"
+  | "rsMarker";
+
+const CHART_COLOR_FIELDS: Array<{ key: ChartColorFieldKey; label: string }> = [
+  { key: "ema10", label: "EMA10" },
+  { key: "ema20", label: "EMA20" },
+  { key: "ema50", label: "EMA50" },
+  { key: "ema200", label: "SMA200" },
+  { key: "vwap", label: "VWAP" },
+  { key: "candleUp", label: "Up Candle" },
+  { key: "candleDown", label: "Down Candle" },
+  { key: "volumeUp", label: "Up Volume" },
+  { key: "volumeDown", label: "Down Volume" },
+  { key: "volumeHQ", label: "HQ Volume (90D High)" },
+  { key: "volumeLQ", label: "LQ Volume (90D Low)" },
+  { key: "rsLine", label: "RS Line" },
+  { key: "rsMarker", label: "RS Circle" },
+];
+const PANEL_TABS: Array<{ key: ChartPanelTab; label: string }> = [
+  { key: "technical", label: "Technical" },
+  { key: "fundamentals", label: "Fundamentals" },
+];
+const CHART_PALETTES: Record<
+  ChartPaletteKey,
+  {
+    label: string;
+    background: string;
+    textColor: string;
+    gridColor: string;
+    crosshairColor: string;
+    borderColor: string;
+    upColor: string;
+    downColor: string;
+    volumeUpColor: string;
+    volumeDownColor: string;
+    rsLineColor: string;
+    rsMarkerColor: string;
+  }
+> = {
+  current: {
+    label: "Current",
+    background: "#0d1117",
+    textColor: "#8b949e",
+    gridColor: "rgba(0, 210, 255, 0.07)",
+    crosshairColor: "rgba(0, 210, 255, 0.22)",
+    borderColor: "rgba(48, 54, 61, 0.95)",
+    upColor: "#00d2ff",
+    downColor: "#ff3131",
+    volumeUpColor: "rgba(0, 210, 255, 0.38)",
+    volumeDownColor: "rgba(255, 49, 49, 0.35)",
+    rsLineColor: "#39ff14",
+    rsMarkerColor: "#39ff14",
+  },
+  editorial: {
+    label: "Editorial",
+    background: "#fcfbff",
+    textColor: "#48536a",
+    gridColor: "rgba(117, 83, 201, 0.08)",
+    crosshairColor: "rgba(117, 83, 201, 0.25)",
+    borderColor: "rgba(154, 132, 202, 0.48)",
+    upColor: "#7b61ff",
+    downColor: "#ff6b6b",
+    volumeUpColor: "rgba(123, 97, 255, 0.28)",
+    volumeDownColor: "rgba(255, 107, 107, 0.25)",
+    rsLineColor: "#00a6a6",
+    rsMarkerColor: "#8f2dff",
+  },
+};
+const RIGHT_EDGE_PADDING_BARS = 12;
+const FUTURE_DRAW_EXTENSION_BARS = 96;
+const USD_TO_INR = 83;
+
+const ANNOTATION_DEFAULT_COLORS: Record<string, string> = {
+  hline: "#00d2ff",
+  vline: "#6ea8ff",
+  trendline: "#ffd36f",
+  ray: "#8ee6ff",
+  rectangle: "#59c4ff",
+  measure: "#4bf0b3",
+  text: "#ffd36f",
+};
+
+function defaultVisibleBars(timeframe: ChartTimeframe) {
+  if (timeframe === "1D") {
+    return 252;
+  }
+  if (timeframe === "1W") {
+    return 104;
+  }
+  if (timeframe === "1h") {
+    return 260;
+  }
+  if (timeframe === "30m") {
+    return 260;
+  }
+  return 220;
+}
+
+function computeEma(bars: ChartBar[], length: number) {
+  if (bars.length < length) {
+    return [];
+  }
+
+  const multiplier = 2 / (length + 1);
+  let previous = bars.slice(0, length).reduce((sum, bar) => sum + bar.close, 0) / length;
+  const points = [
+    {
+      time: bars[length - 1].time as UTCTimestamp,
+      value: Number(previous.toFixed(2)),
+    },
+  ];
+
+  for (let index = length; index < bars.length; index += 1) {
+    const bar = bars[index];
+    previous = (bar.close - previous) * multiplier + previous;
+    points.push({
+      time: bar.time as UTCTimestamp,
+      value: Number(previous.toFixed(2)),
+    });
+  }
+
+  return points;
+}
+
+function computeSma(bars: ChartBar[], length: number) {
+  if (bars.length < length) {
+    return [];
+  }
+
+  return bars.slice(length - 1).map((bar, offset) => {
+    const startIndex = offset;
+    const window = bars.slice(startIndex, startIndex + length);
+    const average = window.reduce((sum, item) => sum + item.close, 0) / window.length;
+    return {
+      time: bar.time as UTCTimestamp,
+      value: Number(average.toFixed(2)),
+    };
+  });
+}
+
+function computeVolumeSma(bars: ChartBar[], length: number) {
+  if (bars.length < length) {
+    return [];
+  }
+
+  return bars.slice(length - 1).map((bar, offset) => {
+    const startIndex = offset;
+    const window = bars.slice(startIndex, startIndex + length);
+    const average = window.reduce((sum, item) => sum + item.volume, 0) / window.length;
+    return {
+      time: bar.time as UTCTimestamp,
+      value: Number(average.toFixed(2)),
+    };
+  });
+}
+
+/**
+ * For a rolling 90-day window ending at each bar, find the bar with the
+ * highest and lowest volume within that window. Returns two Sets of
+ * `bar.time` values tagged "HQ" (90-day high) and "LQ" (90-day low).
+ */
+function computeQuarterlyVolExtremes(bars: ChartBar[]): {
+  hqTimes: Set<number>;
+  lqTimes: Set<number>;
+} {
+  const WINDOW_SEC = 90 * 24 * 60 * 60; // 90 days in seconds
+  const hqTimes = new Set<number>();
+  const lqTimes = new Set<number>();
+
+  for (let i = 0; i < bars.length; i++) {
+    const end = bars[i].time;
+    const start = end - WINDOW_SEC;
+    // Collect bars in [start, end]
+    let maxVol = -Infinity, minVol = Infinity;
+    let maxBar = bars[i], minBar = bars[i];
+    for (let j = i; j >= 0 && bars[j].time >= start; j--) {
+      const vol = bars[j].volume;
+      if (vol > maxVol) { maxVol = vol; maxBar = bars[j]; }
+      if (vol < minVol) { minVol = vol; minBar = bars[j]; }
+    }
+    // Only mark the current bar if it IS the 90-day extreme
+    if (bars[i].time === maxBar.time) hqTimes.add(bars[i].time);
+    if (bars[i].time === minBar.time && minBar.time !== maxBar.time) lqTimes.add(bars[i].time);
+  }
+
+  return { hqTimes, lqTimes };
+}
+
+
+function computeVwap(bars: ChartBar[]) {
+  let cumulativePriceVolume = 0;
+  let cumulativeVolume = 0;
+
+  return bars.map((bar) => {
+    const typicalPrice = (bar.high + bar.low + bar.close) / 3;
+    cumulativePriceVolume += typicalPrice * bar.volume;
+    cumulativeVolume += bar.volume;
+    const value = cumulativeVolume === 0 ? typicalPrice : cumulativePriceVolume / cumulativeVolume;
+    return {
+      time: bar.time as UTCTimestamp,
+      value: Number(value.toFixed(2)),
+    };
+  });
+}
+
+function withOpacity(color: string, opacity: number) {
+  const hex = color.trim();
+  const normalized = hex.startsWith("#") ? hex.slice(1) : hex;
+  if (![3, 6].includes(normalized.length)) {
+    return color;
+  }
+
+  const expanded = normalized.length === 3 ? normalized.split("").map((value) => `${value}${value}`).join("") : normalized;
+  const red = Number.parseInt(expanded.slice(0, 2), 16);
+  const green = Number.parseInt(expanded.slice(2, 4), 16);
+  const blue = Number.parseInt(expanded.slice(4, 6), 16);
+  if ([red, green, blue].some((value) => Number.isNaN(value))) {
+    return color;
+  }
+  return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+}
+
+function normalizeChartTime(value: unknown): number | null {
+  if (typeof value === "number") {
+    return value;
+  }
+  if (value && typeof value === "object" && "year" in value && "month" in value && "day" in value) {
+    const businessDay = value as { year: number; month: number; day: number };
+    return Math.floor(Date.UTC(businessDay.year, businessDay.month - 1, businessDay.day) / 1000);
+  }
+  return null;
+}
+
+function timeframeStepSeconds(timeframe: ChartTimeframe) {
+  if (timeframe === "15m") {
+    return 15 * 60;
+  }
+  if (timeframe === "30m") {
+    return 30 * 60;
+  }
+  if (timeframe === "1h") {
+    return 60 * 60;
+  }
+  if (timeframe === "1W") {
+    return 7 * 24 * 60 * 60;
+  }
+  return 24 * 60 * 60;
+}
+
+function addBusinessDays(timestamp: number, businessDays: number) {
+  const date = new Date(timestamp * 1000);
+  let remaining = businessDays;
+  while (remaining > 0) {
+    date.setUTCDate(date.getUTCDate() + 1);
+    const day = date.getUTCDay();
+    if (day !== 0 && day !== 6) {
+      remaining -= 1;
+    }
+  }
+  return Math.floor(date.getTime() / 1000);
+}
+
+function buildFutureWhitespaceTimes(bars: ChartBar[], timeframe: ChartTimeframe, count: number) {
+  const lastTime = bars[bars.length - 1]?.time;
+  if (!lastTime || count <= 0) {
+    return [] as number[];
+  }
+
+  return Array.from({ length: count }, (_, index) => {
+    const step = index + 1;
+    if (timeframe === "1D") {
+      return addBusinessDays(lastTime, step);
+    }
+    return lastTime + (timeframeStepSeconds(timeframe) * step);
+  });
+}
+
+function buildId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function projectAnchor(chart: ReturnType<typeof createChart> | null, mainSeries: any, anchor: ChartAnchor) {
+  if (!chart || !mainSeries) {
+    return null;
+  }
+
+  const x = chart.timeScale().timeToCoordinate(anchor.time as UTCTimestamp);
+  const y = mainSeries.priceToCoordinate(anchor.price);
+  if (x === null || x === undefined || y === null || y === undefined) {
+    return null;
+  }
+
+  return { x, y };
+}
+
+function getAnnotationHandleAnchors(annotation: ChartAnnotation): Array<{ key: AnnotationHandleKey; anchor: ChartAnchor }> {
+  if ("point" in annotation) {
+    return [{ key: "point", anchor: annotation.point }];
+  }
+
+  return [
+    { key: "start", anchor: annotation.start },
+    { key: "end", anchor: annotation.end },
+  ];
+}
+
+function isTwoPointTool(tool: DrawingTool) {
+  return tool === "trendline" || tool === "ray" || tool === "rectangle" || tool === "measure";
+}
+
+function chartSubtitle(tool: DrawingTool, draftStart: ChartAnchor | null, chartStyle: ChartStyle) {
+  if (tool === "hline") {
+    return "Horizontal line mode: click once to place a saved price level";
+  }
+  if (tool === "vline") {
+    return "Vertical line mode: click once to mark a date";
+  }
+  if (tool === "trendline") {
+    return draftStart ? "Trendline mode: pick the second point" : "Trendline mode: click the first point";
+  }
+  if (tool === "ray") {
+    return draftStart ? "Ray mode: pick the second point to set direction" : "Ray mode: click the first point";
+  }
+  if (tool === "rectangle") {
+    return draftStart ? "Rectangle mode: pick the opposite corner" : "Rectangle mode: click the first corner";
+  }
+  if (tool === "measure") {
+    return draftStart ? "Measure mode: pick the second point to measure move and bars" : "Measure mode: click the first point";
+  }
+  if (tool === "text") {
+    return "Text mode: click a candle or bar to place a saved note";
+  }
+  return chartStyle === "bars" ? "Bar chart, volume, indicators, and saved drawings" : "Candles, volume, indicators, and saved drawings";
+}
+
+function numberLocaleForMarket(market: MarketKey) {
+  return market === "us" ? "en-US" : "en-IN";
+}
+
+function formatNumber(value: number | null | undefined, digits = 2, market: MarketKey = "india") {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return value.toLocaleString(numberLocaleForMarket(market), {
+    maximumFractionDigits: digits,
+    minimumFractionDigits: digits,
+  });
+}
+
+function formatPercent(value: number | null | undefined, market: MarketKey = "india") {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return `${value >= 0 ? "+" : ""}${formatNumber(value, 2, market)}%`;
+}
+
+function formatPlainPercent(value: number | null | undefined, market: MarketKey = "india") {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return `${formatNumber(value, 2, market)}%`;
+}
+
+function formatCrore(value: number | null | undefined, market: MarketKey = "india", digits?: number) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  if (market === "us") {
+    const usdValue = (value * 10_000_000) / USD_TO_INR;
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      notation: "compact",
+      maximumFractionDigits: digits ?? 1,
+    }).format(usdValue);
+  }
+  return `${formatNumber(value, digits ?? 2, market)} Cr`;
+}
+
+function formatPrice(value: number | null | undefined, market: MarketKey, digits = 2) {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return `${market === "us" ? "$" : "₹"}${formatNumber(value, digits, market)}`;
+}
+
+function formatCount(value: number | null | undefined, market: MarketKey = "india") {
+  if (value === null || value === undefined || Number.isNaN(value)) {
+    return "—";
+  }
+  return Math.round(value).toLocaleString(numberLocaleForMarket(market));
+}
+
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return "—";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return date.toLocaleString();
+}
+
+function formatChartDateFromTimestamp(value: number | null | undefined, market: MarketKey = "india") {
+  if (!value) {
+    return "—";
+  }
+  const date = new Date(value * 1000);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+  return date.toLocaleDateString(numberLocaleForMarket(market), {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatCircuitBand(summary: StockOverview, market: MarketKey) {
+  if (market !== "india") {
+    return summary.circuit_band_label ?? "N/A";
+  }
+
+  const denominator = 1 + (summary.change_pct / 100);
+  const previousClose = denominator === 0 ? null : summary.last_price / denominator;
+  if (previousClose && previousClose > 0 && summary.lower_circuit_limit != null && summary.upper_circuit_limit != null) {
+    const lowerPct = ((summary.lower_circuit_limit / previousClose) - 1) * 100;
+    const upperPct = ((summary.upper_circuit_limit / previousClose) - 1) * 100;
+    const symmetric = Math.abs(Math.abs(lowerPct) - Math.abs(upperPct)) < 0.05;
+    if (symmetric) {
+      return `±${formatNumber(Math.abs(upperPct), 2, market)}%`;
+    }
+    return `${lowerPct >= 0 ? "+" : ""}${formatNumber(lowerPct, 2, market)}% / ${upperPct >= 0 ? "+" : ""}${formatNumber(upperPct, 2, market)}%`;
+  }
+
+  return summary.circuit_band_label ?? "N/A";
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function pointToSegmentDist(px: number, py: number, x1: number, y1: number, x2: number, y2: number) {
+  const dx = x2 - x1;
+  const dy = y2 - y1;
+  if (dx === 0 && dy === 0) return Math.hypot(px - x1, py - y1);
+  const t = Math.max(0, Math.min(1, ((px - x1) * dx + (py - y1) * dy) / (dx * dx + dy * dy)));
+  return Math.hypot(px - (x1 + t * dx), py - (y1 + t * dy));
+}
+
+function nearestBarTime(bars: ChartBar[], targetTime: number) {
+  if (!bars.length) {
+    return targetTime;
+  }
+
+  let low = 0;
+  let high = bars.length - 1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const candidate = bars[mid]?.time ?? targetTime;
+    if (candidate === targetTime) {
+      return candidate;
+    }
+    if (candidate < targetTime) {
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  const left = bars[Math.max(0, high)]?.time ?? targetTime;
+  const right = bars[Math.min(bars.length - 1, low)]?.time ?? targetTime;
+  return Math.abs(left - targetTime) <= Math.abs(right - targetTime) ? left : right;
+}
+
+function findBarIndexAtOrBefore(bars: ChartBar[], targetTime: number) {
+  if (!bars.length) {
+    return -1;
+  }
+
+  let low = 0;
+  let high = bars.length - 1;
+  let best = -1;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const candidate = bars[mid]?.time ?? targetTime;
+    if (candidate <= targetTime) {
+      best = mid;
+      low = mid + 1;
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return best;
+}
+
+function barsBetweenTimes(bars: ChartBar[], startTime: number, endTime: number) {
+  const from = Math.min(startTime, endTime);
+  const to = Math.max(startTime, endTime);
+  return bars.filter((bar) => bar.time >= from && bar.time <= to).length;
+}
+
+function projectRayEnd(start: { x: number; y: number }, end: { x: number; y: number }, stageWidth: number) {
+  const deltaX = end.x - start.x;
+  const deltaY = end.y - start.y;
+  if (Math.abs(deltaX) < 0.001) {
+    return {
+      x: end.x,
+      y: end.y + (deltaY >= 0 ? 1200 : -1200),
+    };
+  }
+
+  const targetX = deltaX >= 0 ? stageWidth : 0;
+  const slope = deltaY / deltaX;
+  return {
+    x: targetX,
+    y: end.y + slope * (targetX - end.x),
+  };
+}
+
+function updateKindLabel(kind: CompanyFundamentals["recent_updates"][number]["kind"]) {
+  if (kind === "results") {
+    return "Results";
+  }
+  if (kind === "concall") {
+    return "Call";
+  }
+  if (kind === "holding") {
+    return "Holding";
+  }
+  if (kind === "filing") {
+    return "Filing";
+  }
+  return "News";
+}
+
+function computeRvolBars(bars: ChartBar[], period = 50) {
+  type RvolEntry = {
+    time: number;
+    rvol50: number;
+    turnoverRvol50: number;
+    volume: number;
+    avgVolume: number;
+    turnover: number;
+    avgTurnover: number;
+  };
+  const result: RvolEntry[] = [];
+  for (let i = period; i < bars.length; i++) {
+    const prior = bars.slice(i - period, i);
+    const avgVolume = prior.reduce((s, b) => s + b.volume, 0) / period;
+    const avgTurnover = prior.reduce((s, b) => s + b.volume * b.close, 0) / period;
+    const bar = bars[i];
+    const turnover = bar.volume * bar.close;
+    result.push({
+      time: bar.time,
+      rvol50: avgVolume > 0 ? bar.volume / avgVolume : 0,
+      turnoverRvol50: avgTurnover > 0 ? turnover / avgTurnover : 0,
+      volume: bar.volume,
+      avgVolume,
+      turnover,
+      avgTurnover,
+    });
+  }
+  return result;
+}
+
+function rvolColor(rvol: number) {
+  if (rvol >= 3) return "#00d2ff";
+  if (rvol >= 2) return "#39ff14";
+  if (rvol >= 1) return "#ffd36f";
+  return "#8b949e";
+}
+
+type EarningsMarkerItem = {
+  id: string;
+  kind: "reported" | "upcoming";
+  time: number;
+  period: string | null;
+  title: string;
+  description: string | null;
+  eventDate: string;
+  documentUrl: string | null;
+};
+
+function parseEventTimestamp(value: string | null | undefined) {
+  if (!value) {
+    return null;
+  }
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : null;
+}
+
+function formatEventDate(value: string | null | undefined, market: MarketKey) {
+  if (!value) {
+    return "Date unavailable";
+  }
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) {
+    return value;
+  }
+  return new Intl.DateTimeFormat(market === "india" ? "en-IN" : "en-US", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(new Date(timestamp));
+}
+
+function quarterKeyFromPeriod(period: string | null | undefined, market: MarketKey) {
+  if (!period) {
+    return null;
+  }
+
+  const directQuarterMatch = period.match(/\bQ([1-4])\s*FY\s*(\d{2,4})\b/i);
+  if (directQuarterMatch) {
+    const fiscalYear = Number(directQuarterMatch[2].length === 2 ? `20${directQuarterMatch[2]}` : directQuarterMatch[2]);
+    return `Q${directQuarterMatch[1]}:FY${fiscalYear}`;
+  }
+
+  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
+  if (!monthMatch) {
+    return null;
+  }
+
+  const monthToken = monthMatch[1].slice(0, 3).toLowerCase();
+  const year = Number(monthMatch[2]);
+  const monthToQuarterIndia: Record<string, { quarter: string; fiscalYear: number }> = {
+    mar: { quarter: "Q4", fiscalYear: year },
+    jun: { quarter: "Q1", fiscalYear: year + 1 },
+    sep: { quarter: "Q2", fiscalYear: year + 1 },
+    dec: { quarter: "Q3", fiscalYear: year + 1 },
+  };
+  const monthToQuarterUs: Record<string, { quarter: string; fiscalYear: number }> = {
+    mar: { quarter: "Q1", fiscalYear: year },
+    jun: { quarter: "Q2", fiscalYear: year },
+    sep: { quarter: "Q3", fiscalYear: year },
+    dec: { quarter: "Q4", fiscalYear: year },
+  };
+  const mapping = market === "india" ? monthToQuarterIndia[monthToken] : monthToQuarterUs[monthToken];
+  return mapping ? `${mapping.quarter}:FY${mapping.fiscalYear}` : null;
+}
+
+function quarterEndTimestamp(period: string | null | undefined) {
+  if (!period) {
+    return null;
+  }
+  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
+  if (!monthMatch) {
+    return null;
+  }
+  const monthIndex = new Date(`${monthMatch[1]} 1, ${monthMatch[2]}`).getMonth();
+  if (!Number.isFinite(monthIndex)) {
+    return null;
+  }
+  const year = Number(monthMatch[2]);
+  return Math.floor(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0) / 1000);
+}
+
+function extractQuarterHint(text: string, market: MarketKey) {
+  const quarterMatch = text.match(/\bq([1-4])\b/i);
+  if (!quarterMatch) {
+    return null;
+  }
+  const fyMatch = text.match(/\bfy\s*'?\s*(\d{2,4})\b/i);
+  if (!fyMatch) {
+    return `Q${quarterMatch[1]}`;
+  }
+  const fiscalYear = Number(fyMatch[1].length === 2 ? `20${fyMatch[1]}` : fyMatch[1]);
+  const normalizedFiscalYear = market === "india" || fiscalYear > 1900 ? fiscalYear : fiscalYear;
+  return `Q${quarterMatch[1]}:FY${normalizedFiscalYear}`;
+}
+
+function isEarningsRelatedItem(title: string | null | undefined, detail: string | null | undefined) {
+  const text = `${title ?? ""} ${detail ?? ""}`.toLowerCase();
+  return /(earnings|results|quarterly\s+results|financial\s+results|board\s+meeting.*result|conference\s+call|concall)/i.test(text);
+}
+
+function growthPct(current: number | null | undefined, previous: number | null | undefined) {
+  if (current == null || previous == null || previous === 0) {
+    return null;
+  }
+  return ((current - previous) / Math.abs(previous)) * 100;
+}
+
+function marginDelta(current: number | null | undefined, previous: number | null | undefined) {
+  if (current == null || previous == null) {
+    return null;
+  }
+  return current - previous;
+}
+
+function buildEarningsMarkers(fundamentals: CompanyFundamentals | null, market: MarketKey): EarningsMarkerItem[] {
+  if (!fundamentals) {
+    return [];
+  }
+
+  const quarters = (fundamentals.quarterly_results ?? [])
+    .filter((item) => item.period && item.period.toUpperCase() !== "TTM")
+    .map((item, index) => ({
+      item,
+      index,
+      key: quarterKeyFromPeriod(item.period, market),
+      endTime: quarterEndTimestamp(item.period),
+    }));
+
+  const markers: EarningsMarkerItem[] = [];
+  const usedPeriods = new Set<string>();
+
+  for (const quarter of quarters) {
+    const timestamp = parseEventTimestamp(quarter.item.result_date);
+    if (!timestamp) {
+      continue;
+    }
+    usedPeriods.add(quarter.item.period);
+    markers.push({
+      id: `reported:${quarter.item.period}:${timestamp}`,
+      kind: "reported",
+      time: timestamp,
+      period: quarter.item.period,
+      title: `${quarter.item.period} results`,
+      description: null,
+      eventDate: quarter.item.result_date ?? "",
+      documentUrl: quarter.item.result_document_url ?? null,
+    });
+  }
+
+  const candidates = [
+    ...(fundamentals.recent_updates ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_at,
+      documentUrl: item.link,
+      sourceKind: item.kind,
+    })),
+    ...(fundamentals.official_updates ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+    ...(fundamentals.latest_editorial_news ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+    ...(fundamentals.detailed_news ?? []).map((item) => ({
+      title: item.title,
+      description: item.summary,
+      date: item.published_date,
+      documentUrl: item.url,
+      sourceKind: item.impact_category,
+    })),
+  ]
+    .filter((item) => item.date && isEarningsRelatedItem(item.title, item.description))
+    .map((item) => ({
+      ...item,
+      time: parseEventTimestamp(item.date),
+      hint: extractQuarterHint(`${item.title ?? ""} ${item.description ?? ""}`, market),
+    }))
+    .filter((item): item is typeof item & { time: number } => typeof item.time === "number")
+    .sort((left, right) => left.time - right.time);
+
+  for (const candidate of candidates) {
+    let bestQuarter: (typeof quarters)[number] | null = null;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    for (const quarter of quarters) {
+      if (usedPeriods.has(quarter.item.period) || quarter.endTime == null) {
+        continue;
+      }
+      const diffDays = (candidate.time - quarter.endTime) / 86400;
+      if (diffDays < -10 || diffDays > 80) {
+        continue;
+      }
+      let score = diffDays;
+      if (candidate.hint) {
+        if (quarter.key === candidate.hint || quarter.key?.startsWith(candidate.hint)) {
+          score -= 50;
+        } else if (candidate.hint.startsWith("Q") && quarter.key && !quarter.key.startsWith(candidate.hint)) {
+          score += 24;
+        }
+      }
+      if (score < bestScore) {
+        bestScore = score;
+        bestQuarter = quarter;
+      }
+    }
+
+    if (!bestQuarter) {
+      continue;
+    }
+
+    usedPeriods.add(bestQuarter.item.period);
+    markers.push({
+      id: `reported:${bestQuarter.item.period}:${candidate.time}`,
+      kind: "reported",
+      time: candidate.time,
+      period: bestQuarter.item.period,
+      title: candidate.title ?? `${bestQuarter.item.period} results`,
+      description: candidate.description ?? null,
+      eventDate: candidate.date ?? "",
+      documentUrl: bestQuarter.item.result_document_url ?? candidate.documentUrl ?? null,
+    });
+  }
+
+  for (const event of fundamentals.upcoming_events ?? []) {
+    if (!event.date || !isEarningsRelatedItem(event.event, event.impact ?? null)) {
+      continue;
+    }
+    const timestamp = parseEventTimestamp(event.date);
+    if (!timestamp) {
+      continue;
+    }
+    markers.push({
+      id: `upcoming:${event.event}:${timestamp}`,
+      kind: "upcoming",
+      time: timestamp,
+      period: null,
+      title: event.event,
+      description: event.impact ?? null,
+      eventDate: event.date,
+      documentUrl: null,
+    });
+  }
+
+  const deduped = new Map<string, EarningsMarkerItem>();
+  for (const marker of markers) {
+    const key = `${marker.kind}:${marker.period ?? marker.title}:${marker.time}`;
+    if (!deduped.has(key)) {
+      deduped.set(key, marker);
+    }
+  }
+
+  return [...deduped.values()].sort((left, right) => left.time - right.time);
+}
+
+function formatVolumeShort(v: number, market: MarketKey) {
+  if (market === "india") {
+    if (v >= 1e7) return `${(v / 1e7).toFixed(2)} Cr`;
+    if (v >= 1e5) return `${(v / 1e5).toFixed(1)} L`;
+    if (v >= 1e3) return `${(v / 1e3).toFixed(1)} K`;
+    return `${Math.round(v)}`;
+  }
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+  return `${Math.round(v)}`;
+}
+
+function formatTurnoverShort(t: number, market: MarketKey) {
+  if (market === "india") {
+    const cr = t / 1e7;
+    if (cr >= 1000) return `₹${(cr / 1000).toFixed(1)}K Cr`;
+    return `₹${cr.toFixed(1)} Cr`;
+  }
+  if (t >= 1e9) return `$${(t / 1e9).toFixed(2)}B`;
+  if (t >= 1e6) return `$${(t / 1e6).toFixed(2)}M`;
+  return `$${(t / 1e3).toFixed(1)}K`;
+}
+
+function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: ChartBar[] | null) {
+  if (!benchmarkBars || primaryBars.length < 2 || benchmarkBars.length < 2) {
+    return [];
+  }
+
+  const startTime = primaryBars[0]?.time;
+  const endTime = primaryBars[primaryBars.length - 1]?.time;
+  const primaryBase = primaryBars[0]?.close;
+  if (!startTime || !endTime || !primaryBase || primaryBase <= 0) {
+    return [];
+  }
+
+  const scopedBars = benchmarkBars.filter((bar) => bar.time >= startTime && bar.time <= endTime && bar.close > 0);
+  if (scopedBars.length < 2) {
+    return [];
+  }
+
+  const benchmarkBase = scopedBars[0]?.close;
+  if (!benchmarkBase || benchmarkBase <= 0) {
+    return [];
+  }
+
+  return scopedBars.map((bar) => ({
+    time: bar.time as UTCTimestamp,
+    value: Number((primaryBase * (bar.close / benchmarkBase)).toFixed(4)),
+  }));
+}
+
+function buildIndexOhlcvOverlay(primaryBars: ChartBar[], indexBars: ChartBar[]): Array<{ time: UTCTimestamp; open: number; high: number; low: number; close: number }> {
+  if (primaryBars.length < 2 || indexBars.length < 2) return [];
+  const startTime = primaryBars[0]?.time;
+  const endTime = primaryBars[primaryBars.length - 1]?.time;
+  const primaryBase = primaryBars[0]?.close;
+  if (!startTime || !endTime || !primaryBase || primaryBase <= 0) return [];
+  const scopedBars = indexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0);
+  if (scopedBars.length < 2) return [];
+  const indexBase = scopedBars[0]?.close;
+  if (!indexBase || indexBase <= 0) return [];
+  const scale = primaryBase / indexBase;
+  return scopedBars.map((b) => ({
+    time: b.time as UTCTimestamp,
+    open: Number((b.open * scale).toFixed(4)),
+    high: Number((b.high * scale).toFixed(4)),
+    low: Number((b.low * scale).toFixed(4)),
+    close: Number((b.close * scale).toFixed(4)),
+  }));
+}
+
+export function ChartPanel({
+  market,
+  symbol,
+  bars,
+  rsLine,
+  rsLineMarkers,
+  summary,
+  panelTab,
+  onPanelTabChange,
+  chartError,
+  chartLoading,
+  chartCacheState,
+  showRvol,
+  onShowRvolChange,
+  rvolPos,
+  onRvolPosChange,
+  rvolAccentColor,
+  onRvolAccentColorChange,
+  rvolScale,
+  onRvolScaleChange,
+  showEarningsMarkers,
+  onShowEarningsMarkersChange,
+  earningsMarkerColor,
+  onEarningsMarkerColorChange,
+  fundamentals,
+  fundamentalsLoading,
+  fundamentalsError,
+  groupSummary = null,
+  timeframe,
+  onTimeframeChange,
+  chartStyle,
+  onChartStyleChange,
+  chartPalette,
+  onChartPaletteChange,
+  showBenchmarkOverlay,
+  onShowBenchmarkOverlayChange,
+  indicatorKeys,
+  onToggleIndicator,
+  chartColors,
+  onChartColorsChange,
+  drawingColor,
+  onDrawingColorChange,
+  annotations,
+  onAnnotationsChange,
+  onAddToWatchlist,
+  searchOptions = [],
+  onSearchSymbol,
+  onOpenGroup,
+  onRefreshChart,
+  expanded = false,
+}: ChartPanelProps) {
+  const searchListId = `chart-search-${useId()}`;
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const interactionLayerRef = useRef<HTMLDivElement | null>(null);
+  const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
+  const mainSeriesRef = useRef<any>(null);
+  const benchmarkHistoryCacheRef = useRef<Record<string, ChartBar[]>>({});
+  const indicatorKeysRef = useRef(indicatorKeys);
+  const drawingToolRef = useRef<DrawingTool>("none");
+  const draftTrendStartRef = useRef<ChartAnchor | null>(null);
+  const pointerDownAnchorRef = useRef<ChartAnchor | null>(null);
+  const pointerDownPositionRef = useRef<{ x: number; y: number } | null>(null);
+  const pointerMovedRef = useRef(false);
+  const annotationsRef = useRef(annotations);
+  const onAnnotationsChangeRef = useRef(onAnnotationsChange);
+  const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
+  const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
+  const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
+  const earningsPopupRef = useRef<HTMLDivElement | null>(null);
+  const earningsPopupDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
+  const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
+  const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
+  const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
+  const [hoveredRsPoint, setHoveredRsPoint] = useState<ChartLinePoint | null>(null);
+  const [hoveredBar, setHoveredBar] = useState<HoveredPriceBar | null>(null);
+  const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
+  const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
+  const [overlayVersion, setOverlayVersion] = useState(0);
+  const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
+  const [draggingAnnotationHandle, setDraggingAnnotationHandle] = useState<string | null>(null);
+  const [extendedHistory, setExtendedHistory] = useState<ChartResponse | null>(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
+  const [benchmarkLoading, setBenchmarkLoading] = useState(false);
+  const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [selectedEarningsMarkerId, setSelectedEarningsMarkerId] = useState<string | null>(null);
+  const [earningsPopupPos, setEarningsPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [indexOverlaySymbol, setIndexOverlaySymbol] = useState<string | null>(null);
+  const [indexOverlayMode, setIndexOverlayMode] = useState<"overlay" | "pane">("overlay");
+  const [indexOverlayStyle, setIndexOverlayStyle] = useState<"line" | "candle" | "bars">("line");
+  const [indexOverlayColor, setIndexOverlayColor] = useState("#ffd36f");
+  const [indexBars, setIndexBars] = useState<ChartBar[] | null>(null);
+  const [indexLoading, setIndexLoading] = useState(false);
+  const indexCacheRef = useRef<Record<string, ChartBar[]>>({});
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const palette = CHART_PALETTES[chartPalette];
+  const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
+  const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
+  const safeRsLineMarkers = useMemo(
+    () => sanitizeLineMarkers(extendedHistory?.rs_line_markers ?? rsLineMarkers),
+    [extendedHistory, rsLineMarkers],
+  );
+  const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
+  const safeIndexBars = useMemo(() => sanitizeChartBars(indexBars ?? []), [indexBars]);
+  const futureWhitespaceTimes = useMemo(
+    () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
+    [activeBars, timeframe],
+  );
+  const benchmarkSymbol = market === "us" ? "SPY" : null;
+  const canShowBenchmarkOverlay = market === "us" && Boolean(symbol) && symbol !== benchmarkSymbol;
+  const benchmarkOverlayData = useMemo(
+    () => (showBenchmarkOverlay ? buildBenchmarkOverlaySeries(activeBars, safeBenchmarkBars) : []),
+    [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
+  );
+  const rvolData = useMemo(() => computeRvolBars(activeBars, 50), [activeBars]);
+  const currentRvol = useMemo(() => {
+    if (!rvolData.length) return null;
+    if (hoveredBar) {
+      const entry = [...rvolData].reverse().find((e) => e.time <= hoveredBar.time);
+      return entry ?? rvolData[rvolData.length - 1];
+    }
+    return rvolData[rvolData.length - 1];
+  }, [rvolData, hoveredBar]);
+  const stageWidth = containerRef.current?.clientWidth ?? 0;
+  const stageHeight = containerRef.current?.clientHeight ?? 0;
+  const reportedQuarterlyResults = useMemo(
+    () => (fundamentals?.quarterly_results ?? []).filter((item) => item.period && item.period.toUpperCase() !== "TTM"),
+    [fundamentals],
+  );
+  const earningsMarkers = useMemo(() => buildEarningsMarkers(fundamentals, market), [fundamentals, market]);
+  const positionedEarningsMarkers = useMemo(() => {
+    if (!showEarningsMarkers || panelTab !== "technical" || !earningsMarkers.length || !chartRef.current) {
+      return [] as Array<EarningsMarkerItem & { x: number }>;
+    }
+
+    return earningsMarkers.flatMap((marker) => {
+      const x = chartRef.current?.timeScale().timeToCoordinate(marker.time as UTCTimestamp);
+      if (x == null || !Number.isFinite(x) || x < -18 || x > stageWidth + 18) {
+        return [];
+      }
+      return [{ ...marker, x }];
+    });
+  }, [earningsMarkers, overlayVersion, panelTab, showEarningsMarkers, stageWidth]);
+  const selectedEarningsMarker = useMemo(
+    () => earningsMarkers.find((marker) => marker.id === selectedEarningsMarkerId) ?? null,
+    [earningsMarkers, selectedEarningsMarkerId],
+  );
+  const earningsPopupRows = useMemo(() => {
+    if (!reportedQuarterlyResults.length) {
+      return [] as Array<QuarterlyResultItem & {
+        salesQoqPct: number | null;
+        salesYoyPct: number | null;
+        profitQoqPct: number | null;
+        profitYoyPct: number | null;
+        marginQoqDelta: number | null;
+        marginYoyDelta: number | null;
+      }>;
+    }
+
+    const selectedIndex = selectedEarningsMarker?.period
+      ? reportedQuarterlyResults.findIndex((item) => item.period === selectedEarningsMarker.period)
+      : reportedQuarterlyResults.length - 1;
+    const anchorIndex = selectedIndex >= 0 ? selectedIndex : reportedQuarterlyResults.length - 1;
+    const startIndex = Math.max(0, anchorIndex - 3);
+    const slice = reportedQuarterlyResults.slice(startIndex, Math.min(reportedQuarterlyResults.length, startIndex + 4));
+
+    return slice.map((item) => {
+      const index = reportedQuarterlyResults.findIndex((quarter) => quarter.period === item.period);
+      const previous = index > 0 ? reportedQuarterlyResults[index - 1] : null;
+      const yearAgo = index >= 4 ? reportedQuarterlyResults[index - 4] : null;
+      return {
+        ...item,
+        salesQoqPct: item.qoq_change_pct ?? growthPct(item.sales_crore, previous?.sales_crore),
+        salesYoyPct: item.yoy_change_pct ?? growthPct(item.sales_crore, yearAgo?.sales_crore),
+        profitQoqPct: growthPct(item.net_profit_crore, previous?.net_profit_crore),
+        profitYoyPct: growthPct(item.net_profit_crore, yearAgo?.net_profit_crore),
+        marginQoqDelta: marginDelta(item.operating_margin_pct, previous?.operating_margin_pct),
+        marginYoyDelta: marginDelta(item.operating_margin_pct, yearAgo?.operating_margin_pct),
+      };
+    });
+  }, [reportedQuarterlyResults, selectedEarningsMarker]);
+  const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
+  const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
+  const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
+  const formatAmountValue = (value: number | null | undefined, digits?: number) => formatCrore(value, market, digits);
+  const formatPriceValue = (value: number | null | undefined, digits = 2) => formatPrice(value, market, digits);
+  const formatCountValue = (value: number | null | undefined) => formatCount(value, market);
+  const ownershipLabels = market === "india"
+    ? {
+        title: "Promoter / FII / DII Activity",
+        description: "Latest shareholding pattern and quarter-on-quarter change.",
+        promoter: "Promoter",
+        fii: "FII",
+        dii: "DII",
+        promoterChange: "Promoter Change",
+        fiiChange: "FII Change",
+        diiChange: "DII Change",
+      }
+    : {
+        title: "Ownership Activity",
+        description: "Latest ownership mix and quarter-on-quarter change.",
+        promoter: "Insiders",
+        fii: "Foreign",
+        dii: "Domestic",
+        promoterChange: "Insider Change",
+        fiiChange: "Foreign Change",
+        diiChange: "Domestic Change",
+      };
+
+  const switchDrawingTool = (nextTool: DrawingTool) => {
+    setDraftTrendStart(null);
+    setHoverAnchor(null);
+    setDrawingTool(nextTool);
+  };
+
+  indicatorKeysRef.current = indicatorKeys;
+
+  useEffect(() => {
+    drawingToolRef.current = drawingTool;
+  }, [drawingTool]);
+
+  useEffect(() => {
+    draftTrendStartRef.current = draftTrendStart;
+  }, [draftTrendStart]);
+
+  useEffect(() => {
+    annotationsRef.current = annotations;
+    setOverlayVersion((version) => version + 1);
+  }, [annotations]);
+
+  useEffect(() => {
+    onAnnotationsChangeRef.current = onAnnotationsChange;
+  }, [onAnnotationsChange]);
+
+  useEffect(() => {
+    setDrawingTool("none");
+    setDraftTrendStart(null);
+    setHoverAnchor(null);
+    setHoveredRsPoint(null);
+    setHoveredBar(null);
+    setSelectedAnnotationId(null);
+    annotationDragRef.current = null;
+    setDraggingAnnotationHandle(null);
+    setExtendedHistory(null);
+    setIndexBars(null);
+    setSelectedEarningsMarkerId(null);
+    setEarningsPopupPos(null);
+  }, [symbol, timeframe]);
+
+  useEffect(() => {
+    if (canShowBenchmarkOverlay) {
+      return;
+    }
+    if (showBenchmarkOverlay) {
+      onShowBenchmarkOverlayChange(false);
+    }
+    setBenchmarkLoading(false);
+    setBenchmarkError(null);
+  }, [canShowBenchmarkOverlay, onShowBenchmarkOverlayChange, showBenchmarkOverlay]);
+
+  useEffect(() => {
+    if (!showBenchmarkOverlay || !benchmarkSymbol || !symbol || symbol === benchmarkSymbol || panelTab !== "technical") {
+      setBenchmarkLoading(false);
+      setBenchmarkError(null);
+      return;
+    }
+
+    const cacheKey = `${market}:${benchmarkSymbol}:${timeframe}`;
+    const cached = benchmarkHistoryCacheRef.current[cacheKey];
+    if (cached) {
+      setBenchmarkBars(cached);
+      setBenchmarkLoading(false);
+      setBenchmarkError(null);
+      return;
+    }
+
+    let active = true;
+    setBenchmarkBars(null);
+    setBenchmarkLoading(true);
+    setBenchmarkError(null);
+
+    void getChartHistory(benchmarkSymbol, timeframe, market)
+      .then((payload) => {
+        if (!active) {
+          return;
+        }
+        benchmarkHistoryCacheRef.current[cacheKey] = payload.bars;
+        setBenchmarkBars(payload.bars);
+        setBenchmarkError(null);
+      })
+      .catch((error: unknown) => {
+        if (!active) {
+          return;
+        }
+        setBenchmarkError(error instanceof Error ? error.message : `Failed to load ${benchmarkSymbol} overlay.`);
+      })
+      .finally(() => {
+        if (active) {
+          setBenchmarkLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [benchmarkSymbol, market, panelTab, showBenchmarkOverlay, symbol, timeframe]);
+
+  useEffect(() => {
+    if (!indexOverlaySymbol || !symbol || market !== "india" || panelTab !== "technical") {
+      setIndexBars(null);
+      setIndexLoading(false);
+      return;
+    }
+
+    const cacheKey = `india:${indexOverlaySymbol}:${timeframe}`;
+    const cached = indexCacheRef.current[cacheKey];
+    if (cached) {
+      setIndexBars(cached);
+      setIndexLoading(false);
+      return;
+    }
+
+    let active = true;
+    setIndexBars(null);
+    setIndexLoading(true);
+
+    void getChartHistory(indexOverlaySymbol, timeframe, "india")
+      .then((payload) => {
+        if (!active) return;
+        indexCacheRef.current[cacheKey] = payload.bars;
+        setIndexBars(payload.bars);
+      })
+      .catch(() => {
+        // ignore — overlay simply won't render
+      })
+      .finally(() => {
+        if (active) setIndexLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [indexOverlaySymbol, market, panelTab, symbol, timeframe]);
+
+  useEffect(() => {
+    setChartSearchQuery(symbol ?? "");
+  }, [symbol]);
+
+  const anchorFromPointer = (clientX: number, clientY: number, rectOverride?: DOMRect): ChartAnchor | null => {
+    const stage = stageRef.current;
+    const container = containerRef.current;
+    const chart = chartRef.current;
+    const mainSeries = mainSeriesRef.current;
+    if (!stage || !container || !chart || !mainSeries) {
+      return null;
+    }
+
+    const rect = rectOverride ?? interactionLayerRef.current?.getBoundingClientRect() ?? container.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const y = clientY - rect.top;
+    const rawTime = (chart.timeScale() as any).coordinateToTime(x);
+    const rawPrice = mainSeries.coordinateToPrice(y);
+    const time = normalizeChartTime(rawTime);
+
+    if (time === null || rawPrice === null || rawPrice === undefined) {
+      return null;
+    }
+
+    const lastBarTime = activeBars[activeBars.length - 1]?.time ?? null;
+    const snappedTime = lastBarTime !== null && time > lastBarTime ? time : nearestBarTime(activeBars, time);
+
+    return {
+      time: snappedTime,
+      price: Number(rawPrice.toFixed(2)),
+    };
+  };
+
+  const commitDrawingAnchor = (anchor: ChartAnchor) => {
+    const tool = drawingToolRef.current;
+    if (tool === "none") {
+      return;
+    }
+
+    if (tool === "hline") {
+      onAnnotationsChangeRef.current([
+        ...annotationsRef.current,
+        {
+          id: buildId(),
+          type: "hline",
+          point: anchor,
+          color: drawingColor,
+        },
+      ]);
+      setHoverAnchor(null);
+      setDrawingTool("none");
+      return;
+    }
+
+    if (tool === "vline") {
+      onAnnotationsChangeRef.current([
+        ...annotationsRef.current,
+        {
+          id: buildId(),
+          type: "vline",
+          point: anchor,
+          color: drawingColor,
+        },
+      ]);
+      setHoverAnchor(null);
+      setDrawingTool("none");
+      return;
+    }
+
+    if (isTwoPointTool(tool)) {
+      const draft = draftTrendStartRef.current;
+      if (!draft) {
+        setDraftTrendStart(anchor);
+        return;
+      }
+
+      onAnnotationsChangeRef.current([
+        ...annotationsRef.current,
+        {
+          id: buildId(),
+          type: tool,
+          start: draft,
+          end: anchor,
+          color: drawingColor,
+        } as Extract<ChartAnnotation, { type: "trendline" | "ray" | "rectangle" | "measure" }>,
+      ]);
+      setDraftTrendStart(null);
+      setHoverAnchor(null);
+      setDrawingTool("none");
+      return;
+    }
+
+    const note = window.prompt("Add note to chart");
+    if (!note || !note.trim()) {
+      return;
+    }
+
+    onAnnotationsChangeRef.current([
+      ...annotationsRef.current,
+      {
+        id: buildId(),
+        type: "text",
+        point: anchor,
+        text: note.trim(),
+        color: drawingColor,
+      },
+    ]);
+    setHoverAnchor(null);
+    setDrawingTool("none");
+  };
+
+  const handleStagePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    const anchor = anchorFromPointer(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+    if (!anchor) {
+      return;
+    }
+    pointerDownAnchorRef.current = anchor;
+    pointerDownPositionRef.current = { x: event.clientX, y: event.clientY };
+    pointerMovedRef.current = false;
+  };
+
+  const handleStagePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (pointerDownPositionRef.current) {
+      const deltaX = event.clientX - pointerDownPositionRef.current.x;
+      const deltaY = event.clientY - pointerDownPositionRef.current.y;
+      if (Math.hypot(deltaX, deltaY) > 4) {
+        pointerMovedRef.current = true;
+      }
+    }
+
+    if (!isTwoPointTool(drawingToolRef.current) || !draftTrendStartRef.current) {
+      setHoverAnchor(null);
+      return;
+    }
+
+    const anchor = anchorFromPointer(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect());
+    if (!anchor) {
+      setHoverAnchor(null);
+      return;
+    }
+
+    setHoverAnchor(anchor);
+  };
+
+  const handleStagePointerLeave = () => {
+    if (isTwoPointTool(drawingToolRef.current) && !pointerDownPositionRef.current) {
+      setHoverAnchor(null);
+    }
+  };
+
+  const handleStagePointerUp = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    const downAnchor = pointerDownAnchorRef.current;
+    pointerDownAnchorRef.current = null;
+    pointerDownPositionRef.current = null;
+
+    if (!downAnchor || pointerMovedRef.current) {
+      pointerMovedRef.current = false;
+      return;
+    }
+
+    pointerMovedRef.current = false;
+    const anchor = anchorFromPointer(event.clientX, event.clientY, event.currentTarget.getBoundingClientRect()) ?? downAnchor;
+    commitDrawingAnchor(anchor);
+  };
+
+  useEffect(() => {
+    if (panelTab !== "technical" || !containerRef.current) {
+      return;
+    }
+
+    const chart = createChart(containerRef.current, {
+      autoSize: true,
+      layout: {
+        background: { type: ColorType.Solid, color: palette.background },
+        textColor: palette.textColor,
+      },
+      grid: {
+        vertLines: { color: palette.gridColor },
+        horzLines: { color: palette.gridColor },
+      },
+      crosshair: {
+        vertLine: { color: palette.crosshairColor },
+        horzLine: { color: palette.crosshairColor },
+      },
+      leftPriceScale: {
+        visible: false,
+        borderColor: palette.borderColor,
+      },
+      rightPriceScale: {
+        borderColor: palette.borderColor,
+      },
+      timeScale: {
+        borderColor: palette.borderColor,
+        timeVisible: timeframe === "15m" || timeframe === "30m" || timeframe === "1h",
+        rightOffset: RIGHT_EDGE_PADDING_BARS,
+      },
+    });
+
+    const mainSeries =
+      chartStyle === "bars"
+        ? chart.addBarSeries({
+            upColor: chartColors.candleUp,
+            downColor: chartColors.candleDown,
+            thinBars: false,
+          })
+        : chart.addCandlestickSeries({
+            upColor: chartColors.candleUp,
+            downColor: chartColors.candleDown,
+            wickUpColor: chartColors.candleUp,
+            wickDownColor: chartColors.candleDown,
+            borderVisible: false,
+          });
+    mainSeries.priceScale().applyOptions({
+      scaleMargins: (() => {
+        const hasIndexPane = indexOverlaySymbol !== null && market === "india" && safeIndexBars.length > 0 && indexOverlayMode === "pane";
+        if (safeRsLine.length) return hasIndexPane ? { top: 0.04, bottom: 0.50 } : { top: 0.04, bottom: 0.32 };
+        return hasIndexPane ? { top: 0.04, bottom: 0.36 } : { top: 0.04, bottom: 0.18 };
+      })(),
+    });
+
+    const volumeSeries = chart.addHistogramSeries({
+      color: "#00d2ff",
+      priceScaleId: "",
+      priceFormat: { type: "volume" },
+    });
+    const volumeSmaSeries = chart.addLineSeries({
+      color: withOpacity(chartColors.volumeUp, 0.92),
+      lineWidth: 2,
+      priceScaleId: "",
+      priceFormat: { type: "volume" },
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: { top: safeRsLine.length ? 0.88 : 0.82, bottom: 0 },
+    });
+
+    const ohlcvData = [
+      ...activeBars.map((bar) => ({
+        time: bar.time as UTCTimestamp,
+        open: bar.open,
+        high: bar.high,
+        low: bar.low,
+        close: bar.close,
+      })),
+      ...futureWhitespaceTimes.map((time) => ({ time: time as UTCTimestamp })),
+    ];
+
+    mainSeries.setData(ohlcvData);
+    if (benchmarkOverlayData.length) {
+      const benchmarkSeries = chart.addLineSeries({
+        color: "#ffb347",
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      benchmarkSeries.setData(benchmarkOverlayData);
+    }
+
+    // ── India index overlay ──────────────────────────────────────────────────
+    if (indexOverlaySymbol && market === "india" && safeIndexBars.length > 0) {
+      const idxColor = indexOverlayColor;
+      if (indexOverlayMode === "overlay") {
+        if (indexOverlayStyle === "line") {
+          const lineData = buildBenchmarkOverlaySeries(activeBars, safeIndexBars);
+          if (lineData.length > 0) {
+            const idxSeries = chart.addLineSeries({
+              color: idxColor,
+              lineWidth: 2,
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            idxSeries.setData(lineData);
+          }
+        } else {
+          const rebasedOhlcv = buildIndexOhlcvOverlay(activeBars, safeIndexBars);
+          if (rebasedOhlcv.length > 0) {
+            if (indexOverlayStyle === "candle") {
+              const idxSeries = chart.addCandlestickSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                wickUpColor: idxColor,
+                wickDownColor: withOpacity(idxColor, 0.45),
+                borderVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false,
+              });
+              idxSeries.setData(rebasedOhlcv);
+            } else {
+              const idxSeries = chart.addBarSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                thinBars: false,
+              });
+              idxSeries.setData(rebasedOhlcv);
+            }
+          }
+        }
+      } else {
+        // Pane mode: index occupies a separate band at the bottom of the chart
+        const startTime = activeBars[0]?.time;
+        const endTime = activeBars[activeBars.length - 1]?.time;
+        const scopedBars = startTime && endTime
+          ? safeIndexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0)
+          : [];
+        if (scopedBars.length > 0) {
+          const paneScaleOpts = { visible: false, scaleMargins: { top: 0.62, bottom: 0.12 } };
+          if (indexOverlayStyle === "line") {
+            const idxSeries = chart.addLineSeries({
+              color: idxColor,
+              lineWidth: 2,
+              priceScaleId: "index-pane",
+              priceLineVisible: false,
+              lastValueVisible: false,
+              crosshairMarkerVisible: false,
+            });
+            idxSeries.priceScale().applyOptions(paneScaleOpts);
+            idxSeries.setData(scopedBars.map((b) => ({ time: b.time as UTCTimestamp, value: b.close })));
+          } else {
+            const ohlcvPane = scopedBars.map((b) => ({
+              time: b.time as UTCTimestamp,
+              open: b.open,
+              high: b.high,
+              low: b.low,
+              close: b.close,
+            }));
+            if (indexOverlayStyle === "candle") {
+              const idxSeries = chart.addCandlestickSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                wickUpColor: idxColor,
+                wickDownColor: withOpacity(idxColor, 0.45),
+                borderVisible: false,
+                priceScaleId: "index-pane",
+                priceLineVisible: false,
+                lastValueVisible: false,
+              });
+              idxSeries.priceScale().applyOptions(paneScaleOpts);
+              idxSeries.setData(ohlcvPane);
+            } else {
+              const idxSeries = chart.addBarSeries({
+                upColor: idxColor,
+                downColor: withOpacity(idxColor, 0.45),
+                thinBars: false,
+                priceScaleId: "index-pane",
+              });
+              idxSeries.priceScale().applyOptions(paneScaleOpts);
+              idxSeries.setData(ohlcvPane);
+            }
+          }
+        }
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────────
+    const { hqTimes, lqTimes } = computeQuarterlyVolExtremes(activeBars);
+    volumeSeries.setData(
+      activeBars.map((bar) => {
+        if (hqTimes.has(bar.time)) {
+          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeHQ, 0.90) };
+        }
+        if (lqTimes.has(bar.time)) {
+          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeLQ, 0.82) };
+        }
+        return {
+          time: bar.time as UTCTimestamp,
+          value: bar.volume,
+          color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
+        };
+      }),
+    );
+
+    // HQ / LQ markers on volume bars
+    const volMarkers: Array<{ time: UTCTimestamp; position: "aboveBar"; shape: "arrowDown"; color: string; text: string; size: number }> = [];
+    for (const bar of activeBars) {
+      if (hqTimes.has(bar.time)) {
+        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeHQ, text: "HQ", size: 0.8 });
+      } else if (lqTimes.has(bar.time)) {
+        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeLQ, text: "LQ", size: 0.8 });
+      }
+    }
+    volMarkers.sort((a, b) => (a.time as number) - (b.time as number));
+    volumeSeries.setMarkers(volMarkers);
+
+    volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
+
+    let rsSeries: any = null;
+    if (safeRsLine.length) {
+      rsSeries = chart.addLineSeries({
+        color: chartColors.rsLine,
+        lineWidth: 2,
+        priceScaleId: "rs-rating",
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: true,
+      });
+      rsSeries.priceScale().applyOptions({
+        visible: false,
+        scaleMargins: { top: 0.72, bottom: 0.14 },
+      });
+      rsSeries.setData(
+        safeRsLine.map((point) => ({
+          time: point.time as UTCTimestamp,
+          value: point.value,
+        })),
+      );
+      rsSeries.setMarkers(
+        safeRsLineMarkers.map((marker) => ({
+          time: marker.time as UTCTimestamp,
+          position: "inBar",
+          shape: "circle",
+          color: chartColors.rsMarker,
+          text: "",
+          size: chartColors.rsMarkerSize,
+        })),
+      );
+    }
+
+    for (const indicator of INDICATORS) {
+      if (!indicatorKeysRef.current.includes(indicator.key)) {
+        continue;
+      }
+
+      const lineSeries = chart.addLineSeries({
+        color: chartColors[indicator.colorKey],
+        lineWidth: indicator.key === "ema200" ? 2 : 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+
+      lineSeries.setData(
+        indicator.key === "ema10"
+          ? computeEma(activeBars, 10)
+          : indicator.key === "ema20"
+            ? computeEma(activeBars, 20)
+            : indicator.key === "ema50"
+              ? computeEma(activeBars, 50)
+            : indicator.key === "ema200"
+              ? computeSma(activeBars, 200)
+              : computeVwap(activeBars),
+      );
+    }
+
+    const updateOverlay = () => {
+      setOverlayVersion((version) => version + 1);
+    };
+    const handleCrosshairMove = (param: any) => {
+      if (!param?.time) {
+        setHoveredRsPoint(null);
+        setHoveredBar(null);
+        return;
+      }
+
+      const hoveredTime = normalizeChartTime(param.time);
+      if (hoveredTime === null) {
+        setHoveredRsPoint(null);
+        setHoveredBar(null);
+        return;
+      }
+
+      const priceData = param.seriesData?.get?.(mainSeries) as
+        | {
+            open?: number;
+            high?: number;
+            low?: number;
+            close?: number;
+          }
+        | undefined;
+      if (
+        priceData &&
+        typeof priceData.open === "number" &&
+        typeof priceData.high === "number" &&
+        typeof priceData.low === "number" &&
+        typeof priceData.close === "number"
+      ) {
+        const barIndex = findBarIndexAtOrBefore(activeBars, hoveredTime);
+        const previousClose = barIndex > 0 ? activeBars[barIndex - 1]?.close ?? null : null;
+        const changeValue = previousClose === null ? null : Number(priceData.close) - previousClose;
+        const changePct = previousClose && previousClose !== 0 && changeValue !== null ? (changeValue / previousClose) * 100 : null;
+        setHoveredBar({
+          time: hoveredTime,
+          open: Number(priceData.open),
+          high: Number(priceData.high),
+          low: Number(priceData.low),
+          close: Number(priceData.close),
+          changeValue,
+          changePct,
+        });
+      } else {
+        const fallbackIndex = findBarIndexAtOrBefore(activeBars, hoveredTime);
+        const fallbackBar = fallbackIndex >= 0 ? activeBars[fallbackIndex] : null;
+        const previousClose = fallbackIndex > 0 ? activeBars[fallbackIndex - 1]?.close ?? null : null;
+        const changeValue = fallbackBar && previousClose !== null ? fallbackBar.close - previousClose : null;
+        const changePct = changeValue !== null && previousClose && previousClose !== 0 ? (changeValue / previousClose) * 100 : null;
+        setHoveredBar(
+          fallbackBar
+            ? {
+                time: fallbackBar.time,
+                open: fallbackBar.open,
+                high: fallbackBar.high,
+                low: fallbackBar.low,
+                close: fallbackBar.close,
+                changeValue,
+                changePct,
+              }
+            : null,
+        );
+      }
+
+      if (!rsSeries) {
+        setHoveredRsPoint(null);
+        return;
+      }
+
+      const seriesData = param.seriesData?.get?.(rsSeries) as { value?: number } | undefined;
+      if (seriesData?.value !== undefined) {
+        setHoveredRsPoint({
+          time: hoveredTime,
+          value: Number(seriesData.value),
+        });
+        return;
+      }
+
+      const fallbackPoint = [...safeRsLine].reverse().find((point) => point.time <= hoveredTime) ?? null;
+      setHoveredRsPoint(fallbackPoint);
+    };
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
+    chart.subscribeCrosshairMove(handleCrosshairMove);
+
+    const visibleBars = defaultVisibleBars(timeframe);
+    const endIndex = Math.max(0, activeBars.length - 1);
+    const startIndex = Math.max(0, activeBars.length - visibleBars);
+    if (activeBars.length > visibleBars) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: startIndex,
+        to: endIndex + RIGHT_EDGE_PADDING_BARS,
+      });
+    } else {
+      chart.timeScale().fitContent();
+      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
+    }
+
+    chartRef.current = chart;
+    mainSeriesRef.current = mainSeries;
+    updateOverlay();
+
+    return () => {
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateOverlay);
+      chart.unsubscribeCrosshairMove(handleCrosshairMove);
+      chart.remove();
+      chartRef.current = null;
+      mainSeriesRef.current = null;
+    };
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, timeframe]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setOverlayVersion((version) => version + 1);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const isDrawing = drawingTool !== "none";
+    chartRef.current.applyOptions({
+      handleScroll: isDrawing
+        ? false
+        : {
+            mouseWheel: true,
+            pressedMouseMove: true,
+            horzTouchDrag: true,
+            vertTouchDrag: true,
+          },
+      handleScale: isDrawing
+        ? false
+        : {
+            mouseWheel: true,
+            pinch: true,
+            axisPressedMouseMove: {
+              time: true,
+              price: true,
+            },
+          },
+    });
+  }, [drawingTool]);
+
+  const handleRvolDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const widget = rvolWidgetRef.current;
+    const stage = stageRef.current;
+    if (!widget || !stage) return;
+    const widgetRect = widget.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    rvolDragRef.current = {
+      startPX: e.clientX,
+      startPY: e.clientY,
+      startWX: widgetRect.left - stageRect.left,
+      startWY: widgetRect.top - stageRect.top,
+    };
+    const onMove = (ev: PointerEvent) => {
+      if (!rvolDragRef.current) return;
+      const stage2 = stageRef.current;
+      if (!stage2) return;
+      const stageRect2 = stage2.getBoundingClientRect();
+      const dx = ev.clientX - rvolDragRef.current.startPX;
+      const dy = ev.clientY - rvolDragRef.current.startPY;
+      const newX = Math.max(0, Math.min(rvolDragRef.current.startWX + dx, stageRect2.width - 40));
+      const newY = Math.max(0, Math.min(rvolDragRef.current.startWY + dy, stageRect2.height - 40));
+      onRvolPosChange({ x: newX, y: newY });
+    };
+    const onUp = () => {
+      rvolDragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleEarningsMarkerClick = (marker: EarningsMarkerItem) => {
+    setSelectedEarningsMarkerId(marker.id);
+    setEarningsPopupPos((current) => {
+      if (current) {
+        return current;
+      }
+      const fallbackX = Math.max(12, stageWidth - 360);
+      return { x: fallbackX, y: 54 };
+    });
+  };
+
+  const handleEarningsPopupDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    const popup = earningsPopupRef.current;
+    const stage = stageRef.current;
+    if (!popup || !stage) {
+      return;
+    }
+    const popupRect = popup.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    earningsPopupDragRef.current = {
+      startPX: event.clientX,
+      startPY: event.clientY,
+      startWX: popupRect.left - stageRect.left,
+      startWY: popupRect.top - stageRect.top,
+    };
+    const onMove = (moveEvent: PointerEvent) => {
+      if (!earningsPopupDragRef.current) {
+        return;
+      }
+      const liveStage = stageRef.current;
+      if (!liveStage) {
+        return;
+      }
+      const liveStageRect = liveStage.getBoundingClientRect();
+      const dx = moveEvent.clientX - earningsPopupDragRef.current.startPX;
+      const dy = moveEvent.clientY - earningsPopupDragRef.current.startPY;
+      const nextX = Math.max(0, Math.min(earningsPopupDragRef.current.startWX + dx, liveStageRect.width - 120));
+      const nextY = Math.max(0, Math.min(earningsPopupDragRef.current.startWY + dy, liveStageRect.height - 120));
+      setEarningsPopupPos({ x: nextX, y: nextY });
+    };
+    const onUp = () => {
+      earningsPopupDragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const handleLoadFullHistory = async () => {
+    if (!symbol || historyLoading) return;
+    if (extendedHistory) {
+      setExtendedHistory(null);
+      return;
+    }
+    setHistoryLoading(true);
+    try {
+      const result = await getChartHistory(symbol, timeframe, market);
+      if (result.bars.length > 0) {
+        setExtendedHistory(result);
+      }
+    } catch {
+      // silently ignore
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const selectAnnotation = (id: string) =>
+    setSelectedAnnotationId((prev) => (prev === id ? null : id));
+
+  const updateAnnotation = (id: string, patch: Partial<ChartAnnotation>) =>
+    onAnnotationsChange(annotations.map((a) => (a.id === id ? { ...a, ...patch } as ChartAnnotation : a)));
+
+  const updateAnnotationAnchor = (annotationId: string, handleKey: AnnotationHandleKey, anchor: ChartAnchor) => {
+    onAnnotationsChangeRef.current(
+      annotationsRef.current.map((annotation) => {
+        if (annotation.id !== annotationId) {
+          return annotation;
+        }
+        if (handleKey === "point" && "point" in annotation) {
+          return { ...annotation, point: anchor };
+        }
+        if (handleKey === "start" && "start" in annotation) {
+          return { ...annotation, start: anchor };
+        }
+        if (handleKey === "end" && "end" in annotation) {
+          return { ...annotation, end: anchor };
+        }
+        return annotation;
+      }),
+    );
+  };
+
+  const startAnnotationHandleDrag = (
+    event: ReactPointerEvent<SVGGElement>,
+    annotationId: string,
+    handleKey: AnnotationHandleKey,
+  ) => {
+    if (event.button !== 0) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    const anchor = anchorFromPointer(event.clientX, event.clientY);
+    setSelectedAnnotationId(annotationId);
+    annotationDragRef.current = { annotationId, handleKey };
+    setDraggingAnnotationHandle(`${annotationId}:${handleKey}`);
+    if (anchor) {
+      updateAnnotationAnchor(annotationId, handleKey, anchor);
+    }
+  };
+
+  const deleteAnnotation = (id: string) => {
+    if (annotationDragRef.current?.annotationId === id) {
+      annotationDragRef.current = null;
+      setDraggingAnnotationHandle(null);
+    }
+    setSelectedAnnotationId(null);
+    onAnnotationsChange(annotations.filter((a) => a.id !== id));
+  };
+
+  useEffect(() => {
+    if (!draggingAnnotationHandle) {
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const activeDrag = annotationDragRef.current;
+      if (!activeDrag) {
+        return;
+      }
+      const anchor = anchorFromPointer(event.clientX, event.clientY);
+      if (anchor) {
+        updateAnnotationAnchor(activeDrag.annotationId, activeDrag.handleKey, anchor);
+      }
+    };
+
+    const stopDragging = () => {
+      annotationDragRef.current = null;
+      setDraggingAnnotationHandle(null);
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+    };
+  }, [draggingAnnotationHandle, activeBars]);
+
+  const horizontalLineOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "hline" }> => annotation.type === "hline")
+    .map((annotation) => {
+      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+      if (!point) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.hline;
+      const lw = annotation.lineWidth ?? 1.6;
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke="transparent" strokeWidth={14} />
+          {isSel && <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
+          <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw} strokeDasharray="8 5" />
+          <rect x={Math.max(stageWidth - 84, 4)} y={Math.max(point.y - 11, 4)} width="80" height="22" rx="8" fill="rgba(13, 17, 23, 0.92)" />
+          <text x={Math.max(stageWidth - 44, 10)} y={point.y + 4} fill={color} fontSize="11" textAnchor="middle">
+            {annotation.point.price.toFixed(2)}
+          </text>
+        </g>
+      );
+    });
+  const verticalLineOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "vline" }> => annotation.type === "vline")
+    .map((annotation) => {
+      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+      if (!point) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.vline;
+      const lw = annotation.lineWidth ?? 1.5;
+      const labelX = clamp(point.x + 8, 6, Math.max(stageWidth - 96, 6));
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke="transparent" strokeWidth={14} />
+          {isSel && <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
+          <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw} strokeDasharray="7 5" />
+          <rect x={labelX} y={8} width="88" height="22" rx="8" fill="rgba(13, 17, 23, 0.9)" />
+          <text x={labelX + 44} y={22} fill={color} fontSize="11" textAnchor="middle">
+            {formatChartDateFromTimestamp(annotation.point.time)}
+          </text>
+        </g>
+      );
+    });
+  const trendlineOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "trendline" }> => annotation.type === "trendline")
+    .map((annotation) => {
+      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+      if (!start || !end) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.trendline;
+      const lw = annotation.lineWidth ?? 2;
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="6 4" />
+        </g>
+      );
+    });
+  const rayOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "ray" }> => annotation.type === "ray")
+    .map((annotation) => {
+      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+      if (!start || !end) return null;
+      const rayEnd = projectRayEnd(start, end, stageWidth);
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.ray;
+      const lw = annotation.lineWidth ?? 2;
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+          {isSel && <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+          <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
+        </g>
+      );
+    });
+  const rectangleOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "rectangle" }> => annotation.type === "rectangle")
+    .map((annotation) => {
+      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+      if (!start || !end) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.rectangle;
+      const lw = annotation.lineWidth ?? 1.6;
+      const x = Math.min(start.x, end.x);
+      const y = Math.min(start.y, end.y);
+      const w = Math.max(Math.abs(end.x - start.x), 2);
+      const h = Math.max(Math.abs(end.y - start.y), 2);
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          {isSel && <rect x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx="8" fill={color} opacity={0.1} />}
+          <rect x={x} y={y} width={w} height={h} rx="6"
+            fill={isSel ? `${color}22` : "rgba(89, 196, 255, 0.12)"}
+            stroke={color} strokeWidth={lw} strokeDasharray="6 4"
+            style={{ pointerEvents: "auto" }} />
+        </g>
+      );
+    });
+  const measureOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "measure" }> => annotation.type === "measure")
+    .map((annotation) => {
+      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+      if (!start || !end) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.measure;
+      const lw = annotation.lineWidth ?? 2;
+      const change = annotation.end.price - annotation.start.price;
+      const changePct = annotation.start.price === 0 ? 0 : (change / annotation.start.price) * 100;
+      const spanBars = barsBetweenTimes(activeBars, annotation.start.time, annotation.end.time);
+      const midX = (start.x + end.x) / 2;
+      const midY = (start.y + end.y) / 2;
+      const label = `${change >= 0 ? "+" : ""}${formatValue(change, 2)} | ${changePct >= 0 ? "+" : ""}${formatValue(changePct, 2)}% | ${spanBars} bars`;
+      const labelWidth = Math.max(170, Math.min(240, label.length * 6.4));
+      const labelX = clamp(midX - labelWidth / 2, 6, Math.max(stageWidth - labelWidth - 6, 6));
+      const labelY = clamp(midY - 26, 8, Math.max(stageHeight - 28, 8));
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="5 4" />
+          <circle cx={start.x} cy={start.y} r="4" fill={color} />
+          <circle cx={end.x} cy={end.y} r="4" fill={color} />
+          <rect x={labelX} y={labelY} width={labelWidth} height="24" rx="8" fill="rgba(4, 8, 17, 0.92)" />
+          <text x={labelX + labelWidth / 2} y={labelY + 15} fill={color} fontSize="11" textAnchor="middle">
+            {label}
+          </text>
+        </g>
+      );
+    });
+
+  const textOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "text" }> => annotation.type === "text")
+    .map((annotation) => {
+      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+      if (!point) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.text;
+      return (
+        <div
+          key={annotation.id}
+          className={isSel ? "chart-note selected" : "chart-note"}
+          style={{
+            left: `${Math.min(point.x + 10, Math.max(stageWidth - 180, 12))}px`,
+            top: `${Math.max(point.y - 12, 10)}px`,
+            borderColor: isSel ? color : undefined,
+            color: isSel ? color : undefined,
+            cursor: "pointer",
+          }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}
+        >
+          {annotation.text}
+        </div>
+      );
+    });
+
+  const draftPoint = draftTrendStart ? projectAnchor(chartRef.current, mainSeriesRef.current, draftTrendStart) : null;
+  const hoverPoint = hoverAnchor ? projectAnchor(chartRef.current, mainSeriesRef.current, hoverAnchor) : null;
+  const draftMeasureLabel =
+    draftTrendStart && hoverAnchor
+      ? `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(hoverAnchor.price - draftTrendStart.price, 2)} | ${
+          draftTrendStart.price === 0
+            ? "0.00"
+            : `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(((hoverAnchor.price - draftTrendStart.price) / draftTrendStart.price) * 100, 2)}`
+        }% | ${barsBetweenTimes(activeBars, draftTrendStart.time, hoverAnchor.time)} bars`
+      : null;
+
+  const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) ?? null;
+  const selectedAnnotationHandles = selectedAnnotation
+    ? getAnnotationHandleAnchors(selectedAnnotation).map(({ key, anchor }) => {
+        const point = projectAnchor(chartRef.current, mainSeriesRef.current, anchor);
+        if (!point) {
+          return null;
+        }
+
+        const color = selectedAnnotation.color ?? ANNOTATION_DEFAULT_COLORS[selectedAnnotation.type] ?? "#ffd36f";
+        const handleId = `${selectedAnnotation.id}:${key}`;
+        const isDragging = draggingAnnotationHandle === handleId;
+        return (
+          <g
+            key={handleId}
+            style={{ pointerEvents: "auto", cursor: isDragging ? "grabbing" : "grab" }}
+            onPointerDown={(event) => startAnnotationHandleDrag(event, selectedAnnotation.id, key)}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <circle cx={point.x} cy={point.y} r="11" fill="transparent" />
+            <circle cx={point.x} cy={point.y} r={isDragging ? 6 : 5} fill={color} stroke="rgba(4, 8, 17, 0.92)" strokeWidth="2" />
+          </g>
+        );
+      })
+    : [];
+  const annotationEditPos = (() => {
+    if (!selectedAnnotation) return null;
+    let ex = 20, ey = 20;
+    if ("point" in selectedAnnotation) {
+      const pt = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.point);
+      if (pt) { ex = clamp(pt.x - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(pt.y - 54, 4, Math.max(stageHeight - 66, 4)); }
+    } else if ("start" in selectedAnnotation) {
+      const st = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.start);
+      const en = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.end);
+      if (st && en) { ex = clamp((st.x + en.x) / 2 - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(Math.min(st.y, en.y) - 54, 4, Math.max(stageHeight - 66, 4)); }
+    }
+    return { x: ex, y: ey };
+  })();
+  const valuation = fundamentals?.valuation ?? null;
+  const growth = fundamentals?.growth ?? null;
+  const ratioCards = [
+    { label: "P/E", value: formatValue(valuation?.pe_ratio, 2) },
+    { label: "PEG", value: formatValue(valuation?.peg_ratio, 2) },
+    { label: "OPM", value: formatPercentValue(valuation?.operating_margin_pct) },
+    { label: "Net Margin", value: formatPercentValue(valuation?.net_margin_pct) },
+    { label: "ROCE", value: formatPercentValue(valuation?.roce_pct) },
+    { label: "ROE", value: formatPercentValue(valuation?.roe_pct) },
+    { label: "Dividend Yield", value: formatPercentValue(valuation?.dividend_yield_pct) },
+    { label: "Market Cap", value: formatAmountValue(valuation?.market_cap_crore) },
+  ];
+  const growthCards = [
+    { label: "Sales QoQ", value: formatSignedPercentValue(growth?.sales_qoq_pct) },
+    { label: "Sales YoY", value: formatSignedPercentValue(growth?.sales_yoy_pct) },
+    { label: "Profit QoQ", value: formatSignedPercentValue(growth?.profit_qoq_pct) },
+    { label: "Profit YoY", value: formatSignedPercentValue(growth?.profit_yoy_pct) },
+    { label: "OPM", value: formatPercentValue(growth?.operating_margin_latest_pct) },
+    { label: "Net Margin", value: formatPercentValue(growth?.net_margin_latest_pct) },
+  ];
+  const chartTitle = summary?.name ?? (symbol ? `${symbol}` : "Chart");
+  const chartSubtitleText = summary
+    ? `${summary.symbol} • ${summary.exchange} • ${summary.sector}${summary.sub_sector ? ` • ${summary.sub_sector}` : ""}`
+    : symbol
+      ? `${symbol} • Live chart`
+      : undefined;
+  const priceTrendClass = summary ? (summary.change_pct >= 0 ? "positive" : "negative") : "neutral";
+  const rsTrendClass = summary
+    ? (summary.rs_rating ?? summary.rs_rating_1w_ago) >= summary.rs_rating_1w_ago
+      ? "positive"
+      : "negative"
+    : "neutral";
+  const hoveredPriceTrendClass =
+    hoveredBar?.changePct !== null && hoveredBar?.changePct !== undefined
+      ? hoveredBar.changePct >= 0
+        ? "positive"
+        : "negative"
+      : priceTrendClass;
+  const priceLine1 = hoveredBar
+    ? `${formatChartDateFromTimestamp(hoveredBar.time, market)} · O ${formatPriceValue(hoveredBar.open, 2)} · H ${formatPriceValue(hoveredBar.high, 2)} · L ${formatPriceValue(hoveredBar.low, 2)} · C ${formatPriceValue(hoveredBar.close, 2)}`
+    : summary
+      ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(summary.change_pct)}`
+      : "Hover the chart to inspect OHLC detail.";
+  const priceLine2 = hoveredBar
+    ? (hoveredBar.changePct !== null && hoveredBar.changeValue !== null
+        ? `Chg ${hoveredBar.changeValue >= 0 ? "+" : ""}${formatValue(hoveredBar.changeValue, 2)} (${formatSignedPercentValue(hoveredBar.changePct)})`
+        : null)
+    : summary
+      ? "Hover the chart to inspect OHLC detail."
+      : null;
+  const chartSearchSuggestions = useMemo(
+    () => buildSymbolSuggestions(searchOptions, deferredChartSearchQuery, 100),
+    [deferredChartSearchQuery, searchOptions],
+  );
+
+  const handleChartSearchSubmit = (query: string) => {
+    const trimmed = query.trim();
+    if (!trimmed) {
+      return;
+    }
+    onSearchSymbol?.(trimmed);
+  };
+
+  return (
+    <Panel
+      title={chartTitle}
+      subtitle={chartSubtitleText}
+      actions={
+        <div className="chart-actions">
+          {onSearchSymbol ? (
+            <form
+              className="chart-search-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                handleChartSearchSubmit(chartSearchQuery);
+              }}
+            >
+              <input
+                list={searchListId}
+                value={chartSearchQuery}
+                onChange={(event) => setChartSearchQuery(event.target.value)}
+                onInput={(event) => {
+                  const inputEvent = event.nativeEvent as InputEvent;
+                  if (inputEvent.inputType === "insertReplacementText" || !inputEvent.inputType) {
+                    const value = (event.target as HTMLInputElement).value;
+                    setTimeout(() => handleChartSearchSubmit(value), 0);
+                  }
+                }}
+                placeholder="Search another stock"
+                aria-label="Search another stock"
+              />
+              <datalist id={searchListId}>
+                {chartSearchSuggestions.map((item) => (
+                  <option key={`chart-search-${item.symbol}`} value={item.symbol}>
+                    {item.name}
+                  </option>
+                ))}
+              </datalist>
+              <button type="submit" className="tool-pill">
+                Search
+              </button>
+            </form>
+          ) : null}
+          <div className="chart-tab-switcher">
+            {PANEL_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                className={panelTab === tab.key ? "scanner-tab active" : "scanner-tab"}
+                onClick={() => onPanelTabChange(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+          <button
+            type="button"
+            className={aiChatOpen ? "tool-pill active" : "tool-pill"}
+            onClick={() => setAiChatOpen((prev) => !prev)}
+            disabled={!symbol}
+            title="Open AI Chart Analysis chat"
+          >
+            ✦ AI Analysis
+          </button>
+          {panelTab === "technical" ? (
+            <>
+              <div className="timeframe-switcher">
+                {TIMEFRAMES.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    className={item === timeframe ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => onTimeframeChange(item)}
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+              <div className="chart-style-switcher">
+                {CHART_STYLES.map((style) => (
+                  <button
+                    key={style.key}
+                    type="button"
+                    className={style.key === chartStyle ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => onChartStyleChange(style.key)}
+                  >
+                    {style.label}
+                  </button>
+                ))}
+              </div>
+              <div className="chart-style-switcher">
+                {Object.entries(CHART_PALETTES).map(([key, value]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={chartPalette === key ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => onChartPaletteChange(key as ChartPaletteKey)}
+                  >
+                    {value.label}
+                  </button>
+                ))}
+              </div>
+              <div className="indicator-switcher">
+                {INDICATORS.map((indicator) => (
+                  <button
+                    key={indicator.key}
+                    type="button"
+                    className={indicatorKeys.includes(indicator.key) ? "indicator-pill active" : "indicator-pill"}
+                    onClick={() => onToggleIndicator(indicator.key)}
+                  >
+                    {indicator.label}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={showRvol ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => onShowRvolChange(!showRvol)}
+                  title="Relative Volume vs 50-day average. Helps spot unusual activity."
+                >
+                  RVOL
+                </button>
+                <button
+                  type="button"
+                  className={showEarningsMarkers ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => onShowEarningsMarkersChange(!showEarningsMarkers)}
+                  title="Show real earnings/result dates when verified company data is available."
+                >
+                  Earnings
+                </button>
+                {showEarningsMarkers ? (
+                  <label className="earnings-color-control" title="E marker colour">
+                    <input
+                      type="color"
+                      className="rvol-color-input"
+                      value={earningsMarkerColor}
+                      onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
+                    />
+                  </label>
+                ) : null}
+              </div>
+              {market === "us" ? (
+                <div className="chart-style-switcher">
+                  <button
+                    type="button"
+                    className={showBenchmarkOverlay ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => onShowBenchmarkOverlayChange(!showBenchmarkOverlay)}
+                    disabled={!canShowBenchmarkOverlay || benchmarkLoading}
+                    title={canShowBenchmarkOverlay ? "Overlay SPY on the active price chart." : "SPY overlay is unavailable for SPY itself."}
+                  >
+                    {benchmarkLoading ? "Loading SPY..." : "SPY Overlay"}
+                  </button>
+                </div>
+              ) : null}
+              {symbol ? (
+                <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
+                  Add to Watchlist
+                </button>
+              ) : null}
+              <button
+                type="button"
+                className={chartLoading ? "tool-pill loading" : "tool-pill"}
+                onClick={() => onRefreshChart?.()}
+                disabled={!symbol || chartLoading || !onRefreshChart}
+                title="Refresh the chart from the backend while keeping cached data visible"
+              >
+                {chartLoading ? "Refreshing..." : "Refresh Chart"}
+              </button>
+              {chartCacheState === "cached" ? <span className="chart-save-pill">Cached view</span> : null}
+              {showBenchmarkOverlay && !benchmarkLoading ? <span className="chart-save-pill">SPY compare</span> : null}
+              {showBenchmarkOverlay && benchmarkError ? <span className="chart-save-pill">{benchmarkError}</span> : null}
+            </>
+          ) : (
+            <div className="fundamentals-toolbar">
+              {symbol ? (
+                <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
+                  Add to Watchlist
+                </button>
+              ) : null}
+              <span className="chart-save-pill">Updated {formatDateTime(fundamentals?.fetched_at)}</span>
+            </div>
+          )}
+        </div>
+      }
+      className={expanded ? "chart-panel expanded" : "chart-panel"}
+    >
+      {panelTab === "technical" ? (
+        <div className="chart-drawing-toolbar">
+          <label className="drawing-tool-select">
+            <select
+              value={drawingTool}
+              onChange={(event: ChangeEvent<HTMLSelectElement>) => switchDrawingTool(event.target.value as DrawingTool)}
+            >
+              {DRAWING_TOOLS.map((tool) => (
+                <option key={tool.key} value={tool.key}>
+                  {tool.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          {drawingTool !== "none" ? (
+            <label className="draft-color-row" title="Drawing color">
+              <span>Color</span>
+              <input type="color" value={drawingColor} onChange={(e) => onDrawingColorChange(e.target.value)} />
+            </label>
+          ) : null}
+          <button
+            type="button"
+            className="tool-pill"
+            onClick={() => onAnnotationsChange(annotations.slice(0, -1))}
+            disabled={!annotations.length}
+          >
+            Undo
+          </button>
+          <button
+            type="button"
+            className="tool-pill"
+            onClick={() => {
+              setDraftTrendStart(null);
+              setHoverAnchor(null);
+              setDrawingTool("none");
+              setSelectedAnnotationId(null);
+              onAnnotationsChange([]);
+            }}
+            disabled={!annotations.length && !draftTrendStart}
+          >
+            Clear All
+          </button>
+          {annotations.length > 0 && <span className="chart-save-pill">{annotations.length} saved</span>}
+          <details className="chart-color-settings">
+            <summary>Indicator Colors</summary>
+            <div className="chart-color-grid">
+              {CHART_COLOR_FIELDS.map((field) => (
+                <label key={field.key} className="chart-color-field">
+                  <span>{field.label}</span>
+                  <input
+                    type="color"
+                    value={chartColors[field.key]}
+                    onChange={(event) =>
+                      onChartColorsChange({
+                        ...chartColors,
+                        [field.key]: event.target.value,
+                      })
+                    }
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="chart-slider-field">
+              <span>RS Circle Size</span>
+              <div>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="8"
+                  step="0.5"
+                  value={chartColors.rsMarkerSize}
+                  onChange={(event) =>
+                    onChartColorsChange({
+                      ...chartColors,
+                      rsMarkerSize: Number(event.target.value),
+                    })
+                  }
+                />
+                <strong>{chartColors.rsMarkerSize}px</strong>
+              </div>
+            </label>
+          </details>
+          <button
+            type="button"
+            className={historyLoading ? "tool-pill loading" : "tool-pill"}
+            onClick={handleLoadFullHistory}
+            disabled={historyLoading || !symbol}
+            title={extendedHistory ? "Return to the standard chart range" : "Load full price history for this stock"}
+          >
+            {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
+          </button>
+          {market === "india" ? (
+            <div className="index-overlay-controls">
+              <select
+                className="index-overlay-select"
+                value={indexOverlaySymbol ?? ""}
+                onChange={(e) => setIndexOverlaySymbol(e.target.value || null)}
+                title="Add a Nifty index overlay to this chart"
+              >
+                <option value="">Index Overlay</option>
+                <option value="^NSEI">Nifty 50</option>
+                <option value="^NSEMDCP50">Nifty Midcap 50</option>
+                <option value="^NSEBANK">Nifty Bank</option>
+              </select>
+              {indexOverlaySymbol ? (
+                <>
+                  <button
+                    type="button"
+                    className={indexOverlayMode === "overlay" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayMode("overlay")}
+                    title="Overlay on main price scale (rebased)"
+                  >
+                    Overlay
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayMode === "pane" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayMode("pane")}
+                    title="Show in a separate pane below main chart"
+                  >
+                    Pane
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "line" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("line")}
+                    title="Line chart style"
+                  >
+                    Line
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "candle" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("candle")}
+                    title="Candlestick chart style"
+                  >
+                    Candle
+                  </button>
+                  <button
+                    type="button"
+                    className={indexOverlayStyle === "bars" ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setIndexOverlayStyle("bars")}
+                    title="Bar chart style"
+                  >
+                    Bars
+                  </button>
+                  <label className="index-overlay-color" title="Index overlay colour">
+                    <input
+                      type="color"
+                      value={indexOverlayColor}
+                      onChange={(e) => setIndexOverlayColor(e.target.value)}
+                    />
+                  </label>
+                  {indexLoading ? <span className="chart-save-pill">Loading…</span> : null}
+                </>
+              ) : null}
+            </div>
+          ) : null}
+          {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
+        </div>
+      ) : null}
+      {summary ? (
+        <div className="chart-summary-strip compact">
+          <div className={`chart-summary-chip ${priceTrendClass}`}>
+            <span>Price</span>
+            <strong>{formatPriceValue(summary.last_price, 2)}</strong>
+          </div>
+          <div className={`chart-summary-chip ${priceTrendClass}`}>
+            <span>1D Change</span>
+            <strong>{formatSignedPercentValue(summary.change_pct)}</strong>
+          </div>
+          <div className={`chart-summary-chip strong ${rsTrendClass}`}>
+            <span>RS Rating</span>
+            <strong>{summary.rs_rating}</strong>
+          </div>
+          {groupSummary ? (
+            onOpenGroup ? (
+              <button
+                type="button"
+                className="chart-summary-chip chart-summary-chip-action"
+                onClick={() => onOpenGroup(groupSummary.groupId)}
+                title={`Open ${groupSummary.groupName}`}
+              >
+                <span>Group</span>
+                <strong>{groupSummary.groupName}</strong>
+              </button>
+            ) : (
+              <div className="chart-summary-chip">
+                <span>Group</span>
+                <strong>{groupSummary.groupName}</strong>
+              </div>
+            )
+          ) : null}
+          {groupSummary ? (
+            <div className="chart-summary-chip">
+              <span>Group Rank</span>
+              <strong>{groupSummary.groupRankLabel}</strong>
+            </div>
+          ) : null}
+          {groupSummary ? (
+            <div className="chart-summary-chip">
+              <span>Stock Rank</span>
+              <strong>{`${groupSummary.stockRank}/${groupSummary.stockCount}`}</strong>
+            </div>
+          ) : null}
+          <div className="chart-summary-chip">
+            <span>RS 1W Ago</span>
+            <strong>{summary.rs_rating_1w_ago}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>RS Rating 1M Ago</span>
+            <strong>{summary.rs_rating_1m_ago}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>12M Return</span>
+            <strong>{formatPercentValue(summary.stock_return_12m)}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>20D ADR</span>
+            <strong>{formatPercentValue(summary.adr_pct_20)}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>30D Traded Value</span>
+            <strong>{formatAmountValue(summary.avg_rupee_volume_30d_crore)}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>{market === "india" ? "Circuit Band" : "Circuit Limit"}</span>
+            <strong>{formatCircuitBand(summary, market)}</strong>
+          </div>
+        </div>
+      ) : null}
+      {panelTab === "technical" ? (
+        !symbol ? (
+          <div className="empty-state">Pick a stock to view the chart.</div>
+        ) : chartError && activeBars.length === 0 ? (
+          <div className="empty-state">{chartError}</div>
+        ) : (
+        <div className="chart-stage">
+          {symbol ? (
+            <button
+              type="button"
+              className="chart-stage-watchlist-add"
+              onClick={() => onAddToWatchlist?.(symbol)}
+              aria-label={`Add ${symbol} to a watchlist`}
+              title={`Add ${symbol} to watchlist`}
+            >
+              +
+            </button>
+          ) : null}
+          {showRvol && currentRvol ? (
+            <div
+              ref={rvolWidgetRef}
+              className={`rvol-widget rvol-widget--${rvolScale}`}
+              style={{
+                ...(rvolPos ? { left: rvolPos.x, top: rvolPos.y, bottom: "auto" } : {}),
+                borderColor: `color-mix(in srgb, ${rvolAccentColor} 45%, transparent)`,
+              }}
+            >
+              <div className="rvol-widget-header" onPointerDown={handleRvolDragStart}>
+                <span className="rvol-widget-title" style={{ color: rvolAccentColor }}>RVOL <span className="rvol-widget-subtitle">vs 50d avg</span></span>
+                <div className="rvol-widget-controls" onPointerDown={(e) => e.stopPropagation()}>
+                  {(["sm", "md", "lg"] as const).map((s) => (
+                    <button key={s} type="button" className={`rvol-size-btn${rvolScale === s ? " active" : ""}`} onClick={() => onRvolScaleChange(s)} style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}>
+                      {s === "sm" ? "S" : s === "md" ? "M" : "L"}
+                    </button>
+                  ))}
+                  <input type="color" className="rvol-color-input" value={rvolAccentColor} onChange={(e) => onRvolAccentColorChange(e.target.value)} title="Widget color" />
+                </div>
+              </div>
+              <div className="rvol-widget-row">
+                <span className="rvol-label">Vol</span>
+                <span className="rvol-value" style={{ color: rvolColor(currentRvol.rvol50) }}>
+                  {currentRvol.rvol50.toFixed(2)}×
+                </span>
+                <span className="rvol-bar-track">
+                  <span className="rvol-bar-fill" style={{ width: `${Math.min(currentRvol.rvol50 / 4, 1) * 100}%`, background: rvolColor(currentRvol.rvol50) }} />
+                </span>
+              </div>
+              <div className="rvol-widget-row">
+                <span className="rvol-label">Turn</span>
+                <span className="rvol-value" style={{ color: rvolColor(currentRvol.turnoverRvol50) }}>
+                  {currentRvol.turnoverRvol50.toFixed(2)}×
+                </span>
+                <span className="rvol-bar-track">
+                  <span className="rvol-bar-fill" style={{ width: `${Math.min(currentRvol.turnoverRvol50 / 4, 1) * 100}%`, background: rvolColor(currentRvol.turnoverRvol50) }} />
+                </span>
+              </div>
+              <div className="rvol-widget-detail">
+                {formatVolumeShort(currentRvol.volume, market)} / avg {formatVolumeShort(currentRvol.avgVolume, market)}
+              </div>
+              <div className="rvol-widget-detail">
+                {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
+              </div>
+            </div>
+          ) : null}
+          {showEarningsMarkers && positionedEarningsMarkers.length > 0 ? (
+            <div className="earnings-marker-layer" aria-label="Earnings markers">
+              {positionedEarningsMarkers.map((marker) => (
+                <button
+                  key={marker.id}
+                  type="button"
+                  className={selectedEarningsMarkerId === marker.id ? "earnings-marker active" : "earnings-marker"}
+                  style={{
+                    left: marker.x,
+                    color: earningsMarkerColor,
+                    borderColor: `color-mix(in srgb, ${earningsMarkerColor} 50%, transparent)`,
+                    boxShadow: selectedEarningsMarkerId === marker.id ? `0 0 0 1px ${earningsMarkerColor}` : undefined,
+                  }}
+                  title={`${marker.kind === "upcoming" ? "Upcoming" : "Reported"}: ${marker.title} • ${formatEventDate(marker.eventDate, market)}`}
+                  onClick={() => handleEarningsMarkerClick(marker)}
+                >
+                  E
+                </button>
+              ))}
+            </div>
+          ) : null}
+          {selectedEarningsMarker ? (
+            <div
+              ref={earningsPopupRef}
+              className="earnings-popup"
+              style={{
+                ...(earningsPopupPos ? { left: earningsPopupPos.x, top: earningsPopupPos.y, right: "auto" } : {}),
+                borderColor: `color-mix(in srgb, ${earningsMarkerColor} 46%, transparent)`,
+              }}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="earnings-popup-header" onPointerDown={handleEarningsPopupDragStart}>
+                <div>
+                  <strong style={{ color: earningsMarkerColor }}>{selectedEarningsMarker.kind === "upcoming" ? "Upcoming Earnings" : "Earnings Snapshot"}</strong>
+                  <span>{selectedEarningsMarker.period ?? selectedEarningsMarker.title}</span>
+                </div>
+                <div className="earnings-popup-actions" onPointerDown={(event) => event.stopPropagation()}>
+                  <input
+                    type="color"
+                    className="rvol-color-input"
+                    value={earningsMarkerColor}
+                    onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
+                    title="E marker colour"
+                  />
+                  <button type="button" className="earnings-popup-close" onClick={() => setSelectedEarningsMarkerId(null)}>
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="earnings-popup-meta">
+                <span>{formatEventDate(selectedEarningsMarker.eventDate, market)}</span>
+                <span>{selectedEarningsMarker.kind === "upcoming" ? "Scheduled / announced date" : "Declared date"}</span>
+              </div>
+              {selectedEarningsMarker.description ? <p className="earnings-popup-summary">{selectedEarningsMarker.description}</p> : null}
+              {earningsPopupRows.length > 0 ? (
+                <div className="earnings-popup-table-wrap">
+                  <table className="earnings-popup-table">
+                    <thead>
+                      <tr>
+                        <th>Quarter</th>
+                        <th>Sales</th>
+                        <th>QoQ</th>
+                        <th>YoY</th>
+                        <th>OPM</th>
+                        <th>QoQ Δ</th>
+                        <th>YoY Δ</th>
+                        <th>Profit</th>
+                        <th>QoQ</th>
+                        <th>YoY</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {earningsPopupRows.map((row) => (
+                        <tr key={`${selectedEarningsMarker.id}-${row.period}`} className={row.period === selectedEarningsMarker.period ? "is-selected" : ""}>
+                          <td>
+                            <strong>{row.period}</strong>
+                            {row.result_date ? <small>{formatEventDate(row.result_date, market)}</small> : null}
+                          </td>
+                          <td>{formatAmountValue(row.sales_crore)}</td>
+                          <td className={row.salesQoqPct == null ? "" : row.salesQoqPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.salesQoqPct)}
+                          </td>
+                          <td className={row.salesYoyPct == null ? "" : row.salesYoyPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.salesYoyPct)}
+                          </td>
+                          <td>{formatPercentValue(row.operating_margin_pct)}</td>
+                          <td className={row.marginQoqDelta == null ? "" : row.marginQoqDelta >= 0 ? "positive-text" : "negative-text"}>
+                            {row.marginQoqDelta == null ? "—" : `${row.marginQoqDelta >= 0 ? "+" : ""}${row.marginQoqDelta.toFixed(2)} pp`}
+                          </td>
+                          <td className={row.marginYoyDelta == null ? "" : row.marginYoyDelta >= 0 ? "positive-text" : "negative-text"}>
+                            {row.marginYoyDelta == null ? "—" : `${row.marginYoyDelta >= 0 ? "+" : ""}${row.marginYoyDelta.toFixed(2)} pp`}
+                          </td>
+                          <td>{formatAmountValue(row.net_profit_crore)}</td>
+                          <td className={row.profitQoqPct == null ? "" : row.profitQoqPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.profitQoqPct)}
+                          </td>
+                          <td className={row.profitYoyPct == null ? "" : row.profitYoyPct >= 0 ? "positive-text" : "negative-text"}>
+                            {formatSignedPercentValue(row.profitYoyPct)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="earnings-popup-empty">No verified quarterly results were available for this marker.</div>
+              )}
+              {selectedEarningsMarker.documentUrl ? (
+                <a className="earnings-popup-link" href={selectedEarningsMarker.documentUrl} target="_blank" rel="noreferrer">
+                  Open filing ↗
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+        <div className="chart-stage-meta">
+            <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+              <span>{priceLine1}</span>
+              {priceLine2 ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
+            </span>
+            <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+              {hoveredRsPoint ? `RS Rating ${Math.round(hoveredRsPoint.value)} on ${formatChartDateFromTimestamp(hoveredRsPoint.time)}` : "RS Rating line is plotted below price."}
+            </span>
+            {draftTrendStart ? <span className="chart-stage-label emphasis" style={{ background: palette.background, borderColor: palette.borderColor }}>{chartSubtitle(drawingTool, draftTrendStart, chartStyle)}</span> : null}
+          </div>
+          <div
+            ref={stageRef}
+            className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}
+          >
+            <div ref={containerRef} className="chart-canvas" />
+            {drawingTool !== "none" ? (
+              <div
+                ref={interactionLayerRef}
+                className="chart-interaction-layer"
+                onPointerDown={handleStagePointerDown}
+                onPointerMove={handleStagePointerMove}
+                onPointerLeave={handleStagePointerLeave}
+                onPointerUp={handleStagePointerUp}
+              />
+            ) : null}
+            <svg
+              className="chart-overlay"
+              width={Math.max(stageWidth, 1)}
+              height={Math.max(stageHeight, 1)}
+              viewBox={`0 0 ${Math.max(stageWidth, 1)} ${Math.max(stageHeight, 1)}`}
+              preserveAspectRatio="none"
+            >
+              {verticalLineOverlays}
+              {horizontalLineOverlays}
+              {trendlineOverlays}
+              {rayOverlays}
+              {rectangleOverlays}
+              {measureOverlays}
+              {draftPoint ? <circle cx={draftPoint.x} cy={draftPoint.y} r="5" fill="#ffd36f" /> : null}
+              {draftPoint && hoverPoint && drawingTool === "trendline" ? (
+                <line
+                  x1={draftPoint.x}
+                  y1={draftPoint.y}
+                  x2={hoverPoint.x}
+                  y2={hoverPoint.y}
+                  stroke="#ffd36f"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray="4 4"
+                />
+              ) : null}
+              {draftPoint && hoverPoint && drawingTool === "ray" ? (
+                <line
+                  x1={draftPoint.x}
+                  y1={draftPoint.y}
+                  x2={projectRayEnd(draftPoint, hoverPoint, stageWidth).x}
+                  y2={projectRayEnd(draftPoint, hoverPoint, stageWidth).y}
+                  stroke="#8ee6ff"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray="4 4"
+                />
+              ) : null}
+              {draftPoint && hoverPoint && drawingTool === "rectangle" ? (
+                <rect
+                  x={Math.min(draftPoint.x, hoverPoint.x)}
+                  y={Math.min(draftPoint.y, hoverPoint.y)}
+                  width={Math.max(Math.abs(hoverPoint.x - draftPoint.x), 2)}
+                  height={Math.max(Math.abs(hoverPoint.y - draftPoint.y), 2)}
+                  rx="6"
+                  fill="rgba(89, 196, 255, 0.1)"
+                  stroke="#59c4ff"
+                  strokeWidth="1.6"
+                  strokeDasharray="5 4"
+                />
+              ) : null}
+              {draftPoint && hoverPoint && drawingTool === "measure" ? (
+                <g>
+                  <line
+                    x1={draftPoint.x}
+                    y1={draftPoint.y}
+                    x2={hoverPoint.x}
+                    y2={hoverPoint.y}
+                    stroke="#4bf0b3"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeDasharray="5 4"
+                  />
+                  {draftMeasureLabel ? (
+                    <>
+                      <rect
+                        x={clamp(((draftPoint.x + hoverPoint.x) / 2) - 92, 6, Math.max(stageWidth - 188, 6))}
+                        y={clamp(((draftPoint.y + hoverPoint.y) / 2) - 26, 8, Math.max(stageHeight - 30, 8))}
+                        width="184"
+                        height="24"
+                        rx="8"
+                        fill="rgba(4, 8, 17, 0.92)"
+                      />
+                      <text
+                        x={clamp(((draftPoint.x + hoverPoint.x) / 2), 98, Math.max(stageWidth - 98, 98))}
+                        y={clamp(((draftPoint.y + hoverPoint.y) / 2) - 10, 23, Math.max(stageHeight - 15, 23))}
+                        fill="#4bf0b3"
+                        fontSize="11"
+                        textAnchor="middle"
+                      >
+                        {draftMeasureLabel}
+                      </text>
+                    </>
+                  ) : null}
+                </g>
+              ) : null}
+              {selectedAnnotationHandles}
+              {hoverPoint ? <circle cx={hoverPoint.x} cy={hoverPoint.y} r="4" fill="#ffd36f" /> : null}
+            </svg>
+            <div className="chart-note-layer">{textOverlays}</div>
+            {selectedAnnotation && annotationEditPos ? (
+              <div
+                className="annotation-edit-panel"
+                style={{ left: annotationEditPos.x, top: annotationEditPos.y }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <label className="annotation-edit-color" title="Line color">
+                  <input
+                    type="color"
+                    value={selectedAnnotation.color ?? ANNOTATION_DEFAULT_COLORS[selectedAnnotation.type] ?? "#ffd36f"}
+                    onChange={(e) => updateAnnotation(selectedAnnotation.id, { color: e.target.value } as any)}
+                  />
+                </label>
+                {selectedAnnotation.type !== "text" ? (
+                  <div className="annotation-edit-widths">
+                    {([1, 2, 3] as const).map((w) => (
+                      <button
+                        key={w}
+                        type="button"
+                        className={(selectedAnnotation.lineWidth ?? 2) === w ? "width-btn active" : "width-btn"}
+                        onClick={() => updateAnnotation(selectedAnnotation.id, { lineWidth: w } as any)}
+                        title={`Line width ${w}`}
+                      >
+                        <span style={{ display: "block", height: w + 1, width: 16, background: "currentColor", borderRadius: 2 }} />
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <button
+                  type="button"
+                  className="annotation-edit-delete"
+                  onClick={() => deleteAnnotation(selectedAnnotation.id)}
+                  title="Delete drawing"
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="annotation-edit-close"
+                  onClick={() => setSelectedAnnotationId(null)}
+                  title="Deselect"
+                >
+                  ✕
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+        )
+      ) : !symbol ? (
+        <div className="empty-state">Pick a stock to view fundamentals.</div>
+      ) : fundamentalsLoading ? (
+        <div className="empty-state">Loading fundamentals for {symbol}...</div>
+      ) : fundamentalsError ? (
+        <div className="empty-state">{fundamentalsError}</div>
+      ) : !fundamentals ? (
+        <div className="empty-state">Fundamentals are not available for this stock yet.</div>
+      ) : (
+        <PremiumResearchPanel
+          symbol={symbol}
+          market={market}
+          fundamentals={fundamentals}
+        />
+      )}
+      {aiChatOpen && symbol ? (
+        <AiChatWindow
+          symbol={symbol}
+          market={market}
+          timeframe={timeframe}
+          bars={(extendedHistory?.bars ?? bars).slice(-150)}
+          onClose={() => setAiChatOpen(false)}
+        />
+      ) : null}
+    </Panel>
+  );
+}

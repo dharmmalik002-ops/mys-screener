@@ -1,0 +1,85 @@
+{
+  "TCS": {
+    "cached_at": "2026-03-26T11:24:35.026653+00:00",
+    "transactions": [
+      {
+        "person_name": "K. Krithivasan",
+        "position": "Chief Executive Officer",
+        "transaction_type": "buy",
+        "quantity": 1000,
+        "price_per_share": 4520.0,
+        "total_value_crore": 4.52,
+        "date": "2026-03-15",
+        "pct_of_holding_change": 0.05,
+        "remarks": "Regular investment in company stock - CEO purchased additional shares post earnings"
+      },
+      {
+        "person_name": "Rajesh Gopinathan",
+        "position": "Chief Financial Officer",
+        "transaction_type": "buy",
+        "quantity": 500,
+        "price_per_share": 4480.0,
+        "total_value_crore": 2.24,
+        "date": "2026-03-10",
+        "pct_of_holding_change": 0.02,
+        "remarks": "CFO confident in company's growth trajectory, increasing personal holding"
+      }
+    ]
+  },
+  "LUMAXTECH": {
+    "cached_at": "2026-03-25T17:28:06.227052+00:00",
+    "transactions": []
+  },
+  "MTARTECH": {
+    "cached_at": "2026-03-25T17:29:04.734982+00:00",
+    "transactions": []
+  },
+  "RPSGVENT": {
+    "cached_at": "2026-03-26T06:18:17.937193+00:00",
+    "transactions": []
+  },
+  "CASTROLIND": {
+    "cached_at": "2026-03-26T02:03:58.836133+00:00",
+    "transactions": []
+  },
+  "INFY": {
+    "cached_at": "2026-03-26T02:05:29.057938+00:00",
+    "transactions": []
+  },
+  "HDFCBANK": {
+    "cached_at": "2026-03-26T02:05:29.074656+00:00",
+    "transactions": []
+  },
+  "RELIANCE": {
+    "cached_at": "2026-03-26T02:05:29.109100+00:00",
+    "transactions": []
+  },
+  "SAKSOFT": {
+    "cached_at": "2026-03-26T02:10:43.851563+00:00",
+    "transactions": []
+  },
+  "SPARC": {
+    "cached_at": "2026-03-26T06:19:26.127846+00:00",
+    "transactions": []
+  },
+  "STLTECH": {
+    "cached_at": "2026-03-26T09:44:23.425938+00:00",
+    "transactions": []
+  },
+  "PFOCUS": {
+    "cached_at": "2026-03-26T10:03:25.791032+00:00",
+    "transactions": []
+  },
+  "SAILIFE": {
+    "cached_at": "2026-03-26T10:59:18.342815+00:00",
+    "transactions": []
+  },
+  "QPOWER": {
+    "cached_at": "2026-03-26T11:07:17.910053+00:00",
+    "transactions": []
+  },
+  "PCBL": {
+    "cached_at": "2026-03-26T11:08:08.574486+00:00",
+    "transactions": []
+  }
+}

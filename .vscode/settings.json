@@ -1,0 +1,11 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^cd \"/Users/dharmender/Desktop/Stock Scanner copy 3/backend\" && python -c \"\nfrom app\\.providers\\.free import FreeMarketDataProvider\nfrom app\\.models\\.market import StockSnapshot, ScanMatch, ImprovingRsItem, SectorCompanyItem\nfrom app\\.scanners\\.definitions import SCANS, build_scan_match, run_custom_scan\nfrom app\\.services\\.dashboard_service import DashboardService, build_leader_match, build_stock_overview\nprint\\('All imports successful'\\)\nprint\\(f'ScanMatch rs_rating type: \\{ScanMatch\\.model_fields\\[\\\\\"rs_rating\\\\\"\\]\\.annotation\\}'\\)\nprint\\(f'ImprovingRsItem rs_rating type: \\{ImprovingRsItem\\.model_fields\\[\\\\\"rs_rating\\\\\"\\]\\.annotation\\}'\\)\nprint\\(f'SectorCompanyItem rs_rating type: \\{SectorCompanyItem\\.model_fields\\[\\\\\"rs_rating\\\\\"\\]\\.annotation\\}'\\)\nprint\\(f'StockSnapshot rs_eligible default: \\{StockSnapshot\\.model_fields\\[\\\\\"rs_eligible\\\\\"\\]\\.default\\}'\\)\n\"\n$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "'\"/Users/dharmender/Desktop/Website/Stock": true,
+        "\"/Users/dharmender/Desktop/Website/Stock": true,
+        "npx tsc": true
+    }
+}

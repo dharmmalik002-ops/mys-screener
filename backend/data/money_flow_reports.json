@@ -1,0 +1,346 @@
+{
+  "2026-W13": {
+    "week_key": "2026-W13",
+    "week_start": "2026-03-23",
+    "generated_at": "2026-03-28T17:19:56.954831Z",
+    "inflows": [
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "This sector has shown a strong positive return of +4.3% for the week, outperforming the broader market indices like Nifty 50 and Nifty Midcap 50. This suggests renewed investor interest and potential for further upside.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Despite a negative 1-month and 3-month performance, the sector has managed a +3.0% gain this week. This indicates a potential bottoming out and a shift in investor sentiment, possibly driven by anticipation of better quarterly results or global tech demand recovery.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Healthcare",
+        "sentiment": "bullish",
+        "reason": "The sector has posted a modest +1.6% gain for the week, demonstrating resilience amidst a generally weak market. Its defensive characteristics and consistent demand drivers likely attract capital during uncertain times.",
+        "magnitude": "mild"
+      }
+    ],
+    "outflows": [
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "This sector is experiencing significant outflows, evidenced by a -5.2% weekly decline and a substantial -24.3% drop over three months. High interest rates and potential slowdown in real estate demand are likely weighing heavily on investor sentiment.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Financial Services",
+        "sentiment": "bearish",
+        "reason": "A sharp -2.0% weekly decline and a -10.3% performance over three months indicate significant investor caution. Concerns around credit growth, regulatory changes, or asset quality might be driving this outflow.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bearish",
+        "reason": "The sector has seen a substantial -2.4% weekly drop and a -14.7% decline over three months. While typically defensive, recent underperformance suggests that even traditionally safe havens are facing selling pressure, possibly due to valuation concerns or shifts in investor risk appetite.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Diversified",
+        "sentiment": "bearish",
+        "reason": "A significant -3.4% weekly loss and a -15.3% performance over three months point to broad-based selling. This could be due to a combination of sector-specific issues or general market risk aversion affecting diversified holdings.",
+        "magnitude": "moderate"
+      }
+    ],
+    "sector_performance": [
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "Strong weekly gains (+4.3%) suggest a positive momentum shift, potentially driven by upcoming content releases or advertising revenue growth.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Despite recent weakness, a positive weekly return (+3.0%) indicates resilience and potential for recovery, possibly due to global demand stabilization or cost optimization efforts.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Healthcare",
+        "sentiment": "bullish",
+        "reason": "Consistent positive weekly performance (+1.6%) highlights its defensive appeal and steady demand, making it a preferred choice in volatile markets.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bearish",
+        "reason": "Significant weekly (-0.3%) and quarterly (-16.9%) declines suggest headwinds from project execution delays, rising input costs, or subdued government spending.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "Sharp weekly (-5.2%) and quarterly (-24.3%) losses indicate severe investor pessimism, likely due to high borrowing costs and a slowdown in property demand.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Financial Services",
+        "sentiment": "bearish",
+        "reason": "Consistent negative performance across all timeframes, including a -2.0% weekly drop, points to underlying concerns about asset quality and future profitability.",
+        "magnitude": "strong"
+      }
+    ],
+    "short_term_headwinds": [
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "Persistent high interest rates and potential for further tightening by the Reserve Bank of India will continue to dampen demand and increase borrowing costs for developers.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Automobile and Auto Components",
+        "sentiment": "bearish",
+        "reason": "Rising input costs, particularly for raw materials and semiconductors, coupled with potential slowdown in discretionary spending, could pressure margins and sales volumes in the near term.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Consumer Durables",
+        "sentiment": "bearish",
+        "reason": "Similar to automobiles, this sector is vulnerable to a slowdown in consumer spending due to inflationary pressures and potential interest rate hikes, impacting demand for big-ticket items.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bearish",
+        "reason": "The sector faces immediate pressure from potential delays in government infrastructure projects and rising construction material costs, impacting project timelines and profitability.",
+        "magnitude": "moderate"
+      }
+    ],
+    "short_term_tailwinds": [
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "Upcoming festive seasons and potential for increased advertising spend, coupled with strong content pipelines from major players, could drive revenue growth in the short term.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Anticipation of a potential stabilization in global IT spending and a focus on cost-optimization by clients might lead to improved order books and project wins for Indian IT firms.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Healthcare",
+        "sentiment": "bullish",
+        "reason": "The sector's inherent defensive qualities will likely continue to attract capital as investors seek stability amidst broader market volatility.",
+        "magnitude": "mild"
+      }
+    ],
+    "long_term_tailwinds": [
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "The ongoing digital transformation across industries globally, coupled with India's strong talent pool and cost competitiveness, provides a robust long-term growth runway for the IT sector.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Healthcare",
+        "sentiment": "bullish",
+        "reason": "Increasing healthcare expenditure, rising disposable incomes, an aging population, and a focus on medical tourism are structural drivers for sustained growth in the healthcare sector.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Construction Materials",
+        "sentiment": "bullish",
+        "reason": "The government's continued focus on infrastructure development, including roads, housing, and urban development, will drive sustained demand for construction materials over the long term.",
+        "magnitude": "moderate"
+      }
+    ],
+    "macro_summary": "The Indian equity market is currently experiencing significant selling pressure, with broad-based outflows across most sectors, particularly in Realty and Financial Services. This suggests heightened risk aversion among investors, possibly driven by global economic uncertainties and domestic inflation concerns. While some sectors like Media and IT are showing pockets of resilience and potential short-term recovery, the overall market sentiment remains bearish, with a clear preference for defensive plays like Healthcare.",
+    "ai_model": "gemini"
+  },
+  "2026-W14": {
+    "week_key": "2026-W14",
+    "week_start": "2026-03-30",
+    "generated_at": "2026-04-04T03:30:12.327868Z",
+    "inflows": [
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Despite a weak 1-month and 3-month performance, the strong 1-day (+2.0%) and 1-week (+3.2%) gains suggest a potential turnaround. Investors may be re-entering the sector anticipating a bottoming out of the recent downturn, possibly driven by positive outlooks on global IT spending or specific company deal wins not reflected in broader metrics.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "The sector exhibits robust weekly performance (+3.6%) and positive 3-month gains (+3.1%), indicating sustained investor interest. This could be fueled by anticipation of strong advertising revenues from upcoming events or a recovery in consumer discretionary spending on entertainment and media content.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bullish",
+        "reason": "A positive 1-day gain (+0.2%) and a significant weekly return (+3.0%) suggest renewed investor confidence. This is likely driven by ongoing government infrastructure spending initiatives and positive sentiment around the real estate sector's recovery, despite longer-term negative performance.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "The sector shows a strong 1-day gain (+1.7%) and a respectable weekly return (+2.3%). Utilities often attract defensive flows, and this uptick could signal a rotation into safer assets amidst broader market uncertainty or anticipation of favorable regulatory changes.",
+        "magnitude": "mild"
+      }
+    ],
+    "outflows": [
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "The sector has experienced a significant weekly decline (-3.8%) and the worst 1-month (-15.5%) and 3-month (-23.6%) performance among all listed sectors. This indicates strong selling pressure, likely due to concerns about rising interest rates, potential slowdown in housing demand, or regulatory headwinds.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Financial Services",
+        "sentiment": "bearish",
+        "reason": "A substantial weekly drop (-3.2%) and the worst 1-month performance (-14.4%) point to significant outflows. This could be attributed to concerns over asset quality, increased competition, or a cautious outlook on credit growth in the current economic environment.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Telecommunication",
+        "sentiment": "bearish",
+        "reason": "The sector shows a notable weekly decline (-3.3%) and a sharp 3-month fall (-14.3%). This suggests investor apprehension, possibly related to intense competition, pricing pressures, or significant capital expenditure requirements for network upgrades.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Oil Gas & Consumable Fuels",
+        "sentiment": "bearish",
+        "reason": "A significant weekly drop (-3.0%) and a negative 1-month performance (-5.7%) indicate selling pressure. This could be driven by a decline in global crude oil prices, concerns about demand slowdown, or geopolitical factors impacting energy markets.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Consumer Durables",
+        "sentiment": "bearish",
+        "reason": "The sector has seen a considerable weekly decline (-3.0%) and a weak 1-month performance (-9.8%). This suggests that consumers are likely cutting back on discretionary spending, possibly due to inflationary pressures or a general economic slowdown.",
+        "magnitude": "moderate"
+      }
+    ],
+    "sector_performance": [
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Strong weekly rebound after a prolonged downturn indicates potential bottoming out and renewed investor interest.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "Consistent positive performance over the week and 3 months suggests resilience and potential for further upside.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bullish",
+        "reason": "Positive weekly momentum, driven by government spending and real estate recovery hopes, overshadows recent weakness.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Defensive appeal and positive short-term gains suggest a safe haven rotation.",
+        "magnitude": "mild"
+      },
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "Sharp weekly decline and significant longer-term underperformance highlight significant investor concerns.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Financial Services",
+        "sentiment": "bearish",
+        "reason": "Substantial weekly drop and poor monthly performance indicate widespread investor caution.",
+        "magnitude": "strong"
+      }
+    ],
+    "short_term_headwinds": [
+      {
+        "name": "Realty",
+        "sentiment": "bearish",
+        "reason": "Persistent negative sentiment, sharp weekly decline, and weak short-to-medium term performance indicate ongoing headwinds from interest rate sensitivity and demand concerns.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Financial Services",
+        "sentiment": "bearish",
+        "reason": "Significant weekly and monthly declines suggest immediate concerns regarding asset quality, credit growth, and regulatory shifts are weighing heavily on the sector.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Automobile and Auto Components",
+        "sentiment": "bearish",
+        "reason": "A notable weekly decline (-2.5%) and poor monthly performance (-14.2%) suggest headwinds from potentially slowing consumer demand, input cost pressures, or supply chain disruptions.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Oil Gas & Consumable Fuels",
+        "sentiment": "bearish",
+        "reason": "The sharp weekly drop (-3.0%) indicates immediate sensitivity to global commodity price fluctuations and potential demand concerns.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Telecommunication",
+        "sentiment": "bearish",
+        "reason": "The steep weekly decline (-3.3%) points to immediate investor concerns regarding competitive pressures and potential regulatory impacts.",
+        "magnitude": "moderate"
+      }
+    ],
+    "short_term_tailwinds": [
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "The strong weekly rebound (+3.2%) suggests a potential shift in sentiment, with investors potentially anticipating a bottom and re-entering the sector for short-term gains.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "The robust weekly performance (+3.6%) indicates strong current investor interest, possibly driven by seasonal advertising trends or positive news flow.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bullish",
+        "reason": "The positive weekly momentum (+3.0%) suggests that ongoing government infrastructure push and a perceived stabilization in the real estate market are driving short-term investor appetite.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "The strong daily (+1.7%) and weekly (+2.3%) gains indicate a potential short-term rotation into defensive sectors amid market volatility.",
+        "magnitude": "mild"
+      }
+    ],
+    "long_term_tailwinds": [
+      {
+        "name": "Information Technology",
+        "sentiment": "bullish",
+        "reason": "Despite recent weakness, the long-term structural demand for IT services, digital transformation, and AI adoption globally remains a strong tailwind for the sector.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Construction",
+        "sentiment": "bullish",
+        "reason": "The Indian government's sustained focus on infrastructure development, 'Make in India' initiatives, and urban development projects provide a strong long-term growth impetus.",
+        "magnitude": "strong"
+      },
+      {
+        "name": "Utilities",
+        "sentiment": "bullish",
+        "reason": "Increasing demand for power driven by economic growth, renewable energy transition initiatives, and government focus on energy security offer long-term structural advantages.",
+        "magnitude": "moderate"
+      },
+      {
+        "name": "Media Entertainment & Publication",
+        "sentiment": "bullish",
+        "reason": "Growing digital penetration, increasing disposable incomes, and evolving content consumption patterns are likely to drive long-term growth in advertising and subscription revenues.",
+        "magnitude": "moderate"
+      }
+    ],
+    "macro_summary": "The Indian equity market is exhibiting mixed signals this week, with a clear divergence in sector performance. While IT and Media are showing signs of recovery and attracting inflows, sectors like Realty and Financial Services are facing significant selling pressure. Investors appear cautious, rotating out of interest-rate sensitive and discretionary spending-linked sectors, while showing renewed interest in technology and defensive utilities. Key risks include persistent inflation, potential global economic slowdown impacting export-oriented sectors, and ongoing geopolitical uncertainties.",
+    "ai_model": "gemini"
+  }
+}

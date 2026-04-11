@@ -1,0 +1,59 @@
+name: Deploy to HuggingFace
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "Dockerfile"
+      - "render.yaml"
+
+jobs:
+  deploy-hf:
+    name: Push backend to HuggingFace Spaces
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so HF push works cleanly
+
+      - name: Configure Git identity
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Build clean deploy snapshot
+        run: |
+          rm -rf /tmp/hf-deploy
+          mkdir -p /tmp/hf-deploy
+          rsync -a ./ /tmp/hf-deploy/ \
+            --exclude '.git' \
+            --exclude '.github' \
+            --exclude '.venv' \
+            --exclude 'backend/.venv' \
+            --exclude 'frontend/node_modules' \
+            --exclude 'test-results' \
+            --exclude 'tmp' \
+            --exclude 'backend/data/chart_cache' \
+            --exclude 'backend/data/chart_cache_us' \
+            --exclude 'backend/data/news_cache' \
+            --exclude 'backend/data/free_snapshots.json' \
+            --exclude 'backend/data/free_snapshots_us.json' \
+            --exclude 'backend/data/free_snapshots.json.gz' \
+            --exclude 'backend/data/free_snapshots_us.json.gz'
+
+      - name: Push clean snapshot to HuggingFace
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          cd /tmp/hf-deploy
+          git init
+          git checkout -b main
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git add .
+          git commit -m "Deploy from GitHub Actions ${GITHUB_SHA}"
+          git remote add hf \
+            "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
+          git push hf main:main --force
