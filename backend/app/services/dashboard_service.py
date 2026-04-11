@@ -64,6 +64,7 @@ from app.models.market import (
     UniverseBreadth,
     WatchlistItem,
     WatchlistsStateResponse,
+    derive_rs_comparison_dates,
 )
 from app.providers.base import MarketDataProvider
 from app.scanners.definitions import (
@@ -191,6 +192,7 @@ RESULTS_UPDATE_KEYWORDS = (
 
 def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reason: str) -> ScanMatch:
     display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
+    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return ScanMatch(
         scan_id=scan_id,
         symbol=snapshot.symbol,
@@ -209,6 +211,9 @@ def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reas
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,
@@ -221,6 +226,7 @@ def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reas
 
 
 def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
+    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return StockOverview(
         symbol=snapshot.symbol,
         name=snapshot.name,
@@ -239,6 +245,9 @@ def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,
@@ -862,6 +871,7 @@ class DashboardService:
                 continue
 
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
+            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             score = round(
                 60
                 + (snapshot.gap_pct * 8)
@@ -888,6 +898,9 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -932,6 +945,7 @@ class DashboardService:
 
             distance_to_pivot_pct = 0.0 if pivot_level <= 0 else round(((pivot_level - snapshot.last_price) / pivot_level) * 100, 2)
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
+            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             score = round(
                 60
                 + (snapshot.rs_rating * 0.34)
@@ -960,6 +974,9 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -1073,6 +1090,7 @@ class DashboardService:
             if request.enable_ma_support:
                 reasons.append(f"Pulling into {selected_ma_key.upper()} within {ma_distance_pct:.2f}%")
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
+            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             items.append(
                 ScanMatch(
                     scan_id="pull-backs",
@@ -1092,6 +1110,9 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -2724,7 +2745,7 @@ class DashboardService:
             consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
                 [item["snapshot"] for item in consolidating_candidates],
                 limit=8,
-                max_age_hours=24 * 14,
+                max_age_hours=72,
             )
         except TypeError:
             consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
@@ -2772,7 +2793,7 @@ class DashboardService:
             value_fundamentals = await self._fetch_fundamentals_for_symbols(
                 value_snapshot_pool,
                 limit=self._money_flow_value_fundamentals_limit(),
-                max_age_hours=24 * 14,
+                max_age_hours=72,
             )
         except TypeError:
             value_fundamentals = await self._fetch_fundamentals_for_symbols(
@@ -3987,10 +4008,24 @@ class DashboardService:
         historical_snapshots: list[StockSnapshot] = []
         for snapshot in snapshots:
             history = history_reader(snapshot.symbol, max(620, 520 + offset_bars), allow_legacy=True)
-            if history is None or history.empty or len(history) <= offset_bars:
+            if history is None or history.empty:
                 continue
-            trimmed = history.iloc[:-offset_bars] if offset_bars > 0 else history
-            if trimmed.empty or len(trimmed) < 30:
+
+            candidate_offsets = [offset_bars, 3, 2, 1, 0]
+            trimmed = None
+            for candidate_offset in candidate_offsets:
+                if candidate_offset > offset_bars:
+                    continue
+                if len(history) <= candidate_offset:
+                    continue
+                candidate_trimmed = history.iloc[:-candidate_offset] if candidate_offset > 0 else history
+                if candidate_trimmed.empty:
+                    continue
+                if len(candidate_trimmed) >= 20:
+                    trimmed = candidate_trimmed
+                    break
+
+            if trimmed is None:
                 continue
             benchmark_history = benchmark_close[benchmark_close.index <= trimmed.index[-1]] if not benchmark_close.empty else benchmark_close
             instrument = {

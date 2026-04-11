@@ -228,6 +228,8 @@ class FreeMarketDataProvider:
         self._live_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._fundamentals_memory_cache: dict[str, CompanyFundamentals] = {}
         self._bulk_fundamentals_memory_cache: dict[str, dict[str, Any]] | None = None
+        self._bulk_fundamentals_memory_cache_mtime: float | None = None
+        self._bulk_fundamentals_memory_loaded_at: float | None = None
         self._chart_symbol_scale_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
         self._holiday_date_cache: dict[tuple[int, ...], set[date]] = {}
         self._last_refresh_metadata = self._default_refresh_metadata()
@@ -1255,16 +1257,34 @@ class FreeMarketDataProvider:
         return (snapshot_mtime, metadata_mtime)
 
     def _get_bulk_fundamentals(self) -> dict[str, dict[str, Any]]:
-        if self._bulk_fundamentals_memory_cache is not None:
+        cache_exists = self.bulk_fundamentals_cache_path.exists()
+        file_mtime = self.bulk_fundamentals_cache_path.stat().st_mtime if cache_exists else -1.0
+        max_memory_age_seconds = 15 * 60 if self._is_market_open_ist() else 2 * 60 * 60
+        loaded_age_seconds = (
+            max(time.time() - float(self._bulk_fundamentals_memory_loaded_at), 0.0)
+            if self._bulk_fundamentals_memory_loaded_at is not None
+            else float("inf")
+        )
+
+        if (
+            self._bulk_fundamentals_memory_cache is not None
+            and self._bulk_fundamentals_memory_cache_mtime == file_mtime
+            and loaded_age_seconds <= max_memory_age_seconds
+        ):
             return self._bulk_fundamentals_memory_cache
-        if not self.bulk_fundamentals_cache_path.exists():
+
+        if not cache_exists:
             self._bulk_fundamentals_memory_cache = {}
+            self._bulk_fundamentals_memory_cache_mtime = -1.0
+            self._bulk_fundamentals_memory_loaded_at = time.time()
             return self._bulk_fundamentals_memory_cache
         try:
             payload = json.loads(self.bulk_fundamentals_cache_path.read_text(encoding="utf-8"))
             self._bulk_fundamentals_memory_cache = payload if isinstance(payload, dict) else {}
         except Exception:
             self._bulk_fundamentals_memory_cache = {}
+        self._bulk_fundamentals_memory_cache_mtime = file_mtime
+        self._bulk_fundamentals_memory_loaded_at = time.time()
         return self._bulk_fundamentals_memory_cache
 
     def _fetch_yf_bulk_info(self, yf_ticker: str) -> dict[str, Any]:
@@ -1369,8 +1389,13 @@ class FreeMarketDataProvider:
             )
             # Invalidate in-memory cache so next request picks up fresh data
             self._bulk_fundamentals_memory_cache = None
+            self._bulk_fundamentals_memory_cache_mtime = None
+            self._bulk_fundamentals_memory_loaded_at = None
             # Also clear snapshot memory cache so enriched rows get rebuilt
             self._snapshots_memory_cache.clear()
+            self._snapshot_request_tasks.clear()
+            self._background_snapshot_refresh_tasks.clear()
+            self._live_snapshot_refresh_tasks.clear()
         except Exception as exc:
             logger.error("Failed to write bulk fundamentals cache: %s", exc)
             return {"status": "error", "reason": str(exc)}
@@ -1850,7 +1875,8 @@ class FreeMarketDataProvider:
         path = self._chart_cache_path(symbol, timeframe)
         if not path.exists():
             return False
-        age_seconds = max(time.time() - path.stat().st_mtime, 0.0)
+        chart_mtime = path.stat().st_mtime
+        age_seconds = max(time.time() - chart_mtime, 0.0)
         normalized_symbol = str(symbol or "").strip().upper()
         if timeframe == "1D" and normalized_symbol in MACRO_CHART_SYMBOLS:
             return age_seconds < (6 * 60 * 60)
@@ -1861,6 +1887,12 @@ class FreeMarketDataProvider:
         if timeframe == "1h":
             return age_seconds < 15 * 60
         if timeframe == "1D":
+            if not self._is_market_open_ist():
+                snapshot_updated_at = self.get_snapshot_updated_at()
+                if snapshot_updated_at is not None:
+                    chart_updated_at = datetime.fromtimestamp(chart_mtime, tz=timezone.utc)
+                    if chart_updated_at + timedelta(minutes=1) < snapshot_updated_at:
+                        return False
             # 15 mins if open; 30 mins after close so snapshot rebuilds always
             # fetch the confirmed official close rather than reusing an intraday cache.
             return age_seconds < (15 * 60 if self._is_market_open_ist() else 30 * 60)

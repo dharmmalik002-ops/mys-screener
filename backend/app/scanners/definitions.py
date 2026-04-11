@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
+    derive_rs_comparison_dates,
     ReturnsScanRequest,
     ScanDescriptor,
     ScanMatch,
@@ -733,6 +734,7 @@ def build_scan_match(
     pattern: str | None = None,
 ) -> ScanMatch:
     display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
+    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return ScanMatch(
         scan_id=scan_id,
         symbol=snapshot.symbol,
@@ -752,6 +754,9 @@ def build_scan_match(
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
+        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
+        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,

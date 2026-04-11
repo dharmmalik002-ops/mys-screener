@@ -23,6 +23,9 @@ export type ScanMatch = {
   pattern?: string | null;
   rs_rating?: number | null;
   rs_rating_1m_ago?: number | null;
+  rs_rating_1d_ago_date?: string | null;
+  rs_rating_1w_ago_date?: string | null;
+  rs_rating_1m_ago_date?: string | null;
   nifty_outperformance?: number | null;
   sector_outperformance?: number | null;
   three_month_rs?: number | null;
@@ -535,6 +538,9 @@ export type StockOverview = {
   rs_rating_1d_ago: number | null;
   rs_rating_1w_ago: number | null;
   rs_rating_1m_ago: number | null;
+  rs_rating_1d_ago_date?: string | null;
+  rs_rating_1w_ago_date?: string | null;
+  rs_rating_1m_ago_date?: string | null;
   nifty_outperformance: number;
   sector_outperformance: number;
   three_month_rs: number;

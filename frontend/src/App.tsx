@@ -1409,7 +1409,17 @@ function indiaDateKey(date: Date = new Date()) {
   }).format(date);
 }
 
-function savedScannerFreshToday(savedAt: string | null | undefined) {
+function marketDateKey(date: Date, market: MarketKey) {
+  const timeZone = market === "us" ? "America/New_York" : "Asia/Kolkata";
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(date);
+}
+
+function savedScannerFreshForMarket(savedAt: string | null | undefined, market: MarketKey) {
   if (!savedAt) {
     return false;
   }
@@ -1417,7 +1427,18 @@ function savedScannerFreshToday(savedAt: string | null | undefined) {
   if (Number.isNaN(parsed.getTime())) {
     return false;
   }
-  return indiaDateKey(parsed) === indiaDateKey();
+  return marketDateKey(parsed, market) === marketDateKey(new Date(), market);
+}
+
+function isFundamentalsPayloadFresh(payload: CompanyFundamentals | null | undefined) {
+  if (!payload?.fetched_at) {
+    return false;
+  }
+  const fetchedAt = Date.parse(payload.fetched_at);
+  if (!Number.isFinite(fetchedAt)) {
+    return false;
+  }
+  return (Date.now() - fetchedAt) <= (2 * 60 * 60 * 1000);
 }
 
 function downloadTextFile(filename: string, contents: string) {
@@ -1789,10 +1810,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setActiveSavedScannerId(null);
     setSavedDrawings(nextSavedDrawings);
     setChartPalette(nextChartPalette);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setScanLoading(false);
+    setImprovingRsLoading(false);
+    setSectorLoading(false);
     setGroupsData(null);
     setGroupsVisibleSymbols([]);
     setGroupsLoading(false);
     setGroupsFocusRequest(null);
+    setChartGroupModalContext(null);
+    setJournalAddRequest(null);
     setSelectedSymbol(null);
     setChart(null);
     setChartOpen(false);
@@ -2616,8 +2645,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     // Don't show loading spinner until the user is actually on the fundamentals tab,
     // but always kick off the background fetch.
     const onFundamentalsTab = chartPanelTab === "fundamentals" && !(activePage === "home" && !chartOpen);
+    const cachedFundamentals = fundamentalsBySymbol[selectedSymbol];
+    const hasFreshFundamentals = isFundamentalsPayloadFresh(cachedFundamentals);
 
-    if (fundamentalsBySymbol[selectedSymbol]) {
+    if (cachedFundamentals && hasFreshFundamentals) {
       setFundamentalsError(null);
       if (onFundamentalsTab) setFundamentalsLoading(false);
       return;
@@ -2971,6 +3002,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const visibleSymbolsKey = visibleSymbols.join("|");
   const displayedChart = chart && chart.symbol === selectedSymbol && chart.timeframe === timeframe ? chart : null;
   const activeChartKey = selectedSymbol ? `${selectedSymbol}:${timeframe}` : null;
+  const activeChartSavedAt = useMemo(() => {
+    if (!selectedSymbol) {
+      return null;
+    }
+    const chartCacheKey = buildChartCacheKey(activeMarket, selectedSymbol, timeframe);
+    return persistedChartCacheRef.current[activeMarket][chartCacheKey]?.saved_at ?? null;
+  }, [activeMarket, chart, selectedSymbol, timeframe]);
   const activeAnnotations = activeChartKey ? savedDrawings[activeChartKey] ?? [] : [];
   const activeFundamentals = selectedSymbol ? fundamentalsBySymbol[selectedSymbol] ?? null : null;
   const activeChartGroupContext = useMemo(
@@ -4364,13 +4402,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    const stalePresets = savedScanners.filter((preset) => !savedScannerFreshToday(preset.lastUpdatedAt));
+    const stalePresets = savedScanners.filter((preset) => !savedScannerFreshForMarket(preset.lastUpdatedAt, activeMarket));
     if (stalePresets.length === 0) {
       return;
     }
 
     void syncSavedScanners(stalePresets);
-  }, [loading]);
+  }, [activeMarket, loading, savedScanners]);
 
   const autoRefreshSchedule = getAutoRefreshSchedule(new Date(clockTick), activeMarket);
   const navSearchSuggestions = useMemo(
@@ -4379,6 +4417,42 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   );
   const brandEyebrow = activeMarket === "india" ? "NSE / BSE Stock Scanner" : "NYSE / Nasdaq Stock Scanner";
   const floorMetricLabel = activeMarket === "india" ? "Floor" : "US Filter";
+  const freshnessWatermarks = useMemo(() => {
+    const labels: Array<{ key: string; label: string; value: string }> = [];
+    const toTimeLabel = (raw: string | null | undefined) => {
+      if (!raw) {
+        return null;
+      }
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) {
+        return null;
+      }
+      return parsed.toLocaleTimeString();
+    };
+
+    const dashboardTime = toTimeLabel(dashboard?.generated_at);
+    if (dashboardTime) labels.push({ key: "dashboard", label: "Dashboard", value: dashboardTime });
+
+    const sectorsTime = toTimeLabel(sectorTabData?.generated_at);
+    if (sectorsTime) labels.push({ key: "sectors", label: "Sectors", value: sectorsTime });
+
+    const groupsTime = toTimeLabel(groupsData?.generated_at);
+    if (groupsTime) labels.push({ key: "groups", label: "Groups", value: groupsTime });
+
+    const chartTime = toTimeLabel(activeChartSavedAt);
+    if (chartTime) {
+      labels.push({
+        key: "chart",
+        label: "Chart",
+        value: chartCacheState === "cached" ? `${chartTime} (cached)` : chartTime,
+      });
+    }
+
+    const fundamentalsTime = toTimeLabel(activeFundamentals?.fetched_at);
+    if (fundamentalsTime) labels.push({ key: "fundamentals", label: "Fundamentals", value: fundamentalsTime });
+
+    return labels;
+  }, [activeChartSavedAt, activeFundamentals?.fetched_at, chartCacheState, dashboard?.generated_at, groupsData?.generated_at, sectorTabData?.generated_at]);
 
   // Backend warm-up detection: listen to status events dispatched by api.ts
   useEffect(() => {
@@ -4836,6 +4910,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               </div>
             </section>
 
+            {freshnessWatermarks.length > 0 ? (
+              <section className="freshness-watermark-strip" aria-label="Section freshness timestamps">
+                {freshnessWatermarks.map((item) => (
+                  <span key={item.key} className="freshness-watermark-chip">
+                    <strong>{item.label}</strong>
+                    <small>{item.value}</small>
+                  </span>
+                ))}
+              </section>
+            ) : null}
+
             <section
               className={
                 activePage === "screener"
@@ -4869,6 +4954,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       name: preset.name,
                       mode: preset.mode,
                       lastMatchCount: preset.lastMatchCount,
+                      lastUpdatedAt: preset.lastUpdatedAt,
+                      isStale: !savedScannerFreshForMarket(preset.lastUpdatedAt, activeMarket),
                     }))}
                     activeSavedScannerId={activeSavedScannerId}
                     onLoadSavedScanner={handleLoadSavedScannerById}

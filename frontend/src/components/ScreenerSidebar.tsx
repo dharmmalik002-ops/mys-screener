@@ -7,6 +7,8 @@ export type SavedSidebarScanner = {
   name: string;
   mode: Exclude<ScreenerMode, "improving-rs">;
   lastMatchCount?: number;
+  lastUpdatedAt?: string | null;
+  isStale?: boolean;
 };
 
 type ScreenerSidebarProps = {
@@ -96,7 +98,10 @@ export function ScreenerSidebar({
                       className={activeSavedScannerId === saved.id ? "screener-saved-item active" : "screener-saved-item"}
                     >
                       <button type="button" className="screener-saved-load" onClick={() => onLoadSavedScanner(saved.id)}>
-                        <strong>{saved.name}</strong>
+                        <strong>
+                          {saved.name}
+                          {saved.isStale ? <span className="screener-saved-stale-badge">Stale</span> : null}
+                        </strong>
                         <small>{saved.lastMatchCount ?? 0} stocks</small>
                       </button>
                       <button type="button" className="screener-saved-delete" onClick={() => onDeleteSavedScanner(saved.id)}>

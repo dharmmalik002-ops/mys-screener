@@ -1,7 +1,31 @@
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal, Any
 
 from pydantic import BaseModel, Field, field_validator
+
+
+def derive_rs_comparison_dates(history_as_of_date: str | None) -> tuple[str | None, str | None, str | None]:
+    if not history_as_of_date:
+        return None, None, None
+    try:
+        anchor = date.fromisoformat(history_as_of_date)
+    except Exception:
+        return None, None, None
+
+    def shift_trading_days(start: date, sessions: int) -> date:
+        current = start
+        remaining = max(int(sessions), 0)
+        while remaining > 0:
+            current = current - timedelta(days=1)
+            while current.weekday() >= 5:
+                current = current - timedelta(days=1)
+            remaining -= 1
+        return current
+
+    day_1 = shift_trading_days(anchor, 1)
+    week_1 = shift_trading_days(anchor, 5)
+    month_1 = shift_trading_days(anchor, 21)
+    return day_1.isoformat(), week_1.isoformat(), month_1.isoformat()
 
 
 class StockSnapshot(BaseModel):
@@ -102,6 +126,7 @@ class StockSnapshot(BaseModel):
     recent_highs: list[float] = Field(default_factory=list)
     recent_lows: list[float] = Field(default_factory=list)
     recent_volumes: list[int] = Field(default_factory=list)
+    recent_closes: list[float] = Field(default_factory=list)
     chart_grid_points: list["ChartLinePoint"] = Field(default_factory=list)
     instrument_key: str | None = None
     history_as_of_date: str | None = None  # ISO date of the session this snapshot reflects
@@ -663,6 +688,9 @@ class ScanMatch(BaseModel):
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None
     rs_rating_1m_ago: int | None = None
+    rs_rating_1d_ago_date: str | None = None
+    rs_rating_1w_ago_date: str | None = None
+    rs_rating_1m_ago_date: str | None = None
     rs_today: float | None = None
     rs_1m: float | None = None
     nifty_outperformance: float | None = None
@@ -818,6 +846,9 @@ class StockOverview(BaseModel):
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None
     rs_rating_1m_ago: int | None = None
+    rs_rating_1d_ago_date: str | None = None
+    rs_rating_1w_ago_date: str | None = None
+    rs_rating_1m_ago_date: str | None = None
     nifty_outperformance: float
     sector_outperformance: float
     three_month_rs: float
@@ -1173,6 +1204,11 @@ class ImprovingRsResponse(BaseModel):
     window: ImprovingRsWindow
     total_hits: int
     items: list[ImprovingRsItem]
+
+
+class EandCScanResponse(BaseModel):
+    contraction: list[ScanMatch] = []
+    expansion: list[ScanMatch] = []
 
 
 class UniverseBreadth(BaseModel):
