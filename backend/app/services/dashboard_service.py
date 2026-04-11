@@ -280,6 +280,7 @@ class DashboardService:
         self._scan_sector_summary_cache: dict[tuple[str, str, datetime], list[ScanSectorSummary]] = {}
         self._market_overview_cache: tuple[float, object] | None = None
         self._industry_groups_cache: IndustryGroupsResponse | None = None
+        self._industry_groups_request_task: asyncio.Task[IndustryGroupsResponse] | None = None
         self._market_health_cache: MarketHealthResponse | None = None
         self._sector_rotation_cache = None
         # Resolve money-flow storage path next to data/
@@ -4041,6 +4042,34 @@ class DashboardService:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(response.model_dump(mode="json"), indent=2), encoding="utf-8")
 
+    async def _build_and_cache_industry_groups(self, snapshot_updated_at: datetime) -> IndustryGroupsResponse:
+        snapshots = await self._snapshots()
+        benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
+        historical_snapshots = await asyncio.to_thread(self._build_historical_snapshots, snapshots, 5)
+        _, historical_benchmark_snapshots = self._resolve_group_benchmark(historical_snapshots)
+        market_key = self._market_key()
+        response = await asyncio.to_thread(
+            build_industry_groups_response,
+            snapshots,
+            benchmark_snapshots,
+            historical_snapshots,
+            historical_benchmark_snapshots,
+            generated_at=snapshot_updated_at,
+            benchmark_label=benchmark_label,
+            market_key=market_key,
+        )
+        groups_path, ranks_path, stocks_path = self._industry_group_file_paths()
+        await asyncio.to_thread(
+            write_industry_group_files,
+            response,
+            groups_path=groups_path,
+            ranks_path=ranks_path,
+            stocks_path=stocks_path,
+        )
+        await asyncio.to_thread(self._save_industry_groups_cache, response)
+        self._industry_groups_cache = response
+        return response
+
     def _resolve_group_benchmark(self, snapshots: list[StockSnapshot]) -> tuple[str, list[StockSnapshot]]:
         if self._market_key() == "india":
             constituent_map = self._cached_index_constituents_or_schedule_refresh()
@@ -4111,32 +4140,30 @@ class DashboardService:
             self._industry_groups_cache = disk_cached
             return disk_cached
 
-        snapshots = await self._snapshots()
-        benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
-        historical_snapshots = await asyncio.to_thread(self._build_historical_snapshots, snapshots, 5)
-        _, historical_benchmark_snapshots = self._resolve_group_benchmark(historical_snapshots)
-        market_key = self._market_key()
-        response = await asyncio.to_thread(
-            build_industry_groups_response,
-            snapshots,
-            benchmark_snapshots,
-            historical_snapshots,
-            historical_benchmark_snapshots,
-            generated_at=snapshot_updated_at,
-            benchmark_label=benchmark_label,
-            market_key=market_key,
-        )
-        groups_path, ranks_path, stocks_path = self._industry_group_file_paths()
-        await asyncio.to_thread(
-            write_industry_group_files,
-            response,
-            groups_path=groups_path,
-            ranks_path=ranks_path,
-            stocks_path=stocks_path,
-        )
-        await asyncio.to_thread(self._save_industry_groups_cache, response)
-        self._industry_groups_cache = response
-        return response
+        stale_floor = datetime.min.replace(tzinfo=timezone.utc)
+        stale_cached = await asyncio.to_thread(self._load_cached_industry_groups, stale_floor)
+
+        active_task = self._industry_groups_request_task
+        if active_task is not None and not active_task.done():
+            if stale_cached is not None:
+                self._industry_groups_cache = stale_cached
+                return stale_cached
+            return await asyncio.shield(active_task)
+
+        task = asyncio.create_task(self._build_and_cache_industry_groups(snapshot_updated_at))
+        self._industry_groups_request_task = task
+
+        def clear_task(completed_task: asyncio.Task[IndustryGroupsResponse]) -> None:
+            if self._industry_groups_request_task is completed_task:
+                self._industry_groups_request_task = None
+
+        task.add_done_callback(clear_task)
+
+        if stale_cached is not None:
+            self._industry_groups_cache = stale_cached
+            return stale_cached
+
+        return await asyncio.shield(task)
 
     async def refresh_market_data(self) -> dict[str, object]:
         snapshot_before = self.provider.get_snapshot_updated_at()
