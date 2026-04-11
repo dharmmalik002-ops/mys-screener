@@ -1624,3 +1624,23 @@ export function getArticleProxyUrl(articleUrl: string) {
   const params = new URLSearchParams({ url: articleUrl });
   return `${API_BASE}/api/article-proxy?${params}`;
 }
+
+// ─── Keep-alive ───────────────────────────────────────────────────────────────
+// Ping the backend every 8 minutes while the browser tab is open so the
+// HuggingFace Spaces free tier doesn't sleep the container mid-session.
+
+let _keepAliveInterval: ReturnType<typeof setInterval> | null = null;
+
+export function startKeepAlive() {
+  if (_keepAliveInterval) return;
+  _keepAliveInterval = setInterval(async () => {
+    try {
+      await fetch(`${API_BASE}/api/health`, {
+        cache: "no-store",
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch {
+      // Best-effort: failure is harmless.
+    }
+  }, 8 * 60 * 1000); // every 8 minutes
+}

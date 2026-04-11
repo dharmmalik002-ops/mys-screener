@@ -62,6 +62,7 @@ import {
   type WatchdogStatusResponse,
   type WatchlistsStateResponse,
   dispatchBackendEvent as _dispatchBackendEvent,
+  startKeepAlive,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
@@ -2560,13 +2561,23 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }, 1200);
 
     async function prefetchGroupsPage() {
-      try {
-        const payload = await getIndustryGroups(activeMarket);
-        if (active) {
-          setGroupsData(payload);
+      // Retry with backoff so groups auto-populate even if the backend is
+      // still warming up from a cold start on HF free tier.
+      const maxAttempts = 3;
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        if (!active) return;
+        try {
+          const payload = await getIndustryGroups(activeMarket);
+          if (active) {
+            setGroupsData(payload);
+          }
+          return;
+        } catch {
+          if (attempt < maxAttempts - 1) {
+            await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
+          }
+          // Final attempt failure is silently ignored — prefetch is best-effort.
         }
-      } catch {
-        // Prefetch is best-effort and should not disturb the active page.
       }
     }
 
@@ -4825,6 +4836,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     };
     window.addEventListener("backend-status", handle);
     return () => window.removeEventListener("backend-status", handle);
+  }, []);
+
+  // Start keep-alive pings once the app mounts so the HF Space container
+  // stays awake as long as the user has the tab open.
+  useEffect(() => {
+    startKeepAlive();
   }, []);
 
   const applyWatchdogBadge = (status: WatchdogStatusResponse) => {

@@ -485,6 +485,22 @@ async def apply_startup_bhavcopy(market_name: str, service_obj) -> None:
         logger.warning("Startup Bhavcopy patch (%s) failed: %s", market_name.upper(), exc)
 
 
+
+async def _keep_alive_self_ping() -> None:
+    """Ping own health endpoint every 10 min so HF Spaces free tier doesn't
+    sleep the container.  Runs as an infinite background task."""
+    import httpx
+
+    while True:
+        await asyncio.sleep(600)  # 10 minutes
+        try:
+            async with httpx.AsyncClient() as client:
+                await client.get("http://127.0.0.1:7860/api/health", timeout=5)
+            logger.debug("keep-alive self-ping OK")
+        except Exception:
+            pass  # best-effort; failure is harmless
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler.add_job(
@@ -556,20 +572,18 @@ async def lifespan(app: FastAPI):
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
         watchdog_agent.tick_seconds,
     )
-    startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)
-    try:
-        await asyncio.wait_for(
-            asyncio.gather(
-                warm_startup_cache("india", service),
-                warm_startup_cache("us", us_service),
-            ),
-            timeout=startup_warm_timeout_seconds,
-        )
-    except TimeoutError:
-        logger.warning("Startup cache warm timed out after %ds; serving with on-demand warmup", startup_warm_timeout_seconds)
+    # Fire-and-forget startup warm — runs in background so uvicorn starts
+    # accepting requests immediately.  On HF free tier the blocking warm was
+    # taking 15-60 s, during which /api/health timed out and the frontend
+    # showed an infinite spinner.
+    asyncio.ensure_future(warm_startup_cache("india", service))
+    asyncio.ensure_future(warm_startup_cache("us", us_service))
     # Apply NSE Bhavcopy EOD prices on top of Yahoo data — fire-and-forget,
     # runs in the background so it doesn't block the server from accepting requests.
     asyncio.ensure_future(apply_startup_bhavcopy("india", service))
+    # Keep-alive self-ping — prevents HF Spaces free tier from sleeping
+    # the container after ~15 min of inactivity.
+    asyncio.ensure_future(_keep_alive_self_ping())
     yield
     scheduler.shutdown()
 
