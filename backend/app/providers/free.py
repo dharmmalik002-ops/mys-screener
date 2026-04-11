@@ -396,10 +396,31 @@ class FreeMarketDataProvider:
         cache_key = float(market_cap_min_crore)
 
         # Closed-session safety: if we crossed a completed market close without a
-        # historical rebuild, force one before serving cached rows. Live-price
-        # patches can update last_price/change_pct, but they do not roll historical
-        # baselines used by 1W/1M/3M/6M returns.
+        # historical rebuild, kick one off in the background while serving the
+        # latest cached rows immediately. This keeps API latency low on hosted
+        # environments where a full historical rebuild can take minutes.
         if self.snapshot_cache_path.exists() and not self._is_market_open_ist() and self._market_close_refresh_due():
+            cache_signature = self._snapshot_memory_signature()
+            cached = self._snapshots_memory_cache.get(cache_key)
+            if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
+                self._schedule_background_snapshot_refresh(
+                    cache_key,
+                    market_cap_min_crore,
+                    force_refresh=True,
+                )
+                return cached[2]
+
+            cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
+            if cached_rows:
+                snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
+                self._snapshots_memory_cache[cache_key] = (*cache_signature, snapshots)
+                self._schedule_background_snapshot_refresh(
+                    cache_key,
+                    market_cap_min_crore,
+                    force_refresh=True,
+                )
+                return snapshots
+
             return await self._get_or_create_snapshot_request_task(
                 cache_key,
                 market_cap_min_crore,

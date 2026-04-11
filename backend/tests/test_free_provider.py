@@ -177,6 +177,22 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(self.provider.get_last_refresh_metadata()["applied_quote_count"], 0)
         self.assertIsNone(self.provider.get_last_refresh_metadata()["quote_source"])
 
+    def test_get_snapshots_returns_cached_rows_while_post_close_refresh_runs_in_background(self) -> None:
+        today = self.provider._current_or_previous_trading_day_ist().isoformat()
+        row = self._snapshot_row(session_date=today)
+        self._seed_snapshot_cache([row])
+
+        with patch.object(self.provider, "_is_market_open_ist", return_value=False), patch.object(
+            self.provider, "_market_close_refresh_due", return_value=True
+        ), patch.object(
+            self.provider,
+            "_load_or_refresh_snapshots",
+            side_effect=AssertionError("should not block on historical rebuild"),
+        ):
+            snapshots = asyncio.run(self.provider.get_snapshots(1000.0))
+
+        self.assertGreater(len(snapshots), 0)
+
     def test_history_snapshot_uses_latest_history_date_for_session_date(self) -> None:
         history = self._history(periods=120)
 
