@@ -1,8 +1,10 @@
 import asyncio
+import json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
 from app.models.market import (
@@ -107,6 +109,14 @@ def build_router(service):
         if not isinstance(prov, FreeMarketDataProvider):
             return {"market": market, "provider": type(prov).__name__, "watchdog": "n/a"}
 
+        watchdog_agent = None
+        try:
+            from app.services.watchdog_agent import get_active_watchdog_agent
+
+            watchdog_agent = get_active_watchdog_agent()
+        except Exception:
+            watchdog_agent = None
+
         snap_age = prov._snapshot_age_seconds()
         is_open = prov._is_market_open_ist()
         snap_updated = prov.get_snapshot_updated_at()
@@ -164,14 +174,85 @@ def build_router(service):
             "site_systems_ready": len(site_sections) - len(attention_items),
             "site_attention_count": len(attention_items),
             "attention_items": attention_items,
-            "watchdog_interval_seconds": 90,
+            "watchdog_interval_seconds": getattr(watchdog_agent, "tick_seconds", 90),
             "server_utc": now_utc.isoformat(),
+        }
+
+    @router.get("/watchdog-events")
+    async def watchdog_events(market: str = Query(default="india")):
+        """Server-sent stream of watchdog invalidation and refresh events."""
+        try:
+            from app.services.watchdog_agent import get_active_watchdog_agent
+
+            watchdog_agent = get_active_watchdog_agent()
+        except Exception:
+            watchdog_agent = None
+
+        if watchdog_agent is None:
+            raise HTTPException(status_code=503, detail="Watchdog event bus is not available")
+
+        normalized_market = str(market or "india").strip().lower()
+        queue = await watchdog_agent.signal_bus.subscribe(normalized_market)
+
+        async def event_stream():
+            try:
+                while True:
+                    try:
+                        message = await asyncio.wait_for(queue.get(), timeout=25)
+                        yield f"data: {message}\n\n"
+                    except TimeoutError:
+                        heartbeat = {
+                            "event": "heartbeat",
+                            "market": normalized_market,
+                            "ts": datetime.now(timezone.utc).isoformat(),
+                        }
+                        yield f"data: {json.dumps(heartbeat)}\n\n"
+            except asyncio.CancelledError:
+                return
+            finally:
+                await watchdog_agent.signal_bus.unsubscribe(queue)
+
+        return StreamingResponse(
+            event_stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
+
+    @router.get("/watchdog-audit")
+    async def watchdog_audit(
+        component: str | None = Query(default=None),
+        limit: int = Query(default=50, ge=1, le=500),
+    ):
+        """Recent watchdog decision log for debugging and health transparency."""
+        try:
+            from app.services.watchdog_agent import get_active_watchdog_agent
+
+            watchdog_agent = get_active_watchdog_agent()
+        except Exception:
+            watchdog_agent = None
+
+        if watchdog_agent is None:
+            raise HTTPException(status_code=503, detail="Watchdog audit log is not available")
+
+        return {
+            "entries": watchdog_agent.recent_audit(component=component, limit=limit),
+            "tick_seconds": watchdog_agent.tick_seconds,
         }
 
     @router.get("/watchdog-tasks")
     async def watchdog_tasks(market: str = Query(default="india")):
         """Return today's watchdog schedule with done/pending/attention details for the home-page popup."""
         from app.providers.free import FreeMarketDataProvider
+        try:
+            from app.services.watchdog_agent import get_active_watchdog_agent
+
+            watchdog_agent = get_active_watchdog_agent()
+        except Exception:
+            watchdog_agent = None
 
         normalized_market = str(market or "india").strip().lower()
         svc = resolve_service(normalized_market)
@@ -267,7 +348,7 @@ def build_router(service):
             task_item(
                 "live_market_watchdog",
                 "Live market watchdog",
-                "Every 90 seconds",
+                f"Every {getattr(watchdog_agent, 'tick_seconds', 90)} seconds",
                 live_status,
                 live_detail,
                 iso_or_none(snapshot_updated),

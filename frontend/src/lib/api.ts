@@ -1080,6 +1080,10 @@ function withMarket(path: string, market: MarketKey) {
   return `${path}${separator}market=${market}`;
 }
 
+export function buildWatchdogEventsUrl(market: MarketKey) {
+  return `${API_BASE}/api/watchdog-events?market=${encodeURIComponent(market)}`;
+}
+
 export function getDashboard(market: MarketKey) {
   return request<DashboardResponse>(withMarket("/api/dashboard", market));
 }

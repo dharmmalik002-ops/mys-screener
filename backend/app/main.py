@@ -2,6 +2,7 @@ import asyncio
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -19,6 +20,7 @@ from app.core.config import get_settings
 from app.providers.factory import build_provider
 from app.scanners.definitions import scan_catalog_with_counts
 from app.services.maintenance import run_market_close_maintenance
+from app.services.watchdog_agent import WatchdogAgent, set_active_watchdog_agent
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -48,7 +50,19 @@ services = {
     "india": service,
     "us": us_service,
 }
+watchdog_agent = WatchdogAgent(
+    services=services,
+    settings_by_market={"india": settings, "us": us_settings},
+    data_dir=Path(__file__).resolve().parents[1] / "data",
+    tick_seconds=30,
+)
+set_active_watchdog_agent(watchdog_agent)
 scheduler = AsyncIOScheduler(timezone=IST)
+
+
+async def autonomous_watchdog_cycle_job() -> None:
+    """Run one autonomous watchdog cycle across all registered health contracts."""
+    await watchdog_agent.run_cycle()
 
 
 def current_weekday(market_timezone: ZoneInfo) -> int:
@@ -474,8 +488,8 @@ async def apply_startup_bhavcopy(market_name: str, service_obj) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     scheduler.add_job(
-        live_market_watchdog_job,
-        IntervalTrigger(seconds=90),
+        autonomous_watchdog_cycle_job,
+        IntervalTrigger(seconds=watchdog_agent.tick_seconds),
         id="live_market_watchdog",
         replace_existing=True,
     )
@@ -537,9 +551,10 @@ async def lifespan(app: FastAPI):
     )
     scheduler.start()
     logger.info(
-        "Scheduler started — Watchdog: every 90s (24/7); "
+        "Scheduler started — Watchdog: every %ss (adaptive autonomous cycle); "
         "India: close 4:00 PM IST / stocks 6:00 PM IST / money-flow Sat 9 AM IST / fundamentals Sun 1 AM IST; "
-        "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET"
+        "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
+        watchdog_agent.tick_seconds,
     )
     startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)
     try:

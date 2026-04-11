@@ -16,6 +16,7 @@ import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import type { ImportResult } from "./components/WatchlistImportModal";
 import {
   type ChartBar,
+  buildWatchdogEventsUrl,
   getChart,
   getConsolidatingScan,
   getDashboard,
@@ -2532,6 +2533,62 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return () => {
       window.clearTimeout(initialDelayId);
       window.clearInterval(liveId);
+    };
+  }, [activeMarket]);
+
+  useEffect(() => {
+    const eventSource = new EventSource(buildWatchdogEventsUrl(activeMarket));
+
+    eventSource.onmessage = (event) => {
+      let payload: { event?: string; market?: string; data?: { symbol?: string } } | null = null;
+      try {
+        payload = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      const eventType = String(payload?.event ?? "").toLowerCase();
+      if (!eventType || eventType === "heartbeat") {
+        return;
+      }
+
+      const eventMarket = String(payload?.market ?? "global").toLowerCase();
+      if (eventMarket !== "global" && eventMarket !== activeMarket) {
+        return;
+      }
+
+      if (eventType === "cache_invalidated") {
+        try {
+          window.localStorage.removeItem(marketScopedKey(MARKET_VIEW_CACHE_KEY, activeMarket));
+        } catch {
+          // Ignore storage access failures in private mode.
+        }
+      }
+
+      if (eventType === "snapshot_refreshed") {
+        silentLivePollRef.current();
+      }
+
+      if (eventType === "fundamentals_updated") {
+        const updatedSymbol = String(payload?.data?.symbol ?? "").toUpperCase();
+        const selected = String(selectedSymbolRef.current ?? "").toUpperCase();
+        if (!updatedSymbol || !selected || updatedSymbol !== selected) {
+          return;
+        }
+
+        void getFundamentals(updatedSymbol, activeMarket)
+          .then((fundamentalsPayload) => {
+            setFundamentalsBySymbol((current) => ({
+              ...current,
+              [updatedSymbol]: fundamentalsPayload,
+            }));
+          })
+          .catch(() => {});
+      }
+    };
+
+    return () => {
+      eventSource.close();
     };
   }, [activeMarket]);
 
