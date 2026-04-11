@@ -1422,8 +1422,9 @@ class DashboardService:
 
     async def get_market_overview(self):
         now = time.time()
+        ttl_seconds = 120 if self._is_market_open_now() else 300
         cached = getattr(self, "_market_overview_cache", None)
-        if cached and now - cached[0] < 300:
+        if cached and now - cached[0] < ttl_seconds:
             return cached[1]
         items_raw = await asyncio.to_thread(self.provider.get_market_overview)
         from app.models.market import MarketMacroItem, MarketOverviewResponse
@@ -1431,6 +1432,15 @@ class DashboardService:
         result = MarketOverviewResponse(items=items)
         self._market_overview_cache = (now, result)
         return result
+
+    def _is_market_open_now(self) -> bool:
+        is_market_open_fn = getattr(self.provider, "_is_market_open_ist", None)
+        if not callable(is_market_open_fn):
+            return False
+        try:
+            return bool(is_market_open_fn())
+        except Exception:
+            return False
 
     async def get_index_pe_history(self, symbol: str) -> IndexPeHistoryResponse:
         """Fetch historical P/E for an index and compute 5-year average."""

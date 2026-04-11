@@ -191,12 +191,12 @@ async def live_market_watchdog_job() -> None:
     """24/7 watchdog — runs every 90 seconds.
 
     Responsibilities:
-    - During India market hours (9:15–15:30 IST Mon–Fri):
-        • If snapshot is >180 s old → force a live refresh immediately.
-        • After refresh, bust the in-memory sector-tab / dashboard caches so
-          the very next request to /api/sectors or /api/dashboard returns fresh
-          data instead of the stale cached response.
-    - During US market hours (9:30–16:00 ET Mon–Fri): same for US.
+    - During India market hours (9:15–15:30 IST Mon-Fri):
+        - If snapshot is >180 s old, force a live refresh immediately.
+        - Clear in-memory sector-tab/dashboard caches before refresh attempts
+          so stale cached responses are not served after stale-snapshot detection,
+          even if the upstream refresh fails.
+    - During US market hours (9:30-16:00 ET Mon-Fri): same behavior for US.
     - After India market close on a weekday:
         • If today's Bhavcopy patch has not yet been applied → apply it now
           and rebuild the dashboard so sector heatmap shows official EOD prices.
@@ -221,8 +221,8 @@ async def live_market_watchdog_job() -> None:
                     "WATCHDOG INDIA: snapshot stale (%.0fs > 180s) — forcing live refresh", snap_age
                 )
                 try:
-                    india_snapshots = await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
                     service._clear_runtime_caches()
+                    india_snapshots = await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
                     prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
                     logger.warning(
                         "WATCHDOG INDIA: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
@@ -330,8 +330,8 @@ async def live_market_watchdog_job() -> None:
                     "WATCHDOG US: snapshot stale (%.0fs > 180s) — forcing live refresh", us_snap_age
                 )
                 try:
-                    us_snapshots = await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
                     us_service._clear_runtime_caches()
+                    us_snapshots = await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
                     prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
                     logger.warning(
                         "WATCHDOG US: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
