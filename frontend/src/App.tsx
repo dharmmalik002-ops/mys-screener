@@ -2124,21 +2124,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         const dashboardPromise = getDashboard(activeMarket);
         const sectorPromise = getSectorTab("1D", "desc", activeMarket);
 
-        const dashboardPayload = await dashboardPromise;
-        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
-          window.clearTimeout(loadingGuardTimeoutId);
-          loadingGuardTimeoutId = null;
-        }
-        if (!active) {
-          return;
-        }
-
-        setDashboard(dashboardPayload);
-        updateMarketViewCache(activeMarket, { dashboard: dashboardPayload });
-        setSelectedSymbol((current) => current ?? dashboardPayload.top_gainers[0]?.symbol ?? null);
-        setLoading(false);
-        setError(null);
-        refreshTickerRibbon();
+        let dashboardResolved = false;
 
         void sectorPromise
           .then((sectorPayload) => {
@@ -2158,7 +2144,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 });
                 return current;
               }
-              const nextSymbol = dashboardPayload.top_gainers[0]?.symbol ?? firstSymbolFromSectorTab(sectorPayload);
+              const nextSymbol = firstSymbolFromSectorTab(sectorPayload);
               updateMarketViewCache(activeMarket, {
                 sectorTabData: sectorPayload,
                 universeCatalog: nextUniverseCatalog,
@@ -2170,6 +2156,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               sectorTabData: sectorPayload,
               universeCatalog: nextUniverseCatalog,
             });
+
+            if (!hadCachedDashboard && !dashboardResolved) {
+              setLoading(false);
+              setError((current) => (current === "Backend is waking up. Data can take up to a minute on first load." ? null : current));
+            }
           })
           .catch((sectorError) => {
             if (!active && hadCachedDashboard) {
@@ -2179,6 +2170,23 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               setError((current) => current ?? (sectorError instanceof Error ? sectorError.message : "Failed to load sectors"));
             }
           });
+
+        const dashboardPayload = await dashboardPromise;
+        dashboardResolved = true;
+        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
+          window.clearTimeout(loadingGuardTimeoutId);
+          loadingGuardTimeoutId = null;
+        }
+        if (!active) {
+          return;
+        }
+
+        setDashboard(dashboardPayload);
+        updateMarketViewCache(activeMarket, { dashboard: dashboardPayload });
+        setSelectedSymbol((current) => current ?? dashboardPayload.top_gainers[0]?.symbol ?? null);
+        setLoading(false);
+        setError(null);
+        refreshTickerRibbon();
       } catch (loadError) {
         if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
           window.clearTimeout(loadingGuardTimeoutId);
