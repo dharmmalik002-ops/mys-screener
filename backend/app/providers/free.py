@@ -2333,6 +2333,15 @@ class FreeMarketDataProvider:
                     except Exception:
                         pass
                 if all_rows:
+                    # Write merged seed chunks to the primary path immediately so that
+                    # get_snapshot_updated_at() returns a valid mtime on first boot.
+                    # Without this the watchdog health panel shows "No usable snapshot
+                    # timestamp" and "close refresh not confirmed" indefinitely until
+                    # the first scheduled full refresh runs and writes the file.
+                    try:
+                        path.write_text(json.dumps(all_rows), encoding="utf-8")
+                    except Exception:
+                        pass
                     return all_rows
                 return []
         try:

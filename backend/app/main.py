@@ -98,6 +98,19 @@ async def daily_listed_universe_refresh_job(market_name: str, market_service: Da
             len(scan_results.get("minervini-5m", [])),
         )
 
+        # Repopulate sector-tab, scanner, and all runtime caches so that the
+        # watchdog health panel shows "done" immediately after close refresh —
+        # not "Needs attention" until someone visits the sector heatmap page.
+        try:
+            prewarm_summary = await market_service.prewarm_watchdog_sections(snapshots)
+            logger.info(
+                "%s post-close prewarm complete: %d sections warmed",
+                market_name.upper(),
+                prewarm_summary.get("section_count", 0),
+            )
+        except Exception as exc:
+            logger.warning("%s post-close prewarm failed: %s", market_name.upper(), exc)
+
         if result.get("refresh_mode") != "historical-refresh":
             logger.info("Skipping %s fundamentals warmup: snapshot already current", market_name.upper())
             return
@@ -355,6 +368,19 @@ async def live_market_watchdog_job() -> None:
                         logger.debug("WATCHDOG US: money-flow stock ideas current for %s", payload.recommendation_date)
                 except Exception as exc:
                     logger.error("WATCHDOG US: money-flow stock ideas refresh FAILED: %s", exc)
+
+            # If startup cache warm timed out (common on HF free tier), sector tab
+            # and scan catalog may be empty.  Re-warm them here during closed hours
+            # so the health panel stops showing "Needs attention" even outside market
+            # session.  Guard: only run if the snapshot file exists (i.e. real data).
+            sector_tab_warm = bool((getattr(us_service, "_sector_tab_cache", {}) or {}).get(("1D", "desc")))
+            scan_warm = getattr(us_service, "_scan_catalog_cache", None) is not None
+            if us_prov.snapshot_cache_path.exists() and (not sector_tab_warm or not scan_warm):
+                try:
+                    await us_service.prewarm_watchdog_sections()
+                    logger.info("WATCHDOG US: closed-hours cache prewarm complete")
+                except Exception as exc:
+                    logger.warning("WATCHDOG US: closed-hours prewarm failed: %s", exc)
 
     logger.debug(
         "WATCHDOG heartbeat — India open=%s age=%.0fs | US open=%s age=%.0fs",

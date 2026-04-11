@@ -663,6 +663,13 @@ class DashboardService:
             self.get_money_flow_stock_ideas_history(),
             return_exceptions=True,
         )
+        # Warm scan catalog so screener health check shows "done" from the start.
+        # _scan_catalog() is pure CPU (no I/O) and caches into _scan_catalog_cache.
+        try:
+            snapshots = await self._snapshots()
+            self._scan_catalog(self._scan_eligible_snapshots(snapshots))
+        except Exception:
+            pass
 
     def get_historical_breadth(self) -> HistoricalBreadthResponse:
         from pathlib import Path
@@ -4252,6 +4259,16 @@ class DashboardService:
                 issues.append("fundamentals:unavailable")
 
         unique_sections = list(dict.fromkeys(warmed_sections))
+
+        # Warm the scan catalog (pure CPU, no network) so the screener health
+        # check switches from "Needs attention" to "done" after every prewarm.
+        try:
+            self._scan_catalog(self._scan_eligible_snapshots(snapshots))
+            if "scanner" not in unique_sections:
+                unique_sections.append("scanner")
+        except Exception as exc:
+            issues.append(f"scanner:{type(exc).__name__}")
+
         return {
             "sections": unique_sections,
             "section_count": len(unique_sections),
