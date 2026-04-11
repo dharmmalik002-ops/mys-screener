@@ -395,16 +395,17 @@ class AIAnalysisService:
             return {}
 
         symbol = fundamentals.symbol.upper()
+        fundamentals_fetched_at = fundamentals.fetched_at.isoformat() if getattr(fundamentals, "fetched_at", None) else None
 
         # Check memory cache
         cached = self._memory_cache.get(symbol)
-        if cached and self._is_cache_fresh(cached):
+        if cached and self._is_cache_fresh(cached, fundamentals_fetched_at=fundamentals_fetched_at):
             return cached.get("data", {})
 
         # Check disk cache
         disk_cache = self._load_disk_cache()
         cached_entry = disk_cache.get(symbol)
-        if isinstance(cached_entry, dict) and self._is_cache_fresh(cached_entry):
+        if isinstance(cached_entry, dict) and self._is_cache_fresh(cached_entry, fundamentals_fetched_at=fundamentals_fetched_at):
             self._memory_cache[symbol] = cached_entry
             return cached_entry.get("data", {})
 
@@ -565,7 +566,7 @@ class AIAnalysisService:
         self._mark_quota_exhausted()
         raise RuntimeError(f"All Gemini models exhausted after retries: {last_exc}")
 
-    def _is_cache_fresh(self, entry: dict[str, Any]) -> bool:
+    def _is_cache_fresh(self, entry: dict[str, Any], fundamentals_fetched_at: str | None = None) -> bool:
         if int(entry.get("cache_version", 0)) != AI_CACHE_VERSION:
             return False
         generated_at = entry.get("generated_at")
@@ -573,8 +574,20 @@ class AIAnalysisService:
             return False
         try:
             gen_time = datetime.fromisoformat(generated_at)
+            if gen_time.tzinfo is None:
+                gen_time = gen_time.replace(tzinfo=timezone.utc)
             age_hours = (datetime.now(timezone.utc) - gen_time).total_seconds() / 3600
-            return age_hours < 24
+            if age_hours >= 24:
+                return False
+
+            if fundamentals_fetched_at:
+                fund_time = datetime.fromisoformat(fundamentals_fetched_at.replace("Z", "+00:00"))
+                if fund_time.tzinfo is None:
+                    fund_time = fund_time.replace(tzinfo=timezone.utc)
+                if fund_time > gen_time:
+                    return False
+
+            return True
         except Exception:
             return False
 

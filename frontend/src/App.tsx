@@ -109,7 +109,7 @@ const SCANNER_SETTINGS_KEY = "mr-malik-scanner-settings:v1";
 const SAVED_SCANNERS_KEY = "mr-malik-saved-scanners:v1";
 const ACTIVE_MARKET_KEY = "mr-malik-active-market:v1";
 const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v1";
-const MARKET_VIEW_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const MARKET_VIEW_CACHE_MAX_AGE_MS = 4 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
 type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow" | "newsdesk" | "journal";
@@ -335,8 +335,17 @@ function isChartResponseCacheCompatible(payload: ChartResponse | null | undefine
   }
   // Expire persisted chart cache entries older than 2 hours
   if (savedAt) {
-    const ageMs = Date.now() - new Date(savedAt).getTime();
+    const savedDate = new Date(savedAt);
+    const nowDate = new Date();
+    const ageMs = Date.now() - savedDate.getTime();
     if (!Number.isFinite(ageMs) || ageMs > 2 * 60 * 60 * 1000) {
+      return false;
+    }
+    if (
+      savedDate.getFullYear() !== nowDate.getFullYear()
+      || savedDate.getMonth() !== nowDate.getMonth()
+      || savedDate.getDate() !== nowDate.getDate()
+    ) {
       return false;
     }
   }
@@ -1543,6 +1552,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const selectedSymbolRef = useRef<string | null>(null);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
+  const previousActiveMarketRef = useRef<MarketKey>(activeMarket);
   const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false, us: false });
   const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null, us: null });
   const watchlistsHydrationRequestIdRef = useRef(0);
@@ -2513,11 +2523,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
   };
   useEffect(() => {
+    const initialDelayId = window.setTimeout(() => {
+      silentLivePollRef.current();
+    }, 3_000);
     const liveId = window.setInterval(() => {
       silentLivePollRef.current();
     }, 2 * 60 * 1000); // every 2 minutes
-    return () => window.clearInterval(liveId);
-  }, []); // stable — always calls latest via ref
+    return () => {
+      window.clearTimeout(initialDelayId);
+      window.clearInterval(liveId);
+    };
+  }, [activeMarket]);
 
   // Auto-refresh once after market close to pick up confirmed close data
   useEffect(() => {
@@ -4266,6 +4282,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   };
 
   handleRefreshRef.current = handleRefresh;
+
+  useEffect(() => {
+    const previousMarket = previousActiveMarketRef.current;
+    previousActiveMarketRef.current = activeMarket;
+
+    if (previousMarket === activeMarket) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      if (!refreshingRef.current) {
+        void handleRefreshRef.current("auto");
+      }
+    }, 2_500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [activeMarket]);
 
   useEffect(() => {
     if (loading || savedScanners.length === 0) {

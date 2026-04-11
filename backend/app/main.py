@@ -288,6 +288,10 @@ async def live_market_watchdog_job() -> None:
                 last_patch_date = last_patch_date_fn() if callable(last_patch_date_fn) else None
                 if ist_tot_min >= first_retry_min and last_patch_date != today_ist:
                     logger.info("WATCHDOG INDIA: official bhavcopy not yet applied for %s — retrying now", today_ist)
+                    # Once the official bhavcopy window opens, always bust runtime
+                    # caches first so stale intraday aggregates are not served all evening
+                    # if upstream patch endpoints are temporarily unavailable.
+                    service._clear_runtime_caches()
                     try:
                         live_patch_fn = getattr(india_prov, "apply_bhavcopy_eod", None)
                         fallback_patch_fn = getattr(india_prov, "apply_committed_bhavcopy_patch", None)
@@ -360,6 +364,28 @@ async def live_market_watchdog_job() -> None:
         else:
             us_weekday = now_et.weekday()
             us_tot_min = now_et.hour * 60 + now_et.minute
+
+            # Run one post-close sync shortly after the US cash close so
+            # overnight views reflect official closing session prices.
+            us_after_close_window = us_weekday < 5 and (16 * 60) < us_tot_min <= (17 * 60)
+            if us_after_close_window:
+                us_close_refresh_due_fn = getattr(us_prov, "_market_close_refresh_due", None)
+                us_close_refresh_due = bool(us_close_refresh_due_fn()) if callable(us_close_refresh_due_fn) else False
+                if us_close_refresh_due:
+                    try:
+                        us_snapshots = await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
+                        refresh_metadata = us_prov.get_last_refresh_metadata()
+                        if int(refresh_metadata.get("applied_quote_count", 0) or 0) > 0:
+                            us_service._clear_runtime_caches()
+                            prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
+                            logger.info(
+                                "WATCHDOG US: post-close EOD sync OK — applied %s recent quotes and warmed %s sections",
+                                refresh_metadata.get("applied_quote_count", 0),
+                                prewarm_summary.get("section_count", 0),
+                            )
+                    except Exception as exc:
+                        logger.error("WATCHDOG US: post-close EOD sync FAILED: %s", exc)
+
             us_money_flow_due = us_weekday < 5 and us_tot_min >= (16 * 60 + 30)
             if us_money_flow_due:
                 try:

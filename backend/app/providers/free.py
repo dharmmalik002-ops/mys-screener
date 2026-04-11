@@ -771,6 +771,7 @@ class FreeMarketDataProvider:
             "avg_volume_30d": 0,
             "avg_volume_50d": 0,
             "recent_volumes": [],
+            "recent_closes": [],
         }
 
     def _snapshot_session_bounds(self, symbol: str) -> tuple[float | None, float | None]:
@@ -1416,6 +1417,7 @@ class FreeMarketDataProvider:
                 "recent_highs": row.get("recent_highs", []),
                 "recent_lows": row.get("recent_lows", []),
                 "recent_volumes": row.get("recent_volumes", []),
+                "recent_closes": row.get("recent_closes", []),
                 "sma20": row.get("sma20", row.get("ema20")),
                 "sma50": row.get("sma50", row.get("ema50")),
                 "sma150": row.get("sma150", row.get("sma200", row.get("ema200"))),
@@ -1459,6 +1461,7 @@ class FreeMarketDataProvider:
             "recent_highs": row.get("recent_highs", []),
             "recent_lows": row.get("recent_lows", []),
             "recent_volumes": row.get("recent_volumes", []),
+            "recent_closes": row.get("recent_closes", []),
             "sma20": row.get("sma20", row.get("ema20")),
             "sma50": row.get("sma50", row.get("ema50")),
             "sma150": row.get("sma150", row.get("sma200", row.get("ema200"))),
@@ -1984,8 +1987,9 @@ class FreeMarketDataProvider:
 
     async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None) -> CompanyFundamentals:
         normalized_symbol = symbol.upper()
+        max_age_hours = self._fundamentals_cache_max_age_hours()
         cached = self._fundamentals_memory_cache.get(normalized_symbol)
-        if cached and self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=6):
+        if cached and self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=max_age_hours):
             return cached
 
         try:
@@ -2034,9 +2038,10 @@ class FreeMarketDataProvider:
         return fundamentals
 
     def _load_or_refresh_fundamentals(self, symbol: str, snapshot: StockSnapshot | None) -> CompanyFundamentals:
+        max_age_hours = self._fundamentals_cache_max_age_hours()
         cache = self._load_json_file(self.fundamentals_cache_path)
         cached_payload = cache.get(symbol)
-        if isinstance(cached_payload, dict) and self._fundamentals_payload_fresh(cached_payload, max_age_hours=6):
+        if isinstance(cached_payload, dict) and self._fundamentals_payload_fresh(cached_payload, max_age_hours=max_age_hours):
             try:
                 return CompanyFundamentals.model_validate(cached_payload)
             except Exception:
@@ -2239,6 +2244,16 @@ class FreeMarketDataProvider:
                 logging.getLogger(__name__).warning("AI enrichment failed for %s: %s", symbol, exc)
 
         return fundamentals
+
+    def _fundamentals_cache_max_age_hours(self) -> int:
+        is_market_open_fn = getattr(self, "_is_market_open_ist", None)
+        if callable(is_market_open_fn):
+            try:
+                if bool(is_market_open_fn()):
+                    return 2
+            except Exception:
+                pass
+        return 6
 
     def _load_snapshot_from_cache(self, symbol: str) -> StockSnapshot | None:
         if not self.snapshot_cache_path.exists():
@@ -6904,6 +6919,7 @@ class FreeMarketDataProvider:
             "recent_highs": [round(float(value), 2) for value in high.tail(20).tolist()],
             "recent_lows": [round(float(value), 2) for value in low.tail(20).tolist()],
             "recent_volumes": [int(float(value) or 0) for value in volume.tail(20).tolist()],
+            "recent_closes": [round(float(value), 2) for value in adjusted_close.tail(20).tolist()],
             "chart_grid_points": chart_grid_points,
             "instrument_key": instrument["ticker"],
             "history_as_of_date": latest_history_date,

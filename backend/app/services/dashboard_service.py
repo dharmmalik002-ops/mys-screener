@@ -69,6 +69,7 @@ from app.providers.base import MarketDataProvider
 from app.scanners.definitions import (
     run_consolidating_scan,
     run_custom_scan,
+    run_e_and_c_scan,
     run_returns_scan,
     scan_catalog_with_counts,
     scanner_sector_label,
@@ -1422,7 +1423,7 @@ class DashboardService:
 
     async def get_market_overview(self):
         now = time.time()
-        ttl_seconds = 120 if self._is_market_open_now() else 300
+        ttl_seconds = 90 if self._is_market_open_now() else 300
         cached = getattr(self, "_market_overview_cache", None)
         if cached and now - cached[0] < ttl_seconds:
             return cached[1]
@@ -3269,6 +3270,18 @@ class DashboardService:
             total_items=len(cards),
             cards=cards,
         )
+
+        # Snapshot timestamps are part of the cache key; prune old keys to
+        # avoid unbounded growth on long-running instances.
+        if len(self._chart_grid_cache) >= 128:
+            for key in [key for key in self._chart_grid_cache if key[3] != snapshot_updated_at]:
+                self._chart_grid_cache.pop(key, None)
+            while len(self._chart_grid_cache) >= 128:
+                oldest_key = next(iter(self._chart_grid_cache), None)
+                if oldest_key is None:
+                    break
+                self._chart_grid_cache.pop(oldest_key, None)
+
         self._chart_grid_cache[cache_key] = response
         return response
 
@@ -3477,6 +3490,12 @@ class DashboardService:
             historical_runner=lambda historical_snapshots: run_consolidating_scan(request, historical_snapshots),
             include_sector_summaries=include_sector_summaries,
         )
+
+    async def get_e_and_c_scan_results(self) -> "EandCScanResponse":
+        from app.models.market import EandCScanResponse
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        contraction, expansion = run_e_and_c_scan(snapshots)
+        return EandCScanResponse(contraction=contraction, expansion=expansion)
 
     async def get_sector_tab(self, sort_by: SectorSortBy, sort_order: str) -> SectorTabResponse:
         normalized_sort_order = "asc" if sort_order == "asc" else "desc"
