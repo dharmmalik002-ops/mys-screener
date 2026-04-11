@@ -5,9 +5,43 @@
   display: flex;
   flex-direction: column;
   min-height: 100%;
-  background: var(--bg);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(1200px 420px at -10% -20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent),
+    radial-gradient(920px 360px at 105% -5%, color-mix(in srgb, var(--positive) 8%, transparent), transparent),
+    var(--bg);
   color: var(--text);
   font-family: var(--font-display, "DM Sans", system-ui, sans-serif);
+}
+
+.tj-root::before,
+.tj-root::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.tj-root::before {
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  top: -160px;
+  right: -140px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  filter: blur(36px);
+}
+
+.tj-root::after {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  left: -120px;
+  bottom: 80px;
+  background: color-mix(in srgb, var(--positive) 10%, transparent);
+  filter: blur(42px);
 }
 
 /* ─── Header ─────────────────────────────────────────────────────────────── */
@@ -16,8 +50,9 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 24px;
-  background: var(--surface-strong);
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
   border-bottom: 1px solid var(--line-strong);
+  backdrop-filter: blur(8px);
   flex-wrap: wrap;
   gap: 12px;
 }
@@ -94,9 +129,9 @@
 /* ─── Tabs ───────────────────────────────────────────────────────────────── */
 .tj-tabbar {
   display: flex;
-  gap: 2px;
-  padding: 8px 20px 0;
-  background: var(--surface-strong);
+  gap: 8px;
+  padding: 10px 20px 8px;
+  background: color-mix(in srgb, var(--surface-strong) 84%, transparent);
   border-bottom: 1px solid var(--line-strong);
   overflow-x: auto;
   scrollbar-width: none;
@@ -105,19 +140,27 @@
 
 .tj-tabbtn {
   position: relative;
-  padding: 9px 16px;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 999px;
   color: var(--text-muted);
   font-size: 0.83rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: color var(--transition-fast), border-color var(--transition-fast);
+  transition: color var(--transition-fast), border-color var(--transition-fast), background var(--transition-fast);
 }
-.tj-tabbtn:hover { color: var(--text); }
-.tj-tabbtn.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tj-tabbtn:hover {
+  color: var(--text);
+  border-color: var(--line);
+  background: color-mix(in srgb, var(--surface) 65%, transparent);
+}
+.tj-tabbtn.active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
+}
 
 .tj-tabbadge {
   position: absolute;
@@ -171,11 +214,100 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   padding: 16px 18px;
-  transition: border-color var(--transition-fast);
+  transition: border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-.tj-kpi:hover { border-color: var(--line-strong); }
+.tj-kpi:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
 .tj-kpi.pos { border-left: 3px solid var(--positive); }
 .tj-kpi.neg { border-left: 3px solid var(--negative); }
+
+.tj-dashboard-controlbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.tj-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.tj-toggle-btn {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  border-radius: 999px;
+  padding: 6px 11px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.tj-toggle-btn:hover {
+  color: var(--text);
+}
+
+.tj-toggle-btn.active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--accent);
+}
+
+.tj-board-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 8px;
+}
+
+.tj-board-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  padding: 10px 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--transition-fast), transform var(--transition-fast), background var(--transition-fast);
+}
+
+.tj-board-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+}
+
+.tj-board-sym {
+  font-size: 0.86rem;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: var(--text);
+}
+
+.tj-board-meta {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.tj-card-note {
+  margin-top: 9px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
 
 .tj-kpi-label {
   font-size: 0.73rem;
@@ -327,6 +459,27 @@
 .tj-wl-rank { color: var(--text-muted); font-size: 0.7rem; width: 22px; }
 .tj-wl-sym { font-weight: 600; flex: 1; }
 .tj-wl-pnl { font-size: 0.73rem; }
+
+.tj-symbol-link {
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  text-underline-offset: 3px;
+}
+
+.tj-symbol-link:hover {
+  color: var(--accent);
+}
+
+.tj-symbol-link-inline {
+  text-decoration: none;
+}
 
 /* ─── Heatmap ────────────────────────────────────────────────────────────── */
 .tj-hm-root {

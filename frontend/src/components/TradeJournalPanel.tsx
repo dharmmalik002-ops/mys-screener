@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getChart, getJournalData, saveJournalData, type MarketKey } from "../lib/api";
 import "./TradeJournalPanel.css";
 
@@ -37,6 +37,7 @@ interface TradeJournalPanelProps {
   market?: MarketKey;
   addRequest?: JournalAddRequest | null;
   onAddRequestHandled?: () => void;
+  onOpenSymbolChart?: (symbol: string) => void;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -339,7 +340,7 @@ function Heatmap({ closed }: { closed: ClosedTrade[] }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: TradeJournalPanelProps) {
+export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
@@ -393,6 +394,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
   const [filterMonth, setFilterMonth] = useState("all");
   const [filterOutcome, setFilterOutcome] = useState("all");
   const [filterSymbol, setFilterSymbol] = useState("");
+  const [dashboardMetric, setDashboardMetric] = useState<"combined" | "realized">("combined");
+  const [dashboardFocus, setDashboardFocus] = useState<"all" | "winners" | "losers">("all");
 
   // Modals
   type ModalState =
@@ -883,6 +886,51 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
   function posForCat(cat: OpenPosCat) { return openPositions.filter(p => (openPosCats[p.symbol] || "full") === cat); }
   const totalUnrealized = openPositions.reduce((s, p) => { const cmp = posMeta[p.symbol]?.cmp || p.avgPx; return s + (cmp - p.avgPx) * p.qty; }, 0);
   const totalRisk = openPositions.reduce((s, p) => { const sl = posMeta[p.symbol]?.sl || p.avgPx * 0.92; return s + (p.avgPx - sl) * p.qty; }, 0);
+  const symbolScoreboard = useMemo(() => {
+    const stats: Record<string, { symbol: string; realized: number; unrealized: number; wins: number; losses: number; openQty: number }> = {};
+
+    closedTrades.forEach((trade) => {
+      const symbol = trade.symbol.toUpperCase();
+      if (!stats[symbol]) {
+        stats[symbol] = { symbol, realized: 0, unrealized: 0, wins: 0, losses: 0, openQty: 0 };
+      }
+      stats[symbol].realized += trade.pnl;
+      if (trade.pnl > 0) stats[symbol].wins += 1;
+      else stats[symbol].losses += 1;
+    });
+
+    openPositions.forEach((position) => {
+      const symbol = position.symbol.toUpperCase();
+      if (!stats[symbol]) {
+        stats[symbol] = { symbol, realized: 0, unrealized: 0, wins: 0, losses: 0, openQty: 0 };
+      }
+      const cmp = posMeta[position.symbol]?.cmp || position.avgPx;
+      stats[symbol].unrealized += (cmp - position.avgPx) * position.qty;
+      stats[symbol].openQty += position.qty;
+    });
+
+    return Object.values(stats)
+      .map((row) => {
+        const closedCount = row.wins + row.losses;
+        return {
+          ...row,
+          combined: row.realized + row.unrealized,
+          winRate: closedCount > 0 ? (row.wins / closedCount) * 100 : 0,
+        };
+      })
+      .filter((row) => {
+        const score = dashboardMetric === "combined" ? row.combined : row.realized;
+        if (dashboardFocus === "winners") return score >= 0;
+        if (dashboardFocus === "losers") return score < 0;
+        return true;
+      })
+      .sort((a, b) => {
+        const aScore = dashboardMetric === "combined" ? a.combined : a.realized;
+        const bScore = dashboardMetric === "combined" ? b.combined : b.realized;
+        if (bScore !== aScore) return bScore - aScore;
+        return b.winRate - a.winRate;
+      });
+  }, [closedTrades, dashboardFocus, dashboardMetric, openPositions, posMeta]);
 
   // ── Save new setup ────────────────────────────────────────────────────────
   function saveNewSetup() {
@@ -916,7 +964,17 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
         <div className="tj-kcard-header">
           <div className="tj-kcard-sym">
-            <span className="tj-kcard-sym-text">{p.symbol}</span>
+            <button
+              type="button"
+              className="tj-symbol-link tj-symbol-link-inline tj-kcard-sym-text"
+              onClick={(event) => {
+                event.stopPropagation();
+                onOpenSymbolChart?.(p.symbol);
+              }}
+              title="Open big chart"
+            >
+              {p.symbol}
+            </button>
             {p.setupType && <span className="tj-kcard-setup">{p.setupType}</span>}
           </div>
           <span className="tj-kcard-qty">×{Math.round(p.qty)}</span>
@@ -1032,6 +1090,18 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
             </div>
           </div>
 
+          <div className="tj-dashboard-controlbar">
+            <div className="tj-toggle-group" role="tablist" aria-label="Dashboard metric mode">
+              <button type="button" className={`tj-toggle-btn ${dashboardMetric === "combined" ? "active" : ""}`} onClick={() => setDashboardMetric("combined")}>Combined P&L</button>
+              <button type="button" className={`tj-toggle-btn ${dashboardMetric === "realized" ? "active" : ""}`} onClick={() => setDashboardMetric("realized")}>Realized P&L</button>
+            </div>
+            <div className="tj-toggle-group" role="tablist" aria-label="Dashboard symbol focus">
+              <button type="button" className={`tj-toggle-btn ${dashboardFocus === "all" ? "active" : ""}`} onClick={() => setDashboardFocus("all")}>All</button>
+              <button type="button" className={`tj-toggle-btn ${dashboardFocus === "winners" ? "active" : ""}`} onClick={() => setDashboardFocus("winners")}>Winners</button>
+              <button type="button" className={`tj-toggle-btn ${dashboardFocus === "losers" ? "active" : ""}`} onClick={() => setDashboardFocus("losers")}>Losers</button>
+            </div>
+          </div>
+
           <div className="tj-chart-row">
             <div className="tj-card full-width">
               <div className="tj-card-hdr">Equity Curve</div>
@@ -1052,7 +1122,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
                   {top10Win.length === 0 ? <div className="tj-empty">No winners yet</div> : top10Win.map((t, i) => (
                     <div key={i} className="tj-wl-row">
                       <span className="tj-wl-rank">#{i + 1}</span>
-                      <span className="tj-wl-sym">{t.symbol}</span>
+                      <button
+                        type="button"
+                        className="tj-symbol-link tj-symbol-link-inline tj-wl-sym"
+                        onClick={() => onOpenSymbolChart?.(t.symbol)}
+                        title="Open big chart"
+                      >
+                        {t.symbol}
+                      </button>
                       <span className="pos">{fmtPerc(t.perc)}</span>
                       <span className="pos tj-wl-pnl">{fmtPnl(t.pnl)}</span>
                     </div>
@@ -1063,7 +1140,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
                   {top10Loss.length === 0 ? <div className="tj-empty">No losers yet</div> : top10Loss.map((t, i) => (
                     <div key={i} className="tj-wl-row">
                       <span className="tj-wl-rank">#{i + 1}</span>
-                      <span className="tj-wl-sym">{t.symbol}</span>
+                      <button
+                        type="button"
+                        className="tj-symbol-link tj-symbol-link-inline tj-wl-sym"
+                        onClick={() => onOpenSymbolChart?.(t.symbol)}
+                        title="Open big chart"
+                      >
+                        {t.symbol}
+                      </button>
                       <span className="neg">{fmtPerc(t.perc)}</span>
                       <span className="neg tj-wl-pnl">{fmtPnl(t.pnl)}</span>
                     </div>
@@ -1071,6 +1155,33 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="tj-card" style={{ marginBottom: 16 }}>
+            <div className="tj-card-hdr">Interactive Symbol Scoreboard</div>
+            {symbolScoreboard.length === 0 ? (
+              <div className="tj-empty">No symbol data yet</div>
+            ) : (
+              <div className="tj-board-list">
+                {symbolScoreboard.slice(0, 12).map((row) => {
+                  const activePnl = dashboardMetric === "combined" ? row.combined : row.realized;
+                  return (
+                    <button
+                      type="button"
+                      key={row.symbol}
+                      className="tj-board-row"
+                      onClick={() => onOpenSymbolChart?.(row.symbol)}
+                      title="Open big chart"
+                    >
+                      <span className="tj-board-sym">{row.symbol}</span>
+                      <span className={activePnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(activePnl)}</span>
+                      <span className="tj-board-meta">WR {row.winRate.toFixed(0)}% · Open Qty {Math.round(row.openQty)}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="tj-card-note">Click any symbol to open the full-size chart.</div>
           </div>
 
           <div className="tj-card">
@@ -1111,7 +1222,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled }: T
                 <tbody>
                   {filteredClosed.map((t, i) => (
                     <tr key={i} className={t.pnl >= 0 ? "win-row" : "loss-row"}>
-                      <td className="tj-sym-cell">{t.symbol}</td>
+                      <td className="tj-sym-cell">
+                        <button type="button" className="tj-symbol-link" onClick={() => onOpenSymbolChart?.(t.symbol)} title="Open big chart">
+                          {t.symbol}
+                        </button>
+                      </td>
                       <td>{t.setupType || "—"}</td>
                       <td>{fmt(t.entryPx)}</td>
                       <td>{fmt(t.exitPx)}</td>

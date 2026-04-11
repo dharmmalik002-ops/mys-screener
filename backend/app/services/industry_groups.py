@@ -601,7 +601,16 @@ def build_industry_groups_response(
             )
         )
 
-    as_of_date = generated_at.astimezone(timezone.utc).date().isoformat()
+    snapshot_as_of_dates = [
+        str(snapshot.history_as_of_date or "").strip()
+        for snapshot in snapshots
+        if str(snapshot.history_as_of_date or "").strip()
+    ]
+    as_of_date = (
+        max(snapshot_as_of_dates)
+        if snapshot_as_of_dates
+        else generated_at.astimezone(timezone.utc).date().isoformat()
+    )
     return IndustryGroupsResponse(
         generated_at=generated_at,
         as_of_date=as_of_date,

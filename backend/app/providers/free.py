@@ -394,6 +394,18 @@ class FreeMarketDataProvider:
 
     async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
         cache_key = float(market_cap_min_crore)
+
+        # Closed-session safety: if we crossed a completed market close without a
+        # historical rebuild, force one before serving cached rows. Live-price
+        # patches can update last_price/change_pct, but they do not roll historical
+        # baselines used by 1W/1M/3M/6M returns.
+        if self.snapshot_cache_path.exists() and not self._is_market_open_ist() and self._market_close_refresh_due():
+            return await self._get_or_create_snapshot_request_task(
+                cache_key,
+                market_cap_min_crore,
+                force_refresh=True,
+            )
+
         cache_signature = self._snapshot_memory_signature()
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
@@ -4056,6 +4068,66 @@ class FreeMarketDataProvider:
                     continue
                 normalized_row[field] = self._previous_trading_day(stored_date).isoformat()
                 changed = True
+
+            # Self-heal derived period returns from baselines so snapshot files
+            # patched via EOD close updates remain internally consistent.
+            current_price = self._to_float(normalized_row.get("last_price"))
+            if current_price not in (None, 0):
+                derived_returns = {
+                    "stock_return_5d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_5d")),
+                        float(normalized_row.get("stock_return_5d", 0) or 0),
+                    ),
+                    "stock_return_20d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_20d")),
+                        float(normalized_row.get("stock_return_20d", 0) or 0),
+                    ),
+                    "stock_return_40d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_40d")),
+                        float(normalized_row.get("stock_return_40d", 0) or 0),
+                    ),
+                    "stock_return_60d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_60d")),
+                        float(normalized_row.get("stock_return_60d", 0) or 0),
+                    ),
+                    "stock_return_126d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_126d")),
+                        float(normalized_row.get("stock_return_126d", 0) or 0),
+                    ),
+                    "stock_return_189d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_189d")),
+                        float(normalized_row.get("stock_return_189d", 0) or 0),
+                    ),
+                    "stock_return_12m": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_252d")),
+                        float(normalized_row.get("stock_return_12m", 0) or 0),
+                    ),
+                    "stock_return_504d": self._return_from_baseline(
+                        float(current_price),
+                        self._to_float(normalized_row.get("baseline_close_504d")),
+                        float(normalized_row.get("stock_return_504d", 0) or 0),
+                    ),
+                }
+                for field, value in derived_returns.items():
+                    rounded = round(float(value), 2)
+                    existing = self._to_float(normalized_row.get(field))
+                    if existing is None or round(float(existing), 2) != rounded:
+                        normalized_row[field] = rounded
+                        changed = True
+
+                rs_weighted_score = self._weighted_rs_score_from_price(normalized_row, float(current_price))
+                existing_rs = self._to_float(normalized_row.get("rs_weighted_score"))
+                if existing_rs is None or round(float(existing_rs), 4) != round(float(rs_weighted_score), 4):
+                    normalized_row["rs_weighted_score"] = round(float(rs_weighted_score), 4)
+                    changed = True
+
             normalized_rows.append(normalized_row)
         return normalized_rows, changed
 
@@ -4781,10 +4853,23 @@ class FreeMarketDataProvider:
         }
 
     def _fetch_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
-        items: list[IndexQuoteItem] = []
+        items_by_symbol: dict[str, IndexQuoteItem] = {}
+
+        # Prefer NSE official index feed for mapped India indices.
+        # This avoids Yahoo symbol inconsistencies (for example ^CNX500).
+        nse_symbols = [symbol for symbol in symbols if symbol.upper() in INDEX_SYMBOL_TO_NSE_NAME]
+        if nse_symbols:
+            try:
+                for item in self._fetch_nse_index_quotes(nse_symbols):
+                    items_by_symbol[item.symbol.upper()] = item
+            except Exception:
+                pass
+
         missing: list[str] = []
 
         for symbol in symbols:
+            if symbol.upper() in items_by_symbol:
+                continue
             try:
                 chart_item = self._index_quote_from_cached_bars(symbol)
             except Exception:
@@ -4796,7 +4881,7 @@ class FreeMarketDataProvider:
             if chart_item is not None:
                 age_hours = (datetime.now(timezone.utc) - chart_item.updated_at).total_seconds() / 3600
                 if age_hours < 4:
-                    items.append(chart_item)
+                    items_by_symbol[symbol.upper()] = chart_item
                     continue
             missing.append(symbol)
 
@@ -4821,12 +4906,12 @@ class FreeMarketDataProvider:
                         if ts
                         else datetime.now(timezone.utc)
                     )
-                    items.append(IndexQuoteItem(
+                    items_by_symbol[symbol.upper()] = IndexQuoteItem(
                         symbol=symbol,
                         price=round(price, 2),
                         change_pct=change_pct,
                         updated_at=updated_at,
-                    ))
+                    )
                     filled.add(symbol.upper())
             except Exception:
                 pass
@@ -4851,16 +4936,16 @@ class FreeMarketDataProvider:
                         if ts
                         else datetime.now(timezone.utc)
                     )
-                    items.append(IndexQuoteItem(
+                    items_by_symbol[symbol.upper()] = IndexQuoteItem(
                         symbol=symbol,
                         price=round(price, 2),
                         change_pct=change_pct,
                         updated_at=updated_at,
-                    ))
+                    )
                 except Exception:
                     pass
 
-        return items
+        return [items_by_symbol[symbol.upper()] for symbol in symbols if symbol.upper() in items_by_symbol]
 
     def _index_quote_from_bars(self, symbol: str, bars: list[ChartBar]) -> IndexQuoteItem | None:
         if len(bars) < 2:
@@ -4910,10 +4995,29 @@ class FreeMarketDataProvider:
         )
 
     def _fetch_nse_index_quote(self, symbol: str) -> IndexQuoteItem | None:
-        index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
-        if not index_name:
+        rows = self._fetch_nse_all_indices_rows()
+        if not rows:
             return None
+        return self._index_quote_from_nse_rows(rows, symbol)
 
+    def _fetch_nse_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
+        rows = self._fetch_nse_all_indices_rows()
+        if not rows:
+            return []
+
+        items: list[IndexQuoteItem] = []
+        seen: set[str] = set()
+        for symbol in symbols:
+            normalized_symbol = str(symbol).upper()
+            if normalized_symbol in seen:
+                continue
+            seen.add(normalized_symbol)
+            item = self._index_quote_from_nse_rows(rows, symbol)
+            if item is not None:
+                items.append(item)
+        return items
+
+    def _fetch_nse_all_indices_rows(self) -> list[dict[str, Any]]:
         headers = {
             "User-Agent": USER_AGENT,
             "Accept": "application/json,text/plain,*/*",
@@ -4926,7 +5030,17 @@ class FreeMarketDataProvider:
             payload = response.json()
 
         rows = payload.get("data") or []
-        matched = next((row for row in rows if str(row.get("index", "")).strip().upper() == index_name.upper()), None)
+        return rows if isinstance(rows, list) else []
+
+    def _index_quote_from_nse_rows(self, rows: list[dict[str, Any]], symbol: str) -> IndexQuoteItem | None:
+        index_name = INDEX_SYMBOL_TO_NSE_NAME.get(str(symbol).upper())
+        if not index_name:
+            return None
+
+        matched = next(
+            (row for row in rows if str(row.get("index", "")).strip().upper() == index_name.upper()),
+            None,
+        )
         if not matched:
             return None
 
@@ -7322,13 +7436,78 @@ class FreeMarketDataProvider:
                 continue
             close = ohlcv["close"]
             prev_close = ohlcv.get("prev_close") or row.get("last_price") or close
+            open_price = ohlcv.get("open") or prev_close or close
             change_pct = ((close - prev_close) / prev_close * 100) if prev_close else 0.0
+
+            # Keep period returns aligned with official EOD close so group/stock
+            # rankings remain consistent after Bhavcopy patching.
+            stock_return_5d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_5d")),
+                float(row.get("stock_return_5d", 0) or 0),
+            )
+            stock_return_20d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_20d")),
+                float(row.get("stock_return_20d", 0) or 0),
+            )
+            stock_return_40d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_40d")),
+                float(row.get("stock_return_40d", 0) or 0),
+            )
+            stock_return_60d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_60d")),
+                float(row.get("stock_return_60d", 0) or 0),
+            )
+            stock_return_126d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_126d")),
+                float(row.get("stock_return_126d", 0) or 0),
+            )
+            stock_return_189d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_189d")),
+                float(row.get("stock_return_189d", 0) or 0),
+            )
+            stock_return_12m = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_252d")),
+                float(row.get("stock_return_12m", 0) or 0),
+            )
+            stock_return_504d = self._return_from_baseline(
+                float(close),
+                self._to_float(row.get("baseline_close_504d")),
+                float(row.get("stock_return_504d", 0) or 0),
+            )
+
+            rs_weighted_score = self._weighted_rs_score_from_price(row, float(close))
+            gap_pct = ((float(open_price) / float(prev_close)) - 1) * 100 if prev_close else float(row.get("gap_pct", 0) or 0)
+            trend_strength = self._trend_strength(
+                float(close),
+                self._to_float(row.get("ema20")),
+                self._to_float(row.get("ema50")),
+                self._to_float(row.get("ema200")),
+            )
+
             row["last_price"] = round(close, 4)
             row["previous_close"] = round(prev_close, 4)
             row["change_pct"] = round(change_pct, 4)
             row["day_high"] = round(ohlcv.get("high") or close, 4)
             row["day_low"] = round(ohlcv.get("low") or close, 4)
             row["volume"] = int(ohlcv.get("volume") or 0)
+            row["stock_return_5d"] = round(stock_return_5d, 2)
+            row["stock_return_20d"] = round(stock_return_20d, 2)
+            row["stock_return_40d"] = round(stock_return_40d, 2)
+            row["stock_return_60d"] = round(stock_return_60d, 2)
+            row["stock_return_126d"] = round(stock_return_126d, 2)
+            row["stock_return_189d"] = round(stock_return_189d, 2)
+            row["stock_return_12m"] = round(stock_return_12m, 2)
+            row["stock_return_504d"] = round(stock_return_504d, 2)
+            row["rs_weighted_score"] = round(rs_weighted_score, 4)
+            row["gap_pct"] = round(gap_pct, 2)
+            row["trend_strength"] = round(float(trend_strength), 2)
             row["history_as_of_date"] = trade_date_str
             row["history_session_date"] = trade_date_str
             row["official_close_date"] = trade_date_str

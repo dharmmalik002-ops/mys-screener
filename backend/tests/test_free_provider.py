@@ -710,16 +710,21 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(snapshots[0].symbol, "TEST")
         schedule_refresh.assert_not_called()
 
-    def test_get_snapshots_serves_stale_closed_session_cache_without_queueing_refresh(self) -> None:
+    def test_get_snapshots_rebuilds_stale_closed_session_cache_before_serving(self) -> None:
         current_session = self.provider._current_or_previous_trading_day_ist()
         stale_session = self.provider._previous_trading_day(current_session).isoformat()
         row = self._snapshot_row(session_date=stale_session)
         self._seed_snapshot_cache([row])
+        rebuilt_snapshot = StockSnapshot.model_validate(self._snapshot_row(session_date=current_session.isoformat()))
 
         with patch.object(self.provider, "_snapshot_schema_ok", return_value=True), patch.object(
             self.provider,
+            "_get_or_create_snapshot_request_task",
+            return_value=[rebuilt_snapshot],
+        ) as request_task, patch.object(
+            self.provider,
             "_load_or_refresh_snapshots",
-            side_effect=AssertionError("request path should not block on close-session rebuild"),
+            side_effect=AssertionError("closed-session path should use request task helper"),
         ), patch.object(
             self.provider,
             "_schedule_background_snapshot_refresh",
@@ -739,8 +744,44 @@ class FreeProviderRegressionTests(unittest.TestCase):
             snapshots = asyncio.run(self.provider.get_snapshots(1000.0))
 
         self.assertEqual(len(snapshots), 1)
-        self.assertEqual(snapshots[0].last_price, row["last_price"])
+        self.assertEqual(snapshots[0].symbol, rebuilt_snapshot.symbol)
+        request_task.assert_called_once_with(1000.0, 1000.0, force_refresh=True)
         schedule_refresh.assert_not_called()
+
+    def test_apply_bhavcopy_updates_period_returns_from_baselines(self) -> None:
+        session_date = self.provider._current_or_previous_trading_day_ist().isoformat()
+        row = self._snapshot_row(session_date=session_date)
+        row["stock_return_5d"] = 0.0
+        row["stock_return_20d"] = 0.0
+        self._seed_snapshot_cache([row])
+
+        baseline_5d = float(row.get("baseline_close_5d") or 1)
+        baseline_20d = float(row.get("baseline_close_20d") or baseline_5d)
+        new_close = round(baseline_5d * 1.08, 4)
+        prev_close = round(new_close / 1.02, 4)
+        trade_date = self.provider._current_or_previous_trading_day_ist()
+
+        updated = self.provider._apply_bhavcopy_to_snapshot_file(
+            {
+                "TEST": {
+                    "close": new_close,
+                    "prev_close": prev_close,
+                    "open": prev_close,
+                    "high": max(new_close, prev_close),
+                    "low": min(new_close, prev_close),
+                    "volume": 12345,
+                }
+            },
+            trade_date,
+        )
+
+        self.assertEqual(updated, 1)
+        persisted = json.loads(self.provider.snapshot_cache_path.read_text(encoding="utf-8"))[0]
+        expected_1w = ((new_close / baseline_5d) - 1) * 100
+        expected_1m = ((new_close / baseline_20d) - 1) * 100 if baseline_20d else 0.0
+        self.assertAlmostEqual(float(persisted["stock_return_5d"]), round(expected_1w, 2), places=2)
+        self.assertAlmostEqual(float(persisted["stock_return_20d"]), round(expected_1m, 2), places=2)
+        self.assertEqual(persisted["history_as_of_date"], trade_date.isoformat())
 
     def test_force_refresh_rebuilds_closed_session_history_on_weekend(self) -> None:
         friday = datetime(2026, 4, 3, tzinfo=timezone.utc).date()

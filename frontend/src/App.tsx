@@ -5205,6 +5205,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               market={activeMarket}
               addRequest={journalAddRequest}
               onAddRequestHandled={() => setJournalAddRequest(null)}
+              onOpenSymbolChart={handlePickSymbol}
             />
           </Suspense>
         ) : null}
