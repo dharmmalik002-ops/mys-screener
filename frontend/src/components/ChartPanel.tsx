@@ -991,7 +991,7 @@ function buildEarningsMarkers(fundamentals: CompanyFundamentals | null, market: 
         continue;
       }
       const diffDays = (candidate.time - quarter.endTime) / 86400;
-      if (diffDays < -10 || diffDays > 140) {
+      if (diffDays < -10 || diffDays > 80) {
         continue;
       }
       let score = diffDays;

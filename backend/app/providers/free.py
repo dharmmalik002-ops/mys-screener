@@ -3458,15 +3458,20 @@ class FreeMarketDataProvider:
                 continue
 
             best_index: int | None = None
-            best_gap: int | None = None
+            best_score: float | None = None
+            quarter_key = self._quarter_key_from_period_label(item.period)
             for index, event_date in enumerate(parsed_dates):
                 if index in used_indexes:
                     continue
                 gap_days = (event_date - period_end).days
-                if gap_days < -10 or gap_days > 120:
+                if gap_days < -10 or gap_days > 75:
                     continue
-                if best_gap is None or gap_days < best_gap:
-                    best_gap = gap_days
+                # Prefer dates whose inferred quarter key matches this period's key
+                score: float = gap_days
+                if quarter_key and self._quarter_key_from_event_date(event_date) == quarter_key:
+                    score -= 50  # strong bonus for matching quarter
+                if best_score is None or score < best_score:
+                    best_score = score
                     best_index = index
 
             if best_index is None:
@@ -4986,6 +4991,25 @@ class FreeMarketDataProvider:
     def _quarter_key_from_event_date(self, event_date: date, *, use_month_end: bool = False) -> str:
         month = event_date.month
         year = event_date.year
+        if self._market_locale() == "US":
+            # US: Calendar-year fiscal quarters (Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec)
+            if use_month_end:
+                if month == 3:
+                    return f"Q1 FY{year}"
+                if month == 6:
+                    return f"Q2 FY{year}"
+                if month == 9:
+                    return f"Q3 FY{year}"
+                if month == 12:
+                    return f"Q4 FY{year}"
+            if month in (1, 2, 3):
+                return f"Q4 FY{year - 1}"
+            if month in (4, 5, 6):
+                return f"Q1 FY{year}"
+            if month in (7, 8, 9):
+                return f"Q2 FY{year}"
+            return f"Q3 FY{year}"
+        # India: April-March fiscal year
         if use_month_end:
             if month == 3:
                 return f"Q4 FY{year}"
