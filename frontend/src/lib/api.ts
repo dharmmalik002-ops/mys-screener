@@ -135,11 +135,19 @@ export type HistoricalBreadthResponse = {
   universes: HistoricalUniverseBreadth[];
 };
 
+export type WatchlistBifurcation = {
+  id: string;
+  name: string;
+  symbols: string[];
+};
+
 export type WatchlistItem = {
   id: string;
   name: string;
   color: string;
   symbols: string[];
+  active_bifurcation_id?: string | null;
+  bifurcations?: WatchlistBifurcation[];
 };
 
 export type WatchlistsStateResponse = {
@@ -837,6 +845,21 @@ export type EandCScanResponse = {
   expansion: ScanMatch[];
 };
 
+export type EandCScanRequest = {
+  min_price: number;
+  contraction_min_avg_volume_50d: number;
+  contraction_min_day_volume: number;
+  contraction_require_above_ema50: boolean;
+  contraction_max_price_to_sma50_ratio: number;
+  contraction_max_today_change_abs_pct: number;
+  contraction_max_prev_day_change_abs_pct: number;
+  contraction_max_two_days_ago_change_abs_pct: number;
+  expansion_min_change_pct: number;
+  expansion_min_avg_volume_50d: number;
+  expansion_min_day_volume: number;
+  expansion_min_volume_multiple: number;
+};
+
 export type NearPivotScanRequest = {
   min_rs_rating: number;
   max_pct_from_52w_high: number;
@@ -1385,8 +1408,15 @@ export function getGapUpOpeners(
   return request<ScanResultsResponse>(withScanOptions(`/api/gap-up-openers?${params.toString()}`, market, options));
 }
 
-export function getEandCScan(market: MarketKey) {
-  return request<EandCScanResponse>(`/api/${market}/e-and-c`);
+export function getEandCScan(market: MarketKey, settings?: EandCScanRequest) {
+  const params = new URLSearchParams();
+  if (settings) {
+    for (const [key, value] of Object.entries(settings)) {
+      params.set(key, String(value));
+    }
+  }
+  const query = params.toString();
+  return request<EandCScanResponse>(`/api/${market}/e-and-c${query ? `?${query}` : ""}`);
 }
 
 export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, options?: ScanRequestOptions) {

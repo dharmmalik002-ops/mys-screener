@@ -1211,6 +1211,21 @@ class EandCScanResponse(BaseModel):
     expansion: list[ScanMatch] = []
 
 
+class EandCScanRequest(BaseModel):
+    min_price: float = Field(default=20.0, ge=0.0)
+    contraction_min_avg_volume_50d: int = Field(default=30_000, ge=0)
+    contraction_min_day_volume: int = Field(default=10_000, ge=0)
+    contraction_require_above_ema50: bool = True
+    contraction_max_price_to_sma50_ratio: float = Field(default=1.35, ge=0.1)
+    contraction_max_today_change_abs_pct: float = Field(default=3.5, ge=0.0)
+    contraction_max_prev_day_change_abs_pct: float = Field(default=3.5, ge=0.0)
+    contraction_max_two_days_ago_change_abs_pct: float = Field(default=4.5, ge=0.0)
+    expansion_min_change_pct: float = Field(default=5.0)
+    expansion_min_avg_volume_50d: int = Field(default=15_000, ge=0)
+    expansion_min_day_volume: int = Field(default=25_000, ge=0)
+    expansion_min_volume_multiple: float = Field(default=2.0, ge=0.0)
+
+
 class UniverseBreadth(BaseModel):
     universe: str
     total: int
@@ -1367,10 +1382,17 @@ class CompanyQuestionResponse(BaseModel):
 
 
 class WatchlistItem(BaseModel):
+    class Bifurcation(BaseModel):
+        id: str
+        name: str
+        symbols: list[str] = Field(default_factory=list)
+
     id: str
     name: str
     color: str
     symbols: list[str] = Field(default_factory=list)
+    active_bifurcation_id: str | None = None
+    bifurcations: list[Bifurcation] = Field(default_factory=list)
 
 
 class WatchlistsStateResponse(BaseModel):

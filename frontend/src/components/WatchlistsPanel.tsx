@@ -13,6 +13,12 @@ const WATCHLIST_SLOT_GAP = 4;
 const WATCHLIST_ROW_SLOT_HEIGHT = 46;
 
 export type LocalWatchlist = {
+  bifurcations: Array<{
+    id: string;
+    name: string;
+    symbols: string[];
+  }>;
+  active_bifurcation_id?: string | null;
   id: string;
   name: string;
   color: string;
@@ -32,6 +38,10 @@ type WatchlistsPanelProps = {
   onSetWatchlistColor: (id: string, color: string) => void;
   onRemoveFromWatchlist: (watchlistId: string, symbol: string) => void;
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
+  onCreateBifurcation: (watchlistId: string, name: string) => void;
+  onRenameBifurcation: (watchlistId: string, bifurcationId: string, name: string) => void;
+  onMoveSymbolsBetweenBifurcations: (watchlistId: string, fromBifurcationId: string, toBifurcationId: string, symbols: string[]) => void;
+  onSetActiveBifurcation: (watchlistId: string, bifurcationId: string) => void;
   onCopyToWatchlist: (watchlistId: string, symbol: string) => void;
   onImportWatchlist: (result: ImportResult) => void;
   onReorderWatchlists: (orderedIds: string[]) => void;
@@ -105,6 +115,10 @@ export function WatchlistsPanel({
   onSetWatchlistColor,
   onRemoveFromWatchlist,
   onMoveSymbols,
+  onCreateBifurcation,
+  onRenameBifurcation,
+  onMoveSymbolsBetweenBifurcations,
+  onSetActiveBifurcation,
   onCopyToWatchlist,
   onImportWatchlist,
   onReorderWatchlists,
@@ -134,10 +148,23 @@ export function WatchlistsPanel({
   const [importOpen, setImportOpen] = useState(false);
   const dragSrcIdRef = useRef<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [activeBifurcationId, setActiveBifurcationId] = useState<string | null>(null);
+  const [newBifurcationName, setNewBifurcationName] = useState("");
+  const [renameBifurcationDraft, setRenameBifurcationDraft] = useState("");
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
     [activeWatchlistId, watchlists],
+  );
+
+  const activeBifurcations = useMemo(
+    () => activeWatchlist?.bifurcations ?? [],
+    [activeWatchlist?.bifurcations],
+  );
+
+  const activeBifurcation = useMemo(
+    () => activeBifurcations.find((item) => item.id === activeBifurcationId) ?? activeBifurcations[0] ?? null,
+    [activeBifurcationId, activeBifurcations],
   );
 
   const lookup = useMemo(() => {
@@ -183,7 +210,7 @@ export function WatchlistsPanel({
 
   const activeItems = useMemo(
     (): WatchlistDisplayItem[] =>
-      (activeWatchlist?.symbols ?? [])
+      (activeBifurcation?.symbols ?? activeWatchlist?.symbols ?? [])
         .map((symbol) => {
           const match = lookup.get(symbol);
           if (match) {
@@ -220,7 +247,7 @@ export function WatchlistsPanel({
           }
           return (right.rs_rating ?? 0) - (left.rs_rating ?? 0);
         }),
-    [activeWatchlist?.symbols, lookup],
+    [activeBifurcation?.symbols, activeWatchlist?.symbols, lookup],
   );
 
   const availableMoveTargets = useMemo(
@@ -237,6 +264,17 @@ export function WatchlistsPanel({
   }, [activeWatchlist?.id, activeWatchlist?.name]);
 
   useEffect(() => {
+    const nextBifurcationId = activeWatchlist?.active_bifurcation_id
+      ?? activeWatchlist?.bifurcations?.[0]?.id
+      ?? null;
+    setActiveBifurcationId(nextBifurcationId);
+    const nextBifurcationName = activeWatchlist?.bifurcations?.find((item) => item.id === nextBifurcationId)?.name
+      ?? activeWatchlist?.bifurcations?.[0]?.name
+      ?? "";
+    setRenameBifurcationDraft(nextBifurcationName);
+  }, [activeWatchlist?.active_bifurcation_id, activeWatchlist?.bifurcations, activeWatchlist?.id]);
+
+  useEffect(() => {
     setSelectedSymbols([]);
     setRowMoveTargets({});
     setBulkTargetWatchlistId((current) => {
@@ -249,10 +287,10 @@ export function WatchlistsPanel({
 
   useEffect(() => {
     setSelectedSymbols((current) => {
-      const activeSymbols = new Set(activeWatchlist?.symbols ?? []);
+      const activeSymbols = new Set(activeItems.map((item) => item.symbol));
       return current.filter((symbol) => activeSymbols.has(symbol));
     });
-  }, [activeWatchlist?.symbols]);
+  }, [activeItems]);
 
   const shouldVirtualize = hasWideTableLayout && activeItems.length > 60;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
@@ -375,6 +413,11 @@ export function WatchlistsPanel({
       key={`watchlist-${activeWatchlist?.id ?? "none"}-${item.symbol}`}
       className={selectedSymbol === item.symbol ? "scan-row watchlist-row active" : "scan-row watchlist-row"}
       style={virtualHeight ? { height: `${virtualHeight}px` } : undefined}
+      draggable
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData("text/watchlist-symbol", item.symbol);
+      }}
     >
       <span>
         <input
@@ -635,6 +678,84 @@ export function WatchlistsPanel({
       >
         {activeWatchlist ? (
           <>
+            <div className="watchlist-bifurcation-panel">
+              <div className="watchlist-bifurcation-list">
+                {activeBifurcations.map((bifurcation) => {
+                  const isActive = activeBifurcation?.id === bifurcation.id;
+                  return (
+                    <button
+                      key={`bifurcation-${activeWatchlist.id}-${bifurcation.id}`}
+                      type="button"
+                      className={isActive ? "tool-pill active" : "tool-pill"}
+                      onClick={() => {
+                        setActiveBifurcationId(bifurcation.id);
+                        setRenameBifurcationDraft(bifurcation.name);
+                        onSetActiveBifurcation(activeWatchlist.id, bifurcation.id);
+                      }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        const symbol = event.dataTransfer.getData("text/watchlist-symbol").trim().toUpperCase();
+                        if (!symbol || !activeBifurcation || activeBifurcation.id === bifurcation.id) {
+                          return;
+                        }
+                        onMoveSymbolsBetweenBifurcations(activeWatchlist.id, activeBifurcation.id, bifurcation.id, [symbol]);
+                      }}
+                    >
+                      {bifurcation.name} ({bifurcation.symbols.length})
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="watchlist-bifurcation-actions">
+                <input
+                  value={newBifurcationName}
+                  onChange={(event) => setNewBifurcationName(event.target.value)}
+                  placeholder="New bifurcation"
+                />
+                <button
+                  type="button"
+                  className="tool-pill"
+                  onClick={() => {
+                    const value = newBifurcationName.trim();
+                    if (!value) {
+                      return;
+                    }
+                    onCreateBifurcation(activeWatchlist.id, value);
+                    setNewBifurcationName("");
+                  }}
+                >
+                  Add Group
+                </button>
+                <input
+                  value={renameBifurcationDraft}
+                  onChange={(event) => setRenameBifurcationDraft(event.target.value)}
+                  placeholder="Rename group"
+                  disabled={!activeBifurcation}
+                />
+                <button
+                  type="button"
+                  className="tool-pill"
+                  disabled={!activeBifurcation}
+                  onClick={() => {
+                    if (!activeBifurcation) {
+                      return;
+                    }
+                    const value = renameBifurcationDraft.trim();
+                    if (!value) {
+                      return;
+                    }
+                    onRenameBifurcation(activeWatchlist.id, activeBifurcation.id, value);
+                  }}
+                >
+                  Rename Group
+                </button>
+              </div>
+            </div>
+
             <div className="watchlist-quick-add">
               <input
                 list="watchlist-symbols"
@@ -670,14 +791,14 @@ export function WatchlistsPanel({
                 type="button"
                 className="tool-pill"
                 onClick={() => {
-                  if (!activeWatchlist?.symbols?.length) {
+                  if (activeItems.length === 0) {
                     return;
                   }
-                  const allSelected = selectedSymbols.length === activeWatchlist.symbols.length;
-                  setSelectedSymbols(allSelected ? [] : [...activeWatchlist.symbols]);
+                  const allSelected = selectedSymbols.length === activeItems.length;
+                  setSelectedSymbols(allSelected ? [] : activeItems.map((item) => item.symbol));
                 }}
               >
-                {selectedSymbols.length === activeWatchlist.symbols.length && activeWatchlist.symbols.length > 0 ? "Unselect All" : "Select All"}
+                {selectedSymbols.length === activeItems.length && activeItems.length > 0 ? "Unselect All" : "Select All"}
               </button>
               <span className="watchlist-selection-count">{selectedSymbols.length} selected</span>
               <select

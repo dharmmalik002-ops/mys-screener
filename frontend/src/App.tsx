@@ -10,7 +10,7 @@ import type {
   ChartTimeframe,
   IndicatorKey,
 } from "./components/ChartPanel";
-import type { EandCViewMode } from "./components/EandCScannerPanel";
+import type { EandCSettings, EandCViewMode } from "./components/EandCScannerPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import type { ImportResult } from "./components/WatchlistImportModal";
@@ -43,6 +43,7 @@ import {
   type ConsolidatingScanRequest,
   type CustomScanRequest,
   type DashboardResponse,
+  type EandCScanRequest,
   type EandCScanResponse,
   type ImprovingRsResponse,
   type ImprovingRsWindow,
@@ -140,6 +141,36 @@ function intersectEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
     });
 }
 
+function unionEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
+  const mergedBySymbol = new Map<string, ScanMatch>();
+
+  for (const item of contraction) {
+    mergedBySymbol.set(item.symbol, {
+      ...item,
+      reasons: [...(item.reasons ?? [])],
+    });
+  }
+
+  for (const item of expansion) {
+    const existing = mergedBySymbol.get(item.symbol);
+    if (!existing) {
+      mergedBySymbol.set(item.symbol, {
+        ...item,
+        reasons: [...(item.reasons ?? [])],
+      });
+      continue;
+    }
+
+    mergedBySymbol.set(item.symbol, {
+      ...existing,
+      score: Math.max(existing.score ?? 0, item.score ?? 0),
+      reasons: [...(existing.reasons ?? []), ...(item.reasons ?? [])],
+    });
+  }
+
+  return Array.from(mergedBySymbol.values()).sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
+}
+
 function buildEandCScanResultsResponse(payload: EandCScanResponse, viewMode: EandCViewMode): ScanResultsResponse {
   const contraction = payload.contraction ?? [];
   const expansion = payload.expansion ?? [];
@@ -148,7 +179,7 @@ function buildEandCScanResultsResponse(payload: EandCScanResponse, viewMode: Ean
       ? contraction
       : viewMode === "expansion"
         ? expansion
-        : intersectEandCItems(contraction, expansion);
+        : unionEandCItems(contraction, expansion);
 
   const scanDescriptor =
     viewMode === "contraction"
@@ -169,9 +200,9 @@ function buildEandCScanResultsResponse(payload: EandCScanResponse, viewMode: Ean
           }
         : {
             id: "e-and-c-both",
-            name: "E&C Intersection",
+            name: "E&C Either (OR)",
             category: "Setups",
-            description: "Stocks appearing in both contraction and expansion lists.",
+            description: "Stocks appearing in contraction OR expansion lists.",
             hit_count: items.length,
           };
 
@@ -275,6 +306,8 @@ type PersistedScannerSettings = {
   appliedReturnsFilters: ReturnsScanRequest;
   consolidatingFilters: ConsolidatingScanRequest;
   appliedConsolidatingFilters: ConsolidatingScanRequest;
+  eAndCSettings: EandCScanRequest;
+  appliedEAndCSettings: EandCScanRequest;
 };
 
 const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string; symbol: string }>> = {
@@ -556,6 +589,21 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
   enable_near_multi_year_breakout: true,
   min_liquidity_crore: null,
   limit: 1500,
+};
+
+const DEFAULT_E_AND_C_SETTINGS: EandCSettings = {
+  min_price: 20,
+  contraction_min_avg_volume_50d: 30000,
+  contraction_min_day_volume: 10000,
+  contraction_require_above_ema50: true,
+  contraction_max_price_to_sma50_ratio: 1.35,
+  contraction_max_today_change_abs_pct: 3.5,
+  contraction_max_prev_day_change_abs_pct: 3.5,
+  contraction_max_two_days_ago_change_abs_pct: 4.5,
+  expansion_min_change_pct: 5,
+  expansion_min_avg_volume_50d: 15000,
+  expansion_min_day_volume: 25000,
+  expansion_min_volume_multiple: 2,
 };
 
 const SUPPORTED_INDICATORS: IndicatorKey[] = ["ema10", "ema20", "ema50", "ema200", "vwap"];
@@ -1134,6 +1182,46 @@ function normalizeWatchlistColor(value: unknown, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized : fallback;
 }
 
+function normalizeWatchlistBifurcations(value: unknown, fallbackSymbols: string[]): LocalWatchlist["bifurcations"] {
+  if (!Array.isArray(value)) {
+    return [{ id: "main", name: "Main", symbols: [...fallbackSymbols] }];
+  }
+
+  const output: LocalWatchlist["bifurcations"] = [];
+  const seenIds = new Set<string>();
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+    const candidate = item as { id?: unknown; name?: unknown; symbols?: unknown };
+    const id = typeof candidate.id === "string" && candidate.id.trim() ? candidate.id.trim() : buildLocalId();
+    const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
+    if (!name || seenIds.has(id)) {
+      continue;
+    }
+    const symbols = Array.isArray(candidate.symbols)
+      ? Array.from(
+          new Set(
+            candidate.symbols
+              .map((symbol) => normalizeStoredSymbol(symbol))
+              .filter((symbol): symbol is string => Boolean(symbol)),
+          ),
+        )
+      : [];
+    seenIds.add(id);
+    output.push({ id, name, symbols });
+  }
+
+  if (output.length === 0) {
+    return [{ id: "main", name: "Main", symbols: [...fallbackSymbols] }];
+  }
+  return output;
+}
+
+function watchlistSymbolsFromBifurcations(bifurcations: LocalWatchlist["bifurcations"]): string[] {
+  return Array.from(new Set(bifurcations.flatMap((item) => item.symbols)));
+}
+
 function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
   if (!Array.isArray(value)) {
     return [];
@@ -1158,7 +1246,7 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       continue;
     }
 
-    const symbols = Array.isArray(candidate.symbols)
+    const legacySymbols = Array.isArray(candidate.symbols)
       ? Array.from(
           new Set(
             candidate.symbols
@@ -1167,6 +1255,22 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
           ),
         )
       : [];
+    const bifurcations = normalizeWatchlistBifurcations((candidate as { bifurcations?: unknown }).bifurcations, legacySymbols);
+    const mergedSymbols = Array.from(new Set([...legacySymbols, ...watchlistSymbolsFromBifurcations(bifurcations)]));
+    if (mergedSymbols.length > 0) {
+      const firstBifurcation = bifurcations[0];
+      if (firstBifurcation) {
+        const firstSet = new Set(firstBifurcation.symbols);
+        const missing = mergedSymbols.filter((symbol) => !firstSet.has(symbol));
+        if (missing.length > 0) {
+          firstBifurcation.symbols = [...firstBifurcation.symbols, ...missing];
+        }
+      }
+    }
+    const activeBifurcationIdRaw = (candidate as { active_bifurcation_id?: unknown }).active_bifurcation_id;
+    const activeBifurcationId = typeof activeBifurcationIdRaw === "string" && bifurcations.some((item) => item.id === activeBifurcationIdRaw)
+      ? activeBifurcationIdRaw
+      : bifurcations[0]?.id ?? null;
     const color = normalizeWatchlistColor(candidate.color, DEFAULT_WATCHLIST_COLORS[output.length % DEFAULT_WATCHLIST_COLORS.length]);
 
     seenIds.add(id);
@@ -1174,7 +1278,9 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       id,
       name: rawName,
       color,
-      symbols,
+      symbols: mergedSymbols,
+      bifurcations,
+      active_bifurcation_id: activeBifurcationId,
     });
   }
 
@@ -1272,6 +1378,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
     appliedReturnsFilters: DEFAULT_RETURNS_FILTERS,
     consolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
     appliedConsolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
+    eAndCSettings: DEFAULT_E_AND_C_SETTINGS,
+    appliedEAndCSettings: DEFAULT_E_AND_C_SETTINGS,
   };
 
   if (typeof window === "undefined") {
@@ -1320,6 +1428,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
       appliedReturnsFilters: mergeWithDefaults(DEFAULT_RETURNS_FILTERS, parsed.appliedReturnsFilters),
       consolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.consolidatingFilters),
       appliedConsolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.appliedConsolidatingFilters),
+      eAndCSettings: mergeWithDefaults(DEFAULT_E_AND_C_SETTINGS, parsed.eAndCSettings),
+      appliedEAndCSettings: mergeWithDefaults(DEFAULT_E_AND_C_SETTINGS, parsed.appliedEAndCSettings),
     };
   } catch {
     return defaults;
@@ -1501,6 +1611,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [activePage, setActivePage] = useState<AppPage>("home");
   const [activeScanner, setActiveScanner] = useState<ScreenerMode>("custom-scan");
   const [eAndCViewMode, setEAndCViewMode] = useState<EandCViewMode>("both");
+  const [eAndCSettings, setEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.eAndCSettings);
+  const [appliedEAndCSettings, setAppliedEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.appliedEAndCSettings);
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
   const [customFilters, setCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.customFilters);
   const [appliedCustomFilters, setAppliedCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.appliedCustomFilters);
@@ -1787,6 +1899,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setAppliedReturnsFilters(settings.appliedReturnsFilters);
     setConsolidatingFilters(settings.consolidatingFilters);
     setAppliedConsolidatingFilters(settings.appliedConsolidatingFilters);
+    setEAndCSettings(settings.eAndCSettings);
+    setAppliedEAndCSettings(settings.appliedEAndCSettings);
   };
 
   const handleMarketChange = (nextMarket: MarketKey) => {
@@ -2237,7 +2351,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           setScanSectorSummariesLoading(false);
           setImprovingRsLoading(false);
 
-          const payload = eAndCData ?? await getEandCScan(activeMarket);
+          const payload = eAndCData ?? await getEandCScan(activeMarket, appliedEAndCSettings);
           if (!active || scanRequestIdRef.current !== requestId) {
             return;
           }
@@ -2316,6 +2430,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     gapUpThreshold,
     groupsData,
     hasAppliedFiltersOnce,
+    appliedEAndCSettings,
     eAndCData,
     eAndCViewMode,
     improvingRsWindow,
@@ -2890,6 +3005,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         appliedReturnsFilters,
         consolidatingFilters,
         appliedConsolidatingFilters,
+        eAndCSettings,
+        appliedEAndCSettings,
       }),
     );
   }, [
@@ -2910,6 +3027,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     nearPivotFilters,
     pullBackFilters,
     returnsFilters,
+    eAndCSettings,
+    appliedEAndCSettings,
     activeMarket,
   ]);
 
@@ -3086,6 +3205,42 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const normalizeConsolidatingFilters = (filters: ConsolidatingScanRequest): ConsolidatingScanRequest => ({
     ...filters,
     limit: clampResultLimit(filters.limit),
+  });
+
+  const normalizeEandCSettings = (settings: EandCScanRequest): EandCScanRequest => ({
+    ...DEFAULT_E_AND_C_SETTINGS,
+    ...settings,
+    min_price: Number.isFinite(settings.min_price) ? Math.max(settings.min_price, 0) : DEFAULT_E_AND_C_SETTINGS.min_price,
+    contraction_min_avg_volume_50d: Number.isFinite(settings.contraction_min_avg_volume_50d)
+      ? Math.max(Math.floor(settings.contraction_min_avg_volume_50d), 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_min_avg_volume_50d,
+    contraction_min_day_volume: Number.isFinite(settings.contraction_min_day_volume)
+      ? Math.max(Math.floor(settings.contraction_min_day_volume), 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_min_day_volume,
+    contraction_max_price_to_sma50_ratio: Number.isFinite(settings.contraction_max_price_to_sma50_ratio)
+      ? Math.max(settings.contraction_max_price_to_sma50_ratio, 0.1)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_max_price_to_sma50_ratio,
+    contraction_max_today_change_abs_pct: Number.isFinite(settings.contraction_max_today_change_abs_pct)
+      ? Math.max(settings.contraction_max_today_change_abs_pct, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_max_today_change_abs_pct,
+    contraction_max_prev_day_change_abs_pct: Number.isFinite(settings.contraction_max_prev_day_change_abs_pct)
+      ? Math.max(settings.contraction_max_prev_day_change_abs_pct, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_max_prev_day_change_abs_pct,
+    contraction_max_two_days_ago_change_abs_pct: Number.isFinite(settings.contraction_max_two_days_ago_change_abs_pct)
+      ? Math.max(settings.contraction_max_two_days_ago_change_abs_pct, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_max_two_days_ago_change_abs_pct,
+    expansion_min_change_pct: Number.isFinite(settings.expansion_min_change_pct)
+      ? settings.expansion_min_change_pct
+      : DEFAULT_E_AND_C_SETTINGS.expansion_min_change_pct,
+    expansion_min_avg_volume_50d: Number.isFinite(settings.expansion_min_avg_volume_50d)
+      ? Math.max(Math.floor(settings.expansion_min_avg_volume_50d), 0)
+      : DEFAULT_E_AND_C_SETTINGS.expansion_min_avg_volume_50d,
+    expansion_min_day_volume: Number.isFinite(settings.expansion_min_day_volume)
+      ? Math.max(Math.floor(settings.expansion_min_day_volume), 0)
+      : DEFAULT_E_AND_C_SETTINGS.expansion_min_day_volume,
+    expansion_min_volume_multiple: Number.isFinite(settings.expansion_min_volume_multiple)
+      ? Math.max(settings.expansion_min_volume_multiple, 0)
+      : DEFAULT_E_AND_C_SETTINGS.expansion_min_volume_multiple,
   });
 
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
@@ -3634,6 +3789,33 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setEAndCViewMode(mode);
   };
 
+  const handleEandCSettingsChange = (updates: Partial<EandCScanRequest>) => {
+    setEAndCSettings((current) => ({ ...current, ...updates }));
+  };
+
+  const handleApplyEandCSettings = () => {
+    const nextSettings = normalizeEandCSettings(eAndCSettings);
+    setEAndCSettings(nextSettings);
+    setAppliedEAndCSettings(nextSettings);
+    setEAndCData(null);
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleResetEandCSettings = () => {
+    setEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
+    setAppliedEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
+    setEAndCData(null);
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setScannerRunNonce((current) => current + 1);
+  };
+
   const handleRefreshEandCScan = () => {
     setActivePage("screener");
     setActiveScanner("e-and-c");
@@ -3851,11 +4033,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
 
     const symbol = initialSymbol?.trim().toUpperCase();
+    const initialSymbols = symbol ? [symbol] : [];
     const nextWatchlist: LocalWatchlist = {
       id: buildLocalId(),
       name: trimmed,
       color: DEFAULT_WATCHLIST_COLORS[watchlists.length % DEFAULT_WATCHLIST_COLORS.length],
-      symbols: symbol ? [symbol] : [],
+      symbols: initialSymbols,
+      bifurcations: [{ id: "main", name: "Main", symbols: initialSymbols }],
+      active_bifurcation_id: "main",
       updated_at: Date.now(),
     };
     setWatchlists((current) => [...current, nextWatchlist]);
@@ -3864,11 +4049,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   };
 
   const handleImportWatchlist = (result: ImportResult) => {
+    const mainId = buildLocalId();
     const nextWatchlist: LocalWatchlist = {
       id: buildLocalId(),
       name: result.name,
       color: result.color,
       symbols: result.symbols,
+      bifurcations: [{ id: mainId, name: "Main", symbols: result.symbols }],
+      active_bifurcation_id: mainId,
       updated_at: Date.now(),
     };
     setWatchlists((current) => [...current, nextWatchlist]);
@@ -3912,7 +4100,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       current.map((watchlist) =>
         watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
           ? watchlist
-          : { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol], updated_at: Date.now() },
+          : {
+              ...watchlist,
+              symbols: [...watchlist.symbols, normalizedSymbol],
+              bifurcations: watchlist.bifurcations.length > 0
+                ? watchlist.bifurcations.map((bifurcation, index) => (
+                  index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
+                    ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
+                    : bifurcation
+                ))
+                : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
+              active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
+              updated_at: Date.now(),
+            },
       ),
     );
     setActiveWatchlistId(watchlistId);
@@ -3927,7 +4127,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       current.map((watchlist) =>
         watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
           ? watchlist
-          : { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol], updated_at: Date.now() },
+          : {
+              ...watchlist,
+              symbols: [...watchlist.symbols, normalizedSymbol],
+              bifurcations: watchlist.bifurcations.length > 0
+                ? watchlist.bifurcations.map((bifurcation, index) => (
+                  index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
+                    ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
+                    : bifurcation
+                ))
+                : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
+              active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
+              updated_at: Date.now(),
+            },
       ),
     );
     // intentionally does NOT switch active watchlist
@@ -3942,10 +4154,120 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setWatchlists((current) =>
       current.map((watchlist) =>
         watchlist.id === watchlistId
-          ? { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol), updated_at: Date.now() }
+          ? {
+              ...watchlist,
+              symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol),
+              bifurcations: watchlist.bifurcations.map((bifurcation) => ({
+                ...bifurcation,
+                symbols: bifurcation.symbols.filter((item) => item !== normalizedSymbol),
+              })),
+              updated_at: Date.now(),
+            }
           : watchlist,
       ),
     );
+  };
+
+  const handleCreateBifurcation = (watchlistId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
+    setWatchlists((current) => current.map((watchlist) => {
+      if (watchlist.id !== watchlistId) {
+        return watchlist;
+      }
+      const bifurcationId = buildLocalId();
+      return {
+        ...watchlist,
+        bifurcations: [...watchlist.bifurcations, { id: bifurcationId, name: trimmed, symbols: [] }],
+        active_bifurcation_id: bifurcationId,
+        updated_at: Date.now(),
+      };
+    }));
+  };
+
+  const handleRenameBifurcation = (watchlistId: string, bifurcationId: string, name: string) => {
+    const trimmed = name.trim();
+    if (!trimmed) {
+      return;
+    }
+    setWatchlists((current) => current.map((watchlist) => {
+      if (watchlist.id !== watchlistId) {
+        return watchlist;
+      }
+      return {
+        ...watchlist,
+        bifurcations: watchlist.bifurcations.map((bifurcation) => (
+          bifurcation.id === bifurcationId ? { ...bifurcation, name: trimmed } : bifurcation
+        )),
+        updated_at: Date.now(),
+      };
+    }));
+  };
+
+  const handleSetActiveBifurcation = (watchlistId: string, bifurcationId: string) => {
+    setWatchlists((current) => current.map((watchlist) => {
+      if (watchlist.id !== watchlistId) {
+        return watchlist;
+      }
+      if (!watchlist.bifurcations.some((bifurcation) => bifurcation.id === bifurcationId)) {
+        return watchlist;
+      }
+      return {
+        ...watchlist,
+        active_bifurcation_id: bifurcationId,
+        updated_at: Date.now(),
+      };
+    }));
+  };
+
+  const handleMoveSymbolsBetweenBifurcations = (
+    watchlistId: string,
+    fromBifurcationId: string,
+    toBifurcationId: string,
+    symbols: string[],
+  ) => {
+    if (!watchlistId || !fromBifurcationId || !toBifurcationId || fromBifurcationId === toBifurcationId || symbols.length === 0) {
+      return;
+    }
+    const normalizedSymbols = Array.from(new Set(symbols.map((item) => item.trim().toUpperCase()).filter(Boolean)));
+    if (normalizedSymbols.length === 0) {
+      return;
+    }
+
+    setWatchlists((current) => current.map((watchlist) => {
+      if (watchlist.id !== watchlistId) {
+        return watchlist;
+      }
+      if (!watchlist.bifurcations.some((item) => item.id === fromBifurcationId) || !watchlist.bifurcations.some((item) => item.id === toBifurcationId)) {
+        return watchlist;
+      }
+
+      const nextBifurcations = watchlist.bifurcations.map((bifurcation) => {
+        if (bifurcation.id === fromBifurcationId) {
+          return {
+            ...bifurcation,
+            symbols: bifurcation.symbols.filter((item) => !normalizedSymbols.includes(item)),
+          };
+        }
+        if (bifurcation.id === toBifurcationId) {
+          return {
+            ...bifurcation,
+            symbols: Array.from(new Set([...bifurcation.symbols, ...normalizedSymbols])),
+          };
+        }
+        return bifurcation;
+      });
+
+      return {
+        ...watchlist,
+        bifurcations: nextBifurcations,
+        symbols: watchlistSymbolsFromBifurcations(nextBifurcations),
+        active_bifurcation_id: toBifurcationId,
+        updated_at: Date.now(),
+      };
+    }));
   };
 
   const handleReorderWatchlists = (orderedIds: string[]) => {
@@ -3984,17 +4306,30 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       return current.map((watchlist) => {
         if (watchlist.id === fromWatchlistId) {
+          const nextSourceBifurcations = watchlist.bifurcations.map((bifurcation) => ({
+            ...bifurcation,
+            symbols: bifurcation.symbols.filter((item) => !normalizedSymbols.includes(item)),
+          }));
           return {
             ...watchlist,
             symbols: watchlist.symbols.filter((item) => !normalizedSymbols.includes(item)),
+            bifurcations: nextSourceBifurcations,
           };
         }
 
         if (watchlist.id === toWatchlistId) {
           const merged = Array.from(new Set([...watchlist.symbols, ...normalizedSymbols]));
+          const nextTargetBifurcations = watchlist.bifurcations.length > 0
+            ? watchlist.bifurcations.map((bifurcation, index) => (
+              index === 0
+                ? { ...bifurcation, symbols: Array.from(new Set([...bifurcation.symbols, ...normalizedSymbols])) }
+                : bifurcation
+            ))
+            : [{ id: "main", name: "Main", symbols: [...normalizedSymbols] }];
           return {
             ...watchlist,
             symbols: merged,
+            bifurcations: nextTargetBifurcations,
           };
         }
 
@@ -5050,8 +5385,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   viewMode={eAndCViewMode}
                                   onViewModeChange={handleEandCViewModeChange}
                                   onRefresh={handleRefreshEandCScan}
+                                  settings={eAndCSettings}
+                                  onSettingsChange={handleEandCSettingsChange}
+                                  onApplySettings={handleApplyEandCSettings}
+                                  onResetSettings={handleResetEandCSettings}
                                   contractionCount={eAndCData?.contraction.length ?? 0}
                                   expansionCount={eAndCData?.expansion.length ?? 0}
+                                  eitherCount={
+                                    eAndCData
+                                      ? unionEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
+                                      : 0
+                                  }
                                   intersectionCount={
                                     eAndCData
                                       ? intersectEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
@@ -5256,6 +5600,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSetWatchlistColor={handleSetWatchlistColor}
                   onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   onMoveSymbols={handleMoveWatchlistSymbols}
+                  onCreateBifurcation={handleCreateBifurcation}
+                  onRenameBifurcation={handleRenameBifurcation}
+                  onMoveSymbolsBetweenBifurcations={handleMoveSymbolsBetweenBifurcations}
+                  onSetActiveBifurcation={handleSetActiveBifurcation}
                   onCopyToWatchlist={handleCopyToWatchlist}
                   onImportWatchlist={handleImportWatchlist}
                   onReorderWatchlists={handleReorderWatchlists}

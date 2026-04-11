@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
@@ -18,6 +18,7 @@ from app.models.market import (
     CompanyQuestionResponse,
     CompanyFundamentals,
     CustomScanRequest,
+    EandCScanRequest,
     EandCScanResponse,
     IndexPeHistoryResponse,
     IndexQuotesResponse,
@@ -934,8 +935,11 @@ def build_router(service):
         )
 
     @router.get("/{market_name}/e-and-c", response_model=EandCScanResponse)
-    async def namespaced_e_and_c_scan(market_name: str):
-        return await resolve_service(market_name).get_e_and_c_scan_results()
+    async def namespaced_e_and_c_scan(
+        market_name: str,
+        request: EandCScanRequest = Depends(),
+    ):
+        return await resolve_service(market_name).get_e_and_c_scan_results(request=request)
 
     @router.get("/{market_name}/sectors", response_model=SectorTabResponse)
     async def namespaced_sectors(

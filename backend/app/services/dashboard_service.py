@@ -28,6 +28,7 @@ from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
     DashboardResponse,
+    EandCScanRequest,
     DetailedNews,
     HistoricalBreadthDataPoint,
     IndexPeHistoryResponse,
@@ -3512,10 +3513,10 @@ class DashboardService:
             include_sector_summaries=include_sector_summaries,
         )
 
-    async def get_e_and_c_scan_results(self) -> "EandCScanResponse":
+    async def get_e_and_c_scan_results(self, request: EandCScanRequest | None = None) -> "EandCScanResponse":
         from app.models.market import EandCScanResponse
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        contraction, expansion = run_e_and_c_scan(snapshots)
+        contraction, expansion = run_e_and_c_scan(snapshots, request=request)
         return EandCScanResponse(contraction=contraction, expansion=expansion)
 
     async def get_sector_tab(self, sort_by: SectorSortBy, sort_order: str) -> SectorTabResponse:
@@ -3727,6 +3728,19 @@ class DashboardService:
         return data_dir / filename
 
     @staticmethod
+    def _normalize_watchlist_bifurcation(item: WatchlistItem.Bifurcation) -> WatchlistItem.Bifurcation | None:
+        bifurcation_id = str(item.id or "").strip()
+        name = str(item.name or "").strip()
+        if not bifurcation_id or not name:
+            return None
+        symbols = list(dict.fromkeys(str(symbol or "").strip().upper() for symbol in item.symbols if str(symbol or "").strip()))
+        return WatchlistItem.Bifurcation(
+            id=bifurcation_id,
+            name=name,
+            symbols=symbols,
+        )
+
+    @staticmethod
     def _normalize_watchlist_item(item: WatchlistItem) -> WatchlistItem | None:
         watchlist_id = str(item.id or "").strip()
         name = str(item.name or "").strip()
@@ -3738,11 +3752,53 @@ class DashboardService:
             color = "#4f8cff"
 
         symbols = list(dict.fromkeys(str(symbol or "").strip().upper() for symbol in item.symbols if str(symbol or "").strip()))
+
+        normalized_bifurcations: list[WatchlistItem.Bifurcation] = []
+        seen_bifurcation_ids: set[str] = set()
+        for bifurcation in item.bifurcations:
+            normalized_bifurcation = DashboardService._normalize_watchlist_bifurcation(bifurcation)
+            if normalized_bifurcation is None or normalized_bifurcation.id in seen_bifurcation_ids:
+                continue
+            seen_bifurcation_ids.add(normalized_bifurcation.id)
+            normalized_bifurcations.append(normalized_bifurcation)
+
+        if normalized_bifurcations:
+            bifurcation_symbol_union = list(
+                dict.fromkeys(
+                    symbol
+                    for bifurcation in normalized_bifurcations
+                    for symbol in bifurcation.symbols
+                )
+            )
+            symbols = list(dict.fromkeys([*symbols, *bifurcation_symbol_union]))
+
+            if symbols and normalized_bifurcations:
+                first_bifurcation = normalized_bifurcations[0]
+                missing_symbols = [symbol for symbol in symbols if symbol not in first_bifurcation.symbols]
+                if missing_symbols:
+                    normalized_bifurcations[0] = first_bifurcation.model_copy(
+                        update={"symbols": [*first_bifurcation.symbols, *missing_symbols]}
+                    )
+        elif symbols:
+            normalized_bifurcations = [
+                WatchlistItem.Bifurcation(
+                    id="main",
+                    name="Main",
+                    symbols=symbols,
+                )
+            ]
+
+        active_bifurcation_id = str(item.active_bifurcation_id or "").strip() or None
+        if active_bifurcation_id and active_bifurcation_id not in {bifurcation.id for bifurcation in normalized_bifurcations}:
+            active_bifurcation_id = None
+
         return WatchlistItem(
             id=watchlist_id,
             name=name,
             color=color,
             symbols=symbols,
+            active_bifurcation_id=active_bifurcation_id or (normalized_bifurcations[0].id if normalized_bifurcations else None),
+            bifurcations=normalized_bifurcations,
         )
 
     def _sanitize_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:

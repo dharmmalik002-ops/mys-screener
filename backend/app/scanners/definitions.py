@@ -5,6 +5,7 @@ from datetime import date, timedelta
 from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
+    EandCScanRequest,
     derive_rs_comparison_dates,
     ReturnsScanRequest,
     ScanDescriptor,
@@ -613,71 +614,79 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
-def _e_and_c_contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> tuple[float, list[str]] | None:
     closes = snapshot.recent_closes
     if len(closes) < 4:
         return None
-    if snapshot.last_price <= 30:
+    if snapshot.last_price <= request.min_price:
         return None
-    if (snapshot.avg_volume_50d or 0) < 50_000:
+    if (snapshot.avg_volume_50d or 0) < request.contraction_min_avg_volume_50d:
         return None
-    if snapshot.volume <= 25_000:
+    if snapshot.volume <= request.contraction_min_day_volume:
         return None
-    if snapshot.ema50 is None or snapshot.last_price <= snapshot.ema50:
+    if request.contraction_require_above_ema50 and (snapshot.ema50 is None or snapshot.last_price <= snapshot.ema50):
         return None
-    if snapshot.sma50 is not None and snapshot.last_price > 1.25 * snapshot.sma50:
+    if (
+        snapshot.sma50 is not None
+        and request.contraction_max_price_to_sma50_ratio > 0
+        and snapshot.last_price > request.contraction_max_price_to_sma50_ratio * snapshot.sma50
+    ):
         return None
-    if abs(snapshot.change_pct) > 2.5:
+    if abs(snapshot.change_pct) > request.contraction_max_today_change_abs_pct:
         return None
     prev_close_2 = closes[-3]
     if prev_close_2 <= 0:
         return None
     prev_change = (closes[-2] - prev_close_2) / prev_close_2 * 100
-    if abs(prev_change) > 2.5:
+    if abs(prev_change) > request.contraction_max_prev_day_change_abs_pct:
         return None
     prev_close_3 = closes[-4]
     if prev_close_3 <= 0:
         return None
     prev_prev_change = (closes[-3] - prev_close_3) / prev_close_3 * 100
-    if abs(prev_prev_change) > 3.5:
+    if abs(prev_prev_change) > request.contraction_max_two_days_ago_change_abs_pct:
         return None
     reasons = [
         f"Today {round(snapshot.change_pct, 1)}%, yesterday {round(prev_change, 1)}%, 2d ago {round(prev_prev_change, 1)}%",
         f"Price above EMA50 ({snapshot.ema50:.2f}) and within 25% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
     ]
-    score = 50.0 + max(0.0, 2.5 - abs(snapshot.change_pct)) * 6
+    score = 50.0 + max(0.0, request.contraction_max_today_change_abs_pct - abs(snapshot.change_pct)) * 6
     return round(score, 2), reasons
 
 
-def _e_and_c_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+def _e_and_c_expansion(snapshot: StockSnapshot, request: EandCScanRequest) -> tuple[float, list[str]] | None:
     avg_vol = snapshot.avg_volume_50d or 0
-    if snapshot.last_price <= 30:
+    if snapshot.last_price <= request.min_price:
         return None
-    if snapshot.change_pct < 6.5:
+    if snapshot.change_pct < request.expansion_min_change_pct:
         return None
-    if avg_vol < 25_000:
+    if avg_vol < request.expansion_min_avg_volume_50d:
         return None
-    if snapshot.volume <= 50_000:
+    if snapshot.volume <= request.expansion_min_day_volume:
         return None
-    if avg_vol <= 0 or snapshot.volume <= avg_vol * 3:
+    if avg_vol <= 0 or snapshot.volume <= avg_vol * request.expansion_min_volume_multiple:
         return None
     rvol = round(snapshot.volume / avg_vol, 1) if avg_vol > 0 else 0.0
     reasons = [
         f"+{round(snapshot.change_pct, 1)}% on {rvol}x average volume",
     ]
-    score = 50.0 + snapshot.change_pct * 2 + min(rvol - 3, 10.0) * 1.5
+    score = 50.0 + snapshot.change_pct * 2 + min(rvol - request.expansion_min_volume_multiple, 10.0) * 1.5
     return round(score, 2), reasons
 
 
-def run_e_and_c_scan(snapshots: list[StockSnapshot]) -> tuple[list[ScanMatch], list[ScanMatch]]:
+def run_e_and_c_scan(
+    snapshots: list[StockSnapshot],
+    request: EandCScanRequest | None = None,
+) -> tuple[list[ScanMatch], list[ScanMatch]]:
+    active_request = request or EandCScanRequest()
     contraction: list[ScanMatch] = []
     expansion: list[ScanMatch] = []
     for snapshot in snapshots:
-        result = _e_and_c_contraction(snapshot)
+        result = _e_and_c_contraction(snapshot, active_request)
         if result is not None:
             score, reasons = result
             contraction.append(build_scan_match("e-and-c-contraction", snapshot, score, reasons))
-        result = _e_and_c_expansion(snapshot)
+        result = _e_and_c_expansion(snapshot, active_request)
         if result is not None:
             score, reasons = result
             expansion.append(build_scan_match("e-and-c-expansion", snapshot, score, reasons))
