@@ -646,11 +646,40 @@ def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> 
     prev_prev_change = (closes[-3] - prev_close_3) / prev_close_3 * 100
     if abs(prev_prev_change) > request.contraction_max_two_days_ago_change_abs_pct:
         return None
+
+    # Prior run-up: the stock must have had a meaningful upward move before
+    # contracting.  At least ONE of the return thresholds must be met (OR logic).
+    # This matches the "Stock passes ANY of the below filters" section from the
+    # reference scanner and prevents flat / dead stocks from appearing.
+    if request.contraction_require_prior_run_up:
+        has_run_up = (
+            snapshot.stock_return_5d >= request.contraction_min_return_5d
+            or snapshot.stock_return_20d >= request.contraction_min_return_20d
+            or snapshot.stock_return_60d >= request.contraction_min_return_60d
+        )
+        if not has_run_up:
+            return None
+
+    run_up_label = ""
+    if snapshot.stock_return_5d >= request.contraction_min_return_5d:
+        run_up_label = f" | 5D return +{snapshot.stock_return_5d:.1f}%"
+    elif snapshot.stock_return_20d >= request.contraction_min_return_20d:
+        run_up_label = f" | 20D return +{snapshot.stock_return_20d:.1f}%"
+    elif snapshot.stock_return_60d >= request.contraction_min_return_60d:
+        run_up_label = f" | 60D return +{snapshot.stock_return_60d:.1f}%"
+
     reasons = [
-        f"Today {round(snapshot.change_pct, 1)}%, yesterday {round(prev_change, 1)}%, 2d ago {round(prev_prev_change, 1)}%",
-        f"Price above EMA50 ({snapshot.ema50:.2f}) and within 25% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
+        f"Today {round(snapshot.change_pct, 1)}%, yesterday {round(prev_change, 1)}%, 2d ago {round(prev_prev_change, 1)}%{run_up_label}",
+        f"Price above EMA50 ({snapshot.ema50:.2f}) and within {round(request.contraction_max_price_to_sma50_ratio * 100 - 100)}% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
     ]
     score = 50.0 + max(0.0, request.contraction_max_today_change_abs_pct - abs(snapshot.change_pct)) * 6
+    # Boost score if the stock has a strong prior move
+    if snapshot.stock_return_5d >= request.contraction_min_return_5d:
+        score += 8.0
+    if snapshot.stock_return_20d >= request.contraction_min_return_20d:
+        score += 5.0
+    if snapshot.stock_return_60d >= request.contraction_min_return_60d:
+        score += 3.0
     return round(score, 2), reasons
 
 

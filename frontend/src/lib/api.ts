@@ -854,6 +854,10 @@ export type EandCScanRequest = {
   contraction_max_today_change_abs_pct: number;
   contraction_max_prev_day_change_abs_pct: number;
   contraction_max_two_days_ago_change_abs_pct: number;
+  contraction_require_prior_run_up: boolean;
+  contraction_min_return_5d: number;
+  contraction_min_return_20d: number;
+  contraction_min_return_60d: number;
   expansion_min_change_pct: number;
   expansion_min_avg_volume_50d: number;
   expansion_min_day_volume: number;

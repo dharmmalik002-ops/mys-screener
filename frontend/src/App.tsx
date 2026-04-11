@@ -593,14 +593,18 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
 };
 
 const DEFAULT_E_AND_C_SETTINGS: EandCSettings = {
-  min_price: 20,
-  contraction_min_avg_volume_50d: 30000,
-  contraction_min_day_volume: 10000,
+  min_price: 30,
+  contraction_min_avg_volume_50d: 50000,
+  contraction_min_day_volume: 25000,
   contraction_require_above_ema50: true,
-  contraction_max_price_to_sma50_ratio: 1.35,
-  contraction_max_today_change_abs_pct: 3.5,
-  contraction_max_prev_day_change_abs_pct: 3.5,
-  contraction_max_two_days_ago_change_abs_pct: 4.5,
+  contraction_max_price_to_sma50_ratio: 1.25,
+  contraction_max_today_change_abs_pct: 2.5,
+  contraction_max_prev_day_change_abs_pct: 2.5,
+  contraction_max_two_days_ago_change_abs_pct: 3.5,
+  contraction_require_prior_run_up: true,
+  contraction_min_return_5d: 10,
+  contraction_min_return_20d: 20,
+  contraction_min_return_60d: 30,
   expansion_min_change_pct: 5,
   expansion_min_avg_volume_50d: 15000,
   expansion_min_day_volume: 25000,
@@ -3266,6 +3270,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     contraction_max_two_days_ago_change_abs_pct: Number.isFinite(settings.contraction_max_two_days_ago_change_abs_pct)
       ? Math.max(settings.contraction_max_two_days_ago_change_abs_pct, 0)
       : DEFAULT_E_AND_C_SETTINGS.contraction_max_two_days_ago_change_abs_pct,
+    contraction_require_prior_run_up: typeof settings.contraction_require_prior_run_up === "boolean"
+      ? settings.contraction_require_prior_run_up
+      : DEFAULT_E_AND_C_SETTINGS.contraction_require_prior_run_up,
+    contraction_min_return_5d: Number.isFinite(settings.contraction_min_return_5d)
+      ? Math.max(settings.contraction_min_return_5d, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_5d,
+    contraction_min_return_20d: Number.isFinite(settings.contraction_min_return_20d)
+      ? Math.max(settings.contraction_min_return_20d, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_20d,
+    contraction_min_return_60d: Number.isFinite(settings.contraction_min_return_60d)
+      ? Math.max(settings.contraction_min_return_60d, 0)
+      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_60d,
     expansion_min_change_pct: Number.isFinite(settings.expansion_min_change_pct)
       ? settings.expansion_min_change_pct
       : DEFAULT_E_AND_C_SETTINGS.expansion_min_change_pct,

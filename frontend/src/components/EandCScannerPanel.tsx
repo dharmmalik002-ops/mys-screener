@@ -11,6 +11,10 @@ export type EandCSettings = {
   contraction_max_today_change_abs_pct: number;
   contraction_max_prev_day_change_abs_pct: number;
   contraction_max_two_days_ago_change_abs_pct: number;
+  contraction_require_prior_run_up: boolean;
+  contraction_min_return_5d: number;
+  contraction_min_return_20d: number;
+  contraction_min_return_60d: number;
   expansion_min_change_pct: number;
   expansion_min_avg_volume_50d: number;
   expansion_min_day_volume: number;
@@ -90,7 +94,7 @@ export function EandCScannerPanel({
           {`Contraction: ${contractionCount} | Expansion: ${expansionCount} | Either (OR): ${eitherCount} | Intersection: ${intersectionCount}`}
         </strong>
         <span>
-          Contraction: tight daily moves with trend support and healthy volume. Expansion: strong price+volume expansion days.
+          Contraction: tight daily moves with trend support, healthy volume, and a prior run-up. Expansion: strong price+volume expansion days.
         </span>
       </div>
 
@@ -166,6 +170,36 @@ export function EandCScannerPanel({
           />
         </label>
         <label>
+          <span>Min 5D Return % (prior run-up)</span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={settings.contraction_min_return_5d}
+            onChange={(event) => onSettingsChange({ contraction_min_return_5d: Number(event.target.value) || 0 })}
+          />
+        </label>
+        <label>
+          <span>Min 20D Return % (prior run-up)</span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={settings.contraction_min_return_20d}
+            onChange={(event) => onSettingsChange({ contraction_min_return_20d: Number(event.target.value) || 0 })}
+          />
+        </label>
+        <label>
+          <span>Min 60D Return % (prior run-up)</span>
+          <input
+            type="number"
+            min={0}
+            step={1}
+            value={settings.contraction_min_return_60d}
+            onChange={(event) => onSettingsChange({ contraction_min_return_60d: Number(event.target.value) || 0 })}
+          />
+        </label>
+        <label>
           <span>Expansion Min Change %</span>
           <input
             type="number"
@@ -210,6 +244,14 @@ export function EandCScannerPanel({
             type="checkbox"
             checked={settings.contraction_require_above_ema50}
             onChange={(event) => onSettingsChange({ contraction_require_above_ema50: event.target.checked })}
+          />
+        </label>
+        <label className="scan-settings-checkbox">
+          <span>Require Prior Run-Up (Contraction)</span>
+          <input
+            type="checkbox"
+            checked={settings.contraction_require_prior_run_up}
+            onChange={(event) => onSettingsChange({ contraction_require_prior_run_up: event.target.checked })}
           />
         </label>
       </div>
