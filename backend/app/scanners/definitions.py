@@ -615,9 +615,6 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 
 def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> tuple[float, list[str]] | None:
-    closes = snapshot.recent_closes
-    if len(closes) < 4:
-        return None
     if snapshot.last_price <= request.min_price:
         return None
     if (snapshot.avg_volume_50d or 0) < request.contraction_min_avg_volume_50d:
@@ -632,19 +629,48 @@ def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> 
         and snapshot.last_price > request.contraction_max_price_to_sma50_ratio * snapshot.sma50
     ):
         return None
+
+    # Today's change must be tight
     if abs(snapshot.change_pct) > request.contraction_max_today_change_abs_pct:
         return None
-    prev_close_2 = closes[-3]
-    if prev_close_2 <= 0:
+
+    # Previous-day and 2-day-ago changes: use recent_closes if available,
+    # otherwise fall back to recent_highs/recent_lows range-based proxy.
+    closes = snapshot.recent_closes
+    prev_change: float | None = None
+    prev_prev_change: float | None = None
+
+    if len(closes) >= 4:
+        # Direct per-day change from closing prices
+        if closes[-3] > 0:
+            prev_change = (closes[-2] - closes[-3]) / closes[-3] * 100
+        if closes[-4] > 0:
+            prev_prev_change = (closes[-3] - closes[-4]) / closes[-4] * 100
+    elif len(snapshot.recent_highs) >= 3 and len(snapshot.recent_lows) >= 3:
+        # Fallback: derive approximate daily ranges from highs/lows.
+        # The daily range (high-low)/midpoint for recent days is a good
+        # proxy for volatility — if it's tight, the stock is contracting.
+        for offset, (max_pct, label) in [
+            (-2, (request.contraction_max_prev_day_change_abs_pct, "prev")),
+            (-3, (request.contraction_max_two_days_ago_change_abs_pct, "2d_ago")),
+        ]:
+            try:
+                h = snapshot.recent_highs[offset]
+                l = snapshot.recent_lows[offset]
+                if h > 0 and l > 0:
+                    day_range_pct = (h - l) / ((h + l) / 2) * 100
+                    if label == "prev":
+                        prev_change = day_range_pct / 2  # half-range as proxy for change
+                    else:
+                        prev_prev_change = day_range_pct / 2
+            except (IndexError, ZeroDivisionError):
+                pass
+
+    # Apply prev-day filter (skip if data unavailable — let other filters decide)
+    if prev_change is not None and abs(prev_change) > request.contraction_max_prev_day_change_abs_pct:
         return None
-    prev_change = (closes[-2] - prev_close_2) / prev_close_2 * 100
-    if abs(prev_change) > request.contraction_max_prev_day_change_abs_pct:
-        return None
-    prev_close_3 = closes[-4]
-    if prev_close_3 <= 0:
-        return None
-    prev_prev_change = (closes[-3] - prev_close_3) / prev_close_3 * 100
-    if abs(prev_prev_change) > request.contraction_max_two_days_ago_change_abs_pct:
+    # Apply 2-day-ago filter
+    if prev_prev_change is not None and abs(prev_prev_change) > request.contraction_max_two_days_ago_change_abs_pct:
         return None
 
     # Prior run-up: the stock must have had a meaningful upward move before
@@ -660,16 +686,20 @@ def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> 
         if not has_run_up:
             return None
 
+    # Build reasons label
     run_up_label = ""
     if snapshot.stock_return_5d >= request.contraction_min_return_5d:
-        run_up_label = f" | 5D return +{snapshot.stock_return_5d:.1f}%"
+        run_up_label = f" | 5D +{snapshot.stock_return_5d:.1f}%"
     elif snapshot.stock_return_20d >= request.contraction_min_return_20d:
-        run_up_label = f" | 20D return +{snapshot.stock_return_20d:.1f}%"
+        run_up_label = f" | 20D +{snapshot.stock_return_20d:.1f}%"
     elif snapshot.stock_return_60d >= request.contraction_min_return_60d:
-        run_up_label = f" | 60D return +{snapshot.stock_return_60d:.1f}%"
+        run_up_label = f" | 60D +{snapshot.stock_return_60d:.1f}%"
+
+    prev_label = f", prev {round(prev_change, 1)}%" if prev_change is not None else ""
+    prev2_label = f", 2d ago {round(prev_prev_change, 1)}%" if prev_prev_change is not None else ""
 
     reasons = [
-        f"Today {round(snapshot.change_pct, 1)}%, yesterday {round(prev_change, 1)}%, 2d ago {round(prev_prev_change, 1)}%{run_up_label}",
+        f"Today {round(snapshot.change_pct, 1)}%{prev_label}{prev2_label}{run_up_label}",
         f"Price above EMA50 ({snapshot.ema50:.2f}) and within {round(request.contraction_max_price_to_sma50_ratio * 100 - 100)}% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
     ]
     score = 50.0 + max(0.0, request.contraction_max_today_change_abs_pct - abs(snapshot.change_pct)) * 6
