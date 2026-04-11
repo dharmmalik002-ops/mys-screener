@@ -612,6 +612,79 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
+def _e_and_c_contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    closes = snapshot.recent_closes
+    if len(closes) < 4:
+        return None
+    if snapshot.last_price <= 30:
+        return None
+    if (snapshot.avg_volume_50d or 0) < 50_000:
+        return None
+    if snapshot.volume <= 25_000:
+        return None
+    if snapshot.ema50 is None or snapshot.last_price <= snapshot.ema50:
+        return None
+    if snapshot.sma50 is not None and snapshot.last_price > 1.25 * snapshot.sma50:
+        return None
+    if abs(snapshot.change_pct) > 2.5:
+        return None
+    prev_close_2 = closes[-3]
+    if prev_close_2 <= 0:
+        return None
+    prev_change = (closes[-2] - prev_close_2) / prev_close_2 * 100
+    if abs(prev_change) > 2.5:
+        return None
+    prev_close_3 = closes[-4]
+    if prev_close_3 <= 0:
+        return None
+    prev_prev_change = (closes[-3] - prev_close_3) / prev_close_3 * 100
+    if abs(prev_prev_change) > 3.5:
+        return None
+    reasons = [
+        f"Today {round(snapshot.change_pct, 1)}%, yesterday {round(prev_change, 1)}%, 2d ago {round(prev_prev_change, 1)}%",
+        f"Price above EMA50 ({snapshot.ema50:.2f}) and within 25% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
+    ]
+    score = 50.0 + max(0.0, 2.5 - abs(snapshot.change_pct)) * 6
+    return round(score, 2), reasons
+
+
+def _e_and_c_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    avg_vol = snapshot.avg_volume_50d or 0
+    if snapshot.last_price <= 30:
+        return None
+    if snapshot.change_pct < 6.5:
+        return None
+    if avg_vol < 25_000:
+        return None
+    if snapshot.volume <= 50_000:
+        return None
+    if avg_vol <= 0 or snapshot.volume <= avg_vol * 3:
+        return None
+    rvol = round(snapshot.volume / avg_vol, 1) if avg_vol > 0 else 0.0
+    reasons = [
+        f"+{round(snapshot.change_pct, 1)}% on {rvol}x average volume",
+    ]
+    score = 50.0 + snapshot.change_pct * 2 + min(rvol - 3, 10.0) * 1.5
+    return round(score, 2), reasons
+
+
+def run_e_and_c_scan(snapshots: list[StockSnapshot]) -> tuple[list[ScanMatch], list[ScanMatch]]:
+    contraction: list[ScanMatch] = []
+    expansion: list[ScanMatch] = []
+    for snapshot in snapshots:
+        result = _e_and_c_contraction(snapshot)
+        if result is not None:
+            score, reasons = result
+            contraction.append(build_scan_match("e-and-c-contraction", snapshot, score, reasons))
+        result = _e_and_c_expansion(snapshot)
+        if result is not None:
+            score, reasons = result
+            expansion.append(build_scan_match("e-and-c-expansion", snapshot, score, reasons))
+    contraction.sort(key=lambda x: x.score, reverse=True)
+    expansion.sort(key=lambda x: x.score, reverse=True)
+    return contraction, expansion
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -643,7 +716,6 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("clean-pullback", "Clean Pullbacks", "Setups", "Tight pullbacks inside healthy uptrends.", _clean_pullback),
     ScanDefinition("darvas-box", "Darvas Box", "Setups", "Box breakouts with renewed momentum.", _darvas_box),
     ScanDefinition("pivot-breakout", "Pivot Breakouts", "Setups", "Swing-high pivot resolutions with confirmation.", _pivot_breakout),
-    ScanDefinition("consolidating", "Consolidating", "Setups", "Union of run-up consolidations and stocks coiling just below 3-year highs.", _consolidating),
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),

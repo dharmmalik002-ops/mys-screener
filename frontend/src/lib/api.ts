@@ -826,6 +826,11 @@ export type ImprovingRsResponse = {
   items: ImprovingRsItem[];
 };
 
+export type EandCScanResponse = {
+  contraction: ScanMatch[];
+  expansion: ScanMatch[];
+};
+
 export type NearPivotScanRequest = {
   min_rs_rating: number;
   max_pct_from_52w_high: number;
@@ -1368,6 +1373,10 @@ export function getGapUpOpeners(
     params.set("min_liquidity_crore", String(minLiquidityCrore));
   }
   return request<ScanResultsResponse>(withScanOptions(`/api/gap-up-openers?${params.toString()}`, market, options));
+}
+
+export function getEandCScan(market: MarketKey) {
+  return request<EandCScanResponse>(`/api/${market}/e-and-c`);
 }
 
 export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, options?: ScanRequestOptions) {

@@ -15,8 +15,8 @@ from app.models.market import (
     CompanyQuestionRequest,
     CompanyQuestionResponse,
     CompanyFundamentals,
-    ConsolidatingScanRequest,
     CustomScanRequest,
+    EandCScanResponse,
     IndexPeHistoryResponse,
     IndexQuotesResponse,
     ImprovingRsResponse,
@@ -27,9 +27,6 @@ from app.models.market import (
     MoneyFlowStockIdeasHistoryResponse,
     MoneyFlowStockIdeasResponse,
     SectorRotationResponse,
-    NearPivotScanRequest,
-    PullBackScanRequest,
-    ReturnsScanRequest,
     ScanDescriptor,
     SectorGroupKind,
     SectorSortBy,
@@ -612,50 +609,6 @@ def build_router(service):
             include_sector_summaries=include_sector_summaries,
         )
 
-    @router.post("/near-pivot")
-    async def near_pivot_scan(
-        request: NearPivotScanRequest,
-        market: str = Query(default="india"),
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market).get_near_pivot_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/pull-backs")
-    async def pull_back_scan(
-        request: PullBackScanRequest,
-        market: str = Query(default="india"),
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market).get_pull_back_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/returns")
-    async def returns_scan(
-        request: ReturnsScanRequest,
-        market: str = Query(default="india"),
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market).get_returns_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/consolidating")
-    async def consolidating_scan(
-        request: ConsolidatingScanRequest,
-        market: str = Query(default="india"),
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market).get_consolidating_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
     @router.get("/sectors", response_model=SectorTabResponse)
     async def sectors(
         market: str = Query(default="india"),
@@ -899,49 +852,9 @@ def build_router(service):
             include_sector_summaries=include_sector_summaries,
         )
 
-    @router.post("/{market_name}/near-pivot")
-    async def namespaced_near_pivot_scan(
-        market_name: str,
-        request: NearPivotScanRequest,
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market_name).get_near_pivot_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/{market_name}/pull-backs")
-    async def namespaced_pull_back_scan(
-        market_name: str,
-        request: PullBackScanRequest,
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market_name).get_pull_back_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/{market_name}/returns")
-    async def namespaced_returns_scan(
-        market_name: str,
-        request: ReturnsScanRequest,
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market_name).get_returns_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
-
-    @router.post("/{market_name}/consolidating")
-    async def namespaced_consolidating_scan(
-        market_name: str,
-        request: ConsolidatingScanRequest,
-        include_sector_summaries: bool = Query(default=False),
-    ):
-        return await resolve_service(market_name).get_consolidating_scan_results(
-            request=request,
-            include_sector_summaries=include_sector_summaries,
-        )
+    @router.get("/{market_name}/e-and-c", response_model=EandCScanResponse)
+    async def namespaced_e_and_c_scan(market_name: str):
+        return await resolve_service(market_name).get_e_and_c_scan_results()
 
     @router.get("/{market_name}/sectors", response_model=SectorTabResponse)
     async def namespaced_sectors(
