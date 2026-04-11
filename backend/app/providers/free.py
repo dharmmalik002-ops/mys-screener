@@ -1877,13 +1877,11 @@ class FreeMarketDataProvider:
             if refreshed_weekly:
                 return refreshed_weekly
         try:
-            # Wrap in a 30 s timeout so that slow/blocked external downloads
-            # (e.g. yf.download hanging on HuggingFace) do not lock the worker
-            # thread forever.  A TimeoutError is treated like any other Exception
-            # below — we fall back to cached_bars or raise a clean error.
+            # Wrap in a 5s timeout so that slow pulls don't drag down the
+            # whole grid response or cause HF proxy to return 503 / 504.
             chart_bars = await asyncio.wait_for(
                 asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
-                timeout=30.0,
+                timeout=5.0,
             )
             if len(chart_bars) < min_required_bars:
                 legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)

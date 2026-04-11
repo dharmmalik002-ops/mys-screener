@@ -3272,7 +3272,7 @@ class DashboardService:
             reverse=True,
         )
         total_market_cap = sum(max(item.market_cap_crore, 0.0) for item in ordered_members)
-        semaphore = asyncio.Semaphore(12)
+        semaphore = asyncio.Semaphore(24)
         cards = await asyncio.gather(
             *[
                 self._build_chart_grid_card(
@@ -3325,7 +3325,7 @@ class DashboardService:
             if len(normalized_symbols) >= 48:
                 break
 
-        semaphore = asyncio.Semaphore(12)
+        semaphore = asyncio.Semaphore(24)
 
         async def load_symbol(symbol: str) -> ChartGridSeriesItem | None:
             async with semaphore:
