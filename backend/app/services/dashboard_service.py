@@ -776,10 +776,25 @@ class DashboardService:
             return cached_dashboard
         scanners, results = self._scan_catalog(scan_snapshots)
 
-        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:5]
-        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:5]
+        # Only rank snapshots from the most recent session — stale rows from
+        # older dates (e.g. carried over from a tariff-shock day weeks ago)
+        # have change_pct relative to their old session and would pollute the
+        # gainers/losers lists with irrelevant historical moves.
+        if scan_snapshots:
+            latest_date = max(
+                (str(item.history_as_of_date or "") for item in scan_snapshots),
+                default="",
+            )
+            current_session_snaps = [
+                item for item in scan_snapshots if str(item.history_as_of_date or "") == latest_date
+            ] if latest_date else scan_snapshots
+        else:
+            current_session_snaps = scan_snapshots
+
+        top_gainers = sorted(current_session_snaps, key=lambda item: item.change_pct, reverse=True)[:5]
+        top_losers = sorted(current_session_snaps, key=lambda item: item.change_pct)[:5]
         top_volume = sorted(
-            [item for item in scan_snapshots if self._has_reliable_relative_volume(item)],
+            [item for item in current_session_snaps if self._has_reliable_relative_volume(item)],
             key=lambda item: item.relative_volume,
             reverse=True,
         )[:5]

@@ -532,9 +532,9 @@ export type StockOverview = {
   relative_volume: number;
   avg_rupee_volume_30d_crore: number;
   rs_rating: number | null;
-  rs_rating_1d_ago: number;
-  rs_rating_1w_ago: number;
-  rs_rating_1m_ago: number;
+  rs_rating_1d_ago: number | null;
+  rs_rating_1w_ago: number | null;
+  rs_rating_1m_ago: number | null;
   nifty_outperformance: number;
   sector_outperformance: number;
   three_month_rs: number;
@@ -633,6 +633,21 @@ export type CustomScanRequest = {
   above_ema20: boolean;
   above_ema50: boolean;
   above_ema200: boolean;
+  // Fundamental filters
+  min_eps_growth_yoy: number | null;
+  min_revenue_growth_yoy: number | null;
+  min_operating_margin: number | null;
+  min_profit_margin: number | null;
+  min_roe: number | null;
+  max_peg_ratio: number | null;
+  min_pe_ratio: number | null;
+  max_pe_ratio: number | null;
+  // Technical Guru & Shakeout filters
+  minervini_trend_template: boolean;
+  kullamagi_setup: boolean;
+  shakeout_21ema: boolean;
+  shakeout_50ema: boolean;
+  max_consolidation_range_pct: number | null;
   pattern: CustomScanPattern;
   sort_by: CustomSortBy;
   sort_order: "asc" | "desc";
@@ -657,7 +672,7 @@ export type SectorCompanyItem = {
   return_6m: number;
   return_1y: number;
   return_2y: number;
-  rs_rating: number;
+  rs_rating: number | null;
 };
 
 export type SectorGroup = {
@@ -795,13 +810,13 @@ export type ImprovingRsItem = {
   market_cap_crore: number;
   last_price: number;
   change_pct: number;
-  rs_rating: number;
-  rs_rating_1d_ago: number;
-  rs_rating_1w_ago: number;
-  rs_rating_1m_ago: number;
-  improvement_1d: number;
-  improvement_1w: number;
-  improvement_1m: number;
+  rs_rating: number | null;
+  rs_rating_1d_ago: number | null;
+  rs_rating_1w_ago: number | null;
+  rs_rating_1m_ago: number | null;
+  improvement_1d: number | null;
+  improvement_1w: number | null;
+  improvement_1m: number | null;
 };
 
 export type ImprovingRsResponse = {
