@@ -5327,6 +5327,12 @@ button {
   align-items: center;
 }
 
+.indicator-inline-controls {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .earnings-marker-layer {
   position: absolute;
   top: 54px;

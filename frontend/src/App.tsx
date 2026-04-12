@@ -875,6 +875,9 @@ function readChartPreferences(market: MarketKey): {
   rvolPos: { x: number; y: number } | null;
   rvolAccentColor: string;
   rvolScale: "sm" | "md" | "lg";
+  showExpansionMarkers: boolean;
+  expansionMarkerColor: string;
+  expansionMarkerScale: "sm" | "md" | "lg";
   showEarningsMarkers: boolean;
   earningsMarkerColor: string;
 } {
@@ -890,6 +893,9 @@ function readChartPreferences(market: MarketKey): {
     rvolPos: null as { x: number; y: number } | null,
     rvolAccentColor: "#00d2ff",
     rvolScale: "md" as const,
+    showExpansionMarkers: true,
+    expansionMarkerColor: "#22c55e",
+    expansionMarkerScale: "md" as const,
     showEarningsMarkers: false,
     earningsMarkerColor: "#ff78b0",
   };
@@ -915,6 +921,9 @@ function readChartPreferences(market: MarketKey): {
       rvolPos: { x?: number | null; y?: number | null } | null;
       rvolAccentColor: string;
       rvolScale: "sm" | "md" | "lg";
+      showExpansionMarkers: boolean;
+      expansionMarkerColor: string;
+      expansionMarkerScale: "sm" | "md" | "lg";
       showEarningsMarkers: boolean;
       earningsMarkerColor: string;
     }>;
@@ -930,6 +939,9 @@ function readChartPreferences(market: MarketKey): {
       rvolPos: normalizeWidgetPosition(parsed.rvolPos),
       rvolAccentColor: normalizeHexColor(parsed.rvolAccentColor, defaults.rvolAccentColor),
       rvolScale: normalizeRvolScale(parsed.rvolScale),
+      showExpansionMarkers: parsed.showExpansionMarkers !== false,
+      expansionMarkerColor: normalizeHexColor(parsed.expansionMarkerColor, defaults.expansionMarkerColor),
+      expansionMarkerScale: normalizeRvolScale(parsed.expansionMarkerScale),
       showEarningsMarkers: parsed.showEarningsMarkers === true,
       earningsMarkerColor: normalizeHexColor(parsed.earningsMarkerColor, defaults.earningsMarkerColor),
     };
@@ -1536,6 +1548,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(initialPreferences.rvolPos);
   const [rvolAccentColor, setRvolAccentColor] = useState(initialPreferences.rvolAccentColor);
   const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">(initialPreferences.rvolScale);
+  const [showExpansionMarkers, setShowExpansionMarkers] = useState(initialPreferences.showExpansionMarkers);
+  const [expansionMarkerColor, setExpansionMarkerColor] = useState(initialPreferences.expansionMarkerColor);
+  const [expansionMarkerScale, setExpansionMarkerScale] = useState<"sm" | "md" | "lg">(initialPreferences.expansionMarkerScale);
   const [showEarningsMarkers, setShowEarningsMarkers] = useState(initialPreferences.showEarningsMarkers);
   const [earningsMarkerColor, setEarningsMarkerColor] = useState(initialPreferences.earningsMarkerColor);
   const [savedDrawings, setSavedDrawings] = useState<Record<string, ChartAnnotation[]>>(initialSavedDrawings);
@@ -1813,6 +1828,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setRvolPos(preferences.rvolPos);
     setRvolAccentColor(preferences.rvolAccentColor);
     setRvolScale(preferences.rvolScale);
+    setShowExpansionMarkers(preferences.showExpansionMarkers);
+    setExpansionMarkerColor(preferences.expansionMarkerColor);
+    setExpansionMarkerScale(preferences.expansionMarkerScale);
     setShowEarningsMarkers(preferences.showEarningsMarkers);
     setEarningsMarkerColor(preferences.earningsMarkerColor);
   };
@@ -2806,6 +2824,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         rvolPos,
         rvolAccentColor,
         rvolScale,
+        showExpansionMarkers,
+        expansionMarkerColor,
+        expansionMarkerScale,
         showEarningsMarkers,
         earningsMarkerColor,
       }),
@@ -2817,12 +2838,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     chartPanelTab,
     chartStyle,
     earningsMarkerColor,
+    expansionMarkerColor,
+    expansionMarkerScale,
     indicatorKeys,
     rvolAccentColor,
     rvolPos,
     rvolScale,
     showBenchmarkOverlay,
     showEarningsMarkers,
+    showExpansionMarkers,
     showRvol,
     timeframe,
   ]);
@@ -5462,6 +5486,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     onRvolAccentColorChange={setRvolAccentColor}
                     rvolScale={rvolScale}
                     onRvolScaleChange={setRvolScale}
+                    showExpansionMarkers={showExpansionMarkers}
+                    onShowExpansionMarkersChange={setShowExpansionMarkers}
+                    expansionMarkerColor={expansionMarkerColor}
+                    onExpansionMarkerColorChange={setExpansionMarkerColor}
+                    expansionMarkerScale={expansionMarkerScale}
+                    onExpansionMarkerScaleChange={setExpansionMarkerScale}
                     showEarningsMarkers={showEarningsMarkers}
                     onShowEarningsMarkersChange={setShowEarningsMarkers}
                     earningsMarkerColor={earningsMarkerColor}
@@ -5573,6 +5603,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onRvolAccentColorChange={setRvolAccentColor}
                   rvolScale={rvolScale}
                   onRvolScaleChange={setRvolScale}
+                  showExpansionMarkers={showExpansionMarkers}
+                  onShowExpansionMarkersChange={setShowExpansionMarkers}
+                  expansionMarkerColor={expansionMarkerColor}
+                  onExpansionMarkerColorChange={setExpansionMarkerColor}
+                  expansionMarkerScale={expansionMarkerScale}
+                  onExpansionMarkerScaleChange={setExpansionMarkerScale}
                   showEarningsMarkers={showEarningsMarkers}
                   onShowEarningsMarkersChange={setShowEarningsMarkers}
                   earningsMarkerColor={earningsMarkerColor}
@@ -5659,6 +5695,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 onRvolAccentColorChange={setRvolAccentColor}
                 rvolScale={rvolScale}
                 onRvolScaleChange={setRvolScale}
+                showExpansionMarkers={showExpansionMarkers}
+                onShowExpansionMarkersChange={setShowExpansionMarkers}
+                expansionMarkerColor={expansionMarkerColor}
+                onExpansionMarkerColorChange={setExpansionMarkerColor}
+                expansionMarkerScale={expansionMarkerScale}
+                onExpansionMarkerScaleChange={setExpansionMarkerScale}
                 showEarningsMarkers={showEarningsMarkers}
                 onShowEarningsMarkersChange={setShowEarningsMarkers}
                 earningsMarkerColor={earningsMarkerColor}

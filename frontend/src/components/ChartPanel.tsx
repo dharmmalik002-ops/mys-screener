@@ -143,6 +143,12 @@ type ChartPanelProps = {
   onRvolAccentColorChange: (color: string) => void;
   rvolScale: RvolScale;
   onRvolScaleChange: (scale: RvolScale) => void;
+  showExpansionMarkers: boolean;
+  onShowExpansionMarkersChange: (show: boolean) => void;
+  expansionMarkerColor: string;
+  onExpansionMarkerColorChange: (color: string) => void;
+  expansionMarkerScale: RvolScale;
+  onExpansionMarkerScaleChange: (scale: RvolScale) => void;
   showEarningsMarkers: boolean;
   onShowEarningsMarkersChange: (show: boolean) => void;
   earningsMarkerColor: string;
@@ -181,6 +187,12 @@ const CHART_STYLES: Array<{ key: ChartStyle; label: string }> = [
   { key: "bars", label: "Bars" },
 ];
 type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
+const MARKER_SCALE_OPTIONS: RvolScale[] = ["sm", "md", "lg"];
+const EXPANSION_MARKER_SIZE_MAP: Record<RvolScale, number> = {
+  sm: 0.8,
+  md: 1.1,
+  lg: 1.4,
+};
 
 const INDICATORS: Array<{ key: IndicatorKey; label: string; colorKey: IndicatorColorKey }> = [
   { key: "ema10", label: "EMA10", colorKey: "ema10" },
@@ -784,6 +796,28 @@ function computeRvolBars(bars: ChartBar[], period = 50) {
   return result;
 }
 
+function computeExpansionSignalBars(bars: ChartBar[], volumePeriod = 20) {
+  const signals: Array<{ time: number; changePct: number; relativeVolume: number }> = [];
+  for (let index = volumePeriod; index < bars.length; index += 1) {
+    const bar = bars[index];
+    const previousBar = bars[index - 1];
+    if (!previousBar || previousBar.close <= 0 || bar.volume <= 0) {
+      continue;
+    }
+    const prior = bars.slice(index - volumePeriod, index);
+    const avgVolume = prior.reduce((sum, item) => sum + item.volume, 0) / volumePeriod;
+    if (avgVolume <= 0) {
+      continue;
+    }
+    const changePct = ((bar.close / previousBar.close) - 1) * 100;
+    const relativeVolume = bar.volume / avgVolume;
+    if (changePct >= 6 && relativeVolume >= 3) {
+      signals.push({ time: bar.time, changePct, relativeVolume });
+    }
+  }
+  return signals;
+}
+
 function rvolColor(rvol: number) {
   if (rvol >= 3) return "#00d2ff";
   if (rvol >= 2) return "#39ff14";
@@ -1148,6 +1182,12 @@ export function ChartPanel({
   onRvolAccentColorChange,
   rvolScale,
   onRvolScaleChange,
+  showExpansionMarkers,
+  onShowExpansionMarkersChange,
+  expansionMarkerColor,
+  onExpansionMarkerColorChange,
+  expansionMarkerScale,
+  onExpansionMarkerScaleChange,
   showEarningsMarkers,
   onShowEarningsMarkersChange,
   earningsMarkerColor,
@@ -1730,6 +1770,18 @@ export function ChartPanel({
     ];
 
     mainSeries.setData(ohlcvData);
+    mainSeries.setMarkers(
+      timeframe === "1D" && showExpansionMarkers
+        ? computeExpansionSignalBars(activeBars).map((signal) => ({
+            time: signal.time as UTCTimestamp,
+            position: "belowBar" as const,
+            shape: "circle" as const,
+            color: expansionMarkerColor,
+            text: "",
+            size: EXPANSION_MARKER_SIZE_MAP[expansionMarkerScale],
+          }))
+        : [],
+    );
     if (benchmarkOverlayData.length) {
       const benchmarkSeries = chart.addLineSeries({
         color: "#ffb347",
@@ -2037,7 +2089,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, expansionMarkerColor, expansionMarkerScale, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, showExpansionMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2659,6 +2711,38 @@ export function ChartPanel({
                 >
                   RVOL
                 </button>
+                <button
+                  type="button"
+                  className={showExpansionMarkers ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => onShowExpansionMarkersChange(!showExpansionMarkers)}
+                  title="Mark daily bars where change is at least 6% and RVOL is at least 3 versus the prior 20-day average volume."
+                >
+                  Expansion Dots
+                </button>
+                {showExpansionMarkers ? (
+                  <div className="indicator-inline-controls">
+                    <label className="earnings-color-control" title="Expansion dot colour">
+                      <input
+                        type="color"
+                        className="rvol-color-input"
+                        value={expansionMarkerColor}
+                        onChange={(event) => onExpansionMarkerColorChange(event.target.value)}
+                      />
+                    </label>
+                    {MARKER_SCALE_OPTIONS.map((scale) => (
+                      <button
+                        key={scale}
+                        type="button"
+                        className={`rvol-size-btn${expansionMarkerScale === scale ? " active" : ""}`}
+                        onClick={() => onExpansionMarkerScaleChange(scale)}
+                        style={expansionMarkerScale === scale ? { borderColor: expansionMarkerColor, color: expansionMarkerColor } : {}}
+                        title={`Expansion dot size ${scale.toUpperCase()}`}
+                      >
+                        {scale.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
                 <button
                   type="button"
                   className={showEarningsMarkers ? "indicator-pill active" : "indicator-pill"}

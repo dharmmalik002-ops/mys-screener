@@ -1024,6 +1024,54 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(bars[-1].low, 205.2)
         self.assertEqual(bars[-1].volume, 9291600)
 
+    def test_universe_builder_prefers_nse_quote_for_bse_rows_when_same_isin_trades_in_non_eq_series(self) -> None:
+        with patch.object(
+            self.provider,
+            "_fetch_nse_listed_equities",
+            return_value={},
+        ), patch.object(
+            self.provider,
+            "_fetch_bse_active_equities",
+            return_value=[
+                {
+                    "Mktcap": 9710.9,
+                    "ISIN_NUMBER": "INE542F01020",
+                    "scrip_id": "SWANDEF",
+                    "SCRIP_CD": "533107",
+                    "Issuer_Name": "Swan Defence and Heavy Industries Limited",
+                }
+            ],
+        ), patch.object(
+            self.provider,
+            "_fetch_nse_quote_details",
+            return_value={
+                "SWANDEF": {
+                    "symbol": "SWANDEF",
+                    "name": "Swan Defence and Heavy Industries Limited",
+                    "isin": "INE542F01020",
+                    "series": "BE",
+                    "listing_date": "2025-01-20",
+                    "sector": "Capital Goods",
+                    "sub_sector": "Ship Building & Allied Services",
+                    "market_cap_crore": 9710.9,
+                }
+            },
+        ), patch.object(
+            self.provider,
+            "_fetch_company_metadata",
+            return_value={},
+        ):
+            rows = self.provider._fetch_market_cap_universe(800.0)
+
+        self.assertEqual(len(rows), 1)
+        row = rows[0]
+        self.assertEqual(row["symbol"], "SWANDEF")
+        self.assertEqual(row["exchange"], "NSE")
+        self.assertEqual(row["ticker"], "SWANDEF.NS")
+        self.assertEqual(row["isin"], "INE542F01020")
+        self.assertEqual(row["sector"], "Capital Goods")
+        self.assertEqual(row["sub_sector"], "Ship Building & Allied Services")
+
 
 class USFreeProviderRegressionTests(unittest.TestCase):
     def setUp(self) -> None:

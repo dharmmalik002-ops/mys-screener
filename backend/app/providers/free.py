@@ -68,8 +68,8 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 14
-SNAPSHOT_CACHE_VERSION = 16
-CHART_CACHE_VERSION = 9
+SNAPSHOT_CACHE_VERSION = 17
+CHART_CACHE_VERSION = 10
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -80,7 +80,7 @@ SNAPSHOT_SESSION_RANGE_BUFFER_RATIO = 0.25
 SNAPSHOT_SESSION_FALLBACK_RATIO = 2.0
 QUOTE_DOWNLOAD_BATCH_SIZE = 200
 NSE_DIRECT_QUOTE_FALLBACK_MAX_SYMBOLS = 60
-UNIVERSE_CACHE_VERSION = 3
+UNIVERSE_CACHE_VERSION = 4
 UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS = 2
 SNAPSHOT_HISTORY_PERIOD = "3y"
 RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache"}
@@ -1776,6 +1776,9 @@ class FreeMarketDataProvider:
         info = payload.get("info") or {}
         price_info = payload.get("priceInfo") or {}
         security_info = payload.get("securityInfo") or {}
+        company_name = str(info.get("companyName") or symbol).strip()
+        isin = str(info.get("isin") or metadata.get("isin") or "").strip().upper() or None
+        series = str(metadata.get("series") or "").strip().upper() or None
 
         sector = self._normalize_sector_label(
             industry_info.get("sector") or industry_info.get("macro") or metadata.get("pdSectorInd")
@@ -1802,6 +1805,10 @@ class FreeMarketDataProvider:
             if override:
                 return {
                     **override,
+                    "symbol": symbol,
+                    "name": company_name,
+                    "isin": isin,
+                    "series": series,
                     "listing_date": listing_date,
                     "market_cap_crore": market_cap_crore,
                     "circuit_band_label": circuit_band_label,
@@ -1810,6 +1817,10 @@ class FreeMarketDataProvider:
                     "circuit_updated_on": self._current_or_previous_trading_day_ist().isoformat() if circuit_band_label or upper_circuit_limit is not None or lower_circuit_limit is not None else None,
                 }
         return {
+            "symbol": symbol,
+            "name": company_name,
+            "isin": isin,
+            "series": series,
             "sector": sector,
             "sub_sector": sub_sector,
             "listing_date": listing_date,
@@ -5805,6 +5816,15 @@ class FreeMarketDataProvider:
         session_date = self._current_or_previous_trading_day_ist().isoformat()
         rows_by_key: dict[str, dict[str, Any]] = {}
         matched_nse_symbols: set[str] = set()
+        bse_nse_fallback_symbols = sorted(
+            {
+                self._normalize_symbol(item.get("scrip_id"))
+                for item in bse_rows
+                if self._normalize_symbol(item.get("scrip_id"))
+                and self._normalize_symbol(item.get("scrip_id")) not in nse_listings
+            }
+        )
+        bse_nse_fallback_details = self._fetch_nse_quote_details(bse_nse_fallback_symbols)
 
         def seed_metadata(symbol: str, isin: str | None, fallback: dict[str, Any]) -> dict[str, Any]:
             cached_row = cached_by_symbol.get(symbol) or (cached_by_isin.get(isin or "") if isin else None) or {}
@@ -5827,18 +5847,39 @@ class FreeMarketDataProvider:
             matched_nse = nse_by_isin.get(isin or "")
             bse_symbol = self._normalize_symbol(bse_row.get("scrip_id"))
             bse_code = str(bse_row.get("SCRIP_CD") or "").strip()
+            fallback_nse = None
+            if not matched_nse and bse_symbol:
+                candidate = bse_nse_fallback_details.get(bse_symbol, {})
+                candidate_isin = str(candidate.get("isin") or "").strip().upper() or None
+                if isin and candidate_isin and isin == candidate_isin:
+                    fallback_nse = candidate
 
-            if matched_nse:
-                symbol = str(matched_nse["symbol"]).upper()
-                fallback = seed_metadata(symbol, isin, matched_nse)
-                matched_nse_symbols.add(symbol)
+            nse_preferred = matched_nse or fallback_nse
+            if nse_preferred:
+                symbol = str(
+                    nse_preferred.get("symbol")
+                    or bse_symbol
+                    or (matched_nse.get("symbol") if matched_nse else "")
+                    or ""
+                ).upper()
+                if not symbol:
+                    continue
+                fallback = seed_metadata(symbol, isin, nse_preferred)
+                if matched_nse:
+                    matched_nse_symbols.add(symbol)
                 row = {
                     "symbol": symbol,
-                    "name": str(matched_nse.get("name") or symbol).strip(),
+                    "name": str(
+                        nse_preferred.get("name")
+                        or (matched_nse.get("name") if matched_nse else "")
+                        or bse_row.get("Issuer_Name")
+                        or bse_row.get("Scrip_Name")
+                        or symbol
+                    ).strip(),
                     "exchange": "NSE",
                     "market_cap_crore": round(float(market_cap_crore), 2),
                     "ticker": f"{symbol}.NS",
-                    "listing_date": fallback["listing_date"] or matched_nse.get("listing_date"),
+                    "listing_date": fallback["listing_date"] or nse_preferred.get("listing_date"),
                     "sector": fallback["sector"],
                     "sub_sector": fallback["sub_sector"],
                     "isin": isin,
