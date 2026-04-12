@@ -2411,6 +2411,21 @@ class FreeMarketDataProvider:
                     except Exception:
                         pass
                 if all_rows:
+                    # HF deploys rely on split seed chunks because the platform
+                    # rejects large snapshot files. Those chunks can lag the
+                    # current cache version by a release, which would otherwise
+                    # make every cold boot treat them as invalid and trigger a
+                    # full historical rebuild before serving any data.
+                    if "free_snapshots" in stem:
+                        upgraded_rows: list[dict[str, Any]] = []
+                        for row in all_rows:
+                            if not isinstance(row, dict):
+                                continue
+                            upgraded_row = dict(row)
+                            upgraded_row["snapshot_cache_version"] = SNAPSHOT_CACHE_VERSION
+                            upgraded_rows.append(upgraded_row)
+                        if upgraded_rows:
+                            all_rows = upgraded_rows
                     # Write merged seed chunks to the primary path immediately so that
                     # get_snapshot_updated_at() returns a valid mtime on first boot.
                     # Without this the watchdog health panel shows "No usable snapshot
