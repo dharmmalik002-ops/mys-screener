@@ -14,22 +14,33 @@ backend/data/chart_cache_us/
 backend/data/news_cache/
 backend/data/*.json.gz
 backend/data/*.lock
-backend/data/free_snapshots*.json
-backend/data/industry_groups_cache*.json
-backend/data/free_fundamental_cache*.json
-backend/data/free_fundamentals*.json
-backend/data/free_company_metadata*.json
-backend/data/free_universe*.json
-backend/data/free_historical_breadth*.json
-backend/data/group-ranks*.json
-backend/data/groups*.json
+backend/data/free_snapshots.json
+backend/data/free_snapshots_us.json
+backend/data/industry_groups_cache.json
+backend/data/industry_groups_cache_us.json
+backend/data/free_fundamental_cache.json
+backend/data/free_fundamental_cache_us.json
+backend/data/free_fundamentals.json
+backend/data/free_fundamentals_us.json
+backend/data/free_company_metadata.json
+backend/data/free_company_metadata_us.json
+backend/data/free_historical_breadth.json
+backend/data/free_historical_breadth_us.json
+backend/data/group-ranks.json
+backend/data/group-ranks_us.json
+backend/data/groups.json
+backend/data/groups_us.json
 backend/data/money_flow_*.json
-backend/data/stocks-to-groups*.json
+backend/data/stocks-to-groups.json
+backend/data/stocks-to-groups_us.json
 backend/data/ai_analysis_cache.json
-backend/data/bhavcopy_*.json
-backend/data/sample_universe.json
 backend/data/live_universe.json
 
 # Keep watchlists (per user request)
 !backend/data/watchlists_state.json
 !backend/data/watchlists_state_us.json
+
+# Keep necessary startup seed chunks and static assets
+!backend/data/*_seed_*.json
+!backend/data/*universe*.json
+!backend/data/bhavcopy_patch.json
