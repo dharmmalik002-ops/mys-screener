@@ -620,6 +620,64 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(materialized.avg_volume_20d, 0)
         self.assertEqual(materialized.relative_volume, 0.0)
 
+    def test_download_history_frame_normalizes_indian_daily_volume_with_nested_bhavcopy_patch(self) -> None:
+        history = self._history(periods=5)
+        history["Volume"] = [6_400_000, 6_500_000, 6_600_000, 6_700_000, 9_500_000]
+        patch_dir = self.provider.backend_root / "data"
+        patch_dir.mkdir(parents=True, exist_ok=True)
+        patch_dir.joinpath("bhavcopy_patch.json").write_text(
+            json.dumps(
+                {
+                    "date": history.index[-1].date().isoformat(),
+                    "symbols": {
+                        "TEST": {
+                            "c": float(history.iloc[-1]["Close"]),
+                            "v": 95_000,
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with patch.object(self.provider, "_download_history_frame_http", return_value=history):
+            normalized = self.provider._download_history_frame("TEST.NS", period="1y", interval="1d")
+
+        self.assertEqual(int(normalized.iloc[-1]["Volume"]), 95_000)
+        self.assertEqual(int(normalized.iloc[0]["Volume"]), 64_000)
+
+    def test_download_history_frame_skips_intraday_volume_normalization(self) -> None:
+        index = pd.date_range(start=datetime(2026, 3, 27, 9, 15, tzinfo=timezone.utc), periods=3, freq="1min")
+        history = pd.DataFrame(
+            [
+                {"Open": 100.0, "High": 101.0, "Low": 99.5, "Close": 100.5, "Adj Close": 100.5, "Volume": 2_500_000, "Stock Splits": 0.0},
+                {"Open": 100.5, "High": 101.5, "Low": 100.0, "Close": 101.0, "Adj Close": 101.0, "Volume": 2_600_000, "Stock Splits": 0.0},
+                {"Open": 101.0, "High": 102.0, "Low": 100.8, "Close": 101.8, "Adj Close": 101.8, "Volume": 2_700_000, "Stock Splits": 0.0},
+            ],
+            index=index,
+        )
+        patch_dir = self.provider.backend_root / "data"
+        patch_dir.mkdir(parents=True, exist_ok=True)
+        patch_dir.joinpath("bhavcopy_patch.json").write_text(
+            json.dumps(
+                {
+                    "date": history.index[-1].date().isoformat(),
+                    "symbols": {
+                        "TEST": {
+                            "c": float(history.iloc[-1]["Close"]),
+                            "v": 27_000,
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+
+        with patch.object(self.provider, "_download_history_frame_http", return_value=history):
+            normalized = self.provider._download_history_frame("TEST.NS", period="2d", interval="1m")
+
+        self.assertEqual(int(normalized.iloc[-1]["Volume"]), 2_700_000)
+
     def test_apply_live_quote_to_daily_history_ignores_out_of_scale_quote(self) -> None:
         history = self.provider._split_adjusted_history(self._history(periods=60, start_close=100.0, step=0.4))
         quote = {

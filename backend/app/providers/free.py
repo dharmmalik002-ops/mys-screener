@@ -68,8 +68,8 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 14
-SNAPSHOT_CACHE_VERSION = 15
-CHART_CACHE_VERSION = 8
+SNAPSHOT_CACHE_VERSION = 16
+CHART_CACHE_VERSION = 9
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -7892,7 +7892,7 @@ class FreeMarketDataProvider:
 
         # Apply volume normalization for Indian stocks (fix 100x/0.01x scaling errors)
         try:
-            normalized = self._normalize_volume_for_india(normalized, ticker)
+            normalized = self._normalize_volume_for_india(normalized, ticker, interval=interval)
         except Exception:
             pass
 
@@ -8056,11 +8056,13 @@ class FreeMarketDataProvider:
             return history.iloc[cut_idx:].copy()
         return history
 
-    def _normalize_volume_for_india(self, df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+    def _normalize_volume_for_india(self, df: pd.DataFrame, ticker: str, *, interval: str = "1d") -> pd.DataFrame:
         """Fixes the common 100x/0.01x volume scaling bug in Yahoo Finance for Indian stocks.
         Uses official Bhavcopy patch data as the ground truth if available.
         """
         if not (ticker.endswith(".NS") or ticker.endswith(".BO")):
+            return df
+        if str(interval or "").lower() != "1d":
             return df
         if df.empty or "Volume" not in df.columns:
             return df
@@ -8077,26 +8079,44 @@ class FreeMarketDataProvider:
             return df
 
         symbol = ticker.split(".")[0]
-        if symbol not in bhav_data:
+        if not isinstance(bhav_data, dict):
             return df
 
-        ground_truth_vol = float(bhav_data[symbol].get("v") or 0)
-        bhav_close = float(bhav_data[symbol].get("c") or 0)
+        symbols_map = bhav_data.get("symbols") if isinstance(bhav_data.get("symbols"), dict) else bhav_data
+        symbol_payload = symbols_map.get(symbol) if isinstance(symbols_map, dict) else None
+        if not isinstance(symbol_payload, dict):
+            return df
+
+        ground_truth_vol = float(symbol_payload.get("v") or symbol_payload.get("volume") or 0)
+        bhav_close = float(symbol_payload.get("c") or symbol_payload.get("close") or 0)
+        bhav_date = self._parse_row_date(bhav_data.get("date"))
 
         if ground_truth_vol <= 0:
             return df
 
-        # Step B: Find the matching row in df to ensure we compare the same day
-        # We walk backwards through the history
         matching_row = None
-        for idx, row in df.iloc[::-1].iterrows():
-            row_close = float(row["Close"])
-            if abs(row_close - bhav_close) < 0.05: # Close enough (0.05 rupee tolerance)
-                matching_row = row
-                break
+        if bhav_date is not None:
+            try:
+                normalized_index = pd.DatetimeIndex(pd.to_datetime(df.index))
+                local_dates = (
+                    normalized_index.tz_convert(IST).date
+                    if normalized_index.tz is not None
+                    else normalized_index.date
+                )
+                matching_positions = [index for index, local_date in enumerate(local_dates) if local_date == bhav_date]
+                if matching_positions:
+                    matching_row = df.iloc[matching_positions[-1]]
+            except Exception:
+                matching_row = None
 
         if matching_row is None:
-            # Fallback to last bar if price is within 5%
+            for _, row in df.iloc[::-1].iterrows():
+                row_close = float(row["Close"])
+                if abs(row_close - bhav_close) < 0.05:
+                    matching_row = row
+                    break
+
+        if matching_row is None:
             last_bar = df.iloc[-1]
             if abs(float(last_bar["Close"]) - bhav_close) / (bhav_close or 1) <= 0.05:
                 matching_row = last_bar
@@ -8117,7 +8137,10 @@ class FreeMarketDataProvider:
             multiplier = 100.0
 
         if multiplier != 1.0:
-            df["Volume"] = (df["Volume"] * multiplier).round(0).astype("int64")
+            scaled = df.copy()
+            scaled["Volume"] = pd.to_numeric(scaled["Volume"], errors="coerce").fillna(0)
+            scaled["Volume"] = (scaled["Volume"] * multiplier).round(0).astype("int64")
+            return scaled
 
         return df
 

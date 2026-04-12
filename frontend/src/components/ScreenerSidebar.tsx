@@ -40,7 +40,7 @@ const ITEMS: Array<{
   },
   {
     mode: "e-and-c",
-    title: "E&C",
+    title: "Expansion",
   },
   {
     mode: "minervini-1m",

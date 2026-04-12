@@ -1850,27 +1850,7 @@ class USDashboardServiceMarketHealthTests(unittest.IsolatedAsyncioTestCase):
         response = run_custom_scan(CustomScanRequest(min_rs_rating=70, limit=20), [snapshot])
         self.assertEqual(response, [])
 
-    def test_e_and_c_scan_returns_contraction_and_expansion_matches(self) -> None:
-        contraction_snapshot = self._build_snapshot(
-            symbol="CNTR",
-            name="Contraction Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_000.0,
-            start_close=100.0,
-            step=0.8,
-        )
-        contraction_snapshot.last_price = 130.0
-        contraction_snapshot.change_pct = 1.1
-        contraction_snapshot.volume = 60_000
-        contraction_snapshot.avg_volume_50d = 100_000
-        contraction_snapshot.ema50 = 120.0
-        contraction_snapshot.sma50 = 125.0
-        contraction_snapshot.stock_return_5d = 12.0
-        contraction_snapshot.stock_return_20d = 22.0
-        contraction_snapshot.stock_return_60d = 35.0
-        contraction_snapshot.recent_closes = [118.0, 122.0, 124.0, 125.0]
-
+    def test_e_and_c_scan_returns_expansion_matches_only_under_new_rules(self) -> None:
         expansion_snapshot = self._build_snapshot(
             symbol="EXPN",
             name="Expansion Match",
@@ -1882,15 +1862,29 @@ class USDashboardServiceMarketHealthTests(unittest.IsolatedAsyncioTestCase):
         )
         expansion_snapshot.last_price = 145.0
         expansion_snapshot.change_pct = 6.2
-        expansion_snapshot.volume = 52_000
-        expansion_snapshot.avg_volume_50d = 20_000
+        expansion_snapshot.volume = 52_001
+        expansion_snapshot.avg_volume_20d = 25_000
+
+        non_match_snapshot = self._build_snapshot(
+            symbol="MISS",
+            name="Non Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=9_200.0,
+            start_close=100.0,
+            step=0.75,
+        )
+        non_match_snapshot.last_price = 142.0
+        non_match_snapshot.change_pct = 6.4
+        non_match_snapshot.volume = 49_500
+        non_match_snapshot.avg_volume_20d = 20_000
 
         contraction, expansion = run_e_and_c_scan(
-            [contraction_snapshot, expansion_snapshot],
+            [expansion_snapshot, non_match_snapshot],
             request=EandCScanRequest(),
         )
 
-        self.assertEqual([item.symbol for item in contraction], ["CNTR"])
+        self.assertEqual(contraction, [])
         self.assertEqual([item.symbol for item in expansion], ["EXPN"])
 
     def test_returns_scan_uses_normalized_sector_labels(self) -> None:

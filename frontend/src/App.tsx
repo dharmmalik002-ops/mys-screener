@@ -10,7 +10,7 @@ import type {
   ChartTimeframe,
   IndicatorKey,
 } from "./components/ChartPanel";
-import type { EandCSettings, EandCViewMode } from "./components/EandCScannerPanel";
+import type { EandCSettings } from "./components/EandCScannerPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import type { ImportResult } from "./components/WatchlistImportModal";
@@ -122,93 +122,17 @@ type RefreshSource = "manual" | "auto";
 type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "e-and-c">;
 type SectorGroupSortMode = "1W" | "1M" | "count-desc" | "count-asc";
 
-function intersectEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
-  const expansionBySymbol = new Map(expansion.map((item) => [item.symbol, item]));
-  return contraction
-    .filter((item) => expansionBySymbol.has(item.symbol))
-    .map((item) => {
-      const expansionItem = expansionBySymbol.get(item.symbol);
-      if (!expansionItem) {
-        return item;
-      }
-      return {
-        ...item,
-        reasons: [
-          ...(item.reasons ?? []),
-          "Also qualifies under expansion.",
-          ...(expansionItem.reasons ?? []),
-        ],
-      };
-    });
-}
-
-function unionEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
-  const mergedBySymbol = new Map<string, ScanMatch>();
-
-  for (const item of contraction) {
-    mergedBySymbol.set(item.symbol, {
-      ...item,
-      reasons: [...(item.reasons ?? [])],
-    });
-  }
-
-  for (const item of expansion) {
-    const existing = mergedBySymbol.get(item.symbol);
-    if (!existing) {
-      mergedBySymbol.set(item.symbol, {
-        ...item,
-        reasons: [...(item.reasons ?? [])],
-      });
-      continue;
-    }
-
-    mergedBySymbol.set(item.symbol, {
-      ...existing,
-      score: Math.max(existing.score ?? 0, item.score ?? 0),
-      reasons: [...(existing.reasons ?? []), ...(item.reasons ?? [])],
-    });
-  }
-
-  return Array.from(mergedBySymbol.values()).sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
-}
-
-function buildEandCScanResultsResponse(payload: EandCScanResponse, viewMode: EandCViewMode): ScanResultsResponse {
-  const contraction = payload.contraction ?? [];
-  const expansion = payload.expansion ?? [];
-  const items =
-    viewMode === "contraction"
-      ? contraction
-      : viewMode === "expansion"
-        ? expansion
-        : unionEandCItems(contraction, expansion);
-
-  const scanDescriptor =
-    viewMode === "contraction"
-      ? {
-          id: "e-and-c-contraction",
-          name: "E&C Contraction",
-          category: "Setups",
-          description: "Tight ranges over recent sessions with trend support and healthy liquidity.",
-          hit_count: items.length,
-        }
-      : viewMode === "expansion"
-        ? {
-            id: "e-and-c-expansion",
-            name: "E&C Expansion",
-            category: "Setups",
-            description: "Strong price expansion with volume surge and minimum liquidity.",
-            hit_count: items.length,
-          }
-        : {
-            id: "e-and-c-both",
-            name: "E&C Either (OR)",
-            category: "Setups",
-            description: "Stocks appearing in contraction OR expansion lists.",
-            hit_count: items.length,
-          };
+function buildEandCScanResultsResponse(payload: EandCScanResponse): ScanResultsResponse {
+  const items = [...(payload.expansion ?? [])].sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
 
   return {
-    scan: scanDescriptor,
+    scan: {
+      id: "expansion",
+      name: "Expansion",
+      category: "Setups",
+      description: "Stocks up at least 6% in a day with RVOL >= 2 and same-day volume above 50,000.",
+      hit_count: items.length,
+    },
     generated_at: new Date().toISOString(),
     market_cap_min_crore: 0,
     total_hits: items.length,
@@ -593,22 +517,9 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
 };
 
 const DEFAULT_E_AND_C_SETTINGS: EandCSettings = {
-  min_price: 30,
-  contraction_min_avg_volume_50d: 50000,
-  contraction_min_day_volume: 25000,
-  contraction_require_above_ema50: true,
-  contraction_max_price_to_sma50_ratio: 1.25,
-  contraction_max_today_change_abs_pct: 2.5,
-  contraction_max_prev_day_change_abs_pct: 2.5,
-  contraction_max_two_days_ago_change_abs_pct: 3.5,
-  contraction_require_prior_run_up: true,
-  contraction_min_return_5d: 10,
-  contraction_min_return_20d: 20,
-  contraction_min_return_60d: 30,
-  expansion_min_change_pct: 5,
-  expansion_min_avg_volume_50d: 15000,
-  expansion_min_day_volume: 25000,
-  expansion_min_volume_multiple: 2,
+  expansion_min_change_pct: 6,
+  expansion_min_relative_volume: 2,
+  expansion_min_day_volume: 50000,
 };
 
 const SUPPORTED_INDICATORS: IndicatorKey[] = ["ema10", "ema20", "ema50", "ema200", "vwap"];
@@ -1187,6 +1098,17 @@ function normalizeWatchlistColor(value: unknown, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized : fallback;
 }
 
+function normalizeWatchlistUpdatedAt(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
 function normalizeWatchlistBifurcations(value: unknown, fallbackSymbols: string[]): LocalWatchlist["bifurcations"] {
   if (!Array.isArray(value)) {
     return [{ id: "main", name: "Main", symbols: [...fallbackSymbols] }];
@@ -1277,6 +1199,7 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       ? activeBifurcationIdRaw
       : bifurcations[0]?.id ?? null;
     const color = normalizeWatchlistColor(candidate.color, DEFAULT_WATCHLIST_COLORS[output.length % DEFAULT_WATCHLIST_COLORS.length]);
+    const updatedAt = normalizeWatchlistUpdatedAt(candidate.updated_at);
 
     seenIds.add(id);
     output.push({
@@ -1286,6 +1209,7 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       symbols: mergedSymbols,
       bifurcations,
       active_bifurcation_id: activeBifurcationId,
+      updated_at: updatedAt,
     });
   }
 
@@ -1342,16 +1266,24 @@ function readActiveWatchlistId(watchlists: LocalWatchlist[], market: MarketKey):
 function normalizeWatchlistsStatePayload(
   payload: Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id" | "updated_at">,
 ): { watchlists: LocalWatchlist[]; activeWatchlistId: string | null; updatedAt: number | null } {
-  const watchlists = sanitizeWatchlists(payload.watchlists);
+  const updatedAt = normalizeWatchlistUpdatedAt(payload.updated_at);
+  const watchlists = sanitizeWatchlists(payload.watchlists).map((watchlist) => (
+    watchlist.updated_at == null && updatedAt !== null
+      ? { ...watchlist, updated_at: updatedAt }
+      : watchlist
+  ));
   const activeWatchlistId =
     watchlists.some((watchlist) => watchlist.id === payload.active_watchlist_id)
       ? payload.active_watchlist_id
       : watchlists[0]?.id ?? null;
-  return { watchlists, activeWatchlistId, updatedAt: payload.updated_at ?? null };
+  return { watchlists, activeWatchlistId, updatedAt };
 }
 
 function watchlistsStateSignature(watchlists: LocalWatchlist[], activeWatchlistId: string | null) {
-  return JSON.stringify({ watchlists, active_watchlist_id: activeWatchlistId });
+  return JSON.stringify({
+    watchlists: watchlists.map(({ updated_at: _updatedAt, ...watchlist }) => watchlist),
+    active_watchlist_id: activeWatchlistId,
+  });
 }
 
 function mergeWithDefaults<T extends Record<string, unknown>>(defaults: T, value: unknown): T {
@@ -1615,7 +1547,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [fundamentalsError, setFundamentalsError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>("home");
   const [activeScanner, setActiveScanner] = useState<ScreenerMode>("custom-scan");
-  const [eAndCViewMode, setEAndCViewMode] = useState<EandCViewMode>("both");
   const [eAndCSettings, setEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.eAndCSettings);
   const [appliedEAndCSettings, setAppliedEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.appliedEAndCSettings);
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
@@ -2391,7 +2322,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             setEAndCData(payload);
           }
 
-          const resultPayload = buildEandCScanResultsResponse(payload, eAndCViewMode);
+          const resultPayload = buildEandCScanResultsResponse(payload);
           setScanResults(resultPayload);
           setError(null);
           setSelectedSymbol((current) => {
@@ -2463,7 +2394,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     hasAppliedFiltersOnce,
     appliedEAndCSettings,
     eAndCData,
-    eAndCViewMode,
     improvingRsWindow,
     loading,
     scannerRunNonce,
@@ -3251,49 +3181,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const normalizeEandCSettings = (settings: EandCScanRequest): EandCScanRequest => ({
     ...DEFAULT_E_AND_C_SETTINGS,
     ...settings,
-    min_price: Number.isFinite(settings.min_price) ? Math.max(settings.min_price, 0) : DEFAULT_E_AND_C_SETTINGS.min_price,
-    contraction_min_avg_volume_50d: Number.isFinite(settings.contraction_min_avg_volume_50d)
-      ? Math.max(Math.floor(settings.contraction_min_avg_volume_50d), 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_min_avg_volume_50d,
-    contraction_min_day_volume: Number.isFinite(settings.contraction_min_day_volume)
-      ? Math.max(Math.floor(settings.contraction_min_day_volume), 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_min_day_volume,
-    contraction_max_price_to_sma50_ratio: Number.isFinite(settings.contraction_max_price_to_sma50_ratio)
-      ? Math.max(settings.contraction_max_price_to_sma50_ratio, 0.1)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_max_price_to_sma50_ratio,
-    contraction_max_today_change_abs_pct: Number.isFinite(settings.contraction_max_today_change_abs_pct)
-      ? Math.max(settings.contraction_max_today_change_abs_pct, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_max_today_change_abs_pct,
-    contraction_max_prev_day_change_abs_pct: Number.isFinite(settings.contraction_max_prev_day_change_abs_pct)
-      ? Math.max(settings.contraction_max_prev_day_change_abs_pct, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_max_prev_day_change_abs_pct,
-    contraction_max_two_days_ago_change_abs_pct: Number.isFinite(settings.contraction_max_two_days_ago_change_abs_pct)
-      ? Math.max(settings.contraction_max_two_days_ago_change_abs_pct, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_max_two_days_ago_change_abs_pct,
-    contraction_require_prior_run_up: typeof settings.contraction_require_prior_run_up === "boolean"
-      ? settings.contraction_require_prior_run_up
-      : DEFAULT_E_AND_C_SETTINGS.contraction_require_prior_run_up,
-    contraction_min_return_5d: Number.isFinite(settings.contraction_min_return_5d)
-      ? Math.max(settings.contraction_min_return_5d, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_5d,
-    contraction_min_return_20d: Number.isFinite(settings.contraction_min_return_20d)
-      ? Math.max(settings.contraction_min_return_20d, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_20d,
-    contraction_min_return_60d: Number.isFinite(settings.contraction_min_return_60d)
-      ? Math.max(settings.contraction_min_return_60d, 0)
-      : DEFAULT_E_AND_C_SETTINGS.contraction_min_return_60d,
     expansion_min_change_pct: Number.isFinite(settings.expansion_min_change_pct)
-      ? settings.expansion_min_change_pct
+      ? Math.max(settings.expansion_min_change_pct, 0)
       : DEFAULT_E_AND_C_SETTINGS.expansion_min_change_pct,
-    expansion_min_avg_volume_50d: Number.isFinite(settings.expansion_min_avg_volume_50d)
-      ? Math.max(Math.floor(settings.expansion_min_avg_volume_50d), 0)
-      : DEFAULT_E_AND_C_SETTINGS.expansion_min_avg_volume_50d,
+    expansion_min_relative_volume: Number.isFinite(settings.expansion_min_relative_volume)
+      ? Math.max(settings.expansion_min_relative_volume, 0)
+      : DEFAULT_E_AND_C_SETTINGS.expansion_min_relative_volume,
     expansion_min_day_volume: Number.isFinite(settings.expansion_min_day_volume)
       ? Math.max(Math.floor(settings.expansion_min_day_volume), 0)
       : DEFAULT_E_AND_C_SETTINGS.expansion_min_day_volume,
-    expansion_min_volume_multiple: Number.isFinite(settings.expansion_min_volume_multiple)
-      ? Math.max(settings.expansion_min_volume_multiple, 0)
-      : DEFAULT_E_AND_C_SETTINGS.expansion_min_volume_multiple,
   });
 
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
@@ -3308,7 +3204,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (!eAndCData) {
         return Promise.resolve(null);
       }
-      return Promise.resolve(buildEandCScanResultsResponse(eAndCData, eAndCViewMode));
+      return Promise.resolve(buildEandCScanResultsResponse(eAndCData));
     }
     if (activeScanner === "near-pivot") {
       return getNearPivotScan(appliedNearPivotFilters, activeMarket, options);
@@ -3830,16 +3726,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setCustomFilters(DEFAULT_CUSTOM_FILTERS);
     setAppliedCustomFilters(DEFAULT_CUSTOM_FILTERS);
     setScannerRunNonce((current) => current + 1);
-  };
-
-  const handleEandCViewModeChange = (mode: EandCViewMode) => {
-    setActivePage("screener");
-    setActiveScanner("e-and-c");
-    setScanLoading(true);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setEAndCViewMode(mode);
   };
 
   const handleEandCSettingsChange = (updates: Partial<EandCScanRequest>) => {
@@ -5335,7 +5221,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
-                      "e-and-c": activeScanner === "e-and-c" ? scanResults?.total_hits ?? 0 : (scanResults?.scan.id?.startsWith("e-and-c") ? scanResults.total_hits : 0),
+                      "e-and-c": activeScanner === "e-and-c" ? scanResults?.total_hits ?? 0 : (scanResults?.scan.id === "expansion" ? scanResults.total_hits : 0),
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
@@ -5370,7 +5256,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 : activeScanner === "gap-up-openers"
                                   ? "Gap Up Openers"
                                   : activeScanner === "e-and-c"
-                                    ? "E&C"
+                                    ? "Expansion"
                                   : activeScanner === "near-pivot"
                                     ? "Near Pivot"
                                   : activeScanner === "returns"
@@ -5391,7 +5277,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 : activeScanner === "gap-up-openers"
                                   ? "Filter stocks by opening gap percentage."
                                   : activeScanner === "e-and-c"
-                                    ? "Switch between contraction, expansion, and their intersection."
+                                    ? "Stocks up at least 6% in a day with RVOL >= 2 and same-day volume above 50,000."
                                   : activeScanner === "near-pivot"
                                     ? "Find high-RS stocks tightening close to their pivot zone."
                                   : activeScanner === "returns"
@@ -5442,25 +5328,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             : activeScanner === "e-and-c"
                               ? (
                                 <EandCScannerPanel
-                                  viewMode={eAndCViewMode}
-                                  onViewModeChange={handleEandCViewModeChange}
                                   onRefresh={handleRefreshEandCScan}
                                   settings={eAndCSettings}
                                   onSettingsChange={handleEandCSettingsChange}
                                   onApplySettings={handleApplyEandCSettings}
                                   onResetSettings={handleResetEandCSettings}
-                                  contractionCount={eAndCData?.contraction.length ?? 0}
                                   expansionCount={eAndCData?.expansion.length ?? 0}
-                                  eitherCount={
-                                    eAndCData
-                                      ? unionEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
-                                      : 0
-                                  }
-                                  intersectionCount={
-                                    eAndCData
-                                      ? intersectEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
-                                      : 0
-                                  }
                                 />
                               )
                             : activeScanner === "near-pivot"

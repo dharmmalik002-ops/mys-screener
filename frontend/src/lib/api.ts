@@ -152,7 +152,7 @@ export type WatchlistItem = {
 
 export type WatchlistsStateResponse = {
   market: MarketKey;
-  updated_at?: number | null;
+  updated_at?: string | number | null;
   active_watchlist_id: string | null;
   watchlists: WatchlistItem[];
 };
@@ -846,22 +846,9 @@ export type EandCScanResponse = {
 };
 
 export type EandCScanRequest = {
-  min_price: number;
-  contraction_min_avg_volume_50d: number;
-  contraction_min_day_volume: number;
-  contraction_require_above_ema50: boolean;
-  contraction_max_price_to_sma50_ratio: number;
-  contraction_max_today_change_abs_pct: number;
-  contraction_max_prev_day_change_abs_pct: number;
-  contraction_max_two_days_ago_change_abs_pct: number;
-  contraction_require_prior_run_up: boolean;
-  contraction_min_return_5d: number;
-  contraction_min_return_20d: number;
-  contraction_min_return_60d: number;
   expansion_min_change_pct: number;
-  expansion_min_avg_volume_50d: number;
+  expansion_min_relative_volume: number;
   expansion_min_day_volume: number;
-  expansion_min_volume_multiple: number;
 };
 
 export type NearPivotScanRequest = {
