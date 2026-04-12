@@ -2454,7 +2454,32 @@ class FreeMarketDataProvider:
                     raw = json.loads(fh.read())
             else:
                 raw = json.loads(load_path.read_text(encoding="utf-8"))
-            return raw if isinstance(raw, list) else []
+            rows = raw if isinstance(raw, list) else []
+            if not rows:
+                return []
+            # Seeded snapshot archives can legitimately trail the current
+            # runtime cache version by a release. Treat them as bootstrapping
+            # input and self-upgrade their version marker so hosted cold boots
+            # can serve cached data immediately instead of rebuilding the full
+            # snapshot universe before answering requests.
+            if "free_snapshots" in path.stem:
+                upgraded_rows: list[dict[str, Any]] = []
+                changed = False
+                for row in rows:
+                    if not isinstance(row, dict):
+                        continue
+                    upgraded_row = dict(row)
+                    if int(upgraded_row.get("snapshot_cache_version", 0) or 0) != SNAPSHOT_CACHE_VERSION:
+                        upgraded_row["snapshot_cache_version"] = SNAPSHOT_CACHE_VERSION
+                        changed = True
+                    upgraded_rows.append(upgraded_row)
+                rows = upgraded_rows
+                if changed and not path.exists():
+                    try:
+                        path.write_text(json.dumps(rows), encoding="utf-8")
+                    except Exception:
+                        pass
+            return rows
         except Exception:
             return []
 

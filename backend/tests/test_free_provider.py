@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import gzip
 import json
 import os
 import sys
@@ -19,7 +20,13 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.models.market import ChartBar, DetailedNews, IndexQuoteItem, QuarterlyResultItem, StockSnapshot
-from app.providers.free import CHART_CACHE_VERSION, LIVE_SNAPSHOT_MAX_AGE_SECONDS, FreeMarketDataProvider, UNIVERSE_CACHE_VERSION
+from app.providers.free import (
+    CHART_CACHE_VERSION,
+    LIVE_SNAPSHOT_MAX_AGE_SECONDS,
+    SNAPSHOT_CACHE_VERSION,
+    FreeMarketDataProvider,
+    UNIVERSE_CACHE_VERSION,
+)
 from app.providers.us_free import USFreeMarketDataProvider
 
 
@@ -111,6 +118,11 @@ class FreeProviderRegressionTests(unittest.TestCase):
     def _seed_snapshot_cache(self, rows: list[dict[str, object]]) -> None:
         self.provider.snapshot_cache_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
 
+    def _seed_snapshot_gzip(self, rows: list[dict[str, object]]) -> None:
+        gz_path = self.provider.snapshot_cache_path.with_name(self.provider.snapshot_cache_path.name + ".gz")
+        with gzip.open(gz_path, "wt", encoding="utf-8") as handle:
+            json.dump(rows, handle)
+
     def test_stale_live_quotes_do_not_rewrite_cache_or_count_as_live_refresh(self) -> None:
         today = self.provider._current_or_previous_trading_day_ist().isoformat()
         row = self._snapshot_row(session_date=today)
@@ -143,6 +155,22 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(rows[0]["last_price"], row["last_price"])
         self.assertEqual(self.provider.get_last_refresh_metadata()["applied_quote_count"], 0)
         self.assertIsNone(self.provider.get_last_refresh_metadata()["quote_source"])
+
+    def test_load_valid_cached_snapshot_rows_accepts_gzip_seed_from_older_cache_version(self) -> None:
+        row = self._snapshot_row(session_date=self.provider._current_or_previous_trading_day_ist().isoformat())
+        row["snapshot_cache_version"] = 14
+        row["rs_rating"] = row.get("rs_rating", 0)
+        row["rs_rating_1d_ago"] = row.get("rs_rating_1d_ago", row["rs_rating"])
+        row["rs_rating_1w_ago"] = row.get("rs_rating_1w_ago", row["rs_rating"])
+        row["rs_rating_1m_ago"] = row.get("rs_rating_1m_ago", row["rs_rating"])
+        self._seed_snapshot_gzip([row])
+
+        rows = self.provider._load_valid_cached_snapshot_rows()
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["snapshot_cache_version"], self.provider._load_json_rows(self.provider.snapshot_cache_path)[0]["snapshot_cache_version"])
+        self.assertEqual(rows[0]["snapshot_cache_version"], SNAPSHOT_CACHE_VERSION)
+        self.assertTrue(self.provider.snapshot_cache_path.exists())
 
     def test_fresh_same_day_quotes_update_snapshot_rows(self) -> None:
         today = self.provider._current_or_previous_trading_day_ist().isoformat()
