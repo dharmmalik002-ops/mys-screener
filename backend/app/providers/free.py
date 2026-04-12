@@ -68,8 +68,8 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 14
-SNAPSHOT_CACHE_VERSION = 14
-CHART_CACHE_VERSION = 7
+SNAPSHOT_CACHE_VERSION = 15
+CHART_CACHE_VERSION = 8
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -7874,6 +7874,13 @@ class FreeMarketDataProvider:
         normalized = history.copy()
         normalized.index = pd.to_datetime(normalized.index)
         normalized = normalized[~normalized.index.duplicated(keep="last")].sort_index()
+
+        # Apply volume normalization for Indian stocks (fix 100x/0.01x scaling errors)
+        try:
+            normalized = self._normalize_volume_for_india(normalized, ticker)
+        except Exception:
+            pass
+
         return normalized
 
     def _download_history_frame_http(self, ticker: str, period: str, interval: str) -> pd.DataFrame:
@@ -8033,6 +8040,71 @@ class FreeMarketDataProvider:
         if cut_idx is not None:
             return history.iloc[cut_idx:].copy()
         return history
+
+    def _normalize_volume_for_india(self, df: pd.DataFrame, ticker: str) -> pd.DataFrame:
+        """Fixes the common 100x/0.01x volume scaling bug in Yahoo Finance for Indian stocks.
+        Uses official Bhavcopy patch data as the ground truth if available.
+        """
+        if not (ticker.endswith(".NS") or ticker.endswith(".BO")):
+            return df
+        if df.empty or "Volume" not in df.columns:
+            return df
+
+        # Step A: Load bhavcopy ground truth for comparison
+        bhav_path = self.backend_root / "data" / "bhavcopy_patch.json"
+        if not bhav_path.exists():
+            return df
+
+        try:
+            with open(bhav_path, "r") as f:
+                bhav_data = json.load(f)
+        except Exception:
+            return df
+
+        symbol = ticker.split(".")[0]
+        if symbol not in bhav_data:
+            return df
+
+        ground_truth_vol = float(bhav_data[symbol].get("v") or 0)
+        bhav_close = float(bhav_data[symbol].get("c") or 0)
+
+        if ground_truth_vol <= 0:
+            return df
+
+        # Step B: Find the matching row in df to ensure we compare the same day
+        # We walk backwards through the history
+        matching_row = None
+        for idx, row in df.iloc[::-1].iterrows():
+            row_close = float(row["Close"])
+            if abs(row_close - bhav_close) < 0.05: # Close enough (0.05 rupee tolerance)
+                matching_row = row
+                break
+
+        if matching_row is None:
+            # Fallback to last bar if price is within 5%
+            last_bar = df.iloc[-1]
+            if abs(float(last_bar["Close"]) - bhav_close) / (bhav_close or 1) <= 0.05:
+                matching_row = last_bar
+            else:
+                return df
+
+        yahoo_vol = float(matching_row["Volume"])
+        if yahoo_vol <= 0:
+            return df
+
+        ratio = yahoo_vol / ground_truth_vol
+
+        # Step C: Detect 100x inflation or 0.01x deflation
+        multiplier = 1.0
+        if 80.0 <= ratio <= 125.0:
+            multiplier = 0.01
+        elif 0.008 <= ratio <= 0.0125:
+            multiplier = 100.0
+
+        if multiplier != 1.0:
+            df["Volume"] = (df["Volume"] * multiplier).round(0).astype("int64")
+
+        return df
 
     def _history_to_chart_bars(self, history: pd.DataFrame) -> list[ChartBar]:
         bars: list[ChartBar] = []
