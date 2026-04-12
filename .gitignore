@@ -6,9 +6,30 @@ node_modules/
 dist/
 .env
 backend/.env
+frontend/tsconfig.tsbuildinfo
+
+# Data and Cache
+backend/data/chart_cache/
+backend/data/chart_cache_us/
+backend/data/news_cache/
+backend/data/*.json.gz
+backend/data/*.lock
+backend/data/free_snapshots*.json
+backend/data/industry_groups_cache*.json
+backend/data/free_fundamental_cache*.json
+backend/data/free_fundamentals*.json
+backend/data/free_company_metadata*.json
+backend/data/free_universe*.json
+backend/data/free_historical_breadth*.json
+backend/data/group-ranks*.json
+backend/data/groups*.json
+backend/data/money_flow_*.json
+backend/data/stocks-to-groups*.json
+backend/data/ai_analysis_cache.json
+backend/data/bhavcopy_*.json
+backend/data/sample_universe.json
 backend/data/live_universe.json
-backend/data/watchlists_state.json
-backend/data/watchlists_state_us.json
-backend/data/free_snapshots.json
-backend/data/industry_groups_cache.json
-backend/data/industry_groups_cache_us.json
+
+# Keep watchlists (per user request)
+!backend/data/watchlists_state.json
+!backend/data/watchlists_state_us.json

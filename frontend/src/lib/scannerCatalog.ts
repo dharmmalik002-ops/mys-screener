@@ -36,6 +36,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "relative-strength", name: "Relative Strengths", category: "Setups", description: "RS leaders.", hit_count: 0 },
   { id: "minervini-1m", name: "Minervini 1 Month", category: "Setups", description: "Trend template names with a rising 200 SMA and strong 52-week positioning.", hit_count: 0 },
   { id: "minervini-5m", name: "Minervini 5 Months", category: "Setups", description: "Trend template names with a rising 200 SMA over 1 and 5 months and stronger 52-week positioning.", hit_count: 0 },
+  { id: "ema-expansion", name: "Expansion", category: "Setups", description: "Price gain >= 6.5%, RVOL > 3.0, and liquidity floors.", hit_count: 0 },
 ];
 
 export const SCANNER_BADGES: Record<string, string> = {
@@ -74,6 +75,7 @@ export const SCANNER_BADGES: Record<string, string> = {
   "relative-strength": "RS",
   "minervini-1m": "MIN1",
   "minervini-5m": "MIN5",
+  "ema-expansion": "EXP",
 };
 
 const order = new Map(DEFAULT_SCANNERS.map((scanner, index) => [scanner.id, index]));

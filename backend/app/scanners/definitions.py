@@ -614,144 +614,29 @@ def _minervini_5m(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
-def _e_and_c_contraction(snapshot: StockSnapshot, request: EandCScanRequest) -> tuple[float, list[str]] | None:
-    if snapshot.last_price <= request.min_price:
-        return None
-    if (snapshot.avg_volume_50d or 0) < request.contraction_min_avg_volume_50d:
-        return None
-    if snapshot.volume <= request.contraction_min_day_volume:
-        return None
-    if request.contraction_require_above_ema50 and (snapshot.ema50 is None or snapshot.last_price <= snapshot.ema50):
-        return None
-    if (
-        snapshot.sma50 is not None
-        and request.contraction_max_price_to_sma50_ratio > 0
-        and snapshot.last_price > request.contraction_max_price_to_sma50_ratio * snapshot.sma50
-    ):
+def _ema_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    avg_vol_50 = snapshot.avg_volume_50d or 0
+    volume = snapshot.volume or 0
+    
+    # 1. 50-day average volume floor (>= 25,000)
+    # 2. Daily volume floor (> 50,000)
+    # 3. Price floor (> 30)
+    if avg_vol_50 < 25000 or volume <= 50000 or snapshot.last_price <= 30:
         return None
 
-    # Today's change must be tight
-    if abs(snapshot.change_pct) > request.contraction_max_today_change_abs_pct:
-        return None
+    rvol_50 = volume / avg_vol_50
 
-    # Previous-day and 2-day-ago changes: use recent_closes if available,
-    # otherwise fall back to recent_highs/recent_lows range-based proxy.
-    closes = snapshot.recent_closes
-    prev_change: float | None = None
-    prev_prev_change: float | None = None
-
-    if len(closes) >= 4:
-        # Direct per-day change from closing prices
-        if closes[-3] > 0:
-            prev_change = (closes[-2] - closes[-3]) / closes[-3] * 100
-        if closes[-4] > 0:
-            prev_prev_change = (closes[-3] - closes[-4]) / closes[-4] * 100
-    elif len(snapshot.recent_highs) >= 3 and len(snapshot.recent_lows) >= 3:
-        # Fallback: derive approximate daily ranges from highs/lows.
-        # The daily range (high-low)/midpoint for recent days is a good
-        # proxy for volatility — if it's tight, the stock is contracting.
-        for offset, (max_pct, label) in [
-            (-2, (request.contraction_max_prev_day_change_abs_pct, "prev")),
-            (-3, (request.contraction_max_two_days_ago_change_abs_pct, "2d_ago")),
-        ]:
-            try:
-                h = snapshot.recent_highs[offset]
-                l = snapshot.recent_lows[offset]
-                if h > 0 and l > 0:
-                    day_range_pct = (h - l) / ((h + l) / 2) * 100
-                    if label == "prev":
-                        prev_change = day_range_pct / 2  # half-range as proxy for change
-                    else:
-                        prev_prev_change = day_range_pct / 2
-            except (IndexError, ZeroDivisionError):
-                pass
-
-    # Apply prev-day filter (skip if data unavailable — let other filters decide)
-    if prev_change is not None and abs(prev_change) > request.contraction_max_prev_day_change_abs_pct:
-        return None
-    # Apply 2-day-ago filter
-    if prev_prev_change is not None and abs(prev_prev_change) > request.contraction_max_two_days_ago_change_abs_pct:
-        return None
-
-    # Prior run-up: the stock must have had a meaningful upward move before
-    # contracting.  At least ONE of the return thresholds must be met (OR logic).
-    # This matches the "Stock passes ANY of the below filters" section from the
-    # reference scanner and prevents flat / dead stocks from appearing.
-    if request.contraction_require_prior_run_up:
-        has_run_up = (
-            snapshot.stock_return_5d >= request.contraction_min_return_5d
-            or snapshot.stock_return_20d >= request.contraction_min_return_20d
-            or snapshot.stock_return_60d >= request.contraction_min_return_60d
-        )
-        if not has_run_up:
-            return None
-
-    # Build reasons label
-    run_up_label = ""
-    if snapshot.stock_return_5d >= request.contraction_min_return_5d:
-        run_up_label = f" | 5D +{snapshot.stock_return_5d:.1f}%"
-    elif snapshot.stock_return_20d >= request.contraction_min_return_20d:
-        run_up_label = f" | 20D +{snapshot.stock_return_20d:.1f}%"
-    elif snapshot.stock_return_60d >= request.contraction_min_return_60d:
-        run_up_label = f" | 60D +{snapshot.stock_return_60d:.1f}%"
-
-    prev_label = f", prev {round(prev_change, 1)}%" if prev_change is not None else ""
-    prev2_label = f", 2d ago {round(prev_prev_change, 1)}%" if prev_prev_change is not None else ""
-
-    reasons = [
-        f"Today {round(snapshot.change_pct, 1)}%{prev_label}{prev2_label}{run_up_label}",
-        f"Price above EMA50 ({snapshot.ema50:.2f}) and within {round(request.contraction_max_price_to_sma50_ratio * 100 - 100)}% of SMA50 ({snapshot.sma50:.2f})" if snapshot.sma50 else f"Price above EMA50 ({snapshot.ema50:.2f})",
-    ]
-    score = 50.0 + max(0.0, request.contraction_max_today_change_abs_pct - abs(snapshot.change_pct)) * 6
-    # Boost score if the stock has a strong prior move
-    if snapshot.stock_return_5d >= request.contraction_min_return_5d:
-        score += 8.0
-    if snapshot.stock_return_20d >= request.contraction_min_return_20d:
-        score += 5.0
-    if snapshot.stock_return_60d >= request.contraction_min_return_60d:
-        score += 3.0
-    return round(score, 2), reasons
-
-
-def _e_and_c_expansion(snapshot: StockSnapshot, request: EandCScanRequest) -> tuple[float, list[str]] | None:
-    avg_vol = snapshot.avg_volume_50d or 0
-    if snapshot.last_price <= request.min_price:
-        return None
-    if snapshot.change_pct < request.expansion_min_change_pct:
-        return None
-    if avg_vol < request.expansion_min_avg_volume_50d:
-        return None
-    if snapshot.volume <= request.expansion_min_day_volume:
-        return None
-    if avg_vol <= 0 or snapshot.volume <= avg_vol * request.expansion_min_volume_multiple:
-        return None
-    rvol = round(snapshot.volume / avg_vol, 1) if avg_vol > 0 else 0.0
-    reasons = [
-        f"+{round(snapshot.change_pct, 1)}% on {rvol}x average volume",
-    ]
-    score = 50.0 + snapshot.change_pct * 2 + min(rvol - request.expansion_min_volume_multiple, 10.0) * 1.5
-    return round(score, 2), reasons
-
-
-def run_e_and_c_scan(
-    snapshots: list[StockSnapshot],
-    request: EandCScanRequest | None = None,
-) -> tuple[list[ScanMatch], list[ScanMatch]]:
-    active_request = request or EandCScanRequest()
-    contraction: list[ScanMatch] = []
-    expansion: list[ScanMatch] = []
-    for snapshot in snapshots:
-        result = _e_and_c_contraction(snapshot, active_request)
-        if result is not None:
-            score, reasons = result
-            contraction.append(build_scan_match("e-and-c-contraction", snapshot, score, reasons))
-        result = _e_and_c_expansion(snapshot, active_request)
-        if result is not None:
-            score, reasons = result
-            expansion.append(build_scan_match("e-and-c-expansion", snapshot, score, reasons))
-    contraction.sort(key=lambda x: x.score, reverse=True)
-    expansion.sort(key=lambda x: x.score, reverse=True)
-    return contraction, expansion
+    # 4. Change % floor (>= 6.5%)
+    # 5. RVOL floor (> 3.0x)
+    if snapshot.change_pct >= 6.5 and rvol_50 > 3.0:
+        score = 75 + rvol_50 * 2 + snapshot.change_pct
+        return round(score, 2), [
+            "Expansion setup",
+            f"Daily Change: {snapshot.change_pct}%",
+            f"50-Day RVOL: {rvol_50:.2f}x",
+            f"Price: {snapshot.last_price:.2f}"
+        ]
+    return None
 
 
 SCANS: list[ScanDefinition] = [
@@ -788,6 +673,7 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
+    ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, RVOL > 3.0, and liquidity floors (AvgVol > 25k, Vol > 50k, Price > 30).", _ema_expansion),
 ]
 
 SCAN_BY_ID = {scan.id: scan for scan in SCANS}
