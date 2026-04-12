@@ -24,6 +24,7 @@ from app.models.market import (
     ChartLinePoint,
     ConsolidatingScanRequest,
     CustomScanRequest,
+    EandCScanRequest,
     HistoricalBreadthDataPoint,
     HistoricalBreadthResponse,
     HistoricalUniverseBreadth,
@@ -45,7 +46,7 @@ from app.models.market import (
     UniverseBreadth,
 )
 from app.providers.free import FreeMarketDataProvider
-from app.scanners.definitions import SCAN_BY_ID, run_consolidating_scan, run_custom_scan, run_returns_scan, run_scan
+from app.scanners.definitions import SCAN_BY_ID, run_consolidating_scan, run_custom_scan, run_e_and_c_scan, run_returns_scan, run_scan
 from app.services.dashboard_service import DashboardService
 from app.services.us_dashboard_service import USDashboardService
 
@@ -1848,6 +1849,49 @@ class USDashboardServiceMarketHealthTests(unittest.IsolatedAsyncioTestCase):
 
         response = run_custom_scan(CustomScanRequest(min_rs_rating=70, limit=20), [snapshot])
         self.assertEqual(response, [])
+
+    def test_e_and_c_scan_returns_contraction_and_expansion_matches(self) -> None:
+        contraction_snapshot = self._build_snapshot(
+            symbol="CNTR",
+            name="Contraction Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=9_000.0,
+            start_close=100.0,
+            step=0.8,
+        )
+        contraction_snapshot.last_price = 130.0
+        contraction_snapshot.change_pct = 1.1
+        contraction_snapshot.volume = 60_000
+        contraction_snapshot.avg_volume_50d = 100_000
+        contraction_snapshot.ema50 = 120.0
+        contraction_snapshot.sma50 = 125.0
+        contraction_snapshot.stock_return_5d = 12.0
+        contraction_snapshot.stock_return_20d = 22.0
+        contraction_snapshot.stock_return_60d = 35.0
+        contraction_snapshot.recent_closes = [118.0, 122.0, 124.0, 125.0]
+
+        expansion_snapshot = self._build_snapshot(
+            symbol="EXPN",
+            name="Expansion Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=9_500.0,
+            start_close=100.0,
+            step=0.9,
+        )
+        expansion_snapshot.last_price = 145.0
+        expansion_snapshot.change_pct = 6.2
+        expansion_snapshot.volume = 52_000
+        expansion_snapshot.avg_volume_50d = 20_000
+
+        contraction, expansion = run_e_and_c_scan(
+            [contraction_snapshot, expansion_snapshot],
+            request=EandCScanRequest(),
+        )
+
+        self.assertEqual([item.symbol for item in contraction], ["CNTR"])
+        self.assertEqual([item.symbol for item in expansion], ["EXPN"])
 
     def test_returns_scan_uses_normalized_sector_labels(self) -> None:
         private_bank = self._build_snapshot(
