@@ -36,6 +36,20 @@ To make this magical for you, **I have just created a `Dockerfile` in your folde
 8. Click **Add file > Upload files** and drag the files from your local `Stock Scanner c` folder up into this space. (Or link your GitHub repo if you feel comfortable!). Make sure to upload the new `Dockerfile` I just created for you.
 9. **Link them together**: Go to the Space's settings -> Variables and secrets. Click **New secret**. Create a secret with the name `FRONTEND_ORIGIN` and paste the Vercel URL you got in Step 2. Then, inside your local `frontend/.env` file, you can set `VITE_API_BASE=https://your-username-stock-scanner-backend.hf.space` (and push the update to Github so Vercel builds it).
 
+### Optional but recommended: make watchlists permanent with Neon
+
+Hugging Face free Space storage can be rebuilt during deploys, so if you want watchlists to survive browser cache clears and backend updates, use a free Neon Postgres database for the watchlist store.
+
+1. Go to [Neon](https://neon.com/) and create a free project.
+2. Open the project's **Connect** dialog and copy the **pooled** Postgres connection string.
+3. In your Hugging Face Space, go to **Settings -> Variables and secrets**.
+4. Add a secret named `DATABASE_URL` and paste the Neon connection string.
+5. Add a variable or secret named `WATCHLISTS_BACKEND` with the value `database`.
+6. Redeploy the Space.
+
+> [!TIP]
+> Neon connection strings work like normal Postgres URLs. Neon recommends using the pooled hostname when your app may open many concurrent connections.
+
 ## Step 4: The "Keep-Awake" Trick (For Automatic Updates)
 Your app already has a built-in schedule to automatically update data depending on market time. However, free containers go into "sleep mode" if not used for a couple days. 
 

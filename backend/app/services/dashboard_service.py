@@ -2,6 +2,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 import re
 import time
 from bisect import bisect_left, bisect_right
@@ -77,6 +78,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
+from app.services.watchlists_store import PostgresWatchlistsStore, WatchlistsStateStore
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
     ("Nifty 50", "https://niftyindices.com/IndexConstituent/ind_nifty50list.csv"),
@@ -94,6 +96,7 @@ INDEX_HEATMAP_SYMBOLS: dict[str, str] = {
 INDEX_CONSTITUENT_CACHE_MAX_AGE = timedelta(hours=6)
 INDEX_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 IST = timezone(timedelta(hours=5, minutes=30))
+logger = logging.getLogger(__name__)
 GENERIC_COMPLIANCE_KEYWORDS = (
     "regulation 30",
     "sebi (lodr)",
@@ -266,7 +269,12 @@ def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
 
 
 class DashboardService:
-    def __init__(self, provider: MarketDataProvider, settings: Settings) -> None:
+    def __init__(
+        self,
+        provider: MarketDataProvider,
+        settings: Settings,
+        watchlists_store: WatchlistsStateStore | None = None,
+    ) -> None:
         self.provider = provider
         self.settings = settings
         self._dashboard_cache: DashboardResponse | None = None
@@ -288,6 +296,10 @@ class DashboardService:
         _backend_root = Path(__file__).resolve().parents[2]
         self._money_flow_cache_path = _backend_root / "data" / "money_flow_reports.json"
         self._money_flow_stock_cache_path = _backend_root / "data" / "money_flow_stock_ideas.json"
+        self._watchlists_store = watchlists_store or PostgresWatchlistsStore(
+            settings.database_url if settings.use_watchlists_database else None,
+            connect_timeout_seconds=settings.watchlists_database_connect_timeout_seconds,
+        )
 
     @staticmethod
     def _chart_bar_limit(timeframe: str) -> int:
@@ -3866,7 +3878,7 @@ class DashboardService:
             watchlists=normalized_watchlists,
         )
 
-    def get_watchlists_state(self) -> WatchlistsStateResponse:
+    def _get_watchlists_state_from_files(self) -> WatchlistsStateResponse:
         candidate_states: list[tuple[int, WatchlistsStateResponse, Path]] = []
         for path in (
             self._watchlists_state_path(),
@@ -3892,8 +3904,49 @@ class DashboardService:
 
         return state
 
+    def _load_watchlists_state_from_database(self) -> WatchlistsStateResponse | None:
+        if not self._watchlists_store.is_enabled():
+            return None
+
+        try:
+            state = self._watchlists_store.load_state(self._market_key())
+        except Exception as exc:
+            logger.warning("Watchlists database read failed for %s: %s", self._market_key(), exc)
+            return None
+
+        if state is None:
+            return None
+
+        normalized = self._sanitize_watchlists_state(state, refresh_timestamp=False)
+        self._persist_watchlists_state_files(normalized)
+        return normalized
+
+    def _maybe_migrate_watchlists_state_to_database(self, state: WatchlistsStateResponse) -> None:
+        if not self._watchlists_store.is_enabled():
+            return
+        if state.updated_at is None and state.active_watchlist_id is None and not state.watchlists:
+            return
+        try:
+            self._watchlists_store.save_state(state)
+        except Exception as exc:
+            logger.warning("Watchlists database migration failed for %s: %s", self._market_key(), exc)
+
+    def get_watchlists_state(self) -> WatchlistsStateResponse:
+        database_state = self._load_watchlists_state_from_database()
+        if database_state is not None:
+            return database_state
+
+        file_state = self._get_watchlists_state_from_files()
+        self._maybe_migrate_watchlists_state_to_database(file_state)
+        return file_state
+
     def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
         state = self._sanitize_watchlists_state(payload, refresh_timestamp=True)
+        if self._watchlists_store.is_enabled():
+            try:
+                self._watchlists_store.save_state(state)
+            except Exception as exc:
+                logger.warning("Watchlists database save failed for %s: %s", self._market_key(), exc)
         self._persist_watchlists_state_files(state)
         return state
 

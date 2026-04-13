@@ -2870,6 +2870,24 @@ class DashboardServiceWatchlistsPersistenceTests(unittest.TestCase):
         def _default_exchange(self) -> str:
             return "NSE"
 
+    class StubWatchlistsStore:
+        def __init__(self, initial_state: WatchlistsStateResponse | None = None) -> None:
+            self.state_by_market: dict[str, WatchlistsStateResponse] = {}
+            self.saved_markets: list[str] = []
+            if initial_state is not None:
+                self.state_by_market[initial_state.market] = initial_state
+
+        def is_enabled(self) -> bool:
+            return True
+
+        def load_state(self, market: str) -> WatchlistsStateResponse | None:
+            return self.state_by_market.get(market)
+
+        def save_state(self, state: WatchlistsStateResponse) -> WatchlistsStateResponse:
+            self.saved_markets.append(state.market)
+            self.state_by_market[state.market] = state
+            return state
+
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.backend_root = Path(self.temp_dir.name)
@@ -2962,6 +2980,89 @@ class DashboardServiceWatchlistsPersistenceTests(unittest.TestCase):
         self.assertEqual(restored.watchlists, [])
         self.assertIsNone(restored.active_watchlist_id)
         self.assertEqual(restored.updated_at, deleted.updated_at)
+
+    def test_get_watchlists_state_prefers_database_store_when_available(self) -> None:
+        store_state = WatchlistsStateResponse(
+            market="india",
+            updated_at=1_712_320_000_000,
+            active_watchlist_id="wl-db",
+            watchlists=[
+                WatchlistItem(
+                    id="wl-db",
+                    name="Neon",
+                    color="#00a389",
+                    symbols=["DIXON", "CGPOWER"],
+                )
+            ],
+        )
+        service = DashboardService(
+            provider=self.StubProvider(self.backend_root),
+            settings=Settings(),
+            watchlists_store=self.StubWatchlistsStore(store_state),
+        )
+
+        state = service.get_watchlists_state()
+
+        self.assertEqual(state.active_watchlist_id, "wl-db")
+        self.assertEqual(state.watchlists[0].symbols, ["DIXON", "CGPOWER"])
+
+    def test_get_watchlists_state_migrates_file_state_into_database_store(self) -> None:
+        store = self.StubWatchlistsStore()
+        service = DashboardService(
+            provider=self.StubProvider(self.backend_root),
+            settings=Settings(),
+            watchlists_store=store,
+        )
+        payload = {
+            "market": "india",
+            "updated_at": 1_712_330_000_000,
+            "active_watchlist_id": "wl-1",
+            "watchlists": [
+                {
+                    "id": "wl-1",
+                    "name": "Core",
+                    "color": "#4f8cff",
+                    "symbols": ["INFY", "TCS"],
+                }
+            ],
+        }
+        path = service._watchlists_state_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        state = service.get_watchlists_state()
+
+        self.assertEqual(state.active_watchlist_id, "wl-1")
+        self.assertEqual(store.state_by_market["india"].watchlists[0].symbols, ["INFY", "TCS"])
+        self.assertEqual(store.saved_markets, ["india"])
+
+    def test_save_watchlists_state_persists_to_database_store(self) -> None:
+        store = self.StubWatchlistsStore()
+        service = DashboardService(
+            provider=self.StubProvider(self.backend_root),
+            settings=Settings(),
+            watchlists_store=store,
+        )
+
+        saved = service.save_watchlists_state(
+            WatchlistsStateResponse(
+                market="india",
+                active_watchlist_id="wl-1",
+                watchlists=[
+                    WatchlistItem(
+                        id="wl-1",
+                        name="Core",
+                        color="#4f8cff",
+                        symbols=["INFY", "TCS"],
+                    )
+                ],
+            )
+        )
+
+        self.assertEqual(store.state_by_market["india"].active_watchlist_id, "wl-1")
+        self.assertEqual(store.state_by_market["india"].watchlists[0].symbols, ["INFY", "TCS"])
+        self.assertEqual(store.saved_markets, ["india"])
+        self.assertEqual(saved.active_watchlist_id, "wl-1")
 
 
 if __name__ == "__main__":

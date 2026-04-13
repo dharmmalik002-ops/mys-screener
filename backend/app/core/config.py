@@ -26,12 +26,20 @@ class Settings(BaseSettings):
     default_timeframe: str = "1D"
     refresh_timeout_seconds: int = Field(default=600, alias="REFRESH_TIMEOUT_SECONDS")
     warm_fundamentals_after_refresh: bool = Field(default=False, alias="WARM_FUNDAMENTALS_AFTER_REFRESH")
+    database_url: str | None = Field(default=None, alias="DATABASE_URL")
+    watchlists_backend: Literal["auto", "file", "database"] = Field(default="auto", alias="WATCHLISTS_BACKEND")
+    watchlists_database_connect_timeout_seconds: int = Field(
+        default=10,
+        alias="WATCHLISTS_DATABASE_CONNECT_TIMEOUT_SECONDS",
+    )
 
     @model_validator(mode="after")
     def resolve_paths(self) -> "Settings":
         backend_root = Path(__file__).resolve().parents[2]
         if not self.live_universe_path.is_absolute():
             object.__setattr__(self, "live_universe_path", backend_root / self.live_universe_path)
+        database_url = str(self.database_url or "").strip() or None
+        object.__setattr__(self, "database_url", database_url)
         return self
 
     @property
@@ -42,6 +50,12 @@ class Settings(BaseSettings):
             "http://localhost:5173",
         }
         return sorted(origins)
+
+    @property
+    def use_watchlists_database(self) -> bool:
+        if self.watchlists_backend == "file":
+            return False
+        return bool(self.database_url)
 
 
 @lru_cache(maxsize=1)
