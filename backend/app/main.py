@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -38,6 +39,12 @@ from app.services.us_dashboard_service import USDashboardService
 logger = logging.getLogger(__name__)
 IST = ZoneInfo("Asia/Kolkata")
 ET = ZoneInfo("America/New_York")
+IS_HF_SPACE = bool(
+    os.getenv("SPACE_ID")
+    or os.getenv("SPACE_REPO_NAME")
+    or os.getenv("HF_SPACE_ID")
+    or os.getenv("SYSTEM") == "spaces"
+)
 
 settings = get_settings()
 india_provider = build_provider(settings, market="india")
@@ -237,13 +244,19 @@ async def live_market_watchdog_job() -> None:
                 try:
                     service._clear_runtime_caches()
                     india_snapshots = await india_prov.refresh_live_snapshots(settings.market_cap_min_crore)
-                    prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
-                    logger.warning(
-                        "WATCHDOG INDIA: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
-                        prewarm_summary.get("section_count", 0),
-                        prewarm_summary.get("symbol_count", 0),
-                        india_prov._snapshot_age_seconds(),
-                    )
+                    if IS_HF_SPACE:
+                        logger.warning(
+                            "WATCHDOG INDIA: live refresh OK (HF lazy warm) — snapshot age now %.0fs",
+                            india_prov._snapshot_age_seconds(),
+                        )
+                    else:
+                        prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
+                        logger.warning(
+                            "WATCHDOG INDIA: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
+                            prewarm_summary.get("section_count", 0),
+                            prewarm_summary.get("symbol_count", 0),
+                            india_prov._snapshot_age_seconds(),
+                        )
                 except Exception as exc:
                     logger.error("WATCHDOG INDIA: live refresh FAILED: %s", exc)
             else:
@@ -286,12 +299,18 @@ async def live_market_watchdog_job() -> None:
                         refresh_metadata = india_prov.get_last_refresh_metadata()
                         if int(refresh_metadata.get("applied_quote_count", 0) or 0) > 0:
                             service._clear_runtime_caches()
-                            prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
-                            logger.info(
-                                "WATCHDOG INDIA: provisional close sync OK — applied %s recent quotes and warmed %s sections",
-                                refresh_metadata.get("applied_quote_count", 0),
-                                prewarm_summary.get("section_count", 0),
-                            )
+                            if IS_HF_SPACE:
+                                logger.info(
+                                    "WATCHDOG INDIA: provisional close sync OK (HF lazy warm) — applied %s recent quotes",
+                                    refresh_metadata.get("applied_quote_count", 0),
+                                )
+                            else:
+                                prewarm_summary = await service.prewarm_watchdog_sections(india_snapshots)
+                                logger.info(
+                                    "WATCHDOG INDIA: provisional close sync OK — applied %s recent quotes and warmed %s sections",
+                                    refresh_metadata.get("applied_quote_count", 0),
+                                    prewarm_summary.get("section_count", 0),
+                                )
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: provisional close sync FAILED: %s", exc)
 
@@ -318,7 +337,10 @@ async def live_market_watchdog_job() -> None:
                                 result = fallback_result
                         if result.get("snapshots_updated", 0) > 0:
                             service._clear_runtime_caches()
-                            await service.prewarm_watchdog_sections()
+                            # HF free tier is memory constrained; charts/fundamental prewarm spikes
+                            # frequently OOM-kill the container. Keep this lazy on HF.
+                            if not IS_HF_SPACE:
+                                await service.prewarm_watchdog_sections()
                         logger.warning("WATCHDOG INDIA: bhavcopy patch result: %s", result)
                     except Exception as exc:
                         logger.error("WATCHDOG INDIA: bhavcopy patch FAILED: %s", exc)
@@ -350,13 +372,19 @@ async def live_market_watchdog_job() -> None:
                 try:
                     us_service._clear_runtime_caches()
                     us_snapshots = await us_prov.refresh_live_snapshots(us_settings.market_cap_min_crore)
-                    prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
-                    logger.warning(
-                        "WATCHDOG US: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
-                        prewarm_summary.get("section_count", 0),
-                        prewarm_summary.get("symbol_count", 0),
-                        us_prov._snapshot_age_seconds(),
-                    )
+                    if IS_HF_SPACE:
+                        logger.warning(
+                            "WATCHDOG US: live refresh OK (HF lazy warm) — snapshot age now %.0fs",
+                            us_prov._snapshot_age_seconds(),
+                        )
+                    else:
+                        prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
+                        logger.warning(
+                            "WATCHDOG US: live refresh OK — warmed %s sections and %s symbols, snapshot age now %.0fs",
+                            prewarm_summary.get("section_count", 0),
+                            prewarm_summary.get("symbol_count", 0),
+                            us_prov._snapshot_age_seconds(),
+                        )
                 except Exception as exc:
                     logger.error("WATCHDOG US: live refresh FAILED: %s", exc)
             else:
@@ -391,12 +419,18 @@ async def live_market_watchdog_job() -> None:
                         refresh_metadata = us_prov.get_last_refresh_metadata()
                         if int(refresh_metadata.get("applied_quote_count", 0) or 0) > 0:
                             us_service._clear_runtime_caches()
-                            prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
-                            logger.info(
-                                "WATCHDOG US: post-close EOD sync OK — applied %s recent quotes and warmed %s sections",
-                                refresh_metadata.get("applied_quote_count", 0),
-                                prewarm_summary.get("section_count", 0),
-                            )
+                            if IS_HF_SPACE:
+                                logger.info(
+                                    "WATCHDOG US: post-close EOD sync OK (HF lazy warm) — applied %s recent quotes",
+                                    refresh_metadata.get("applied_quote_count", 0),
+                                )
+                            else:
+                                prewarm_summary = await us_service.prewarm_watchdog_sections(us_snapshots)
+                                logger.info(
+                                    "WATCHDOG US: post-close EOD sync OK — applied %s recent quotes and warmed %s sections",
+                                    refresh_metadata.get("applied_quote_count", 0),
+                                    prewarm_summary.get("section_count", 0),
+                                )
                     except Exception as exc:
                         logger.error("WATCHDOG US: post-close EOD sync FAILED: %s", exc)
 
@@ -415,7 +449,7 @@ async def live_market_watchdog_job() -> None:
             # session.  Guard: only run if the snapshot file exists (i.e. real data).
             sector_tab_warm = bool((getattr(us_service, "_sector_tab_cache", {}) or {}).get(("1D", "desc")))
             scan_warm = getattr(us_service, "_scan_catalog_cache", None) is not None
-            if us_prov.snapshot_cache_path.exists() and (not sector_tab_warm or not scan_warm):
+            if (not IS_HF_SPACE) and us_prov.snapshot_cache_path.exists() and (not sector_tab_warm or not scan_warm):
                 try:
                     await us_service.prewarm_watchdog_sections()
                     logger.info("WATCHDOG US: closed-hours cache prewarm complete")
@@ -509,62 +543,67 @@ async def lifespan(app: FastAPI):
         id="live_market_watchdog",
         replace_existing=True,
     )
-    scheduler.add_job(
-        daily_listed_universe_refresh_job,
-        CronTrigger(hour=16, minute=0, timezone=IST),
-        args=["india", service, settings, IST],
-        id="india_daily_listed_universe_refresh",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        weekly_money_flow_job,
-        CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=IST),
-        args=["india", service],
-        id="india_weekly_money_flow",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        weekly_bulk_fundamentals_job,
-        CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=IST),
-        args=["india", service],
-        id="india_weekly_bulk_fundamentals",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        daily_money_flow_stock_job,
-        CronTrigger(day_of_week="mon-fri", hour=18, minute=0, timezone=IST),
-        args=["india", service, IST],
-        id="india_daily_money_flow_stocks",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        daily_listed_universe_refresh_job,
-        CronTrigger(day_of_week="mon-fri", hour=16, minute=15, timezone=ET),
-        args=["us", us_service, us_settings, ET],
-        id="us_daily_listed_universe_refresh",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        weekly_money_flow_job,
-        CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=ET),
-        args=["us", us_service],
-        id="us_weekly_money_flow",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        weekly_bulk_fundamentals_job,
-        CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=ET),
-        args=["us", us_service],
-        id="us_weekly_bulk_fundamentals",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        daily_money_flow_stock_job,
-        CronTrigger(day_of_week="mon-fri", hour=16, minute=30, timezone=ET),
-        args=["us", us_service, ET],
-        id="us_daily_money_flow_stocks",
-        replace_existing=True,
-    )
+    if IS_HF_SPACE:
+        # Hugging Face free tier is resource constrained; the heavy scheduled
+        # maintenance jobs can OOM-kill the container and take the space down.
+        logger.info("HF Space detected: skipping heavy scheduled maintenance jobs")
+    else:
+        scheduler.add_job(
+            daily_listed_universe_refresh_job,
+            CronTrigger(hour=16, minute=0, timezone=IST),
+            args=["india", service, settings, IST],
+            id="india_daily_listed_universe_refresh",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            weekly_money_flow_job,
+            CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=IST),
+            args=["india", service],
+            id="india_weekly_money_flow",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            weekly_bulk_fundamentals_job,
+            CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=IST),
+            args=["india", service],
+            id="india_weekly_bulk_fundamentals",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            daily_money_flow_stock_job,
+            CronTrigger(day_of_week="mon-fri", hour=18, minute=0, timezone=IST),
+            args=["india", service, IST],
+            id="india_daily_money_flow_stocks",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            daily_listed_universe_refresh_job,
+            CronTrigger(day_of_week="mon-fri", hour=16, minute=15, timezone=ET),
+            args=["us", us_service, us_settings, ET],
+            id="us_daily_listed_universe_refresh",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            weekly_money_flow_job,
+            CronTrigger(day_of_week="sat", hour=9, minute=0, timezone=ET),
+            args=["us", us_service],
+            id="us_weekly_money_flow",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            weekly_bulk_fundamentals_job,
+            CronTrigger(day_of_week="sun", hour=1, minute=0, timezone=ET),
+            args=["us", us_service],
+            id="us_weekly_bulk_fundamentals",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            daily_money_flow_stock_job,
+            CronTrigger(day_of_week="mon-fri", hour=16, minute=30, timezone=ET),
+            args=["us", us_service, ET],
+            id="us_daily_money_flow_stocks",
+            replace_existing=True,
+        )
     scheduler.start()
     logger.info(
         "Scheduler started — Watchdog: every %ss (adaptive autonomous cycle); "
@@ -572,18 +611,17 @@ async def lifespan(app: FastAPI):
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
         watchdog_agent.tick_seconds,
     )
-    # Fire-and-forget startup warm — runs in background so uvicorn starts
-    # accepting requests immediately.  On HF free tier the blocking warm was
-    # taking 15-60 s, during which /api/health timed out and the frontend
-    # showed an infinite spinner.
-    asyncio.ensure_future(warm_startup_cache("india", service))
-    asyncio.ensure_future(warm_startup_cache("us", us_service))
-    # Apply NSE Bhavcopy EOD prices on top of Yahoo data — fire-and-forget,
-    # runs in the background so it doesn't block the server from accepting requests.
-    asyncio.ensure_future(apply_startup_bhavcopy("india", service))
+    async def _startup_sequence() -> None:
+        # Keep startup conservative to avoid memory spikes on HF.
+        await warm_startup_cache("india", service)
+        await apply_startup_bhavcopy("india", service)
+        if not IS_HF_SPACE:
+            await warm_startup_cache("us", us_service)
+
+    asyncio.create_task(_startup_sequence())
     # Keep-alive self-ping — prevents HF Spaces free tier from sleeping
     # the container after ~15 min of inactivity.
-    asyncio.ensure_future(_keep_alive_self_ping())
+    asyncio.create_task(_keep_alive_self_ping())
     yield
     scheduler.shutdown()
 

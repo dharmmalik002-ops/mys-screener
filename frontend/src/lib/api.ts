@@ -1043,14 +1043,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
                 try {
                   await Promise.race([
                     _warmupPromise,
-                    new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+                    // HF Spaces can take 30-90s to wake; wait longer before failing.
+                    new Promise<void>((resolve) => setTimeout(resolve, 60_000)),
                   ]);
                 } catch {
                   // Ignore warm-up probe failures here; the normal retry path below handles them.
                 }
               }
             }
-            lastError = new Error(`Request failed: ${response.status}`);
+            lastError = new Error(
+              response.status === 503
+                ? "Backend temporarily unavailable (503). If this is a cold start, wait 30-90 seconds and retry."
+                : `Request failed: ${response.status}`,
+            );
             // Retry the same base for server errors if attempts remain
             if (SERVER_ERROR_CODES.has(response.status) && attempt < maxAttempts - 1) continue;
             break; // fall through to next base

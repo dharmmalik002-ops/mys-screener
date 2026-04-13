@@ -7443,7 +7443,7 @@ class FreeMarketDataProvider:
         self, bhavcopy: dict[str, dict[str, float]], trade_date: date
     ) -> int:
         """Patch the last daily chart-cache bar for every symbol in the Bhavcopy
-        with the official NSE EOD values.  Returns the number of symbols updated.
+        with the official exchange EOD values (BSE/NSE). Returns the number of symbols updated.
 
         A Bhavcopy bar is written at UTC midnight of the IST trade date (same
         convention as the rest of the chart cache) so the downstream code that
@@ -7483,7 +7483,8 @@ class FreeMarketDataProvider:
         return updated
 
     def apply_bhavcopy_eod(self) -> dict[str, object]:
-        """Fetch the most-recent NSE Bhavcopy and apply it to all chart caches.
+        """Fetch the most-recent Bhavcopy (BSE first, then NSE) and apply it to
+        chart caches and snapshot data.
 
         This is the authoritative fix for the "yesterday's date / today's price"
         problem caused by Yahoo Finance's delayed and timezone-ambiguous EOD data.
@@ -7537,7 +7538,7 @@ class FreeMarketDataProvider:
             return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
 
         chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, candidate_date)
-        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, candidate_date)
+        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, candidate_date, source=source)
         # Invalidate in-memory snapshot cache so next request rebuilds from patched disk file
         if snap_updated:
             self._snapshots_memory_cache.clear()
@@ -7558,9 +7559,13 @@ class FreeMarketDataProvider:
         }
 
     def _apply_bhavcopy_to_snapshot_file(
-        self, bhavcopy: dict[str, dict[str, float]], trade_date: date
+        self,
+        bhavcopy: dict[str, dict[str, float]],
+        trade_date: date,
+        *,
+        source: str,
     ) -> int:
-        """Patch the on-disk free_snapshots.json with official NSE EOD prices.
+        """Patch the on-disk free_snapshots.json with official EOD prices (BSE/NSE).
         Returns the number of rows updated.  Uses seed files as source when the
         primary snapshot file does not yet exist (fresh HF restart with seed chunks).
         """
@@ -7568,6 +7573,15 @@ class FreeMarketDataProvider:
         rows = self._load_json_rows(self.snapshot_cache_path)
         if not rows or not isinstance(rows, list):
             return 0
+        source_key = str(source or "").strip().lower()
+        official_source = (
+            "bse-bhavcopy"
+            if source_key.startswith("bse")
+            else "nse-bhavcopy"
+            if source_key.startswith("nse")
+            else source_key
+            or "bhavcopy"
+        )
         trade_date_str = trade_date.isoformat()
         updated = 0
         for row in rows:
@@ -7652,7 +7666,7 @@ class FreeMarketDataProvider:
             row["history_as_of_date"] = trade_date_str
             row["history_session_date"] = trade_date_str
             row["official_close_date"] = trade_date_str
-            row["official_close_source"] = "nse-bhavcopy"
+            row["official_close_source"] = official_source
             updated += 1
         try:
             self.snapshot_cache_path.write_text(
@@ -7711,7 +7725,7 @@ class FreeMarketDataProvider:
             for row in rows[:10]:
                 source = str(row.get("official_close_source") or "").strip().lower()
                 candidate = str(row.get("official_close_date") or "").strip()
-                if source != "nse-bhavcopy" or not candidate:
+                if source not in {"nse-bhavcopy", "bse-bhavcopy", "committed-patch", "bhavcopy"} or not candidate:
                     continue
                 try:
                     return date.fromisoformat(candidate)
@@ -7771,7 +7785,7 @@ class FreeMarketDataProvider:
         except ValueError:
             return {"status": "error", "reason": "invalid_date_in_patch"}
 
-        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, trade_date_obj)
+        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, trade_date_obj, source="committed-patch")
         chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, trade_date_obj)
         if snap_updated:
             self._snapshots_memory_cache.clear()
