@@ -221,6 +221,9 @@ class FreeMarketDataProvider:
         self.bhavcopy_status_path = self.backend_root / "data" / "bhavcopy_status.json"
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
+        # Cache bhavcopy payloads in-memory (per date, per exchange) so we don't
+        # re-download and parse the full CSV on every chart request.
+        self._bhavcopy_memory_cache: dict[tuple[str, str], tuple[float, dict[str, dict[str, float]]]] = {}
         self._invalidate_stale_caches()
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
         self._snapshot_request_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
@@ -400,6 +403,12 @@ class FreeMarketDataProvider:
         # latest cached rows immediately. This keeps API latency low on hosted
         # environments where a full historical rebuild can take minutes.
         if self.snapshot_cache_path.exists() and not self._is_market_open_ist() and self._market_close_refresh_due():
+            if self._strict_closed_session_refresh_due():
+                return await self._get_or_create_snapshot_request_task(
+                    cache_key,
+                    market_cap_min_crore,
+                    force_refresh=True,
+                )
             cache_signature = self._snapshot_memory_signature()
             cached = self._snapshots_memory_cache.get(cache_key)
             if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
@@ -750,6 +759,14 @@ class FreeMarketDataProvider:
         if self._chart_bars_have_price_gap(bars):
             return False
 
+        snapshot_session_date = self._snapshot_session_date(symbol)
+        latest_trade_date = self._chart_bar_trade_date(bars[-1])
+        if snapshot_session_date is not None and latest_trade_date < snapshot_session_date:
+            # Allow slightly stale daily caches to load so we can cheaply patch the
+            # current session bar from snapshot/Bhavcopy data instead of timing out on
+            # a full network history download.
+            return True
+
         scale = self._chart_symbol_scale_lookup().get(str(symbol or "").strip().upper()) or {}
         references = [
             self._to_float(scale.get("last_price")),
@@ -1094,10 +1111,12 @@ class FreeMarketDataProvider:
             cached_bars = [ChartBar.model_validate(item) for item in bar_payload]
         except Exception:
             return []
-        if str(timeframe or "").strip().upper() == "1D" and cached_bars and not self._is_trading_day_ist(
-            self._chart_bar_trade_date(cached_bars[-1])
-        ):
-            return []
+        if str(timeframe or "").strip().upper() == "1D" and cached_bars:
+            last_trade_date = self._chart_bar_trade_date(cached_bars[-1])
+            if not self._is_trading_day_ist(last_trade_date):
+                snapshot_session_date = self._snapshot_session_date(symbol)
+                if snapshot_session_date is None or last_trade_date >= snapshot_session_date:
+                    return []
         if not self._chart_bars_match_symbol_scale(symbol, cached_bars):
             return []
         return cached_bars[-bars:]
@@ -1963,9 +1982,9 @@ class FreeMarketDataProvider:
         return weekly_bars[-bars:]
 
     def _refresh_daily_chart_from_bhavcopy(self, symbol: str, bars: int) -> list[ChartBar]:
-        """Try to patch today's (or yesterday's) EOD bar from the NSE Bhavcopy
-        and return refreshed bars.  Returns [] if bhavcopy is unavailable or not
-        applicable (e.g. non-NSE provider, market currently open with no prior bhavcopy).
+        """Try to patch the most recent EOD bar from official Bhavcopy (BSE first, then NSE).
+
+        Returns refreshed bars, or [] if bhavcopy is unavailable / symbol not found.
         """
         if self._default_exchange() != "NSE":
             return []
@@ -1976,32 +1995,37 @@ class FreeMarketDataProvider:
             days_back = candidate.weekday() - 4
             candidate = candidate - timedelta(days=days_back)
 
-        # Check if we already have a bar for this date in cache (avoid re-download)
+        # Load existing cache as the base for the patch.
         cached = self._read_chart_cache(symbol, "1D", max(bars, 520))
-        if cached:
-            last_bar_date = self._chart_bar_trade_date(cached[-1])
-            if last_bar_date == candidate:
-                return cached[-bars:]
+        if not cached:
+            return []
 
-        bhavcopy = self._fetch_nse_bhavcopy(candidate)
+        # Prefer BSE (globally accessible) then NSE (may be geo-blocked).
+        bhavcopy = self._get_bhavcopy_cached("bse", candidate)
+        source = "bse"
+        if not bhavcopy:
+            bhavcopy = self._get_bhavcopy_cached("nse", candidate)
+            source = "nse"
+
         if not bhavcopy:
             # Try previous day (holiday / first publish delay)
             prev = candidate - timedelta(days=1)
-            if prev.weekday() < 5:
-                bhavcopy = self._fetch_nse_bhavcopy(prev)
-                if bhavcopy:
-                    candidate = prev
+            while prev.weekday() >= 5:
+                prev -= timedelta(days=1)
+            bhavcopy = self._get_bhavcopy_cached("bse", prev)
+            source = "bse-prev"
+            if not bhavcopy:
+                bhavcopy = self._get_bhavcopy_cached("nse", prev)
+                source = "nse-prev"
+            if bhavcopy:
+                candidate = prev
+
         if not bhavcopy:
             return []
 
         sym_upper = symbol.strip().upper()
         ohlcv = bhavcopy.get(sym_upper)
         if not ohlcv or not ohlcv.get("close"):
-            return []
-
-        # If cache is empty (e.g. first request after server restart), we cannot
-        # patch a non-existent bar — return [] so get_chart() falls back to Yahoo.
-        if not cached:
             return []
 
         ts = int(datetime(candidate.year, candidate.month, candidate.day, tzinfo=timezone.utc).timestamp())
@@ -4116,10 +4140,11 @@ class FreeMarketDataProvider:
         current_session = self._current_or_previous_trading_day_ist()
         stale_days = max((current_session - session_date).days, 0)
         if force_refresh:
-            # Always rebuild when explicitly requested so the button picks up
-            # a fresh confirmed close even if the snapshot was already written
-            # earlier today with intraday / pre-close data.
-            return True
+            # Force-refresh should prefer cheap live-quote refresh, not always force a
+            # full historical rebuild (which is slow and can fail on thin symbols).
+            # Rebuild only when the cached session is not the current session or
+            # the stored history source is known to be unreliable.
+            return stale_days > 0 or not self._history_source_is_reliable(rows[0].get("history_source"))
         if not self._is_trading_day_ist():
             return False
         return stale_days >= 3
@@ -4956,10 +4981,25 @@ class FreeMarketDataProvider:
 
     def _fetch_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
         items_by_symbol: dict[str, IndexQuoteItem] = {}
+        missing: list[str] = []
 
-        # Prefer NSE official index feed for mapped India indices.
-        # This avoids Yahoo symbol inconsistencies (for example ^CNX500).
-        nse_symbols = [symbol for symbol in symbols if symbol.upper() in INDEX_SYMBOL_TO_NSE_NAME]
+        # Prefer recent chart-cache bars first. They are fast, survive transient
+        # upstream outages, and avoid unnecessary network fetches for index cards.
+        for symbol in symbols:
+            try:
+                chart_item = self._index_quote_from_cached_bars(symbol)
+            except Exception:
+                chart_item = None
+
+            if chart_item is not None and (
+                self._is_chart_cache_fresh(symbol, "1D") or self._is_chart_cache_fresh(symbol, "15m")
+            ):
+                items_by_symbol[symbol.upper()] = chart_item
+                continue
+            missing.append(symbol)
+
+        # Fill remaining mapped India indices from NSE's official feed.
+        nse_symbols = [symbol for symbol in missing if symbol.upper() in INDEX_SYMBOL_TO_NSE_NAME]
         if nse_symbols:
             try:
                 for item in self._fetch_nse_index_quotes(nse_symbols):
@@ -4967,25 +5007,7 @@ class FreeMarketDataProvider:
             except Exception:
                 pass
 
-        missing: list[str] = []
-
-        for symbol in symbols:
-            if symbol.upper() in items_by_symbol:
-                continue
-            try:
-                chart_item = self._index_quote_from_cached_bars(symbol)
-            except Exception:
-                chart_item = None
-
-            # Accept cached value only when it has a recent timestamp (< 4 hours).
-            # On a fresh HF restart the chart cache is empty, so chart_item is None
-            # and we fall through to the live Yahoo fetch below.
-            if chart_item is not None:
-                age_hours = (datetime.now(timezone.utc) - chart_item.updated_at).total_seconds() / 3600
-                if age_hours < 4:
-                    items_by_symbol[symbol.upper()] = chart_item
-                    continue
-            missing.append(symbol)
+        missing = [symbol for symbol in missing if symbol.upper() not in items_by_symbol]
 
         if missing:
             # Attempt 1: Yahoo v7 quote API (batch, low latency, but requires crumb).
@@ -5046,6 +5068,17 @@ class FreeMarketDataProvider:
                     )
                 except Exception:
                     pass
+
+            # Final fallback: if network fetches failed but an older chart cache exists,
+            # return it rather than dropping the index card entirely.
+            unresolved = [s for s in still_missing if s.upper() not in items_by_symbol]
+            for symbol in unresolved:
+                try:
+                    chart_item = self._index_quote_from_cached_bars(symbol)
+                except Exception:
+                    chart_item = None
+                if chart_item is not None:
+                    items_by_symbol[symbol.upper()] = chart_item
 
         return [items_by_symbol[symbol.upper()] for symbol in symbols if symbol.upper() in items_by_symbol]
 
@@ -6488,7 +6521,13 @@ class FreeMarketDataProvider:
             return history
 
         adjusted = history.copy()
-        factors = self._price_adjustment_factors(adjusted)
+        factors = self._price_adjustment_factors(adjusted).fillna(1.0)
+        legacy_factors = self._legacy_adj_close_adjustment_factors(adjusted)
+        used_legacy_adjustment = not legacy_factors.empty and any(
+            abs(float(value) - 1.0) > 1e-6 for value in legacy_factors.tolist()
+        )
+        if not legacy_factors.empty:
+            factors = factors * legacy_factors
         adjusted["Adjustment Factor"] = factors
 
         for column in ("Open", "High", "Low", "Close"):
@@ -6500,9 +6539,43 @@ class FreeMarketDataProvider:
 
         # Second pass: normalize any large single-day gaps that yfinance's Stock Splits
         # column failed to capture (common for Indian bonus issues and consolidations).
-        adjusted = self._normalize_chart_price_gaps(adjusted)
+        if not used_legacy_adjustment:
+            adjusted = self._normalize_chart_price_gaps(adjusted)
 
         return adjusted
+
+    def _legacy_adj_close_adjustment_factors(self, history: pd.DataFrame) -> pd.Series:
+        if history.empty or "Adj Close" not in history.columns or "Close" not in history.columns:
+            return pd.Series(dtype=float)
+
+        split_series = history.get("Stock Splits")
+        if split_series is not None:
+            normalized_splits = pd.to_numeric(split_series, errors="coerce").fillna(0.0)
+            if any(value not in (0.0, 1.0) for value in normalized_splits.tolist()):
+                return pd.Series(1.0, index=history.index, dtype=float)
+
+        close = pd.to_numeric(history.get("Close"), errors="coerce")
+        adj_close = pd.to_numeric(history.get("Adj Close"), errors="coerce")
+        ratio = (adj_close / close.where(close > 0)).replace([float("inf"), float("-inf")], pd.NA)
+        valid_ratio = pd.to_numeric(ratio, errors="coerce").dropna()
+        valid_ratio = valid_ratio[valid_ratio > 0]
+        if valid_ratio.empty:
+            return pd.Series(1.0, index=history.index, dtype=float)
+
+        latest_ratio = float(valid_ratio.iloc[-1] or 0.0)
+        if latest_ratio <= 0:
+            return pd.Series(1.0, index=history.index, dtype=float)
+
+        normalized_ratio = (ratio / latest_ratio).replace([float("inf"), float("-inf")], pd.NA)
+        valid_normalized_ratio = pd.to_numeric(normalized_ratio, errors="coerce").dropna()
+        valid_normalized_ratio = valid_normalized_ratio[valid_normalized_ratio > 0]
+        if valid_normalized_ratio.empty:
+            return pd.Series(1.0, index=history.index, dtype=float)
+
+        if float(valid_normalized_ratio.min()) > 0.55 and float(valid_normalized_ratio.max()) < 1.8:
+            return pd.Series(1.0, index=history.index, dtype=float)
+
+        return pd.to_numeric(normalized_ratio, errors="coerce").fillna(1.0).astype(float)
 
     def _normalize_chart_price_gaps(self, history: pd.DataFrame) -> pd.DataFrame:
         """Normalize large single-day price gaps caused by corporate actions (bonus issues,
@@ -7439,6 +7512,22 @@ class FreeMarketDataProvider:
         except Exception:
             return {}
 
+    def _get_bhavcopy_cached(self, exchange: str, trade_date: date) -> dict[str, dict[str, float]]:
+        key = (str(exchange or "").strip().lower(), trade_date.isoformat())
+        cached = self._bhavcopy_memory_cache.get(key)
+        now = time.time()
+        if cached and (now - cached[0]) < (30 * 60):
+            return cached[1]
+
+        if key[0] == "bse":
+            payload = self._fetch_bse_bhavcopy(trade_date)
+        else:
+            payload = self._fetch_nse_bhavcopy(trade_date)
+
+        if payload:
+            self._bhavcopy_memory_cache[key] = (now, payload)
+        return payload
+
     def _apply_bhavcopy_to_chart_caches(
         self, bhavcopy: dict[str, dict[str, float]], trade_date: date
     ) -> int:
@@ -7563,7 +7652,7 @@ class FreeMarketDataProvider:
         bhavcopy: dict[str, dict[str, float]],
         trade_date: date,
         *,
-        source: str,
+        source: str = "nse",
     ) -> int:
         """Patch the on-disk free_snapshots.json with official EOD prices (BSE/NSE).
         Returns the number of rows updated.  Uses seed files as source when the

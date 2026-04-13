@@ -3282,11 +3282,21 @@ class DashboardService:
         if not sparkline:
             async with semaphore:
                 try:
-                    bars = await self.provider.get_chart(
-                        snapshot.symbol,
-                        "1D",
-                        bars=self._chart_grid_bar_limit(timeframe),
-                    )
+                    read_cache = getattr(self.provider, "_read_chart_cache", None)
+                    if callable(read_cache):
+                        bars = await asyncio.to_thread(
+                            read_cache,
+                            snapshot.symbol,
+                            "1D",
+                            self._chart_grid_bar_limit(timeframe),
+                            allow_legacy=True,
+                        )
+                    else:
+                        bars = await self.provider.get_chart(
+                            snapshot.symbol,
+                            "1D",
+                            bars=self._chart_grid_bar_limit(timeframe),
+                        )
                 except Exception:
                     bars = []
 
@@ -3417,11 +3427,21 @@ class DashboardService:
         async def load_symbol(symbol: str) -> ChartGridSeriesItem | None:
             async with semaphore:
                 try:
-                    bars = await self.provider.get_chart(
-                        symbol,
-                        "1D",
-                        bars=self._chart_grid_series_bar_limit(),
-                    )
+                    read_cache = getattr(self.provider, "_read_chart_cache", None)
+                    if callable(read_cache):
+                        bars = await asyncio.to_thread(
+                            read_cache,
+                            symbol,
+                            "1D",
+                            self._chart_grid_series_bar_limit(),
+                            allow_legacy=True,
+                        )
+                    else:
+                        bars = await self.provider.get_chart(
+                            symbol,
+                            "1D",
+                            bars=self._chart_grid_series_bar_limit(),
+                        )
                 except Exception:
                     return None
             return ChartGridSeriesItem(symbol=symbol, bars=bars)
