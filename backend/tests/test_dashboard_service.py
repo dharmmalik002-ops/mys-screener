@@ -44,6 +44,8 @@ from app.models.market import (
     SectorCard,
     StockSnapshot,
     UniverseBreadth,
+    WatchlistItem,
+    WatchlistsStateResponse,
 )
 from app.providers.free import FreeMarketDataProvider
 from app.scanners.definitions import SCAN_BY_ID, run_consolidating_scan, run_custom_scan, run_e_and_c_scan, run_returns_scan, run_scan
@@ -2858,6 +2860,108 @@ class DashboardServiceVolumeLeaderTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("HIST", [item.symbol for item in response.top_volume_spikes])
         self.assertNotIn("NOHIST", [item.symbol for item in response.top_volume_spikes])
+
+
+class DashboardServiceWatchlistsPersistenceTests(unittest.TestCase):
+    class StubProvider:
+        def __init__(self, backend_root: Path) -> None:
+            self.backend_root = backend_root
+
+        def _default_exchange(self) -> str:
+            return "NSE"
+
+    def setUp(self) -> None:
+        self.temp_dir = tempfile.TemporaryDirectory()
+        self.backend_root = Path(self.temp_dir.name)
+        self.service = DashboardService(provider=self.StubProvider(self.backend_root), settings=Settings())
+
+    def tearDown(self) -> None:
+        self.temp_dir.cleanup()
+
+    def test_get_watchlists_state_preserves_saved_updated_at(self) -> None:
+        payload = {
+            "market": "india",
+            "updated_at": 1_712_310_000_000,
+            "active_watchlist_id": "wl-1",
+            "watchlists": [
+                {
+                    "id": "wl-1",
+                    "name": "Core",
+                    "color": "#4f8cff",
+                    "symbols": ["INFY", "TCS"],
+                }
+            ],
+        }
+        path = self.service._watchlists_state_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+        state = self.service.get_watchlists_state()
+
+        self.assertEqual(state.updated_at, payload["updated_at"])
+        self.assertEqual(state.watchlists[0].symbols, ["INFY", "TCS"])
+
+    def test_get_watchlists_state_restores_from_backup_when_primary_is_missing(self) -> None:
+        saved = self.service.save_watchlists_state(
+            WatchlistsStateResponse(
+                market="india",
+                active_watchlist_id="wl-1",
+                watchlists=[
+                    WatchlistItem(
+                        id="wl-1",
+                        name="Core",
+                        color="#4f8cff",
+                        symbols=["INFY", "TCS"],
+                    )
+                ],
+            )
+        )
+        primary_path = self.service._watchlists_state_path()
+        backup_path = self.service._watchlists_backup_path()
+        self.assertTrue(primary_path.exists())
+        self.assertTrue(backup_path.exists())
+
+        primary_path.unlink()
+
+        restored = self.service.get_watchlists_state()
+
+        self.assertEqual(restored.active_watchlist_id, "wl-1")
+        self.assertEqual(restored.watchlists[0].symbols, ["INFY", "TCS"])
+        self.assertEqual(restored.updated_at, saved.updated_at)
+        self.assertTrue(primary_path.exists())
+
+    def test_get_watchlists_state_keeps_manual_delete_when_restoring_from_recovery(self) -> None:
+        self.service.save_watchlists_state(
+            WatchlistsStateResponse(
+                market="india",
+                active_watchlist_id="wl-1",
+                watchlists=[
+                    WatchlistItem(
+                        id="wl-1",
+                        name="Core",
+                        color="#4f8cff",
+                        symbols=["INFY", "TCS"],
+                    )
+                ],
+            )
+        )
+        deleted = self.service.save_watchlists_state(
+            WatchlistsStateResponse(
+                market="india",
+                active_watchlist_id=None,
+                watchlists=[],
+            )
+        )
+        primary_path = self.service._watchlists_state_path()
+        backup_path = self.service._watchlists_backup_path()
+        primary_path.unlink()
+        backup_path.unlink()
+
+        restored = self.service.get_watchlists_state()
+
+        self.assertEqual(restored.watchlists, [])
+        self.assertIsNone(restored.active_watchlist_id)
+        self.assertEqual(restored.updated_at, deleted.updated_at)
 
 
 if __name__ == "__main__":

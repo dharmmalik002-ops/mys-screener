@@ -106,6 +106,9 @@ const THEME_KEY = "mr-malik-theme:v1";
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
 const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
+const WATCHLISTS_BROWSER_BACKUP_KEY = "mr-malik-watchlists:state:v1";
+const WATCHLISTS_BROWSER_BACKUP_DB = "mr-malik-watchlists-db:v1";
+const WATCHLISTS_BROWSER_BACKUP_STORE = "watchlists-state";
 const LEGACY_WATCHLISTS_KEYS = ["mr-malik-watchlists", "stock-scanner-watchlists:v1", "stock-scanner-watchlists"];
 const ACTIVE_WATCHLIST_KEY = "mr-malik-active-watchlist:v1";
 const SCANNER_SETTINGS_KEY = "mr-malik-scanner-settings:v1";
@@ -190,6 +193,8 @@ type PersistedChartCacheEntry = {
   saved_at: string;
   payload: ChartResponse;
 };
+
+type PersistedWatchlistsState = Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id" | "updated_at">;
 
 type SavedScannerPreset = {
   id: string;
@@ -341,6 +346,86 @@ function readMarketScopedValue(baseKey: string, market: MarketKey, legacyKeys: s
   }
 
   return null;
+}
+
+function latestWatchlistsUpdatedAt(watchlists: LocalWatchlist[]): number {
+  return Math.max(0, ...watchlists.map((watchlist) => watchlist.updated_at ?? 0));
+}
+
+async function requestPersistentBrowserStorage(): Promise<void> {
+  if (typeof navigator === "undefined" || !("storage" in navigator) || typeof navigator.storage.persist !== "function") {
+    return;
+  }
+  try {
+    await navigator.storage.persist();
+  } catch {
+    // Ignore browser-denied persistence requests.
+  }
+}
+
+function openWatchlistsBackupDatabase(): Promise<IDBDatabase | null> {
+  if (typeof indexedDB === "undefined") {
+    return Promise.resolve(null);
+  }
+
+  return new Promise((resolve) => {
+    try {
+      const request = indexedDB.open(WATCHLISTS_BROWSER_BACKUP_DB, 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains(WATCHLISTS_BROWSER_BACKUP_STORE)) {
+          database.createObjectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => resolve(null);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
+async function readBrowserWatchlistsBackup(market: MarketKey): Promise<PersistedWatchlistsState | null> {
+  const database = await openWatchlistsBackupDatabase();
+  if (!database) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
+    const transaction = database.transaction(WATCHLISTS_BROWSER_BACKUP_STORE, "readonly");
+    const store = transaction.objectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
+    const request = store.get(marketScopedKey(WATCHLISTS_BROWSER_BACKUP_KEY, market));
+    request.onsuccess = () => {
+      const payload = request.result;
+      database.close();
+      resolve(payload && typeof payload === "object" ? payload as PersistedWatchlistsState : null);
+    };
+    request.onerror = () => {
+      database.close();
+      resolve(null);
+    };
+  });
+}
+
+async function writeBrowserWatchlistsBackup(market: MarketKey, payload: PersistedWatchlistsState): Promise<void> {
+  const database = await openWatchlistsBackupDatabase();
+  if (!database) {
+    return;
+  }
+
+  await new Promise<void>((resolve) => {
+    const transaction = database.transaction(WATCHLISTS_BROWSER_BACKUP_STORE, "readwrite");
+    const store = transaction.objectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
+    store.put(payload, marketScopedKey(WATCHLISTS_BROWSER_BACKUP_KEY, market));
+    transaction.oncomplete = () => {
+      database.close();
+      resolve();
+    };
+    transaction.onerror = () => {
+      database.close();
+      resolve();
+    };
+  });
 }
 
 function emptyMarketViewCacheEntry(): MarketViewCacheEntry {
@@ -1649,6 +1734,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     india: readPersistedMarketViewCache("india"),
     us: readPersistedMarketViewCache("us"),
   });
+
+  useEffect(() => {
+    void requestPersistentBrowserStorage();
+  }, []);
+
   const updateMarketViewCache = (
     market: MarketKey,
     updates: Partial<MarketViewCacheEntry>,
@@ -1972,8 +2062,31 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     watchlistsSyncReadyRef.current[activeMarket] = false;
 
     async function hydrateWatchlists() {
-      const localWatchlists = readWatchlists(activeMarket);
-      const localActiveWatchlistId = readActiveWatchlistId(localWatchlists, activeMarket);
+      let localWatchlists = readWatchlists(activeMarket);
+      let localActiveWatchlistId = readActiveWatchlistId(localWatchlists, activeMarket);
+      let localTimestamp = latestWatchlistsUpdatedAt(localWatchlists);
+
+      const browserBackupState = await readBrowserWatchlistsBackup(activeMarket);
+      if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      if (browserBackupState) {
+        const normalizedBrowserBackup = normalizeWatchlistsStatePayload({
+          watchlists: browserBackupState.watchlists,
+          active_watchlist_id: browserBackupState.active_watchlist_id,
+          updated_at: browserBackupState.updated_at,
+        });
+        const browserBackupTimestamp = Math.max(
+          normalizedBrowserBackup.updatedAt ?? 0,
+          latestWatchlistsUpdatedAt(normalizedBrowserBackup.watchlists),
+        );
+        if (browserBackupTimestamp > localTimestamp) {
+          localWatchlists = normalizedBrowserBackup.watchlists;
+          localActiveWatchlistId = normalizedBrowserBackup.activeWatchlistId;
+          localTimestamp = browserBackupTimestamp;
+        }
+      }
 
       try {
         const remoteState = await getWatchlistsState(activeMarket);
@@ -1984,9 +2097,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         const normalizedRemote = normalizeWatchlistsStatePayload(remoteState);
         const hasRemoteData = normalizedRemote.watchlists.length > 0;
         const remoteTimestamp = normalizedRemote.updatedAt ?? 0;
-        
-        // Find newest local timestamp across all watchlists as a proxy for most recent local edit.
-        const localTimestamp = Math.max(0, ...localWatchlists.map(w => w.updated_at ?? 0));
 
         let nextWatchlists = localWatchlists;
         let nextActiveWatchlistId = localActiveWatchlistId;
@@ -2884,7 +2994,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const serialized = JSON.stringify(watchlists);
     window.localStorage.setItem(marketScopedKey(WATCHLISTS_KEY, activeMarket), serialized);
     window.localStorage.setItem(marketScopedKey(WATCHLISTS_BACKUP_KEY, activeMarket), serialized);
-  }, [activeMarket, watchlists]);
+    const normalizedActiveWatchlistId =
+      activeWatchlistId && watchlists.some((watchlist) => watchlist.id === activeWatchlistId)
+        ? activeWatchlistId
+        : watchlists[0]?.id ?? null;
+    void writeBrowserWatchlistsBackup(activeMarket, {
+      watchlists,
+      active_watchlist_id: normalizedActiveWatchlistId,
+      updated_at: latestWatchlistsUpdatedAt(watchlists) || Date.now(),
+    });
+  }, [activeMarket, activeWatchlistId, isWatchlistsHydrated, watchlists]);
 
   useEffect(() => {
     if (!watchlistsSyncReadyRef.current[activeMarket]) {

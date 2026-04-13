@@ -3728,6 +3728,44 @@ class DashboardService:
         filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
         return data_dir / filename
 
+    def _watchlists_backup_path(self) -> Path:
+        path = self._watchlists_state_path()
+        return path.with_name(f"{path.stem}.backup{path.suffix}")
+
+    def _watchlists_recovery_path(self) -> Path:
+        path = self._watchlists_state_path()
+        return path.with_name(f"{path.stem}.recovery{path.suffix}")
+
+    @staticmethod
+    def _watchlists_state_updated_at(state: WatchlistsStateResponse | None) -> int:
+        if state is None or state.updated_at is None:
+            return 0
+        return int(state.updated_at or 0)
+
+    @staticmethod
+    def _write_json_state(path: Path, payload: dict[str, object]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = path.with_suffix(f"{path.suffix}.tmp")
+        temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        temp_path.replace(path)
+
+    def _load_watchlists_state_file(self, path: Path) -> WatchlistsStateResponse | None:
+        if not path.exists():
+            return None
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            return WatchlistsStateResponse.model_validate(payload)
+        except Exception:
+            return None
+
+    def _persist_watchlists_state_files(self, state: WatchlistsStateResponse) -> None:
+        payload = state.model_dump(mode="json")
+        primary_path = self._watchlists_state_path()
+        backup_path = self._watchlists_backup_path()
+        self._write_json_state(primary_path, payload)
+        self._write_json_state(backup_path, payload)
+        self._write_json_state(self._watchlists_recovery_path(), payload)
+
     @staticmethod
     def _normalize_watchlist_bifurcation(item: WatchlistItem.Bifurcation) -> WatchlistItem.Bifurcation | None:
         bifurcation_id = str(item.id or "").strip()
@@ -3802,7 +3840,12 @@ class DashboardService:
             bifurcations=normalized_bifurcations,
         )
 
-    def _sanitize_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
+    def _sanitize_watchlists_state(
+        self,
+        payload: WatchlistsStateResponse,
+        *,
+        refresh_timestamp: bool,
+    ) -> WatchlistsStateResponse:
         normalized_watchlists: list[WatchlistItem] = []
         seen_ids: set[str] = set()
         for item in payload.watchlists:
@@ -3818,29 +3861,40 @@ class DashboardService:
 
         return WatchlistsStateResponse(
             market=self._market_key(),
-            updated_at=datetime.now(timezone.utc),
+            updated_at=int(datetime.now(timezone.utc).timestamp() * 1000) if refresh_timestamp else payload.updated_at,
             active_watchlist_id=active_watchlist_id or (normalized_watchlists[0].id if normalized_watchlists else None),
             watchlists=normalized_watchlists,
         )
 
     def get_watchlists_state(self) -> WatchlistsStateResponse:
-        path = self._watchlists_state_path()
-        if not path.exists():
+        candidate_states: list[tuple[int, WatchlistsStateResponse, Path]] = []
+        for path in (
+            self._watchlists_state_path(),
+            self._watchlists_backup_path(),
+            self._watchlists_recovery_path(),
+        ):
+            state = self._load_watchlists_state_file(path)
+            if state is None:
+                continue
+            sanitized = self._sanitize_watchlists_state(state, refresh_timestamp=False)
+            candidate_states.append((self._watchlists_state_updated_at(sanitized), sanitized, path))
+
+        if not candidate_states:
             return WatchlistsStateResponse(market=self._market_key())
 
-        try:
-            payload = json.loads(path.read_text(encoding="utf-8"))
-            state = WatchlistsStateResponse.model_validate(payload)
-        except Exception:
-            return WatchlistsStateResponse(market=self._market_key())
+        _, state, source_path = max(
+            candidate_states,
+            key=lambda item: (item[0], 1 if item[2] == self._watchlists_state_path() else 0),
+        )
 
-        return self._sanitize_watchlists_state(state)
+        if source_path != self._watchlists_state_path():
+            self._persist_watchlists_state_files(state)
+
+        return state
 
     def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
-        state = self._sanitize_watchlists_state(payload)
-        path = self._watchlists_state_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(state.model_dump(mode="json"), indent=2), encoding="utf-8")
+        state = self._sanitize_watchlists_state(payload, refresh_timestamp=True)
+        self._persist_watchlists_state_files(state)
         return state
 
     def _journal_data_path(self) -> Path:
