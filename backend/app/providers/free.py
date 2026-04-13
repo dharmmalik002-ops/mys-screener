@@ -4198,6 +4198,38 @@ class FreeMarketDataProvider:
                     normalized_row["rs_weighted_score"] = round(float(rs_weighted_score), 4)
                     changed = True
 
+            symbol = str(normalized_row.get("symbol") or "").strip().upper()
+            recent_closes = normalized_row.get("recent_closes")
+            needs_recent_closes = not isinstance(recent_closes, list) or len(recent_closes) < 4
+            needs_contraction_baselines = any(
+                normalized_row.get(field) in (None, "")
+                for field in ("baseline_close_10d", "baseline_close_30d", "baseline_close_90d")
+            )
+            if symbol and (needs_recent_closes or needs_contraction_baselines):
+                cached_history = self._history_frame_from_cached_bars(symbol)
+                if cached_history.empty:
+                    cached_history = self._history_frame_from_cached_bars(symbol, allow_legacy=True)
+                if not cached_history.empty:
+                    adjusted_close = pd.to_numeric(cached_history.get("Adj Close"), errors="coerce").dropna()
+                    if needs_recent_closes and not adjusted_close.empty:
+                        rebuilt_recent_closes = [round(float(value), 2) for value in adjusted_close.tail(20).tolist()]
+                        if rebuilt_recent_closes:
+                            normalized_row["recent_closes"] = rebuilt_recent_closes
+                            changed = True
+
+                    for field, lookback in (
+                        ("baseline_close_10d", 10),
+                        ("baseline_close_30d", 30),
+                        ("baseline_close_90d", 90),
+                    ):
+                        if normalized_row.get(field) not in (None, ""):
+                            continue
+                        baseline_close = self._baseline_at_lookback(adjusted_close, lookback)
+                        if baseline_close is None:
+                            continue
+                        normalized_row[field] = round(float(baseline_close), 4)
+                        changed = True
+
             normalized_rows.append(normalized_row)
         return normalized_rows, changed
 
@@ -6801,11 +6833,14 @@ class FreeMarketDataProvider:
             "stock_return_12m_1d_ago": 0.0,
             "stock_return_12m_1w_ago": 0.0,
             "stock_return_12m_1m_ago": 0.0,
+            "baseline_close_10d": round(current_price, 4),
             "baseline_close_5d": round(current_price, 4),
             "baseline_close_20d": round(current_price, 4),
+            "baseline_close_30d": round(current_price, 4),
             "baseline_close_40d": round(current_price, 4),
             "baseline_close_60d": round(current_price, 4),
             "baseline_close_63d": round(current_price, 4),
+            "baseline_close_90d": round(current_price, 4),
             "baseline_close_126d": round(current_price, 4),
             "baseline_close_189d": round(current_price, 4),
             "baseline_close_252d": round(current_price, 4),
@@ -6983,10 +7018,13 @@ class FreeMarketDataProvider:
         rs_eligible_1w_ago = bool(rs_lookbacks_1w_ago)
         rs_eligible_1m_ago = bool(rs_lookbacks_1m_ago)
         baseline_close_5d = self._baseline_at_lookback(adjusted_close, RETURN_1W_BARS)
+        baseline_close_10d = self._baseline_at_lookback(adjusted_close, 10)
         baseline_close_20d = self._baseline_at_lookback(adjusted_close, RETURN_1M_BARS)
+        baseline_close_30d = self._baseline_at_lookback(adjusted_close, 30)
         baseline_close_40d = self._baseline_at_lookback(adjusted_close, 40)
         baseline_close_60d = self._baseline_at_lookback(adjusted_close, RETURN_3M_BARS)
         baseline_close_63d = self._baseline_at_lookback(adjusted_close, RETURN_3M_BARS)
+        baseline_close_90d = self._baseline_at_lookback(adjusted_close, 90)
         baseline_close_126d = self._baseline_at_lookback(adjusted_close, RETURN_6M_BARS)
         baseline_close_189d = self._baseline_at_lookback(adjusted_close, RETURN_9M_BARS)
         baseline_close_252d = self._baseline_at_lookback(adjusted_close, RETURN_1Y_BARS)
@@ -7127,11 +7165,14 @@ class FreeMarketDataProvider:
             "stock_return_12m_1d_ago": round(stock_return_12m_1d_ago, 2),
             "stock_return_12m_1w_ago": round(stock_return_12m_1w_ago, 2),
             "stock_return_12m_1m_ago": round(stock_return_12m_1m_ago, 2),
+            "baseline_close_10d": round(float(baseline_close_10d), 4) if baseline_close_10d is not None else None,
             "baseline_close_5d": round(float(baseline_close_5d), 4) if baseline_close_5d is not None else None,
             "baseline_close_20d": round(float(baseline_close_20d), 4) if baseline_close_20d is not None else None,
+            "baseline_close_30d": round(float(baseline_close_30d), 4) if baseline_close_30d is not None else None,
             "baseline_close_40d": round(float(baseline_close_40d), 4) if baseline_close_40d is not None else None,
             "baseline_close_60d": round(float(baseline_close_60d), 4) if baseline_close_60d is not None else None,
             "baseline_close_63d": round(float(baseline_close_63d), 4) if baseline_close_63d is not None else None,
+            "baseline_close_90d": round(float(baseline_close_90d), 4) if baseline_close_90d is not None else None,
             "baseline_close_126d": round(float(baseline_close_126d), 4) if baseline_close_126d is not None else None,
             "baseline_close_189d": round(float(baseline_close_189d), 4) if baseline_close_189d is not None else None,
             "baseline_close_252d": round(float(baseline_close_252d), 4) if baseline_close_252d is not None else None,

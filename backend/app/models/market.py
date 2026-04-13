@@ -103,6 +103,11 @@ class StockSnapshot(BaseModel):
     stock_return_12m_1d_ago: float = 0.0
     stock_return_12m_1w_ago: float = 0.0
     stock_return_12m_1m_ago: float = 0.0
+    baseline_close_10d: float | None = None
+    baseline_close_20d: float | None = None
+    baseline_close_30d: float | None = None
+    baseline_close_63d: float | None = None
+    baseline_close_90d: float | None = None
     rsi_14: float = 50.0  # Added for Market Health Dashboard
     rs_line_today: float = 0.0
     rs_line_1m: float = 0.0

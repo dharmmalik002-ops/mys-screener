@@ -122,7 +122,7 @@ type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "wat
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
-type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "e-and-c">;
+type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "e-and-c" | "contraction">;
 type SectorGroupSortMode = "1W" | "1M" | "count-desc" | "count-asc";
 
 function buildEandCScanResultsResponse(payload: EandCScanResponse): ScanResultsResponse {
@@ -1535,7 +1535,7 @@ function scannerModeLabel(mode: SavableScannerMode): string {
 }
 
 function isSavableScannerMode(mode: ScreenerMode): mode is SavableScannerMode {
-  return mode !== "improving-rs" && mode !== "e-and-c" && mode !== "near-pivot" && mode !== "pull-backs" && mode !== "returns" && mode !== "consolidating";
+  return mode !== "improving-rs" && mode !== "e-and-c" && mode !== "contraction" && mode !== "near-pivot" && mode !== "pull-backs" && mode !== "returns" && mode !== "consolidating";
 }
 
 function nextSavedScannerName(mode: SavableScannerMode, current: SavedScannerPreset[]) {
@@ -3348,6 +3348,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         return Promise.resolve(null);
       }
       return Promise.resolve(buildEandCScanResultsResponse(eAndCData));
+    }
+    if (activeScanner === "contraction") {
+      return getScanResults("contraction", activeMarket, options);
     }
     if (activeScanner === "near-pivot") {
       return getNearPivotScan(appliedNearPivotFilters, activeMarket, options);
@@ -5365,6 +5368,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
                       "e-and-c": activeScanner === "e-and-c" ? scanResults?.total_hits ?? 0 : (scanResults?.scan.id === "expansion" ? scanResults.total_hits : 0),
+                      "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
@@ -5400,6 +5404,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "Gap Up Openers"
                                   : activeScanner === "e-and-c"
                                     ? "Expansion"
+                                  : activeScanner === "contraction"
+                                    ? "Contraction"
                                   : activeScanner === "near-pivot"
                                     ? "Near Pivot"
                                   : activeScanner === "returns"
@@ -5421,6 +5427,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "Filter stocks by opening gap percentage."
                                   : activeScanner === "e-and-c"
                                     ? "Stocks up at least 6% in a day with RVOL >= 2 and same-day volume above 50,000."
+                                  : activeScanner === "contraction"
+                                    ? "Tight 3-day contractions above the 50D EMA with liquidity floors and at least one 5D/10D/30D/90D run-up trigger."
                                   : activeScanner === "near-pivot"
                                     ? "Find high-RS stocks tightening close to their pivot zone."
                                   : activeScanner === "returns"
@@ -5452,11 +5460,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         </div>
 
                         {showScannerSettings
-                          ? activeScanner === "ipo"
+                          ? activeScanner === "ipo" || activeScanner === "contraction"
                             ? (
                               <div className="scanner-settings-note">
                                 <strong>Built-in scan</strong>
-                                <span>The IPO screener uses the backend listing-date rule and does not have extra filters yet.</span>
+                                <span>
+                                  {activeScanner === "ipo"
+                                    ? "The IPO screener uses the backend listing-date rule and does not have extra filters yet."
+                                    : "The Contraction screener follows the fixed image rules: a tight 3-day change band, close above the 50D EMA, liquidity floors, and at least one run-up trigger."}
+                                </span>
                               </div>
                             )
                             : activeScanner === "gap-up-openers"

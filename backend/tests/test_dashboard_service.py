@@ -1889,6 +1889,138 @@ class USDashboardServiceMarketHealthTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(contraction, [])
         self.assertEqual([item.symbol for item in expansion], ["EXPN"])
 
+    def test_contraction_scan_matches_tight_three_day_contractions_with_run_up_trigger(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="CNTR",
+            name="Contraction Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=8_500.0,
+            start_close=100.0,
+            step=0.55,
+        )
+        snapshot.last_price = 150.0
+        snapshot.previous_close = 148.0
+        snapshot.change_pct = round(((150.0 / 148.0) - 1) * 100, 2)
+        snapshot.ema50 = 135.0
+        snapshot.sma50 = 125.0
+        snapshot.avg_volume_50d = 60_000
+        snapshot.volume = 38_000
+        snapshot.recent_closes = [120.0, 124.0, 128.0, 132.0, 136.0, 140.0, 142.0, 143.0, 144.0, 144.8, 148.0, 150.0]
+        snapshot.baseline_close_30d = 121.0
+        snapshot.baseline_close_90d = 112.0
+        snapshot.stock_return_20d = 18.0
+        snapshot.stock_return_60d = 22.0
+
+        results = run_scan(SCAN_BY_ID["contraction"], [snapshot])
+
+        self.assertEqual([item.symbol for item in results], ["CNTR"])
+        self.assertIn("3-day contraction", results[0].reasons[0])
+
+    def test_contraction_scan_requires_a_run_up_trigger(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="MISSC",
+            name="Contraction Miss",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=8_200.0,
+            start_close=100.0,
+            step=0.5,
+        )
+        snapshot.last_price = 149.0
+        snapshot.previous_close = 148.0
+        snapshot.change_pct = round(((149.0 / 148.0) - 1) * 100, 2)
+        snapshot.ema50 = 136.0
+        snapshot.sma50 = 124.0
+        snapshot.avg_volume_50d = 72_000
+        snapshot.volume = 34_000
+        snapshot.recent_closes = [138.0, 139.0, 140.0, 141.0, 142.0, 143.0, 144.0, 145.0, 146.0, 147.0, 148.0, 149.0]
+        snapshot.baseline_close_30d = 138.0
+        snapshot.baseline_close_90d = 120.0
+        snapshot.stock_return_20d = 12.0
+        snapshot.stock_return_60d = 18.0
+
+        results = run_scan(SCAN_BY_ID["contraction"], [snapshot])
+
+        self.assertEqual(results, [])
+
+    async def test_contraction_scan_results_enrich_missing_recent_closes_from_chart_history(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="CNTRH",
+            name="Contraction History Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=8_900.0,
+            start_close=100.0,
+            step=0.45,
+        )
+        snapshot.last_price = 150.0
+        snapshot.previous_close = 148.0
+        snapshot.change_pct = round(((150.0 / 148.0) - 1) * 100, 2)
+        snapshot.ema50 = 135.0
+        snapshot.sma50 = 125.0
+        snapshot.avg_volume_50d = 60_000
+        snapshot.volume = 38_000
+        snapshot.recent_closes = []
+        snapshot.baseline_close_30d = None
+        snapshot.baseline_close_90d = None
+        snapshot.stock_return_5d = 5.0
+        snapshot.stock_return_20d = 24.0
+        snapshot.stock_return_60d = 18.0
+
+        closes = [120.0, 124.0, 128.0, 132.0, 136.0, 140.0, 142.0, 143.0, 144.0, 144.8, 148.0, 150.0]
+
+        class StubProvider:
+            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
+                self.rows = rows
+                self.updated_at = updated_at
+
+            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                return self.rows
+
+            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
+                del bars
+                self_symbol = symbol
+                self_timeframe = timeframe
+                if self_symbol != "CNTRH" or self_timeframe != "1D":
+                    return []
+                base_time = int(self.updated_at.timestamp()) - (len(closes) * 86400)
+                return [
+                    ChartBar(
+                        time=base_time + (index * 86400),
+                        open=close - 1,
+                        high=close + 1,
+                        low=close - 2,
+                        close=close,
+                        volume=50_000,
+                    )
+                    for index, close in enumerate(closes)
+                ]
+
+            async def get_index_quotes(self, symbols: list[str]):
+                del symbols
+                return []
+
+            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
+                del symbol, snapshot
+                raise NotImplementedError
+
+            async def refresh_snapshots(self, market_cap_min_crore: float):
+                del market_cap_min_crore
+                raise NotImplementedError
+
+            def get_snapshot_updated_at(self) -> datetime:
+                return self.updated_at
+
+            def get_last_refresh_metadata(self) -> dict[str, object]:
+                return {}
+
+        service = DashboardService(provider=StubProvider([snapshot], self.snapshot_updated_at), settings=Settings())
+
+        response = await service.get_scan_results("contraction", include_sector_summaries=False)
+
+        self.assertEqual([item.symbol for item in response.items], ["CNTRH"])
+
     def test_returns_scan_uses_normalized_sector_labels(self) -> None:
         private_bank = self._build_snapshot(
             symbol="PVTBANK",

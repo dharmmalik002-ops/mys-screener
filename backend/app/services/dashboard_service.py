@@ -70,10 +70,12 @@ from app.models.market import (
 )
 from app.providers.base import MarketDataProvider
 from app.scanners.definitions import (
+    SCAN_BY_ID,
     run_consolidating_scan,
     run_custom_scan,
     run_e_and_c_scan,
     run_returns_scan,
+    run_scan,
     scan_catalog_with_counts,
     scanner_sector_label,
 )
@@ -1307,6 +1309,72 @@ class DashboardService:
             return items
         return [item for item in items if float(item.avg_rupee_volume_30d_crore or 0.0) >= min_liquidity_crore]
 
+    @staticmethod
+    def _return_from_baseline(current_price: float, baseline_close: float | None) -> float:
+        if current_price <= 0 or baseline_close in (None, 0):
+            return 0.0
+        return ((current_price / float(baseline_close)) - 1) * 100
+
+    def _contraction_prefilter(self, snapshot: StockSnapshot) -> bool:
+        ema50 = snapshot.ema50
+        sma50 = snapshot.sma50
+        avg_volume_50d = snapshot.avg_volume_50d
+        if ema50 is None or sma50 is None or avg_volume_50d is None or sma50 <= 0:
+            return False
+        if abs(snapshot.change_pct) > 2.5:
+            return False
+        if snapshot.last_price <= ema50 or snapshot.last_price <= 30:
+            return False
+        if avg_volume_50d < 50_000 or snapshot.volume <= 25_000:
+            return False
+        if snapshot.last_price > (1.25 * sma50):
+            return False
+
+        return any(
+            threshold_check
+            for threshold_check in (
+                snapshot.stock_return_5d >= 10.0,
+                snapshot.stock_return_20d >= 20.0,
+                snapshot.stock_return_60d >= 30.0,
+                self._return_from_baseline(snapshot.last_price, snapshot.baseline_close_30d) >= 20.0,
+                self._return_from_baseline(snapshot.last_price, snapshot.baseline_close_90d) >= 30.0,
+            )
+        )
+
+    async def _build_contraction_candidates(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+        candidates = [snapshot for snapshot in snapshots if self._contraction_prefilter(snapshot)]
+        if not candidates:
+            return []
+
+        semaphore = asyncio.Semaphore(8)
+
+        async def enrich(snapshot: StockSnapshot) -> StockSnapshot:
+            if len(snapshot.recent_closes) >= 91:
+                return snapshot
+
+            async with semaphore:
+                try:
+                    bars = await self.provider.get_chart(snapshot.symbol, "1D", 120)
+                except Exception:
+                    return snapshot
+
+            recent_closes = [
+                round(float(getattr(bar, "close", 0) or 0), 2)
+                for bar in bars
+                if float(getattr(bar, "close", 0) or 0) > 0
+            ]
+            if len(recent_closes) < 4:
+                return snapshot
+            return snapshot.model_copy(update={"recent_closes": recent_closes})
+
+        return await asyncio.gather(*(enrich(snapshot) for snapshot in candidates))
+
+    async def _get_contraction_scan_items(self, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
+        candidates = await self._build_contraction_candidates(snapshots)
+        if not candidates:
+            return []
+        return run_scan(SCAN_BY_ID["contraction"], candidates)
+
     async def get_scan_results(
         self,
         scan_id: str,
@@ -1319,7 +1387,12 @@ class DashboardService:
         if descriptor is None:
             raise KeyError(scan_id)
 
-        items = self._filter_scan_items_by_liquidity(results[scan_id], min_liquidity_crore)
+        if scan_id == "contraction":
+            raw_items = await self._get_contraction_scan_items(snapshots)
+        else:
+            raw_items = results[scan_id]
+
+        items = self._filter_scan_items_by_liquidity(raw_items, min_liquidity_crore)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         request_signature = scan_id if min_liquidity_crore is None else f"{scan_id}:{min_liquidity_crore:.2f}"
         return await self._scan_results_response(
@@ -1329,7 +1402,9 @@ class DashboardService:
             snapshots=snapshots,
             items=items,
             historical_runner=lambda historical_snapshots: self._filter_scan_items_by_liquidity(
-                scan_catalog_with_counts(historical_snapshots)[1].get(scan_id, []),
+                run_scan(SCAN_BY_ID["contraction"], historical_snapshots)
+                if scan_id == "contraction"
+                else scan_catalog_with_counts(historical_snapshots)[1].get(scan_id, []),
                 min_liquidity_crore,
             ),
             include_sector_summaries=include_sector_summaries,

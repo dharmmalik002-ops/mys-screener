@@ -673,6 +673,138 @@ def _ema_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return None
 
 
+def _pct_change_between(current: float | None, previous: float | None) -> float | None:
+    if current in (None, 0) or previous in (None, 0):
+        return None
+    return ((float(current) / float(previous)) - 1) * 100
+
+
+def _recent_close_anchor_offset(snapshot: StockSnapshot) -> int:
+    closes = [float(value) for value in snapshot.recent_closes if value is not None]
+    if len(closes) < 2:
+        return 0
+
+    latest_recorded_change = _pct_change_between(closes[-1], closes[-2])
+    if latest_recorded_change is not None and abs(latest_recorded_change - snapshot.change_pct) <= 0.35:
+        return 1
+
+    if snapshot.previous_close not in (None, 0):
+        previous_close_gap = abs(_pct_change_between(closes[-1], snapshot.previous_close) or 0.0)
+        if previous_close_gap <= 0.25:
+            return 0
+
+    current_price_gap = abs(_pct_change_between(closes[-1], snapshot.last_price) or 0.0)
+    return 1 if current_price_gap <= 0.25 else 0
+
+
+def _close_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None:
+    closes = [float(value) for value in snapshot.recent_closes if value is not None]
+    if days <= 0 or not closes:
+        return None
+
+    index = days + _recent_close_anchor_offset(snapshot)
+    if len(closes) < index:
+        return None
+    return closes[-index]
+
+
+def _daily_change_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None:
+    close_n_days_ago = _close_n_days_ago(snapshot, days)
+    close_prev_day = _close_n_days_ago(snapshot, days + 1)
+    return _pct_change_between(close_n_days_ago, close_prev_day)
+
+
+def _return_from_baseline(current_price: float, baseline_close: float | None) -> float | None:
+    return _pct_change_between(current_price, baseline_close)
+
+
+def _return_since_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None:
+    current_price = snapshot.last_price
+    if current_price <= 0:
+        return None
+
+    direct_close = _close_n_days_ago(snapshot, days)
+    if direct_close is not None:
+        return _return_from_baseline(current_price, direct_close)
+
+    baseline_map: dict[int, float | None] = {
+        10: snapshot.baseline_close_10d,
+        20: snapshot.baseline_close_20d,
+        30: snapshot.baseline_close_30d or snapshot.baseline_close_20d,
+        63: snapshot.baseline_close_63d,
+        90: snapshot.baseline_close_90d or snapshot.baseline_close_63d,
+    }
+    derived = _return_from_baseline(current_price, baseline_map.get(days))
+    if derived is not None:
+        return derived
+
+    if days == 5:
+        return snapshot.stock_return_5d
+    if days == 30:
+        return snapshot.stock_return_20d
+    if days == 90:
+        return snapshot.stock_return_60d
+    return None
+
+
+def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    ema50 = snapshot.ema50
+    sma50 = snapshot.sma50
+    avg_volume_50d = snapshot.avg_volume_50d
+    if ema50 is None or sma50 is None or avg_volume_50d is None or sma50 <= 0:
+        return None
+
+    if abs(snapshot.change_pct) > 2.5:
+        return None
+
+    change_1_day_ago = _daily_change_n_days_ago(snapshot, 1)
+    change_2_days_ago = _daily_change_n_days_ago(snapshot, 2)
+    if change_1_day_ago is None or change_2_days_ago is None:
+        return None
+    if abs(change_1_day_ago) > 2.5 or abs(change_2_days_ago) > 3.5:
+        return None
+
+    if snapshot.last_price <= ema50 or snapshot.last_price <= 30:
+        return None
+    if avg_volume_50d < 50_000 or snapshot.volume <= 25_000:
+        return None
+    if snapshot.last_price > (1.25 * sma50):
+        return None
+
+    trigger_returns = {
+        "5D +10%": _return_since_n_days_ago(snapshot, 5),
+        "10D +20%": _return_since_n_days_ago(snapshot, 10),
+        "30D +20%": _return_since_n_days_ago(snapshot, 30),
+        "90D +30%": _return_since_n_days_ago(snapshot, 90),
+    }
+    matched_triggers = [
+        (label, value)
+        for label, value in trigger_returns.items()
+        if value is not None
+        and (
+            (label == "5D +10%" and value >= 10.0)
+            or (label in {"10D +20%", "30D +20%"} and value >= 20.0)
+            or (label == "90D +30%" and value >= 30.0)
+        )
+    ]
+    if not matched_triggers:
+        return None
+
+    best_trigger_label, best_trigger_return = max(matched_triggers, key=lambda item: item[1])
+    tightness_score = (
+        max(0.0, 2.5 - abs(snapshot.change_pct))
+        + max(0.0, 2.5 - abs(change_1_day_ago))
+        + max(0.0, 3.5 - abs(change_2_days_ago))
+    )
+    score = 72 + (tightness_score * 1.8) + min(best_trigger_return, 40.0) * 0.35 + min(avg_volume_50d / 50_000, 4.0) * 1.5
+    reasons = [
+        f"3-day contraction: {snapshot.change_pct:+.2f}%, {change_1_day_ago:+.2f}%, {change_2_days_ago:+.2f}%",
+        f"Above 50D EMA ({ema50:.2f}) and within 25% of 50D SMA ({sma50:.2f})",
+        f"{best_trigger_label} trigger hit at +{best_trigger_return:.2f}% with volume {snapshot.volume:,}",
+    ]
+    return round(score, 2), reasons
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -704,6 +836,13 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("clean-pullback", "Clean Pullbacks", "Setups", "Tight pullbacks inside healthy uptrends.", _clean_pullback),
     ScanDefinition("darvas-box", "Darvas Box", "Setups", "Box breakouts with renewed momentum.", _darvas_box),
     ScanDefinition("pivot-breakout", "Pivot Breakouts", "Setups", "Swing-high pivot resolutions with confirmation.", _pivot_breakout),
+    ScanDefinition(
+        "contraction",
+        "Contraction",
+        "Setups",
+        "Tight 3-day contractions above the 50D EMA with liquidity floors and prior run-up confirmation.",
+        _contraction,
+    ),
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
