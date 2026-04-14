@@ -790,6 +790,11 @@ class FreeMarketDataProvider:
         if snapshot_session_date is None:
             return True
 
+        # Normalise to the most recent trading day so holiday / weekend session
+        # dates never force a spurious cache-miss and chart refresh.
+        if not self._is_trading_day_ist(snapshot_session_date):
+            snapshot_session_date = self._previous_trading_day(snapshot_session_date)
+
         snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
         return bars[-1].time >= snapshot_ts
 
@@ -930,6 +935,11 @@ class FreeMarketDataProvider:
             return None
 
         session_date = self._parse_row_date(scale.get("history_session_date")) or self._current_or_previous_trading_day_ist()
+        # Never create a chart bar for a non-trading day (holiday / weekend).
+        # The snapshot may have been refreshed on a holiday but the price data
+        # belongs to the most recent trading session.
+        if not self._is_trading_day_ist(session_date):
+            session_date = self._previous_trading_day(session_date)
         open_value = self._to_float(scale.get("previous_close")) or close_value
         high_value = self._to_float(scale.get("day_high")) or max(open_value, close_value)
         low_value = self._to_float(scale.get("day_low")) or min(open_value, close_value)
@@ -1015,6 +1025,10 @@ class FreeMarketDataProvider:
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return history
         session_date = self._snapshot_session_date(symbol)
+        # Normalise holiday / weekend session dates so the bar is placed on
+        # the correct trading day — consistent with _snapshot_session_bar().
+        if session_date is not None and not self._is_trading_day_ist(session_date):
+            session_date = self._previous_trading_day(session_date)
         return self._apply_session_bar_to_daily_history(history, snapshot_bar, session_date=session_date)
 
     def _sanitize_live_quote_ohlc(
