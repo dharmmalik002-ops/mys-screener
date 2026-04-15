@@ -790,11 +790,6 @@ class FreeMarketDataProvider:
         if snapshot_session_date is None:
             return True
 
-        # Normalise to the most recent trading day so holiday / weekend session
-        # dates never force a spurious cache-miss and chart refresh.
-        if not self._is_trading_day_ist(snapshot_session_date):
-            snapshot_session_date = self._previous_trading_day(snapshot_session_date)
-
         snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
         return bars[-1].time >= snapshot_ts
 
@@ -885,6 +880,7 @@ class FreeMarketDataProvider:
         return session_date
 
     @staticmethod
+    @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
         timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)
         if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
@@ -934,11 +930,6 @@ class FreeMarketDataProvider:
             return None
 
         session_date = self._parse_row_date(scale.get("history_session_date")) or self._current_or_previous_trading_day_ist()
-        # Never create a chart bar for a non-trading day (holiday / weekend).
-        # The snapshot may have been refreshed on a holiday but the price data
-        # belongs to the most recent trading session.
-        if not self._is_trading_day_ist(session_date):
-            session_date = self._previous_trading_day(session_date)
         open_value = self._to_float(scale.get("previous_close")) or close_value
         high_value = self._to_float(scale.get("day_high")) or max(open_value, close_value)
         low_value = self._to_float(scale.get("day_low")) or min(open_value, close_value)
@@ -1024,10 +1015,6 @@ class FreeMarketDataProvider:
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return history
         session_date = self._snapshot_session_date(symbol)
-        # Normalise holiday / weekend session dates so the bar is placed on
-        # the correct trading day — consistent with _snapshot_session_bar().
-        if session_date is not None and not self._is_trading_day_ist(session_date):
-            session_date = self._previous_trading_day(session_date)
         return self._apply_session_bar_to_daily_history(history, snapshot_bar, session_date=session_date)
 
     def _sanitize_live_quote_ohlc(
@@ -1107,16 +1094,10 @@ class FreeMarketDataProvider:
             cached_bars = [ChartBar.model_validate(item) for item in bar_payload]
         except Exception:
             return []
-        # Trim trailing bars that fall on non-trading days (holidays/weekends)
-        # instead of invalidating the entire cache.  This preserves good data
-        # and avoids unnecessary Yahoo re-fetches on holidays.
-        if str(timeframe or "").strip().upper() == "1D" and cached_bars:
-            while cached_bars and not self._is_trading_day_ist(
-                self._chart_bar_trade_date(cached_bars[-1])
-            ):
-                cached_bars.pop()
-            if not cached_bars:
-                return []
+        if str(timeframe or "").strip().upper() == "1D" and cached_bars and not self._is_trading_day_ist(
+            self._chart_bar_trade_date(cached_bars[-1])
+        ):
+            return []
         if not self._chart_bars_match_symbol_scale(symbol, cached_bars):
             return []
         return cached_bars[-bars:]
@@ -1979,9 +1960,6 @@ class FreeMarketDataProvider:
             return []
         now_ist = datetime.now(IST)
         candidate = now_ist.date()
-        # Short-circuit on market holidays — no bhavcopy will exist for today.
-        if self._is_market_holiday(candidate) and candidate.weekday() < 5:
-            return []
         # Walk back from weekends
         if candidate.weekday() >= 5:
             days_back = candidate.weekday() - 4
@@ -8071,15 +8049,13 @@ class FreeMarketDataProvider:
             if h <= 0 or c <= 0:
                 continue
 
-            # Filter zero-volume bars on non-trading days (holiday/weekend placeholders).
+            # Filter zero-volume flat bars on non-trading days (holiday/weekend placeholders).
             # Uses market-specific calendar via _should_skip_zero_volume_bar.
-            # Unconditionally skip any zero-volume bar on a holiday — Yahoo sometimes
-            # returns bars with slight price variation from different exchange rounding,
-            # which would slip through a price-proximity check.
             bar_timestamp = index.to_pydatetime()
             bar_date = bar_timestamp.date()
-            if self._should_skip_zero_volume_bar(bar_date) and v == 0:
-                continue
+            if self._should_skip_zero_volume_bar(bar_date):
+                if v == 0 and (prev_close is None or abs(c - prev_close) < 0.01):
+                    continue
 
             # Normalise timestamp to midnight UTC of the *canonical trade date*.
             # For India (IST = UTC+5:30) yfinance returns bars at IST midnight,
