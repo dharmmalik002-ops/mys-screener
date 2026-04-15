@@ -1979,8 +1979,7 @@ class FreeMarketDataProvider:
             return []
         now_ist = datetime.now(IST)
         candidate = now_ist.date()
-        # Short-circuit on market holidays — no bhavcopy will exist for today
-        # and attempting previous-day fallback is handled below only for weekends.
+        # Short-circuit on market holidays — no bhavcopy will exist for today.
         if self._is_market_holiday(candidate) and candidate.weekday() < 5:
             return []
         # Walk back from weekends

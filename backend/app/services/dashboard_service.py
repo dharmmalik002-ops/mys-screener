@@ -854,8 +854,7 @@ class DashboardService:
 
     async def get_scan_counts(self) -> list[ScanDescriptor]:
         snapshots = await self._snapshots()
-        eligible = self._scan_eligible_snapshots(snapshots)
-        scanners, _ = await asyncio.to_thread(self._scan_catalog, eligible)
+        scanners, _ = self._scan_catalog(self._scan_eligible_snapshots(snapshots))
         return scanners
 
     def _gap_up_items(
@@ -1303,7 +1302,7 @@ class DashboardService:
         min_liquidity_crore: float | None = None,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        scanners, results = await asyncio.to_thread(self._scan_catalog, snapshots)
+        scanners, results = self._scan_catalog(snapshots)
         descriptor = next((scan for scan in scanners if scan.id == scan_id), None)
         if descriptor is None:
             raise KeyError(scan_id)
