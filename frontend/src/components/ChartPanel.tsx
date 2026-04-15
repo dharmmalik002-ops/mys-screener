@@ -2832,22 +2832,25 @@ export function ChartPanel({
           >
             {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
           </button>
+          
+          <div className="index-overlay-controls">
+            <select
+              className="index-overlay-select"
+              value={viewRange}
+              onChange={(e) => handleViewRangeChange(e.target.value as ChartVisibleRange)}
+              title="Select Chart Visible Range"
+            >
+              <option value="1W">1 Week</option>
+              <option value="1M">1 Month</option>
+              <option value="3M">3 Months</option>
+              <option value="1Y">1 Year</option>
+              <option value="5Y">5 Years</option>
+              <option value="All">All</option>
+            </select>
+          </div>
+
           {market === "india" ? (
-            <div className="index-overlay-controls">
-              <select
-                className="index-overlay-select"
-                value={viewRange}
-                onChange={(e) => handleViewRangeChange(e.target.value as ChartVisibleRange)}
-                title="Select Chart Visible Range"
-                style={{ marginRight: "8px" }}
-              >
-                <option value="1W">1 Week</option>
-                <option value="1M">1 Month</option>
-                <option value="3M">3 Months</option>
-                <option value="1Y">1 Year</option>
-                <option value="5Y">5 Years</option>
-                <option value="All">All</option>
-              </select>
+            <div className="index-overlay-controls" style={{ marginLeft: "8px" }}>
               <select
                 className="index-overlay-select"
                 value={indexOverlaySymbol ?? ""}
