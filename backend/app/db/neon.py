@@ -21,14 +21,27 @@ async def init_db_pool() -> None:
     if dsn.startswith("postgresql://"):
         dsn = dsn.replace("postgresql://", "postgres://", 1)
 
+    # Strip any accidental quotes injected by Hugging Face Secrets UI
+    dsn = dsn.strip('"').strip("'")
+
+    if not dsn.startswith("postgres"):
+        logger.error("Invalid DATABASE_URL format")
+        return
+
     try:
-        _pool = await asyncpg.create_pool(
-            dsn,
-            min_size=1,
-            max_size=5,
-            command_timeout=10,
-            ssl="require",
-        )
+        # Use simple ssl=True fallback if sslmode is missing, 
+        # otherwise rely on the DSN's built-in ?sslmode=require string.
+        use_ssl = True if "sslmode" not in dsn and "ssl=" not in dsn else None
+        
+        kwargs = {
+            "min_size": 1,
+            "max_size": 5,
+            "command_timeout": 10
+        }
+        if use_ssl is not None:
+             kwargs["ssl"] = use_ssl
+
+        _pool = await asyncpg.create_pool(dsn, **kwargs)
         if _pool is not None:
             async with _pool.acquire() as conn:
                 await conn.execute("""
