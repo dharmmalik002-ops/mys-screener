@@ -885,7 +885,6 @@ class FreeMarketDataProvider:
         return session_date
 
     @staticmethod
-    @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
         timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)
         if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
