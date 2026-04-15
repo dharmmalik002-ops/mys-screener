@@ -1319,7 +1319,7 @@ class DashboardService:
             snapshots=snapshots,
             items=items,
             historical_runner=lambda historical_snapshots: self._filter_scan_items_by_liquidity(
-                run_scan(SCAN_BY_ID[scan_id], historical_snapshots),
+                run_scan(SCAN_BY_ID[scan_id], historical_snapshots) if scan_id in SCAN_BY_ID else [],
                 min_liquidity_crore,
             ),
             include_sector_summaries=include_sector_summaries,

@@ -27,6 +27,7 @@ async def init_db_pool() -> None:
             min_size=1,
             max_size=5,
             command_timeout=10,
+            ssl="require",
         )
         if _pool is not None:
             async with _pool.acquire() as conn:
