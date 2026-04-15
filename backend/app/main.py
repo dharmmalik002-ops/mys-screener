@@ -1,5 +1,16 @@
 import asyncio
 import logging
+import functools
+import requests
+
+# Apply global fallback timeout to protect HuggingFace event loop against Yahoo Finance tarpits.
+original_request = requests.Session.request
+@functools.wraps(original_request)
+def timeout_request(self, method, url, **kwargs):
+    if "timeout" not in kwargs or kwargs["timeout"] is None:
+        kwargs["timeout"] = 15  # 15s global maximum timeout
+    return original_request(self, method, url, **kwargs)
+requests.Session.request = timeout_request
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
