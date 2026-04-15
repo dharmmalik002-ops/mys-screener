@@ -74,6 +74,11 @@ scheduler = AsyncIOScheduler(timezone=IST)
 
 async def autonomous_watchdog_cycle_job() -> None:
     """Run one autonomous watchdog cycle across all registered health contracts."""
+    lock_path = Path(__file__).resolve().parents[1] / "data" / "scheduled_maintenance.lock"
+    import time
+    if lock_path.exists() and (time.time() - lock_path.stat().st_mtime) < 7200:
+        logger.info("WATCHDOG: skipping cycle — scheduled_maintenance.lock exists and is recent")
+        return
     await watchdog_agent.run_cycle()
 
 

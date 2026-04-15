@@ -7163,6 +7163,16 @@ class FreeMarketDataProvider:
                         history = commodity_fallback
 
         if history.empty:
+            # Fallback for Indian market: if Yahoo is dead, try to build a 1-bar synthetic
+            # chart from the snapshot data so the chart panel doesn't just crash.
+            snapshot_rows = self._load_valid_cached_snapshot_rows()
+            row = next((r for r in snapshot_rows if str(r.get("symbol")).upper() == symbol.upper()), None)
+            if row and row.get("last_price"):
+                synthetic_history = self._build_flat_price_history(float(row["last_price"]), 1)
+                synthetic_history.index = [pd.Timestamp(row.get("history_session_date") or date.today())]
+                chart_bars = self._history_to_chart_bars(synthetic_history)
+                if chart_bars:
+                    return chart_bars
             raise RuntimeError(f"No chart history for {symbol}")
 
         history = history.tail(bars)

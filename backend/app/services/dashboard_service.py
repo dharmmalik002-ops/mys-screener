@@ -4354,12 +4354,10 @@ class DashboardService:
         if callable(get_sector_rotation):
             warm_jobs.append(("sector-rotation", get_sector_rotation(), 20.0))
 
-        warm_results = await asyncio.gather(
-            *(
-                _warm_section(label, awaitable, timeout_seconds=timeout_seconds)
-                for label, awaitable, timeout_seconds in warm_jobs
-            )
-        )
+        warm_results = []
+        for label, awaitable, timeout_seconds in warm_jobs:
+            result = await _warm_section(label, awaitable, timeout_seconds=timeout_seconds)
+            warm_results.append(result)
         for (label, _, _), result in zip(warm_jobs, warm_results):
             if label == "dashboard":
                 dashboard_payload = result if isinstance(result, DashboardResponse) else None
