@@ -73,6 +73,8 @@ from app.scanners.definitions import (
     run_custom_scan,
     run_e_and_c_scan,
     run_returns_scan,
+    run_scan,
+    SCAN_BY_ID,
     scan_catalog_with_counts,
     scanner_sector_label,
 )
@@ -1317,7 +1319,7 @@ class DashboardService:
             snapshots=snapshots,
             items=items,
             historical_runner=lambda historical_snapshots: self._filter_scan_items_by_liquidity(
-                scan_catalog_with_counts(historical_snapshots)[1].get(scan_id, []),
+                run_scan(SCAN_BY_ID[scan_id], historical_snapshots),
                 min_liquidity_crore,
             ),
             include_sector_summaries=include_sector_summaries,

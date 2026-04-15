@@ -12,6 +12,7 @@ import { AiChatWindow } from "./AiChatWindow";
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars";
 export type ChartTimeframe = "15m" | "30m" | "1h" | "1D" | "1W";
+export type ChartVisibleRange = "1W" | "1M" | "3M" | "1Y" | "5Y" | "All";
 export type ChartPanelTab = "technical" | "fundamentals";
 export type ChartPaletteKey = "current" | "editorial";
 export type ChartColorSettings = {
@@ -1220,6 +1221,16 @@ export function ChartPanel({
   const [indexOverlayMode, setIndexOverlayMode] = useState<"overlay" | "pane">("overlay");
   const [indexOverlayStyle, setIndexOverlayStyle] = useState<"line" | "candle" | "bars">("line");
   const [indexOverlayColor, setIndexOverlayColor] = useState("#ffd36f");
+  const [viewRange, setViewRange] = useState<ChartVisibleRange>("1Y");
+
+  const handleViewRangeChange = (range: ChartVisibleRange) => {
+    setViewRange(range);
+    if (range === "1W") {
+      onTimeframeChange("1h");
+    } else {
+      onTimeframeChange("1D");
+    }
+  };
   const [indexBars, setIndexBars] = useState<ChartBar[] | null>(null);
   const [indexLoading, setIndexLoading] = useState(false);
   const indexCacheRef = useRef<Record<string, ChartBar[]>>({});
@@ -2013,7 +2024,14 @@ export function ChartPanel({
     chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
     chart.subscribeCrosshairMove(handleCrosshairMove);
 
-    const visibleBars = defaultVisibleBars(timeframe);
+    let visibleBars = defaultVisibleBars(timeframe);
+    if (viewRange === "1W") visibleBars = Math.min(35, activeBars.length);
+    else if (viewRange === "1M") visibleBars = Math.min(22, activeBars.length);
+    else if (viewRange === "3M") visibleBars = Math.min(66, activeBars.length);
+    else if (viewRange === "1Y") visibleBars = Math.min(252, activeBars.length);
+    else if (viewRange === "5Y") visibleBars = Math.min(1260, activeBars.length);
+    else if (viewRange === "All") visibleBars = activeBars.length;
+    
     const endIndex = Math.max(0, activeBars.length - 1);
     const startIndex = Math.max(0, activeBars.length - visibleBars);
     if (activeBars.length > visibleBars) {
@@ -2037,7 +2055,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, timeframe, viewRange]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2816,6 +2834,20 @@ export function ChartPanel({
           </button>
           {market === "india" ? (
             <div className="index-overlay-controls">
+              <select
+                className="index-overlay-select"
+                value={viewRange}
+                onChange={(e) => handleViewRangeChange(e.target.value as ChartVisibleRange)}
+                title="Select Chart Visible Range"
+                style={{ marginRight: "8px" }}
+              >
+                <option value="1W">1 Week</option>
+                <option value="1M">1 Month</option>
+                <option value="3M">3 Months</option>
+                <option value="1Y">1 Year</option>
+                <option value="5Y">5 Years</option>
+                <option value="All">All</option>
+              </select>
               <select
                 className="index-overlay-select"
                 value={indexOverlaySymbol ?? ""}
