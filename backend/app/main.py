@@ -21,6 +21,7 @@ from app.providers.factory import build_provider
 from app.scanners.definitions import scan_catalog_with_counts
 from app.services.maintenance import run_market_close_maintenance
 from app.services.watchdog_agent import WatchdogAgent, set_active_watchdog_agent
+from app.db.neon import init_db_pool, close_db_pool
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -503,6 +504,7 @@ async def _keep_alive_self_ping() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    await init_db_pool()
     scheduler.add_job(
         autonomous_watchdog_cycle_job,
         IntervalTrigger(seconds=watchdog_agent.tick_seconds),
@@ -586,6 +588,7 @@ async def lifespan(app: FastAPI):
     asyncio.ensure_future(_keep_alive_self_ping())
     yield
     scheduler.shutdown()
+    await close_db_pool()
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)

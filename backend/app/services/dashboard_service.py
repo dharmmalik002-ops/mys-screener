@@ -3823,7 +3823,16 @@ class DashboardService:
             watchlists=normalized_watchlists,
         )
 
-    def get_watchlists_state(self) -> WatchlistsStateResponse:
+    async def get_watchlists_state(self) -> WatchlistsStateResponse:
+        from app.db.neon import get_watchlist
+        db_payload = await get_watchlist(self._market_key())
+        if db_payload:
+            try:
+                state = WatchlistsStateResponse.model_validate(db_payload)
+                return self._sanitize_watchlists_state(state)
+            except Exception:
+                pass
+
         path = self._watchlists_state_path()
         if not path.exists():
             return WatchlistsStateResponse(market=self._market_key())
@@ -3836,11 +3845,16 @@ class DashboardService:
 
         return self._sanitize_watchlists_state(state)
 
-    def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
+    async def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
+        from app.db.neon import save_watchlist, get_pool
         state = self._sanitize_watchlists_state(payload)
-        path = self._watchlists_state_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(state.model_dump(mode="json"), indent=2), encoding="utf-8")
+        
+        if get_pool() is not None:
+            await save_watchlist(self._market_key(), state.model_dump(mode="json"))
+        else:
+            path = self._watchlists_state_path()
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(state.model_dump(mode="json"), indent=2), encoding="utf-8")
         return state
 
     def _journal_data_path(self) -> Path:

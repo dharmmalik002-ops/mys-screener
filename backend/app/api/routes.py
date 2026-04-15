@@ -790,13 +790,13 @@ def build_router(service):
 
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
-        return resolve_service(market).get_watchlists_state()
+        return await resolve_service(market).get_watchlists_state()
 
     @router.put("/watchlists", response_model=WatchlistsStateResponse)
     async def save_watchlists(payload: WatchlistsStateResponse, market: str = Query(default="india")):
         market_service = resolve_service(market)
         normalized = payload.model_copy(update={"market": str(market or "india").strip().lower()})
-        return market_service.save_watchlists_state(normalized)
+        return await market_service.save_watchlists_state(normalized)
 
     # ── Journal Data (market-independent, shared across both markets) ──
     @router.get("/journal")
