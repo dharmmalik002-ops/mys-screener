@@ -590,19 +590,27 @@ async def lifespan(app: FastAPI):
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
         watchdog_agent.tick_seconds,
     )
-    # Fire-and-forget startup warm — runs in background so uvicorn starts
-    # accepting requests immediately.  On HF free tier the blocking warm was
-    # taking 15-60 s, during which /api/health timed out and the frontend
-    # showed an infinite spinner.
-    asyncio.ensure_future(warm_startup_cache("india", service))
-    asyncio.ensure_future(warm_startup_cache("us", us_service))
-    # Apply NSE Bhavcopy EOD prices on top of Yahoo data — fire-and-forget,
-    # runs in the background so it doesn't block the server from accepting requests.
-    asyncio.ensure_future(apply_startup_bhavcopy("india", service))
+    async def run_sequential_startup():
+        try:
+            # Staggered startup sequential chain — prevents GIL/CPU contention 
+            # on resource-constrained hosts (HF free tier).
+            await warm_startup_cache("india", service)
+            await asyncio.sleep(2)
+            await warm_startup_cache("us", us_service)
+            await asyncio.sleep(2)
+            await apply_startup_bhavcopy("india", service)
+            logger.info("Sequential startup sequence completed successfully")
+        except Exception as exc:
+            logger.error("Sequential startup sequence failed: %s", exc)
+
+    # Fire-and-forget the sequential chain so uvicorn starts accepting requests immediately.
+    asyncio.ensure_future(run_sequential_startup())
+    
     # Keep-alive self-ping — prevents HF Spaces free tier from sleeping
     # the container after ~15 min of inactivity.
     asyncio.ensure_future(_keep_alive_self_ping())
     yield
+
     scheduler.shutdown()
     await close_db_pool()
 

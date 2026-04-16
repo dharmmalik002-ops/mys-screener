@@ -432,6 +432,11 @@ class WatchdogAgent:
         self.validator = DataQualityValidator()
         self._last_check: dict[str, float] = {}
         self._last_status: dict[str, HealthStatus] = {}
+        self._startup_grace_period_until = time.time() + 60.0  # 60s grace period
+
+        # Log startup immediately so we know the watchdog is alive
+        self.audit.log("global", "watchdog_boot", f"v3.2 autonomous cycle active; interval={tick_seconds}s")
+
 
         for market in ("india", "us"):
             service_obj = services.get(market)
@@ -456,7 +461,13 @@ class WatchdogAgent:
 
     async def run_cycle(self) -> None:
         now = time.time()
+        if now < self._startup_grace_period_until:
+            # During startup grace period, we skip the main cycle to avoid
+            # resource contention with the staggered warmup logic in main.lifespan.
+            return
+
         for component_id, contract in self.registry.items():
+
             market_state = self.scheduler.get_market_state(contract.market)
             recent_failures = self.audit.failure_count(component_id)
             interval = self.scheduler.get_check_interval(contract, market_state, recent_failures)

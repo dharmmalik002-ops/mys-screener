@@ -33,6 +33,14 @@ class StockSnapshot(BaseModel):
     name: str
     exchange: Literal["NSE", "BSE", "NYSE", "NASDAQ"]
     listing_date: date | None = None
+
+    @field_validator("listing_date", mode="before")
+    @classmethod
+    def parse_listing_date(cls, v: Any) -> Any:
+        if v == "" or v is None:
+            return None
+        return v
+
     sector: str
     sub_sector: str = "Unclassified"
     circuit_band_label: str | None = None
@@ -675,6 +683,14 @@ class ScanMatch(BaseModel):
     name: str
     exchange: str
     listing_date: date | None = None
+
+    @field_validator("listing_date", mode="before")
+    @classmethod
+    def parse_listing_date(cls, v: Any) -> Any:
+        if v == "" or v is None:
+            return None
+        return v
+
     sector: str
     sub_sector: str | None = None
     market_cap_crore: float

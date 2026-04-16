@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import io
@@ -412,7 +413,7 @@ class FreeMarketDataProvider:
 
             cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
             if cached_rows:
-                snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
+                snapshots = await self._materialize_snapshot_rows(cached_rows)
                 self._snapshots_memory_cache[cache_key] = (*cache_signature, snapshots)
                 self._schedule_background_snapshot_refresh(
                     cache_key,
@@ -452,7 +453,7 @@ class FreeMarketDataProvider:
         async def _load_and_cache() -> list[StockSnapshot]:
             rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
             if rows:
-                snaps = await asyncio.to_thread(self._materialize_snapshot_rows, rows)
+                snaps = await self._materialize_snapshot_rows(rows)
                 self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snaps)
                 # After the initial disk load, also schedule a live refresh if needed
                 if self._needs_background_live_refresh(cache_key):
@@ -515,7 +516,7 @@ class FreeMarketDataProvider:
                 raise
             payload = [row for row in cached_rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
             self._last_refresh_metadata = self._default_refresh_metadata()
-        snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, payload)
+        snapshots = await self._materialize_snapshot_rows(payload)
         self._snapshots_memory_cache[float(market_cap_min_crore)] = (*self._snapshot_memory_signature(), snapshots)
         return snapshots
 
@@ -558,8 +559,32 @@ class FreeMarketDataProvider:
         rows = self._load_valid_cached_snapshot_rows()
         return [row for row in rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
 
-    def _materialize_snapshot_rows(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
-        return [StockSnapshot.model_validate(self._with_snapshot_fallbacks(row)) for row in rows]
+    async def _materialize_snapshot_rows(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
+        chunk_size = 300
+        result = []
+        for i in range(0, len(rows), chunk_size):
+            chunk = rows[i:i + chunk_size]
+            # Validate chunk in thread to avoid GIL holding in main loop
+            materialized = await asyncio.to_thread(self._materialize_snapshot_rows_sync, chunk)
+            result.extend(materialized)
+            if i + chunk_size < len(rows):
+                await asyncio.sleep(0.02) # Yield to event loop
+        return result
+
+    def _materialize_snapshot_rows_sync(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
+        """Materializes snapshot rows into Pydantic models with per-row resilience."""
+        materialized: list[StockSnapshot] = []
+        logger = logging.getLogger(__name__)
+        for row in rows:
+            try:
+                # model_validate is the primary bottleneck; catching errors here prevents
+                # "poison rows" from killing the entire universe load.
+                item = StockSnapshot.model_validate(self._with_snapshot_fallbacks(row))
+                materialized.append(item)
+            except Exception as e:
+                symbol = row.get("symbol") or "Unknown"
+                logger.error(f"Failed to materialize snapshot for {symbol}: {e}")
+        return materialized
 
     async def _load_snapshots_with_fallback(
         self,
@@ -569,13 +594,13 @@ class FreeMarketDataProvider:
         cache_key = float(market_cap_min_crore)
         try:
             payload = await asyncio.to_thread(self._load_or_refresh_snapshots, market_cap_min_crore, force_refresh)
-            snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, payload)
+            snapshots = await self._materialize_snapshot_rows(payload)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
             return snapshots
         except Exception:
             cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
             if cached_rows:
-                snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
+                snapshots = await self._materialize_snapshot_rows(cached_rows)
                 self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
                 return snapshots
             return await self.demo.get_snapshots(market_cap_min_crore)
@@ -632,7 +657,7 @@ class FreeMarketDataProvider:
                 for row in active_rows
                 if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore
             ]
-            snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, filtered_rows)
+            snapshots = await self._materialize_snapshot_rows(filtered_rows)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
             return snapshots
         except Exception:
@@ -879,7 +904,6 @@ class FreeMarketDataProvider:
         # False and the snapshot to never rebuild after close.
         return session_date
 
-    @staticmethod
     @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
         timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)

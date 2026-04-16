@@ -667,16 +667,22 @@ class DashboardService:
 
     async def warm_startup_views(self) -> None:
         await self.build_dashboard()
-        await asyncio.gather(
-            self.get_sector_tab("1D", "desc"),
-            self.get_sector_tab("1M", "desc"),
-            self.get_industry_groups(),
-            self.get_market_health(),
-            self.get_sector_rotation(),
-            self.get_money_flow_history(),
-            self.get_money_flow_stock_ideas_history(),
-            return_exceptions=True,
-        )
+        # Sequentialized warming with small yields to event loop 
+        # avoids blocking health pings on slow pods (HF free tier).
+        await self.get_sector_tab("1D", "desc")
+        await asyncio.sleep(0.2)
+        await self.get_sector_tab("1M", "desc")
+        await asyncio.sleep(0.2)
+        await self.get_industry_groups()
+        await asyncio.sleep(0.2)
+        await self.get_market_health()
+        await asyncio.sleep(0.2)
+        await self.get_sector_rotation()
+        await asyncio.sleep(0.2)
+        await self.get_money_flow_history()
+        await asyncio.sleep(0.2)
+        await self.get_money_flow_stock_ideas_history()
+
         # Warm scan catalog so screener health check shows "done" from the start.
         # _scan_catalog() is pure CPU (no I/O) and caches into _scan_catalog_cache.
         try:
