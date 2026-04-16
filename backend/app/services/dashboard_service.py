@@ -353,6 +353,14 @@ class DashboardService:
 
         scanners, results = scan_catalog_with_counts(snapshots)
         copied = self._copy_scan_descriptors(scanners)
+        
+        # Clear other potentially large caches when a major data refresh occurs
+        # to stay within Hugging Face free tier memory limits.
+        if len(self._sector_tab_cache) > 5:
+            self._sector_tab_cache.clear()
+        if len(self._chart_grid_cache) > 10:
+            self._chart_grid_cache.clear()
+            
         self._scan_catalog_cache = (snapshot_updated_at, copied, results)
         return self._copy_scan_descriptors(copied), results
 
@@ -3709,6 +3717,10 @@ class DashboardService:
         self._industry_groups_cache = None
         self._market_health_cache = None
         self._sector_rotation_cache = None
+        
+        # Explicitly trigger GC to reclaim orphaned StockSnapshot objects
+        import gc
+        gc.collect()
 
     def _market_key(self) -> str:
         default_exchange_getter = getattr(self.provider, "_default_exchange", None)

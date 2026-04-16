@@ -594,11 +594,19 @@ async def lifespan(app: FastAPI):
         try:
             # Staggered startup sequential chain — prevents GIL/CPU contention 
             # on resource-constrained hosts (HF free tier).
+            import gc
+            
             await warm_startup_cache("india", service)
-            await asyncio.sleep(2)
+            gc.collect()
+            await asyncio.sleep(10)  # Increase stagger to allow memory to settle
+            
             await warm_startup_cache("us", us_service)
-            await asyncio.sleep(2)
+            gc.collect()
+            await asyncio.sleep(5)
+            
             await apply_startup_bhavcopy("india", service)
+            gc.collect()
+            
             logger.info("Sequential startup sequence completed successfully")
         except Exception as exc:
             logger.error("Sequential startup sequence failed: %s", exc)
