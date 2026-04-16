@@ -103,6 +103,11 @@ class StockSnapshot(BaseModel):
     stock_return_12m_1d_ago: float = 0.0
     stock_return_12m_1w_ago: float = 0.0
     stock_return_12m_1m_ago: float = 0.0
+    baseline_close_10d: float | None = None
+    baseline_close_20d: float | None = None
+    baseline_close_30d: float | None = None
+    baseline_close_63d: float | None = None
+    baseline_close_90d: float | None = None
     rsi_14: float = 50.0  # Added for Market Health Dashboard
     rs_line_today: float = 0.0
     rs_line_1m: float = 0.0
@@ -1212,23 +1217,9 @@ class EandCScanResponse(BaseModel):
 
 
 class EandCScanRequest(BaseModel):
-    min_price: float = Field(default=30.0, ge=0.0)
-    contraction_min_avg_volume_50d: int = Field(default=50_000, ge=0)
-    contraction_min_day_volume: int = Field(default=25_000, ge=0)
-    contraction_require_above_ema50: bool = True
-    contraction_max_price_to_sma50_ratio: float = Field(default=1.25, ge=0.1)
-    contraction_max_today_change_abs_pct: float = Field(default=2.5, ge=0.0)
-    contraction_max_prev_day_change_abs_pct: float = Field(default=2.5, ge=0.0)
-    contraction_max_two_days_ago_change_abs_pct: float = Field(default=3.5, ge=0.0)
-    # Prior run-up: at least ONE must be met (stock has momentum before contracting)
-    contraction_require_prior_run_up: bool = True
-    contraction_min_return_5d: float = Field(default=10.0, ge=0.0)   # Close ≥ 5d ago × 1.1
-    contraction_min_return_20d: float = Field(default=20.0, ge=0.0)  # Close ≥ ~30d ago × 1.2
-    contraction_min_return_60d: float = Field(default=30.0, ge=0.0)  # Close ≥ ~90d ago × 1.3
-    expansion_min_change_pct: float = Field(default=5.0)
-    expansion_min_avg_volume_50d: int = Field(default=15_000, ge=0)
-    expansion_min_day_volume: int = Field(default=25_000, ge=0)
-    expansion_min_volume_multiple: float = Field(default=2.0, ge=0.0)
+    expansion_min_change_pct: float = Field(default=6.0, ge=0.0)
+    expansion_min_relative_volume: float = Field(default=2.0, ge=0.0)
+    expansion_min_day_volume: int = Field(default=50_000, ge=0)
 
 
 class UniverseBreadth(BaseModel):
