@@ -1,5 +1,16 @@
 import asyncio
 import logging
+import functools
+import requests
+
+# Apply global fallback timeout to protect HuggingFace event loop against Yahoo Finance tarpits.
+original_request = requests.Session.request
+@functools.wraps(original_request)
+def timeout_request(self, method, url, **kwargs):
+    if "timeout" not in kwargs or kwargs["timeout"] is None:
+        kwargs["timeout"] = 15  # 15s global maximum timeout
+    return original_request(self, method, url, **kwargs)
+requests.Session.request = timeout_request
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
@@ -63,6 +74,11 @@ scheduler = AsyncIOScheduler(timezone=IST)
 
 async def autonomous_watchdog_cycle_job() -> None:
     """Run one autonomous watchdog cycle across all registered health contracts."""
+    lock_path = Path(__file__).resolve().parents[1] / "data" / "scheduled_maintenance.lock"
+    import time
+    if lock_path.exists() and (time.time() - lock_path.stat().st_mtime) < 7200:
+        logger.info("WATCHDOG: skipping cycle — scheduled_maintenance.lock exists and is recent")
+        return
     await watchdog_agent.run_cycle()
 
 
@@ -574,19 +590,27 @@ async def lifespan(app: FastAPI):
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
         watchdog_agent.tick_seconds,
     )
-    # Fire-and-forget startup warm — runs in background so uvicorn starts
-    # accepting requests immediately.  On HF free tier the blocking warm was
-    # taking 15-60 s, during which /api/health timed out and the frontend
-    # showed an infinite spinner.
-    asyncio.ensure_future(warm_startup_cache("india", service))
-    asyncio.ensure_future(warm_startup_cache("us", us_service))
-    # Apply NSE Bhavcopy EOD prices on top of Yahoo data — fire-and-forget,
-    # runs in the background so it doesn't block the server from accepting requests.
-    asyncio.ensure_future(apply_startup_bhavcopy("india", service))
+    async def run_sequential_startup():
+        try:
+            # Staggered startup sequential chain — prevents GIL/CPU contention 
+            # on resource-constrained hosts (HF free tier).
+            await warm_startup_cache("india", service)
+            await asyncio.sleep(2)
+            await warm_startup_cache("us", us_service)
+            await asyncio.sleep(2)
+            await apply_startup_bhavcopy("india", service)
+            logger.info("Sequential startup sequence completed successfully")
+        except Exception as exc:
+            logger.error("Sequential startup sequence failed: %s", exc)
+
+    # Fire-and-forget the sequential chain so uvicorn starts accepting requests immediately.
+    asyncio.ensure_future(run_sequential_startup())
+    
     # Keep-alive self-ping — prevents HF Spaces free tier from sleeping
     # the container after ~15 min of inactivity.
     asyncio.ensure_future(_keep_alive_self_ping())
     yield
+
     scheduler.shutdown()
     await close_db_pool()
 

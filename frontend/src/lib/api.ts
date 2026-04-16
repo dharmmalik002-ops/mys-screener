@@ -152,7 +152,7 @@ export type WatchlistItem = {
 
 export type WatchlistsStateResponse = {
   market: MarketKey;
-  updated_at?: number | null;
+  updated_at?: string | number | null;
   active_watchlist_id: string | null;
   watchlists: WatchlistItem[];
 };
@@ -846,22 +846,9 @@ export type EandCScanResponse = {
 };
 
 export type EandCScanRequest = {
-  min_price: number;
-  contraction_min_avg_volume_50d: number;
-  contraction_min_day_volume: number;
-  contraction_require_above_ema50: boolean;
-  contraction_max_price_to_sma50_ratio: number;
-  contraction_max_today_change_abs_pct: number;
-  contraction_max_prev_day_change_abs_pct: number;
-  contraction_max_two_days_ago_change_abs_pct: number;
-  contraction_require_prior_run_up: boolean;
-  contraction_min_return_5d: number;
-  contraction_min_return_20d: number;
-  contraction_min_return_60d: number;
   expansion_min_change_pct: number;
-  expansion_min_avg_volume_50d: number;
+  expansion_min_relative_volume: number;
   expansion_min_day_volume: number;
-  expansion_min_volume_multiple: number;
 };
 
 export type NearPivotScanRequest = {
@@ -1056,14 +1043,19 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
                 try {
                   await Promise.race([
                     _warmupPromise,
-                    new Promise<void>((resolve) => setTimeout(resolve, 12_000)),
+                    // HF Spaces can take 30-90s to wake; wait longer before failing.
+                    new Promise<void>((resolve) => setTimeout(resolve, 60_000)),
                   ]);
                 } catch {
                   // Ignore warm-up probe failures here; the normal retry path below handles them.
                 }
               }
             }
-            lastError = new Error(`Request failed: ${response.status}`);
+            lastError = new Error(
+              response.status === 503
+                ? "Backend temporarily unavailable (503). If this is a cold start, wait 30-90 seconds and retry."
+                : `Request failed: ${response.status}`,
+            );
             // Retry the same base for server errors if attempts remain
             if (SERVER_ERROR_CODES.has(response.status) && attempt < maxAttempts - 1) continue;
             break; // fall through to next base
