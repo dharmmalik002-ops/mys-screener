@@ -12,3 +12,4 @@ backend/data/watchlists_state_us.json
 backend/data/free_snapshots.json
 backend/data/industry_groups_cache.json
 backend/data/industry_groups_cache_us.json
+backend/venv/

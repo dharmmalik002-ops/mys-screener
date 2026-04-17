@@ -119,7 +119,7 @@ type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "wat
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
-type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "e-and-c">;
+type SavableScannerMode = Exclude<ScreenerMode, "improving-rs">;
 type SectorGroupSortMode = "1W" | "1M" | "count-desc" | "count-asc";
 
 function intersectEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
@@ -172,50 +172,7 @@ function unionEandCItems(contraction: ScanMatch[], expansion: ScanMatch[]) {
   return Array.from(mergedBySymbol.values()).sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
 }
 
-function buildEandCScanResultsResponse(payload: EandCScanResponse, viewMode: EandCViewMode): ScanResultsResponse {
-  const contraction = payload.contraction ?? [];
-  const expansion = payload.expansion ?? [];
-  const items =
-    viewMode === "contraction"
-      ? contraction
-      : viewMode === "expansion"
-        ? expansion
-        : unionEandCItems(contraction, expansion);
-
-  const scanDescriptor =
-    viewMode === "contraction"
-      ? {
-          id: "e-and-c-contraction",
-          name: "E&C Contraction",
-          category: "Setups",
-          description: "Tight ranges over recent sessions with trend support and healthy liquidity.",
-          hit_count: items.length,
-        }
-      : viewMode === "expansion"
-        ? {
-            id: "e-and-c-expansion",
-            name: "E&C Expansion",
-            category: "Setups",
-            description: "Strong price expansion with volume surge and minimum liquidity.",
-            hit_count: items.length,
-          }
-        : {
-            id: "e-and-c-both",
-            name: "E&C Either (OR)",
-            category: "Setups",
-            description: "Stocks appearing in contraction OR expansion lists.",
-            hit_count: items.length,
-          };
-
-  return {
-    scan: scanDescriptor,
-    generated_at: new Date().toISOString(),
-    market_cap_min_crore: 0,
-    total_hits: items.length,
-    items,
-    sector_summaries: [],
-  };
-}
+// buildEandCScanResultsResponse was removed as Expansion and Contraction are now independent.
 
 type RibbonItem = {
   key: string;
@@ -1506,7 +1463,7 @@ function scannerModeLabel(mode: SavableScannerMode): string {
 }
 
 function isSavableScannerMode(mode: ScreenerMode): mode is SavableScannerMode {
-  return mode !== "improving-rs" && mode !== "e-and-c" && mode !== "near-pivot" && mode !== "pull-backs" && mode !== "returns" && mode !== "consolidating";
+  return mode !== "improving-rs" && mode !== "near-pivot" && mode !== "pull-backs" && mode !== "returns" && mode !== "consolidating";
 }
 
 function nextSavedScannerName(mode: SavableScannerMode, current: SavedScannerPreset[]) {
@@ -1588,7 +1545,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [sectorTabData, setSectorTabData] = useState<SectorTabResponse | null>(null);
   const [groupsData, setGroupsData] = useState<IndustryGroupsResponse | null>(null);
   const [improvingRsData, setImprovingRsData] = useState<ImprovingRsResponse | null>(null);
-  const [eAndCData, setEAndCData] = useState<EandCScanResponse | null>(null);
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [chartOpen, setChartOpen] = useState(false);
@@ -1615,7 +1571,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [fundamentalsError, setFundamentalsError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>("home");
   const [activeScanner, setActiveScanner] = useState<ScreenerMode>("custom-scan");
-  const [eAndCViewMode, setEAndCViewMode] = useState<EandCViewMode>("both");
   const [eAndCSettings, setEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.eAndCSettings);
   const [appliedEAndCSettings, setAppliedEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.appliedEAndCSettings);
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
@@ -2377,31 +2332,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           return;
         }
 
-        if (activePage === "screener" && activeScanner === "e-and-c") {
-          setScanSectorSummaries([]);
-          setScanSectorSummariesLoading(false);
-          setImprovingRsLoading(false);
-
-          const payload = eAndCData ?? await getEandCScan(activeMarket, appliedEAndCSettings);
-          if (!active || scanRequestIdRef.current !== requestId) {
-            return;
-          }
-
-          if (!eAndCData) {
-            setEAndCData(payload);
-          }
-
-          const resultPayload = buildEandCScanResultsResponse(payload, eAndCViewMode);
-          setScanResults(resultPayload);
-          setError(null);
-          setSelectedSymbol((current) => {
-            if (current && resultPayload.items.some((item) => item.symbol === current)) {
-              return current;
-            }
-            return resultPayload.items[0]?.symbol ?? null;
-          });
-          return;
-        }
 
         setScanLoading(true);
         setError(null);
@@ -2461,10 +2391,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     gapUpThreshold,
     groupsData,
     hasAppliedFiltersOnce,
-    appliedEAndCSettings,
-    eAndCData,
-    eAndCViewMode,
-    improvingRsWindow,
     loading,
     scannerRunNonce,
     sectorSortBy,
@@ -2476,7 +2402,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       loading ||
       activePage !== "screener" ||
       activeScanner === "improving-rs" ||
-      activeScanner === "e-and-c" ||
       scanArrangementMode !== "sector" ||
       scanLoading ||
       !scanResults ||
@@ -3304,11 +3229,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "gap-up-openers") {
       return getGapUpOpeners(gapUpThreshold, activeMarket, gapUpMinLiquidityCrore, options);
     }
-    if (activeScanner === "e-and-c") {
-      if (!eAndCData) {
-        return Promise.resolve(null);
-      }
-      return Promise.resolve(buildEandCScanResultsResponse(eAndCData, eAndCViewMode));
+    if (activeScanner === "ema-expansion") {
+      return getScanResults("ema-expansion", activeMarket, options);
+    }
+    if (activeScanner === "contraction") {
+      return getScanResults("contraction", activeMarket, options);
     }
     if (activeScanner === "near-pivot") {
       return getNearPivotScan(appliedNearPivotFilters, activeMarket, options);
@@ -5335,7 +5260,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
-                      "e-and-c": activeScanner === "e-and-c" ? scanResults?.total_hits ?? 0 : (scanResults?.scan.id?.startsWith("e-and-c") ? scanResults.total_hits : 0),
+                      "ema-expansion": activeScanner === "ema-expansion" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ema-expansion" ? scanResults.total_hits : 0,
+                      "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
@@ -5369,8 +5295,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "IPO"
                                 : activeScanner === "gap-up-openers"
                                   ? "Gap Up Openers"
-                                  : activeScanner === "e-and-c"
-                                    ? "E&C"
+                                  : activeScanner === "ema-expansion"
+                                    ? "Expansion"
+                                  : activeScanner === "contraction"
+                                    ? "Contraction"
                                   : activeScanner === "near-pivot"
                                     ? "Near Pivot"
                                   : activeScanner === "returns"
@@ -5390,8 +5318,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
                                   ? "Filter stocks by opening gap percentage."
-                                  : activeScanner === "e-and-c"
-                                    ? "Switch between contraction, expansion, and their intersection."
+                                  : activeScanner === "ema-expansion"
+                                    ? "Strong price expansion with volume surge and minimum liquidity."
+                                  : activeScanner === "contraction"
+                                    ? "Tight 3-day ranges above the 50D EMA with liquidity floors."
                                   : activeScanner === "near-pivot"
                                     ? "Find high-RS stocks tightening close to their pivot zone."
                                   : activeScanner === "returns"
@@ -5439,29 +5369,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 onMinLiquidityCroreChange={setGapUpMinLiquidityCrore}
                               />
                             )
-                            : activeScanner === "e-and-c"
+                            : activeScanner === "ema-expansion" || activeScanner === "contraction"
                               ? (
-                                <EandCScannerPanel
-                                  viewMode={eAndCViewMode}
-                                  onViewModeChange={handleEandCViewModeChange}
-                                  onRefresh={handleRefreshEandCScan}
-                                  settings={eAndCSettings}
-                                  onSettingsChange={handleEandCSettingsChange}
-                                  onApplySettings={handleApplyEandCSettings}
-                                  onResetSettings={handleResetEandCSettings}
-                                  contractionCount={eAndCData?.contraction.length ?? 0}
-                                  expansionCount={eAndCData?.expansion.length ?? 0}
-                                  eitherCount={
-                                    eAndCData
-                                      ? unionEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
-                                      : 0
-                                  }
-                                  intersectionCount={
-                                    eAndCData
-                                      ? intersectEandCItems(eAndCData.contraction ?? [], eAndCData.expansion ?? []).length
-                                      : 0
-                                  }
-                                />
+                                <div className="scanner-settings-note">
+                                  <strong>Built-in scan</strong>
+                                  <span>This scanner uses optimized backend logic with fixed filters.</span>
+                                </div>
                               )
                             : activeScanner === "near-pivot"
                               ? (

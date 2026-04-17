@@ -1,7 +1,7 @@
 import type { MarketKey } from "../lib/api";
 import { Panel } from "./Panel";
 
-export type ScreenerMode = "custom-scan" | "ipo" | "gap-up-openers" | "e-and-c" | "contraction" | "near-pivot" | "pull-backs" | "improving-rs" | "returns" | "consolidating" | "minervini-1m" | "minervini-5m";
+export type ScreenerMode = "custom-scan" | "ipo" | "gap-up-openers" | "ema-expansion" | "contraction" | "near-pivot" | "pull-backs" | "improving-rs" | "returns" | "consolidating" | "minervini-1m" | "minervini-5m";
 export type SavedSidebarScanner = {
   id: string;
   name: string;
@@ -39,7 +39,7 @@ const ITEMS: Array<{
     title: "Gap Up Openers",
   },
   {
-    mode: "e-and-c",
+    mode: "ema-expansion",
     title: "Expansion",
   },
   {
