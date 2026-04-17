@@ -1,4 +1,5 @@
 import asyncio
+import gc
 import csv
 import io
 import json
@@ -860,6 +861,11 @@ class DashboardService:
             recent_alerts=alerts,
         )
         self._dashboard_cache = response
+        
+        # Aggressive memory reclamation after building the dashboard (all scanners run)
+        import gc
+        gc.collect()
+        
         return response
 
     async def get_scan_counts(self) -> list[ScanDescriptor]:

@@ -600,15 +600,16 @@ async def lifespan(app: FastAPI):
             # Detect Hugging Face Space environment
             is_hf = os.getenv("SPACE_ID") is not None
             
+            if is_hf:
+                logger.warning("Hugging Face environment detected: skipping all startup warming to conserve memory. Relying on autonomous watchdog for lazy rewarming.")
+                return
+            
             await warm_startup_cache("india", service)
             gc.collect()
             
-            if is_hf:
-                logger.warning("Hugging Face environment detected: skipping US market pre-warm to conserve memory")
-            else:
-                await asyncio.sleep(10)  # Moderate stagger for local/heavy hosts
-                await warm_startup_cache("us", us_service)
-                gc.collect()
+            await asyncio.sleep(10)  # Moderate stagger for local/heavy hosts
+            await warm_startup_cache("us", us_service)
+            gc.collect()
             
             await asyncio.sleep(5)
             await apply_startup_bhavcopy("india", service)

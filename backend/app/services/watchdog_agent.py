@@ -432,6 +432,7 @@ class WatchdogAgent:
         self.validator = DataQualityValidator()
         self._last_check: dict[str, float] = {}
         self._last_status: dict[str, HealthStatus] = {}
+        self._boot_time = time.time()
 
         for market in ("india", "us"):
             service_obj = services.get(market)
@@ -455,7 +456,15 @@ class WatchdogAgent:
         return self.audit.failure_count(component, window_seconds)
 
     async def run_cycle(self) -> None:
+        import os
+        is_hf = os.getenv("SPACE_ID") is not None
         now = time.time()
+        
+        # Stagger the first cycle on HF to avoid competing with web server startup memory spikes
+        if is_hf and (now - self._boot_time) < 60:
+            logger.info("WATCHDOG: staggering initial cycle (waiting for web server to settle)...")
+            return
+
         for component_id, contract in self.registry.items():
             market_state = self.scheduler.get_market_state(contract.market)
             recent_failures = self.audit.failure_count(component_id)
