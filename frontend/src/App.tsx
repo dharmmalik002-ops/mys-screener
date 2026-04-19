@@ -10,7 +10,7 @@ import type {
   ChartTimeframe,
   IndicatorKey,
 } from "./components/ChartPanel";
-import type { EandCSettings, EandCViewMode } from "./components/EandCScannerPanel";
+import type { EandCSettings } from "./components/EandCScannerPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import type { ImportResult } from "./components/WatchlistImportModal";
@@ -1966,7 +1966,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setFundamentalsBySymbol({});
     setFundamentalsError(null);
     setImprovingRsData(null);
-    setEAndCData(null);
+
     setScanResults(null);
     setScanSectorSummaries([]);
   }, [activeMarket]);
@@ -3757,16 +3757,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScannerRunNonce((current) => current + 1);
   };
 
-  const handleEandCViewModeChange = (mode: EandCViewMode) => {
-    setActivePage("screener");
-    setActiveScanner("e-and-c");
-    setScanLoading(true);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setEAndCViewMode(mode);
-  };
-
   const handleEandCSettingsChange = (updates: Partial<EandCScanRequest>) => {
     setEAndCSettings((current) => ({ ...current, ...updates }));
   };
@@ -3775,7 +3765,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const nextSettings = normalizeEandCSettings(eAndCSettings);
     setEAndCSettings(nextSettings);
     setAppliedEAndCSettings(nextSettings);
-    setEAndCData(null);
     setScanLoading(true);
     setScanResults(null);
     setScanSectorSummaries([]);
@@ -3786,7 +3775,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const handleResetEandCSettings = () => {
     setEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
     setAppliedEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
-    setEAndCData(null);
     setScanLoading(true);
     setScanResults(null);
     setScanSectorSummaries([]);
@@ -3796,12 +3784,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   const handleRefreshEandCScan = () => {
     setActivePage("screener");
-    setActiveScanner("e-and-c");
+    setActiveScanner("ema-expansion");
     setScanLoading(true);
     setScanResults(null);
     setScanSectorSummaries([]);
     setScanSectorSummariesLoading(false);
-    setEAndCData(null);
     setScannerRunNonce((current) => current + 1);
   };
 
