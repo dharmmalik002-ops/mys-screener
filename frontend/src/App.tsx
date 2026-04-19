@@ -10,17 +10,13 @@ import type {
   ChartTimeframe,
   IndicatorKey,
 } from "./components/ChartPanel";
-import type { EandCSettings } from "./components/EandCScannerPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
-import type { ImportResult } from "./components/WatchlistImportModal";
 import {
   type ChartBar,
-  buildWatchdogEventsUrl,
   getChart,
   getConsolidatingScan,
   getDashboard,
-  getEandCScan,
   getFundamentals,
   getGapUpOpeners,
   getIndustryGroups,
@@ -33,9 +29,7 @@ import {
   getScanResults,
   getSectorTab,
   getWatchlistsState,
-  getWatchdogStatus,
   refreshMarketData,
-  runWatchdogFix,
   runCustomScan,
   saveWatchlistsState,
   type ChartResponse,
@@ -43,8 +37,6 @@ import {
   type ConsolidatingScanRequest,
   type CustomScanRequest,
   type DashboardResponse,
-  type EandCScanRequest,
-  type EandCScanResponse,
   type ImprovingRsResponse,
   type ImprovingRsWindow,
   type IndustryGroupsResponse,
@@ -59,27 +51,17 @@ import {
   type SectorSortBy,
   type SectorTabResponse,
   type ScanResultsResponse,
-  type WatchdogStatusResponse,
   type WatchlistsStateResponse,
-  dispatchBackendEvent as _dispatchBackendEvent,
-  startKeepAlive,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
+import { AppStatusBanners } from "./components/AppStatusBanners";
 
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
-const AiScreenerPanel = lazy(() => import("./components/AiScreenerPanel").then((module) => ({ default: module.AiScreenerPanel }))) as React.FC<{
-  market: MarketKey;
-  onPickSymbol: (symbol: string) => void;
-  onRequestAddToWatchlist: (symbol: string) => void;
-  onVisibleSymbolsChange?: (symbols: string[]) => void;
-  selectedSymbol: string | null;
-}>;
 const ChartGroupModal = lazy(() => import("./components/ChartGroupModal"));
 const ConsolidatingScannerPanel = lazy(() => import("./components/ConsolidatingScannerPanel").then((module) => ({ default: module.ConsolidatingScannerPanel })));
 const CustomScannerPanel = lazy(() => import("./components/CustomScannerPanel").then((module) => ({ default: module.CustomScannerPanel })));
-const EandCScannerPanel = lazy(() => import("./components/EandCScannerPanel").then((module) => ({ default: module.EandCScannerPanel })));
 const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").then((module) => ({ default: module.GapUpScannerPanel })));
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
 const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then((module) => ({ default: module.ImprovingRsPanel })));
@@ -88,15 +70,14 @@ const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPa
 const MoneyFlowPanel = lazy(() => import("./components/MoneyFlowPanel").then((module) => ({ default: module.MoneyFlowPanel })));
 const NewsTab = lazy(() => import("./components/NewsTab"));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
-const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const SectorExplorerPanel = lazy(() => import("./components/SectorExplorerPanel").then((module) => ({ default: module.SectorExplorerPanel })));
+const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
-const WatchdogTasksModal = lazy(() => import("./components/WatchdogTasksModal").then((module) => ({ default: module.WatchdogTasksModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
@@ -106,43 +87,21 @@ const THEME_KEY = "mr-malik-theme:v1";
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
 const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
-const WATCHLISTS_BROWSER_BACKUP_KEY = "mr-malik-watchlists:state:v1";
-const WATCHLISTS_BROWSER_BACKUP_DB = "mr-malik-watchlists-db:v1";
-const WATCHLISTS_BROWSER_BACKUP_STORE = "watchlists-state";
 const LEGACY_WATCHLISTS_KEYS = ["mr-malik-watchlists", "stock-scanner-watchlists:v1", "stock-scanner-watchlists"];
 const ACTIVE_WATCHLIST_KEY = "mr-malik-active-watchlist:v1";
 const SCANNER_SETTINGS_KEY = "mr-malik-scanner-settings:v1";
 const SAVED_SCANNERS_KEY = "mr-malik-saved-scanners:v1";
 const ACTIVE_MARKET_KEY = "mr-malik-active-market:v1";
 const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v1";
-const MARKET_VIEW_CACHE_MAX_AGE_MS = 4 * 60 * 60 * 1000;
+const MARKET_VIEW_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "ai-screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow" | "newsdesk" | "journal";
+type AppPage = "home" | "screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow" | "newsdesk" | "journal";
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
-type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "e-and-c" | "contraction">;
+type SavableScannerMode = Exclude<ScreenerMode, "improving-rs">;
 type SectorGroupSortMode = "1W" | "1M" | "count-desc" | "count-asc";
-
-function buildEandCScanResultsResponse(payload: EandCScanResponse): ScanResultsResponse {
-  const items = [...(payload.expansion ?? [])].sort((left, right) => (right.score ?? 0) - (left.score ?? 0));
-
-  return {
-    scan: {
-      id: "expansion",
-      name: "Expansion",
-      category: "Setups",
-      description: "Stocks up at least 6% in a day with RVOL >= 2 and same-day volume above 50,000.",
-      hit_count: items.length,
-    },
-    generated_at: new Date().toISOString(),
-    market_cap_min_crore: 0,
-    total_hits: items.length,
-    items,
-    sector_summaries: [],
-  };
-}
 
 type RibbonItem = {
   key: string;
@@ -194,8 +153,6 @@ type PersistedChartCacheEntry = {
   payload: ChartResponse;
 };
 
-type PersistedWatchlistsState = Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id" | "updated_at">;
-
 type SavedScannerPreset = {
   id: string;
   name: string;
@@ -236,8 +193,6 @@ type PersistedScannerSettings = {
   appliedReturnsFilters: ReturnsScanRequest;
   consolidatingFilters: ConsolidatingScanRequest;
   appliedConsolidatingFilters: ConsolidatingScanRequest;
-  eAndCSettings: EandCScanRequest;
-  appliedEAndCSettings: EandCScanRequest;
 };
 
 const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string; symbol: string }>> = {
@@ -267,9 +222,6 @@ const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string;
 
 const DEFAULT_WATCHLIST_COLORS = ["#4f8cff", "#00a389", "#ff9f1c", "#ef476f", "#7c5cff", "#06b6d4", "#84cc16", "#f97316"];
 const MAX_PERSISTED_CHART_RESPONSES = 8;
-const CHART_PREFETCH_FORWARD_COUNT = 5;
-const CHART_PREFETCH_BACKWARD_COUNT = 2;
-const CHART_PREFETCH_PARALLELISM = 3;
 
 function DeferredPanelPlaceholder({ className = "workspace-pad", compact = false }: { className?: string; compact?: boolean }) {
   const blockClassName = compact ? "skeleton-block skeleton-block-sm" : "skeleton-block skeleton-block-lg";
@@ -293,23 +245,18 @@ function buildChartCacheKey(market: MarketKey, symbol: string, timeframe: ChartT
   return `${market}:${symbol}:${timeframe}`;
 }
 
+function shouldPersistChartResponse(timeframe: ChartTimeframe) {
+  return timeframe === "1D" || timeframe === "1W";
+}
+
 function isChartResponseCacheCompatible(payload: ChartResponse | null | undefined, savedAt?: string) {
   if (!payload) {
     return false;
   }
   // Expire persisted chart cache entries older than 2 hours
   if (savedAt) {
-    const savedDate = new Date(savedAt);
-    const nowDate = new Date();
-    const ageMs = Date.now() - savedDate.getTime();
+    const ageMs = Date.now() - new Date(savedAt).getTime();
     if (!Number.isFinite(ageMs) || ageMs > 2 * 60 * 60 * 1000) {
-      return false;
-    }
-    if (
-      savedDate.getFullYear() !== nowDate.getFullYear()
-      || savedDate.getMonth() !== nowDate.getMonth()
-      || savedDate.getDate() !== nowDate.getDate()
-    ) {
       return false;
     }
   }
@@ -346,86 +293,6 @@ function readMarketScopedValue(baseKey: string, market: MarketKey, legacyKeys: s
   }
 
   return null;
-}
-
-function latestWatchlistsUpdatedAt(watchlists: LocalWatchlist[]): number {
-  return Math.max(0, ...watchlists.map((watchlist) => watchlist.updated_at ?? 0));
-}
-
-async function requestPersistentBrowserStorage(): Promise<void> {
-  if (typeof navigator === "undefined" || !("storage" in navigator) || typeof navigator.storage.persist !== "function") {
-    return;
-  }
-  try {
-    await navigator.storage.persist();
-  } catch {
-    // Ignore browser-denied persistence requests.
-  }
-}
-
-function openWatchlistsBackupDatabase(): Promise<IDBDatabase | null> {
-  if (typeof indexedDB === "undefined") {
-    return Promise.resolve(null);
-  }
-
-  return new Promise((resolve) => {
-    try {
-      const request = indexedDB.open(WATCHLISTS_BROWSER_BACKUP_DB, 1);
-      request.onupgradeneeded = () => {
-        const database = request.result;
-        if (!database.objectStoreNames.contains(WATCHLISTS_BROWSER_BACKUP_STORE)) {
-          database.createObjectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
-        }
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => resolve(null);
-    } catch {
-      resolve(null);
-    }
-  });
-}
-
-async function readBrowserWatchlistsBackup(market: MarketKey): Promise<PersistedWatchlistsState | null> {
-  const database = await openWatchlistsBackupDatabase();
-  if (!database) {
-    return null;
-  }
-
-  return new Promise((resolve) => {
-    const transaction = database.transaction(WATCHLISTS_BROWSER_BACKUP_STORE, "readonly");
-    const store = transaction.objectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
-    const request = store.get(marketScopedKey(WATCHLISTS_BROWSER_BACKUP_KEY, market));
-    request.onsuccess = () => {
-      const payload = request.result;
-      database.close();
-      resolve(payload && typeof payload === "object" ? payload as PersistedWatchlistsState : null);
-    };
-    request.onerror = () => {
-      database.close();
-      resolve(null);
-    };
-  });
-}
-
-async function writeBrowserWatchlistsBackup(market: MarketKey, payload: PersistedWatchlistsState): Promise<void> {
-  const database = await openWatchlistsBackupDatabase();
-  if (!database) {
-    return;
-  }
-
-  await new Promise<void>((resolve) => {
-    const transaction = database.transaction(WATCHLISTS_BROWSER_BACKUP_STORE, "readwrite");
-    const store = transaction.objectStore(WATCHLISTS_BROWSER_BACKUP_STORE);
-    store.put(payload, marketScopedKey(WATCHLISTS_BROWSER_BACKUP_KEY, market));
-    transaction.oncomplete = () => {
-      database.close();
-      resolve();
-    };
-    transaction.onerror = () => {
-      database.close();
-      resolve();
-    };
-  });
 }
 
 function emptyMarketViewCacheEntry(): MarketViewCacheEntry {
@@ -541,8 +408,6 @@ const DEFAULT_CUSTOM_FILTERS: CustomScanRequest = {
   sort_by: "rs_rating",
   sort_order: "desc",
   limit: 1500,
-  scan_date: null,
-  highest_vol_lookback_days: null,
 };
 
 const DEFAULT_NEAR_PIVOT_FILTERS: NearPivotScanRequest = {
@@ -601,12 +466,6 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
   limit: 1500,
 };
 
-const DEFAULT_E_AND_C_SETTINGS: EandCSettings = {
-  expansion_min_change_pct: 6,
-  expansion_min_relative_volume: 2,
-  expansion_min_day_volume: 50000,
-};
-
 const SUPPORTED_INDICATORS: IndicatorKey[] = ["ema10", "ema20", "ema50", "ema200", "vwap"];
 
 function normalizeIndicatorKeys(value: unknown): IndicatorKey[] {
@@ -634,8 +493,6 @@ function normalizeChartColors(value: unknown): ChartColorSettings {
     candleDown: typeof candidate.candleDown === "string" ? candidate.candleDown : DEFAULT_CHART_COLORS.candleDown,
     volumeUp: typeof candidate.volumeUp === "string" ? candidate.volumeUp : DEFAULT_CHART_COLORS.volumeUp,
     volumeDown: typeof candidate.volumeDown === "string" ? candidate.volumeDown : DEFAULT_CHART_COLORS.volumeDown,
-    volumeHQ: typeof candidate.volumeHQ === "string" ? candidate.volumeHQ : DEFAULT_CHART_COLORS.volumeHQ,
-    volumeLQ: typeof candidate.volumeLQ === "string" ? candidate.volumeLQ : DEFAULT_CHART_COLORS.volumeLQ,
     rsLine: typeof candidate.rsLine === "string" ? candidate.rsLine : DEFAULT_CHART_COLORS.rsLine,
     rsMarker: typeof candidate.rsMarker === "string" ? candidate.rsMarker : DEFAULT_CHART_COLORS.rsMarker,
     rsMarkerSize:
@@ -758,43 +615,25 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
 
   const openMinutes = market === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
   const closeMinutes = market === "us" ? 16 * 60 : 15 * 60 + 30;
-  // How long after close before we auto-refresh to pick up confirmed close data
-  const postCloseGraceMinutes = market === "us" ? 20 : 35;
   const tzLabel = market === "us" ? "ET" : "IST";
   const openLabel = market === "us" ? "09:30" : "09:15";
   const closeLabel = market === "us" ? "16:00" : "15:30";
 
   const isMarketOpen = isTradingDay && totalMinutes >= openMinutes && totalMinutes <= closeMinutes;
-  // Window just after close where we want to auto-refresh once to pick up close data
-  const isJustAfterClose = isTradingDay && totalMinutes > closeMinutes && totalMinutes < closeMinutes + postCloseGraceMinutes + 5;
-  const minutesSinceClose = isTradingDay && totalMinutes > closeMinutes ? totalMinutes - closeMinutes : null;
 
   if (isMarketOpen) {
     return {
       mode: "market-open" as const,
-      delayMs: 0,
-      label: market === "us" ? "US Live Sync" : "India Live Sync",
-      detail: `Auto-syncing dashboard, screeners, and movers every 2 min during ${openLabel}-${closeLabel} ${tzLabel}`,
-      refreshFundamentals: false,
-    };
-  }
-
-  // Just closed and within the post-close refresh grace window: schedule auto-refresh
-  // to fire once the confirmed close data is available
-  if (isJustAfterClose && minutesSinceClose !== null) {
-    const remainingMs = (postCloseGraceMinutes - minutesSinceClose) * 60_000;
-    return {
-      mode: "after-hours" as const,
-      delayMs: Math.max(remainingMs, 10_000), // at least 10s
+      delayMs: 24 * 60 * 60_000,
       label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
-      detail: `Auto-refreshing close snapshot — ${closeLabel} ${tzLabel} session`,
+      detail: `Showing the last confirmed close during ${openLabel}-${closeLabel} ${tzLabel}`,
       refreshFundamentals: false,
     };
   }
 
   return {
     mode: "after-hours" as const,
-    delayMs: 0, // no auto-refresh outside the close window
+    delayMs: 24 * 60 * 60_000,
     label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
     detail: `Daily cache updates after the ${closeLabel} ${tzLabel} close`,
     refreshFundamentals: false,
@@ -926,28 +765,6 @@ function normalizeChartPanelTab(value: string | undefined): ChartPanelTab {
   return value === "fundamentals" ? "fundamentals" : "technical";
 }
 
-function normalizeRvolScale(value: string | undefined): "sm" | "md" | "lg" {
-  if (value === "sm" || value === "lg") {
-    return value;
-  }
-  return "md";
-}
-
-function normalizeWidgetPosition(
-  value: { x?: number | null; y?: number | null } | null | undefined,
-): { x: number; y: number } | null {
-  if (!value || typeof value.x !== "number" || typeof value.y !== "number") {
-    return null;
-  }
-  if (!Number.isFinite(value.x) || !Number.isFinite(value.y)) {
-    return null;
-  }
-  return {
-    x: Math.max(0, value.x),
-    y: Math.max(0, value.y),
-  };
-}
-
 function readChartPreferences(market: MarketKey): {
   chartPanelTab: ChartPanelTab;
   timeframe: ChartTimeframe;
@@ -956,37 +773,17 @@ function readChartPreferences(market: MarketKey): {
   indicatorKeys: IndicatorKey[];
   chartColors: ChartColorSettings;
   drawingColor: string;
-  showRvol: boolean;
-  rvolPos: { x: number; y: number } | null;
-  rvolAccentColor: string;
-  rvolScale: "sm" | "md" | "lg";
-  showExpansionMarkers: boolean;
-  expansionMarkerColor: string;
-  expansionMarkerScale: "sm" | "md" | "lg";
-  showEarningsMarkers: boolean;
-  earningsMarkerColor: string;
 } {
-  const defaults = {
-    chartPanelTab: "technical" as ChartPanelTab,
-    timeframe: "1D" as ChartTimeframe,
-    chartStyle: "candles" as ChartStyle,
-    showBenchmarkOverlay: false,
-    indicatorKeys: ["ema20", "ema50"] as IndicatorKey[],
-    chartColors: DEFAULT_CHART_COLORS,
-    drawingColor: "#00d2ff",
-    showRvol: false,
-    rvolPos: null as { x: number; y: number } | null,
-    rvolAccentColor: "#00d2ff",
-    rvolScale: "md" as const,
-    showExpansionMarkers: true,
-    expansionMarkerColor: "#22c55e",
-    expansionMarkerScale: "md" as const,
-    showEarningsMarkers: false,
-    earningsMarkerColor: "#ff78b0",
-  };
-
   if (typeof window === "undefined") {
-    return defaults;
+    return {
+      chartPanelTab: "technical",
+      timeframe: "1D",
+      chartStyle: "candles",
+      showBenchmarkOverlay: false,
+      indicatorKeys: ["ema20", "ema50"],
+      chartColors: DEFAULT_CHART_COLORS,
+      drawingColor: "#00d2ff",
+    };
   }
 
   try {
@@ -1002,15 +799,6 @@ function readChartPreferences(market: MarketKey): {
       indicatorKeys: IndicatorKey[];
       chartColors: ChartColorSettings;
       drawingColor: string;
-      showRvol: boolean;
-      rvolPos: { x?: number | null; y?: number | null } | null;
-      rvolAccentColor: string;
-      rvolScale: "sm" | "md" | "lg";
-      showExpansionMarkers: boolean;
-      expansionMarkerColor: string;
-      expansionMarkerScale: "sm" | "md" | "lg";
-      showEarningsMarkers: boolean;
-      earningsMarkerColor: string;
     }>;
     return {
       chartPanelTab: normalizeChartPanelTab(parsed.chartPanelTab),
@@ -1019,19 +807,18 @@ function readChartPreferences(market: MarketKey): {
       showBenchmarkOverlay: parsed.showBenchmarkOverlay === true,
       indicatorKeys: normalizeIndicatorKeys(parsed.indicatorKeys),
       chartColors: normalizeChartColors(parsed.chartColors),
-      drawingColor: normalizeHexColor(parsed.drawingColor, defaults.drawingColor),
-      showRvol: parsed.showRvol === true,
-      rvolPos: normalizeWidgetPosition(parsed.rvolPos),
-      rvolAccentColor: normalizeHexColor(parsed.rvolAccentColor, defaults.rvolAccentColor),
-      rvolScale: normalizeRvolScale(parsed.rvolScale),
-      showExpansionMarkers: parsed.showExpansionMarkers !== false,
-      expansionMarkerColor: normalizeHexColor(parsed.expansionMarkerColor, defaults.expansionMarkerColor),
-      expansionMarkerScale: normalizeRvolScale(parsed.expansionMarkerScale),
-      showEarningsMarkers: parsed.showEarningsMarkers === true,
-      earningsMarkerColor: normalizeHexColor(parsed.earningsMarkerColor, defaults.earningsMarkerColor),
+      drawingColor: normalizeHexColor(parsed.drawingColor, "#00d2ff"),
     };
   } catch {
-    return defaults;
+    return {
+      chartPanelTab: "technical",
+      timeframe: "1D",
+      chartStyle: "candles",
+      showBenchmarkOverlay: false,
+      indicatorKeys: ["ema20", "ema50"],
+      chartColors: DEFAULT_CHART_COLORS,
+      drawingColor: "#00d2ff",
+    };
   }
 }
 
@@ -1052,8 +839,8 @@ function macroIndexFallbackSymbol(cardName: string, market: MarketKey): string |
   if (normalizedName === "NIFTY 50") {
     return "^NSEI";
   }
-  if (normalizedName === "BANK NIFTY" || normalizedName === "NIFTY BANK") {
-    return "^NSEBANK";
+  if (normalizedName === "NIFTY SMALLCAP 250") {
+    return "^CNXSC";
   }
   if (normalizedName === "NIFTY MIDCAP 50") {
     return "^NSEMDCP50";
@@ -1128,7 +915,12 @@ function readPersistedChartCache(market: MarketKey) {
     const parsed = JSON.parse(raw) as Record<string, PersistedChartCacheEntry>;
     return Object.fromEntries(
       Object.entries(parsed ?? {}).filter(
-        ([, value]) => value && typeof value === "object" && isChartResponseCacheCompatible(value.payload),
+        ([, value]) =>
+          value
+          && typeof value === "object"
+          && typeof value.payload?.timeframe === "string"
+          && shouldPersistChartResponse(value.payload.timeframe as ChartTimeframe)
+          && isChartResponseCacheCompatible(value.payload),
       ),
     );
   } catch {
@@ -1195,57 +987,6 @@ function normalizeWatchlistColor(value: unknown, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(normalized) ? normalized : fallback;
 }
 
-function normalizeWatchlistUpdatedAt(value: unknown): number | null {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value;
-  }
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function normalizeWatchlistBifurcations(value: unknown, fallbackSymbols: string[]): LocalWatchlist["bifurcations"] {
-  if (!Array.isArray(value)) {
-    return [{ id: "main", name: "Main", symbols: [...fallbackSymbols] }];
-  }
-
-  const output: LocalWatchlist["bifurcations"] = [];
-  const seenIds = new Set<string>();
-  for (const item of value) {
-    if (!item || typeof item !== "object") {
-      continue;
-    }
-    const candidate = item as { id?: unknown; name?: unknown; symbols?: unknown };
-    const id = typeof candidate.id === "string" && candidate.id.trim() ? candidate.id.trim() : buildLocalId();
-    const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
-    if (!name || seenIds.has(id)) {
-      continue;
-    }
-    const symbols = Array.isArray(candidate.symbols)
-      ? Array.from(
-          new Set(
-            candidate.symbols
-              .map((symbol) => normalizeStoredSymbol(symbol))
-              .filter((symbol): symbol is string => Boolean(symbol)),
-          ),
-        )
-      : [];
-    seenIds.add(id);
-    output.push({ id, name, symbols });
-  }
-
-  if (output.length === 0) {
-    return [{ id: "main", name: "Main", symbols: [...fallbackSymbols] }];
-  }
-  return output;
-}
-
-function watchlistSymbolsFromBifurcations(bifurcations: LocalWatchlist["bifurcations"]): string[] {
-  return Array.from(new Set(bifurcations.flatMap((item) => item.symbols)));
-}
-
 function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
   if (!Array.isArray(value)) {
     return [];
@@ -1270,7 +1011,7 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       continue;
     }
 
-    const legacySymbols = Array.isArray(candidate.symbols)
+    const symbols = Array.isArray(candidate.symbols)
       ? Array.from(
           new Set(
             candidate.symbols
@@ -1279,34 +1020,14 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
           ),
         )
       : [];
-    const bifurcations = normalizeWatchlistBifurcations((candidate as { bifurcations?: unknown }).bifurcations, legacySymbols);
-    const mergedSymbols = Array.from(new Set([...legacySymbols, ...watchlistSymbolsFromBifurcations(bifurcations)]));
-    if (mergedSymbols.length > 0) {
-      const firstBifurcation = bifurcations[0];
-      if (firstBifurcation) {
-        const firstSet = new Set(firstBifurcation.symbols);
-        const missing = mergedSymbols.filter((symbol) => !firstSet.has(symbol));
-        if (missing.length > 0) {
-          firstBifurcation.symbols = [...firstBifurcation.symbols, ...missing];
-        }
-      }
-    }
-    const activeBifurcationIdRaw = (candidate as { active_bifurcation_id?: unknown }).active_bifurcation_id;
-    const activeBifurcationId = typeof activeBifurcationIdRaw === "string" && bifurcations.some((item) => item.id === activeBifurcationIdRaw)
-      ? activeBifurcationIdRaw
-      : bifurcations[0]?.id ?? null;
     const color = normalizeWatchlistColor(candidate.color, DEFAULT_WATCHLIST_COLORS[output.length % DEFAULT_WATCHLIST_COLORS.length]);
-    const updatedAt = normalizeWatchlistUpdatedAt(candidate.updated_at);
 
     seenIds.add(id);
     output.push({
       id,
       name: rawName,
       color,
-      symbols: mergedSymbols,
-      bifurcations,
-      active_bifurcation_id: activeBifurcationId,
-      updated_at: updatedAt,
+      symbols,
     });
   }
 
@@ -1361,26 +1082,18 @@ function readActiveWatchlistId(watchlists: LocalWatchlist[], market: MarketKey):
 }
 
 function normalizeWatchlistsStatePayload(
-  payload: Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id" | "updated_at">,
-): { watchlists: LocalWatchlist[]; activeWatchlistId: string | null; updatedAt: number | null } {
-  const updatedAt = normalizeWatchlistUpdatedAt(payload.updated_at);
-  const watchlists = sanitizeWatchlists(payload.watchlists).map((watchlist) => (
-    watchlist.updated_at == null && updatedAt !== null
-      ? { ...watchlist, updated_at: updatedAt }
-      : watchlist
-  ));
+  payload: Pick<WatchlistsStateResponse, "watchlists" | "active_watchlist_id">,
+): { watchlists: LocalWatchlist[]; activeWatchlistId: string | null } {
+  const watchlists = sanitizeWatchlists(payload.watchlists);
   const activeWatchlistId =
     watchlists.some((watchlist) => watchlist.id === payload.active_watchlist_id)
       ? payload.active_watchlist_id
       : watchlists[0]?.id ?? null;
-  return { watchlists, activeWatchlistId, updatedAt };
+  return { watchlists, activeWatchlistId };
 }
 
 function watchlistsStateSignature(watchlists: LocalWatchlist[], activeWatchlistId: string | null) {
-  return JSON.stringify({
-    watchlists: watchlists.map(({ updated_at: _updatedAt, ...watchlist }) => watchlist),
-    active_watchlist_id: activeWatchlistId,
-  });
+  return JSON.stringify({ watchlists, active_watchlist_id: activeWatchlistId });
 }
 
 function mergeWithDefaults<T extends Record<string, unknown>>(defaults: T, value: unknown): T {
@@ -1412,8 +1125,6 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
     appliedReturnsFilters: DEFAULT_RETURNS_FILTERS,
     consolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
     appliedConsolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
-    eAndCSettings: DEFAULT_E_AND_C_SETTINGS,
-    appliedEAndCSettings: DEFAULT_E_AND_C_SETTINGS,
   };
 
   if (typeof window === "undefined") {
@@ -1462,8 +1173,6 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
       appliedReturnsFilters: mergeWithDefaults(DEFAULT_RETURNS_FILTERS, parsed.appliedReturnsFilters),
       consolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.consolidatingFilters),
       appliedConsolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.appliedConsolidatingFilters),
-      eAndCSettings: mergeWithDefaults(DEFAULT_E_AND_C_SETTINGS, parsed.eAndCSettings),
-      appliedEAndCSettings: mergeWithDefaults(DEFAULT_E_AND_C_SETTINGS, parsed.appliedEAndCSettings),
     };
   } catch {
     return defaults;
@@ -1485,6 +1194,10 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "custom-scan",
       "ipo",
       "gap-up-openers",
+      "near-pivot",
+      "pull-backs",
+      "returns",
+      "consolidating",
       "minervini-1m",
       "minervini-5m",
     ]);
@@ -1535,7 +1248,7 @@ function scannerModeLabel(mode: SavableScannerMode): string {
 }
 
 function isSavableScannerMode(mode: ScreenerMode): mode is SavableScannerMode {
-  return mode !== "improving-rs" && mode !== "e-and-c" && mode !== "contraction" && mode !== "near-pivot" && mode !== "pull-backs" && mode !== "returns" && mode !== "consolidating";
+  return mode !== "improving-rs";
 }
 
 function nextSavedScannerName(mode: SavableScannerMode, current: SavedScannerPreset[]) {
@@ -1553,17 +1266,7 @@ function indiaDateKey(date: Date = new Date()) {
   }).format(date);
 }
 
-function marketDateKey(date: Date, market: MarketKey) {
-  const timeZone = market === "us" ? "America/New_York" : "Asia/Kolkata";
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function savedScannerFreshForMarket(savedAt: string | null | undefined, market: MarketKey) {
+function savedScannerFreshToday(savedAt: string | null | undefined) {
   if (!savedAt) {
     return false;
   }
@@ -1571,18 +1274,7 @@ function savedScannerFreshForMarket(savedAt: string | null | undefined, market: 
   if (Number.isNaN(parsed.getTime())) {
     return false;
   }
-  return marketDateKey(parsed, market) === marketDateKey(new Date(), market);
-}
-
-function isFundamentalsPayloadFresh(payload: CompanyFundamentals | null | undefined) {
-  if (!payload?.fetched_at) {
-    return false;
-  }
-  const fetchedAt = Date.parse(payload.fetched_at);
-  if (!Number.isFinite(fetchedAt)) {
-    return false;
-  }
-  return (Date.now() - fetchedAt) <= (2 * 60 * 60 * 1000);
+  return indiaDateKey(parsed) === indiaDateKey();
 }
 
 function downloadTextFile(filename: string, contents: string) {
@@ -1605,9 +1297,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const initialScannerSettings = readScannerSettings(bootstrapMarket);
   const initialSavedScanners = readSavedScanners(bootstrapMarket);
   const initialSavedDrawings = readSavedDrawings(bootstrapMarket);
-  const [backendStatus, setBackendStatus] = useState<"ok" | "warming" | "failed">("ok");
-  const [watchdogStatus, setWatchdogStatus] = useState<"checking" | "healthy" | "stale" | "offline">("checking");
-  const [watchdogStatusMeta, setWatchdogStatusMeta] = useState("Checking backend freshness...");
   const [activeMarket, setActiveMarket] = useState<MarketKey>(bootstrapMarket);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
   const [universeCatalog, setUniverseCatalog] = useState<ScanMatch[]>([]);
@@ -1617,7 +1306,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [sectorTabData, setSectorTabData] = useState<SectorTabResponse | null>(null);
   const [groupsData, setGroupsData] = useState<IndustryGroupsResponse | null>(null);
   const [improvingRsData, setImprovingRsData] = useState<ImprovingRsResponse | null>(null);
-  const [eAndCData, setEAndCData] = useState<EandCScanResponse | null>(null);
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const [chartOpen, setChartOpen] = useState(false);
@@ -1629,15 +1317,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [indicatorKeys, setIndicatorKeys] = useState<IndicatorKey[]>(initialPreferences.indicatorKeys);
   const [chartColors, setChartColors] = useState<ChartColorSettings>(initialPreferences.chartColors);
   const [chartDrawingColor, setChartDrawingColor] = useState(initialPreferences.drawingColor);
-  const [showRvol, setShowRvol] = useState(initialPreferences.showRvol);
-  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(initialPreferences.rvolPos);
-  const [rvolAccentColor, setRvolAccentColor] = useState(initialPreferences.rvolAccentColor);
-  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">(initialPreferences.rvolScale);
-  const [showExpansionMarkers, setShowExpansionMarkers] = useState(initialPreferences.showExpansionMarkers);
-  const [expansionMarkerColor, setExpansionMarkerColor] = useState(initialPreferences.expansionMarkerColor);
-  const [expansionMarkerScale, setExpansionMarkerScale] = useState<"sm" | "md" | "lg">(initialPreferences.expansionMarkerScale);
-  const [showEarningsMarkers, setShowEarningsMarkers] = useState(initialPreferences.showEarningsMarkers);
-  const [earningsMarkerColor, setEarningsMarkerColor] = useState(initialPreferences.earningsMarkerColor);
   const [savedDrawings, setSavedDrawings] = useState<Record<string, ChartAnnotation[]>>(initialSavedDrawings);
   const [fundamentalsBySymbol, setFundamentalsBySymbol] = useState<Record<string, CompanyFundamentals>>({});
   const [chartError, setChartError] = useState<string | null>(null);
@@ -1647,8 +1326,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [fundamentalsError, setFundamentalsError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>("home");
   const [activeScanner, setActiveScanner] = useState<ScreenerMode>("custom-scan");
-  const [eAndCSettings, setEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.eAndCSettings);
-  const [appliedEAndCSettings, setAppliedEAndCSettings] = useState<EandCScanRequest>(initialScannerSettings.appliedEAndCSettings);
   const [resultSortMode, setResultSortMode] = useState<ResultSortMode>("rs");
   const [customFilters, setCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.customFilters);
   const [appliedCustomFilters, setAppliedCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.appliedCustomFilters);
@@ -1680,7 +1357,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [sectorVisibleSymbols, setSectorVisibleSymbols] = useState<string[]>([]);
   const [sectorLoading, setSectorLoading] = useState(false);
   const [groupsVisibleSymbols, setGroupsVisibleSymbols] = useState<string[]>([]);
-  const [aiVisibleSymbols, setAiVisibleSymbols] = useState<string[]>([]);
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [improvingRsWindow, setImprovingRsWindow] = useState<ImprovingRsWindow>("1D");
   const [improvingRsLoading, setImprovingRsLoading] = useState(false);
@@ -1688,7 +1364,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [showScannerSettings, setShowScannerSettings] = useState(true);
   const [theme, setTheme] = useState<ThemeKey>(readTheme);
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
-  const [isWatchlistsHydrated, setIsWatchlistsHydrated] = useState(false);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
   const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number } | null>(null);
@@ -1706,15 +1381,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [clockTick, setClockTick] = useState(() => Date.now());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [bootstrapNonce, setBootstrapNonce] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
-  const [watchdogFixing, setWatchdogFixing] = useState(false);
-  const [watchdogTasksOpen, setWatchdogTasksOpen] = useState(false);
   const chartRequestIdRef = useRef(0);
   const fundamentalsRequestIdRef = useRef(0);
   const scanRequestIdRef = useRef(0);
   const scanSectorSummaryRequestIdRef = useRef(0);
   const refreshingRef = useRef(false);
-  const lastAutoRefreshAtRef = useRef(0);
   const handleRefreshRef = useRef<(source?: RefreshSource) => Promise<void>>(async () => {});
   const visibleSymbolsRef = useRef<string[]>([]);
   const pageVisibleSymbolsRef = useRef<string[]>([]);
@@ -1722,10 +1395,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const selectedSymbolRef = useRef<string | null>(null);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
-  const previousActiveMarketRef = useRef<MarketKey>(activeMarket);
   const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false, us: false });
   const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null, us: null });
   const watchlistsHydrationRequestIdRef = useRef(0);
+  const autoRefreshAttemptKeyRef = useRef<Record<MarketKey, string | null>>({ india: null, us: null });
   const persistedChartCacheRef = useRef<Record<MarketKey, Record<string, PersistedChartCacheEntry>>>({
     india: readPersistedChartCache("india"),
     us: readPersistedChartCache("us"),
@@ -1734,11 +1407,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     india: readPersistedMarketViewCache("india"),
     us: readPersistedMarketViewCache("us"),
   });
-
-  useEffect(() => {
-    void requestPersistentBrowserStorage();
-  }, []);
-
   const updateMarketViewCache = (
     market: MarketKey,
     updates: Partial<MarketViewCacheEntry>,
@@ -1761,9 +1429,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       void import("./components/ScreenerSidebar");
       void import("./components/ScanTable");
       void import("./components/CustomScannerPanel");
-      void import("./components/EandCScannerPanel");
       void import("./components/ImprovingRsPanel");
       void import("./components/GapUpScannerPanel");
+      void import("./components/NearPivotScannerPanel");
+      void import("./components/PullBackScannerPanel");
+      void import("./components/ReturnsScannerPanel");
+      void import("./components/ConsolidatingScannerPanel");
       void import("./components/MinerviniScannerPanel");
       return;
     }
@@ -1792,6 +1463,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
+    if (page === "newsdesk") {
+      void import("./components/NewsTab");
+      return;
+    }
+
+    if (page === "journal") {
+      void import("./components/TradeJournalPanel");
+      return;
+    }
+
     void import("./components/MoneyFlowPanel");
   };
 
@@ -1810,6 +1491,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const storeCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe, payload: ChartResponse) => {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
     chartResponseCacheRef.current[cacheKey] = payload;
+    if (!shouldPersistChartResponse(chartTimeframe)) {
+      return;
+    }
     const nextPersisted = prunePersistedChartCache({
       ...persistedChartCacheRef.current[market],
       [cacheKey]: {
@@ -1914,15 +1598,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setIndicatorKeys(preferences.indicatorKeys);
     setChartColors(preferences.chartColors);
     setChartDrawingColor(preferences.drawingColor);
-    setShowRvol(preferences.showRvol);
-    setRvolPos(preferences.rvolPos);
-    setRvolAccentColor(preferences.rvolAccentColor);
-    setRvolScale(preferences.rvolScale);
-    setShowExpansionMarkers(preferences.showExpansionMarkers);
-    setExpansionMarkerColor(preferences.expansionMarkerColor);
-    setExpansionMarkerScale(preferences.expansionMarkerScale);
-    setShowEarningsMarkers(preferences.showEarningsMarkers);
-    setEarningsMarkerColor(preferences.earningsMarkerColor);
   };
 
   const applyScannerSettings = (settings: PersistedScannerSettings) => {
@@ -1943,8 +1618,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setAppliedReturnsFilters(settings.appliedReturnsFilters);
     setConsolidatingFilters(settings.consolidatingFilters);
     setAppliedConsolidatingFilters(settings.appliedConsolidatingFilters);
-    setEAndCSettings(settings.eAndCSettings);
-    setAppliedEAndCSettings(settings.appliedEAndCSettings);
   };
 
   const handleMarketChange = (nextMarket: MarketKey) => {
@@ -1964,22 +1637,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setWatchlists(nextWatchlists);
     setActiveWatchlistId(readActiveWatchlistId(nextWatchlists, nextMarket));
     setWatchlistPickerSymbol(null);
+    setJournalAddRequest(null);
     setSavedScanners(nextSavedScanners);
     setActiveSavedScannerId(null);
     setSavedDrawings(nextSavedDrawings);
     setChartPalette(nextChartPalette);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setScanLoading(false);
-    setImprovingRsLoading(false);
-    setSectorLoading(false);
     setGroupsData(null);
     setGroupsVisibleSymbols([]);
     setGroupsLoading(false);
     setGroupsFocusRequest(null);
-    setChartGroupModalContext(null);
-    setJournalAddRequest(null);
     setSelectedSymbol(null);
     setChart(null);
     setChartOpen(false);
@@ -2003,7 +1669,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeMarket, useMarketRoutes]);
   const chartResponseCacheRef = useRef<Record<string, ChartResponse>>({});
   const tickerRequestIdRef = useRef(0);
-  const refreshTickerRibbonRef = useRef<() => void>(() => {});
 
   const refreshTickerRibbon = () => {
     const requestId = tickerRequestIdRef.current + 1;
@@ -2018,8 +1683,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       })
       .catch(() => {});
   };
-
-  refreshTickerRibbonRef.current = refreshTickerRibbon;
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -2050,10 +1713,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setFundamentalsBySymbol({});
     setFundamentalsError(null);
     setImprovingRsData(null);
-    setEAndCData(null);
     setScanResults(null);
     setScanSectorSummaries([]);
-  }, [activeMarket]);
+  }, [activeMarket, bootstrapNonce]);
 
   useEffect(() => {
     let active = true;
@@ -2062,31 +1724,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     watchlistsSyncReadyRef.current[activeMarket] = false;
 
     async function hydrateWatchlists() {
-      let localWatchlists = readWatchlists(activeMarket);
-      let localActiveWatchlistId = readActiveWatchlistId(localWatchlists, activeMarket);
-      let localTimestamp = latestWatchlistsUpdatedAt(localWatchlists);
-
-      const browserBackupState = await readBrowserWatchlistsBackup(activeMarket);
-      if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
-        return;
-      }
-
-      if (browserBackupState) {
-        const normalizedBrowserBackup = normalizeWatchlistsStatePayload({
-          watchlists: browserBackupState.watchlists,
-          active_watchlist_id: browserBackupState.active_watchlist_id,
-          updated_at: browserBackupState.updated_at,
-        });
-        const browserBackupTimestamp = Math.max(
-          normalizedBrowserBackup.updatedAt ?? 0,
-          latestWatchlistsUpdatedAt(normalizedBrowserBackup.watchlists),
-        );
-        if (browserBackupTimestamp > localTimestamp) {
-          localWatchlists = normalizedBrowserBackup.watchlists;
-          localActiveWatchlistId = normalizedBrowserBackup.activeWatchlistId;
-          localTimestamp = browserBackupTimestamp;
-        }
-      }
+      const localWatchlists = readWatchlists(activeMarket);
+      const localActiveWatchlistId = readActiveWatchlistId(localWatchlists, activeMarket);
 
       try {
         const remoteState = await getWatchlistsState(activeMarket);
@@ -2095,44 +1734,23 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
 
         const normalizedRemote = normalizeWatchlistsStatePayload(remoteState);
-        const hasRemoteData = normalizedRemote.watchlists.length > 0;
-        const remoteTimestamp = normalizedRemote.updatedAt ?? 0;
-
-        let nextWatchlists = localWatchlists;
-        let nextActiveWatchlistId = localActiveWatchlistId;
-
-        // "Smart Restore" Logic: 
-        // 1. If server HAS data and it's NEWER than local, we download it (Multi-computer sync).
-        // 2. If server has data but it's OLDER than local, we stick to local (it will be pushed below).
-        // 3. If server is EMPTY but local is NOT, we stick to local (Update/Wipe recovery).
-        const shouldPreferRemote = hasRemoteData && remoteTimestamp > localTimestamp;
-        
-        if (shouldPreferRemote) {
-          nextWatchlists = normalizedRemote.watchlists;
-          nextActiveWatchlistId = normalizedRemote.activeWatchlistId;
-        }
+        const nextWatchlists = normalizedRemote.watchlists.length > 0 ? normalizedRemote.watchlists : localWatchlists;
+        const nextActiveWatchlistId = normalizedRemote.watchlists.length > 0
+          ? normalizedRemote.activeWatchlistId
+          : localActiveWatchlistId;
 
         setWatchlists(nextWatchlists);
         setActiveWatchlistId(nextActiveWatchlistId);
-        setIsWatchlistsHydrated(true);
-
-        // Update technical signatures to avoid redundant syncs.
         watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(
-          hasRemoteData ? normalizedRemote.watchlists : [],
-          hasRemoteData ? normalizedRemote.activeWatchlistId : null,
+          normalizedRemote.watchlists,
+          normalizedRemote.activeWatchlistId,
         );
         watchlistsSyncReadyRef.current[activeMarket] = true;
 
-        // Trigger a force-push back to server if:
-        // - The server was empty but we had local data.
-        // - Our local data is newer than what we just saw on the server.
-        const needsRestoration = (!hasRemoteData && localWatchlists.length > 0) || (hasRemoteData && localTimestamp > remoteTimestamp);
-        
-        if (needsRestoration) {
+        if (normalizedRemote.watchlists.length === 0 && localWatchlists.length > 0) {
           const localPayload = {
-            watchlists: nextWatchlists,
-            active_watchlist_id: nextActiveWatchlistId,
-            updated_at: localTimestamp || Date.now(),
+            watchlists: localWatchlists,
+            active_watchlist_id: localActiveWatchlistId,
           };
           const savedState = await saveWatchlistsState(localPayload, activeMarket);
           if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
@@ -2144,15 +1762,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             normalizedSaved.activeWatchlistId,
           );
         }
-      } catch (err) {
+      } catch {
         if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
           return;
         }
 
-        // Catch-all safety: ensure LocalStorage data is AT LEAST loaded locally.
         setWatchlists(localWatchlists);
         setActiveWatchlistId(localActiveWatchlistId);
-        setIsWatchlistsHydrated(true);
         watchlistsServerSignatureRef.current[activeMarket] = null;
         watchlistsSyncReadyRef.current[activeMarket] = true;
       }
@@ -2170,25 +1786,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     async function loadInitialData() {
       const cachedView = marketViewCacheRef.current[activeMarket];
       const hadCachedDashboard = Boolean(cachedView.dashboard);
-      let loadingGuardTimeoutId: number | null = null;
       if (!hadCachedDashboard) {
         setLoading(true);
-        if (typeof window !== "undefined") {
-          loadingGuardTimeoutId = window.setTimeout(() => {
-            if (!active) {
-              return;
-            }
-            setLoading(false);
-            setError((current) => current ?? "Backend is waking up. Data can take up to a minute on first load.");
-          }, 12000);
-        }
       }
 
       try {
         const dashboardPromise = getDashboard(activeMarket);
         const sectorPromise = getSectorTab("1D", "desc", activeMarket);
 
-        let dashboardResolved = false;
+        const dashboardPayload = await dashboardPromise;
+        if (!active) {
+          return;
+        }
+
+        setDashboard(dashboardPayload);
+        updateMarketViewCache(activeMarket, { dashboard: dashboardPayload });
+        setSelectedSymbol((current) => current ?? dashboardPayload.top_gainers[0]?.symbol ?? null);
+        setLoading(false);
+        setError(null);
+        refreshTickerRibbon();
 
         void sectorPromise
           .then((sectorPayload) => {
@@ -2208,7 +1824,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 });
                 return current;
               }
-              const nextSymbol = firstSymbolFromSectorTab(sectorPayload);
+              const nextSymbol = dashboardPayload.top_gainers[0]?.symbol ?? firstSymbolFromSectorTab(sectorPayload);
               updateMarketViewCache(activeMarket, {
                 sectorTabData: sectorPayload,
                 universeCatalog: nextUniverseCatalog,
@@ -2220,47 +1836,31 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               sectorTabData: sectorPayload,
               universeCatalog: nextUniverseCatalog,
             });
-
-            if (!hadCachedDashboard && !dashboardResolved) {
-              setLoading(false);
-              setError((current) => (current === "Backend is waking up. Data can take up to a minute on first load." ? null : current));
-            }
           })
           .catch((sectorError) => {
-            if (!active && hadCachedDashboard) {
+            if (!active) {
               return;
             }
-            if (!hadCachedDashboard) {
-              setError((current) => current ?? (sectorError instanceof Error ? sectorError.message : "Failed to load sectors"));
-            }
+            setError((current) => current ?? (
+              sectorError instanceof Error
+                ? hadCachedDashboard
+                  ? `${sectorError.message}. Sector data may be stale.`
+                  : sectorError.message
+                : "Failed to load sectors"
+            ));
           });
-
-        const dashboardPayload = await dashboardPromise;
-        dashboardResolved = true;
-        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
-          window.clearTimeout(loadingGuardTimeoutId);
-          loadingGuardTimeoutId = null;
-        }
-        if (!active) {
-          return;
-        }
-
-        setDashboard(dashboardPayload);
-        updateMarketViewCache(activeMarket, { dashboard: dashboardPayload });
-        setSelectedSymbol((current) => current ?? dashboardPayload.top_gainers[0]?.symbol ?? null);
-        setLoading(false);
-        setError(null);
-        refreshTickerRibbon();
       } catch (loadError) {
-        if (loadingGuardTimeoutId !== null && typeof window !== "undefined") {
-          window.clearTimeout(loadingGuardTimeoutId);
-          loadingGuardTimeoutId = null;
-        }
         if (active) {
           setLoading(false);
-          if (!hadCachedDashboard) {
-            setError(loadError instanceof Error ? loadError.message : "Failed to load home page");
-          }
+          setError(
+            loadError instanceof Error
+              ? hadCachedDashboard
+                ? `${loadError.message}. Showing cached market snapshot.`
+                : loadError.message
+              : hadCachedDashboard
+                ? "Failed to refresh live market data. Showing cached market snapshot."
+                : "Failed to load home page",
+          );
         }
       }
     }
@@ -2288,18 +1888,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const timeoutId = window.setTimeout(() => {
       void import("./components/ScreenerSidebar");
       void import("./components/ScanTable");
-      void import("./components/CustomScannerPanel");
-      void import("./components/EandCScannerPanel");
-      void import("./components/ImprovingRsPanel");
-      void import("./components/GapUpScannerPanel");
-      void import("./components/MinerviniScannerPanel");
       void import("./components/SectorExplorerPanel");
       void import("./components/GroupsPanel");
       void import("./components/WatchlistsPanel");
-      void import("./components/WatchlistPickerModal");
-      void import("./components/MarketHealthPanel");
-      void import("./components/MoneyFlowPanel");
-    }, 2000);
+    }, 3500);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -2367,7 +1959,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       const requestId = scanRequestIdRef.current + 1;
       scanRequestIdRef.current = requestId;
       try {
-        if (activePage === "home" || activePage === "watchlists" || activePage === "market-health" || activePage === "money-flow") {
+        if (
+          activePage === "home" ||
+          activePage === "watchlists" ||
+          activePage === "market-health" ||
+          activePage === "money-flow" ||
+          activePage === "newsdesk" ||
+          activePage === "journal"
+        ) {
           setScanLoading(false);
           setScanSectorSummariesLoading(false);
           setError(null);
@@ -2436,32 +2035,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           return;
         }
 
-        if (activePage === "screener" && activeScanner === "e-and-c") {
-          setScanSectorSummaries([]);
-          setScanSectorSummariesLoading(false);
-          setImprovingRsLoading(false);
-
-          const payload = eAndCData ?? await getEandCScan(activeMarket, appliedEAndCSettings);
-          if (!active || scanRequestIdRef.current !== requestId) {
-            return;
-          }
-
-          if (!eAndCData) {
-            setEAndCData(payload);
-          }
-
-          const resultPayload = buildEandCScanResultsResponse(payload);
-          setScanResults(resultPayload);
-          setError(null);
-          setSelectedSymbol((current) => {
-            if (current && resultPayload.items.some((item) => item.symbol === current)) {
-              return current;
-            }
-            return resultPayload.items[0]?.symbol ?? null;
-          });
-          return;
-        }
-
         setScanLoading(true);
         setError(null);
         scanSectorSummaryRequestIdRef.current += 1;
@@ -2474,12 +2047,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
         setScanResults(payload);
         setScanSectorSummaries(payload.sector_summaries ?? []);
-        setSelectedSymbol((current) => {
-          if (current && payload.items.some((item) => item.symbol === current)) {
-            return current;
-          }
-          return payload.items[0]?.symbol ?? null;
-        });
+        setSelectedSymbol((current) => (current && payload.items.some((item) => item.symbol === current) ? current : payload.items[0]?.symbol ?? null));
         setError(null);
       } catch (loadError) {
         if (active && scanRequestIdRef.current === requestId) {
@@ -2520,8 +2088,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     gapUpThreshold,
     groupsData,
     hasAppliedFiltersOnce,
-    appliedEAndCSettings,
-    eAndCData,
     improvingRsWindow,
     loading,
     scannerRunNonce,
@@ -2534,7 +2100,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       loading ||
       activePage !== "screener" ||
       activeScanner === "improving-rs" ||
-      activeScanner === "e-and-c" ||
       scanArrangementMode !== "sector" ||
       scanLoading ||
       !scanResults ||
@@ -2623,23 +2188,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }, 1200);
 
     async function prefetchGroupsPage() {
-      // Retry with backoff so groups auto-populate even if the backend is
-      // still warming up from a cold start on HF free tier.
-      const maxAttempts = 3;
-      for (let attempt = 0; attempt < maxAttempts; attempt++) {
-        if (!active) return;
-        try {
-          const payload = await getIndustryGroups(activeMarket);
-          if (active) {
-            setGroupsData(payload);
-          }
-          return;
-        } catch {
-          if (attempt < maxAttempts - 1) {
-            await new Promise((r) => setTimeout(r, 3000 * (attempt + 1)));
-          }
-          // Final attempt failure is silently ignored — prefetch is best-effort.
+      try {
+        const payload = await getIndustryGroups(activeMarket);
+        if (active) {
+          setGroupsData(payload);
         }
+      } catch {
+        // Prefetch is best-effort and should not disturb the active page.
       }
     }
 
@@ -2659,7 +2214,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    if ((activePage === "home" && !chartOpen) || activePage === "market-health") {
+    if (
+      (activePage === "home" && !chartOpen) ||
+      activePage === "market-health" ||
+      activePage === "money-flow" ||
+      activePage === "newsdesk" ||
+      activePage === "journal"
+    ) {
       chartRequestIdRef.current += 1;
       setChartError(null);
       setChartLoading(false);
@@ -2690,195 +2251,28 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return () => window.clearInterval(intervalId);
   }, []);
 
-  // Refresh the index ribbon (ticker tape) every 3 minutes so prices stay live.
-  useEffect(() => {
-    const ribbonIntervalId = window.setInterval(() => {
-      refreshTickerRibbonRef.current();
-    }, 3 * 60 * 1000);
-    return () => window.clearInterval(ribbonIntervalId);
-  }, []); // empty — always calls the latest version via ref
-
-  // Silent market-data poll — runs every 2 minutes during market hours and
-  // continues later into the evening so the home sector heatmap picks up the
-  // official close snapshot when the Bhavcopy patch lands after 8:30–9:00 PM IST.
-  const silentLivePollRef = useRef<() => void>(() => {});
-  silentLivePollRef.current = () => {
-    const { weekday, totalMinutes } = getMarketClock(activeMarket);
-    const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
-    const openMin = activeMarket === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
-    const closeMin = activeMarket === "us" ? 16 * 60 : 15 * 60 + 30;
-    const eveningSyncEndMin = activeMarket === "us" ? 22 * 60 : 23 * 60;
-    const withinActiveWindow = totalMinutes >= openMin && totalMinutes <= closeMin;
-    const withinCloseSyncWindow = totalMinutes > closeMin && totalMinutes <= eveningSyncEndMin;
-    if (!isTradingDay || (!withinActiveWindow && !withinCloseSyncWindow) || refreshingRef.current) return;
-
-    // First nudge the backend to refresh the market snapshot, then silently reload
-    // whichever page the user is actively viewing so movers/screeners do not lag.
-    void refreshMarketData(activeMarket).catch(() => null);
-
-    void getSectorTab("1D", "desc", activeMarket)
-      .then((payload) => {
-        setSectorTabData(payload);
-        setUniverseCatalog(buildUniverseCatalogFromSectorTab(payload));
-        updateMarketViewCache(activeMarket, { sectorTabData: payload });
-      })
-      .catch(() => {});
-
-    void getDashboard(activeMarket)
-      .then((payload) => {
-        setDashboard(payload);
-        updateMarketViewCache(activeMarket, { dashboard: payload });
-      })
-      .catch(() => {});
-
-    if (activePage === "screener" && activeScanner === "improving-rs") {
-      void getImprovingRs(improvingRsWindow, activeMarket)
-        .then((payload) => {
-          setImprovingRsData(payload);
-          const preferredSymbol = selectedSymbolRef.current;
-          const nextSelected =
-            preferredSymbol && payload.items.some((item) => item.symbol === preferredSymbol)
-              ? preferredSymbol
-              : payload.items[0]?.symbol ?? null;
-          if (nextSelected) {
-            setSelectedSymbol(nextSelected);
-          }
-        })
-        .catch(() => {});
-    } else if (activePage === "screener") {
-      void requestActiveScannerResults(true)
-        .then((payload) => {
-          if (!payload) {
-            return;
-          }
-          syncSelectedSymbolFromScan(payload, selectedSymbolRef.current);
-          setScanSectorSummaries(payload.sector_summaries ?? []);
-        })
-        .catch(() => {});
-    }
-
-    if (activePage === "home" || activePage === "groups") {
-      void getIndustryGroups(activeMarket)
-        .then((payload) => {
-          setGroupsData(payload);
-          updateMarketViewCache(activeMarket, { groupsData: payload });
-        })
-        .catch(() => {});
-    }
-  };
-  useEffect(() => {
-    const initialDelayId = window.setTimeout(() => {
-      silentLivePollRef.current();
-    }, 3_000);
-    const liveId = window.setInterval(() => {
-      silentLivePollRef.current();
-    }, 2 * 60 * 1000); // every 2 minutes
-    return () => {
-      window.clearTimeout(initialDelayId);
-      window.clearInterval(liveId);
-    };
-  }, [activeMarket]);
-
-  useEffect(() => {
-    const eventSource = new EventSource(buildWatchdogEventsUrl(activeMarket));
-
-    eventSource.onmessage = (event) => {
-      let payload: { event?: string; market?: string; data?: { symbol?: string } } | null = null;
-      try {
-        payload = JSON.parse(event.data);
-      } catch {
-        return;
-      }
-
-      const eventType = String(payload?.event ?? "").toLowerCase();
-      if (!eventType || eventType === "heartbeat") {
-        return;
-      }
-
-      const eventMarket = String(payload?.market ?? "global").toLowerCase();
-      if (eventMarket !== "global" && eventMarket !== activeMarket) {
-        return;
-      }
-
-      if (eventType === "cache_invalidated") {
-        try {
-          window.localStorage.removeItem(marketScopedKey(MARKET_VIEW_CACHE_KEY, activeMarket));
-        } catch {
-          // Ignore storage access failures in private mode.
-        }
-      }
-
-      if (eventType === "snapshot_refreshed") {
-        silentLivePollRef.current();
-      }
-
-      if (eventType === "fundamentals_updated") {
-        const updatedSymbol = String(payload?.data?.symbol ?? "").toUpperCase();
-        const selected = String(selectedSymbolRef.current ?? "").toUpperCase();
-        if (!updatedSymbol || !selected || updatedSymbol !== selected) {
-          return;
-        }
-
-        void getFundamentals(updatedSymbol, activeMarket)
-          .then((fundamentalsPayload) => {
-            setFundamentalsBySymbol((current) => ({
-              ...current,
-              [updatedSymbol]: fundamentalsPayload,
-            }));
-          })
-          .catch(() => {});
-      }
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [activeMarket]);
-
-  // Auto-refresh once after market close to pick up confirmed close data
-  useEffect(() => {
-    const schedule = getAutoRefreshSchedule(new Date(), activeMarket);
-    if (schedule.delayMs <= 0) return;
-    const timerId = window.setTimeout(() => {
-      void handleRefreshRef.current("auto");
-    }, schedule.delayMs);
-    return () => window.clearTimeout(timerId);
-  }, [activeMarket, clockTick]); // clockTick drives re-evaluation every minute
-
   useEffect(() => {
     refreshingRef.current = refreshing;
   }, [refreshing]);
 
   useEffect(() => {
-    // Prefetch fundamentals as soon as a stock is selected, regardless of tab.
-    // This way the data is ready instantly when the user switches to the fundamentals tab.
-    if (!selectedSymbol || activePage === "market-health") {
+    if (
+      !selectedSymbol ||
+      chartPanelTab !== "fundamentals" ||
+      (activePage === "home" && !chartOpen) ||
+      activePage === "market-health" ||
+      activePage === "money-flow" ||
+      activePage === "newsdesk" ||
+      activePage === "journal"
+    ) {
       setFundamentalsLoading(false);
       return;
     }
-    // Don't show loading spinner until the user is actually on the fundamentals tab,
-    // but always kick off the background fetch.
-    const onFundamentalsTab = chartPanelTab === "fundamentals" && !(activePage === "home" && !chartOpen);
-    const cachedFundamentals = fundamentalsBySymbol[selectedSymbol];
-    const hasFreshFundamentals = isFundamentalsPayloadFresh(cachedFundamentals);
 
-    if (cachedFundamentals && hasFreshFundamentals) {
+    if (fundamentalsBySymbol[selectedSymbol]) {
       setFundamentalsError(null);
-      if (onFundamentalsTab) setFundamentalsLoading(false);
+      setFundamentalsLoading(false);
       return;
-    }
-
-    if (!onFundamentalsTab) {
-      // Background prefetch — no loading spinner, silent fetch
-      let cancelled = false;
-      getFundamentals(selectedSymbol, activeMarket)
-        .then((payload) => {
-          if (!cancelled && payload.symbol === selectedSymbol) {
-            setFundamentalsBySymbol((prev) => ({ ...prev, [payload.symbol]: payload }));
-          }
-        })
-        .catch(() => {});
-      return () => { cancelled = true; };
     }
 
     let active = true;
@@ -2930,36 +2324,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         indicatorKeys,
         chartColors,
         drawingColor: chartDrawingColor,
-        showRvol,
-        rvolPos,
-        rvolAccentColor,
-        rvolScale,
-        showExpansionMarkers,
-        expansionMarkerColor,
-        expansionMarkerScale,
-        showEarningsMarkers,
-        earningsMarkerColor,
       }),
     );
-  }, [
-    activeMarket,
-    chartColors,
-    chartDrawingColor,
-    chartPanelTab,
-    chartStyle,
-    earningsMarkerColor,
-    expansionMarkerColor,
-    expansionMarkerScale,
-    indicatorKeys,
-    rvolAccentColor,
-    rvolPos,
-    rvolScale,
-    showBenchmarkOverlay,
-    showEarningsMarkers,
-    showExpansionMarkers,
-    showRvol,
-    timeframe,
-  ]);
+  }, [activeMarket, chartColors, chartDrawingColor, chartPanelTab, chartStyle, indicatorKeys, showBenchmarkOverlay, timeframe]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -2987,23 +2354,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [theme]);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !isWatchlistsHydrated) {
+    if (typeof window === "undefined") {
       return;
     }
 
     const serialized = JSON.stringify(watchlists);
     window.localStorage.setItem(marketScopedKey(WATCHLISTS_KEY, activeMarket), serialized);
     window.localStorage.setItem(marketScopedKey(WATCHLISTS_BACKUP_KEY, activeMarket), serialized);
-    const normalizedActiveWatchlistId =
-      activeWatchlistId && watchlists.some((watchlist) => watchlist.id === activeWatchlistId)
-        ? activeWatchlistId
-        : watchlists[0]?.id ?? null;
-    void writeBrowserWatchlistsBackup(activeMarket, {
-      watchlists,
-      active_watchlist_id: normalizedActiveWatchlistId,
-      updated_at: latestWatchlistsUpdatedAt(watchlists) || Date.now(),
-    });
-  }, [activeMarket, activeWatchlistId, isWatchlistsHydrated, watchlists]);
+  }, [activeMarket, watchlists]);
 
   useEffect(() => {
     if (!watchlistsSyncReadyRef.current[activeMarket]) {
@@ -3119,8 +2477,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         appliedReturnsFilters,
         consolidatingFilters,
         appliedConsolidatingFilters,
-        eAndCSettings,
-        appliedEAndCSettings,
       }),
     );
   }, [
@@ -3141,8 +2497,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     nearPivotFilters,
     pullBackFilters,
     returnsFilters,
-    eAndCSettings,
-    appliedEAndCSettings,
     activeMarket,
   ]);
 
@@ -3212,8 +2566,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       ? (improvingRsData?.items ?? []).map((item) => item.symbol)
       : activePage === "market-health"
         ? []
-      : activePage === "ai-screener"
-        ? aiVisibleSymbols
       : activePage === "sectors"
         ? sectorVisibleSymbols
         : activePage === "groups"
@@ -3235,13 +2587,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const visibleSymbolsKey = visibleSymbols.join("|");
   const displayedChart = chart && chart.symbol === selectedSymbol && chart.timeframe === timeframe ? chart : null;
   const activeChartKey = selectedSymbol ? `${selectedSymbol}:${timeframe}` : null;
-  const activeChartSavedAt = useMemo(() => {
-    if (!selectedSymbol) {
-      return null;
-    }
-    const chartCacheKey = buildChartCacheKey(activeMarket, selectedSymbol, timeframe);
-    return persistedChartCacheRef.current[activeMarket][chartCacheKey]?.saved_at ?? null;
-  }, [activeMarket, chart, selectedSymbol, timeframe]);
   const activeAnnotations = activeChartKey ? savedDrawings[activeChartKey] ?? [] : [];
   const activeFundamentals = selectedSymbol ? fundamentalsBySymbol[selectedSymbol] ?? null : null;
   const activeChartGroupContext = useMemo(
@@ -3321,20 +2666,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     limit: clampResultLimit(filters.limit),
   });
 
-  const normalizeEandCSettings = (settings: EandCScanRequest): EandCScanRequest => ({
-    ...DEFAULT_E_AND_C_SETTINGS,
-    ...settings,
-    expansion_min_change_pct: Number.isFinite(settings.expansion_min_change_pct)
-      ? Math.max(settings.expansion_min_change_pct, 0)
-      : DEFAULT_E_AND_C_SETTINGS.expansion_min_change_pct,
-    expansion_min_relative_volume: Number.isFinite(settings.expansion_min_relative_volume)
-      ? Math.max(settings.expansion_min_relative_volume, 0)
-      : DEFAULT_E_AND_C_SETTINGS.expansion_min_relative_volume,
-    expansion_min_day_volume: Number.isFinite(settings.expansion_min_day_volume)
-      ? Math.max(Math.floor(settings.expansion_min_day_volume), 0)
-      : DEFAULT_E_AND_C_SETTINGS.expansion_min_day_volume,
-  });
-
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
     if (activeScanner === "ipo") {
@@ -3342,15 +2673,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (activeScanner === "gap-up-openers") {
       return getGapUpOpeners(gapUpThreshold, activeMarket, gapUpMinLiquidityCrore, options);
-    }
-    if (activeScanner === "e-and-c") {
-      if (!eAndCData) {
-        return Promise.resolve(null);
-      }
-      return Promise.resolve(buildEandCScanResultsResponse(eAndCData));
-    }
-    if (activeScanner === "contraction") {
-      return getScanResults("contraction", activeMarket, options);
     }
     if (activeScanner === "near-pivot") {
       return getNearPivotScan(appliedNearPivotFilters, activeMarket, options);
@@ -3656,85 +2978,61 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [selectedSymbol]);
 
   useEffect(() => {
-    if (!selectedSymbol || activePage === "market-health") {
+    if (timeframe !== "1D" && timeframe !== "1W") {
       return;
     }
 
-    const navigationSymbols = chartOpen
-      ? chartNavigationSymbolsRef.current?.length
-        ? chartNavigationSymbolsRef.current
-        : pageVisibleSymbols
-      : pageVisibleSymbols.length > 0
-        ? pageVisibleSymbols
-        : visibleSymbols;
-
-    if (!navigationSymbols.length) {
+    if (activePage !== "screener" && activePage !== "watchlists") {
       return;
     }
 
-    const currentIndex = navigationSymbols.indexOf(selectedSymbol);
-    const forwardSymbols = currentIndex >= 0
+    const orderedSymbols = selectedSymbol && visibleSymbols.includes(selectedSymbol)
       ? [
-          ...navigationSymbols.slice(currentIndex + 1),
-          ...navigationSymbols.slice(0, currentIndex),
+          ...visibleSymbols.slice(visibleSymbols.indexOf(selectedSymbol) + 1),
+          ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
         ]
-      : navigationSymbols;
-    const backwardSymbols = currentIndex >= 0
-      ? [...navigationSymbols.slice(0, currentIndex)].reverse()
-      : [];
-    const symbolsToWarm = Array.from(
-      new Set([
-        ...forwardSymbols.slice(0, CHART_PREFETCH_FORWARD_COUNT),
-        ...backwardSymbols.slice(0, CHART_PREFETCH_BACKWARD_COUNT),
-      ]),
-    ).filter((symbol) => symbol && symbol !== selectedSymbol);
+      : visibleSymbols;
+    const symbolsToWarm = orderedSymbols
+      .filter((symbol) => symbol && symbol !== selectedSymbol)
+      .slice(0, 4);
 
     if (symbolsToWarm.length === 0) {
       return;
     }
 
     let cancelled = false;
-
-    const warmChartSymbol = async (symbol: string) => {
-      const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
-      if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
-        return;
-      }
-
-      prewarmingChartKeysRef.current.add(cacheKey);
-      try {
-        const payload = await getChart(symbol, timeframe, activeMarket);
-        if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
-          storeCachedChart(activeMarket, symbol, timeframe, payload);
-        }
-      } catch {
-        // Ignore prewarm failures and let explicit chart loads retry on demand.
-      } finally {
-        prewarmingChartKeysRef.current.delete(cacheKey);
-      }
-    };
-
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        for (let index = 0; index < symbolsToWarm.length; index += CHART_PREFETCH_PARALLELISM) {
+        for (const symbol of symbolsToWarm) {
           if (cancelled) {
             return;
           }
-          const batch = symbolsToWarm.slice(index, index + CHART_PREFETCH_PARALLELISM);
-          await Promise.allSettled(batch.map((symbol) => warmChartSymbol(symbol)));
+          const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
+          if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
+            continue;
+          }
+          prewarmingChartKeysRef.current.add(cacheKey);
+          try {
+            const payload = await getChart(symbol, timeframe, activeMarket);
+            if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
+              storeCachedChart(activeMarket, symbol, timeframe, payload);
+            }
+          } catch {
+            // Ignore prewarm failures and let explicit chart loads retry on demand.
+          } finally {
+            prewarmingChartKeysRef.current.delete(cacheKey);
+          }
         }
       })();
-    }, chartOpen ? 80 : 150);
+    }, 150);
 
     return () => {
       cancelled = true;
       window.clearTimeout(timeoutId);
     };
-  }, [activeMarket, activePage, chartOpen, pageVisibleSymbols, selectedSymbol, timeframe, visibleSymbols]);
+  }, [activeMarket, activePage, selectedSymbol, timeframe, visibleSymbolsKey]);
 
   useEffect(() => {
-    // When switching TO the watchlists page, only set a default selection if NONE exists.
-    // We want to avoid resetting the user's selection just because they visited the watchlist page.
     if (activePage !== "watchlists" || !activeWatchlist) {
       return;
     }
@@ -3743,13 +3041,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    // Only force a change if there's no selection at all. 
-    // If the user already has a selection, we let them keep it, 
-    // even if it's not in the currently active watchlist (they might have just added it to another one).
-    if (!selectedSymbol) {
+    if (!selectedSymbol || !activeWatchlist.symbols.includes(selectedSymbol)) {
       setSelectedSymbol(activeWatchlist.symbols[0]);
     }
-  }, [activePage, activeWatchlist]);
+  }, [activePage, activeWatchlist, selectedSymbol]);
 
   useEffect(() => {
     if (activePage !== "groups" && !chartOpen) {
@@ -3759,7 +3054,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const shouldHandleListNavigation = activePage === "screener" || activePage === "watchlists" || activePage === "ai-screener";
+      const shouldHandleListNavigation = activePage === "screener" || activePage === "watchlists";
       const shouldHandleGroupsNavigation = activePage === "groups" && !chartOpen && Boolean(chartNavigationSymbolsRef.current?.length);
       const shouldHandleChartContextNavigation =
         chartOpen &&
@@ -3767,8 +3062,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           activePage === "screener" ||
           activePage === "watchlists" ||
           activePage === "sectors" ||
-          activePage === "groups" ||
-          activePage === "ai-screener");
+          activePage === "groups");
       if (!shouldHandleChartContextNavigation && !shouldHandleListNavigation && !shouldHandleGroupsNavigation) {
         return;
       }
@@ -3871,44 +3165,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScanSectorSummariesLoading(false);
     setCustomFilters(DEFAULT_CUSTOM_FILTERS);
     setAppliedCustomFilters(DEFAULT_CUSTOM_FILTERS);
-    setScannerRunNonce((current) => current + 1);
-  };
-
-  const handleEandCSettingsChange = (updates: Partial<EandCScanRequest>) => {
-    setEAndCSettings((current) => ({ ...current, ...updates }));
-  };
-
-  const handleApplyEandCSettings = () => {
-    const nextSettings = normalizeEandCSettings(eAndCSettings);
-    setEAndCSettings(nextSettings);
-    setAppliedEAndCSettings(nextSettings);
-    setEAndCData(null);
-    setScanLoading(true);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setScannerRunNonce((current) => current + 1);
-  };
-
-  const handleResetEandCSettings = () => {
-    setEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
-    setAppliedEAndCSettings(DEFAULT_E_AND_C_SETTINGS);
-    setEAndCData(null);
-    setScanLoading(true);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setScannerRunNonce((current) => current + 1);
-  };
-
-  const handleRefreshEandCScan = () => {
-    setActivePage("screener");
-    setActiveScanner("e-and-c");
-    setScanLoading(true);
-    setScanResults(null);
-    setScanSectorSummaries([]);
-    setScanSectorSummariesLoading(false);
-    setEAndCData(null);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -4118,33 +3374,24 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
 
     const symbol = initialSymbol?.trim().toUpperCase();
-    const initialSymbols = symbol ? [symbol] : [];
     const nextWatchlist: LocalWatchlist = {
       id: buildLocalId(),
       name: trimmed,
       color: DEFAULT_WATCHLIST_COLORS[watchlists.length % DEFAULT_WATCHLIST_COLORS.length],
-      symbols: initialSymbols,
-      bifurcations: [{ id: "main", name: "Main", symbols: initialSymbols }],
-      active_bifurcation_id: "main",
-      updated_at: Date.now(),
+      symbols: symbol ? [symbol] : [],
     };
-    setWatchlists((current) => [...current, nextWatchlist]);
-    setActiveWatchlistId(nextWatchlist.id);
-    setActivePage("watchlists");
-  };
-
-  const handleImportWatchlist = (result: ImportResult) => {
-    const mainId = buildLocalId();
-    const nextWatchlist: LocalWatchlist = {
-      id: buildLocalId(),
-      name: result.name,
-      color: result.color,
-      symbols: result.symbols,
-      bifurcations: [{ id: mainId, name: "Main", symbols: result.symbols }],
-      active_bifurcation_id: mainId,
-      updated_at: Date.now(),
-    };
-    setWatchlists((current) => [...current, nextWatchlist]);
+    setWatchlists((current) => {
+      if (!symbol) {
+        return [...current, nextWatchlist];
+      }
+      return [
+        ...current.map((watchlist) => ({
+          ...watchlist,
+          symbols: watchlist.symbols.filter((item) => item !== symbol),
+        })),
+        nextWatchlist,
+      ];
+    });
     setActiveWatchlistId(nextWatchlist.id);
     setActivePage("watchlists");
   };
@@ -4155,7 +3402,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
     setWatchlists((current) =>
-      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, name: trimmed, updated_at: Date.now() } : watchlist)),
+      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, name: trimmed } : watchlist)),
     );
   };
 
@@ -4172,7 +3419,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const handleSetWatchlistColor = (watchlistId: string, color: string) => {
     const normalizedColor = normalizeWatchlistColor(color, DEFAULT_WATCHLIST_COLORS[0]);
     setWatchlists((current) =>
-      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, color: normalizedColor, updated_at: Date.now() } : watchlist)),
+      current.map((watchlist) => (watchlist.id === watchlistId ? { ...watchlist, color: normalizedColor } : watchlist)),
     );
   };
 
@@ -4181,53 +3428,26 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (!normalizedSymbol) {
       return;
     }
-    setWatchlists((current) =>
-      current.map((watchlist) =>
-        watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
-          ? watchlist
-          : {
-              ...watchlist,
-              symbols: [...watchlist.symbols, normalizedSymbol],
-              bifurcations: watchlist.bifurcations.length > 0
-                ? watchlist.bifurcations.map((bifurcation, index) => (
-                  index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
-                    ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
-                    : bifurcation
-                ))
-                : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
-              active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
-              updated_at: Date.now(),
-            },
-      ),
-    );
-    setActiveWatchlistId(watchlistId);
-  };
+    setWatchlists((current) => {
+      if (!current.some((watchlist) => watchlist.id === watchlistId)) {
+        return current;
+      }
 
-  const handleCopyToWatchlist = (watchlistId: string, symbol: string) => {
-    const normalizedSymbol = symbol.trim().toUpperCase();
-    if (!normalizedSymbol) {
-      return;
-    }
-    setWatchlists((current) =>
-      current.map((watchlist) =>
-        watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
-          ? watchlist
-          : {
-              ...watchlist,
-              symbols: [...watchlist.symbols, normalizedSymbol],
-              bifurcations: watchlist.bifurcations.length > 0
-                ? watchlist.bifurcations.map((bifurcation, index) => (
-                  index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
-                    ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
-                    : bifurcation
-                ))
-                : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
-              active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
-              updated_at: Date.now(),
-            },
-      ),
-    );
-    // intentionally does NOT switch active watchlist
+      return current.map((watchlist) => {
+        const nextSymbols = watchlist.symbols.filter((item) => item !== normalizedSymbol);
+        if (watchlist.id !== watchlistId) {
+          return nextSymbols.length === watchlist.symbols.length
+            ? watchlist
+            : { ...watchlist, symbols: nextSymbols };
+        }
+
+        return {
+          ...watchlist,
+          symbols: [...nextSymbols, normalizedSymbol],
+        };
+      });
+    });
+    setActiveWatchlistId(watchlistId);
   };
 
   const handleRemoveFromWatchlist = (watchlistId: string, symbol: string) => {
@@ -4239,133 +3459,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setWatchlists((current) =>
       current.map((watchlist) =>
         watchlist.id === watchlistId
-          ? {
-              ...watchlist,
-              symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol),
-              bifurcations: watchlist.bifurcations.map((bifurcation) => ({
-                ...bifurcation,
-                symbols: bifurcation.symbols.filter((item) => item !== normalizedSymbol),
-              })),
-              updated_at: Date.now(),
-            }
+          ? { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol) }
           : watchlist,
       ),
     );
-  };
-
-  const handleCreateBifurcation = (watchlistId: string, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      return;
-    }
-    setWatchlists((current) => current.map((watchlist) => {
-      if (watchlist.id !== watchlistId) {
-        return watchlist;
-      }
-      const bifurcationId = buildLocalId();
-      return {
-        ...watchlist,
-        bifurcations: [...watchlist.bifurcations, { id: bifurcationId, name: trimmed, symbols: [] }],
-        active_bifurcation_id: bifurcationId,
-        updated_at: Date.now(),
-      };
-    }));
-  };
-
-  const handleRenameBifurcation = (watchlistId: string, bifurcationId: string, name: string) => {
-    const trimmed = name.trim();
-    if (!trimmed) {
-      return;
-    }
-    setWatchlists((current) => current.map((watchlist) => {
-      if (watchlist.id !== watchlistId) {
-        return watchlist;
-      }
-      return {
-        ...watchlist,
-        bifurcations: watchlist.bifurcations.map((bifurcation) => (
-          bifurcation.id === bifurcationId ? { ...bifurcation, name: trimmed } : bifurcation
-        )),
-        updated_at: Date.now(),
-      };
-    }));
-  };
-
-  const handleSetActiveBifurcation = (watchlistId: string, bifurcationId: string) => {
-    setWatchlists((current) => current.map((watchlist) => {
-      if (watchlist.id !== watchlistId) {
-        return watchlist;
-      }
-      if (!watchlist.bifurcations.some((bifurcation) => bifurcation.id === bifurcationId)) {
-        return watchlist;
-      }
-      return {
-        ...watchlist,
-        active_bifurcation_id: bifurcationId,
-        updated_at: Date.now(),
-      };
-    }));
-  };
-
-  const handleMoveSymbolsBetweenBifurcations = (
-    watchlistId: string,
-    fromBifurcationId: string,
-    toBifurcationId: string,
-    symbols: string[],
-  ) => {
-    if (!watchlistId || !fromBifurcationId || !toBifurcationId || fromBifurcationId === toBifurcationId || symbols.length === 0) {
-      return;
-    }
-    const normalizedSymbols = Array.from(new Set(symbols.map((item) => item.trim().toUpperCase()).filter(Boolean)));
-    if (normalizedSymbols.length === 0) {
-      return;
-    }
-
-    setWatchlists((current) => current.map((watchlist) => {
-      if (watchlist.id !== watchlistId) {
-        return watchlist;
-      }
-      if (!watchlist.bifurcations.some((item) => item.id === fromBifurcationId) || !watchlist.bifurcations.some((item) => item.id === toBifurcationId)) {
-        return watchlist;
-      }
-
-      const nextBifurcations = watchlist.bifurcations.map((bifurcation) => {
-        if (bifurcation.id === fromBifurcationId) {
-          return {
-            ...bifurcation,
-            symbols: bifurcation.symbols.filter((item) => !normalizedSymbols.includes(item)),
-          };
-        }
-        if (bifurcation.id === toBifurcationId) {
-          return {
-            ...bifurcation,
-            symbols: Array.from(new Set([...bifurcation.symbols, ...normalizedSymbols])),
-          };
-        }
-        return bifurcation;
-      });
-
-      return {
-        ...watchlist,
-        bifurcations: nextBifurcations,
-        symbols: watchlistSymbolsFromBifurcations(nextBifurcations),
-        active_bifurcation_id: toBifurcationId,
-        updated_at: Date.now(),
-      };
-    }));
-  };
-
-  const handleReorderWatchlists = (orderedIds: string[]) => {
-    setWatchlists((current) => {
-      const map = new Map(current.map((wl) => [wl.id, wl]));
-      const reordered = orderedIds.map((id) => map.get(id)).filter(Boolean) as typeof current;
-      // Append any watchlists not in orderedIds (safety)
-      const ordered = new Set(orderedIds);
-      for (const wl of current) {
-        if (!ordered.has(wl.id)) reordered.push(wl);
-      }
-      return reordered;
-    });
   };
 
   const handleMoveWatchlistSymbols = (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => {
@@ -4391,38 +3488,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       return current.map((watchlist) => {
         if (watchlist.id === fromWatchlistId) {
-          const nextSourceBifurcations = watchlist.bifurcations.map((bifurcation) => ({
-            ...bifurcation,
-            symbols: bifurcation.symbols.filter((item) => !normalizedSymbols.includes(item)),
-          }));
           return {
             ...watchlist,
             symbols: watchlist.symbols.filter((item) => !normalizedSymbols.includes(item)),
-            bifurcations: nextSourceBifurcations,
           };
         }
 
         if (watchlist.id === toWatchlistId) {
           const merged = Array.from(new Set([...watchlist.symbols, ...normalizedSymbols]));
-          const nextTargetBifurcations = watchlist.bifurcations.length > 0
-            ? watchlist.bifurcations.map((bifurcation, index) => (
-              index === 0
-                ? { ...bifurcation, symbols: Array.from(new Set([...bifurcation.symbols, ...normalizedSymbols])) }
-                : bifurcation
-            ))
-            : [{ id: "main", name: "Main", symbols: [...normalizedSymbols] }];
           return {
             ...watchlist,
             symbols: merged,
-            bifurcations: nextTargetBifurcations,
           };
         }
 
         return watchlist;
-      }).map(w => (w.id === fromWatchlistId || w.id === toWatchlistId ? { ...w, updated_at: Date.now() } : w));
+      });
     });
 
-    // Stay on the current (source) watchlist after moving — do NOT switch to target.
+    setActiveWatchlistId(toWatchlistId);
   };
 
   const handleExportWatchlist = (watchlistId: string) => {
@@ -4664,8 +3748,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (nextSelectedSymbol) {
         const shouldForceChartReload =
           nextSelectedSymbol !== selectedSymbol ||
-          refreshMode === "historical-refresh" ||
-          refreshMode === "rebuilding-background";
+          refreshMode === "historical-refresh";
         void loadChartForSelection(nextSelectedSymbol, timeframe, activeMarket, {
           forceNetwork: shouldForceChartReload,
           preferCached: true,
@@ -4704,15 +3787,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       if (refreshPayload) {
         const rp = refreshPayload as RefreshResponse;
-        const isBackgroundRebuild = rp.refresh_mode === "rebuilding-background";
-        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "cached-current" || isBackgroundRebuild;
+        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "cached-current";
         const clearableAutoRefresh = refreshSucceeded;
 
-        if (isBackgroundRebuild) {
-          // EOD rebuild running in background — show info message and auto-reload in ~2 min
-          setError(rp.message ?? "Rebuilding EOD snapshot in background — data will update shortly.");
-          setTimeout(() => void handleRefreshRef.current("auto"), 120_000);
-        } else if (refreshSucceeded && loadWarnings.length === 0) {
+        if (refreshSucceeded && loadWarnings.length === 0) {
           setError(null);
         } else if (source === "manual") {
           const snapshotLabel = rp.snapshot_updated_at
@@ -4752,231 +3830,74 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
   };
 
-  const handleWatchdogFix = async () => {
-    if (watchdogFixing || refreshingRef.current) {
+  handleRefreshRef.current = handleRefresh;
+  const hasBootstrappedData = Boolean(dashboard || sectorTabData || groupsData);
+
+  const handleRetryConnection = () => {
+    setError(null);
+    setChartError(null);
+    if (!hasBootstrappedData || loading) {
+      setBootstrapNonce((current) => current + 1);
       return;
     }
-
-    setWatchdogFixing(true);
-    setWatchdogStatus("checking");
-    setWatchdogStatusMeta("Running self-heal now...");
-    setError("Running watchdog self-heal — checking caches and forcing a fresh sync...");
-    try {
-      const result = await runWatchdogFix(activeMarket);
-      await handleRefresh("manual");
-      try {
-        const status = await getWatchdogStatus(activeMarket);
-        applyWatchdogBadge(status);
-      } catch {
-        setWatchdogStatus("offline");
-        setWatchdogStatusMeta("Status unavailable right now.");
-      }
-
-      const notice = result.message ?? "Watchdog self-heal completed.";
-      setError(notice);
-      const clearAfterMs = result.refresh_mode === "rebuilding-background" ? 180_000 : 15_000;
-      window.setTimeout(() => {
-        setError((current) => (current === notice ? null : current));
-      }, clearAfterMs);
-
-      if (result.refresh_mode === "rebuilding-background") {
-        window.setTimeout(() => {
-          void handleRefreshRef.current("auto");
-          void getWatchdogStatus(activeMarket)
-            .then((status) => applyWatchdogBadge(status))
-            .catch(() => {});
-        }, 120_000);
-      }
-    } catch (watchdogError) {
-      setWatchdogStatus("offline");
-      setWatchdogStatusMeta("Watchdog self-heal failed.");
-      setError(watchdogError instanceof Error ? watchdogError.message : "Watchdog self-heal failed");
-    } finally {
-      setWatchdogFixing(false);
+    void handleRefreshRef.current("manual");
+    if (selectedSymbol) {
+      void loadChartForSelection(selectedSymbol, timeframe, activeMarket, {
+        forceNetwork: true,
+        preferCached: true,
+      }).catch((loadError) => {
+        setChartError(loadError instanceof Error ? loadError.message : "Failed to load chart");
+      });
     }
   };
 
-  handleRefreshRef.current = handleRefresh;
-
   useEffect(() => {
-    const previousMarket = previousActiveMarketRef.current;
-    previousActiveMarketRef.current = activeMarket;
-
-    if (previousMarket === activeMarket) {
+    if (loading || refreshing || !dashboard) {
       return;
     }
 
+    const generatedAtMs = new Date(dashboard.generated_at).getTime();
+    const ageMs = Date.now() - generatedAtMs;
+    if (Number.isFinite(generatedAtMs) && ageMs <= 10 * 60 * 1000) {
+      return;
+    }
+
+    const attemptKey = `${activeMarket}:${dashboard.generated_at}`;
+    if (autoRefreshAttemptKeyRef.current[activeMarket] === attemptKey) {
+      return;
+    }
+    autoRefreshAttemptKeyRef.current[activeMarket] = attemptKey;
+
     const timeoutId = window.setTimeout(() => {
-      if (!refreshingRef.current) {
-        void handleRefreshRef.current("auto");
-      }
-    }, 2_500);
+      void handleRefreshRef.current("auto");
+    }, 900);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [activeMarket]);
+  }, [activeMarket, dashboard, loading, refreshing]);
 
   useEffect(() => {
     if (loading || savedScanners.length === 0) {
       return;
     }
 
-    const stalePresets = savedScanners.filter((preset) => !savedScannerFreshForMarket(preset.lastUpdatedAt, activeMarket));
+    const stalePresets = savedScanners.filter((preset) => !savedScannerFreshToday(preset.lastUpdatedAt));
     if (stalePresets.length === 0) {
       return;
     }
 
     void syncSavedScanners(stalePresets);
-  }, [activeMarket, loading, savedScanners]);
+  }, [loading]);
 
   const autoRefreshSchedule = getAutoRefreshSchedule(new Date(clockTick), activeMarket);
-  const navSearchSuggestions = useMemo(
-    () => buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80),
-    [universeCatalog, deferredNavSearchQuery],
-  );
+  const navSearchSuggestions = buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80);
   const brandEyebrow = activeMarket === "india" ? "NSE / BSE Stock Scanner" : "NYSE / Nasdaq Stock Scanner";
   const floorMetricLabel = activeMarket === "india" ? "Floor" : "US Filter";
-  const freshnessWatermarks = useMemo(() => {
-    const labels: Array<{ key: string; label: string; value: string }> = [];
-    const toTimeLabel = (raw: string | null | undefined) => {
-      if (!raw) {
-        return null;
-      }
-      const parsed = new Date(raw);
-      if (Number.isNaN(parsed.getTime())) {
-        return null;
-      }
-      return parsed.toLocaleTimeString();
-    };
-
-    const dashboardTime = toTimeLabel(dashboard?.generated_at);
-    if (dashboardTime) labels.push({ key: "dashboard", label: "Dashboard", value: dashboardTime });
-
-    const sectorsTime = toTimeLabel(sectorTabData?.generated_at);
-    if (sectorsTime) labels.push({ key: "sectors", label: "Sectors", value: sectorsTime });
-
-    const groupsTime = toTimeLabel(groupsData?.generated_at);
-    if (groupsTime) labels.push({ key: "groups", label: "Groups", value: groupsTime });
-
-    const chartTime = toTimeLabel(activeChartSavedAt);
-    if (chartTime) {
-      labels.push({
-        key: "chart",
-        label: "Chart",
-        value: chartCacheState === "cached" ? `${chartTime} (cached)` : chartTime,
-      });
-    }
-
-    const fundamentalsTime = toTimeLabel(activeFundamentals?.fetched_at);
-    if (fundamentalsTime) labels.push({ key: "fundamentals", label: "Fundamentals", value: fundamentalsTime });
-
-    return labels;
-  }, [activeChartSavedAt, activeFundamentals?.fetched_at, chartCacheState, dashboard?.generated_at, groupsData?.generated_at, sectorTabData?.generated_at]);
-
-  // Backend warm-up detection: listen to status events dispatched by api.ts
-  useEffect(() => {
-    const handle = (e: Event) => {
-      const type = (e as CustomEvent<{ type: string }>).detail.type;
-      if (type === "warming") setBackendStatus("warming");
-      else if (type === "ready") setBackendStatus("ok");
-      else if (type === "failed") setBackendStatus("failed");
-    };
-    window.addEventListener("backend-status", handle);
-    return () => window.removeEventListener("backend-status", handle);
-  }, []);
-
-  // Start keep-alive pings once the app mounts so the HF Space container
-  // stays awake as long as the user has the tab open.
-  useEffect(() => {
-    startKeepAlive();
-  }, []);
-
-  const applyWatchdogBadge = (status: WatchdogStatusResponse) => {
-    const ageSeconds = Math.max(0, Math.round(status.snapshot_age_seconds ?? 0));
-    const ageLabel = ageSeconds < 90 ? `${ageSeconds}s old` : `${Math.round(ageSeconds / 60)}m old`;
-    const freshnessLabel = status.snapshot_stale
-      ? status.close_refresh_due
-        ? "close sync due"
-        : status.snapshot_session_date && status.expected_session_date && status.snapshot_session_date !== status.expected_session_date
-          ? `${status.snapshot_session_date} snapshot loaded`
-          : ageLabel
-      : ageLabel;
-    const siteCoverage =
-      typeof status.site_systems_ready === "number" && typeof status.site_systems_total === "number"
-        ? ` · ${status.site_systems_ready}/${status.site_systems_total} sections ready`
-        : "";
-    const needsAttention = status.snapshot_stale || (status.site_attention_count ?? 0) > 0;
-    setWatchdogStatus(needsAttention ? "stale" : "healthy");
-    setWatchdogStatusMeta(
-      `${status.is_market_open ? "Live" : "Idle"} · ${freshnessLabel}${siteCoverage} · checks every ${status.watchdog_interval_seconds}s`,
-    );
-  };
-
-  useEffect(() => {
-    let active = true;
-
-    async function pollWatchdogStatus() {
-      try {
-        const status = await getWatchdogStatus(activeMarket);
-        if (!active) {
-          return;
-        }
-        applyWatchdogBadge(status);
-        if (status.snapshot_stale && !refreshingRef.current && !watchdogFixing) {
-          const now = Date.now();
-          if (now - lastAutoRefreshAtRef.current >= 3 * 60 * 1000) {
-            lastAutoRefreshAtRef.current = now;
-            void handleRefreshRef.current("auto");
-          }
-        }
-      } catch {
-        if (!active) {
-          return;
-        }
-        setWatchdogStatus("offline");
-        setWatchdogStatusMeta("Status unavailable right now.");
-      }
-    }
-
-    void pollWatchdogStatus();
-    const intervalId = window.setInterval(() => {
-      void pollWatchdogStatus();
-    }, 60_000);
-
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-    };
-  }, [activeMarket]);
-
-  void _dispatchBackendEvent; // suppress unused import
   const floorMetricValue = activeMarket === "india" ? `${dashboard?.market_cap_min_crore ?? 800} Cr+` : ">$15 · 400K+ ADV";
-  const watchdogBadgeLabel = watchdogFixing
-    ? "Fixing"
-    : watchdogStatus === "healthy"
-      ? "Healthy"
-      : watchdogStatus === "stale"
-        ? "Needs sync"
-        : watchdogStatus === "offline"
-          ? "Offline"
-          : "Checking";
-  const watchdogBadgeTitle = watchdogFixing ? "Running watchdog self-heal now..." : watchdogStatusMeta;
 
   return (
     <div className="app-shell app-shell-simple">
-      {backendStatus === "warming" && (
-        <div className="backend-warmup-banner">
-          <span className="warmup-spinner" />
-          <span>Server is starting up after a recent update — connecting automatically, please wait…</span>
-        </div>
-      )}
-      {backendStatus === "failed" && (
-        <div className="backend-warmup-banner backend-warmup-banner--failed">
-          Could not reach the backend after 6 minutes.{" "}
-          <button className="warmup-retry-btn" onClick={() => { setBackendStatus("ok"); window.location.reload(); }}>Reload page</button>
-        </div>
-      )}
       <div className="ticker-ribbon">
         <div className="ticker-ribbon-track">
           {[...tickerTapeItems, ...tickerTapeItems].map((item, index) => (
@@ -5045,16 +3966,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
           <button
             type="button"
-            className={activePage === "ai-screener" ? "nav-button primary ai-sparkle" : "nav-button ghost"}
-            onClick={() => setActivePage("ai-screener")}
-            onMouseEnter={() => prefetchPageModules("ai-screener")}
-            onFocus={() => prefetchPageModules("ai-screener")}
-          >
-            AI Screener
-          </button>
-
-          <button
-            type="button"
             className={activePage === "sectors" ? "nav-button primary" : "nav-button ghost"}
             onClick={() => setActivePage("sectors")}
             onMouseEnter={() => prefetchPageModules("sectors")}
@@ -5110,6 +4021,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             type="button"
             className={activePage === "newsdesk" ? "nav-button primary" : "nav-button ghost"}
             onClick={() => setActivePage("newsdesk")}
+            onMouseEnter={() => prefetchPageModules("newsdesk")}
+            onFocus={() => prefetchPageModules("newsdesk")}
           >
             Newsdesk
           </button>
@@ -5118,8 +4031,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             type="button"
             className={activePage === "journal" ? "nav-button primary" : "nav-button ghost"}
             onClick={() => setActivePage("journal")}
+            onMouseEnter={() => prefetchPageModules("journal")}
+            onFocus={() => prefetchPageModules("journal")}
           >
-            📒 Journal
+            Journal
           </button>
 
           <form
@@ -5194,36 +4109,21 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </div>
           </div>
 
-          <div className="nav-mode-toggle">
-            <span>Watchdog</span>
-            <div className="mode-switch">
-              <span
-                className={`tool-pill active watchdog-status-pill watchdog-status-pill--${watchdogStatus}`}
-                title={watchdogBadgeTitle}
-              >
-                <span className="watchdog-status-dot" />
-                {watchdogBadgeLabel}
-              </span>
-            </div>
-          </div>
-
-          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing || watchdogFixing}>
+          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing}>
             {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
-          </button>
-          <button
-            type="button"
-            className="nav-button"
-            onClick={() => void handleWatchdogFix()}
-            disabled={refreshing || watchdogFixing}
-            title="Runs the broader full-site self-heal watchdog: checks dashboard, sectors, screeners, groups, fundamentals, charts, and forces a fresh sync."
-          >
-            {watchdogFixing ? "Running Watchdog..." : "Watchdog Fix"}
           </button>
         </div>
       </header>
 
+      <AppStatusBanners
+        error={error}
+        hasBootstrappedData={hasBootstrappedData}
+        loading={loading}
+        market={activeMarket}
+        onRetry={handleRetryConnection}
+      />
+
       <main className="workspace">
-        {error ? <div className="error-banner">{error}</div> : null}
 
         {loading ? (
           <div className="loading-skeleton">
@@ -5252,7 +4152,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               onOpenGroups={(options) => {
                 void openGroupsView(options);
               }}
-              onOpenWatchdogTasks={() => setWatchdogTasksOpen(true)}
             />
           </Suspense>
         ) : null}
@@ -5271,23 +4170,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
-        {!loading && activePage === "ai-screener" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <AiScreenerPanel
-              market={activeMarket}
-              onPickSymbol={handlePickSymbol}
-              onRequestAddToWatchlist={setWatchlistPickerSymbol}
-              onVisibleSymbolsChange={setAiVisibleSymbols}
-              selectedSymbol={selectedSymbol}
-            />
-          </Suspense>
-        ) : null}
         {!loading && activePage === "newsdesk" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <NewsTab
-              market={activeMarket}
-              onPickSymbol={handlePickSymbol}
-            />
+            <NewsTab market={activeMarket} onPickSymbol={handlePickSymbol} />
           </Suspense>
         ) : null}
         {!loading && activePage === "journal" ? (
@@ -5300,7 +4185,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "ai-screener" && activePage !== "newsdesk" && activePage !== "journal" ? (
+        {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "newsdesk" && activePage !== "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">
@@ -5337,17 +4222,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               </div>
             </section>
 
-            {freshnessWatermarks.length > 0 ? (
-              <section className="freshness-watermark-strip" aria-label="Section freshness timestamps">
-                {freshnessWatermarks.map((item) => (
-                  <span key={item.key} className="freshness-watermark-chip">
-                    <strong>{item.label}</strong>
-                    <small>{item.value}</small>
-                  </span>
-                ))}
-              </section>
-            ) : null}
-
             <section
               className={
                 activePage === "screener"
@@ -5367,8 +4241,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
-                      "e-and-c": activeScanner === "e-and-c" ? scanResults?.total_hits ?? 0 : (scanResults?.scan.id === "expansion" ? scanResults.total_hits : 0),
-                      "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
@@ -5382,8 +4254,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       name: preset.name,
                       mode: preset.mode,
                       lastMatchCount: preset.lastMatchCount,
-                      lastUpdatedAt: preset.lastUpdatedAt,
-                      isStale: !savedScannerFreshForMarket(preset.lastUpdatedAt, activeMarket),
                     }))}
                     activeSavedScannerId={activeSavedScannerId}
                     onLoadSavedScanner={handleLoadSavedScannerById}
@@ -5402,10 +4272,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "IPO"
                                 : activeScanner === "gap-up-openers"
                                   ? "Gap Up Openers"
-                                  : activeScanner === "e-and-c"
-                                    ? "Expansion"
-                                  : activeScanner === "contraction"
-                                    ? "Contraction"
                                   : activeScanner === "near-pivot"
                                     ? "Near Pivot"
                                   : activeScanner === "returns"
@@ -5425,10 +4291,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
                                   ? "Filter stocks by opening gap percentage."
-                                  : activeScanner === "e-and-c"
-                                    ? "Stocks up at least 6% in a day with RVOL >= 2 and same-day volume above 50,000."
-                                  : activeScanner === "contraction"
-                                    ? "Tight 3-day contractions above the 50D EMA with liquidity floors and at least one 5D/10D/30D/90D run-up trigger."
                                   : activeScanner === "near-pivot"
                                     ? "Find high-RS stocks tightening close to their pivot zone."
                                   : activeScanner === "returns"
@@ -5460,15 +4322,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         </div>
 
                         {showScannerSettings
-                          ? activeScanner === "ipo" || activeScanner === "contraction"
+                          ? activeScanner === "ipo"
                             ? (
                               <div className="scanner-settings-note">
                                 <strong>Built-in scan</strong>
-                                <span>
-                                  {activeScanner === "ipo"
-                                    ? "The IPO screener uses the backend listing-date rule and does not have extra filters yet."
-                                    : "The Contraction screener follows the fixed image rules: a tight 3-day change band, close above the 50D EMA, liquidity floors, and at least one run-up trigger."}
-                                </span>
+                                <span>The IPO screener uses the backend listing-date rule and does not have extra filters yet.</span>
                               </div>
                             )
                             : activeScanner === "gap-up-openers"
@@ -5480,17 +4338,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 onMinLiquidityCroreChange={setGapUpMinLiquidityCrore}
                               />
                             )
-                            : activeScanner === "e-and-c"
-                              ? (
-                                <EandCScannerPanel
-                                  onRefresh={handleRefreshEandCScan}
-                                  settings={eAndCSettings}
-                                  onSettingsChange={handleEandCSettingsChange}
-                                  onApplySettings={handleApplyEandCSettings}
-                                  onResetSettings={handleResetEandCSettings}
-                                  expansionCount={eAndCData?.expansion.length ?? 0}
-                                />
-                              )
                             : activeScanner === "near-pivot"
                               ? (
                                 <NearPivotScannerPanel
@@ -5583,7 +4430,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         sectorSummaries={scanSectorSummaries}
                         onPickSymbol={handlePickSymbol}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
-                        onRequestAddToJournal={(symbol, price) => { setJournalAddRequest({ symbol, suggestedPrice: price }); setActivePage("journal"); }}
                         selectedSymbol={selectedSymbol}
                         sortMode={resultSortMode}
                         onSortModeChange={setResultSortMode}
@@ -5609,24 +4455,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     chartError={chartError}
                     chartLoading={chartLoading}
                     chartCacheState={chartCacheState}
-                    showRvol={showRvol}
-                    onShowRvolChange={setShowRvol}
-                    rvolPos={rvolPos}
-                    onRvolPosChange={setRvolPos}
-                    rvolAccentColor={rvolAccentColor}
-                    onRvolAccentColorChange={setRvolAccentColor}
-                    rvolScale={rvolScale}
-                    onRvolScaleChange={setRvolScale}
-                    showExpansionMarkers={showExpansionMarkers}
-                    onShowExpansionMarkersChange={setShowExpansionMarkers}
-                    expansionMarkerColor={expansionMarkerColor}
-                    onExpansionMarkerColorChange={setExpansionMarkerColor}
-                    expansionMarkerScale={expansionMarkerScale}
-                    onExpansionMarkerScaleChange={setExpansionMarkerScale}
-                    showEarningsMarkers={showEarningsMarkers}
-                    onShowEarningsMarkersChange={setShowEarningsMarkers}
-                    earningsMarkerColor={earningsMarkerColor}
-                    onEarningsMarkerColorChange={setEarningsMarkerColor}
                     fundamentals={activeFundamentals}
                     fundamentalsLoading={fundamentalsLoading}
                     fundamentalsError={fundamentalsError}
@@ -5694,19 +4522,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSetWatchlistColor={handleSetWatchlistColor}
                   onRemoveFromWatchlist={handleRemoveFromWatchlist}
                   onMoveSymbols={handleMoveWatchlistSymbols}
-                  onCreateBifurcation={handleCreateBifurcation}
-                  onRenameBifurcation={handleRenameBifurcation}
-                  onMoveSymbolsBetweenBifurcations={handleMoveSymbolsBetweenBifurcations}
-                  onSetActiveBifurcation={handleSetActiveBifurcation}
-                  onCopyToWatchlist={handleCopyToWatchlist}
-                  onImportWatchlist={handleImportWatchlist}
-                  onReorderWatchlists={handleReorderWatchlists}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
-                  onRequestAddToJournal={(symbol, price) => { setJournalAddRequest({ symbol, suggestedPrice: price }); setActivePage("journal"); }}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
                   selectedSymbol={selectedSymbol}
-                  groupsData={groupsData}
                 />
               ) : (
                 null
@@ -5726,24 +4545,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   chartError={chartError}
                   chartLoading={chartLoading}
                   chartCacheState={chartCacheState}
-                  showRvol={showRvol}
-                  onShowRvolChange={setShowRvol}
-                  rvolPos={rvolPos}
-                  onRvolPosChange={setRvolPos}
-                  rvolAccentColor={rvolAccentColor}
-                  onRvolAccentColorChange={setRvolAccentColor}
-                  rvolScale={rvolScale}
-                  onRvolScaleChange={setRvolScale}
-                  showExpansionMarkers={showExpansionMarkers}
-                  onShowExpansionMarkersChange={setShowExpansionMarkers}
-                  expansionMarkerColor={expansionMarkerColor}
-                  onExpansionMarkerColorChange={setExpansionMarkerColor}
-                  expansionMarkerScale={expansionMarkerScale}
-                  onExpansionMarkerScaleChange={setExpansionMarkerScale}
-                  showEarningsMarkers={showEarningsMarkers}
-                  onShowEarningsMarkersChange={setShowEarningsMarkers}
-                  earningsMarkerColor={earningsMarkerColor}
-                  onEarningsMarkerColorChange={setEarningsMarkerColor}
                   fundamentals={activeFundamentals}
                   fundamentalsLoading={fundamentalsLoading}
                   fundamentalsError={fundamentalsError}
@@ -5777,25 +4578,32 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           </Suspense>
         ) : null}
 
-        {watchdogTasksOpen ? (
+        {watchlistPickerSymbol ? (
           <Suspense fallback={null}>
-            <WatchdogTasksModal market={activeMarket} onClose={() => setWatchdogTasksOpen(false)} />
-          </Suspense>
-        ) : null}
-
-        {chartGroupModalContext ? (
-          <Suspense fallback={null}>
-            <ChartGroupModal
+            <WatchlistPickerModal
               market={activeMarket}
-              context={chartGroupModalContext}
-              selectedSymbol={selectedSymbol}
-              onClose={() => setChartGroupModalContext(null)}
-              onSelectSymbol={(symbol: string) => handleSelectChartGroupSymbol(symbol, chartGroupModalContext)}
-              onAddToWatchlist={setWatchlistPickerSymbol}
-              onOpenGroupsPage={() => void handleOpenChartGroupPage(chartGroupModalContext)}
+              symbol={watchlistPickerSymbol}
+              watchlists={watchlists}
+              onClose={() => setWatchlistPickerSymbol(null)}
+              onAddToWatchlist={handleAddToWatchlist}
+              onCreateWatchlist={handleCreateWatchlist}
             />
           </Suspense>
         ) : null}
+
+      {chartGroupModalContext ? (
+        <Suspense fallback={null}>
+          <ChartGroupModal
+            market={activeMarket}
+            context={chartGroupModalContext}
+            selectedSymbol={selectedSymbol}
+            onClose={() => setChartGroupModalContext(null)}
+            onSelectSymbol={(symbol: string) => handleSelectChartGroupSymbol(symbol, chartGroupModalContext)}
+            onAddToWatchlist={setWatchlistPickerSymbol}
+            onOpenGroupsPage={() => void handleOpenChartGroupPage(chartGroupModalContext)}
+          />
+        </Suspense>
+      ) : null}
       </main>
 
       {chartOpen ? (
@@ -5818,24 +4626,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 chartError={chartError}
                 chartLoading={chartLoading}
                 chartCacheState={chartCacheState}
-                showRvol={showRvol}
-                onShowRvolChange={setShowRvol}
-                rvolPos={rvolPos}
-                onRvolPosChange={setRvolPos}
-                rvolAccentColor={rvolAccentColor}
-                onRvolAccentColorChange={setRvolAccentColor}
-                rvolScale={rvolScale}
-                onRvolScaleChange={setRvolScale}
-                showExpansionMarkers={showExpansionMarkers}
-                onShowExpansionMarkersChange={setShowExpansionMarkers}
-                expansionMarkerColor={expansionMarkerColor}
-                onExpansionMarkerColorChange={setExpansionMarkerColor}
-                expansionMarkerScale={expansionMarkerScale}
-                onExpansionMarkerScaleChange={setExpansionMarkerScale}
-                showEarningsMarkers={showEarningsMarkers}
-                onShowEarningsMarkersChange={setShowEarningsMarkers}
-                earningsMarkerColor={earningsMarkerColor}
-                onEarningsMarkerColorChange={setEarningsMarkerColor}
                 fundamentals={activeFundamentals}
                 fundamentalsLoading={fundamentalsLoading}
                 fundamentalsError={fundamentalsError}
@@ -5866,19 +4656,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </Suspense>
           </div>
         </div>
-      ) : null}
-
-      {watchlistPickerSymbol ? (
-        <Suspense fallback={null}>
-          <WatchlistPickerModal
-            market={activeMarket}
-            symbol={watchlistPickerSymbol}
-            watchlists={watchlists}
-            onClose={() => setWatchlistPickerSymbol(null)}
-            onAddToWatchlist={handleAddToWatchlist}
-            onCreateWatchlist={handleCreateWatchlist}
-          />
-        </Suspense>
       ) : null}
 
       <footer className="app-footer">

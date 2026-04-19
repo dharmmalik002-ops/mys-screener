@@ -2,19 +2,16 @@ import asyncio
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import io
-import gzip
 import json
 import os
 import re
 import subprocess
 import time
-import xml.etree.ElementTree as ET
 from datetime import date, datetime, timedelta, timezone
-from email.utils import parsedate_to_datetime
 from html import unescape
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote_plus, urljoin, urlparse
+from urllib.parse import urljoin, urlparse
 
 import httpx
 import holidays
@@ -57,19 +54,15 @@ NSE_INDEX_CHART_URL = "https://www.nseindia.com/api/chart-databyindex"
 BSE_LIST_SCRIPS_PAGE_URL = "https://www.bseindia.com/corporates/List_Scrips.aspx"
 BSE_LIST_SCRIPS_API_URL = "https://api.bseindia.com/BseIndiaAPI/api/ListofScripData/w"
 FRED_WTI_HISTORY_CSV_URL = "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DCOILWTICO"
-COMMODITY_FALLBACK_PRICES = {
-    "CL=F": 75.0,
-    "BZ=F": 78.0,
-}
 NIFTY_TICKER = "^NSEI"
 USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 SCREENER_URL = "https://www.screener.in/company"
 SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
-FUNDAMENTALS_CACHE_VERSION = 14
-SNAPSHOT_CACHE_VERSION = 17
-CHART_CACHE_VERSION = 10
+FUNDAMENTALS_CACHE_VERSION = 10
+SNAPSHOT_CACHE_VERSION = 12
+CHART_CACHE_VERSION = 4
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -80,11 +73,11 @@ SNAPSHOT_SESSION_RANGE_BUFFER_RATIO = 0.25
 SNAPSHOT_SESSION_FALLBACK_RATIO = 2.0
 QUOTE_DOWNLOAD_BATCH_SIZE = 200
 NSE_DIRECT_QUOTE_FALLBACK_MAX_SYMBOLS = 60
-UNIVERSE_CACHE_VERSION = 4
+UNIVERSE_CACHE_VERSION = 3
 UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS = 2
 SNAPSHOT_HISTORY_PERIOD = "3y"
 RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache"}
-MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^NSEBANK", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
+MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^CNXSC", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
 RS_LOOKBACKS: tuple[tuple[int, float], ...] = ((63, 0.4), (126, 0.2), (189, 0.2), (252, 0.2))
 RETURN_1W_BARS = 5
 RETURN_1M_BARS = 21
@@ -216,29 +209,23 @@ class FreeMarketDataProvider:
         self.snapshot_cache_path = self.backend_root / "data" / "free_snapshots.json"
         self.company_metadata_path = self.backend_root / "data" / "free_company_metadata.json"
         self.fundamentals_cache_path = self.backend_root / "data" / "free_fundamentals.json"
-        self.bulk_fundamentals_cache_path = self.backend_root / "data" / "free_fundamental_cache.json"
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
-        self.bhavcopy_status_path = self.backend_root / "data" / "bhavcopy_status.json"
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
-        # Cache bhavcopy payloads in-memory (per date, per exchange) so we don't
-        # re-download and parse the full CSV on every chart request.
-        self._bhavcopy_memory_cache: dict[tuple[str, str], tuple[float, dict[str, dict[str, float]]]] = {}
-        self._invalidate_stale_caches()
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
         self._snapshot_request_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._background_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._live_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._fundamentals_memory_cache: dict[str, CompanyFundamentals] = {}
-        self._bulk_fundamentals_memory_cache: dict[str, dict[str, Any]] | None = None
-        self._bulk_fundamentals_memory_cache_mtime: float | None = None
-        self._bulk_fundamentals_memory_loaded_at: float | None = None
         self._chart_symbol_scale_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
         self._holiday_date_cache: dict[tuple[int, ...], set[date]] = {}
+        self._seed_snapshot_cache_restored_at: float | None = None
         self._last_refresh_metadata = self._default_refresh_metadata()
-        self._ticker_alias_map: dict[str, str] | None = None
         self.demo = DemoMarketDataProvider()
         self.ai_service = AIAnalysisService(api_key=gemini_api_key, cache_dir=self.backend_root / "data")
+
+    def _seed_snapshot_glob(self) -> str:
+        return "free_snapshots_seed_*.json"
 
     def _benchmark_symbol(self) -> str:
         return NIFTY_TICKER
@@ -268,34 +255,6 @@ class FreeMarketDataProvider:
         if len(normalized) == 1:
             return next(iter(normalized))
         return "mixed"
-
-    def _invalidate_stale_caches(self) -> None:
-        """Wipe stale caches on version mismatch or data scale inconsistency."""
-        # Check if we need a full chart/snapshot wipe
-        if self.snapshot_cache_path.exists():
-            try:
-                with open(self.snapshot_cache_path, "r") as f:
-                    data = json.load(f)
-                    if data and isinstance(data, list) and len(data) > 0:
-                        v = int(data[0].get("snapshot_cache_version", 0))
-                        if v < SNAPSHOT_CACHE_VERSION:
-                            print(f"Bumping snapshot cache from v{v} to v{SNAPSHOT_CACHE_VERSION}. Status. History check. Verified status.")
-                            self.snapshot_cache_path.unlink(missing_ok=True)
-            except Exception:
-                self.snapshot_cache_path.unlink(missing_ok=True)
-
-        # Clear chart cache if needed
-        # We look for a marker file or just rely on the version in individual files
-        # To be safe for this fix, we wipe the chart_cache if it's too old
-        # Given the "stupid % change" report, we force-clear the chart cache one-time
-        # for Indian stocks to resolve the scale issue.
-        # Check marker
-        marker_file = self.chart_cache_dir / f".version_{CHART_CACHE_VERSION}"
-        if not marker_file.exists():
-            print(f"Invalidating chart cache for version {CHART_CACHE_VERSION}. Status. History check. Verified status.")
-            for f in self.chart_cache_dir.glob("*.json"):
-                f.unlink(missing_ok=True)
-            marker_file.touch()
 
     def get_last_refresh_metadata(self) -> dict[str, Any]:
         return dict(self._last_refresh_metadata)
@@ -381,106 +340,24 @@ class FreeMarketDataProvider:
         except ValueError:
             return None
 
-    def _needs_background_live_refresh(self, cache_key: float) -> bool:
-        """Return True if a background live-price refresh should be scheduled.
-
-        Fires when the market is open AND the on-disk snapshot is stale (>120 s).
-        Also fires when only seed chunks exist on disk (primary file absent) so
-        that the first boot during market hours gets live prices promptly.
-        """
-        if not self._is_market_open_ist():
-            return False
-        # Primary file missing → seed-chunks-only state: always refresh during market hours
-        if not self.snapshot_cache_path.exists():
-            return True
-        return self._snapshot_age_seconds() >= LIVE_SNAPSHOT_MAX_AGE_SECONDS
-
     async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
         cache_key = float(market_cap_min_crore)
-
-        # Closed-session safety: if we crossed a completed market close without a
-        # historical rebuild, kick one off in the background while serving the
-        # latest cached rows immediately. This keeps API latency low on hosted
-        # environments where a full historical rebuild can take minutes.
-        if self.snapshot_cache_path.exists() and not self._is_market_open_ist() and self._market_close_refresh_due():
-            if self._strict_closed_session_refresh_due():
-                return await self._get_or_create_snapshot_request_task(
-                    cache_key,
-                    market_cap_min_crore,
-                    force_refresh=True,
-                )
-            cache_signature = self._snapshot_memory_signature()
-            cached = self._snapshots_memory_cache.get(cache_key)
-            if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
-                self._schedule_background_snapshot_refresh(
-                    cache_key,
-                    market_cap_min_crore,
-                    force_refresh=True,
-                )
-                return cached[2]
-
-            cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
-            if cached_rows:
-                snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
-                self._snapshots_memory_cache[cache_key] = (*cache_signature, snapshots)
-                self._schedule_background_snapshot_refresh(
-                    cache_key,
-                    market_cap_min_crore,
-                    force_refresh=True,
-                )
-                return snapshots
-
-            return await self._get_or_create_snapshot_request_task(
-                cache_key,
-                market_cap_min_crore,
-                force_refresh=True,
-            )
-
         cache_signature = self._snapshot_memory_signature()
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
-            # Auto-refresh: if market is open and data is stale, kick off a
-            # background live refresh so the next request gets live prices.
-            # We check _live_snapshot_refresh_tasks to avoid double-scheduling.
-            if self._needs_background_live_refresh(cache_key):
-                existing_live = self._live_snapshot_refresh_tasks.get(cache_key)
-                if existing_live is None or existing_live.done():
-                    asyncio.create_task(self.refresh_live_snapshots(market_cap_min_crore))
+            if self._seed_snapshot_cache_needs_refresh():
+                self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
             return cached[2]
 
-        # Single-flight + cancellation-safe: one background task loads and materialises
-        # the snapshot cache; all callers await it via asyncio.shield so that a
-        # client-disconnect cancel does NOT kill the underlying load task.  Without
-        # this protection every cancelled request leaves a zombie thread running and
-        # the next request spawns another, causing GIL-contention death spirals on
-        # slow hosts (e.g. HF free tier) where a single load takes > request timeout.
-        existing = self._snapshot_request_tasks.get(cache_key)
-        if existing is not None and not existing.done():
-            return await asyncio.shield(existing)
+        cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
+        if cached_rows:
+            snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
+            self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
+            if self._seed_snapshot_cache_needs_refresh():
+                self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
+            return snapshots
 
-        async def _load_and_cache() -> list[StockSnapshot]:
-            rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
-            if rows:
-                snaps = await asyncio.to_thread(self._materialize_snapshot_rows, rows)
-                self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snaps)
-                # After the initial disk load, also schedule a live refresh if needed
-                if self._needs_background_live_refresh(cache_key):
-                    existing_live = self._live_snapshot_refresh_tasks.get(cache_key)
-                    if existing_live is None or existing_live.done():
-                        asyncio.create_task(self.refresh_live_snapshots(market_cap_min_crore))
-                return snaps
-            # Disk cache empty / invalid → full rebuild (yfinance etc.)
-            return await self._load_snapshots_with_fallback(market_cap_min_crore, False)
-
-        task: asyncio.Task[list[StockSnapshot]] = asyncio.create_task(_load_and_cache())
-        self._snapshot_request_tasks[cache_key] = task
-
-        def _clear(t: asyncio.Task[list[StockSnapshot]]) -> None:
-            if self._snapshot_request_tasks.get(cache_key) is t:
-                self._snapshot_request_tasks.pop(cache_key, None)
-
-        task.add_done_callback(_clear)
-        return await asyncio.shield(task)
+        return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore)
 
     async def get_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
         if not symbols:
@@ -557,7 +434,7 @@ class FreeMarketDataProvider:
     def _load_valid_cached_snapshot_rows(self) -> list[dict[str, Any]]:
         rows = self._load_json_rows(self.snapshot_cache_path)
         if not rows or not self._snapshot_schema_ok(rows):
-            return []
+            return self._restore_snapshot_cache_from_seed()
         normalized_rows, changed = self._normalize_cached_snapshot_rows(rows)
         if changed:
             self._write_snapshot_rows(normalized_rows)
@@ -617,7 +494,7 @@ class FreeMarketDataProvider:
         cache_key = float(market_cap_min_crore)
         self._snapshots_memory_cache.clear()
 
-        if not self._is_market_open_ist() and not self._allow_after_close_live_refresh():
+        if not self._is_market_open_ist():
             self._last_refresh_metadata = self._default_refresh_metadata()
             return await self.get_snapshots(market_cap_min_crore)
 
@@ -676,6 +553,11 @@ class FreeMarketDataProvider:
                 self._background_snapshot_refresh_tasks.pop(cache_key, None)
 
         task.add_done_callback(clear_task)
+
+    def _seed_snapshot_cache_needs_refresh(self) -> bool:
+        if self._seed_snapshot_cache_restored_at is None or not self.snapshot_cache_path.exists():
+            return False
+        return self.snapshot_cache_path.stat().st_mtime == self._seed_snapshot_cache_restored_at
 
     def _chart_cache_path(self, symbol: str, timeframe: str) -> Path:
         safe_symbol = re.sub(r"[^A-Za-z0-9._-]+", "_", symbol.upper())
@@ -754,19 +636,6 @@ class FreeMarketDataProvider:
         if latest_close in (None, 0):
             return False
 
-        # Reject cache if it contains unhandled corporate-action price gaps (bonus issues,
-        # reverse splits, etc.) that make the chart visually broken/incorrect.
-        if self._chart_bars_have_price_gap(bars):
-            return False
-
-        snapshot_session_date = self._snapshot_session_date(symbol)
-        latest_trade_date = self._chart_bar_trade_date(bars[-1])
-        if snapshot_session_date is not None and latest_trade_date < snapshot_session_date:
-            # Allow slightly stale daily caches to load so we can cheaply patch the
-            # current session bar from snapshot/Bhavcopy data instead of timing out on
-            # a full network history download.
-            return True
-
         scale = self._chart_symbol_scale_lookup().get(str(symbol or "").strip().upper()) or {}
         references = [
             self._to_float(scale.get("last_price")),
@@ -781,24 +650,6 @@ class FreeMarketDataProvider:
 
         return self._bar_matches_snapshot_session(symbol, bars[-1])
 
-    @staticmethod
-    def _chart_bars_have_price_gap(bars: list[ChartBar]) -> bool:
-        """Return True if consecutive bars contain a single-day price ratio >= 1.8x or <= 0.55x.
-        Such ratios can't occur in normal trading (India's 20% circuit rule) and indicate an
-        unhandled corporate action (bonus issue, split, demerger) in the cached data.
-        Only check the most recent 400 bars (most likely to have recent corporate actions).
-        """
-        recent = bars[-400:] if len(bars) > 400 else bars
-        for i in range(1, len(recent)):
-            prev = float(getattr(recent[i - 1], "close", 0) or 0)
-            curr = float(getattr(recent[i], "close", 0) or 0)
-            if prev <= 0 or curr <= 0:
-                continue
-            ratio = curr / prev
-            if ratio >= 1.8 or ratio <= 0.55:
-                return True
-        return False
-
     def _chart_cache_covers_snapshot_session(self, symbol: str, timeframe: str, bars: list[ChartBar]) -> bool:
         if not bars or str(timeframe or "").strip().upper() not in {"1D", "1W"}:
             return True
@@ -807,8 +658,7 @@ class FreeMarketDataProvider:
         if snapshot_session_date is None:
             return True
 
-        snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
-        return bars[-1].time >= snapshot_ts
+        return self._chart_bar_trade_date(bars[-1]) >= snapshot_session_date
 
     @staticmethod
     def _history_source_is_reliable(value: Any) -> bool:
@@ -823,7 +673,6 @@ class FreeMarketDataProvider:
             "avg_volume_30d": 0,
             "avg_volume_50d": 0,
             "recent_volumes": [],
-            "recent_closes": [],
         }
 
     def _snapshot_session_bounds(self, symbol: str) -> tuple[float | None, float | None]:
@@ -889,27 +738,18 @@ class FreeMarketDataProvider:
         if not self._is_trading_day_ist(session_date) or market_now < refresh_cutoff:
             return self._previous_trading_day(session_date)
 
-        # Past the post-close grace period on a trading day — today's session is
-        # complete.  Do NOT use the benchmark chart cache to determine this: that
-        # cache may be stale (only written when a user views the chart) and would
-        # return yesterday's date, causing _market_close_refresh_due() to return
-        # False and the snapshot to never rebuild after close.
-        return session_date
+        latest_chart_session_date = self._latest_available_chart_session_date(self._benchmark_symbol())
+        if latest_chart_session_date is not None:
+            return latest_chart_session_date
 
-    @staticmethod
+        return self._previous_trading_day(session_date)
+
     @staticmethod
     def _chart_bar_trade_date(bar: ChartBar) -> date:
         timestamp = datetime.fromtimestamp(int(bar.time), tz=timezone.utc)
         if timestamp.hour == 0 and timestamp.minute == 0 and timestamp.second == 0:
             return timestamp.date()
         return timestamp.astimezone(IST).date()
-
-    def _session_date_to_chart_timestamp(self, session_date: date) -> int:
-        # Store snapshot bar at UTC midnight of the session date so it aligns
-        # with the corrected _history_to_chart_bars timestamps (which now use
-        # the IST trade date as the canonical date rather than the UTC date).
-        utc_midnight = datetime(session_date.year, session_date.month, session_date.day, tzinfo=timezone.utc)
-        return int(utc_midnight.timestamp())
 
     def _values_fit_snapshot_session(self, symbol: str, values: list[Any]) -> bool:
         lower, upper = self._snapshot_session_bounds(symbol)
@@ -935,8 +775,8 @@ class FreeMarketDataProvider:
         snapshot_session_date = self._snapshot_session_date(symbol)
         if snapshot_session_date is None:
             return True
-        snapshot_ts = self._session_date_to_chart_timestamp(snapshot_session_date)
-        if bar.time != snapshot_ts:
+        bar_date = self._chart_bar_trade_date(bar)
+        if bar_date != snapshot_session_date:
             return True
         return self._values_fit_snapshot_session(symbol, [bar.open, bar.high, bar.low, bar.close])
 
@@ -953,7 +793,7 @@ class FreeMarketDataProvider:
         if high_value >= low_value:
             open_value = min(max(open_value, low_value), high_value)
         volume_value = int(self._to_float(scale.get("volume")) or 0)
-        timestamp = int(self._session_date_to_chart_timestamp(session_date))
+        timestamp = int(datetime.combine(session_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
         return ChartBar(
             time=timestamp,
             open=round(float(open_value), 2),
@@ -972,36 +812,19 @@ class FreeMarketDataProvider:
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return
 
-        new_ts = snapshot_bar.time
-        # Also remove any old-style snapshot bar stored at the IST session date as a
-        # UTC midnight timestamp (the pre-ada5197 convention).  Without this, a cache
-        # that was written before the fix will contain a bar at e.g. April-8 00:00 UTC
-        # while the new snapshot bar sits at April-7 00:00 UTC — causing the append
-        # below to insert bars out of chronological order.
-        snapshot_session_date = self._snapshot_session_date(symbol)
-        old_ts: int | None = None
-        if snapshot_session_date is not None:
-            old_ts = int(
-                datetime.combine(snapshot_session_date, datetime.min.time(), tzinfo=timezone.utc).timestamp()
-            )
-
-        patched_bars = [
-            bar for bar in cached_bars
-            if bar.time != new_ts and (old_ts is None or bar.time != old_ts)
-        ]
-        patched_bars.append(snapshot_bar)
-        patched_bars.sort(key=lambda b: b.time)
+        patched_bars = list(cached_bars)
+        snapshot_date = self._chart_bar_trade_date(snapshot_bar)
+        last_bar_date = self._chart_bar_trade_date(patched_bars[-1])
+        if last_bar_date == snapshot_date:
+            patched_bars[-1] = snapshot_bar
+        else:
+            patched_bars.append(snapshot_bar)
 
         self._write_chart_cache(symbol, "1D", patched_bars[-520:])
 
-    def _apply_session_bar_to_daily_history(
-        self, history: pd.DataFrame, bar: ChartBar, session_date: date | None = None
-    ) -> pd.DataFrame:
+    def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
         patched = history.copy()
-        # Use the explicitly-supplied IST session date when available.  Deriving the
-        # trade date from bar.time alone loses the IST→UTC day-shift (e.g. April 8 IST
-        # session stored at April 7 00:00 UTC would give trade_date=April 7, not April 8).
-        trade_date = session_date if session_date is not None else self._chart_bar_trade_date(bar)
+        trade_date = self._chart_bar_trade_date(bar)
         row_payload = {
             "Open": float(bar.open),
             "High": float(bar.high),
@@ -1031,8 +854,7 @@ class FreeMarketDataProvider:
         snapshot_bar = self._snapshot_session_bar(symbol)
         if snapshot_bar is None or not self._bar_matches_snapshot_session(symbol, snapshot_bar):
             return history
-        session_date = self._snapshot_session_date(symbol)
-        return self._apply_session_bar_to_daily_history(history, snapshot_bar, session_date=session_date)
+        return self._apply_session_bar_to_daily_history(history, snapshot_bar)
 
     def _sanitize_live_quote_ohlc(
         self,
@@ -1111,133 +933,13 @@ class FreeMarketDataProvider:
             cached_bars = [ChartBar.model_validate(item) for item in bar_payload]
         except Exception:
             return []
-        if str(timeframe or "").strip().upper() == "1D" and cached_bars:
-            last_trade_date = self._chart_bar_trade_date(cached_bars[-1])
-            if not self._is_trading_day_ist(last_trade_date):
-                snapshot_session_date = self._snapshot_session_date(symbol)
-                if snapshot_session_date is None or last_trade_date >= snapshot_session_date:
-                    return []
+        if str(timeframe or "").strip().upper() == "1D" and cached_bars and not self._is_trading_day_ist(
+            self._chart_bar_trade_date(cached_bars[-1])
+        ):
+            return []
         if not self._chart_bars_match_symbol_scale(symbol, cached_bars):
             return []
         return cached_bars[-bars:]
-
-    # ------------------------------------------------------------------ #
-    # Historical chart scan (AI screener: date-specific / peak-volume)   #
-    # ------------------------------------------------------------------ #
-
-    def run_historical_chart_scan(
-        self,
-        request: "Any",  # CustomScanRequest – typed loosely to avoid circular import
-        snapshots: "list[Any]",
-    ) -> "list[Any]":
-        """
-        Scan cached daily chart bars to answer two kinds of AI queries:
-        1. RVOL + change%-based filter for a *specific date*  (request.scan_date is set)
-        2. Stocks that recorded their highest quarterly volume in the last N days
-           (request.highest_vol_lookback_days is set)
-        Returns a list of ScanMatch objects.
-        """
-        from app.scanners.definitions import build_scan_match
-
-        scan_date = request.scan_date              # date | None
-        lookback_days = request.highest_vol_lookback_days  # int | None
-        min_rvol = request.min_relative_volume     # float | None
-        min_chg = request.min_change_pct           # float | None
-        max_chg = request.max_change_pct           # float | None
-
-        matches = []
-
-        for snapshot in snapshots:
-            symbol = snapshot.symbol
-            bars = self._read_chart_cache(symbol, "1D", 120)
-            if not bars:
-                continue
-
-            # ── Mode 1: single-date RVOL / change% scan ──────────────────
-            if scan_date is not None:
-                target_idx: int | None = None
-                for i, bar in enumerate(bars):
-                    if self._chart_bar_trade_date(bar) == scan_date:
-                        target_idx = i
-                        break
-                if target_idx is None or target_idx == 0:
-                    continue
-
-                target_bar = bars[target_idx]
-                prev_bar = bars[target_idx - 1]
-
-                change_pct = (
-                    (target_bar.close - prev_bar.close) / prev_bar.close * 100
-                    if prev_bar.close > 0
-                    else 0.0
-                )
-                prior_bars = bars[max(0, target_idx - 30):target_idx]
-                avg_vol = (
-                    sum(b.volume for b in prior_bars) / len(prior_bars)
-                    if prior_bars else 0.0
-                )
-                rvol = (target_bar.volume / avg_vol) if avg_vol > 0 else 0.0
-
-                if min_chg is not None and change_pct < min_chg:
-                    continue
-                if max_chg is not None and change_pct > max_chg:
-                    continue
-                if min_rvol is not None and rvol < min_rvol:
-                    continue
-
-                score = rvol * 10.0 + max(change_pct, 0.0) * 2.0
-                date_str = scan_date.isoformat()
-                reasons = [
-                    f"RVOL {rvol:.2f}x on {date_str}",
-                    f"Chg {change_pct:+.2f}% on {date_str}",
-                    f"Vol {target_bar.volume:,}",
-                ]
-                matches.append(
-                    build_scan_match("historical-scan", snapshot, round(score, 2), reasons, pattern="Historical")
-                )
-
-            # ── Mode 2: highest quarterly volume in last N days ───────────
-            elif lookback_days is not None:
-                n = max(1, min(lookback_days, len(bars) - 5))
-                quarter_bars = bars[-65:] if len(bars) >= 65 else bars
-                recent_bars = bars[-n:]
-                if not recent_bars or not quarter_bars:
-                    continue
-
-                max_recent_vol = max(b.volume for b in recent_bars)
-                max_quarter_vol = max(b.volume for b in quarter_bars)
-
-                if max_recent_vol < max_quarter_vol or max_quarter_vol == 0:
-                    continue
-
-                peak_bar = max(recent_bars, key=lambda b: b.volume)
-                try:
-                    peak_idx = bars.index(peak_bar)
-                except ValueError:
-                    continue
-                prior_bars_for_rvol = bars[max(0, peak_idx - 30):peak_idx]
-                avg_vol = (
-                    sum(b.volume for b in prior_bars_for_rvol) / len(prior_bars_for_rvol)
-                    if prior_bars_for_rvol else float(max_quarter_vol)
-                )
-                rvol = (peak_bar.volume / avg_vol) if avg_vol > 0 else 0.0
-
-                if min_rvol is not None and rvol < min_rvol:
-                    continue
-
-                peak_date = self._chart_bar_trade_date(peak_bar).isoformat()
-                score = rvol * 10.0 + snapshot.stock_return_20d * 0.2
-                reasons = [
-                    f"Peak Vol on {peak_date}",
-                    f"RVOL {rvol:.2f}x (qtrly high)",
-                    f"Vol {peak_bar.volume:,}",
-                ]
-                matches.append(
-                    build_scan_match("historical-scan", snapshot, round(score, 2), reasons, pattern="Vol. Peak")
-                )
-
-        matches.sort(key=lambda m: m.score, reverse=True)
-        return matches[:500]
 
     def _seed_daily_chart_cache(self, symbol: str, history: pd.DataFrame) -> None:
         series = history.dropna(subset=["Close"]).tail(520)
@@ -1274,8 +976,7 @@ class FreeMarketDataProvider:
         )
         session_volume = int(self._quote_number(quote, "regularMarketVolume") or 0)
         trade_date = quote_updated_at.astimezone(IST).date()
-        trade_timestamp = self._session_date_to_chart_timestamp(trade_date)
-        trade_bar_date = self._chart_bar_trade_date(ChartBar(time=trade_timestamp, open=0, high=0, low=0, close=0, volume=0))
+        trade_timestamp = int(datetime.combine(trade_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
 
         next_bar = ChartBar(
             time=trade_timestamp,
@@ -1288,7 +989,7 @@ class FreeMarketDataProvider:
 
         patched_bars = list(cached_bars)
         last_bar_date = self._chart_bar_trade_date(patched_bars[-1])
-        if last_bar_date == trade_bar_date:
+        if last_bar_date == trade_date:
             previous_bar = patched_bars[-1]
             patched_bars[-1] = ChartBar(
                 time=trade_timestamp,
@@ -1308,170 +1009,7 @@ class FreeMarketDataProvider:
         metadata_mtime = self.company_metadata_path.stat().st_mtime if self.company_metadata_path.exists() else -1.0
         return (snapshot_mtime, metadata_mtime)
 
-    def _get_bulk_fundamentals(self) -> dict[str, dict[str, Any]]:
-        cache_exists = self.bulk_fundamentals_cache_path.exists()
-        file_mtime = self.bulk_fundamentals_cache_path.stat().st_mtime if cache_exists else -1.0
-        max_memory_age_seconds = 15 * 60 if self._is_market_open_ist() else 2 * 60 * 60
-        loaded_age_seconds = (
-            max(time.time() - float(self._bulk_fundamentals_memory_loaded_at), 0.0)
-            if self._bulk_fundamentals_memory_loaded_at is not None
-            else float("inf")
-        )
-
-        if (
-            self._bulk_fundamentals_memory_cache is not None
-            and self._bulk_fundamentals_memory_cache_mtime == file_mtime
-            and loaded_age_seconds <= max_memory_age_seconds
-        ):
-            return self._bulk_fundamentals_memory_cache
-
-        if not cache_exists:
-            self._bulk_fundamentals_memory_cache = {}
-            self._bulk_fundamentals_memory_cache_mtime = -1.0
-            self._bulk_fundamentals_memory_loaded_at = time.time()
-            return self._bulk_fundamentals_memory_cache
-        try:
-            payload = json.loads(self.bulk_fundamentals_cache_path.read_text(encoding="utf-8"))
-            self._bulk_fundamentals_memory_cache = payload if isinstance(payload, dict) else {}
-        except Exception:
-            self._bulk_fundamentals_memory_cache = {}
-        self._bulk_fundamentals_memory_cache_mtime = file_mtime
-        self._bulk_fundamentals_memory_loaded_at = time.time()
-        return self._bulk_fundamentals_memory_cache
-
-    def _fetch_yf_bulk_info(self, yf_ticker: str) -> dict[str, Any]:
-        """Fetch key fundamental fields from yfinance for a single ticker.
-        Runs in a thread; returns an empty dict on any error.
-        """
-        try:
-            t = yf.Ticker(yf_ticker)
-            try:
-                info = t.get_info()
-            except Exception:
-                try:
-                    info = t.info
-                except Exception:
-                    return {}
-            return {
-                "eps_growth_yoy": info.get("earningsGrowth"),
-                "revenue_growth_yoy": info.get("revenueGrowth"),
-                "operating_margin": info.get("operatingMargins"),
-                "profit_margin": info.get("profitMargins"),
-                "roe": info.get("returnOnEquity"),
-                "roa": info.get("returnOnAssets"),
-                "trailing_eps": info.get("trailingEps"),
-                "forward_eps": info.get("forwardEps"),
-                "peg_ratio": info.get("pegRatio"),
-                "price_to_book": info.get("priceToBook"),
-                "debt_to_equity": info.get("debtToEquity"),
-            }
-        except Exception:
-            return {}
-
-    def update_bulk_fundamentals_cache(self, max_workers: int = 8) -> dict[str, Any]:
-        """Refresh the bulk fundamentals cache (free_fundamental_cache.json) by
-        fetching yfinance `ticker.info` for every stock in the universe.
-
-        Called weekly by the APScheduler job in main.py.  Runs synchronously in a
-        background thread so callers should use asyncio.to_thread().
-
-        Returns a summary dict: {updated, skipped, errors, duration_seconds}.
-        """
-        import time
-        from concurrent.futures import ThreadPoolExecutor, as_completed
-
-        t0 = time.monotonic()
-        rows = self._load_valid_cached_snapshot_rows()
-        if not rows:
-            # Fall back to universe file if snapshots not yet built
-            rows = self._load_json_rows(self.universe_cache_path)
-        if not rows:
-            return {"status": "skipped", "reason": "no universe rows found"}
-
-        # Build {symbol: yf_ticker} map
-        sym_to_yf: dict[str, str] = {}
-        for row in rows:
-            symbol = str(row.get("symbol") or "").upper()
-            if not symbol:
-                continue
-            instrument_key = str(row.get("instrument_key") or "").strip().upper()
-            yf_ticker = instrument_key if instrument_key else f"{symbol}.NS"
-            sym_to_yf[symbol] = yf_ticker
-
-        existing = {}
-        if self.bulk_fundamentals_cache_path.exists():
-            try:
-                existing = json.loads(self.bulk_fundamentals_cache_path.read_text(encoding="utf-8"))
-                if not isinstance(existing, dict):
-                    existing = {}
-            except Exception:
-                existing = {}
-
-        logger = logging.getLogger(__name__)
-        updated = 0
-        skipped = 0
-        errors = 0
-        total = len(sym_to_yf)
-
-        logger.info("Bulk fundamentals update: fetching %d symbols with %d workers", total, max_workers)
-
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            futures = {executor.submit(self._fetch_yf_bulk_info, yf_ticker): symbol
-                       for symbol, yf_ticker in sym_to_yf.items()}
-            done = 0
-            for future in as_completed(futures):
-                symbol = futures[future]
-                done += 1
-                try:
-                    data = future.result()
-                    if any(v is not None for v in data.values()):
-                        existing[symbol] = data
-                        updated += 1
-                    else:
-                        skipped += 1
-                except Exception:
-                    errors += 1
-                if done % 200 == 0 or done == total:
-                    logger.info("Bulk fundamentals: %d/%d done (%d updated, %d skip, %d err)",
-                                done, total, updated, skipped, errors)
-
-        try:
-            self.bulk_fundamentals_cache_path.write_text(
-                json.dumps(existing, indent=2), encoding="utf-8"
-            )
-            # Invalidate in-memory cache so next request picks up fresh data
-            self._bulk_fundamentals_memory_cache = None
-            self._bulk_fundamentals_memory_cache_mtime = None
-            self._bulk_fundamentals_memory_loaded_at = None
-            # Also clear snapshot memory cache so enriched rows get rebuilt
-            self._snapshots_memory_cache.clear()
-            self._snapshot_request_tasks.clear()
-            self._background_snapshot_refresh_tasks.clear()
-            self._live_snapshot_refresh_tasks.clear()
-        except Exception as exc:
-            logger.error("Failed to write bulk fundamentals cache: %s", exc)
-            return {"status": "error", "reason": str(exc)}
-
-        duration = round(time.monotonic() - t0, 1)
-        logger.info("Bulk fundamentals update complete: %d updated, %d skip, %d err in %.1fs",
-                    updated, skipped, errors, duration)
-        return {
-            "status": "ok",
-            "updated": updated,
-            "skipped": skipped,
-            "errors": errors,
-            "duration_seconds": duration,
-            "total": total,
-        }
-
     def _with_snapshot_fallbacks(self, row: dict[str, Any]) -> dict[str, Any]:
-        symbol = str(row.get("symbol") or "").upper()
-        funds = self._get_bulk_fundamentals().get(symbol) or {}
-        if funds:
-            for k, v in funds.items():
-                if k not in row and k != "symbol":
-                    row[k] = v
-        
         if "rs_rating_1m_ago" in row:
             return self._normalize_snapshot_volume_baselines({
                 **row,
@@ -1494,7 +1032,6 @@ class FreeMarketDataProvider:
                 "recent_highs": row.get("recent_highs", []),
                 "recent_lows": row.get("recent_lows", []),
                 "recent_volumes": row.get("recent_volumes", []),
-                "recent_closes": row.get("recent_closes", []),
                 "sma20": row.get("sma20", row.get("ema20")),
                 "sma50": row.get("sma50", row.get("ema50")),
                 "sma150": row.get("sma150", row.get("sma200", row.get("ema200"))),
@@ -1538,7 +1075,6 @@ class FreeMarketDataProvider:
             "recent_highs": row.get("recent_highs", []),
             "recent_lows": row.get("recent_lows", []),
             "recent_volumes": row.get("recent_volumes", []),
-            "recent_closes": row.get("recent_closes", []),
             "sma20": row.get("sma20", row.get("ema20")),
             "sma50": row.get("sma50", row.get("ema50")),
             "sma150": row.get("sma150", row.get("sma200", row.get("ema200"))),
@@ -1795,9 +1331,6 @@ class FreeMarketDataProvider:
         info = payload.get("info") or {}
         price_info = payload.get("priceInfo") or {}
         security_info = payload.get("securityInfo") or {}
-        company_name = str(info.get("companyName") or symbol).strip()
-        isin = str(info.get("isin") or metadata.get("isin") or "").strip().upper() or None
-        series = str(metadata.get("series") or "").strip().upper() or None
 
         sector = self._normalize_sector_label(
             industry_info.get("sector") or industry_info.get("macro") or metadata.get("pdSectorInd")
@@ -1824,10 +1357,6 @@ class FreeMarketDataProvider:
             if override:
                 return {
                     **override,
-                    "symbol": symbol,
-                    "name": company_name,
-                    "isin": isin,
-                    "series": series,
                     "listing_date": listing_date,
                     "market_cap_crore": market_cap_crore,
                     "circuit_band_label": circuit_band_label,
@@ -1836,10 +1365,6 @@ class FreeMarketDataProvider:
                     "circuit_updated_on": self._current_or_previous_trading_day_ist().isoformat() if circuit_band_label or upper_circuit_limit is not None or lower_circuit_limit is not None else None,
                 }
         return {
-            "symbol": symbol,
-            "name": company_name,
-            "isin": isin,
-            "series": series,
             "sector": sector,
             "sub_sector": sub_sector,
             "listing_date": listing_date,
@@ -1884,20 +1409,13 @@ class FreeMarketDataProvider:
             for row in rows
         ]
 
-    async def get_chart(self, symbol: str, timeframe: str, bars: int = 520) -> list[ChartBar]:
+    async def get_chart(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
         cached_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars)
         min_required_bars = min(120, max(2, bars)) if timeframe == "1D" else 2
         cache_has_enough_data = len(cached_bars) >= min_required_bars
         cache_covers_snapshot_session = self._chart_cache_covers_snapshot_session(symbol, timeframe, cached_bars)
         if cached_bars and cache_has_enough_data and cache_covers_snapshot_session and self._is_chart_cache_fresh(symbol, timeframe):
             return cached_bars
-        # When the market is closed and we have enough bars, try the Bhavcopy
-        # as the first refresh attempt — it gives correct IST dates + official
-        # NSE closing prices, fixing the "yesterday's date / wrong price" issue.
-        if timeframe == "1D" and cached_bars and cache_has_enough_data and not self._is_market_open_ist():
-            refreshed_bhav = await asyncio.to_thread(self._refresh_daily_chart_from_bhavcopy, symbol, bars)
-            if refreshed_bhav:
-                return refreshed_bhav
         if timeframe == "1D" and cached_bars and cache_has_enough_data:
             refreshed_bars = await asyncio.to_thread(self._refresh_cached_daily_chart_from_quote, symbol, bars)
             if refreshed_bars:
@@ -1907,11 +1425,9 @@ class FreeMarketDataProvider:
             if refreshed_weekly:
                 return refreshed_weekly
         try:
-            # Wrap in a 5s timeout so that slow pulls don't drag down the
-            # whole grid response or cause HF proxy to return 503 / 504.
             chart_bars = await asyncio.wait_for(
                 asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
-                timeout=5.0,
+                timeout=self._chart_fetch_timeout_seconds(timeframe),
             )
             if len(chart_bars) < min_required_bars:
                 legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
@@ -1920,24 +1436,25 @@ class FreeMarketDataProvider:
                 if len(legacy_bars) >= min_required_bars:
                     return legacy_bars
             await asyncio.to_thread(self._write_chart_cache, symbol, timeframe, chart_bars)
-            # Always apply Bhavcopy after fresh Yahoo download for daily Indian charts.
-            # This corrects the last bar's date/price without a second round-trip.
-            if timeframe == "1D":
-                bhav_refreshed = await asyncio.to_thread(self._refresh_daily_chart_from_bhavcopy, symbol, bars)
-                if bhav_refreshed:
-                    return bhav_refreshed
             return chart_bars
         except Exception:
             if cached_bars:
                 return cached_bars
             raise
 
+    @staticmethod
+    def _chart_fetch_timeout_seconds(timeframe: str) -> float:
+        if timeframe in {"15m", "30m", "1h"}:
+            return 12.0
+        if timeframe == "1D":
+            return 8.0
+        return 6.0
+
     def _is_chart_cache_fresh(self, symbol: str, timeframe: str) -> bool:
         path = self._chart_cache_path(symbol, timeframe)
         if not path.exists():
             return False
-        chart_mtime = path.stat().st_mtime
-        age_seconds = max(time.time() - chart_mtime, 0.0)
+        age_seconds = max(time.time() - path.stat().st_mtime, 0.0)
         normalized_symbol = str(symbol or "").strip().upper()
         if timeframe == "1D" and normalized_symbol in MACRO_CHART_SYMBOLS:
             return age_seconds < (6 * 60 * 60)
@@ -1948,18 +1465,10 @@ class FreeMarketDataProvider:
         if timeframe == "1h":
             return age_seconds < 15 * 60
         if timeframe == "1D":
-            if not self._is_market_open_ist():
-                snapshot_updated_at = self.get_snapshot_updated_at()
-                if snapshot_updated_at is not None:
-                    chart_updated_at = datetime.fromtimestamp(chart_mtime, tz=timezone.utc)
-                    if chart_updated_at + timedelta(minutes=1) < snapshot_updated_at:
-                        return False
-            # 15 mins if open; 30 mins after close so snapshot rebuilds always
-            # fetch the confirmed official close rather than reusing an intraday cache.
-            return age_seconds < (15 * 60 if self._is_market_open_ist() else 30 * 60)
+            return age_seconds < (5 * 60 if self._is_market_open_ist() else 24 * 60 * 60)
         if timeframe == "1W":
-            return age_seconds < (30 * 60 if self._is_market_open_ist() else 60 * 60)
-        return age_seconds < 4 * 60 * 60
+            return age_seconds < (10 * 60 if self._is_market_open_ist() else 24 * 60 * 60)
+        return age_seconds < 24 * 60 * 60
 
     def _refresh_cached_daily_chart_from_quote(self, symbol: str, bars: int) -> list[ChartBar]:
         cached_daily = self._read_chart_cache(symbol, "1D", max(bars, 520))
@@ -1980,69 +1489,6 @@ class FreeMarketDataProvider:
         if weekly_bars:
             self._write_chart_cache(symbol, "1W", weekly_bars)
         return weekly_bars[-bars:]
-
-    def _refresh_daily_chart_from_bhavcopy(self, symbol: str, bars: int) -> list[ChartBar]:
-        """Try to patch the most recent EOD bar from official Bhavcopy (BSE first, then NSE).
-
-        Returns refreshed bars, or [] if bhavcopy is unavailable / symbol not found.
-        """
-        if self._default_exchange() != "NSE":
-            return []
-        now_ist = datetime.now(IST)
-        candidate = now_ist.date()
-        # Walk back from weekends
-        if candidate.weekday() >= 5:
-            days_back = candidate.weekday() - 4
-            candidate = candidate - timedelta(days=days_back)
-
-        # Load existing cache as the base for the patch.
-        cached = self._read_chart_cache(symbol, "1D", max(bars, 520))
-        if not cached:
-            return []
-
-        # Prefer BSE (globally accessible) then NSE (may be geo-blocked).
-        bhavcopy = self._get_bhavcopy_cached("bse", candidate)
-        source = "bse"
-        if not bhavcopy:
-            bhavcopy = self._get_bhavcopy_cached("nse", candidate)
-            source = "nse"
-
-        if not bhavcopy:
-            # Try previous day (holiday / first publish delay)
-            prev = candidate - timedelta(days=1)
-            while prev.weekday() >= 5:
-                prev -= timedelta(days=1)
-            bhavcopy = self._get_bhavcopy_cached("bse", prev)
-            source = "bse-prev"
-            if not bhavcopy:
-                bhavcopy = self._get_bhavcopy_cached("nse", prev)
-                source = "nse-prev"
-            if bhavcopy:
-                candidate = prev
-
-        if not bhavcopy:
-            return []
-
-        sym_upper = symbol.strip().upper()
-        ohlcv = bhavcopy.get(sym_upper)
-        if not ohlcv or not ohlcv.get("close"):
-            return []
-
-        ts = int(datetime(candidate.year, candidate.month, candidate.day, tzinfo=timezone.utc).timestamp())
-        new_bar = ChartBar(
-            time=ts,
-            open=ohlcv.get("open") or ohlcv["close"],
-            high=ohlcv.get("high") or ohlcv["close"],
-            low=ohlcv.get("low") or ohlcv["close"],
-            close=ohlcv["close"],
-            volume=int(ohlcv.get("volume") or 0),
-        )
-        patched = [b for b in cached if b.time != ts]
-        patched.append(new_bar)
-        patched.sort(key=lambda b: b.time)
-        patched = patched[-520:]
-        self._write_chart_cache(symbol, "1D", patched)
-        return patched[-bars:]
 
     @staticmethod
     def _aggregate_weekly_chart_bars(daily_bars: list[ChartBar]) -> list[ChartBar]:
@@ -2085,9 +1531,8 @@ class FreeMarketDataProvider:
 
     async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None) -> CompanyFundamentals:
         normalized_symbol = symbol.upper()
-        max_age_hours = self._fundamentals_cache_max_age_hours()
         cached = self._fundamentals_memory_cache.get(normalized_symbol)
-        if cached and self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=max_age_hours):
+        if cached and self._fundamentals_payload_fresh(cached.model_dump(mode="json"), max_age_hours=6):
             return cached
 
         try:
@@ -2136,10 +1581,9 @@ class FreeMarketDataProvider:
         return fundamentals
 
     def _load_or_refresh_fundamentals(self, symbol: str, snapshot: StockSnapshot | None) -> CompanyFundamentals:
-        max_age_hours = self._fundamentals_cache_max_age_hours()
         cache = self._load_json_file(self.fundamentals_cache_path)
         cached_payload = cache.get(symbol)
-        if isinstance(cached_payload, dict) and self._fundamentals_payload_fresh(cached_payload, max_age_hours=max_age_hours):
+        if isinstance(cached_payload, dict) and self._fundamentals_payload_fresh(cached_payload, max_age_hours=6):
             try:
                 return CompanyFundamentals.model_validate(cached_payload)
             except Exception:
@@ -2159,40 +1603,27 @@ class FreeMarketDataProvider:
         screener_payload: dict[str, Any] = {}
         yahoo_payload: dict[str, Any] = {}
 
-        # Run both slow external fetches in parallel to reduce total latency
-        def _fetch_screener():
-            html = self._fetch_screener_company_page(symbol)
-            return self._parse_screener_company_page(symbol, html)
+        try:
+            screener_html = self._fetch_screener_company_page(symbol)
+            screener_payload = self._parse_screener_company_page(symbol, screener_html)
+        except Exception:
+            warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
 
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            f_screener = executor.submit(_fetch_screener)
-            f_yahoo = executor.submit(self._fetch_yfinance_fundamentals, symbol)
-
-            try:
-                screener_payload = f_screener.result()
-            except Exception:
-                warnings.append("Quarterly tables and shareholding pattern could not be refreshed from the company page right now.")
-
-            try:
-                yahoo_payload = f_yahoo.result()
-            except Exception:
-                warnings.append("Recent headline/news fallback is unavailable right now.")
+        try:
+            yahoo_payload = self._fetch_yfinance_fundamentals(symbol)
+        except Exception:
+            warnings.append("Recent headline/news fallback is unavailable right now.")
 
         quarterly_results = self._merge_quarterly_results(
             screener_payload.get("quarterly_results") or [],
             yahoo_payload.get("quarterly_results") or [],
         )
-        quarterly_results = self._attach_earnings_result_dates(
-            quarterly_results,
-            yahoo_payload.get("historical_earnings_dates") or [],
-        )
         profit_loss = self._merge_profit_loss_items(
             screener_payload.get("profit_loss") or [],
             yahoo_payload.get("profit_loss") or [],
         )
-        quarterly_results = self._annotate_quarterly_yoy_qoq(quarterly_results)
         shareholding_pattern = screener_payload.get("shareholding_pattern") or yahoo_payload.get("shareholding_pattern") or []
-        growth = self._build_growth_snapshot(quarterly_results, profit_loss)
+        growth = self._build_growth_snapshot(quarterly_results)
         shareholding_delta = self._build_shareholding_delta(shareholding_pattern)
         valuation = self._build_valuation_snapshot(
             snapshot=snapshot,
@@ -2209,63 +1640,6 @@ class FreeMarketDataProvider:
             recent_updates,
             yahoo_payload.get("company_website"),
         )
-        upcoming_events = self._merge_upcoming_events(
-            screener_payload.get("upcoming_events") or [],
-            yahoo_payload.get("upcoming_events") or [],
-        )
-
-        # Supplement with Google News RSS headlines
-        company_display_name = (
-            (snapshot.name if snapshot else None)
-            or screener_payload.get("name")
-            or yahoo_payload.get("name")
-            or symbol
-        )
-        google_news = self._fetch_google_news_rss(company_display_name)
-        google_earnings_news = self._fetch_google_news_rss(company_display_name, earnings_only=True)
-        if google_news or google_earnings_news:
-            existing_titles = {item.title.lower() for item in detailed_news}
-            for gnews_item in [*google_news, *google_earnings_news]:
-                if gnews_item.title.lower() not in existing_titles:
-                    detailed_news.append(gnews_item)
-                    existing_titles.add(gnews_item.title.lower())
-
-        news_upcoming_events, news_result_updates = self._derive_earnings_signals_from_news(
-            [*google_news, *google_earnings_news]
-        )
-        if news_result_updates:
-            recent_updates = self._merge_updates(news_result_updates, recent_updates)
-        if news_upcoming_events:
-            upcoming_events = self._merge_upcoming_events(upcoming_events, news_upcoming_events)
-        quarterly_results = self._attach_result_dates_from_updates(quarterly_results, recent_updates)
-
-        # Fallback: promote Yahoo Finance news headlines to detailed_news
-        # when live scraping yields fewer than 3 editorial items
-        editorial_count = sum(1 for n in detailed_news if n.is_editorial)
-        if editorial_count < 3:
-            existing_titles_fb = {n.title.lower() for n in detailed_news}
-            for update in recent_updates:
-                if update.kind != "news":
-                    continue
-                if not update.title or update.title.lower() in existing_titles_fb:
-                    continue
-                pub_date = update.published_at[:10] if update.published_at else None
-                detailed_news.append(DetailedNews(
-                    title=update.title,
-                    summary=update.summary or update.title,
-                    impact_category="market",
-                    sentiment="neutral",
-                    source=update.source or "Yahoo Finance",
-                    domain=(update.source or "Yahoo Finance").lower().replace(" ", ""),
-                    source_type="Editorial News",
-                    classification="editorial_news",
-                    is_editorial=True,
-                    url=update.link,
-                    published_date=pub_date,
-                    relevance_score=0.60,
-                ))
-                existing_titles_fb.add(update.title.lower())
-
         growth_drivers = self._build_growth_drivers(
             growth=growth,
             shareholding_delta=shareholding_delta,
@@ -2327,7 +1701,6 @@ class FreeMarketDataProvider:
             shareholding_pattern=shareholding_pattern[:6],
             shareholding_delta=shareholding_delta,
             insider_transactions=insider_transactions,
-            upcoming_events=upcoming_events[:6],
             last_news_update=datetime.now(timezone.utc) if detailed_news else None,
             data_warnings=warnings,
         )
@@ -2342,16 +1715,6 @@ class FreeMarketDataProvider:
                 logging.getLogger(__name__).warning("AI enrichment failed for %s: %s", symbol, exc)
 
         return fundamentals
-
-    def _fundamentals_cache_max_age_hours(self) -> int:
-        is_market_open_fn = getattr(self, "_is_market_open_ist", None)
-        if callable(is_market_open_fn):
-            try:
-                if bool(is_market_open_fn()):
-                    return 2
-            except Exception:
-                pass
-        return 6
 
     def _load_snapshot_from_cache(self, symbol: str) -> StockSnapshot | None:
         if not self.snapshot_cache_path.exists():
@@ -2392,6 +1755,9 @@ class FreeMarketDataProvider:
     def _fundamentals_payload_fresh(self, payload: dict[str, Any], max_age_hours: int) -> bool:
         if int(payload.get("cache_version", 0) or 0) != FUNDAMENTALS_CACHE_VERSION:
             return False
+        warnings = [str(item).lower() for item in (payload.get("data_warnings") or [])]
+        if any("could not be refreshed" in warning or "currently unavailable" in warning for warning in warnings):
+            return False
         timestamp = payload.get("fetched_at")
         if not timestamp:
             return False
@@ -2399,14 +1765,7 @@ class FreeMarketDataProvider:
             fetched_at = datetime.fromisoformat(str(timestamp).replace("Z", "+00:00"))
         except ValueError:
             return False
-        age = datetime.now(timezone.utc) - fetched_at
-        # Partial results (warnings present) are still served up to 2 h
-        # instead of being immediately evicted — avoids constant 30 s re-fetches
-        # when one data source (screener/yfinance) is slow or rate-limited.
-        warnings = [str(item).lower() for item in (payload.get("data_warnings") or [])]
-        has_warnings = any("could not be refreshed" in w or "currently unavailable" in w for w in warnings)
-        effective_max = min(max_age_hours, 2) if has_warnings else max_age_hours
-        return age <= timedelta(hours=effective_max)
+        return datetime.now(timezone.utc) - fetched_at <= timedelta(hours=max_age_hours)
 
     def _load_json_file(self, path: Path) -> dict[str, Any]:
         if not path.exists():
@@ -2418,94 +1777,52 @@ class FreeMarketDataProvider:
             return {}
 
     def _load_json_rows(self, path: Path) -> list[dict[str, Any]]:
-        # If the primary .json file is missing, try fallback sources:
-        # 1. A single gzip seed: <name>.json.gz (local dev convenience)
-        # 2. Numbered seed chunks: <name>_seed_0.json, _seed_1.json … (HF deploy)
-        #    HF git rejects files > 10 MiB, so the 63 MB US snapshot is split
-        #    into ~9 chunks of ≤ 8 MB each that ARE accepted.  On first boot the
-        #    chunks are loaded and merged; the scheduled refresh then writes the
-        #    merged .json so subsequent cold-starts skip the chunk loading.
-        load_path = path
         if not path.exists():
-            gz_path = path.with_name(path.name + ".gz")
-            if gz_path.exists():
-                load_path = gz_path
-            else:
-                # Try numbered seed chunks: free_snapshots_us_seed_0.json …
-                stem = path.stem        # e.g. "free_snapshots_us"
-                parent = path.parent
-                all_rows: list[dict[str, Any]] = []
-                for i in range(50):
-                    chunk_path = parent / f"{stem}_seed_{i}.json"
-                    if not chunk_path.exists():
-                        break
-                    try:
-                        raw = json.loads(chunk_path.read_text(encoding="utf-8"))
-                        if isinstance(raw, list):
-                            all_rows.extend(raw)
-                    except Exception:
-                        pass
-                if all_rows:
-                    # HF deploys rely on split seed chunks because the platform
-                    # rejects large snapshot files. Those chunks can lag the
-                    # current cache version by a release, which would otherwise
-                    # make every cold boot treat them as invalid and trigger a
-                    # full historical rebuild before serving any data.
-                    if "free_snapshots" in stem:
-                        upgraded_rows: list[dict[str, Any]] = []
-                        for row in all_rows:
-                            if not isinstance(row, dict):
-                                continue
-                            upgraded_row = dict(row)
-                            upgraded_row["snapshot_cache_version"] = SNAPSHOT_CACHE_VERSION
-                            upgraded_rows.append(upgraded_row)
-                        if upgraded_rows:
-                            all_rows = upgraded_rows
-                    # Write merged seed chunks to the primary path immediately so that
-                    # get_snapshot_updated_at() returns a valid mtime on first boot.
-                    # Without this the watchdog health panel shows "No usable snapshot
-                    # timestamp" and "close refresh not confirmed" indefinitely until
-                    # the first scheduled full refresh runs and writes the file.
-                    try:
-                        path.write_text(json.dumps(all_rows), encoding="utf-8")
-                    except Exception:
-                        pass
-                    return all_rows
-                return []
+            return []
         try:
-            if load_path.suffix == ".gz":
-                with gzip.open(load_path, "rt", encoding="utf-8") as fh:
-                    raw = json.loads(fh.read())
-            else:
-                raw = json.loads(load_path.read_text(encoding="utf-8"))
-            rows = raw if isinstance(raw, list) else []
-            if not rows:
-                return []
-            # Seeded snapshot archives can legitimately trail the current
-            # runtime cache version by a release. Treat them as bootstrapping
-            # input and self-upgrade their version marker so hosted cold boots
-            # can serve cached data immediately instead of rebuilding the full
-            # snapshot universe before answering requests.
-            if "free_snapshots" in path.stem:
-                upgraded_rows: list[dict[str, Any]] = []
-                changed = False
-                for row in rows:
-                    if not isinstance(row, dict):
-                        continue
-                    upgraded_row = dict(row)
-                    if int(upgraded_row.get("snapshot_cache_version", 0) or 0) != SNAPSHOT_CACHE_VERSION:
-                        upgraded_row["snapshot_cache_version"] = SNAPSHOT_CACHE_VERSION
-                        changed = True
-                    upgraded_rows.append(upgraded_row)
-                rows = upgraded_rows
-                if changed and not path.exists():
-                    try:
-                        path.write_text(json.dumps(rows), encoding="utf-8")
-                    except Exception:
-                        pass
-            return rows
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            return raw if isinstance(raw, list) else []
         except Exception:
             return []
+
+    def _load_seed_snapshot_rows(self) -> list[dict[str, Any]]:
+        seed_paths = sorted(self.snapshot_cache_path.parent.glob(self._seed_snapshot_glob()))
+        if not seed_paths:
+            return []
+
+        rows: list[dict[str, Any]] = []
+        seen_symbols: set[str] = set()
+        for path in seed_paths:
+            for row in self._load_json_rows(path):
+                if not isinstance(row, dict):
+                    continue
+                normalized_row = dict(row)
+                normalized_row["snapshot_cache_version"] = SNAPSHOT_CACHE_VERSION
+                symbol = str(normalized_row.get("symbol") or "").strip().upper()
+                if symbol and symbol in seen_symbols:
+                    continue
+                rows.append(normalized_row)
+                if symbol:
+                    seen_symbols.add(symbol)
+
+        if not rows:
+            return []
+
+        normalized_rows, _ = self._normalize_cached_snapshot_rows(rows)
+        if not self._snapshot_schema_ok(normalized_rows):
+            return []
+        return normalized_rows
+
+    def _restore_snapshot_cache_from_seed(self) -> list[dict[str, Any]]:
+        seed_rows = self._load_seed_snapshot_rows()
+        if not seed_rows:
+            return []
+        self.snapshot_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        self._write_snapshot_rows(seed_rows)
+        self._seed_snapshot_cache_restored_at = (
+            self.snapshot_cache_path.stat().st_mtime if self.snapshot_cache_path.exists() else None
+        )
+        return seed_rows
 
     def _fetch_screener_company_page(self, symbol: str) -> str:
         headers = {
@@ -2570,9 +1887,7 @@ class FreeMarketDataProvider:
         except Exception:
             annual_frame = pd.DataFrame()
 
-        earnings_result_dates, upcoming_events, earnings_updates = self._extract_yfinance_earnings_signals(ticker)
-
-        recent_updates: list[CompanyUpdateItem] = list(earnings_updates)
+        recent_updates: list[CompanyUpdateItem] = []
         try:
             for item in getattr(ticker, "news", [])[:6]:
                 title = str(item.get("title") or "").strip()
@@ -2595,7 +1910,7 @@ class FreeMarketDataProvider:
                     )
                 )
         except Exception:
-            recent_updates = list(earnings_updates)
+            recent_updates = []
 
         # --- Balance Sheet ---
         balance_sheet_items: list[dict[str, Any]] = []
@@ -2693,11 +2008,6 @@ class FreeMarketDataProvider:
         except Exception:
             pass
 
-        quarterly_results = self._attach_earnings_result_dates(
-            self._parse_yfinance_statement(quarterly_frame, quarterly=True),
-            earnings_result_dates,
-        )
-
         return {
             "name": info.get("shortName") or info.get("longName") or symbol,
             "about": info.get("longBusinessSummary"),
@@ -2712,11 +2022,9 @@ class FreeMarketDataProvider:
                 "roe_pct": (self._safe_float(info.get("returnOnEquity")) * 100 if info.get("returnOnEquity") is not None else None),
                 "dividend_yield_pct": (self._safe_float(info.get("dividendYield")) * 100 if info.get("dividendYield") is not None else None),
             },
-            "quarterly_results": quarterly_results,
-            "historical_earnings_dates": earnings_result_dates,
+            "quarterly_results": self._parse_yfinance_statement(quarterly_frame, quarterly=True),
             "profit_loss": self._parse_yfinance_statement(annual_frame, quarterly=False),
             "recent_updates": recent_updates,
-            "upcoming_events": upcoming_events,
             "balance_sheet": balance_sheet_items,
             "cash_flow": cash_flow_items,
             "financial_ratios": financial_ratios,
@@ -2875,9 +2183,7 @@ class FreeMarketDataProvider:
                     kind=self._classify_update_kind(title),
                 )
             )
-        # Sort newest-first before truncating so old archived items don't crowd out recent ones
-        updates.sort(key=lambda item: item.published_at or "", reverse=True)
-        return updates[:15]
+        return updates[:10]
 
     def _derive_link_update_title(self, title: str, context_text: str) -> str:
         cleaned_title = self._clean_text(title)
@@ -3342,7 +2648,6 @@ class FreeMarketDataProvider:
                 profit_before_tax_crore=item.profit_before_tax_crore if item.profit_before_tax_crore is not None else fallback.profit_before_tax_crore if fallback else None,
                 net_profit_crore=item.net_profit_crore if item.net_profit_crore is not None else fallback.net_profit_crore if fallback else None,
                 eps=item.eps if item.eps is not None else fallback.eps if fallback else None,
-                result_date=item.result_date or (fallback.result_date if fallback else None),
                 result_document_url=item.result_document_url or (fallback.result_document_url if fallback else None),
             )
         return sorted(merged.values(), key=lambda item: self._period_sort_key(item.period))
@@ -3440,285 +2745,25 @@ class FreeMarketDataProvider:
                 )
         return results
 
-    def _extract_yfinance_earnings_signals(
-        self,
-        ticker: yf.Ticker,
-    ) -> tuple[list[str], list[dict[str, str]], list[CompanyUpdateItem]]:
-        result_dates: list[str] = []
-        upcoming_events: list[dict[str, str]] = []
-        earnings_updates: list[CompanyUpdateItem] = []
-        seen_dates: set[str] = set()
-        today = self._current_ist_date()
-
-        try:
-            earnings_frame = ticker.get_earnings_dates(limit=8)
-        except Exception:
-            earnings_frame = pd.DataFrame()
-
-        if isinstance(earnings_frame, pd.DataFrame) and not earnings_frame.empty:
-            for event_index, row in earnings_frame.iterrows():
-                iso_date = self._coerce_iso_date(event_index)
-                if not iso_date or iso_date in seen_dates:
-                    continue
-                seen_dates.add(iso_date)
-                event_date = date.fromisoformat(iso_date)
-                reported_eps = self._safe_float(row.get("Reported EPS")) if hasattr(row, "get") else None
-                estimate_eps = self._safe_float(row.get("EPS Estimate")) if hasattr(row, "get") else None
-                surprise_pct = self._safe_float(row.get("Surprise(%)")) if hasattr(row, "get") else None
-                is_reported = reported_eps is not None or event_date < today
-                if is_reported:
-                    result_dates.append(iso_date)
-
-                impact_bits: list[str] = []
-                if reported_eps is not None:
-                    impact_bits.append(f"Reported EPS {reported_eps:.2f}")
-                elif estimate_eps is not None:
-                    impact_bits.append(f"Street EPS est. {estimate_eps:.2f}")
-                if surprise_pct is not None and reported_eps is not None:
-                    impact_bits.append(f"Surprise {surprise_pct:+.2f}%")
-                impact = "; ".join(impact_bits) or (
-                    "Quarterly results declared" if is_reported else "Quarterly earnings date scheduled"
-                )
-                label = self._build_earnings_event_label(event_date, is_reported=is_reported)
-
-                if event_date >= today:
-                    upcoming_events.append({
-                        "date": iso_date,
-                        "event": label,
-                        "impact": impact,
-                    })
-
-                if event_date >= (today - timedelta(days=120)):
-                    earnings_updates.append(
-                        CompanyUpdateItem(
-                            title=label,
-                            source="Yahoo Finance earnings calendar",
-                            published_at=iso_date,
-                            summary=impact,
-                            kind="results",
-                        )
-                    )
-
-        try:
-            calendar_data = getattr(ticker, "calendar", None)
-        except Exception:
-            calendar_data = None
-
-        calendar_values: list[Any] = []
-        if isinstance(calendar_data, dict):
-            earnings_value = calendar_data.get("Earnings Date")
-            if isinstance(earnings_value, (list, tuple, set)):
-                calendar_values.extend(list(earnings_value))
-            elif earnings_value is not None:
-                calendar_values.append(earnings_value)
-        elif isinstance(calendar_data, pd.DataFrame) and not calendar_data.empty:
-            for label in ("Earnings Date", "EarningsDate"):
-                if label in calendar_data.index:
-                    values = calendar_data.loc[label]
-                    if hasattr(values, "tolist"):
-                        calendar_values.extend(values.tolist())
-                    else:
-                        calendar_values.append(values)
-
-        for raw_value in calendar_values:
-            iso_date = self._coerce_iso_date(raw_value)
-            if not iso_date:
-                continue
-            event_date = date.fromisoformat(iso_date)
-            if event_date < today:
-                continue
-            if any(existing.get("date") == iso_date for existing in upcoming_events):
-                continue
-            label = self._build_earnings_event_label(event_date, is_reported=False)
-            upcoming_events.append({
-                "date": iso_date,
-                "event": label,
-                "impact": "Quarterly earnings date scheduled",
-            })
-            earnings_updates.append(
-                CompanyUpdateItem(
-                    title=label,
-                    source="Yahoo Finance earnings calendar",
-                    published_at=iso_date,
-                    summary="Quarterly earnings date scheduled",
-                    kind="results",
-                )
-            )
-
-        return sorted(set(result_dates)), self._merge_upcoming_events(upcoming_events), self._merge_updates(earnings_updates, [])
-
-    def _coerce_iso_date(self, value: Any) -> str | None:
-        if value is None:
-            return None
-        if isinstance(value, (list, tuple, set)):
-            for item in value:
-                parsed = self._coerce_iso_date(item)
-                if parsed:
-                    return parsed
-            return None
-        if isinstance(value, pd.Timestamp):
-            if pd.isna(value):
-                return None
-            return value.to_pydatetime().date().isoformat()
-        if isinstance(value, datetime):
-            return value.date().isoformat()
-        if isinstance(value, date):
-            return value.isoformat()
-        text = self._clean_text(value)
-        if not text:
-            return None
-        parsed = pd.to_datetime(text, errors="coerce")
-        if pd.isna(parsed):
-            return None
-        if isinstance(parsed, pd.Timestamp):
-            return parsed.to_pydatetime().date().isoformat()
-        return None
-
-    def _build_earnings_event_label(self, event_date: date, *, is_reported: bool) -> str:
-        if event_date.month in (4, 5, 6):
-            quarter_label = f"Q4 FY{event_date.year}"
-        elif event_date.month in (7, 8, 9):
-            quarter_label = f"Q1 FY{event_date.year + 1}"
-        elif event_date.month in (10, 11, 12):
-            quarter_label = f"Q2 FY{event_date.year + 1}"
-        else:
-            quarter_label = f"Q3 FY{event_date.year}"
-        suffix = "results declared" if is_reported else "results expected"
-        return f"{quarter_label} {suffix}"
-
-    def _attach_earnings_result_dates(
-        self,
-        quarterly_results: list[QuarterlyResultItem],
-        result_dates: list[str],
-    ) -> list[QuarterlyResultItem]:
-        if not quarterly_results or not result_dates:
-            return quarterly_results
-
-        parsed_dates = [
-            date.fromisoformat(value)
-            for value in sorted({value for value in result_dates if value})
-        ]
-        used_indexes: set[int] = set()
-        enriched: list[QuarterlyResultItem] = []
-
-        for item in sorted(quarterly_results, key=lambda quarter: self._period_sort_key(quarter.period)):
-            if item.result_date:
-                enriched.append(item)
-                continue
-            period_end = self._period_end_date(item.period)
-            if period_end is None:
-                enriched.append(item)
-                continue
-
-            best_index: int | None = None
-            best_score: float | None = None
-            quarter_key = self._quarter_key_from_period_label(item.period)
-            for index, event_date in enumerate(parsed_dates):
-                if index in used_indexes:
-                    continue
-                gap_days = (event_date - period_end).days
-                if gap_days < -10 or gap_days > 75:
-                    continue
-                # Prefer dates whose inferred quarter key matches this period's key
-                score: float = gap_days
-                if quarter_key and self._quarter_key_from_event_date(event_date) == quarter_key:
-                    score -= 50  # strong bonus for matching quarter
-                if best_score is None or score < best_score:
-                    best_score = score
-                    best_index = index
-
-            if best_index is None:
-                enriched.append(item)
-                continue
-
-            used_indexes.add(best_index)
-            enriched.append(item.model_copy(update={"result_date": parsed_dates[best_index].isoformat()}))
-
-        return sorted(enriched, key=lambda quarter: self._period_sort_key(quarter.period))
-
-    def _period_end_date(self, period: str) -> date | None:
-        cleaned = self._clean_text(period)
-        for fmt in ("%b %Y", "%B %Y"):
-            try:
-                parsed = datetime.strptime(cleaned, fmt)
-            except ValueError:
-                continue
-            if parsed.month == 12:
-                return date(parsed.year + 1, 1, 1) - timedelta(days=1)
-            return date(parsed.year, parsed.month + 1, 1) - timedelta(days=1)
-        return None
-
-    def _merge_upcoming_events(self, *event_groups: list[dict[str, Any]]) -> list[dict[str, str]]:
-        merged: list[dict[str, str]] = []
-        seen: set[str] = set()
-        for group in event_groups:
-            for item in group or []:
-                if not isinstance(item, dict):
-                    continue
-                iso_date = self._coerce_iso_date(item.get("date"))
-                event = self._clean_text(item.get("event"))
-                impact = self._clean_text(item.get("impact")) or "Quarterly earnings date scheduled"
-                if not iso_date or not event:
-                    continue
-                key = f"{iso_date}::{event.lower()}"
-                if key in seen:
-                    continue
-                seen.add(key)
-                merged.append({"date": iso_date, "event": event, "impact": impact})
-        merged.sort(key=lambda item: (item.get("date") or "", item.get("event") or ""))
-        return merged
-
     def _raw_value_to_crore(self, value: float | None) -> float | None:
         if value is None:
             return None
         return round(value / 10_000_000, 2)
 
-    def _annotate_quarterly_yoy_qoq(self, quarterly_results: list[QuarterlyResultItem]) -> list[QuarterlyResultItem]:
-        """Populate yoy_change_pct and qoq_change_pct on each QuarterlyResultItem."""
-        out: list[QuarterlyResultItem] = []
-        for i, item in enumerate(quarterly_results):
-            qoq_pct: float | None = None
-            yoy_pct: float | None = None
-            if i > 0:
-                qoq_pct = self._growth_pct(item.sales_crore, quarterly_results[i - 1].sales_crore)
-            if i >= 4:
-                yoy_pct = self._growth_pct(item.sales_crore, quarterly_results[i - 4].sales_crore)
-            out.append(item.model_copy(update={"qoq_change_pct": qoq_pct, "yoy_change_pct": yoy_pct}))
-        return out
-
-    def _build_growth_snapshot(self, quarterly_results: list[QuarterlyResultItem], profit_loss: list["ProfitLossItem"] | None = None) -> GrowthSnapshot | None:
+    def _build_growth_snapshot(self, quarterly_results: list[QuarterlyResultItem]) -> GrowthSnapshot | None:
         if not quarterly_results:
             return None
-        # Exclude TTM row from recency comparisons
-        real_quarters = [q for q in quarterly_results if q.period.upper() != "TTM"]
-        if not real_quarters:
-            return None
-        latest = real_quarters[-1]
-        previous = real_quarters[-2] if len(real_quarters) >= 2 else None
-        year_ago = real_quarters[-5] if len(real_quarters) >= 5 else None
+        latest = quarterly_results[-1]
+        previous = quarterly_results[-2] if len(quarterly_results) >= 2 else None
+        year_ago = quarterly_results[-5] if len(quarterly_results) >= 5 else None
         latest_net_margin = self._margin_pct(latest.net_profit_crore, latest.sales_crore)
         previous_net_margin = self._margin_pct(previous.net_profit_crore, previous.sales_crore) if previous else None
-
-        sales_yoy_pct = self._growth_pct(latest.sales_crore, year_ago.sales_crore if year_ago else None)
-        profit_yoy_pct = self._growth_pct(latest.net_profit_crore, year_ago.net_profit_crore if year_ago else None)
-
-        # Fallback: use annual profit_loss for YoY when not enough quarters
-        if (sales_yoy_pct is None or profit_yoy_pct is None) and profit_loss:
-            annual = [p for p in profit_loss if p.period.upper() != "TTM" and p.sales_crore]
-            if len(annual) >= 2:
-                latest_ann = annual[-1]
-                prev_ann = annual[-2]
-                if sales_yoy_pct is None:
-                    sales_yoy_pct = self._growth_pct(latest_ann.sales_crore, prev_ann.sales_crore)
-                if profit_yoy_pct is None:
-                    profit_yoy_pct = self._growth_pct(latest_ann.net_profit_crore, prev_ann.net_profit_crore)
-
         return GrowthSnapshot(
             latest_period=latest.period,
             sales_qoq_pct=self._growth_pct(latest.sales_crore, previous.sales_crore if previous else None),
-            sales_yoy_pct=sales_yoy_pct,
+            sales_yoy_pct=self._growth_pct(latest.sales_crore, year_ago.sales_crore if year_ago else None),
             profit_qoq_pct=self._growth_pct(latest.net_profit_crore, previous.net_profit_crore if previous else None),
-            profit_yoy_pct=profit_yoy_pct,
+            profit_yoy_pct=self._growth_pct(latest.net_profit_crore, year_ago.net_profit_crore if year_ago else None),
             operating_margin_latest_pct=latest.operating_margin_pct,
             operating_margin_previous_pct=previous.operating_margin_pct if previous else None,
             net_margin_latest_pct=latest_net_margin,
@@ -4041,17 +3086,6 @@ class FreeMarketDataProvider:
     def _post_close_refresh_grace_minutes(self) -> int:
         return 30
 
-    def _allow_after_close_live_refresh(self) -> bool:
-        market_timezone = self._market_timezone()
-        market_now = datetime.now(timezone.utc).astimezone(market_timezone)
-        session_date = market_now.date()
-        if not self._is_trading_day_ist(session_date):
-            return False
-        session_close = datetime.combine(session_date, datetime.min.time(), tzinfo=market_timezone) + timedelta(
-            minutes=self._market_close_minutes()
-        )
-        return market_now <= session_close + timedelta(hours=8)
-
     def _previous_trading_day(self, trading_date: date) -> date:
         previous = trading_date - timedelta(days=1)
         while not self._is_trading_day_ist(previous):
@@ -4090,20 +3124,7 @@ class FreeMarketDataProvider:
         snapshot_session_date = self._snapshot_rows_session_date(cached_rows)
         if snapshot_session_date is None:
             return True
-        latest_completed = self._latest_completed_market_session_date()
-        if snapshot_session_date < latest_completed:
-            return True
-        # Session date matches but snapshot may have been captured before market close
-        # (e.g. mid-session load at 2:30 PM). If the snapshot file predates the last
-        # close time, we still need a post-close rebuild to get final EOD prices.
-        if self.snapshot_cache_path.exists():
-            last_close = self._latest_closed_session_close()
-            snapshot_mtime = datetime.fromtimestamp(
-                self.snapshot_cache_path.stat().st_mtime, tz=timezone.utc
-            )
-            if snapshot_mtime < last_close:
-                return True
-        return False
+        return snapshot_session_date < self._latest_completed_market_session_date()
 
     def _strict_closed_session_refresh_due(self) -> bool:
         if not self._market_close_refresh_due():
@@ -4140,11 +3161,7 @@ class FreeMarketDataProvider:
         current_session = self._current_or_previous_trading_day_ist()
         stale_days = max((current_session - session_date).days, 0)
         if force_refresh:
-            # Force-refresh should prefer cheap live-quote refresh, not always force a
-            # full historical rebuild (which is slow and can fail on thin symbols).
-            # Rebuild only when the cached session is not the current session or
-            # the stored history source is known to be unreliable.
-            return stale_days > 0 or not self._history_source_is_reliable(rows[0].get("history_source"))
+            return stale_days >= 1
         if not self._is_trading_day_ist():
             return False
         return stale_days >= 3
@@ -4163,98 +3180,6 @@ class FreeMarketDataProvider:
                     continue
                 normalized_row[field] = self._previous_trading_day(stored_date).isoformat()
                 changed = True
-
-            # Self-heal derived period returns from baselines so snapshot files
-            # patched via EOD close updates remain internally consistent.
-            current_price = self._to_float(normalized_row.get("last_price"))
-            if current_price not in (None, 0):
-                derived_returns = {
-                    "stock_return_5d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_5d")),
-                        float(normalized_row.get("stock_return_5d", 0) or 0),
-                    ),
-                    "stock_return_20d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_20d")),
-                        float(normalized_row.get("stock_return_20d", 0) or 0),
-                    ),
-                    "stock_return_40d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_40d")),
-                        float(normalized_row.get("stock_return_40d", 0) or 0),
-                    ),
-                    "stock_return_60d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_60d")),
-                        float(normalized_row.get("stock_return_60d", 0) or 0),
-                    ),
-                    "stock_return_126d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_126d")),
-                        float(normalized_row.get("stock_return_126d", 0) or 0),
-                    ),
-                    "stock_return_189d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_189d")),
-                        float(normalized_row.get("stock_return_189d", 0) or 0),
-                    ),
-                    "stock_return_12m": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_252d")),
-                        float(normalized_row.get("stock_return_12m", 0) or 0),
-                    ),
-                    "stock_return_504d": self._return_from_baseline(
-                        float(current_price),
-                        self._to_float(normalized_row.get("baseline_close_504d")),
-                        float(normalized_row.get("stock_return_504d", 0) or 0),
-                    ),
-                }
-                for field, value in derived_returns.items():
-                    rounded = round(float(value), 2)
-                    existing = self._to_float(normalized_row.get(field))
-                    if existing is None or round(float(existing), 2) != rounded:
-                        normalized_row[field] = rounded
-                        changed = True
-
-                rs_weighted_score = self._weighted_rs_score_from_price(normalized_row, float(current_price))
-                existing_rs = self._to_float(normalized_row.get("rs_weighted_score"))
-                if existing_rs is None or round(float(existing_rs), 4) != round(float(rs_weighted_score), 4):
-                    normalized_row["rs_weighted_score"] = round(float(rs_weighted_score), 4)
-                    changed = True
-
-            symbol = str(normalized_row.get("symbol") or "").strip().upper()
-            recent_closes = normalized_row.get("recent_closes")
-            needs_recent_closes = not isinstance(recent_closes, list) or len(recent_closes) < 4
-            needs_contraction_baselines = any(
-                normalized_row.get(field) in (None, "")
-                for field in ("baseline_close_10d", "baseline_close_30d", "baseline_close_90d")
-            )
-            if symbol and (needs_recent_closes or needs_contraction_baselines):
-                cached_history = self._history_frame_from_cached_bars(symbol)
-                if cached_history.empty:
-                    cached_history = self._history_frame_from_cached_bars(symbol, allow_legacy=True)
-                if not cached_history.empty:
-                    adjusted_close = pd.to_numeric(cached_history.get("Adj Close"), errors="coerce").dropna()
-                    if needs_recent_closes and not adjusted_close.empty:
-                        rebuilt_recent_closes = [round(float(value), 2) for value in adjusted_close.tail(20).tolist()]
-                        if rebuilt_recent_closes:
-                            normalized_row["recent_closes"] = rebuilt_recent_closes
-                            changed = True
-
-                    for field, lookback in (
-                        ("baseline_close_10d", 10),
-                        ("baseline_close_30d", 30),
-                        ("baseline_close_90d", 90),
-                    ):
-                        if normalized_row.get(field) not in (None, ""):
-                            continue
-                        baseline_close = self._baseline_at_lookback(adjusted_close, lookback)
-                        if baseline_close is None:
-                            continue
-                        normalized_row[field] = round(float(baseline_close), 4)
-                        changed = True
-
             normalized_rows.append(normalized_row)
         return normalized_rows, changed
 
@@ -4428,79 +3353,6 @@ class FreeMarketDataProvider:
                     }
         return quotes
 
-    def _fetch_yahoo_live_quote_via_chart(self, ticker: str) -> dict[str, Any] | None:
-        """Fetch a live quote using the Yahoo v8 chart API (no crumb required).
-
-        Unlike the v7 quote endpoint, the v8 chart endpoint works from any IP
-        including HuggingFace US servers without crumb/cookie authentication.
-        Returns a dict with regularMarketPrice, regularMarketPreviousClose, and
-        regularMarketTime, or None on failure.
-
-        Falls back to yfinance Ticker.fast_info if the httpx request fails, as
-        yfinance handles crumb negotiation automatically.
-        """
-        headers = {
-            "User-Agent": USER_AGENT,
-            "Accept": "application/json,text/plain,*/*",
-            "Referer": "https://finance.yahoo.com/",
-        }
-        # ── Attempt 1: httpx directly to the v8 chart endpoint ────────────────
-        try:
-            with httpx.Client(timeout=15, headers=headers, follow_redirects=True) as client:
-                response = client.get(
-                    f"{YAHOO_CHART_URL}/{ticker}",
-                    params={"range": "2d", "interval": "1d", "includePrePost": "false"},
-                )
-                response.raise_for_status()
-                payload = response.json()
-            result = ((payload.get("chart") or {}).get("result") or [None])[0]
-            if result:
-                meta = result.get("meta") or {}
-                price = self._to_float(meta.get("regularMarketPrice"))
-                prev_close = self._to_float(
-                    meta.get("previousClose") or meta.get("chartPreviousClose") or meta.get("regularMarketPreviousClose")
-                )
-                ts = meta.get("regularMarketTime")
-                if price and price > 0:
-                    return {
-                        "regularMarketPrice": price,
-                        "regularMarketPreviousClose": prev_close or price,
-                        "regularMarketTime": ts,
-                    }
-        except Exception:
-            pass
-
-        # ── Attempt 2: yfinance Ticker.fast_info (handles crumbs automatically) ─
-        # Uses a daemon thread with join timeout so we never block indefinitely.
-        try:
-            import threading
-            _result: list[dict[str, Any] | None] = [None]
-
-            def _yf_fetch() -> None:
-                try:
-                    t = yf.Ticker(ticker)
-                    fi = t.fast_info
-                    price = self._to_float(getattr(fi, "last_price", None))
-                    prev_close = self._to_float(getattr(fi, "previous_close", None))
-                    if price and price > 0:
-                        _result[0] = {
-                            "regularMarketPrice": price,
-                            "regularMarketPreviousClose": prev_close or price,
-                            "regularMarketTime": None,
-                        }
-                except Exception:
-                    pass
-
-            thread = threading.Thread(target=_yf_fetch, daemon=True)
-            thread.start()
-            thread.join(timeout=18)
-            if _result[0] is not None:
-                return _result[0]
-        except Exception:
-            pass
-
-        return None
-
     def _fetch_quote_batch(self, tickers: list[str]) -> dict[str, dict[str, Any]]:
         normalized_tickers = [str(ticker).strip() for ticker in tickers if str(ticker).strip()]
         if not normalized_tickers:
@@ -4621,7 +3473,6 @@ class FreeMarketDataProvider:
                     group_by="ticker" if len(batch) > 1 else "column",
                     progress=False,
                     threads=True,
-                    auto_adjust=False,
                 )
             except Exception:
                 continue
@@ -4722,7 +3573,7 @@ class FreeMarketDataProvider:
 
         for row in missing_rows:
             symbol = str(row.get("symbol") or "").upper()
-            ticker = str(row.get("instrument_key") or (f"{symbol}.NS" if str(row.get("exchange") or "").upper() == "NSE" else symbol)).upper()
+            ticker = str(row.get("instrument_key") or f"{symbol}.NS").upper()
             quote = yahoo_quotes.get(ticker) or yahoo_quotes.get(symbol)
             if not quote:
                 continue
@@ -4769,8 +3620,6 @@ class FreeMarketDataProvider:
         applied_quote_count = 0
         applied_sources: set[str] = set()
 
-        latest_session_date = self._latest_completed_market_session_date()
-
         for row in refreshed_rows:
             symbol = str(row.get("symbol") or "").upper()
             quote = live_prices.get(symbol)
@@ -4779,13 +3628,7 @@ class FreeMarketDataProvider:
             quote_updated_at = self._quote_updated_at_from_quote(quote)
             if not self._is_live_quote_recent(quote_updated_at):
                 continue
-            # Skip session bounds check when the cached row is from a different
-            # (older) trading session — the bounds are for the old session and
-            # will incorrectly reject quotes for stocks that moved significantly
-            # (e.g. >25%) since that session (tariff shocks, earnings gaps, etc).
-            row_session_date = self._parse_row_date(row.get("history_as_of_date"))
-            row_is_current_session = (row_session_date == latest_session_date)
-            if row_is_current_session and not self._quote_matches_snapshot_session(symbol, quote):
+            if not self._quote_matches_snapshot_session(symbol, quote):
                 continue
             patch = self._quote_to_live_snapshot_patch(row, quote, benchmark_quote)
             if not self._live_quote_matches_cached_scale(row.get("last_price"), patch.get("last_price")):
@@ -4865,22 +3708,9 @@ class FreeMarketDataProvider:
     ) -> dict[str, Any]:
         quote_updated_at = self._quote_updated_at_from_quote(quote)
         current_price = self._quote_number(quote, "regularMarketPrice") or float(row.get("last_price") or 0)
-        _cached_prev = float(row.get("previous_close") or row.get("last_price") or current_price)
-        _raw_prev_close = self._quote_number(quote, "regularMarketPreviousClose")
-        # Yahoo sometimes returns corrupt previous_close values (e.g. pre-split price).
-        # Validate against cached scale before trusting it; fall back to cached if it fails.
-        previous_close = (
-            _raw_prev_close
-            if _raw_prev_close and self._live_quote_matches_cached_scale(_cached_prev, _raw_prev_close)
-            else _cached_prev
-        )
+        previous_close = self._quote_number(quote, "regularMarketPreviousClose") or float(row.get("previous_close") or row.get("last_price") or current_price)
         session_high = self._quote_number(quote, "regularMarketDayHigh") or current_price
         session_low = self._quote_number(quote, "regularMarketDayLow") or current_price
-        
-        # Candle sanity: ensure current price is within high/low bounds
-        session_high = max(session_high, current_price)
-        session_low = min(session_low, current_price)
-        
         session_open = self._quote_number(quote, "regularMarketOpen") or previous_close or current_price
         session_volume = int(self._quote_number(quote, "regularMarketVolume") or row.get("volume") or 0)
         high_52w = self._quote_number(quote, "fiftyTwoWeekHigh") or float(row.get("high_52w") or session_high)
@@ -4980,107 +3810,61 @@ class FreeMarketDataProvider:
         }
 
     def _fetch_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
-        items_by_symbol: dict[str, IndexQuoteItem] = {}
-        missing: list[str] = []
+        items: list[IndexQuoteItem] = []
+        normalized_symbols = [str(symbol or "").strip() for symbol in symbols if str(symbol or "").strip()]
+        live_quotes: dict[str, dict[str, Any]] = {}
 
-        # Prefer recent chart-cache bars first. They are fast, survive transient
-        # upstream outages, and avoid unnecessary network fetches for index cards.
-        for symbol in symbols:
+        if normalized_symbols:
+            try:
+                live_quotes = self._fetch_quote_batch(normalized_symbols)
+            except Exception:
+                live_quotes = {}
+
+        for symbol in normalized_symbols:
+            quote = live_quotes.get(symbol.upper())
+            if quote is not None:
+                live_item = self._index_quote_from_live_quote(symbol, quote)
+                if live_item is not None:
+                    items.append(live_item)
+                    continue
+
+            try:
+                nse_item = self._fetch_nse_index_quote(symbol)
+            except Exception:
+                nse_item = None
+            if nse_item is not None:
+                items.append(nse_item)
+                continue
+
             try:
                 chart_item = self._index_quote_from_cached_bars(symbol)
             except Exception:
                 chart_item = None
+            if chart_item is not None:
+                items.append(chart_item)
 
-            if chart_item is not None and (
-                self._is_chart_cache_fresh(symbol, "1D") or self._is_chart_cache_fresh(symbol, "15m")
-            ):
-                items_by_symbol[symbol.upper()] = chart_item
-                continue
-            missing.append(symbol)
+        return items
 
-        # Fill remaining mapped India indices from NSE's official feed.
-        nse_symbols = [symbol for symbol in missing if symbol.upper() in INDEX_SYMBOL_TO_NSE_NAME]
-        if nse_symbols:
+    def _index_quote_from_live_quote(self, symbol: str, quote: dict[str, Any]) -> IndexQuoteItem | None:
+        current_price = self._to_float(quote.get("regularMarketPrice"))
+        previous_close = self._to_float(quote.get("regularMarketPreviousClose"))
+        if current_price in (None, 0) or previous_close in (None, 0):
+            return None
+
+        updated_at = datetime.now(timezone.utc)
+        market_time = quote.get("regularMarketTime")
+        if isinstance(market_time, (int, float)):
             try:
-                for item in self._fetch_nse_index_quotes(nse_symbols):
-                    items_by_symbol[item.symbol.upper()] = item
+                updated_at = datetime.fromtimestamp(int(market_time), tz=timezone.utc)
             except Exception:
-                pass
+                updated_at = datetime.now(timezone.utc)
 
-        missing = [symbol for symbol in missing if symbol.upper() not in items_by_symbol]
-
-        if missing:
-            # Attempt 1: Yahoo v7 quote API (batch, low latency, but requires crumb).
-            # Fails silently on HF US servers due to missing crumb — v8 fallback below.
-            filled: set[str] = set()
-            try:
-                yahoo_quotes = self._fetch_yahoo_live_quotes(missing)
-                for symbol in missing:
-                    q = yahoo_quotes.get(symbol.upper())
-                    if not q:
-                        continue
-                    price = self._to_float(q.get("regularMarketPrice"))
-                    prev = self._to_float(q.get("regularMarketPreviousClose"))
-                    ts = q.get("regularMarketTime")
-                    if not price or price <= 0:
-                        continue
-                    change_pct = round(((price / prev) - 1) * 100, 2) if prev and prev > 0 else 0.0
-                    updated_at = (
-                        datetime.fromtimestamp(int(ts), tz=timezone.utc)
-                        if ts
-                        else datetime.now(timezone.utc)
-                    )
-                    items_by_symbol[symbol.upper()] = IndexQuoteItem(
-                        symbol=symbol,
-                        price=round(price, 2),
-                        change_pct=change_pct,
-                        updated_at=updated_at,
-                    )
-                    filled.add(symbol.upper())
-            except Exception:
-                pass
-
-            # Attempt 2: Yahoo v8 chart API — no crumb required, works from any IP.
-            # Used as fallback when the v7 batch call fails (e.g. on HuggingFace).
-            still_missing = [s for s in missing if s.upper() not in filled]
-            for symbol in still_missing:
-                try:
-                    ticker = self._resolve_ticker(symbol) if not symbol.startswith("^") else symbol
-                    q = self._fetch_yahoo_live_quote_via_chart(ticker)
-                    if not q:
-                        continue
-                    price = self._to_float(q.get("regularMarketPrice"))
-                    prev = self._to_float(q.get("regularMarketPreviousClose"))
-                    ts = q.get("regularMarketTime")
-                    if not price or price <= 0:
-                        continue
-                    change_pct = round(((price / prev) - 1) * 100, 2) if prev and prev > 0 else 0.0
-                    updated_at = (
-                        datetime.fromtimestamp(int(ts), tz=timezone.utc)
-                        if ts
-                        else datetime.now(timezone.utc)
-                    )
-                    items_by_symbol[symbol.upper()] = IndexQuoteItem(
-                        symbol=symbol,
-                        price=round(price, 2),
-                        change_pct=change_pct,
-                        updated_at=updated_at,
-                    )
-                except Exception:
-                    pass
-
-            # Final fallback: if network fetches failed but an older chart cache exists,
-            # return it rather than dropping the index card entirely.
-            unresolved = [s for s in still_missing if s.upper() not in items_by_symbol]
-            for symbol in unresolved:
-                try:
-                    chart_item = self._index_quote_from_cached_bars(symbol)
-                except Exception:
-                    chart_item = None
-                if chart_item is not None:
-                    items_by_symbol[symbol.upper()] = chart_item
-
-        return [items_by_symbol[symbol.upper()] for symbol in symbols if symbol.upper() in items_by_symbol]
+        return IndexQuoteItem(
+            symbol=symbol,
+            price=round(float(current_price), 2),
+            change_pct=round(((float(current_price) / float(previous_close)) - 1) * 100, 2),
+            updated_at=updated_at,
+        )
 
     def _index_quote_from_bars(self, symbol: str, bars: list[ChartBar]) -> IndexQuoteItem | None:
         if len(bars) < 2:
@@ -5130,29 +3914,10 @@ class FreeMarketDataProvider:
         )
 
     def _fetch_nse_index_quote(self, symbol: str) -> IndexQuoteItem | None:
-        rows = self._fetch_nse_all_indices_rows()
-        if not rows:
+        index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
+        if not index_name:
             return None
-        return self._index_quote_from_nse_rows(rows, symbol)
 
-    def _fetch_nse_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
-        rows = self._fetch_nse_all_indices_rows()
-        if not rows:
-            return []
-
-        items: list[IndexQuoteItem] = []
-        seen: set[str] = set()
-        for symbol in symbols:
-            normalized_symbol = str(symbol).upper()
-            if normalized_symbol in seen:
-                continue
-            seen.add(normalized_symbol)
-            item = self._index_quote_from_nse_rows(rows, symbol)
-            if item is not None:
-                items.append(item)
-        return items
-
-    def _fetch_nse_all_indices_rows(self) -> list[dict[str, Any]]:
         headers = {
             "User-Agent": USER_AGENT,
             "Accept": "application/json,text/plain,*/*",
@@ -5165,17 +3930,7 @@ class FreeMarketDataProvider:
             payload = response.json()
 
         rows = payload.get("data") or []
-        return rows if isinstance(rows, list) else []
-
-    def _index_quote_from_nse_rows(self, rows: list[dict[str, Any]], symbol: str) -> IndexQuoteItem | None:
-        index_name = INDEX_SYMBOL_TO_NSE_NAME.get(str(symbol).upper())
-        if not index_name:
-            return None
-
-        matched = next(
-            (row for row in rows if str(row.get("index", "")).strip().upper() == index_name.upper()),
-            None,
-        )
+        matched = next((row for row in rows if str(row.get("index", "")).strip().upper() == index_name.upper()), None)
         if not matched:
             return None
 
@@ -5200,304 +3955,6 @@ class FreeMarketDataProvider:
             )
         except (TypeError, ValueError):
             return None
-
-    def _market_locale(self) -> str:
-        """Return 'IN' for India provider, overridden by US provider to return 'US'."""
-        return "IN"
-
-    def _is_earnings_related_text(self, text: str) -> bool:
-        lowered = self._clean_text(text).lower()
-        if not lowered:
-            return False
-        return any(
-            keyword in lowered
-            for keyword in (
-                "results",
-                "earnings",
-                "quarterly",
-                "q1",
-                "q2",
-                "q3",
-                "q4",
-                "board meeting",
-                "dividend",
-            )
-        )
-
-    def _extract_explicit_dates_from_text(self, text: str, reference_date: str | date | None = None) -> list[str]:
-        normalized = self._clean_text(text)
-        if not normalized:
-            return []
-        normalized = normalized.replace("–", "-").replace("—", "-")
-        normalized = re.sub(r"(\d{1,2})(st|nd|rd|th)\b", r"\1", normalized, flags=re.IGNORECASE)
-
-        if isinstance(reference_date, str):
-            base_date = date.fromisoformat(reference_date[:10]) if reference_date[:10] else self._current_ist_date()
-        elif isinstance(reference_date, date):
-            base_date = reference_date
-        else:
-            base_date = self._current_ist_date()
-
-        parsed_dates: list[date] = []
-
-        def _append_candidate(day_text: str, month_text: str, year_text: str | None) -> None:
-            year_value = int(year_text) if year_text else base_date.year
-            raw_value = f"{day_text} {month_text} {year_value}"
-            for fmt in ("%d %b %Y", "%d %B %Y"):
-                try:
-                    parsed = datetime.strptime(raw_value, fmt).date()
-                    if not year_text and parsed < (base_date - timedelta(days=45)):
-                        parsed = date(parsed.year + 1, parsed.month, parsed.day)
-                    parsed_dates.append(parsed)
-                    return
-                except ValueError:
-                    continue
-
-        for match in re.finditer(r"\b(\d{1,2})\s*[-/]\s*(\d{1,2})\s+([A-Za-z]{3,9})\s*,?\s*(20\d{2})?\b", normalized):
-            _append_candidate(match.group(2), match.group(3), match.group(4))
-
-        for match in re.finditer(r"\b(\d{1,2})\s+([A-Za-z]{3,9})\s*,?\s*(20\d{2})?\b", normalized):
-            _append_candidate(match.group(1), match.group(2), match.group(3))
-
-        for match in re.finditer(r"\b([A-Za-z]{3,9})\s+(\d{1,2})(?:,\s*|\s+)?(20\d{2})?\b", normalized):
-            _append_candidate(match.group(2), match.group(1), match.group(3))
-
-        seen: set[str] = set()
-        unique_dates: list[str] = []
-        for parsed in sorted(parsed_dates):
-            iso_date = parsed.isoformat()
-            if iso_date in seen:
-                continue
-            seen.add(iso_date)
-            unique_dates.append(iso_date)
-        return unique_dates
-
-    def _quarter_key_from_period_label(self, period: str | None) -> str | None:
-        cleaned = self._clean_text(period)
-        if not cleaned:
-            return None
-        for fmt in ("%b %Y", "%B %Y"):
-            try:
-                parsed = datetime.strptime(cleaned, fmt)
-                return self._quarter_key_from_event_date(date(parsed.year, parsed.month, 1), use_month_end=True)
-            except ValueError:
-                continue
-        return None
-
-    def _quarter_key_from_event_date(self, event_date: date, *, use_month_end: bool = False) -> str:
-        month = event_date.month
-        year = event_date.year
-        if self._market_locale() == "US":
-            # US: Calendar-year fiscal quarters (Q1=Jan-Mar, Q2=Apr-Jun, Q3=Jul-Sep, Q4=Oct-Dec)
-            if use_month_end:
-                if month == 3:
-                    return f"Q1 FY{year}"
-                if month == 6:
-                    return f"Q2 FY{year}"
-                if month == 9:
-                    return f"Q3 FY{year}"
-                if month == 12:
-                    return f"Q4 FY{year}"
-            if month in (1, 2, 3):
-                return f"Q4 FY{year - 1}"
-            if month in (4, 5, 6):
-                return f"Q1 FY{year}"
-            if month in (7, 8, 9):
-                return f"Q2 FY{year}"
-            return f"Q3 FY{year}"
-        # India: April-March fiscal year
-        if use_month_end:
-            if month == 3:
-                return f"Q4 FY{year}"
-            if month == 6:
-                return f"Q1 FY{year + 1}"
-            if month == 9:
-                return f"Q2 FY{year + 1}"
-            if month == 12:
-                return f"Q3 FY{year + 1}"
-        if month in (4, 5, 6):
-            return f"Q4 FY{year}"
-        if month in (7, 8, 9):
-            return f"Q1 FY{year + 1}"
-        if month in (10, 11, 12):
-            return f"Q2 FY{year + 1}"
-        return f"Q3 FY{year}"
-
-    def _infer_quarter_key_from_text(self, text: str, reference_date: date | None = None) -> str | None:
-        lowered = self._clean_text(text).lower()
-        if not lowered:
-            return None
-        full_match = re.search(r"\bq([1-4])\s*fy\s*(20\d{2}|\d{2})\b", lowered)
-        if full_match:
-            fiscal_year = full_match.group(2)
-            if len(fiscal_year) == 2:
-                fiscal_year = f"20{fiscal_year}"
-            return f"Q{full_match.group(1)} FY{fiscal_year}"
-        quarter_match = re.search(r"\bq([1-4])\b", lowered)
-        if quarter_match and reference_date is not None:
-            fallback_fy = int(self._quarter_key_from_event_date(reference_date).split("FY", 1)[1])
-            quarter_no = int(quarter_match.group(1))
-            if quarter_no == 4 and reference_date.month in (1, 2, 3):
-                fallback_fy = reference_date.year
-            return f"Q{quarter_no} FY{fallback_fy}"
-        return None
-
-    def _derive_earnings_signals_from_news(
-        self,
-        news_items: list[DetailedNews],
-    ) -> tuple[list[dict[str, str]], list[CompanyUpdateItem]]:
-        if not news_items:
-            return [], []
-
-        today = self._current_ist_date()
-        derived_events: list[dict[str, str]] = []
-        derived_updates: list[CompanyUpdateItem] = []
-        seen_updates: set[str] = set()
-        schedule_markers = (
-            "results date",
-            "earnings date",
-            "to announce",
-            "will announce",
-            "date and time",
-            "announcement schedule",
-            "board meeting",
-            "expected",
-            "preview",
-            "this date",
-            "quarterly earnings on",
-            "quarterly results on",
-        )
-
-        for item in news_items:
-            combined = self._clean_text(f"{item.title}. {item.summary or ''}")
-            lowered = combined.lower()
-            if not self._is_earnings_related_text(combined):
-                continue
-            candidate_dates = self._extract_explicit_dates_from_text(combined, item.published_date)
-            published_iso = self._coerce_iso_date(item.published_date)
-            if not candidate_dates and published_iso and ("results" in lowered or "earnings" in lowered):
-                candidate_dates = [published_iso]
-            if not candidate_dates:
-                continue
-
-            is_schedule = any(marker in lowered for marker in schedule_markers)
-            for iso_date in candidate_dates:
-                event_date = date.fromisoformat(iso_date)
-                if event_date < (today - timedelta(days=400)):
-                    continue
-                is_future_event = is_schedule and event_date >= (today - timedelta(days=1))
-                label = self._build_earnings_event_label(event_date, is_reported=not is_future_event)
-                update_key = f"{iso_date}::{label.lower()}"
-                if update_key not in seen_updates:
-                    derived_updates.append(
-                        CompanyUpdateItem(
-                            title=label,
-                            source=item.source or "Google News",
-                            published_at=iso_date,
-                            summary=self._clean_text(item.title) or item.summary,
-                            link=item.url,
-                            kind="results",
-                        )
-                    )
-                    seen_updates.add(update_key)
-                if is_future_event:
-                    derived_events.append(
-                        {
-                            "date": iso_date,
-                            "event": label,
-                            "impact": self._clean_text(item.title)[:180] or "Quarterly earnings date surfaced from news coverage",
-                        }
-                    )
-
-        return self._merge_upcoming_events(derived_events), self._merge_updates(derived_updates, [])
-
-    def _attach_result_dates_from_updates(
-        self,
-        quarterly_results: list[QuarterlyResultItem],
-        recent_updates: list[CompanyUpdateItem],
-    ) -> list[QuarterlyResultItem]:
-        if not quarterly_results or not recent_updates:
-            return quarterly_results
-
-        enriched = [item for item in quarterly_results]
-        fallback_dates: list[str] = []
-        for update in recent_updates:
-            iso_date = self._coerce_iso_date(update.published_at)
-            if not iso_date:
-                continue
-            text = self._clean_text(f"{update.title}. {update.summary or ''}")
-            if not self._is_earnings_related_text(text):
-                continue
-            event_date = date.fromisoformat(iso_date)
-            quarter_hint = self._infer_quarter_key_from_text(text, event_date)
-            if quarter_hint:
-                for index, item in enumerate(enriched):
-                    if item.result_date:
-                        continue
-                    if self._quarter_key_from_period_label(item.period) == quarter_hint:
-                        enriched[index] = item.model_copy(update={"result_date": iso_date})
-                        break
-            else:
-                fallback_dates.append(iso_date)
-
-        return self._attach_earnings_result_dates(enriched, fallback_dates)
-
-    def _fetch_google_news_rss(self, company_name: str, earnings_only: bool = False) -> list[DetailedNews]:
-        """Fetch recent news headlines from Google News RSS for a company."""
-        locale = self._market_locale()
-        try:
-            if earnings_only:
-                query_text = f'"{company_name}" (results OR earnings OR "board meeting" OR dividend)'
-            else:
-                query_text = f'"{company_name}"'
-            query = quote_plus(query_text)
-            if locale == "US":
-                url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
-            else:
-                url = f"https://news.google.com/rss/search?q={query}&hl=en-IN&gl=IN&ceid=IN:en"
-
-            with httpx.Client(timeout=10, headers={"User-Agent": USER_AGENT}, follow_redirects=True) as client:
-                resp = client.get(url)
-                resp.raise_for_status()
-
-            root = ET.fromstring(resp.content)
-            news_items: list[DetailedNews] = []
-            for item_el in root.findall(".//item")[:8]:
-                title_el = item_el.find("title")
-                link_el = item_el.find("link")
-                pub_date_el = item_el.find("pubDate")
-                source_el = item_el.find("source")
-
-                title = self._clean_text(title_el.text or "") if title_el is not None else ""
-                if not title or len(title) < 10:
-                    continue
-                link = (link_el.text or "").strip() if link_el is not None else None
-                source = self._clean_text(source_el.text or "Google News") if source_el is not None else "Google News"
-
-                pub_date_str: str | None = None
-                if pub_date_el is not None and pub_date_el.text:
-                    try:
-                        pub_date_str = parsedate_to_datetime(pub_date_el.text.strip()).date().isoformat()
-                    except Exception:
-                        pass
-
-                news_items.append(DetailedNews(
-                    title=title,
-                    summary=title,
-                    impact_category="market",
-                    sentiment="neutral",
-                    source=source,
-                    domain=source.lower().replace(" ", ""),
-                    source_type="Editorial News",
-                    classification="editorial_news",
-                    is_editorial=True,
-                    url=link,
-                    published_date=pub_date_str,
-                    relevance_score=0.70,
-                ))
-            return news_items
-        except Exception:
-            return []
 
     def get_market_overview(self) -> list[dict[str, Any]]:
         """Fetch crude oil price + NSE index levels with P/E for the market macro strip."""
@@ -5550,7 +4007,7 @@ class FreeMarketDataProvider:
         # ── NSE Indices (price + P/E via allIndices) ───────────────────────────
         nse_targets = [
             ("^NSEI", "Nifty 50", "NIFTY 50"),
-            ("^NSEBANK", "Bank Nifty", "NIFTY BANK"),
+            ("^CNXSC", "Nifty SmallCap 250", "NIFTY SMALLCAP 250"),
             ("^NSEMDCP50", "Nifty Midcap 50", "NIFTY MIDCAP 50"),
         ]
         nse_rows: dict[str, dict[str, Any]] = {}
@@ -5602,7 +4059,7 @@ class FreeMarketDataProvider:
     # symbol → NSE index name used in the PE-history API
     _PE_HISTORY_INDEX_MAP = {
         "^NSEI": "NIFTY 50",
-        "^NSEBANK": "NIFTY BANK",
+        "^CNXSC": "NIFTY SMALLCAP 250",
         "^NSEMDCP50": "NIFTY MIDCAP 50",
     }
 
@@ -5906,15 +4363,6 @@ class FreeMarketDataProvider:
         session_date = self._current_or_previous_trading_day_ist().isoformat()
         rows_by_key: dict[str, dict[str, Any]] = {}
         matched_nse_symbols: set[str] = set()
-        bse_nse_fallback_symbols = sorted(
-            {
-                self._normalize_symbol(item.get("scrip_id"))
-                for item in bse_rows
-                if self._normalize_symbol(item.get("scrip_id"))
-                and self._normalize_symbol(item.get("scrip_id")) not in nse_listings
-            }
-        )
-        bse_nse_fallback_details = self._fetch_nse_quote_details(bse_nse_fallback_symbols)
 
         def seed_metadata(symbol: str, isin: str | None, fallback: dict[str, Any]) -> dict[str, Any]:
             cached_row = cached_by_symbol.get(symbol) or (cached_by_isin.get(isin or "") if isin else None) or {}
@@ -5937,39 +4385,18 @@ class FreeMarketDataProvider:
             matched_nse = nse_by_isin.get(isin or "")
             bse_symbol = self._normalize_symbol(bse_row.get("scrip_id"))
             bse_code = str(bse_row.get("SCRIP_CD") or "").strip()
-            fallback_nse = None
-            if not matched_nse and bse_symbol:
-                candidate = bse_nse_fallback_details.get(bse_symbol, {})
-                candidate_isin = str(candidate.get("isin") or "").strip().upper() or None
-                if isin and candidate_isin and isin == candidate_isin:
-                    fallback_nse = candidate
 
-            nse_preferred = matched_nse or fallback_nse
-            if nse_preferred:
-                symbol = str(
-                    nse_preferred.get("symbol")
-                    or bse_symbol
-                    or (matched_nse.get("symbol") if matched_nse else "")
-                    or ""
-                ).upper()
-                if not symbol:
-                    continue
-                fallback = seed_metadata(symbol, isin, nse_preferred)
-                if matched_nse:
-                    matched_nse_symbols.add(symbol)
+            if matched_nse:
+                symbol = str(matched_nse["symbol"]).upper()
+                fallback = seed_metadata(symbol, isin, matched_nse)
+                matched_nse_symbols.add(symbol)
                 row = {
                     "symbol": symbol,
-                    "name": str(
-                        nse_preferred.get("name")
-                        or (matched_nse.get("name") if matched_nse else "")
-                        or bse_row.get("Issuer_Name")
-                        or bse_row.get("Scrip_Name")
-                        or symbol
-                    ).strip(),
+                    "name": str(matched_nse.get("name") or symbol).strip(),
                     "exchange": "NSE",
                     "market_cap_crore": round(float(market_cap_crore), 2),
                     "ticker": f"{symbol}.NS",
-                    "listing_date": fallback["listing_date"] or nse_preferred.get("listing_date"),
+                    "listing_date": fallback["listing_date"] or matched_nse.get("listing_date"),
                     "sector": fallback["sector"],
                     "sub_sector": fallback["sub_sector"],
                     "isin": isin,
@@ -6512,8 +4939,16 @@ class FreeMarketDataProvider:
         if history.empty:
             return pd.Series(dtype=float)
 
-        # FOR "TRUE" CANDLES: We only adjust for STOCK SPLITS, not Dividends.
-        # Yahoo's "Adj Close" includes both, which distorts technical chart patterns.
+        adjusted_close = history.get("Adj Close")
+        close = history.get("Close")
+        if adjusted_close is not None and close is not None:
+            close_series = pd.to_numeric(close, errors="coerce").replace(0, pd.NA)
+            adjusted_close_series = pd.to_numeric(adjusted_close, errors="coerce")
+            factors = (adjusted_close_series / close_series).replace([pd.NA, pd.NaT], pd.NA)
+            factors = factors.replace([float("inf"), float("-inf")], pd.NA)
+            if factors.notna().any():
+                return factors.ffill().bfill().fillna(1.0).astype(float)
+
         return self._split_adjustment_factors(history).fillna(1.0)
 
     def _split_adjusted_history(self, history: pd.DataFrame) -> pd.DataFrame:
@@ -6521,13 +4956,7 @@ class FreeMarketDataProvider:
             return history
 
         adjusted = history.copy()
-        factors = self._price_adjustment_factors(adjusted).fillna(1.0)
-        legacy_factors = self._legacy_adj_close_adjustment_factors(adjusted)
-        used_legacy_adjustment = not legacy_factors.empty and any(
-            abs(float(value) - 1.0) > 1e-6 for value in legacy_factors.tolist()
-        )
-        if not legacy_factors.empty:
-            factors = factors * legacy_factors
+        factors = self._price_adjustment_factors(adjusted)
         adjusted["Adjustment Factor"] = factors
 
         for column in ("Open", "High", "Low", "Close"):
@@ -6537,79 +4966,7 @@ class FreeMarketDataProvider:
         if "Adj Close" in adjusted.columns:
             adjusted["Adj Close"] = pd.to_numeric(adjusted["Adj Close"], errors="coerce").fillna(adjusted["Close"])
 
-        # Second pass: normalize any large single-day gaps that yfinance's Stock Splits
-        # column failed to capture (common for Indian bonus issues and consolidations).
-        if not used_legacy_adjustment:
-            adjusted = self._normalize_chart_price_gaps(adjusted)
-
         return adjusted
-
-    def _legacy_adj_close_adjustment_factors(self, history: pd.DataFrame) -> pd.Series:
-        if history.empty or "Adj Close" not in history.columns or "Close" not in history.columns:
-            return pd.Series(dtype=float)
-
-        split_series = history.get("Stock Splits")
-        if split_series is not None:
-            normalized_splits = pd.to_numeric(split_series, errors="coerce").fillna(0.0)
-            if any(value not in (0.0, 1.0) for value in normalized_splits.tolist()):
-                return pd.Series(1.0, index=history.index, dtype=float)
-
-        close = pd.to_numeric(history.get("Close"), errors="coerce")
-        adj_close = pd.to_numeric(history.get("Adj Close"), errors="coerce")
-        ratio = (adj_close / close.where(close > 0)).replace([float("inf"), float("-inf")], pd.NA)
-        valid_ratio = pd.to_numeric(ratio, errors="coerce").dropna()
-        valid_ratio = valid_ratio[valid_ratio > 0]
-        if valid_ratio.empty:
-            return pd.Series(1.0, index=history.index, dtype=float)
-
-        latest_ratio = float(valid_ratio.iloc[-1] or 0.0)
-        if latest_ratio <= 0:
-            return pd.Series(1.0, index=history.index, dtype=float)
-
-        normalized_ratio = (ratio / latest_ratio).replace([float("inf"), float("-inf")], pd.NA)
-        valid_normalized_ratio = pd.to_numeric(normalized_ratio, errors="coerce").dropna()
-        valid_normalized_ratio = valid_normalized_ratio[valid_normalized_ratio > 0]
-        if valid_normalized_ratio.empty:
-            return pd.Series(1.0, index=history.index, dtype=float)
-
-        if float(valid_normalized_ratio.min()) > 0.55 and float(valid_normalized_ratio.max()) < 1.8:
-            return pd.Series(1.0, index=history.index, dtype=float)
-
-        return pd.to_numeric(normalized_ratio, errors="coerce").fillna(1.0).astype(float)
-
-    def _normalize_chart_price_gaps(self, history: pd.DataFrame) -> pd.DataFrame:
-        """Normalize large single-day price gaps caused by corporate actions (bonus issues,
-        reverse splits, demergers) that are not reported in yfinance's Stock Splits column.
-
-        India's exchange circuit breakers cap daily moves at 20%, so any gap >= 1.8x or
-        <= 0.55x must be a corporate action.  We multiply all bars before the gap by the
-        gap ratio so the series becomes continuous, producing correct adjusted prices.
-        """
-        if history.empty or "Close" not in history.columns:
-            return history
-
-        df = history.copy()
-        for _ in range(20):  # at most 20 corporate actions per series
-            closes = df["Close"].fillna(0).astype(float).tolist()
-            gap_idx: int | None = None
-            # Scan backward so the most recent gap is fixed first (proper cumulative order)
-            for i in range(len(closes) - 1, 0, -1):
-                prev = closes[i - 1]
-                curr = closes[i]
-                if prev <= 0 or curr <= 0:
-                    continue
-                ratio = curr / prev
-                if ratio >= 1.8 or ratio <= 0.55:
-                    gap_idx = i
-                    break  # fix the outermost gap first, then re-scan
-            if gap_idx is None:
-                break
-            factor = float(closes[gap_idx]) / float(closes[gap_idx - 1])
-            for col in ("Open", "High", "Low", "Close"):
-                if col in df.columns:
-                    col_loc = df.columns.get_loc(col)
-                    df.iloc[:gap_idx, col_loc] = df.iloc[:gap_idx, col_loc].astype(float) * factor
-        return df
 
     def _build_chart_grid_points(
         self,
@@ -6906,14 +5263,11 @@ class FreeMarketDataProvider:
             "stock_return_12m_1d_ago": 0.0,
             "stock_return_12m_1w_ago": 0.0,
             "stock_return_12m_1m_ago": 0.0,
-            "baseline_close_10d": round(current_price, 4),
             "baseline_close_5d": round(current_price, 4),
             "baseline_close_20d": round(current_price, 4),
-            "baseline_close_30d": round(current_price, 4),
             "baseline_close_40d": round(current_price, 4),
             "baseline_close_60d": round(current_price, 4),
             "baseline_close_63d": round(current_price, 4),
-            "baseline_close_90d": round(current_price, 4),
             "baseline_close_126d": round(current_price, 4),
             "baseline_close_189d": round(current_price, 4),
             "baseline_close_252d": round(current_price, 4),
@@ -6940,6 +5294,7 @@ class FreeMarketDataProvider:
             "long_base_avg_range_pct": 0.0,
             "long_base_span_pct": 0.0,
             "long_base_window_days": 60,
+            "recent_closes": [round(current_price, 2)],
             "recent_highs": [round(session_high, 2)],
             "recent_lows": [round(session_low, 2)],
             "recent_volumes": [],
@@ -7091,13 +5446,10 @@ class FreeMarketDataProvider:
         rs_eligible_1w_ago = bool(rs_lookbacks_1w_ago)
         rs_eligible_1m_ago = bool(rs_lookbacks_1m_ago)
         baseline_close_5d = self._baseline_at_lookback(adjusted_close, RETURN_1W_BARS)
-        baseline_close_10d = self._baseline_at_lookback(adjusted_close, 10)
         baseline_close_20d = self._baseline_at_lookback(adjusted_close, RETURN_1M_BARS)
-        baseline_close_30d = self._baseline_at_lookback(adjusted_close, 30)
         baseline_close_40d = self._baseline_at_lookback(adjusted_close, 40)
         baseline_close_60d = self._baseline_at_lookback(adjusted_close, RETURN_3M_BARS)
         baseline_close_63d = self._baseline_at_lookback(adjusted_close, RETURN_3M_BARS)
-        baseline_close_90d = self._baseline_at_lookback(adjusted_close, 90)
         baseline_close_126d = self._baseline_at_lookback(adjusted_close, RETURN_6M_BARS)
         baseline_close_189d = self._baseline_at_lookback(adjusted_close, RETURN_9M_BARS)
         baseline_close_252d = self._baseline_at_lookback(adjusted_close, RETURN_1Y_BARS)
@@ -7238,14 +5590,11 @@ class FreeMarketDataProvider:
             "stock_return_12m_1d_ago": round(stock_return_12m_1d_ago, 2),
             "stock_return_12m_1w_ago": round(stock_return_12m_1w_ago, 2),
             "stock_return_12m_1m_ago": round(stock_return_12m_1m_ago, 2),
-            "baseline_close_10d": round(float(baseline_close_10d), 4) if baseline_close_10d is not None else None,
             "baseline_close_5d": round(float(baseline_close_5d), 4) if baseline_close_5d is not None else None,
             "baseline_close_20d": round(float(baseline_close_20d), 4) if baseline_close_20d is not None else None,
-            "baseline_close_30d": round(float(baseline_close_30d), 4) if baseline_close_30d is not None else None,
             "baseline_close_40d": round(float(baseline_close_40d), 4) if baseline_close_40d is not None else None,
             "baseline_close_60d": round(float(baseline_close_60d), 4) if baseline_close_60d is not None else None,
             "baseline_close_63d": round(float(baseline_close_63d), 4) if baseline_close_63d is not None else None,
-            "baseline_close_90d": round(float(baseline_close_90d), 4) if baseline_close_90d is not None else None,
             "baseline_close_126d": round(float(baseline_close_126d), 4) if baseline_close_126d is not None else None,
             "baseline_close_189d": round(float(baseline_close_189d), 4) if baseline_close_189d is not None else None,
             "baseline_close_252d": round(float(baseline_close_252d), 4) if baseline_close_252d is not None else None,
@@ -7276,10 +5625,10 @@ class FreeMarketDataProvider:
             "long_base_avg_range_pct": round(float(best_base_avg_range), 2),
             "long_base_span_pct": round(float(best_base_span), 2),
             "long_base_window_days": int(best_base_window),
+            "recent_closes": [round(float(value), 2) for value in close.tail(20).tolist()],
             "recent_highs": [round(float(value), 2) for value in high.tail(20).tolist()],
             "recent_lows": [round(float(value), 2) for value in low.tail(20).tolist()],
             "recent_volumes": [int(float(value) or 0) for value in volume.tail(20).tolist()],
-            "recent_closes": [round(float(value), 2) for value in adjusted_close.tail(20).tolist()],
             "chart_grid_points": chart_grid_points,
             "instrument_key": instrument["ticker"],
             "history_as_of_date": latest_history_date,
@@ -7318,27 +5667,6 @@ class FreeMarketDataProvider:
             history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
             history = self._aggregate_weekly_history(history)
         else:
-            # Commodity macros like crude oil should open instantly and not depend
-            # on a slow Yahoo history download. Use the public FRED time series first,
-            # then fall back to a synthetic flat history seeded from the live quote.
-            if timeframe == "1D" and symbol.upper() in {"CL=F", "BZ=F"}:
-                commodity_history = self._history_frame_from_cached_bars(symbol)
-                if not self._history_has_minimum_bars(commodity_history):
-                    commodity_history = self._download_fred_wti_history()
-                if self._history_has_minimum_bars(commodity_history):
-                    history = commodity_history.tail(bars)
-                    chart_bars = self._history_to_chart_bars(history)
-                    if self._chart_bars_match_symbol_scale(symbol, chart_bars):
-                        return chart_bars
-
-                live_quote = self._fetch_yahoo_live_quote_via_chart(ticker)
-                live_price = self._quote_number(live_quote or {}, "regularMarketPrice")
-                fallback_price = live_price or COMMODITY_FALLBACK_PRICES.get(symbol.upper())
-                if fallback_price and fallback_price > 0:
-                    synthetic_history = self._build_flat_price_history(float(fallback_price), bars)
-                    chart_bars = self._history_to_chart_bars(synthetic_history)
-                    if chart_bars:
-                        return chart_bars
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
             history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
@@ -7361,537 +5689,10 @@ class FreeMarketDataProvider:
             raise RuntimeError(f"No chart history for {symbol}")
 
         history = history.tail(bars)
-        # Clip history to start after any major corporate restructuring event
-        # (demerger, spin-off) that causes a 40%+ one-day price change.
-        # Such events make pre-event historical prices appear 2-3x the current price.
-        # Genuine splits/bonuses are already handled by _split_adjusted_history.
-        if not symbol.startswith("^"):  # don't clip index histories
-            history = self._clip_history_at_corporate_action(history)
         chart_bars = self._history_to_chart_bars(history)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
         return chart_bars
-
-    # ── NSE Bhavcopy (official EOD) ─────────────────────────────────────────
-
-    def _fetch_nse_bhavcopy(self, trade_date: date) -> dict[str, dict[str, float]]:
-        """Download the NSE CM Bhavcopy for *trade_date* (IST calendar date).
-        Returns {SYMBOL: {open, high, low, close, volume, prev_close}}.
-        Tries the new-format URL first (available ~6:30 PM IST) then falls
-        back to the legacy URL.  Returns {} on any failure.
-        """
-        date_str = trade_date.strftime("%Y%m%d")
-        mon_upper = trade_date.strftime("%b").upper()
-        dd = trade_date.strftime("%d")
-        year = trade_date.strftime("%Y")
-
-        urls = [
-            # New CM Bhavcopy format (introduced ~2022)
-            f"https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_str}_F_0000.csv.zip",
-            # Legacy format still mirrored on the archives
-            f"https://nsearchives.nseindia.com/content/historical/EQUITIES/{year}/{mon_upper}/cm{dd}{mon_upper}{year}bhav.csv.zip",
-        ]
-
-        headers = {
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Encoding": "gzip, deflate",
-            "Referer": "https://www.nseindia.com/",
-        }
-
-        for url in urls:
-            try:
-                resp = requests.get(url, headers=headers, timeout=20)
-                if resp.status_code != 200:
-                    continue
-                import zipfile
-                zf = zipfile.ZipFile(io.BytesIO(resp.content))
-                csv_name = zf.namelist()[0]
-                csv_bytes = zf.read(csv_name)
-                reader = csv.DictReader(io.StringIO(csv_bytes.decode("utf-8", errors="replace")))
-                rows = list(reader)
-                if not rows:
-                    continue
-
-                # Detect format by checking which column names are present
-                headers_found = set(rows[0].keys())
-                result: dict[str, dict[str, float]] = {}
-
-                if "TckrSymb" in headers_found:
-                    # New format
-                    for row in rows:
-                        if row.get("SctySrs", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
-                            continue
-                        sym = row.get("TckrSymb", "").strip()
-                        if not sym:
-                            continue
-                        try:
-                            result[sym] = {
-                                "open": float(row.get("OpnPric") or 0),
-                                "high": float(row.get("HghPric") or 0),
-                                "low": float(row.get("LwPric") or 0),
-                                "close": float(row.get("ClsPric") or 0),
-                                "volume": float(row.get("TtlTradgVol") or 0),
-                                "prev_close": float(row.get("PrvsClsgPric") or 0),
-                            }
-                        except (ValueError, TypeError):
-                            continue
-                elif "SYMBOL" in headers_found:
-                    # Legacy format
-                    for row in rows:
-                        if row.get("SERIES", "").strip() not in ("EQ", "BE", "BZ", "SM", "ST"):
-                            continue
-                        sym = row.get("SYMBOL", "").strip()
-                        if not sym:
-                            continue
-                        try:
-                            result[sym] = {
-                                "open": float(row.get("OPEN") or 0),
-                                "high": float(row.get("HIGH") or 0),
-                                "low": float(row.get("LOW") or 0),
-                                "close": float(row.get("CLOSE") or 0),
-                                "volume": float(row.get("TOTTRDQTY") or 0),
-                                "prev_close": float(row.get("PREVCLOSE") or 0),
-                            }
-                        except (ValueError, TypeError):
-                            continue
-
-                if result:
-                    return result
-            except Exception:
-                continue
-
-        return {}
-
-    def _fetch_bse_bhavcopy(self, trade_date: date) -> dict[str, dict[str, float]]:
-        """Download the BSE CM Bhavcopy for *trade_date*.
-        Returns {SYMBOL: {open, high, low, close, volume, prev_close}}.
-        BSE publishes a direct CSV (no zip) at ~4:24 PM IST — earlier than NSE
-        and NOT geo-blocked, so this works from any server including HF Spaces.
-        Returns {} on any failure.
-        """
-        date_str = trade_date.strftime("%Y%m%d")
-        url = (
-            f"https://www.bseindia.com/download/BhavCopy/Equity/"
-            f"BhavCopy_BSE_CM_0_0_0_{date_str}_F_0000.CSV"
-        )
-        headers = {
-            "User-Agent": USER_AGENT,
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Referer": "https://www.bseindia.com/",
-        }
-        try:
-            resp = requests.get(url, headers=headers, timeout=20)
-            if resp.status_code != 200 or len(resp.content) < 1000:
-                return {}
-            reader = csv.DictReader(io.StringIO(resp.text))
-            rows = list(reader)
-            if not rows:
-                return {}
-            result: dict[str, dict[str, float]] = {}
-            for row in rows:
-                series = row.get("SctySrs", "").strip()
-                # Skip debt and government securities series
-                if not series or series in ("D", "G", "GB", "GS"):
-                    continue
-                sym = row.get("TckrSymb", "").strip().upper()
-                if not sym:
-                    continue
-                try:
-                    result[sym] = {
-                        "open": float(row.get("OpnPric") or 0),
-                        "high": float(row.get("HghPric") or 0),
-                        "low": float(row.get("LwPric") or 0),
-                        "close": float(row.get("ClsPric") or 0),
-                        "volume": float(row.get("TtlTradgVol") or 0),
-                        "prev_close": float(row.get("PrvsClsgPric") or 0),
-                    }
-                except (ValueError, TypeError):
-                    continue
-            return result
-        except Exception:
-            return {}
-
-    def _get_bhavcopy_cached(self, exchange: str, trade_date: date) -> dict[str, dict[str, float]]:
-        key = (str(exchange or "").strip().lower(), trade_date.isoformat())
-        cached = self._bhavcopy_memory_cache.get(key)
-        now = time.time()
-        if cached and (now - cached[0]) < (30 * 60):
-            return cached[1]
-
-        if key[0] == "bse":
-            payload = self._fetch_bse_bhavcopy(trade_date)
-        else:
-            payload = self._fetch_nse_bhavcopy(trade_date)
-
-        if payload:
-            self._bhavcopy_memory_cache[key] = (now, payload)
-        return payload
-
-    def _apply_bhavcopy_to_chart_caches(
-        self, bhavcopy: dict[str, dict[str, float]], trade_date: date
-    ) -> int:
-        """Patch the last daily chart-cache bar for every symbol in the Bhavcopy
-        with the official exchange EOD values (BSE/NSE). Returns the number of symbols updated.
-
-        A Bhavcopy bar is written at UTC midnight of the IST trade date (same
-        convention as the rest of the chart cache) so the downstream code that
-        reads bar timestamps will map it back to the correct IST calendar date.
-        """
-        updated = 0
-        ts = int(datetime(trade_date.year, trade_date.month, trade_date.day, tzinfo=timezone.utc).timestamp())
-
-        for symbol, ohlcv in bhavcopy.items():
-            close = ohlcv.get("close", 0)
-            if not close or close <= 0:
-                continue
-            try:
-                cached = self._read_chart_cache(symbol, "1D", 520)
-                if not cached:
-                    continue
-
-                new_bar = ChartBar(
-                    time=ts,
-                    open=ohlcv.get("open") or close,
-                    high=ohlcv.get("high") or close,
-                    low=ohlcv.get("low") or close,
-                    close=close,
-                    volume=int(ohlcv.get("volume") or 0),
-                )
-
-                # Replace bar at this timestamp or append
-                patched = [b for b in cached if b.time != ts]
-                patched.append(new_bar)
-                patched.sort(key=lambda b: b.time)
-
-                self._write_chart_cache(symbol, "1D", patched[-520:])
-                updated += 1
-            except Exception:
-                continue
-
-        return updated
-
-    def apply_bhavcopy_eod(self) -> dict[str, object]:
-        """Fetch the most-recent Bhavcopy (BSE first, then NSE) and apply it to
-        chart caches and snapshot data.
-
-        This is the authoritative fix for the "yesterday's date / today's price"
-        problem caused by Yahoo Finance's delayed and timezone-ambiguous EOD data.
-        Should be called once after 6:30 PM IST on every trading day.
-
-        Returns a status dict for logging.
-        """
-        now_ist = datetime.now(IST)
-        # Only applicable to India market
-        if self._default_exchange() != "NSE":
-            return {"status": "skipped", "reason": "not NSE market"}
-
-        # Determine the last trading date to fetch.  After market close we want
-        # today; before market close we want yesterday's official close.
-        market_close_today_ist = now_ist.replace(
-            hour=MARKET_CLOSE_MINUTES_IST // 60,
-            minute=MARKET_CLOSE_MINUTES_IST % 60,
-            second=0, microsecond=0,
-        )
-        candidate_date = now_ist.date() if now_ist > market_close_today_ist else (now_ist.date() - timedelta(days=1))
-
-        # Skip weekends
-        if candidate_date.weekday() >= 5:
-            # Walk back to Friday
-            days_back = candidate_date.weekday() - 4
-            candidate_date = candidate_date - timedelta(days=days_back)
-
-        # Phase 1: BSE bhavcopy — publishes at ~4:24 PM IST, no geo-blocking, globally accessible
-        bhavcopy = self._fetch_bse_bhavcopy(candidate_date)
-        source = "bse"
-
-        # Phase 2: NSE archives — publishes at ~6:30 PM IST, geo-blocked on non-Indian servers
-        if not bhavcopy:
-            bhavcopy = self._fetch_nse_bhavcopy(candidate_date)
-            source = "nse"
-
-        # Phase 3: try previous trading day (holiday fallback) — BSE then NSE
-        if not bhavcopy:
-            prev = candidate_date - timedelta(days=1)
-            while prev.weekday() >= 5:
-                prev -= timedelta(days=1)
-            bhavcopy = self._fetch_bse_bhavcopy(prev)
-            source = "bse-prev"
-            if not bhavcopy:
-                bhavcopy = self._fetch_nse_bhavcopy(prev)
-                source = "nse-prev"
-            if bhavcopy:
-                candidate_date = prev
-
-        if not bhavcopy:
-            return {"status": "error", "reason": "bhavcopy_not_available", "date": candidate_date.isoformat()}
-
-        chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, candidate_date)
-        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, candidate_date, source=source)
-        # Invalidate in-memory snapshot cache so next request rebuilds from patched disk file
-        if snap_updated:
-            self._snapshots_memory_cache.clear()
-        if snap_updated or chart_updated:
-            self._write_bhavcopy_status(
-                candidate_date,
-                source=source,
-                snapshots_updated=snap_updated,
-                chart_caches_updated=chart_updated,
-            )
-        return {
-            "status": "ok",
-            "date": candidate_date.isoformat(),
-            "source": source,
-            "symbols_in_bhavcopy": len(bhavcopy),
-            "chart_caches_updated": chart_updated,
-            "snapshots_updated": snap_updated,
-        }
-
-    def _apply_bhavcopy_to_snapshot_file(
-        self,
-        bhavcopy: dict[str, dict[str, float]],
-        trade_date: date,
-        *,
-        source: str = "nse",
-    ) -> int:
-        """Patch the on-disk free_snapshots.json with official EOD prices (BSE/NSE).
-        Returns the number of rows updated.  Uses seed files as source when the
-        primary snapshot file does not yet exist (fresh HF restart with seed chunks).
-        """
-        # Load from seed chunks when the primary file is absent.
-        rows = self._load_json_rows(self.snapshot_cache_path)
-        if not rows or not isinstance(rows, list):
-            return 0
-        source_key = str(source or "").strip().lower()
-        official_source = (
-            "bse-bhavcopy"
-            if source_key.startswith("bse")
-            else "nse-bhavcopy"
-            if source_key.startswith("nse")
-            else source_key
-            or "bhavcopy"
-        )
-        trade_date_str = trade_date.isoformat()
-        updated = 0
-        for row in rows:
-            sym = row.get("symbol", "")
-            ohlcv = bhavcopy.get(sym)
-            if not ohlcv or not ohlcv.get("close"):
-                continue
-            close = ohlcv["close"]
-            prev_close = ohlcv.get("prev_close") or row.get("last_price") or close
-            open_price = ohlcv.get("open") or prev_close or close
-            change_pct = ((close - prev_close) / prev_close * 100) if prev_close else 0.0
-
-            # Keep period returns aligned with official EOD close so group/stock
-            # rankings remain consistent after Bhavcopy patching.
-            stock_return_5d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_5d")),
-                float(row.get("stock_return_5d", 0) or 0),
-            )
-            stock_return_20d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_20d")),
-                float(row.get("stock_return_20d", 0) or 0),
-            )
-            stock_return_40d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_40d")),
-                float(row.get("stock_return_40d", 0) or 0),
-            )
-            stock_return_60d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_60d")),
-                float(row.get("stock_return_60d", 0) or 0),
-            )
-            stock_return_126d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_126d")),
-                float(row.get("stock_return_126d", 0) or 0),
-            )
-            stock_return_189d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_189d")),
-                float(row.get("stock_return_189d", 0) or 0),
-            )
-            stock_return_12m = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_252d")),
-                float(row.get("stock_return_12m", 0) or 0),
-            )
-            stock_return_504d = self._return_from_baseline(
-                float(close),
-                self._to_float(row.get("baseline_close_504d")),
-                float(row.get("stock_return_504d", 0) or 0),
-            )
-
-            rs_weighted_score = self._weighted_rs_score_from_price(row, float(close))
-            gap_pct = ((float(open_price) / float(prev_close)) - 1) * 100 if prev_close else float(row.get("gap_pct", 0) or 0)
-            trend_strength = self._trend_strength(
-                float(close),
-                self._to_float(row.get("ema20")),
-                self._to_float(row.get("ema50")),
-                self._to_float(row.get("ema200")),
-            )
-
-            row["last_price"] = round(close, 4)
-            row["previous_close"] = round(prev_close, 4)
-            row["change_pct"] = round(change_pct, 4)
-            row["day_high"] = round(ohlcv.get("high") or close, 4)
-            row["day_low"] = round(ohlcv.get("low") or close, 4)
-            row["volume"] = int(ohlcv.get("volume") or 0)
-            row["stock_return_5d"] = round(stock_return_5d, 2)
-            row["stock_return_20d"] = round(stock_return_20d, 2)
-            row["stock_return_40d"] = round(stock_return_40d, 2)
-            row["stock_return_60d"] = round(stock_return_60d, 2)
-            row["stock_return_126d"] = round(stock_return_126d, 2)
-            row["stock_return_189d"] = round(stock_return_189d, 2)
-            row["stock_return_12m"] = round(stock_return_12m, 2)
-            row["stock_return_504d"] = round(stock_return_504d, 2)
-            row["rs_weighted_score"] = round(rs_weighted_score, 4)
-            row["gap_pct"] = round(gap_pct, 2)
-            row["trend_strength"] = round(float(trend_strength), 2)
-            row["history_as_of_date"] = trade_date_str
-            row["history_session_date"] = trade_date_str
-            row["official_close_date"] = trade_date_str
-            row["official_close_source"] = official_source
-            updated += 1
-        try:
-            self.snapshot_cache_path.write_text(
-                json.dumps(rows, separators=(",", ":")), encoding="utf-8"
-            )
-        except Exception:
-            return 0
-        return updated
-
-    def _read_bhavcopy_status(self) -> dict[str, Any]:
-        try:
-            if self.bhavcopy_status_path.exists():
-                payload = json.loads(self.bhavcopy_status_path.read_text(encoding="utf-8"))
-                if isinstance(payload, dict):
-                    return payload
-        except Exception:
-            pass
-        return {}
-
-    def _write_bhavcopy_status(
-        self,
-        trade_date: date,
-        *,
-        source: str,
-        snapshots_updated: int,
-        chart_caches_updated: int,
-    ) -> None:
-        payload = {
-            "date": trade_date.isoformat(),
-            "source": source,
-            "snapshots_updated": int(snapshots_updated or 0),
-            "chart_caches_updated": int(chart_caches_updated or 0),
-            "applied_at": datetime.now(timezone.utc).isoformat(),
-        }
-        try:
-            self.bhavcopy_status_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        except Exception:
-            pass
-
-    def _last_applied_bhavcopy_date(self) -> date | None:
-        """Best-effort detection of the latest official Bhavcopy date already patched into snapshots."""
-        status_payload = self._read_bhavcopy_status()
-        candidate = str(status_payload.get("date") or "").strip()
-        if candidate:
-            try:
-                return date.fromisoformat(candidate)
-            except ValueError:
-                pass
-
-        try:
-            rows = self._load_json_rows(self.snapshot_cache_path)
-        except Exception:
-            rows = []
-
-        if isinstance(rows, list):
-            for row in rows[:10]:
-                source = str(row.get("official_close_source") or "").strip().lower()
-                candidate = str(row.get("official_close_date") or "").strip()
-                if source not in {"nse-bhavcopy", "bse-bhavcopy", "committed-patch", "bhavcopy"} or not candidate:
-                    continue
-                try:
-                    return date.fromisoformat(candidate)
-                except ValueError:
-                    continue
-        return None
-
-    def apply_committed_bhavcopy_patch(self) -> dict:
-        """Apply the committed bhavcopy_patch.json file to snapshot data.
-
-        This file is a compact (~200 KB) map of {symbol: {o,h,l,c,v,p}} for
-        a specific trade date, generated locally and committed to the repo.
-        Unlike live NSE downloads, this works from any server (no IP restriction).
-
-        Called at startup so HuggingFace Space always serves official NSE prices
-        immediately after a cold start, without relying on a live NSE download.
-        """
-        if self._default_exchange() != "NSE":
-            return {"status": "skipped", "reason": "not NSE market"}
-
-        patch_path = self.backend_root / "data" / "bhavcopy_patch.json"
-        if not patch_path.exists():
-            return {"status": "skipped", "reason": "patch_file_missing"}
-
-        try:
-            patch_data = json.loads(patch_path.read_text(encoding="utf-8"))
-        except Exception as e:
-            return {"status": "error", "reason": str(e)}
-
-        trade_date_str = patch_data.get("date", "")
-        symbols_map = patch_data.get("symbols", {})
-        if not symbols_map or not trade_date_str:
-            return {"status": "error", "reason": "invalid_patch_file"}
-
-        # Check if this patch is already applied (avoid re-patching same date)
-        if self.snapshot_cache_path.exists():
-            try:
-                first_row = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
-                if isinstance(first_row, list) and first_row:
-                    existing_date = first_row[0].get("history_as_of_date", "")
-                    if existing_date >= trade_date_str:
-                        return {"status": "skipped", "reason": f"already_at_{existing_date}"}
-            except Exception:
-                pass
-
-        # Convert compact format {o,h,l,c,v,p} to the format _apply_bhavcopy_to_snapshot_file expects
-        bhavcopy = {
-            sym: {
-                "open": v["o"], "high": v["h"], "low": v["l"],
-                "close": v["c"], "volume": v["v"], "prev_close": v["p"],
-            }
-            for sym, v in symbols_map.items()
-        }
-
-        try:
-            trade_date_obj = date.fromisoformat(trade_date_str)
-        except ValueError:
-            return {"status": "error", "reason": "invalid_date_in_patch"}
-
-        snap_updated = self._apply_bhavcopy_to_snapshot_file(bhavcopy, trade_date_obj, source="committed-patch")
-        chart_updated = self._apply_bhavcopy_to_chart_caches(bhavcopy, trade_date_obj)
-        if snap_updated:
-            self._snapshots_memory_cache.clear()
-        if snap_updated or chart_updated:
-            self._write_bhavcopy_status(
-                trade_date_obj,
-                source="committed-patch",
-                snapshots_updated=snap_updated,
-                chart_caches_updated=chart_updated,
-            )
-
-        return {
-            "status": "ok",
-            "date": trade_date_str,
-            "snapshots_updated": snap_updated,
-            "chart_caches_updated": chart_updated,
-        }
 
     def _download_nse_index_chart_history(self, symbol: str) -> pd.DataFrame:
         index_name = INDEX_SYMBOL_TO_NSE_NAME.get(symbol.upper())
@@ -7953,26 +5754,6 @@ class FreeMarketDataProvider:
         frame = pd.DataFrame.from_records(records, index=pd.DatetimeIndex(index_values))
         return frame[~frame.index.duplicated(keep="last")].sort_index()
 
-    def _build_flat_price_history(self, price: float, bars: int) -> pd.DataFrame:
-        if price <= 0:
-            return pd.DataFrame()
-        periods = max(int(bars or 0), 120)
-        date_index = pd.bdate_range(end=datetime.now(timezone.utc), periods=periods, tz=timezone.utc)
-        constant_values = [float(price)] * len(date_index)
-        frame = pd.DataFrame(
-            {
-                "Open": constant_values,
-                "High": constant_values,
-                "Low": constant_values,
-                "Close": constant_values,
-                "Adj Close": constant_values,
-                "Volume": [0] * len(date_index),
-                "Stock Splits": [0.0] * len(date_index),
-            },
-            index=date_index,
-        )
-        return frame
-
     def _download_fred_wti_history(self) -> pd.DataFrame:
         headers = {
             "User-Agent": "Mozilla/5.0",
@@ -7980,15 +5761,13 @@ class FreeMarketDataProvider:
             "Referer": "https://fred.stlouisfed.org/",
         }
         try:
-            # Keep commodity charts responsive even when FRED is slow from hosted
-            # environments like Hugging Face Spaces.
-            response = requests.get(FRED_WTI_HISTORY_CSV_URL, headers=headers, timeout=8)
+            response = requests.get(FRED_WTI_HISTORY_CSV_URL, headers=headers, timeout=45)
             response.raise_for_status()
             csv_text = response.text
         except Exception:
             try:
                 proc = subprocess.run(
-                    ["curl", "-s", "-L", "--max-time", "8", FRED_WTI_HISTORY_CSV_URL],
+                    ["curl", "-s", "-L", "--max-time", "25", FRED_WTI_HISTORY_CSV_URL],
                     capture_output=True,
                     text=True,
                     check=False,
@@ -8099,13 +5878,6 @@ class FreeMarketDataProvider:
         normalized = history.copy()
         normalized.index = pd.to_datetime(normalized.index)
         normalized = normalized[~normalized.index.duplicated(keep="last")].sort_index()
-
-        # Apply volume normalization for Indian stocks (fix 100x/0.01x scaling errors)
-        try:
-            normalized = self._normalize_volume_for_india(normalized, ticker, interval=interval)
-        except Exception:
-            pass
-
         return normalized
 
     def _download_history_frame_http(self, ticker: str, period: str, interval: str) -> pd.DataFrame:
@@ -8138,22 +5910,6 @@ class FreeMarketDataProvider:
         if not timestamps:
             return pd.DataFrame()
 
-        # Build a date-keyed split lookup as a robust fallback.
-        # Yahoo sometimes keys split events by the effective-date timestamp which may
-        # not byte-match the bar timestamp, but the calendar date will always match.
-        _date_splits: dict[str, float] = {}
-        for _ts_key, _sp in split_events.items():
-            if not isinstance(_sp, dict):
-                continue
-            try:
-                _dt = datetime.fromtimestamp(int(_ts_key), tz=timezone.utc)
-                _num = self._to_float(_sp.get("numerator"))
-                _den = self._to_float(_sp.get("denominator"))
-                if _num not in (None, 0) and _den not in (None, 0):
-                    _date_splits[_dt.date().isoformat()] = float(_num) / float(_den)
-            except (ValueError, TypeError, OSError):
-                continue
-
         records: list[dict[str, Any]] = []
         index_values: list[datetime] = []
         opens = quote.get("open") or []
@@ -8168,20 +5924,12 @@ class FreeMarketDataProvider:
             if close in (None, ""):
                 continue
             split_ratio = 0.0
-            # Primary: exact timestamp match
             split_payload = split_events.get(str(timestamp_value)) or split_events.get(timestamp_value)
             if isinstance(split_payload, dict):
                 numerator = self._to_float(split_payload.get("numerator"))
                 denominator = self._to_float(split_payload.get("denominator"))
                 if numerator not in (None, 0) and denominator not in (None, 0):
                     split_ratio = float(numerator) / float(denominator)
-            # Fallback: date-based match (handles timestamp misalignment between bar and split event)
-            if split_ratio == 0.0 and _date_splits:
-                try:
-                    _bar_date = datetime.fromtimestamp(int(timestamp_value), tz=timezone.utc).date().isoformat()
-                    split_ratio = _date_splits.get(_bar_date, 0.0)
-                except (ValueError, TypeError, OSError):
-                    pass
             records.append(
                 {
                     "Open": opens[index] if index < len(opens) else close,
@@ -8224,139 +5972,8 @@ class FreeMarketDataProvider:
         weekly.index.name = history.index.name
         return weekly.dropna(subset=["Close"]).sort_index()
 
-    def _should_skip_zero_volume_bar(self, bar_date: date) -> bool:
-        """Return True if bar_date is not a valid trading day for this market.
-        Override in market-specific subclasses to use the correct holiday calendar."""
-        return not self._is_trading_day_ist(bar_date)
-
-    @staticmethod
-    def _clip_history_at_corporate_action(history: pd.DataFrame, threshold: float = 0.40) -> pd.DataFrame:
-        """Return history starting from after the most recent large one-day price
-        change caused by a demerger, spin-off, or scheme of arrangement.
-
-        A legitimate split/bonus is already handled via _split_adjusted_history.
-        A demerger causes a REAL permanent price drop (>40%) that makes pre-event
-        history misleading (old prices appear 2-3x higher than current price).
-        We keep only the post-event series so the chart is internally consistent.
-        """
-        if len(history) < 2:
-            return history
-        closes = history["Close"].astype(float)
-        # Walk forward and find the MOST RECENT bar whose single-day change
-        # exceeds the threshold AND where the stock's splits column is 0/NaN
-        # (to avoid re-clipping already-adjusted splits).
-        split_col = history.get("Stock Splits")
-        cut_idx = None
-        for i in range(1, len(closes)):
-            prev = float(closes.iloc[i - 1])
-            curr = float(closes.iloc[i])
-            if prev <= 0:
-                continue
-            chg = abs(curr - prev) / prev
-            if chg < threshold:
-                continue
-            # Skip if Yahoo already tagged this as a split event
-            if split_col is not None:
-                split_val = float(split_col.iloc[i] or 0)
-                if split_val not in (0.0, 1.0):
-                    continue  # real split — already handled by _split_adjusted_history
-            # Real demerger / corporate restructuring: clip here
-            cut_idx = i
-        if cut_idx is not None:
-            return history.iloc[cut_idx:].copy()
-        return history
-
-    def _normalize_volume_for_india(self, df: pd.DataFrame, ticker: str, *, interval: str = "1d") -> pd.DataFrame:
-        """Fixes the common 100x/0.01x volume scaling bug in Yahoo Finance for Indian stocks.
-        Uses official Bhavcopy patch data as the ground truth if available.
-        """
-        if not (ticker.endswith(".NS") or ticker.endswith(".BO")):
-            return df
-        if str(interval or "").lower() != "1d":
-            return df
-        if df.empty or "Volume" not in df.columns:
-            return df
-
-        # Step A: Load bhavcopy ground truth for comparison
-        bhav_path = self.backend_root / "data" / "bhavcopy_patch.json"
-        if not bhav_path.exists():
-            return df
-
-        try:
-            with open(bhav_path, "r") as f:
-                bhav_data = json.load(f)
-        except Exception:
-            return df
-
-        symbol = ticker.split(".")[0]
-        if not isinstance(bhav_data, dict):
-            return df
-
-        symbols_map = bhav_data.get("symbols") if isinstance(bhav_data.get("symbols"), dict) else bhav_data
-        symbol_payload = symbols_map.get(symbol) if isinstance(symbols_map, dict) else None
-        if not isinstance(symbol_payload, dict):
-            return df
-
-        ground_truth_vol = float(symbol_payload.get("v") or symbol_payload.get("volume") or 0)
-        bhav_close = float(symbol_payload.get("c") or symbol_payload.get("close") or 0)
-        bhav_date = self._parse_row_date(bhav_data.get("date"))
-
-        if ground_truth_vol <= 0:
-            return df
-
-        matching_row = None
-        if bhav_date is not None:
-            try:
-                normalized_index = pd.DatetimeIndex(pd.to_datetime(df.index))
-                local_dates = (
-                    normalized_index.tz_convert(IST).date
-                    if normalized_index.tz is not None
-                    else normalized_index.date
-                )
-                matching_positions = [index for index, local_date in enumerate(local_dates) if local_date == bhav_date]
-                if matching_positions:
-                    matching_row = df.iloc[matching_positions[-1]]
-            except Exception:
-                matching_row = None
-
-        if matching_row is None:
-            for _, row in df.iloc[::-1].iterrows():
-                row_close = float(row["Close"])
-                if abs(row_close - bhav_close) < 0.05:
-                    matching_row = row
-                    break
-
-        if matching_row is None:
-            last_bar = df.iloc[-1]
-            if abs(float(last_bar["Close"]) - bhav_close) / (bhav_close or 1) <= 0.05:
-                matching_row = last_bar
-            else:
-                return df
-
-        yahoo_vol = float(matching_row["Volume"])
-        if yahoo_vol <= 0:
-            return df
-
-        ratio = yahoo_vol / ground_truth_vol
-
-        # Step C: Detect 100x inflation or 0.01x deflation
-        multiplier = 1.0
-        if 80.0 <= ratio <= 125.0:
-            multiplier = 0.01
-        elif 0.008 <= ratio <= 0.0125:
-            multiplier = 100.0
-
-        if multiplier != 1.0:
-            scaled = df.copy()
-            scaled["Volume"] = pd.to_numeric(scaled["Volume"], errors="coerce").fillna(0)
-            scaled["Volume"] = (scaled["Volume"] * multiplier).round(0).astype("int64")
-            return scaled
-
-        return df
-
     def _history_to_chart_bars(self, history: pd.DataFrame) -> list[ChartBar]:
         bars: list[ChartBar] = []
-        prev_close = None
         for index, row in history.iterrows():
             o = round(float(row["Open"]), 2)
             h = round(float(row["High"]), 2)
@@ -8368,29 +5985,9 @@ class FreeMarketDataProvider:
             l = min(l, o, c)
             if h <= 0 or c <= 0:
                 continue
-
-            # Filter zero-volume flat bars on non-trading days (holiday/weekend placeholders).
-            # Uses market-specific calendar via _should_skip_zero_volume_bar.
-            bar_timestamp = index.to_pydatetime()
-            bar_date = bar_timestamp.date()
-            if self._should_skip_zero_volume_bar(bar_date):
-                if v == 0 and (prev_close is None or abs(c - prev_close) < 0.01):
-                    continue
-
-            # Normalise timestamp to midnight UTC of the *canonical trade date*.
-            # For India (IST = UTC+5:30) yfinance returns bars at IST midnight,
-            # e.g. April 8 00:00 IST = April 7 18:30 UTC.  Truncating to UTC
-            # midnight would give April 7 — one day early.  We use the IST
-            # calendar date so the chart library always labels the bar correctly.
-            if bar_timestamp.tzinfo is not None:
-                trade_date = bar_timestamp.astimezone(IST).date()
-            else:
-                trade_date = bar_timestamp.date()
-            utc_midnight = datetime(trade_date.year, trade_date.month, trade_date.day, tzinfo=timezone.utc)
-
             bars.append(
                 ChartBar(
-                    time=int(utc_midnight.timestamp()),
+                    time=int(index.to_pydatetime().replace(tzinfo=timezone.utc).timestamp()),
                     open=o,
                     high=h,
                     low=l,
@@ -8398,7 +5995,6 @@ class FreeMarketDataProvider:
                     volume=v,
                 )
             )
-            prev_close = c
         return bars
 
     def _window_max(self, series: pd.Series, window: int, *, exclude_last: bool) -> float:
@@ -8417,40 +6013,14 @@ class FreeMarketDataProvider:
             subset = series
         return float(subset.min())
 
-    def _get_ticker_alias_map(self) -> dict[str, str]:
-        """Lazily builds a {SYMBOL → instrument_key} map from snapshot rows.
-
-        Reads seed-chunk files when the primary snapshot file is absent
-        (e.g. on HuggingFace deployments where 16 MB files are forbidden).
-        The result is cached in memory for the lifetime of this provider
-        instance so subsequent lookups are O(1).
-        """
-        if self._ticker_alias_map is not None:
-            return self._ticker_alias_map
-        rows = self._load_json_rows(self.snapshot_cache_path)
-        m: dict[str, str] = {}
-        for item in rows:
-            sym = str(item.get("symbol") or "").strip().upper()
-            key = str(item.get("instrument_key") or "").strip()
-            if sym and key:
-                m[sym] = key
-        self._ticker_alias_map = m
-        return m
-
     def _resolve_ticker(self, symbol: str) -> str:
         if symbol.startswith("^") or symbol.endswith(".NS") or symbol.endswith(".BO"):
             return symbol
-        sym_upper = symbol.upper()
-        alias_map = self._get_ticker_alias_map()
-        # 1) Exact match.
-        if sym_upper in alias_map:
-            return alias_map[sym_upper]
-        # 2) Unique prefix match – handles short aliases such as "LAURUS" → "LAURUSLABS".
-        #    Only resolves when exactly one snapshot symbol starts with the given prefix,
-        #    to avoid ambiguous expansions.
-        prefix_matches = [k for k in alias_map if k.startswith(sym_upper)]
-        if len(prefix_matches) == 1:
-            return alias_map[prefix_matches[0]]
+        if self.snapshot_cache_path.exists():
+            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
+            row = next((item for item in rows if item["symbol"] == symbol), None)
+            if row and row.get("instrument_key"):
+                return str(row["instrument_key"])
         return f"{symbol}.NS"
 
     def _extract_history(self, frame: pd.DataFrame, ticker: str) -> pd.DataFrame:
@@ -8594,28 +6164,13 @@ class FreeMarketDataProvider:
         return adaptive_lookbacks
 
     def _weighted_rs_score(self, series: pd.Series, offset: int) -> float:
-        """
-        Relative Strength Rating calculation based on MarketSmith IBD methodology:
-        (0.4 x 3m Performance) + (0.2 x 6m Performance) + (0.2 x 9m Performance) + (0.2 x 12m Performance)
-        """
         lookbacks = self._adaptive_rs_lookbacks(series, offset)
         if not lookbacks:
             return 0.0
 
         score = 0.0
-        total_weight = 0.0
         for lookback, weight in lookbacks:
-            try:
-                ret = self._return_pct_as_of(series, lookback, offset, allow_partial=True)
-                score += ret * weight
-                total_weight += weight
-            except Exception:
-                continue
-                
-        # Normalize score if we have partial history (less than 1 year)
-        if total_weight > 0 and total_weight < 1.0:
-            score = score / total_weight
-            
+            score += self._return_pct_as_of(series, lookback, offset, allow_partial=False) * weight
         return score
 
     def _weighted_rs_score_from_price(self, row: dict[str, Any], current_price: float) -> float:

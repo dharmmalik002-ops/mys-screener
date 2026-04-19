@@ -1,13 +1,11 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
+import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
-import { PremiumResearchPanel } from "./PremiumResearchPanel";
-import { AiChatWindow } from "./AiChatWindow";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars";
@@ -24,14 +22,10 @@ export type ChartColorSettings = {
   candleDown: string;
   volumeUp: string;
   volumeDown: string;
-  volumeHQ: string;
-  volumeLQ: string;
   rsLine: string;
   rsMarker: string;
   rsMarkerSize: number;
 };
-
-export type RvolScale = "sm" | "md" | "lg";
 
 export type ChartGroupSummary = {
   groupId: string;
@@ -135,24 +129,6 @@ type ChartPanelProps = {
   chartError: string | null;
   chartLoading: boolean;
   chartCacheState: "cached" | "live" | null;
-  showRvol: boolean;
-  onShowRvolChange: (show: boolean) => void;
-  rvolPos: { x: number; y: number } | null;
-  onRvolPosChange: (position: { x: number; y: number } | null) => void;
-  rvolAccentColor: string;
-  onRvolAccentColorChange: (color: string) => void;
-  rvolScale: RvolScale;
-  onRvolScaleChange: (scale: RvolScale) => void;
-  showExpansionMarkers: boolean;
-  onShowExpansionMarkersChange: (show: boolean) => void;
-  expansionMarkerColor: string;
-  onExpansionMarkerColorChange: (color: string) => void;
-  expansionMarkerScale: RvolScale;
-  onExpansionMarkerScaleChange: (scale: RvolScale) => void;
-  showEarningsMarkers: boolean;
-  onShowEarningsMarkersChange: (show: boolean) => void;
-  earningsMarkerColor: string;
-  onEarningsMarkerColorChange: (color: string) => void;
   fundamentals: CompanyFundamentals | null;
   fundamentalsLoading: boolean;
   fundamentalsError: string | null;
@@ -187,12 +163,6 @@ const CHART_STYLES: Array<{ key: ChartStyle; label: string }> = [
   { key: "bars", label: "Bars" },
 ];
 type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
-const MARKER_SCALE_OPTIONS: RvolScale[] = ["sm", "md", "lg"];
-const EXPANSION_MARKER_SIZE_MAP: Record<RvolScale, number> = {
-  sm: 0.8,
-  md: 1.1,
-  lg: 1.4,
-};
 
 const INDICATORS: Array<{ key: IndicatorKey; label: string; colorKey: IndicatorColorKey }> = [
   { key: "ema10", label: "EMA10", colorKey: "ema10" },
@@ -221,8 +191,6 @@ type ChartColorFieldKey =
   | "candleDown"
   | "volumeUp"
   | "volumeDown"
-  | "volumeHQ"
-  | "volumeLQ"
   | "rsLine"
   | "rsMarker";
 
@@ -236,8 +204,6 @@ const CHART_COLOR_FIELDS: Array<{ key: ChartColorFieldKey; label: string }> = [
   { key: "candleDown", label: "Down Candle" },
   { key: "volumeUp", label: "Up Volume" },
   { key: "volumeDown", label: "Down Volume" },
-  { key: "volumeHQ", label: "HQ Volume (90D High)" },
-  { key: "volumeLQ", label: "LQ Volume (90D Low)" },
   { key: "rsLine", label: "RS Line" },
   { key: "rsMarker", label: "RS Circle" },
 ];
@@ -378,39 +344,6 @@ function computeVolumeSma(bars: ChartBar[], length: number) {
     };
   });
 }
-
-/**
- * For a rolling 90-day window ending at each bar, find the bar with the
- * highest and lowest volume within that window. Returns two Sets of
- * `bar.time` values tagged "HQ" (90-day high) and "LQ" (90-day low).
- */
-function computeQuarterlyVolExtremes(bars: ChartBar[]): {
-  hqTimes: Set<number>;
-  lqTimes: Set<number>;
-} {
-  const WINDOW_SEC = 90 * 24 * 60 * 60; // 90 days in seconds
-  const hqTimes = new Set<number>();
-  const lqTimes = new Set<number>();
-
-  for (let i = 0; i < bars.length; i++) {
-    const end = bars[i].time;
-    const start = end - WINDOW_SEC;
-    // Collect bars in [start, end]
-    let maxVol = -Infinity, minVol = Infinity;
-    let maxBar = bars[i], minBar = bars[i];
-    for (let j = i; j >= 0 && bars[j].time >= start; j--) {
-      const vol = bars[j].volume;
-      if (vol > maxVol) { maxVol = vol; maxBar = bars[j]; }
-      if (vol < minVol) { minVol = vol; minBar = bars[j]; }
-    }
-    // Only mark the current bar if it IS the 90-day extreme
-    if (bars[i].time === maxBar.time) hqTimes.add(bars[i].time);
-    if (bars[i].time === minBar.time && minBar.time !== maxBar.time) lqTimes.add(bars[i].time);
-  }
-
-  return { hqTimes, lqTimes };
-}
-
 
 function computeVwap(bars: ChartBar[]) {
   let cumulativePriceVolume = 0;
@@ -766,354 +699,6 @@ function updateKindLabel(kind: CompanyFundamentals["recent_updates"][number]["ki
   return "News";
 }
 
-function computeRvolBars(bars: ChartBar[], period = 50) {
-  type RvolEntry = {
-    time: number;
-    rvol50: number;
-    turnoverRvol50: number;
-    volume: number;
-    avgVolume: number;
-    turnover: number;
-    avgTurnover: number;
-  };
-  const result: RvolEntry[] = [];
-  for (let i = period; i < bars.length; i++) {
-    const prior = bars.slice(i - period, i);
-    const avgVolume = prior.reduce((s, b) => s + b.volume, 0) / period;
-    const avgTurnover = prior.reduce((s, b) => s + b.volume * b.close, 0) / period;
-    const bar = bars[i];
-    const turnover = bar.volume * bar.close;
-    result.push({
-      time: bar.time,
-      rvol50: avgVolume > 0 ? bar.volume / avgVolume : 0,
-      turnoverRvol50: avgTurnover > 0 ? turnover / avgTurnover : 0,
-      volume: bar.volume,
-      avgVolume,
-      turnover,
-      avgTurnover,
-    });
-  }
-  return result;
-}
-
-function computeExpansionSignalBars(bars: ChartBar[], volumePeriod = 20) {
-  const signals: Array<{ time: number; changePct: number; relativeVolume: number }> = [];
-  for (let index = volumePeriod; index < bars.length; index += 1) {
-    const bar = bars[index];
-    const previousBar = bars[index - 1];
-    if (!previousBar || previousBar.close <= 0 || bar.volume <= 0) {
-      continue;
-    }
-    const prior = bars.slice(index - volumePeriod, index);
-    const avgVolume = prior.reduce((sum, item) => sum + item.volume, 0) / volumePeriod;
-    if (avgVolume <= 0) {
-      continue;
-    }
-    const changePct = ((bar.close / previousBar.close) - 1) * 100;
-    const relativeVolume = bar.volume / avgVolume;
-    if (changePct >= 6 && relativeVolume >= 3) {
-      signals.push({ time: bar.time, changePct, relativeVolume });
-    }
-  }
-  return signals;
-}
-
-function rvolColor(rvol: number) {
-  if (rvol >= 3) return "#00d2ff";
-  if (rvol >= 2) return "#39ff14";
-  if (rvol >= 1) return "#ffd36f";
-  return "#8b949e";
-}
-
-type EarningsMarkerItem = {
-  id: string;
-  kind: "reported" | "upcoming";
-  time: number;
-  period: string | null;
-  title: string;
-  description: string | null;
-  eventDate: string;
-  documentUrl: string | null;
-};
-
-function parseEventTimestamp(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : null;
-}
-
-function formatEventDate(value: string | null | undefined, market: MarketKey) {
-  if (!value) {
-    return "Date unavailable";
-  }
-  const timestamp = Date.parse(value);
-  if (!Number.isFinite(timestamp)) {
-    return value;
-  }
-  return new Intl.DateTimeFormat(market === "india" ? "en-IN" : "en-US", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(new Date(timestamp));
-}
-
-function quarterKeyFromPeriod(period: string | null | undefined, market: MarketKey) {
-  if (!period) {
-    return null;
-  }
-
-  const directQuarterMatch = period.match(/\bQ([1-4])\s*FY\s*(\d{2,4})\b/i);
-  if (directQuarterMatch) {
-    const fiscalYear = Number(directQuarterMatch[2].length === 2 ? `20${directQuarterMatch[2]}` : directQuarterMatch[2]);
-    return `Q${directQuarterMatch[1]}:FY${fiscalYear}`;
-  }
-
-  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
-  if (!monthMatch) {
-    return null;
-  }
-
-  const monthToken = monthMatch[1].slice(0, 3).toLowerCase();
-  const year = Number(monthMatch[2]);
-  const monthToQuarterIndia: Record<string, { quarter: string; fiscalYear: number }> = {
-    mar: { quarter: "Q4", fiscalYear: year },
-    jun: { quarter: "Q1", fiscalYear: year + 1 },
-    sep: { quarter: "Q2", fiscalYear: year + 1 },
-    dec: { quarter: "Q3", fiscalYear: year + 1 },
-  };
-  const monthToQuarterUs: Record<string, { quarter: string; fiscalYear: number }> = {
-    mar: { quarter: "Q1", fiscalYear: year },
-    jun: { quarter: "Q2", fiscalYear: year },
-    sep: { quarter: "Q3", fiscalYear: year },
-    dec: { quarter: "Q4", fiscalYear: year },
-  };
-  const mapping = market === "india" ? monthToQuarterIndia[monthToken] : monthToQuarterUs[monthToken];
-  return mapping ? `${mapping.quarter}:FY${mapping.fiscalYear}` : null;
-}
-
-function quarterEndTimestamp(period: string | null | undefined) {
-  if (!period) {
-    return null;
-  }
-  const monthMatch = period.match(/\b([A-Za-z]{3,4})\s+(\d{4})\b/);
-  if (!monthMatch) {
-    return null;
-  }
-  const monthIndex = new Date(`${monthMatch[1]} 1, ${monthMatch[2]}`).getMonth();
-  if (!Number.isFinite(monthIndex)) {
-    return null;
-  }
-  const year = Number(monthMatch[2]);
-  return Math.floor(Date.UTC(year, monthIndex + 1, 0, 12, 0, 0) / 1000);
-}
-
-function extractQuarterHint(text: string, market: MarketKey) {
-  const quarterMatch = text.match(/\bq([1-4])\b/i);
-  if (!quarterMatch) {
-    return null;
-  }
-  const fyMatch = text.match(/\bfy\s*'?\s*(\d{2,4})\b/i);
-  if (!fyMatch) {
-    return `Q${quarterMatch[1]}`;
-  }
-  const fiscalYear = Number(fyMatch[1].length === 2 ? `20${fyMatch[1]}` : fyMatch[1]);
-  const normalizedFiscalYear = market === "india" || fiscalYear > 1900 ? fiscalYear : fiscalYear;
-  return `Q${quarterMatch[1]}:FY${normalizedFiscalYear}`;
-}
-
-function isEarningsRelatedItem(title: string | null | undefined, detail: string | null | undefined) {
-  const text = `${title ?? ""} ${detail ?? ""}`.toLowerCase();
-  return /(earnings|results|quarterly\s+results|financial\s+results|board\s+meeting.*result|conference\s+call|concall)/i.test(text);
-}
-
-function growthPct(current: number | null | undefined, previous: number | null | undefined) {
-  if (current == null || previous == null || previous === 0) {
-    return null;
-  }
-  return ((current - previous) / Math.abs(previous)) * 100;
-}
-
-function marginDelta(current: number | null | undefined, previous: number | null | undefined) {
-  if (current == null || previous == null) {
-    return null;
-  }
-  return current - previous;
-}
-
-function buildEarningsMarkers(fundamentals: CompanyFundamentals | null, market: MarketKey): EarningsMarkerItem[] {
-  if (!fundamentals) {
-    return [];
-  }
-
-  const quarters = (fundamentals.quarterly_results ?? [])
-    .filter((item) => item.period && item.period.toUpperCase() !== "TTM")
-    .map((item, index) => ({
-      item,
-      index,
-      key: quarterKeyFromPeriod(item.period, market),
-      endTime: quarterEndTimestamp(item.period),
-    }));
-
-  const markers: EarningsMarkerItem[] = [];
-  const usedPeriods = new Set<string>();
-
-  for (const quarter of quarters) {
-    const timestamp = parseEventTimestamp(quarter.item.result_date);
-    if (!timestamp) {
-      continue;
-    }
-    usedPeriods.add(quarter.item.period);
-    markers.push({
-      id: `reported:${quarter.item.period}:${timestamp}`,
-      kind: "reported",
-      time: timestamp,
-      period: quarter.item.period,
-      title: `${quarter.item.period} results`,
-      description: null,
-      eventDate: quarter.item.result_date ?? "",
-      documentUrl: quarter.item.result_document_url ?? null,
-    });
-  }
-
-  const candidates = [
-    ...(fundamentals.recent_updates ?? []).map((item) => ({
-      title: item.title,
-      description: item.summary,
-      date: item.published_at,
-      documentUrl: item.link,
-      sourceKind: item.kind,
-    })),
-    ...(fundamentals.official_updates ?? []).map((item) => ({
-      title: item.title,
-      description: item.summary,
-      date: item.published_date,
-      documentUrl: item.url,
-      sourceKind: item.impact_category,
-    })),
-    ...(fundamentals.latest_editorial_news ?? []).map((item) => ({
-      title: item.title,
-      description: item.summary,
-      date: item.published_date,
-      documentUrl: item.url,
-      sourceKind: item.impact_category,
-    })),
-    ...(fundamentals.detailed_news ?? []).map((item) => ({
-      title: item.title,
-      description: item.summary,
-      date: item.published_date,
-      documentUrl: item.url,
-      sourceKind: item.impact_category,
-    })),
-  ]
-    .filter((item) => item.date && isEarningsRelatedItem(item.title, item.description))
-    .map((item) => ({
-      ...item,
-      time: parseEventTimestamp(item.date),
-      hint: extractQuarterHint(`${item.title ?? ""} ${item.description ?? ""}`, market),
-    }))
-    .filter((item): item is typeof item & { time: number } => typeof item.time === "number")
-    .sort((left, right) => left.time - right.time);
-
-  for (const candidate of candidates) {
-    let bestQuarter: (typeof quarters)[number] | null = null;
-    let bestScore = Number.POSITIVE_INFINITY;
-
-    for (const quarter of quarters) {
-      if (usedPeriods.has(quarter.item.period) || quarter.endTime == null) {
-        continue;
-      }
-      const diffDays = (candidate.time - quarter.endTime) / 86400;
-      if (diffDays < -10 || diffDays > 80) {
-        continue;
-      }
-      let score = diffDays;
-      if (candidate.hint) {
-        if (quarter.key === candidate.hint || quarter.key?.startsWith(candidate.hint)) {
-          score -= 50;
-        } else if (candidate.hint.startsWith("Q") && quarter.key && !quarter.key.startsWith(candidate.hint)) {
-          score += 24;
-        }
-      }
-      if (score < bestScore) {
-        bestScore = score;
-        bestQuarter = quarter;
-      }
-    }
-
-    if (!bestQuarter) {
-      continue;
-    }
-
-    usedPeriods.add(bestQuarter.item.period);
-    markers.push({
-      id: `reported:${bestQuarter.item.period}:${candidate.time}`,
-      kind: "reported",
-      time: candidate.time,
-      period: bestQuarter.item.period,
-      title: candidate.title ?? `${bestQuarter.item.period} results`,
-      description: candidate.description ?? null,
-      eventDate: candidate.date ?? "",
-      documentUrl: bestQuarter.item.result_document_url ?? candidate.documentUrl ?? null,
-    });
-  }
-
-  for (const event of fundamentals.upcoming_events ?? []) {
-    if (!event.date || !isEarningsRelatedItem(event.event, event.impact ?? null)) {
-      continue;
-    }
-    const timestamp = parseEventTimestamp(event.date);
-    if (!timestamp) {
-      continue;
-    }
-    markers.push({
-      id: `upcoming:${event.event}:${timestamp}`,
-      kind: "upcoming",
-      time: timestamp,
-      period: null,
-      title: event.event,
-      description: event.impact ?? null,
-      eventDate: event.date,
-      documentUrl: null,
-    });
-  }
-
-  const deduped = new Map<string, EarningsMarkerItem>();
-  for (const marker of markers) {
-    const key = `${marker.kind}:${marker.period ?? marker.title}:${marker.time}`;
-    if (!deduped.has(key)) {
-      deduped.set(key, marker);
-    }
-  }
-
-  return [...deduped.values()].sort((left, right) => left.time - right.time);
-}
-
-function formatVolumeShort(v: number, market: MarketKey) {
-  if (market === "india") {
-    if (v >= 1e7) return `${(v / 1e7).toFixed(2)} Cr`;
-    if (v >= 1e5) return `${(v / 1e5).toFixed(1)} L`;
-    if (v >= 1e3) return `${(v / 1e3).toFixed(1)} K`;
-    return `${Math.round(v)}`;
-  }
-  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
-  return `${Math.round(v)}`;
-}
-
-function formatTurnoverShort(t: number, market: MarketKey) {
-  if (market === "india") {
-    const cr = t / 1e7;
-    if (cr >= 1000) return `₹${(cr / 1000).toFixed(1)}K Cr`;
-    return `₹${cr.toFixed(1)} Cr`;
-  }
-  if (t >= 1e9) return `$${(t / 1e9).toFixed(2)}B`;
-  if (t >= 1e6) return `$${(t / 1e6).toFixed(2)}M`;
-  return `$${(t / 1e3).toFixed(1)}K`;
-}
-
 function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: ChartBar[] | null) {
   if (!benchmarkBars || primaryBars.length < 2 || benchmarkBars.length < 2) {
     return [];
@@ -1142,26 +727,6 @@ function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: Cha
   }));
 }
 
-function buildIndexOhlcvOverlay(primaryBars: ChartBar[], indexBars: ChartBar[]): Array<{ time: UTCTimestamp; open: number; high: number; low: number; close: number }> {
-  if (primaryBars.length < 2 || indexBars.length < 2) return [];
-  const startTime = primaryBars[0]?.time;
-  const endTime = primaryBars[primaryBars.length - 1]?.time;
-  const primaryBase = primaryBars[0]?.close;
-  if (!startTime || !endTime || !primaryBase || primaryBase <= 0) return [];
-  const scopedBars = indexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0);
-  if (scopedBars.length < 2) return [];
-  const indexBase = scopedBars[0]?.close;
-  if (!indexBase || indexBase <= 0) return [];
-  const scale = primaryBase / indexBase;
-  return scopedBars.map((b) => ({
-    time: b.time as UTCTimestamp,
-    open: Number((b.open * scale).toFixed(4)),
-    high: Number((b.high * scale).toFixed(4)),
-    low: Number((b.low * scale).toFixed(4)),
-    close: Number((b.close * scale).toFixed(4)),
-  }));
-}
-
 export function ChartPanel({
   market,
   symbol,
@@ -1174,24 +739,6 @@ export function ChartPanel({
   chartError,
   chartLoading,
   chartCacheState,
-  showRvol,
-  onShowRvolChange,
-  rvolPos,
-  onRvolPosChange,
-  rvolAccentColor,
-  onRvolAccentColorChange,
-  rvolScale,
-  onRvolScaleChange,
-  showExpansionMarkers,
-  onShowExpansionMarkersChange,
-  expansionMarkerColor,
-  onExpansionMarkerColorChange,
-  expansionMarkerScale,
-  onExpansionMarkerScaleChange,
-  showEarningsMarkers,
-  onShowEarningsMarkersChange,
-  earningsMarkerColor,
-  onEarningsMarkerColorChange,
   fundamentals,
   fundamentalsLoading,
   fundamentalsError,
@@ -1235,10 +782,6 @@ export function ChartPanel({
   const annotationsRef = useRef(annotations);
   const onAnnotationsChangeRef = useRef(onAnnotationsChange);
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
-  const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
-  const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
-  const earningsPopupRef = useRef<HTMLDivElement | null>(null);
-  const earningsPopupDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -1246,7 +789,7 @@ export function ChartPanel({
   const [hoveredBar, setHoveredBar] = useState<HoveredPriceBar | null>(null);
   const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
   const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
-  const [overlayVersion, setOverlayVersion] = useState(0);
+  const [, setOverlayVersion] = useState(0);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [draggingAnnotationHandle, setDraggingAnnotationHandle] = useState<string | null>(null);
   const [extendedHistory, setExtendedHistory] = useState<ChartResponse | null>(null);
@@ -1254,16 +797,6 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
-  const [selectedEarningsMarkerId, setSelectedEarningsMarkerId] = useState<string | null>(null);
-  const [earningsPopupPos, setEarningsPopupPos] = useState<{ x: number; y: number } | null>(null);
-  const [indexOverlaySymbol, setIndexOverlaySymbol] = useState<string | null>(null);
-  const [indexOverlayMode, setIndexOverlayMode] = useState<"overlay" | "pane">("overlay");
-  const [indexOverlayStyle, setIndexOverlayStyle] = useState<"line" | "candle" | "bars">("line");
-  const [indexOverlayColor, setIndexOverlayColor] = useState("#ffd36f");
-  const [indexBars, setIndexBars] = useState<ChartBar[] | null>(null);
-  const [indexLoading, setIndexLoading] = useState(false);
-  const indexCacheRef = useRef<Record<string, ChartBar[]>>({});
-  const [aiChatOpen, setAiChatOpen] = useState(false);
   const palette = CHART_PALETTES[chartPalette];
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
@@ -1272,7 +805,6 @@ export function ChartPanel({
     [extendedHistory, rsLineMarkers],
   );
   const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
-  const safeIndexBars = useMemo(() => sanitizeChartBars(indexBars ?? []), [indexBars]);
   const futureWhitespaceTimes = useMemo(
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
@@ -1283,73 +815,6 @@ export function ChartPanel({
     () => (showBenchmarkOverlay ? buildBenchmarkOverlaySeries(activeBars, safeBenchmarkBars) : []),
     [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
   );
-  const rvolData = useMemo(() => computeRvolBars(activeBars, 50), [activeBars]);
-  const currentRvol = useMemo(() => {
-    if (!rvolData.length) return null;
-    if (hoveredBar) {
-      const entry = [...rvolData].reverse().find((e) => e.time <= hoveredBar.time);
-      return entry ?? rvolData[rvolData.length - 1];
-    }
-    return rvolData[rvolData.length - 1];
-  }, [rvolData, hoveredBar]);
-  const stageWidth = containerRef.current?.clientWidth ?? 0;
-  const stageHeight = containerRef.current?.clientHeight ?? 0;
-  const reportedQuarterlyResults = useMemo(
-    () => (fundamentals?.quarterly_results ?? []).filter((item) => item.period && item.period.toUpperCase() !== "TTM"),
-    [fundamentals],
-  );
-  const earningsMarkers = useMemo(() => buildEarningsMarkers(fundamentals, market), [fundamentals, market]);
-  const positionedEarningsMarkers = useMemo(() => {
-    if (!showEarningsMarkers || panelTab !== "technical" || !earningsMarkers.length || !chartRef.current) {
-      return [] as Array<EarningsMarkerItem & { x: number }>;
-    }
-
-    return earningsMarkers.flatMap((marker) => {
-      const x = chartRef.current?.timeScale().timeToCoordinate(marker.time as UTCTimestamp);
-      if (x == null || !Number.isFinite(x) || x < -18 || x > stageWidth + 18) {
-        return [];
-      }
-      return [{ ...marker, x }];
-    });
-  }, [earningsMarkers, overlayVersion, panelTab, showEarningsMarkers, stageWidth]);
-  const selectedEarningsMarker = useMemo(
-    () => earningsMarkers.find((marker) => marker.id === selectedEarningsMarkerId) ?? null,
-    [earningsMarkers, selectedEarningsMarkerId],
-  );
-  const earningsPopupRows = useMemo(() => {
-    if (!reportedQuarterlyResults.length) {
-      return [] as Array<QuarterlyResultItem & {
-        salesQoqPct: number | null;
-        salesYoyPct: number | null;
-        profitQoqPct: number | null;
-        profitYoyPct: number | null;
-        marginQoqDelta: number | null;
-        marginYoyDelta: number | null;
-      }>;
-    }
-
-    const selectedIndex = selectedEarningsMarker?.period
-      ? reportedQuarterlyResults.findIndex((item) => item.period === selectedEarningsMarker.period)
-      : reportedQuarterlyResults.length - 1;
-    const anchorIndex = selectedIndex >= 0 ? selectedIndex : reportedQuarterlyResults.length - 1;
-    const startIndex = Math.max(0, anchorIndex - 3);
-    const slice = reportedQuarterlyResults.slice(startIndex, Math.min(reportedQuarterlyResults.length, startIndex + 4));
-
-    return slice.map((item) => {
-      const index = reportedQuarterlyResults.findIndex((quarter) => quarter.period === item.period);
-      const previous = index > 0 ? reportedQuarterlyResults[index - 1] : null;
-      const yearAgo = index >= 4 ? reportedQuarterlyResults[index - 4] : null;
-      return {
-        ...item,
-        salesQoqPct: item.qoq_change_pct ?? growthPct(item.sales_crore, previous?.sales_crore),
-        salesYoyPct: item.yoy_change_pct ?? growthPct(item.sales_crore, yearAgo?.sales_crore),
-        profitQoqPct: growthPct(item.net_profit_crore, previous?.net_profit_crore),
-        profitYoyPct: growthPct(item.net_profit_crore, yearAgo?.net_profit_crore),
-        marginQoqDelta: marginDelta(item.operating_margin_pct, previous?.operating_margin_pct),
-        marginYoyDelta: marginDelta(item.operating_margin_pct, yearAgo?.operating_margin_pct),
-      };
-    });
-  }, [reportedQuarterlyResults, selectedEarningsMarker]);
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
@@ -1413,9 +878,6 @@ export function ChartPanel({
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
     setExtendedHistory(null);
-    setIndexBars(null);
-    setSelectedEarningsMarkerId(null);
-    setEarningsPopupPos(null);
   }, [symbol, timeframe]);
 
   useEffect(() => {
@@ -1475,43 +937,6 @@ export function ChartPanel({
       active = false;
     };
   }, [benchmarkSymbol, market, panelTab, showBenchmarkOverlay, symbol, timeframe]);
-
-  useEffect(() => {
-    if (!indexOverlaySymbol || !symbol || market !== "india" || panelTab !== "technical") {
-      setIndexBars(null);
-      setIndexLoading(false);
-      return;
-    }
-
-    const cacheKey = `india:${indexOverlaySymbol}:${timeframe}`;
-    const cached = indexCacheRef.current[cacheKey];
-    if (cached) {
-      setIndexBars(cached);
-      setIndexLoading(false);
-      return;
-    }
-
-    let active = true;
-    setIndexBars(null);
-    setIndexLoading(true);
-
-    void getChartHistory(indexOverlaySymbol, timeframe, "india")
-      .then((payload) => {
-        if (!active) return;
-        indexCacheRef.current[cacheKey] = payload.bars;
-        setIndexBars(payload.bars);
-      })
-      .catch(() => {
-        // ignore — overlay simply won't render
-      })
-      .finally(() => {
-        if (active) setIndexLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [indexOverlaySymbol, market, panelTab, symbol, timeframe]);
 
   useEffect(() => {
     setChartSearchQuery(symbol ?? "");
@@ -1733,11 +1158,7 @@ export function ChartPanel({
             borderVisible: false,
           });
     mainSeries.priceScale().applyOptions({
-      scaleMargins: (() => {
-        const hasIndexPane = indexOverlaySymbol !== null && market === "india" && safeIndexBars.length > 0 && indexOverlayMode === "pane";
-        if (safeRsLine.length) return hasIndexPane ? { top: 0.04, bottom: 0.50 } : { top: 0.04, bottom: 0.32 };
-        return hasIndexPane ? { top: 0.04, bottom: 0.36 } : { top: 0.04, bottom: 0.18 };
-      })(),
+      scaleMargins: safeRsLine.length ? { top: 0.04, bottom: 0.32 } : { top: 0.04, bottom: 0.18 },
     });
 
     const volumeSeries = chart.addHistogramSeries({
@@ -1770,18 +1191,6 @@ export function ChartPanel({
     ];
 
     mainSeries.setData(ohlcvData);
-    mainSeries.setMarkers(
-      timeframe === "1D" && showExpansionMarkers
-        ? computeExpansionSignalBars(activeBars).map((signal) => ({
-            time: signal.time as UTCTimestamp,
-            position: "belowBar" as const,
-            shape: "circle" as const,
-            color: expansionMarkerColor,
-            text: "",
-            size: EXPANSION_MARKER_SIZE_MAP[expansionMarkerScale],
-          }))
-        : [],
-    );
     if (benchmarkOverlayData.length) {
       const benchmarkSeries = chart.addLineSeries({
         color: "#ffb347",
@@ -1792,132 +1201,13 @@ export function ChartPanel({
       });
       benchmarkSeries.setData(benchmarkOverlayData);
     }
-
-    // ── India index overlay ──────────────────────────────────────────────────
-    if (indexOverlaySymbol && market === "india" && safeIndexBars.length > 0) {
-      const idxColor = indexOverlayColor;
-      if (indexOverlayMode === "overlay") {
-        if (indexOverlayStyle === "line") {
-          const lineData = buildBenchmarkOverlaySeries(activeBars, safeIndexBars);
-          if (lineData.length > 0) {
-            const idxSeries = chart.addLineSeries({
-              color: idxColor,
-              lineWidth: 2,
-              priceLineVisible: false,
-              lastValueVisible: false,
-              crosshairMarkerVisible: false,
-            });
-            idxSeries.setData(lineData);
-          }
-        } else {
-          const rebasedOhlcv = buildIndexOhlcvOverlay(activeBars, safeIndexBars);
-          if (rebasedOhlcv.length > 0) {
-            if (indexOverlayStyle === "candle") {
-              const idxSeries = chart.addCandlestickSeries({
-                upColor: idxColor,
-                downColor: withOpacity(idxColor, 0.45),
-                wickUpColor: idxColor,
-                wickDownColor: withOpacity(idxColor, 0.45),
-                borderVisible: false,
-                priceLineVisible: false,
-                lastValueVisible: false,
-              });
-              idxSeries.setData(rebasedOhlcv);
-            } else {
-              const idxSeries = chart.addBarSeries({
-                upColor: idxColor,
-                downColor: withOpacity(idxColor, 0.45),
-                thinBars: false,
-              });
-              idxSeries.setData(rebasedOhlcv);
-            }
-          }
-        }
-      } else {
-        // Pane mode: index occupies a separate band at the bottom of the chart
-        const startTime = activeBars[0]?.time;
-        const endTime = activeBars[activeBars.length - 1]?.time;
-        const scopedBars = startTime && endTime
-          ? safeIndexBars.filter((b) => b.time >= startTime && b.time <= endTime && b.close > 0)
-          : [];
-        if (scopedBars.length > 0) {
-          const paneScaleOpts = { visible: false, scaleMargins: { top: 0.62, bottom: 0.12 } };
-          if (indexOverlayStyle === "line") {
-            const idxSeries = chart.addLineSeries({
-              color: idxColor,
-              lineWidth: 2,
-              priceScaleId: "index-pane",
-              priceLineVisible: false,
-              lastValueVisible: false,
-              crosshairMarkerVisible: false,
-            });
-            idxSeries.priceScale().applyOptions(paneScaleOpts);
-            idxSeries.setData(scopedBars.map((b) => ({ time: b.time as UTCTimestamp, value: b.close })));
-          } else {
-            const ohlcvPane = scopedBars.map((b) => ({
-              time: b.time as UTCTimestamp,
-              open: b.open,
-              high: b.high,
-              low: b.low,
-              close: b.close,
-            }));
-            if (indexOverlayStyle === "candle") {
-              const idxSeries = chart.addCandlestickSeries({
-                upColor: idxColor,
-                downColor: withOpacity(idxColor, 0.45),
-                wickUpColor: idxColor,
-                wickDownColor: withOpacity(idxColor, 0.45),
-                borderVisible: false,
-                priceScaleId: "index-pane",
-                priceLineVisible: false,
-                lastValueVisible: false,
-              });
-              idxSeries.priceScale().applyOptions(paneScaleOpts);
-              idxSeries.setData(ohlcvPane);
-            } else {
-              const idxSeries = chart.addBarSeries({
-                upColor: idxColor,
-                downColor: withOpacity(idxColor, 0.45),
-                thinBars: false,
-                priceScaleId: "index-pane",
-              });
-              idxSeries.priceScale().applyOptions(paneScaleOpts);
-              idxSeries.setData(ohlcvPane);
-            }
-          }
-        }
-      }
-    }
-    // ────────────────────────────────────────────────────────────────────────
-    const { hqTimes, lqTimes } = computeQuarterlyVolExtremes(activeBars);
     volumeSeries.setData(
-      activeBars.map((bar) => {
-        if (hqTimes.has(bar.time)) {
-          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeHQ, 0.90) };
-        }
-        if (lqTimes.has(bar.time)) {
-          return { time: bar.time as UTCTimestamp, value: bar.volume, color: withOpacity(chartColors.volumeLQ, 0.82) };
-        }
-        return {
-          time: bar.time as UTCTimestamp,
-          value: bar.volume,
-          color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
-        };
-      }),
+      activeBars.map((bar) => ({
+        time: bar.time as UTCTimestamp,
+        value: bar.volume,
+        color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
+      })),
     );
-
-    // HQ / LQ markers on volume bars
-    const volMarkers: Array<{ time: UTCTimestamp; position: "aboveBar"; shape: "arrowDown"; color: string; text: string; size: number }> = [];
-    for (const bar of activeBars) {
-      if (hqTimes.has(bar.time)) {
-        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeHQ, text: "HQ", size: 0.8 });
-      } else if (lqTimes.has(bar.time)) {
-        volMarkers.push({ time: bar.time as UTCTimestamp, position: "aboveBar", shape: "arrowDown", color: chartColors.volumeLQ, text: "LQ", size: 0.8 });
-      }
-    }
-    volMarkers.sort((a, b) => (a.time as number) - (b.time as number));
-    volumeSeries.setMarkers(volMarkers);
-
     volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
 
     let rsSeries: any = null;
@@ -2089,7 +1379,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, expansionMarkerColor, expansionMarkerScale, futureWhitespaceTimes, indicatorKeys, indexOverlayColor, indexOverlayMode, indexOverlayStyle, indexOverlaySymbol, market, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeIndexBars, safeRsLine, safeRsLineMarkers, showExpansionMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeRsLine, safeRsLineMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2125,95 +1415,6 @@ export function ChartPanel({
     });
   }, [drawingTool]);
 
-  const handleRvolDragStart = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    e.preventDefault();
-    e.stopPropagation();
-    const widget = rvolWidgetRef.current;
-    const stage = stageRef.current;
-    if (!widget || !stage) return;
-    const widgetRect = widget.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
-    rvolDragRef.current = {
-      startPX: e.clientX,
-      startPY: e.clientY,
-      startWX: widgetRect.left - stageRect.left,
-      startWY: widgetRect.top - stageRect.top,
-    };
-    const onMove = (ev: PointerEvent) => {
-      if (!rvolDragRef.current) return;
-      const stage2 = stageRef.current;
-      if (!stage2) return;
-      const stageRect2 = stage2.getBoundingClientRect();
-      const dx = ev.clientX - rvolDragRef.current.startPX;
-      const dy = ev.clientY - rvolDragRef.current.startPY;
-      const newX = Math.max(0, Math.min(rvolDragRef.current.startWX + dx, stageRect2.width - 40));
-      const newY = Math.max(0, Math.min(rvolDragRef.current.startWY + dy, stageRect2.height - 40));
-      onRvolPosChange({ x: newX, y: newY });
-    };
-    const onUp = () => {
-      rvolDragRef.current = null;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-
-  const handleEarningsMarkerClick = (marker: EarningsMarkerItem) => {
-    setSelectedEarningsMarkerId(marker.id);
-    setEarningsPopupPos((current) => {
-      if (current) {
-        return current;
-      }
-      const fallbackX = Math.max(12, stageWidth - 360);
-      return { x: fallbackX, y: 54 };
-    });
-  };
-
-  const handleEarningsPopupDragStart = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    const popup = earningsPopupRef.current;
-    const stage = stageRef.current;
-    if (!popup || !stage) {
-      return;
-    }
-    const popupRect = popup.getBoundingClientRect();
-    const stageRect = stage.getBoundingClientRect();
-    earningsPopupDragRef.current = {
-      startPX: event.clientX,
-      startPY: event.clientY,
-      startWX: popupRect.left - stageRect.left,
-      startWY: popupRect.top - stageRect.top,
-    };
-    const onMove = (moveEvent: PointerEvent) => {
-      if (!earningsPopupDragRef.current) {
-        return;
-      }
-      const liveStage = stageRef.current;
-      if (!liveStage) {
-        return;
-      }
-      const liveStageRect = liveStage.getBoundingClientRect();
-      const dx = moveEvent.clientX - earningsPopupDragRef.current.startPX;
-      const dy = moveEvent.clientY - earningsPopupDragRef.current.startPY;
-      const nextX = Math.max(0, Math.min(earningsPopupDragRef.current.startWX + dx, liveStageRect.width - 120));
-      const nextY = Math.max(0, Math.min(earningsPopupDragRef.current.startWY + dy, liveStageRect.height - 120));
-      setEarningsPopupPos({ x: nextX, y: nextY });
-    };
-    const onUp = () => {
-      earningsPopupDragRef.current = null;
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-    };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-  };
-
   const handleLoadFullHistory = async () => {
     if (!symbol || historyLoading) return;
     if (extendedHistory) {
@@ -2232,6 +1433,9 @@ export function ChartPanel({
       setHistoryLoading(false);
     }
   };
+
+  const stageWidth = containerRef.current?.clientWidth ?? 0;
+  const stageHeight = containerRef.current?.clientHeight ?? 0;
 
   const selectAnnotation = (id: string) =>
     setSelectedAnnotationId((prev) => (prev === id ? null : id));
@@ -2645,15 +1849,6 @@ export function ChartPanel({
               </button>
             ))}
           </div>
-          <button
-            type="button"
-            className={aiChatOpen ? "tool-pill active" : "tool-pill"}
-            onClick={() => setAiChatOpen((prev) => !prev)}
-            disabled={!symbol}
-            title="Open AI Chart Analysis chat"
-          >
-            ✦ AI Analysis
-          </button>
           {panelTab === "technical" ? (
             <>
               <div className="timeframe-switcher">
@@ -2703,64 +1898,6 @@ export function ChartPanel({
                     {indicator.label}
                   </button>
                 ))}
-                <button
-                  type="button"
-                  className={showRvol ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => onShowRvolChange(!showRvol)}
-                  title="Relative Volume vs 50-day average. Helps spot unusual activity."
-                >
-                  RVOL
-                </button>
-                <button
-                  type="button"
-                  className={showExpansionMarkers ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => onShowExpansionMarkersChange(!showExpansionMarkers)}
-                  title="Mark daily bars where change is at least 6% and RVOL is at least 3 versus the prior 20-day average volume."
-                >
-                  Expansion Dots
-                </button>
-                {showExpansionMarkers ? (
-                  <div className="indicator-inline-controls">
-                    <label className="earnings-color-control" title="Expansion dot colour">
-                      <input
-                        type="color"
-                        className="rvol-color-input"
-                        value={expansionMarkerColor}
-                        onChange={(event) => onExpansionMarkerColorChange(event.target.value)}
-                      />
-                    </label>
-                    {MARKER_SCALE_OPTIONS.map((scale) => (
-                      <button
-                        key={scale}
-                        type="button"
-                        className={`rvol-size-btn${expansionMarkerScale === scale ? " active" : ""}`}
-                        onClick={() => onExpansionMarkerScaleChange(scale)}
-                        style={expansionMarkerScale === scale ? { borderColor: expansionMarkerColor, color: expansionMarkerColor } : {}}
-                        title={`Expansion dot size ${scale.toUpperCase()}`}
-                      >
-                        {scale.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <button
-                  type="button"
-                  className={showEarningsMarkers ? "indicator-pill active" : "indicator-pill"}
-                  onClick={() => onShowEarningsMarkersChange(!showEarningsMarkers)}
-                  title="Show real earnings/result dates when verified company data is available."
-                >
-                  Earnings
-                </button>
-                {showEarningsMarkers ? (
-                  <label className="earnings-color-control" title="E marker colour">
-                    <input
-                      type="color"
-                      className="rvol-color-input"
-                      value={earningsMarkerColor}
-                      onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
-                    />
-                  </label>
-                ) : null}
               </div>
               {market === "us" ? (
                 <div className="chart-style-switcher">
@@ -2898,73 +2035,6 @@ export function ChartPanel({
           >
             {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
           </button>
-          {market === "india" ? (
-            <div className="index-overlay-controls">
-              <select
-                className="index-overlay-select"
-                value={indexOverlaySymbol ?? ""}
-                onChange={(e) => setIndexOverlaySymbol(e.target.value || null)}
-                title="Add a Nifty index overlay to this chart"
-              >
-                <option value="">Index Overlay</option>
-                <option value="^NSEI">Nifty 50</option>
-                <option value="^NSEMDCP50">Nifty Midcap 50</option>
-                <option value="^NSEBANK">Nifty Bank</option>
-              </select>
-              {indexOverlaySymbol ? (
-                <>
-                  <button
-                    type="button"
-                    className={indexOverlayMode === "overlay" ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setIndexOverlayMode("overlay")}
-                    title="Overlay on main price scale (rebased)"
-                  >
-                    Overlay
-                  </button>
-                  <button
-                    type="button"
-                    className={indexOverlayMode === "pane" ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setIndexOverlayMode("pane")}
-                    title="Show in a separate pane below main chart"
-                  >
-                    Pane
-                  </button>
-                  <button
-                    type="button"
-                    className={indexOverlayStyle === "line" ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setIndexOverlayStyle("line")}
-                    title="Line chart style"
-                  >
-                    Line
-                  </button>
-                  <button
-                    type="button"
-                    className={indexOverlayStyle === "candle" ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setIndexOverlayStyle("candle")}
-                    title="Candlestick chart style"
-                  >
-                    Candle
-                  </button>
-                  <button
-                    type="button"
-                    className={indexOverlayStyle === "bars" ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setIndexOverlayStyle("bars")}
-                    title="Bar chart style"
-                  >
-                    Bars
-                  </button>
-                  <label className="index-overlay-color" title="Index overlay colour">
-                    <input
-                      type="color"
-                      value={indexOverlayColor}
-                      onChange={(e) => setIndexOverlayColor(e.target.value)}
-                    />
-                  </label>
-                  {indexLoading ? <span className="chart-save-pill">Loading…</span> : null}
-                </>
-              ) : null}
-            </div>
-          ) : null}
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
       ) : null}
@@ -3041,8 +2111,20 @@ export function ChartPanel({
       {panelTab === "technical" ? (
         !symbol ? (
           <div className="empty-state">Pick a stock to view the chart.</div>
+        ) : chartLoading && activeBars.length === 0 ? (
+          <div className="empty-state">
+            Loading {timeframe} chart…
+            {timeframe !== "1D" && timeframe !== "1W" ? (
+              <div className="empty-state-subtitle">Intraday data can take longer on the first request.</div>
+            ) : null}
+          </div>
         ) : chartError && activeBars.length === 0 ? (
-          <div className="empty-state">{chartError}</div>
+          <div className="empty-state">
+            <div>{chartError}</div>
+            {timeframe !== "1D" && timeframe !== "1W" ? (
+              <div className="empty-state-subtitle">If the intraday feed is slow, try Refresh Chart once more.</div>
+            ) : null}
+          </div>
         ) : (
         <div className="chart-stage">
           {symbol ? (
@@ -3055,166 +2137,6 @@ export function ChartPanel({
             >
               +
             </button>
-          ) : null}
-          {showRvol && currentRvol ? (
-            <div
-              ref={rvolWidgetRef}
-              className={`rvol-widget rvol-widget--${rvolScale}`}
-              style={{
-                ...(rvolPos ? { left: rvolPos.x, top: rvolPos.y, bottom: "auto" } : {}),
-                borderColor: `color-mix(in srgb, ${rvolAccentColor} 45%, transparent)`,
-              }}
-            >
-              <div className="rvol-widget-header" onPointerDown={handleRvolDragStart}>
-                <span className="rvol-widget-title" style={{ color: rvolAccentColor }}>RVOL <span className="rvol-widget-subtitle">vs 50d avg</span></span>
-                <div className="rvol-widget-controls" onPointerDown={(e) => e.stopPropagation()}>
-                  {(["sm", "md", "lg"] as const).map((s) => (
-                    <button key={s} type="button" className={`rvol-size-btn${rvolScale === s ? " active" : ""}`} onClick={() => onRvolScaleChange(s)} style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}>
-                      {s === "sm" ? "S" : s === "md" ? "M" : "L"}
-                    </button>
-                  ))}
-                  <input type="color" className="rvol-color-input" value={rvolAccentColor} onChange={(e) => onRvolAccentColorChange(e.target.value)} title="Widget color" />
-                </div>
-              </div>
-              <div className="rvol-widget-row">
-                <span className="rvol-label">Vol</span>
-                <span className="rvol-value" style={{ color: rvolColor(currentRvol.rvol50) }}>
-                  {currentRvol.rvol50.toFixed(2)}×
-                </span>
-                <span className="rvol-bar-track">
-                  <span className="rvol-bar-fill" style={{ width: `${Math.min(currentRvol.rvol50 / 4, 1) * 100}%`, background: rvolColor(currentRvol.rvol50) }} />
-                </span>
-              </div>
-              <div className="rvol-widget-row">
-                <span className="rvol-label">Turn</span>
-                <span className="rvol-value" style={{ color: rvolColor(currentRvol.turnoverRvol50) }}>
-                  {currentRvol.turnoverRvol50.toFixed(2)}×
-                </span>
-                <span className="rvol-bar-track">
-                  <span className="rvol-bar-fill" style={{ width: `${Math.min(currentRvol.turnoverRvol50 / 4, 1) * 100}%`, background: rvolColor(currentRvol.turnoverRvol50) }} />
-                </span>
-              </div>
-              <div className="rvol-widget-detail">
-                {formatVolumeShort(currentRvol.volume, market)} / avg {formatVolumeShort(currentRvol.avgVolume, market)}
-              </div>
-              <div className="rvol-widget-detail">
-                {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
-              </div>
-            </div>
-          ) : null}
-          {showEarningsMarkers && positionedEarningsMarkers.length > 0 ? (
-            <div className="earnings-marker-layer" aria-label="Earnings markers">
-              {positionedEarningsMarkers.map((marker) => (
-                <button
-                  key={marker.id}
-                  type="button"
-                  className={selectedEarningsMarkerId === marker.id ? "earnings-marker active" : "earnings-marker"}
-                  style={{
-                    left: marker.x,
-                    color: earningsMarkerColor,
-                    borderColor: `color-mix(in srgb, ${earningsMarkerColor} 50%, transparent)`,
-                    boxShadow: selectedEarningsMarkerId === marker.id ? `0 0 0 1px ${earningsMarkerColor}` : undefined,
-                  }}
-                  title={`${marker.kind === "upcoming" ? "Upcoming" : "Reported"}: ${marker.title} • ${formatEventDate(marker.eventDate, market)}`}
-                  onClick={() => handleEarningsMarkerClick(marker)}
-                >
-                  E
-                </button>
-              ))}
-            </div>
-          ) : null}
-          {selectedEarningsMarker ? (
-            <div
-              ref={earningsPopupRef}
-              className="earnings-popup"
-              style={{
-                ...(earningsPopupPos ? { left: earningsPopupPos.x, top: earningsPopupPos.y, right: "auto" } : {}),
-                borderColor: `color-mix(in srgb, ${earningsMarkerColor} 46%, transparent)`,
-              }}
-              onClick={(event) => event.stopPropagation()}
-            >
-              <div className="earnings-popup-header" onPointerDown={handleEarningsPopupDragStart}>
-                <div>
-                  <strong style={{ color: earningsMarkerColor }}>{selectedEarningsMarker.kind === "upcoming" ? "Upcoming Earnings" : "Earnings Snapshot"}</strong>
-                  <span>{selectedEarningsMarker.period ?? selectedEarningsMarker.title}</span>
-                </div>
-                <div className="earnings-popup-actions" onPointerDown={(event) => event.stopPropagation()}>
-                  <input
-                    type="color"
-                    className="rvol-color-input"
-                    value={earningsMarkerColor}
-                    onChange={(event) => onEarningsMarkerColorChange(event.target.value)}
-                    title="E marker colour"
-                  />
-                  <button type="button" className="earnings-popup-close" onClick={() => setSelectedEarningsMarkerId(null)}>
-                    ×
-                  </button>
-                </div>
-              </div>
-              <div className="earnings-popup-meta">
-                <span>{formatEventDate(selectedEarningsMarker.eventDate, market)}</span>
-                <span>{selectedEarningsMarker.kind === "upcoming" ? "Scheduled / announced date" : "Declared date"}</span>
-              </div>
-              {selectedEarningsMarker.description ? <p className="earnings-popup-summary">{selectedEarningsMarker.description}</p> : null}
-              {earningsPopupRows.length > 0 ? (
-                <div className="earnings-popup-table-wrap">
-                  <table className="earnings-popup-table">
-                    <thead>
-                      <tr>
-                        <th>Quarter</th>
-                        <th>Sales</th>
-                        <th>QoQ</th>
-                        <th>YoY</th>
-                        <th>OPM</th>
-                        <th>QoQ Δ</th>
-                        <th>YoY Δ</th>
-                        <th>Profit</th>
-                        <th>QoQ</th>
-                        <th>YoY</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {earningsPopupRows.map((row) => (
-                        <tr key={`${selectedEarningsMarker.id}-${row.period}`} className={row.period === selectedEarningsMarker.period ? "is-selected" : ""}>
-                          <td>
-                            <strong>{row.period}</strong>
-                            {row.result_date ? <small>{formatEventDate(row.result_date, market)}</small> : null}
-                          </td>
-                          <td>{formatAmountValue(row.sales_crore)}</td>
-                          <td className={row.salesQoqPct == null ? "" : row.salesQoqPct >= 0 ? "positive-text" : "negative-text"}>
-                            {formatSignedPercentValue(row.salesQoqPct)}
-                          </td>
-                          <td className={row.salesYoyPct == null ? "" : row.salesYoyPct >= 0 ? "positive-text" : "negative-text"}>
-                            {formatSignedPercentValue(row.salesYoyPct)}
-                          </td>
-                          <td>{formatPercentValue(row.operating_margin_pct)}</td>
-                          <td className={row.marginQoqDelta == null ? "" : row.marginQoqDelta >= 0 ? "positive-text" : "negative-text"}>
-                            {row.marginQoqDelta == null ? "—" : `${row.marginQoqDelta >= 0 ? "+" : ""}${row.marginQoqDelta.toFixed(2)} pp`}
-                          </td>
-                          <td className={row.marginYoyDelta == null ? "" : row.marginYoyDelta >= 0 ? "positive-text" : "negative-text"}>
-                            {row.marginYoyDelta == null ? "—" : `${row.marginYoyDelta >= 0 ? "+" : ""}${row.marginYoyDelta.toFixed(2)} pp`}
-                          </td>
-                          <td>{formatAmountValue(row.net_profit_crore)}</td>
-                          <td className={row.profitQoqPct == null ? "" : row.profitQoqPct >= 0 ? "positive-text" : "negative-text"}>
-                            {formatSignedPercentValue(row.profitQoqPct)}
-                          </td>
-                          <td className={row.profitYoyPct == null ? "" : row.profitYoyPct >= 0 ? "positive-text" : "negative-text"}>
-                            {formatSignedPercentValue(row.profitYoyPct)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="earnings-popup-empty">No verified quarterly results were available for this marker.</div>
-              )}
-              {selectedEarningsMarker.documentUrl ? (
-                <a className="earnings-popup-link" href={selectedEarningsMarker.documentUrl} target="_blank" rel="noreferrer">
-                  Open filing ↗
-                </a>
-              ) : null}
-            </div>
           ) : null}
         <div className="chart-stage-meta">
             <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
@@ -3389,21 +2311,763 @@ export function ChartPanel({
       ) : !fundamentals ? (
         <div className="empty-state">Fundamentals are not available for this stock yet.</div>
       ) : (
-        <PremiumResearchPanel
-          symbol={symbol}
-          market={market}
-          fundamentals={fundamentals}
-        />
+        <div className="fundamentals-layout">
+          <section className="fundamentals-card fundamentals-overview-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>{fundamentals.name}</h3>
+                <p>
+                  {fundamentals.exchange} • {fundamentals.sector ?? "Unclassified"} • {fundamentals.sub_sector ?? "Unclassified"}
+                </p>
+              </div>
+              <span className="fundamentals-stamp">Updated {formatDateTime(fundamentals.fetched_at)}</span>
+            </div>
+            <p>{fundamentals.about ?? "Recent business summary is not available right now."}</p>
+          </section>
+
+
+
+          {/* Management Team */}
+          {fundamentals.management_team && fundamentals.management_team.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Management Team</h3>
+                  <p>Key leadership driving the company's strategic direction.</p>
+                </div>
+              </div>
+              <div className="management-team-grid">
+                {fundamentals.management_team.map((member, index) => (
+                  <div key={index} className="management-member-card">
+                    <h4>{member.name}</h4>
+                    <p className="member-position">{member.position}</p>
+                    <p className="member-background">{member.background}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Management Guidance */}
+          {fundamentals.management_guidance && fundamentals.management_guidance.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Management Guidance & Outlook</h3>
+                  <p>Forward-looking guidance from management and strategic plans.</p>
+                </div>
+              </div>
+              <div className="management-guidance-list">
+                {fundamentals.management_guidance.map((guidance, index) => (
+                  <div key={index} className="guidance-item">
+                    <h4>{guidance.fiscal_year} Guidance</h4>
+                    <div className="guidance-metrics">
+                      {guidance.revenue_growth_guidance_pct !== null && (
+                        <div className="guidance-metric">
+                          <span className="metric-label">Revenue Growth:</span>
+                          <span className="metric-value">{guidance.revenue_growth_guidance_pct}%</span>
+                        </div>
+                      )}
+                      {guidance.ebitda_guidance_pct !== null && (
+                        <div className="guidance-metric">
+                          <span className="metric-label">EBITDA Target:</span>
+                          <span className="metric-value">{guidance.ebitda_guidance_pct}%</span>
+                        </div>
+                      )}
+                      {guidance.capex_guidance_crore !== null && (
+                        <div className="guidance-metric">
+                          <span className="metric-label">CapEx Plan:</span>
+                          <span className="metric-value">{formatAmountValue(guidance.capex_guidance_crore, market === "us" ? 1 : 0)}</span>
+                        </div>
+                      )}
+                    </div>
+                    {guidance.key_guidance_points && guidance.key_guidance_points.length > 0 && (
+                      <div className="guidance-points">
+                        <strong>Key Initiatives:</strong>
+                        <ul>
+                          {guidance.key_guidance_points.map((point, i) => (
+                            <li key={i}>{point}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Strategy and Outlook */}
+          {fundamentals.strategy_and_outlook && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Strategy & Long-term Outlook</h3>
+                  <p>Management's strategic vision and competitive positioning for the future.</p>
+                </div>
+              </div>
+              <p className="strategy-text">{fundamentals.strategy_and_outlook}</p>
+            </section>
+          )}
+
+          {/* Competitive Position */}
+          {fundamentals.competitive_position && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Competitive Position & Market Standing</h3>
+                  <p>How the company stacks up against competitors in the market.</p>
+                </div>
+              </div>
+              <div className="competitive-position-section">
+                <div className="comp-position-item">
+                  <span className="comp-label">Market Position:</span>
+                  <strong>{fundamentals.competitive_position.market_position}</strong>
+                </div>
+                <div className="comp-position-item">
+                  <span className="comp-label">Market Share:</span>
+                  <strong>{fundamentals.competitive_position.market_share_estimate}%</strong>
+                </div>
+                {fundamentals.competitive_position.competitive_advantages && fundamentals.competitive_position.competitive_advantages.length > 0 && (
+                  <div className="comp-advantages">
+                    <strong>Competitive Advantages:</strong>
+                    <ul>
+                      {fundamentals.competitive_position.competitive_advantages.map((adv, i) => (
+                        <li key={i}>{adv}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {fundamentals.competitive_position.key_competitors && fundamentals.competitive_position.key_competitors.length > 0 && (
+                  <div className="competitors-list">
+                    <strong>Key Competitors:</strong>
+                    <div className="competitors-tags">
+                      {fundamentals.competitive_position.key_competitors.map((comp, i) => (
+                        <span key={i} className="competitor-tag">{comp}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
+
+          {/* Business Segments */}
+          {fundamentals.business_segments && fundamentals.business_segments.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Business Segments & Revenue Mix</h3>
+                  <p>Revenue breakdown by business unit and growth trajectories.</p>
+                </div>
+              </div>
+              <div className="fundamentals-table-wrap">
+                <table className="fundamentals-table">
+                  <thead>
+                    <tr>
+                      <th>Segment</th>
+                      <th>Revenue</th>
+                      <th>Revenue %</th>
+                      <th>Growth %</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fundamentals.business_segments.map((segment, index) => (
+                      <tr key={index}>
+                        <td>{segment.name}</td>
+                        <td>{formatAmountValue(segment.revenue_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatPercentValue(segment.revenue_pct)}</td>
+                        <td className={segment.growth_pct !== null && segment.growth_pct > 0 ? "positive" : "negative"}>
+                          {segment.growth_pct !== null ? (segment.growth_pct > 0 ? "+" : "") + formatPercentValue(segment.growth_pct) : "N/A"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Geographic Presence */}
+          {fundamentals.geographic_presence && fundamentals.geographic_presence.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Geographic Presence</h3>
+                  <p>Revenue distribution and market presence across regions.</p>
+                </div>
+              </div>
+              <div className="geographic-presence-list">
+                {fundamentals.geographic_presence.map((region, index) => (
+                  <div key={index} className="geographic-item">{region}</div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Balance Sheet */}
+          {fundamentals.balance_sheet && fundamentals.balance_sheet.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Balance Sheet Analysis</h3>
+                  <p>Financial position and asset allocation snapshot.</p>
+                </div>
+              </div>
+              <div className="fundamentals-table-wrap">
+                <table className="fundamentals-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>Total Assets</th>
+                      <th>Total Liabilities</th>
+                      <th>Equity</th>
+                      <th>Debt</th>
+                      <th>Cash</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fundamentals.balance_sheet.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.period}</td>
+                        <td>{formatAmountValue(item.total_assets_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.total_liabilities_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.shareholders_equity_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.debt_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.cash_and_equivalents_crore, market === "us" ? 1 : 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Cash Flow */}
+          {fundamentals.cash_flow && fundamentals.cash_flow.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Cash Flow Analysis</h3>
+                  <p>How the company generates and uses cash from operations.</p>
+                </div>
+              </div>
+              <div className="fundamentals-table-wrap">
+                <table className="fundamentals-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>Operating CF</th>
+                      <th>Free Cash Flow</th>
+                      <th>CapEx</th>
+                      <th>Dividends Paid</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fundamentals.cash_flow.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.period}</td>
+                        <td>{formatAmountValue(item.operating_cash_flow_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.free_cash_flow_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.capital_expenditure_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.dividends_paid_crore, market === "us" ? 1 : 0)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Financial Ratios */}
+          {fundamentals.financial_ratios && fundamentals.financial_ratios.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Financial Ratios & Metrics</h3>
+                  <p>Key financial metrics for profitability, efficiency, and solvency analysis.</p>
+                </div>
+              </div>
+              <div className="fundamentals-table-wrap">
+                <table className="fundamentals-table">
+                  <thead>
+                    <tr>
+                      <th>Period</th>
+                      <th>ROE</th>
+                      <th>ROA</th>
+                      <th>ROCE</th>
+                      <th>Current Ratio</th>
+                      <th>D/E Ratio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fundamentals.financial_ratios.map((item, index) => (
+                      <tr key={index}>
+                        <td>{item.period}</td>
+                        <td>{formatPercentValue(item.roe_pct)}</td>
+                        <td>{formatPercentValue(item.roa_pct)}</td>
+                        <td>{formatPercentValue(item.roce_pct)}</td>
+                        <td>{formatValue(item.current_ratio, 2)}</td>
+                        <td>{formatValue(item.debt_to_equity_ratio, 2)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
+
+          {/* Risk Analysis */}
+          {fundamentals.risks_and_opportunities && fundamentals.risks_and_opportunities.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Risk Analysis & Opportunities</h3>
+                  <p>Key risks and growth opportunities for the company ahead.</p>
+                </div>
+              </div>
+              <div className="risks-opportunities-list">
+                {fundamentals.risks_and_opportunities.map((item, index) => (
+                  <div key={index} className={`risk-opportunity-item risk-${item.risk_category.toLowerCase()}`}>
+                    <div className="risk-header">
+                      <h4>{item.risk_category}</h4>
+                      <span className={`severity-badge severity-${item.severity.toLowerCase()}`}>{item.severity}</span>
+                    </div>
+                    <p className="risk-description">{item.description}</p>
+                    <div className="mitigation-strategy">
+                      <strong>Mitigation/Strategy:</strong>
+                      <p>{item.mitigation_strategy}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Detailed News Articles */}
+          {fundamentals.detailed_news && fundamentals.detailed_news.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Detailed News & Developments</h3>
+                  <p>In-depth analysis of recent company news and market developments.</p>
+                </div>
+              </div>
+              <div className="detailed-news-list">
+                {fundamentals.detailed_news.map((newsItem, index) => (
+                  <article key={index} className="detailed-news-article">
+                    <div className="news-header">
+                      <h4>{newsItem.title}</h4>
+                      <div className="news-meta">
+                        <span className={`news-impact impact-${newsItem.impact_category.toLowerCase()}`}>
+                          {newsItem.impact_category}
+                        </span>
+                        <span className={`sentiment-badge sentiment-${newsItem.sentiment}`}>
+                          {newsItem.sentiment}
+                        </span>
+                        <span className="news-source">{newsItem.source}</span>
+                        <span className="news-date">{formatDateTime(newsItem.published_date)}</span>
+                      </div>
+                    </div>
+                    <p className="news-summary">{newsItem.summary}</p>
+                    {newsItem.detailed_points && newsItem.detailed_points.length > 0 && (
+                      <ul className="news-detailed-points">
+                        {newsItem.detailed_points.map((point, i) => (
+                          <li key={i}>{point}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="news-relevance">Relevance Score: {Math.round(newsItem.relevance_score * 100)}%</div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Latest Earnings Key Metrics */}
+          {fundamentals.latest_earnings_key_metrics && Object.keys(fundamentals.latest_earnings_key_metrics).length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Latest Earnings Key Metrics</h3>
+                  <p>Summary of the most recent quarterly or annual results.</p>
+                </div>
+              </div>
+              <div className="earnings-metrics-grid">
+                {Object.entries(fundamentals.latest_earnings_key_metrics).map(([key, value]) => (
+                  <div key={key} className="earnings-metric">
+                    <span className="metric-label">{key}</span>
+                    <strong className="metric-value">{value}</strong>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Upcoming Events */}
+          {fundamentals.upcoming_events && fundamentals.upcoming_events.length > 0 && (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Upcoming Events & Catalysts</h3>
+                  <p>Important dates and potential market-moving events ahead.</p>
+                </div>
+              </div>
+              <div className="upcoming-events-list">
+                {fundamentals.upcoming_events.map((event, index) => (
+                  <div key={index} className="upcoming-event">
+                    <div className="event-date">{event.date}</div>
+                    <div className="event-content">
+                      <h4>{event.event}</h4>
+                      <p>{event.impact}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Valuation & Margins</h3>
+                <p>Built from the latest reported numbers and current market profile.</p>
+              </div>
+            </div>
+            <div className="fundamentals-stat-grid">
+              {ratioCards.map((card) => (
+                <div key={card.label} className="fundamentals-stat">
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Latest Growth</h3>
+                <p>{growth?.latest_period ? `Recent quarter: ${growth.latest_period}` : "Recent quarter growth snapshot"}</p>
+              </div>
+            </div>
+            <div className="fundamentals-stat-grid">
+              {growthCards.map((card) => (
+                <div key={card.label} className="fundamentals-stat">
+                  <span>{card.label}</span>
+                  <strong>{card.value}</strong>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Growth Drivers</h3>
+                <p>What is supporting or pressuring the current business momentum.</p>
+              </div>
+            </div>
+            <div className="fundamentals-driver-list">
+              {fundamentals.growth_drivers.length ? (
+                fundamentals.growth_drivers.map((driver, index) => (
+                  <article key={`${driver.title}-${index}`} className={`fundamentals-driver ${driver.tone}`}>
+                    <strong>{driver.title}</strong>
+                    <p>{driver.detail}</p>
+                  </article>
+                ))
+              ) : (
+                <div className="empty-state">No recent growth drivers are available for this company right now.</div>
+              )}
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Quarterly Results</h3>
+                <p>Sales, profit, and margin progression from recent reported quarters.</p>
+              </div>
+            </div>
+            <div className="fundamentals-table-wrap">
+              <table className="fundamentals-table">
+                <thead>
+                  <tr>
+                    <th>Quarter</th>
+                    <th>Sales</th>
+                    <th>OP</th>
+                    <th>OPM</th>
+                    <th>PBT</th>
+                    <th>Net Profit</th>
+                    <th>EPS</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fundamentals.quarterly_results.map((item) => (
+                    <tr key={item.period}>
+                      <td>{item.period}</td>
+                      <td>{formatAmountValue(item.sales_crore)}</td>
+                      <td>{formatAmountValue(item.operating_profit_crore)}</td>
+                      <td>{formatPercentValue(item.operating_margin_pct)}</td>
+                      <td>{formatAmountValue(item.profit_before_tax_crore)}</td>
+                      <td>{formatAmountValue(item.net_profit_crore)}</td>
+                      <td>{formatValue(item.eps, 2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Profit & Loss</h3>
+                <p>Annual view to understand how the business has compounded over time.</p>
+              </div>
+            </div>
+            <div className="fundamentals-table-wrap">
+              <table className="fundamentals-table">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>Sales</th>
+                    <th>OP</th>
+                    <th>OPM</th>
+                    <th>Net Profit</th>
+                    <th>EPS</th>
+                    <th>Dividend Payout</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fundamentals.profit_loss.map((item) => (
+                    <tr key={item.period}>
+                      <td>{item.period}</td>
+                      <td>{formatAmountValue(item.sales_crore)}</td>
+                      <td>{formatAmountValue(item.operating_profit_crore)}</td>
+                      <td>{formatPercentValue(item.operating_margin_pct)}</td>
+                      <td>{formatAmountValue(item.net_profit_crore)}</td>
+                      <td>{formatValue(item.eps, 2)}</td>
+                      <td>{formatPercentValue(item.dividend_payout_pct)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>{ownershipLabels.title}</h3>
+                <p>{ownershipLabels.description}</p>
+              </div>
+            </div>
+            {fundamentals.shareholding_delta ? (
+              <div className="fundamentals-stat-grid fundamentals-stat-grid-compact">
+                <div className="fundamentals-stat">
+                  <span>{ownershipLabels.promoterChange}</span>
+                  <strong>{formatSignedPercentValue(fundamentals.shareholding_delta.promoter_change_pct)}</strong>
+                </div>
+                <div className="fundamentals-stat">
+                  <span>{ownershipLabels.fiiChange}</span>
+                  <strong>{formatSignedPercentValue(fundamentals.shareholding_delta.fii_change_pct)}</strong>
+                </div>
+                <div className="fundamentals-stat">
+                  <span>{ownershipLabels.diiChange}</span>
+                  <strong>{formatSignedPercentValue(fundamentals.shareholding_delta.dii_change_pct)}</strong>
+                </div>
+                <div className="fundamentals-stat">
+                  <span>Public Change</span>
+                  <strong>{formatSignedPercentValue(fundamentals.shareholding_delta.public_change_pct)}</strong>
+                </div>
+              </div>
+            ) : null}
+            <div className="fundamentals-table-wrap">
+              <table className="fundamentals-table">
+                <thead>
+                  <tr>
+                    <th>Period</th>
+                    <th>{ownershipLabels.promoter}</th>
+                    <th>{ownershipLabels.fii}</th>
+                    <th>{ownershipLabels.dii}</th>
+                    <th>Public</th>
+                    <th>Shareholders</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {fundamentals.shareholding_pattern.map((item) => (
+                    <tr key={item.period}>
+                      <td>{item.period}</td>
+                      <td>{formatPercentValue(item.promoter_pct)}</td>
+                      <td>{formatPercentValue(item.fii_pct)}</td>
+                      <td>{formatPercentValue(item.dii_pct)}</td>
+                      <td>{formatPercentValue(item.public_pct)}</td>
+                      <td>{formatCountValue(item.shareholder_count)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="fundamentals-card">
+            <div className="fundamentals-card-head">
+              <div>
+                <h3>Recent News, Results & Calls</h3>
+                <p>Recent public updates merged from filings and headline/news feeds.</p>
+              </div>
+            </div>
+            <div className="fundamentals-update-list">
+              {fundamentals.recent_updates.length ? (
+                fundamentals.recent_updates.map((item, index) => (
+                  <article key={`${item.title}-${index}`} className="fundamentals-update">
+                    <div className="fundamentals-update-meta">
+                      <span className={`fundamentals-badge ${item.kind}`}>{updateKindLabel(item.kind)}</span>
+                      <span>{item.source}</span>
+                      <span>{formatDateTime(item.published_at)}</span>
+                    </div>
+                    {item.link ? (
+                      <a href={item.link} target="_blank" rel="noreferrer">
+                        {item.title}
+                      </a>
+                    ) : (
+                      <strong>{item.title}</strong>
+                    )}
+                    {item.summary ? <p>{item.summary}</p> : null}
+                  </article>
+                ))
+              ) : (
+                <div className="empty-state">No recent news or company updates are available right now.</div>
+              )}
+            </div>
+          </section>
+
+          {fundamentals.ai_news_summary ? (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>AI News Summary</h3>
+                  <p>AI-generated summary of latest news about this company.</p>
+                </div>
+                {fundamentals.last_news_update ? (
+                  <span className="fundamentals-stamp">Updated {fundamentals.last_news_update}</span>
+                ) : null}
+              </div>
+              <div className="ai-news-content">
+                <p className="ai-summary-text">{fundamentals.ai_news_summary.summary}</p>
+                {fundamentals.ai_news_summary.key_points.length ? (
+                  <div className="ai-key-points">
+                    <strong>Key Points:</strong>
+                    <ul>
+                      {fundamentals.ai_news_summary.key_points.map((point, index) => (
+                        <li key={index}>{point}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+                <span className={`sentiment-badge sentiment-${fundamentals.ai_news_summary.sentiment}`}>
+                  Sentiment: {fundamentals.ai_news_summary.sentiment}
+                </span>
+              </div>
+            </section>
+          ) : null}
+
+          {fundamentals.business_triggers.length ? (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Business Triggers</h3>
+                  <p>Recent developments likely to impact stock price.</p>
+                </div>
+              </div>
+              <div className="business-triggers-list">
+                {fundamentals.business_triggers.map((trigger, index) => (
+                  <article key={index} className="business-trigger-item">
+                    <div className="trigger-header">
+                      <strong>{trigger.title}</strong>
+                      <span className={`trigger-impact-badge impact-${trigger.impact}`}>{trigger.impact}</span>
+                    </div>
+                    <p className="trigger-description">{trigger.description}</p>
+                    <div className="trigger-meta">
+                      <span className="trigger-source">{trigger.source}</span>
+                      <span className="trigger-date">{trigger.date}</span>
+                      <span className="trigger-likelihood">
+                        Price Impact Likelihood: {Math.round(trigger.likelihood_to_impact * 100)}%
+                      </span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          ) : null}
+
+          {fundamentals.insider_transactions.length ? (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Insider Transactions</h3>
+                  <p>Recent insider buying and selling activity.</p>
+                </div>
+              </div>
+              <div className="fundamentals-table-wrap">
+                <table className="fundamentals-table insider-transactions-table">
+                  <thead>
+                    <tr>
+                      <th>Person</th>
+                      <th>Position</th>
+                      <th>Type</th>
+                      <th>Quantity</th>
+                      <th>Price</th>
+                      <th>Total Value</th>
+                      <th>Date</th>
+                      <th>% Change</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fundamentals.insider_transactions.map((txn, index) => (
+                      <tr key={index} className={`insider-txn-${txn.transaction_type}`}>
+                        <td>{txn.person_name}</td>
+                        <td>{txn.position}</td>
+                        <td>
+                          <span className={`transaction-badge txn-${txn.transaction_type}`}>
+                            {txn.transaction_type.toUpperCase()}
+                          </span>
+                        </td>
+                        <td>{formatCountValue(txn.quantity)}</td>
+                        <td>{formatPriceValue(txn.price_per_share, 2)}</td>
+                        <td>{formatAmountValue(txn.total_value_crore)}</td>
+                        <td>{txn.date}</td>
+                        <td className={txn.pct_of_holding_change > 0 ? "positive" : "negative"}>
+                          {txn.pct_of_holding_change > 0 ? "+" : ""}{formatPercentValue(txn.pct_of_holding_change)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          ) : null}
+
+          {fundamentals.data_warnings.length ? (
+            <section className="fundamentals-card">
+              <div className="fundamentals-card-head">
+                <div>
+                  <h3>Data Notes</h3>
+                  <p>Useful context when a public data source is missing or delayed.</p>
+                </div>
+              </div>
+              <div className="fundamentals-warning-list">
+                {fundamentals.data_warnings.map((warning, index) => (
+                  <span key={`${warning}-${index}`} className="fundamentals-warning-pill">
+                    {warning}
+                  </span>
+                ))}
+              </div>
+            </section>
+          ) : null}
+        </div>
       )}
-      {aiChatOpen && symbol ? (
-        <AiChatWindow
-          symbol={symbol}
-          market={market}
-          timeframe={timeframe}
-          bars={(extendedHistory?.bars ?? bars).slice(-150)}
-          onClose={() => setAiChatOpen(false)}
-        />
-      ) : null}
     </Panel>
   );
 }

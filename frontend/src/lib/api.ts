@@ -23,9 +23,6 @@ export type ScanMatch = {
   pattern?: string | null;
   rs_rating?: number | null;
   rs_rating_1m_ago?: number | null;
-  rs_rating_1d_ago_date?: string | null;
-  rs_rating_1w_ago_date?: string | null;
-  rs_rating_1m_ago_date?: string | null;
   nifty_outperformance?: number | null;
   sector_outperformance?: number | null;
   three_month_rs?: number | null;
@@ -80,11 +77,6 @@ export type ScanResultsResponse = {
   sector_summaries: ScanSectorSummary[];
 };
 
-export type AiScanResponse = {
-  results: ScanResultsResponse;
-  parsed_request: CustomScanRequest;
-};
-
 export type ScanSectorSummary = {
   sector: string;
   current_hits: number;
@@ -135,24 +127,16 @@ export type HistoricalBreadthResponse = {
   universes: HistoricalUniverseBreadth[];
 };
 
-export type WatchlistBifurcation = {
-  id: string;
-  name: string;
-  symbols: string[];
-};
-
 export type WatchlistItem = {
   id: string;
   name: string;
   color: string;
   symbols: string[];
-  active_bifurcation_id?: string | null;
-  bifurcations?: WatchlistBifurcation[];
 };
 
 export type WatchlistsStateResponse = {
   market: MarketKey;
-  updated_at?: string | number | null;
+  updated_at: string;
   active_watchlist_id: string | null;
   watchlists: WatchlistItem[];
 };
@@ -244,32 +228,17 @@ export type QuarterlyResultItem = {
   expenses_crore: number | null;
   operating_profit_crore: number | null;
   operating_margin_pct: number | null;
-  ebitda_crore: number | null;
-  ebitda_margin_pct: number | null;
-  gross_margin_pct: number | null;
-  other_income_crore: number | null;
-  interest_crore: number | null;
-  depreciation_crore: number | null;
   profit_before_tax_crore: number | null;
-  tax_pct: number | null;
   net_profit_crore: number | null;
   eps: number | null;
-  yoy_change_pct: number | null;
-  qoq_change_pct: number | null;
-  beat_miss: "beat" | "miss" | "in-line" | null;
-  segment_performance: any[];
-  result_date: string | null;
   result_document_url: string | null;
 };
 
 export type ProfitLossItem = {
   period: string;
   sales_crore: number | null;
-  expenses_crore: number | null;
   operating_profit_crore: number | null;
   operating_margin_pct: number | null;
-  ebitda_crore: number | null;
-  ebitda_margin_pct: number | null;
   net_profit_crore: number | null;
   eps: number | null;
   dividend_payout_pct: number | null;
@@ -359,35 +328,14 @@ export type CompanyFundamentals = {
   risks_and_opportunities: RiskAnalysis[];
   recent_updates: CompanyUpdateItem[];
   detailed_news: DetailedNews[];
-  latest_editorial_news?: DetailedNews[];
-  official_updates?: DetailedNews[];
   shareholding_pattern: ShareholdingPatternItem[];
   shareholding_delta: ShareholdingDelta | null;
   data_warnings: string[];
   ai_news_summary: AISummary | null;
   business_triggers: BusinessTrigger[];
-  future_growth_triggers: GrowthTrigger[];
-  growth_risks: RiskAnalysis[];
   insider_transactions: InsiderTransaction[];
   last_news_update: string | null;
   latest_earnings_key_metrics: Record<string, number | string>;
-  results_summary?: {
-    beat_miss: string;
-    highlights: string[];
-    segment_performance: string;
-    margins_analysis?: string;
-  } | null;
-  guidance_tracker?: Array<{
-    date: string;
-    previous: string;
-    current: string;
-    reason: string;
-  }>;
-  growth_trends?: {
-    revenue_trend: string;
-    profit_trend: string;
-    margin_trend: string;
-  } | null;
   upcoming_events: Array<{ date: string; event: string; impact?: string }>;
 };
 
@@ -429,21 +377,13 @@ export type FinancialRatios = {
 
 export type ManagementGuidance = {
   fiscal_year: string;
-  quarter: string | null;
   revenue_growth_guidance_pct: number | null;
   ebitda_guidance_pct: number | null;
   eps_guidance: number | null;
   capex_guidance_crore: number | null;
   guidance_date: string | null;
   guidance_source: string | null;
-  guidance_type: "Explicit" | "Qualitative" | null;
-  confidence_score: number | null;
   key_guidance_points: string[];
-  analyst_concerns: string[];
-  is_stale: boolean;
-  validity_banner: "Valid" | "Stale" | "Withdrawn" | "Not Provided";
-  fiscal_period: string | null;
-  source_date: string | null;
 };
 
 export type CompetitivePosition = {
@@ -465,38 +405,17 @@ export type DetailedNews = {
   title: string;
   summary: string;
   impact_category: string;
-  sentiment: "positive" | "negative" | "neutral";
+  sentiment: string;
   source: string;
-  domain: string | null;
-  source_type: string;
-  classification: "editorial_news" | "company_release" | "exchange_filing" | "regulatory_filing" | "transcript" | "investor_presentation" | "duplicate" | "low_quality" | "rumor";
-  is_editorial: boolean;
-  url: string | null;
-  published_date: string | null;
-  impact_area: string | null;
-  why_it_matters: string | null;
+  published_date: string;
   detailed_points: string[];
   relevance_score: number;
-  connection_to_guidance: string | null;
-  impact_tags: string[];
-};
-
-export type GrowthTrigger = {
-  title: string;
-  category: string;
-  why_it_matters: string;
-  evidence_source: string;
-  source_date: string | null;
-  confidence_score: number;
-  impact_area: "revenue" | "eps" | "profit" | "margin" | "cash flow" | "any";
-  horizon: "near-term" | "medium-term" | "multi-year";
-  is_new: boolean;
 };
 
 export type RiskAnalysis = {
   risk_category: string;
   description: string;
-  severity: "high" | "medium" | "low";
+  severity: string;
   mitigation_strategy: string | null;
 };
 
@@ -543,12 +462,9 @@ export type StockOverview = {
   relative_volume: number;
   avg_rupee_volume_30d_crore: number;
   rs_rating: number | null;
-  rs_rating_1d_ago: number | null;
-  rs_rating_1w_ago: number | null;
-  rs_rating_1m_ago: number | null;
-  rs_rating_1d_ago_date?: string | null;
-  rs_rating_1w_ago_date?: string | null;
-  rs_rating_1m_ago_date?: string | null;
+  rs_rating_1d_ago: number;
+  rs_rating_1w_ago: number;
+  rs_rating_1m_ago: number;
   nifty_outperformance: number;
   sector_outperformance: number;
   three_month_rs: number;
@@ -647,28 +563,10 @@ export type CustomScanRequest = {
   above_ema20: boolean;
   above_ema50: boolean;
   above_ema200: boolean;
-  // Fundamental filters
-  min_eps_growth_yoy: number | null;
-  min_revenue_growth_yoy: number | null;
-  min_operating_margin: number | null;
-  min_profit_margin: number | null;
-  min_roe: number | null;
-  max_peg_ratio: number | null;
-  min_pe_ratio: number | null;
-  max_pe_ratio: number | null;
-  // Technical Guru & Shakeout filters
-  minervini_trend_template: boolean;
-  kullamagi_setup: boolean;
-  shakeout_21ema: boolean;
-  shakeout_50ema: boolean;
-  max_consolidation_range_pct: number | null;
   pattern: CustomScanPattern;
   sort_by: CustomSortBy;
   sort_order: "asc" | "desc";
   limit: number;
-  // Historical chart scan fields
-  scan_date: string | null;
-  highest_vol_lookback_days: number | null;
 };
 
 export type SectorCompanyItem = {
@@ -686,7 +584,7 @@ export type SectorCompanyItem = {
   return_6m: number;
   return_1y: number;
   return_2y: number;
-  rs_rating: number | null;
+  rs_rating: number;
 };
 
 export type SectorGroup = {
@@ -729,11 +627,9 @@ export type IndustryGroupTopStock = {
   symbol: string;
   company_name: string;
   rs_rating: number | null;
-  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
-  relative_return_1w: number;
   relative_return_3m: number;
   relative_return_6m: number;
 };
@@ -759,7 +655,6 @@ export type IndustryGroupStockItem = {
   final_group_name: string;
   last_price: number;
   change_pct: number;
-  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
@@ -780,15 +675,12 @@ export type IndustryGroupRankItem = {
   description: string;
   stock_count: number;
   score: number;
-  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
-  relative_return_1w: number;
   relative_return_1m: number;
   relative_return_3m: number;
   relative_return_6m: number;
-  median_return_1w: number;
   median_return_1m: number;
   median_return_3m: number;
   median_return_6m: number;
@@ -824,13 +716,13 @@ export type ImprovingRsItem = {
   market_cap_crore: number;
   last_price: number;
   change_pct: number;
-  rs_rating: number | null;
-  rs_rating_1d_ago: number | null;
-  rs_rating_1w_ago: number | null;
-  rs_rating_1m_ago: number | null;
-  improvement_1d: number | null;
-  improvement_1w: number | null;
-  improvement_1m: number | null;
+  rs_rating: number;
+  rs_rating_1d_ago: number;
+  rs_rating_1w_ago: number;
+  rs_rating_1m_ago: number;
+  improvement_1d: number;
+  improvement_1w: number;
+  improvement_1m: number;
 };
 
 export type ImprovingRsResponse = {
@@ -838,17 +730,6 @@ export type ImprovingRsResponse = {
   window: ImprovingRsWindow;
   total_hits: number;
   items: ImprovingRsItem[];
-};
-
-export type EandCScanResponse = {
-  contraction: ScanMatch[];
-  expansion: ScanMatch[];
-};
-
-export type EandCScanRequest = {
-  expansion_min_change_pct: number;
-  expansion_min_relative_volume: number;
-  expansion_min_day_volume: number;
 };
 
 export type NearPivotScanRequest = {
@@ -918,8 +799,7 @@ export type RefreshResponse = {
     | "cached-current"
     | "cache-fallback"
     | "timeout-fallback"
-    | "error-fallback"
-    | "rebuilding-background";
+    | "error-fallback";
   message: string | null;
   snapshot_updated_at: string;
   snapshot_age_minutes: number;
@@ -928,162 +808,56 @@ export type RefreshResponse = {
   quote_source: string | null;
 };
 
-export type WatchdogStatusResponse = {
-  market: string;
-  is_market_open: boolean;
-  snapshot_age_seconds: number;
-  snapshot_updated_at: string | null;
-  snapshot_stale: boolean;
-  snapshot_session_date?: string | null;
-  expected_session_date?: string | null;
-  close_refresh_due?: boolean;
-  site_systems_total?: number;
-  site_systems_ready?: number;
-  site_attention_count?: number;
-  attention_items?: string[];
-  watchdog_interval_seconds: number;
-  server_utc: string;
-};
+const API_BASE = import.meta.env.VITE_API_BASE ?? "";
+const REQUEST_TIMEOUT_MS = (() => {
+  const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 12000);
+  if (!Number.isFinite(parsed) || parsed < 1000) {
+    return 12000;
+  }
+  return parsed;
+})();
+const FALLBACK_API_BASES = [
+  "",
+  API_BASE,
+  "http://127.0.0.1:8001",
+  "http://localhost:8001",
+  "http://127.0.0.1:8000",
+  "http://localhost:8000",
+].filter(
+  (value, index, array) => array.indexOf(value) === index,
+);
+const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
 
-export type WatchdogTaskItem = {
-  id: string;
-  title: string;
-  source: string;
-  schedule: string;
-  status: "done" | "scheduled" | "attention";
-  detail: string;
-  last_event_at: string | null;
-  done_today: boolean;
-};
+async function fetchWithTimeout(input: string, init?: RequestInit): Promise<Response> {
+  return fetchWithTimeoutMs(input, REQUEST_TIMEOUT_MS, init);
+}
 
-export type WatchdogTasksResponse = {
-  market: string;
-  local_timezone: string;
-  local_time: string;
-  day_key: string;
-  next_reset_at: string;
-  tasks: WatchdogTaskItem[];
-};
+async function fetchWithTimeoutMs(input: string, timeoutMs: number, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
-const API_BASE = import.meta.env.VITE_API_BASE || "https://dharmmalik-stock-scanner-backend.hf.space";
-
-const FALLBACK_API_BASES = (import.meta.env.DEV
-  ? ["", API_BASE, "http://127.0.0.1:8001", "http://localhost:8001", "http://127.0.0.1:8000", "http://localhost:8000"]
-  : [API_BASE]
-).filter((value, index, array) => array.indexOf(value) === index);
-
-// Fires a DOM event so the UI can show a status banner.
-export function dispatchBackendEvent(type: "warming" | "ready" | "failed") {
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent("backend-status", { detail: { type } }));
+  try {
+    return await fetch(input, {
+      cache: "no-store",
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    window.clearTimeout(timeoutId);
   }
 }
 
-const RETRYABLE_STATUS_CODES = new Set([404, 500, 502, 503, 504]);
-// Codes worth pausing 2.5 s and retrying once on the same base (transient HF-Space platform errors)
-const SERVER_ERROR_CODES = new Set([500, 502, 503, 504]);
-
-// Singleton warm-up — all concurrent requests share one loop instead of each
-// spawning their own, which caused the banner to fight itself.
-let _warmupPromise: Promise<void> | null = null;
-let _lastSuccessfulPing = 0;
-
-async function _runWarmupLoop(): Promise<void> {
-  // HF sleep wake = 30-90s. Docker rebuild = 2-5min. We try for 6 minutes total.
-  const WARMUP_DEADLINE_MS = 6 * 60 * 1000;
-  const PROBE_INTERVAL_MS = 8_000;
-  const deadline = Date.now() + WARMUP_DEADLINE_MS;
-  dispatchBackendEvent("warming");
-  while (Date.now() < deadline) {
-    await new Promise(r => setTimeout(r, PROBE_INTERVAL_MS));
-    try {
-      const signal = AbortSignal.timeout(8_000);
-      const probe = await fetch(`${API_BASE}/api/health`, { cache: "no-store", signal });
-      if (probe.status !== 503) {
-        _lastSuccessfulPing = Date.now();
-        dispatchBackendEvent("ready");
-        _warmupPromise = null;
-        return;
-      }
-    } catch {
-      // still down — keep waiting
-    }
-  }
-  dispatchBackendEvent("failed");
-  _warmupPromise = null;
-}
-
-function triggerWarmup() {
-  if (_warmupPromise) return; // already running
-  _warmupPromise = _runWarmupLoop();
-}
-
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  let lastError: Error | null = null;
-
-  for (const base of FALLBACK_API_BASES) {
-    // In production, retry once after a short delay for transient server errors
-    // (handles cold-start / platform-level 500s on HuggingFace Spaces)
-    const maxAttempts = (!import.meta.env.DEV && base === API_BASE) ? 3 : 1;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      if (attempt > 0) await new Promise<void>(r => setTimeout(r, 2_500));
-      try {
-        const response = await fetch(`${base}${path}`, {
-          cache: "no-store",
-          ...init,
-        });
-
-        if (!response.ok) {
-          if (RETRYABLE_STATUS_CODES.has(response.status)) {
-            // If the real backend returns 503, start the shared warm-up loop and
-            // give it a short window to recover before surfacing the error.
-            if (response.status === 503 && base === API_BASE) {
-              triggerWarmup();
-              if (_warmupPromise) {
-                try {
-                  await Promise.race([
-                    _warmupPromise,
-                    // HF Spaces can take 30-90s to wake; wait longer before failing.
-                    new Promise<void>((resolve) => setTimeout(resolve, 60_000)),
-                  ]);
-                } catch {
-                  // Ignore warm-up probe failures here; the normal retry path below handles them.
-                }
-              }
-            }
-            lastError = new Error(
-              response.status === 503
-                ? "Backend temporarily unavailable (503). If this is a cold start, wait 30-90 seconds and retry."
-                : `Request failed: ${response.status}`,
-            );
-            // Retry the same base for server errors if attempts remain
-            if (SERVER_ERROR_CODES.has(response.status) && attempt < maxAttempts - 1) continue;
-            break; // fall through to next base
-          }
-          throw new Error(`Request failed: ${response.status}`);
-        }
-
-        // On success, record the ping and ensure any warming banner is dismissed
-        if (base === API_BASE) {
-          _lastSuccessfulPing = Date.now();
-          if (_warmupPromise === null) dispatchBackendEvent("ready");
-        }
-
-        return response.json() as Promise<T>;
-      } catch (error) {
-        lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
-        if (attempt < maxAttempts - 1) continue; // retry network-level errors too
-      }
-    }
-  }
-
-  throw lastError ?? new Error("Failed to reach market data API");
-}
+type RequestOptions = {
+  timeoutMs?: number;
+};
 
 function routeScopedMarket(): MarketKey | null {
   if (typeof window === "undefined") {
     return null;
   }
+
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
   if (pathname === "/us" || pathname.startsWith("/us/")) {
     return "us";
@@ -1094,8 +868,40 @@ function routeScopedMarket(): MarketKey | null {
   return null;
 }
 
-// Suppress unused warning for _lastSuccessfulPing (used as a guard)
-void _lastSuccessfulPing;
+async function request<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T> {
+  let lastError: Error | null = null;
+  const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
+
+  for (const base of FALLBACK_API_BASES) {
+    try {
+      const response = await fetchWithTimeoutMs(`${base}${path}`, timeoutMs, init);
+
+      if (!response.ok) {
+        if (RETRYABLE_STATUS_CODES.has(response.status)) {
+          lastError = new Error(`Request failed: ${response.status}`);
+          continue;
+        }
+        throw new Error(`Request failed: ${response.status}`);
+      }
+
+      const contentType = response.headers.get("content-type") ?? "";
+      if (!contentType.toLowerCase().includes("application/json")) {
+        throw new Error("API returned a non-JSON response");
+      }
+
+      return response.json() as Promise<T>;
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+        continue;
+      }
+      lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+    }
+  }
+
+  throw lastError ?? new Error("Failed to reach market data API");
+}
+
 function withMarket(path: string, market: MarketKey) {
   const scopedMarket = routeScopedMarket();
   if (scopedMarket === market && path.startsWith("/api/")) {
@@ -1103,10 +909,6 @@ function withMarket(path: string, market: MarketKey) {
   }
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}market=${market}`;
-}
-
-export function buildWatchdogEventsUrl(market: MarketKey) {
-  return `${API_BASE}/api/watchdog-events?market=${encodeURIComponent(market)}`;
 }
 
 export function getDashboard(market: MarketKey) {
@@ -1148,23 +950,19 @@ export function runCustomScan(body: CustomScanRequest, market: MarketKey, option
   });
 }
 
-export function runAiScan(query: string, market: MarketKey, options?: ScanRequestOptions) {
-  return request<AiScanResponse>(withScanOptions("/api/ai-scan", market, options), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ query }),
-  });
-}
-
 export function getChart(symbol: string, timeframe: string, market: MarketKey) {
-  return request<ChartResponse>(`/api/chart/${encodeURIComponent(symbol)}?timeframe=${timeframe}&market=${market}`);
+  return request<ChartResponse>(
+    `/api/chart/${encodeURIComponent(symbol)}?timeframe=${timeframe}&market=${market}`,
+    undefined,
+    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 18000 : 25000 },
+  );
 }
 
 export function getChartHistory(symbol: string, timeframe: string, market: MarketKey) {
   return request<ChartResponse>(
     `/api/chart/${encodeURIComponent(symbol)}/history?timeframe=${timeframe}&market=${market}`,
+    undefined,
+    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 20000 : 30000 },
   );
 }
 
@@ -1188,20 +986,6 @@ export function refreshMarketData(market: MarketKey) {
   return request<RefreshResponse>(withMarket("/api/refresh", market), {
     method: "POST",
   });
-}
-
-export function runWatchdogFix(market: MarketKey) {
-  return request<RefreshResponse>(withMarket("/api/watchdog/fix", market), {
-    method: "POST",
-  });
-}
-
-export function getWatchdogStatus(market: MarketKey) {
-  return request<WatchdogStatusResponse>(withMarket("/api/watchdog-status", market));
-}
-
-export function getWatchdogTasks(market: MarketKey) {
-  return request<WatchdogTasksResponse>(withMarket("/api/watchdog-tasks", market));
 }
 
 export function getIndexQuotes(symbols: string[], market: MarketKey) {
@@ -1353,6 +1137,37 @@ export function askMoneyFlowCompanyQuestion(symbol: string, question: string, ma
   });
 }
 
+export type LiveNewsItem = {
+  id: string;
+  title: string;
+  description: string;
+  link: string;
+  pub_date: string;
+  image: string | null;
+  category: string;
+  companies: string[];
+  source: { id: string; name: string; color: string };
+};
+
+export type LiveNewsResponse = {
+  items: LiveNewsItem[];
+  count: number;
+  categories: string[];
+};
+
+export function getLiveNews(market: MarketKey, category?: string, limit = 150) {
+  const params = new URLSearchParams({ market, limit: String(limit) });
+  if (category && category !== "all") {
+    params.set("category", category);
+  }
+  return request<LiveNewsResponse>(`/api/live-news?${params.toString()}`);
+}
+
+export function getArticleProxyUrl(articleUrl: string) {
+  const params = new URLSearchParams({ url: articleUrl });
+  return `/api/article-proxy?${params.toString()}`;
+}
+
 export type SectorRotationItem = {
   sector: string;
   total_stocks: number;
@@ -1402,17 +1217,6 @@ export function getGapUpOpeners(
     params.set("min_liquidity_crore", String(minLiquidityCrore));
   }
   return request<ScanResultsResponse>(withScanOptions(`/api/gap-up-openers?${params.toString()}`, market, options));
-}
-
-export function getEandCScan(market: MarketKey, settings?: EandCScanRequest) {
-  const params = new URLSearchParams();
-  if (settings) {
-    for (const [key, value] of Object.entries(settings)) {
-      params.set(key, String(value));
-    }
-  }
-  const query = params.toString();
-  return request<EandCScanResponse>(`/api/${market}/e-and-c${query ? `?${query}` : ""}`);
 }
 
 export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -1502,8 +1306,6 @@ export function saveWatchlistsState(
   });
 }
 
-// ─── Journal Data ─────────────────────────────────────────────────────────────
-
 export function getJournalData() {
   return request<Record<string, unknown>>("/api/journal");
 }
@@ -1511,132 +1313,9 @@ export function getJournalData() {
 export function saveJournalData(payload: Record<string, unknown>) {
   return request<Record<string, unknown>>("/api/journal", {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+    },
     body: JSON.stringify(payload),
   });
-}
-
-// ─── AI Knowledge Base ────────────────────────────────────────────────────────
-
-export type KbEntry = {
-  id: string;
-  type: "text" | "url" | "youtube";
-  title: string;
-  content_preview: string;
-  source_url: string | null;
-  added_at: string;
-  content_length: number;
-};
-
-export function getKnowledgeBase() {
-  return request<{ entries: KbEntry[] }>("/api/knowledge-base");
-}
-
-export function addKnowledgeBaseEntry(body: {
-  type: string;
-  title: string;
-  content: string;
-  source_url?: string | null;
-}) {
-  return request<KbEntry>("/api/knowledge-base", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
-export function deleteKnowledgeBaseEntry(id: string) {
-  return request<{ success: boolean }>(`/api/knowledge-base/${id}`, { method: "DELETE" });
-}
-
-export function ingestUrl(url: string) {
-  return request<{ title: string; content: string; source_type: string }>(
-    "/api/knowledge-base/ingest-url",
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url }),
-    },
-  );
-}
-
-// ─── AI Chart Analysis ────────────────────────────────────────────────────────
-
-export type AiChatMessageInput = { role: "user" | "assistant"; content: string };
-
-export function runAiChartAnalysis(
-  body: {
-    symbol: string;
-    timeframe: string;
-    query: string;
-    bars: ChartBar[];
-    conversation_history: AiChatMessageInput[];
-    include_knowledge_base: boolean;
-  },
-  market: MarketKey,
-) {
-  return request<{ response: string }>(withMarket("/api/ai-chart-analysis", market), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-}
-
-// ─── Live News (Newsdesk) ─────────────────────────────────────────────────────
-
-export type LiveNewsItem = {
-  id: string;
-  title: string;
-  description: string;
-  link: string;
-  pub_date: string;
-  image: string | null;
-  category: string;
-  companies: string[];
-  source: { id: string; name: string; color: string };
-};
-
-export type LiveNewsResponse = {
-  items: LiveNewsItem[];
-  count: number;
-  categories: string[];
-};
-
-export function getLiveNews(market: MarketKey, category?: string, limit = 150) {
-  const params = new URLSearchParams({ market, limit: String(limit) });
-  if (category && category !== "all") params.set("category", category);
-  return request<LiveNewsResponse>(`/api/live-news?${params}`);
-}
-
-export function getCompanyLiveNews(symbol: string, market: MarketKey, limit = 30) {
-  const params = new URLSearchParams({ market, limit: String(limit) });
-  return request<{ items: LiveNewsItem[]; count: number }>(
-    `/api/live-news/company/${encodeURIComponent(symbol)}?${params}`,
-  );
-}
-
-/** Returns the proxy URL (not a fetch—just build the URL for an iframe src). */
-export function getArticleProxyUrl(articleUrl: string) {
-  const params = new URLSearchParams({ url: articleUrl });
-  return `${API_BASE}/api/article-proxy?${params}`;
-}
-
-// ─── Keep-alive ───────────────────────────────────────────────────────────────
-// Ping the backend every 8 minutes while the browser tab is open so the
-// HuggingFace Spaces free tier doesn't sleep the container mid-session.
-
-let _keepAliveInterval: ReturnType<typeof setInterval> | null = null;
-
-export function startKeepAlive() {
-  if (_keepAliveInterval) return;
-  _keepAliveInterval = setInterval(async () => {
-    try {
-      await fetch(`${API_BASE}/api/health`, {
-        cache: "no-store",
-        signal: AbortSignal.timeout(5_000),
-      });
-    } catch {
-      // Best-effort: failure is harmless.
-    }
-  }, 8 * 60 * 1000); // every 8 minutes
 }
