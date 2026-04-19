@@ -2155,7 +2155,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   ]);
 
   useEffect(() => {
-    if (loading || activePage === "sectors" || sectorTabData) {
+    if (loading || activePage === "home" || activePage === "sectors" || sectorTabData) {
       return;
     }
 
@@ -2671,6 +2671,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "ipo") {
       return getScanResults("ipo", activeMarket, options);
     }
+    if (activeScanner === "contraction") {
+      return getScanResults("contraction", activeMarket, options);
+    }
     if (activeScanner === "gap-up-openers") {
       return getGapUpOpeners(gapUpThreshold, activeMarket, gapUpMinLiquidityCrore, options);
     }
@@ -2753,6 +2756,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (preset.mode === "ipo") {
       return getScanResults("ipo", activeMarket, options);
+    }
+    if (preset.mode === "contraction") {
+      return getScanResults("contraction", activeMarket, options);
     }
     if (preset.mode === "gap-up-openers") {
       return getGapUpOpeners(preset.gapUpThreshold ?? 1, activeMarket, preset.gapUpMinLiquidityCrore ?? null, options);
@@ -3787,7 +3793,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       if (refreshPayload) {
         const rp = refreshPayload as RefreshResponse;
-        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "cached-current";
+        const refreshSucceeded = rp.refresh_mode === "historical-refresh" || rp.refresh_mode === "live-refresh" || rp.refresh_mode === "cached-current";
         const clearableAutoRefresh = refreshSucceeded;
 
         if (refreshSucceeded && loadWarnings.length === 0) {
@@ -4241,6 +4247,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
+                      "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,

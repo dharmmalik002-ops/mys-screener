@@ -809,6 +809,10 @@ export type RefreshResponse = {
 };
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
+const DEFAULT_PRODUCTION_API_BASES = [
+  "https://dharmmalik-stock-scanner-backend.hf.space",
+  "https://stock-scanner-backend.onrender.com",
+];
 const REQUEST_TIMEOUT_MS = (() => {
   const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 12000);
   if (!Number.isFinite(parsed) || parsed < 1000) {
@@ -816,14 +820,34 @@ const REQUEST_TIMEOUT_MS = (() => {
   }
   return parsed;
 })();
-const FALLBACK_API_BASES = [
-  "",
-  API_BASE,
-  "http://127.0.0.1:8001",
-  "http://localhost:8001",
-  "http://127.0.0.1:8000",
-  "http://localhost:8000",
-].filter(
+function defaultApiBases() {
+  const isBrowser = typeof window !== "undefined";
+  const hostname = isBrowser ? window.location.hostname.toLowerCase() : "";
+  const localhostBases = [
+    "",
+    API_BASE,
+    "http://127.0.0.1:8001",
+    "http://localhost:8001",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+  ];
+
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return localhostBases;
+  }
+
+  return [
+    "",
+    API_BASE,
+    ...DEFAULT_PRODUCTION_API_BASES,
+    "http://127.0.0.1:8001",
+    "http://localhost:8001",
+    "http://127.0.0.1:8000",
+    "http://localhost:8000",
+  ];
+}
+
+const FALLBACK_API_BASES = defaultApiBases().filter(
   (value, index, array) => array.indexOf(value) === index,
 );
 const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);

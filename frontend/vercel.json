@@ -14,6 +14,7 @@
     }
   ],
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://dharmmalik-stock-scanner-backend.hf.space/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
