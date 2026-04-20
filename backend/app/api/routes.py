@@ -3,7 +3,7 @@ import json
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import StreamingResponse
 
 from pydantic import BaseModel
@@ -720,6 +720,47 @@ def build_router(service):
         Call this after 6:30 PM IST on any trading day to get correct EOD prices.
         """
         return await asyncio.to_thread(resolve_service("india").apply_bhavcopy_eod)
+
+    @router.post("/maintenance/eod-refresh")
+    async def maintenance_eod_refresh(
+        request: Request,
+        market: str = Query(default="india"),
+    ):
+        from app.core.config import get_settings
+        settings_cache = get_settings()
+        
+        token = request.headers.get("x-maintenance-token")
+        if not token or token != settings_cache.maintenance_trigger_token:
+            # We return 503 exactly as described so it alerts the user if missing
+            raise HTTPException(status_code=503, detail="Maintenance token not configured or incorrect")
+        
+        svc = resolve_service(market)
+        prov = svc.provider
+        
+        # 1. Apply committed patch first (as the cron has likely already pushed it)
+        try:
+            patch_fn = getattr(prov, "apply_committed_bhavcopy_patch", None)
+            if callable(patch_fn):
+                result = await asyncio.to_thread(patch_fn)
+                if result.get("status") != "ok" or result.get("snapshots_updated", 0) == 0:
+                    live_fn = getattr(prov, "apply_bhavcopy_eod", None)
+                    if callable(live_fn):
+                        await asyncio.to_thread(live_fn)
+            else:
+                live_fn = getattr(prov, "apply_bhavcopy_eod", None)
+                if callable(live_fn):
+                    await asyncio.to_thread(live_fn)
+                    
+            from app.models.market import StockSnapshot
+            snaps: list[StockSnapshot] = await prov.get_snapshots(getattr(settings_cache, "market_cap_min_crore", 0))
+        except Exception as e:
+             raise HTTPException(status_code=500, detail=str(e))
+             
+        # 2. Rebuild caches
+        svc._clear_runtime_caches()
+        summary = await svc.prewarm_watchdog_sections(snaps)
+        
+        return {"status": "ok", "prewarmed": summary}
 
     @router.get("/index-quotes", response_model=IndexQuotesResponse)
     async def index_quotes(

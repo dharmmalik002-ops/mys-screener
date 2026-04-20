@@ -3962,13 +3962,14 @@ class DashboardService:
         except Exception:
             return None
 
-        snapshot_date = snapshot_updated_at.astimezone(timezone.utc).date().isoformat()
-        as_of_date = str(groups_payload.get("asOfDate") or "").strip()
-        if as_of_date and as_of_date < snapshot_date:
-            return None
-
         latest_mtime = max(groups_path.stat().st_mtime, ranks_path.stat().st_mtime, stocks_path.stat().st_mtime)
         generated_at = datetime.fromtimestamp(latest_mtime, tz=timezone.utc)
+        
+        snapshot_date = snapshot_updated_at.astimezone(timezone.utc).date().isoformat()
+        as_of_date = str(groups_payload.get("asOfDate") or "").strip()
+        if (as_of_date and as_of_date < snapshot_date) or generated_at < snapshot_updated_at:
+            return None
+
         base_groups = {
             str(row.get("groupId") or ""): row
             for row in groups_payload.get("groups", [])

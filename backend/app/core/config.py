@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     default_timeframe: str = "1D"
     refresh_timeout_seconds: int = Field(default=600, alias="REFRESH_TIMEOUT_SECONDS")
     warm_fundamentals_after_refresh: bool = Field(default=False, alias="WARM_FUNDAMENTALS_AFTER_REFRESH")
+    maintenance_trigger_token: str | None = Field(default=None, alias="MAINTENANCE_TRIGGER_TOKEN")
     database_url: str | None = Field(default=None, alias="DATABASE_URL")
 
     @model_validator(mode="after")

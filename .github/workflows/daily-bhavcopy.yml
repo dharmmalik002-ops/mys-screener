@@ -6,13 +6,12 @@ on:
   # NOTE: NSE archives geo-block non-Indian IPs (GitHub Actions servers are outside India).
   #       The script now falls back to yfinance (Yahoo Finance) which is globally accessible.
   schedule:
-    - cron: "10 12 * * 1-5"  # 5:40 PM IST
-    - cron: "25 12 * * 1-5"  # 5:55 PM IST
+    - cron: "00 11 * * 1-5"  # 4:30 PM IST
+    - cron: "10 11 * * 1-5"  # 4:40 PM IST
+    - cron: "20 11 * * 1-5"  # 4:50 PM IST
+    - cron: "40 11 * * 1-5"  # 5:10 PM IST
+    - cron: "00 12 * * 1-5"  # 5:30 PM IST
     - cron: "40 12 * * 1-5"  # 6:10 PM IST
-    - cron: "55 12 * * 1-5"  # 6:25 PM IST
-    - cron: "10 13 * * 1-5"  # 6:40 PM IST
-    - cron: "25 13 * * 1-5"  # 6:55 PM IST
-    - cron: "00 14 * * 1-5"  # 7:30 PM IST final retry
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 
@@ -88,6 +87,30 @@ jobs:
           git remote add hf \
             "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
           git push hf main:main --force
+
+      - name: Wait for frontend/HF to be healthy and trigger maintenance
+        if: steps.patch.outputs.changed == 'true'
+        env:
+          MAINTENANCE_TRIGGER_TOKEN: ${{ secrets.MAINTENANCE_TRIGGER_TOKEN }}
+        run: |
+          echo "Waiting for Hugging Face space to rebuild and return 200 OK..."
+          
+          # Give it max 5 minutes (30 attempts * 10s)
+          for i in {1..30}; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://dharmmalik-stock-scanner-backend.hf.space/api/health)
+            if [ "$STATUS" = "200" ]; then
+              echo "Backend is live!"
+              break
+            fi
+            echo "Attempt $i: Status is $STATUS, retrying in 10s..."
+            sleep 10
+          done
+          
+          # Now POST to the maintenance endpoint
+          echo "Triggering post-close maintenance EOD refresh..."
+          RESPONSE=$(curl -s -X POST "https://dharmmalik-stock-scanner-backend.hf.space/api/maintenance/eod-refresh?market=india" \
+            -H "x-maintenance-token: $MAINTENANCE_TRIGGER_TOKEN")
+          echo "Maintenance Endpoint Response: $RESPONSE"
 
       - name: Log skip
         if: steps.patch.outputs.changed == 'false'
