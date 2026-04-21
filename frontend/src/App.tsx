@@ -3621,6 +3621,56 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeMarket, activePage, chartOpen, pageVisibleSymbols, selectedSymbol, timeframe, visibleSymbols]);
 
   useEffect(() => {
+    if (!scanResults || scanResults.items.length === 0) {
+      return;
+    }
+
+    const symbolsToWarm = scanResults.items.slice(0, 20).map(item => item.symbol).filter(symbol => symbol && symbol !== selectedSymbol);
+
+    if (symbolsToWarm.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const warmChartSymbol = async (symbol: string) => {
+      const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
+      if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
+        return;
+      }
+
+      prewarmingChartKeysRef.current.add(cacheKey);
+      try {
+        const payload = await getChart(symbol, timeframe, activeMarket);
+        if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
+          storeCachedChart(activeMarket, symbol, timeframe, payload);
+        }
+      } catch {
+        // Ignore prewarm failures and let explicit chart loads retry on demand.
+      } finally {
+        prewarmingChartKeysRef.current.delete(cacheKey);
+      }
+    };
+
+    const timeoutId = window.setTimeout(() => {
+      void (async () => {
+        for (let index = 0; index < symbolsToWarm.length; index += CHART_PREFETCH_PARALLELISM) {
+          if (cancelled) {
+            return;
+          }
+          const batch = symbolsToWarm.slice(index, index + CHART_PREFETCH_PARALLELISM);
+          await Promise.allSettled(batch.map((symbol) => warmChartSymbol(symbol)));
+        }
+      })();
+    }, 200); // Delay slightly more for screener results
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+    };
+  }, [scanResults, activeMarket, timeframe, selectedSymbol]);
+
+  useEffect(() => {
     // When switching TO the watchlists page, only set a default selection if NONE exists.
     // We want to avoid resetting the user's selection just because they visited the watchlist page.
     if (activePage !== "watchlists" || !activeWatchlist) {
