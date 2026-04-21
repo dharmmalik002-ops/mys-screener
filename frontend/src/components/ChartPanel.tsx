@@ -3003,7 +3003,11 @@ export function ChartPanel({
             <button
               type="button"
               className="chart-stage-watchlist-add"
-              onClick={() => onAddToWatchlist?.(symbol)}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                onAddToWatchlist?.(symbol);
+              }}
               aria-label={`Add ${symbol} to a watchlist`}
               title={`Add ${symbol} to watchlist`}
             >
