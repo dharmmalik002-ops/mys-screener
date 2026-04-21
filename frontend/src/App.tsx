@@ -295,9 +295,9 @@ const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string;
 
 const DEFAULT_WATCHLIST_COLORS = ["#4f8cff", "#00a389", "#ff9f1c", "#ef476f", "#7c5cff", "#06b6d4", "#84cc16", "#f97316"];
 const MAX_PERSISTED_CHART_RESPONSES = 8;
-const CHART_PREFETCH_FORWARD_COUNT = 5;
-const CHART_PREFETCH_BACKWARD_COUNT = 2;
-const CHART_PREFETCH_PARALLELISM = 3;
+const CHART_PREFETCH_FORWARD_COUNT = 20;
+const CHART_PREFETCH_BACKWARD_COUNT = 5;
+const CHART_PREFETCH_PARALLELISM = 4;
 
 function DeferredPanelPlaceholder({ className = "workspace-pad", compact = false }: { className?: string; compact?: boolean }) {
   const blockClassName = compact ? "skeleton-block skeleton-block-sm" : "skeleton-block skeleton-block-lg";
@@ -2303,6 +2303,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               return;
             }
             setGroupsData(payload);
+            updateMarketViewCache(activeMarket, { groupsData: payload });
             setSelectedSymbol((current) => (
               current && payload.stocks.some((item) => item.symbol === current)
                 ? current

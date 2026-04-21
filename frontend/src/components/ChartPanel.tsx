@@ -2823,34 +2823,36 @@ export function ChartPanel({
               </div>
             </label>
           </details>
-          <button
-            type="button"
-            className={historyLoading ? "tool-pill loading" : "tool-pill"}
-            onClick={handleLoadFullHistory}
-            disabled={historyLoading || !symbol}
-            title={extendedHistory ? "Return to the standard chart range" : "Load full price history for this stock"}
-          >
-            {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
-          </button>
-          
-          <div className="index-overlay-controls">
-            <select
-              className="index-overlay-select"
-              value={viewRange}
-              onChange={(e) => handleViewRangeChange(e.target.value as ChartVisibleRange)}
-              title="Select Chart Visible Range"
+          <div className="history-controls-row">
+            <button
+              type="button"
+              className={historyLoading ? "tool-pill loading" : "tool-pill"}
+              onClick={handleLoadFullHistory}
+              disabled={historyLoading || !symbol}
+              title={extendedHistory ? "Return to the standard chart range" : "Load full price history for this stock"}
             >
-              <option value="1W">1 Week</option>
-              <option value="1M">1 Month</option>
-              <option value="3M">3 Months</option>
-              <option value="1Y">1 Year</option>
-              <option value="5Y">5 Years</option>
-              <option value="All">All</option>
-            </select>
+              {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
+            </button>
+            
+            <div className="index-overlay-controls">
+              <select
+                className="index-overlay-select"
+                value={viewRange}
+                onChange={(e) => handleViewRangeChange(e.target.value as ChartVisibleRange)}
+                title="Select Chart Visible Range"
+              >
+                <option value="1W">1 Week</option>
+                <option value="1M">1 Month</option>
+                <option value="3M">3 Months</option>
+                <option value="1Y">1 Year</option>
+                <option value="5Y">5 Years</option>
+                <option value="All">All</option>
+              </select>
+            </div>
           </div>
 
           {market === "india" ? (
-            <div className="index-overlay-controls" style={{ marginLeft: "8px" }}>
+            <div className="index-overlay-controls" style={{ marginLeft: "0" }}>
               <select
                 className="index-overlay-select"
                 value={indexOverlaySymbol ?? ""}

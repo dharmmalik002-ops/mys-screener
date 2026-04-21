@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import type { MarketKey } from "../lib/api";
 import type { LocalWatchlist } from "./WatchlistsPanel";
@@ -22,10 +22,17 @@ export function WatchlistPickerModal({
 }: WatchlistPickerModalProps) {
   const marketLabel = market === "india" ? "India" : "US";
   const [newWatchlistName, setNewWatchlistName] = useState("");
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (modalRef.current) {
+      modalRef.current.scrollTop = 0;
+    }
+  }, [symbol]);
 
   return (
     <div className="watchlist-picker-backdrop" onClick={onClose}>
-      <div className="watchlist-picker-modal" onClick={(event) => event.stopPropagation()}>
+      <div className="watchlist-picker-modal" ref={modalRef} onClick={(event) => event.stopPropagation()}>
         <div className="watchlist-picker-head">
           <div>
             <p className="eyebrow">{marketLabel} Watchlists</p>

@@ -5190,6 +5190,13 @@ button {
   background: color-mix(in srgb, var(--surface) 96%, transparent);
 }
 
+.history-controls-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 /* RVOL Widget */
 .rvol-widget {
   position: absolute;
