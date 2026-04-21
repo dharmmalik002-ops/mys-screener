@@ -856,6 +856,14 @@ def build_router(service):
         payload = await get_watchlist(normalized)
         return {"market": normalized, "raw_type": type(payload).__name__ if payload is not None else None, "raw": payload}
 
+    @router.get("/_debug/db_status")
+    async def debug_db_status():
+        """Return whether the Neon DB pool is available in this process."""
+        from app.db.neon import get_pool
+
+        pool = get_pool()
+        return {"pool_exists": pool is not None}
+
     # ── Journal Data (market-independent, shared across both markets) ──
     @router.get("/journal")
     async def get_journal():
