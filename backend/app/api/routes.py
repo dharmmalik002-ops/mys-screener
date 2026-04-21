@@ -1,5 +1,6 @@
 import asyncio
 import json
+import inspect
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -831,13 +832,29 @@ def build_router(service):
 
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
-        return await resolve_service(market).get_watchlists_state()
+        svc = resolve_service(market)
+        result = svc.get_watchlists_state()
+        if inspect.isawaitable(result):
+            return await result
+        return result
 
     @router.put("/watchlists", response_model=WatchlistsStateResponse)
     async def save_watchlists(payload: WatchlistsStateResponse, market: str = Query(default="india")):
         market_service = resolve_service(market)
         normalized = payload.model_copy(update={"market": str(market or "india").strip().lower()})
-        return await market_service.save_watchlists_state(normalized)
+        result = market_service.save_watchlists_state(normalized)
+        if inspect.isawaitable(result):
+            return await result
+        return result
+
+    @router.get("/_debug/watchlist_raw")
+    async def debug_watchlist(market: str = Query(default="india")):
+        """Debug endpoint: return raw DB payload for watchlists (not validated)."""
+        from app.db.neon import get_watchlist
+
+        normalized = str(market or "india").strip().lower()
+        payload = await get_watchlist(normalized)
+        return {"market": normalized, "raw_type": type(payload).__name__ if payload is not None else None, "raw": payload}
 
     # ── Journal Data (market-independent, shared across both markets) ──
     @router.get("/journal")
