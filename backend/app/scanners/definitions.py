@@ -1,6 +1,8 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
+import logging
+import time
 
 from app.models.market import (
     ConsolidatingScanRequest,
@@ -15,6 +17,8 @@ from app.models.market import (
 
 
 ScannerFn = Callable[[StockSnapshot], tuple[float, list[str]] | None]
+
+logger = logging.getLogger(__name__)
 
 CONSOLIDATING_RUN_UP_LABEL = "Long Consolidation After a Run-Up"
 CONSOLIDATING_BREAKOUT_LABEL = "Near Multi-Year Breakout"
@@ -916,15 +920,19 @@ def _passes_min_liquidity(snapshot: StockSnapshot, min_liquidity_crore: float | 
 
 
 def run_scan(scan: ScanDefinition, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
+    start = time.time()
     matches: list[ScanMatch] = []
+    logger.debug("run_scan start: %s snapshots=%d", scan.id, len(snapshots) if snapshots is not None else 0)
     for snapshot in snapshots:
         outcome = scan.evaluator(snapshot)
         if not outcome:
             continue
         score, reasons = outcome
         matches.append(build_scan_match(scan.id, snapshot, score, reasons, pattern=scan.name))
-
-    return _default_sort(matches)
+    sorted_matches = _default_sort(matches)
+    duration = time.time() - start
+    logger.info("run_scan finished: %s snapshots=%d matches=%d duration=%.2fs", scan.id, len(snapshots) if snapshots is not None else 0, len(sorted_matches), duration)
+    return sorted_matches
 
 
 def _return_for_period(snapshot: StockSnapshot, period: str) -> float:

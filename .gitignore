@@ -44,3 +44,4 @@ backend/data/live_universe.json
 !backend/data/*_seed_*.json
 !backend/data/*universe*.json
 !backend/data/bhavcopy_patch.json
+backend/venv/

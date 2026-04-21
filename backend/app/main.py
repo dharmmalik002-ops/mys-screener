@@ -57,13 +57,9 @@ services = {
     "india": service,
     "us": us_service,
 }
-watchdog_agent = WatchdogAgent(
-    services=services,
-    settings_by_market={"india": settings, "us": us_settings},
-    data_dir=Path(__file__).resolve().parents[1] / "data",
-    tick_seconds=30,
-)
-set_active_watchdog_agent(watchdog_agent)
+# Watchdog intentionally disabled for EOD-only deployment to speed startup.
+# To re-enable, construct a WatchdogAgent and call `set_active_watchdog_agent()`.
+watchdog_agent = None
 scheduler = AsyncIOScheduler(timezone=IST)
 
 
@@ -537,12 +533,14 @@ async def _keep_alive_self_ping() -> None:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    scheduler.add_job(
-        autonomous_watchdog_cycle_job,
-        IntervalTrigger(seconds=watchdog_agent.tick_seconds),
-        id="live_market_watchdog",
-        replace_existing=True,
-    )
+    # Autonomous watchdog disabled — skip scheduling the recurring watchdog job.
+    if watchdog_agent is not None:
+        scheduler.add_job(
+            autonomous_watchdog_cycle_job,
+            IntervalTrigger(seconds=watchdog_agent.tick_seconds),
+            id="live_market_watchdog",
+            replace_existing=True,
+        )
     if IS_HF_SPACE:
         # Hugging Face free tier is resource constrained; the heavy scheduled
         # maintenance jobs can OOM-kill the container and take the space down.
@@ -606,10 +604,10 @@ async def lifespan(app: FastAPI):
         )
     scheduler.start()
     logger.info(
-        "Scheduler started — Watchdog: every %ss (adaptive autonomous cycle); "
+        "Scheduler started — Watchdog: %s (adaptive autonomous cycle); "
         "India: close 4:00 PM IST / stocks 6:00 PM IST / money-flow Sat 9 AM IST / fundamentals Sun 1 AM IST; "
         "US: close 4:15 PM ET / stocks 4:30 PM ET / money-flow Sat 9 AM ET / fundamentals Sun 1 AM ET",
-        watchdog_agent.tick_seconds,
+        (watchdog_agent.tick_seconds if watchdog_agent is not None else "disabled"),
     )
     async def _startup_sequence() -> None:
         # Keep startup conservative to avoid memory spikes on HF.

@@ -5210,14 +5210,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing || watchdogFixing}>
             {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
           </button>
-          <button
-            type="button"
-            className="nav-button"
-            onClick={() => void handleWatchdogFix()}
-            disabled={refreshing || watchdogFixing}
-            title="Runs the broader full-site self-heal watchdog: checks dashboard, sectors, screeners, groups, fundamentals, charts, and forces a fresh sync."
-          >
-            {watchdogFixing ? "Running Watchdog..." : "Watchdog Fix"}
+          <button type="button" className="nav-button" disabled title="Watchdog disabled in EOD-only mode">
+            Watchdog Disabled
           </button>
         </div>
       </header>

@@ -1106,7 +1106,8 @@ function withMarket(path: string, market: MarketKey) {
 }
 
 export function buildWatchdogEventsUrl(market: MarketKey) {
-  return `${API_BASE}/api/watchdog-events?market=${encodeURIComponent(market)}`;
+  // Disabled for EOD-only deployments — no SSE stream.
+  return "";
 }
 
 export function getDashboard(market: MarketKey) {
@@ -1191,17 +1192,34 @@ export function refreshMarketData(market: MarketKey) {
 }
 
 export function runWatchdogFix(market: MarketKey) {
-  return request<RefreshResponse>(withMarket("/api/watchdog/fix", market), {
-    method: "POST",
-  });
+  // Disabled in EOD-only mode — avoid triggering heavy background fixes.
+  return Promise.reject(new Error("Watchdog fix is disabled in EOD-only mode"));
 }
 
 export function getWatchdogStatus(market: MarketKey) {
-  return request<WatchdogStatusResponse>(withMarket("/api/watchdog-status", market));
+  // Return a lightweight disabled status to prevent UI from triggering watchdog actions.
+  return Promise.resolve({
+    market,
+    is_market_open: false,
+    snapshot_age_seconds: 0,
+    snapshot_updated_at: null,
+    snapshot_stale: false,
+    watchdog_interval_seconds: 0,
+    server_utc: new Date().toISOString(),
+  } as WatchdogStatusResponse);
 }
 
 export function getWatchdogTasks(market: MarketKey) {
-  return request<WatchdogTasksResponse>(withMarket("/api/watchdog-tasks", market));
+  // Return an empty disabled task list so the UI doesn't attempt prewarm operations.
+  const now = new Date();
+  return Promise.resolve({
+    market,
+    local_timezone: "IST",
+    local_time: now.toISOString(),
+    day_key: now.toISOString().slice(0, 10),
+    next_reset_at: new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString(),
+    tasks: [],
+  } as WatchdogTasksResponse);
 }
 
 export function getIndexQuotes(symbols: string[], market: MarketKey) {

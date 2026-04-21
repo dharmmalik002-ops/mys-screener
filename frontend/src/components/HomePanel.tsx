@@ -1029,14 +1029,7 @@ export function HomePanel({
             </p>
           </div>
           <div className="home-hero-actions">
-            <button
-              type="button"
-              className="home-watchdog-button"
-              onClick={onOpenWatchdogTasks}
-              title="Open today's watchdog schedule, task status, and any pending issues."
-            >
-              Watchdog Tasks
-            </button>
+            {/* Watchdog tasks UI disabled for EOD-only deployment */}
           </div>
         </div>
         <div className="home-hero-metrics">
