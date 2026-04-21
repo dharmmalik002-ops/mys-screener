@@ -76,7 +76,16 @@ async def get_watchlist(market: str) -> dict[str, Any] | None:
                 market
             )
             if row:
-                return json.loads(row["state_json"])
+                state_val = row["state_json"]
+                # asyncpg typically returns JSON/JSONB columns as Python objects
+                # (dict/list). Be tolerant and accept either a raw JSON string
+                # or an already-deserialized Python object.
+                if isinstance(state_val, (str, bytes)):
+                    try:
+                        return json.loads(state_val)
+                    except Exception:
+                        return None
+                return state_val
             return None
     except Exception as exc:
         logger.error("Error reading watchlist from DB for market %s: %s", market, exc)
