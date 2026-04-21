@@ -100,7 +100,7 @@ async def save_watchlist(market: str, state_json: dict[str, Any]) -> None:
         async with pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO watchlists_state (market, state_json, updated_at)
-                VALUES ($1, $2, CURRENT_TIMESTAMP)
+                VALUES ($1, to_jsonb($2::text), CURRENT_TIMESTAMP)
                 ON CONFLICT (market)
                 DO UPDATE SET 
                     state_json = EXCLUDED.state_json,
