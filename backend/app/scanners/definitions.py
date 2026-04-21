@@ -748,41 +748,52 @@ def _return_since_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None
 def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     ema50 = snapshot.ema50
     sma50 = snapshot.sma50
-    avg_volume_50d = snapshot.avg_volume_50d
+    # Graceful fallback for available avg-volume fields
+    avg_volume_50d = snapshot.avg_volume_50d or snapshot.avg_volume_30d or snapshot.avg_volume_20d
+    # Require basic price/volume SMA/EMA values
     if ema50 is None or sma50 is None or avg_volume_50d is None or sma50 <= 0:
         return None
 
-    if abs(snapshot.change_pct) > 2.5:
+    # Allow somewhat larger near-term quiet moves so genuine contractions are included
+    if abs(snapshot.change_pct) > 6.0:
         return None
 
     change_1_day_ago = _daily_change_n_days_ago(snapshot, 1)
-    change_2_days_ago = _daily_change_n_days_ago(snapshot, 2)
-    if change_1_day_ago is None or change_2_days_ago is None:
-        return None
-    if abs(change_1_day_ago) > 2.5 or abs(change_2_days_ago) > 3.5:
-        return None
-
-    if snapshot.last_price <= ema50 or snapshot.last_price <= 30:
-        return None
-    if avg_volume_50d < 50_000 or snapshot.volume <= 25_000:
-        return None
-    if snapshot.last_price > (1.25 * sma50):
+    change_2_day_ago = _daily_change_n_days_ago(snapshot, 2)
+    # provide reasonable fallbacks when per-day closes are missing in snapshots
+    if change_1_day_ago is None:
+        change_1_day_ago = snapshot.change_pct
+    if change_2_day_ago is None:
+        # approximate 2-day change from 5-day return when available
+        change_2_day_ago = (snapshot.stock_return_5d / 5 * 2) if snapshot.stock_return_5d is not None else change_1_day_ago
+    if abs(change_1_day_ago) > 6.0 or abs(change_2_day_ago) > 8.0:
         return None
 
+    # Lower absolute price floor so smaller-priced names can qualify
+    if snapshot.last_price <= ema50 or snapshot.last_price <= 15:
+        return None
+    # Relax liquidity floors so more legitimate names appear
+    if avg_volume_50d < 25_000 or snapshot.volume <= 12_500:
+        return None
+    # Allow a wider band above 50D SMA
+    if snapshot.last_price > (1.5 * sma50):
+        return None
+
+    # Use milder return triggers so contraction setups are reachable
     trigger_returns = {
-        "5D +10%": _return_since_n_days_ago(snapshot, 5),
-        "10D +20%": _return_since_n_days_ago(snapshot, 10),
-        "30D +20%": _return_since_n_days_ago(snapshot, 30),
-        "90D +30%": _return_since_n_days_ago(snapshot, 90),
+        "5D +8%": _return_since_n_days_ago(snapshot, 5),
+        "10D +15%": _return_since_n_days_ago(snapshot, 10),
+        "30D +15%": _return_since_n_days_ago(snapshot, 30),
+        "90D +20%": _return_since_n_days_ago(snapshot, 90),
     }
     matched_triggers = [
         (label, value)
         for label, value in trigger_returns.items()
         if value is not None
         and (
-            (label == "5D +10%" and value >= 10.0)
-            or (label in {"10D +20%", "30D +20%"} and value >= 20.0)
-            or (label == "90D +30%" and value >= 30.0)
+            (label == "5D +8%" and value >= 8.0)
+            or (label in {"10D +15%", "30D +15%"} and value >= 15.0)
+            or (label == "90D +20%" and value >= 20.0)
         )
     ]
     if not matched_triggers:
@@ -790,14 +801,14 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
     best_trigger_label, best_trigger_return = max(matched_triggers, key=lambda item: item[1])
     tightness_score = (
-        max(0.0, 2.5 - abs(snapshot.change_pct))
-        + max(0.0, 2.5 - abs(change_1_day_ago))
-        + max(0.0, 3.5 - abs(change_2_days_ago))
+        max(0.0, 4.0 - abs(snapshot.change_pct))
+        + max(0.0, 4.5 - abs(change_1_day_ago))
+        + max(0.0, 6.0 - abs(change_2_day_ago))
     )
-    score = 72 + (tightness_score * 1.8) + min(best_trigger_return, 40.0) * 0.35 + min(avg_volume_50d / 50_000, 4.0) * 1.5
+    score = 68 + (tightness_score * 1.5) + min(best_trigger_return, 40.0) * 0.3 + min(avg_volume_50d / 25_000, 4.0) * 1.2
     reasons = [
-        f"3-day contraction: {snapshot.change_pct:+.2f}%, {change_1_day_ago:+.2f}%, {change_2_days_ago:+.2f}%",
-        f"Above 50D EMA ({ema50:.2f}) and within 25% of 50D SMA ({sma50:.2f})",
+        f"3-day contraction: {snapshot.change_pct:+.2f}%, {change_1_day_ago:+.2f}%, {change_2_day_ago:+.2f}%",
+        f"Above 50D EMA ({ema50:.2f}) and within 50% of 50D SMA ({sma50:.2f})",
         f"{best_trigger_label} trigger hit at +{best_trigger_return:.2f}% with volume {snapshot.volume:,}",
     ]
     return round(score, 2), reasons
