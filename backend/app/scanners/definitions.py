@@ -658,9 +658,9 @@ def _ema_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
     rvol_50 = volume / avg_vol_50
 
-    # 4. Change % floor (>= 6.5%)
-    # 5. RVOL floor (> 3.0x)
-    if snapshot.change_pct >= 6.5 and rvol_50 > 3.0:
+    # 4. Change % floor (>= 5.0%)
+    # 5. RVOL floor (> 2.5x)
+    if snapshot.change_pct >= 5.0 and rvol_50 > 2.5:
         score = 75 + rvol_50 * 2 + snapshot.change_pct
         return round(score, 2), [
             "Expansion setup",
@@ -855,7 +855,7 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
-    ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, RVOL > 3.0, and liquidity floors (AvgVol > 25k, Vol > 50k, Price > 30).", _ema_expansion),
+    ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 5.0%, RVOL > 2.5, and liquidity floors (AvgVol > 25k, Vol > 50k, Price > 30).", _ema_expansion),
 ]
 
 SCAN_BY_ID = {scan.id: scan for scan in SCANS}

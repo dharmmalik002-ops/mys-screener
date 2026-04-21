@@ -1997,11 +1997,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         let nextWatchlists = localWatchlists;
         let nextActiveWatchlistId = localActiveWatchlistId;
 
-        // "Smart Restore" Logic: 
-        // 1. If server HAS data and it's NEWER than local, we download it (Multi-computer sync).
-        // 2. If server has data but it's OLDER than local, we stick to local (it will be pushed below).
-        // 3. If server is EMPTY but local is NOT, we stick to local (Update/Wipe recovery).
-        const shouldPreferRemote = hasRemoteData && remoteTimestamp > localTimestamp;
+        // Prefer local watchlists to prevent loss. Only use remote if local is completely empty.
+        const shouldPreferRemote = !localWatchlists.length && hasRemoteData;
         
         if (shouldPreferRemote) {
           nextWatchlists = normalizedRemote.watchlists;
