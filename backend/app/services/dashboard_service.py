@@ -1397,10 +1397,48 @@ class DashboardService:
         cache_key = (symbol, timeframe)
         cached = self._chart_response_cache.get(cache_key)
         now = datetime.now(timezone.utc)
+        # Fast path: if we have any cached response, return it immediately to avoid
+        # blocking the request on slow provider/network I/O. If the cache is stale
+        # or based on an older snapshot, refresh it in the background.
         if cached is not None:
             cached_at, cached_snapshot_at, cached_response = cached
-            if cached_snapshot_at >= snapshot_updated_at and now - cached_at <= self._chart_response_cache_ttl(timeframe):
+            ttl_ok = now - cached_at <= self._chart_response_cache_ttl(timeframe)
+            snapshot_ok = cached_snapshot_at >= snapshot_updated_at
+            if snapshot_ok and ttl_ok:
                 return cached_response
+
+            # Return stale cached response immediately, and schedule an async
+            # refresh so subsequent requests see an updated chart without making
+            # the current caller wait.
+            async def _refresh_chart_in_background():
+                try:
+                    snaps, bars_new = await asyncio.gather(
+                        self._snapshots(),
+                        self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe)),
+                    )
+                    snap = next((item for item in snaps if item.symbol == symbol), None)
+                    rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars_new, snapshots=snaps)
+                    summary_new = build_stock_overview(snap) if snap else None
+                    if summary_new is not None:
+                        summary_new = self._with_chart_summary(summary_new, bars_new, rs_line, snap.previous_close if snap else None)
+                    response_new = ChartResponse(
+                        symbol=symbol,
+                        timeframe=timeframe,
+                        bars=bars_new,
+                        summary=summary_new,
+                        rs_line=rs_line,
+                        rs_line_markers=rs_line_markers,
+                    )
+                    self._chart_response_cache[cache_key] = (datetime.now(timezone.utc), self._snapshot_updated_at(), response_new)
+                except Exception:
+                    # Ignore background errors — cached response remains available.
+                    return
+
+            try:
+                asyncio.create_task(_refresh_chart_in_background())
+            except Exception:
+                pass
+            return cached_response
 
         snapshots, bars = await asyncio.gather(
             self._snapshots(),
