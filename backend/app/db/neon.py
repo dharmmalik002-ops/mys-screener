@@ -96,15 +96,14 @@ async def save_watchlist(market: str, state_json: dict[str, Any]) -> None:
     if pool is None:
         return
     try:
-        json_str = json.dumps(state_json)
         async with pool.acquire() as conn:
             await conn.execute("""
                 INSERT INTO watchlists_state (market, state_json, updated_at)
-                VALUES ($1, to_jsonb($2::text), CURRENT_TIMESTAMP)
+                VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
                 ON CONFLICT (market)
                 DO UPDATE SET 
                     state_json = EXCLUDED.state_json,
                     updated_at = CURRENT_TIMESTAMP;
-            """, market, json_str)
+            """, market, state_json)
     except Exception as exc:
         logger.error("Error saving watchlist to DB for market %s: %s", market, exc)
