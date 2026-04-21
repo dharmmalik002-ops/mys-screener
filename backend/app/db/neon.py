@@ -77,15 +77,21 @@ async def get_watchlist(market: str) -> dict[str, Any] | None:
             )
             if row:
                 state_val = row["state_json"]
-                # asyncpg typically returns JSON/JSONB columns as Python objects
-                # (dict/list). Be tolerant and accept either a raw JSON string
-                # or an already-deserialized Python object.
-                if isinstance(state_val, (str, bytes)):
-                    try:
+                # asyncpg usually returns JSON/JSONB as Python dict/list, but
+                # be tolerant: handle str, bytes, memoryview and other cases.
+                try:
+                    if isinstance(state_val, (bytes, bytearray, memoryview)):
+                        text = bytes(state_val).decode("utf-8")
+                        return json.loads(text)
+                    if isinstance(state_val, str):
                         return json.loads(state_val)
-                    except Exception:
-                        return None
-                return state_val
+                    if isinstance(state_val, (dict, list)):
+                        return state_val
+                    # Last-resort: try parsing the string representation.
+                    return json.loads(str(state_val))
+                except Exception as exc:
+                    logger.debug("Unable to deserialize watchlist state for %s: %s (%s)", market, type(state_val), exc)
+                    return None
             return None
     except Exception as exc:
         logger.error("Error reading watchlist from DB for market %s: %s", market, exc)
