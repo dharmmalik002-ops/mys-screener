@@ -2859,6 +2859,7 @@ export function ChartPanel({
               >
                 <option value="">Index Overlay</option>
                 <option value="^NSEI">Nifty 50</option>
+                <option value="^CNX500">Nifty 500</option>
                 <option value="^NSEMDCP50">Nifty Midcap 50</option>
                 <option value="^NSEBANK">Nifty Bank</option>
               </select>

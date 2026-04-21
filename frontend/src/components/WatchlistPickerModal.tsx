@@ -8,8 +8,8 @@ type WatchlistPickerModalProps = {
   symbol: string;
   watchlists: LocalWatchlist[];
   onClose: () => void;
-  onAddToWatchlist: (watchlistId: string, symbol: string) => void;
-  onCreateWatchlist: (name: string, symbol?: string) => void;
+  onAddToWatchlist: (watchlistId: string, symbol: string) => Promise<void> | void;
+  onCreateWatchlist: (name: string, symbol?: string) => Promise<void> | void;
 };
 
 export function WatchlistPickerModal({
@@ -43,10 +43,15 @@ export function WatchlistPickerModal({
               type="button"
               className="watchlist-picker-row"
               style={{ borderLeftColor: watchlist.color }}
-              onClick={() => {
-                onAddToWatchlist(watchlist.id, symbol);
-                onClose();
-              }}
+              onClick={async () => {
+                  try {
+                    await onAddToWatchlist(watchlist.id, symbol);
+                  } catch {
+                    // ignore errors but still close modal
+                  } finally {
+                    onClose();
+                  }
+                }}
             >
               <span className="watchlist-link-color" style={{ backgroundColor: watchlist.color }} aria-hidden="true" />
               <span>
@@ -68,12 +73,16 @@ export function WatchlistPickerModal({
           <button
             type="button"
             className="nav-button primary"
-            onClick={() => {
+            onClick={async () => {
               const value = newWatchlistName.trim();
               if (!value) {
                 return;
               }
-              onCreateWatchlist(value, symbol);
+              try {
+                await onCreateWatchlist(value, symbol);
+              } catch {
+                // ignore
+              }
               setNewWatchlistName("");
               onClose();
             }}
