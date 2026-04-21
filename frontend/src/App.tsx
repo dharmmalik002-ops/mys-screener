@@ -1615,6 +1615,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [isWatchlistsHydrated, setIsWatchlistsHydrated] = useState(false);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
+  const openWatchlistPicker = (symbol: string | null) => {
+    if (!symbol) return;
+    // Ensure the picker opens as an overlay rather than navigating away
+    setWatchlistPickerSymbol(symbol);
+  };
   const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
@@ -5229,7 +5234,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <AiScreenerPanel
               market={activeMarket}
               onPickSymbol={handlePickSymbol}
-              onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                    onRequestAddToWatchlist={openWatchlistPicker}
               onVisibleSymbolsChange={setAiVisibleSymbols}
               selectedSymbol={selectedSymbol}
             />
@@ -5515,7 +5520,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         window={improvingRsWindow}
                         onWindowChange={setImprovingRsWindow}
                         onPickSymbol={handlePickSymbol}
-                        onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                        onRequestAddToWatchlist={openWatchlistPicker}
                         selectedSymbol={selectedSymbol}
                       />
                     ) : (
@@ -5586,7 +5591,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     onDrawingColorChange={setChartDrawingColor}
                     annotations={activeAnnotations}
                     onAnnotationsChange={handleAnnotationsChange}
-                    onAddToWatchlist={setWatchlistPickerSymbol}
+                    onAddToWatchlist={openWatchlistPicker}
                     searchOptions={universeCatalog}
                     onSearchSymbol={handleChartSearchSubmit}
                     onOpenGroup={handleOpenChartGroupModal}
@@ -5605,7 +5610,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSortOrderChange={setSectorSortOrder}
                   onPickSymbol={handlePickSymbol}
                   onPickSymbolWithContext={handlePickSymbolWithContext}
-                  onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                  onRequestAddToWatchlist={openWatchlistPicker}
                   onVisibleSymbolsChange={setSectorVisibleSymbols}
                   selectedSymbol={selectedSymbol}
                 />
@@ -5617,7 +5622,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   selectedSymbol={selectedSymbol}
                   focusRequest={groupsFocusRequest}
                   onPickSymbolWithContext={handlePickSymbolWithContext}
-                  onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                  onRequestAddToWatchlist={openWatchlistPicker}
                   onVisibleSymbolsChange={setGroupsVisibleSymbols}
                 />
               ) : activePage === "watchlists" ? (
@@ -5640,7 +5645,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onCopyToWatchlist={handleCopyToWatchlist}
                   onImportWatchlist={handleImportWatchlist}
                   onReorderWatchlists={handleReorderWatchlists}
-                  onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                  onRequestAddToWatchlist={openWatchlistPicker}
                   onRequestAddToJournal={(symbol, price) => { setJournalAddRequest({ symbol, suggestedPrice: price }); setActivePage("journal"); }}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
@@ -5697,7 +5702,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onDrawingColorChange={setChartDrawingColor}
                   annotations={activeAnnotations}
                   onAnnotationsChange={handleAnnotationsChange}
-                  onAddToWatchlist={setWatchlistPickerSymbol}
+                  onAddToWatchlist={openWatchlistPicker}
                   searchOptions={universeCatalog}
                   onSearchSymbol={handleChartSearchSubmit}
                   onOpenGroup={handleOpenChartGroupModal}
