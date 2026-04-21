@@ -4,7 +4,10 @@ import json
 import threading
 from typing import Protocol
 
-import psycopg
+try:
+    import psycopg
+except Exception:  # pragma: no cover - runtime environments may not have psycopg installed
+    psycopg = None  # type: ignore
 
 from app.models.market import WatchlistsStateResponse
 
