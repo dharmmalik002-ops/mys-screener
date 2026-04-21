@@ -103,6 +103,8 @@ async def save_watchlist(market: str, state_json: dict[str, Any]) -> None:
         return
     try:
         async with pool.acquire() as conn:
+            # Ensure we pass a JSON string so Postgres can cast to jsonb reliably.
+            json_text = json.dumps(state_json)
             await conn.execute("""
                 INSERT INTO watchlists_state (market, state_json, updated_at)
                 VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
@@ -110,6 +112,6 @@ async def save_watchlist(market: str, state_json: dict[str, Any]) -> None:
                 DO UPDATE SET 
                     state_json = EXCLUDED.state_json,
                     updated_at = CURRENT_TIMESTAMP;
-            """, market, state_json)
+            """, market, json_text)
     except Exception as exc:
         logger.error("Error saving watchlist to DB for market %s: %s", market, exc)
