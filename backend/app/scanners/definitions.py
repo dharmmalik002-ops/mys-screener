@@ -118,33 +118,40 @@ def _range_pct_from_low(high: float, low: float) -> float:
 def _day_high(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.day_high)
     if gap >= -0.25 and snapshot.change_pct >= 0.5:
-        score = 74 + snapshot.change_pct + max(snapshot.relative_volume - 1, 0)
-        return round(score, 2), ["Trading at session high", f"{gap:.2f}% from day high"]
-    return None
+    # Graceful fallback for available avg-volume fields
+    avg_volume_50d = snapshot.avg_volume_50d or snapshot.avg_volume_30d or snapshot.avg_volume_20d
+    # Require basic price/volume SMA/EMA values
+    if ema50 is None or sma50 is None or avg_volume_50d is None or sma50 <= 0:
+        return None
 
+    # Allow slightly larger near-term quiet moves than before
+    if abs(snapshot.change_pct) > 4.0:
+        return None
 
-def _day_low(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
-    gap = _gap_from_level(snapshot.last_price, snapshot.day_low)
-    if gap <= 0.35 and snapshot.change_pct <= -0.5:
-        score = 74 + abs(snapshot.change_pct) + max(snapshot.relative_volume - 1, 0)
-        return round(score, 2), ["Trading at session low", f"{gap:.2f}% from day low"]
-    return None
+    change_1_day_ago = _daily_change_n_days_ago(snapshot, 1)
+    change_2_days_ago = _daily_change_n_days_ago(snapshot, 2)
+    if change_1_day_ago is None or change_2_days_ago is None:
+        return None
+    if abs(change_1_day_ago) > 4.5 or abs(change_2_days_ago) > 6.0:
+        return None
 
+    # Lower absolute price floor so smaller-priced names can qualify
+    if snapshot.last_price <= ema50 or snapshot.last_price <= 15:
+        return None
+    # Relax liquidity floors so more legitimate names appear
+    if avg_volume_50d < 25_000 or snapshot.volume <= 12_500:
+        return None
+    # Allow a wider band above 50D SMA
+    if snapshot.last_price > (1.5 * sma50):
+        return None
 
-def _near_day_high(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
-    gap = _gap_from_level(snapshot.last_price, snapshot.day_high)
-    if -1.35 <= gap < -0.2 and snapshot.change_pct >= 0:
-        return round(68 + snapshot.change_pct + snapshot.trend_strength * 5, 2), ["Near day high", f"{gap:.2f}% below day high"]
-    return None
-
-
-def _near_day_low(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
-    gap = _gap_from_level(snapshot.last_price, snapshot.day_low)
-    if 0.25 < gap <= 1.75 and snapshot.change_pct <= 0.5:
-        return round(68 + abs(min(snapshot.change_pct, 0)) + (1 - snapshot.trend_strength) * 5, 2), ["Near day low", f"{gap:.2f}% above day low"]
-    return None
-
-
+    # Use slightly milder return triggers so contraction setups are reachable
+    trigger_returns = {
+        "5D +8%": _return_since_n_days_ago(snapshot, 5),
+        "10D +15%": _return_since_n_days_ago(snapshot, 10),
+        "30D +15%": _return_since_n_days_ago(snapshot, 30),
+        "90D +20%": _return_since_n_days_ago(snapshot, 90),
+    }
 def _prev_day_high_break(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     gap = _gap_from_level(snapshot.last_price, snapshot.previous_day_high_level)
     if gap >= 0.2 and snapshot.change_pct >= 1 and snapshot.relative_volume >= 1.15 and _price_near_day_high(snapshot, 0.45):
