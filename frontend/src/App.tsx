@@ -2288,7 +2288,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           return;
         }
 
-        if (activePage === "groups") {
+        if (activePage === "groups" || activePage === "watchlists") {
           setScanLoading(false);
           setScanSectorSummariesLoading(false);
           if (groupsData) {
@@ -2297,17 +2297,21 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             return;
           }
           setGroupsLoading(true);
-          const payload = await getIndustryGroups(activeMarket);
-          if (!active) {
-            return;
+          try {
+            const payload = await getIndustryGroups(activeMarket);
+            if (!active) {
+              return;
+            }
+            setGroupsData(payload);
+            setSelectedSymbol((current) => (
+              current && payload.stocks.some((item) => item.symbol === current)
+                ? current
+                : firstSymbolFromIndustryGroups(payload)
+            ));
+            setError(null);
+          } catch {
+            // ignore groups load failures — UI will render without group ranks.
           }
-          setGroupsData(payload);
-          setSelectedSymbol((current) => (
-            current && payload.stocks.some((item) => item.symbol === current)
-              ? current
-              : firstSymbolFromIndustryGroups(payload)
-          ));
-          setError(null);
           return;
         }
 
@@ -3991,7 +3995,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     });
   };
 
-  const handleCreateWatchlist = (name: string, initialSymbol?: string) => {
+  const handleCreateWatchlist = async (name: string, initialSymbol?: string) => {
     const trimmed = name.trim();
     if (!trimmed) {
       return;
@@ -4008,9 +4012,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       active_bifurcation_id: "main",
       updated_at: Date.now(),
     };
-    setWatchlists((current) => [...current, nextWatchlist]);
+    const next = [...watchlists, nextWatchlist];
+    setWatchlists(next);
     setActiveWatchlistId(nextWatchlist.id);
     setActivePage("watchlists");
+    try {
+      if (watchlistsSyncReadyRef.current[activeMarket]) {
+        await saveWatchlistsState({ watchlists: next, active_watchlist_id: nextWatchlist.id }, activeMarket);
+      }
+    } catch {
+      // ignore sync failures; localStorage still holds the change
+    }
   };
 
   const handleImportWatchlist = (result: ImportResult) => {
@@ -4056,31 +4068,44 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     );
   };
 
-  const handleAddToWatchlist = (watchlistId: string, symbol: string) => {
+  const handleAddToWatchlist = async (watchlistId: string, symbol: string) => {
     const normalizedSymbol = symbol.trim().toUpperCase();
     if (!normalizedSymbol) {
       return;
     }
-    setWatchlists((current) =>
-      current.map((watchlist) =>
-        watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
-          ? watchlist
-          : {
-              ...watchlist,
-              symbols: [...watchlist.symbols, normalizedSymbol],
-              bifurcations: watchlist.bifurcations.length > 0
-                ? watchlist.bifurcations.map((bifurcation, index) => (
-                  index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
-                    ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
-                    : bifurcation
-                ))
-                : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
-              active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
-              updated_at: Date.now(),
-            },
-      ),
+    const next = watchlists.map((watchlist) =>
+      watchlist.id !== watchlistId || watchlist.symbols.includes(normalizedSymbol)
+        ? watchlist
+        : {
+            ...watchlist,
+            symbols: [...watchlist.symbols, normalizedSymbol],
+            bifurcations: watchlist.bifurcations.length > 0
+              ? watchlist.bifurcations.map((bifurcation, index) => (
+                index === 0 && !bifurcation.symbols.includes(normalizedSymbol)
+                  ? { ...bifurcation, symbols: [...bifurcation.symbols, normalizedSymbol] }
+                  : bifurcation
+              ))
+              : [{ id: "main", name: "Main", symbols: [normalizedSymbol] }],
+            active_bifurcation_id: watchlist.active_bifurcation_id ?? watchlist.bifurcations[0]?.id ?? "main",
+            updated_at: Date.now(),
+          },
     );
+    setWatchlists(next);
     setActiveWatchlistId(watchlistId);
+    try {
+      if (watchlistsSyncReadyRef.current[activeMarket]) {
+        const saved = await saveWatchlistsState({ watchlists: next, active_watchlist_id: watchlistId }, activeMarket);
+        const normalizedSaved = normalizeWatchlistsStatePayload(saved);
+        watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(normalizedSaved.watchlists, normalizedSaved.activeWatchlistId);
+        // If server normalized changed the state, reflect it locally
+        if (watchlistsServerSignatureRef.current[activeMarket] !== watchlistsStateSignature(next, watchlistId)) {
+          setWatchlists(normalizedSaved.watchlists);
+          setActiveWatchlistId(normalizedSaved.activeWatchlistId);
+        }
+      }
+    } catch {
+      // ignore sync errors
+    }
   };
 
   const handleCopyToWatchlist = (watchlistId: string, symbol: string) => {

@@ -1907,21 +1907,70 @@ class FreeMarketDataProvider:
             if refreshed_weekly:
                 return refreshed_weekly
         try:
-            # Wrap in a 5s timeout so that slow pulls don't drag down the
-            # whole grid response or cause HF proxy to return 503 / 504.
-            chart_bars = await asyncio.wait_for(
-                asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
-                timeout=5.0,
+            # Start the network fetch and a legacy/cache read in parallel and
+            # return whichever valid result completes first. This avoids waiting
+            # for a slow network call when a usable cached/legacy payload exists.
+            fetch_task = asyncio.create_task(asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars))
+            legacy_task = asyncio.create_task(asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True))
+
+            done, pending = await asyncio.wait(
+                {fetch_task, legacy_task}, return_when=asyncio.FIRST_COMPLETED, timeout=5.0
             )
+
+            chart_bars = None
+            # Prefer the fetch result if it finished and is valid.
+            if fetch_task in done:
+                try:
+                    candidate = fetch_task.result()
+                    if isinstance(candidate, list) and len(candidate) >= min_required_bars:
+                        chart_bars = candidate
+                except Exception:
+                    chart_bars = None
+
+            # If fetch didn't yield a good result yet, check legacy cache result.
+            if chart_bars is None and legacy_task in done:
+                try:
+                    legacy_bars = legacy_task.result()
+                    if isinstance(legacy_bars, list) and len(legacy_bars) >= min_required_bars:
+                        # Cancel ongoing fetch if legacy is sufficient
+                        if not fetch_task.done():
+                            fetch_task.cancel()
+                        return legacy_bars
+                except Exception:
+                    pass
+
+            # If nothing finished in FIRST_COMPLETED or fetch finished but was small,
+            # wait for the fetch (bounded) to complete and use it if acceptable.
+            if chart_bars is None:
+                try:
+                    chart_bars = await asyncio.wait_for(fetch_task, timeout=5.0)
+                except Exception:
+                    # Fetch failed / timed out — fall back to cached bars when available
+                    if cached_bars:
+                        # Ensure we cancel legacy task if still running
+                        if not legacy_task.done():
+                            legacy_task.cancel()
+                        return cached_bars
+                    # If no cached payload, try legacy synchronously before giving up
+                    try:
+                        legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
+                        if len(legacy_bars) >= min_required_bars:
+                            return legacy_bars
+                    except Exception:
+                        pass
+                    raise
+
+            # At this point we have `chart_bars` from the network fetch.
             if len(chart_bars) < min_required_bars:
-                legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
+                # If fetch returned too few bars, prefer cached/legacy if usable.
                 if len(cached_bars) >= min_required_bars:
                     return cached_bars
+                legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
                 if len(legacy_bars) >= min_required_bars:
                     return legacy_bars
+
+            # Persist the fresh network result and optionally apply bhavcopy patch.
             await asyncio.to_thread(self._write_chart_cache, symbol, timeframe, chart_bars)
-            # Always apply Bhavcopy after fresh Yahoo download for daily Indian charts.
-            # This corrects the last bar's date/price without a second round-trip.
             if timeframe == "1D":
                 bhav_refreshed = await asyncio.to_thread(self._refresh_daily_chart_from_bhavcopy, symbol, bars)
                 if bhav_refreshed:
@@ -7318,27 +7367,6 @@ class FreeMarketDataProvider:
             history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
             history = self._aggregate_weekly_history(history)
         else:
-            # Commodity macros like crude oil should open instantly and not depend
-            # on a slow Yahoo history download. Use the public FRED time series first,
-            # then fall back to a synthetic flat history seeded from the live quote.
-            if timeframe == "1D" and symbol.upper() in {"CL=F", "BZ=F"}:
-                commodity_history = self._history_frame_from_cached_bars(symbol)
-                if not self._history_has_minimum_bars(commodity_history):
-                    commodity_history = self._download_fred_wti_history()
-                if self._history_has_minimum_bars(commodity_history):
-                    history = commodity_history.tail(bars)
-                    chart_bars = self._history_to_chart_bars(history)
-                    if self._chart_bars_match_symbol_scale(symbol, chart_bars):
-                        return chart_bars
-
-                live_quote = self._fetch_yahoo_live_quote_via_chart(ticker)
-                live_price = self._quote_number(live_quote or {}, "regularMarketPrice")
-                fallback_price = live_price or COMMODITY_FALLBACK_PRICES.get(symbol.upper())
-                if fallback_price and fallback_price > 0:
-                    synthetic_history = self._build_flat_price_history(float(fallback_price), bars)
-                    chart_bars = self._history_to_chart_bars(synthetic_history)
-                    if chart_bars:
-                        return chart_bars
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
             history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
@@ -7361,12 +7389,6 @@ class FreeMarketDataProvider:
             raise RuntimeError(f"No chart history for {symbol}")
 
         history = history.tail(bars)
-        # Clip history to start after any major corporate restructuring event
-        # (demerger, spin-off) that causes a 40%+ one-day price change.
-        # Such events make pre-event historical prices appear 2-3x the current price.
-        # Genuine splits/bonuses are already handled by _split_adjusted_history.
-        if not symbol.startswith("^"):  # don't clip index histories
-            history = self._clip_history_at_corporate_action(history)
         chart_bars = self._history_to_chart_bars(history)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
