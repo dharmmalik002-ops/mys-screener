@@ -864,6 +864,34 @@ def build_router(service):
         pool = get_pool()
         return {"pool_exists": pool is not None}
 
+    @router.put("/_debug/force_update_watchlist")
+    async def debug_force_update_watchlist(payload: dict, market: str = Query(default="india")):
+        """Force-write the provided payload into the watchlists_state table as jsonb.
+
+        This bypasses service sanitization and is intended for debugging only.
+        """
+        from app.db.neon import get_pool
+
+        normalized = str(market or "india").strip().lower()
+        pool = get_pool()
+        if pool is None:
+            return {"error": "no_db_pool"}
+        try:
+            async with pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO watchlists_state (market, state_json, updated_at)
+                    VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
+                    ON CONFLICT (market)
+                    DO UPDATE SET state_json = EXCLUDED.state_json, updated_at = CURRENT_TIMESTAMP;
+                    """,
+                    normalized,
+                    payload,
+                )
+        except Exception as exc:
+            return {"error": str(exc)}
+        return {"status": "ok"}
+
     # ── Journal Data (market-independent, shared across both markets) ──
     @router.get("/journal")
     async def get_journal():
