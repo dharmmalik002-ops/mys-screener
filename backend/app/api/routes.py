@@ -886,7 +886,7 @@ def build_router(service):
                     DO UPDATE SET state_json = EXCLUDED.state_json, updated_at = CURRENT_TIMESTAMP;
                     """,
                     normalized,
-                    payload,
+                    json.dumps(payload),
                 )
         except Exception as exc:
             return {"error": str(exc)}
