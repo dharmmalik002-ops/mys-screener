@@ -847,50 +847,7 @@ def build_router(service):
             return await result
         return result
 
-    @router.get("/_debug/watchlist_raw")
-    async def debug_watchlist(market: str = Query(default="india")):
-        """Debug endpoint: return raw DB payload for watchlists (not validated)."""
-        from app.db.neon import get_watchlist
-
-        normalized = str(market or "india").strip().lower()
-        payload = await get_watchlist(normalized)
-        return {"market": normalized, "raw_type": type(payload).__name__ if payload is not None else None, "raw": payload}
-
-    @router.get("/_debug/db_status")
-    async def debug_db_status():
-        """Return whether the Neon DB pool is available in this process."""
-        from app.db.neon import get_pool
-
-        pool = get_pool()
-        return {"pool_exists": pool is not None}
-
-    @router.put("/_debug/force_update_watchlist")
-    async def debug_force_update_watchlist(payload: dict, market: str = Query(default="india")):
-        """Force-write the provided payload into the watchlists_state table as jsonb.
-
-        This bypasses service sanitization and is intended for debugging only.
-        """
-        from app.db.neon import get_pool
-
-        normalized = str(market or "india").strip().lower()
-        pool = get_pool()
-        if pool is None:
-            return {"error": "no_db_pool"}
-        try:
-            async with pool.acquire() as conn:
-                await conn.execute(
-                    """
-                    INSERT INTO watchlists_state (market, state_json, updated_at)
-                    VALUES ($1, $2::jsonb, CURRENT_TIMESTAMP)
-                    ON CONFLICT (market)
-                    DO UPDATE SET state_json = EXCLUDED.state_json, updated_at = CURRENT_TIMESTAMP;
-                    """,
-                    normalized,
-                    json.dumps(payload),
-                )
-        except Exception as exc:
-            return {"error": str(exc)}
-        return {"status": "ok"}
+    # Debug endpoints removed — production cleanup
 
     # ── Journal Data (market-independent, shared across both markets) ──
     @router.get("/journal")
