@@ -1,29 +1,20 @@
 import { Suspense, lazy, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 
-import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type IndustryGroupsResponse, type MarketKey, type ScanMatch } from "../lib/api";
+import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type MarketKey, type ScanMatch } from "../lib/api";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { useMinWidth, useVirtualRows } from "../lib/virtualRows";
 import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, ChartGridSortBy, ChartGridStat } from "./ChartGridModal";
-import type { ImportResult } from "./WatchlistImportModal";
 import { Panel } from "./Panel";
 
 const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })));
-const WatchlistImportModal = lazy(() => import("./WatchlistImportModal").then((module) => ({ default: module.WatchlistImportModal })));
-const WATCHLIST_SLOT_GAP = 4;
-const WATCHLIST_ROW_SLOT_HEIGHT = 46;
+const WATCHLIST_SLOT_GAP = 6;
+const WATCHLIST_ROW_SLOT_HEIGHT = 64;
 
 export type LocalWatchlist = {
-  bifurcations: Array<{
-    id: string;
-    name: string;
-    symbols: string[];
-  }>;
-  active_bifurcation_id?: string | null;
   id: string;
   name: string;
   color: string;
   symbols: string[];
-  updated_at?: number | null;
 };
 
 type WatchlistsPanelProps = {
@@ -38,19 +29,10 @@ type WatchlistsPanelProps = {
   onSetWatchlistColor: (id: string, color: string) => void;
   onRemoveFromWatchlist: (watchlistId: string, symbol: string) => void;
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
-  onCreateBifurcation: (watchlistId: string, name: string) => void;
-  onRenameBifurcation: (watchlistId: string, bifurcationId: string, name: string) => void;
-  onMoveSymbolsBetweenBifurcations: (watchlistId: string, fromBifurcationId: string, toBifurcationId: string, symbols: string[]) => void;
-  onSetActiveBifurcation: (watchlistId: string, bifurcationId: string) => void;
-  onCopyToWatchlist: (watchlistId: string, symbol: string) => void;
-  onImportWatchlist: (result: ImportResult) => void;
-  onReorderWatchlists: (orderedIds: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
-  onRequestAddToJournal?: (symbol: string, price: number) => void;
   onPickSymbol: (symbol: string) => void;
   universeItems: ScanMatch[];
   selectedSymbol: string | null;
-  groupsData?: IndustryGroupsResponse | null;
 };
 
 type WatchlistDisplayItem = {
@@ -115,19 +97,10 @@ export function WatchlistsPanel({
   onSetWatchlistColor,
   onRemoveFromWatchlist,
   onMoveSymbols,
-  onCreateBifurcation,
-  onRenameBifurcation,
-  onMoveSymbolsBetweenBifurcations,
-  onSetActiveBifurcation,
-  onCopyToWatchlist,
-  onImportWatchlist,
-  onReorderWatchlists,
   onRequestAddToWatchlist,
-  onRequestAddToJournal,
   onPickSymbol,
   universeItems,
   selectedSymbol,
-  groupsData,
 }: WatchlistsPanelProps) {
   const marketLabel = market === "india" ? "India" : "US";
   const hasWideTableLayout = useMinWidth(1180);
@@ -145,26 +118,10 @@ export function WatchlistsPanel({
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
-  const [importOpen, setImportOpen] = useState(false);
-  const dragSrcIdRef = useRef<string | null>(null);
-  const [dragOverId, setDragOverId] = useState<string | null>(null);
-  const [activeBifurcationId, setActiveBifurcationId] = useState<string | null>(null);
-  const [newBifurcationName, setNewBifurcationName] = useState("");
-  const [renameBifurcationDraft, setRenameBifurcationDraft] = useState("");
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
     [activeWatchlistId, watchlists],
-  );
-
-  const activeBifurcations = useMemo(
-    () => activeWatchlist?.bifurcations ?? [],
-    [activeWatchlist?.bifurcations],
-  );
-
-  const activeBifurcation = useMemo(
-    () => activeBifurcations.find((item) => item.id === activeBifurcationId) ?? activeBifurcations[0] ?? null,
-    [activeBifurcationId, activeBifurcations],
   );
 
   const lookup = useMemo(() => {
@@ -175,42 +132,9 @@ export function WatchlistsPanel({
     return map;
   }, [universeItems]);
 
-  // Build symbol → group info lookup from groups data
-  const groupLookup = useMemo(() => {
-    type GroupInfo = { groupName: string; groupRank: number; totalGroups: number; stockRankInGroup: number; totalInGroup: number };
-    const map = new Map<string, GroupInfo>();
-    if (!groupsData) return map;
-    // group_id → rank map
-    const rankByGroupId = new Map<string, { rank: number; total: number }>();
-    for (const g of groupsData.groups) {
-      rankByGroupId.set(g.group_id, { rank: g.rank, total: groupsData.groups.length });
-    }
-    // Group stocks by group_id, sorted by rs_rating desc to get stock rank
-    const byGroupId = new Map<string, typeof groupsData.stocks>();
-    for (const s of groupsData.stocks) {
-      const arr = byGroupId.get(s.final_group_id) ?? [];
-      arr.push(s);
-      byGroupId.set(s.final_group_id, arr);
-    }
-    for (const [gid, stocks] of byGroupId) {
-      const sorted = [...stocks].sort((a, b) => (b.rs_rating ?? 0) - (a.rs_rating ?? 0));
-      const groupMeta = rankByGroupId.get(gid);
-      sorted.forEach((s, idx) => {
-        map.set(s.symbol, {
-          groupName: s.final_group_name,
-          groupRank: groupMeta?.rank ?? 0,
-          totalGroups: groupMeta?.total ?? 0,
-          stockRankInGroup: idx + 1,
-          totalInGroup: sorted.length,
-        });
-      });
-    }
-    return map;
-  }, [groupsData]);
-
   const activeItems = useMemo(
     (): WatchlistDisplayItem[] =>
-      (activeBifurcation?.symbols ?? activeWatchlist?.symbols ?? [])
+      (activeWatchlist?.symbols ?? [])
         .map((symbol) => {
           const match = lookup.get(symbol);
           if (match) {
@@ -247,7 +171,7 @@ export function WatchlistsPanel({
           }
           return (right.rs_rating ?? 0) - (left.rs_rating ?? 0);
         }),
-    [activeBifurcation?.symbols, activeWatchlist?.symbols, lookup],
+    [activeWatchlist?.symbols, lookup],
   );
 
   const availableMoveTargets = useMemo(
@@ -264,17 +188,6 @@ export function WatchlistsPanel({
   }, [activeWatchlist?.id, activeWatchlist?.name]);
 
   useEffect(() => {
-    const nextBifurcationId = activeWatchlist?.active_bifurcation_id
-      ?? activeWatchlist?.bifurcations?.[0]?.id
-      ?? null;
-    setActiveBifurcationId(nextBifurcationId);
-    const nextBifurcationName = activeWatchlist?.bifurcations?.find((item) => item.id === nextBifurcationId)?.name
-      ?? activeWatchlist?.bifurcations?.[0]?.name
-      ?? "";
-    setRenameBifurcationDraft(nextBifurcationName);
-  }, [activeWatchlist?.active_bifurcation_id, activeWatchlist?.bifurcations, activeWatchlist?.id]);
-
-  useEffect(() => {
     setSelectedSymbols([]);
     setRowMoveTargets({});
     setBulkTargetWatchlistId((current) => {
@@ -287,10 +200,10 @@ export function WatchlistsPanel({
 
   useEffect(() => {
     setSelectedSymbols((current) => {
-      const activeSymbols = new Set(activeItems.map((item) => item.symbol));
+      const activeSymbols = new Set(activeWatchlist?.symbols ?? []);
       return current.filter((symbol) => activeSymbols.has(symbol));
     });
-  }, [activeItems]);
+  }, [activeWatchlist?.symbols]);
 
   const shouldVirtualize = hasWideTableLayout && activeItems.length > 60;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
@@ -406,18 +319,11 @@ export function WatchlistsPanel({
     }, {});
   }
 
-  const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
-    const groupInfo = groupLookup.get(item.symbol);
-    return (
+  const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => (
     <div
       key={`watchlist-${activeWatchlist?.id ?? "none"}-${item.symbol}`}
       className={selectedSymbol === item.symbol ? "scan-row watchlist-row active" : "scan-row watchlist-row"}
       style={virtualHeight ? { height: `${virtualHeight}px` } : undefined}
-      draggable
-      onDragStart={(event) => {
-        event.dataTransfer.effectAllowed = "move";
-        event.dataTransfer.setData("text/watchlist-symbol", item.symbol);
-      }}
     >
       <span>
         <input
@@ -440,81 +346,46 @@ export function WatchlistsPanel({
       <span>{item.isKnown ? formatPrice(item.last_price, market) : "--"}</span>
       <span className={item.isKnown ? metricClass(item.change_pct) : ""}>{item.isKnown ? formatReturn(item.change_pct) : "--"}</span>
       <span>{item.isKnown ? item.rs_rating ?? "--" : "--"}</span>
-      {groupInfo ? (
-        <span className="wl-group-cell">
-          <span className="wl-group-name" title={groupInfo.groupName}>{groupInfo.groupName}</span>
-          <span className="wl-group-badges">
-            <span className="wl-badge wl-badge--rank" title={`Group ranked #${groupInfo.groupRank} of ${groupInfo.totalGroups}`}>
-              G#{groupInfo.groupRank}
-            </span>
-            <span className="wl-badge wl-badge--stock" title={`Ranked #${groupInfo.stockRankInGroup} in its group of ${groupInfo.totalInGroup} stocks`}>
-              #{groupInfo.stockRankInGroup}/{groupInfo.totalInGroup}
-            </span>
-          </span>
-        </span>
-      ) : (
-        <span className="wl-group-cell" style={{ color: "var(--text-muted)" }}>—</span>
-      )}
       <div className="watchlist-row-actions">
-        {onRequestAddToJournal && (
-          <button
-            type="button"
-            className="tool-pill small"
-            style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" }}
-            onClick={() => onRequestAddToJournal(item.symbol, item.last_price)}
-            title="Add to Trade Journal"
-          >
-            Journal
-          </button>
-        )}
-        {availableMoveTargets.length > 0 ? (
-          <>
-            <select
-              value={rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id || ""}
-              onChange={(event) => {
-                const targetId = event.target.value;
-                setRowMoveTargets((current) => ({ ...current, [item.symbol]: targetId }));
-                if (activeWatchlist && targetId) {
-                  onMoveSymbols(activeWatchlist.id, targetId, [item.symbol]);
-                  setSelectedSymbols((current) => current.filter((s) => s !== item.symbol));
-                }
-              }}
-              title="Select watchlist to move to immediately"
-            >
-              {availableMoveTargets.map((watchlist) => (
-                <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
-                  {watchlist.symbols.includes(item.symbol) ? `✓ ${watchlist.name}` : watchlist.name}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              className="tool-pill"
-              onClick={() => {
-                const targetId = rowMoveTargets[item.symbol] || availableMoveTargets[0]?.id;
-                if (targetId) onCopyToWatchlist(targetId, item.symbol);
-              }}
-            >
-              Copy
-            </button>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="tool-pill"
-            onClick={() => {
-              if (activeWatchlist) {
-                onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
-              }
-            }}
-          >
-            Remove
-          </button>
-        )}
+        <button
+          type="button"
+          className="tool-pill"
+          onClick={() => {
+            if (activeWatchlist) {
+              onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
+            }
+          }}
+        >
+          Remove
+        </button>
+        <select
+          value={rowMoveTargets[item.symbol] || bulkTargetWatchlistId || availableMoveTargets[0]?.id || ""}
+          onChange={(event) =>
+            setRowMoveTargets((current) => ({
+              ...current,
+              [item.symbol]: event.target.value,
+            }))
+          }
+          disabled={availableMoveTargets.length === 0}
+        >
+          {availableMoveTargets.length === 0 ? <option value="">No target</option> : null}
+          {availableMoveTargets.map((watchlist) => (
+            <option key={`row-target-${item.symbol}-${watchlist.id}`} value={watchlist.id}>
+              {watchlist.name}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="tool-pill"
+          disabled={availableMoveTargets.length === 0}
+          onClick={() => handleMoveOne(item.symbol)}
+        >
+          Move
+        </button>
       </div>
     </div>
-    );
-  };
+  );
 
   return (
     <div className="watchlists-layout">
@@ -523,23 +394,6 @@ export function WatchlistsPanel({
         subtitle={`${marketLabel} watchlists and saved collections`}
         className="watchlists-sidebar"
       >
-        {/* Quick-switch dropdown */}
-        <div className="wl-quick-switch">
-          <select
-            className="wl-quick-select"
-            value={activeWatchlist?.id ?? ""}
-            onChange={(e) => onSelectWatchlist(e.target.value)}
-          >
-            {watchlists.length === 0 && <option value="">No watchlists yet</option>}
-            {watchlists.map((wl) => (
-              <option key={wl.id} value={wl.id}>{wl.name} ({wl.symbols.length})</option>
-            ))}
-          </select>
-          <button type="button" className="tool-pill wl-import-btn" onClick={() => setImportOpen(true)} title="Import watchlist from file or paste">
-            Import
-          </button>
-        </div>
-
         <div className="watchlists-create">
           <input
             value={newWatchlistName}
@@ -564,45 +418,9 @@ export function WatchlistsPanel({
 
         <div className="watchlists-nav">
           {watchlists.map((watchlist) => (
-            <div
-              key={watchlist.id}
-              className={`watchlist-link-row${dragOverId === watchlist.id ? " wl-drag-over" : ""}`}
-              draggable
-              onDragStart={(e) => {
-                dragSrcIdRef.current = watchlist.id;
-                e.dataTransfer.effectAllowed = "move";
-                e.dataTransfer.setData("text/plain", watchlist.id);
-              }}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = "move";
-                if (dragOverId !== watchlist.id) setDragOverId(watchlist.id);
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setDragOverId(null);
-                }
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragOverId(null);
-                const srcId = e.dataTransfer.getData("text/plain") || dragSrcIdRef.current;
-                if (!srcId || srcId === watchlist.id) return;
-                const ids = watchlists.map((wl) => wl.id);
-                const fromIdx = ids.indexOf(srcId);
-                const toIdx = ids.indexOf(watchlist.id);
-                if (fromIdx === -1 || toIdx === -1) return;
-                const reordered = [...ids];
-                reordered.splice(fromIdx, 1);
-                reordered.splice(toIdx, 0, srcId);
-                onReorderWatchlists(reordered);
-              }}
-              onDragEnd={() => { dragSrcIdRef.current = null; setDragOverId(null); }}
-            >
-              <span className="wl-drag-handle" aria-hidden="true">⠿</span>
+            <div key={watchlist.id} className="watchlist-link-row">
               <button
                 type="button"
-                draggable={false}
                 className={watchlist.id === activeWatchlist?.id ? "watchlist-link active" : "watchlist-link"}
                 style={{
                   borderLeftColor: watchlist.color,
@@ -616,7 +434,7 @@ export function WatchlistsPanel({
                   <small>{watchlist.symbols.length} stocks</small>
                 </span>
               </button>
-              <label className="watchlist-inline-color" title={`Change color for ${watchlist.name}`} draggable={false}>
+              <label className="watchlist-inline-color" title={`Change color for ${watchlist.name}`}>
                 <input
                   type="color"
                   value={watchlist.color}
@@ -678,84 +496,6 @@ export function WatchlistsPanel({
       >
         {activeWatchlist ? (
           <>
-            <div className="watchlist-bifurcation-panel">
-              <div className="watchlist-bifurcation-list">
-                {activeBifurcations.map((bifurcation) => {
-                  const isActive = activeBifurcation?.id === bifurcation.id;
-                  return (
-                    <button
-                      key={`bifurcation-${activeWatchlist.id}-${bifurcation.id}`}
-                      type="button"
-                      className={isActive ? "tool-pill active" : "tool-pill"}
-                      onClick={() => {
-                        setActiveBifurcationId(bifurcation.id);
-                        setRenameBifurcationDraft(bifurcation.name);
-                        onSetActiveBifurcation(activeWatchlist.id, bifurcation.id);
-                      }}
-                      onDragOver={(event) => {
-                        event.preventDefault();
-                        event.dataTransfer.dropEffect = "move";
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        const symbol = event.dataTransfer.getData("text/watchlist-symbol").trim().toUpperCase();
-                        if (!symbol || !activeBifurcation || activeBifurcation.id === bifurcation.id) {
-                          return;
-                        }
-                        onMoveSymbolsBetweenBifurcations(activeWatchlist.id, activeBifurcation.id, bifurcation.id, [symbol]);
-                      }}
-                    >
-                      {bifurcation.name} ({bifurcation.symbols.length})
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="watchlist-bifurcation-actions">
-                <input
-                  value={newBifurcationName}
-                  onChange={(event) => setNewBifurcationName(event.target.value)}
-                  placeholder="New bifurcation"
-                />
-                <button
-                  type="button"
-                  className="tool-pill"
-                  onClick={() => {
-                    const value = newBifurcationName.trim();
-                    if (!value) {
-                      return;
-                    }
-                    onCreateBifurcation(activeWatchlist.id, value);
-                    setNewBifurcationName("");
-                  }}
-                >
-                  Add Group
-                </button>
-                <input
-                  value={renameBifurcationDraft}
-                  onChange={(event) => setRenameBifurcationDraft(event.target.value)}
-                  placeholder="Rename group"
-                  disabled={!activeBifurcation}
-                />
-                <button
-                  type="button"
-                  className="tool-pill"
-                  disabled={!activeBifurcation}
-                  onClick={() => {
-                    if (!activeBifurcation) {
-                      return;
-                    }
-                    const value = renameBifurcationDraft.trim();
-                    if (!value) {
-                      return;
-                    }
-                    onRenameBifurcation(activeWatchlist.id, activeBifurcation.id, value);
-                  }}
-                >
-                  Rename Group
-                </button>
-              </div>
-            </div>
-
             <div className="watchlist-quick-add">
               <input
                 list="watchlist-symbols"
@@ -791,26 +531,19 @@ export function WatchlistsPanel({
                 type="button"
                 className="tool-pill"
                 onClick={() => {
-                  if (activeItems.length === 0) {
+                  if (!activeWatchlist?.symbols?.length) {
                     return;
                   }
-                  const allSelected = selectedSymbols.length === activeItems.length;
-                  setSelectedSymbols(allSelected ? [] : activeItems.map((item) => item.symbol));
+                  const allSelected = selectedSymbols.length === activeWatchlist.symbols.length;
+                  setSelectedSymbols(allSelected ? [] : [...activeWatchlist.symbols]);
                 }}
               >
-                {selectedSymbols.length === activeItems.length && activeItems.length > 0 ? "Unselect All" : "Select All"}
+                {selectedSymbols.length === activeWatchlist.symbols.length && activeWatchlist.symbols.length > 0 ? "Unselect All" : "Select All"}
               </button>
               <span className="watchlist-selection-count">{selectedSymbols.length} selected</span>
               <select
                 value={bulkTargetWatchlistId}
-                onChange={(event) => {
-                  const targetId = event.target.value;
-                  setBulkTargetWatchlistId(targetId);
-                  if (targetId && activeWatchlist && selectedSymbols.length > 0) {
-                    onMoveSymbols(activeWatchlist.id, targetId, selectedSymbols);
-                    setSelectedSymbols([]);
-                  }
-                }}
+                onChange={(event) => setBulkTargetWatchlistId(event.target.value)}
                 disabled={availableMoveTargets.length === 0}
               >
                 {availableMoveTargets.length === 0 ? <option value="">No other watchlist</option> : null}
@@ -844,8 +577,7 @@ export function WatchlistsPanel({
                 <span>Stock</span>
                 <span>Price</span>
                 <span>Change</span>
-                <span>RS</span>
-                <span>Group / Rank</span>
+                <span>RS Rating</span>
                 <span>Action</span>
               </div>
               <div ref={shouldVirtualize ? containerRef : undefined} className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}>
@@ -891,18 +623,6 @@ export function WatchlistsPanel({
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGridSeries}
             onClose={() => setGridOpen(false)}
-          />
-        </Suspense>
-      ) : null}
-      {importOpen ? (
-        <Suspense fallback={null}>
-          <WatchlistImportModal
-            defaultColor="#4f8cff"
-            onConfirm={(result) => {
-              onImportWatchlist(result);
-              setImportOpen(false);
-            }}
-            onClose={() => setImportOpen(false)}
           />
         </Suspense>
       ) : null}

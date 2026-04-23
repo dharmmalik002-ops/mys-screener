@@ -10,8 +10,6 @@ export const DEFAULT_CHART_COLORS: ChartColorSettings = {
   candleDown: "#ff3131",
   volumeUp: "#00d2ff",
   volumeDown: "#ff3131",
-  volumeHQ: "#fbbf24",
-  volumeLQ: "#818cf8",
   rsLine: "#39ff14",
   rsMarker: "#39ff14",
   rsMarkerSize: 4,

@@ -52,6 +52,10 @@ import {
   type SectorTabResponse,
   type ScanResultsResponse,
   type WatchlistsStateResponse,
+  normalizeChartResponse,
+  normalizeDashboardResponse,
+  normalizeIndustryGroupsResponse,
+  normalizeSectorTabResponse,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
@@ -306,12 +310,14 @@ function emptyMarketViewCacheEntry(): MarketViewCacheEntry {
 }
 
 function normalizeMarketViewCacheEntry(raw: Partial<MarketViewCacheEntry> | null | undefined): MarketViewCacheEntry {
-  const sectorTabData = raw?.sectorTabData ?? null;
+  const dashboard = raw?.dashboard ? normalizeDashboardResponse(raw.dashboard) : null;
+  const sectorTabData = raw?.sectorTabData ? normalizeSectorTabResponse(raw.sectorTabData) : null;
+  const groupsData = raw?.groupsData ? normalizeIndustryGroupsResponse(raw.groupsData) : null;
   const derivedUniverseCatalog = sectorTabData ? buildUniverseCatalogFromSectorTab(sectorTabData) : [];
   return {
-    dashboard: raw?.dashboard ?? null,
+    dashboard,
     sectorTabData,
-    groupsData: raw?.groupsData ?? null,
+    groupsData,
     universeCatalog: raw?.universeCatalog?.length ? raw.universeCatalog : derivedUniverseCatalog,
     selectedSymbol: raw?.selectedSymbol ?? null,
   };
@@ -587,6 +593,34 @@ const US_MARKET_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
 });
 
+const INDIA_SNAPSHOT_DATE_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+const INDIA_SNAPSHOT_TIME_FORMATTER = new Intl.DateTimeFormat("en-IN", {
+  timeZone: "Asia/Kolkata",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
+
+const US_SNAPSHOT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
+const US_SNAPSHOT_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: true,
+});
+
 function getMarketClock(market: MarketKey, now: Date = new Date()) {
   const formatter = market === "us" ? US_MARKET_TIME_FORMATTER : INDIA_MARKET_TIME_FORMATTER;
   const parts = formatter.formatToParts(now);
@@ -601,6 +635,28 @@ function getMarketClock(market: MarketKey, now: Date = new Date()) {
 
 function getIndiaClock(now: Date = new Date()) {
   return getMarketClock("india", now);
+}
+
+function formatSnapshotDate(market: MarketKey, value: string | null | undefined) {
+  if (!value) {
+    return "--";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "--";
+  }
+  return (market === "us" ? US_SNAPSHOT_DATE_FORMATTER : INDIA_SNAPSHOT_DATE_FORMATTER).format(parsed);
+}
+
+function formatSnapshotTime(market: MarketKey, value: string | null | undefined) {
+  if (!value) {
+    return "--";
+  }
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    return "--";
+  }
+  return (market === "us" ? US_SNAPSHOT_TIME_FORMATTER : INDIA_SNAPSHOT_TIME_FORMATTER).format(parsed);
 }
 
 function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "india"): {
@@ -754,7 +810,10 @@ function settledError(result: PromiseSettledResult<unknown>): string | null {
   return result.reason instanceof Error ? result.reason.message : "Request failed";
 }
 
-function normalizeTimeframe(value: string | undefined): ChartTimeframe {
+function normalizeTimeframe(value: string | undefined, market: MarketKey = "india"): ChartTimeframe {
+  if (market === "india" && (value === "15m" || value === "30m" || value === "1h")) {
+    return "1D";
+  }
   if (value === "15m" || value === "30m" || value === "1h" || value === "1W") {
     return value;
   }
@@ -802,7 +861,7 @@ function readChartPreferences(market: MarketKey): {
     }>;
     return {
       chartPanelTab: normalizeChartPanelTab(parsed.chartPanelTab),
-      timeframe: normalizeTimeframe(parsed.timeframe),
+      timeframe: normalizeTimeframe(parsed.timeframe, market),
       chartStyle: parsed.chartStyle === "bars" ? "bars" : "candles",
       showBenchmarkOverlay: parsed.showBenchmarkOverlay === true,
       indicatorKeys: normalizeIndicatorKeys(parsed.indicatorKeys),
@@ -861,12 +920,13 @@ function buildIndexFallbackChart(
   const indexCard = sectorTabData.sectors.find(
     (card) => card.group_kind === "index" && macroIndexFallbackSymbol(card.sector, market) === symbol,
   );
-  if (!indexCard || indexCard.sparkline.length < 8) {
+  const sparkline = Array.isArray(indexCard?.sparkline) ? indexCard.sparkline : [];
+  if (!indexCard || sparkline.length < 8) {
     return null;
   }
 
-  const bars: ChartBar[] = indexCard.sparkline.map((point, index) => {
-    const previousValue = index > 0 ? indexCard.sparkline[index - 1].value : point.value;
+  const bars: ChartBar[] = sparkline.map((point, index) => {
+    const previousValue = index > 0 ? sparkline[index - 1].value : point.value;
     const open = Number(previousValue.toFixed(2));
     const close = Number(point.value.toFixed(2));
     return {
@@ -920,8 +980,14 @@ function readPersistedChartCache(market: MarketKey) {
           && typeof value === "object"
           && typeof value.payload?.timeframe === "string"
           && shouldPersistChartResponse(value.payload.timeframe as ChartTimeframe)
-          && isChartResponseCacheCompatible(value.payload),
-      ),
+          && isChartResponseCacheCompatible(normalizeChartResponse(value.payload)),
+      ).map(([key, value]) => [
+        key,
+        {
+          ...value,
+          payload: normalizeChartResponse(value.payload),
+        } satisfies PersistedChartCacheEntry,
+      ]),
     );
   } catch {
     return {};
@@ -1194,6 +1260,7 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "custom-scan",
       "ipo",
       "gap-up-openers",
+      "ema-expansion",
       "near-pivot",
       "pull-backs",
       "returns",
@@ -1202,14 +1269,23 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "minervini-5m",
     ]);
     return Array.isArray(parsed)
-      ? parsed.filter(
-          (item): item is SavedScannerPreset =>
-            Boolean(item)
-            && typeof item.id === "string"
-            && typeof item.name === "string"
-            && typeof item.mode === "string"
-            && validModes.has(item.mode as SavableScannerMode),
-        )
+      ? parsed
+          .map((item) => {
+            if (!item || typeof item !== "object") {
+              return null;
+            }
+            const normalizedMode = item.mode === "e-and-c" ? "ema-expansion" : item.mode;
+            if (
+              typeof item.id !== "string"
+              || typeof item.name !== "string"
+              || typeof normalizedMode !== "string"
+              || !validModes.has(normalizedMode as SavableScannerMode)
+            ) {
+              return null;
+            }
+            return { ...item, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
+          })
+          .filter((item): item is SavedScannerPreset => Boolean(item))
       : [];
   } catch {
     return [];
@@ -1225,6 +1301,9 @@ function scannerModeLabel(mode: SavableScannerMode): string {
   }
   if (mode === "gap-up-openers") {
     return "Gap Up Openers";
+  }
+  if (mode === "ema-expansion") {
+    return "Expansion";
   }
   if (mode === "near-pivot") {
     return "Near Pivot";
@@ -1598,6 +1677,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setIndicatorKeys(preferences.indicatorKeys);
     setChartColors(preferences.chartColors);
     setChartDrawingColor(preferences.drawingColor);
+  };
+
+  const handleTimeframeChange = (nextTimeframe: ChartTimeframe) => {
+    setTimeframe(normalizeTimeframe(nextTimeframe, activeMarket));
   };
 
   const applyScannerSettings = (settings: PersistedScannerSettings) => {
@@ -2040,7 +2123,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         scanSectorSummaryRequestIdRef.current += 1;
         setScanSectorSummaries([]);
         setScanSectorSummariesLoading(false);
-        const payload = await requestActiveScannerResults(false);
+        const payload = await requestActiveScannerResults(scanArrangementMode === "sector");
 
         if (!payload || !active || scanRequestIdRef.current !== requestId) {
           return;
@@ -2091,6 +2174,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     improvingRsWindow,
     loading,
     scannerRunNonce,
+    scanArrangementMode,
     sectorSortBy,
     sectorSortOrder,
   ]);
@@ -2203,6 +2287,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       window.clearTimeout(prefetchHandle);
     };
   }, [activeMarket, activePage, groupsData, loading]);
+
+  useEffect(() => {
+    if (activeMarket === "india" && timeframe !== "1D" && timeframe !== "1W") {
+      setTimeframe("1D");
+    }
+  }, [activeMarket, timeframe]);
 
   useEffect(() => {
     if (!selectedSymbol) {
@@ -2523,6 +2613,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     (scanner) => scanner.category === "Setups" && scanner.id !== "custom-scan",
   );
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
+  const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
+  const snapshotTimeLabel = formatSnapshotTime(activeMarket, dashboard?.generated_at);
+  const snapshotStripLabel = activeMarket === "india" ? "India EOD Active" : "US Snapshot Active";
+  const snapshotStripDetail = activeMarket === "india"
+    ? `EOD applied for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`
+    : `Snapshot active for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`;
   const activeWatchlist = watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null;
   const activeViewCount =
     activePage === "home"
@@ -2671,6 +2767,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "ipo") {
       return getScanResults("ipo", activeMarket, options);
     }
+    if (activeScanner === "ema-expansion") {
+      return getScanResults("ema-expansion", activeMarket, options);
+    }
     if (activeScanner === "contraction") {
       return getScanResults("contraction", activeMarket, options);
     }
@@ -2756,6 +2855,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (preset.mode === "ipo") {
       return getScanResults("ipo", activeMarket, options);
+    }
+    if (preset.mode === "ema-expansion") {
+      return getScanResults("ema-expansion", activeMarket, options);
     }
     if (preset.mode === "contraction") {
       return getScanResults("contraction", activeMarket, options);
@@ -3728,7 +3830,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         setSelectedSymbol(nextSelectedSymbol);
       } else if (activePage === "screener") {
         scanSectorSummaryRequestIdRef.current += 1;
-        const scanPayload = await requestActiveScannerResults(false);
+        const scanPayload = await requestActiveScannerResults(scanArrangementMode === "sector");
         if (!scanPayload) {
           throw new Error("Scanner settings are not ready yet");
         }
@@ -4129,6 +4231,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         onRetry={handleRetryConnection}
       />
 
+      {!loading ? (
+        <section className="snapshot-status-strip" aria-live="polite">
+          <span className="snapshot-status-strip__label">{snapshotStripLabel}</span>
+          <strong>{snapshotDateLabel}</strong>
+          <span className="snapshot-status-strip__detail">{snapshotStripDetail}</span>
+        </section>
+      ) : null}
+
       <main className="workspace">
 
         {loading ? (
@@ -4153,6 +4263,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               dashboard={dashboard}
               sectors={sectorTabData}
               groups={groupsData}
+              snapshotDateLabel={snapshotDateLabel}
+              snapshotTimeLabel={snapshotTimeLabel}
               onPickSymbol={handlePickSymbol}
               onOpenSectors={() => setActivePage("sectors")}
               onOpenGroups={(options) => {
@@ -4223,8 +4335,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 <strong>{floorMetricValue}</strong>
               </div>
               <div className="metric-card">
-                <span>Updated</span>
-                <strong>{dashboard ? new Date(dashboard.generated_at).toLocaleTimeString() : "--"}</strong>
+                <span>{activeMarket === "india" ? "EOD As Of" : "Snapshot Date"}</span>
+                <strong>{snapshotDateLabel}</strong>
+              </div>
+              <div className="metric-card">
+                <span>Published</span>
+                <strong>{snapshotTimeLabel}</strong>
               </div>
             </section>
 
@@ -4247,6 +4363,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
+                      "ema-expansion": activeScanner === "ema-expansion" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ema-expansion" ? scanResults.total_hits : 0,
                       "contraction": activeScanner === "contraction" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "contraction" ? scanResults.total_hits : 0,
                       "near-pivot": activeScanner === "near-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "near-pivot" ? scanResults.total_hits : 0,
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
@@ -4279,6 +4396,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "IPO"
                                 : activeScanner === "gap-up-openers"
                                   ? "Gap Up Openers"
+                                  : activeScanner === "ema-expansion"
+                                    ? "Expansion"
+                                  : activeScanner === "contraction"
+                                    ? "Contraction"
                                   : activeScanner === "near-pivot"
                                     ? "Near Pivot"
                                   : activeScanner === "returns"
@@ -4298,6 +4419,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
                                   ? "Filter stocks by opening gap percentage."
+                                  : activeScanner === "ema-expansion"
+                                    ? "Built-in expansion scan using price, RVOL, and same-day liquidity rules."
+                                  : activeScanner === "contraction"
+                                    ? "Built-in contraction scan for tight 3-day pull-ins above the 50D EMA."
                                   : activeScanner === "near-pivot"
                                     ? "Find high-RS stocks tightening close to their pivot zone."
                                   : activeScanner === "returns"
@@ -4336,6 +4461,20 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 <span>The IPO screener uses the backend listing-date rule and does not have extra filters yet.</span>
                               </div>
                             )
+                            : activeScanner === "ema-expansion"
+                              ? (
+                                <div className="scanner-settings-note">
+                                  <strong>Built-in scan</strong>
+                                  <span>The Expansion screener uses the backend expansion rules and only shows expansion matches.</span>
+                                </div>
+                              )
+                              : activeScanner === "contraction"
+                                ? (
+                                  <div className="scanner-settings-note">
+                                    <strong>Built-in scan</strong>
+                                    <span>The Contraction screener uses the backend contraction rules and does not use custom scanner filters.</span>
+                                  </div>
+                                )
                             : activeScanner === "gap-up-openers"
                             ? (
                               <GapUpScannerPanel
@@ -4467,7 +4606,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     fundamentalsError={fundamentalsError}
                     groupSummary={activeChartGroupSummary}
                     timeframe={timeframe}
-                    onTimeframeChange={setTimeframe}
+                    onTimeframeChange={handleTimeframeChange}
                     chartStyle={chartStyle}
                     onChartStyleChange={setChartStyle}
                     chartPalette={chartPalette}
@@ -4557,7 +4696,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   fundamentalsError={fundamentalsError}
                   groupSummary={activeChartGroupSummary}
                   timeframe={timeframe}
-                  onTimeframeChange={setTimeframe}
+                  onTimeframeChange={handleTimeframeChange}
                   chartStyle={chartStyle}
                   onChartStyleChange={setChartStyle}
                   chartPalette={chartPalette}
@@ -4638,7 +4777,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 fundamentalsError={fundamentalsError}
                 groupSummary={activeChartGroupSummary}
                 timeframe={timeframe}
-                onTimeframeChange={setTimeframe}
+                onTimeframeChange={handleTimeframeChange}
                 chartStyle={chartStyle}
                 onChartStyleChange={setChartStyle}
                 chartPalette={chartPalette}

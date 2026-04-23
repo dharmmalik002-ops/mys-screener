@@ -10,25 +10,11 @@ export default defineConfig({
           if (!id.includes("node_modules")) {
             return undefined;
           }
-          // recharts + its d3 deps load only when fundamentals Charts/Valuation tab opens
-          if (
-            id.includes("recharts") ||
-            id.includes("d3-scale") ||
-            id.includes("d3-shape") ||
-            id.includes("d3-path") ||
-            id.includes("d3-color") ||
-            id.includes("d3-format") ||
-            id.includes("d3-interpolate") ||
-            id.includes("d3-time") ||
-            id.includes("d3-array") ||
-            id.includes("decimal.js") ||
-            id.includes("victory-vendor")
-          ) {
-            return "recharts-vendor";
+          if (id.includes("react-dom") || id.includes("react/jsx-runtime") || id.includes("/react/")) {
+            return "react-vendor";
           }
-          // lightweight-charts loads with ChartPanel (on stock select)
-          if (id.includes("lightweight-charts")) {
-            return "lw-charts-vendor";
+          if (id.includes("lightweight-charts") || id.includes("recharts")) {
+            return "charts-vendor";
           }
           return "vendor";
         },

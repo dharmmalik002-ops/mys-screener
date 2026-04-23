@@ -48,7 +48,6 @@ type ScanTableProps = {
   sectorSummaries: ScanSectorSummary[];
   onPickSymbol: (symbol: string) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
-  onRequestAddToJournal?: (symbol: string, price: number) => void;
   selectedSymbol: string | null;
   sortMode: "change" | "rs";
   onSortModeChange: (mode: "change" | "rs") => void;
@@ -163,7 +162,6 @@ export function ScanTable({
   sectorSummaries,
   onPickSymbol,
   onRequestAddToWatchlist,
-  onRequestAddToJournal,
   selectedSymbol,
   sortMode,
   onSortModeChange,
@@ -234,7 +232,7 @@ export function ScanTable({
     });
   }, [arrangementMode, sectorGroups, sortedItems, summaryBySector]);
 
-  const shouldVirtualize = tableEntries.length > 80;
+  const shouldVirtualize = hasWideTableLayout && tableEntries.length > 120;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
     items: tableEntries,
     getKey: (entry) => entry.key,
@@ -367,11 +365,6 @@ export function ScanTable({
         <button type="button" className="tool-pill small" onClick={() => onRequestAddToWatchlist(item.symbol)}>
           Add
         </button>
-        {onRequestAddToJournal && (
-          <button type="button" className="tool-pill small" style={{ background: "var(--accent)", color: "#fff", borderColor: "var(--accent)" }} onClick={() => onRequestAddToJournal(item.symbol, item.last_price)}>
-            Journal
-          </button>
-        )}
       </div>
     );
   };

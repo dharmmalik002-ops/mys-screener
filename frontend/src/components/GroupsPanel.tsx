@@ -25,13 +25,12 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score" | "1w" | "1m" | "3m" | "6m" | "breadth" | "trend";
+type GroupSortBy = "rank" | "score" | "1m" | "3m" | "6m" | "breadth" | "trend";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
   { value: "rank", label: "Rank" },
   { value: "score", label: "Score" },
-  { value: "1w", label: "1W" },
   { value: "1m", label: "1M" },
   { value: "3m", label: "3M" },
   { value: "6m", label: "6M" },
@@ -175,10 +174,6 @@ export function GroupsPanel({
   const groupCardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
-    void import("./ChartGridModal");
-  }, []);
-
-  useEffect(() => {
     setExpandedGroupIds([]);
     setGridGroupId(null);
     setMemberGridSeries({});
@@ -255,9 +250,6 @@ export function GroupsPanel({
       }
       if (sortBy === "score") {
         return right.score - left.score;
-      }
-      if (sortBy === "1w") {
-        return right.relative_return_1w - left.relative_return_1w;
       }
       if (sortBy === "1m") {
         return right.relative_return_1m - left.relative_return_1m;
@@ -509,10 +501,6 @@ export function GroupsPanel({
                   </small>
                 </div>
                 <div className="group-metric-card">
-                  <span>1W Rel</span>
-                  <strong className={metricClass(group.relative_return_1w)}>{formatReturn(group.relative_return_1w)}</strong>
-                </div>
-                <div className="group-metric-card">
                   <span>1M Rel</span>
                   <strong className={metricClass(group.relative_return_1m)}>{formatReturn(group.relative_return_1m)}</strong>
                 </div>
@@ -581,7 +569,6 @@ export function GroupsPanel({
                       <span>Stock</span>
                       <span>Price</span>
                       <span>1D</span>
-                      <span>1W</span>
                       <span>1M</span>
                       <span>3M</span>
                       <span>6M</span>
@@ -598,7 +585,6 @@ export function GroupsPanel({
                         </button>
                         <span>{formatPrice(member.last_price, market)}</span>
                         <span className={metricClass(member.change_pct)}>{formatReturn(member.change_pct)}</span>
-                        <span className={metricClass(member.return_1w)}>{formatReturn(member.return_1w)}</span>
                         <span className={metricClass(member.return_1m)}>{formatReturn(member.return_1m)}</span>
                         <span className={metricClass(member.return_3m)}>{formatReturn(member.return_3m)}</span>
                         <span className={metricClass(member.return_6m)}>{formatReturn(member.return_6m)}</span>
@@ -617,7 +603,7 @@ export function GroupsPanel({
       </div>
 
       {activeGridGroup ? (
-        <Suspense fallback={<div className="chart-modal-backdrop"><div className="chart-grid-modal"><div className="empty-state">Opening group grid…</div></div></div>}>
+        <Suspense fallback={null}>
           <ChartGridModal
             contextLabel="Group"
             title={activeGridGroup.group_name}

@@ -22,6 +22,8 @@ export function WatchlistPickerModal({
 }: WatchlistPickerModalProps) {
   const marketLabel = market === "india" ? "India" : "US";
   const [newWatchlistName, setNewWatchlistName] = useState("");
+  const normalizedSymbol = symbol.trim().toUpperCase();
+  const currentWatchlistId = watchlists.find((watchlist) => watchlist.symbols.includes(normalizedSymbol))?.id ?? null;
 
   return (
     <div className="watchlist-picker-backdrop" onClick={onClose}>
@@ -44,6 +46,10 @@ export function WatchlistPickerModal({
               className="watchlist-picker-row"
               style={{ borderLeftColor: watchlist.color }}
               onClick={() => {
+                if (watchlist.id === currentWatchlistId) {
+                  onClose();
+                  return;
+                }
                 onAddToWatchlist(watchlist.id, symbol);
                 onClose();
               }}
@@ -53,7 +59,13 @@ export function WatchlistPickerModal({
                 <strong>{watchlist.name}</strong>
                 <small>{watchlist.symbols.length} {market === "us" ? "tickers" : "stocks"}</small>
               </span>
-              <span>Add</span>
+              <span>
+                {watchlist.id === currentWatchlistId
+                  ? "Selected"
+                  : currentWatchlistId
+                    ? "Move here"
+                    : "Add"}
+              </span>
             </button>
           ))}
           {watchlists.length === 0 ? <div className="empty-state">Create your first watchlist below.</div> : null}

@@ -33,10 +33,11 @@ type HomePanelProps = {
   dashboard: DashboardResponse | null;
   sectors: SectorTabResponse | null;
   groups: IndustryGroupsResponse | null;
+  snapshotDateLabel: string;
+  snapshotTimeLabel: string;
   onPickSymbol: (symbol: string) => void;
   onOpenSectors: () => void;
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
-  onOpenWatchdogTasks: () => void;
 };
 
 type GridTarget =
@@ -754,10 +755,11 @@ export function HomePanel({
   dashboard,
   sectors,
   groups,
+  snapshotDateLabel,
+  snapshotTimeLabel,
   onPickSymbol,
   onOpenSectors,
   onOpenGroups,
-  onOpenWatchdogTasks,
 }: HomePanelProps) {
   const [heatmapWindow, setHeatmapWindow] = useState<SectorSortBy>("1D");
   const [groupFilter, setGroupFilter] = useState<HomeGroupFilter>(40);
@@ -830,7 +832,7 @@ export function HomePanel({
       const bars = sparklineToBars(card.sparkline ?? []);
       const nameUpper = card.sector.toUpperCase();
       if (nameUpper.includes("NIFTY 50")) map["^NSEI"] = bars;
-      if (nameUpper.includes("BANK NIFTY") || nameUpper.includes("NIFTY BANK")) map["^NSEBANK"] = bars;
+      if (nameUpper.includes("SMALLCAP 250")) map["^CNXSC"] = bars;
       if (nameUpper.includes("MIDCAP 50")) map["^NSEMDCP50"] = bars;
     }
     return map;
@@ -1028,16 +1030,6 @@ export function HomePanel({
                 : "NYSE and Nasdaq liquid stocks and ETFs filtered for price above $15 and average daily volume above 400,000 shares."}
             </p>
           </div>
-          <div className="home-hero-actions">
-            <button
-              type="button"
-              className="home-watchdog-button"
-              onClick={onOpenWatchdogTasks}
-              title="Open today's watchdog schedule, task status, and any pending issues."
-            >
-              Watchdog Tasks
-            </button>
-          </div>
         </div>
         <div className="home-hero-metrics">
           <div className="metric-card">
@@ -1045,8 +1037,12 @@ export function HomePanel({
             <strong>{dashboard?.universe_count ?? 0}</strong>
           </div>
           <div className="metric-card">
-            <span>Updated</span>
-            <strong>{dashboard ? new Date(dashboard.generated_at).toLocaleTimeString() : "--"}</strong>
+            <span>{activeMarket === "india" ? "EOD As Of" : "Snapshot Date"}</span>
+            <strong>{snapshotDateLabel}</strong>
+          </div>
+          <div className="metric-card">
+            <span>Published</span>
+            <strong>{snapshotTimeLabel}</strong>
           </div>
         </div>
       </section>

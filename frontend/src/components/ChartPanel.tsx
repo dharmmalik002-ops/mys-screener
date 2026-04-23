@@ -261,6 +261,10 @@ const RIGHT_EDGE_PADDING_BARS = 12;
 const FUTURE_DRAW_EXTENSION_BARS = 96;
 const USD_TO_INR = 83;
 
+function supportedTimeframes(market: MarketKey): ChartTimeframe[] {
+  return market === "india" ? ["1D", "1W"] : TIMEFRAMES;
+}
+
 const ANNOTATION_DEFAULT_COLORS: Record<string, string> = {
   hline: "#00d2ff",
   vline: "#6ea8ff",
@@ -798,6 +802,7 @@ export function ChartPanel({
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const palette = CHART_PALETTES[chartPalette];
+  const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   const safeRsLine = useMemo(() => sanitizeLinePoints(extendedHistory?.rs_line ?? rsLine), [extendedHistory, rsLine]);
   const safeRsLineMarkers = useMemo(
@@ -818,6 +823,12 @@ export function ChartPanel({
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
+
+  useEffect(() => {
+    if (!availableTimeframes.includes(timeframe)) {
+      onTimeframeChange(availableTimeframes[0] ?? "1D");
+    }
+  }, [availableTimeframes, onTimeframeChange, timeframe]);
   const formatAmountValue = (value: number | null | undefined, digits?: number) => formatCrore(value, market, digits);
   const formatPriceValue = (value: number | null | undefined, digits = 2) => formatPrice(value, market, digits);
   const formatCountValue = (value: number | null | undefined) => formatCount(value, market);
@@ -1852,7 +1863,7 @@ export function ChartPanel({
           {panelTab === "technical" ? (
             <>
               <div className="timeframe-switcher">
-                {TIMEFRAMES.map((item) => (
+                {availableTimeframes.map((item) => (
                   <button
                     key={item}
                     type="button"

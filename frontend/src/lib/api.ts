@@ -851,6 +851,788 @@ const FALLBACK_API_BASES = defaultApiBases().filter(
   (value, index, array) => array.indexOf(value) === index,
 );
 const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
+let preferredApiBase: string | null = null;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function readString(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
+function readNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function readNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function readNullableNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function mapArray<T>(value: unknown, mapper: (item: unknown) => T): T[] {
+  return Array.isArray(value) ? value.map(mapper) : [];
+}
+
+function normalizeScanDescriptor(value: unknown): ScanDescriptor {
+  const raw = isRecord(value) ? value : {};
+  return {
+    id: readString(raw.id),
+    name: readString(raw.name),
+    category: readString(raw.category),
+    description: readString(raw.description),
+    hit_count: readNumber(raw.hit_count),
+  };
+}
+
+function normalizeScanMatch(value: unknown): ScanMatch {
+  const raw = isRecord(value) ? value : {};
+  return {
+    scan_id: readString(raw.scan_id),
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    exchange: readString(raw.exchange),
+    listing_date: readNullableString(raw.listing_date),
+    sector: readString(raw.sector, "Unclassified"),
+    sub_sector: readNullableString(raw.sub_sector),
+    market_cap_crore: readNumber(raw.market_cap_crore),
+    last_price: readNumber(raw.last_price),
+    change_pct: readNumber(raw.change_pct),
+    relative_volume: readNumber(raw.relative_volume),
+    avg_rupee_volume_30d_crore: readNullableNumber(raw.avg_rupee_volume_30d_crore),
+    score: readNumber(raw.score),
+    pattern: readNullableString(raw.pattern),
+    rs_rating: readNullableNumber(raw.rs_rating),
+    rs_rating_1m_ago: readNullableNumber(raw.rs_rating_1m_ago),
+    nifty_outperformance: readNullableNumber(raw.nifty_outperformance),
+    sector_outperformance: readNullableNumber(raw.sector_outperformance),
+    three_month_rs: readNullableNumber(raw.three_month_rs),
+    stock_return_20d: readNullableNumber(raw.stock_return_20d),
+    stock_return_60d: readNullableNumber(raw.stock_return_60d),
+    stock_return_12m: readNullableNumber(raw.stock_return_12m),
+    gap_pct: readNullableNumber(raw.gap_pct),
+    reasons: readStringArray(raw.reasons),
+  };
+}
+
+function normalizeAlertItem(value: unknown): AlertItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    id: readString(raw.id),
+    symbol: readString(raw.symbol),
+    scan_name: readString(raw.scan_name),
+    message: readString(raw.message),
+    created_at: readString(raw.created_at),
+  };
+}
+
+export function normalizeDashboardResponse(value: unknown): DashboardResponse {
+  const raw = isRecord(value) ? value : {};
+  const dataMode = raw.data_mode === "demo" || raw.data_mode === "upstox" || raw.data_mode === "free"
+    ? raw.data_mode
+    : "free";
+  return {
+    app_name: readString(raw.app_name, "Stock Scanner"),
+    generated_at: readString(raw.generated_at),
+    market_status: readString(raw.market_status),
+    data_mode: dataMode,
+    market_cap_min_crore: readNumber(raw.market_cap_min_crore),
+    universe_count: readNumber(raw.universe_count),
+    scanners: mapArray(raw.scanners, normalizeScanDescriptor),
+    popular_scan_ids: readStringArray(raw.popular_scan_ids),
+    top_gainers: mapArray(raw.top_gainers, normalizeScanMatch),
+    top_losers: mapArray(raw.top_losers, normalizeScanMatch),
+    top_volume_spikes: mapArray(raw.top_volume_spikes, normalizeScanMatch),
+    recent_alerts: mapArray(raw.recent_alerts, normalizeAlertItem),
+  };
+}
+
+function normalizeIndexQuoteItem(value: unknown): IndexQuoteItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    price: readNumber(raw.price),
+    change_pct: readNumber(raw.change_pct),
+    updated_at: readString(raw.updated_at),
+  };
+}
+
+function normalizeIndexQuotesResponse(value: unknown): IndexQuotesResponse {
+  const raw = isRecord(value) ? value : {};
+  return {
+    generated_at: readString(raw.generated_at),
+    items: mapArray(raw.items, normalizeIndexQuoteItem),
+  };
+}
+
+function normalizeScanSectorSummary(value: unknown): ScanSectorSummary {
+  const raw = isRecord(value) ? value : {};
+  return {
+    sector: readString(raw.sector, "Unclassified"),
+    current_hits: readNumber(raw.current_hits),
+    prior_week_hits: readNumber(raw.prior_week_hits),
+    prior_month_hits: readNumber(raw.prior_month_hits),
+    sector_return_1w: readNumber(raw.sector_return_1w),
+    sector_return_1m: readNumber(raw.sector_return_1m),
+  };
+}
+
+function normalizeScanResultsResponse(value: unknown): ScanResultsResponse {
+  const raw = isRecord(value) ? value : {};
+  return {
+    scan: normalizeScanDescriptor(raw.scan),
+    generated_at: readString(raw.generated_at),
+    market_cap_min_crore: readNumber(raw.market_cap_min_crore),
+    total_hits: readNumber(raw.total_hits),
+    items: mapArray(raw.items, normalizeScanMatch),
+    sector_summaries: mapArray(raw.sector_summaries, normalizeScanSectorSummary),
+  };
+}
+
+function normalizeChartBar(value: unknown): ChartBar {
+  const raw = isRecord(value) ? value : {};
+  return {
+    time: readNumber(raw.time),
+    open: readNumber(raw.open),
+    high: readNumber(raw.high),
+    low: readNumber(raw.low),
+    close: readNumber(raw.close),
+    volume: readNumber(raw.volume),
+  };
+}
+
+function normalizeChartLinePoint(value: unknown): ChartLinePoint {
+  const raw = isRecord(value) ? value : {};
+  return {
+    time: readNumber(raw.time),
+    value: readNumber(raw.value),
+  };
+}
+
+function normalizeChartLineMarker(value: unknown): ChartLineMarker {
+  const raw = isRecord(value) ? value : {};
+  return {
+    time: readNumber(raw.time),
+    value: readNumber(raw.value),
+    label: readString(raw.label),
+    color: readString(raw.color),
+  };
+}
+
+function normalizeStockOverview(value: unknown): StockOverview | null {
+  if (!isRecord(value)) {
+    return null;
+  }
+  return {
+    symbol: readString(value.symbol),
+    name: readString(value.name),
+    exchange: readString(value.exchange),
+    sector: readString(value.sector, "Unclassified"),
+    sub_sector: readString(value.sub_sector),
+    circuit_band_label: readNullableString(value.circuit_band_label),
+    upper_circuit_limit: readNullableNumber(value.upper_circuit_limit),
+    lower_circuit_limit: readNullableNumber(value.lower_circuit_limit),
+    market_cap_crore: readNumber(value.market_cap_crore),
+    last_price: readNumber(value.last_price),
+    change_pct: readNumber(value.change_pct),
+    relative_volume: readNumber(value.relative_volume),
+    avg_rupee_volume_30d_crore: readNumber(value.avg_rupee_volume_30d_crore),
+    rs_rating: readNullableNumber(value.rs_rating),
+    rs_rating_1d_ago: readNumber(value.rs_rating_1d_ago),
+    rs_rating_1w_ago: readNumber(value.rs_rating_1w_ago),
+    rs_rating_1m_ago: readNumber(value.rs_rating_1m_ago),
+    nifty_outperformance: readNumber(value.nifty_outperformance),
+    sector_outperformance: readNumber(value.sector_outperformance),
+    three_month_rs: readNumber(value.three_month_rs),
+    stock_return_5d: readNumber(value.stock_return_5d),
+    stock_return_20d: readNumber(value.stock_return_20d),
+    stock_return_60d: readNumber(value.stock_return_60d),
+    stock_return_126d: readNumber(value.stock_return_126d),
+    stock_return_12m: readNumber(value.stock_return_12m),
+    adr_pct_20: readNumber(value.adr_pct_20),
+    pct_from_52w_high: readNumber(value.pct_from_52w_high),
+    pct_from_ath: readNumber(value.pct_from_ath),
+    pct_from_52w_low: readNumber(value.pct_from_52w_low),
+    gap_pct: readNumber(value.gap_pct),
+  };
+}
+
+export function normalizeChartResponse(value: unknown): ChartResponse {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    timeframe: readString(raw.timeframe, "1D"),
+    bars: mapArray(raw.bars, normalizeChartBar),
+    summary: normalizeStockOverview(raw.summary),
+    rs_line: mapArray(raw.rs_line, normalizeChartLinePoint),
+    rs_line_markers: mapArray(raw.rs_line_markers, normalizeChartLineMarker),
+  };
+}
+
+function normalizeSectorCompanyItem(value: unknown): SectorCompanyItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    exchange: readString(raw.exchange),
+    sector: readString(raw.sector, "Unclassified"),
+    sub_sector: readString(raw.sub_sector),
+    market_cap_crore: readNumber(raw.market_cap_crore),
+    last_price: readNumber(raw.last_price),
+    return_1d: readNumber(raw.return_1d),
+    return_1w: readNumber(raw.return_1w),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    return_1y: readNumber(raw.return_1y),
+    return_2y: readNumber(raw.return_2y),
+    rs_rating: readNumber(raw.rs_rating),
+  };
+}
+
+function normalizeSectorGroup(value: unknown): SectorGroup {
+  const raw = isRecord(value) ? value : {};
+  return {
+    sub_sector: readString(raw.sub_sector, "Unclassified"),
+    company_count: readNumber(raw.company_count),
+    companies: mapArray(raw.companies, normalizeSectorCompanyItem),
+  };
+}
+
+function normalizeSectorCard(value: unknown): SectorCard {
+  const raw = isRecord(value) ? value : {};
+  const groupKind = raw.group_kind === "index" ? "index" : "sector";
+  return {
+    group_kind: groupKind,
+    sector: readString(raw.sector, "Unclassified"),
+    company_count: readNumber(raw.company_count),
+    sub_sector_count: readNumber(raw.sub_sector_count),
+    last_price: readNullableNumber(raw.last_price),
+    return_1d: readNumber(raw.return_1d),
+    return_1w: readNumber(raw.return_1w),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    return_1y: readNumber(raw.return_1y),
+    return_2y: readNumber(raw.return_2y),
+    sparkline: mapArray(raw.sparkline, normalizeChartLinePoint),
+    sub_sectors: mapArray(raw.sub_sectors, normalizeSectorGroup),
+  };
+}
+
+export function normalizeSectorTabResponse(value: unknown): SectorTabResponse {
+  const raw = isRecord(value) ? value : {};
+  const sortByValues = new Set(["1D", "1W", "1M", "3M", "6M", "1Y", "2Y"]);
+  const sortBy = typeof raw.sort_by === "string" && sortByValues.has(raw.sort_by) ? raw.sort_by as SectorSortBy : "1M";
+  const sortOrder = raw.sort_order === "asc" ? "asc" : "desc";
+  return {
+    generated_at: readString(raw.generated_at),
+    total_sectors: readNumber(raw.total_sectors),
+    sort_by: sortBy,
+    sort_order: sortOrder,
+    sectors: mapArray(raw.sectors, normalizeSectorCard),
+  };
+}
+
+function normalizeIndustryGroupTopStock(value: unknown): IndustryGroupTopStock {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    company_name: readString(raw.company_name),
+    rs_rating: readNullableNumber(raw.rs_rating),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    relative_return_3m: readNumber(raw.relative_return_3m),
+    relative_return_6m: readNumber(raw.relative_return_6m),
+  };
+}
+
+function normalizeIndustryGroupMasterItem(value: unknown): IndustryGroupMasterItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    group_id: readString(raw.group_id),
+    group_name: readString(raw.group_name),
+    parent_sector: readString(raw.parent_sector, "Unclassified"),
+    description: readString(raw.description),
+    stock_count: readNumber(raw.stock_count),
+    symbols: readStringArray(raw.symbols),
+  };
+}
+
+function normalizeIndustryGroupStockItem(value: unknown): IndustryGroupStockItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    company_name: readString(raw.company_name),
+    exchange: readString(raw.exchange),
+    market_cap_cr: readNumber(raw.market_cap_cr),
+    avg_traded_value_50d_cr: readNumber(raw.avg_traded_value_50d_cr),
+    sector: readString(raw.sector, "Unclassified"),
+    raw_industry: readString(raw.raw_industry),
+    final_group_id: readString(raw.final_group_id),
+    final_group_name: readString(raw.final_group_name),
+    last_price: readNumber(raw.last_price),
+    change_pct: readNumber(raw.change_pct),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    return_1y: readNumber(raw.return_1y),
+    rs_rating: readNullableNumber(raw.rs_rating),
+  };
+}
+
+function normalizeIndustryGroupRankItem(value: unknown): IndustryGroupRankItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    rank: readNumber(raw.rank),
+    rank_label: readString(raw.rank_label),
+    rank_change_1w: readNullableNumber(raw.rank_change_1w),
+    score_change_1w: readNullableNumber(raw.score_change_1w),
+    strength_bucket: readString(raw.strength_bucket),
+    trend_label: readString(raw.trend_label),
+    group_id: readString(raw.group_id),
+    group_name: readString(raw.group_name),
+    parent_sector: readString(raw.parent_sector, "Unclassified"),
+    description: readString(raw.description),
+    stock_count: readNumber(raw.stock_count),
+    score: readNumber(raw.score),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    relative_return_1m: readNumber(raw.relative_return_1m),
+    relative_return_3m: readNumber(raw.relative_return_3m),
+    relative_return_6m: readNumber(raw.relative_return_6m),
+    median_return_1m: readNumber(raw.median_return_1m),
+    median_return_3m: readNumber(raw.median_return_3m),
+    median_return_6m: readNumber(raw.median_return_6m),
+    pct_above_50dma: readNumber(raw.pct_above_50dma),
+    pct_above_200dma: readNumber(raw.pct_above_200dma),
+    pct_outperform_benchmark_3m: readNumber(raw.pct_outperform_benchmark_3m),
+    pct_outperform_benchmark_6m: readNumber(raw.pct_outperform_benchmark_6m),
+    breadth_score: readNumber(raw.breadth_score),
+    trend_health_score: readNumber(raw.trend_health_score),
+    leaders: readStringArray(raw.leaders),
+    laggards: readStringArray(raw.laggards),
+    top_constituents: mapArray(raw.top_constituents, normalizeIndustryGroupTopStock),
+    symbols: readStringArray(raw.symbols),
+  };
+}
+
+export function normalizeIndustryGroupsResponse(value: unknown): IndustryGroupsResponse {
+  const raw = isRecord(value) ? value : {};
+  return {
+    generated_at: readString(raw.generated_at),
+    as_of_date: readString(raw.as_of_date),
+    benchmark: readString(raw.benchmark),
+    filters: isRecord(raw.filters)
+      ? {
+          min_market_cap_cr: readNumber(raw.filters.min_market_cap_cr),
+          min_avg_daily_value_cr: readNumber(raw.filters.min_avg_daily_value_cr),
+        }
+      : {
+          min_market_cap_cr: 0,
+          min_avg_daily_value_cr: 0,
+        },
+    total_groups: readNumber(raw.total_groups),
+    groups: mapArray(raw.groups, normalizeIndustryGroupRankItem),
+    master: mapArray(raw.master, normalizeIndustryGroupMasterItem),
+    stocks: mapArray(raw.stocks, normalizeIndustryGroupStockItem),
+  };
+}
+
+function normalizeImprovingRsItem(value: unknown): ImprovingRsItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    exchange: readString(raw.exchange),
+    sector: readString(raw.sector, "Unclassified"),
+    sub_sector: readString(raw.sub_sector),
+    market_cap_crore: readNumber(raw.market_cap_crore),
+    last_price: readNumber(raw.last_price),
+    change_pct: readNumber(raw.change_pct),
+    rs_rating: readNumber(raw.rs_rating),
+    rs_rating_1d_ago: readNumber(raw.rs_rating_1d_ago),
+    rs_rating_1w_ago: readNumber(raw.rs_rating_1w_ago),
+    rs_rating_1m_ago: readNumber(raw.rs_rating_1m_ago),
+    improvement_1d: readNumber(raw.improvement_1d),
+    improvement_1w: readNumber(raw.improvement_1w),
+    improvement_1m: readNumber(raw.improvement_1m),
+  };
+}
+
+function normalizeImprovingRsResponse(value: unknown): ImprovingRsResponse {
+  const raw = isRecord(value) ? value : {};
+  const window = raw.window === "1W" || raw.window === "1M" ? raw.window : "1D";
+  return {
+    generated_at: readString(raw.generated_at),
+    window,
+    total_hits: readNumber(raw.total_hits),
+    items: mapArray(raw.items, normalizeImprovingRsItem),
+  };
+}
+
+function normalizeChartGridCard(value: unknown): ChartGridCard {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    exchange: readString(raw.exchange),
+    sector: readString(raw.sector, "Unclassified"),
+    sub_sector: readString(raw.sub_sector),
+    market_cap_crore: readNumber(raw.market_cap_crore),
+    last_price: readNumber(raw.last_price),
+    change_pct: readNumber(raw.change_pct),
+    return_1d: readNumber(raw.return_1d),
+    return_1w: readNumber(raw.return_1w),
+    return_1m: readNumber(raw.return_1m),
+    return_3m: readNumber(raw.return_3m),
+    return_6m: readNumber(raw.return_6m),
+    return_1y: readNumber(raw.return_1y),
+    return_2y: readNumber(raw.return_2y),
+    rs_rating: readNullableNumber(raw.rs_rating),
+    weight_pct: readNullableNumber(raw.weight_pct),
+    sparkline: mapArray(raw.sparkline, normalizeChartLinePoint),
+  };
+}
+
+function normalizeChartGridResponse(value: unknown): ChartGridResponse {
+  const raw = isRecord(value) ? value : {};
+  const groupKind = raw.group_kind === "index" ? "index" : "sector";
+  const timeframe = raw.timeframe === "3M" || raw.timeframe === "6M" || raw.timeframe === "2Y" ? raw.timeframe : "1Y";
+  return {
+    generated_at: readString(raw.generated_at),
+    name: readString(raw.name),
+    group_kind: groupKind,
+    timeframe,
+    total_items: readNumber(raw.total_items),
+    cards: mapArray(raw.cards, normalizeChartGridCard),
+  };
+}
+
+function normalizeChartGridSeriesItem(value: unknown): ChartGridSeriesItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    symbol: readString(raw.symbol),
+    bars: mapArray(raw.bars, normalizeChartBar),
+  };
+}
+
+function normalizeChartGridSeriesResponse(value: unknown): ChartGridSeriesResponse {
+  const raw = isRecord(value) ? value : {};
+  const timeframe = raw.timeframe === "3M" || raw.timeframe === "6M" || raw.timeframe === "2Y" ? raw.timeframe : "1Y";
+  return {
+    generated_at: readString(raw.generated_at),
+    timeframe,
+    total_items: readNumber(raw.total_items),
+    items: mapArray(raw.items, normalizeChartGridSeriesItem),
+  };
+}
+
+function normalizeCompanyFundamentals(value: unknown): CompanyFundamentals {
+  const raw = isRecord(value) ? value : {};
+  const aiSummary = isRecord(raw.ai_news_summary)
+    ? {
+        generated_at: readString(raw.ai_news_summary.generated_at),
+        summary: readString(raw.ai_news_summary.summary),
+        key_points: readStringArray(raw.ai_news_summary.key_points),
+        sentiment:
+          raw.ai_news_summary.sentiment === "positive"
+          || raw.ai_news_summary.sentiment === "negative"
+          || raw.ai_news_summary.sentiment === "neutral"
+            ? raw.ai_news_summary.sentiment
+            : "neutral",
+      }
+    : null;
+
+  return {
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    exchange: readNullableString(raw.exchange),
+    sector: readNullableString(raw.sector),
+    sub_sector: readNullableString(raw.sub_sector),
+    fetched_at: readString(raw.fetched_at),
+    about: readNullableString(raw.about),
+    business_summary: readNullableString(raw.business_summary),
+    company_website: readNullableString(raw.company_website),
+    headquarters: readNullableString(raw.headquarters),
+    quarterly_results: mapArray(raw.quarterly_results, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        sales_crore: readNullableNumber(entry.sales_crore),
+        expenses_crore: readNullableNumber(entry.expenses_crore),
+        operating_profit_crore: readNullableNumber(entry.operating_profit_crore),
+        operating_margin_pct: readNullableNumber(entry.operating_margin_pct),
+        profit_before_tax_crore: readNullableNumber(entry.profit_before_tax_crore),
+        net_profit_crore: readNullableNumber(entry.net_profit_crore),
+        eps: readNullableNumber(entry.eps),
+        result_document_url: readNullableString(entry.result_document_url),
+      };
+    }),
+    profit_loss: mapArray(raw.profit_loss, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        sales_crore: readNullableNumber(entry.sales_crore),
+        operating_profit_crore: readNullableNumber(entry.operating_profit_crore),
+        operating_margin_pct: readNullableNumber(entry.operating_margin_pct),
+        net_profit_crore: readNullableNumber(entry.net_profit_crore),
+        eps: readNullableNumber(entry.eps),
+        dividend_payout_pct: readNullableNumber(entry.dividend_payout_pct),
+      };
+    }),
+    balance_sheet: mapArray(raw.balance_sheet, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        total_assets_crore: readNullableNumber(entry.total_assets_crore),
+        current_assets_crore: readNullableNumber(entry.current_assets_crore),
+        total_liabilities_crore: readNullableNumber(entry.total_liabilities_crore),
+        current_liabilities_crore: readNullableNumber(entry.current_liabilities_crore),
+        shareholders_equity_crore: readNullableNumber(entry.shareholders_equity_crore),
+        debt_crore: readNullableNumber(entry.debt_crore),
+        cash_and_equivalents_crore: readNullableNumber(entry.cash_and_equivalents_crore),
+        inventory_crore: readNullableNumber(entry.inventory_crore),
+        receivables_crore: readNullableNumber(entry.receivables_crore),
+      };
+    }),
+    cash_flow: mapArray(raw.cash_flow, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        operating_cash_flow_crore: readNullableNumber(entry.operating_cash_flow_crore),
+        investing_cash_flow_crore: readNullableNumber(entry.investing_cash_flow_crore),
+        financing_cash_flow_crore: readNullableNumber(entry.financing_cash_flow_crore),
+        free_cash_flow_crore: readNullableNumber(entry.free_cash_flow_crore),
+        capital_expenditure_crore: readNullableNumber(entry.capital_expenditure_crore),
+        dividends_paid_crore: readNullableNumber(entry.dividends_paid_crore),
+      };
+    }),
+    financial_ratios: mapArray(raw.financial_ratios, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        roe_pct: readNullableNumber(entry.roe_pct),
+        roa_pct: readNullableNumber(entry.roa_pct),
+        roce_pct: readNullableNumber(entry.roce_pct),
+        current_ratio: readNullableNumber(entry.current_ratio),
+        quick_ratio: readNullableNumber(entry.quick_ratio),
+        debt_to_equity_ratio: readNullableNumber(entry.debt_to_equity_ratio),
+        debt_to_assets_ratio: readNullableNumber(entry.debt_to_assets_ratio),
+        interest_coverage: readNullableNumber(entry.interest_coverage),
+        asset_turnover: readNullableNumber(entry.asset_turnover),
+      };
+    }),
+    growth: isRecord(raw.growth)
+      ? {
+          latest_period: readNullableString(raw.growth.latest_period),
+          sales_qoq_pct: readNullableNumber(raw.growth.sales_qoq_pct),
+          sales_yoy_pct: readNullableNumber(raw.growth.sales_yoy_pct),
+          profit_qoq_pct: readNullableNumber(raw.growth.profit_qoq_pct),
+          profit_yoy_pct: readNullableNumber(raw.growth.profit_yoy_pct),
+          operating_margin_latest_pct: readNullableNumber(raw.growth.operating_margin_latest_pct),
+          operating_margin_previous_pct: readNullableNumber(raw.growth.operating_margin_previous_pct),
+          net_margin_latest_pct: readNullableNumber(raw.growth.net_margin_latest_pct),
+          net_margin_previous_pct: readNullableNumber(raw.growth.net_margin_previous_pct),
+        }
+      : null,
+    valuation: isRecord(raw.valuation)
+      ? {
+          market_cap_crore: readNullableNumber(raw.valuation.market_cap_crore),
+          pe_ratio: readNullableNumber(raw.valuation.pe_ratio),
+          peg_ratio: readNullableNumber(raw.valuation.peg_ratio),
+          operating_margin_pct: readNullableNumber(raw.valuation.operating_margin_pct),
+          net_margin_pct: readNullableNumber(raw.valuation.net_margin_pct),
+          roce_pct: readNullableNumber(raw.valuation.roce_pct),
+          roe_pct: readNullableNumber(raw.valuation.roe_pct),
+          dividend_yield_pct: readNullableNumber(raw.valuation.dividend_yield_pct),
+        }
+      : null,
+    growth_drivers: mapArray(raw.growth_drivers, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        title: readString(entry.title),
+        detail: readString(entry.detail),
+        tone: entry.tone === "positive" || entry.tone === "watch" ? entry.tone : "neutral",
+      };
+    }),
+    management_team: mapArray(raw.management_team, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        name: readString(entry.name),
+        position: readString(entry.position),
+        background: readNullableString(entry.background) ?? undefined,
+      };
+    }),
+    management_guidance: mapArray(raw.management_guidance, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        fiscal_year: readString(entry.fiscal_year),
+        revenue_growth_guidance_pct: readNullableNumber(entry.revenue_growth_guidance_pct),
+        ebitda_guidance_pct: readNullableNumber(entry.ebitda_guidance_pct),
+        eps_guidance: readNullableNumber(entry.eps_guidance),
+        capex_guidance_crore: readNullableNumber(entry.capex_guidance_crore),
+        guidance_date: readNullableString(entry.guidance_date),
+        guidance_source: readNullableString(entry.guidance_source),
+        key_guidance_points: readStringArray(entry.key_guidance_points),
+      };
+    }),
+    strategy_and_outlook: readNullableString(raw.strategy_and_outlook),
+    competitive_position: isRecord(raw.competitive_position)
+      ? {
+          market_position: readNullableString(raw.competitive_position.market_position),
+          competitive_advantages: readStringArray(raw.competitive_position.competitive_advantages),
+          market_share_estimate: readNullableNumber(raw.competitive_position.market_share_estimate),
+          key_competitors: readStringArray(raw.competitive_position.key_competitors),
+        }
+      : null,
+    business_segments: mapArray(raw.business_segments, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        name: readString(entry.name),
+        revenue_crore: readNullableNumber(entry.revenue_crore),
+        revenue_pct: readNullableNumber(entry.revenue_pct),
+        growth_pct: readNullableNumber(entry.growth_pct),
+        period: readString(entry.period),
+      };
+    }),
+    geographic_presence: readStringArray(raw.geographic_presence),
+    risks_and_opportunities: mapArray(raw.risks_and_opportunities, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        risk_category: readString(entry.risk_category),
+        description: readString(entry.description),
+        severity: readString(entry.severity),
+        mitigation_strategy: readNullableString(entry.mitigation_strategy),
+      };
+    }),
+    recent_updates: mapArray(raw.recent_updates, (item) => {
+      const entry = isRecord(item) ? item : {};
+      const kind = entry.kind === "results" || entry.kind === "concall" || entry.kind === "holding" || entry.kind === "filing"
+        ? entry.kind
+        : "news";
+      return {
+        title: readString(entry.title),
+        source: readString(entry.source),
+        published_at: readNullableString(entry.published_at),
+        summary: readNullableString(entry.summary),
+        link: readNullableString(entry.link),
+        kind,
+      };
+    }),
+    detailed_news: mapArray(raw.detailed_news, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        title: readString(entry.title),
+        summary: readString(entry.summary),
+        impact_category: readString(entry.impact_category),
+        sentiment: readString(entry.sentiment),
+        source: readString(entry.source),
+        published_date: readString(entry.published_date),
+        detailed_points: readStringArray(entry.detailed_points),
+        relevance_score: readNumber(entry.relevance_score),
+      };
+    }),
+    shareholding_pattern: mapArray(raw.shareholding_pattern, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        period: readString(entry.period),
+        promoter_pct: readNullableNumber(entry.promoter_pct),
+        fii_pct: readNullableNumber(entry.fii_pct),
+        dii_pct: readNullableNumber(entry.dii_pct),
+        public_pct: readNullableNumber(entry.public_pct),
+        shareholder_count: readNullableNumber(entry.shareholder_count),
+      };
+    }),
+    shareholding_delta: isRecord(raw.shareholding_delta)
+      ? {
+          latest_period: readNullableString(raw.shareholding_delta.latest_period),
+          previous_period: readNullableString(raw.shareholding_delta.previous_period),
+          promoter_change_pct: readNullableNumber(raw.shareholding_delta.promoter_change_pct),
+          fii_change_pct: readNullableNumber(raw.shareholding_delta.fii_change_pct),
+          dii_change_pct: readNullableNumber(raw.shareholding_delta.dii_change_pct),
+          public_change_pct: readNullableNumber(raw.shareholding_delta.public_change_pct),
+        }
+      : null,
+    data_warnings: readStringArray(raw.data_warnings),
+    ai_news_summary: aiSummary,
+    business_triggers: mapArray(raw.business_triggers, (item) => {
+      const entry = isRecord(item) ? item : {};
+      const impact = entry.impact === "positive" || entry.impact === "negative" ? entry.impact : "neutral";
+      return {
+        title: readString(entry.title),
+        description: readString(entry.description),
+        impact,
+        date: readString(entry.date),
+        source: readString(entry.source),
+        likelihood_to_impact: readNumber(entry.likelihood_to_impact),
+      };
+    }),
+    insider_transactions: mapArray(raw.insider_transactions, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        person_name: readString(entry.person_name),
+        position: readString(entry.position),
+        transaction_type: entry.transaction_type === "sell" ? "sell" : "buy",
+        quantity: readNumber(entry.quantity),
+        price_per_share: readNumber(entry.price_per_share),
+        total_value_crore: readNumber(entry.total_value_crore),
+        date: readString(entry.date),
+        pct_of_holding_change: readNumber(entry.pct_of_holding_change),
+        remarks: readNullableString(entry.remarks),
+      };
+    }),
+    last_news_update: readNullableString(raw.last_news_update),
+    latest_earnings_key_metrics: isRecord(raw.latest_earnings_key_metrics)
+      ? Object.fromEntries(
+          Object.entries(raw.latest_earnings_key_metrics).filter(([, metricValue]) =>
+            typeof metricValue === "string" || Number.isFinite(Number(metricValue))),
+        ) as Record<string, number | string>
+      : {},
+    upcoming_events: mapArray(raw.upcoming_events, (item) => {
+      const entry = isRecord(item) ? item : {};
+      return {
+        date: readString(entry.date),
+        event: readString(entry.event),
+        impact: readNullableString(entry.impact) ?? undefined,
+      };
+    }),
+  };
+}
+
+function normalizeWatchlistItem(value: unknown): WatchlistItem {
+  const raw = isRecord(value) ? value : {};
+  return {
+    id: readString(raw.id),
+    name: readString(raw.name),
+    color: readString(raw.color),
+    symbols: readStringArray(raw.symbols),
+  };
+}
+
+function normalizeWatchlistsStateResponse(value: unknown): WatchlistsStateResponse {
+  const raw = isRecord(value) ? value : {};
+  const market = raw.market === "us" ? "us" : "india";
+  return {
+    market,
+    updated_at: readString(raw.updated_at),
+    active_watchlist_id: readNullableString(raw.active_watchlist_id),
+    watchlists: mapArray(raw.watchlists, normalizeWatchlistItem),
+  };
+}
+
+type ResponseNormalizer<T> = (payload: unknown) => T;
 
 async function fetchWithTimeout(input: string, init?: RequestInit): Promise<Response> {
   return fetchWithTimeoutMs(input, REQUEST_TIMEOUT_MS, init);
@@ -892,11 +1674,23 @@ function routeScopedMarket(): MarketKey | null {
   return null;
 }
 
-async function request<T>(path: string, init?: RequestInit, options?: RequestOptions): Promise<T> {
+function orderedApiBases() {
+  if (!preferredApiBase) {
+    return FALLBACK_API_BASES;
+  }
+  return [preferredApiBase, ...FALLBACK_API_BASES.filter((base) => base !== preferredApiBase)];
+}
+
+async function request<T>(
+  path: string,
+  init?: RequestInit,
+  options?: RequestOptions,
+  normalize?: ResponseNormalizer<T>,
+): Promise<T> {
   let lastError: Error | null = null;
   const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
 
-  for (const base of FALLBACK_API_BASES) {
+  for (const base of orderedApiBases()) {
     try {
       const response = await fetchWithTimeoutMs(`${base}${path}`, timeoutMs, init);
 
@@ -913,7 +1707,9 @@ async function request<T>(path: string, init?: RequestInit, options?: RequestOpt
         throw new Error("API returned a non-JSON response");
       }
 
-      return response.json() as Promise<T>;
+      const payload = await response.json();
+      preferredApiBase = base;
+      return normalize ? normalize(payload) : payload as T;
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
@@ -936,11 +1732,16 @@ function withMarket(path: string, market: MarketKey) {
 }
 
 export function getDashboard(market: MarketKey) {
-  return request<DashboardResponse>(withMarket("/api/dashboard", market));
+  return request<DashboardResponse>(withMarket("/api/dashboard", market), undefined, undefined, normalizeDashboardResponse);
 }
 
 export function getScanCounts(market: MarketKey) {
-  return request<ScanDescriptor[]>(withMarket("/api/scan-counts", market));
+  return request<ScanDescriptor[]>(
+    withMarket("/api/scan-counts", market),
+    undefined,
+    undefined,
+    (payload) => mapArray(payload, normalizeScanDescriptor),
+  );
 }
 
 function withScanOptions(path: string, market: MarketKey, options?: ScanRequestOptions) {
@@ -961,7 +1762,12 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
 }
 
 export function getScanResults(scanId: string, market: MarketKey, options?: ScanRequestOptions) {
-  return request<ScanResultsResponse>(withScanOptions(`/api/scans/${scanId}`, market, options));
+  return request<ScanResultsResponse>(
+    withScanOptions(`/api/scans/${scanId}`, market, options),
+    undefined,
+    undefined,
+    normalizeScanResultsResponse,
+  );
 }
 
 export function runCustomScan(body: CustomScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -971,7 +1777,7 @@ export function runCustomScan(body: CustomScanRequest, market: MarketKey, option
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, undefined, normalizeScanResultsResponse);
 }
 
 export function getChart(symbol: string, timeframe: string, market: MarketKey) {
@@ -979,6 +1785,7 @@ export function getChart(symbol: string, timeframe: string, market: MarketKey) {
     `/api/chart/${encodeURIComponent(symbol)}?timeframe=${timeframe}&market=${market}`,
     undefined,
     { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 18000 : 25000 },
+    normalizeChartResponse,
   );
 }
 
@@ -987,23 +1794,35 @@ export function getChartHistory(symbol: string, timeframe: string, market: Marke
     `/api/chart/${encodeURIComponent(symbol)}/history?timeframe=${timeframe}&market=${market}`,
     undefined,
     { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 20000 : 30000 },
+    normalizeChartResponse,
   );
 }
 
 export function getChartGrid(name: string, groupKind: "sector" | "index", timeframe: ChartGridTimeframe, market: MarketKey) {
   return request<ChartGridResponse>(
     `/api/chart-grid?name=${encodeURIComponent(name)}&group_kind=${groupKind}&timeframe=${timeframe}&market=${market}`,
+    undefined,
+    undefined,
+    normalizeChartGridResponse,
   );
 }
 
 export function getChartGridSeries(symbols: string[], timeframe: ChartGridTimeframe, market: MarketKey) {
   return request<ChartGridSeriesResponse>(
     `/api/chart-grid-series?symbols=${encodeURIComponent(symbols.join(","))}&timeframe=${timeframe}&market=${market}`,
+    undefined,
+    undefined,
+    normalizeChartGridSeriesResponse,
   );
 }
 
 export function getFundamentals(symbol: string, market: MarketKey) {
-  return request<CompanyFundamentals>(`/api/fundamentals/${symbol}?market=${market}`);
+  return request<CompanyFundamentals>(
+    `/api/fundamentals/${symbol}?market=${market}`,
+    undefined,
+    undefined,
+    normalizeCompanyFundamentals,
+  );
 }
 
 export function refreshMarketData(market: MarketKey) {
@@ -1013,7 +1832,12 @@ export function refreshMarketData(market: MarketKey) {
 }
 
 export function getIndexQuotes(symbols: string[], market: MarketKey) {
-  return request<IndexQuotesResponse>(`/api/index-quotes?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`);
+  return request<IndexQuotesResponse>(
+    `/api/index-quotes?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`,
+    undefined,
+    undefined,
+    normalizeIndexQuotesResponse,
+  );
 }
 
 export type MarketMacroItem = {
@@ -1240,7 +2064,12 @@ export function getGapUpOpeners(
   if (minLiquidityCrore !== null && Number.isFinite(minLiquidityCrore)) {
     params.set("min_liquidity_crore", String(minLiquidityCrore));
   }
-  return request<ScanResultsResponse>(withScanOptions(`/api/gap-up-openers?${params.toString()}`, market, options));
+  return request<ScanResultsResponse>(
+    withScanOptions(`/api/gap-up-openers?${params.toString()}`, market, options),
+    undefined,
+    undefined,
+    normalizeScanResultsResponse,
+  );
 }
 
 export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -1250,7 +2079,7 @@ export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, 
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, undefined, normalizeScanResultsResponse);
 }
 
 export function getPullBackScan(body: PullBackScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -1260,7 +2089,7 @@ export function getPullBackScan(body: PullBackScanRequest, market: MarketKey, op
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, undefined, normalizeScanResultsResponse);
 }
 
 export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -1270,7 +2099,7 @@ export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, opti
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, undefined, normalizeScanResultsResponse);
 }
 
 export function getConsolidatingScan(body: ConsolidatingScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -1280,19 +2109,29 @@ export function getConsolidatingScan(body: ConsolidatingScanRequest, market: Mar
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  });
+  }, undefined, normalizeScanResultsResponse);
 }
 
 export function getSectorTab(sortBy: SectorSortBy, sortOrder: "asc" | "desc", market: MarketKey) {
-  return request<SectorTabResponse>(`/api/sectors?sort_by=${sortBy}&sort_order=${sortOrder}&market=${market}`);
+  return request<SectorTabResponse>(
+    `/api/sectors?sort_by=${sortBy}&sort_order=${sortOrder}&market=${market}`,
+    undefined,
+    undefined,
+    normalizeSectorTabResponse,
+  );
 }
 
 export function getIndustryGroups(market: MarketKey) {
-  return request<IndustryGroupsResponse>(withMarket("/api/groups", market));
+  return request<IndustryGroupsResponse>(withMarket("/api/groups", market), undefined, undefined, normalizeIndustryGroupsResponse);
 }
 
 export function getImprovingRs(window: ImprovingRsWindow, market: MarketKey) {
-  return request<ImprovingRsResponse>(`/api/improving-rs?window=${window}&market=${market}`);
+  return request<ImprovingRsResponse>(
+    `/api/improving-rs?window=${window}&market=${market}`,
+    undefined,
+    undefined,
+    normalizeImprovingRsResponse,
+  );
 }
 
 export function getMarketHealth(market: MarketKey) {
@@ -1310,7 +2149,12 @@ export function refreshHistoricalMarketHealth(market: MarketKey) {
 }
 
 export function getWatchlistsState(market: MarketKey) {
-  return request<WatchlistsStateResponse>(withMarket("/api/watchlists", market));
+  return request<WatchlistsStateResponse>(
+    withMarket("/api/watchlists", market),
+    undefined,
+    undefined,
+    normalizeWatchlistsStateResponse,
+  );
 }
 
 export function saveWatchlistsState(
@@ -1327,7 +2171,7 @@ export function saveWatchlistsState(
       active_watchlist_id: payload.active_watchlist_id,
       watchlists: payload.watchlists,
     }),
-  });
+  }, undefined, normalizeWatchlistsStateResponse);
 }
 
 export function getJournalData() {
