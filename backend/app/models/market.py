@@ -1,31 +1,7 @@
-from datetime import date, datetime, timedelta, timezone
-from typing import Literal, Any
+from datetime import date, datetime, timezone
+from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
-
-
-def derive_rs_comparison_dates(history_as_of_date: str | None) -> tuple[str | None, str | None, str | None]:
-    if not history_as_of_date:
-        return None, None, None
-    try:
-        anchor = date.fromisoformat(history_as_of_date)
-    except Exception:
-        return None, None, None
-
-    def shift_trading_days(start: date, sessions: int) -> date:
-        current = start
-        remaining = max(int(sessions), 0)
-        while remaining > 0:
-            current = current - timedelta(days=1)
-            while current.weekday() >= 5:
-                current = current - timedelta(days=1)
-            remaining -= 1
-        return current
-
-    day_1 = shift_trading_days(anchor, 1)
-    week_1 = shift_trading_days(anchor, 5)
-    month_1 = shift_trading_days(anchor, 21)
-    return day_1.isoformat(), week_1.isoformat(), month_1.isoformat()
+from pydantic import BaseModel, Field
 
 
 class StockSnapshot(BaseModel):
@@ -103,11 +79,19 @@ class StockSnapshot(BaseModel):
     stock_return_12m_1d_ago: float = 0.0
     stock_return_12m_1w_ago: float = 0.0
     stock_return_12m_1m_ago: float = 0.0
-    baseline_close_10d: float | None = None
+    baseline_close_5d: float | None = None
     baseline_close_20d: float | None = None
-    baseline_close_30d: float | None = None
+    baseline_close_40d: float | None = None
+    baseline_close_60d: float | None = None
     baseline_close_63d: float | None = None
-    baseline_close_90d: float | None = None
+    baseline_close_126d: float | None = None
+    baseline_close_189d: float | None = None
+    baseline_close_252d: float | None = None
+    baseline_close_504d: float | None = None
+    rs_baseline_close_q1: float | None = None
+    rs_baseline_close_q2: float | None = None
+    rs_baseline_close_q3: float | None = None
+    rs_baseline_close_q4: float | None = None
     rsi_14: float = 50.0  # Added for Market Health Dashboard
     rs_line_today: float = 0.0
     rs_line_1m: float = 0.0
@@ -117,7 +101,13 @@ class StockSnapshot(BaseModel):
     rs_rating_1w_ago: int = 0
     rs_rating_1m_ago: int = 0
     rs_weighted_score: float = 0.0
+    rs_weighted_score_1d_ago: float = 0.0
+    rs_weighted_score_1w_ago: float = 0.0
+    rs_weighted_score_1m_ago: float = 0.0
     rs_eligible: bool = False
+    rs_eligible_1d_ago: bool = False
+    rs_eligible_1w_ago: bool = False
+    rs_eligible_1m_ago: bool = False
     pivot_high: float
     darvas_high: float
     darvas_low: float
@@ -128,27 +118,17 @@ class StockSnapshot(BaseModel):
     long_base_avg_range_pct: float | None = None
     long_base_span_pct: float | None = None
     long_base_window_days: int | None = None
+    ma200_type: str | None = None
+    recent_closes: list[float] = Field(default_factory=list)
     recent_highs: list[float] = Field(default_factory=list)
     recent_lows: list[float] = Field(default_factory=list)
     recent_volumes: list[int] = Field(default_factory=list)
-    recent_closes: list[float] = Field(default_factory=list)
     chart_grid_points: list["ChartLinePoint"] = Field(default_factory=list)
     instrument_key: str | None = None
-    history_as_of_date: str | None = None  # ISO date of the session this snapshot reflects
-    
-    # Fundamental cached fields
-    eps_growth_yoy: float | None = None
-    revenue_growth_yoy: float | None = None
-    operating_margin: float | None = None
-    profit_margin: float | None = None
-    roe: float | None = None
-    roa: float | None = None
-    trailing_eps: float | None = None
-    forward_eps: float | None = None
-    peg_ratio: float | None = None
-    pe_ratio: float | None = None
-    price_to_book: float | None = None
-    debt_to_equity: float | None = None
+    history_as_of_date: date | None = None
+    history_session_date: date | None = None
+    history_bars: int = 0
+    history_source: str | None = None
 
     @property
     def relative_volume(self) -> float:
@@ -359,39 +339,22 @@ class ChartLineMarker(BaseModel):
 
 
 class QuarterlyResultItem(BaseModel):
-    """Financial results for a single quarter"""
     period: str
     sales_crore: float | None = None
     expenses_crore: float | None = None
     operating_profit_crore: float | None = None
     operating_margin_pct: float | None = None
-    ebitda_crore: float | None = None
-    ebitda_margin_pct: float | None = None
-    gross_margin_pct: float | None = None
-    other_income_crore: float | None = None
-    interest_crore: float | None = None
-    depreciation_crore: float | None = None
     profit_before_tax_crore: float | None = None
-    tax_pct: float | None = None
     net_profit_crore: float | None = None
     eps: float | None = None
-    yoy_change_pct: float | None = None
-    qoq_change_pct: float | None = None
-    beat_miss: Literal["beat", "miss", "in-line"] | None = None
-    segment_performance: list[dict[str, Any]] = Field(default_factory=list)
-    result_date: str | None = None
     result_document_url: str | None = None
 
 
 class ProfitLossItem(BaseModel):
-    """Annual profit and loss metrics"""
     period: str
     sales_crore: float | None = None
-    expenses_crore: float | None = None
     operating_profit_crore: float | None = None
     operating_margin_pct: float | None = None
-    ebitda_crore: float | None = None
-    ebitda_margin_pct: float | None = None
     net_profit_crore: float | None = None
     eps: float | None = None
     dividend_payout_pct: float | None = None
@@ -523,21 +486,13 @@ class FinancialRatios(BaseModel):
 class ManagementGuidance(BaseModel):
     """Forward-looking guidance from management"""
     fiscal_year: str
-    quarter: str | None = None
     revenue_growth_guidance_pct: float | None = None
     ebitda_guidance_pct: float | None = None
     eps_guidance: float | None = None
     capex_guidance_crore: float | None = None
     guidance_date: str | None = None
     guidance_source: str | None = None
-    guidance_type: Literal["Explicit", "Qualitative"] | None = None
-    confidence_score: float | None = None
     key_guidance_points: list[str] = Field(default_factory=list)
-    analyst_concerns: list[str] = Field(default_factory=list)
-    is_stale: bool = False
-    validity_banner: Literal["Valid", "Stale", "Withdrawn", "Not Provided"] = "Valid"
-    fiscal_period: str | None = None  # e.g., "FY2026", "Q1 FY2027"
-    source_date: str | None = None
 
 
 class CompetitivePosition(BaseModel):
@@ -554,7 +509,7 @@ class BusinessSegment(BaseModel):
     revenue_crore: float | None = None
     revenue_pct: float | None = None
     growth_pct: float | None = None
-    period: str | None = None
+    period: str
 
 
 class DetailedNews(BaseModel):
@@ -562,20 +517,11 @@ class DetailedNews(BaseModel):
     title: str
     summary: str  # Full detailed summary, not just 1-2 sentences
     impact_category: str  # earnings, strategic, regulatory, market, etc.
-    sentiment: Literal["positive", "negative", "neutral"] = "neutral"
+    sentiment: str  # positive, negative, neutral
     source: str
-    domain: str | None = None
-    source_type: str = "Editorial News"  # Editorial News, Company Release, etc.
-    classification: Literal["editorial_news", "company_release", "exchange_filing", "regulatory_filing", "transcript", "investor_presentation", "duplicate", "low_quality", "rumor"] = "editorial_news"
-    is_editorial: bool = True
-    url: str | None = None
-    published_date: str | None = None
-    impact_area: str | None = None  # Revenue, Margin, EPS, Capex, Order Book, Regulatory
-    why_it_matters: str | None = None
+    published_date: str
     detailed_points: list[str] = Field(default_factory=list)
     relevance_score: float  # 0-1, how relevant to stock price
-    connection_to_guidance: str | None = None
-    impact_tags: list[str] = Field(default_factory=list)
 
 
 class RiskAnalysis(BaseModel):
@@ -584,19 +530,6 @@ class RiskAnalysis(BaseModel):
     description: str
     severity: str  # high, medium, low
     mitigation_strategy: str | None = None
-
-
-class GrowthTrigger(BaseModel):
-    """Forward-looking business development that could drive growth"""
-    title: str
-    category: str  # order book, expansion, new product, etc.
-    why_it_matters: str
-    evidence_source: str
-    source_date: str | None = None
-    confidence_score: float = 0.8
-    impact_area: Literal["revenue", "eps", "profit", "margin", "cash flow", "any"] = "any"
-    horizon: Literal["near-term", "medium-term", "multi-year"] = "medium-term"
-    is_new: bool = True
 
 
 class CompanyFundamentals(BaseModel):
@@ -644,23 +577,14 @@ class CompanyFundamentals(BaseModel):
     shareholding_pattern: list[ShareholdingPatternItem] = Field(default_factory=list)
     shareholding_delta: ShareholdingDelta | None = None
     
-    # Pre-split news lists (populated by NewsPipeline after AI analysis)
-    latest_editorial_news: list[DetailedNews] = Field(default_factory=list)
-    official_updates: list[DetailedNews] = Field(default_factory=list)
-
     # AI-generated insights
     ai_news_summary: AISummary | None = None
     business_triggers: list[BusinessTrigger] = Field(default_factory=list)
-    future_growth_triggers: list[GrowthTrigger] = Field(default_factory=list)
-    growth_risks: list[RiskAnalysis] = Field(default_factory=list)
     insider_transactions: list[InsiderTransaction] = Field(default_factory=list)
     last_news_update: datetime | None = None
     
     # Recent Performance & Catalysts
     latest_earnings_key_metrics: dict[str, float | str] = Field(default_factory=dict)
-    results_summary: dict[str, Any] | None = None  # {beat_miss, highlights, segment_performance}
-    guidance_tracker: list[dict[str, Any]] = Field(default_factory=list)  # [{date, previous, current, reason}]
-    growth_trends: dict[str, Any] | None = None  # {revenue_trend, profit_trend, margin_trend}
     upcoming_events: list[dict[str, str]] = Field(default_factory=list)  # [{date, event, impact}]
     
     data_warnings: list[str] = Field(default_factory=list)
@@ -693,9 +617,6 @@ class ScanMatch(BaseModel):
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None
     rs_rating_1m_ago: int | None = None
-    rs_rating_1d_ago_date: str | None = None
-    rs_rating_1w_ago_date: str | None = None
-    rs_rating_1m_ago_date: str | None = None
     rs_today: float | None = None
     rs_1m: float | None = None
     nifty_outperformance: float | None = None
@@ -755,11 +676,6 @@ class ScanResultsResponse(BaseModel):
     total_hits: int
     items: list[ScanMatch]
     sector_summaries: list["ScanSectorSummary"] = Field(default_factory=list)
-
-
-class AiScanResponse(BaseModel):
-    results: ScanResultsResponse
-    parsed_request: "CustomScanRequest"
 
 
 class ScanSectorSummary(BaseModel):
@@ -826,6 +742,13 @@ class ReturnsScanRequest(BaseModel):
     limit: int = Field(default=1500, ge=1, le=5000)
 
 
+class EandCScanRequest(BaseModel):
+    expansion_min_change_pct: float = Field(default=4.0, ge=0.0, le=50.0)
+    expansion_min_day_volume: int = Field(default=100000, ge=0)
+    expansion_min_relative_volume: float = Field(default=1.5, ge=0.0, le=50.0)
+    limit: int = Field(default=1500, ge=1, le=5000)
+
+
 class ConsolidatingScanRequest(BaseModel):
     enable_run_up_consolidation: bool = True
     enable_near_multi_year_breakout: bool = True
@@ -851,9 +774,6 @@ class StockOverview(BaseModel):
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None
     rs_rating_1m_ago: int | None = None
-    rs_rating_1d_ago_date: str | None = None
-    rs_rating_1w_ago_date: str | None = None
-    rs_rating_1m_ago_date: str | None = None
     nifty_outperformance: float
     sector_outperformance: float
     three_month_rs: float
@@ -940,24 +860,6 @@ class CustomScanRequest(BaseModel):
     near_high_period: NearHighPeriod | None = None
     near_high_max_distance_pct: float | None = None
     price_vs_ma_mode: PriceVsMaMode = "any"
-    
-    # Fundamental filters
-    min_eps_growth_yoy: float | None = None
-    min_revenue_growth_yoy: float | None = None
-    min_operating_margin: float | None = None
-    min_profit_margin: float | None = None
-    min_roe: float | None = None
-    max_peg_ratio: float | None = None
-    min_pe_ratio: float | None = None
-    max_pe_ratio: float | None = None
-    
-    # Technical Guru & Shakeout filters
-    minervini_trend_template: bool = False
-    kullamagi_setup: bool = False
-    shakeout_21ema: bool = False
-    shakeout_50ema: bool = False
-    max_consolidation_range_pct: float | None = None
-
     price_vs_ma_key: MaKey = "ema20"
     require_bullish_ma_order: bool = False
     require_bearish_ma_order: bool = False
@@ -974,11 +876,6 @@ class CustomScanRequest(BaseModel):
     sort_by: CustomSortBy = "pattern"
     sort_order: SortOrder = "desc"
     limit: int = Field(default=1500, ge=1, le=5000)
-
-    # Historical chart-based scan fields
-    # When set, the AI screener scans chart cache data instead of live snapshots.
-    scan_date: date | None = None  # ISO date for single-day historical scan
-    highest_vol_lookback_days: int | None = None  # Find stocks with quarterly-high vol in last N days
 
 
 class ChartResponse(BaseModel):
@@ -1100,11 +997,9 @@ class IndustryGroupTopStock(BaseModel):
     symbol: str
     company_name: str
     rs_rating: int | None = None
-    return_1w: float = 0.0
     return_1m: float
     return_3m: float
     return_6m: float
-    relative_return_1w: float = 0.0
     relative_return_3m: float
     relative_return_6m: float
 
@@ -1130,7 +1025,6 @@ class IndustryGroupStockItem(BaseModel):
     final_group_name: str
     last_price: float
     change_pct: float
-    return_1w: float = 0.0
     return_1m: float
     return_3m: float
     return_6m: float
@@ -1151,15 +1045,12 @@ class IndustryGroupRankItem(BaseModel):
     description: str
     stock_count: int
     score: float
-    return_1w: float = 0.0
     return_1m: float
     return_3m: float
     return_6m: float
-    relative_return_1w: float = 0.0
     relative_return_1m: float
     relative_return_3m: float
     relative_return_6m: float
-    median_return_1w: float = 0.0
     median_return_1m: float
     median_return_3m: float
     median_return_6m: float
@@ -1209,17 +1100,6 @@ class ImprovingRsResponse(BaseModel):
     window: ImprovingRsWindow
     total_hits: int
     items: list[ImprovingRsItem]
-
-
-class EandCScanResponse(BaseModel):
-    contraction: list[ScanMatch] = []
-    expansion: list[ScanMatch] = []
-
-
-class EandCScanRequest(BaseModel):
-    expansion_min_change_pct: float = Field(default=6.0, ge=0.0)
-    expansion_min_relative_volume: float = Field(default=2.0, ge=0.0)
-    expansion_min_day_volume: int = Field(default=50_000, ge=0)
 
 
 class UniverseBreadth(BaseModel):
@@ -1378,46 +1258,25 @@ class CompanyQuestionResponse(BaseModel):
 
 
 class WatchlistItem(BaseModel):
-    class Bifurcation(BaseModel):
-        id: str
-        name: str
-        symbols: list[str] = Field(default_factory=list)
-
     id: str
     name: str
     color: str
     symbols: list[str] = Field(default_factory=list)
-    active_bifurcation_id: str | None = None
-    bifurcations: list[Bifurcation] = Field(default_factory=list)
 
 
 class WatchlistsStateResponse(BaseModel):
     market: Literal["india", "us"]
-    updated_at: int | None = None
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active_watchlist_id: str | None = None
     watchlists: list[WatchlistItem] = Field(default_factory=list)
 
-    @field_validator("updated_at", mode="before")
-    @classmethod
-    def _normalize_updated_at(cls, value: object) -> int | None:
-        if value is None or value == "":
-            return None
-        if isinstance(value, datetime):
-            normalized = value if value.tzinfo is not None else value.replace(tzinfo=timezone.utc)
-            return int(normalized.timestamp() * 1000)
-        if isinstance(value, str):
-            stripped = value.strip()
-            if not stripped:
-                return None
-            if stripped.isdigit():
-                return int(stripped)
-            try:
-                parsed = datetime.fromisoformat(stripped.replace("Z", "+00:00"))
-            except ValueError:
-                return value
-            normalized = parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
-            return int(normalized.timestamp() * 1000)
-        return value
+
+class BhavcopyStatusResponse(BaseModel):
+    market: Literal["india", "us"]
+    updated: bool = False
+    date: str | None = None
+    updated_at: datetime | None = None
+    source: str | None = None
 
 
 # ── Sector Rotation ──────────────────────────────────────────────────────────

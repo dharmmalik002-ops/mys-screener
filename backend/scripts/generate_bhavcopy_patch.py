@@ -14,6 +14,8 @@ are often geo-blocked by NSE).
 Format written:
     {
       "date": "YYYY-MM-DD",
+      "updated_at": "YYYY-MM-DDTHH:MM:SS+00:00",
+      "source": "BSE" | "NSE" | "YFINANCE",
       "symbols": {
         "RELIANCE": {"o": 1340.0, "h": 1355.0, "l": 1330.0, "c": 1347.8, "v": 4500000, "p": 1300.0},
         ...
@@ -26,7 +28,9 @@ from __future__ import annotations
 import csv
 import io
 import json
+import logging
 import sys
+import time
 import zipfile
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -37,6 +41,8 @@ import requests
 IST = ZoneInfo("Asia/Kolkata")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_PATH = DATA_DIR / "bhavcopy_patch.json"
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 2
 
 BHAV_URL = "https://nsearchives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_yyyymmdd}_F_0000.csv.zip"
 BHAV_URL_ALT = "https://archives.nseindia.com/content/cm/BhavCopy_NSE_CM_0_0_0_{date_yyyymmdd}_F_0000.csv.zip"
@@ -67,6 +73,31 @@ BSE_HEADERS = {
     "Referer": "https://www.bseindia.com/",
 }
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+logger = logging.getLogger("bhavcopy_patch")
+
+
+def _request_with_retry(
+    session: requests.Session | None,
+    url: str,
+    *,
+    headers: dict[str, str],
+    timeout: int,
+    attempts: int = RETRY_ATTEMPTS,
+) -> requests.Response:
+    last_error: Exception | None = None
+    for attempt in range(1, attempts + 1):
+        try:
+            response = (session or requests).get(url, headers=headers, timeout=timeout)
+            logger.info("GET %s -> %s (attempt %s/%s)", url, response.status_code, attempt, attempts)
+            return response
+        except Exception as exc:
+            last_error = exc
+            logger.warning("GET %s failed on attempt %s/%s: %s", url, attempt, attempts, exc)
+            if attempt < attempts:
+                time.sleep(RETRY_BACKOFF_SECONDS * attempt)
+    raise RuntimeError(f"request failed after {attempts} attempts: {url}") from last_error
+
 
 def _fetch_bhavcopy_csv(trade_date: date) -> str | None:
     date_yyyymmdd = trade_date.strftime("%Y%m%d")
@@ -87,10 +118,11 @@ def _fetch_bhavcopy_csv(trade_date: date) -> str | None:
                 s.headers.update(HEADERS)
                 # Prime cookies like a browser; harmless for archive URLs and
                 # helps when NSE tightens anti-bot checks.
-                s.get("https://www.nseindia.com", headers=HEADERS, timeout=10)
-                r = s.get(url, headers=HEADERS, timeout=30)
+                _request_with_retry(s, "https://www.nseindia.com", headers=HEADERS, timeout=10)
+                r = _request_with_retry(s, url, headers=HEADERS, timeout=30)
 
             if r.status_code != 200 or not r.content:
+                logger.warning("NSE archive unavailable for %s with status %s", url, r.status_code)
                 continue
 
             # NSE usually serves a ZIP, but handle a direct CSV response too.
@@ -103,7 +135,7 @@ def _fetch_bhavcopy_csv(trade_date: date) -> str | None:
             else:
                 return r.text
         except Exception as exc:
-            print(f"  warn: {url} → {exc}", file=sys.stderr)
+            logger.warning("NSE fetch failed for %s: %s", url, exc)
     return None
 
 
@@ -170,9 +202,9 @@ def _fetch_from_bse(trade_date: date) -> dict[str, dict] | None:
     date_yyyymmdd = trade_date.strftime("%Y%m%d")
     url = BSE_BHAV_URL.format(date_yyyymmdd=date_yyyymmdd)
     try:
-        resp = requests.get(url, headers=BSE_HEADERS, timeout=20)
+        resp = _request_with_retry(None, url, headers=BSE_HEADERS, timeout=20)
         if resp.status_code != 200 or len(resp.content) < 1000:
-            print(f"  BSE: HTTP {resp.status_code} for {url}", file=sys.stderr)
+            logger.warning("BSE unavailable for %s with status %s", url, resp.status_code)
             return None
 
         reader = csv.DictReader(io.StringIO(resp.text))
@@ -206,10 +238,10 @@ def _fetch_from_bse(trade_date: date) -> dict[str, dict] | None:
         if not result:
             return None
 
-        print(f"BSE fallback: fetched {len(result)} symbols for {trade_date.isoformat()}")
+        logger.info("BSE fetched %s symbols for %s", len(result), trade_date.isoformat())
         return result
     except Exception as exc:
-        print(f"  BSE fetch failed: {exc}", file=sys.stderr)
+        logger.warning("BSE fetch failed: %s", exc)
         return None
 
 
@@ -236,18 +268,18 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
         import yfinance as yf
         import pandas as pd
     except ImportError:
-        print("yfinance/pandas not installed; skipping yfinance fallback", file=sys.stderr)
+        logger.warning("yfinance/pandas not installed; skipping yfinance fallback")
         return None
 
     universe_path = DATA_DIR / "free_universe.json"
     if not universe_path.exists():
-        print("free_universe.json not found; skipping yfinance fallback", file=sys.stderr)
+        logger.warning("free_universe.json not found; skipping yfinance fallback")
         return None
 
     try:
         universe = json.loads(universe_path.read_text(encoding="utf-8"))
     except Exception as exc:
-        print(f"Failed to read universe: {exc}", file=sys.stderr)
+        logger.warning("Failed to read universe: %s", exc)
         return None
 
     if not isinstance(universe, list):
@@ -317,13 +349,13 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
                         "p": 0.0,
                     }
         except Exception as exc:
-            print(f"yfinance chunk {i // CHUNK + 1} failed: {exc}", file=sys.stderr)
+            logger.warning("yfinance chunk %s failed: %s", i // CHUNK + 1, exc)
             continue
 
     if not result:
         return None
 
-    print(f"yfinance fallback: fetched {len(result)} symbols for {trade_date.isoformat()}")
+    logger.info("yfinance fetched %s symbols for %s", len(result), trade_date.isoformat())
     return result
 
 
@@ -338,26 +370,31 @@ def _patch_already_current(target_date: date) -> bool:
         return False
 
 
-def _write_patch(target_date: date, symbols: dict) -> None:
-    patch = {"date": target_date.isoformat(), "symbols": symbols}
+def _write_patch(target_date: date, symbols: dict, source: str) -> None:
+    patch = {
+        "date": target_date.isoformat(),
+        "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
+        "source": source.upper(),
+        "symbols": symbols,
+    }
     OUTPUT_PATH.write_text(json.dumps(patch, separators=(",", ":")), encoding="utf-8")
-    print(f"Written {OUTPUT_PATH} — date={target_date.isoformat()}, symbols={len(symbols)}")
+    logger.info("Written %s date=%s source=%s symbols=%s", OUTPUT_PATH, target_date.isoformat(), source.upper(), len(symbols))
 
 
 def main() -> int:
     target = _last_trading_day()
-    print(f"Fetching EOD Bhavcopy for {target.isoformat()} …")
+    logger.info("Fetching EOD Bhavcopy for %s", target.isoformat())
 
     # --- Phase 1: BSE bhavcopy (authoritative, no geo-blocking, available ~4:24 PM IST) ---
     bse_symbols = _fetch_from_bse(target)
     if bse_symbols:
         if _patch_already_current(target):
-            print(f"Patch already current for {target.isoformat()} ({len(bse_symbols)} symbols). No update needed.")
+            logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(bse_symbols))
             return 0
-        _write_patch(target, bse_symbols)
+        _write_patch(target, bse_symbols, "BSE")
         return 0
 
-    print(f"  BSE unavailable for {target} — trying NSE archives …")
+    logger.info("BSE unavailable for %s. Trying NSE archives.", target)
 
     # --- Phase 2: NSE archives (authoritative, but geo-blocked from non-Indian IPs) ---
     csv_text = _fetch_bhavcopy_csv(target)
@@ -365,23 +402,23 @@ def main() -> int:
         symbols = _parse_bhavcopy_csv(csv_text)
         if symbols:
             if _patch_already_current(target):
-                print(f"Patch already current for {target.isoformat()} ({len(symbols)} symbols). No update needed.")
+                logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
                 return 0
-            _write_patch(target, symbols)
+            _write_patch(target, symbols, "NSE")
             return 0
 
-    print(f"  NSE also unavailable for {target} — trying yfinance fallback …", file=sys.stderr)
+    logger.warning("NSE unavailable for %s. Trying yfinance fallback.", target)
 
     # --- Phase 3: yfinance fallback for today (globally accessible via Yahoo Finance) ---
     yf_symbols = _fetch_from_yfinance(target)
     if yf_symbols:
         if _patch_already_current(target):
-            print(f"Patch already current for {target.isoformat()}. No update needed.")
+            logger.info("Patch already current for %s. No update needed.", target.isoformat())
             return 0
-        _write_patch(target, yf_symbols)
+        _write_patch(target, yf_symbols, "YFINANCE")
         return 0
 
-    print(f"  yfinance also unavailable — trying BSE for previous trading day …", file=sys.stderr)
+    logger.warning("yfinance unavailable for %s. Trying previous trading day.", target)
 
     # --- Phase 4: last resort — previous trading day via BSE then NSE (holiday fallback) ---
     prev = target - timedelta(days=1)
@@ -390,21 +427,21 @@ def main() -> int:
     bse_prev = _fetch_from_bse(prev)
     if bse_prev:
         if _patch_already_current(prev):
-            print(f"Patch already current for {prev.isoformat()} ({len(bse_prev)} symbols). No update needed.")
+            logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(bse_prev))
             return 0
-        _write_patch(prev, bse_prev)
+        _write_patch(prev, bse_prev, "BSE")
         return 0
     csv_text = _fetch_bhavcopy_csv(prev)
     if csv_text:
         symbols = _parse_bhavcopy_csv(csv_text)
         if symbols:
             if _patch_already_current(prev):
-                print(f"Patch already current for {prev.isoformat()} ({len(symbols)} symbols). No update needed.")
+                logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(symbols))
                 return 0
-            _write_patch(prev, symbols)
+            _write_patch(prev, symbols, "NSE")
             return 0
 
-    print("ERROR: Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.", file=sys.stderr)
+    logger.error("Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.")
     return 1
 
 

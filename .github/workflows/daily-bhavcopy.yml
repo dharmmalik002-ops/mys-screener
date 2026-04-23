@@ -37,6 +37,7 @@ jobs:
       - name: Generate bhavcopy patch
         id: patch
         run: |
+          set -euo pipefail
           python backend/scripts/generate_bhavcopy_patch.py
           # Capture whether the file changed (new date vs already current)
           if git diff --quiet backend/data/bhavcopy_patch.json; then
@@ -48,19 +49,50 @@ jobs:
       - name: Commit and push if updated
         if: steps.patch.outputs.changed == 'true'
         run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          set -euo pipefail
+          retry() {
+            local attempts="$1"
+            shift
+            local try=1
+            until "$@"; do
+              if [ "$try" -ge "$attempts" ]; then
+                echo "command failed after ${try} attempts: $*" >&2
+                return 1
+              fi
+              echo "retry ${try}/${attempts} failed: $*" >&2
+              try=$((try + 1))
+              sleep 5
+            done
+          }
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           DATE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(d['date'])")
+          SOURCE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(str(d.get('source','NSE')).upper())")
           SYMS=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(len(d['symbols']))")
           git add backend/data/bhavcopy_patch.json
-          git commit -m "data: NSE EOD bhavcopy patch for ${DATE} (${SYMS} symbols) [skip ci]"
-          git push origin main
+          git commit -m "data: ${SOURCE} EOD bhavcopy patch for ${DATE} (${SYMS} symbols) [skip ci]"
+          retry 3 git push origin HEAD:main
 
       - name: Trigger HF deploy with clean snapshot
         if: steps.patch.outputs.changed == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          set -euo pipefail
+          retry() {
+            local attempts="$1"
+            shift
+            local try=1
+            until "$@"; do
+              if [ "$try" -ge "$attempts" ]; then
+                echo "command failed after ${try} attempts: $*" >&2
+                return 1
+              fi
+              echo "retry ${try}/${attempts} failed: $*" >&2
+              try=$((try + 1))
+              sleep 5
+            done
+          }
           rm -rf /tmp/hf-deploy
           mkdir -p /tmp/hf-deploy
           rsync -a ./ /tmp/hf-deploy/ \
@@ -81,13 +113,13 @@ jobs:
           cd /tmp/hf-deploy
           git init
           git checkout -b main
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add .
           git commit -m "Deploy bhavcopy snapshot ${GITHUB_SHA}"
           git remote add hf \
             "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
-          git push hf main:main --force
+          retry 3 git push hf main:main --force
 
       - name: Log skip
         if: steps.patch.outputs.changed == 'false'

@@ -2,11 +2,10 @@ import asyncio
 import csv
 import io
 import json
-import logging
 import re
 import time
 from bisect import bisect_left, bisect_right
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -16,6 +15,7 @@ import pandas as pd
 from app.core.config import Settings
 from app.models.market import (
     AlertItem,
+    BhavcopyStatusResponse,
     ChartGridCard,
     ChartGridResponse,
     ChartGridSeriesItem,
@@ -29,8 +29,6 @@ from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
     DashboardResponse,
-    EandCScanRequest,
-    DetailedNews,
     HistoricalBreadthDataPoint,
     IndexPeHistoryResponse,
     IndexPePoint,
@@ -66,21 +64,20 @@ from app.models.market import (
     UniverseBreadth,
     WatchlistItem,
     WatchlistsStateResponse,
-    derive_rs_comparison_dates,
 )
 from app.providers.base import MarketDataProvider
 from app.scanners.definitions import (
     SCAN_BY_ID,
+    SCANS,
     run_consolidating_scan,
     run_custom_scan,
-    run_e_and_c_scan,
-    run_returns_scan,
     run_scan,
+    run_returns_scan,
     scan_catalog_with_counts,
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
-from app.services.watchlists_store import PostgresWatchlistsStore, WatchlistsStateStore
+from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
     ("Nifty 50", "https://niftyindices.com/IndexConstituent/ind_nifty50list.csv"),
@@ -98,7 +95,6 @@ INDEX_HEATMAP_SYMBOLS: dict[str, str] = {
 INDEX_CONSTITUENT_CACHE_MAX_AGE = timedelta(hours=6)
 INDEX_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 IST = timezone(timedelta(hours=5, minutes=30))
-logger = logging.getLogger(__name__)
 GENERIC_COMPLIANCE_KEYWORDS = (
     "regulation 30",
     "sebi (lodr)",
@@ -198,7 +194,6 @@ RESULTS_UPDATE_KEYWORDS = (
 
 def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reason: str) -> ScanMatch:
     display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
-    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return ScanMatch(
         scan_id=scan_id,
         symbol=snapshot.symbol,
@@ -217,9 +212,6 @@ def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reas
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,
@@ -232,7 +224,6 @@ def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reas
 
 
 def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
-    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return StockOverview(
         symbol=snapshot.symbol,
         name=snapshot.name,
@@ -251,9 +242,6 @@ def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,
@@ -271,14 +259,13 @@ def build_stock_overview(snapshot: StockSnapshot) -> StockOverview:
 
 
 class DashboardService:
-    def __init__(
-        self,
-        provider: MarketDataProvider,
-        settings: Settings,
-        watchlists_store: WatchlistsStateStore | None = None,
-    ) -> None:
+    def __init__(self, provider: MarketDataProvider, settings: Settings) -> None:
         self.provider = provider
         self.settings = settings
+        self._watchlists_store = PostgresWatchlistsStore(
+            settings.database_url,
+            connect_timeout_seconds=settings.watchlists_database_connect_timeout_seconds,
+        )
         self._dashboard_cache: DashboardResponse | None = None
         self._scan_catalog_cache: tuple[datetime, list[ScanDescriptor], dict[str, list[ScanMatch]]] | None = None
         self._sector_tab_cache: dict[tuple[str, str], SectorTabResponse] = {}
@@ -290,7 +277,6 @@ class DashboardService:
         self._scan_sector_summary_cache: dict[tuple[str, str, datetime], list[ScanSectorSummary]] = {}
         self._market_overview_cache: tuple[float, object] | None = None
         self._industry_groups_cache: IndustryGroupsResponse | None = None
-        self._industry_groups_request_task: asyncio.Task[IndustryGroupsResponse] | None = None
         self._market_health_cache: MarketHealthResponse | None = None
         self._sector_rotation_cache = None
         # Resolve money-flow storage path next to data/
@@ -298,10 +284,30 @@ class DashboardService:
         _backend_root = Path(__file__).resolve().parents[2]
         self._money_flow_cache_path = _backend_root / "data" / "money_flow_reports.json"
         self._money_flow_stock_cache_path = _backend_root / "data" / "money_flow_stock_ideas.json"
-        self._watchlists_store = watchlists_store or PostgresWatchlistsStore(
-            settings.database_url if settings.use_watchlists_database else None,
-            connect_timeout_seconds=settings.watchlists_database_connect_timeout_seconds,
-        )
+
+    def _legacy_data_dir(self) -> Path:
+        backend_root = getattr(self.provider, "backend_root", None)
+        if backend_root is None:
+            backend_root = Path(__file__).resolve().parents[2]
+        return Path(backend_root) / "data"
+
+    def _state_data_dir(self) -> Path:
+        return Path(self.settings.app_state_dir) / "data"
+
+    @staticmethod
+    def _read_json_dict(path: Path) -> dict:
+        if not path.exists():
+            return {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    @staticmethod
+    def _write_json_payload(path: Path, payload: object) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     @staticmethod
     def _chart_bar_limit(timeframe: str) -> int:
@@ -456,7 +462,6 @@ class DashboardService:
         reverse: bool,
         metric_field_map: dict[str, str],
         last_price: float | None = None,
-        return_1d_override: float | None = None,
     ) -> SectorCard:
         return SectorCard(
             group_kind=group_kind,
@@ -464,7 +469,7 @@ class DashboardService:
             company_count=len(members),
             sub_sector_count=len(grouped_members),
             last_price=last_price,
-            return_1d=round(float(return_1d_override), 2) if return_1d_override is not None else self._weighted_average_return(members, "change_pct"),
+            return_1d=self._weighted_average_return(members, "change_pct"),
             return_1w=self._weighted_average_return(members, "stock_return_5d"),
             return_1m=self._weighted_average_return(members, "stock_return_20d"),
             return_3m=self._weighted_average_return(members, "stock_return_60d"),
@@ -678,24 +683,10 @@ class DashboardService:
         return response
 
     async def warm_startup_views(self) -> None:
+        # Keep startup work limited to the dashboard path so the API stays
+        # responsive on resource-constrained hosts. Heavier views can warm
+        # lazily on the first real request.
         await self.build_dashboard()
-        await asyncio.gather(
-            self.get_sector_tab("1D", "desc"),
-            self.get_sector_tab("1M", "desc"),
-            self.get_industry_groups(),
-            self.get_market_health(),
-            self.get_sector_rotation(),
-            self.get_money_flow_history(),
-            self.get_money_flow_stock_ideas_history(),
-            return_exceptions=True,
-        )
-        # Warm scan catalog so screener health check shows "done" from the start.
-        # _scan_catalog() is pure CPU (no I/O) and caches into _scan_catalog_cache.
-        try:
-            snapshots = await self._snapshots()
-            self._scan_catalog(self._scan_eligible_snapshots(snapshots))
-        except Exception:
-            pass
 
     def get_historical_breadth(self) -> HistoricalBreadthResponse:
         from pathlib import Path
@@ -800,27 +791,27 @@ class DashboardService:
         cached_dashboard = self._dashboard_cache
         if cached_dashboard is not None and cached_dashboard.generated_at >= snapshot_updated_at:
             return cached_dashboard
-        scanners, results = self._scan_catalog(scan_snapshots)
-
-        # Only rank snapshots from the most recent session — stale rows from
-        # older dates (e.g. carried over from a tariff-shock day weeks ago)
-        # have change_pct relative to their old session and would pollute the
-        # gainers/losers lists with irrelevant historical moves.
-        if scan_snapshots:
-            latest_date = max(
-                (str(item.history_as_of_date or "") for item in scan_snapshots),
-                default="",
-            )
-            current_session_snaps = [
-                item for item in scan_snapshots if str(item.history_as_of_date or "") == latest_date
-            ] if latest_date else scan_snapshots
+        cached_catalog = self._scan_catalog_cache
+        if cached_catalog is not None and cached_catalog[0] >= snapshot_updated_at:
+            scanners = self._copy_scan_descriptors(cached_catalog[1])
+            results = cached_catalog[2]
         else:
-            current_session_snaps = scan_snapshots
+            scanners = [
+                ScanDescriptor(
+                    id=scan.id,
+                    name=scan.name,
+                    category=scan.category,
+                    description=scan.description,
+                    hit_count=0,
+                )
+                for scan in SCANS
+            ]
+            results = {}
 
-        top_gainers = sorted(current_session_snaps, key=lambda item: item.change_pct, reverse=True)[:5]
-        top_losers = sorted(current_session_snaps, key=lambda item: item.change_pct)[:5]
+        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:5]
+        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:5]
         top_volume = sorted(
-            [item for item in current_session_snaps if self._has_reliable_relative_volume(item)],
+            [item for item in scan_snapshots if self._has_reliable_relative_volume(item)],
             key=lambda item: item.relative_volume,
             reverse=True,
         )[:5]
@@ -868,7 +859,7 @@ class DashboardService:
 
     async def get_scan_counts(self) -> list[ScanDescriptor]:
         snapshots = await self._snapshots()
-        scanners, _ = self._scan_catalog(self._scan_eligible_snapshots(snapshots))
+        scanners, _ = await asyncio.to_thread(self._scan_catalog, self._scan_eligible_snapshots(snapshots))
         return scanners
 
     def _gap_up_items(
@@ -887,7 +878,6 @@ class DashboardService:
                 continue
 
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
-            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             score = round(
                 60
                 + (snapshot.gap_pct * 8)
@@ -914,9 +904,6 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -961,7 +948,6 @@ class DashboardService:
 
             distance_to_pivot_pct = 0.0 if pivot_level <= 0 else round(((pivot_level - snapshot.last_price) / pivot_level) * 100, 2)
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
-            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             score = round(
                 60
                 + (snapshot.rs_rating * 0.34)
@@ -990,9 +976,6 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -1106,7 +1089,6 @@ class DashboardService:
             if request.enable_ma_support:
                 reasons.append(f"Pulling into {selected_ma_key.upper()} within {ma_distance_pct:.2f}%")
             display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
-            rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
             items.append(
                 ScanMatch(
                     scan_id="pull-backs",
@@ -1126,9 +1108,6 @@ class DashboardService:
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-                    rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-                    rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-                    rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
                     nifty_outperformance=snapshot.nifty_outperformance,
                     sector_outperformance=snapshot.sector_outperformance,
                     three_month_rs=snapshot.three_month_rs,
@@ -1310,70 +1289,80 @@ class DashboardService:
         return [item for item in items if float(item.avg_rupee_volume_30d_crore or 0.0) >= min_liquidity_crore]
 
     @staticmethod
-    def _return_from_baseline(current_price: float, baseline_close: float | None) -> float:
-        if current_price <= 0 or baseline_close in (None, 0):
-            return 0.0
-        return ((current_price / float(baseline_close)) - 1) * 100
-
-    def _contraction_prefilter(self, snapshot: StockSnapshot) -> bool:
-        ema50 = snapshot.ema50
-        sma50 = snapshot.sma50
-        avg_volume_50d = snapshot.avg_volume_50d
-        if ema50 is None or sma50 is None or avg_volume_50d is None or sma50 <= 0:
+    def _contraction_snapshot_needs_enrichment(snapshot: StockSnapshot) -> bool:
+        recent_closes = [float(value) for value in getattr(snapshot, "recent_closes", []) if value is not None]
+        if len(recent_closes) >= 4:
             return False
-        if abs(snapshot.change_pct) > 2.5:
-            return False
-        if snapshot.last_price <= ema50 or snapshot.last_price <= 30:
-            return False
-        if avg_volume_50d < 50_000 or snapshot.volume <= 25_000:
-            return False
-        if snapshot.last_price > (1.25 * sma50):
-            return False
-
-        return any(
-            threshold_check
-            for threshold_check in (
-                snapshot.stock_return_5d >= 10.0,
-                snapshot.stock_return_20d >= 20.0,
-                snapshot.stock_return_60d >= 30.0,
-                self._return_from_baseline(snapshot.last_price, snapshot.baseline_close_30d) >= 20.0,
-                self._return_from_baseline(snapshot.last_price, snapshot.baseline_close_90d) >= 30.0,
-            )
+        baseline_fields = (
+            "baseline_close_5d",
+            "baseline_close_20d",
+            "baseline_close_60d",
+            "baseline_close_63d",
         )
+        return not any(getattr(snapshot, field_name, None) not in (None, 0) for field_name in baseline_fields)
 
-    async def _build_contraction_candidates(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
-        candidates = [snapshot for snapshot in snapshots if self._contraction_prefilter(snapshot)]
+    @staticmethod
+    def _baseline_close_from_bars(closes: list[float], days: int) -> float | None:
+        if len(closes) <= days:
+            return None
+        value = closes[-(days + 1)]
+        return round(float(value), 4)
+
+    @classmethod
+    def _snapshot_with_contraction_history(cls, snapshot: StockSnapshot, bars: list[ChartBar]) -> StockSnapshot:
+        closes = [round(float(bar.close), 2) for bar in bars if getattr(bar, "close", None) not in (None, 0)]
+        volumes = [int(float(getattr(bar, "volume", 0) or 0)) for bar in bars]
+        if len(closes) < 4:
+            return snapshot
+
+        updates: dict[str, object] = {
+            "recent_closes": closes,
+            "recent_volumes": volumes,
+        }
+
+        for field_name, days in (
+            ("baseline_close_5d", 5),
+            ("baseline_close_20d", 20),
+            ("baseline_close_60d", 60),
+            ("baseline_close_63d", 63),
+        ):
+            baseline_close = cls._baseline_close_from_bars(closes, days)
+            if baseline_close is not None:
+                updates[field_name] = baseline_close
+
+        return snapshot.model_copy(update=updates)
+
+    async def _build_contraction_snapshots(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+        candidates = [snapshot for snapshot in snapshots if self._contraction_snapshot_needs_enrichment(snapshot)]
         if not candidates:
-            return []
+            return snapshots
 
+        snapshot_by_symbol = {snapshot.symbol: snapshot for snapshot in snapshots}
         semaphore = asyncio.Semaphore(8)
 
         async def enrich(snapshot: StockSnapshot) -> StockSnapshot:
-            if len(snapshot.recent_closes) >= 91:
-                return snapshot
-
             async with semaphore:
                 try:
-                    bars = await self.provider.get_chart(snapshot.symbol, "1D", 120)
+                    bars = await self.provider.get_chart(snapshot.symbol, "1D", bars=120)
                 except Exception:
                     return snapshot
+            return self._snapshot_with_contraction_history(snapshot, bars)
 
-            recent_closes = [
-                round(float(getattr(bar, "close", 0) or 0), 2)
-                for bar in bars
-                if float(getattr(bar, "close", 0) or 0) > 0
-            ]
-            if len(recent_closes) < 4:
-                return snapshot
-            return snapshot.model_copy(update={"recent_closes": recent_closes})
+        enriched = await asyncio.gather(*[enrich(snapshot) for snapshot in candidates])
+        for snapshot in enriched:
+            snapshot_by_symbol[snapshot.symbol] = snapshot
+        return [snapshot_by_symbol[snapshot.symbol] for snapshot in snapshots]
 
-        return await asyncio.gather(*(enrich(snapshot) for snapshot in candidates))
-
-    async def _get_contraction_scan_items(self, snapshots: list[StockSnapshot]) -> list[ScanMatch]:
-        candidates = await self._build_contraction_candidates(snapshots)
-        if not candidates:
-            return []
-        return run_scan(SCAN_BY_ID["contraction"], candidates)
+    async def _get_contraction_scan_items(
+        self,
+        snapshots: list[StockSnapshot],
+        min_liquidity_crore: float | None,
+    ) -> list[ScanMatch]:
+        enriched_snapshots = await self._build_contraction_snapshots(snapshots)
+        return self._filter_scan_items_by_liquidity(
+            run_scan(SCAN_BY_ID["contraction"], enriched_snapshots),
+            min_liquidity_crore,
+        )
 
     async def get_scan_results(
         self,
@@ -1388,11 +1377,9 @@ class DashboardService:
             raise KeyError(scan_id)
 
         if scan_id == "contraction":
-            raw_items = await self._get_contraction_scan_items(snapshots)
+            items = await self._get_contraction_scan_items(snapshots, min_liquidity_crore)
         else:
-            raw_items = results[scan_id]
-
-        items = self._filter_scan_items_by_liquidity(raw_items, min_liquidity_crore)
+            items = self._filter_scan_items_by_liquidity(results[scan_id], min_liquidity_crore)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         request_signature = scan_id if min_liquidity_crore is None else f"{scan_id}:{min_liquidity_crore:.2f}"
         return await self._scan_results_response(
@@ -1433,36 +1420,6 @@ class DashboardService:
             include_sector_summaries=include_sector_summaries,
         )
 
-    async def get_historical_chart_scan_results(
-        self,
-        request: CustomScanRequest,
-    ) -> ScanResultsResponse:
-        """Run a historical chart-data scan (date-specific RVOL/change% or peak-volume query)."""
-        snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = await asyncio.to_thread(
-            self.provider.run_historical_chart_scan, request, snapshots
-        )
-        scan_date_str = request.scan_date.isoformat() if request.scan_date else None
-        if scan_date_str:
-            description = f"Historical scan for {scan_date_str}: RVOL and price-change filters applied."
-        else:
-            description = f"Stocks with highest quarterly volume in last {request.highest_vol_lookback_days} days."
-        return await self._scan_results_response(
-            scan={
-                "id": "historical-scan",
-                "name": "Historical Chart Scan",
-                "category": "AI",
-                "description": description,
-                "hit_count": len(items),
-            },
-            scan_key="historical-scan",
-            request_signature=json.dumps(request.model_dump(mode="python"), sort_keys=True, default=str),
-            snapshots=snapshots,
-            items=items,
-            historical_runner=lambda _hist: items,
-            include_sector_summaries=False,
-        )
-
     async def get_chart(self, symbol: str, timeframe: str):
         snapshot_updated_at = self._snapshot_updated_at()
         cache_key = (symbol, timeframe)
@@ -1473,18 +1430,18 @@ class DashboardService:
             if cached_snapshot_at >= snapshot_updated_at and now - cached_at <= self._chart_response_cache_ttl(timeframe):
                 return cached_response
 
-        snapshots, bars = await asyncio.gather(
-            self._snapshots(),
-            self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe)),
-        )
+        bars = await self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe))
+        snapshots: list[StockSnapshot] = []
+        if not symbol.startswith("^"):
+            try:
+                snapshots = await asyncio.wait_for(self._snapshots(), timeout=3.0)
+            except Exception:
+                snapshots = []
         snapshot = next((item for item in snapshots if item.symbol == symbol), None)
-        # Prefix fallback: "LAURUS" must match "LAURUSLABS" when the journal
-        # stores a short alias that the provider already resolved to a ticker.
-        if snapshot is None:
-            prefix_hits = [s for s in snapshots if s.symbol.startswith(symbol)]
-            if len(prefix_hits) == 1:
-                snapshot = prefix_hits[0]
-        rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars, snapshots=snapshots)
+        if snapshots:
+            rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars, snapshots=snapshots)
+        else:
+            rs_line, rs_line_markers = [], []
         summary = build_stock_overview(snapshot) if snapshot else None
         if summary is not None:
             summary = self._with_chart_summary(summary, bars, rs_line, snapshot.previous_close if snapshot else None)
@@ -1500,11 +1457,19 @@ class DashboardService:
         return response
 
     async def get_chart_history(self, symbol: str, timeframe: str):
-        snapshots = await self._snapshots()
+        snapshots: list[StockSnapshot] = []
+        if not symbol.startswith("^"):
+            try:
+                snapshots = await asyncio.wait_for(self._snapshots(), timeout=3.0)
+            except Exception:
+                snapshots = []
         snapshot = next((item for item in snapshots if item.symbol == symbol), None)
 
         bars = await self.get_chart_full_history(symbol=symbol, timeframe=timeframe)
-        rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars, snapshots=snapshots)
+        if snapshots:
+            rs_line, rs_line_markers = await self._build_rs_line(symbol=symbol, timeframe=timeframe, bars=bars, snapshots=snapshots)
+        else:
+            rs_line, rs_line_markers = [], []
 
         summary = build_stock_overview(snapshot) if snapshot else None
         if summary is not None:
@@ -1533,9 +1498,8 @@ class DashboardService:
 
     async def get_market_overview(self):
         now = time.time()
-        ttl_seconds = 90 if self._is_market_open_now() else 300
         cached = getattr(self, "_market_overview_cache", None)
-        if cached and now - cached[0] < ttl_seconds:
+        if cached and now - cached[0] < 300:
             return cached[1]
         items_raw = await asyncio.to_thread(self.provider.get_market_overview)
         from app.models.market import MarketMacroItem, MarketOverviewResponse
@@ -1543,15 +1507,6 @@ class DashboardService:
         result = MarketOverviewResponse(items=items)
         self._market_overview_cache = (now, result)
         return result
-
-    def _is_market_open_now(self) -> bool:
-        is_market_open_fn = getattr(self.provider, "_is_market_open_ist", None)
-        if not callable(is_market_open_fn):
-            return False
-        try:
-            return bool(is_market_open_fn())
-        except Exception:
-            return False
 
     async def get_index_pe_history(self, symbol: str) -> IndexPeHistoryResponse:
         """Fetch historical P/E for an index and compute 5-year average."""
@@ -2696,13 +2651,7 @@ class DashboardService:
         )
         return score, setup_summary, thesis
 
-    async def _fetch_fundamentals_for_symbols(
-        self,
-        snapshots: list[StockSnapshot],
-        limit: int,
-        *,
-        max_age_hours: float = 72,
-    ) -> dict[str, CompanyFundamentals]:
+    async def _fetch_fundamentals_for_symbols(self, snapshots: list[StockSnapshot], limit: int) -> dict[str, CompanyFundamentals]:
         selected = snapshots[:limit]
         results: dict[str, CompanyFundamentals] = {}
         cached_loader = getattr(self.provider, "get_fundamentals_cached", None)
@@ -2715,7 +2664,7 @@ class DashboardService:
                     fundamentals = await cached_loader(
                         snapshot.symbol,
                         snapshot=snapshot,
-                        max_age_hours=max_age_hours,
+                        max_age_hours=72,
                     )
                 except TypeError:
                     try:
@@ -2733,32 +2682,15 @@ class DashboardService:
         if not missing:
             return results
 
-        demo_provider = getattr(self.provider, "demo", None)
-        provider_loader = getattr(self.provider, "get_fundamentals", None)
+        semaphore = asyncio.Semaphore(3)
 
         async def load(snapshot: StockSnapshot):
-            if demo_provider is not None:
+            async with semaphore:
                 try:
-                    fallback = await demo_provider.get_fundamentals(snapshot.symbol, snapshot)
-                    if fallback is not None:
-                        return snapshot.symbol, fallback
-                except Exception:
-                    pass
-
-            if not callable(provider_loader):
-                return None
-            try:
-                refreshed = await provider_loader(snapshot.symbol, snapshot=snapshot)
-            except TypeError:
-                try:
-                    refreshed = await provider_loader(snapshot.symbol, snapshot)
+                    fundamentals = await self.provider.get_fundamentals(symbol=snapshot.symbol, snapshot=snapshot)
                 except Exception:
                     return None
-            except Exception:
-                return None
-            if refreshed is None:
-                return None
-            return snapshot.symbol, refreshed
+            return snapshot.symbol, fundamentals
 
         fetched = await asyncio.gather(*[load(snapshot) for snapshot in missing])
         results.update(
@@ -2830,17 +2762,10 @@ class DashboardService:
         sector_snapshot_map: dict[str, list[StockSnapshot]] = {}
         for snapshot in snapshots:
             sector_snapshot_map.setdefault(snapshot.sector or "Unknown", []).append(snapshot)
-        try:
-            consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
-                [item["snapshot"] for item in consolidating_candidates],
-                limit=8,
-                max_age_hours=72,
-            )
-        except TypeError:
-            consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
-                [item["snapshot"] for item in consolidating_candidates],
-                limit=8,
-            )
+        consolidating_fundamentals = await self._fetch_fundamentals_for_symbols(
+            [item["snapshot"] for item in consolidating_candidates],
+            limit=8,
+        )
         consolidating_ideas: list[MoneyFlowStockIdea] = []
         for candidate in consolidating_candidates:
             snapshot = candidate["snapshot"]
@@ -2878,17 +2803,10 @@ class DashboardService:
             ),
             reverse=True,
         )
-        try:
-            value_fundamentals = await self._fetch_fundamentals_for_symbols(
-                value_snapshot_pool,
-                limit=self._money_flow_value_fundamentals_limit(),
-                max_age_hours=72,
-            )
-        except TypeError:
-            value_fundamentals = await self._fetch_fundamentals_for_symbols(
-                value_snapshot_pool,
-                limit=self._money_flow_value_fundamentals_limit(),
-            )
+        value_fundamentals = await self._fetch_fundamentals_for_symbols(
+            value_snapshot_pool,
+            limit=self._money_flow_value_fundamentals_limit(),
+        )
         value_candidates: list[dict] = []
         snapshot_by_symbol = {snapshot.symbol: snapshot for snapshot in value_snapshot_pool}
         for symbol, fundamentals in value_fundamentals.items():
@@ -3047,6 +2965,30 @@ class DashboardService:
             generated_at=datetime.now(timezone.utc),
             ai_model=model_name,
         )
+
+    def _journal_data_path(self) -> Path:
+        return self._state_data_dir() / "journal_data.json"
+
+    def _legacy_journal_data_path(self) -> Path:
+        return self._legacy_data_dir() / "journal_data.json"
+
+    def get_journal_data(self) -> dict:
+        path = self._journal_data_path()
+        payload = self._read_json_dict(path)
+        if payload:
+            return payload
+
+        legacy_path = self._legacy_journal_data_path()
+        legacy_payload = self._read_json_dict(legacy_path)
+        if legacy_payload:
+            self._write_json_payload(path, legacy_payload)
+            return legacy_payload
+        return {}
+
+    def save_journal_data(self, payload: dict) -> dict:
+        path = self._journal_data_path()
+        self._write_json_payload(path, payload)
+        return payload
 
     async def get_sector_rotation(self) -> "SectorRotationResponse":
         """Rank sectors using a composite of weighted return, breadth vs Nifty, and momentum acceleration.
@@ -3282,21 +3224,11 @@ class DashboardService:
         if not sparkline:
             async with semaphore:
                 try:
-                    read_cache = getattr(self.provider, "_read_chart_cache", None)
-                    if callable(read_cache):
-                        bars = await asyncio.to_thread(
-                            read_cache,
-                            snapshot.symbol,
-                            "1D",
-                            self._chart_grid_bar_limit(timeframe),
-                            allow_legacy=True,
-                        )
-                    else:
-                        bars = await self.provider.get_chart(
-                            snapshot.symbol,
-                            "1D",
-                            bars=self._chart_grid_bar_limit(timeframe),
-                        )
+                    bars = await self.provider.get_chart(
+                        snapshot.symbol,
+                        "1D",
+                        bars=self._chart_grid_bar_limit(timeframe),
+                    )
                 except Exception:
                     bars = []
 
@@ -3369,7 +3301,7 @@ class DashboardService:
             reverse=True,
         )
         total_market_cap = sum(max(item.market_cap_crore, 0.0) for item in ordered_members)
-        semaphore = asyncio.Semaphore(24)
+        semaphore = asyncio.Semaphore(12)
         cards = await asyncio.gather(
             *[
                 self._build_chart_grid_card(
@@ -3390,18 +3322,6 @@ class DashboardService:
             total_items=len(cards),
             cards=cards,
         )
-
-        # Snapshot timestamps are part of the cache key; prune old keys to
-        # avoid unbounded growth on long-running instances.
-        if len(self._chart_grid_cache) >= 128:
-            for key in [key for key in self._chart_grid_cache if key[3] != snapshot_updated_at]:
-                self._chart_grid_cache.pop(key, None)
-            while len(self._chart_grid_cache) >= 128:
-                oldest_key = next(iter(self._chart_grid_cache), None)
-                if oldest_key is None:
-                    break
-                self._chart_grid_cache.pop(oldest_key, None)
-
         self._chart_grid_cache[cache_key] = response
         return response
 
@@ -3422,26 +3342,16 @@ class DashboardService:
             if len(normalized_symbols) >= 48:
                 break
 
-        semaphore = asyncio.Semaphore(24)
+        semaphore = asyncio.Semaphore(12)
 
         async def load_symbol(symbol: str) -> ChartGridSeriesItem | None:
             async with semaphore:
                 try:
-                    read_cache = getattr(self.provider, "_read_chart_cache", None)
-                    if callable(read_cache):
-                        bars = await asyncio.to_thread(
-                            read_cache,
-                            symbol,
-                            "1D",
-                            self._chart_grid_series_bar_limit(),
-                            allow_legacy=True,
-                        )
-                    else:
-                        bars = await self.provider.get_chart(
-                            symbol,
-                            "1D",
-                            bars=self._chart_grid_series_bar_limit(),
-                        )
+                    bars = await self.provider.get_chart(
+                        symbol,
+                        "1D",
+                        bars=self._chart_grid_series_bar_limit(),
+                    )
                 except Exception:
                     return None
             return ChartGridSeriesItem(symbol=symbol, bars=bars)
@@ -3621,12 +3531,6 @@ class DashboardService:
             include_sector_summaries=include_sector_summaries,
         )
 
-    async def get_e_and_c_scan_results(self, request: EandCScanRequest | None = None) -> "EandCScanResponse":
-        from app.models.market import EandCScanResponse
-        snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        contraction, expansion = run_e_and_c_scan(snapshots, request=request)
-        return EandCScanResponse(contraction=contraction, expansion=expansion)
-
     async def get_sector_tab(self, sort_by: SectorSortBy, sort_order: str) -> SectorTabResponse:
         normalized_sort_order = "asc" if sort_order == "asc" else "desc"
         cache_key = (sort_by, normalized_sort_order)
@@ -3727,7 +3631,6 @@ class DashboardService:
                     reverse,
                     metric_field_map,
                     last_price=index_quote.price if index_quote is not None else None,
-                    return_1d_override=index_quote.change_pct if index_quote is not None else None,
                 )
             )
 
@@ -3821,70 +3724,71 @@ class DashboardService:
         return "india" if str(default_exchange or "").upper() in {"NSE", "BSE"} else "us"
 
     def _watchlists_state_path(self) -> Path:
-        # Hugging Face Persistent Storage Tier mounts a volume at /data
-        # If it exists, we use it to ensure the watchlist survives updates/restarts.
-        persistent_root = Path("/data")
-        if persistent_root.exists() and persistent_root.is_dir():
-            data_dir = persistent_root
-        else:
-            backend_root = getattr(self.provider, "backend_root", None)
-            if backend_root is None:
-                backend_root = Path(__file__).resolve().parents[2]
-            data_dir = Path(backend_root) / "data"
-            
+        data_dir = self._state_data_dir()
         filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
         return data_dir / filename
 
-    def _watchlists_backup_path(self) -> Path:
-        path = self._watchlists_state_path()
-        return path.with_name(f"{path.stem}.backup{path.suffix}")
+    def _legacy_watchlists_state_path(self) -> Path:
+        filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
+        return self._legacy_data_dir() / filename
 
-    def _watchlists_recovery_path(self) -> Path:
-        path = self._watchlists_state_path()
-        return path.with_name(f"{path.stem}.recovery{path.suffix}")
-
-    @staticmethod
-    def _watchlists_state_updated_at(state: WatchlistsStateResponse | None) -> int:
-        if state is None or state.updated_at is None:
-            return 0
-        return int(state.updated_at or 0)
-
-    @staticmethod
-    def _write_json_state(path: Path, payload: dict[str, object]) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        temp_path = path.with_suffix(f"{path.suffix}.tmp")
-        temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        temp_path.replace(path)
-
-    def _load_watchlists_state_file(self, path: Path) -> WatchlistsStateResponse | None:
+    def _load_watchlists_state_from_file(self, path: Path) -> WatchlistsStateResponse | None:
         if not path.exists():
             return None
+
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
-            return WatchlistsStateResponse.model_validate(payload)
+            state = WatchlistsStateResponse.model_validate(payload)
         except Exception:
             return None
+        return self._sanitize_watchlists_state(state)
 
-    def _persist_watchlists_state_files(self, state: WatchlistsStateResponse) -> None:
-        payload = state.model_dump(mode="json")
-        primary_path = self._watchlists_state_path()
-        backup_path = self._watchlists_backup_path()
-        self._write_json_state(primary_path, payload)
-        self._write_json_state(backup_path, payload)
-        self._write_json_state(self._watchlists_recovery_path(), payload)
+    def _persist_watchlists_file_backup(self, state: WatchlistsStateResponse) -> None:
+        self._write_json_payload(self._watchlists_state_path(), state.model_dump(mode="json"))
+
+    def _bhavcopy_patch_path(self) -> Path:
+        backend_root = getattr(self.provider, "backend_root", None)
+        if backend_root is None:
+            backend_root = Path(__file__).resolve().parents[2]
+        return Path(backend_root) / "data" / "bhavcopy_patch.json"
+
+    def _bhavcopy_status_path(self) -> Path:
+        backend_root = getattr(self.provider, "backend_root", None)
+        if backend_root is None:
+            backend_root = Path(__file__).resolve().parents[2]
+        return Path(backend_root) / "data" / "bhavcopy_status.json"
 
     @staticmethod
-    def _normalize_watchlist_bifurcation(item: WatchlistItem.Bifurcation) -> WatchlistItem.Bifurcation | None:
-        bifurcation_id = str(item.id or "").strip()
-        name = str(item.name or "").strip()
-        if not bifurcation_id or not name:
+    def _read_json_object(path: Path) -> dict[str, object]:
+        if not path.exists():
+            return {}
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        return payload if isinstance(payload, dict) else {}
+
+    @staticmethod
+    def _parse_optional_date(value: object) -> date | None:
+        text = str(value or "").strip()
+        if not text:
             return None
-        symbols = list(dict.fromkeys(str(symbol or "").strip().upper() for symbol in item.symbols if str(symbol or "").strip()))
-        return WatchlistItem.Bifurcation(
-            id=bifurcation_id,
-            name=name,
-            symbols=symbols,
-        )
+        try:
+            return date.fromisoformat(text)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _parse_optional_datetime(value: object) -> datetime | None:
+        text = str(value or "").strip()
+        if not text:
+            return None
+        normalized = text.replace("Z", "+00:00")
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError:
+            return None
+        return parsed if parsed.tzinfo is not None else parsed.replace(tzinfo=timezone.utc)
 
     @staticmethod
     def _normalize_watchlist_item(item: WatchlistItem) -> WatchlistItem | None:
@@ -3898,61 +3802,14 @@ class DashboardService:
             color = "#4f8cff"
 
         symbols = list(dict.fromkeys(str(symbol or "").strip().upper() for symbol in item.symbols if str(symbol or "").strip()))
-
-        normalized_bifurcations: list[WatchlistItem.Bifurcation] = []
-        seen_bifurcation_ids: set[str] = set()
-        for bifurcation in item.bifurcations:
-            normalized_bifurcation = DashboardService._normalize_watchlist_bifurcation(bifurcation)
-            if normalized_bifurcation is None or normalized_bifurcation.id in seen_bifurcation_ids:
-                continue
-            seen_bifurcation_ids.add(normalized_bifurcation.id)
-            normalized_bifurcations.append(normalized_bifurcation)
-
-        if normalized_bifurcations:
-            bifurcation_symbol_union = list(
-                dict.fromkeys(
-                    symbol
-                    for bifurcation in normalized_bifurcations
-                    for symbol in bifurcation.symbols
-                )
-            )
-            symbols = list(dict.fromkeys([*symbols, *bifurcation_symbol_union]))
-
-            if symbols and normalized_bifurcations:
-                first_bifurcation = normalized_bifurcations[0]
-                missing_symbols = [symbol for symbol in symbols if symbol not in first_bifurcation.symbols]
-                if missing_symbols:
-                    normalized_bifurcations[0] = first_bifurcation.model_copy(
-                        update={"symbols": [*first_bifurcation.symbols, *missing_symbols]}
-                    )
-        elif symbols:
-            normalized_bifurcations = [
-                WatchlistItem.Bifurcation(
-                    id="main",
-                    name="Main",
-                    symbols=symbols,
-                )
-            ]
-
-        active_bifurcation_id = str(item.active_bifurcation_id or "").strip() or None
-        if active_bifurcation_id and active_bifurcation_id not in {bifurcation.id for bifurcation in normalized_bifurcations}:
-            active_bifurcation_id = None
-
         return WatchlistItem(
             id=watchlist_id,
             name=name,
             color=color,
             symbols=symbols,
-            active_bifurcation_id=active_bifurcation_id or (normalized_bifurcations[0].id if normalized_bifurcations else None),
-            bifurcations=normalized_bifurcations,
         )
 
-    def _sanitize_watchlists_state(
-        self,
-        payload: WatchlistsStateResponse,
-        *,
-        refresh_timestamp: bool,
-    ) -> WatchlistsStateResponse:
+    def _sanitize_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
         normalized_watchlists: list[WatchlistItem] = []
         seen_ids: set[str] = set()
         for item in payload.watchlists:
@@ -3968,115 +3825,77 @@ class DashboardService:
 
         return WatchlistsStateResponse(
             market=self._market_key(),
-            updated_at=int(datetime.now(timezone.utc).timestamp() * 1000) if refresh_timestamp else payload.updated_at,
+            updated_at=datetime.now(timezone.utc),
             active_watchlist_id=active_watchlist_id or (normalized_watchlists[0].id if normalized_watchlists else None),
             watchlists=normalized_watchlists,
         )
 
-    def _get_watchlists_state_from_files(self) -> WatchlistsStateResponse:
-        candidate_states: list[tuple[int, WatchlistsStateResponse, Path]] = []
-        for path in (
-            self._watchlists_state_path(),
-            self._watchlists_backup_path(),
-            self._watchlists_recovery_path(),
-        ):
-            state = self._load_watchlists_state_file(path)
-            if state is None:
-                continue
-            sanitized = self._sanitize_watchlists_state(state, refresh_timestamp=False)
-            candidate_states.append((self._watchlists_state_updated_at(sanitized), sanitized, path))
-
-        if not candidate_states:
-            return WatchlistsStateResponse(market=self._market_key())
-
-        _, state, source_path = max(
-            candidate_states,
-            key=lambda item: (item[0], 1 if item[2] == self._watchlists_state_path() else 0),
-        )
-
-        if source_path != self._watchlists_state_path():
-            self._persist_watchlists_state_files(state)
-
-        return state
-
-    def _load_watchlists_state_from_database(self) -> WatchlistsStateResponse | None:
-        if not self._watchlists_store.is_enabled():
-            return None
-
-        try:
-            state = self._watchlists_store.load_state(self._market_key())
-        except Exception as exc:
-            logger.warning("Watchlists database read failed for %s: %s", self._market_key(), exc)
-            return None
-
-        if state is None:
-            return None
-
-        normalized = self._sanitize_watchlists_state(state, refresh_timestamp=False)
-        self._persist_watchlists_state_files(normalized)
-        return normalized
-
-    def _maybe_migrate_watchlists_state_to_database(self, state: WatchlistsStateResponse) -> None:
-        if not self._watchlists_store.is_enabled():
-            return
-        if state.updated_at is None and state.active_watchlist_id is None and not state.watchlists:
-            return
-        try:
-            self._watchlists_store.save_state(state)
-        except Exception as exc:
-            logger.warning("Watchlists database migration failed for %s: %s", self._market_key(), exc)
-
     def get_watchlists_state(self) -> WatchlistsStateResponse:
-        database_state = self._load_watchlists_state_from_database()
-        if database_state is not None:
-            return database_state
-
-        file_state = self._get_watchlists_state_from_files()
-        self._maybe_migrate_watchlists_state_to_database(file_state)
-        return file_state
-
-    def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
-        state = self._sanitize_watchlists_state(payload, refresh_timestamp=True)
         if self._watchlists_store.is_enabled():
             try:
-                self._watchlists_store.save_state(state)
-            except Exception as exc:
-                logger.warning("Watchlists database save failed for %s: %s", self._market_key(), exc)
-        self._persist_watchlists_state_files(state)
-        return state
+                state = self._watchlists_store.load_state(self._market_key())
+                if state is not None:
+                    normalized = self._sanitize_watchlists_state(state)
+                    self._persist_watchlists_file_backup(normalized)
+                    return normalized
+            except Exception:
+                pass
 
-    def _journal_data_path(self) -> Path:
-        persistent_root = Path("/data")
-        if persistent_root.exists() and persistent_root.is_dir():
-            data_dir = persistent_root
-        else:
-            backend_root = getattr(self.provider, "backend_root", None)
-            if backend_root is None:
-                backend_root = Path(__file__).resolve().parents[2]
-            data_dir = Path(backend_root) / "data"
-        return data_dir / "journal_data.json"
+        state = self._load_watchlists_state_from_file(self._watchlists_state_path())
+        if state is not None:
+            if self._watchlists_store.is_enabled():
+                try:
+                    self._watchlists_store.save_state(state)
+                except Exception:
+                    pass
+            return state
 
-    def get_journal_data(self) -> dict:
-        path = self._journal_data_path()
-        if not path.exists():
-            return {}
-        try:
-            return json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
+        legacy_state = self._load_watchlists_state_from_file(self._legacy_watchlists_state_path())
+        if legacy_state is not None:
+            self._persist_watchlists_file_backup(legacy_state)
+            if self._watchlists_store.is_enabled():
+                try:
+                    self._watchlists_store.save_state(legacy_state)
+                except Exception:
+                    pass
+            return legacy_state
 
-    def save_journal_data(self, payload: dict) -> dict:
-        path = self._journal_data_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-        return payload
+        return WatchlistsStateResponse(market=self._market_key())
 
-    def apply_bhavcopy_eod(self) -> dict:
-        """Delegate to provider.apply_bhavcopy_eod() if supported."""
-        fn = getattr(self.provider, "apply_bhavcopy_eod", None)
-        if callable(fn) and self._market_key() == "india":
-            return fn()
-        return {"status": "skipped", "reason": "provider_unsupported_or_not_india"}
+    def get_bhavcopy_status(self) -> BhavcopyStatusResponse:
+        market = self._market_key()
+        if market != "india":
+            return BhavcopyStatusResponse(market=market, updated=False)
+
+        patch_payload = self._read_json_object(self._bhavcopy_patch_path())
+        runtime_payload = self._read_json_object(self._bhavcopy_status_path())
+        patch_date = self._parse_optional_date(patch_payload.get("date"))
+        updated_at = self._parse_optional_datetime(patch_payload.get("updated_at")) or self._parse_optional_datetime(runtime_payload.get("applied_at"))
+        source = str(patch_payload.get("source") or runtime_payload.get("source") or "").strip().upper() or None
+        today_ist = datetime.now(IST).date()
+        return BhavcopyStatusResponse(
+            market=market,
+            updated=patch_date == today_ist,
+            date=patch_date.isoformat() if patch_date is not None else None,
+            updated_at=updated_at,
+            source=source,
+        )
+
+    def save_watchlists_state(self, payload: WatchlistsStateResponse) -> WatchlistsStateResponse:
+        state = self._sanitize_watchlists_state(payload)
+        existing_state = self.get_watchlists_state()
+        if existing_state.watchlists:
+            state = self._sanitize_watchlists_state(merge_watchlists_state(existing_state, state))
+
+        persisted_state = state
+        self._persist_watchlists_file_backup(state)
+        if self._watchlists_store.is_enabled():
+            try:
+                persisted_state = self._sanitize_watchlists_state(self._watchlists_store.save_state(state))
+            except Exception:
+                persisted_state = state
+        self._persist_watchlists_file_backup(persisted_state)
+        return persisted_state
 
     def _industry_group_file_paths(self) -> tuple[Path, Path, Path]:
         backend_root = getattr(self.provider, "backend_root", None)
@@ -4158,15 +3977,12 @@ class DashboardService:
                     description=str(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("description") or ""),
                     stock_count=int(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("stockCount") or len(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("symbols") or [])),
                     score=float(rank_row.get("score", 0.0) or 0.0),
-                    return_1w=float(rank_row.get("return1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1w", 0.0)) or 0.0),
                     return_1m=float(rank_row.get("return1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1m", 0.0)) or 0.0),
                     return_3m=float(rank_row.get("return3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("3m", 0.0)) or 0.0),
                     return_6m=float(rank_row.get("return6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("6m", 0.0)) or 0.0),
-                    relative_return_1w=float(rank_row.get("relativeReturn1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("1w", 0.0)) or 0.0),
                     relative_return_1m=float(rank_row.get("relativeReturn1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("1m", 0.0)) or 0.0),
                     relative_return_3m=float(rank_row.get("relativeReturn3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("3m", 0.0)) or 0.0),
                     relative_return_6m=float(rank_row.get("relativeReturn6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("6m", 0.0)) or 0.0),
-                    median_return_1w=float(rank_row.get("return1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1w", 0.0)) or 0.0),
                     median_return_1m=float(rank_row.get("return1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1m", 0.0)) or 0.0),
                     median_return_3m=float(rank_row.get("return3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("3m", 0.0)) or 0.0),
                     median_return_6m=float(rank_row.get("return6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("6m", 0.0)) or 0.0),
@@ -4209,7 +4025,6 @@ class DashboardService:
                     final_group_name=str(item.get("finalGroupName") or ""),
                     last_price=float(item.get("lastPrice", 0.0) or 0.0),
                     change_pct=float(item.get("changePct", 0.0) or 0.0),
-                    return_1w=float(item.get("return1w", 0.0) or 0.0),
                     return_1m=float(item.get("return1m", 0.0) or 0.0),
                     return_3m=float(item.get("return3m", 0.0) or 0.0),
                     return_6m=float(item.get("return6m", 0.0) or 0.0),
@@ -4244,34 +4059,6 @@ class DashboardService:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(response.model_dump(mode="json"), indent=2), encoding="utf-8")
 
-    async def _build_and_cache_industry_groups(self, snapshot_updated_at: datetime) -> IndustryGroupsResponse:
-        snapshots = await self._snapshots()
-        benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
-        historical_snapshots = await asyncio.to_thread(self._build_historical_snapshots, snapshots, 5)
-        _, historical_benchmark_snapshots = self._resolve_group_benchmark(historical_snapshots)
-        market_key = self._market_key()
-        response = await asyncio.to_thread(
-            build_industry_groups_response,
-            snapshots,
-            benchmark_snapshots,
-            historical_snapshots,
-            historical_benchmark_snapshots,
-            generated_at=snapshot_updated_at,
-            benchmark_label=benchmark_label,
-            market_key=market_key,
-        )
-        groups_path, ranks_path, stocks_path = self._industry_group_file_paths()
-        await asyncio.to_thread(
-            write_industry_group_files,
-            response,
-            groups_path=groups_path,
-            ranks_path=ranks_path,
-            stocks_path=stocks_path,
-        )
-        await asyncio.to_thread(self._save_industry_groups_cache, response)
-        self._industry_groups_cache = response
-        return response
-
     def _resolve_group_benchmark(self, snapshots: list[StockSnapshot]) -> tuple[str, list[StockSnapshot]]:
         if self._market_key() == "india":
             constituent_map = self._cached_index_constituents_or_schedule_refresh()
@@ -4295,24 +4082,10 @@ class DashboardService:
         historical_snapshots: list[StockSnapshot] = []
         for snapshot in snapshots:
             history = history_reader(snapshot.symbol, max(620, 520 + offset_bars), allow_legacy=True)
-            if history is None or history.empty:
+            if history is None or history.empty or len(history) <= offset_bars:
                 continue
-
-            candidate_offsets = [offset_bars, 3, 2, 1, 0]
-            trimmed = None
-            for candidate_offset in candidate_offsets:
-                if candidate_offset > offset_bars:
-                    continue
-                if len(history) <= candidate_offset:
-                    continue
-                candidate_trimmed = history.iloc[:-candidate_offset] if candidate_offset > 0 else history
-                if candidate_trimmed.empty:
-                    continue
-                if len(candidate_trimmed) >= 20:
-                    trimmed = candidate_trimmed
-                    break
-
-            if trimmed is None:
+            trimmed = history.iloc[:-offset_bars] if offset_bars > 0 else history
+            if trimmed.empty or len(trimmed) < 30:
                 continue
             benchmark_history = benchmark_close[benchmark_close.index <= trimmed.index[-1]] if not benchmark_close.empty else benchmark_close
             instrument = {
@@ -4342,140 +4115,94 @@ class DashboardService:
             self._industry_groups_cache = disk_cached
             return disk_cached
 
-        stale_floor = datetime.min.replace(tzinfo=timezone.utc)
-        stale_cached = await asyncio.to_thread(self._load_cached_industry_groups, stale_floor)
-
-        active_task = self._industry_groups_request_task
-        if active_task is not None and not active_task.done():
-            if stale_cached is not None:
-                self._industry_groups_cache = stale_cached
-                return stale_cached
-            return await asyncio.shield(active_task)
-
-        task = asyncio.create_task(self._build_and_cache_industry_groups(snapshot_updated_at))
-        self._industry_groups_request_task = task
-
-        def clear_task(completed_task: asyncio.Task[IndustryGroupsResponse]) -> None:
-            if self._industry_groups_request_task is completed_task:
-                self._industry_groups_request_task = None
-
-        task.add_done_callback(clear_task)
-
-        if stale_cached is not None:
-            self._industry_groups_cache = stale_cached
-            return stale_cached
-
-        return await asyncio.shield(task)
+        snapshots = await self._snapshots()
+        benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
+        historical_snapshots = await asyncio.to_thread(self._build_historical_snapshots, snapshots, 5)
+        _, historical_benchmark_snapshots = self._resolve_group_benchmark(historical_snapshots)
+        market_key = self._market_key()
+        response = await asyncio.to_thread(
+            build_industry_groups_response,
+            snapshots,
+            benchmark_snapshots,
+            historical_snapshots,
+            historical_benchmark_snapshots,
+            generated_at=snapshot_updated_at,
+            benchmark_label=benchmark_label,
+            market_key=market_key,
+        )
+        groups_path, ranks_path, stocks_path = self._industry_group_file_paths()
+        await asyncio.to_thread(
+            write_industry_group_files,
+            response,
+            groups_path=groups_path,
+            ranks_path=ranks_path,
+            stocks_path=stocks_path,
+        )
+        await asyncio.to_thread(self._save_industry_groups_cache, response)
+        self._industry_groups_cache = response
+        return response
 
     async def refresh_market_data(self) -> dict[str, object]:
         snapshot_before = self.provider.get_snapshot_updated_at()
         refresh_strategy = None
+        refresh_mode = "cache-fallback"
+        message = "Showing the latest cached close snapshot."
+        applied_quote_count = 0
+        historical_rebuild = False
+        quote_source = None
         try:
             refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
             refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
-
-            # For historical (post-close EOD) rebuilds, first try a fast provisional
-            # sync from the latest same-session exchange quotes. This keeps EOD movers
-            # current before the official Bhavcopy arrives later in the evening.
+            live_refresh_method = getattr(self.provider, "refresh_live_snapshots", None)
+            provider_eod_only = bool(getattr(self.provider, "eod_only_mode", False))
             if refresh_strategy == "historical":
-                live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
-                if callable(live_refresh):
-                    try:
-                        snapshots = await asyncio.wait_for(
-                            live_refresh(self.settings.market_cap_min_crore),
-                            timeout=max(self.settings.refresh_timeout_seconds, 20),
-                        )
-                        snapshot_after = self.provider.get_snapshot_updated_at()
-                        refresh_metadata = self.provider.get_last_refresh_metadata()
-                        applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
-                        historical_rebuild = bool(refresh_metadata.get("historical_rebuild", False))
-                        quote_source = refresh_metadata.get("quote_source")
-                        if applied_quote_count > 0:
-                            self._clear_runtime_caches()
-                            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
-                            return {
-                                "ok": True,
-                                "universe_count": len(snapshots),
-                                "market_cap_min_crore": self.settings.market_cap_min_crore,
-                                "refresh_mode": "live-refresh",
-                                "message": "Synced the provisional close snapshot from the latest exchange quotes.",
-                                "snapshot_updated_at": snapshot_timestamp.isoformat(),
-                                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
-                                "applied_quote_count": applied_quote_count,
-                                "historical_rebuild": historical_rebuild,
-                                "quote_source": quote_source,
-                            }
-                    except Exception:
-                        pass
-
-                schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
-                if callable(schedule_bg):
-                    schedule_bg(
-                        float(self.settings.market_cap_min_crore),
-                        self.settings.market_cap_min_crore,
-                        force_refresh=True,
-                    )
-                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                    snapshot_after = self.provider.get_snapshot_updated_at()
-                    snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
-                    return {
-                        "ok": True,
-                        "universe_count": len(snapshots),
-                        "market_cap_min_crore": self.settings.market_cap_min_crore,
-                        "refresh_mode": "rebuilding-background",
-                        "message": "Rebuilding EOD snapshot in the background — data will auto-update in ~2 minutes.",
-                        "snapshot_updated_at": snapshot_timestamp.isoformat(),
-                        "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
-                        "applied_quote_count": 0,
-                        "historical_rebuild": False,
-                        "quote_source": None,
-                    }
-
-                full_refresh = getattr(self.provider, "refresh_snapshots", None)
-                if callable(full_refresh):
-                    snapshots = await asyncio.wait_for(
-                        full_refresh(self.settings.market_cap_min_crore),
-                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
-                    )
-                    snapshot_after = self.provider.get_snapshot_updated_at()
-                    refresh_metadata = self.provider.get_last_refresh_metadata()
-                    applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
-                    historical_rebuild = bool(refresh_metadata.get("historical_rebuild", True))
-                    quote_source = refresh_metadata.get("quote_source")
-                    self._clear_runtime_caches()
-                    snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
-                    return {
-                        "ok": True,
-                        "universe_count": len(snapshots),
-                        "market_cap_min_crore": self.settings.market_cap_min_crore,
-                        "refresh_mode": "historical-refresh",
-                        "message": "Rebuilt the official close snapshot for this session.",
-                        "snapshot_updated_at": snapshot_timestamp.isoformat(),
-                        "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
-                        "applied_quote_count": applied_quote_count,
-                        "historical_rebuild": historical_rebuild,
-                        "quote_source": quote_source,
-                    }
+                snapshot_loader = self.provider.refresh_snapshots
+                refresh_kind = "historical"
+            elif callable(live_refresh_method) and not provider_eod_only:
+                snapshot_loader = live_refresh_method
+                refresh_kind = "live"
+            elif refresh_strategy == "cache":
+                snapshot_loader = self.provider.get_snapshots
+                refresh_kind = "cache"
+            else:
+                snapshot_loader = self.provider.get_snapshots
+                refresh_kind = "fallback"
 
             snapshots = await asyncio.wait_for(
-                self.provider.get_snapshots(self.settings.market_cap_min_crore),
+                snapshot_loader(self.settings.market_cap_min_crore),
                 timeout=max(self.settings.refresh_timeout_seconds, 15),
             )
             snapshot_after = self.provider.get_snapshot_updated_at()
-            refresh_metadata = {
-                "applied_quote_count": 0,
-                "historical_rebuild": False,
-                "quote_source": None,
-            }
+            if refresh_kind in {"historical", "live"}:
+                refresh_metadata = self.provider.get_last_refresh_metadata()
+            else:
+                refresh_metadata = {
+                    "applied_quote_count": 0,
+                    "historical_rebuild": False,
+                    "quote_source": None,
+                }
             applied_quote_count = int(refresh_metadata.get("applied_quote_count", 0) or 0)
             historical_rebuild = bool(refresh_metadata.get("historical_rebuild", False))
             quote_source = refresh_metadata.get("quote_source")
-            if refresh_strategy == "cache":
+            if refresh_kind == "historical" and historical_rebuild:
+                refresh_mode = "historical-refresh"
+                message = "Historical market snapshot refreshed for the latest closed session."
+            elif refresh_kind == "live" and (applied_quote_count > 0 or snapshot_after != snapshot_before):
+                refresh_mode = "live-refresh"
+                if applied_quote_count > 0:
+                    source_label = f" from {quote_source}" if quote_source else ""
+                    message = f"Live market snapshot refreshed with {applied_quote_count} updated quotes{source_label}."
+                else:
+                    message = "Live market snapshot refreshed."
+            elif refresh_strategy == "cache":
                 refresh_mode = "cached-current"
                 message = "Market data is already current for this session."
-            else:
+            elif refresh_kind == "fallback":
                 refresh_mode = "cache-fallback"
                 message = "Showing the latest cached close snapshot."
+            else:
+                refresh_mode = "cached-current"
+                message = "Market data is already current for this session."
         except TimeoutError:
             snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
             snapshot_after = self.provider.get_snapshot_updated_at()
@@ -4510,298 +4237,6 @@ class DashboardService:
             "historical_rebuild": historical_rebuild,
             "quote_source": quote_source,
         }
-
-    async def prewarm_watchdog_sections(self, snapshots: list[StockSnapshot] | None = None) -> dict[str, object]:
-        """Warm the main website sections after a refresh so the watchdog covers more than raw snapshots."""
-        snapshots = snapshots or await self._snapshots()
-        snapshot_lookup = {item.symbol.upper(): item for item in snapshots}
-        warmed_sections: list[str] = []
-        hot_symbols: list[str] = []
-        issues: list[str] = []
-        dashboard_payload: DashboardResponse | None = None
-
-        async def _warm_section(label: str, awaitable, *, timeout_seconds: float = 20.0) -> object | None:
-            try:
-                result = await asyncio.wait_for(awaitable, timeout=timeout_seconds)
-                warmed_sections.append(label)
-                return result
-            except Exception as exc:
-                issues.append(f"{label}:{type(exc).__name__}")
-                return None
-
-        warm_jobs: list[tuple[str, object, float]] = [
-            ("dashboard", self.build_dashboard(), 25.0),
-            ("sectors", self.get_sector_tab("1D", "desc"), 25.0),
-            ("groups", self.get_industry_groups(), 20.0),
-            ("market-health", self.get_market_health(), 15.0),
-        ]
-
-        get_sector_rotation = getattr(self, "get_sector_rotation", None)
-        if callable(get_sector_rotation):
-            warm_jobs.append(("sector-rotation", get_sector_rotation(), 20.0))
-
-        warm_results = await asyncio.gather(
-            *(
-                _warm_section(label, awaitable, timeout_seconds=timeout_seconds)
-                for label, awaitable, timeout_seconds in warm_jobs
-            )
-        )
-        for (label, _, _), result in zip(warm_jobs, warm_results):
-            if label == "dashboard":
-                dashboard_payload = result if isinstance(result, DashboardResponse) else None
-
-        seen_symbols: set[str] = set()
-
-        def _remember(symbol: str | None) -> None:
-            normalized = str(symbol or "").strip().upper()
-            if normalized and normalized not in seen_symbols:
-                seen_symbols.add(normalized)
-                hot_symbols.append(normalized)
-
-        if dashboard_payload is not None:
-            for collection in (
-                getattr(dashboard_payload, "top_gainers", []),
-                getattr(dashboard_payload, "top_losers", []),
-                getattr(dashboard_payload, "top_volume_spikes", []),
-            ):
-                for item in collection[:3]:
-                    _remember(getattr(item, "symbol", None))
-        else:
-            for snapshot in sorted(snapshots, key=lambda item: abs(item.change_pct), reverse=True)[:6]:
-                _remember(snapshot.symbol)
-
-        if hot_symbols:
-            try:
-                chart_results = await asyncio.wait_for(
-                    asyncio.gather(
-                        *(self.get_chart(symbol, "1D") for symbol in hot_symbols[:6]),
-                        return_exceptions=True,
-                    ),
-                    timeout=30.0,
-                )
-            except Exception as exc:
-                chart_results = [exc]
-            if any(not isinstance(result, Exception) for result in chart_results):
-                warmed_sections.append("charts")
-            else:
-                issues.append("charts:unavailable")
-
-            get_fundamentals_cached = getattr(self.provider, "get_fundamentals_cached", None)
-            get_fundamentals = getattr(self.provider, "get_fundamentals", None)
-            fundamentals_results = []
-            if callable(get_fundamentals_cached):
-                try:
-                    fundamentals_results = await asyncio.wait_for(
-                        asyncio.gather(
-                            *(
-                                get_fundamentals_cached(
-                                    symbol,
-                                    snapshot_lookup.get(symbol),
-                                    max_age_hours=8,
-                                )
-                                for symbol in hot_symbols[:4]
-                            ),
-                            return_exceptions=True,
-                        ),
-                        timeout=12.0,
-                    )
-                except Exception:
-                    fundamentals_results = []
-            if not any(result not in (None, False) and not isinstance(result, Exception) for result in fundamentals_results) and callable(get_fundamentals):
-                try:
-                    fundamentals_results = await asyncio.wait_for(
-                        asyncio.gather(
-                            *(
-                                get_fundamentals(symbol, snapshot_lookup.get(symbol))
-                                for symbol in hot_symbols[:2]
-                            ),
-                            return_exceptions=True,
-                        ),
-                        timeout=20.0,
-                    )
-                except Exception as exc:
-                    fundamentals_results = [exc]
-            if any(result not in (None, False) and not isinstance(result, Exception) for result in fundamentals_results):
-                warmed_sections.append("fundamentals")
-            else:
-                issues.append("fundamentals:unavailable")
-
-        unique_sections = list(dict.fromkeys(warmed_sections))
-
-        # Warm the scan catalog (pure CPU, no network) so the screener health
-        # check switches from "Needs attention" to "done" after every prewarm.
-        try:
-            self._scan_catalog(self._scan_eligible_snapshots(snapshots))
-            if "scanner" not in unique_sections:
-                unique_sections.append("scanner")
-        except Exception as exc:
-            issues.append(f"scanner:{type(exc).__name__}")
-
-        return {
-            "sections": unique_sections,
-            "section_count": len(unique_sections),
-            "symbols": hot_symbols[:6],
-            "symbol_count": min(len(hot_symbols), 6),
-            "issues": issues,
-        }
-
-    async def run_watchdog_fix(self) -> dict[str, object]:
-        """Manual self-heal used by the website watchdog button.
-
-        This is intentionally stronger than the normal refresh button:
-        - deletes corrupt snapshot caches if they exist,
-        - applies Bhavcopy patch when available,
-        - forces a live refresh during market hours,
-        - queues / runs a close rebuild outside market hours,
-        - clears and re-warms the important runtime caches.
-        """
-        snapshot_before = self.provider.get_snapshot_updated_at()
-        actions: list[str] = []
-        refresh_mode = "cached-current"
-        quote_source: str | None = None
-        applied_quote_count = 0
-        historical_rebuild = False
-
-        try:
-            snapshot_path = getattr(self.provider, "snapshot_cache_path", None)
-            load_valid_cached = getattr(self.provider, "_load_valid_cached_snapshot_rows", None)
-            if snapshot_path is not None and callable(load_valid_cached):
-                valid_rows = await asyncio.to_thread(load_valid_cached)
-                if not valid_rows and snapshot_path.exists():
-                    snapshot_path.unlink(missing_ok=True)
-                    snapshot_path.with_suffix(f"{snapshot_path.suffix}.gz").unlink(missing_ok=True)
-                    actions.append("deleted_corrupt_snapshot_cache")
-
-            live_patch_fn = getattr(self.provider, "apply_bhavcopy_eod", None)
-            committed_patch_fn = getattr(self.provider, "apply_committed_bhavcopy_patch", None)
-            patch_result = {}
-            if callable(live_patch_fn):
-                patch_result = await asyncio.to_thread(live_patch_fn)
-            if (patch_result.get("status") != "ok" and callable(committed_patch_fn)):
-                committed_result = await asyncio.to_thread(committed_patch_fn)
-                if committed_result.get("status") == "ok" or committed_result.get("snapshots_updated", 0) > 0:
-                    patch_result = committed_result
-            updated = int(patch_result.get("snapshots_updated", 0) or 0)
-            if updated > 0:
-                applied_quote_count += updated
-                actions.append(f"applied_bhavcopy_patch:{updated}")
-
-            is_market_open_method = getattr(self.provider, "_is_market_open_ist", None)
-            is_market_open = bool(is_market_open_method()) if callable(is_market_open_method) else False
-            refresh_strategy_method = getattr(self.provider, "preferred_refresh_strategy", None)
-            refresh_strategy = refresh_strategy_method() if callable(refresh_strategy_method) else None
-            close_refresh_due_method = getattr(self.provider, "_market_close_refresh_due", None)
-            close_refresh_due = bool(close_refresh_due_method()) if callable(close_refresh_due_method) else (refresh_strategy == "historical")
-            live_refresh = getattr(self.provider, "refresh_live_snapshots", None)
-            full_refresh = getattr(self.provider, "refresh_snapshots", None)
-            schedule_bg = getattr(self.provider, "_schedule_background_snapshot_refresh", None)
-
-            if is_market_open:
-                if callable(live_refresh):
-                    snapshots = await asyncio.wait_for(
-                        live_refresh(self.settings.market_cap_min_crore),
-                        timeout=max(self.settings.refresh_timeout_seconds, 20),
-                    )
-                    refresh_mode = "live-refresh"
-                    quote_source = "watchdog-live"
-                    actions.append("forced_live_snapshot_refresh")
-                elif callable(full_refresh):
-                    snapshots = await asyncio.wait_for(
-                        full_refresh(self.settings.market_cap_min_crore),
-                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
-                    )
-                    refresh_mode = "historical-refresh"
-                    historical_rebuild = True
-                    actions.append("forced_full_snapshot_rebuild")
-                else:
-                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                    actions.append("reloaded_snapshots")
-            else:
-                # After hours, only queue a heavy rebuild if the last close is actually due.
-                # If the snapshot is already current for the session, report that clearly.
-                if close_refresh_due and callable(schedule_bg):
-                    schedule_bg(
-                        float(self.settings.market_cap_min_crore),
-                        self.settings.market_cap_min_crore,
-                        force_refresh=True,
-                    )
-                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                    refresh_mode = "rebuilding-background"
-                    actions.append("queued_forced_close_rebuild")
-                elif close_refresh_due and callable(full_refresh):
-                    snapshots = await asyncio.wait_for(
-                        full_refresh(self.settings.market_cap_min_crore),
-                        timeout=max(self.settings.refresh_timeout_seconds * 2, 45),
-                    )
-                    refresh_mode = "historical-refresh"
-                    historical_rebuild = True
-                    actions.append("forced_close_snapshot_rebuild")
-                else:
-                    snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-                    refresh_mode = "cached-current"
-                    actions.append("snapshot_already_current")
-
-            self._clear_runtime_caches()
-            prewarm_summary = await self.prewarm_watchdog_sections(snapshots)
-            warmed_sections = prewarm_summary.get("sections", [])
-            if warmed_sections:
-                actions.append("warmed_site_sections:" + "+".join(str(section) for section in warmed_sections))
-
-            snapshot_after = self.provider.get_snapshot_updated_at()
-            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
-            action_text = ", ".join(actions) if actions else "checked caches and refreshed runtime data"
-            if refresh_mode == "rebuilding-background":
-                user_message = "Watchdog self-heal started a full rebuild in the background — data should finish updating in about 1–3 minutes."
-            elif refresh_mode == "historical-refresh":
-                user_message = f"Watchdog self-heal complete — {action_text}."
-            elif refresh_mode == "live-refresh":
-                user_message = (
-                    f"Watchdog self-heal complete — live prices were refreshed and "
-                    f"{prewarm_summary.get('section_count', 0)} site sections were rewarmed."
-                )
-            elif refresh_mode == "cached-current":
-                user_message = (
-                    f"Watchdog check complete — market data is already current and "
-                    f"{prewarm_summary.get('section_count', 0)} site sections were verified."
-                )
-            else:
-                user_message = f"Watchdog self-heal complete — {action_text}."
-
-            return {
-                "ok": True,
-                "universe_count": len(snapshots),
-                "market_cap_min_crore": self.settings.market_cap_min_crore,
-                "refresh_mode": refresh_mode,
-                "message": user_message,
-                "snapshot_updated_at": snapshot_timestamp.isoformat(),
-                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
-                "applied_quote_count": applied_quote_count,
-                "historical_rebuild": historical_rebuild,
-                "quote_source": quote_source,
-                "site_sections_warmed": prewarm_summary.get("sections", []),
-                "prewarmed_symbol_count": prewarm_summary.get("symbol_count", 0),
-                "prewarmed_symbols": prewarm_summary.get("symbols", []),
-            }
-        except Exception as exc:
-            self._clear_runtime_caches()
-            try:
-                snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-            except Exception:
-                snapshots = []
-            snapshot_after = self.provider.get_snapshot_updated_at()
-            snapshot_timestamp = snapshot_after or snapshot_before or datetime.now(timezone.utc)
-            return {
-                "ok": False,
-                "universe_count": len(snapshots),
-                "market_cap_min_crore": self.settings.market_cap_min_crore,
-                "refresh_mode": "error-fallback",
-                "message": f"Watchdog self-heal hit {type(exc).__name__}, but the latest reachable market snapshot is still loaded.",
-                "snapshot_updated_at": snapshot_timestamp.isoformat(),
-                "snapshot_age_minutes": self._snapshot_age_minutes(snapshot_timestamp),
-                "applied_quote_count": applied_quote_count,
-                "historical_rebuild": historical_rebuild,
-                "quote_source": quote_source,
-            }
 
     @staticmethod
     def _weighted_average_return(items: list[StockSnapshot], field: str) -> float:
@@ -4858,17 +4293,12 @@ class DashboardService:
                 latest_close = None
         if latest_close not in (None, 0):
             payload["last_price"] = round(latest_close, 2)
-            # Use the definitively correct T-1 close from history (second to last bar).
-            # Fall back to the snapshot's previous_close when fewer than 2 bars exist.
             reference_previous_close = previous_close
-            if len(bars) >= 2:
+            if reference_previous_close in (None, 0) and len(bars) >= 2:
                 try:
-                    bar_prev_close = float(bars[-2].close)
-                    if bar_prev_close > 0:
-                        reference_previous_close = bar_prev_close
+                    reference_previous_close = float(bars[-2].close)
                 except (AttributeError, TypeError, ValueError):
-                    pass
-
+                    reference_previous_close = None
             if reference_previous_close not in (None, 0):
                 payload["change_pct"] = round(((latest_close / float(reference_previous_close)) - 1) * 100, 2)
         adr_pct_20 = self._adr_pct_from_bars(bars)

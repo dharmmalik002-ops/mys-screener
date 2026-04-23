@@ -4,9 +4,58 @@ import json
 import threading
 from typing import Protocol
 
-import psycopg
+try:
+    import psycopg
+except Exception:  # pragma: no cover - optional dependency in some deployments
+    psycopg = None
 
-from app.models.market import WatchlistsStateResponse
+from app.models.market import WatchlistItem, WatchlistsStateResponse
+
+
+def merge_watchlists_state(
+    existing: WatchlistsStateResponse | None,
+    incoming: WatchlistsStateResponse,
+) -> WatchlistsStateResponse:
+    if existing is None:
+        return incoming.model_copy(deep=True)
+
+    existing_by_id = {item.id: item for item in existing.watchlists}
+    incoming_by_id = {item.id: item for item in incoming.watchlists}
+    merged_watchlists: list[WatchlistItem] = []
+    seen_ids: set[str] = set()
+
+    for item in existing.watchlists:
+        replacement = incoming_by_id.get(item.id)
+        merged_symbols = list(dict.fromkeys([*item.symbols, *(replacement.symbols if replacement else [])]))
+        merged_watchlists.append(
+            WatchlistItem(
+                id=item.id,
+                name=replacement.name if replacement else item.name,
+                color=replacement.color if replacement else item.color,
+                symbols=merged_symbols,
+            )
+        )
+        seen_ids.add(item.id)
+
+    for item in incoming.watchlists:
+        if item.id in seen_ids:
+            continue
+        merged_watchlists.append(item.model_copy(deep=True))
+        seen_ids.add(item.id)
+
+    active_watchlist_id = incoming.active_watchlist_id if incoming.active_watchlist_id in seen_ids else None
+    if active_watchlist_id is None and existing.active_watchlist_id in seen_ids:
+        active_watchlist_id = existing.active_watchlist_id
+    if active_watchlist_id is None and merged_watchlists:
+        active_watchlist_id = merged_watchlists[0].id
+
+    updated_at = incoming.updated_at if incoming.updated_at >= existing.updated_at else existing.updated_at
+    return WatchlistsStateResponse(
+        market=incoming.market,
+        updated_at=updated_at,
+        active_watchlist_id=active_watchlist_id,
+        watchlists=merged_watchlists,
+    )
 
 
 class WatchlistsStateStore(Protocol):
@@ -30,7 +79,7 @@ class PostgresWatchlistsStore:
         self._state_cache: dict[str, WatchlistsStateResponse] = {}
 
     def is_enabled(self) -> bool:
-        return bool(self._database_url)
+        return bool(self._database_url) and psycopg is not None
 
     @staticmethod
     def _normalize_market(market: str) -> str:
@@ -54,6 +103,8 @@ class PostgresWatchlistsStore:
     def _connect(self) -> psycopg.Connection:
         if not self._database_url:
             raise RuntimeError("DATABASE_URL is not configured")
+        if psycopg is None:
+            raise RuntimeError("psycopg is not installed")
         return psycopg.connect(
             self._database_url,
             autocommit=True,
@@ -124,9 +175,20 @@ class PostgresWatchlistsStore:
         if not self.is_enabled():
             return state
 
-        payload = state.model_dump(mode="json")
         with self._connect() as connection, connection.cursor() as cursor:
             self._ensure_schema(cursor)
+            cursor.execute(
+                "SELECT payload FROM watchlists_state WHERE market = %s",
+                (self._normalize_market(state.market),),
+            )
+            row = cursor.fetchone()
+            existing_state: WatchlistsStateResponse | None = None
+            if row is not None:
+                payload = row[0]
+                normalized_payload = payload if isinstance(payload, (dict, list)) else json.loads(str(payload))
+                existing_state = WatchlistsStateResponse.model_validate(normalized_payload)
+            merged_state = merge_watchlists_state(existing_state, state)
+            payload = merged_state.model_dump(mode="json")
             cursor.execute(
                 """
                 INSERT INTO watchlists_state (
@@ -145,11 +207,11 @@ class PostgresWatchlistsStore:
                     server_updated_at = NOW()
                 """,
                 (
-                    self._normalize_market(state.market),
-                    state.updated_at,
-                    state.active_watchlist_id,
+                    self._normalize_market(merged_state.market),
+                    merged_state.updated_at,
+                    merged_state.active_watchlist_id,
                     json.dumps(payload),
                 ),
             )
-        self._set_cached_state(state)
-        return state
+        self._set_cached_state(merged_state)
+        return merged_state

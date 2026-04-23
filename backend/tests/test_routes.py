@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 import unittest
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -15,6 +15,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.api.routes import build_router
 from app.models.market import (
+    BhavcopyStatusResponse,
     MoneyFlowHistoryResponse,
     MoneyFlowReport,
     MoneyFlowSector,
@@ -26,7 +27,6 @@ from app.models.market import (
     WatchlistItem,
     WatchlistsStateResponse,
 )
-from app.providers.free import FreeMarketDataProvider
 
 
 class StubIndiaService:
@@ -95,6 +95,15 @@ class StubIndiaService:
         self.watchlists_state = payload
         return payload
 
+    def get_bhavcopy_status(self) -> BhavcopyStatusResponse:
+        return BhavcopyStatusResponse(
+            market="india",
+            updated=True,
+            date="2026-04-23",
+            updated_at=datetime(2026, 4, 23, 13, 25, tzinfo=timezone.utc),
+            source="BSE",
+        )
+
     @staticmethod
     def _report() -> MoneyFlowReport:
         sector = MoneyFlowSector(
@@ -127,49 +136,6 @@ class StubIndiaService:
             value_ideas=[],
             ai_model="gemini",
         )
-
-
-class StubWatchdogProvider(FreeMarketDataProvider):
-    def __init__(self, *, is_open: bool, snap_age: float, close_refresh_due: bool) -> None:
-        self._is_open = is_open
-        self._snap_age = snap_age
-        self._close_refresh_due_value = close_refresh_due
-        self._updated_at = datetime(2026, 4, 10, 9, 30, tzinfo=timezone.utc)
-
-    def _snapshot_age_seconds(self) -> float:
-        return self._snap_age
-
-    def _is_market_open_ist(self, target: date | None = None) -> bool:
-        return self._is_open
-
-    def get_snapshot_updated_at(self) -> datetime:
-        return self._updated_at
-
-    def _market_close_refresh_due(self) -> bool:
-        return self._close_refresh_due_value
-
-    def _load_valid_cached_snapshot_rows(self):
-        return [{"history_session_date": "2026-04-09"}]
-
-    def _snapshot_rows_session_date(self, rows):
-        return date(2026, 4, 9)
-
-    def _latest_completed_market_session_date(self):
-        return date(2026, 4, 10)
-
-
-class StubWatchdogService:
-    def __init__(self, provider: FreeMarketDataProvider) -> None:
-        self.provider = provider
-        self._dashboard_cache = None
-        self._scan_catalog_cache = None
-        self._sector_tab_cache = {}
-        self._industry_groups_cache = None
-        self._market_health_cache = None
-        self._sector_rotation_cache = None
-
-    async def get_money_flow_stock_ideas(self):
-        return None
 
 
 class MoneyFlowRoutesTests(unittest.TestCase):
@@ -219,37 +185,9 @@ class MoneyFlowRoutesTests(unittest.TestCase):
         self.assertEqual(response.json()["active_watchlist_id"], "wl-2")
         self.assertEqual(self.service.watchlists_state.watchlists[0].name, "Breakouts")
 
-    def test_watchdog_status_flags_close_snapshot_as_stale_when_refresh_due(self) -> None:
-        app = FastAPI()
-        watchdog_service = StubWatchdogService(
-            StubWatchdogProvider(is_open=False, snap_age=60.0, close_refresh_due=True)
-        )
-        app.include_router(build_router({"india": watchdog_service}))
-        client = TestClient(app)
-
-        response = client.get("/api/watchdog-status?market=india")
+    def test_bhavcopy_status_route_returns_today_status(self) -> None:
+        response = self.client.get("/api/bhavcopy/status")
 
         self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        self.assertTrue(payload["snapshot_stale"])
-        self.assertTrue(payload["close_refresh_due"])
-        self.assertEqual(payload["snapshot_session_date"], "2026-04-09")
-        self.assertEqual(payload["expected_session_date"], "2026-04-10")
-
-    def test_watchdog_tasks_cover_broader_website_sections(self) -> None:
-        app = FastAPI()
-        watchdog_service = StubWatchdogService(
-            StubWatchdogProvider(is_open=True, snap_age=45.0, close_refresh_due=False)
-        )
-        app.include_router(build_router({"india": watchdog_service}))
-        client = TestClient(app)
-
-        response = client.get("/api/watchdog-tasks?market=india")
-
-        self.assertEqual(response.status_code, 200)
-        payload = response.json()
-        task_ids = {task["id"] for task in payload["tasks"]}
-        self.assertIn("dashboard_home_cache", task_ids)
-        self.assertIn("sector_heatmap_sync", task_ids)
-        self.assertIn("scanner_engine_sync", task_ids)
-        self.assertIn("fundamentals_earnings_sync", task_ids)
+        self.assertTrue(response.json()["updated"])
+        self.assertEqual(response.json()["source"], "BSE")

@@ -20,7 +20,7 @@ jobs:
 
       - name: Configure Git identity
         run: |
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
 
       - name: Build clean deploy snapshot
@@ -47,13 +47,28 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          set -euo pipefail
+          retry() {
+            local attempts="$1"
+            shift
+            local try=1
+            until "$@"; do
+              if [ "$try" -ge "$attempts" ]; then
+                echo "command failed after ${try} attempts: $*" >&2
+                return 1
+              fi
+              echo "retry ${try}/${attempts} failed: $*" >&2
+              try=$((try + 1))
+              sleep 5
+            done
+          }
           cd /tmp/hf-deploy
           git init
           git checkout -b main
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add .
           git commit -m "Deploy from GitHub Actions ${GITHUB_SHA}"
           git remote add hf \
             "https://dharmmalik:${HF_TOKEN}@huggingface.co/spaces/dharmmalik/stock-scanner-backend"
-          git push hf main:main --force
+          retry 3 git push hf main:main --force
