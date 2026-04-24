@@ -1472,6 +1472,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const pageVisibleSymbolsRef = useRef<string[]>([]);
   const chartNavigationSymbolsRef = useRef<string[] | null>(null);
   const selectedSymbolRef = useRef<string | null>(null);
+  const activeMarketRef = useRef(activeMarket);
+  const timeframeRef = useRef(timeframe);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
   const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false, us: false });
@@ -1632,7 +1634,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     try {
       const payload = await getChart(symbol, chartTimeframe, market);
-      if (chartRequestIdRef.current !== requestId || payload.symbol !== symbol || payload.timeframe !== chartTimeframe) {
+      const requestStillMatchesSelection =
+        activeMarketRef.current === market &&
+        selectedSymbolRef.current === symbol &&
+        timeframeRef.current === chartTimeframe;
+      if ((chartRequestIdRef.current !== requestId && !requestStillMatchesSelection) || payload.symbol !== symbol || payload.timeframe !== chartTimeframe) {
+        if (requestStillMatchesSelection) {
+          setChartLoading(false);
+        }
         return fallbackChart;
       }
       const shouldKeepFallbackChart = Boolean(
@@ -1652,7 +1661,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       setChartCacheState("live");
       return payload;
     } catch (loadError) {
-      if (chartRequestIdRef.current !== requestId) {
+      const requestStillMatchesSelection =
+        activeMarketRef.current === market &&
+        selectedSymbolRef.current === symbol &&
+        timeframeRef.current === chartTimeframe;
+      if (chartRequestIdRef.current !== requestId && !requestStillMatchesSelection) {
         return fallbackChart;
       }
       setChartLoading(false);
@@ -2309,7 +2322,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       activePage === "market-health" ||
       activePage === "money-flow" ||
       activePage === "newsdesk" ||
-      activePage === "journal"
+      (activePage === "journal" && !chartOpen)
     ) {
       chartRequestIdRef.current += 1;
       setChartError(null);
@@ -2346,6 +2359,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [refreshing]);
 
   useEffect(() => {
+    activeMarketRef.current = activeMarket;
+  }, [activeMarket]);
+
+  useEffect(() => {
+    timeframeRef.current = timeframe;
+  }, [timeframe]);
+
+  useEffect(() => {
     if (
       !selectedSymbol ||
       chartPanelTab !== "fundamentals" ||
@@ -2353,7 +2374,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       activePage === "market-health" ||
       activePage === "money-flow" ||
       activePage === "newsdesk" ||
-      activePage === "journal"
+      (activePage === "journal" && !chartOpen)
     ) {
       setFundamentalsLoading(false);
       return;
@@ -3964,6 +3985,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
+    const refreshSchedule = getAutoRefreshSchedule(new Date(), activeMarket);
+
     const generatedAtMs = new Date(dashboard.generated_at).getTime();
     const ageMs = Date.now() - generatedAtMs;
     if (Number.isFinite(generatedAtMs) && ageMs <= 10 * 60 * 1000) {
@@ -3978,7 +4001,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     const timeoutId = window.setTimeout(() => {
       void handleRefreshRef.current("auto");
-    }, 900);
+    }, refreshSchedule.delayMs);
 
     return () => {
       window.clearTimeout(timeoutId);
@@ -4724,19 +4747,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           </Suspense>
         ) : null}
 
-        {watchlistPickerSymbol ? (
-          <Suspense fallback={null}>
-            <WatchlistPickerModal
-              market={activeMarket}
-              symbol={watchlistPickerSymbol}
-              watchlists={watchlists}
-              onClose={() => setWatchlistPickerSymbol(null)}
-              onAddToWatchlist={handleAddToWatchlist}
-              onCreateWatchlist={handleCreateWatchlist}
-            />
-          </Suspense>
-        ) : null}
-
       {chartGroupModalContext ? (
         <Suspense fallback={null}>
           <ChartGroupModal
@@ -4802,6 +4812,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </Suspense>
           </div>
         </div>
+      ) : null}
+
+      {watchlistPickerSymbol ? (
+        <Suspense fallback={null}>
+          <WatchlistPickerModal
+            market={activeMarket}
+            symbol={watchlistPickerSymbol}
+            watchlists={watchlists}
+            onClose={() => setWatchlistPickerSymbol(null)}
+            onAddToWatchlist={handleAddToWatchlist}
+            onCreateWatchlist={handleCreateWatchlist}
+          />
+        </Suspense>
       ) : null}
 
       <footer className="app-footer">
