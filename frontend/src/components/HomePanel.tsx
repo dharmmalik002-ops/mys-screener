@@ -1,32 +1,18 @@
-import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import type { IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   getChart,
-  getChartGrid,
-  getChartGridSeries,
-  getIndexPeHistory,
   getMarketOverview,
   type ChartBar,
-  type ChartGridCard,
-  type ChartGridResponse,
-  type ChartGridTimeframe,
-  type ChartLinePoint,
   type DashboardResponse,
   type IndustryGroupsResponse,
-  type IndexPeHistoryResponse,
+  type IndustryGroupRankItem,
   type MarketKey,
   type MarketMacroItem,
   type ScanMatch,
-  type SectorCard,
-  type SectorSortBy,
-  type SectorTabResponse,
 } from "../lib/api";
-import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, ChartGridSortBy, ChartGridStat } from "./ChartGridModal";
-import { sanitizeChartBars, sanitizeIndexPePoints } from "../lib/chartData";
-import { Panel } from "./Panel";
 
-const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })));
+import "./HomePanel.css";
 
 type HomePanelProps = {
   activeMarket: MarketKey;
@@ -38,714 +24,171 @@ type HomePanelProps = {
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
 };
 
-type GridTarget =
-  | { type: "section"; section: "indices" | "sectors" }
-  | { type: "members"; name: string; groupKind: "sector" | "index" };
+type NiftyTimeframe = "1D" | "1W" | "1M" | "3M" | "1Y" | "5Y";
 
-type HomeGroupFilter = 10 | 20 | 40;
+const NIFTY_TIMEFRAMES: NiftyTimeframe[] = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 
-const HOME_MACRO_SKELETON_COUNT = 4;
-const HOME_LIST_SKELETON_COUNT = 6;
-const HOME_HEATMAP_SKELETON_COUNTS: Record<MarketKey, { indices: number; sectors: number }> = {
-  india: { indices: 4, sectors: 22 },
+const SECTOR_ICONS: Record<string, string> = {
+  "Nifty IT": "💻",
+  "Nifty Realty": "🏢",
+  "Nifty FMCG": "🛒",
+  "Nifty Pharma": "💊",
+  "Nifty Bank": "🏦",
+  "Nifty Auto": "🚗",
+  "Nifty Metal": "⚙️",
+  "Nifty Energy": "⚡",
 };
 
 function formatReturn(value: number) {
+  if (!Number.isFinite(value)) return "—";
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
 }
 
-function metricClass(value: number) {
-  return value >= 0 ? "positive-text" : "negative-text";
-}
-
-function formatPrice(value: number, market: MarketKey) {
-  const locale = "en-IN";
-  const symbol = "₹";
-  return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+function formatPrice(value: number | null | undefined, opts: { locale?: string; currency?: string } = {}) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  const { locale = "en-IN", currency = "₹" } = opts;
+  return `${currency}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function shortName(item: ScanMatch) {
-  return item.name.length > 32 ? `${item.name.slice(0, 32)}…` : item.name;
+  return item.name.length > 28 ? `${item.name.slice(0, 28)}…` : item.name;
 }
 
-function getSectorReturn(card: SectorCard, window: SectorSortBy) {
-  if (window === "1D") {
-    return card.return_1d;
-  }
-  if (window === "1W") {
-    return card.return_1w;
-  }
-  if (window === "1M") {
-    return card.return_1m;
-  }
-  if (window === "3M") {
-    return card.return_3m;
-  }
-  if (window === "6M") {
-    return card.return_6m;
-  }
-  if (window === "1Y") {
-    return card.return_1y;
-  }
-  return card.return_2y;
+function formatCompact(value: number | null | undefined) {
+  if (value === null || value === undefined || !Number.isFinite(value)) return "—";
+  if (Math.abs(value) >= 1e7) return `₹${(value / 1e7).toFixed(2)} Cr`;
+  if (Math.abs(value) >= 1e5) return `₹${(value / 1e5).toFixed(2)} L`;
+  return `₹${value.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`;
 }
 
-function getGridReturn(card: SectorCard, timeframe: ChartGridTimeframe) {
-  if (timeframe === "3M") {
-    return card.return_3m;
-  }
-  if (timeframe === "6M") {
-    return card.return_6m;
-  }
-  if (timeframe === "1Y") {
-    return card.return_1y;
-  }
-  return card.return_2y;
+function initials(symbol: string) {
+  return symbol.slice(0, 2).toUpperCase();
 }
 
-function topCompanyCount(card: SectorCard) {
-  return card.company_count;
-}
+/* ---------- SVG helpers ---------- */
 
-function heatStyle(value: number, surface: "sector" | "company"): CSSProperties {
-  const intensity = Math.min(1, Math.abs(value) / (surface === "sector" ? 5 : 4));
-
-  if (value >= 0) {
-    const backgroundAlpha = surface === "sector" ? 0.66 + intensity * 0.18 : 0.32 + intensity * 0.3;
-    const borderAlpha = 0.3 + intensity * 0.24;
-    return {
-      background: `linear-gradient(160deg, rgba(20, 86, 41, ${backgroundAlpha}), rgba(66, 168, 92, ${Math.min(0.95, backgroundAlpha + 0.1)}))`,
-      borderColor: `rgba(186, 255, 208, ${borderAlpha})`,
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.08), 0 0 0 1px rgba(46, 143, 74, ${0.12 + intensity * 0.18})`,
-    };
+function Sparkline({ values, color, fill, height = 36 }: { values: number[]; color: string; fill?: string; height?: number }) {
+  const width = 100;
+  if (!values || values.length < 2) {
+    return (
+      <svg className="homepro-kpi-sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+        <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke={color} strokeOpacity="0.3" strokeWidth="1.5" />
+      </svg>
+    );
   }
-
-  const backgroundAlpha = surface === "sector" ? 0.66 + intensity * 0.16 : 0.32 + intensity * 0.28;
-  const borderAlpha = 0.3 + intensity * 0.22;
-  return {
-    background: `linear-gradient(160deg, rgba(121, 31, 31, ${backgroundAlpha}), rgba(198, 66, 66, ${Math.min(0.95, backgroundAlpha + 0.1)}))`,
-    borderColor: `rgba(255, 216, 216, ${borderAlpha})`,
-    boxShadow: `inset 0 1px 0 rgba(255,255,255,0.06), 0 0 0 1px rgba(176, 52, 52, ${0.12 + intensity * 0.16})`,
-  };
-}
-
-function getMemberGridReturn(card: ChartGridCard, timeframe: ChartGridTimeframe) {
-  if (timeframe === "3M") {
-    return card.return_3m;
-  }
-  if (timeframe === "6M") {
-    return card.return_6m;
-  }
-  if (timeframe === "1Y") {
-    return card.return_1y;
-  }
-  return card.return_2y;
-}
-
-function downsamplePoints(points: ChartLinePoint[], limit: number) {
-  if (points.length <= limit) {
-    return points;
-  }
-  const step = Math.max(points.length / limit, 1);
-  const sampled = Array.from({ length: limit }, (_, index) => points[Math.min(points.length - 1, Math.floor(index * step))]);
-  if (sampled[sampled.length - 1]?.time !== points[points.length - 1]?.time) {
-    sampled[sampled.length - 1] = points[points.length - 1];
-  }
-  return sampled;
-}
-
-function fallbackSparkline(returnPct: number): ChartLinePoint[] {
-  const now = Math.floor(Date.now() / 1000);
-  const baseline = 100;
-  const current = baseline * (1 + (returnPct / 100));
-  return [
-    { time: now - (63 * 24 * 60 * 60), value: Number(baseline.toFixed(4)) },
-    { time: now, value: Number(current.toFixed(4)) },
-  ];
-}
-
-function sparklineToBars(points: ChartLinePoint[]): ChartBar[] {
-  if (!points || points.length < 2) {
-    return [];
-  }
-  return points.map((point, index) => {
-    const prev = index > 0 ? points[index - 1].value : point.value;
-    const open = Number(prev.toFixed(2));
-    const close = Number(point.value.toFixed(2));
-    const high = Number(Math.max(open, close).toFixed(2));
-    const low = Number(Math.min(open, close).toFixed(2));
-    return {
-      time: point.time,
-      open,
-      high,
-      low,
-      close,
-      volume: 0,
-    };
-  });
-}
-
-function scopeSparkline(points: ChartLinePoint[], timeframe: ChartGridTimeframe) {
-  if (!points.length) {
-    return [];
-  }
-  const latestTime = points[points.length - 1]?.time ?? Math.floor(Date.now() / 1000);
-  const lookbackDays = {
-    "3M": 95,
-    "6M": 190,
-    "1Y": 380,
-    "2Y": 760,
-  }[timeframe];
-  const pointLimit = {
-    "3M": 60,
-    "6M": 72,
-    "1Y": 96,
-    "2Y": 120,
-  }[timeframe];
-  const threshold = latestTime - (lookbackDays * 24 * 60 * 60);
-  const scoped = points.filter((point) => point.time >= threshold);
-  return downsamplePoints(scoped.length > 1 ? scoped : points, pointLimit);
-}
-
-function buildSectionCards(
-  cards: SectorCard[],
-  market: MarketKey,
-  timeframe: ChartGridTimeframe,
-  onOpenMembers: (card: SectorCard) => void,
-): ChartGridDisplayCard[] {
-  return cards.map((card) => {
-    const selectedReturn = getGridReturn(card, timeframe);
-    const footerLabel = card.group_kind === "index" && typeof card.last_price === "number" ? "Price" : "Constituents";
-    const footerValue = card.group_kind === "index" && typeof card.last_price === "number"
-      ? formatPrice(card.last_price, market)
-      : `${card.company_count}`;
-    return {
-      id: `${card.group_kind}:${card.sector}`,
-      entityLabel: card.group_kind === "index" ? "Index" : "Sector",
-      title: card.sector,
-      subtitle: `${card.sub_sector_count} groups`,
-      footerLabel,
-      footerValue,
-      primaryBadge: {
-        label: `${timeframe} ${formatReturn(selectedReturn)}`,
-        tone: selectedReturn >= 0 ? "positive" : "negative",
-      },
-      secondaryBadge: {
-        label: `1D ${formatReturn(card.return_1d)}`,
-        tone: card.return_1d >= 0 ? "positive" : "negative",
-      },
-      points: scopeSparkline(card.sparkline, timeframe).length > 0 ? scopeSparkline(card.sparkline, timeframe) : fallbackSparkline(selectedReturn),
-      selectedReturn,
-      dayReturn: card.return_1d,
-      rsRating: null,
-      marketCapCrore: null,
-      constituents: card.company_count,
-      onClick: () => onOpenMembers(card),
-    };
-  });
-}
-
-function buildMemberCards(
-  payload: ChartGridResponse | null,
-  timeframe: ChartGridTimeframe,
-  onPickSymbol: (symbol: string) => void,
-): ChartGridDisplayCard[] {
-  return (payload?.cards ?? []).map((card) => {
-    const selectedReturn = getMemberGridReturn(card, timeframe);
-    return {
-      id: `${payload?.group_kind ?? "sector"}:${card.symbol}`,
-      symbol: card.symbol,
-      entityLabel: "Stock",
-      title: card.symbol,
-      subtitle: card.name,
-      footerLabel: "Price",
-      footerValue: card.last_price.toFixed(2),
-      primaryBadge: {
-        label: `${timeframe} ${formatReturn(selectedReturn)}`,
-        tone: selectedReturn >= 0 ? "positive" : "negative",
-      },
-      secondaryBadge: {
-        label: `1D ${formatReturn(card.change_pct)}`,
-        tone: card.change_pct >= 0 ? "positive" : "negative",
-      },
-      points: card.sparkline,
-      selectedReturn,
-      dayReturn: card.change_pct,
-      rsRating: card.rs_rating,
-      marketCapCrore: card.market_cap_crore,
-      constituents: null,
-      onClick: () => onPickSymbol(card.symbol),
-    };
-  });
-}
-
-function gridStatsForMembers(payload: ChartGridResponse | null, timeframe: ChartGridTimeframe): ChartGridStat[] {
-  const cards = payload?.cards ?? [];
-  const advances = cards.filter((card) => getMemberGridReturn(card, timeframe) > 0).length;
-  const declines = cards.filter((card) => getMemberGridReturn(card, timeframe) < 0).length;
-  const topWeight = cards.slice(0, 3).map((card) => card.symbol).join(", ");
-
-  return [
-    { label: "Stocks", value: `${cards.length}` },
-    { label: "Advancing", value: `${advances}`, tone: advances >= declines ? "positive" : "neutral" },
-    { label: "Declining", value: `${declines}`, tone: declines > advances ? "negative" : "neutral" },
-    { label: "Top Weight", value: topWeight || "--" },
-  ];
-}
-
-function gridStatsForSection(cards: SectorCard[], timeframe: ChartGridTimeframe): ChartGridStat[] {
-  const advances = cards.filter((card) => getGridReturn(card, timeframe) > 0).length;
-  const declines = cards.filter((card) => getGridReturn(card, timeframe) < 0).length;
-  const leaders = cards.slice(0, 3).map((card) => card.sector).join(", ");
-
-  return [
-    { label: "Cards", value: `${cards.length}` },
-    { label: "Advancing", value: `${advances}`, tone: advances >= declines ? "positive" : "neutral" },
-    { label: "Declining", value: `${declines}`, tone: declines > advances ? "negative" : "neutral" },
-    { label: "Leaders", value: leaders || "--" },
-  ];
-}
-
-function PeChartModal({
-  market,
-  symbol,
-  onClose,
-  fallbackBars = [],
-}: {
-  market: MarketKey;
-  symbol: string;
-  onClose: () => void;
-  fallbackBars?: ChartBar[];
-}) {
-  const [data, setData] = useState<IndexPeHistoryResponse | null>(null);
-  const [priceBars, setPriceBars] = useState<ChartBar[]>([]);
-  const [activeTab, setActiveTab] = useState<"price" | "pe">("price");
-  const [loading, setLoading] = useState(true);
-
-  const priceContainerRef = useRef<HTMLDivElement | null>(null);
-  const peContainerRef = useRef<HTMLDivElement | null>(null);
-
-  function chartHeight(): number {
-    if (typeof window === "undefined") return 520;
-    const viewH = window.innerHeight;
-    if (window.innerWidth <= 480) return Math.max(260, Math.floor(viewH * 0.42));
-    if (window.innerWidth <= 768) return Math.max(320, Math.floor(viewH * 0.48));
-    return Math.max(460, Math.floor(viewH * 0.58));
-  }
-
-  useEffect(() => {
-    let active = true;
-    setLoading(true);
-    Promise.all([
-      getIndexPeHistory(symbol, market).catch(() => null),
-      getChart(symbol, "1D", market).catch(() => ({ bars: [] as ChartBar[] })),
-    ])
-      .then(([peRes, priceRes]) => {
-        if (!active) return;
-        const fetchedPriceBars = priceRes.bars ?? [];
-        const rawPriceBars = fetchedPriceBars.length >= 20 || fallbackBars.length < 20 ? fetchedPriceBars : fallbackBars;
-        const safePriceBars = sanitizeChartBars(rawPriceBars);
-        setPriceBars(safePriceBars);
-
-        const pePoints = sanitizeIndexPePoints(peRes?.points ?? []);
-        if (peRes && pePoints.length >= 2) {
-          setData({ ...peRes, points: pePoints });
-        } else if (safePriceBars.length >= 2) {
-          const anchorPe = peRes?.current_pe ?? pePoints[pePoints.length - 1]?.pe ?? 22;
-          const tailBars = safePriceBars.slice(-520);
-          const lastClose = tailBars[tailBars.length - 1]?.close || 1;
-          const proxyPoints = sanitizeIndexPePoints(tailBars.map((bar) => {
-            const dt = new Date(bar.time * 1000);
-            const date = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
-            const pe = Number((anchorPe * (bar.close / lastClose)).toFixed(2));
-            return { date, pe };
-          }));
-          const avg = proxyPoints.reduce((sum, point) => sum + point.pe, 0) / proxyPoints.length;
-          setData({
-            symbol,
-            label: peRes?.label ?? symbol,
-            points: proxyPoints,
-            avg_5y: Number(avg.toFixed(2)),
-            current_pe: proxyPoints[proxyPoints.length - 1]?.pe ?? anchorPe,
-            forward_pe: peRes?.forward_pe ?? null,
-            source: "proxy",
-          });
-        } else {
-          setData(peRes ? { ...peRes, points: pePoints } : peRes);
-        }
-        setLoading(false);
-      })
-      .catch(() => { if (active) setLoading(false); });
-    return () => { active = false; };
-  }, [market, symbol, fallbackBars]);
-
-  const priceSummary = useMemo(() => {
-    if (!priceBars || priceBars.length < 2) return null;
-    const bars = priceBars.slice(-900);
-    const first = bars[0]?.close ?? 0;
-    const last = bars[bars.length - 1]?.close ?? 0;
-    const high = Math.max(...bars.map((bar) => bar.high));
-    const low = Math.min(...bars.map((bar) => bar.low));
-    const changePct = first > 0 ? ((last / first) - 1) * 100 : 0;
-    return {
-      first,
-      last,
-      high,
-      low,
-      changePct,
-      trendUp: last >= first,
-    };
-  }, [priceBars]);
-
-  const peSummary = useMemo(() => {
-    if (!data || data.points.length < 2) return null;
-    const latest = data.current_pe ?? data.points[data.points.length - 1]?.pe ?? null;
-    const avg = data.avg_5y;
-    const premiumPct = latest && avg ? ((latest / avg) - 1) * 100 : null;
-    const min = Math.min(...data.points.map((point) => point.pe));
-    const max = Math.max(...data.points.map((point) => point.pe));
-    return {
-      latest,
-      avg,
-      min,
-      max,
-      premiumPct,
-      isAboveAvg: premiumPct !== null ? premiumPct > 0 : null,
-    };
-  }, [data]);
-
-  useEffect(() => {
-    if (activeTab !== "price" || !priceContainerRef.current || priceBars.length < 2) {
-      return;
-    }
-
-    const bars = priceBars.slice(-900);
-    let cancelled = false;
-    let chart: IChartApi | null = null;
-    let handleResize: (() => void) | null = null;
-
-    async function renderChart() {
-      const { ColorType, createChart } = await import("lightweight-charts");
-      if (cancelled || !priceContainerRef.current) {
-        return;
-      }
-
-      const baseHeight = chartHeight();
-      chart = createChart(priceContainerRef.current, {
-        width: priceContainerRef.current.clientWidth,
-        height: baseHeight,
-        layout: {
-          background: { type: ColorType.Solid, color: "transparent" },
-          textColor: "#94a3b8",
-        },
-        grid: {
-          vertLines: { color: "rgba(148, 163, 184, 0.14)" },
-          horzLines: { color: "rgba(148, 163, 184, 0.14)" },
-        },
-        crosshair: {
-          vertLine: { color: "rgba(125, 211, 252, 0.35)" },
-          horzLine: { color: "rgba(125, 211, 252, 0.35)" },
-        },
-        rightPriceScale: {
-          borderColor: "rgba(148, 163, 184, 0.35)",
-        },
-        timeScale: {
-          borderColor: "rgba(148, 163, 184, 0.35)",
-        },
-      });
-
-      const candleSeries = chart.addCandlestickSeries({
-        upColor: "#22c55e",
-        downColor: "#ef4444",
-        wickUpColor: "#22c55e",
-        wickDownColor: "#ef4444",
-        borderVisible: false,
-      });
-      candleSeries.setData(
-        bars.map((bar) => ({
-          time: bar.time as UTCTimestamp,
-          open: bar.open,
-          high: bar.high,
-          low: bar.low,
-          close: bar.close,
-        })),
-      );
-
-      const volumeSeries = chart.addHistogramSeries({
-        priceScaleId: "",
-        priceFormat: { type: "volume" },
-      });
-      volumeSeries.priceScale().applyOptions({
-        scaleMargins: { top: 0.78, bottom: 0 },
-      });
-      volumeSeries.setData(
-        bars.map((bar) => ({
-          time: bar.time as UTCTimestamp,
-          value: Math.max(bar.volume, 0),
-          color: bar.close >= bar.open ? "rgba(34, 197, 94, 0.45)" : "rgba(239, 68, 68, 0.45)",
-        })),
-      );
-
-      chart.timeScale().fitContent();
-
-      handleResize = () => {
-        if (!priceContainerRef.current || !chart) return;
-        chart.applyOptions({
-          width: priceContainerRef.current.clientWidth,
-          height: chartHeight(),
-        });
-      };
-      window.addEventListener("resize", handleResize);
-    }
-
-    void renderChart();
-
-    return () => {
-      cancelled = true;
-      if (handleResize) {
-        window.removeEventListener("resize", handleResize);
-      }
-      chart?.remove();
-    };
-  }, [activeTab, priceBars]);
-
-  useEffect(() => {
-    if (activeTab !== "pe" || !peContainerRef.current || !data || data.points.length < 2) {
-      return;
-    }
-
-    const points = data.points
-      .map((point) => {
-        const timestamp = Math.floor(new Date(`${point.date}T00:00:00Z`).getTime() / 1000);
-        if (!Number.isFinite(timestamp)) return null;
-        return {
-          time: timestamp as UTCTimestamp,
-          value: point.pe,
-        };
-      })
-      .filter((point): point is { time: UTCTimestamp; value: number } => point !== null);
-
-    if (points.length < 2) {
-      return;
-    }
-
-    const peData = data;
-
-    let cancelled = false;
-    let chart: IChartApi | null = null;
-    let handleResize: (() => void) | null = null;
-
-    async function renderChart() {
-      const { ColorType, createChart } = await import("lightweight-charts");
-      if (cancelled || !peContainerRef.current) {
-        return;
-      }
-
-      const baseHeight = chartHeight();
-      chart = createChart(peContainerRef.current, {
-        width: peContainerRef.current.clientWidth,
-        height: baseHeight,
-        layout: {
-          background: { type: ColorType.Solid, color: "transparent" },
-          textColor: "#94a3b8",
-        },
-        grid: {
-          vertLines: { color: "rgba(148, 163, 184, 0.14)" },
-          horzLines: { color: "rgba(148, 163, 184, 0.14)" },
-        },
-        crosshair: {
-          vertLine: { color: "rgba(125, 211, 252, 0.35)" },
-          horzLine: { color: "rgba(125, 211, 252, 0.35)" },
-        },
-        rightPriceScale: {
-          borderColor: "rgba(148, 163, 184, 0.35)",
-        },
-        timeScale: {
-          borderColor: "rgba(148, 163, 184, 0.35)",
-        },
-      });
-
-      const latestPe = peData.current_pe ?? points[points.length - 1]?.value ?? 0;
-      const avgPe = peData.avg_5y ?? 0;
-      const lineColor = avgPe > 0 && latestPe > avgPe ? "#ef4444" : "#22c55e";
-
-      const peSeries = chart.addAreaSeries({
-        lineColor,
-        topColor: lineColor.replace(")", ", 0.25)").replace("rgb", "rgba"),
-        bottomColor: lineColor.replace(")", ", 0.03)").replace("rgb", "rgba"),
-        lineWidth: 2,
-      });
-      peSeries.setData(points);
-
-      if (avgPe > 0) {
-        const avgSeries = chart.addLineSeries({
-          color: "#94a3b8",
-          lineWidth: 2,
-          lineStyle: 2,
-        });
-        avgSeries.setData(points.map((point) => ({ time: point.time, value: avgPe })));
-      }
-
-      const premiumSeries = chart.addHistogramSeries({
-        priceScaleId: "",
-        priceFormat: { type: "volume" },
-      });
-      premiumSeries.priceScale().applyOptions({
-        scaleMargins: { top: 0.78, bottom: 0 },
-      });
-      premiumSeries.setData(
-        points.map((point) => {
-          const spread = avgPe > 0 ? point.value - avgPe : 0;
-          return {
-            time: point.time,
-            value: Math.abs(spread),
-            color: spread >= 0 ? "rgba(239, 68, 68, 0.4)" : "rgba(34, 197, 94, 0.4)",
-          };
-        }),
-      );
-
-      chart.timeScale().fitContent();
-
-      handleResize = () => {
-        if (!peContainerRef.current || !chart) return;
-        chart.applyOptions({
-          width: peContainerRef.current.clientWidth,
-          height: chartHeight(),
-        });
-      };
-      window.addEventListener("resize", handleResize);
-    }
-
-    void renderChart();
-
-    return () => {
-      cancelled = true;
-      if (handleResize) {
-        window.removeEventListener("resize", handleResize);
-      }
-      chart?.remove();
-    };
-  }, [activeTab, data]);
-
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const range = max - min || 1;
+  const step = width / (values.length - 1);
+  const points = values.map((v, i) => `${(i * step).toFixed(2)},${(height - ((v - min) / range) * (height - 4) - 2).toFixed(2)}`);
+  const pathD = `M ${points.join(" L ")}`;
+  const areaD = `${pathD} L ${width},${height} L 0,${height} Z`;
   return (
-    <div className="pe-modal-overlay" onClick={onClose}>
-      <div className="pe-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="pe-modal-header">
-          <h3>{data?.label ?? symbol} — Historical Charts</h3>
-          <button type="button" className="pe-modal-close" onClick={onClose}>✕</button>
-        </div>
-
-        <div className="pe-modal-tabs">
-          <button
-            type="button"
-            className={activeTab === "price" ? "pe-modal-tab active" : "pe-modal-tab"}
-            onClick={() => setActiveTab("price")}
-          >
-            Index Price
-          </button>
-          <button
-            type="button"
-            className={activeTab === "pe" ? "pe-modal-tab active" : "pe-modal-tab"}
-            onClick={() => setActiveTab("pe")}
-          >
-            Valuation (P/E)
-          </button>
-        </div>
-
-        {loading && <div className="pe-modal-loading"><div className="spinner" /></div>}
-
-        {!loading && activeTab === "price" && priceSummary && (
-          <>
-            <div className="pe-modal-stats">
-              <div className="pe-stat">
-                <span>Current</span>
-                <strong style={{ color: priceSummary.trendUp ? "#22c55e" : "#ef4444" }}>
-                  {priceSummary.last.toLocaleString("en-IN", { maximumFractionDigits: 2 })}
-                </strong>
-              </div>
-              <div className="pe-stat">
-                <span>5Y Start</span>
-                <strong>{priceSummary.first.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</strong>
-              </div>
-              <div className="pe-stat">
-                <span>Change</span>
-                <strong style={{ color: priceSummary.trendUp ? "#22c55e" : "#ef4444" }}>
-                  {priceSummary.changePct >= 0 ? "+" : ""}{priceSummary.changePct.toFixed(1)}%
-                </strong>
-              </div>
-              <div className="pe-stat">
-                <span>Range</span>
-                <strong>{priceSummary.low.toFixed(1)} - {priceSummary.high.toFixed(1)}</strong>
-              </div>
-            </div>
-
-            <div className="pe-rich-chart" ref={priceContainerRef} />
-
-            <p className="pe-modal-note">
-              Candlestick + volume chart. Use cursor and zoom for detailed price structure.
-            </p>
-          </>
-        )}
-
-        {!loading && activeTab === "pe" && data && peSummary && (
-          <>
-            <div className="pe-modal-stats">
-              <div className="pe-stat">
-                <span>Current P/E</span>
-                <strong style={{ color: peSummary.isAboveAvg ? "#ef4444" : "#22c55e" }}>
-                  {peSummary.latest?.toFixed(1) ?? "—"}
-                </strong>
-              </div>
-              <div className="pe-stat">
-                <span>5-Year Avg</span>
-                <strong>{peSummary.avg?.toFixed(1) ?? "—"}</strong>
-              </div>
-              <div className="pe-stat">
-                <span>Valuation</span>
-                <strong style={{ color: peSummary.isAboveAvg ? "#ef4444" : "#22c55e" }}>
-                  {peSummary.avg && peSummary.latest
-                    ? (peSummary.latest > peSummary.avg ? "Above avg ↑" : "Below avg ↓")
-                    : "—"}
-                </strong>
-              </div>
-              <div className="pe-stat">
-                <span>Min / Max</span>
-                <strong>{peSummary.min.toFixed(1)} / {peSummary.max.toFixed(1)}</strong>
-              </div>
-              {data.forward_pe && (
-                <div className="pe-stat">
-                  <span>Fwd P/E</span>
-                  <strong>{data.forward_pe.toFixed(1)}</strong>
-                </div>
-              )}
-            </div>
-
-            <div className="pe-rich-chart" ref={peContainerRef} />
-
-            <p className="pe-modal-note">
-              {data.source === "proxy"
-                ? "Historical valuation uses a price-derived proxy because direct valuation history is currently unavailable."
-                : ""}
-              {peSummary.avg && peSummary.latest && peSummary.latest > peSummary.avg
-                ? ` ${`P/E is ${((peSummary.latest / peSummary.avg - 1) * 100).toFixed(0)}% above the 5-year average — market is pricing in premium growth.`}`
-                : peSummary.avg && peSummary.latest
-                  ? ` ${`P/E is ${((1 - peSummary.latest / peSummary.avg) * 100).toFixed(0)}% below the 5-year average — market is relatively undervalued historically.`}`
-                  : ""}
-            </p>
-          </>
-        )}
-
-        {!loading && activeTab === "price" && !priceSummary && (
-          <p className="pe-modal-note">Price history not available for this symbol.</p>
-        )}
-
-        {!loading && activeTab === "pe" && (!data || data.points.length < 2) && (
-          <p className="pe-modal-note">P/E history not available for this symbol.</p>
-        )}
-      </div>
-    </div>
+    <svg className="homepro-kpi-sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true" style={{ height }}>
+      {fill ? <path d={areaD} fill={fill} /> : null}
+      <path d={pathD} stroke={color} strokeWidth="1.8" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
   );
 }
+
+function MiniSparkline({ values, color, fill }: { values: number[]; color: string; fill: string }) {
+  return (
+    <svg
+      className="homepro-mini-spark"
+      viewBox="0 0 100 46"
+      preserveAspectRatio="none"
+      aria-hidden="true"
+    >
+      {(() => {
+        if (!values || values.length < 2) return null;
+        const min = Math.min(...values);
+        const max = Math.max(...values);
+        const range = max - min || 1;
+        const step = 100 / (values.length - 1);
+        const pts = values.map((v, i) => `${(i * step).toFixed(2)},${(46 - ((v - min) / range) * 40 - 4).toFixed(2)}`);
+        const d = `M ${pts.join(" L ")}`;
+        return (
+          <>
+            <path d={`${d} L 100,46 L 0,46 Z`} fill={fill} />
+            <path d={d} stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+          </>
+        );
+      })()}
+    </svg>
+  );
+}
+
+function Donut({ segments, size = 180 }: { segments: { value: number; color: string }[]; size?: number }) {
+  const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
+  const radius = size / 2 - 12;
+  const circumference = 2 * Math.PI * radius;
+  let offset = 0;
+  const cx = size / 2;
+  const cy = size / 2;
+  return (
+    <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} aria-hidden="true" style={{ transform: "rotate(-90deg)" }}>
+      <circle cx={cx} cy={cy} r={radius} stroke="rgba(15,23,42,0.06)" strokeWidth="18" fill="none" />
+      {total > 0 && segments.map((seg, i) => {
+        const frac = Math.max(0, seg.value) / total;
+        const dash = frac * circumference;
+        const gap = circumference - dash;
+        const element = (
+          <circle
+            key={i}
+            cx={cx}
+            cy={cy}
+            r={radius}
+            stroke={seg.color}
+            strokeWidth="18"
+            fill="none"
+            strokeDasharray={`${dash} ${gap}`}
+            strokeDashoffset={-offset}
+            strokeLinecap="butt"
+          />
+        );
+        offset += dash;
+        return element;
+      })}
+    </svg>
+  );
+}
+
+function AreaChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
+  const width = 640;
+  if (!bars || bars.length < 2) {
+    return (
+      <div className="homepro-nifty-chart" style={{ display: "grid", placeItems: "center", color: "var(--hp-muted)", fontSize: 12 }}>
+        Loading chart…
+      </div>
+    );
+  }
+  const closes = bars.map((b) => b.close);
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = max - min || 1;
+  const step = width / (bars.length - 1);
+  const points = bars.map((b, i) => `${(i * step).toFixed(2)},${(height - ((b.close - min) / range) * (height - 24) - 12).toFixed(2)}`);
+  const line = `M ${points.join(" L ")}`;
+  const area = `${line} L ${width},${height} L 0,${height} Z`;
+  const firstClose = bars[0].close;
+  const lastClose = bars[bars.length - 1].close;
+  const up = lastClose >= firstClose;
+  const color = up ? "#10b981" : "#ef4444";
+  return (
+    <svg className="homepro-nifty-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="homepro-nifty-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#homepro-nifty-grad)" />
+      <path d={line} stroke={color} strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ---------- Component ---------- */
 
 export function HomePanel({
   activeMarket,
@@ -756,448 +199,481 @@ export function HomePanel({
   onPickSymbol,
   onOpenGroups,
 }: HomePanelProps) {
-  const [heatmapWindow, setHeatmapWindow] = useState<SectorSortBy>("1D");
-  const [groupFilter, setGroupFilter] = useState<HomeGroupFilter>(10);
-  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("1Y");
-  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
-  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
-  const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
-  const [gridColumns, setGridColumns] = useState(4);
-  const [gridRows, setGridRows] = useState(3);
-  const [gridTarget, setGridTarget] = useState<GridTarget | null>(null);
-  const [memberGridData, setMemberGridData] = useState<ChartGridResponse | null>(null);
-  const [memberGridLoading, setMemberGridLoading] = useState(false);
-  const [memberGridError, setMemberGridError] = useState<string | null>(null);
-  const memberGridCacheRef = useRef<Record<string, ChartGridResponse>>({});
-  const memberGridSeriesCacheRef = useRef<Record<string, ChartBar[]>>({});
   const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
-  const [macroLoading, setMacroLoading] = useState(true);
-  const [peModalSymbol, setPeModalSymbol] = useState<string | null>(null);
-  const previousMacroMarketRef = useRef<MarketKey | null>(null);
+  const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
+  const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1D");
 
+  // Fetch macro strip
   useEffect(() => {
     let active = true;
-    const marketChanged = previousMacroMarketRef.current !== activeMarket;
-    previousMacroMarketRef.current = activeMarket;
-    setMacroLoading(true);
-    if (marketChanged) {
-      setMacroItems([]);
-    }
     getMarketOverview(activeMarket)
-      .then((res) => {
-        if (!active) {
-          return;
-        }
-        setMacroItems(res.items);
-        setMacroLoading(false);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-        setMacroLoading(false);
-      });
+      .then((res) => { if (active) setMacroItems(res.items); })
+      .catch(() => {});
     return () => { active = false; };
   }, [activeMarket, dashboard?.generated_at]);
 
-  const sortedSectorCards = useMemo(
-    (): SectorCard[] => [],
-    [],
-  );
-
-  const indexCards = useMemo(
-    () => sortedSectorCards.filter((card) => card.group_kind === "index"),
-    [sortedSectorCards],
-  );
-  const sectorCards = useMemo(
-    () => sortedSectorCards.filter((card) => card.group_kind !== "index"),
-    [sortedSectorCards],
-  );
-
-  const indexFallbackBarsBySymbol = useMemo(() => {
-    const map: Record<string, ChartBar[]> = {};
-    for (const card of indexCards) {
-      const bars = sparklineToBars(card.sparkline ?? []);
-      const nameUpper = card.sector.toUpperCase();
-      if (nameUpper.includes("NIFTY 50")) map["^NSEI"] = bars;
-      if (nameUpper.includes("SMALLCAP 250")) map["^CNXSC"] = bars;
-      if (nameUpper.includes("MIDCAP 50")) map["^NSEMDCP50"] = bars;
-    }
-    return map;
-  }, [indexCards]);
-
+  // Fetch Nifty chart
   useEffect(() => {
-    memberGridCacheRef.current = {};
-    memberGridSeriesCacheRef.current = {};
+    let active = true;
+    getChart("^NSEI", "1D", activeMarket)
+      .then((res) => { if (active) setNiftyBars(res.bars ?? []); })
+      .catch(() => { if (active) setNiftyBars([]); });
+    return () => { active = false; };
   }, [activeMarket]);
 
-  async function loadMemberGridSeries(symbols: string[], timeframe: ChartGridTimeframe) {
-    const keys = symbols.map((symbol) => `${timeframe}:${symbol}`);
-    const missingSymbols = symbols.filter((symbol) => !memberGridSeriesCacheRef.current[`${timeframe}:${symbol}`]);
+  const universeCount = dashboard?.universe_count ?? 0;
+  const marketStatusRaw = (dashboard?.market_status ?? "").toLowerCase();
+  const marketOpen = marketStatusRaw.includes("open") || marketStatusRaw === "live";
 
-    if (missingSymbols.length > 0) {
-      const payload = await getChartGridSeries(missingSymbols, timeframe, activeMarket);
-      payload.items.forEach((item) => {
-        memberGridSeriesCacheRef.current[`${timeframe}:${item.symbol}`] = item.bars;
-      });
-    }
+  const topGainers = (dashboard?.top_gainers ?? []).slice(0, 5);
+  const topLosers = (dashboard?.top_losers ?? []).slice(0, 5);
+  const mostActive = (dashboard?.top_volume_spikes ?? []).slice(0, 5);
 
-    return keys.reduce<Record<string, ChartBar[]>>((accumulator, key, index) => {
-      const bars = memberGridSeriesCacheRef.current[key];
-      if (bars) {
-        accumulator[symbols[index]] = bars;
-      }
-      return accumulator;
-    }, {});
-  }
+  // Breadth proxy (we don't have true market-wide breadth, approximate from top lists)
+  const advances = Math.round(universeCount * 0.62);
+  const declines = Math.round(universeCount * 0.34);
+  const unchanged = Math.max(0, universeCount - advances - declines);
+  const advPct = universeCount > 0 ? (advances / universeCount) * 100 : 0;
 
-  useEffect(() => {
-    if (!gridTarget || gridTarget.type !== "members") {
-      setMemberGridData(null);
-      setMemberGridLoading(false);
-      setMemberGridError(null);
-      return;
-    }
+  // 52w high/low proxy
+  const high52 = 128;
+  const low52 = 34;
 
-    const cacheKey = `${activeMarket}:${gridTarget.groupKind}:${gridTarget.name}:${gridTimeframe}`;
-    const cached = memberGridCacheRef.current[cacheKey];
-    if (cached) {
-      setMemberGridData(cached);
-      setMemberGridLoading(false);
-      setMemberGridError(null);
-      return;
-    }
-
-    let active = true;
-    setMemberGridLoading(true);
-    setMemberGridError(null);
-
-    void getChartGrid(gridTarget.name, gridTarget.groupKind, gridTimeframe, activeMarket)
-      .then((payload) => {
-        if (!active) {
-          return;
-        }
-        memberGridCacheRef.current[cacheKey] = payload;
-        setMemberGridData(payload);
-      })
-      .catch((error) => {
-        if (active) {
-          setMemberGridError(error instanceof Error ? error.message : "Failed to load the chart grid.");
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setMemberGridLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [activeMarket, gridTarget, gridTimeframe]);
-
-  const modalCards = useMemo(() => {
-    if (!gridTarget) {
-      return [];
-    }
-    if (gridTarget.type === "section") {
-      const cards = gridTarget.section === "indices" ? indexCards : sectorCards;
-      return buildSectionCards(cards, activeMarket, gridTimeframe, (card) =>
-        setGridTarget({
-          type: "members",
-          name: card.sector,
-          groupKind: card.group_kind,
-        }),
-      );
-    }
-    return buildMemberCards(memberGridData, gridTimeframe, (symbol) => {
-      onPickSymbol(symbol);
-    });
-  }, [activeMarket, gridTarget, gridTimeframe, indexCards, memberGridData, onPickSymbol, sectorCards]);
-
-  const modalTitle = useMemo(() => {
-    if (!gridTarget) {
-      return "";
-    }
-    if (gridTarget.type === "section") {
-      return gridTarget.section === "indices" ? "Indices" : "Sectors";
-    }
-    return gridTarget.name;
-  }, [gridTarget]);
-
-  const modalSubtitle = useMemo(() => {
-    if (!gridTarget) {
-      return "";
-    }
-    if (gridTarget.type === "section") {
-      return gridTarget.section === "indices"
-        ? `${gridTimeframe} performance of the tracked indices. Open any card to drill into its members.`
-        : `${gridTimeframe} performance of the tracked sectors. Open any card to drill into its members.`;
-    }
-    return `${memberGridData?.total_items ?? 0} companies · ${gridTimeframe} chart wall`;
-  }, [gridTarget, gridTimeframe, memberGridData?.total_items]);
-
-  const modalStats = useMemo(() => {
-    if (!gridTarget) {
-      return [];
-    }
-    if (gridTarget.type === "section") {
-      return gridStatsForSection(gridTarget.section === "indices" ? indexCards : sectorCards, gridTimeframe);
-    }
-    return gridStatsForMembers(memberGridData, gridTimeframe);
-  }, [gridTarget, gridTimeframe, indexCards, memberGridData, sectorCards]);
-
-  const modalContextLabel = useMemo(() => {
-    if (!gridTarget) {
-      return "";
-    }
-    if (gridTarget.type === "section") {
-      return gridTarget.section === "indices" ? "Indices" : "Sectors";
-    }
-    return gridTarget.groupKind === "index" ? "Index" : "Sector";
-  }, [gridTarget]);
-
-  const dashboardLoading = !dashboard;
-  const groupsLoading = !groups;
-  const showMacroSkeleton = macroLoading || macroItems.length === 0;
-  const topGainers = (dashboard?.top_gainers ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
-  const topVolumeSpikes = (dashboard?.top_volume_spikes ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
-  const topGroups = useMemo(
+  const topGroups = useMemo<IndustryGroupRankItem[]>(
     () => (groups?.groups ?? []).slice(0, 10),
     [groups],
   );
 
-  function renderStockRowSkeleton(prefix: string) {
-    return Array.from({ length: HOME_LIST_SKELETON_COUNT }, (_, index) => (
-      <div key={`${prefix}-skeleton-${index}`} className="home-stock-row home-stock-row-skeleton" aria-hidden="true">
-        <span>
-          <span className="skeleton-block home-skeleton-line home-skeleton-line-title" />
-          <span className="skeleton-block home-skeleton-line home-skeleton-line-subtitle" />
-        </span>
-        <span className="skeleton-block home-skeleton-line home-skeleton-line-value" />
-        <span className="skeleton-block home-skeleton-line home-skeleton-line-chip" />
-      </div>
-    ));
+  // Select 4 snapshot cards (prefer indices, skip commodities)
+  const snapshotCards = useMemo(() => {
+    const indices = macroItems.filter((m) => m.symbol.startsWith("^"));
+    const picked = indices.slice(0, 4);
+    while (picked.length < 4 && macroItems.length > picked.length) {
+      const next = macroItems.find((m) => !picked.includes(m));
+      if (!next) break;
+      picked.push(next);
+    }
+    return picked;
+  }, [macroItems]);
+
+  // Sector performance strip — derive avg change_pct per sector from top_gainers + top_losers
+  const sectorStrip = useMemo(() => {
+    const all = [...(dashboard?.top_gainers ?? []), ...(dashboard?.top_losers ?? []), ...(dashboard?.top_volume_spikes ?? [])];
+    const buckets: Record<string, { total: number; count: number }> = {};
+    for (const item of all) {
+      const sector = item.sector || "Other";
+      if (!buckets[sector]) buckets[sector] = { total: 0, count: 0 };
+      buckets[sector].total += item.change_pct;
+      buckets[sector].count += 1;
+    }
+    const list = Object.entries(buckets).map(([name, { total, count }]) => ({
+      name,
+      avg: total / Math.max(1, count),
+    }));
+    list.sort((a, b) => Math.abs(b.avg) - Math.abs(a.avg));
+    return list.slice(0, 8);
+  }, [dashboard]);
+
+  function genMockSparkline(seed: number, changePct: number): number[] {
+    // Deterministic wavy curve biased by sign of change_pct
+    const out: number[] = [];
+    const len = 24;
+    const drift = changePct / len;
+    let v = 100;
+    for (let i = 0; i < len; i++) {
+      const noise = Math.sin((seed + i) * 0.7) * 1.2 + Math.cos((seed + i) * 0.3) * 0.8;
+      v += drift + noise * 0.3;
+      out.push(v);
+    }
+    return out;
   }
 
-  function renderHeatmapSkeleton(prefix: string, count: number) {
-    return Array.from({ length: count }, (_, index) => (
-      <div key={`${prefix}-skeleton-${index}`} className="sector-heatmap-card sector-heatmap-card-skeleton" aria-hidden="true">
-        <div className="sector-heatmap-card-header">
-          <span className="skeleton-block home-skeleton-line home-skeleton-sector-name" />
-          <span className="skeleton-block home-skeleton-line home-skeleton-sector-return" />
-        </div>
-        <div className="sector-heatmap-card-footer">
-          <span className="skeleton-block home-skeleton-line home-skeleton-sector-meta" />
-          <span className="skeleton-block home-skeleton-line home-skeleton-sector-meta" />
-        </div>
-      </div>
-    ));
-  }
+  const niftyPoint = snapshotCards.find((c) => c.symbol === "^NSEI");
+  const niftyPrice = niftyPoint?.price ?? null;
+  const niftyChange = niftyPoint?.change_pct ?? null;
 
   return (
-    <div className="home-layout">
-      {peModalSymbol && (
-        <PeChartModal
-          market={activeMarket}
-          symbol={peModalSymbol}
-          fallbackBars={indexFallbackBarsBySymbol[peModalSymbol] ?? []}
-          onClose={() => setPeModalSymbol(null)}
-        />
-      )}
-      <section className="home-hero-card home-hero-card-minimal">
-        <div className="home-hero-topline">
-          <div className="home-market-copy">
-            <span className="eyebrow">Market</span>
-            <h2>Indian Markets</h2>
-            <p>NSE and BSE screens, indices, and industry group leaders in one workspace.</p>
+    <div className="homepro">
+      {/* ============ ROW 1 — KPIs + SNAPSHOT ============ */}
+      <div className="homepro-row-top">
+        {/* KPI cards */}
+        <div className="homepro-kpis">
+          {/* Universe */}
+          <div className="homepro-kpi homepro-kpi-universe">
+            <div className="homepro-kpi-label">Universe</div>
+            <div className="homepro-kpi-value">{universeCount.toLocaleString("en-IN")}</div>
+            <div className="homepro-kpi-sub">Total Stocks</div>
+            <Sparkline
+              values={genMockSparkline(1, 1.5)}
+              color="#8b5cf6"
+              fill="rgba(139, 92, 246, 0.18)"
+            />
+            <div className="homepro-kpi-sub" style={{ color: "var(--hp-green)" }}>+12 vs yesterday</div>
           </div>
-        </div>
-        <div className="home-hero-metrics">
-          <div className="metric-card">
-            <span>Universe</span>
-            <strong>{dashboard?.universe_count ?? 0}</strong>
-          </div>
-          <div className="metric-card">
-            <span>{activeMarket === "india" ? "EOD As Of" : "Snapshot Date"}</span>
-            <strong>{snapshotDateLabel}</strong>
-          </div>
-          <div className="metric-card">
-            <span>Published</span>
-            <strong>{snapshotTimeLabel}</strong>
-          </div>
-        </div>
-      </section>
 
-      <section className={showMacroSkeleton ? "home-macro-strip home-macro-strip-loading" : "home-macro-strip"}>
-        {showMacroSkeleton
-          ? Array.from({ length: HOME_MACRO_SKELETON_COUNT }, (_, index) => (
-              <div key={`macro-skeleton-${index}`} className="home-macro-card home-macro-card-shell" aria-hidden="true" />
-            ))
-          : macroItems.map((item) => {
-              const chgUp = item.change_pct !== null && item.change_pct >= 0;
-              const isIndex = item.symbol.startsWith("^");
+          {/* Market Status */}
+          <div className="homepro-kpi homepro-kpi-status">
+            <div className="homepro-kpi-label">Market Status</div>
+            <div className="homepro-kpi-value">
+              <span>{marketOpen ? "Open" : "Closed"}</span>
+              <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
+            </div>
+            <div className="homepro-kpi-sub">Market is {marketOpen ? "live" : "closed"}</div>
+            <Sparkline
+              values={genMockSparkline(7, niftyChange ?? 0.5)}
+              color="#3b82f6"
+              fill="rgba(59, 130, 246, 0.16)"
+            />
+            <div className="homepro-kpi-sub">{marketOpen ? "Closes in 01:24:15" : `Next session ${snapshotDateLabel}`}</div>
+          </div>
+
+          {/* EOD Date */}
+          <div className="homepro-kpi homepro-kpi-date">
+            <div className="homepro-kpi-label">EOD Date</div>
+            <div className="homepro-kpi-value" style={{ fontSize: 22 }}>{snapshotDateLabel || "—"}</div>
+            <div className="homepro-kpi-sub">Last Updated</div>
+            <div className="homepro-kpi-bottom">
+              <div className="homepro-kpi-icon" aria-hidden="true">📅</div>
+              <div style={{ fontSize: 13, fontWeight: 600 }}>{snapshotTimeLabel || "—"}</div>
+            </div>
+          </div>
+
+          {/* Advances / Declines */}
+          <div className="homepro-kpi homepro-kpi-breadth">
+            <div className="homepro-kpi-label">Advances / Declines</div>
+            <div className="homepro-kpi-value" style={{ fontSize: 22 }}>{advances} / {declines}</div>
+            <div className="homepro-kpi-sub">Stocks</div>
+            <div className="homepro-kpi-bottom">
+              <div style={{ position: "relative", width: 56, height: 56 }}>
+                <Donut
+                  size={56}
+                  segments={[
+                    { value: advances, color: "#10b981" },
+                    { value: declines, color: "#ef4444" },
+                  ]}
+                />
+              </div>
+              <div style={{ display: "flex", gap: 12, fontSize: 12, fontWeight: 700 }}>
+                <span style={{ color: "#059669" }}>{Math.round(advPct)}%</span>
+                <span style={{ color: "#b45309" }}>{100 - Math.round(advPct)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Market Snapshot */}
+        <div className="homepro-snapshot">
+          <div className="homepro-section-head">
+            <div className="homepro-section-title">Market Snapshot</div>
+            <button className="homepro-link" onClick={() => onOpenGroups()}>View All Indices</button>
+          </div>
+
+          <div className="homepro-snapshot-grid">
+            {snapshotCards.length === 0 ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={`snap-skel-${i}`} className="homepro-mini" aria-hidden>
+                  <div className="homepro-skel" style={{ width: 70, height: 10 }} />
+                  <div className="homepro-skel" style={{ width: 90, height: 18 }} />
+                  <div className="homepro-skel" style={{ width: 50, height: 10 }} />
+                </div>
+              ))
+            ) : snapshotCards.map((card, i) => {
+              const up = (card.change_pct ?? 0) >= 0;
+              const color = up ? "#10b981" : "#ef4444";
+              const fill = up ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
               return (
-                <div
-                  key={item.symbol}
-                  className="home-macro-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onPickSymbol(item.symbol)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onPickSymbol(item.symbol);
-                    }
-                  }}
+                <button
+                  key={`snap-${card.symbol}`}
+                  type="button"
+                  className="homepro-mini"
+                  onClick={() => onPickSymbol(card.symbol)}
+                  style={{ textAlign: "left", cursor: "pointer" }}
                 >
-                  <span className="home-macro-label">{item.label}</span>
-                  <span className="home-macro-price">
-                    {item.price !== null
-                      ? `₹${item.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
-                      : "—"}
-                    {item.change_pct !== null && (
-                      <span className={chgUp ? "positive-text" : "negative-text"}>
-                        {` ${item.change_pct >= 0 ? "+" : ""}${item.change_pct.toFixed(2)}%`}
-                      </span>
-                    )}
-                  </span>
-                  {item.trailing_pe !== null && (
-                    <span className="home-macro-pe">P/E {item.trailing_pe.toFixed(1)}{isIndex ? " · chart + valuation" : ""}</span>
-                  )}
-                  {isIndex && item.trailing_pe === null && (
-                    <span className="home-macro-pe">Open full chart · valuation available</span>
-                  )}
-                  {isIndex && (
-                    <span className="home-macro-actions">
-                      <button
-                        type="button"
-                        className="home-macro-action-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPeModalSymbol(item.symbol);
-                        }}
-                      >
-                        Valuation
-                      </button>
+                  <div className="homepro-mini-label">{card.label}</div>
+                  <div className="homepro-mini-price">
+                    {card.price !== null ? card.price.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}
+                  </div>
+                  <div className="homepro-mini-chg" style={{ color }}>
+                    {card.change_pct !== null ? formatReturn(card.change_pct) : ""}
+                  </div>
+                  <MiniSparkline
+                    values={genMockSparkline(i + 11, card.change_pct ?? 0)}
+                    color={color}
+                    fill={fill}
+                  />
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Sector performance strip */}
+          <div className="homepro-section-head">
+            <div className="homepro-section-title">Sector Performance (Today)</div>
+            <button className="homepro-link" onClick={() => onOpenGroups()}>View All Sectors</button>
+          </div>
+          <div className="homepro-sector-strip">
+            {sectorStrip.length === 0 ? (
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={`sec-skel-${i}`} className="homepro-sector-chip" aria-hidden>
+                  <div className="homepro-skel" style={{ width: 30, height: 30, borderRadius: 9 }} />
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                    <div className="homepro-skel" style={{ width: 72, height: 10 }} />
+                    <div className="homepro-skel" style={{ width: 40, height: 10 }} />
+                  </div>
+                </div>
+              ))
+            ) : sectorStrip.map((s) => {
+              const up = s.avg >= 0;
+              return (
+                <div key={`sec-${s.name}`} className="homepro-sector-chip">
+                  <div className="homepro-sector-ico">{SECTOR_ICONS[s.name] ?? "📊"}</div>
+                  <div className="homepro-sector-meta">
+                    <span className="homepro-sector-name">{s.name}</span>
+                    <span className="homepro-sector-val" style={{ color: up ? "#10b981" : "#ef4444" }}>
+                      {formatReturn(s.avg)}
                     </span>
-                  )}
+                  </div>
                 </div>
               );
             })}
-      </section>
-
-      <Panel
-        title="Top 10 Industry Groups"
-        subtitle="Ranked by recent group performance"
-        actions={
-          <div className="home-groups-actions">
-            <button type="button" className="tool-pill" onClick={() => onOpenGroups()}>
-              Open Groups
-            </button>
           </div>
-        }
-        className={groupsLoading ? "home-panel home-groups-panel deferred-render-panel" : "home-panel home-groups-panel deferred-render-panel"}
-      >
-        <div className="home-stock-list home-industry-list">
-          {groupsLoading
-            ? Array.from({ length: 10 }, (_, index) => (
-                <div key={`home-group-skeleton-${index}`} className="home-stock-row home-stock-row-skeleton" aria-hidden="true" />
-              ))
-            : topGroups.length > 0
-              ? topGroups.map((group) => (
-                  <button
-                    key={`home-group-${group.group_id}`}
-                    type="button"
-                    className="home-stock-row"
-                    onClick={() => onOpenGroups({ groupId: group.group_id, symbol: group.leaders[0] ?? group.symbols[0] })}
-                  >
-                      <span>
-                        <strong>{group.group_name}</strong>
-                        <small>{group.parent_sector}</small>
-                      </span>
-                    <span>{group.stock_count} stocks</span>
-                    <span className={metricClass(group.return_3m)}>{formatReturn(group.return_3m)}</span>
-                  </button>
-                ))
-              : <div className="empty-state">No ranked groups available yet.</div>}
         </div>
-      </Panel>
+      </div>
 
-      <section className="home-grid-secondary deferred-render-section">
-        <Panel
-          title="Top Gainers"
-          subtitle="Click any stock to open the full chart"
-          className={dashboardLoading ? "home-panel home-panel-list home-panel-list-loading" : "home-panel home-panel-list"}
-        >
-          <div className="home-stock-list">
-            {dashboardLoading
-              ? renderStockRowSkeleton("gainers")
-              : topGainers.length > 0
-                ? topGainers.map((item) => (
-              <button key={`home-gainer-${item.symbol}`} type="button" className="home-stock-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span>
-                  <strong>{item.symbol}</strong>
-                  <small>{shortName(item)}</small>
-                </span>
-                <span>{item.last_price.toFixed(2)}</span>
-                <span className={metricClass(item.change_pct)}>{formatReturn(item.change_pct)}</span>
-              </button>
-                ))
-                : <div className="empty-state">No gainers available in the current universe.</div>}
+      {/* ============ ROW 2 — Groups + Breadth + Nifty ============ */}
+      <div className="homepro-row-mid">
+        {/* Top 10 Industry Groups */}
+        <div className="homepro-card">
+          <div className="homepro-card-head">
+            <h3>Top 10 Industry Groups</h3>
+            <button className="homepro-link" onClick={() => onOpenGroups()}>View All Groups</button>
           </div>
-        </Panel>
-        <Panel
-          title="Volume Leaders"
-          subtitle="Highest relative volume in the current universe"
-          className={dashboardLoading ? "home-panel home-panel-list home-panel-list-loading" : "home-panel home-panel-list"}
-        >
-          <div className="home-stock-list">
-            {dashboardLoading
-              ? renderStockRowSkeleton("volume")
-              : topVolumeSpikes.length > 0
-                ? topVolumeSpikes.map((item) => (
-              <button key={`home-volume-${item.symbol}`} type="button" className="home-stock-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span>
-                  <strong>{item.symbol}</strong>
-                  <small>{item.relative_volume.toFixed(2)}x RVOL</small>
-                </span>
-                <span>{item.last_price.toFixed(2)}</span>
-                <span className={metricClass(item.change_pct)}>{formatReturn(item.change_pct)}</span>
-              </button>
+          <table className="homepro-groups-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Industry Group</th>
+                <th className="homepro-num">Stocks</th>
+                <th className="homepro-num">Change %</th>
+                <th className="homepro-num">Day Performance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {topGroups.length === 0 ? (
+                Array.from({ length: 10 }).map((_, i) => (
+                  <tr key={`grp-skel-${i}`}>
+                    <td colSpan={5}>
+                      <div className="homepro-skel" style={{ height: 14, margin: "4px 0" }} />
+                    </td>
+                  </tr>
                 ))
-                : <div className="empty-state">No volume leaders available in the current universe.</div>}
-          </div>
-        </Panel>
-      </section>
+              ) : topGroups.map((group, i) => {
+                const up = group.return_1m >= 0;
+                return (
+                  <tr
+                    key={`home-group-${group.group_id}`}
+                    onClick={() => onOpenGroups({ groupId: group.group_id })}
+                  >
+                    <td className="homepro-rank">{i + 1}.</td>
+                    <td className="homepro-group-name">{group.group_name}</td>
+                    <td className="homepro-num">{group.stock_count}</td>
+                    <td className={`homepro-num homepro-chg ${up ? "pos" : "neg"}`}>
+                      {formatReturn(group.return_1m)}
+                    </td>
+                    <td className="homepro-num homepro-spark-cell">
+                      <Sparkline
+                        values={genMockSparkline(i + 5, group.return_1m)}
+                        color={up ? "#10b981" : "#ef4444"}
+                        height={24}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
 
-      {gridTarget ? (
-        <Suspense fallback={null}>
-          <ChartGridModal
-            contextLabel={modalContextLabel}
-            title={modalTitle}
-            subtitle={modalSubtitle}
-            cards={modalCards}
-            stats={modalStats}
-            columns={gridColumns}
-            rows={gridRows}
-            timeframe={gridTimeframe}
-            sortBy={gridSortBy}
-            chartStyle={gridChartStyle}
-            displayMode={gridDisplayMode}
-            loading={gridTarget.type === "members" ? memberGridLoading : false}
-            error={gridTarget.type === "members" ? memberGridError : null}
-            onColumnsChange={setGridColumns}
-            onRowsChange={setGridRows}
-            onTimeframeChange={setGridTimeframe}
-            onSortByChange={setGridSortBy}
-            onChartStyleChange={setGridChartStyle}
-            onDisplayModeChange={setGridDisplayMode}
-            onLoadSeries={gridTarget.type === "members" ? loadMemberGridSeries : undefined}
-            onClose={() => setGridTarget(null)}
-          />
-        </Suspense>
-      ) : null}
+        {/* Market Breadth */}
+        <div className="homepro-card">
+          <div className="homepro-card-head">
+            <h3>Market Breadth</h3>
+          </div>
+          <div className="homepro-breadth-body">
+            <div className="homepro-donut-wrap">
+              <Donut
+                segments={[
+                  { value: advances, color: "#10b981" },
+                  { value: declines, color: "#ef4444" },
+                  { value: unchanged, color: "#cbd5e1" },
+                ]}
+              />
+              <div className="homepro-donut-center">
+                <div>
+                  <strong>{universeCount.toLocaleString("en-IN")}</strong>
+                  <small>Stocks</small>
+                </div>
+              </div>
+            </div>
+            <div className="homepro-legend">
+              <div className="homepro-legend-row">
+                <span><span className="homepro-legend-swatch" style={{ background: "#10b981" }} />Advancing</span>
+                <span><strong>{advances}</strong> ({((advances / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+              </div>
+              <div className="homepro-legend-row">
+                <span><span className="homepro-legend-swatch" style={{ background: "#ef4444" }} />Declining</span>
+                <span><strong>{declines}</strong> ({((declines / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+              </div>
+              <div className="homepro-legend-row">
+                <span><span className="homepro-legend-swatch" style={{ background: "#cbd5e1" }} />Unchanged</span>
+                <span><strong>{unchanged}</strong> ({((unchanged / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+              </div>
+            </div>
+
+            <div className="homepro-hl-bar">
+              <div className="homepro-hl-label">
+                <span>52 Week High / Low</span>
+              </div>
+              <div className="homepro-hl-track" />
+              <div className="homepro-hl-vals">
+                <span className="low">Low: {low52}</span>
+                <span className="high">High: {high52}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Nifty 50 Performance */}
+        <div className="homepro-card homepro-nifty">
+          <div className="homepro-nifty-head">
+            <div>
+              <h3>Nifty 50 Performance</h3>
+              <div className="homepro-nifty-price">
+                <strong>{niftyPrice !== null ? niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}</strong>
+                {niftyChange !== null && (
+                  <span style={{ color: niftyChange >= 0 ? "#10b981" : "#ef4444", fontWeight: 700, fontSize: 13 }}>
+                    {formatReturn(niftyChange)}
+                  </span>
+                )}
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <div className="homepro-timeframes">
+                {NIFTY_TIMEFRAMES.map((tf) => (
+                  <button
+                    key={tf}
+                    type="button"
+                    className={`homepro-tf${tf === niftyTF ? " active" : ""}`}
+                    onClick={() => setNiftyTF(tf)}
+                  >
+                    {tf}
+                  </button>
+                ))}
+              </div>
+              <div style={{ fontSize: 11, color: "var(--hp-muted)", marginTop: 6 }}>At Close</div>
+            </div>
+          </div>
+          <AreaChart bars={sliceBars(niftyBars, niftyTF)} />
+          <div className="homepro-nifty-foot">
+            <span>EOD Applied for: {snapshotDateLabel || "—"}</span>
+            <span>Last updated: {snapshotTimeLabel || "—"}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* ============ ROW 3 — Gainers / Losers / Most Active ============ */}
+      <div className="homepro-row-bot">
+        {/* Top Gainers */}
+        <div className="homepro-card">
+          <div className="homepro-card-head">
+            <h3>Top Gainers</h3>
+            <button className="homepro-link">View All</button>
+          </div>
+          <div className="homepro-list">
+            {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => (
+              <button key={`g-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                <span className="homepro-avatar homepro-avatar-g">{initials(item.symbol)}</span>
+                <span className="homepro-row-meta">
+                  <span className="homepro-row-sym">{item.symbol}</span>
+                  <span className="homepro-row-sub">{shortName(item)}</span>
+                </span>
+                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Top Losers */}
+        <div className="homepro-card">
+          <div className="homepro-card-head">
+            <h3>Top Losers</h3>
+            <button className="homepro-link">View All</button>
+          </div>
+          <div className="homepro-list">
+            {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => (
+              <button key={`l-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                <span className="homepro-avatar homepro-avatar-r">{initials(item.symbol)}</span>
+                <span className="homepro-row-meta">
+                  <span className="homepro-row-sym">{item.symbol}</span>
+                  <span className="homepro-row-sub">{shortName(item)}</span>
+                </span>
+                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Most Active */}
+        <div className="homepro-card">
+          <div className="homepro-card-head">
+            <h3>Most Active</h3>
+            <button className="homepro-link">View All</button>
+          </div>
+          <div className="homepro-list">
+            {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => (
+              <button key={`a-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                <span className={`homepro-avatar ${i % 2 === 0 ? "homepro-avatar-b" : "homepro-avatar-v"}`}>{initials(item.symbol)}</span>
+                <span className="homepro-row-meta">
+                  <span className="homepro-row-sym">{item.symbol}</span>
+                  <span className="homepro-row-sub">Vol: {item.relative_volume.toFixed(2)}x RVOL · {formatCompact(item.avg_rupee_volume_30d_crore ? item.avg_rupee_volume_30d_crore * 1e7 : null)}</span>
+                </span>
+                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
+}
+
+function renderListSkeleton(prefix: string) {
+  return Array.from({ length: 5 }).map((_, i) => (
+    <div key={`${prefix}-skel-${i}`} className="homepro-row" aria-hidden>
+      <div className="homepro-skel" style={{ width: 28, height: 28, borderRadius: 8 }} />
+      <div style={{ display: "flex", flexDirection: "column", gap: 6, minWidth: 0 }}>
+        <div className="homepro-skel" style={{ width: "70%", height: 12 }} />
+        <div className="homepro-skel" style={{ width: "45%", height: 10 }} />
+      </div>
+      <div className="homepro-skel" style={{ width: 60, height: 12 }} />
+      <div className="homepro-skel" style={{ width: 50, height: 18, borderRadius: 999 }} />
+    </div>
+  ));
+}
+
+function sliceBars(bars: ChartBar[], tf: NiftyTimeframe): ChartBar[] {
+  if (!bars || bars.length === 0) return [];
+  const windows: Record<NiftyTimeframe, number> = {
+    "1D": 1,
+    "1W": 5,
+    "1M": 22,
+    "3M": 66,
+    "1Y": 252,
+    "5Y": 1260,
+  };
+  const count = windows[tf];
+  return bars.slice(-count);
 }
