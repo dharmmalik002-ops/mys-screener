@@ -349,36 +349,76 @@ def _build_group_payload(
     raw_counts: Counter[str] = Counter(str(snapshot.sub_sector or "Unclassified") for snapshot in eligible_snapshots)
     benchmark_returns = _benchmark_return_summary(benchmark_snapshots)
 
-    stock_rows: list[IndustryGroupStockItem] = []
-    grouped_snapshots: dict[str, list[StockSnapshot]] = defaultdict(list)
-    grouped_parent_sectors: dict[str, list[str]] = defaultdict(list)
-
+    # Phase 1: initial classification of each eligible snapshot into its raw group.
+    initial_groups: dict[str, list[StockSnapshot]] = defaultdict(list)
+    initial_parents: dict[str, list[str]] = defaultdict(list)
+    initial_raw_industry: dict[str, list[str]] = defaultdict(list)
+    initial_group_name: dict[str, str] = {}
     for snapshot in eligible_snapshots:
         raw_industry = str(snapshot.sub_sector or "Unclassified") or "Unclassified"
         group_name = _friendly_group_name(raw_industry, snapshot.sector, market_key, raw_counts)
         group_id = _slugify(group_name)
-        grouped_snapshots[group_id].append(snapshot)
-        grouped_parent_sectors[group_id].append(snapshot.sector or "Unclassified")
-        stock_rows.append(
-            IndustryGroupStockItem(
-                symbol=snapshot.symbol,
-                company_name=snapshot.name,
-                exchange=snapshot.exchange,
-                market_cap_cr=round(snapshot.market_cap_crore, 2),
-                avg_traded_value_50d_cr=_avg_traded_value_50d_cr(snapshot),
-                sector=snapshot.sector,
-                raw_industry=raw_industry,
-                final_group_id=group_id,
-                final_group_name=group_name,
-                last_price=round(snapshot.last_price, 2),
-                change_pct=round(snapshot.change_pct, 2),
-                return_1m=round(snapshot.stock_return_20d, 2),
-                return_3m=round(snapshot.stock_return_60d, 2),
-                return_6m=round(snapshot.stock_return_126d, 2),
-                return_1y=round(snapshot.stock_return_12m, 2),
-                rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
+        initial_groups[group_id].append(snapshot)
+        initial_parents[group_id].append(snapshot.sector or "Unclassified")
+        initial_raw_industry[group_id].append(raw_industry)
+        initial_group_name[group_id] = group_name
+
+    # Phase 2: merge groups with < MIN_GROUP_STOCKS stocks into the largest group
+    # within the same parent sector (falls back to global largest if needed).
+    MIN_GROUP_STOCKS = 4
+    majority_parent = {gid: _majority_label(parents) for gid, parents in initial_parents.items()}
+    hosts_by_sector: dict[str, list[tuple[str, int]]] = defaultdict(list)
+    for gid, members in initial_groups.items():
+        if len(members) >= MIN_GROUP_STOCKS:
+            hosts_by_sector[majority_parent[gid]].append((gid, len(members)))
+
+    merge_map: dict[str, str] = {}
+    for gid, members in initial_groups.items():
+        if len(members) >= MIN_GROUP_STOCKS:
+            continue
+        candidates = hosts_by_sector.get(majority_parent[gid], [])
+        if not candidates:
+            candidates = [
+                (other_gid, len(other_members))
+                for other_gid, other_members in initial_groups.items()
+                if other_gid != gid and len(other_members) >= MIN_GROUP_STOCKS
+            ]
+        if not candidates:
+            continue
+        merge_map[gid] = max(candidates, key=lambda item: item[1])[0]
+
+    # Phase 3: apply merges to grouped snapshots + build stock rows with final ids.
+    stock_rows: list[IndustryGroupStockItem] = []
+    grouped_snapshots: dict[str, list[StockSnapshot]] = defaultdict(list)
+    grouped_parent_sectors: dict[str, list[str]] = defaultdict(list)
+    for gid, members in initial_groups.items():
+        target_gid = merge_map.get(gid, gid)
+        target_name = initial_group_name.get(target_gid, initial_group_name[gid])
+        parent_entries = initial_parents[gid]
+        raw_entries = initial_raw_industry[gid]
+        grouped_snapshots[target_gid].extend(members)
+        grouped_parent_sectors[target_gid].extend(parent_entries)
+        for snapshot, raw_industry in zip(members, raw_entries):
+            stock_rows.append(
+                IndustryGroupStockItem(
+                    symbol=snapshot.symbol,
+                    company_name=snapshot.name,
+                    exchange=snapshot.exchange,
+                    market_cap_cr=round(snapshot.market_cap_crore, 2),
+                    avg_traded_value_50d_cr=_avg_traded_value_50d_cr(snapshot),
+                    sector=snapshot.sector,
+                    raw_industry=raw_industry,
+                    final_group_id=target_gid,
+                    final_group_name=target_name,
+                    last_price=round(snapshot.last_price, 2),
+                    change_pct=round(snapshot.change_pct, 2),
+                    return_1m=round(snapshot.stock_return_20d, 2),
+                    return_3m=round(snapshot.stock_return_60d, 2),
+                    return_6m=round(snapshot.stock_return_126d, 2),
+                    return_1y=round(snapshot.stock_return_12m, 2),
+                    rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
+                )
             )
-        )
 
     group_rows: list[dict[str, object]] = []
     master_rows: list[IndustryGroupMasterItem] = []

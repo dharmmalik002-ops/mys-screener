@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles/app.css";
 import "./styles/premium-overrides.css";
+import "./styles/nav-modern.css";
 
 class RootErrorBoundary extends React.Component<
   { children: React.ReactNode },

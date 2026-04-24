@@ -28,16 +28,7 @@ type NiftyTimeframe = "1D" | "1W" | "1M" | "3M" | "1Y" | "5Y";
 
 const NIFTY_TIMEFRAMES: NiftyTimeframe[] = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
 
-const SECTOR_ICONS: Record<string, string> = {
-  "Nifty IT": "💻",
-  "Nifty Realty": "🏢",
-  "Nifty FMCG": "🛒",
-  "Nifty Pharma": "💊",
-  "Nifty Bank": "🏦",
-  "Nifty Auto": "🚗",
-  "Nifty Metal": "⚙️",
-  "Nifty Energy": "⚡",
-};
+type ViewAllMode = "gainers" | "losers" | "active";
 
 function formatReturn(value: number) {
   if (!Number.isFinite(value)) return "—";
@@ -153,7 +144,7 @@ function Donut({ segments, size = 180 }: { segments: { value: number; color: str
   );
 }
 
-function AreaChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
+function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
   const width = 640;
   if (!bars || bars.length < 2) {
     return (
@@ -162,28 +153,46 @@ function AreaChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }
       </div>
     );
   }
-  const closes = bars.map((b) => b.close);
-  const min = Math.min(...closes);
-  const max = Math.max(...closes);
+  const highs = bars.map((b) => b.high);
+  const lows = bars.map((b) => b.low);
+  const min = Math.min(...lows);
+  const max = Math.max(...highs);
   const range = max - min || 1;
-  const step = width / (bars.length - 1);
-  const points = bars.map((b, i) => `${(i * step).toFixed(2)},${(height - ((b.close - min) / range) * (height - 24) - 12).toFixed(2)}`);
-  const line = `M ${points.join(" L ")}`;
-  const area = `${line} L ${width},${height} L 0,${height} Z`;
-  const firstClose = bars[0].close;
-  const lastClose = bars[bars.length - 1].close;
-  const up = lastClose >= firstClose;
-  const color = up ? "#10b981" : "#ef4444";
+  const paddingY = 12;
+  const innerH = height - paddingY * 2;
+  const slot = width / bars.length;
+  const candleW = Math.max(2, Math.min(10, slot * 0.65));
+
+  function y(value: number) {
+    return paddingY + innerH - ((value - min) / range) * innerH;
+  }
+
   return (
     <svg className="homepro-nifty-chart" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-      <defs>
-        <linearGradient id="homepro-nifty-grad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor={color} stopOpacity="0.28" />
-          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-        </linearGradient>
-      </defs>
-      <path d={area} fill="url(#homepro-nifty-grad)" />
-      <path d={line} stroke={color} strokeWidth="2" fill="none" strokeLinejoin="round" strokeLinecap="round" />
+      {bars.map((bar, i) => {
+        const cx = slot * (i + 0.5);
+        const up = bar.close >= bar.open;
+        const color = up ? "#10b981" : "#ef4444";
+        const yHigh = y(bar.high);
+        const yLow = y(bar.low);
+        const yOpen = y(bar.open);
+        const yClose = y(bar.close);
+        const bodyTop = Math.min(yOpen, yClose);
+        const bodyH = Math.max(1, Math.abs(yOpen - yClose));
+        return (
+          <g key={i}>
+            <line x1={cx} x2={cx} y1={yHigh} y2={yLow} stroke={color} strokeWidth="1" />
+            <rect
+              x={cx - candleW / 2}
+              y={bodyTop}
+              width={candleW}
+              height={bodyH}
+              fill={color}
+              stroke={color}
+            />
+          </g>
+        );
+      })}
     </svg>
   );
 }
@@ -256,23 +265,25 @@ export function HomePanel({
     return picked;
   }, [macroItems]);
 
-  // Sector performance strip — derive avg change_pct per sector from top_gainers + top_losers
-  const sectorStrip = useMemo(() => {
-    const all = [...(dashboard?.top_gainers ?? []), ...(dashboard?.top_losers ?? []), ...(dashboard?.top_volume_spikes ?? [])];
-    const buckets: Record<string, { total: number; count: number }> = {};
-    for (const item of all) {
-      const sector = item.sector || "Other";
-      if (!buckets[sector]) buckets[sector] = { total: 0, count: 0 };
-      buckets[sector].total += item.change_pct;
-      buckets[sector].count += 1;
-    }
-    const list = Object.entries(buckets).map(([name, { total, count }]) => ({
-      name,
-      avg: total / Math.max(1, count),
-    }));
-    list.sort((a, b) => Math.abs(b.avg) - Math.abs(a.avg));
-    return list.slice(0, 8);
-  }, [dashboard]);
+  const [viewAllMode, setViewAllMode] = useState<ViewAllMode | null>(null);
+
+  const allGainers = useMemo(() => {
+    const list = [...(dashboard?.top_gainers ?? [])];
+    list.sort((a, b) => b.change_pct - a.change_pct);
+    return list.slice(0, 20);
+  }, [dashboard?.top_gainers]);
+
+  const allLosers = useMemo(() => {
+    const list = [...(dashboard?.top_losers ?? [])];
+    list.sort((a, b) => a.change_pct - b.change_pct);
+    return list.slice(0, 20);
+  }, [dashboard?.top_losers]);
+
+  const allActive = useMemo(() => {
+    const list = [...(dashboard?.top_volume_spikes ?? [])];
+    list.sort((a, b) => b.relative_volume - a.relative_volume);
+    return list.slice(0, 20);
+  }, [dashboard?.top_volume_spikes]);
 
   function genMockSparkline(seed: number, changePct: number): number[] {
     // Deterministic wavy curve biased by sign of change_pct
@@ -406,37 +417,6 @@ export function HomePanel({
             })}
           </div>
 
-          {/* Sector performance strip */}
-          <div className="homepro-section-head">
-            <div className="homepro-section-title">Sector Performance (Today)</div>
-            <button className="homepro-link" onClick={() => onOpenGroups()}>View All Sectors</button>
-          </div>
-          <div className="homepro-sector-strip">
-            {sectorStrip.length === 0 ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={`sec-skel-${i}`} className="homepro-sector-chip" aria-hidden>
-                  <div className="homepro-skel" style={{ width: 30, height: 30, borderRadius: 9 }} />
-                  <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                    <div className="homepro-skel" style={{ width: 72, height: 10 }} />
-                    <div className="homepro-skel" style={{ width: 40, height: 10 }} />
-                  </div>
-                </div>
-              ))
-            ) : sectorStrip.map((s) => {
-              const up = s.avg >= 0;
-              return (
-                <div key={`sec-${s.name}`} className="homepro-sector-chip">
-                  <div className="homepro-sector-ico">{SECTOR_ICONS[s.name] ?? "📊"}</div>
-                  <div className="homepro-sector-meta">
-                    <span className="homepro-sector-name">{s.name}</span>
-                    <span className="homepro-sector-val" style={{ color: up ? "#10b981" : "#ef4444" }}>
-                      {formatReturn(s.avg)}
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
@@ -573,7 +553,7 @@ export function HomePanel({
               <div style={{ fontSize: 11, color: "var(--hp-muted)", marginTop: 6 }}>At Close</div>
             </div>
           </div>
-          <AreaChart bars={sliceBars(niftyBars, niftyTF)} />
+          <CandlestickChart bars={sliceBars(niftyBars, niftyTF)} />
           <div className="homepro-nifty-foot">
             <span>EOD Applied for: {snapshotDateLabel || "—"}</span>
             <span>Last updated: {snapshotTimeLabel || "—"}</span>
@@ -587,7 +567,7 @@ export function HomePanel({
         <div className="homepro-card">
           <div className="homepro-card-head">
             <h3>Top Gainers</h3>
-            <button className="homepro-link">View All</button>
+            <button className="homepro-link" onClick={() => setViewAllMode("gainers")}>View All</button>
           </div>
           <div className="homepro-list">
             {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => (
@@ -608,7 +588,7 @@ export function HomePanel({
         <div className="homepro-card">
           <div className="homepro-card-head">
             <h3>Top Losers</h3>
-            <button className="homepro-link">View All</button>
+            <button className="homepro-link" onClick={() => setViewAllMode("losers")}>View All</button>
           </div>
           <div className="homepro-list">
             {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => (
@@ -629,7 +609,7 @@ export function HomePanel({
         <div className="homepro-card">
           <div className="homepro-card-head">
             <h3>Most Active</h3>
-            <button className="homepro-link">View All</button>
+            <button className="homepro-link" onClick={() => setViewAllMode("active")}>View All</button>
           </div>
           <div className="homepro-list">
             {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => (
@@ -644,6 +624,115 @@ export function HomePanel({
               </button>
             ))}
           </div>
+        </div>
+      </div>
+
+      {viewAllMode && (
+        <ViewAllModal
+          mode={viewAllMode}
+          items={viewAllMode === "gainers" ? allGainers : viewAllMode === "losers" ? allLosers : allActive}
+          onClose={() => setViewAllMode(null)}
+          onPickSymbol={(symbol) => {
+            setViewAllMode(null);
+            onPickSymbol(symbol);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ViewAllModal({
+  mode,
+  items,
+  onClose,
+  onPickSymbol,
+}: {
+  mode: ViewAllMode;
+  items: ScanMatch[];
+  onClose: () => void;
+  onPickSymbol: (symbol: string) => void;
+}) {
+  const title = mode === "gainers" ? "Top 20 Gainers" : mode === "losers" ? "Top 20 Losers" : "Top 20 Most Active";
+  const subtitle =
+    mode === "gainers"
+      ? "Stocks with the largest positive change today"
+      : mode === "losers"
+        ? "Stocks with the largest negative change today"
+        : "Stocks with the highest relative volume today";
+  const accent = mode === "gainers" ? "homepro-avatar-g" : mode === "losers" ? "homepro-avatar-r" : "homepro-avatar-b";
+
+  useEffect(() => {
+    function handleKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", handleKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+    };
+  }, [onClose]);
+
+  return (
+    <div className="homepro-modal-overlay" onClick={onClose}>
+      <div className="homepro-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+        <div className="homepro-modal-head">
+          <div>
+            <h2>{title}</h2>
+            <p>{subtitle}</p>
+          </div>
+          <button type="button" className="homepro-modal-close" onClick={onClose} aria-label="Close">✕</button>
+        </div>
+        <div className="homepro-modal-body">
+          {items.length === 0 ? (
+            <div className="homepro-empty">No stocks available yet.</div>
+          ) : (
+            <table className="homepro-modal-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Stock</th>
+                  <th>Sector</th>
+                  <th className="homepro-num">Price</th>
+                  <th className="homepro-num">{mode === "active" ? "RVOL" : "Change"}</th>
+                  <th className="homepro-num">{mode === "active" ? "Change" : "Score"}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.map((item, i) => (
+                  <tr key={`vall-${item.symbol}`} onClick={() => onPickSymbol(item.symbol)}>
+                    <td className="homepro-rank">{i + 1}</td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <span className={`homepro-avatar ${accent}`}>{item.symbol.slice(0, 2).toUpperCase()}</span>
+                        <span>
+                          <strong style={{ display: "block" }}>{item.symbol}</strong>
+                          <small style={{ color: "var(--hp-muted)" }}>{item.name.length > 32 ? `${item.name.slice(0, 32)}…` : item.name}</small>
+                        </span>
+                      </div>
+                    </td>
+                    <td style={{ color: "var(--hp-muted)", fontSize: 12 }}>{item.sector || "—"}</td>
+                    <td className="homepro-num">{formatPrice(item.last_price)}</td>
+                    <td className="homepro-num">
+                      {mode === "active" ? (
+                        <span className="homepro-chip pos" style={{ background: "rgba(59,130,246,0.12)", color: "#1d4ed8" }}>
+                          {item.relative_volume.toFixed(2)}x
+                        </span>
+                      ) : (
+                        <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+                      )}
+                    </td>
+                    <td className="homepro-num">
+                      {mode === "active"
+                        ? <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+                        : <span style={{ fontSize: 12, color: "var(--hp-muted)" }}>{item.score?.toFixed(1) ?? "—"}</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
