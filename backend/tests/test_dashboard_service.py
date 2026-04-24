@@ -1341,6 +1341,54 @@ class DashboardServiceVolumeLeaderTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("HIST", [item.symbol for item in response.top_volume_spikes])
         self.assertNotIn("NOHIST", [item.symbol for item in response.top_volume_spikes])
 
+    async def test_build_dashboard_returns_twenty_market_leaders(self) -> None:
+        snapshots = [
+            self._snapshot(
+                symbol=f"STK{index:02d}",
+                start_close=80.0 + index,
+                step=0.4 + (index * 0.02),
+                volume_boost=2 + (index / 10),
+                keep_recent_volumes=True,
+            ).model_copy(update={"change_pct": float(index - 12)})
+            for index in range(25)
+        ]
+
+        class StubProvider:
+            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
+                self.rows = rows
+                self.updated_at = updated_at
+
+            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                return self.rows
+
+            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
+                raise NotImplementedError
+
+            async def get_index_quotes(self, symbols: list[str]):
+                raise NotImplementedError
+
+            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
+                raise NotImplementedError
+
+            async def refresh_snapshots(self, market_cap_min_crore: float):
+                raise NotImplementedError
+
+            def get_snapshot_updated_at(self) -> datetime:
+                return self.updated_at
+
+            def get_last_refresh_metadata(self) -> dict[str, object]:
+                return {}
+
+        service = DashboardService(provider=StubProvider(snapshots, self.snapshot_updated_at), settings=Settings())
+
+        response = await service.build_dashboard()
+
+        self.assertEqual(len(response.top_gainers), 20)
+        self.assertEqual(len(response.top_losers), 20)
+        self.assertEqual(len(response.top_volume_spikes), 20)
+        self.assertEqual(response.top_gainers[0].symbol, "STK24")
+        self.assertEqual(response.top_losers[0].symbol, "STK00")
+
 
 if __name__ == "__main__":
     unittest.main()

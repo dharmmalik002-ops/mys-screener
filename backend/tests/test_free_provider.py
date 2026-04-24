@@ -616,16 +616,21 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(snapshots[0].symbol, "TEST")
         schedule_refresh.assert_not_called()
 
-    def test_get_snapshots_serves_stale_closed_session_cache_without_queueing_refresh(self) -> None:
+    def test_get_snapshots_refreshes_stale_closed_session_cache_inline(self) -> None:
         current_session = self.provider._current_or_previous_trading_day_ist()
         stale_session = self.provider._previous_trading_day(current_session).isoformat()
         row = self._snapshot_row(session_date=stale_session)
+        refreshed_row = self._snapshot_row(session_date=current_session.isoformat())
+        refreshed_row["last_price"] = row["last_price"] + 10
         self._seed_snapshot_cache([row])
 
         with patch.object(self.provider, "_snapshot_schema_ok", return_value=True), patch.object(
             self.provider,
             "_load_or_refresh_snapshots",
-            side_effect=AssertionError("request path should not block on close-session rebuild"),
+            return_value=[refreshed_row],
+        ) as load_or_refresh, patch.object(
+            self.provider,
+            "_write_snapshot_rows",
         ), patch.object(
             self.provider,
             "_schedule_background_snapshot_refresh",
@@ -645,7 +650,8 @@ class FreeProviderRegressionTests(unittest.TestCase):
             snapshots = asyncio.run(self.provider.get_snapshots(1000.0))
 
         self.assertEqual(len(snapshots), 1)
-        self.assertEqual(snapshots[0].last_price, row["last_price"])
+        self.assertEqual(snapshots[0].last_price, refreshed_row["last_price"])
+        load_or_refresh.assert_called_once_with(1000.0, True)
         schedule_refresh.assert_not_called()
 
     def test_force_refresh_rebuilds_closed_session_history_on_weekend(self) -> None:
