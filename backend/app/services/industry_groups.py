@@ -20,7 +20,8 @@ from app.models.market import (
 
 GROUP_MIN_MARKET_CAP_CR = 800.0
 GROUP_MIN_AVG_DAILY_VALUE_CR = 1.0
-GROUP_KEEP_THRESHOLD = 5
+GROUP_MIN_STOCKS = 4
+GROUP_KEEP_THRESHOLD = GROUP_MIN_STOCKS
 
 INDIA_DIRECT_GROUP_MAP: dict[str, str] = {
     "Pharmaceuticals": "Pharma",
@@ -254,6 +255,42 @@ def _finalize_group_name(group_name: str, market_key: str) -> str:
     return group_name
 
 
+def _broad_parent_group_name(parent_sector: str, market_key: str) -> str:
+    normalized_sector = str(parent_sector or "Unclassified").strip() or "Unclassified"
+    if normalized_sector.lower() == "unclassified":
+        return _finalize_group_name("Special Situations", market_key) if market_key == "india" else "Miscellaneous"
+    suffix = "Diversified" if market_key == "india" else "Others"
+    return _finalize_group_name(f"{normalized_sector} {suffix}", market_key)
+
+
+def _group_family(parent_sector: str) -> str:
+    sector = str(parent_sector or "").strip().lower()
+    if any(token in sector for token in ("bank", "financial", "finance", "insurance")):
+        return "Financials"
+    if any(token in sector for token in ("auto", "consumer", "fmcg", "durable", "retail", "textile", "media")):
+        return "Consumer"
+    if any(token in sector for token in ("capital", "construction", "industrial", "services", "logistics")):
+        return "Industrials"
+    if any(token in sector for token in ("chemical", "material", "metal", "mining", "cement", "paper")):
+        return "Materials"
+    if any(token in sector for token in ("health", "pharma", "hospital")):
+        return "Healthcare"
+    if any(token in sector for token in ("information", "technology", "telecom")):
+        return "Technology & Telecom"
+    if any(token in sector for token in ("oil", "gas", "power", "energy", "utility")):
+        return "Energy & Utilities"
+    if not sector or sector == "unclassified":
+        return "Special Situations"
+    return "Diversified"
+
+
+def _family_group_name(family: str, market_key: str) -> str:
+    normalized_family = str(family or "Diversified").strip() or "Diversified"
+    if normalized_family == "Special Situations":
+        return _finalize_group_name("Special Situations", market_key) if market_key == "india" else "Miscellaneous"
+    return f"{normalized_family} Diversified"
+
+
 def _friendly_group_name(raw_industry: str, sector: str, market_key: str, raw_counts: Counter[str]) -> str:
     normalized_raw = str(raw_industry or "Unclassified").strip() or "Unclassified"
     normalized_sector = str(sector or "Unclassified").strip() or "Unclassified"
@@ -323,6 +360,140 @@ def _snapshot_is_eligible(snapshot: StockSnapshot, market_key: str) -> bool:
         and _avg_traded_value_50d_cr(snapshot) >= GROUP_MIN_AVG_DAILY_VALUE_CR
         and snapshot.last_price > 0
     )
+
+
+def _merge_small_groups(
+    grouped_snapshots: dict[str, list[StockSnapshot]],
+    grouped_parent_sectors: dict[str, list[str]],
+    stock_rows: list[IndustryGroupStockItem],
+    market_key: str,
+) -> tuple[dict[str, list[StockSnapshot]], dict[str, list[str]], list[IndustryGroupStockItem]]:
+    if not grouped_snapshots or all(len(members) >= GROUP_MIN_STOCKS for members in grouped_snapshots.values()):
+        return grouped_snapshots, grouped_parent_sectors, stock_rows
+
+    rows_by_group: dict[str, list[IndustryGroupStockItem]] = defaultdict(list)
+    for row in stock_rows:
+        rows_by_group[row.final_group_id].append(row)
+
+    final_snapshots: dict[str, list[StockSnapshot]] = defaultdict(list)
+    final_parent_sectors: dict[str, list[str]] = defaultdict(list)
+    final_stock_rows: dict[str, list[IndustryGroupStockItem]] = defaultdict(list)
+    final_group_names: dict[str, str] = {}
+
+    def add_group(
+        group_name: str,
+        group_members: list[StockSnapshot],
+        group_rows: list[IndustryGroupStockItem],
+        parent_sectors: list[str],
+    ) -> None:
+        group_id = _slugify(group_name)
+        resolved_name = final_group_names.setdefault(group_id, group_name)
+        final_snapshots[group_id].extend(group_members)
+        final_parent_sectors[group_id].extend(parent_sectors)
+        final_stock_rows[group_id].extend(
+            row.model_copy(update={"final_group_id": group_id, "final_group_name": resolved_name})
+            for row in group_rows
+        )
+
+    def bucket_group_name(group_id: str) -> str:
+        return rows_by_group[group_id][0].final_group_name if rows_by_group[group_id] else group_id
+
+    def bucket_parent_sector(group_id: str) -> str:
+        return _majority_label(grouped_parent_sectors[group_id])
+
+    def add_existing_bucket(group_id: str) -> None:
+        add_group(
+            bucket_group_name(group_id),
+            grouped_snapshots[group_id],
+            rows_by_group[group_id],
+            grouped_parent_sectors[group_id],
+        )
+
+    def merge_bucket_into_name(group_id: str, group_name: str) -> None:
+        add_group(
+            group_name,
+            grouped_snapshots[group_id],
+            rows_by_group[group_id],
+            grouped_parent_sectors[group_id],
+        )
+
+    def merge_bucket_into_existing(group_id: str, target_group_id: str) -> None:
+        target_name = final_group_names[target_group_id]
+        merge_bucket_into_name(group_id, target_name)
+
+    def largest_final_group(candidates: list[str]) -> str | None:
+        if not candidates:
+            return None
+        return max(candidates, key=lambda candidate: len(final_snapshots[candidate]))
+
+    small_group_ids: list[str] = []
+    for group_id, members in grouped_snapshots.items():
+        if len(members) >= GROUP_MIN_STOCKS:
+            add_existing_bucket(group_id)
+        else:
+            small_group_ids.append(group_id)
+
+    remaining_group_ids: list[str] = []
+    groups_by_parent_sector: dict[str, list[str]] = defaultdict(list)
+    for group_id in small_group_ids:
+        groups_by_parent_sector[bucket_parent_sector(group_id)].append(group_id)
+
+    for parent_sector, group_ids in groups_by_parent_sector.items():
+        member_count = sum(len(grouped_snapshots[group_id]) for group_id in group_ids)
+        same_sector_targets = [
+            group_id
+            for group_id in final_snapshots
+            if _majority_label(final_parent_sectors[group_id]) == parent_sector
+        ]
+        if member_count >= GROUP_MIN_STOCKS:
+            broad_name = _broad_parent_group_name(parent_sector, market_key)
+            for group_id in group_ids:
+                merge_bucket_into_name(group_id, broad_name)
+            continue
+        target_group_id = largest_final_group(same_sector_targets)
+        if target_group_id is not None:
+            for group_id in group_ids:
+                merge_bucket_into_existing(group_id, target_group_id)
+            continue
+        remaining_group_ids.extend(group_ids)
+
+    final_remaining_group_ids: list[str] = []
+    groups_by_family: dict[str, list[str]] = defaultdict(list)
+    for group_id in remaining_group_ids:
+        groups_by_family[_group_family(bucket_parent_sector(group_id))].append(group_id)
+
+    for family, group_ids in groups_by_family.items():
+        member_count = sum(len(grouped_snapshots[group_id]) for group_id in group_ids)
+        same_family_targets = [
+            group_id
+            for group_id in final_snapshots
+            if _group_family(_majority_label(final_parent_sectors[group_id])) == family
+        ]
+        if member_count >= GROUP_MIN_STOCKS:
+            family_name = _family_group_name(family, market_key)
+            for group_id in group_ids:
+                merge_bucket_into_name(group_id, family_name)
+            continue
+        target_group_id = largest_final_group(same_family_targets)
+        if target_group_id is not None:
+            for group_id in group_ids:
+                merge_bucket_into_existing(group_id, target_group_id)
+            continue
+        final_remaining_group_ids.extend(group_ids)
+
+    if final_remaining_group_ids:
+        remaining_count = sum(len(grouped_snapshots[group_id]) for group_id in final_remaining_group_ids)
+        target_group_id = largest_final_group(list(final_snapshots))
+        if remaining_count >= GROUP_MIN_STOCKS or target_group_id is None:
+            fallback_name = "Diversified Small Groups" if market_key == "india" else "Miscellaneous"
+            for group_id in final_remaining_group_ids:
+                merge_bucket_into_name(group_id, fallback_name)
+        else:
+            for group_id in final_remaining_group_ids:
+                merge_bucket_into_existing(group_id, target_group_id)
+
+    merged_stock_rows = [row for group_rows in final_stock_rows.values() for row in group_rows]
+    return dict(final_snapshots), dict(final_parent_sectors), merged_stock_rows
 
 
 def _benchmark_return_summary(benchmark_snapshots: list[StockSnapshot]) -> dict[str, float]:
@@ -426,6 +597,13 @@ def _build_group_payload(
                     rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
                 )
             )
+
+    grouped_snapshots, grouped_parent_sectors, stock_rows = _merge_small_groups(
+        grouped_snapshots,
+        grouped_parent_sectors,
+        stock_rows,
+        market_key,
+    )
 
     group_rows: list[dict[str, object]] = []
     master_rows: list[IndustryGroupMasterItem] = []

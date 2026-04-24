@@ -355,7 +355,7 @@ class FreeMarketDataProvider:
         cache_signature = self._snapshot_memory_signature()
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
-            if self.eod_only_mode and self._market_close_refresh_due():
+            if self.preferred_refresh_strategy() == "historical":
                 return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
             if self._seed_snapshot_cache_needs_refresh():
                 self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
@@ -363,7 +363,7 @@ class FreeMarketDataProvider:
 
         cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
         if cached_rows:
-            if self.eod_only_mode and self._market_close_refresh_due():
+            if self.preferred_refresh_strategy() == "historical":
                 return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
             snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)

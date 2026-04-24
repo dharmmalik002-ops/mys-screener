@@ -89,6 +89,22 @@ class IndustryGroupsTests(unittest.TestCase):
                 step=0.8,
             ),
             self._build_snapshot(
+                symbol="PHARMA3",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=7_500.0,
+                start_close=75.0,
+                step=0.75,
+            ),
+            self._build_snapshot(
+                symbol="PHARMA4",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=7_000.0,
+                start_close=70.0,
+                step=0.7,
+            ),
+            self._build_snapshot(
                 symbol="AUTO1",
                 sector="Automobile and Auto Components",
                 sub_sector="Auto Components & Equipments",
@@ -103,6 +119,22 @@ class IndustryGroupsTests(unittest.TestCase):
                 market_cap_crore=6_500.0,
                 start_close=55.0,
                 step=0.65,
+            ),
+            self._build_snapshot(
+                symbol="AUTO3",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=6_000.0,
+                start_close=50.0,
+                step=0.6,
+            ),
+            self._build_snapshot(
+                symbol="AUTO4",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=5_500.0,
+                start_close=45.0,
+                step=0.55,
             ),
         ]
         previous_snapshots = [
@@ -123,6 +155,22 @@ class IndustryGroupsTests(unittest.TestCase):
                 step=0.6,
             ),
             self._build_snapshot(
+                symbol="PHARMA3",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=7_500.0,
+                start_close=75.0,
+                step=0.55,
+            ),
+            self._build_snapshot(
+                symbol="PHARMA4",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=7_000.0,
+                start_close=70.0,
+                step=0.5,
+            ),
+            self._build_snapshot(
                 symbol="AUTO1",
                 sector="Automobile and Auto Components",
                 sub_sector="Auto Components & Equipments",
@@ -138,6 +186,22 @@ class IndustryGroupsTests(unittest.TestCase):
                 start_close=55.0,
                 step=0.35,
             ),
+            self._build_snapshot(
+                symbol="AUTO3",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=6_000.0,
+                start_close=50.0,
+                step=0.3,
+            ),
+            self._build_snapshot(
+                symbol="AUTO4",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=5_500.0,
+                start_close=45.0,
+                step=0.25,
+            ),
         ]
 
         response = build_industry_groups_response(
@@ -152,6 +216,7 @@ class IndustryGroupsTests(unittest.TestCase):
 
         self.assertEqual(response.total_groups, 2)
         self.assertEqual({group.group_name for group in response.groups}, {"Pharma", "Auto Ancillaries"})
+        self.assertTrue(all(group.stock_count >= 4 for group in response.groups))
         self.assertEqual({item.final_group_name for item in response.stocks}, {"Pharma", "Auto Ancillaries"})
         self.assertTrue(all(group.rank >= 1 for group in response.groups))
         self.assertTrue(any(group.score_change_1w is not None for group in response.groups))
@@ -173,6 +238,44 @@ class IndustryGroupsTests(unittest.TestCase):
           self.assertTrue(stocks_path.exists())
           self.assertIn("Pharma", groups_path.read_text(encoding="utf-8"))
           self.assertIn("Auto Ancillaries", stocks_path.read_text(encoding="utf-8"))
+
+    def test_small_industry_groups_merge_into_similar_parent_sector_group(self) -> None:
+        snapshots = [
+            self._build_snapshot(
+                symbol=f"PHARMA{index}",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=10_000.0 - index,
+                start_close=100.0 + index,
+                step=0.6,
+            )
+            for index in range(1, 4)
+        ]
+        snapshots.append(
+            self._build_snapshot(
+                symbol="HOSP1",
+                sector="Healthcare",
+                sub_sector="Hospital",
+                market_cap_crore=9_000.0,
+                start_close=90.0,
+                step=0.55,
+            )
+        )
+
+        response = build_industry_groups_response(
+            snapshots,
+            snapshots,
+            [],
+            [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+
+        self.assertEqual(response.total_groups, 1)
+        self.assertEqual(response.groups[0].group_name, "Healthcare Diversified")
+        self.assertEqual(response.groups[0].stock_count, 4)
+        self.assertEqual({item.final_group_name for item in response.stocks}, {"Healthcare Diversified"})
 
 
 if __name__ == "__main__":

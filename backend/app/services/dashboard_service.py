@@ -95,6 +95,7 @@ INDEX_HEATMAP_SYMBOLS: dict[str, str] = {
     "Nifty 500": "^CNX500",
 }
 INDEX_CONSTITUENT_CACHE_MAX_AGE = timedelta(hours=6)
+MARKET_LEADER_LIMIT = 25
 INDEX_USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36"
 IST = timezone(timedelta(hours=5, minutes=30))
 GENERIC_COMPLIANCE_KEYWORDS = (
@@ -644,13 +645,13 @@ class DashboardService:
             ]
             results = {}
 
-        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:25]
-        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:25]
+        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:MARKET_LEADER_LIMIT]
+        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:MARKET_LEADER_LIMIT]
         top_volume = sorted(
             [item for item in scan_snapshots if self._has_reliable_relative_volume(item)],
             key=lambda item: item.relative_volume,
             reverse=True,
-        )[:25]
+        )[:MARKET_LEADER_LIMIT]
 
         alerts: list[AlertItem] = []
         for scan_id in ("breakout-ath", "volume-price", "strong-nifty", "darvas-box"):
