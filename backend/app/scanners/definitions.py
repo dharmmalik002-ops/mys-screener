@@ -6,7 +6,6 @@ from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
     EandCScanRequest,
-    derive_rs_comparison_dates,
     ReturnsScanRequest,
     ScanDescriptor,
     ScanMatch,
@@ -75,6 +74,12 @@ def _near_or_above(current: float, level: float, tolerance_pct: float) -> bool:
 
 def _near_or_below(current: float, level: float, tolerance_pct: float) -> bool:
     return _gap_from_level(current, level) <= tolerance_pct
+
+
+def _request_filter_value(request: CustomScanRequest, field_name: str, default=None):
+    # Custom scan filters evolve over time; use the serialized payload so removed
+    # optional fields stay absent instead of crashing attribute access.
+    return request.model_dump(mode="python").get(field_name, default)
 
 
 def _price_near_day_high(snapshot: StockSnapshot, tolerance_pct: float = 0.35) -> bool:
@@ -679,8 +684,17 @@ def _pct_change_between(current: float | None, previous: float | None) -> float 
     return ((float(current) / float(previous)) - 1) * 100
 
 
+def _snapshot_float(snapshot: StockSnapshot, *field_names: str) -> float | None:
+    for field_name in field_names:
+        value = getattr(snapshot, field_name, None)
+        if value is None:
+            continue
+        return float(value)
+    return None
+
+
 def _recent_close_anchor_offset(snapshot: StockSnapshot) -> int:
-    closes = [float(value) for value in snapshot.recent_closes if value is not None]
+    closes = [float(value) for value in getattr(snapshot, "recent_closes", []) if value is not None]
     if len(closes) < 2:
         return 0
 
@@ -698,7 +712,7 @@ def _recent_close_anchor_offset(snapshot: StockSnapshot) -> int:
 
 
 def _close_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None:
-    closes = [float(value) for value in snapshot.recent_closes if value is not None]
+    closes = [float(value) for value in getattr(snapshot, "recent_closes", []) if value is not None]
     if days <= 0 or not closes:
         return None
 
@@ -728,11 +742,12 @@ def _return_since_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None
         return _return_from_baseline(current_price, direct_close)
 
     baseline_map: dict[int, float | None] = {
-        10: snapshot.baseline_close_10d,
-        20: snapshot.baseline_close_20d,
-        30: snapshot.baseline_close_30d or snapshot.baseline_close_20d,
-        63: snapshot.baseline_close_63d,
-        90: snapshot.baseline_close_90d or snapshot.baseline_close_63d,
+        5: _snapshot_float(snapshot, "baseline_close_5d"),
+        10: _snapshot_float(snapshot, "baseline_close_10d", "baseline_close_5d"),
+        20: _snapshot_float(snapshot, "baseline_close_20d"),
+        30: _snapshot_float(snapshot, "baseline_close_30d", "baseline_close_20d"),
+        63: _snapshot_float(snapshot, "baseline_close_63d", "baseline_close_60d"),
+        90: _snapshot_float(snapshot, "baseline_close_90d", "baseline_close_63d", "baseline_close_60d"),
     }
     derived = _return_from_baseline(current_price, baseline_map.get(days))
     if derived is not None:
@@ -861,7 +876,6 @@ def build_scan_match(
     pattern: str | None = None,
 ) -> ScanMatch:
     display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
-    rs_1d_date, rs_1w_date, rs_1m_date = derive_rs_comparison_dates(snapshot.history_as_of_date)
     return ScanMatch(
         scan_id=scan_id,
         symbol=snapshot.symbol,
@@ -881,9 +895,6 @@ def build_scan_match(
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
         rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-        rs_rating_1d_ago_date=rs_1d_date if snapshot.rs_eligible else None,
-        rs_rating_1w_ago_date=rs_1w_date if snapshot.rs_eligible else None,
-        rs_rating_1m_ago_date=rs_1m_date if snapshot.rs_eligible else None,
         nifty_outperformance=snapshot.nifty_outperformance,
         sector_outperformance=snapshot.sector_outperformance,
         three_month_rs=snapshot.three_month_rs,
@@ -1058,50 +1069,58 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
         return False
 
     # Fundamental cached fields (stored as decimals eg 0.3 for 30%)
-    if request.min_eps_growth_yoy is not None:
-        val = snapshot.eps_growth_yoy
-        if val is None or (val * 100) < request.min_eps_growth_yoy:
+    min_eps_growth_yoy = _request_filter_value(request, "min_eps_growth_yoy")
+    if min_eps_growth_yoy is not None:
+        val = getattr(snapshot, "eps_growth_yoy", None)
+        if val is None or (val * 100) < min_eps_growth_yoy:
             return False
-    if request.min_revenue_growth_yoy is not None:
-        val = snapshot.revenue_growth_yoy
-        if val is None or (val * 100) < request.min_revenue_growth_yoy:
+    min_revenue_growth_yoy = _request_filter_value(request, "min_revenue_growth_yoy")
+    if min_revenue_growth_yoy is not None:
+        val = getattr(snapshot, "revenue_growth_yoy", None)
+        if val is None or (val * 100) < min_revenue_growth_yoy:
             return False
-    if request.min_operating_margin is not None:
-        val = snapshot.operating_margin
-        if val is None or (val * 100) < request.min_operating_margin:
+    min_operating_margin = _request_filter_value(request, "min_operating_margin")
+    if min_operating_margin is not None:
+        val = getattr(snapshot, "operating_margin", None)
+        if val is None or (val * 100) < min_operating_margin:
             return False
-    if request.min_profit_margin is not None:
-        val = snapshot.profit_margin
-        if val is None or (val * 100) < request.min_profit_margin:
+    min_profit_margin = _request_filter_value(request, "min_profit_margin")
+    if min_profit_margin is not None:
+        val = getattr(snapshot, "profit_margin", None)
+        if val is None or (val * 100) < min_profit_margin:
             return False
-    if request.min_roe is not None:
-        val = snapshot.roe
-        if val is None or (val * 100) < request.min_roe:
+    min_roe = _request_filter_value(request, "min_roe")
+    if min_roe is not None:
+        val = getattr(snapshot, "roe", None)
+        if val is None or (val * 100) < min_roe:
             return False
-    if request.max_peg_ratio is not None:
-        val = snapshot.peg_ratio
-        if val is None or val > request.max_peg_ratio:
+    max_peg_ratio = _request_filter_value(request, "max_peg_ratio")
+    if max_peg_ratio is not None:
+        val = getattr(snapshot, "peg_ratio", None)
+        if val is None or val > max_peg_ratio:
             return False
-    if request.min_pe_ratio is not None:
-        val = snapshot.pe_ratio
-        if val is None or val < request.min_pe_ratio:
+    min_pe_ratio = _request_filter_value(request, "min_pe_ratio")
+    if min_pe_ratio is not None:
+        val = getattr(snapshot, "pe_ratio", None)
+        if val is None or val < min_pe_ratio:
             return False
-    if request.max_pe_ratio is not None:
-        val = snapshot.pe_ratio
-        if val is None or val > request.max_pe_ratio:
+    max_pe_ratio = _request_filter_value(request, "max_pe_ratio")
+    if max_pe_ratio is not None:
+        val = getattr(snapshot, "pe_ratio", None)
+        if val is None or val > max_pe_ratio:
             return False
 
     # Guru & Setup filters
-    if request.minervini_trend_template:
+    if _request_filter_value(request, "minervini_trend_template", False):
         if not _minervini_1m(snapshot): 
             return False
             
-    if request.kullamagi_setup:
+    if _request_filter_value(request, "kullamagi_setup", False):
         if snapshot.ema20 is None or snapshot.last_price < snapshot.ema20: return False
         if snapshot.stock_return_60d < 20: return False
         if snapshot.trend_strength < 4: return False
             
-    if request.shakeout_21ema:
+    if _request_filter_value(request, "shakeout_21ema", False):
         if snapshot.ema20 is None: return False
         if snapshot.last_price < snapshot.ema20: return False
         try:
@@ -1111,7 +1130,7 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
         except Exception:
             return False
 
-    if request.shakeout_50ema:
+    if _request_filter_value(request, "shakeout_50ema", False):
         if snapshot.ema50 is None: return False
         if snapshot.last_price < snapshot.ema50: return False
         try:
@@ -1120,7 +1139,8 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
         except Exception:
             return False
 
-    if request.max_consolidation_range_pct is not None:
+    max_consolidation_range_pct = _request_filter_value(request, "max_consolidation_range_pct")
+    if max_consolidation_range_pct is not None:
         try:
             # Check 15-day and 25-day windows. 
             # If the stock is extremely tight (consolidation) in either window, we keep it.
@@ -1131,7 +1151,7 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
                     highest = max(h)
                     lowest = min(l)
                     range_pct = ((highest - lowest) / highest) * 100 if highest > 0 else 0
-                    if range_pct <= request.max_consolidation_range_pct:
+                    if range_pct <= max_consolidation_range_pct:
                         return True # Passed at least one window
             return False # Failed both windows
         except Exception:

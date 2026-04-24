@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class StockSnapshot(BaseModel):
     symbol: str
     name: str
-    exchange: Literal["NSE", "BSE", "NYSE", "NASDAQ"]
+    exchange: Literal["NSE", "BSE"]
     listing_date: date | None = None
     sector: str
     sub_sector: str = "Unclassified"
@@ -1265,14 +1265,14 @@ class WatchlistItem(BaseModel):
 
 
 class WatchlistsStateResponse(BaseModel):
-    market: Literal["india", "us"]
+    market: Literal["india"]
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     active_watchlist_id: str | None = None
     watchlists: list[WatchlistItem] = Field(default_factory=list)
 
 
 class BhavcopyStatusResponse(BaseModel):
-    market: Literal["india", "us"]
+    market: Literal["india"]
     updated: bool = False
     date: str | None = None
     updated_at: datetime | None = None

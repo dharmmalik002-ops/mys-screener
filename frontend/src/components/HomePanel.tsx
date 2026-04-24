@@ -31,12 +31,10 @@ const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({
 type HomePanelProps = {
   activeMarket: MarketKey;
   dashboard: DashboardResponse | null;
-  sectors: SectorTabResponse | null;
   groups: IndustryGroupsResponse | null;
   snapshotDateLabel: string;
   snapshotTimeLabel: string;
   onPickSymbol: (symbol: string) => void;
-  onOpenSectors: () => void;
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
 };
 
@@ -50,7 +48,6 @@ const HOME_MACRO_SKELETON_COUNT = 4;
 const HOME_LIST_SKELETON_COUNT = 6;
 const HOME_HEATMAP_SKELETON_COUNTS: Record<MarketKey, { indices: number; sectors: number }> = {
   india: { indices: 4, sectors: 22 },
-  us: { indices: 3, sectors: 14 },
 };
 
 function formatReturn(value: number) {
@@ -62,8 +59,8 @@ function metricClass(value: number) {
 }
 
 function formatPrice(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const symbol = market === "us" ? "$" : "₹";
+  const locale = "en-IN";
+  const symbol = "₹";
   return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -753,16 +750,14 @@ function PeChartModal({
 export function HomePanel({
   activeMarket,
   dashboard,
-  sectors,
   groups,
   snapshotDateLabel,
   snapshotTimeLabel,
   onPickSymbol,
-  onOpenSectors,
   onOpenGroups,
 }: HomePanelProps) {
   const [heatmapWindow, setHeatmapWindow] = useState<SectorSortBy>("1D");
-  const [groupFilter, setGroupFilter] = useState<HomeGroupFilter>(40);
+  const [groupFilter, setGroupFilter] = useState<HomeGroupFilter>(10);
   const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("1Y");
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
@@ -806,15 +801,8 @@ export function HomePanel({
   }, [activeMarket, dashboard?.generated_at]);
 
   const sortedSectorCards = useMemo(
-    () =>
-      [...(sectors?.sectors ?? [])].sort((left, right) => {
-        const returnDiff = getSectorReturn(right, heatmapWindow) - getSectorReturn(left, heatmapWindow);
-        if (returnDiff !== 0) {
-          return returnDiff;
-        }
-        return topCompanyCount(right) - topCompanyCount(left);
-      }),
-    [heatmapWindow, sectors],
+    (): SectorCard[] => [],
+    [],
   );
 
   const indexCards = useMemo(
@@ -841,7 +829,7 @@ export function HomePanel({
   useEffect(() => {
     memberGridCacheRef.current = {};
     memberGridSeriesCacheRef.current = {};
-  }, [activeMarket, sectors?.generated_at]);
+  }, [activeMarket]);
 
   async function loadMemberGridSeries(symbols: string[], timeframe: ChartGridTimeframe) {
     const keys = symbols.map((symbol) => `${timeframe}:${symbol}`);
@@ -970,16 +958,14 @@ export function HomePanel({
   }, [gridTarget]);
 
   const dashboardLoading = !dashboard;
-  const sectorsLoading = !sectors;
   const groupsLoading = !groups;
   const showMacroSkeleton = macroLoading || macroItems.length === 0;
   const topGainers = (dashboard?.top_gainers ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
   const topVolumeSpikes = (dashboard?.top_volume_spikes ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
   const topGroups = useMemo(
-    () => (groups?.groups ?? []).filter((group) => group.rank <= groupFilter).slice(0, 12),
-    [groupFilter, groups],
+    () => (groups?.groups ?? []).slice(0, 10),
+    [groups],
   );
-  const heatmapSkeletonCounts = HOME_HEATMAP_SKELETON_COUNTS[activeMarket];
 
   function renderStockRowSkeleton(prefix: string) {
     return Array.from({ length: HOME_LIST_SKELETON_COUNT }, (_, index) => (
@@ -1023,12 +1009,8 @@ export function HomePanel({
         <div className="home-hero-topline">
           <div className="home-market-copy">
             <span className="eyebrow">Market</span>
-            <h2>{activeMarket === "india" ? "Indian Markets" : "US Markets"}</h2>
-            <p>
-              {activeMarket === "india"
-                ? "NSE and BSE screens, indices, and sector rotation in one workspace."
-                : "NYSE and Nasdaq liquid stocks and ETFs filtered for price above $15 and average daily volume above 400,000 shares."}
-            </p>
+            <h2>Indian Markets</h2>
+            <p>NSE and BSE screens, indices, and industry group leaders in one workspace.</p>
           </div>
         </div>
         <div className="home-hero-metrics">
@@ -1072,7 +1054,7 @@ export function HomePanel({
                   <span className="home-macro-label">{item.label}</span>
                   <span className="home-macro-price">
                     {item.price !== null
-                      ? `${item.currency === "USD" ? "$" : "₹"}${item.price.toLocaleString(item.currency === "USD" ? "en-US" : "en-IN", { maximumFractionDigits: 2 })}`
+                      ? `₹${item.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
                       : "—"}
                     {item.change_pct !== null && (
                       <span className={chgUp ? "positive-text" : "negative-text"}>
@@ -1106,20 +1088,10 @@ export function HomePanel({
       </section>
 
       <Panel
-        title={`Top ${groupFilter} Groups`}
-        subtitle="Compact view of the leading ranked industry groups. Click any card to jump into the Groups page."
+        title="Top 10 Industry Groups"
+        subtitle="Ranked by recent group performance"
         actions={
           <div className="home-groups-actions">
-            {[10, 20, 40].map((limit) => (
-              <button
-                key={`home-group-filter-${limit}`}
-                type="button"
-                className={groupFilter === limit ? "tool-pill active" : "tool-pill"}
-                onClick={() => setGroupFilter(limit as HomeGroupFilter)}
-              >
-                Top {limit}
-              </button>
-            ))}
             <button type="button" className="tool-pill" onClick={() => onOpenGroups()}>
               Open Groups
             </button>
@@ -1127,39 +1099,25 @@ export function HomePanel({
         }
         className={groupsLoading ? "home-panel home-groups-panel deferred-render-panel" : "home-panel home-groups-panel deferred-render-panel"}
       >
-        <div className="home-groups-strip">
+        <div className="home-stock-list home-industry-list">
           {groupsLoading
-            ? Array.from({ length: 8 }, (_, index) => (
-                <div key={`home-group-skeleton-${index}`} className="home-group-card home-group-card-skeleton" aria-hidden="true" />
+            ? Array.from({ length: 10 }, (_, index) => (
+                <div key={`home-group-skeleton-${index}`} className="home-stock-row home-stock-row-skeleton" aria-hidden="true" />
               ))
             : topGroups.length > 0
               ? topGroups.map((group) => (
                   <button
                     key={`home-group-${group.group_id}`}
                     type="button"
-                    className="home-group-card"
+                    className="home-stock-row"
                     onClick={() => onOpenGroups({ groupId: group.group_id, symbol: group.leaders[0] ?? group.symbols[0] })}
                   >
-                    <div className="home-group-card-head">
-                      <span className="home-group-rank">{group.rank_label}</span>
-                      <span className={`home-group-badge ${group.rank <= 10 ? "home-group-badge-top10" : ""}`}>{group.strength_bucket}</span>
-                    </div>
-                    <strong>{group.group_name}</strong>
-                    <small>{group.parent_sector}</small>
-                    <div className="home-group-metrics">
                       <span>
-                        <label>Score</label>
-                        <strong>{group.score.toFixed(1)}</strong>
+                        <strong>{group.group_name}</strong>
+                        <small>{group.parent_sector}</small>
                       </span>
-                      <span>
-                        <label>3M Rel</label>
-                        <strong className={metricClass(group.relative_return_3m)}>{formatReturn(group.relative_return_3m)}</strong>
-                      </span>
-                    </div>
-                    <div className="home-group-footer">
-                      <span>{group.stock_count} stocks</span>
-                      <span>{group.leaders.slice(0, 2).join(", ") || "--"}</span>
-                    </div>
+                    <span>{group.stock_count} stocks</span>
+                    <span className={metricClass(group.return_3m)}>{formatReturn(group.return_3m)}</span>
                   </button>
                 ))
               : <div className="empty-state">No ranked groups available yet.</div>}
@@ -1212,119 +1170,6 @@ export function HomePanel({
           </div>
         </Panel>
       </section>
-
-      <Panel
-        title="Sector Heatmap"
-        subtitle="Split into indices and sectors, with chart walls behind each click"
-        actions={
-          <div className="home-heatmap-actions">
-            <div className="sector-sort-pills">
-              {(["1D", "1W", "1M", "3M", "6M", "1Y", "2Y"] as SectorSortBy[]).map((window) => (
-                <button
-                  key={window}
-                  type="button"
-                  className={heatmapWindow === window ? "tool-pill active" : "tool-pill"}
-                  onClick={() => setHeatmapWindow(window)}
-                >
-                  {window}
-                </button>
-              ))}
-            </div>
-            <button type="button" className="tool-pill" onClick={onOpenSectors}>
-              Open Sectors
-            </button>
-          </div>
-        }
-        className={sectorsLoading ? "home-panel home-heatmap-panel home-heatmap-panel-loading deferred-render-panel" : "home-panel home-heatmap-panel deferred-render-panel"}
-      >
-        <div className="home-heatmap-sections">
-          <section className="home-heatmap-section">
-            <div className="home-heatmap-section-head">
-              <div>
-                <p className="eyebrow">Indices</p>
-                <strong>{sectorsLoading ? "Loading..." : `${indexCards.length} tracked`}</strong>
-              </div>
-              <button type="button" className="tool-pill" disabled={sectorsLoading} onClick={() => setGridTarget({ type: "section", section: "indices" })}>
-                Open Grid
-              </button>
-            </div>
-            <div className="sector-heatmap-board">
-              {sectorsLoading
-                ? renderHeatmapSkeleton("indices", heatmapSkeletonCounts.indices)
-                : indexCards.length > 0
-                  ? indexCards.map((sector) => (
-                <button
-                  key={sector.sector}
-                  type="button"
-                  className="sector-heatmap-card"
-                  style={heatStyle(getSectorReturn(sector, heatmapWindow), "sector")}
-                  onClick={() =>
-                    setGridTarget({
-                      type: "members",
-                      name: sector.sector,
-                      groupKind: sector.group_kind,
-                    })
-                  }
-                >
-                  <div className="sector-heatmap-card-header">
-                    <span className="sector-heatmap-card-name">{sector.sector}</span>
-                    <strong className="sector-heatmap-card-return">{formatReturn(getSectorReturn(sector, heatmapWindow))}</strong>
-                  </div>
-                  <div className="sector-heatmap-card-footer">
-                    {typeof sector.last_price === "number"
-                      ? <span>{formatPrice(sector.last_price, activeMarket)}</span>
-                      : <span>{topCompanyCount(sector)} stocks</span>}
-                    <span>{typeof sector.last_price === "number" ? `${topCompanyCount(sector)} stocks` : `${sector.sub_sector_count} groups`}</span>
-                  </div>
-                </button>
-                  ))
-                  : <div className="empty-state">No index heatmap data available.</div>}
-            </div>
-          </section>
-
-          <section className="home-heatmap-section">
-            <div className="home-heatmap-section-head">
-              <div>
-                <p className="eyebrow">Sector</p>
-                <strong>{sectorsLoading ? "Loading..." : `${sectorCards.length} tracked`}</strong>
-              </div>
-              <button type="button" className="tool-pill" disabled={sectorsLoading} onClick={() => setGridTarget({ type: "section", section: "sectors" })}>
-                Open Grid
-              </button>
-            </div>
-            <div className="sector-heatmap-board sector-heatmap-board-wide">
-              {sectorsLoading
-                ? renderHeatmapSkeleton("sectors", heatmapSkeletonCounts.sectors)
-                : sectorCards.length > 0
-                  ? sectorCards.map((sector) => (
-                <button
-                  key={sector.sector}
-                  type="button"
-                  className="sector-heatmap-card"
-                  style={heatStyle(getSectorReturn(sector, heatmapWindow), "sector")}
-                  onClick={() =>
-                    setGridTarget({
-                      type: "members",
-                      name: sector.sector,
-                      groupKind: sector.group_kind,
-                    })
-                  }
-                >
-                  <div className="sector-heatmap-card-header">
-                    <span className="sector-heatmap-card-name">{sector.sector}</span>
-                    <strong className="sector-heatmap-card-return">{formatReturn(getSectorReturn(sector, heatmapWindow))}</strong>
-                  </div>
-                  <div className="sector-heatmap-card-footer">
-                    <span>{topCompanyCount(sector)} stocks</span>
-                    <span>{sector.sub_sector_count} groups</span>
-                  </div>
-                </button>
-                  ))
-                  : <div className="empty-state">No sector heatmap data available.</div>}
-            </div>
-          </section>
-        </div>
-      </Panel>
 
       {gridTarget ? (
         <Suspense fallback={null}>

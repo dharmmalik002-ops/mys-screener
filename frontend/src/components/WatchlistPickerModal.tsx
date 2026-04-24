@@ -57,7 +57,7 @@ export function WatchlistPickerModal({
               <span className="watchlist-link-color" style={{ backgroundColor: watchlist.color }} aria-hidden="true" />
               <span>
                 <strong>{watchlist.name}</strong>
-                <small>{watchlist.symbols.length} {market === "us" ? "tickers" : "stocks"}</small>
+                <small>{watchlist.symbols.length} stocks</small>
               </span>
               <span>
                 {watchlist.id === currentWatchlistId

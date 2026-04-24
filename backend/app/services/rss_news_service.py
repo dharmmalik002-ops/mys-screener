@@ -1,10 +1,4 @@
-"""
-RSS News Service — Python port of Newsdesk (https://github.com/MrChartist/Newsdesk)
-
-Fetches, parses, caches and categorises articles from 30+ premium RSS feeds.
-Includes company→symbol matching for NSE/BSE (India) and US stocks.
-No external dependencies beyond the Python stdlib + xml.etree (both included).
-"""
+"""RSS News Service for India market/company feeds."""
 
 from __future__ import annotations
 
@@ -53,19 +47,6 @@ _INDIA_FEEDS: list[FeedConfig] = [
     FeedConfig("gn-reuters",         "Reuters",            "https://news.google.com/rss/search?q=when:1d+source:%22Reuters%22+India+stock+market&hl=en-IN&gl=IN&ceid=IN:en",                   "Global",    300, "#F97316"),
     FeedConfig("zerohedge",          "ZeroHedge",          "https://feeds.feedburner.com/zerohedge/feed",                                                                                       "Markets",   300, "#D97706"),
     FeedConfig("gn-india-defense",   "India Defense",      "https://news.google.com/rss/search?q=India+defense+military+DRDO+HAL+border&hl=en-IN&gl=IN&ceid=IN:en",                           "Defense",   300, "#E53935"),
-    FeedConfig("gn-geopolitics",     "Geopolitics",        "https://news.google.com/rss/search?q=geopolitics+diplomacy+sanctions+ceasefire&hl=en-US&gl=US&ceid=US:en",                        "Geopolitics",300,"#E53935"),
-    FeedConfig("gn-ai",              "AI & Technology",    "https://news.google.com/rss/search?q=Artificial+Intelligence+OpenAI+ChatGPT+AI+Nvidia&hl=en-US&gl=US&ceid=US:en",                 "AI",        300, "#10B981"),
-]
-
-_US_FEEDS: list[FeedConfig] = [
-    FeedConfig("cnbc-business",      "CNBC Business",      "https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147",                                               "Business",  120, "#005994"),
-    FeedConfig("cnbc-world",         "CNBC World",         "https://www.cnbc.com/id/100727362/device/rss/rss.html",                                                                            "World",     300, "#005994"),
-    FeedConfig("seeking-alpha",      "Seeking Alpha",      "https://seekingalpha.com/market_currents.xml",                                                                                      "Stocks",    300, "#EA580C"),
-    FeedConfig("gn-bloomberg",       "Bloomberg",          "https://news.google.com/rss/search?q=when:1d+source:%22Bloomberg%22&hl=en-US&gl=US&ceid=US:en",                                    "Markets",   300, "#F59E0B"),
-    FeedConfig("gn-reuters-us",      "Reuters US",         "https://news.google.com/rss/search?q=when:1d+source:%22Reuters%22+US+stock+market&hl=en-US&gl=US&ceid=US:en",                     "Global",    300, "#F97316"),
-    FeedConfig("gn-wsj",             "Wall Street Journal","https://news.google.com/rss/search?q=when:1d+source:%22The+Wall+Street+Journal%22&hl=en-US&gl=US&ceid=US:en",                     "Business",  300, "#06B6D4"),
-    FeedConfig("gn-ft",              "Financial Times",    "https://news.google.com/rss/search?q=when:1d+source:%22Financial+Times%22&hl=en-US&gl=US&ceid=US:en",                             "Economy",   300, "#F472B6"),
-    FeedConfig("zerohedge",          "ZeroHedge",          "https://feeds.feedburner.com/zerohedge/feed",                                                                                       "Markets",   300, "#D97706"),
     FeedConfig("gn-geopolitics",     "Geopolitics",        "https://news.google.com/rss/search?q=geopolitics+diplomacy+sanctions+ceasefire&hl=en-US&gl=US&ceid=US:en",                        "Geopolitics",300,"#E53935"),
     FeedConfig("gn-ai",              "AI & Technology",    "https://news.google.com/rss/search?q=Artificial+Intelligence+OpenAI+ChatGPT+AI+Nvidia&hl=en-US&gl=US&ceid=US:en",                 "AI",        300, "#10B981"),
 ]
@@ -160,50 +141,6 @@ _INDIA_COMPANY_MAP: dict[str, list[str]] = {
     "KALYANJWLR": ["Kalyan Jewellers"],
 }
 
-# US: symbol → list of name aliases
-_US_COMPANY_MAP: dict[str, list[str]] = {
-    "AAPL": ["Apple", "Apple Inc"],
-    "MSFT": ["Microsoft"],
-    "NVDA": ["Nvidia", "NVDA"],
-    "GOOGL": ["Google", "Alphabet"],
-    "AMZN": ["Amazon"],
-    "META": ["Meta", "Facebook"],
-    "TSLA": ["Tesla"],
-    "NFLX": ["Netflix"],
-    "AMD": ["AMD", "Advanced Micro Devices"],
-    "INTC": ["Intel"],
-    "QCOM": ["Qualcomm"],
-    "AVGO": ["Broadcom"],
-    "TSM": ["TSMC", "Taiwan Semiconductor"],
-    "JPM": ["JPMorgan", "JP Morgan"],
-    "BAC": ["Bank of America"],
-    "GS": ["Goldman Sachs"],
-    "MS": ["Morgan Stanley"],
-    "V": ["Visa"],
-    "MA": ["Mastercard"],
-    "WMT": ["Walmart"],
-    "XOM": ["ExxonMobil", "Exxon"],
-    "CVX": ["Chevron"],
-    "JNJ": ["Johnson & Johnson"],
-    "PFE": ["Pfizer"],
-    "ABBV": ["AbbVie"],
-    "UNH": ["UnitedHealth"],
-    "LLY": ["Eli Lilly"],
-    "BRK-B": ["Berkshire Hathaway", "Warren Buffett"],
-    "COST": ["Costco"],
-    "HD": ["Home Depot"],
-    "DIS": ["Disney", "Walt Disney"],
-    "PYPL": ["PayPal"],
-    "CRM": ["Salesforce"],
-    "ORCL": ["Oracle"],
-    "IBM": ["IBM"],
-    "UBER": ["Uber"],
-    "ABNB": ["Airbnb"],
-    "COIN": ["Coinbase"],
-    "PLTR": ["Palantir"],
-    "ARM": ["Arm Holdings"],
-}
-
 # ─────────────────────── Article dataclass ───────────────────────────────────
 
 @dataclass
@@ -226,9 +163,9 @@ class RssNewsService:
     """Fetch, parse, cache and categorise RSS feeds for one market."""
 
     def __init__(self, market: str) -> None:
-        self.market = market.lower()
-        self._feeds: list[FeedConfig] = _INDIA_FEEDS if self.market == "india" else _US_FEEDS
-        self._company_map: dict[str, list[str]] = _INDIA_COMPANY_MAP if self.market == "india" else _US_COMPANY_MAP
+        self.market = "india"
+        self._feeds: list[FeedConfig] = _INDIA_FEEDS
+        self._company_map: dict[str, list[str]] = _INDIA_COMPANY_MAP
         # cache: feed_id → (timestamp, list[RssArticle])
         self._cache: dict[str, tuple[float, list[RssArticle]]] = {}
 

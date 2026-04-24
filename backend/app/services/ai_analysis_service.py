@@ -33,9 +33,6 @@ AI_CACHE_VERSION = 5
 
 
 def _equity_market_labels(fundamentals: CompanyFundamentals) -> tuple[str, str, str]:
-    exchange = (fundamentals.exchange or "").strip().upper()
-    if exchange in {"NYSE", "NASDAQ", "AMEX", "ARCA"}:
-        return ("US stock", "US-listed company", "US equities")
     return ("Indian stock", "Indian listed company", "Indian equities")
 
 

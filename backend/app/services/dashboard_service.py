@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import csv
 import io
@@ -476,7 +478,7 @@ class DashboardService:
             return_6m=self._weighted_average_return(members, "stock_return_126d"),
             return_1y=self._weighted_average_return(members, "stock_return_12m"),
             return_2y=self._weighted_average_return(members, "stock_return_504d"),
-            sparkline=self._aggregate_group_sparkline(members),
+            sparkline=[],
             sub_sectors=[
                 SectorGroup(
                     sub_sector=sub_sector,
@@ -520,57 +522,6 @@ class DashboardService:
                 )
             ],
         )
-
-    def _aggregate_group_sparkline(self, members: list[StockSnapshot]) -> list[ChartLinePoint]:
-        weighted_series: list[pd.Series] = []
-        weights: list[float] = []
-
-        for member in members:
-            points = [
-                point
-                for point in (member.chart_grid_points or [])
-                if point.value not in (None, 0)
-            ]
-            if len(points) < 2:
-                continue
-
-            index = pd.to_datetime([point.time for point in points], unit="s", utc=True)
-            series = pd.Series([float(point.value) for point in points], index=index, dtype=float)
-            series = series[~series.index.duplicated(keep="last")].sort_index()
-            if len(series) < 2:
-                continue
-
-            baseline = float(series.iloc[0])
-            if baseline <= 0:
-                continue
-
-            weight = max(float(member.market_cap_crore or 0.0), 1.0)
-            weighted_series.append((series / baseline) * 100.0)
-            weights.append(weight)
-
-        if not weighted_series:
-            return []
-
-        combined = pd.concat(weighted_series, axis=1).sort_index()
-        combined = combined.ffill().dropna(how="all")
-        if combined.empty:
-            return []
-
-        active_weights = combined.notna().mul(weights, axis=1)
-        weighted_values = combined.ffill().mul(weights, axis=1)
-        total_weights = active_weights.sum(axis=1).replace(0, pd.NA)
-        aggregate = (weighted_values.sum(axis=1) / total_weights).dropna()
-        if aggregate.empty:
-            return []
-
-        points = [
-            ChartLinePoint(
-                time=int(index_value.to_pydatetime().replace(tzinfo=timezone.utc).timestamp()),
-                value=round(float(value), 4),
-            )
-            for index_value, value in aggregate.items()
-        ]
-        return self._downsample_chart_points(points, self._chart_grid_point_limit("2Y"))
 
     def _snapshot_age_minutes(self, snapshot_updated_at: datetime) -> int:
         age = datetime.now(timezone.utc) - snapshot_updated_at
@@ -663,126 +614,11 @@ class DashboardService:
             universes.append((universe_name, resolved))
         return universes
 
-    async def get_market_health(self) -> MarketHealthResponse:
-        snapshots = await self._snapshots()
-        snapshot_updated_at = self._snapshot_updated_at()
-        cached = self._market_health_cache
-        if cached is not None and cached.generated_at >= snapshot_updated_at:
-            return cached
-
-        universes = self._resolve_market_health_universes(snapshots)
-
-        response = MarketHealthResponse(
-            generated_at=snapshot_updated_at,
-            universes=[
-                self._calculate_market_breadth(universe_name, universe_stocks)
-                for universe_name, universe_stocks in universes
-            ]
-        )
-        self._market_health_cache = response
-        return response
-
     async def warm_startup_views(self) -> None:
         # Keep startup work limited to the dashboard path so the API stays
         # responsive on resource-constrained hosts. Heavier views can warm
         # lazily on the first real request.
         await self.build_dashboard()
-
-    def get_historical_breadth(self) -> HistoricalBreadthResponse:
-        from pathlib import Path
-        import json
-        cache_file = getattr(self.provider, "historical_breadth_cache_path", None)
-        if cache_file is None:
-            cache_file = Path(__file__).resolve().parents[2] / "data" / "free_historical_breadth.json"
-        
-        if not cache_file.exists():
-            return HistoricalBreadthResponse(universes=[])
-            
-        try:
-            data = json.loads(cache_file.read_text(encoding="utf-8"))
-            return HistoricalBreadthResponse.model_validate(data)
-        except Exception:
-            return HistoricalBreadthResponse(universes=[])
-
-    def _historical_breadth_cache_path(self) -> Path:
-        cache_file = getattr(self.provider, "historical_breadth_cache_path", None)
-        if isinstance(cache_file, Path):
-            return cache_file
-        return Path(__file__).resolve().parents[2] / "data" / "free_historical_breadth.json"
-
-    def _historical_breadth_point_from_universe(
-        self,
-        breadth: UniverseBreadth,
-        date_value: str,
-    ) -> HistoricalBreadthDataPoint:
-        return HistoricalBreadthDataPoint(
-            date=date_value,
-            above_ma20_pct=breadth.above_ma20_pct,
-            above_ma50_pct=breadth.above_ma50_pct,
-            above_sma200_pct=breadth.above_sma200_pct,
-            new_high_52w_pct=breadth.new_high_52w_pct,
-            new_low_52w_pct=breadth.new_low_52w_pct,
-        )
-
-    def _merge_market_health_into_historical_breadth(
-        self,
-        historical: HistoricalBreadthResponse,
-        market_health: MarketHealthResponse,
-    ) -> HistoricalBreadthResponse:
-        generated_at = market_health.generated_at or datetime.now(timezone.utc)
-        latest_date = generated_at.astimezone(self._money_flow_timezone()).date().isoformat()
-        history_by_universe: dict[str, dict[str, HistoricalBreadthDataPoint]] = {
-            universe.universe: {point.date: point for point in universe.history}
-            for universe in historical.universes
-        }
-        universe_order = [universe.universe for universe in historical.universes]
-
-        for breadth in market_health.universes:
-            if breadth.universe not in history_by_universe:
-                history_by_universe[breadth.universe] = {}
-                universe_order.append(breadth.universe)
-            history_by_universe[breadth.universe][latest_date] = self._historical_breadth_point_from_universe(
-                breadth,
-                latest_date,
-            )
-
-        return HistoricalBreadthResponse(
-            generated_at=generated_at,
-            universes=[
-                HistoricalUniverseBreadth(
-                    universe=universe_name,
-                    history=[
-                        history_by_universe[universe_name][date_key]
-                        for date_key in sorted(history_by_universe[universe_name].keys())
-                    ],
-                )
-                for universe_name in universe_order
-            ],
-        )
-
-    def _save_historical_breadth(self, payload: HistoricalBreadthResponse) -> None:
-        cache_path = self._historical_breadth_cache_path()
-        cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(payload.model_dump(mode="json"), indent=2), encoding="utf-8")
-
-    async def refresh_historical_breadth_latest(self) -> HistoricalBreadthResponse:
-        snapshot_before = self.provider.get_snapshot_updated_at()
-        snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
-
-        snapshot_after = self.provider.get_snapshot_updated_at()
-        if snapshot_after != snapshot_before:
-            self._clear_runtime_caches()
-
-        live_market_health = MarketHealthResponse(
-            generated_at=snapshot_after,
-            universes=[
-                self._calculate_market_breadth(universe_name, universe_stocks)
-                for universe_name, universe_stocks in self._resolve_market_health_universes(snapshots)
-            ],
-        )
-        merged = self._merge_market_health_into_historical_breadth(self.get_historical_breadth(), live_market_health)
-        await asyncio.to_thread(self._save_historical_breadth, merged)
-        return merged
 
     async def build_dashboard(self) -> DashboardResponse:
         snapshots = await self._snapshots()
@@ -1606,17 +1442,17 @@ class DashboardService:
         now_local = reference_time or self._money_flow_now()
         week_key, week_start = self._week_key(now_local)
 
-        # Build sector summary for the prompt
+        # Build a lightweight industry-group summary for the prompt.
         sector_lines: list[str] = []
         try:
-            sector_tab = await self.get_sector_tab("1W", "desc")
-            for card in sector_tab.sectors[:30]:
+            group_tab = await self.get_industry_groups()
+            for card in group_tab.groups[:10]:
                 sector_lines.append(
-                    f"{card.sector}: 1D={card.return_1d:+.1f}%, 1W={card.return_1w:+.1f}%, "
+                    f"{card.name}: 1D={card.return_1d:+.1f}%, 1W={card.return_1w:+.1f}%, "
                     f"1M={card.return_1m:+.1f}%, 3M={card.return_3m:+.1f}%, {card.company_count} stocks"
                 )
         except Exception:
-            sector_lines = ["Sector data unavailable"]
+            sector_lines = ["Industry group data unavailable"]
 
         sector_data = "\n".join(sector_lines)
 
@@ -1750,22 +1586,17 @@ class DashboardService:
             ai_model="fallback-rules",
         )
 
-    async def get_money_flow_history(self) -> MoneyFlowHistoryResponse:
-        """Return all stored money-flow reports, newest first."""
-        raw = await asyncio.to_thread(self._load_money_flow_reports)
-        reports: list[MoneyFlowReport] = []
-        for week_key in sorted(raw.keys(), reverse=True):
-            try:
-                reports.append(MoneyFlowReport(**raw[week_key]))
-            except Exception:
-                pass
-        latest = reports[0].week_key if reports else None
-        return MoneyFlowHistoryResponse(reports=reports, latest_week_key=latest)
-
     async def get_money_flow_latest(self) -> MoneyFlowReport | None:
         """Return the most recent report, or None if none exists yet."""
-        history = await self.get_money_flow_history()
-        return history.reports[0] if history.reports else None
+        raw = await asyncio.to_thread(self._load_money_flow_reports)
+        reports: list[MoneyFlowReport] = []
+        for payload in raw.values():
+            try:
+                reports.append(MoneyFlowReport(**payload))
+            except Exception:
+                continue
+        reports.sort(key=lambda report: report.generated_at, reverse=True)
+        return reports[0] if reports else None
 
     def _load_money_flow_stock_payloads(self) -> dict[str, dict]:
         if not self._money_flow_stock_cache_path.exists():
@@ -3531,122 +3362,6 @@ class DashboardService:
             include_sector_summaries=include_sector_summaries,
         )
 
-    async def get_sector_tab(self, sort_by: SectorSortBy, sort_order: str) -> SectorTabResponse:
-        normalized_sort_order = "asc" if sort_order == "asc" else "desc"
-        cache_key = (sort_by, normalized_sort_order)
-        snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        snapshot_updated_at = self._snapshot_updated_at()
-        cached = self._sector_tab_cache.get(cache_key)
-        if cached is not None and cached.generated_at >= snapshot_updated_at and self._index_constituents_cache_fresh():
-            return cached
-        sector_members: dict[str, list[StockSnapshot]] = {}
-        sector_sub_groups: dict[str, dict[str, list[StockSnapshot]]] = {}
-
-        for snapshot in snapshots:
-            sector = snapshot.sector or "Unclassified"
-            sub_sector = snapshot.sub_sector or "Unclassified"
-            sector_members.setdefault(sector, []).append(snapshot)
-            sector_sub_groups.setdefault(sector, {}).setdefault(sub_sector, []).append(snapshot)
-
-        metric_field_map = {
-            "1D": "change_pct",
-            "1W": "stock_return_5d",
-            "1M": "stock_return_20d",
-            "3M": "stock_return_60d",
-            "6M": "stock_return_126d",
-            "1Y": "stock_return_12m",
-            "2Y": "stock_return_504d",
-        }
-        sort_field = {
-            "1D": "return_1d",
-            "1W": "return_1w",
-            "1M": "return_1m",
-            "3M": "return_3m",
-            "6M": "return_6m",
-            "1Y": "return_1y",
-            "2Y": "return_2y",
-        }[sort_by]
-        reverse = normalized_sort_order != "asc"
-        index_constituents = self._cached_index_constituents_or_schedule_refresh()
-        can_cache_response = self._index_constituents_cache_fresh()
-        index_quote_items = []
-        index_quote_symbols = [
-            symbol
-            for index_name, symbol in INDEX_HEATMAP_SYMBOLS.items()
-            if index_name in index_constituents
-        ]
-        if index_quote_symbols:
-            try:
-                index_quote_items = await self.provider.get_index_quotes(index_quote_symbols)
-            except Exception:
-                index_quote_items = []
-        index_quotes_by_symbol = {
-            item.symbol.upper(): item
-            for item in index_quote_items
-            if item.price is not None
-        }
-
-        sector_cards: list[SectorCard] = []
-        for sector, members in sector_members.items():
-            sub_sector_groups = sector_sub_groups.get(sector, {})
-            sector_cards.append(
-                self._build_sector_card(
-                    sector,
-                    members,
-                    sub_sector_groups,
-                    "sector",
-                    sort_by,
-                    sort_field,
-                    reverse,
-                    metric_field_map,
-                )
-            )
-
-        snapshot_by_symbol = {snapshot.symbol.upper(): snapshot for snapshot in snapshots}
-        for index_name, _ in INDEX_HEATMAP_SOURCES:
-            symbols = index_constituents.get(index_name, set())
-            if not symbols:
-                continue
-
-            members = [snapshot_by_symbol[symbol] for symbol in symbols if symbol in snapshot_by_symbol]
-            if not members:
-                continue
-
-            quote_symbol = INDEX_HEATMAP_SYMBOLS.get(index_name, "").upper()
-            index_quote = index_quotes_by_symbol.get(quote_symbol)
-
-            grouped_members: dict[str, list[StockSnapshot]] = {}
-            for member in members:
-                group_name = member.sub_sector or "Unclassified"
-                grouped_members.setdefault(group_name, []).append(member)
-
-            sector_cards.append(
-                self._build_sector_card(
-                    index_name,
-                    members,
-                    grouped_members,
-                    "index",
-                    sort_by,
-                    sort_field,
-                    reverse,
-                    metric_field_map,
-                    last_price=index_quote.price if index_quote is not None else None,
-                )
-            )
-
-        sector_cards.sort(key=lambda card: getattr(card, sort_field), reverse=reverse)
-
-        response = SectorTabResponse(
-            generated_at=snapshot_updated_at,
-            total_sectors=len(sector_cards),
-            sort_by=sort_by,
-            sort_order=normalized_sort_order,
-            sectors=sector_cards,
-        )
-        if can_cache_response:
-            self._sector_tab_cache[cache_key] = response
-        return response
-
     async def get_improving_rs(self, window: ImprovingRsWindow) -> ImprovingRsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         snapshot_updated_at = self._snapshot_updated_at()
@@ -3719,14 +3434,11 @@ class DashboardService:
         self._sector_rotation_cache = None
 
     def _market_key(self) -> str:
-        default_exchange_getter = getattr(self.provider, "_default_exchange", None)
-        default_exchange = default_exchange_getter() if callable(default_exchange_getter) else "NSE"
-        return "india" if str(default_exchange or "").upper() in {"NSE", "BSE"} else "us"
+        return "india"
 
     def _watchlists_state_path(self) -> Path:
         data_dir = self._state_data_dir()
-        filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
-        return data_dir / filename
+        return data_dir / "watchlists_state.json"
 
     def _legacy_watchlists_state_path(self) -> Path:
         filename = "watchlists_state.json" if self._market_key() == "india" else "watchlists_state_us.json"
@@ -4059,6 +3771,32 @@ class DashboardService:
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         cache_path.write_text(json.dumps(response.model_dump(mode="json"), indent=2), encoding="utf-8")
 
+    @staticmethod
+    def _top_industry_groups_response(response: IndustryGroupsResponse) -> IndustryGroupsResponse:
+        top_groups = sorted(
+            response.groups,
+            key=lambda group: (
+                group.return_3m,
+                group.return_1m,
+                group.return_6m,
+                group.score,
+            ),
+            reverse=True,
+        )[:10]
+        reranked_groups = [
+            group.model_copy(update={"rank": index, "rank_label": f"#{index}"})
+            for index, group in enumerate(top_groups, start=1)
+        ]
+        top_group_ids = {group.group_id for group in reranked_groups}
+        return response.model_copy(
+            update={
+                "total_groups": len(reranked_groups),
+                "groups": reranked_groups,
+                "master": [item for item in response.master if item.group_id in top_group_ids],
+                "stocks": [item for item in response.stocks if item.final_group_id in top_group_ids],
+            }
+        )
+
     def _resolve_group_benchmark(self, snapshots: list[StockSnapshot]) -> tuple[str, list[StockSnapshot]]:
         if self._market_key() == "india":
             constituent_map = self._cached_index_constituents_or_schedule_refresh()
@@ -4112,24 +3850,24 @@ class DashboardService:
 
         disk_cached = await asyncio.to_thread(self._load_cached_industry_groups, snapshot_updated_at)
         if disk_cached is not None:
-            self._industry_groups_cache = disk_cached
-            return disk_cached
+            response = self._top_industry_groups_response(disk_cached)
+            self._industry_groups_cache = response
+            return response
 
         snapshots = await self._snapshots()
         benchmark_label, benchmark_snapshots = self._resolve_group_benchmark(snapshots)
-        historical_snapshots = await asyncio.to_thread(self._build_historical_snapshots, snapshots, 5)
-        _, historical_benchmark_snapshots = self._resolve_group_benchmark(historical_snapshots)
         market_key = self._market_key()
         response = await asyncio.to_thread(
             build_industry_groups_response,
             snapshots,
             benchmark_snapshots,
-            historical_snapshots,
-            historical_benchmark_snapshots,
+            [],
+            [],
             generated_at=snapshot_updated_at,
             benchmark_label=benchmark_label,
             market_key=market_key,
         )
+        response = self._top_industry_groups_response(response)
         groups_path, ranks_path, stocks_path = self._industry_group_file_paths()
         await asyncio.to_thread(
             write_industry_group_files,

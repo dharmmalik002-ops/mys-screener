@@ -59,9 +59,6 @@ function resolveShell() {
   }
 
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-  if (pathname === "/us" || pathname.startsWith("/us/")) {
-    return <App initialMarket="us" useMarketRoutes />;
-  }
   if (pathname === "/india" || pathname.startsWith("/india/")) {
     return <App initialMarket="india" useMarketRoutes />;
   }
@@ -75,4 +72,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </RootErrorBoundary>
   </React.StrictMode>,
 );
-

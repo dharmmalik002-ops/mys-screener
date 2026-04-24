@@ -27,7 +27,6 @@ import {
   getImprovingRs,
   getScanCounts,
   getScanResults,
-  getSectorTab,
   getWatchlistsState,
   refreshMarketData,
   runCustomScan,
@@ -69,17 +68,13 @@ const CustomScannerPanel = lazy(() => import("./components/CustomScannerPanel").
 const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").then((module) => ({ default: module.GapUpScannerPanel })));
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
 const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then((module) => ({ default: module.ImprovingRsPanel })));
-const MarketHealthPanel = lazy(() => import("./components/MarketHealthPanel").then((module) => ({ default: module.MarketHealthPanel })));
 const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPanel").then((module) => ({ default: module.MinerviniScannerPanel })));
-const MoneyFlowPanel = lazy(() => import("./components/MoneyFlowPanel").then((module) => ({ default: module.MoneyFlowPanel })));
-const NewsTab = lazy(() => import("./components/NewsTab"));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
-const SectorExplorerPanel = lazy(() => import("./components/SectorExplorerPanel").then((module) => ({ default: module.SectorExplorerPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -100,7 +95,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v1";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "sectors" | "groups" | "watchlists" | "market-health" | "money-flow" | "newsdesk" | "journal";
+type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal";
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
@@ -210,17 +205,6 @@ const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string;
     { key: "nifty-pharma", label: "Nifty Pharma", symbol: "^CNXPHARMA" },
     { key: "nifty-metal", label: "Nifty Metal", symbol: "^CNXMETAL" },
     { key: "nifty-realty", label: "Nifty Realty", symbol: "^CNXREALTY" },
-  ],
-  us: [
-    { key: "sp500", label: "S&P 500", symbol: "^GSPC" },
-    { key: "nasdaq", label: "Nasdaq", symbol: "^IXIC" },
-    { key: "dow", label: "Dow 30", symbol: "^DJI" },
-    { key: "russell", label: "Russell 2000", symbol: "^RUT" },
-    { key: "tech", label: "XLK", symbol: "XLK" },
-    { key: "financials", label: "XLF", symbol: "XLF" },
-    { key: "energy", label: "XLE", symbol: "XLE" },
-    { key: "healthcare", label: "XLV", symbol: "XLV" },
-    { key: "industrials", label: "XLI", symbol: "XLI" },
   ],
 };
 
@@ -585,14 +569,6 @@ const INDIA_MARKET_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
   hour12: false,
 });
 
-const US_MARKET_TIME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  timeZone: "America/New_York",
-  weekday: "short",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-});
-
 const INDIA_SNAPSHOT_DATE_FORMATTER = new Intl.DateTimeFormat("en-IN", {
   timeZone: "Asia/Kolkata",
   day: "2-digit",
@@ -607,22 +583,8 @@ const INDIA_SNAPSHOT_TIME_FORMATTER = new Intl.DateTimeFormat("en-IN", {
   hour12: true,
 });
 
-const US_SNAPSHOT_DATE_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  day: "2-digit",
-  month: "short",
-  year: "numeric",
-});
-
-const US_SNAPSHOT_TIME_FORMATTER = new Intl.DateTimeFormat("en-US", {
-  timeZone: "America/New_York",
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: true,
-});
-
 function getMarketClock(market: MarketKey, now: Date = new Date()) {
-  const formatter = market === "us" ? US_MARKET_TIME_FORMATTER : INDIA_MARKET_TIME_FORMATTER;
+  const formatter = INDIA_MARKET_TIME_FORMATTER;
   const parts = formatter.formatToParts(now);
   const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
   const hour = Number(values.hour ?? "0");
@@ -645,7 +607,7 @@ function formatSnapshotDate(market: MarketKey, value: string | null | undefined)
   if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
-  return (market === "us" ? US_SNAPSHOT_DATE_FORMATTER : INDIA_SNAPSHOT_DATE_FORMATTER).format(parsed);
+  return INDIA_SNAPSHOT_DATE_FORMATTER.format(parsed);
 }
 
 function formatSnapshotTime(market: MarketKey, value: string | null | undefined) {
@@ -656,7 +618,7 @@ function formatSnapshotTime(market: MarketKey, value: string | null | undefined)
   if (Number.isNaN(parsed.getTime())) {
     return "--";
   }
-  return (market === "us" ? US_SNAPSHOT_TIME_FORMATTER : INDIA_SNAPSHOT_TIME_FORMATTER).format(parsed);
+  return INDIA_SNAPSHOT_TIME_FORMATTER.format(parsed);
 }
 
 function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "india"): {
@@ -669,11 +631,11 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
   const { weekday, totalMinutes } = getMarketClock(market, now);
   const isTradingDay = weekday !== "Sat" && weekday !== "Sun";
 
-  const openMinutes = market === "us" ? 9 * 60 + 30 : 9 * 60 + 15;
-  const closeMinutes = market === "us" ? 16 * 60 : 15 * 60 + 30;
-  const tzLabel = market === "us" ? "ET" : "IST";
-  const openLabel = market === "us" ? "09:30" : "09:15";
-  const closeLabel = market === "us" ? "16:00" : "15:30";
+  const openMinutes = 9 * 60 + 15;
+  const closeMinutes = 15 * 60 + 30;
+  const tzLabel = "IST";
+  const openLabel = "09:15";
+  const closeLabel = "15:30";
 
   const isMarketOpen = isTradingDay && totalMinutes >= openMinutes && totalMinutes <= closeMinutes;
 
@@ -681,7 +643,7 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
     return {
       mode: "market-open" as const,
       delayMs: 24 * 60 * 60_000,
-      label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
+      label: "India Close Snapshot",
       detail: `Showing the last confirmed close during ${openLabel}-${closeLabel} ${tzLabel}`,
       refreshFundamentals: false,
     };
@@ -690,7 +652,7 @@ function getAutoRefreshSchedule(now: Date = new Date(), market: MarketKey = "ind
   return {
     mode: "after-hours" as const,
     delayMs: 24 * 60 * 60_000,
-    label: market === "us" ? "US Close Snapshot" : "India Close Snapshot",
+    label: "India Close Snapshot",
     detail: `Daily cache updates after the ${closeLabel} ${tzLabel} close`,
     refreshFundamentals: false,
   };
@@ -750,6 +712,27 @@ function firstSymbolFromSectorTab(data: SectorTabResponse | null): string | null
 
 function firstSymbolFromIndustryGroups(data: IndustryGroupsResponse | null): string | null {
   return data?.groups[0]?.symbols[0] ?? data?.stocks[0]?.symbol ?? null;
+}
+
+function buildUniverseCatalogFromIndustryGroups(data: IndustryGroupsResponse | null): ScanMatch[] {
+  if (!data) {
+    return [];
+  }
+  return data.stocks.map((stock) => ({
+    scan_id: "industry-groups",
+    symbol: stock.symbol,
+    name: stock.company_name,
+    exchange: stock.exchange,
+    sector: stock.sector,
+    sub_sector: stock.final_group_name,
+    market_cap_crore: stock.market_cap_cr,
+    last_price: stock.last_price,
+    change_pct: stock.change_pct,
+    relative_volume: 0,
+    score: stock.rs_rating ?? 0,
+    rs_rating: stock.rs_rating,
+    reasons: [],
+  }));
 }
 
 async function fetchIndexRibbonItems(market: MarketKey): Promise<RibbonItem[]> {
@@ -883,18 +866,6 @@ function readChartPreferences(market: MarketKey): {
 
 function macroIndexFallbackSymbol(cardName: string, market: MarketKey): string | null {
   const normalizedName = cardName.trim().toUpperCase();
-  if (market === "us") {
-    if (normalizedName === "S&P 500") {
-      return "^GSPC";
-    }
-    if (normalizedName === "NASDAQ 100") {
-      return "^IXIC";
-    }
-    if (normalizedName === "DOW 30") {
-      return "^DJI";
-    }
-    return null;
-  }
   if (normalizedName === "NIFTY 50") {
     return "^NSEI";
   }
@@ -1011,11 +982,7 @@ function readTheme(): ThemeKey {
 }
 
 function readActiveMarket(): MarketKey {
-  if (typeof window === "undefined") {
-    return "india";
-  }
-  const saved = window.localStorage.getItem(ACTIVE_MARKET_KEY);
-  return saved === "us" ? "us" : "india";
+  return "india";
 }
 
 function readChartPalette(market: MarketKey): ChartPaletteKey {
@@ -1027,7 +994,7 @@ function readChartPalette(market: MarketKey): ChartPaletteKey {
 }
 
 function marketDisplayLabel(market: MarketKey) {
-  return market === "india" ? "India" : "US";
+  return "India";
 }
 
 function buildLocalId() {
@@ -1476,17 +1443,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const timeframeRef = useRef(timeframe);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
-  const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false, us: false });
-  const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null, us: null });
+  const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false });
+  const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null });
   const watchlistsHydrationRequestIdRef = useRef(0);
-  const autoRefreshAttemptKeyRef = useRef<Record<MarketKey, string | null>>({ india: null, us: null });
+  const autoRefreshAttemptKeyRef = useRef<Record<MarketKey, string | null>>({ india: null });
   const persistedChartCacheRef = useRef<Record<MarketKey, Record<string, PersistedChartCacheEntry>>>({
     india: readPersistedChartCache("india"),
-    us: readPersistedChartCache("us"),
   });
   const marketViewCacheRef = useRef<Record<MarketKey, MarketViewCacheEntry>>({
     india: readPersistedMarketViewCache("india"),
-    us: readPersistedMarketViewCache("us"),
   });
   const updateMarketViewCache = (
     market: MarketKey,
@@ -1520,12 +1485,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    if (page === "sectors") {
-      void import("./components/SectorExplorerPanel");
-      void import("./components/ChartPanel");
-      return;
-    }
-
     if (page === "groups") {
       void import("./components/GroupsPanel");
       void import("./components/ChartPanel");
@@ -1539,22 +1498,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    if (page === "market-health") {
-      void import("./components/MarketHealthPanel");
-      return;
-    }
-
-    if (page === "newsdesk") {
-      void import("./components/NewsTab");
-      return;
-    }
-
     if (page === "journal") {
       void import("./components/TradeJournalPanel");
       return;
     }
-
-    void import("./components/MoneyFlowPanel");
   };
 
   const readCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
@@ -1758,7 +1705,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    const targetPath = activeMarket === "us" ? "/us" : "/india";
+    const targetPath = "/india";
     if (window.location.pathname !== targetPath) {
       window.history.replaceState(window.history.state, "", targetPath);
     }
@@ -1792,8 +1739,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const cachedUniverseCatalog = cachedView.universeCatalog;
     const fallbackSelectedSymbol = cachedView.selectedSymbol
       ?? cachedDashboard?.top_gainers[0]?.symbol
-      ?? firstSymbolFromSectorTab(cachedSectorTab)
-      ?? firstSymbolFromIndustryGroups(cachedGroups);
+      ?? firstSymbolFromIndustryGroups(cachedGroups)
+      ?? firstSymbolFromSectorTab(cachedSectorTab);
 
     setLoading(!cachedDashboard);
     setError(null);
@@ -1888,7 +1835,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
       try {
         const dashboardPromise = getDashboard(activeMarket);
-        const sectorPromise = getSectorTab("1D", "desc", activeMarket);
+        const groupsPromise = getIndustryGroups(activeMarket);
 
         const dashboardPayload = await dashboardPromise;
         if (!active) {
@@ -1902,47 +1849,47 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         setError(null);
         refreshTickerRibbon();
 
-        void sectorPromise
-          .then((sectorPayload) => {
+        void groupsPromise
+          .then((groupsPayload) => {
             if (!active) {
               return;
             }
-            const nextUniverseCatalog = buildUniverseCatalogFromSectorTab(sectorPayload);
-            setSectorTabData(sectorPayload);
+            const nextUniverseCatalog = buildUniverseCatalogFromIndustryGroups(groupsPayload);
+            setGroupsData(groupsPayload);
             setUniverseCatalog(nextUniverseCatalog);
             setSelectedSymbol((current) => {
               const universeSymbols = new Set(nextUniverseCatalog.map((item) => item.symbol));
               if (current && universeSymbols.has(current)) {
                 updateMarketViewCache(activeMarket, {
-                  sectorTabData: sectorPayload,
+                  groupsData: groupsPayload,
                   universeCatalog: nextUniverseCatalog,
                   selectedSymbol: current,
                 });
                 return current;
               }
-              const nextSymbol = dashboardPayload.top_gainers[0]?.symbol ?? firstSymbolFromSectorTab(sectorPayload);
+              const nextSymbol = dashboardPayload.top_gainers[0]?.symbol ?? firstSymbolFromIndustryGroups(groupsPayload);
               updateMarketViewCache(activeMarket, {
-                sectorTabData: sectorPayload,
+                groupsData: groupsPayload,
                 universeCatalog: nextUniverseCatalog,
                 selectedSymbol: nextSymbol,
               });
               return nextSymbol;
             });
             updateMarketViewCache(activeMarket, {
-              sectorTabData: sectorPayload,
+              groupsData: groupsPayload,
               universeCatalog: nextUniverseCatalog,
             });
           })
-          .catch((sectorError) => {
+          .catch((groupsError) => {
             if (!active) {
               return;
             }
             setError((current) => current ?? (
-              sectorError instanceof Error
+              groupsError instanceof Error
                 ? hadCachedDashboard
-                  ? `${sectorError.message}. Sector data may be stale.`
-                  : sectorError.message
-                : "Failed to load sectors"
+                  ? `${groupsError.message}. Group data may be stale.`
+                  : groupsError.message
+                : "Failed to load groups"
             ));
           });
       } catch (loadError) {
@@ -1984,7 +1931,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const timeoutId = window.setTimeout(() => {
       void import("./components/ScreenerSidebar");
       void import("./components/ScanTable");
-      void import("./components/SectorExplorerPanel");
       void import("./components/GroupsPanel");
       void import("./components/WatchlistsPanel");
     }, 3500);
@@ -2005,46 +1951,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeMarket, dashboard, sectorTabData, groupsData, universeCatalog, selectedSymbol]);
 
   useEffect(() => {
-    if (activeMarket !== "us" || !dashboard?.generated_at) {
-      return;
-    }
-
-    let active = true;
-    const dashboardGeneratedAt = dashboard.generated_at;
-
-    async function loadDashboardScanCounts() {
-      try {
-        const scanners = await getScanCounts(activeMarket);
-        if (!active) {
-          return;
-        }
-
-        setDashboard((current) => {
-          if (!current || current.generated_at !== dashboardGeneratedAt) {
-            return current;
-          }
-
-          const countsById = new Map(scanners.map((scanner) => [scanner.id, scanner.hit_count]));
-          return {
-            ...current,
-            scanners: current.scanners.map((scanner) => ({
-              ...scanner,
-              hit_count: countsById.get(scanner.id) ?? scanner.hit_count,
-            })),
-          };
-        });
-      } catch {
-        // Keep the lightweight dashboard response if the follow-up count request fails.
-      }
-    }
-
-    void loadDashboardScanCounts();
-    return () => {
-      active = false;
-    };
-  }, [activeMarket, dashboard?.generated_at]);
-
-  useEffect(() => {
     if (loading) {
       return;
     }
@@ -2058,31 +1964,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         if (
           activePage === "home" ||
           activePage === "watchlists" ||
-          activePage === "market-health" ||
-          activePage === "money-flow" ||
-          activePage === "newsdesk" ||
           activePage === "journal"
         ) {
           setScanLoading(false);
           setScanSectorSummariesLoading(false);
-          setError(null);
-          return;
-        }
-
-        if (activePage === "sectors") {
-          setScanLoading(false);
-          setScanSectorSummariesLoading(false);
-          if (sectorTabData && sectorTabData.sort_by === sectorSortBy && sectorTabData.sort_order === sectorSortOrder) {
-            setSectorLoading(false);
-            setError(null);
-            return;
-          }
-          setSectorLoading(true);
-          const payload = await getSectorTab(sectorSortBy, sectorSortOrder, activeMarket);
-          if (!active) {
-            return;
-          }
-          setSectorTabData(payload);
           setError(null);
           return;
         }
@@ -2150,9 +2035,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           setError(loadError instanceof Error ? loadError.message : "Failed to load screener");
         }
       } finally {
-        if (active && activePage === "sectors") {
-          setSectorLoading(false);
-        }
         if (active && activePage === "groups") {
           setGroupsLoading(false);
         }
@@ -2188,8 +2070,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     loading,
     scannerRunNonce,
     scanArrangementMode,
-    sectorSortBy,
-    sectorSortOrder,
   ]);
 
   useEffect(() => {
@@ -2252,29 +2132,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   ]);
 
   useEffect(() => {
-    if (loading || activePage === "home" || activePage === "sectors" || sectorTabData) {
-      return;
-    }
-
-    let active = true;
-    async function prefetchSectorPage() {
-      try {
-        const payload = await getSectorTab("1M", "desc", activeMarket);
-        if (active) {
-          setSectorTabData(payload);
-        }
-      } catch {
-        // Prefetch is best-effort and shouldn't disturb the active scanner flow.
-      }
-    }
-
-    void prefetchSectorPage();
-    return () => {
-      active = false;
-    };
-  }, [activeMarket, activePage, loading, sectorTabData]);
-
-  useEffect(() => {
     if (loading || activePage === "groups" || groupsData) {
       return;
     }
@@ -2319,9 +2176,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     if (
       (activePage === "home" && !chartOpen) ||
-      activePage === "market-health" ||
-      activePage === "money-flow" ||
-      activePage === "newsdesk" ||
       (activePage === "journal" && !chartOpen)
     ) {
       chartRequestIdRef.current += 1;
@@ -2371,9 +2225,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       !selectedSymbol ||
       chartPanelTab !== "fundamentals" ||
       (activePage === "home" && !chartOpen) ||
-      activePage === "market-health" ||
-      activePage === "money-flow" ||
-      activePage === "newsdesk" ||
       (activePage === "journal" && !chartOpen)
     ) {
       setFundamentalsLoading(false);
@@ -2636,17 +2487,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
   const snapshotTimeLabel = formatSnapshotTime(activeMarket, dashboard?.generated_at);
-  const snapshotStripLabel = activeMarket === "india" ? "India EOD Active" : "US Snapshot Active";
-  const snapshotStripDetail = activeMarket === "india"
-    ? `EOD applied for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`
-    : `Snapshot active for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`;
+  const snapshotStripLabel = "India EOD Active";
+  const snapshotStripDetail = `EOD applied for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`;
   const activeWatchlist = watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null;
   const activeViewCount =
     activePage === "home"
       ? dashboard?.universe_count ?? 0
-      : activePage === "sectors"
-        ? sectorTabData?.total_sectors ?? 0
-        : activePage === "groups"
+      : activePage === "groups"
           ? groupsData?.total_groups ?? 0
         : activePage === "watchlists"
           ? activeWatchlist?.symbols.length ?? 0
@@ -2657,9 +2504,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const activeViewLabel =
     activePage === "home"
       ? "Universe"
-      : activePage === "sectors"
-        ? "Sectors"
-        : activePage === "groups"
+      : activePage === "groups"
           ? "Groups"
         : activePage === "watchlists"
             ? "Watchlist Stocks"
@@ -2681,11 +2526,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const pageVisibleSymbols =
     activePage === "screener" && activeScanner === "improving-rs"
       ? (improvingRsData?.items ?? []).map((item) => item.symbol)
-      : activePage === "market-health"
-        ? []
-      : activePage === "sectors"
-        ? sectorVisibleSymbols
-        : activePage === "groups"
+      : activePage === "groups"
           ? groupsVisibleSymbols
         : activePage === "watchlists"
           ? watchlistVisibleSymbols
@@ -2733,7 +2574,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    if ((activePage === "home" && !chartOpen) || activePage === "market-health") {
+    if (activePage === "home" && !chartOpen) {
       return;
     }
 
@@ -3190,7 +3031,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         (Boolean(chartNavigationSymbolsRef.current?.length) ||
           activePage === "screener" ||
           activePage === "watchlists" ||
-          activePage === "sectors" ||
           activePage === "groups");
       if (!shouldHandleChartContextNavigation && !shouldHandleListNavigation && !shouldHandleGroupsNavigation) {
         return;
@@ -3791,8 +3631,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     const refreshSchedule = getAutoRefreshSchedule(new Date(), activeMarket);
     const shouldRefreshFundamentals = source === "auto" && refreshSchedule.refreshFundamentals;
-    const shouldRefreshSectorTab = activePage === "home" || activePage === "sectors" || sectorTabData === null;
-    const shouldRefreshGroups = activePage === "groups";
+    const shouldRefreshGroups = activePage === "home" || activePage === "groups" || groupsData === null;
 
     refreshingRef.current = true;
     setRefreshing(true);
@@ -3806,35 +3645,31 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       const refreshPayload = await refreshMarketData(activeMarket).catch(() => null);
       const refreshMode = refreshPayload ? (refreshPayload as RefreshResponse).refresh_mode : null;
 
-      const [dashboardResult, sectorResult, groupsResult] = await Promise.allSettled([
+      const [dashboardResult, groupsResult] = await Promise.allSettled([
         getDashboard(activeMarket),
-        shouldRefreshSectorTab ? getSectorTab(sectorSortBy, sectorSortOrder, activeMarket) : Promise.resolve(sectorTabData),
         shouldRefreshGroups ? getIndustryGroups(activeMarket) : Promise.resolve(groupsData),
       ]);
 
       const dashboardPayload = dashboardResult.status === "fulfilled" ? dashboardResult.value : null;
-      const sectorPayload = sectorResult.status === "fulfilled" ? sectorResult.value : null;
       const groupsPayload = groupsResult.status === "fulfilled" ? groupsResult.value : null;
 
-      if (!dashboardPayload && !sectorPayload && !groupsPayload) {
+      if (!dashboardPayload && !groupsPayload) {
         throw new Error(
-          settledError(dashboardResult) ?? settledError(sectorResult) ?? settledError(groupsResult) ?? "Failed to refresh market data",
+          settledError(dashboardResult) ?? settledError(groupsResult) ?? "Failed to refresh market data",
         );
       }
 
       if (dashboardPayload) {
         setDashboard(dashboardPayload);
       }
-      if (sectorPayload) {
-        setSectorTabData(sectorPayload);
-        setUniverseCatalog(buildUniverseCatalogFromSectorTab(sectorPayload));
-      }
       if (groupsPayload) {
         setGroupsData(groupsPayload);
+        setUniverseCatalog(buildUniverseCatalogFromIndustryGroups(groupsPayload));
       } else if (activePage !== "groups" && groupsData) {
         void getIndustryGroups(activeMarket)
           .then((payload) => {
             setGroupsData(payload);
+            setUniverseCatalog(buildUniverseCatalogFromIndustryGroups(payload));
           })
           .catch(() => {});
       }
@@ -3870,7 +3705,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             : firstSymbolFromIndustryGroups(groupsPayload) ?? dashboardPayload?.top_gainers[0]?.symbol ?? null;
         setSelectedSymbol(nextSelectedSymbol);
       } else if (!nextSelectedSymbol) {
-        nextSelectedSymbol = dashboardPayload?.top_gainers[0]?.symbol ?? firstSymbolFromSectorTab(sectorPayload) ?? null;
+        nextSelectedSymbol = dashboardPayload?.top_gainers[0]?.symbol ?? firstSymbolFromIndustryGroups(groupsPayload) ?? null;
         setSelectedSymbol(nextSelectedSymbol);
       }
 
@@ -3912,7 +3747,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         void syncSavedScanners(savedScanners);
       }
 
-      const loadWarnings = [settledError(dashboardResult), settledError(sectorResult), settledError(groupsResult)].filter(Boolean);
+      const loadWarnings = [settledError(dashboardResult), settledError(groupsResult)].filter(Boolean);
 
       if (refreshPayload) {
         const rp = refreshPayload as RefreshResponse;
@@ -3927,10 +3762,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             : "the latest cached snapshot";
           setError(rp.message ?? loadWarnings[0] ?? `Showing cached market data from ${snapshotLabel}.`);
         } else if (source === "auto") {
-          if (dashboardPayload || sectorPayload) {
-            if (sectorPayload) {
-              setUniverseCatalog(buildUniverseCatalogFromSectorTab(sectorPayload));
-            }
+          if (dashboardPayload || groupsPayload) {
             if (loadWarnings.length === 0 && clearableAutoRefresh) {
               setError(null);
             }
@@ -3942,17 +3774,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         setError("Refresh service was unavailable, but the latest reachable market data has been loaded.");
       } else if (source === "auto") {
         // During auto-refresh, silently clear any previous errors if we got data
-        if (dashboardPayload || sectorPayload) {
-          if (sectorPayload) {
-            setUniverseCatalog(buildUniverseCatalogFromSectorTab(sectorPayload));
-          }
+        if (dashboardPayload || groupsPayload) {
           setError(null);
         }
       }
     } catch (refreshError) {
       setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh market data");
     } finally {
-      setSectorLoading(false);
       setImprovingRsLoading(false);
       refreshingRef.current = false;
       setRefreshing(false);
@@ -3960,7 +3788,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   };
 
   handleRefreshRef.current = handleRefresh;
-  const hasBootstrappedData = Boolean(dashboard || sectorTabData || groupsData);
+  const hasBootstrappedData = Boolean(dashboard || groupsData);
 
   const handleRetryConnection = () => {
     setError(null);
@@ -4023,9 +3851,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   const autoRefreshSchedule = getAutoRefreshSchedule(new Date(clockTick), activeMarket);
   const navSearchSuggestions = buildSymbolSuggestions(universeCatalog, deferredNavSearchQuery, 80);
-  const brandEyebrow = activeMarket === "india" ? "NSE / BSE Stock Scanner" : "NYSE / Nasdaq Stock Scanner";
-  const floorMetricLabel = activeMarket === "india" ? "Floor" : "US Filter";
-  const floorMetricValue = activeMarket === "india" ? `${dashboard?.market_cap_min_crore ?? 800} Cr+` : ">$15 · 400K+ ADV";
+  const brandEyebrow = "NSE / BSE Stock Scanner";
+  const floorMetricLabel = "Floor";
+  const floorMetricValue = `${dashboard?.market_cap_min_crore ?? 800} Cr+`;
 
   return (
     <div className="app-shell app-shell-simple">
@@ -4045,25 +3873,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       </div>
       <header className="top-nav">
         <div className="brand-stack">
-          <div className="home-market-toggle nav-market-toggle" role="tablist" aria-label="Select market">
-            <button
-              type="button"
-              className={activeMarket === "india" ? "home-market-toggle-btn active" : "home-market-toggle-btn"}
-              onClick={() => handleMarketChange("india")}
-              aria-pressed={activeMarket === "india"}
-            >
-              India
-            </button>
-            <button
-              type="button"
-              className={activeMarket === "us" ? "home-market-toggle-btn active" : "home-market-toggle-btn"}
-              onClick={() => handleMarketChange("us")}
-              aria-pressed={activeMarket === "us"}
-            >
-              US
-            </button>
-          </div>
-
           <div className="brand-cluster">
             <div className="brand-mark">MM</div>
             <div>
@@ -4097,16 +3906,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
           <button
             type="button"
-            className={activePage === "sectors" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("sectors")}
-            onMouseEnter={() => prefetchPageModules("sectors")}
-            onFocus={() => prefetchPageModules("sectors")}
-          >
-            Sectors
-          </button>
-
-          <button
-            type="button"
             className={activePage === "groups" ? "nav-button primary" : "nav-button ghost"}
             onClick={() => {
               chartNavigationSymbolsRef.current = null;
@@ -4126,36 +3925,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             onFocus={() => prefetchPageModules("watchlists")}
           >
             Watchlists
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "market-health" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("market-health")}
-            onMouseEnter={() => prefetchPageModules("market-health")}
-            onFocus={() => prefetchPageModules("market-health")}
-          >
-            Breadth
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "money-flow" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("money-flow")}
-            onMouseEnter={() => prefetchPageModules("money-flow")}
-            onFocus={() => prefetchPageModules("money-flow")}
-          >
-            Money Flow
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "newsdesk" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("newsdesk")}
-            onMouseEnter={() => prefetchPageModules("newsdesk")}
-            onFocus={() => prefetchPageModules("newsdesk")}
-          >
-            Newsdesk
           </button>
 
           <button
@@ -4284,36 +4053,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <HomePanel
               activeMarket={activeMarket}
               dashboard={dashboard}
-              sectors={sectorTabData}
               groups={groupsData}
               snapshotDateLabel={snapshotDateLabel}
               snapshotTimeLabel={snapshotTimeLabel}
               onPickSymbol={handlePickSymbol}
-              onOpenSectors={() => setActivePage("sectors")}
               onOpenGroups={(options) => {
                 void openGroupsView(options);
               }}
             />
-          </Suspense>
-        ) : null}
-        {!loading && activePage === "market-health" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <MarketHealthPanel market={activeMarket} />
-          </Suspense>
-        ) : null}
-        {!loading && activePage === "money-flow" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <MoneyFlowPanel
-              key={activeMarket}
-              market={activeMarket}
-              onPickSymbol={handlePickSymbol}
-              onPickSymbolWithContext={handlePickSymbolWithContext}
-            />
-          </Suspense>
-        ) : null}
-        {!loading && activePage === "newsdesk" ? (
-          <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <NewsTab market={activeMarket} onPickSymbol={handlePickSymbol} />
           </Suspense>
         ) : null}
         {!loading && activePage === "journal" ? (
@@ -4326,7 +4073,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "market-health" && activePage !== "money-flow" && activePage !== "newsdesk" && activePage !== "journal" ? (
+        {!loading && activePage !== "home" && activePage !== "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">
@@ -4371,7 +4118,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               className={
                 activePage === "screener"
                   ? "screener-page-grid"
-                  : activePage === "sectors" || activePage === "groups" || activePage === "watchlists"
+                  : activePage === "groups" || activePage === "watchlists"
                     ? "workspace-grid workspace-grid-sector"
                     : "workspace-grid"
               }
@@ -4652,21 +4399,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     expanded
                   />
                 </>
-              ) : activePage === "sectors" ? (
-                <SectorExplorerPanel
-                  market={activeMarket}
-                  data={sectorTabData}
-                  loading={sectorLoading}
-                  sortBy={sectorSortBy}
-                  sortOrder={sectorSortOrder}
-                  onSortByChange={setSectorSortBy}
-                  onSortOrderChange={setSectorSortOrder}
-                  onPickSymbol={handlePickSymbol}
-                  onPickSymbolWithContext={handlePickSymbolWithContext}
-                  onRequestAddToWatchlist={setWatchlistPickerSymbol}
-                  onVisibleSymbolsChange={setSectorVisibleSymbols}
-                  selectedSymbol={selectedSymbol}
-                />
               ) : activePage === "groups" ? (
                 <GroupsPanel
                   market={activeMarket}
@@ -4700,7 +4432,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 null
               )}
 
-              {activePage === "sectors" || activePage === "groups" || activePage === "watchlists" ? (
+              {activePage === "groups" || activePage === "watchlists" ? (
                 <ChartPanel
                   key={activeChartKey ?? "empty-chart"}
                   market={activeMarket}
@@ -4739,7 +4471,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSearchSymbol={handleChartSearchSubmit}
                   onOpenGroup={handleOpenChartGroupModal}
                   onRefreshChart={handleChartRefresh}
-                  expanded={activePage === "sectors" || activePage === "groups"}
+                  expanded={activePage === "groups"}
                 />
               ) : null}
             </section>
@@ -4830,7 +4562,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       <footer className="app-footer">
         <span>Mr. Malik Scanner</span>
         <span className="app-footer-dot">·</span>
-        <span>{activeMarket === "india" ? "NSE / BSE" : "NYSE / Nasdaq"}</span>
+        <span>NSE / BSE</span>
         <span className="app-footer-dot">·</span>
         <span>© {new Date().getFullYear()}</span>
       </footer>

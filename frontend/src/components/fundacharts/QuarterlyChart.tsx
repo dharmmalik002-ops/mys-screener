@@ -51,8 +51,8 @@ export function QuarterlyChart({ data, market }: Props) {
     );
   }
 
-  const currSymbol = market === "us" ? "$" : "₹";
-  const suffix = market === "us" ? " M" : " Cr";
+  const currSymbol = "₹";
+  const suffix = " Cr";
 
   const sorted = [...data]
     .sort((a, b) => a.period.localeCompare(b.period))
@@ -76,7 +76,7 @@ export function QuarterlyChart({ data, market }: Props) {
           Quarterly Revenue &amp; Profit ({sorted.length}Q)
         </span>
         <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.4)" }}>
-          Values in {market === "us" ? "$ Millions" : "₹ Crores"}
+          Values in ₹ Crores
         </span>
       </div>
 

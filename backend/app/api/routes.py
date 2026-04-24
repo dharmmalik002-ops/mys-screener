@@ -7,8 +7,6 @@ from app.models.market import (
     ChartGridTimeframe,
     ChartResponse,
     IndustryGroupsResponse,
-    CompanyQuestionRequest,
-    CompanyQuestionResponse,
     CompanyFundamentals,
     ConsolidatingScanRequest,
     CustomScanRequest,
@@ -17,20 +15,11 @@ from app.models.market import (
     ImprovingRsResponse,
     ImprovingRsWindow,
     MarketOverviewResponse,
-    MoneyFlowHistoryResponse,
-    MoneyFlowReport,
-    MoneyFlowStockIdeasHistoryResponse,
-    MoneyFlowStockIdeasResponse,
-    SectorRotationResponse,
     NearPivotScanRequest,
     PullBackScanRequest,
     ReturnsScanRequest,
     ScanDescriptor,
     SectorGroupKind,
-    SectorSortBy,
-    SectorTabResponse,
-    MarketHealthResponse,
-    HistoricalBreadthResponse,
     WatchlistsStateResponse,
 )
 
@@ -39,9 +28,6 @@ def build_router(service):
     router = APIRouter(prefix="/api")
 
     def default_index_symbols(market: str | None) -> list[str]:
-        normalized_market = str(market or "india").strip().lower()
-        if normalized_market == "us":
-            return ["^GSPC", "^IXIC", "^DJI"]
         return ["^NSEI", "^BSESN", "^NSEBANK"]
 
     def resolve_service(market: str):
@@ -57,18 +43,6 @@ def build_router(service):
     @router.get("/dashboard")
     async def dashboard(market: str = Query(default="india")):
         return await resolve_service(market).build_dashboard()
-
-    @router.get("/market-health", response_model=MarketHealthResponse)
-    async def market_health(market: str = Query(default="india")):
-        return await resolve_service(market).get_market_health()
-
-    @router.get("/market-health/history", response_model=HistoricalBreadthResponse)
-    async def market_health_history(market: str = Query(default="india")):
-        return resolve_service(market).get_historical_breadth()
-
-    @router.post("/market-health/history/refresh", response_model=HistoricalBreadthResponse)
-    async def refresh_market_health_history(market: str = Query(default="india")):
-        return await resolve_service(market).refresh_historical_breadth_latest()
 
     @router.get("/scans")
     async def scans(market: str = Query(default="india")):
@@ -160,14 +134,6 @@ def build_router(service):
             include_sector_summaries=include_sector_summaries,
         )
 
-    @router.get("/sectors", response_model=SectorTabResponse)
-    async def sectors(
-        market: str = Query(default="india"),
-        sort_by: SectorSortBy = Query(default="1M"),
-        sort_order: str = Query(default="desc"),
-    ):
-        return await resolve_service(market).get_sector_tab(sort_by=sort_by, sort_order=sort_order)
-
     @router.get("/improving-rs", response_model=ImprovingRsResponse)
     async def improving_rs(
         market: str = Query(default="india"),
@@ -194,53 +160,6 @@ def build_router(service):
     @router.get("/index-pe/{symbol}/history", response_model=IndexPeHistoryResponse)
     async def index_pe_history(symbol: str, market: str = Query(default="india")):
         return await resolve_service(market).get_index_pe_history(symbol.upper())
-
-    @router.get("/money-flow/history", response_model=MoneyFlowHistoryResponse)
-    async def money_flow_history(market: str = Query(default="india")):
-        return await resolve_service(market).get_money_flow_history()
-
-    @router.get("/money-flow/latest", response_model=MoneyFlowReport)
-    async def money_flow_latest(market: str = Query(default="india")):
-        report = await resolve_service(market).get_money_flow_latest()
-        if report is None:
-            raise HTTPException(status_code=404, detail="No money flow reports generated yet")
-        return report
-
-    @router.post("/money-flow/generate", response_model=MoneyFlowReport)
-    async def money_flow_generate(market: str = Query(default="india")):
-        try:
-            return await resolve_service(market).generate_and_store_money_flow()
-        except RuntimeError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @router.get("/money-flow/stocks/latest", response_model=MoneyFlowStockIdeasResponse)
-    async def money_flow_stocks_latest(market: str = Query(default="india")):
-        return await resolve_service(market).get_money_flow_stock_ideas()
-
-    @router.get("/money-flow/stocks/history", response_model=MoneyFlowStockIdeasHistoryResponse)
-    async def money_flow_stocks_history(market: str = Query(default="india")):
-        return await resolve_service(market).get_money_flow_stock_ideas_history()
-
-    @router.post("/money-flow/stocks/generate", response_model=MoneyFlowStockIdeasResponse)
-    async def money_flow_stocks_generate(market: str = Query(default="india")):
-        try:
-            return await resolve_service(market).generate_and_store_money_flow_stock_ideas(force=True)
-        except RuntimeError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @router.post("/money-flow/stocks/ask", response_model=CompanyQuestionResponse)
-    async def money_flow_stocks_ask(request: CompanyQuestionRequest, market: str = Query(default="india")):
-        try:
-            return await resolve_service(market).answer_company_question(
-                symbol=request.symbol.upper(),
-                question=request.question,
-            )
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @router.get("/sector-rotation", response_model=SectorRotationResponse)
-    async def sector_rotation(market: str = Query(default="india")):
-        return await resolve_service(market).get_sector_rotation()
 
     @router.get("/groups", response_model=IndustryGroupsResponse)
     async def groups(market: str = Query(default="india")):
@@ -384,18 +303,6 @@ def build_router(service):
     async def namespaced_dashboard(market_name: str):
         return await resolve_service(market_name).build_dashboard()
 
-    @router.get("/{market_name}/market-health", response_model=MarketHealthResponse)
-    async def namespaced_market_health(market_name: str):
-        return await resolve_service(market_name).get_market_health()
-
-    @router.get("/{market_name}/market-health/history", response_model=HistoricalBreadthResponse)
-    async def namespaced_market_health_history(market_name: str):
-        return resolve_service(market_name).get_historical_breadth()
-
-    @router.post("/{market_name}/market-health/history/refresh", response_model=HistoricalBreadthResponse)
-    async def namespaced_refresh_market_health_history(market_name: str):
-        return await resolve_service(market_name).refresh_historical_breadth_latest()
-
     @router.get("/{market_name}/scans")
     async def namespaced_scans(market_name: str):
         dashboard = await resolve_service(market_name).build_dashboard()
@@ -486,14 +393,6 @@ def build_router(service):
             include_sector_summaries=include_sector_summaries,
         )
 
-    @router.get("/{market_name}/sectors", response_model=SectorTabResponse)
-    async def namespaced_sectors(
-        market_name: str,
-        sort_by: SectorSortBy = Query(default="1M"),
-        sort_order: str = Query(default="desc"),
-    ):
-        return await resolve_service(market_name).get_sector_tab(sort_by=sort_by, sort_order=sort_order)
-
     @router.get("/{market_name}/improving-rs", response_model=ImprovingRsResponse)
     async def namespaced_improving_rs(
         market_name: str,
@@ -520,53 +419,6 @@ def build_router(service):
     @router.get("/{market_name}/index-pe/{symbol}/history", response_model=IndexPeHistoryResponse)
     async def namespaced_index_pe_history(market_name: str, symbol: str):
         return await resolve_service(market_name).get_index_pe_history(symbol.upper())
-
-    @router.get("/{market_name}/money-flow/history", response_model=MoneyFlowHistoryResponse)
-    async def namespaced_money_flow_history(market_name: str):
-        return await resolve_service(market_name).get_money_flow_history()
-
-    @router.get("/{market_name}/money-flow/latest", response_model=MoneyFlowReport)
-    async def namespaced_money_flow_latest(market_name: str):
-        report = await resolve_service(market_name).get_money_flow_latest()
-        if report is None:
-            raise HTTPException(status_code=404, detail="No money flow reports generated yet")
-        return report
-
-    @router.post("/{market_name}/money-flow/generate", response_model=MoneyFlowReport)
-    async def namespaced_money_flow_generate(market_name: str):
-        try:
-            return await resolve_service(market_name).generate_and_store_money_flow()
-        except RuntimeError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @router.get("/{market_name}/money-flow/stocks/latest", response_model=MoneyFlowStockIdeasResponse)
-    async def namespaced_money_flow_stocks_latest(market_name: str):
-        return await resolve_service(market_name).get_money_flow_stock_ideas()
-
-    @router.get("/{market_name}/money-flow/stocks/history", response_model=MoneyFlowStockIdeasHistoryResponse)
-    async def namespaced_money_flow_stocks_history(market_name: str):
-        return await resolve_service(market_name).get_money_flow_stock_ideas_history()
-
-    @router.post("/{market_name}/money-flow/stocks/generate", response_model=MoneyFlowStockIdeasResponse)
-    async def namespaced_money_flow_stocks_generate(market_name: str):
-        try:
-            return await resolve_service(market_name).generate_and_store_money_flow_stock_ideas(force=True)
-        except RuntimeError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-
-    @router.post("/{market_name}/money-flow/stocks/ask", response_model=CompanyQuestionResponse)
-    async def namespaced_money_flow_stocks_ask(market_name: str, request: CompanyQuestionRequest):
-        try:
-            return await resolve_service(market_name).answer_company_question(
-                symbol=request.symbol.upper(),
-                question=request.question,
-            )
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    @router.get("/{market_name}/sector-rotation", response_model=SectorRotationResponse)
-    async def namespaced_sector_rotation(market_name: str):
-        return await resolve_service(market_name).get_sector_rotation()
 
     @router.get("/{market_name}/groups", response_model=IndustryGroupsResponse)
     async def namespaced_groups(market_name: str):

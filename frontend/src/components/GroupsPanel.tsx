@@ -47,14 +47,14 @@ function formatScore(value: number) {
 }
 
 function formatPrice(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const symbol = market === "us" ? "$" : "₹";
+  const locale = "en-IN";
+  const symbol = "₹";
   return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function formatMarketCap(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const suffix = market === "us" ? "Bn" : "Cr";
+  const locale = "en-IN";
+  const suffix = "Cr";
   return `${value.toLocaleString(locale, { maximumFractionDigits: 0 })} ${suffix}`;
 }
 

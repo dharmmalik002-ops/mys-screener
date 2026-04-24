@@ -51,8 +51,8 @@ export function AnnualPLChart({ data, market }: Props) {
     );
   }
 
-  const curr = market === "us" ? "$" : "₹";
-  const suf = market === "us" ? " M" : " Cr";
+  const curr = "₹";
+  const suf = " Cr";
 
   const sorted = [...data]
     .sort((a, b) => a.period.localeCompare(b.period))
@@ -78,7 +78,7 @@ export function AnnualPLChart({ data, market }: Props) {
           Annual Revenue &amp; Profit ({sorted.length}Y)
         </span>
         <span style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.4)" }}>
-          Values in {market === "us" ? "$ Millions" : "₹ Crores"}
+          Values in ₹ Crores
         </span>
       </div>
 

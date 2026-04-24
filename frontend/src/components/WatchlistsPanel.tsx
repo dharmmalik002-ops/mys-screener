@@ -57,8 +57,8 @@ function metricClass(value: number) {
 }
 
 function formatPrice(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const symbol = market === "us" ? "$" : "₹";
+  const locale = "en-IN";
+  const symbol = "₹";
   return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
@@ -501,7 +501,7 @@ export function WatchlistsPanel({
                 list="watchlist-symbols"
                 value={quickAddSymbol}
                 onChange={(event) => setQuickAddSymbol(event.target.value.toUpperCase())}
-                placeholder={`Type ${market === "us" ? "ticker" : "symbol"} to add`}
+                placeholder="Type symbol to add"
               />
               <datalist id="watchlist-symbols">
                 {quickAddSuggestions.map((item) => (
@@ -582,7 +582,7 @@ export function WatchlistsPanel({
               </div>
               <div ref={shouldVirtualize ? containerRef : undefined} className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}>
                 {activeItems.length === 0 ? (
-                  <div className="empty-state">This watchlist is empty. Add {market === "us" ? "tickers" : "stocks"} from scanners, sectors, or the chart.</div>
+                  <div className="empty-state">This watchlist is empty. Add stocks from scanners, groups, or the chart.</div>
                 ) : shouldVirtualize ? (
                   <div className="scan-table-virtual-spacer" style={{ height: `${totalHeight}px` }}>
                     {visibleRows.map((row) => (
@@ -606,7 +606,7 @@ export function WatchlistsPanel({
           <ChartGridModal
             contextLabel="Watchlist"
             title={activeWatchlist?.name ?? "Watchlist Grid"}
-            subtitle={`${activeItems.length} saved ${market === "us" ? "US" : "Indian"} stocks`}
+            subtitle={`${activeItems.length} saved Indian stocks`}
             cards={gridCards}
             stats={gridStats}
             columns={gridColumns}

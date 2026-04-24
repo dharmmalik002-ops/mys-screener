@@ -14,7 +14,6 @@ from zoneinfo import ZoneInfo
 logger = logging.getLogger(__name__)
 
 IST = ZoneInfo("Asia/Kolkata")
-ET = ZoneInfo("America/New_York")
 
 
 @dataclass
@@ -171,24 +170,11 @@ class DependencyGraph:
     _edges: dict[str, list[str]] = {
         "india.snapshot": [
             "india.dashboard",
-            "india.sector_tab",
             "india.scan_catalog",
             "india.industry_groups",
-            "india.market_health",
             "india.improving_rs",
-            "india.sector_rotation",
-        ],
-        "us.snapshot": [
-            "us.dashboard",
-            "us.sector_tab",
-            "us.scan_catalog",
-            "us.industry_groups",
-            "us.market_health",
-            "us.improving_rs",
-            "us.sector_rotation",
         ],
         "india.fundamentals": ["india.ai_analysis"],
-        "us.fundamentals": ["us.ai_analysis"],
     }
 
     def cascade_invalidate(self, refreshed_component: str) -> list[str]:
@@ -207,13 +193,13 @@ class DependencyGraph:
 class AdaptiveScheduler:
     def get_market_state(self, market: str) -> str:
         normalized = str(market or "global").strip().lower()
-        if normalized not in {"india", "us"}:
+        if normalized != "india":
             return "closed"
-        now_local = datetime.now(IST if normalized == "india" else ET)
+        now_local = datetime.now(IST)
         weekday = now_local.weekday()
         total_minutes = now_local.hour * 60 + now_local.minute
-        open_min = 9 * 60 + (15 if normalized == "india" else 30)
-        close_min = (15 * 60 + 30) if normalized == "india" else (16 * 60)
+        open_min = 9 * 60 + 15
+        close_min = 15 * 60 + 30
         if weekday >= 5 or total_minutes < open_min or total_minutes > close_min:
             return "closed"
         if total_minutes - open_min < 10:
@@ -433,7 +419,7 @@ class WatchdogAgent:
         self._last_check: dict[str, float] = {}
         self._last_status: dict[str, HealthStatus] = {}
 
-        for market in ("india", "us"):
+        for market in ("india",):
             service_obj = services.get(market)
             settings_obj = settings_by_market.get(market)
             if service_obj is not None and settings_obj is not None:
@@ -526,7 +512,6 @@ class WatchdogAgent:
     async def _warm_dashboard_children(self, service_obj: Any) -> None:
         await asyncio.gather(
             service_obj.build_dashboard(),
-            service_obj.get_sector_tab("1D", "desc"),
             service_obj.get_industry_groups(),
             return_exceptions=True,
         )
@@ -626,28 +611,6 @@ class WatchdogAgent:
                 self.audit.log(f"{market_name}.dashboard", "quality_warning", ", ".join(issues[:5]), severity="warning")
             return {"issues": issues[:5]}
 
-        async def check_sector_tab() -> HealthStatus:
-            snapshot_updated_at = service_obj._snapshot_updated_at()
-            cache_payload = (getattr(service_obj, "_sector_tab_cache", {}) or {}).get(("1D", "desc"))
-            generated_at = self._generated_at_from_cache(cache_payload)
-            healthy = generated_at is not None and generated_at >= snapshot_updated_at
-            return HealthStatus(
-                healthy=healthy,
-                component_id=f"{market_name}.sector_tab",
-                checked_at=datetime.now(timezone.utc),
-                staleness_seconds=(datetime.now(timezone.utc) - generated_at).total_seconds() if generated_at else None,
-                detail="sector tab cache warm" if healthy else "sector tab cache missing/stale",
-                action_needed=None if healthy else "get_sector_tab",
-                severity="ok" if healthy else "critical",
-            )
-
-        async def heal_sector_tab() -> dict[str, Any]:
-            cache_obj = getattr(service_obj, "_sector_tab_cache", None)
-            if isinstance(cache_obj, dict):
-                cache_obj.pop(("1D", "desc"), None)
-            await service_obj.get_sector_tab("1D", "desc")
-            return {"ok": True}
-
         async def check_market_overview() -> HealthStatus:
             cache_entry = getattr(service_obj, "_market_overview_cache", None)
             is_open_fn = getattr(provider_obj, "_is_market_open_ist", None)
@@ -698,46 +661,6 @@ class WatchdogAgent:
         async def heal_industry_groups() -> dict[str, Any]:
             service_obj._industry_groups_cache = None
             await service_obj.get_industry_groups()
-            return {"ok": True}
-
-        async def check_market_health() -> HealthStatus:
-            snapshot_updated_at = service_obj._snapshot_updated_at()
-            generated_at = self._generated_at_from_cache(getattr(service_obj, "_market_health_cache", None))
-            healthy = generated_at is not None and generated_at >= snapshot_updated_at
-            return HealthStatus(
-                healthy=healthy,
-                component_id=f"{market_name}.market_health",
-                checked_at=datetime.now(timezone.utc),
-                staleness_seconds=(datetime.now(timezone.utc) - generated_at).total_seconds() if generated_at else None,
-                detail="market health cache warm" if healthy else "market health cache missing/stale",
-                action_needed=None if healthy else "get_market_health",
-                severity="ok" if healthy else "warning",
-            )
-
-        async def heal_market_health() -> dict[str, Any]:
-            service_obj._market_health_cache = None
-            await service_obj.get_market_health()
-            return {"ok": True}
-
-        async def check_sector_rotation() -> HealthStatus:
-            snapshot_updated_at = service_obj._snapshot_updated_at()
-            generated_at = self._generated_at_from_cache(getattr(service_obj, "_sector_rotation_cache", None))
-            healthy = generated_at is not None and generated_at >= snapshot_updated_at
-            return HealthStatus(
-                healthy=healthy,
-                component_id=f"{market_name}.sector_rotation",
-                checked_at=datetime.now(timezone.utc),
-                staleness_seconds=(datetime.now(timezone.utc) - generated_at).total_seconds() if generated_at else None,
-                detail="sector rotation cache warm" if healthy else "sector rotation cache missing/stale",
-                action_needed=None if healthy else "get_sector_rotation",
-                severity="ok" if healthy else "warning",
-            )
-
-        async def heal_sector_rotation() -> dict[str, Any]:
-            service_obj._sector_rotation_cache = None
-            get_sector_rotation = getattr(service_obj, "get_sector_rotation", None)
-            if callable(get_sector_rotation):
-                await get_sector_rotation()
             return {"ok": True}
 
         async def check_scan_catalog() -> HealthStatus:
@@ -869,57 +792,6 @@ class WatchdogAgent:
                 refreshed.append(symbol)
             return {"symbols": refreshed}
 
-        async def check_money_flow_stocks() -> HealthStatus:
-            now_local = datetime.now(IST if market_name == "india" else ET)
-            cutoff = dt_time(hour=18, minute=0) if market_name == "india" else dt_time(hour=16, minute=30)
-            if now_local.weekday() >= 5 or now_local.time() < cutoff:
-                return HealthStatus(
-                    healthy=True,
-                    component_id=f"{market_name}.money_flow_stocks",
-                    checked_at=datetime.now(timezone.utc),
-                    staleness_seconds=None,
-                    detail="before cutoff or non-trading day",
-                    action_needed=None,
-                    severity="ok",
-                )
-            payload = await service_obj.get_money_flow_stock_ideas()
-            recommendation_date = str(getattr(payload, "recommendation_date", ""))
-            today_key = now_local.date().isoformat()
-            healthy = recommendation_date == today_key
-            return HealthStatus(
-                healthy=healthy,
-                component_id=f"{market_name}.money_flow_stocks",
-                checked_at=datetime.now(timezone.utc),
-                staleness_seconds=None,
-                detail=f"recommendation_date={recommendation_date or 'missing'}",
-                action_needed=None if healthy else "ensure_money_flow_stock_ideas_current",
-                severity="ok" if healthy else "warning",
-            )
-
-        async def heal_money_flow_stocks() -> dict[str, Any]:
-            payload = await service_obj.ensure_money_flow_stock_ideas_current()
-            return {"updated": payload is not None}
-
-        async def check_money_flow_report() -> HealthStatus:
-            now_local = datetime.now(IST if market_name == "india" else ET)
-            current_week_key = f"{now_local.date().isocalendar().year}-W{now_local.date().isocalendar().week:02d}"
-            latest = await service_obj.get_money_flow_latest()
-            week_key = str(getattr(latest, "week_key", "")) if latest is not None else ""
-            healthy = week_key == current_week_key
-            return HealthStatus(
-                healthy=healthy,
-                component_id=f"{market_name}.money_flow_report",
-                checked_at=datetime.now(timezone.utc),
-                staleness_seconds=None,
-                detail=f"week_key={week_key or 'missing'} current={current_week_key}",
-                action_needed=None if healthy else "ensure_money_flow_report_current",
-                severity="ok" if healthy else "warning",
-            )
-
-        async def heal_money_flow_report() -> dict[str, Any]:
-            payload = await service_obj.ensure_money_flow_report_current()
-            return {"updated": payload is not None}
-
         async def check_bhavcopy() -> HealthStatus:
             if market_name != "india":
                 return HealthStatus(
@@ -1018,18 +890,6 @@ class WatchdogAgent:
                 priority=1,
             ),
             HealthContract(
-                component_id=f"{market_name}.sector_tab",
-                display_name=f"{market_name.upper()} Sector Tab",
-                market=market_name,
-                depends_on=[f"{market_name}.snapshot"],
-                check_fn=check_sector_tab,
-                heal_fn=heal_sector_tab,
-                check_interval_open=60,
-                check_interval_closed=120,
-                max_staleness_seconds=180,
-                priority=1,
-            ),
-            HealthContract(
                 component_id=f"{market_name}.market_overview",
                 display_name=f"{market_name.upper()} Market Overview",
                 market=market_name,
@@ -1048,30 +908,6 @@ class WatchdogAgent:
                 depends_on=[f"{market_name}.snapshot"],
                 check_fn=check_industry_groups,
                 heal_fn=heal_industry_groups,
-                check_interval_open=300,
-                check_interval_closed=300,
-                max_staleness_seconds=600,
-                priority=2,
-            ),
-            HealthContract(
-                component_id=f"{market_name}.market_health",
-                display_name=f"{market_name.upper()} Market Health",
-                market=market_name,
-                depends_on=[f"{market_name}.snapshot"],
-                check_fn=check_market_health,
-                heal_fn=heal_market_health,
-                check_interval_open=300,
-                check_interval_closed=300,
-                max_staleness_seconds=600,
-                priority=2,
-            ),
-            HealthContract(
-                component_id=f"{market_name}.sector_rotation",
-                display_name=f"{market_name.upper()} Sector Rotation",
-                market=market_name,
-                depends_on=[f"{market_name}.snapshot"],
-                check_fn=check_sector_rotation,
-                heal_fn=heal_sector_rotation,
                 check_interval_open=300,
                 check_interval_closed=300,
                 max_staleness_seconds=600,
@@ -1123,30 +959,6 @@ class WatchdogAgent:
                 check_interval_open=1800,
                 check_interval_closed=1800,
                 max_staleness_seconds=24 * 3600,
-                priority=3,
-            ),
-            HealthContract(
-                component_id=f"{market_name}.money_flow_stocks",
-                display_name=f"{market_name.upper()} Money Flow Stocks",
-                market=market_name,
-                depends_on=[f"{market_name}.snapshot", f"{market_name}.fundamentals"],
-                check_fn=check_money_flow_stocks,
-                heal_fn=heal_money_flow_stocks,
-                check_interval_open=900,
-                check_interval_closed=900,
-                max_staleness_seconds=24 * 3600,
-                priority=3,
-            ),
-            HealthContract(
-                component_id=f"{market_name}.money_flow_report",
-                display_name=f"{market_name.upper()} Money Flow Report",
-                market=market_name,
-                depends_on=[f"{market_name}.snapshot"],
-                check_fn=check_money_flow_report,
-                heal_fn=heal_money_flow_report,
-                check_interval_open=1800,
-                check_interval_closed=1800,
-                max_staleness_seconds=7 * 24 * 3600,
                 priority=3,
             ),
             HealthContract(

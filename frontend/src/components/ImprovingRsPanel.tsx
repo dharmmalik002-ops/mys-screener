@@ -18,8 +18,8 @@ type ImprovingRsPanelProps = {
 };
 
 function formatPrice(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const symbol = market === "us" ? "$" : "₹";
+  const locale = "en-IN";
+  const symbol = "₹";
   return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 

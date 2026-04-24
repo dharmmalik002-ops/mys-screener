@@ -34,9 +34,8 @@ function formatReturn(value: number) {
 }
 
 function formatPrice(value: number, market: MarketKey) {
-  const locale = market === "us" ? "en-US" : "en-IN";
-  const symbol = market === "us" ? "$" : "₹";
-  return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  void market;
+  return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 function metricClass(value: number) {

@@ -24,7 +24,7 @@ function parseSymbolText(raw: string): string[] {
   const seen = new Set<string>();
 
   for (const line of lines) {
-    // Strip exchange prefixes like NSE:, BSE:, NYSE:, NASDAQ:, US:
+    // Strip exchange prefixes like NSE: and BSE:.
     const stripped = line.replace(/^[A-Z]{1,10}:/i, "").trim().toUpperCase();
     if (stripped && !seen.has(stripped)) {
       seen.add(stripped);

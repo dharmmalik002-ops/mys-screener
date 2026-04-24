@@ -10,8 +10,6 @@ LOGGER = logging.getLogger(__name__)
 
 
 def default_index_symbols(market_name: str) -> list[str]:
-    if str(market_name or "india").strip().lower() == "us":
-        return ["^GSPC", "^IXIC", "^DJI"]
     return ["^NSEI", "^BSESN", "^NSEBANK"]
 
 
@@ -28,18 +26,6 @@ def _unique_symbols(symbols: list[str]) -> list[str]:
 
 
 async def run_market_close_maintenance(market_name: str, service: DashboardService) -> dict[str, object]:
-    # ── Step 0: Apply NSE Bhavcopy EOD data before rebuilding snapshots ──────
-    # This patches chart caches with the official NSE closing prices (correct
-    # IST calendar dates) so the rebuilt snapshot sees authoritative EOD data
-    # instead of Yahoo Finance's delayed / timezone-ambiguous values.
-    bhavcopy_result: dict[str, object] = {}
-    if str(market_name).strip().lower() == "india":
-        try:
-            bhavcopy_result = await asyncio.to_thread(service.apply_bhavcopy_eod)
-            LOGGER.info("NSE Bhavcopy applied: %s", bhavcopy_result)
-        except Exception:
-            LOGGER.exception("NSE Bhavcopy apply failed — continuing without it")
-
     refresh_result = await service.refresh_market_data()
 
     dashboard = await service.build_dashboard()
@@ -49,11 +35,6 @@ async def run_market_close_maintenance(market_name: str, service: DashboardServi
         await service.get_industry_groups()
     except Exception:
         LOGGER.exception("%s industry-group refresh failed", market_name.upper())
-
-    try:
-        await service.refresh_historical_breadth_latest()
-    except Exception:
-        LOGGER.exception("%s breadth refresh failed", market_name.upper())
 
     chart_symbols = _unique_symbols(
         [
@@ -73,5 +54,4 @@ async def run_market_close_maintenance(market_name: str, service: DashboardServi
         **refresh_result,
         "prewarmed_chart_count": len(chart_symbols),
         "popular_symbols": chart_symbols,
-        "bhavcopy": bhavcopy_result,
     }

@@ -54,9 +54,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
 
   const formatCurrency = (val: number | null | undefined, precision = 2) => {
     if (val === null || val === undefined) return 'N/A';
-    const label = market === 'us' ? '$' : '₹';
-    const suffix = market === 'us' ? 'M' : 'Cr';
-    return `${label}${val.toLocaleString(undefined, { minimumFractionDigits: precision, maximumFractionDigits: precision })}${suffix}`;
+    return `₹${val.toLocaleString("en-IN", { minimumFractionDigits: precision, maximumFractionDigits: precision })}Cr`;
   };
 
   const formatPercent = (val: number | null | undefined) => {

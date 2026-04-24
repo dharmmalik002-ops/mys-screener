@@ -9,7 +9,8 @@ type AppStatusBannersProps = {
 };
 
 function marketLabel(market: MarketKey) {
-  return market === "us" ? "US" : "India";
+  void market;
+  return "India";
 }
 
 export function AppStatusBanners({

@@ -259,10 +259,9 @@ const CHART_PALETTES: Record<
 };
 const RIGHT_EDGE_PADDING_BARS = 12;
 const FUTURE_DRAW_EXTENSION_BARS = 96;
-const USD_TO_INR = 83;
 
 function supportedTimeframes(market: MarketKey): ChartTimeframe[] {
-  return market === "india" ? ["1D", "1W"] : TIMEFRAMES;
+  return ["1D", "1W"];
 }
 
 const ANNOTATION_DEFAULT_COLORS: Record<string, string> = {
@@ -499,7 +498,7 @@ function chartSubtitle(tool: DrawingTool, draftStart: ChartAnchor | null, chartS
 }
 
 function numberLocaleForMarket(market: MarketKey) {
-  return market === "us" ? "en-US" : "en-IN";
+  return "en-IN";
 }
 
 function formatNumber(value: number | null | undefined, digits = 2, market: MarketKey = "india") {
@@ -530,15 +529,6 @@ function formatCrore(value: number | null | undefined, market: MarketKey = "indi
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";
   }
-  if (market === "us") {
-    const usdValue = (value * 10_000_000) / USD_TO_INR;
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: "compact",
-      maximumFractionDigits: digits ?? 1,
-    }).format(usdValue);
-  }
   return `${formatNumber(value, digits ?? 2, market)} Cr`;
 }
 
@@ -546,7 +536,7 @@ function formatPrice(value: number | null | undefined, market: MarketKey, digits
   if (value === null || value === undefined || Number.isNaN(value)) {
     return "—";
   }
-  return `${market === "us" ? "$" : "₹"}${formatNumber(value, digits, market)}`;
+  return `₹${formatNumber(value, digits, market)}`;
 }
 
 function formatCount(value: number | null | undefined, market: MarketKey = "india") {
@@ -814,8 +804,8 @@ export function ChartPanel({
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
   );
-  const benchmarkSymbol = market === "us" ? "SPY" : null;
-  const canShowBenchmarkOverlay = market === "us" && Boolean(symbol) && symbol !== benchmarkSymbol;
+  const benchmarkSymbol = null;
+  const canShowBenchmarkOverlay = false;
   const benchmarkOverlayData = useMemo(
     () => (showBenchmarkOverlay ? buildBenchmarkOverlaySeries(activeBars, safeBenchmarkBars) : []),
     [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
@@ -1910,19 +1900,6 @@ export function ChartPanel({
                   </button>
                 ))}
               </div>
-              {market === "us" ? (
-                <div className="chart-style-switcher">
-                  <button
-                    type="button"
-                    className={showBenchmarkOverlay ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => onShowBenchmarkOverlayChange(!showBenchmarkOverlay)}
-                    disabled={!canShowBenchmarkOverlay || benchmarkLoading}
-                    title={canShowBenchmarkOverlay ? "Overlay SPY on the active price chart." : "SPY overlay is unavailable for SPY itself."}
-                  >
-                    {benchmarkLoading ? "Loading SPY..." : "SPY Overlay"}
-                  </button>
-                </div>
-              ) : null}
               {symbol ? (
                 <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
                   Add to Watchlist
@@ -1938,7 +1915,6 @@ export function ChartPanel({
                 {chartLoading ? "Refreshing..." : "Refresh Chart"}
               </button>
               {chartCacheState === "cached" ? <span className="chart-save-pill">Cached view</span> : null}
-              {showBenchmarkOverlay && !benchmarkLoading ? <span className="chart-save-pill">SPY compare</span> : null}
               {showBenchmarkOverlay && benchmarkError ? <span className="chart-save-pill">{benchmarkError}</span> : null}
             </>
           ) : (
@@ -2388,7 +2364,7 @@ export function ChartPanel({
                       {guidance.capex_guidance_crore !== null && (
                         <div className="guidance-metric">
                           <span className="metric-label">CapEx Plan:</span>
-                          <span className="metric-value">{formatAmountValue(guidance.capex_guidance_crore, market === "us" ? 1 : 0)}</span>
+                          <span className="metric-value">{formatAmountValue(guidance.capex_guidance_crore, 0)}</span>
                         </div>
                       )}
                     </div>
@@ -2486,7 +2462,7 @@ export function ChartPanel({
                     {fundamentals.business_segments.map((segment, index) => (
                       <tr key={index}>
                         <td>{segment.name}</td>
-                        <td>{formatAmountValue(segment.revenue_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(segment.revenue_crore, 0)}</td>
                         <td>{formatPercentValue(segment.revenue_pct)}</td>
                         <td className={segment.growth_pct !== null && segment.growth_pct > 0 ? "positive" : "negative"}>
                           {segment.growth_pct !== null ? (segment.growth_pct > 0 ? "+" : "") + formatPercentValue(segment.growth_pct) : "N/A"}
@@ -2541,11 +2517,11 @@ export function ChartPanel({
                     {fundamentals.balance_sheet.map((item, index) => (
                       <tr key={index}>
                         <td>{item.period}</td>
-                        <td>{formatAmountValue(item.total_assets_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.total_liabilities_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.shareholders_equity_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.debt_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.cash_and_equivalents_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.total_assets_crore, 0)}</td>
+                        <td>{formatAmountValue(item.total_liabilities_crore, 0)}</td>
+                        <td>{formatAmountValue(item.shareholders_equity_crore, 0)}</td>
+                        <td>{formatAmountValue(item.debt_crore, 0)}</td>
+                        <td>{formatAmountValue(item.cash_and_equivalents_crore, 0)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -2578,10 +2554,10 @@ export function ChartPanel({
                     {fundamentals.cash_flow.map((item, index) => (
                       <tr key={index}>
                         <td>{item.period}</td>
-                        <td>{formatAmountValue(item.operating_cash_flow_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.free_cash_flow_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.capital_expenditure_crore, market === "us" ? 1 : 0)}</td>
-                        <td>{formatAmountValue(item.dividends_paid_crore, market === "us" ? 1 : 0)}</td>
+                        <td>{formatAmountValue(item.operating_cash_flow_crore, 0)}</td>
+                        <td>{formatAmountValue(item.free_cash_flow_crore, 0)}</td>
+                        <td>{formatAmountValue(item.capital_expenditure_crore, 0)}</td>
+                        <td>{formatAmountValue(item.dividends_paid_crore, 0)}</td>
                       </tr>
                     ))}
                   </tbody>

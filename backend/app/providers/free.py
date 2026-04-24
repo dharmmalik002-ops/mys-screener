@@ -7,6 +7,7 @@ import os
 import re
 import subprocess
 import time
+import uuid
 from datetime import date, datetime, timedelta, timezone
 from html import unescape
 from pathlib import Path
@@ -203,7 +204,7 @@ INDEX_SYMBOL_TO_NSE_NAME = {
 
 
 class FreeMarketDataProvider:
-    def __init__(self, gemini_api_key: str | None = None) -> None:
+    def __init__(self, gemini_api_key: str | None = None, *, eod_only_mode: bool = False) -> None:
         self.backend_root = Path(__file__).resolve().parents[2]
         self.universe_cache_path = self.backend_root / "data" / "free_universe.json"
         self.snapshot_cache_path = self.backend_root / "data" / "free_snapshots.json"
@@ -221,6 +222,7 @@ class FreeMarketDataProvider:
         self._holiday_date_cache: dict[tuple[int, ...], set[date]] = {}
         self._seed_snapshot_cache_restored_at: float | None = None
         self._last_refresh_metadata = self._default_refresh_metadata()
+        self.eod_only_mode = bool(eod_only_mode)
         self.demo = DemoMarketDataProvider()
         self.ai_service = AIAnalysisService(api_key=gemini_api_key, cache_dir=self.backend_root / "data")
 
@@ -345,12 +347,16 @@ class FreeMarketDataProvider:
         cache_signature = self._snapshot_memory_signature()
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
+            if self.eod_only_mode and self._market_close_refresh_due():
+                return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
             if self._seed_snapshot_cache_needs_refresh():
                 self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
             return cached[2]
 
         cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
         if cached_rows:
+            if self.eod_only_mode and self._market_close_refresh_due():
+                return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
             snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
             if self._seed_snapshot_cache_needs_refresh():
@@ -406,6 +412,8 @@ class FreeMarketDataProvider:
         return snapshots
 
     async def refresh_live_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+        if self.eod_only_mode:
+            return await self.get_snapshots(market_cap_min_crore)
         cache_key = float(market_cap_min_crore)
 
         background_task = self._background_snapshot_refresh_tasks.get(cache_key)
@@ -1410,20 +1418,28 @@ class FreeMarketDataProvider:
         ]
 
     async def get_chart(self, symbol: str, timeframe: str, bars: int = 240) -> list[ChartBar]:
+        if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
+            timeframe = "1D"
         cached_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars)
         min_required_bars = min(120, max(2, bars)) if timeframe == "1D" else 2
         cache_has_enough_data = len(cached_bars) >= min_required_bars
         cache_covers_snapshot_session = self._chart_cache_covers_snapshot_session(symbol, timeframe, cached_bars)
         if cached_bars and cache_has_enough_data and cache_covers_snapshot_session and self._is_chart_cache_fresh(symbol, timeframe):
             return cached_bars
-        if timeframe == "1D" and cached_bars and cache_has_enough_data:
+        if timeframe == "1D" and cached_bars and cache_has_enough_data and not self.eod_only_mode:
             refreshed_bars = await asyncio.to_thread(self._refresh_cached_daily_chart_from_quote, symbol, bars)
             if refreshed_bars:
                 return refreshed_bars
         if timeframe == "1W" and cached_bars:
-            refreshed_weekly = await asyncio.to_thread(self._refresh_cached_weekly_chart_from_daily_cache, symbol, bars)
-            if refreshed_weekly:
-                return refreshed_weekly
+            if self.eod_only_mode:
+                daily_cache = await asyncio.to_thread(self._read_chart_cache, symbol, "1D", max(bars * 7, 260))
+                refreshed_weekly = self._aggregate_weekly_chart_bars(daily_cache)
+                if refreshed_weekly:
+                    return refreshed_weekly[-bars:]
+            else:
+                refreshed_weekly = await asyncio.to_thread(self._refresh_cached_weekly_chart_from_daily_cache, symbol, bars)
+                if refreshed_weekly:
+                    return refreshed_weekly
         try:
             chart_bars = await asyncio.wait_for(
                 asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
@@ -1456,6 +1472,8 @@ class FreeMarketDataProvider:
             return False
         age_seconds = max(time.time() - path.stat().st_mtime, 0.0)
         normalized_symbol = str(symbol or "").strip().upper()
+        if self.eod_only_mode and timeframe in {"1D", "1W"}:
+            return age_seconds < 24 * 60 * 60
         if timeframe == "1D" and normalized_symbol in MACRO_CHART_SYMBOLS:
             return age_seconds < (6 * 60 * 60)
         if timeframe == "1W" and normalized_symbol in MACRO_CHART_SYMBOLS:
@@ -3137,6 +3155,8 @@ class FreeMarketDataProvider:
     def preferred_refresh_strategy(self) -> str:
         if not self._load_valid_cached_snapshot_rows():
             return "historical"
+        if self.eod_only_mode:
+            return "historical" if self._market_close_refresh_due() else "cache"
         if not self._is_market_open_ist() and self._market_close_refresh_due():
             return "historical"
         return "cache"
@@ -3148,7 +3168,8 @@ class FreeMarketDataProvider:
         return max(age.total_seconds(), 0.0)
 
     def _write_snapshot_rows(self, rows: list[dict[str, Any]]) -> None:
-        temp_path = self.snapshot_cache_path.with_suffix(f"{self.snapshot_cache_path.suffix}.tmp")
+        self.snapshot_cache_path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = self.snapshot_cache_path.with_suffix(f"{self.snapshot_cache_path.suffix}.{uuid.uuid4().hex}.tmp")
         temp_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
         os.replace(temp_path, self.snapshot_cache_path)
 
@@ -3161,6 +3182,8 @@ class FreeMarketDataProvider:
         current_session = self._current_or_previous_trading_day_ist()
         stale_days = max((current_session - session_date).days, 0)
         if force_refresh:
+            return stale_days >= 1
+        if self.eod_only_mode:
             return stale_days >= 1
         if not self._is_trading_day_ist():
             return False
@@ -3888,6 +3911,8 @@ class FreeMarketDataProvider:
         daily_item = self._index_quote_from_bars(symbol, self._read_chart_cache(symbol, "1D", 5))
         if daily_item is not None:
             return daily_item
+        if self.eod_only_mode:
+            return None
         return self._index_quote_from_bars(symbol, self._read_chart_cache(symbol, "15m", 64))
 
     def _fetch_index_quote_from_history(self, symbol: str) -> IndexQuoteItem | None:
@@ -3959,7 +3984,7 @@ class FreeMarketDataProvider:
     def get_market_overview(self) -> list[dict[str, Any]]:
         """Fetch crude oil price + NSE index levels with P/E for the market macro strip."""
         results: list[dict[str, Any]] = []
-        snapshot_only_mode = self._is_market_open_ist()
+        snapshot_only_mode = self.eod_only_mode or self._is_market_open_ist()
 
         def history_close_summary(symbol: str) -> tuple[float | None, float | None]:
             try:
@@ -5642,6 +5667,8 @@ class FreeMarketDataProvider:
         return instrument.get("listing_date")
 
     def _fetch_chart_bars(self, symbol: str, timeframe: str, bars: int) -> list[ChartBar]:
+        if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
+            timeframe = "1D"
         ticker = self._resolve_ticker(symbol)
         interval_map = {
             "15m": "15m",
@@ -5664,7 +5691,8 @@ class FreeMarketDataProvider:
             else:
                 history = self._download_history_frame(ticker=ticker, period="10y", interval="1d")
                 history = self._split_adjusted_history(history)
-            history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
+            if not self.eod_only_mode:
+                history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
             history = self._aggregate_weekly_history(history)
         else:
             interval = interval_map.get(timeframe, "1d")
@@ -5672,7 +5700,8 @@ class FreeMarketDataProvider:
             history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
             if timeframe == "1D":
                 history = self._split_adjusted_history(history)
-                history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
+                if not self.eod_only_mode:
+                    history = self._apply_live_quote_to_daily_history(symbol, ticker, history)
 
                 # Yahoo can intermittently return sparse/empty index or commodity series.
                 # Fill gaps from alternate public sources before giving up.

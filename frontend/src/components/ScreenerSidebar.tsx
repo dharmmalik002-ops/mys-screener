@@ -82,7 +82,7 @@ export function ScreenerSidebar({
   onLoadSavedScanner,
   onDeleteSavedScanner,
 }: ScreenerSidebarProps) {
-  const marketLabel = market === "india" ? "India" : "US";
+  const marketLabel = "India";
 
   return (
     <Panel

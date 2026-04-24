@@ -146,7 +146,7 @@ type ScanRequestOptions = {
   minLiquidityCrore?: number | null;
 };
 
-export type MarketKey = "india" | "us";
+export type MarketKey = "india";
 
 export type ChartBar = {
   time: number;
@@ -1623,7 +1623,7 @@ function normalizeWatchlistItem(value: unknown): WatchlistItem {
 
 function normalizeWatchlistsStateResponse(value: unknown): WatchlistsStateResponse {
   const raw = isRecord(value) ? value : {};
-  const market = raw.market === "us" ? "us" : "india";
+  const market = "india";
   return {
     market,
     updated_at: readString(raw.updated_at),
@@ -1665,9 +1665,6 @@ function routeScopedMarket(): MarketKey | null {
   }
 
   const pathname = window.location.pathname.replace(/\/+$/, "") || "/";
-  if (pathname === "/us" || pathname.startsWith("/us/")) {
-    return "us";
-  }
   if (pathname === "/india" || pathname.startsWith("/india/")) {
     return "india";
   }
@@ -1784,7 +1781,7 @@ export function getChart(symbol: string, timeframe: string, market: MarketKey) {
   return request<ChartResponse>(
     `/api/chart/${encodeURIComponent(symbol)}?timeframe=${timeframe}&market=${market}`,
     undefined,
-    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 18000 : 25000 },
+    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 30000 : 25000 },
     normalizeChartResponse,
   );
 }
@@ -1793,7 +1790,7 @@ export function getChartHistory(symbol: string, timeframe: string, market: Marke
   return request<ChartResponse>(
     `/api/chart/${encodeURIComponent(symbol)}/history?timeframe=${timeframe}&market=${market}`,
     undefined,
-    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 20000 : 30000 },
+    { timeoutMs: timeframe === "1D" || timeframe === "1W" ? 35000 : 30000 },
     normalizeChartResponse,
   );
 }
@@ -1951,40 +1948,6 @@ export type CompanyQuestionResponse = {
   ai_model: string | null;
 };
 
-export function getMoneyFlowHistory(market: MarketKey) {
-  return request<MoneyFlowHistoryResponse>(withMarket("/api/money-flow/history", market));
-}
-
-export function getMoneyFlowLatest(market: MarketKey) {
-  return request<MoneyFlowReport>(withMarket("/api/money-flow/latest", market));
-}
-
-export function generateMoneyFlow(market: MarketKey) {
-  return request<MoneyFlowReport>(withMarket("/api/money-flow/generate", market), { method: "POST" });
-}
-
-export function getMoneyFlowStocks(market: MarketKey) {
-  return request<MoneyFlowStockIdeasResponse>(withMarket("/api/money-flow/stocks/latest", market));
-}
-
-export function getMoneyFlowStockHistory(market: MarketKey) {
-  return request<MoneyFlowStockIdeasHistoryResponse>(withMarket("/api/money-flow/stocks/history", market));
-}
-
-export function generateMoneyFlowStocks(market: MarketKey) {
-  return request<MoneyFlowStockIdeasResponse>(withMarket("/api/money-flow/stocks/generate", market), { method: "POST" });
-}
-
-export function askMoneyFlowCompanyQuestion(symbol: string, question: string, market: MarketKey) {
-  return request<CompanyQuestionResponse>(withMarket("/api/money-flow/stocks/ask", market), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ symbol, question }),
-  });
-}
-
 export type LiveNewsItem = {
   id: string;
   title: string;
@@ -2048,10 +2011,6 @@ export type SectorRotationResponse = {
   generated_at: string;
 };
 
-export function getSectorRotation(market: MarketKey) {
-  return request<SectorRotationResponse>(withMarket("/api/sector-rotation", market));
-}
-
 export function getGapUpOpeners(
   minGapPct: number,
   market: MarketKey,
@@ -2112,15 +2071,6 @@ export function getConsolidatingScan(body: ConsolidatingScanRequest, market: Mar
   }, undefined, normalizeScanResultsResponse);
 }
 
-export function getSectorTab(sortBy: SectorSortBy, sortOrder: "asc" | "desc", market: MarketKey) {
-  return request<SectorTabResponse>(
-    `/api/sectors?sort_by=${sortBy}&sort_order=${sortOrder}&market=${market}`,
-    undefined,
-    undefined,
-    normalizeSectorTabResponse,
-  );
-}
-
 export function getIndustryGroups(market: MarketKey) {
   return request<IndustryGroupsResponse>(withMarket("/api/groups", market), undefined, undefined, normalizeIndustryGroupsResponse);
 }
@@ -2132,20 +2082,6 @@ export function getImprovingRs(window: ImprovingRsWindow, market: MarketKey) {
     undefined,
     normalizeImprovingRsResponse,
   );
-}
-
-export function getMarketHealth(market: MarketKey) {
-  return request<MarketHealthResponse>(withMarket("/api/market-health", market));
-}
-
-export function getHistoricalMarketHealth(market: MarketKey) {
-  return request<HistoricalBreadthResponse>(withMarket("/api/market-health/history", market));
-}
-
-export function refreshHistoricalMarketHealth(market: MarketKey) {
-  return request<HistoricalBreadthResponse>(withMarket("/api/market-health/history/refresh", market), {
-    method: "POST",
-  });
 }
 
 export function getWatchlistsState(market: MarketKey) {

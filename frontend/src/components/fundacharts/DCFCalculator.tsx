@@ -14,7 +14,7 @@ type Props = {
   market: string;
 };
 
-const CCY = (mkt: string) => mkt.toUpperCase() === "US" ? "$" : "₹";
+const CCY = (_mkt: string) => "₹";
 
 function roundSf(n: number, sf = 3) {
   if (!isFinite(n) || n === 0) return n;

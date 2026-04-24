@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import sys
 import tempfile
@@ -24,7 +23,6 @@ from app.models.market import (
     ChartLinePoint,
     ConsolidatingScanRequest,
     CustomScanRequest,
-    EandCScanRequest,
     HistoricalBreadthDataPoint,
     HistoricalBreadthResponse,
     HistoricalUniverseBreadth,
@@ -48,9 +46,8 @@ from app.models.market import (
     WatchlistsStateResponse,
 )
 from app.providers.free import FreeMarketDataProvider
-from app.scanners.definitions import SCAN_BY_ID, run_consolidating_scan, run_custom_scan, run_e_and_c_scan, run_returns_scan, run_scan
+from app.scanners.definitions import SCAN_BY_ID, run_consolidating_scan, run_custom_scan, run_returns_scan, run_scan
 from app.services.dashboard_service import DashboardService
-from app.services.us_dashboard_service import USDashboardService
 
 
 class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
@@ -128,36 +125,126 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         )
         return snapshot
 
-    async def test_sector_tab_includes_requested_index_cards(self) -> None:
-        snapshots = [
-            self._build_snapshot(
-                symbol="AAA",
-                name="AAA Industries",
-                sector="Information Technology",
-                sub_sector="Software",
-                market_cap_crore=18_000.0,
-                start_close=100.0,
-                step=1.4,
-            ),
-            self._build_snapshot(
-                symbol="BBB",
-                name="BBB Manufacturing",
-                sector="Industrials",
-                sub_sector="Capital Goods",
-                market_cap_crore=9_000.0,
-                start_close=80.0,
-                step=0.9,
-            ),
-            self._build_snapshot(
-                symbol="CCC",
-                name="CCC Retail",
-                sector="Consumer Services",
-                sub_sector="Retail",
-                market_cap_crore=2_500.0,
-                start_close=50.0,
-                step=0.5,
-            ),
-        ]
+    def test_watchlists_migrate_from_legacy_repo_data_to_app_state_dir(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temp_root = Path(tmp_dir)
+            legacy_backend_root = temp_root / "legacy-backend"
+            legacy_data_dir = legacy_backend_root / "data"
+            legacy_data_dir.mkdir(parents=True, exist_ok=True)
+            legacy_watchlists_path = legacy_data_dir / "watchlists_state.json"
+            legacy_payload = {
+                "market": "india",
+                "updated_at": "2026-04-18T03:00:00Z",
+                "active_watchlist_id": "wl-1",
+                "watchlists": [
+                    {
+                        "id": "wl-1",
+                        "name": "Core",
+                        "color": "#4f8cff",
+                        "symbols": ["INFY", "TCS"],
+                    }
+                ],
+            }
+            legacy_watchlists_path.write_text(json.dumps(legacy_payload), encoding="utf-8")
+
+            class StubProvider:
+                def __init__(self, backend_root: Path) -> None:
+                    self.backend_root = backend_root
+
+                @staticmethod
+                def _default_exchange() -> str:
+                    return "NSE"
+
+            settings = Settings(app_state_dir=temp_root / "state")
+            service = DashboardService(provider=StubProvider(legacy_backend_root), settings=settings)
+
+            state = service.get_watchlists_state()
+
+            self.assertEqual(state.active_watchlist_id, "wl-1")
+            self.assertEqual(state.watchlists[0].symbols, ["INFY", "TCS"])
+            self.assertTrue((settings.app_state_dir / "data" / "watchlists_state.json").exists())
+
+    def test_save_watchlists_state_writes_outside_repo_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temp_root = Path(tmp_dir)
+            legacy_backend_root = temp_root / "legacy-backend"
+            (legacy_backend_root / "data").mkdir(parents=True, exist_ok=True)
+
+            class StubProvider:
+                def __init__(self, backend_root: Path) -> None:
+                    self.backend_root = backend_root
+
+                @staticmethod
+                def _default_exchange() -> str:
+                    return "NSE"
+
+            settings = Settings(app_state_dir=temp_root / "state")
+            service = DashboardService(provider=StubProvider(legacy_backend_root), settings=settings)
+            payload = WatchlistsStateResponse(
+                market="india",
+                active_watchlist_id="wl-1",
+                watchlists=[
+                    WatchlistItem(
+                        id="wl-1",
+                        name="Swing",
+                        color="#22c55e",
+                        symbols=["DIXON", "BSE"],
+                    )
+                ],
+            )
+
+            service.save_watchlists_state(payload)
+
+            self.assertTrue((settings.app_state_dir / "data" / "watchlists_state.json").exists())
+            self.assertFalse((legacy_backend_root / "data" / "watchlists_state.json").exists())
+
+    def test_contraction_scan_tolerates_legacy_snapshot_without_recent_closes(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="LEGACY",
+            name="Legacy Industries",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=12_000.0,
+            start_close=100.0,
+            step=0.55,
+        )
+        legacy_payload = snapshot.model_dump(mode="python")
+        legacy_payload.pop("recent_closes", None)
+
+        legacy_snapshot = StockSnapshot.model_validate(legacy_payload)
+        results = run_scan(SCAN_BY_ID["contraction"], [legacy_snapshot])
+
+        self.assertIsInstance(results, list)
+
+    async def test_contraction_scan_results_enrich_sparse_snapshots_from_chart_history(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="CNTRH",
+            name="Contraction History Match",
+            sector="Industrials",
+            sub_sector="Capital Goods",
+            market_cap_crore=8_900.0,
+            start_close=100.0,
+            step=0.45,
+        )
+        snapshot.last_price = 150.0
+        snapshot.previous_close = 148.0
+        snapshot.change_pct = round(((150.0 / 148.0) - 1) * 100, 2)
+        snapshot.ema50 = 135.0
+        snapshot.sma50 = 125.0
+        snapshot.avg_volume_50d = 60_000
+        snapshot.volume = 38_000
+        snapshot.recent_closes = []
+        snapshot.baseline_close_5d = None
+        snapshot.baseline_close_20d = None
+        snapshot.baseline_close_60d = None
+        snapshot.baseline_close_63d = None
+        snapshot.stock_return_5d = 5.0
+        snapshot.stock_return_20d = 24.0
+        snapshot.stock_return_60d = 18.0
+
+        self.assertEqual(run_scan(SCAN_BY_ID["contraction"], [snapshot]), [])
+
+        closes = [120.0, 124.0, 128.0, 132.0, 136.0, 140.0, 142.0, 143.0, 144.0, 144.8, 148.0, 150.0]
 
         class StubProvider:
             def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
@@ -168,25 +255,32 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
                 return self.rows
 
             async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                price_map = {
-                    "^NSEI": 22700.25,
-                    "^NSEMDCP50": 18654.40,
-                    "^CNXSC": 14231.15,
-                    "^CNX500": 20891.60,
-                }
+                del bars
+                if symbol != "CNTRH" or timeframe != "1D":
+                    return []
+                base_time = int(self.updated_at.timestamp()) - (len(closes) * 86400)
                 return [
-                    IndexQuoteItem(symbol=symbol, price=price_map[symbol], change_pct=0.0, updated_at=self.updated_at)
-                    for symbol in symbols
-                    if symbol in price_map
+                    ChartBar(
+                        time=base_time + (index * 86400),
+                        open=close - 1,
+                        high=close + 1,
+                        low=close - 2,
+                        close=close,
+                        volume=50_000,
+                    )
+                    for index, close in enumerate(closes)
                 ]
 
+            async def get_index_quotes(self, symbols: list[str]):
+                del symbols
+                return []
+
             async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
+                del symbol, snapshot
                 raise NotImplementedError
 
             async def refresh_snapshots(self, market_cap_min_crore: float):
+                del market_cap_min_crore
                 raise NotImplementedError
 
             def get_snapshot_updated_at(self) -> datetime:
@@ -195,37 +289,11 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
             def get_last_refresh_metadata(self) -> dict[str, object]:
                 return {}
 
-        service = DashboardService(provider=StubProvider(snapshots, self.snapshot_updated_at), settings=Settings())
-        service._index_constituents_cache = (
-            self.snapshot_updated_at,
-            {
-                "Nifty 50": {"AAA"},
-                "Nifty Midcap 50": {"BBB"},
-                "Nifty SmallCap 250": {"CCC"},
-                "Nifty 500": {"AAA", "BBB", "CCC"},
-            },
-        )
+        service = DashboardService(provider=StubProvider([snapshot], self.snapshot_updated_at), settings=Settings())
 
-        response = await service.get_sector_tab("1D", "desc")
+        response = await service.get_scan_results("contraction", include_sector_summaries=False)
 
-        sector_names = {card.sector for card in response.sectors}
-        self.assertTrue({"Nifty 50", "Nifty Midcap 50", "Nifty SmallCap 250", "Nifty 500"}.issubset(sector_names))
-
-        nifty_500 = next(card for card in response.sectors if card.sector == "Nifty 500")
-        self.assertEqual(nifty_500.group_kind, "index")
-        self.assertEqual(nifty_500.last_price, 20891.6)
-        self.assertEqual(nifty_500.return_1d, 0.0)
-        nifty_500_symbols = {
-            company.symbol
-            for group in nifty_500.sub_sectors
-            for company in group.companies
-        }
-        self.assertEqual(nifty_500_symbols, {"AAA", "BBB", "CCC"})
-
-        information_technology = next(card for card in response.sectors if card.sector == "Information Technology")
-        self.assertEqual(information_technology.group_kind, "sector")
-        self.assertGreater(len(information_technology.sparkline), 1)
-        self.assertGreater(information_technology.return_1y, information_technology.return_3m)
+        self.assertEqual([item.symbol for item in response.items], ["CNTRH"])
 
     async def test_refresh_market_data_uses_cached_snapshots_when_session_is_already_current(self) -> None:
         snapshot = self._build_snapshot(
@@ -274,6 +342,102 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         self.assertIs(service._dashboard_cache, cached_dashboard)
         self.assertEqual(response["refresh_mode"], "cached-current")
 
+    async def test_refresh_market_data_uses_live_refresh_when_provider_supports_intraday_updates(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="AAA",
+            name="AAA Industries",
+            sector="Information Technology",
+            sub_sector="Software",
+            market_cap_crore=18_000.0,
+            start_close=100.0,
+            step=1.4,
+        )
+
+        class RefreshProvider:
+            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
+                self.row = row
+                self.updated_at = updated_at
+                self.live_refresh_calls = 0
+
+            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                return [self.row]
+
+            def preferred_refresh_strategy(self) -> str:
+                return "cache"
+
+            async def refresh_live_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                self.live_refresh_calls += 1
+                self.updated_at = self.updated_at + timedelta(minutes=5)
+                return [self.row]
+
+            async def refresh_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                raise AssertionError("historical refresh should not be used for live updates")
+
+            def get_snapshot_updated_at(self) -> datetime:
+                return self.updated_at
+
+            def get_last_refresh_metadata(self) -> dict[str, object]:
+                return {"applied_quote_count": 42, "historical_rebuild": False, "quote_source": "nse"}
+
+        provider = RefreshProvider(snapshot, self.snapshot_updated_at)
+        service = DashboardService(provider=provider, settings=Settings())
+        service._dashboard_cache = object()
+
+        response = await service.refresh_market_data()
+
+        self.assertEqual(provider.live_refresh_calls, 1)
+        self.assertIsNone(service._dashboard_cache)
+        self.assertEqual(response["refresh_mode"], "live-refresh")
+        self.assertEqual(response["applied_quote_count"], 42)
+        self.assertEqual(response["quote_source"], "nse")
+
+    async def test_refresh_market_data_skips_live_refresh_for_eod_only_provider(self) -> None:
+        snapshot = self._build_snapshot(
+            symbol="AAA",
+            name="AAA Industries",
+            sector="Information Technology",
+            sub_sector="Software",
+            market_cap_crore=18_000.0,
+            start_close=100.0,
+            step=1.4,
+        )
+
+        class RefreshProvider:
+            eod_only_mode = True
+
+            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
+                self.row = row
+                self.updated_at = updated_at
+                self.get_snapshot_calls = 0
+
+            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                self.get_snapshot_calls += 1
+                return [self.row]
+
+            def preferred_refresh_strategy(self) -> str:
+                return "cache"
+
+            async def refresh_live_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                raise AssertionError("EOD-only providers should not use live refresh")
+
+            async def refresh_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
+                raise AssertionError("Historical refresh should not run for current EOD cache")
+
+            def get_snapshot_updated_at(self) -> datetime:
+                return self.updated_at
+
+            def get_last_refresh_metadata(self) -> dict[str, object]:
+                return {"applied_quote_count": 0, "historical_rebuild": False, "quote_source": None}
+
+        provider = RefreshProvider(snapshot, self.snapshot_updated_at)
+        service = DashboardService(provider=provider, settings=Settings())
+
+        response = await service.refresh_market_data()
+
+        self.assertEqual(provider.get_snapshot_calls, 1)
+        self.assertEqual(response["refresh_mode"], "cached-current")
+        self.assertEqual(response["applied_quote_count"], 0)
+
     async def test_refresh_market_data_uses_full_refresh_for_closed_session_rebuild(self) -> None:
         snapshot = self._build_snapshot(
             symbol="AAA",
@@ -317,62 +481,6 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(provider.full_refresh_calls, 1)
         self.assertIsNone(service._dashboard_cache)
         self.assertEqual(response["refresh_mode"], "historical-refresh")
-
-    async def test_refresh_market_data_uses_recent_quote_patch_before_full_eod_rebuild(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="AAA",
-            name="AAA Industries",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.4,
-        )
-
-        class RefreshProvider:
-            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
-                self.row = row
-                self.updated_at = updated_at
-                self.live_refresh_calls = 0
-                self.full_refresh_calls = 0
-                self.snapshot_calls = 0
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                self.snapshot_calls += 1
-                return [self.row]
-
-            def preferred_refresh_strategy(self) -> str:
-                return "historical"
-
-            async def refresh_live_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                self.live_refresh_calls += 1
-                self.updated_at = self.updated_at + timedelta(minutes=2)
-                return [self.row]
-
-            async def refresh_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                self.full_refresh_calls += 1
-                self.updated_at = self.updated_at + timedelta(minutes=10)
-                return [self.row]
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                if self.live_refresh_calls:
-                    return {"applied_quote_count": 14, "historical_rebuild": False, "quote_source": "nse-live"}
-                return {"applied_quote_count": 0, "historical_rebuild": True, "quote_source": None}
-
-        provider = RefreshProvider(snapshot, self.snapshot_updated_at)
-        service = DashboardService(provider=provider, settings=Settings())
-        service._dashboard_cache = object()
-
-        response = await service.refresh_market_data()
-
-        self.assertEqual(provider.live_refresh_calls, 1)
-        self.assertEqual(provider.full_refresh_calls, 0)
-        self.assertEqual(response["refresh_mode"], "live-refresh")
-        self.assertEqual(response["applied_quote_count"], 14)
-        self.assertEqual(response["quote_source"], "nse-live")
 
     async def test_refresh_market_data_returns_cache_fallback_for_unknown_strategy(self) -> None:
         snapshot = self._build_snapshot(
@@ -826,1523 +934,6 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         self.assertIsNotNone(response.cards[0].weight_pct)
         self.assertGreater(response.cards[0].return_1y, response.cards[0].return_3m)
 
-    async def test_market_health_uses_index_constituent_memberships(self) -> None:
-        snapshots = [
-            self._build_snapshot(
-                symbol="AAA",
-                name="AAA Industries",
-                sector="Information Technology",
-                sub_sector="Software",
-                market_cap_crore=18_000.0,
-                start_close=100.0,
-                step=1.4,
-            ),
-            self._build_snapshot(
-                symbol="BBB",
-                name="BBB Manufacturing",
-                sector="Industrials",
-                sub_sector="Capital Goods",
-                market_cap_crore=9_000.0,
-                start_close=80.0,
-                step=0.9,
-            ),
-            self._build_snapshot(
-                symbol="CCC",
-                name="CCC Retail",
-                sector="Consumer Services",
-                sub_sector="Retail",
-                market_cap_crore=2_500.0,
-                start_close=50.0,
-                step=0.5,
-            ),
-        ]
-
-        class StubProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-        service = DashboardService(provider=StubProvider(snapshots, self.snapshot_updated_at), settings=Settings())
-
-        with patch.object(
-            service,
-            "_load_index_constituents_map",
-            return_value={
-                "Nifty 50": {"CCC"},
-                "Nifty 500": {"AAA", "CCC"},
-            },
-        ):
-            response = await service.get_market_health()
-
-        universe_totals = {item.universe: item.total for item in response.universes}
-        self.assertEqual(universe_totals["Nifty 50"], 1)
-        self.assertEqual(universe_totals["Nifty 500"], 2)
-
-
-class USDashboardServiceMarketHealthTests(unittest.IsolatedAsyncioTestCase):
-    def setUp(self) -> None:
-        self.builder = FreeMarketDataProvider()
-        self.snapshot_updated_at = datetime(2026, 3, 27, 10, 0, tzinfo=timezone.utc)
-
-    def _build_snapshot_with_history(
-        self,
-        *,
-        symbol: str,
-        name: str,
-        sector: str,
-        sub_sector: str,
-        market_cap_crore: float,
-        start_close: float,
-        step: float,
-    ) -> tuple[StockSnapshot, pd.DataFrame, pd.Series]:
-        index = pd.bdate_range(end=self.snapshot_updated_at, periods=520)
-        history = pd.DataFrame(
-            [
-                {
-                    "Open": start_close + (idx * step) - 1,
-                    "High": start_close + (idx * step) + 2,
-                    "Low": start_close + (idx * step) - 2,
-                    "Close": start_close + (idx * step),
-                    "Adj Close": start_close + (idx * step),
-                    "Volume": 100_000 + (idx * 500),
-                    "Stock Splits": 0.0,
-                }
-                for idx in range(len(index))
-            ],
-            index=index,
-        )
-        benchmark = pd.Series([1000 + idx for idx in range(len(index))], index=index, dtype=float)
-        row = self.builder._history_to_snapshot(
-            {
-                "symbol": symbol,
-                "name": name,
-                "exchange": "NYSE",
-                "listing_date": "2020-01-02",
-                "sector": sector,
-                "sub_sector": sub_sector,
-                "market_cap_crore": market_cap_crore,
-                "ticker": symbol,
-            },
-            history,
-            benchmark,
-        )
-        assert row is not None
-        row["market_cap_crore"] = market_cap_crore
-        row["sector"] = sector
-        row["sub_sector"] = sub_sector
-        return StockSnapshot.model_validate(row), history, benchmark
-
-    def _build_snapshot(
-        self,
-        *,
-        symbol: str,
-        name: str,
-        sector: str,
-        sub_sector: str,
-        market_cap_crore: float,
-        start_close: float,
-        step: float,
-    ) -> StockSnapshot:
-        snapshot, _, _ = self._build_snapshot_with_history(
-            symbol=symbol,
-            name=name,
-            sector=sector,
-            sub_sector=sub_sector,
-            market_cap_crore=market_cap_crore,
-            start_close=start_close,
-            step=step,
-        )
-        return snapshot
-
-    async def test_us_sector_tab_cache_does_not_depend_on_index_constituent_state(self) -> None:
-        snapshot_updated_at = datetime(2026, 3, 27, 10, 0, tzinfo=timezone.utc)
-
-        class StubProvider:
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return []
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return snapshot_updated_at
-
-        service = USDashboardService(provider=StubProvider(), settings=Settings())
-        cached_response = SectorTabResponse(
-            generated_at=snapshot_updated_at,
-            total_sectors=0,
-            sort_by="1D",
-            sort_order="desc",
-            sectors=[],
-        )
-        service._sector_tab_cache[("1D", "desc")] = cached_response
-
-        with patch.object(service, "_index_constituents_cache_fresh", return_value=False):
-            response = await service.get_sector_tab("1D", "desc")
-
-        self.assertIs(response, cached_response)
-
-    async def test_market_health_uses_capped_exchange_universes(self) -> None:
-        builder = FreeMarketDataProvider()
-        snapshot_updated_at = datetime(2026, 3, 27, 10, 0, tzinfo=timezone.utc)
-
-        def build_snapshot(symbol: str, exchange: str, market_cap_crore: float, sector: str = "Technology", sub_sector: str = "Software") -> StockSnapshot:
-            index = pd.bdate_range(end=snapshot_updated_at, periods=520)
-            history = pd.DataFrame(
-                [
-                    {
-                        "Open": 100 + idx - 1,
-                        "High": 100 + idx + 2,
-                        "Low": 100 + idx - 2,
-                        "Close": 100 + idx,
-                        "Adj Close": 100 + idx,
-                        "Volume": 100_000 + (idx * 500),
-                        "Stock Splits": 0.0,
-                    }
-                    for idx in range(len(index))
-                ],
-                index=index,
-            )
-            benchmark = pd.Series([1000 + idx for idx in range(len(index))], index=index, dtype=float)
-            row = builder._history_to_snapshot(
-                {
-                    "symbol": symbol,
-                    "name": f"{symbol} Inc",
-                    "exchange": exchange,
-                    "listing_date": "2020-01-02",
-                    "sector": sector,
-                    "sub_sector": sub_sector,
-                    "market_cap_crore": market_cap_crore,
-                    "ticker": symbol,
-                },
-                history,
-                benchmark,
-            )
-            assert row is not None
-            row["market_cap_crore"] = market_cap_crore
-            row["sector"] = sector
-            row["sub_sector"] = sub_sector
-            row["exchange"] = exchange
-            return StockSnapshot.model_validate(row)
-
-        snapshots = [build_snapshot(f"NY{index:03d}", "NYSE", 10_000 - index) for index in range(260)]
-        snapshots.extend(build_snapshot(f"NA{index:03d}", "NASDAQ", 10_000 - index) for index in range(255))
-        snapshots.append(build_snapshot("ETF001", "NYSE", 20_000, sector="Exchange Traded Funds", sub_sector="ETF"))
-
-        class StubProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-        service = USDashboardService(provider=StubProvider(snapshots, snapshot_updated_at), settings=Settings())
-        response = await service.get_market_health()
-
-        universe_totals = {item.universe: item.total for item in response.universes}
-        self.assertEqual(universe_totals["NYSE"], 250)
-        self.assertEqual(universe_totals["NASDAQ"], 250)
-
-    async def test_chart_grid_returns_index_member_sparklines(self) -> None:
-        snapshots = [
-            self._build_snapshot(
-                symbol="AAA",
-                name="AAA Industries",
-                sector="Information Technology",
-                sub_sector="Software",
-                market_cap_crore=18_000.0,
-                start_close=100.0,
-                step=1.4,
-            ),
-            self._build_snapshot(
-                symbol="BBB",
-                name="BBB Manufacturing",
-                sector="Industrials",
-                sub_sector="Capital Goods",
-                market_cap_crore=9_000.0,
-                start_close=80.0,
-                step=0.9,
-            ),
-        ]
-
-        class IndexGridStubProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                return [
-                    ChartBar(time=10, open=80.0, high=82.0, low=79.0, close=81.0, volume=9_000),
-                    ChartBar(time=11, open=81.0, high=84.0, low=80.0, close=83.0, volume=9_500),
-                ]
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=IndexGridStubProvider(snapshots, self.snapshot_updated_at), settings=Settings())
-
-        with patch.object(
-            service,
-            "_load_index_constituents_map",
-            return_value={"Nifty 50": {"AAA", "BBB"}},
-        ):
-            response = await service.get_chart_grid(
-                name="Nifty 50",
-                group_kind="index",
-                timeframe="1Y",
-            )
-
-        self.assertEqual(response.group_kind, "index")
-        self.assertEqual(response.total_items, 2)
-        self.assertEqual({card.symbol for card in response.cards}, {"AAA", "BBB"})
-
-    async def test_chart_grid_prefers_snapshot_sparklines_over_chart_fetches(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="AAA",
-            name="AAA Industries",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.4,
-        )
-        snapshot.chart_grid_points = [
-            ChartLinePoint(time=1, value=100.0),
-            ChartLinePoint(time=2, value=104.0),
-            ChartLinePoint(time=3, value=108.0),
-        ]
-
-        class SnapshotSparklineProvider:
-            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
-                self.row = row
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return [self.row]
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise AssertionError("chart fetch should not be needed when snapshot sparkline exists")
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=SnapshotSparklineProvider(snapshot, self.snapshot_updated_at), settings=Settings())
-        response = await service.get_chart_grid(name="Information Technology", group_kind="sector", timeframe="3M")
-
-        self.assertEqual(response.total_items, 1)
-        self.assertEqual([point.value for point in response.cards[0].sparkline], [100.0, 104.0, 108.0])
-
-    async def test_chart_grid_series_returns_requested_daily_bars(self) -> None:
-        class SeriesStubProvider:
-            def __init__(self, updated_at: datetime) -> None:
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return []
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                base_time = 100 if symbol == "AAA" else 200
-                return [
-                    ChartBar(time=base_time + 1, open=10.0, high=11.0, low=9.5, close=10.5, volume=1000),
-                    ChartBar(time=base_time + 2, open=10.5, high=12.0, low=10.0, close=11.5, volume=1200),
-                ]
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=SeriesStubProvider(self.snapshot_updated_at), settings=Settings())
-        response = await service.get_chart_grid_series(symbols=["AAA", "AAA", "BBB"], timeframe="1Y")
-
-        self.assertEqual(response.total_items, 2)
-        self.assertEqual([item.symbol for item in response.items], ["AAA", "BBB"])
-        self.assertEqual(response.items[0].bars[-1].close, 11.5)
-
-    async def test_near_pivot_excludes_rs_ineligible_names(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="AAA",
-            name="AAA Industries",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.4,
-        )
-        snapshot.rs_eligible = False
-        snapshot.rs_rating = 98
-
-        class ScanStubProvider:
-            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
-                self.row = row
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return [self.row]
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=ScanStubProvider(snapshot, self.snapshot_updated_at), settings=Settings())
-        response = await service.get_near_pivot_scan_results(NearPivotScanRequest())
-        self.assertEqual(response.total_hits, 0)
-
-    async def test_pull_back_excludes_rs_ineligible_names(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="AAA",
-            name="AAA Industries",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.4,
-        )
-        snapshot.rs_eligible = False
-        snapshot.rs_rating = 98
-
-        class PullbackStubProvider:
-            def __init__(self, row: StockSnapshot, updated_at: datetime) -> None:
-                self.row = row
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return [self.row]
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=PullbackStubProvider(snapshot, self.snapshot_updated_at), settings=Settings())
-        response = await service.get_pull_back_scan_results(PullBackScanRequest())
-        self.assertEqual(response.total_hits, 0)
-
-    async def test_gap_up_liquidity_filter_excludes_illiquid_names(self) -> None:
-        liquid = self._build_snapshot(
-            symbol="LIQ",
-            name="Liquid Co",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_000.0,
-            start_close=1000.0,
-            step=1.2,
-        )
-        liquid.gap_pct = 3.2
-        liquid.avg_volume_20d = 250_000
-        liquid.avg_volume_30d = 250_000
-
-        illiquid = self._build_snapshot(
-            symbol="ILLQ",
-            name="Illiquid Co",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=1_200.0,
-            start_close=90.0,
-            step=0.3,
-        )
-        illiquid.gap_pct = 3.8
-        illiquid.avg_volume_20d = 8_000
-        illiquid.avg_volume_30d = 8_000
-
-        class GapUpProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=GapUpProvider([illiquid, liquid], self.snapshot_updated_at), settings=Settings())
-        response = await service.get_gap_up_openers(min_gap_pct=2.0, min_liquidity_crore=5.0)
-
-        self.assertEqual(response.total_hits, 1)
-        self.assertEqual(response.items[0].symbol, "LIQ")
-
-    async def test_near_pivot_liquidity_filter_excludes_illiquid_names(self) -> None:
-        liquid = self._build_snapshot(
-            symbol="LIQ",
-            name="Liquid Co",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=8_000.0,
-            start_close=1000.0,
-            step=1.1,
-        )
-        liquid.rs_eligible = True
-        liquid.rs_rating = 90
-        liquid.last_price = 2000.0
-        liquid.high_52w = round(liquid.last_price / 0.97, 2)
-        liquid.avg_volume_20d = 250_000
-        liquid.avg_volume_30d = 250_000
-        liquid.recent_highs = [2000.0, 2002.0, 2003.0, 2004.0, 2004.5]
-        liquid.recent_lows = [1988.0, 1990.0, 1992.0, 1993.0, 1994.0]
-
-        illiquid = self._build_snapshot(
-            symbol="ILLQ",
-            name="Illiquid Co",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=1_200.0,
-            start_close=90.0,
-            step=0.25,
-        )
-        illiquid.rs_eligible = True
-        illiquid.rs_rating = 91
-        illiquid.last_price = 120.0
-        illiquid.high_52w = round(illiquid.last_price / 0.98, 2)
-        illiquid.avg_volume_20d = 8_000
-        illiquid.avg_volume_30d = 8_000
-        illiquid.recent_highs = [120.0, 120.5, 121.0, 121.2, 121.3]
-        illiquid.recent_lows = [118.0, 118.5, 118.8, 119.0, 119.2]
-
-        class NearPivotProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=NearPivotProvider([illiquid, liquid], self.snapshot_updated_at), settings=Settings())
-        response = await service.get_near_pivot_scan_results(NearPivotScanRequest(min_liquidity_crore=5.0))
-
-        self.assertEqual(response.total_hits, 1)
-        self.assertEqual(response.items[0].symbol, "LIQ")
-
-    async def test_returns_liquidity_filter_excludes_illiquid_names(self) -> None:
-        liquid = self._build_snapshot(
-            symbol="LIQ",
-            name="Liquid Co",
-            sector="Consumer Services",
-            sub_sector="Retail",
-            market_cap_crore=8_000.0,
-            start_close=1000.0,
-            step=1.2,
-        )
-        liquid.stock_return_20d = 14.0
-        liquid.avg_volume_20d = 250_000
-        liquid.avg_volume_30d = 250_000
-
-        illiquid = self._build_snapshot(
-            symbol="ILLQ",
-            name="Illiquid Co",
-            sector="Consumer Services",
-            sub_sector="Retail",
-            market_cap_crore=1_200.0,
-            start_close=90.0,
-            step=0.25,
-        )
-        illiquid.stock_return_20d = 18.0
-        illiquid.avg_volume_20d = 8_000
-        illiquid.avg_volume_30d = 8_000
-
-        class ReturnsProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=ReturnsProvider([illiquid, liquid], self.snapshot_updated_at), settings=Settings())
-        response = await service.get_returns_scan_results(ReturnsScanRequest(timeframe="1M", min_liquidity_crore=5.0))
-
-        self.assertEqual(response.total_hits, 1)
-        self.assertEqual(response.items[0].symbol, "LIQ")
-
-    async def test_returns_scan_includes_sector_summaries_with_historical_counts(self) -> None:
-        alpha, alpha_history, benchmark = self._build_snapshot_with_history(
-            symbol="ALPHA",
-            name="Alpha Tech",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        beta, beta_history, _ = self._build_snapshot_with_history(
-            symbol="BETA",
-            name="Beta Services",
-            sector="Information Technology",
-            sub_sector="IT Services",
-            market_cap_crore=9_000.0,
-            start_close=80.0,
-            step=0.9,
-        )
-        gamma, gamma_history, _ = self._build_snapshot_with_history(
-            symbol="GAMMA",
-            name="Gamma Pharma",
-            sector="Pharma",
-            sub_sector="Formulations",
-            market_cap_crore=7_500.0,
-            start_close=60.0,
-            step=0.7,
-        )
-
-        histories = {
-            "ALPHA": alpha_history,
-            "BETA": beta_history,
-            "GAMMA": gamma_history,
-        }
-
-        class ReturnsSummaryProvider:
-            def __init__(
-                self,
-                rows: list[StockSnapshot],
-                histories_by_symbol: dict[str, pd.DataFrame],
-                benchmark_history: pd.Series,
-                updated_at: datetime,
-                builder: FreeMarketDataProvider,
-            ) -> None:
-                self.rows = rows
-                self.histories_by_symbol = histories_by_symbol
-                self.benchmark_history = benchmark_history
-                self.updated_at = updated_at
-                self.builder = builder
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                if symbol != "^NSEI":
-                    raise NotImplementedError
-                return [
-                    ChartBar(
-                        time=int(timestamp.timestamp()),
-                        open=float(close),
-                        high=float(close),
-                        low=float(close),
-                        close=float(close),
-                        volume=0,
-                    )
-                    for timestamp, close in self.benchmark_history.tail(bars).items()
-                ]
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-            def _history_frame_from_cached_bars(
-                self,
-                symbol: str,
-                bars: int,
-                allow_legacy: bool = True,
-            ) -> pd.DataFrame:
-                return self.histories_by_symbol[symbol].tail(bars)
-
-            def _history_to_snapshot(
-                self,
-                instrument: dict[str, object],
-                history: pd.DataFrame,
-                benchmark_history: pd.Series,
-            ) -> dict[str, object] | None:
-                return self.builder._history_to_snapshot(instrument, history, benchmark_history)
-
-        service = DashboardService(
-            provider=ReturnsSummaryProvider(
-                [alpha, beta, gamma],
-                histories,
-                benchmark,
-                self.snapshot_updated_at,
-                self.builder,
-            ),
-            settings=Settings(),
-        )
-        response = await service.get_returns_scan_results(
-            ReturnsScanRequest(timeframe="1M", min_return_pct=1.0, limit=100),
-        )
-
-        self.assertEqual(response.total_hits, 3)
-        self.assertEqual(len(response.sector_summaries), 2)
-        information_technology = next(summary for summary in response.sector_summaries if summary.sector == "Information Technology")
-        pharma = next(summary for summary in response.sector_summaries if summary.sector == "Pharma")
-        self.assertEqual(information_technology.current_hits, 2)
-        self.assertEqual(pharma.current_hits, 1)
-        self.assertGreaterEqual(information_technology.prior_week_hits, 1)
-        self.assertGreaterEqual(information_technology.prior_month_hits, 1)
-        self.assertNotEqual(information_technology.sector_return_1w, 0.0)
-        self.assertNotEqual(pharma.sector_return_1m, 0.0)
-
-    async def test_consolidating_liquidity_filter_excludes_illiquid_names(self) -> None:
-        liquid = self._build_snapshot(
-            symbol="LIQ",
-            name="Liquid Co",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_000.0,
-            start_close=1000.0,
-            step=1.0,
-        )
-        illiquid = self._build_snapshot(
-            symbol="ILLQ",
-            name="Illiquid Co",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=1_200.0,
-            start_close=100.0,
-            step=0.2,
-        )
-
-        for snapshot in (liquid, illiquid):
-            snapshot.sma200 = 880.0 if snapshot.symbol == "LIQ" else 88.0
-            snapshot.sma50 = 960.0 if snapshot.symbol == "LIQ" else 96.0
-            snapshot.avg_volume_50d = 250_000 if snapshot.symbol == "LIQ" else 8_000
-            snapshot.avg_volume_30d = 250_000 if snapshot.symbol == "LIQ" else 8_000
-            snapshot.avg_volume_20d = 250_000 if snapshot.symbol == "LIQ" else 8_000
-            snapshot.volume = 500_000 if snapshot.symbol == "LIQ" else 16_000
-            snapshot.high_52w = 1105.0 if snapshot.symbol == "LIQ" else 110.5
-            snapshot.low_52w = 700.0 if snapshot.symbol == "LIQ" else 70.0
-            snapshot.recent_highs = [1_005.0] * 5 + [1_010.0] * 5 + [1_015.0] * 5 if snapshot.symbol == "LIQ" else [100.5] * 15
-            snapshot.recent_lows = [960.0] * 5 + [965.0] * 5 + [970.0] * 5 if snapshot.symbol == "LIQ" else [96.0] * 15
-            snapshot.recent_volumes = [120_000] * 10 + [150_000] * 10 if snapshot.symbol == "LIQ" else [4_000] * 20
-
-        class ConsolidatingProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=ConsolidatingProvider([illiquid, liquid], self.snapshot_updated_at), settings=Settings())
-        response = await service.get_consolidating_scan_results(ConsolidatingScanRequest(min_liquidity_crore=5.0))
-
-        self.assertEqual(response.total_hits, 1)
-        self.assertEqual(response.items[0].symbol, "LIQ")
-
-    def test_consolidating_run_up_mode_returns_only_run_up_matches(self) -> None:
-        run_up = self._build_snapshot(
-            symbol="RUNA",
-            name="Run Up A",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        breakout_only = self._build_snapshot(
-            symbol="BRKA",
-            name="Breakout A",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_500.0,
-            start_close=100.0,
-            step=0.9,
-        )
-
-        run_up.sma50 = 150.0
-        run_up.sma200 = 130.0
-        run_up.high_52w = 180.0
-        run_up.low_52w = 120.0
-        run_up.last_price = 171.0
-        run_up.avg_volume_50d = 200_000
-        run_up.avg_volume_30d = 200_000
-        run_up.avg_volume_20d = 200_000
-        run_up.volume = 140_000
-        run_up.recent_highs = [170.0, 170.5, 171.0, 171.5, 172.0, 171.8, 171.7, 171.4, 171.1, 170.9, 170.8, 170.7, 170.9, 171.0, 171.2]
-        run_up.recent_lows = [158.0, 158.2, 158.5, 158.8, 159.0, 159.2, 159.4, 159.6, 159.8, 160.0, 160.2, 160.3, 160.5, 160.6, 160.8]
-        run_up.recent_volumes = [90_000] * 10 + [130_000] * 10
-
-        breakout_only.sma50 = 150.0
-        breakout_only.sma200 = 120.0
-        breakout_only.high_3y = 205.0
-        breakout_only.multi_year_high = 205.0
-        breakout_only.last_price = 194.0
-        breakout_only.volume = 160_000
-        breakout_only.avg_volume_50d = 110_000
-        breakout_only.avg_volume_30d = 110_000
-        breakout_only.avg_volume_20d = 110_000
-        breakout_only.high_52w = 205.0
-        breakout_only.low_52w = 110.0
-        breakout_only.recent_highs = [205.0] * 15
-        breakout_only.recent_lows = [180.0] * 15
-        breakout_only.recent_volumes = [120_000] * 20
-
-        results = run_consolidating_scan(
-            ConsolidatingScanRequest(enable_run_up_consolidation=True, enable_near_multi_year_breakout=False, limit=20),
-            [run_up, breakout_only],
-        )
-
-        self.assertEqual([item.symbol for item in results], ["RUNA"])
-        self.assertEqual(results[0].pattern, "Long Consolidation After a Run-Up")
-
-    def test_consolidating_near_multi_year_breakout_mode_returns_only_breakout_matches(self) -> None:
-        run_up_only = self._build_snapshot(
-            symbol="RUNB",
-            name="Run Up B",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_000.0,
-            start_close=100.0,
-            step=1.1,
-        )
-        breakout = self._build_snapshot(
-            symbol="BRKB",
-            name="Breakout B",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=10_000.0,
-            start_close=100.0,
-            step=1.0,
-        )
-
-        run_up_only.sma50 = 150.0
-        run_up_only.sma200 = 130.0
-        run_up_only.high_52w = 180.0
-        run_up_only.low_52w = 120.0
-        run_up_only.last_price = 171.0
-        run_up_only.avg_volume_50d = 200_000
-        run_up_only.avg_volume_30d = 200_000
-        run_up_only.avg_volume_20d = 200_000
-        run_up_only.volume = 140_000
-        run_up_only.recent_highs = [170.0, 170.5, 171.0, 171.5, 172.0, 171.8, 171.7, 171.4, 171.1, 170.9, 170.8, 170.7, 170.9, 171.0, 171.2]
-        run_up_only.recent_lows = [158.0, 158.2, 158.5, 158.8, 159.0, 159.2, 159.4, 159.6, 159.8, 160.0, 160.2, 160.3, 160.5, 160.6, 160.8]
-        run_up_only.recent_volumes = [90_000] * 10 + [130_000] * 10
-
-        breakout.sma50 = 150.0
-        breakout.sma200 = 120.0
-        breakout.high_3y = 210.0
-        breakout.multi_year_high = 210.0
-        breakout.last_price = 195.0
-        breakout.volume = 180_000
-        breakout.avg_volume_50d = 120_000
-        breakout.avg_volume_30d = 120_000
-        breakout.avg_volume_20d = 120_000
-
-        results = run_consolidating_scan(
-            ConsolidatingScanRequest(enable_run_up_consolidation=False, enable_near_multi_year_breakout=True, limit=20),
-            [run_up_only, breakout],
-        )
-
-        self.assertEqual([item.symbol for item in results], ["BRKB"])
-        self.assertEqual(results[0].pattern, "Near Multi-Year Breakout")
-
-    def test_consolidating_combines_union_when_both_modes_are_enabled(self) -> None:
-        both = self._build_snapshot(
-            symbol="BOTH",
-            name="Both Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=11_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        run_up_only = self._build_snapshot(
-            symbol="RUNO",
-            name="Run Only",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_500.0,
-            start_close=100.0,
-            step=1.1,
-        )
-        breakout_only = self._build_snapshot(
-            symbol="BRKO",
-            name="Break Only",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=10_500.0,
-            start_close=100.0,
-            step=1.0,
-        )
-
-        for snapshot in (both, run_up_only):
-            snapshot.sma50 = 150.0
-            snapshot.sma200 = 130.0
-            snapshot.high_52w = 180.0
-            snapshot.low_52w = 120.0
-            snapshot.last_price = 171.0 if snapshot.symbol == "RUNO" else 174.0
-            snapshot.avg_volume_50d = 200_000
-            snapshot.avg_volume_30d = 200_000
-            snapshot.avg_volume_20d = 200_000
-            snapshot.recent_highs = [170.0, 170.5, 171.0, 171.5, 172.0, 171.8, 171.7, 171.4, 171.1, 170.9, 170.8, 170.7, 170.9, 171.0, 171.2]
-            snapshot.recent_lows = [158.0, 158.2, 158.5, 158.8, 159.0, 159.2, 159.4, 159.6, 159.8, 160.0, 160.2, 160.3, 160.5, 160.6, 160.8]
-            snapshot.recent_volumes = [90_000] * 10 + [130_000] * 10
-            snapshot.volume = 140_000 if snapshot.symbol == "RUNO" else 160_000
-
-        both.high_3y = 180.0
-        both.multi_year_high = 180.0
-        both.last_price = 174.0
-
-        breakout_only.sma50 = 150.0
-        breakout_only.sma200 = 120.0
-        breakout_only.high_3y = 210.0
-        breakout_only.multi_year_high = 210.0
-        breakout_only.last_price = 195.0
-        breakout_only.volume = 180_000
-        breakout_only.avg_volume_50d = 120_000
-        breakout_only.avg_volume_30d = 120_000
-        breakout_only.avg_volume_20d = 120_000
-
-        results = run_consolidating_scan(ConsolidatingScanRequest(limit=20), [both, run_up_only, breakout_only])
-
-        self.assertEqual({item.symbol for item in results}, {"BOTH", "RUNO", "BRKO"})
-        both_match = next(item for item in results if item.symbol == "BOTH")
-        self.assertIn("Long Consolidation After a Run-Up", both_match.pattern or "")
-        self.assertIn("Near Multi-Year Breakout", both_match.pattern or "")
-
-    def test_custom_scan_rs_filter_excludes_non_eligible_names(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="AAA",
-            name="AAA Industries",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.4,
-        )
-        snapshot.rs_eligible = False
-        snapshot.rs_rating = 98
-
-        response = run_custom_scan(CustomScanRequest(min_rs_rating=70, limit=20), [snapshot])
-        self.assertEqual(response, [])
-
-    def test_e_and_c_scan_returns_expansion_matches_only_under_new_rules(self) -> None:
-        expansion_snapshot = self._build_snapshot(
-            symbol="EXPN",
-            name="Expansion Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_500.0,
-            start_close=100.0,
-            step=0.9,
-        )
-        expansion_snapshot.last_price = 145.0
-        expansion_snapshot.change_pct = 6.2
-        expansion_snapshot.volume = 52_001
-        expansion_snapshot.avg_volume_20d = 25_000
-
-        non_match_snapshot = self._build_snapshot(
-            symbol="MISS",
-            name="Non Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=9_200.0,
-            start_close=100.0,
-            step=0.75,
-        )
-        non_match_snapshot.last_price = 142.0
-        non_match_snapshot.change_pct = 6.4
-        non_match_snapshot.volume = 49_500
-        non_match_snapshot.avg_volume_20d = 20_000
-
-        contraction, expansion = run_e_and_c_scan(
-            [expansion_snapshot, non_match_snapshot],
-            request=EandCScanRequest(),
-        )
-
-        self.assertEqual(contraction, [])
-        self.assertEqual([item.symbol for item in expansion], ["EXPN"])
-
-    def test_contraction_scan_matches_tight_three_day_contractions_with_run_up_trigger(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="CNTR",
-            name="Contraction Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_500.0,
-            start_close=100.0,
-            step=0.55,
-        )
-        snapshot.last_price = 150.0
-        snapshot.previous_close = 148.0
-        snapshot.change_pct = round(((150.0 / 148.0) - 1) * 100, 2)
-        snapshot.ema50 = 135.0
-        snapshot.sma50 = 125.0
-        snapshot.avg_volume_50d = 60_000
-        snapshot.volume = 38_000
-        snapshot.recent_closes = [120.0, 124.0, 128.0, 132.0, 136.0, 140.0, 142.0, 143.0, 144.0, 144.8, 148.0, 150.0]
-        snapshot.baseline_close_30d = 121.0
-        snapshot.baseline_close_90d = 112.0
-        snapshot.stock_return_20d = 18.0
-        snapshot.stock_return_60d = 22.0
-
-        results = run_scan(SCAN_BY_ID["contraction"], [snapshot])
-
-        self.assertEqual([item.symbol for item in results], ["CNTR"])
-        self.assertIn("3-day contraction", results[0].reasons[0])
-
-    def test_contraction_scan_requires_a_run_up_trigger(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="MISSC",
-            name="Contraction Miss",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_200.0,
-            start_close=100.0,
-            step=0.5,
-        )
-        snapshot.last_price = 149.0
-        snapshot.previous_close = 148.0
-        snapshot.change_pct = round(((149.0 / 148.0) - 1) * 100, 2)
-        snapshot.ema50 = 136.0
-        snapshot.sma50 = 124.0
-        snapshot.avg_volume_50d = 72_000
-        snapshot.volume = 34_000
-        snapshot.recent_closes = [138.0, 139.0, 140.0, 141.0, 142.0, 143.0, 144.0, 145.0, 146.0, 147.0, 148.0, 149.0]
-        snapshot.baseline_close_30d = 138.0
-        snapshot.baseline_close_90d = 120.0
-        snapshot.stock_return_20d = 12.0
-        snapshot.stock_return_60d = 18.0
-
-        results = run_scan(SCAN_BY_ID["contraction"], [snapshot])
-
-        self.assertEqual(results, [])
-
-    async def test_contraction_scan_results_enrich_missing_recent_closes_from_chart_history(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="CNTRH",
-            name="Contraction History Match",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_900.0,
-            start_close=100.0,
-            step=0.45,
-        )
-        snapshot.last_price = 150.0
-        snapshot.previous_close = 148.0
-        snapshot.change_pct = round(((150.0 / 148.0) - 1) * 100, 2)
-        snapshot.ema50 = 135.0
-        snapshot.sma50 = 125.0
-        snapshot.avg_volume_50d = 60_000
-        snapshot.volume = 38_000
-        snapshot.recent_closes = []
-        snapshot.baseline_close_30d = None
-        snapshot.baseline_close_90d = None
-        snapshot.stock_return_5d = 5.0
-        snapshot.stock_return_20d = 24.0
-        snapshot.stock_return_60d = 18.0
-
-        closes = [120.0, 124.0, 128.0, 132.0, 136.0, 140.0, 142.0, 143.0, 144.0, 144.8, 148.0, 150.0]
-
-        class StubProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                del bars
-                self_symbol = symbol
-                self_timeframe = timeframe
-                if self_symbol != "CNTRH" or self_timeframe != "1D":
-                    return []
-                base_time = int(self.updated_at.timestamp()) - (len(closes) * 86400)
-                return [
-                    ChartBar(
-                        time=base_time + (index * 86400),
-                        open=close - 1,
-                        high=close + 1,
-                        low=close - 2,
-                        close=close,
-                        volume=50_000,
-                    )
-                    for index, close in enumerate(closes)
-                ]
-
-            async def get_index_quotes(self, symbols: list[str]):
-                del symbols
-                return []
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                del symbol, snapshot
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                del market_cap_min_crore
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=StubProvider([snapshot], self.snapshot_updated_at), settings=Settings())
-
-        response = await service.get_scan_results("contraction", include_sector_summaries=False)
-
-        self.assertEqual([item.symbol for item in response.items], ["CNTRH"])
-
-    def test_returns_scan_uses_normalized_sector_labels(self) -> None:
-        private_bank = self._build_snapshot(
-            symbol="PVTBANK",
-            name="Private Bank",
-            sector="Financial Services",
-            sub_sector="Private Sector Bank",
-            market_cap_crore=15_000.0,
-            start_close=100.0,
-            step=1.0,
-        )
-        psu_bank = self._build_snapshot(
-            symbol="PSUBANK",
-            name="PSU Bank",
-            sector="Financial Services",
-            sub_sector="Public Sector Bank",
-            market_cap_crore=11_000.0,
-            start_close=80.0,
-            step=0.8,
-        )
-        defence = self._build_snapshot(
-            symbol="DEFENCE",
-            name="Defence Co",
-            sector="Capital Goods",
-            sub_sector="Aerospace & Defense",
-            market_cap_crore=22_000.0,
-            start_close=90.0,
-            step=1.1,
-        )
-
-        response = run_returns_scan(ReturnsScanRequest(timeframe="1M", limit=50), [private_bank, psu_bank, defence])
-        sectors_by_symbol = {item.symbol: item.sector for item in response}
-
-        self.assertEqual(sectors_by_symbol["PVTBANK"], "Private Sector Banks")
-        self.assertEqual(sectors_by_symbol["PSUBANK"], "PSU Banks")
-        self.assertEqual(sectors_by_symbol["DEFENCE"], "Capital Goods - Aerospace & Defense")
-
-    def test_returns_scan_excludes_short_history_name_when_200sma_is_required(self) -> None:
-        index = pd.bdate_range(end=self.snapshot_updated_at, periods=60)
-        history = pd.DataFrame(
-            [
-                {
-                    "Open": 100 + idx - 1,
-                    "High": 100 + idx + 2,
-                    "Low": 100 + idx - 2,
-                    "Close": 100 + idx,
-                    "Adj Close": 100 + idx,
-                    "Volume": 100_000 + (idx * 500),
-                    "Stock Splits": 0.0,
-                }
-                for idx in range(len(index))
-            ],
-            index=index,
-        )
-        benchmark = pd.Series([1000 + idx for idx in range(len(index))], index=index, dtype=float)
-        row = self.builder._history_to_snapshot(
-            {
-                "symbol": "SHORT",
-                "name": "Short History",
-                "exchange": "NSE",
-                "listing_date": "2025-10-01",
-                "sector": "Financial Services",
-                "sub_sector": "Private Sector Bank",
-                "market_cap_crore": 2_000.0,
-                "ticker": "SHORT.NS",
-            },
-            history,
-            benchmark,
-        )
-        assert row is not None
-        snapshot = StockSnapshot.model_validate(row)
-
-        response = run_returns_scan(ReturnsScanRequest(timeframe="1M", above_200_sma=True, limit=50), [snapshot])
-        self.assertEqual(response, [])
-
-    def test_minervini_scan_returns_qualifying_trend_template_name(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="MINPASS",
-            name="Minervini Pass",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        snapshot.rs_eligible = True
-        snapshot.rs_rating = 92
-
-        response = run_scan(SCAN_BY_ID["minervini-1m"], [snapshot])
-
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].symbol, "MINPASS")
-        self.assertEqual(response[0].scan_id, "minervini-1m")
-        self.assertIn("Price above 50/150/200 SMA", response[0].reasons[0])
-
-    def test_minervini_scan_excludes_name_when_200sma_is_not_rising(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="MINFAIL",
-            name="Minervini Fail",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        snapshot.sma200_1m_ago = snapshot.sma200
-
-        response = run_scan(SCAN_BY_ID["minervini-1m"], [snapshot])
-
-        self.assertEqual(response, [])
-
-    def test_ipo_scan_includes_only_recently_listed_names(self) -> None:
-        recent_listing = (date.today() - timedelta(days=120)).isoformat()
-        stale_listing = (date.today() - timedelta(days=366)).isoformat()
-
-        recent_snapshot = self._build_snapshot(
-            symbol="RECENTIPO",
-            name="Recent IPO",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=8_000.0,
-            start_close=100.0,
-            step=0.9,
-        )
-        recent_snapshot.listing_date = date.fromisoformat(recent_listing)
-
-        stale_snapshot = self._build_snapshot(
-            symbol="OLDIPO",
-            name="Old IPO",
-            sector="Industrials",
-            sub_sector="Capital Goods",
-            market_cap_crore=8_000.0,
-            start_close=90.0,
-            step=0.7,
-        )
-        stale_snapshot.listing_date = date.fromisoformat(stale_listing)
-
-        response = run_scan(SCAN_BY_ID["ipo"], [stale_snapshot, recent_snapshot])
-
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].symbol, "RECENTIPO")
-        self.assertEqual(response[0].scan_id, "ipo")
-        self.assertIn("Listed on", response[0].reasons[0])
-
-    def test_minervini_5m_scan_returns_qualifying_trend_template_name(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="MIN5PASS",
-            name="Minervini 5M Pass",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        snapshot.rs_eligible = True
-        snapshot.rs_rating = 94
-
-        response = run_scan(SCAN_BY_ID["minervini-5m"], [snapshot])
-
-        self.assertEqual(len(response), 1)
-        self.assertEqual(response[0].symbol, "MIN5PASS")
-        self.assertEqual(response[0].scan_id, "minervini-5m")
-        self.assertIn("Price above 50/150/200 SMA", response[0].reasons[0])
-
-    def test_minervini_5m_scan_excludes_name_when_5m_trend_is_not_rising(self) -> None:
-        snapshot = self._build_snapshot(
-            symbol="MIN5FAIL",
-            name="Minervini 5M Fail",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        snapshot.sma200_5m_ago = snapshot.sma200
-
-        response = run_scan(SCAN_BY_ID["minervini-5m"], [snapshot])
-
-        self.assertEqual(response, [])
-
-    async def test_minervini_scan_results_apply_min_liquidity_filter(self) -> None:
-        liquid = self._build_snapshot(
-            symbol="MINLIQ",
-            name="Minervini Liquid",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        illiquid = self._build_snapshot(
-            symbol="MINILLQ",
-            name="Minervini Illiquid",
-            sector="Information Technology",
-            sub_sector="Software",
-            market_cap_crore=18_000.0,
-            start_close=100.0,
-            step=1.2,
-        )
-        liquid.rs_eligible = True
-        liquid.rs_rating = 92
-        illiquid.rs_eligible = True
-        illiquid.rs_rating = 91
-        liquid.avg_volume_30d = 800_000
-        illiquid.avg_volume_30d = 10_000
-
-        class ScanStubProvider:
-            def __init__(self, rows: list[StockSnapshot], updated_at: datetime) -> None:
-                self.rows = rows
-                self.updated_at = updated_at
-
-            async def get_snapshots(self, market_cap_min_crore: float) -> list[StockSnapshot]:
-                return self.rows
-
-            async def get_chart(self, symbol: str, timeframe: str, bars: int = 240):
-                raise NotImplementedError
-
-            async def get_index_quotes(self, symbols: list[str]):
-                raise NotImplementedError
-
-            async def get_fundamentals(self, symbol: str, snapshot: StockSnapshot | None = None):
-                raise NotImplementedError
-
-            async def refresh_snapshots(self, market_cap_min_crore: float):
-                raise NotImplementedError
-
-            def get_snapshot_updated_at(self) -> datetime:
-                return self.updated_at
-
-            def get_last_refresh_metadata(self) -> dict[str, object]:
-                return {}
-
-        service = DashboardService(provider=ScanStubProvider([liquid, illiquid], self.snapshot_updated_at), settings=Settings())
-
-        response = await service.get_scan_results("minervini-1m", min_liquidity_crore=5.0)
-
-        self.assertEqual(response.total_hits, 1)
-        self.assertEqual(response.items[0].symbol, "MINLIQ")
-
-
-class USDashboardServiceMoneyFlowTests(unittest.TestCase):
-    def setUp(self) -> None:
-        self.service = USDashboardService(provider=object(), settings=Settings())
-
-    def _theme_snapshot(self, *, name: str, sector: str, sub_sector: str) -> StockSnapshot:
-        return StockSnapshot.model_construct(
-            symbol="TEST",
-            name=name,
-            exchange="NASDAQ",
-            sector=sector,
-            sub_sector=sub_sector,
-            market_cap_crore=2_000.0,
-            last_price=100.0,
-            change_pct=1.0,
-            volume=1_000_000,
-            avg_volume_20d=900_000,
-            avg_volume_30d=900_000,
-            day_high=101.0,
-            day_low=99.0,
-            ath=120.0,
-            high_52w=120.0,
-            range_high_20d=110.0,
-            benchmark_return_20d=5.0,
-            sector_return_20d=6.0,
-            avg_rupee_volume_30d_crore=25.0,
-            stock_return_20d=8.0,
-            stock_return_60d=22.0,
-            stock_return_12m=35.0,
-            pct_from_52w_high=9.0,
-            pct_from_ath=9.0,
-            pullback_depth_pct=8.0,
-            relative_volume=1.4,
-            rs_eligible=True,
-            rs_rating=82,
-            ema20=98.0,
-            ema50=95.0,
-        )
-
-    def test_us_money_flow_theme_priority_prefers_new_age_and_niche_groups(self) -> None:
-        themed = self._theme_snapshot(
-            name="CyberCloud Systems",
-            sector="Technology",
-            sub_sector="Computer Software: Programming Data Processing",
-        )
-        generic = self._theme_snapshot(
-            name="Regional Bank Holdings",
-            sector="Finance",
-            sub_sector="Major Banks",
-        )
-
-        self.assertGreater(
-            self.service._money_flow_stock_theme_priority(themed, "consolidation"),
-            self.service._money_flow_stock_theme_priority(generic, "consolidation"),
-        )
-
-    def test_us_money_flow_schedule_uses_post_close_et_cutover(self) -> None:
-        et = ZoneInfo("America/New_York")
-        before_close = datetime(2026, 3, 31, 16, 20, tzinfo=et)
-        after_close = datetime(2026, 3, 31, 16, 35, tzinfo=et)
-
-        self.assertEqual(self.service._money_flow_stock_recommendation_date(before_close), "2026-03-30")
-        self.assertEqual(self.service._money_flow_stock_recommendation_date(after_close), "2026-03-31")
-        self.assertEqual(self.service._money_flow_stock_recommendation_date(after_close, force_today=True), "2026-03-31")
-
-        next_update = self.service._money_flow_stock_next_update(after_close)
-        self.assertEqual(next_update.astimezone(et).strftime("%Y-%m-%d %H:%M"), "2026-04-01 16:30")
-
-    def test_us_weekly_money_flow_target_tracks_last_due_saturday(self) -> None:
-        et = ZoneInfo("America/New_York")
-        monday_morning = datetime(2026, 4, 6, 10, 0, tzinfo=et)
-        saturday_before_release = datetime(2026, 4, 11, 8, 30, tzinfo=et)
-
-        week_key, week_start, scheduled_run = self.service._money_flow_target_week(monday_morning)
-        self.assertEqual(week_key, "2026-W14")
-        self.assertEqual(week_start, "2026-03-30")
-        self.assertEqual(scheduled_run.strftime("%Y-%m-%d %H:%M"), "2026-04-04 09:00")
-
-        previous_week_key, previous_week_start, previous_scheduled_run = self.service._money_flow_target_week(saturday_before_release)
-        self.assertEqual(previous_week_key, "2026-W14")
-        self.assertEqual(previous_week_start, "2026-03-30")
-        self.assertEqual(previous_scheduled_run.strftime("%Y-%m-%d %H:%M"), "2026-04-04 09:00")
-
-
 class DashboardServiceMoneyFlowFundamentalsCacheTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
         self.service = DashboardService(provider=object(), settings=Settings())
@@ -2565,133 +1156,6 @@ class DashboardServiceMoneyFlowFundamentalsCacheTests(unittest.IsolatedAsyncioTe
 
         self.assertIs(result, expected_payload)
 
-    async def test_generate_and_store_money_flow_falls_back_without_ai(self) -> None:
-        class StubProvider:
-            def __init__(self) -> None:
-                self.ai_service = type("AIService", (), {"available": False})()
-
-        service = DashboardService(provider=StubProvider(), settings=Settings())
-        stored_reports: dict[str, dict] = {}
-
-        async def get_sector_tab(timeframe: str, sort_order: str):
-            return SectorTabResponse(
-                total_sectors=3,
-                sort_by="1W",
-                sort_order="desc",
-                sectors=[
-                    SectorCard(
-                        sector="Technology",
-                        company_count=12,
-                        sub_sector_count=3,
-                        return_1d=1.2,
-                        return_1w=4.5,
-                        return_1m=8.1,
-                        return_3m=14.2,
-                        return_6m=20.0,
-                        return_1y=31.0,
-                        return_2y=45.0,
-                        sparkline=[],
-                        sub_sectors=[],
-                    ),
-                    SectorCard(
-                        sector="Industrials",
-                        company_count=10,
-                        sub_sector_count=2,
-                        return_1d=0.7,
-                        return_1w=2.1,
-                        return_1m=3.5,
-                        return_3m=9.4,
-                        return_6m=12.3,
-                        return_1y=24.0,
-                        return_2y=36.0,
-                        sparkline=[],
-                        sub_sectors=[],
-                    ),
-                    SectorCard(
-                        sector="Energy",
-                        company_count=8,
-                        sub_sector_count=2,
-                        return_1d=-1.1,
-                        return_1w=-3.8,
-                        return_1m=-6.4,
-                        return_3m=-2.5,
-                        return_6m=4.1,
-                        return_1y=7.0,
-                        return_2y=10.0,
-                        sparkline=[],
-                        sub_sectors=[],
-                    ),
-                ],
-            )
-
-        service.get_sector_tab = get_sector_tab
-        service._load_money_flow_reports = lambda: {}
-        service._save_money_flow_reports = lambda reports: stored_reports.update(reports)
-
-        report = await service.generate_and_store_money_flow(
-            reference_time=datetime(2026, 4, 4, 9, 0, tzinfo=timezone(timedelta(hours=5, minutes=30)))
-        )
-
-        self.assertIsInstance(report, MoneyFlowReport)
-        self.assertEqual(report.week_key, "2026-W14")
-        self.assertEqual(report.ai_model, "fallback-rules")
-        self.assertEqual(report.inflows[0].name, "Technology")
-        self.assertEqual(report.outflows[0].name, "Energy")
-        self.assertIn("2026-W14", stored_reports)
-
-
-class DashboardServiceMarketHealthHistoryTests(unittest.TestCase):
-    def test_merge_market_health_into_historical_breadth_replaces_latest_date(self) -> None:
-        service = DashboardService(provider=object(), settings=Settings())
-        historical = HistoricalBreadthResponse(
-            generated_at=datetime(2026, 4, 1, 10, 0, tzinfo=timezone.utc),
-            universes=[
-                HistoricalUniverseBreadth(
-                    universe="Nifty 500",
-                    history=[
-                        HistoricalBreadthDataPoint(
-                            date="2026-04-02",
-                            above_ma20_pct=45.0,
-                            above_ma50_pct=41.0,
-                            above_sma200_pct=38.0,
-                            new_high_52w_pct=4.0,
-                            new_low_52w_pct=1.0,
-                        )
-                    ],
-                )
-            ],
-        )
-        market_health = MarketHealthResponse(
-            generated_at=datetime(2026, 4, 2, 12, 0, tzinfo=timezone.utc),
-            universes=[
-                UniverseBreadth(
-                    universe="Nifty 500",
-                    total=500,
-                    advances=300,
-                    declines=150,
-                    unchanged=50,
-                    above_ma20_pct=55.0,
-                    above_ma50_pct=52.0,
-                    above_sma200_pct=47.0,
-                    ma20_above_ma50_pct=49.0,
-                    ma50_above_ma200_pct=44.0,
-                    new_high_52w_pct=6.0,
-                    new_low_52w_pct=0.5,
-                    rsi_14_overbought_pct=8.0,
-                    rsi_14_oversold_pct=2.0,
-                )
-            ],
-        )
-
-        merged = service._merge_market_health_into_historical_breadth(historical, market_health)
-
-        self.assertEqual(merged.generated_at, market_health.generated_at)
-        self.assertEqual(len(merged.universes), 1)
-        self.assertEqual(len(merged.universes[0].history), 1)
-        self.assertEqual(merged.universes[0].history[0].date, "2026-04-02")
-        self.assertEqual(merged.universes[0].history[0].above_ma20_pct, 55.0)
-
-
 class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
     async def test_get_industry_groups_uses_persisted_cache_when_snapshot_is_current(self) -> None:
         snapshot_updated_at = datetime(2026, 4, 3, 10, 0, tzinfo=timezone.utc)
@@ -2797,122 +1261,6 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(cached.groups[0].group_name, "Software")
             self.assertEqual(cached.stocks[0].symbol, "AAA")
 
-    async def test_get_industry_groups_returns_stale_cache_while_refreshing_in_background(self) -> None:
-        snapshot_updated_at = datetime(2026, 4, 3, 10, 0, tzinfo=timezone.utc)
-        stale_generated_at = datetime(2026, 4, 2, 10, 0, tzinfo=timezone.utc)
-        stale_response = IndustryGroupsResponse(
-            generated_at=stale_generated_at,
-            as_of_date="2026-04-02",
-            benchmark="NIFTY 500",
-            filters=IndustryGroupFilters(min_market_cap_cr=800.0, min_avg_daily_value_cr=5.0),
-            total_groups=1,
-            groups=[
-                IndustryGroupRankItem(
-                    rank=1,
-                    rank_label="#1",
-                    strength_bucket="Top 10",
-                    trend_label="Improving",
-                    group_id="software",
-                    group_name="Software",
-                    parent_sector="Information Technology",
-                    description="Software companies",
-                    stock_count=1,
-                    score=90.0,
-                    return_1m=11.0,
-                    return_3m=22.0,
-                    return_6m=33.0,
-                    relative_return_1m=3.0,
-                    relative_return_3m=6.0,
-                    relative_return_6m=9.0,
-                    median_return_1m=10.5,
-                    median_return_3m=21.0,
-                    median_return_6m=31.5,
-                    pct_above_50dma=100.0,
-                    pct_above_200dma=100.0,
-                    pct_outperform_benchmark_3m=100.0,
-                    pct_outperform_benchmark_6m=100.0,
-                    breadth_score=100.0,
-                    trend_health_score=95.0,
-                    leaders=["AAA"],
-                    laggards=[],
-                    top_constituents=[],
-                    symbols=["AAA"],
-                )
-            ],
-            master=[
-                IndustryGroupMasterItem(
-                    group_id="software",
-                    group_name="Software",
-                    parent_sector="Information Technology",
-                    description="Software companies",
-                    stock_count=1,
-                    symbols=["AAA"],
-                )
-            ],
-            stocks=[
-                IndustryGroupStockItem(
-                    symbol="AAA",
-                    company_name="AAA Software",
-                    exchange="NSE",
-                    market_cap_cr=1200.0,
-                    avg_traded_value_50d_cr=12.0,
-                    sector="Information Technology",
-                    raw_industry="Software",
-                    final_group_id="software",
-                    final_group_name="Software",
-                    last_price=125.0,
-                    change_pct=2.5,
-                    return_1m=12.0,
-                    return_3m=24.0,
-                    return_6m=36.0,
-                    return_1y=48.0,
-                    rs_rating=97,
-                )
-            ],
-        )
-        fresh_response = stale_response.model_copy(
-            update={"generated_at": snapshot_updated_at, "as_of_date": "2026-04-03"}
-        )
-
-        with tempfile.TemporaryDirectory() as temp_dir:
-            backend_root = Path(temp_dir)
-            data_dir = backend_root / "data"
-            data_dir.mkdir(parents=True, exist_ok=True)
-            (data_dir / "industry_groups_cache.json").write_text(
-                json.dumps(stale_response.model_dump(mode="json"), indent=2),
-                encoding="utf-8",
-            )
-
-            class StubProvider:
-                def __init__(self, root: Path, updated_at: datetime) -> None:
-                    self.backend_root = root
-                    self.updated_at = updated_at
-
-                async def get_snapshots(self, market_cap_min_crore: float):
-                    raise AssertionError("background rebuild path is mocked in this test")
-
-                def get_snapshot_updated_at(self) -> datetime:
-                    return self.updated_at
-
-                def _default_exchange(self) -> str:
-                    return "NSE"
-
-            service = DashboardService(provider=StubProvider(backend_root, snapshot_updated_at), settings=Settings())
-
-            async def fake_rebuild(_: datetime) -> IndustryGroupsResponse:
-                await asyncio.sleep(0.01)
-                return fresh_response
-
-            service._build_and_cache_industry_groups = fake_rebuild  # type: ignore[method-assign]
-
-            returned = await service.get_industry_groups()
-
-            self.assertEqual(returned.generated_at, stale_generated_at)
-            self.assertEqual(returned.as_of_date, "2026-04-02")
-            self.assertIsNotNone(service._industry_groups_request_task)
-
-            await asyncio.wait_for(asyncio.shield(service._industry_groups_request_task), timeout=1.0)
-
 
 class DashboardServiceVolumeLeaderTests(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
@@ -2992,209 +1340,6 @@ class DashboardServiceVolumeLeaderTests(unittest.IsolatedAsyncioTestCase):
 
         self.assertIn("HIST", [item.symbol for item in response.top_volume_spikes])
         self.assertNotIn("NOHIST", [item.symbol for item in response.top_volume_spikes])
-
-
-class DashboardServiceWatchlistsPersistenceTests(unittest.TestCase):
-    class StubProvider:
-        def __init__(self, backend_root: Path) -> None:
-            self.backend_root = backend_root
-
-        def _default_exchange(self) -> str:
-            return "NSE"
-
-    class StubWatchlistsStore:
-        def __init__(self, initial_state: WatchlistsStateResponse | None = None) -> None:
-            self.state_by_market: dict[str, WatchlistsStateResponse] = {}
-            self.saved_markets: list[str] = []
-            if initial_state is not None:
-                self.state_by_market[initial_state.market] = initial_state
-
-        def is_enabled(self) -> bool:
-            return True
-
-        def load_state(self, market: str) -> WatchlistsStateResponse | None:
-            return self.state_by_market.get(market)
-
-        def save_state(self, state: WatchlistsStateResponse) -> WatchlistsStateResponse:
-            self.saved_markets.append(state.market)
-            self.state_by_market[state.market] = state
-            return state
-
-    def setUp(self) -> None:
-        self.temp_dir = tempfile.TemporaryDirectory()
-        self.backend_root = Path(self.temp_dir.name)
-        self.service = DashboardService(provider=self.StubProvider(self.backend_root), settings=Settings())
-
-    def tearDown(self) -> None:
-        self.temp_dir.cleanup()
-
-    def test_get_watchlists_state_preserves_saved_updated_at(self) -> None:
-        payload = {
-            "market": "india",
-            "updated_at": 1_712_310_000_000,
-            "active_watchlist_id": "wl-1",
-            "watchlists": [
-                {
-                    "id": "wl-1",
-                    "name": "Core",
-                    "color": "#4f8cff",
-                    "symbols": ["INFY", "TCS"],
-                }
-            ],
-        }
-        path = self.service._watchlists_state_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-        state = self.service.get_watchlists_state()
-
-        self.assertEqual(state.updated_at, payload["updated_at"])
-        self.assertEqual(state.watchlists[0].symbols, ["INFY", "TCS"])
-
-    def test_get_watchlists_state_restores_from_backup_when_primary_is_missing(self) -> None:
-        saved = self.service.save_watchlists_state(
-            WatchlistsStateResponse(
-                market="india",
-                active_watchlist_id="wl-1",
-                watchlists=[
-                    WatchlistItem(
-                        id="wl-1",
-                        name="Core",
-                        color="#4f8cff",
-                        symbols=["INFY", "TCS"],
-                    )
-                ],
-            )
-        )
-        primary_path = self.service._watchlists_state_path()
-        backup_path = self.service._watchlists_backup_path()
-        self.assertTrue(primary_path.exists())
-        self.assertTrue(backup_path.exists())
-
-        primary_path.unlink()
-
-        restored = self.service.get_watchlists_state()
-
-        self.assertEqual(restored.active_watchlist_id, "wl-1")
-        self.assertEqual(restored.watchlists[0].symbols, ["INFY", "TCS"])
-        self.assertEqual(restored.updated_at, saved.updated_at)
-        self.assertTrue(primary_path.exists())
-
-    def test_get_watchlists_state_keeps_manual_delete_when_restoring_from_recovery(self) -> None:
-        self.service.save_watchlists_state(
-            WatchlistsStateResponse(
-                market="india",
-                active_watchlist_id="wl-1",
-                watchlists=[
-                    WatchlistItem(
-                        id="wl-1",
-                        name="Core",
-                        color="#4f8cff",
-                        symbols=["INFY", "TCS"],
-                    )
-                ],
-            )
-        )
-        deleted = self.service.save_watchlists_state(
-            WatchlistsStateResponse(
-                market="india",
-                active_watchlist_id=None,
-                watchlists=[],
-            )
-        )
-        primary_path = self.service._watchlists_state_path()
-        backup_path = self.service._watchlists_backup_path()
-        primary_path.unlink()
-        backup_path.unlink()
-
-        restored = self.service.get_watchlists_state()
-
-        self.assertEqual(restored.watchlists, [])
-        self.assertIsNone(restored.active_watchlist_id)
-        self.assertEqual(restored.updated_at, deleted.updated_at)
-
-    def test_get_watchlists_state_prefers_database_store_when_available(self) -> None:
-        store_state = WatchlistsStateResponse(
-            market="india",
-            updated_at=1_712_320_000_000,
-            active_watchlist_id="wl-db",
-            watchlists=[
-                WatchlistItem(
-                    id="wl-db",
-                    name="Neon",
-                    color="#00a389",
-                    symbols=["DIXON", "CGPOWER"],
-                )
-            ],
-        )
-        service = DashboardService(
-            provider=self.StubProvider(self.backend_root),
-            settings=Settings(),
-            watchlists_store=self.StubWatchlistsStore(store_state),
-        )
-
-        state = service.get_watchlists_state()
-
-        self.assertEqual(state.active_watchlist_id, "wl-db")
-        self.assertEqual(state.watchlists[0].symbols, ["DIXON", "CGPOWER"])
-
-    def test_get_watchlists_state_migrates_file_state_into_database_store(self) -> None:
-        store = self.StubWatchlistsStore()
-        service = DashboardService(
-            provider=self.StubProvider(self.backend_root),
-            settings=Settings(),
-            watchlists_store=store,
-        )
-        payload = {
-            "market": "india",
-            "updated_at": 1_712_330_000_000,
-            "active_watchlist_id": "wl-1",
-            "watchlists": [
-                {
-                    "id": "wl-1",
-                    "name": "Core",
-                    "color": "#4f8cff",
-                    "symbols": ["INFY", "TCS"],
-                }
-            ],
-        }
-        path = service._watchlists_state_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-
-        state = service.get_watchlists_state()
-
-        self.assertEqual(state.active_watchlist_id, "wl-1")
-        self.assertEqual(store.state_by_market["india"].watchlists[0].symbols, ["INFY", "TCS"])
-        self.assertEqual(store.saved_markets, ["india"])
-
-    def test_save_watchlists_state_persists_to_database_store(self) -> None:
-        store = self.StubWatchlistsStore()
-        service = DashboardService(
-            provider=self.StubProvider(self.backend_root),
-            settings=Settings(),
-            watchlists_store=store,
-        )
-
-        saved = service.save_watchlists_state(
-            WatchlistsStateResponse(
-                market="india",
-                active_watchlist_id="wl-1",
-                watchlists=[
-                    WatchlistItem(
-                        id="wl-1",
-                        name="Core",
-                        color="#4f8cff",
-                        symbols=["INFY", "TCS"],
-                    )
-                ],
-            )
-        )
-
-        self.assertEqual(store.state_by_market["india"].active_watchlist_id, "wl-1")
-        self.assertEqual(store.state_by_market["india"].watchlists[0].symbols, ["INFY", "TCS"])
-        self.assertEqual(store.saved_markets, ["india"])
-        self.assertEqual(saved.active_watchlist_id, "wl-1")
 
 
 if __name__ == "__main__":
