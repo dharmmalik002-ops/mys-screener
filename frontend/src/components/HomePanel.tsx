@@ -269,7 +269,7 @@ export function HomePanel({
 }: HomePanelProps) {
   const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
   const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
-  const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1D");
+  const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1Y");
 
   // Fetch macro strip
   useEffect(() => {
