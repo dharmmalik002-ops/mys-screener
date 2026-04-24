@@ -644,13 +644,13 @@ class DashboardService:
             ]
             results = {}
 
-        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:5]
-        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:5]
+        top_gainers = sorted(scan_snapshots, key=lambda item: item.change_pct, reverse=True)[:25]
+        top_losers = sorted(scan_snapshots, key=lambda item: item.change_pct)[:25]
         top_volume = sorted(
             [item for item in scan_snapshots if self._has_reliable_relative_volume(item)],
             key=lambda item: item.relative_volume,
             reverse=True,
-        )[:5]
+        )[:25]
 
         alerts: list[AlertItem] = []
         for scan_id in ("breakout-ath", "volume-price", "strong-nifty", "darvas-box"):

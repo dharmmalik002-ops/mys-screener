@@ -24,9 +24,9 @@ type HomePanelProps = {
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
 };
 
-type NiftyTimeframe = "1D" | "1W" | "1M" | "3M" | "1Y" | "5Y";
+type NiftyTimeframe = "6M" | "1Y" | "3Y";
 
-const NIFTY_TIMEFRAMES: NiftyTimeframe[] = ["1D", "1W", "1M", "3M", "1Y", "5Y"];
+const NIFTY_TIMEFRAMES: NiftyTimeframe[] = ["6M", "1Y", "3Y"];
 
 type ViewAllMode = "gainers" | "losers" | "active";
 
@@ -283,7 +283,7 @@ export function HomePanel({
   // Fetch Nifty chart
   useEffect(() => {
     let active = true;
-    getChart("^NSEI", "1Y", activeMarket)
+    getChart("^NSEI", "3Y", activeMarket)
       .then((res) => { if (active) setNiftyBars(res.bars ?? []); })
       .catch(() => { if (active) setNiftyBars([]); });
     return () => { active = false; };
@@ -836,12 +836,9 @@ function renderListSkeleton(prefix: string) {
 function sliceBars(bars: ChartBar[], tf: NiftyTimeframe): ChartBar[] {
   if (!bars || bars.length === 0) return [];
   const windows: Record<NiftyTimeframe, number> = {
-    "1D": 1,
-    "1W": 5,
-    "1M": 22,
-    "3M": 66,
+    "6M": 126,
     "1Y": 252,
-    "5Y": 1260,
+    "3Y": 756,
   };
   const count = windows[tf];
   return bars.slice(-count);

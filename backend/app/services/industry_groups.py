@@ -373,19 +373,26 @@ def _build_group_payload(
             hosts_by_sector[majority_parent[gid]].append((gid, len(members)))
 
     merge_map: dict[str, str] = {}
+    global_candidates = sorted(
+        [(gid, len(members)) for gid, members in initial_groups.items() if len(members) >= MIN_GROUP_STOCKS],
+        key=lambda x: x[1],
+        reverse=True,
+    )
+
     for gid, members in initial_groups.items():
         if len(members) >= MIN_GROUP_STOCKS:
             continue
-        candidates = hosts_by_sector.get(majority_parent[gid], [])
-        if not candidates:
-            candidates = [
-                (other_gid, len(other_members))
-                for other_gid, other_members in initial_groups.items()
-                if other_gid != gid and len(other_members) >= MIN_GROUP_STOCKS
-            ]
-        if not candidates:
+        
+        # 1. Try to find largest group in same sector
+        sector_candidates = hosts_by_sector.get(majority_parent[gid], [])
+        if sector_candidates:
+            merge_map[gid] = max(sector_candidates, key=lambda item: item[1])[0]
             continue
-        merge_map[gid] = max(candidates, key=lambda item: item[1])[0]
+            
+        # 2. Fallback to global largest group
+        if global_candidates:
+            merge_map[gid] = global_candidates[0][0]
+        # 3. If everything is too small (rare), keep it as is
 
     # Phase 3: apply merges to grouped snapshots + build stock rows with final ids.
     stock_rows: list[IndustryGroupStockItem] = []
