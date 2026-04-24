@@ -564,6 +564,16 @@
 .homepro-avatar-v { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
 .homepro-avatar-a { background: linear-gradient(135deg, #f59e0b, #d97706); }
 
+.homepro-logo-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: white;
+  padding: 2px;
+  border: 1px solid var(--hp-border);
+}
+
 .homepro-row-meta { min-width: 0; }
 .homepro-row-sym {
   display: block;

@@ -56,6 +56,65 @@ function initials(symbol: string) {
   return symbol.slice(0, 2).toUpperCase();
 }
 
+function getLogoUrl(symbol: string) {
+  const clean = symbol.replace("^", "").toUpperCase();
+  // Map common NSE symbols to TradingView logo IDs
+  const mapping: Record<string, string> = {
+    "RELIANCE": "reliance-industries",
+    "TCS": "tata-consultancy-services",
+    "HDFCBANK": "hdfc-bank",
+    "INFY": "infosys",
+    "ICICIBANK": "icici-bank",
+    "SBIN": "state-bank-of-india",
+    "BHARTIARTL": "bharti-airtel",
+    "LICI": "lic-of-india",
+    "ITC": "itc",
+    "HINDUNILVR": "hindustan-unilever",
+    "LT": "larsen-and-toubro",
+    "BAJFINANCE": "bajaj-finance",
+    "MARUTI": "maruti-suzuki",
+    "ASIANPAINT": "asian-paints",
+    "AXISBANK": "axis-bank",
+    "ADANIENT": "adani-enterprises",
+    "SUNPHARMA": "sun-pharma",
+    "TITAN": "titan",
+    "ULTRACEMCO": "ultratech-cement",
+    "WIPRO": "wipro",
+    "NTPC": "ntpc",
+    "ONGC": "ongc",
+    "JSWSTEEL": "jsw-steel",
+    "M&M": "mahindra-and-mahindra",
+    "POWERGRID": "power-grid",
+    "HCLTECH": "hcl-technologies",
+    "KOTAKBANK": "kotak-mahindra-bank",
+    "COALINDIA": "coal-india",
+    "ADANIPORTS": "adani-ports",
+    "TATASTEEL": "tata-steel",
+    "GRASIM": "grasim",
+    "HINDALCO": "hindalco",
+    "TECHM": "tech-mahindra",
+    "NESTLEIND": "nestle-india",
+    "BAJAJFINSV": "bajaj-finserv",
+    "SBILIFE": "sbi-life-insurance",
+    "DRREDDY": "dr-reddys-labs",
+    "CIPLA": "cipla",
+    "INDUSINDBK": "indusind-bank",
+    "TATAMOTORS": "tata-motors",
+    "BPCL": "bpcl",
+    "BRITANNIA": "britannia",
+    "EICHERMOT": "eicher-motors",
+    "DIVISLAB": "divis-labs",
+    "APOLLOHOSP": "apollo-hospitals",
+    "UPL": "upl",
+    "HEROMOTOCO": "hero-motocorp",
+    "BAJAJ-AUTO": "bajaj-auto",
+    "LTIM": "lti-mindtree",
+  };
+  const id = mapping[clean];
+  if (id) return `https://s3-symbol-logo.tradingview.com/${id}.svg`;
+  return null;
+}
+
 /* ---------- SVG helpers ---------- */
 
 function Sparkline({ values, color, fill, height = 36 }: { values: number[]; color: string; fill?: string; height?: number }) {
@@ -224,7 +283,7 @@ export function HomePanel({
   // Fetch Nifty chart
   useEffect(() => {
     let active = true;
-    getChart("^NSEI", "1D", activeMarket)
+    getChart("^NSEI", "1Y", activeMarket)
       .then((res) => { if (active) setNiftyBars(res.bars ?? []); })
       .catch(() => { if (active) setNiftyBars([]); });
     return () => { active = false; };
@@ -570,17 +629,24 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("gainers")}>View All</button>
           </div>
           <div className="homepro-list">
-            {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => (
-              <button key={`g-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span className="homepro-avatar homepro-avatar-g">{initials(item.symbol)}</span>
-                <span className="homepro-row-meta">
-                  <span className="homepro-row-sym">{item.symbol}</span>
-                  <span className="homepro-row-sub">{shortName(item)}</span>
-                </span>
-                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-              </button>
-            ))}
+            {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => {
+              const logo = getLogoUrl(item.symbol);
+              return (
+                <button key={`g-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                  {logo ? (
+                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                  ) : (
+                    <span className="homepro-avatar homepro-avatar-g">{initials(item.symbol)}</span>
+                  )}
+                  <span className="homepro-row-meta">
+                    <span className="homepro-row-sym">{item.symbol}</span>
+                    <span className="homepro-row-sub">NSE</span>
+                  </span>
+                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -591,17 +657,24 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("losers")}>View All</button>
           </div>
           <div className="homepro-list">
-            {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => (
-              <button key={`l-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span className="homepro-avatar homepro-avatar-r">{initials(item.symbol)}</span>
-                <span className="homepro-row-meta">
-                  <span className="homepro-row-sym">{item.symbol}</span>
-                  <span className="homepro-row-sub">{shortName(item)}</span>
-                </span>
-                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-              </button>
-            ))}
+            {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => {
+              const logo = getLogoUrl(item.symbol);
+              return (
+                <button key={`l-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                  {logo ? (
+                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                  ) : (
+                    <span className="homepro-avatar homepro-avatar-r">{initials(item.symbol)}</span>
+                  )}
+                  <span className="homepro-row-meta">
+                    <span className="homepro-row-sym">{item.symbol}</span>
+                    <span className="homepro-row-sub">NSE</span>
+                  </span>
+                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -612,17 +685,24 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("active")}>View All</button>
           </div>
           <div className="homepro-list">
-            {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => (
-              <button key={`a-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span className={`homepro-avatar ${i % 2 === 0 ? "homepro-avatar-b" : "homepro-avatar-v"}`}>{initials(item.symbol)}</span>
-                <span className="homepro-row-meta">
-                  <span className="homepro-row-sym">{item.symbol}</span>
-                  <span className="homepro-row-sub">Vol: {item.relative_volume.toFixed(2)}x RVOL · {formatCompact(item.avg_rupee_volume_30d_crore ? item.avg_rupee_volume_30d_crore * 1e7 : null)}</span>
-                </span>
-                <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-              </button>
-            ))}
+            {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => {
+              const logo = getLogoUrl(item.symbol);
+              return (
+                <button key={`a-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+                  {logo ? (
+                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+                  ) : (
+                    <span className={`homepro-avatar ${i % 2 === 0 ? "homepro-avatar-b" : "homepro-avatar-v"}`}>{initials(item.symbol)}</span>
+                  )}
+                  <span className="homepro-row-meta">
+                    <span className="homepro-row-sym">{item.symbol}</span>
+                    <span className="homepro-row-sub">NSE</span>
+                  </span>
+                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
