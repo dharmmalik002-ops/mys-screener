@@ -21,6 +21,14 @@ import pandas as pd
 import yfinance as yf
 from bs4 import BeautifulSoup
 from pypdf import PdfReader
+from pydantic import ValidationError
+
+IS_HF_SPACE = bool(
+    os.getenv("SPACE_ID")
+    or os.getenv("SPACE_REPO_NAME")
+    or os.getenv("HF_SPACE_ID")
+    or os.getenv("SYSTEM") == "spaces"
+)
 
 from app.models.market import (
     BalanceSheetItem,
@@ -62,7 +70,7 @@ SCREENER_BASE_URL = "https://www.screener.in"
 YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
-SNAPSHOT_CACHE_VERSION = 12
+SNAPSHOT_CACHE_VERSION = 14
 CHART_CACHE_VERSION = 4
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
@@ -1259,7 +1267,7 @@ class FreeMarketDataProvider:
         metadata: dict[str, dict[str, Any]] = {}
         workers = min(4, max(1, len(universe) // 250 or 1))
         chunk_size = max(1, (len(universe) + workers - 1) // workers)
-        with ThreadPoolExecutor(max_workers=workers) as executor:
+        with ThreadPoolExecutor(max_workers=1 if IS_HF_SPACE else workers) as executor:
             futures = {
                 executor.submit(self._fetch_company_metadata_chunk, universe[index : index + chunk_size]): index
                 for index in range(0, len(universe), chunk_size)
@@ -3301,7 +3309,7 @@ class FreeMarketDataProvider:
         quotes: dict[str, dict[str, Any]] = {}
         workers = min(8, max(2, len(normalized_symbols) // 10 or 1))
         chunk_size = max(1, (len(normalized_symbols) + workers - 1) // workers)
-        with ThreadPoolExecutor(max_workers=workers) as executor:
+        with ThreadPoolExecutor(max_workers=1 if IS_HF_SPACE else workers) as executor:
             futures = {
                 executor.submit(self._fetch_nse_quote_equity_live_chunk, normalized_symbols[index : index + chunk_size]): index
                 for index in range(0, len(normalized_symbols), chunk_size)
@@ -4329,7 +4337,7 @@ class FreeMarketDataProvider:
         details: dict[str, dict[str, Any]] = {}
         workers = min(12, max(3, len(normalized_symbols) // 100 or 1))
         chunk_size = max(1, (len(normalized_symbols) + workers - 1) // workers)
-        with ThreadPoolExecutor(max_workers=workers) as executor:
+        with ThreadPoolExecutor(max_workers=1 if IS_HF_SPACE else workers) as executor:
             futures = {
                 executor.submit(self._fetch_nse_quote_details_chunk, normalized_symbols[index : index + chunk_size]): index
                 for index in range(0, len(normalized_symbols), chunk_size)
@@ -4567,7 +4575,7 @@ class FreeMarketDataProvider:
             breadth_dfs.update(cached_breadth)
         batch_size = 20
         universe_batches = [remaining_universe[index : index + batch_size] for index in range(0, len(remaining_universe), batch_size)]
-        max_workers = min(5, max(1, len(universe_batches)))
+        max_workers = 1 if IS_HF_SPACE else min(5, max(1, len(universe_batches)))
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
@@ -4663,7 +4671,7 @@ class FreeMarketDataProvider:
             instruments[index : index + recovery_batch_size]
             for index in range(0, len(instruments), recovery_batch_size)
         ]
-        max_workers = min(6, max(1, len(recovery_batches) // 4 or 1))
+        max_workers = 1 if IS_HF_SPACE else min(6, max(1, len(recovery_batches) // 4 or 1))
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [
@@ -4691,7 +4699,7 @@ class FreeMarketDataProvider:
         if not remaining:
             return recovered_results, recovered_breadth
 
-        with ThreadPoolExecutor(max_workers=min(6, max(1, len(remaining) // 12 or 1))) as executor:
+        with ThreadPoolExecutor(max_workers=1 if IS_HF_SPACE else min(6, max(1, len(remaining) // 12 or 1))) as executor:
             futures = [
                 executor.submit(self._recover_snapshot_row, instrument, benchmark_close)
                 for instrument in remaining
@@ -4827,7 +4835,7 @@ class FreeMarketDataProvider:
             except Exception:
                 return None, None, None
 
-        max_workers = min(4, max(1, len(batch_universe)))
+        max_workers = 1 if IS_HF_SPACE else min(4, max(1, len(batch_universe)))
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             futures = [executor.submit(build_snapshot_item, item) for item in batch_universe]
             for future in as_completed(futures):
