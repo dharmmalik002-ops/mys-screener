@@ -1689,7 +1689,10 @@ async function request<T>(
 
   for (const base of orderedApiBases()) {
     try {
-      const response = await fetchWithTimeoutMs(`${base}${path}`, timeoutMs, init);
+      const url = init?.method && init.method !== "GET" 
+        ? `${base}${path}` 
+        : `${base}${path}${path.includes("?") ? "&" : "?"}_v=${Date.now()}`;
+      const response = await fetchWithTimeoutMs(url, timeoutMs, init);
 
       if (!response.ok) {
         if (RETRYABLE_STATUS_CODES.has(response.status)) {
