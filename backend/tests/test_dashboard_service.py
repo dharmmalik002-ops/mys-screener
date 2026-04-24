@@ -1175,7 +1175,7 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
                     group_name="Software",
                     parent_sector="Information Technology",
                     description="Software companies",
-                    stock_count=1,
+                    stock_count=4,
                     score=92.5,
                     return_1m=12.0,
                     return_3m=24.0,
@@ -1195,7 +1195,7 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
                     leaders=["AAA"],
                     laggards=[],
                     top_constituents=[],
-                    symbols=["AAA"],
+                    symbols=["AAA", "BBB", "CCC", "DDD"],
                 )
             ],
             master=[
@@ -1204,8 +1204,8 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
                     group_name="Software",
                     parent_sector="Information Technology",
                     description="Software companies",
-                    stock_count=1,
-                    symbols=["AAA"],
+                    stock_count=4,
+                    symbols=["AAA", "BBB", "CCC", "DDD"],
                 )
             ],
             stocks=[
@@ -1260,6 +1260,120 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(cached.total_groups, 1)
             self.assertEqual(cached.groups[0].group_name, "Software")
             self.assertEqual(cached.stocks[0].symbol, "AAA")
+
+    async def test_get_industry_groups_rebuilds_stale_one_stock_group_cache(self) -> None:
+        snapshot_updated_at = datetime(2026, 4, 3, 10, 0, tzinfo=timezone.utc)
+        stale_response = IndustryGroupsResponse(
+            generated_at=snapshot_updated_at,
+            as_of_date="2026-04-03",
+            benchmark="NIFTY 500",
+            filters=IndustryGroupFilters(min_market_cap_cr=800.0, min_avg_daily_value_cr=5.0),
+            total_groups=1,
+            groups=[
+                IndustryGroupRankItem(
+                    rank=1,
+                    rank_label="#1",
+                    strength_bucket="Top 10",
+                    trend_label="Improving",
+                    group_id="software",
+                    group_name="Software",
+                    parent_sector="Information Technology",
+                    description="Software companies",
+                    stock_count=1,
+                    score=92.5,
+                    return_1m=12.0,
+                    return_3m=24.0,
+                    return_6m=36.0,
+                    relative_return_1m=4.0,
+                    relative_return_3m=8.0,
+                    relative_return_6m=12.0,
+                    median_return_1m=11.0,
+                    median_return_3m=22.0,
+                    median_return_6m=33.0,
+                    pct_above_50dma=100.0,
+                    pct_above_200dma=100.0,
+                    pct_outperform_benchmark_3m=100.0,
+                    pct_outperform_benchmark_6m=100.0,
+                    breadth_score=100.0,
+                    trend_health_score=95.0,
+                    leaders=["AAA"],
+                    laggards=[],
+                    top_constituents=[],
+                    symbols=["AAA"],
+                )
+            ],
+            master=[
+                IndustryGroupMasterItem(
+                    group_id="software",
+                    group_name="Software",
+                    parent_sector="Information Technology",
+                    description="Software companies",
+                    stock_count=1,
+                    symbols=["AAA"],
+                )
+            ],
+            stocks=[],
+        )
+        fresh_response = stale_response.model_copy(
+            update={
+                "total_groups": 1,
+                "groups": [
+                    stale_response.groups[0].model_copy(
+                        update={
+                            "group_id": "technology-diversified",
+                            "group_name": "Technology Diversified",
+                            "stock_count": 4,
+                            "symbols": ["AAA", "BBB", "CCC", "DDD"],
+                        }
+                    )
+                ],
+                "master": [
+                    stale_response.master[0].model_copy(
+                        update={
+                            "group_id": "technology-diversified",
+                            "group_name": "Technology Diversified",
+                            "stock_count": 4,
+                            "symbols": ["AAA", "BBB", "CCC", "DDD"],
+                        }
+                    )
+                ],
+            }
+        )
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            backend_root = Path(temp_dir)
+            data_dir = backend_root / "data"
+            data_dir.mkdir(parents=True, exist_ok=True)
+            (data_dir / "industry_groups_cache.json").write_text(
+                json.dumps(stale_response.model_dump(mode="json"), indent=2),
+                encoding="utf-8",
+            )
+
+            class StubProvider:
+                def __init__(self, root: Path, updated_at: datetime) -> None:
+                    self.backend_root = root
+                    self.updated_at = updated_at
+
+                async def get_snapshots(self, market_cap_min_crore: float):
+                    return []
+
+                def get_snapshot_updated_at(self) -> datetime:
+                    return self.updated_at
+
+                def _default_exchange(self) -> str:
+                    return "NSE"
+
+            service = DashboardService(provider=StubProvider(backend_root, snapshot_updated_at), settings=Settings())
+
+            with patch.object(service, "_resolve_group_benchmark", return_value=("NIFTY 500", [])), patch(
+                "app.services.dashboard_service.build_industry_groups_response",
+                return_value=fresh_response,
+            ) as build_response:
+                rebuilt = await service.get_industry_groups()
+
+            self.assertEqual(rebuilt.groups[0].stock_count, 4)
+            self.assertEqual(rebuilt.groups[0].group_name, "Technology Diversified")
+            build_response.assert_called_once()
 
 
 class DashboardServiceVolumeLeaderTests(unittest.IsolatedAsyncioTestCase):

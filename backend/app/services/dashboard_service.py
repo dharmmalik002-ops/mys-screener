@@ -78,7 +78,7 @@ from app.scanners.definitions import (
     scan_catalog_with_counts,
     scanner_sector_label,
 )
-from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
+from app.services.industry_groups import GROUP_MIN_STOCKS, build_industry_groups_response, write_industry_group_files
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
@@ -3648,6 +3648,8 @@ class DashboardService:
 
         if response.generated_at < snapshot_updated_at:
             return self._load_legacy_cached_industry_groups(snapshot_updated_at)
+        if not self._industry_groups_cache_matches_current_rules(response):
+            return None
         return response
 
     def _load_legacy_cached_industry_groups(self, snapshot_updated_at: datetime) -> IndustryGroupsResponse | None:
@@ -3753,7 +3755,7 @@ class DashboardService:
         if not groups:
             return None
 
-        return IndustryGroupsResponse(
+        response = IndustryGroupsResponse(
             generated_at=generated_at,
             as_of_date=as_of_date or generated_at.date().isoformat(),
             benchmark=str(groups_payload.get("benchmark") or "Benchmark"),
@@ -3765,6 +3767,13 @@ class DashboardService:
             groups=sorted(groups, key=lambda item: item.rank),
             master=master,
             stocks=stocks,
+        )
+        return response if self._industry_groups_cache_matches_current_rules(response) else None
+
+    @staticmethod
+    def _industry_groups_cache_matches_current_rules(response: IndustryGroupsResponse) -> bool:
+        return all(group.stock_count >= GROUP_MIN_STOCKS for group in response.groups) and all(
+            item.stock_count >= GROUP_MIN_STOCKS for item in response.master
         )
 
     def _save_industry_groups_cache(self, response: IndustryGroupsResponse) -> None:
@@ -3846,7 +3855,11 @@ class DashboardService:
     async def get_industry_groups(self) -> IndustryGroupsResponse:
         snapshot_updated_at = self._snapshot_updated_at()
         cached = self._industry_groups_cache
-        if cached is not None and cached.generated_at >= snapshot_updated_at:
+        if (
+            cached is not None
+            and cached.generated_at >= snapshot_updated_at
+            and self._industry_groups_cache_matches_current_rules(cached)
+        ):
             return cached
 
         disk_cached = await asyncio.to_thread(self._load_cached_industry_groups, snapshot_updated_at)
