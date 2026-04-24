@@ -691,6 +691,8 @@ class DashboardService:
             recent_alerts=alerts,
         )
         self._dashboard_cache = response
+        import gc
+        gc.collect()
         return response
 
     async def get_scan_counts(self) -> list[ScanDescriptor]:
@@ -3878,6 +3880,8 @@ class DashboardService:
         )
         await asyncio.to_thread(self._save_industry_groups_cache, response)
         self._industry_groups_cache = response
+        import gc
+        gc.collect()
         return response
 
     async def refresh_market_data(self) -> dict[str, object]:

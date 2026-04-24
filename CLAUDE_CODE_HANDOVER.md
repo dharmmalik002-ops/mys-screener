@@ -23,11 +23,12 @@ The project has been optimized for **Hugging Face Free Tier (16GB RAM)**. It is 
 | **Vercel Token**| Web Deployment | `[REDACTED - Set in environment]` |
 
 ## 3. Critical Memory Constraints (Hugging Face)
-**Do NOT re-enable the following features on the HF Space, or it will crash:**
-- **No Concurrent Warming**: In `DashboardService.warm_startup_views`, tasks must be awaited sequentially. Never use `asyncio.gather` for heavy data views.
-- **Single Threading**: The `FreeMarketDataProvider` must use `max_workers=1` on HF. Concurrent `yfinance` fetches or `pandas` aggregations will spike memory over 16GB.
-- **Garbage Collection**: Always trigger `gc.collect()` after startup and after any large data refresh.
-- **Snapshot Materialization**: Be careful with `StockSnapshot.model_validate` on lists > 2000 items.
+> [!CAUTION]
+> Hugging Face Space has a strict **16GB RAM limit**. To prevent OOM crashes:
+> 1. **Market Cap Filter**: Keep `MARKET_CAP_MIN_CRORE = 1500.0` (reduces universe by ~40%).
+> 2. **No Startup Warmup**: Disable `STARTUP_CACHE_WARM_ENABLED` to prevent boot-time spikes.
+> 3. **Single Threading**: All thread pools must use `max_workers=1` on HF.
+> 4. **Garbage Collection**: Always call `gc.collect()` after building the dashboard or industry groups.
 
 ## 4. Common Workflows
 

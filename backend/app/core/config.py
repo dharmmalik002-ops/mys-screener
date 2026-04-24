@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     app_name: str = "Mr. Malik Scanner"
     data_mode: Literal["demo", "upstox", "free"] = "free"
-    market_cap_min_crore: float = Field(default=800, alias="MARKET_CAP_MIN_CRORE")
+    market_cap_min_crore: float = Field(default=1500, alias="MARKET_CAP_MIN_CRORE")
     frontend_origin: str | None = Field(default=None, alias="FRONTEND_ORIGIN")
     frontend_origin_regex: str | None = Field(default=r"https://.*\.vercel\.app$", alias="FRONTEND_ORIGIN_REGEX")
     upstox_access_token: str | None = Field(default=None, alias="UPSTOX_ACCESS_TOKEN")
