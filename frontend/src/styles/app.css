@@ -2459,7 +2459,7 @@ button {
 }
 
 .home-grid-secondary {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .deferred-render-section,
@@ -2547,6 +2547,55 @@ button {
 .home-stock-row small,
 .home-alert-row small {
   color: var(--text-soft);
+}
+
+.mover-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(6, 8, 13, 0.78);
+  backdrop-filter: blur(12px);
+}
+
+.mover-modal {
+  position: relative;
+  width: min(760px, 96vw);
+  max-height: min(82dvh, 860px);
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 94%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
+    radial-gradient(circle at top left, rgba(76, 154, 255, 0.12), transparent 34%);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+}
+
+.mover-modal-head {
+  display: grid;
+  gap: 6px;
+  padding-right: 70px;
+}
+
+.mover-modal-head h2,
+.mover-modal-head small {
+  margin: 0;
+}
+
+.mover-modal-head small {
+  color: var(--text-soft);
+}
+
+.mover-modal-list {
+  display: grid;
+  gap: 10px;
 }
 
 .home-alert-row strong,
@@ -3624,6 +3673,11 @@ button {
 
 .negative-text {
   color: var(--negative);
+}
+
+.neutral-text {
+  color: var(--accent);
+  font-weight: 800;
 }
 
 .chart-panel .panel-body {
@@ -5688,6 +5742,9 @@ button {
   inset: 0;
   z-index: 9999;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   background: rgba(6, 8, 13, 0.95);
   backdrop-filter: blur(10px);
 }

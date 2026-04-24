@@ -1717,6 +1717,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const requestId = tickerRequestIdRef.current + 1;
     tickerRequestIdRef.current = requestId;
 
+    if (activePage === "home") {
+      setTickerTapeItems([]);
+      return;
+    }
+
     void fetchIndexRibbonItems(activeMarket)
       .then((items) => {
         if (tickerRequestIdRef.current !== requestId || items.length === 0) {
@@ -1726,6 +1731,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       })
       .catch(() => {});
   };
+
+  useEffect(() => {
+    if (activePage === "home") {
+      tickerRequestIdRef.current += 1;
+      setTickerTapeItems([]);
+      return;
+    }
+    refreshTickerRibbon();
+  }, [activeMarket, activePage]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -3857,20 +3871,22 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   return (
     <div className="app-shell app-shell-simple">
-      <div className="ticker-ribbon">
-        <div className="ticker-ribbon-track">
-          {[...tickerTapeItems, ...tickerTapeItems].map((item, index) => (
-            <div key={`${item.key}-${index}`} className="ticker-ribbon-item">
-              <span>{item.label}</span>
-              <strong>{item.price.toFixed(2)}</strong>
-              <small className={item.change >= 0 ? "positive-text" : "negative-text"}>
-                {item.change >= 0 ? "+" : ""}
-                {item.change.toFixed(2)}%
-              </small>
-            </div>
-          ))}
+      {activePage !== "home" && tickerTapeItems.length > 0 ? (
+        <div className="ticker-ribbon">
+          <div className="ticker-ribbon-track">
+            {[...tickerTapeItems, ...tickerTapeItems].map((item, index) => (
+              <div key={`${item.key}-${index}`} className="ticker-ribbon-item">
+                <span>{item.label}</span>
+                <strong>{item.price.toFixed(2)}</strong>
+                <small className={item.change >= 0 ? "positive-text" : "negative-text"}>
+                  {item.change >= 0 ? "+" : ""}
+                  {item.change.toFixed(2)}%
+                </small>
+              </div>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
       <header className="top-nav">
         <div className="brand-stack">
           <div className="brand-cluster">
@@ -4023,7 +4039,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         onRetry={handleRetryConnection}
       />
 
-      {!loading ? (
+      {!loading && activePage !== "home" ? (
         <section className="snapshot-status-strip" aria-live="polite">
           <span className="snapshot-status-strip__label">{snapshotStripLabel}</span>
           <strong>{snapshotDateLabel}</strong>
@@ -4054,8 +4070,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               activeMarket={activeMarket}
               dashboard={dashboard}
               groups={groupsData}
-              snapshotDateLabel={snapshotDateLabel}
-              snapshotTimeLabel={snapshotTimeLabel}
               onPickSymbol={handlePickSymbol}
               onOpenGroups={(options) => {
                 void openGroupsView(options);

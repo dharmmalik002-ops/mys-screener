@@ -347,9 +347,6 @@ export function ChartGridModal({
 
   useEffect(() => {
     modalRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    }
   }, [contextLabel, title]);
 
   const zoomFactor = GRID_ZOOM_LEVELS[zoomLevelIndex];

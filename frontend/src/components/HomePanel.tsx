@@ -6,7 +6,6 @@ import {
   getChartGrid,
   getChartGridSeries,
   getIndexPeHistory,
-  getMarketOverview,
   type ChartBar,
   type ChartGridCard,
   type ChartGridResponse,
@@ -16,7 +15,6 @@ import {
   type IndustryGroupsResponse,
   type IndexPeHistoryResponse,
   type MarketKey,
-  type MarketMacroItem,
   type ScanMatch,
   type SectorCard,
   type SectorSortBy,
@@ -32,8 +30,6 @@ type HomePanelProps = {
   activeMarket: MarketKey;
   dashboard: DashboardResponse | null;
   groups: IndustryGroupsResponse | null;
-  snapshotDateLabel: string;
-  snapshotTimeLabel: string;
   onPickSymbol: (symbol: string) => void;
   onOpenGroups: (options?: { groupId?: string; symbol?: string }) => void;
 };
@@ -43,8 +39,8 @@ type GridTarget =
   | { type: "members"; name: string; groupKind: "sector" | "index" };
 
 type HomeGroupFilter = 10 | 20 | 40;
+type MoverListKind = "gainers" | "losers" | "active";
 
-const HOME_MACRO_SKELETON_COUNT = 4;
 const HOME_LIST_SKELETON_COUNT = 6;
 const HOME_HEATMAP_SKELETON_COUNTS: Record<MarketKey, { indices: number; sectors: number }> = {
   india: { indices: 4, sectors: 22 },
@@ -751,8 +747,6 @@ export function HomePanel({
   activeMarket,
   dashboard,
   groups,
-  snapshotDateLabel,
-  snapshotTimeLabel,
   onPickSymbol,
   onOpenGroups,
 }: HomePanelProps) {
@@ -770,35 +764,8 @@ export function HomePanel({
   const [memberGridError, setMemberGridError] = useState<string | null>(null);
   const memberGridCacheRef = useRef<Record<string, ChartGridResponse>>({});
   const memberGridSeriesCacheRef = useRef<Record<string, ChartBar[]>>({});
-  const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
-  const [macroLoading, setMacroLoading] = useState(true);
   const [peModalSymbol, setPeModalSymbol] = useState<string | null>(null);
-  const previousMacroMarketRef = useRef<MarketKey | null>(null);
-
-  useEffect(() => {
-    let active = true;
-    const marketChanged = previousMacroMarketRef.current !== activeMarket;
-    previousMacroMarketRef.current = activeMarket;
-    setMacroLoading(true);
-    if (marketChanged) {
-      setMacroItems([]);
-    }
-    getMarketOverview(activeMarket)
-      .then((res) => {
-        if (!active) {
-          return;
-        }
-        setMacroItems(res.items);
-        setMacroLoading(false);
-      })
-      .catch(() => {
-        if (!active) {
-          return;
-        }
-        setMacroLoading(false);
-      });
-    return () => { active = false; };
-  }, [activeMarket, dashboard?.generated_at]);
+  const [moverModal, setMoverModal] = useState<MoverListKind | null>(null);
 
   const sortedSectorCards = useMemo(
     (): SectorCard[] => [],
@@ -959,9 +926,16 @@ export function HomePanel({
 
   const dashboardLoading = !dashboard;
   const groupsLoading = !groups;
-  const showMacroSkeleton = macroLoading || macroItems.length === 0;
   const topGainers = (dashboard?.top_gainers ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
+  const topLosers = (dashboard?.top_losers ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
   const topVolumeSpikes = (dashboard?.top_volume_spikes ?? []).slice(0, HOME_LIST_SKELETON_COUNT);
+  const allMoverLists: Record<MoverListKind, ScanMatch[]> = {
+    gainers: dashboard?.top_gainers ?? [],
+    losers: dashboard?.top_losers ?? [],
+    active: dashboard?.top_volume_spikes ?? [],
+  };
+  const moverModalTitle = moverModal === "gainers" ? "Top Gainers" : moverModal === "losers" ? "Top Losers" : "Most Active";
+  const moverModalItems = moverModal ? allMoverLists[moverModal] : [];
   const topGroups = useMemo(
     () => (groups?.groups ?? []).slice(0, 10),
     [groups],
@@ -978,6 +952,44 @@ export function HomePanel({
         <span className="skeleton-block home-skeleton-line home-skeleton-line-chip" />
       </div>
     ));
+  }
+
+  function renderMoverRow(item: ScanMatch, kind: MoverListKind, keyPrefix: string) {
+    const value = kind === "active" ? `${item.relative_volume.toFixed(2)}x` : formatReturn(item.change_pct);
+    const meta = kind === "active" ? `${formatReturn(item.change_pct)} · ${shortName(item)}` : shortName(item);
+    return (
+      <button key={`${keyPrefix}-${item.symbol}`} type="button" className="home-stock-row" onClick={() => onPickSymbol(item.symbol)}>
+        <span>
+          <strong>{item.symbol}</strong>
+          <small>{meta}</small>
+        </span>
+        <span>{item.last_price.toFixed(2)}</span>
+        <span className={kind === "active" ? "neutral-text" : metricClass(item.change_pct)}>{value}</span>
+      </button>
+    );
+  }
+
+  function renderMoverPanel(title: string, subtitle: string, kind: MoverListKind, items: ScanMatch[]) {
+    return (
+      <Panel
+        title={title}
+        subtitle={subtitle}
+        className={dashboardLoading ? "home-panel home-panel-list home-panel-list-loading" : "home-panel home-panel-list"}
+        actions={
+          <button type="button" className="tool-pill" onClick={() => setMoverModal(kind)} disabled={allMoverLists[kind].length === 0}>
+            View All
+          </button>
+        }
+      >
+        <div className="home-stock-list">
+          {dashboardLoading
+            ? renderStockRowSkeleton(kind)
+            : items.length > 0
+              ? items.map((item) => renderMoverRow(item, kind, `home-${kind}`))
+              : <div className="empty-state">No stocks available in the current universe.</div>}
+        </div>
+      </Panel>
+    );
   }
 
   function renderHeatmapSkeleton(prefix: string, count: number) {
@@ -1019,72 +1031,14 @@ export function HomePanel({
             <strong>{dashboard?.universe_count ?? 0}</strong>
           </div>
           <div className="metric-card">
-            <span>{activeMarket === "india" ? "EOD As Of" : "Snapshot Date"}</span>
-            <strong>{snapshotDateLabel}</strong>
+            <span>Groups</span>
+            <strong>{groups?.total_groups ?? 0}</strong>
           </div>
           <div className="metric-card">
-            <span>Published</span>
-            <strong>{snapshotTimeLabel}</strong>
+            <span>Movers</span>
+            <strong>{dashboard ? dashboard.top_gainers.length + dashboard.top_losers.length + dashboard.top_volume_spikes.length : 0}</strong>
           </div>
         </div>
-      </section>
-
-      <section className={showMacroSkeleton ? "home-macro-strip home-macro-strip-loading" : "home-macro-strip"}>
-        {showMacroSkeleton
-          ? Array.from({ length: HOME_MACRO_SKELETON_COUNT }, (_, index) => (
-              <div key={`macro-skeleton-${index}`} className="home-macro-card home-macro-card-shell" aria-hidden="true" />
-            ))
-          : macroItems.map((item) => {
-              const chgUp = item.change_pct !== null && item.change_pct >= 0;
-              const isIndex = item.symbol.startsWith("^");
-              return (
-                <div
-                  key={item.symbol}
-                  className="home-macro-card"
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onPickSymbol(item.symbol)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      onPickSymbol(item.symbol);
-                    }
-                  }}
-                >
-                  <span className="home-macro-label">{item.label}</span>
-                  <span className="home-macro-price">
-                    {item.price !== null
-                      ? `₹${item.price.toLocaleString("en-IN", { maximumFractionDigits: 2 })}`
-                      : "—"}
-                    {item.change_pct !== null && (
-                      <span className={chgUp ? "positive-text" : "negative-text"}>
-                        {` ${item.change_pct >= 0 ? "+" : ""}${item.change_pct.toFixed(2)}%`}
-                      </span>
-                    )}
-                  </span>
-                  {item.trailing_pe !== null && (
-                    <span className="home-macro-pe">P/E {item.trailing_pe.toFixed(1)}{isIndex ? " · chart + valuation" : ""}</span>
-                  )}
-                  {isIndex && item.trailing_pe === null && (
-                    <span className="home-macro-pe">Open full chart · valuation available</span>
-                  )}
-                  {isIndex && (
-                    <span className="home-macro-actions">
-                      <button
-                        type="button"
-                        className="home-macro-action-btn"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPeModalSymbol(item.symbol);
-                        }}
-                      >
-                        Valuation
-                      </button>
-                    </span>
-                  )}
-                </div>
-              );
-            })}
       </section>
 
       <Panel
@@ -1125,51 +1079,28 @@ export function HomePanel({
       </Panel>
 
       <section className="home-grid-secondary deferred-render-section">
-        <Panel
-          title="Top Gainers"
-          subtitle="Click any stock to open the full chart"
-          className={dashboardLoading ? "home-panel home-panel-list home-panel-list-loading" : "home-panel home-panel-list"}
-        >
-          <div className="home-stock-list">
-            {dashboardLoading
-              ? renderStockRowSkeleton("gainers")
-              : topGainers.length > 0
-                ? topGainers.map((item) => (
-              <button key={`home-gainer-${item.symbol}`} type="button" className="home-stock-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span>
-                  <strong>{item.symbol}</strong>
-                  <small>{shortName(item)}</small>
-                </span>
-                <span>{item.last_price.toFixed(2)}</span>
-                <span className={metricClass(item.change_pct)}>{formatReturn(item.change_pct)}</span>
-              </button>
-                ))
-                : <div className="empty-state">No gainers available in the current universe.</div>}
-          </div>
-        </Panel>
-        <Panel
-          title="Volume Leaders"
-          subtitle="Highest relative volume in the current universe"
-          className={dashboardLoading ? "home-panel home-panel-list home-panel-list-loading" : "home-panel home-panel-list"}
-        >
-          <div className="home-stock-list">
-            {dashboardLoading
-              ? renderStockRowSkeleton("volume")
-              : topVolumeSpikes.length > 0
-                ? topVolumeSpikes.map((item) => (
-              <button key={`home-volume-${item.symbol}`} type="button" className="home-stock-row" onClick={() => onPickSymbol(item.symbol)}>
-                <span>
-                  <strong>{item.symbol}</strong>
-                  <small>{item.relative_volume.toFixed(2)}x RVOL</small>
-                </span>
-                <span>{item.last_price.toFixed(2)}</span>
-                <span className={metricClass(item.change_pct)}>{formatReturn(item.change_pct)}</span>
-              </button>
-                ))
-                : <div className="empty-state">No volume leaders available in the current universe.</div>}
-          </div>
-        </Panel>
+        {renderMoverPanel("Top Gainers", "Largest positive moves in the current universe", "gainers", topGainers)}
+        {renderMoverPanel("Top Losers", "Largest negative moves in the current universe", "losers", topLosers)}
+        {renderMoverPanel("Most Active", "Highest relative volume in the current universe", "active", topVolumeSpikes)}
       </section>
+
+      {moverModal ? (
+        <div className="mover-modal-backdrop" onClick={() => setMoverModal(null)}>
+          <div className="mover-modal" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="chart-modal-close" onClick={() => setMoverModal(null)}>
+              Close
+            </button>
+            <div className="mover-modal-head">
+              <p className="eyebrow">Market Movers</p>
+              <h2>{moverModalTitle}</h2>
+              <small>{moverModalItems.length} stocks from the latest dashboard list</small>
+            </div>
+            <div className="mover-modal-list">
+              {moverModalItems.map((item) => renderMoverRow(item, moverModal, `modal-${moverModal}`))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {gridTarget ? (
         <Suspense fallback={null}>
