@@ -205,7 +205,7 @@
 .st-card .st-row {
   display: grid;
   grid-template-columns: var(--st-grid);
-  gap: 10px;
+  gap: 8px;
   align-items: center;
 }
 
@@ -224,8 +224,8 @@
 
 /* ----- Row override ----- */
 .st-card .scan-row.st-row {
-  padding: 10px 14px;
-  min-height: 64px;
+  padding: 8px 10px;
+  min-height: 56px;
   border-radius: 10px;
 }
 
@@ -243,17 +243,17 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 9px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   background: var(--st-bg, #f9fafb);
   border: 1px solid var(--st-border, #e5e7eb);
   overflow: hidden;
 }
 
 .st-logo img {
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   object-fit: contain;
 }
 
@@ -329,11 +329,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .st-spark-svg {
-  width: 80px;
-  height: 26px;
+  width: 100%;
+  max-width: 52px;
+  height: 22px;
   display: block;
 }
 
@@ -342,10 +345,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  font-size: 0.74rem;
+  font-size: 0.7rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
@@ -380,11 +383,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border: 1px solid var(--st-border, #e5e7eb);
-  border-radius: 9px;
+  border-radius: 8px;
   background: var(--st-surface, #ffffff);
   color: var(--st-text-soft);
   cursor: pointer;

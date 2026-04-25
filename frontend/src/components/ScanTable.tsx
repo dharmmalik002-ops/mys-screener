@@ -570,17 +570,19 @@ export function ScanTable({
     }, {});
   }
 
-  /* Reactive grid template based on column visibility */
+  /* Reactive grid template based on column visibility.
+     Tight column widths so the Stock column keeps enough room in the
+     narrow middle of the screener page (sidebar | main | chart layout). */
   const gridTemplate = useMemo(() => {
-    const cols: string[] = ["minmax(220px, 1.6fr)"]; // Stock + logo
-    cols.push("88px"); // Price
-    cols.push("84px"); // Change %
-    if (visibleCols.has("spark")) cols.push("90px");
-    if (visibleCols.has("rs")) cols.push("64px");
-    if (visibleCols.has("rs1m")) cols.push("64px");
-    if (visibleCols.has("rvol")) cols.push("60px");
-    if (visibleCols.has("gap")) cols.push("64px");
-    cols.push("44px"); // Watch
+    const cols: string[] = ["minmax(160px, 1.8fr)"]; // Stock + logo (flex-grow)
+    cols.push("72px"); // Price
+    cols.push("64px"); // Change %
+    if (visibleCols.has("spark")) cols.push("56px");
+    if (visibleCols.has("rs")) cols.push("44px");
+    if (visibleCols.has("rs1m")) cols.push("44px");
+    if (visibleCols.has("rvol")) cols.push("48px");
+    if (visibleCols.has("gap")) cols.push("52px");
+    cols.push("32px"); // Watch
     return cols.join(" ");
   }, [visibleCols]);
 

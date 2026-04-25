@@ -1,19 +1,14 @@
-import { useMemo, useState } from "react";
 import {
   Plus,
-  Search,
-  Sparkles,
   Settings2,
   Rocket,
   TrendingUp,
   Maximize2,
   Minimize2,
   Crosshair,
-  Undo2,
   Activity,
   BarChart3,
   Layers,
-  Crown,
   Trash2,
 } from "lucide-react";
 
@@ -74,14 +69,6 @@ const ITEMS: SidebarItem[] = [
   { mode: "improving-rs", title: "Improving RS", hint: "Relative strength", Icon: Activity },
 ];
 
-const QUICK_FILTERS: Array<{ label: string; query: string }> = [
-  { label: "Market Cap > 1000 Cr", query: "market" },
-  { label: "Volume Surge", query: "gap" },
-  { label: "RS > 80", query: "rs" },
-  { label: "Tight Contraction", query: "contraction" },
-  { label: "Recent IPOs", query: "ipo" },
-];
-
 export function ScreenerSidebar({
   market: _market,
   activeMode,
@@ -92,28 +79,11 @@ export function ScreenerSidebar({
   onLoadSavedScanner,
   onDeleteSavedScanner,
 }: ScreenerSidebarProps) {
-  const [search, setSearch] = useState("");
-  const [activeChip, setActiveChip] = useState<string | null>(null);
-
-  const filteredItems = useMemo(() => {
-    const needle = (activeChip ?? search).trim().toLowerCase();
-    if (!needle) return ITEMS;
-    return ITEMS.filter(
-      (it) =>
-        it.title.toLowerCase().includes(needle) ||
-        it.hint.toLowerCase().includes(needle) ||
-        it.mode.toLowerCase().includes(needle),
-    );
-  }, [search, activeChip]);
+  const filteredItems = ITEMS;
 
   const handleNewScreener = () => {
     // "New Screener" defaults to opening the Custom Scanner (the only freeform builder)
     onModeChange("custom-scan");
-  };
-
-  const handleChipClick = (query: string) => {
-    setActiveChip((prev) => (prev === query ? null : query));
-    setSearch("");
   };
 
   return (
@@ -128,39 +98,6 @@ export function ScreenerSidebar({
           <Plus size={16} strokeWidth={2.4} />
           <span>New Screener</span>
         </button>
-
-        {/* Quick Filters */}
-        <section className="ss-quick">
-          <div className="ss-section-label">
-            <Sparkles size={13} />
-            <span>Quick Filters</span>
-          </div>
-          <div className="ss-search">
-            <Search size={14} className="ss-search-icon" />
-            <input
-              type="search"
-              className="ss-search-input"
-              placeholder="Search scanners…"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                if (e.target.value) setActiveChip(null);
-              }}
-            />
-          </div>
-          <div className="ss-chips">
-            {QUICK_FILTERS.map((qf) => (
-              <button
-                key={qf.label}
-                type="button"
-                className={`ss-chip${activeChip === qf.query ? " ss-chip-active" : ""}`}
-                onClick={() => handleChipClick(qf.query)}
-              >
-                {qf.label}
-              </button>
-            ))}
-          </div>
-        </section>
 
         {/* Scanner list */}
         <nav className="ss-nav" aria-label="Scanner modes">
@@ -233,37 +170,6 @@ export function ScreenerSidebar({
           )}
         </nav>
 
-        {/* Pro Features upgrade card */}
-        <div className="ss-pro-card">
-          <div className="ss-pro-head">
-            <span className="ss-pro-crown" aria-hidden>
-              <Crown size={14} strokeWidth={2.2} />
-            </span>
-            <strong>Pro Features</strong>
-          </div>
-          <p className="ss-pro-copy">
-            Unlock AI-driven screens, real-time alerts and unlimited saved scanners.
-          </p>
-          <ul className="ss-pro-bullets">
-            <li>
-              <Undo2 size={11} /> Backtest any preset
-            </li>
-            <li>
-              <Activity size={11} /> Live RS &amp; volume signals
-            </li>
-          </ul>
-          <button
-            type="button"
-            className="ss-pro-cta"
-            onClick={() => {
-              if (typeof window !== "undefined") {
-                window.alert("Upgrade flow coming soon — Pro features are in private beta.");
-              }
-            }}
-          >
-            Upgrade Now
-          </button>
-        </div>
       </div>
     </Panel>
   );
