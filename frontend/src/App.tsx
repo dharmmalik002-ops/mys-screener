@@ -1,4 +1,5 @@
 import { Suspense, lazy, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Moon, RefreshCw, Search as SearchIcon, Sun } from "lucide-react";
 
 import type {
   ChartAnnotation,
@@ -2491,8 +2492,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
   const snapshotTimeLabel = formatSnapshotTime(activeMarket, dashboard?.generated_at);
-  const snapshotStripLabel = "India EOD Active";
-  const snapshotStripDetail = `EOD applied for ${snapshotDateLabel}. Last publish ${snapshotTimeLabel}.`;
   const activeWatchlist = watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null;
   const activeViewCount =
     activePage === "home"
@@ -3995,6 +3994,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           >
             <div className="nav-search-row">
               <div className="nav-search-field">
+                <span className="search-icon" aria-hidden="true">
+                  <SearchIcon size={14} strokeWidth={2.2} />
+                </span>
                 <input
                   list="nav-stock-options"
                   value={navSearchQuery}
@@ -4013,12 +4015,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     }
                   }}
                   placeholder="Search symbol or company"
+                  aria-label="Search symbol or company. Enter opens chart, Shift+Enter jumps to group."
                 />
                 <span className="nav-search-hint">Enter opens chart. Shift+Enter jumps to the stock&apos;s group.</span>
               </div>
-              <button type="submit" className="nav-button primary">
-                Search
-              </button>
             </div>
             <datalist id="nav-stock-options">
               {navSearchSuggestions.map((item) => (
@@ -4029,37 +4029,32 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </datalist>
           </form>
 
-          <div className="nav-mode-toggle">
-            <span>Mode</span>
-            <div className="mode-switch">
-              <button
-                type="button"
-                className={theme === "dark" ? "tool-pill active" : "tool-pill"}
-                onClick={() => setTheme("dark")}
-              >
-                Dark
-              </button>
-              <button
-                type="button"
-                className={theme === "light" ? "tool-pill active" : "tool-pill"}
-                onClick={() => setTheme("light")}
-              >
-                Light
-              </button>
-            </div>
-          </div>
+          <span className="status-pill" title={autoRefreshSchedule.detail}>
+            <span className="status-dot" aria-hidden="true" />
+            <span>{autoRefreshSchedule.label}</span>
+            <span className="status-pill-sep" aria-hidden="true" />
+            <strong>{snapshotDateLabel}</strong>
+          </span>
 
-          <div className="nav-mode-toggle">
-            <span>Data Mode</span>
-            <div className="mode-switch">
-              <span className="tool-pill active" title={autoRefreshSchedule.detail}>
-                {autoRefreshSchedule.label}
-              </span>
-            </div>
-          </div>
+          <button
+            type="button"
+            className={refreshing ? "icon-btn is-spinning" : "icon-btn"}
+            onClick={() => void handleRefresh("manual")}
+            disabled={refreshing}
+            title={refreshing ? "Refreshing snapshot…" : "Refresh close snapshot"}
+            aria-label="Refresh close snapshot"
+          >
+            <RefreshCw size={15} strokeWidth={2.2} />
+          </button>
 
-          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing}>
-            {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
+          <button
+            type="button"
+            className="icon-btn"
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun size={15} strokeWidth={2.2} /> : <Moon size={15} strokeWidth={2.2} />}
           </button>
         </div>
       </header>
@@ -4072,13 +4067,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         onRetry={handleRetryConnection}
       />
 
-      {!loading ? (
-        <section className="snapshot-status-strip" aria-live="polite">
-          <span className="snapshot-status-strip__label">{snapshotStripLabel}</span>
-          <strong>{snapshotDateLabel}</strong>
-          <span className="snapshot-status-strip__detail">{snapshotStripDetail}</span>
-        </section>
-      ) : null}
+      {/* India EOD status now lives inside the top-nav status-pill */}
 
       <main className="workspace">
 

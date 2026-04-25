@@ -1,0 +1,299 @@
+/* ==========================================================================
+   Top-bar modernisation overrides — lighter, tighter, less GPU-heavy.
+   Loaded after app.css + premium-overrides.css so these win.
+   ========================================================================== */
+
+/* ---- Top nav: shrink padding, drop heavy blur/shadow ---- */
+.top-nav {
+  padding: 8px 22px;
+  gap: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+/* ---- Brand: smaller mark, denser title ---- */
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.brand-cluster {
+  gap: 10px;
+}
+
+.brand-cluster h1 {
+  font-size: 0.98rem;
+}
+
+.eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  opacity: 0.65;
+}
+
+/* ---- Nav controls ---- */
+.nav-controls {
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tighter nav buttons, no heavy shadow/blur, no underline animation tail */
+.top-nav .nav-button {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: transparent;
+  background: transparent;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.top-nav .nav-button::after {
+  display: none;
+}
+
+.top-nav .nav-button:hover {
+  transform: none;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.top-nav .nav-button.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: var(--accent-contrast);
+  border-color: transparent;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  animation: none;
+}
+
+.top-nav .nav-button.ghost {
+  background: transparent;
+}
+
+.top-nav .nav-button:disabled {
+  opacity: 0.45;
+  background: transparent;
+}
+
+/* ---- Search: compact pill with icon inside, no separate Search button ---- */
+.top-nav .nav-search {
+  min-width: min(100%, 280px);
+  margin-left: auto;
+}
+
+.top-nav .nav-search-row {
+  gap: 6px;
+}
+
+.top-nav .nav-search-field {
+  position: relative;
+  gap: 0;
+}
+
+.top-nav .nav-search input {
+  min-width: 220px;
+  padding: 7px 12px 7px 32px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  border-color: var(--line);
+  backdrop-filter: none;
+  box-shadow: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.top-nav .nav-search input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.top-nav .nav-search-field .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+.top-nav .nav-search-hint {
+  display: none;
+}
+
+.top-nav .nav-search-row .nav-button.search-submit {
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+}
+
+/* ---- Icon buttons (theme toggle, refresh) ---- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-family: inherit;
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn.is-spinning svg {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Status pill (replaces the separate India EOD strip) ---- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.status-pill .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #10b981 22%, transparent);
+}
+
+.status-pill .status-dot.is-stale {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 22%, transparent);
+}
+
+.status-pill strong {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.status-pill .status-pill-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line);
+}
+
+/* Hide the legacy plain-text Mode / Data Mode / strip blocks ----- */
+.top-nav .nav-mode-toggle.legacy-hidden {
+  display: none;
+}
+
+/* If the snapshot strip is rendered alongside the new pill, slim it down */
+.snapshot-status-strip.is-compact {
+  display: none;
+}
+
+/* ---- General lightening: drop the infinite glow pulse ---- */
+.nav-button.primary,
+.timeframe-pill.active,
+.scanner-tab.active,
+.indicator-pill.active,
+.tool-pill.active {
+  animation: none;
+}
+
+/* ---- Ticker ribbon: tighten ---- */
+.ticker-ribbon-track {
+  padding: 6px 22px;
+  gap: 28px;
+}
+
+.ticker-ribbon-item {
+  font-size: 0.7rem;
+}
+
+.ticker-ribbon-item strong {
+  font-size: 0.78rem;
+}
+
+/* Gentle hover: kill the lift across the app for a calmer feel.
+   Only suppresses the translateY; colour/border hover still reads. */
+.nav-button:hover,
+.scanner-tab:hover,
+.timeframe-pill:hover,
+.indicator-pill:hover,
+.tool-pill:hover {
+  transform: none;
+}
+
+/* ---- Site-wide lightening: tame heavy blurs and big glow shadows ---- */
+.panel,
+.panel-shell,
+.scan-table,
+.workspace-panel,
+.panel-frame,
+.modal-shell {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.scan-row {
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.scan-row:hover {
+  transform: none;
+  border-left: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* Drop the heaviest box-shadow halos on cards — keep a soft edge */
+.panel,
+.panel-shell {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+/* Reduce the ambient glow under the workspace */
+.workspace {
+  padding-top: 14px;
+}
+
+/* Snapshot strip is replaced by the in-header pill — hide leftovers */
+.snapshot-status-strip {
+  display: none;
+}

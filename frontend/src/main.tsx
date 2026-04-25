@@ -4,6 +4,7 @@ import App from "./App";
 import "./styles/app.css";
 import "./styles/premium-overrides.css";
 import "./styles/nav-modern.css";
+import "./styles/top-bar-modern.css";
 
 class RootErrorBoundary extends React.Component<
   { children: React.ReactNode },

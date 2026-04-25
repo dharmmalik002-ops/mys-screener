@@ -8,7 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
-import { ChevronRight, Trash2 } from "lucide-react";
+import { Plus, Trash2 } from "lucide-react";
 
 import {
   getChartGridSeries,
@@ -157,71 +157,6 @@ function RsBadge({ rs }: { rs: number | null | undefined }) {
   return <span className={`st-rs-badge st-rs-${tone}`}>{Math.round(rs)}</span>;
 }
 
-/* ---------- SD price sparkline (synthesized from return windows) ---------- */
-function MiniSpark({ item, color }: { item: WatchlistDisplayItem; color: string }) {
-  const r12m = item.stock_return_12m ?? 0;
-  const r3m = item.stock_return_60d ?? r12m / 4;
-  const r1m = item.stock_return_20d ?? r3m / 3;
-  const rDay = Number.isFinite(item.change_pct) ? item.change_pct : 0;
-
-  const pts: number[] = [
-    100,
-    100 + r12m * 0.15,
-    100 + r12m * 0.4,
-    100 + r12m * 0.65,
-    100 + r12m * 0.85 + r3m * 0.2,
-    100 + r12m * 0.95 + r3m * 0.6 + r1m * 0.4,
-    100 + r12m + r3m * 0.7 + r1m * 0.9 + rDay * 0.5,
-  ];
-
-  return <SparkPath pts={pts} color={color} />;
-}
-
-/* ---------- RS-line sparkline (uses rs_rating + rs_rating_1m_ago) ---------- */
-function RsLineSpark({ item }: { item: WatchlistDisplayItem }) {
-  const rsNow = item.rs_rating;
-  const rsOld = item.rs_rating_1m_ago;
-  if (rsNow === null && rsOld === null) {
-    return <span className="wl-rank-muted" style={{ fontSize: "0.74rem" }}>—</span>;
-  }
-  const end = rsNow ?? rsOld ?? 50;
-  const start = rsOld ?? rsNow ?? 50;
-  const mid1 = start + (end - start) * 0.35 + (rsNow !== null ? Math.sin(rsNow) * 1.5 : 0);
-  const mid2 = start + (end - start) * 0.7 + (rsNow !== null ? Math.cos(rsNow) * 1.5 : 0);
-  const pts = [start, mid1, (start + end) / 2, mid2, end];
-  const up = end >= start;
-  return <SparkPath pts={pts} color={up ? "#3b82f6" : "#a855f7"} strokeWidth={1.6} />;
-}
-
-function SparkPath({
-  pts,
-  color,
-  strokeWidth = 1.6,
-}: {
-  pts: number[];
-  color: string;
-  strokeWidth?: number;
-}) {
-  const minV = Math.min(...pts);
-  const maxV = Math.max(...pts);
-  const range = Math.max(0.001, maxV - minV);
-  const W = 80;
-  const H = 26;
-  const path = pts
-    .map((v, i) => {
-      const x = (i / (pts.length - 1)) * W;
-      const y = H - ((v - minV) / range) * H;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="wl-spark-svg" aria-hidden>
-      <path d={path} stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
 /* ---------- Helpers ---------- */
 function formatReturn(value: number) {
   return `${value >= 0 ? "+" : ""}${value.toFixed(2)}%`;
@@ -233,13 +168,6 @@ function metricClass(value: number) {
 
 function formatPrice(value: number, _market: MarketKey) {
   return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
-function formatMarketCap(value: number | null): string {
-  if (!value || value <= 0) return "--";
-  if (value >= 100_000) return `₹${(value / 100_000).toFixed(2)}L Cr`;
-  if (value >= 1_000) return `₹${(value / 1_000).toFixed(1)}K Cr`;
-  return `₹${value.toFixed(0)} Cr`;
 }
 
 function selectedReturnForGrid(item: WatchlistDisplayItem, timeframe: ChartGridTimeframe) {
@@ -546,12 +474,10 @@ export function WatchlistsPanel({
   }
 
   const gridTemplate =
-    "minmax(170px, 1.6fr) 84px 76px 56px 90px 90px 84px 88px 96px 36px";
+    "minmax(180px, 1.8fr) 88px 76px 56px 88px 96px 36px";
 
   const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
     const logoUrl = getLogoUrl(item.symbol);
-    const up = item.change_pct >= 0;
-    const sparkColor = up ? "#10b981" : "#ef4444";
     const isActive = selectedSymbol === item.symbol;
     const checkboxOn = selectedSymbols.includes(item.symbol);
     const popOpen = movePopoverFor === item.symbol;
@@ -610,14 +536,6 @@ export function WatchlistsPanel({
           <RsBadge rs={item.rs_rating} />
         </span>
 
-        <span className="wl-spark-cell">
-          {item.isKnown ? <MiniSpark item={item} color={sparkColor} /> : <span className="wl-rank-muted" style={{ fontSize: "0.74rem" }}>—</span>}
-        </span>
-
-        <span className="wl-spark-cell">
-          <RsLineSpark item={item} />
-        </span>
-
         <span className="wl-rank">
           {item.groupRank !== null ? (
             <span className="wl-rank-pill">#{item.groupRank}</span>
@@ -636,27 +554,26 @@ export function WatchlistsPanel({
           )}
         </span>
 
-        <span className="wl-mcap">{formatMarketCap(item.market_cap_crore)}</span>
-
         <span className="wl-move-wrap" ref={popOpen ? movePopoverWrapRef : undefined}>
           <button
             type="button"
             className="wl-move-btn"
             disabled={availableMoveTargets.length === 0}
-            title={availableMoveTargets.length === 0 ? "No other watchlist" : `Move ${item.symbol} to…`}
+            title={availableMoveTargets.length === 0 ? "No other watchlist" : `Add ${item.symbol} to…`}
             onClick={(event) => {
               event.stopPropagation();
               setMovePopoverFor((current) => (current === item.symbol ? null : item.symbol));
             }}
           >
-            <ChevronRight size={14} strokeWidth={2.4} />
+            <Plus size={14} strokeWidth={2.6} />
           </button>
           {popOpen ? (
             <div className="wl-move-pop" onClick={(event) => event.stopPropagation()}>
               {availableMoveTargets.length === 0 ? (
-                <span className="wl-move-empty">Create another watchlist to move stocks.</span>
+                <span className="wl-move-empty">Create another watchlist to add stocks.</span>
               ) : (
                 <>
+                  <span className="wl-move-heading">Add to…</span>
                   {availableMoveTargets.map((target) => (
                     <button
                       key={`row-move-${item.symbol}-${target.id}`}
@@ -670,12 +587,11 @@ export function WatchlistsPanel({
                   ))}
                   <button
                     type="button"
-                    className="wl-move-item"
+                    className="wl-move-item wl-move-item--danger"
                     onClick={() => {
                       if (activeWatchlist) onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
                       setMovePopoverFor(null);
                     }}
-                    style={{ color: "#ef4444" }}
                   >
                     <Trash2 size={12} />
                     <span>Remove from this watchlist</span>
@@ -879,11 +795,8 @@ export function WatchlistsPanel({
                 <span className="wl-right">Price</span>
                 <span className="wl-right">Change</span>
                 <span className="wl-center">RS</span>
-                <span className="wl-center">SD Chart</span>
-                <span className="wl-center">RS Line</span>
                 <span className="wl-center">Group Rank</span>
                 <span className="wl-center">Rank in Group</span>
-                <span className="wl-right">Market Cap</span>
                 <span></span>
               </div>
               <div

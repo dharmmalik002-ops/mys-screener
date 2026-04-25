@@ -249,6 +249,28 @@
   color: var(--st-text-soft);
 }
 
+.wl-move-heading {
+  display: block;
+  padding: 6px 10px 2px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-text-soft);
+}
+
+.wl-move-item--danger {
+  color: #ef4444;
+  margin-top: 2px;
+  border-top: 1px solid var(--st-border, #e5e7eb);
+  padding-top: 8px;
+}
+
+.wl-move-item--danger:hover {
+  background: rgba(239, 68, 68, 0.08);
+  color: #dc2626;
+}
+
 /* ----- Bulk toolbar (kept, modernised) ----- */
 .wl-bulk-toolbar {
   display: inline-flex;
