@@ -16,35 +16,25 @@ def merge_watchlists_state(
     existing: WatchlistsStateResponse | None,
     incoming: WatchlistsStateResponse,
 ) -> WatchlistsStateResponse:
+    """Apply PUT semantics — the incoming payload is authoritative.
+
+    The frontend always sends the full canonical state on save (every
+    watchlist with its complete symbol list), so a delete arrives as an
+    "absence". The previous implementation unioned existing + incoming,
+    which silently resurrected anything the user had removed. This
+    rewrite keeps only what the client sent.
+
+    `existing` is still consulted for one purpose: choosing a fallback
+    `active_watchlist_id` if the incoming payload doesn't specify one.
+    """
     if existing is None:
         return incoming.model_copy(deep=True)
 
-    existing_by_id = {item.id: item for item in existing.watchlists}
-    incoming_by_id = {item.id: item for item in incoming.watchlists}
-    merged_watchlists: list[WatchlistItem] = []
-    seen_ids: set[str] = set()
+    incoming_ids = {item.id for item in incoming.watchlists}
+    merged_watchlists = [item.model_copy(deep=True) for item in incoming.watchlists]
 
-    for item in existing.watchlists:
-        replacement = incoming_by_id.get(item.id)
-        merged_symbols = list(dict.fromkeys([*item.symbols, *(replacement.symbols if replacement else [])]))
-        merged_watchlists.append(
-            WatchlistItem(
-                id=item.id,
-                name=replacement.name if replacement else item.name,
-                color=replacement.color if replacement else item.color,
-                symbols=merged_symbols,
-            )
-        )
-        seen_ids.add(item.id)
-
-    for item in incoming.watchlists:
-        if item.id in seen_ids:
-            continue
-        merged_watchlists.append(item.model_copy(deep=True))
-        seen_ids.add(item.id)
-
-    active_watchlist_id = incoming.active_watchlist_id if incoming.active_watchlist_id in seen_ids else None
-    if active_watchlist_id is None and existing.active_watchlist_id in seen_ids:
+    active_watchlist_id = incoming.active_watchlist_id if incoming.active_watchlist_id in incoming_ids else None
+    if active_watchlist_id is None and existing.active_watchlist_id in incoming_ids:
         active_watchlist_id = existing.active_watchlist_id
     if active_watchlist_id is None and merged_watchlists:
         active_watchlist_id = merged_watchlists[0].id

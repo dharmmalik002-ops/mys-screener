@@ -31,7 +31,7 @@ class WatchlistsStoreTests(unittest.TestCase):
             self.assertIsNone(store.load_state("india"))
             self.assertEqual(store.save_state(state), state)
 
-    def test_merge_watchlists_state_preserves_existing_lists_and_symbols(self) -> None:
+    def test_merge_watchlists_state_uses_incoming_as_authoritative(self) -> None:
         existing = WatchlistsStateResponse(
             market="india",
             updated_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
@@ -53,8 +53,44 @@ class WatchlistsStoreTests(unittest.TestCase):
 
         merged = watchlists_store.merge_watchlists_state(existing, incoming)
 
+        # Incoming is authoritative: wl-2 was dropped (a delete), wl-1's
+        # symbols match incoming exactly (no resurrection of TCS).
         self.assertEqual(merged.active_watchlist_id, "wl-3")
-        self.assertEqual([item.id for item in merged.watchlists], ["wl-1", "wl-2", "wl-3"])
+        self.assertEqual([item.id for item in merged.watchlists], ["wl-1", "wl-3"])
         self.assertEqual(merged.watchlists[0].name, "Core Plus")
-        self.assertEqual(merged.watchlists[0].symbols, ["INFY", "TCS", "HDFCBANK"])
-        self.assertEqual(merged.watchlists[1].symbols, ["RELIANCE"])
+        self.assertEqual(merged.watchlists[0].symbols, ["INFY", "HDFCBANK"])
+        self.assertEqual(merged.watchlists[1].symbols, ["SBIN"])
+
+    def test_merge_watchlists_state_falls_back_to_existing_active_id(self) -> None:
+        existing = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id="wl-1",
+            watchlists=[WatchlistItem(id="wl-1", name="Core", color="#4f8cff", symbols=["INFY"])],
+        )
+        incoming = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 19, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id=None,
+            watchlists=[WatchlistItem(id="wl-1", name="Core", color="#4f8cff", symbols=["INFY", "TCS"])],
+        )
+        merged = watchlists_store.merge_watchlists_state(existing, incoming)
+        self.assertEqual(merged.active_watchlist_id, "wl-1")
+        self.assertEqual(merged.watchlists[0].symbols, ["INFY", "TCS"])
+
+    def test_merge_watchlists_state_honours_full_clear(self) -> None:
+        existing = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id="wl-1",
+            watchlists=[WatchlistItem(id="wl-1", name="Core", color="#4f8cff", symbols=["INFY"])],
+        )
+        incoming = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 20, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id=None,
+            watchlists=[],
+        )
+        merged = watchlists_store.merge_watchlists_state(existing, incoming)
+        self.assertEqual(merged.watchlists, [])
+        self.assertIsNone(merged.active_watchlist_id)
