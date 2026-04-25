@@ -8,6 +8,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { createPortal } from "react-dom";
 import { Plus, Trash2 } from "lucide-react";
 
 import {
@@ -253,7 +254,9 @@ export function WatchlistsPanel({
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
   const [bulkTargetWatchlistId, setBulkTargetWatchlistId] = useState<string>("");
   const [movePopoverFor, setMovePopoverFor] = useState<string | null>(null);
-  const movePopoverWrapRef = useRef<HTMLDivElement | null>(null);
+  const [movePopoverAnchor, setMovePopoverAnchor] = useState<{ top: number; left: number } | null>(null);
+  const moveButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const movePopoverEl = useRef<HTMLDivElement | null>(null);
   const [gridOpen, setGridOpen] = useState(false);
   const [gridColumns, setGridColumns] = useState(4);
   const [gridRows, setGridRows] = useState(3);
@@ -347,6 +350,7 @@ export function WatchlistsPanel({
   useEffect(() => {
     setSelectedSymbols([]);
     setMovePopoverFor(null);
+    setMovePopoverAnchor(null);
     setBulkTargetWatchlistId((current) => {
       if (current && availableMoveTargets.some((watchlist) => watchlist.id === current)) {
         return current;
@@ -362,18 +366,47 @@ export function WatchlistsPanel({
     });
   }, [activeWatchlist?.symbols]);
 
-  // Click-outside for the per-row Move popover.
+  // Close per-row Add popover on outside click, scroll, or resize.
   useEffect(() => {
     if (!movePopoverFor) return;
-    const handler = (event: MouseEvent) => {
-      const wrap = movePopoverWrapRef.current;
-      if (wrap && !wrap.contains(event.target as Node)) {
-        setMovePopoverFor(null);
-      }
+    const close = () => {
+      setMovePopoverFor(null);
+      setMovePopoverAnchor(null);
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    const onMouseDown = (event: MouseEvent) => {
+      const target = event.target as Node;
+      const trigger = moveButtonRefs.current[movePopoverFor];
+      const pop = movePopoverEl.current;
+      if (trigger?.contains(target)) return;
+      if (pop?.contains(target)) return;
+      close();
+    };
+    document.addEventListener("mousedown", onMouseDown);
+    window.addEventListener("scroll", close, true);
+    window.addEventListener("resize", close);
+    return () => {
+      document.removeEventListener("mousedown", onMouseDown);
+      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("resize", close);
+    };
   }, [movePopoverFor]);
+
+  const openMovePopover = (symbol: string) => {
+    if (movePopoverFor === symbol) {
+      setMovePopoverFor(null);
+      setMovePopoverAnchor(null);
+      return;
+    }
+    const trigger = moveButtonRefs.current[symbol];
+    if (!trigger) return;
+    const rect = trigger.getBoundingClientRect();
+    const POP_WIDTH = 220;
+    setMovePopoverAnchor({
+      top: rect.bottom + 6,
+      left: Math.max(8, rect.right - POP_WIDTH),
+    });
+    setMovePopoverFor(symbol);
+  };
 
   const shouldVirtualize = hasWideTableLayout && activeItems.length > 60;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
@@ -422,6 +455,7 @@ export function WatchlistsPanel({
     onMoveSymbols(activeWatchlist.id, targetId, [symbol]);
     setSelectedSymbols((current) => current.filter((item) => item !== symbol));
     setMovePopoverFor(null);
+    setMovePopoverAnchor(null);
   };
 
   const gridCards = useMemo<ChartGridDisplayCard[]>(() => {
@@ -554,54 +588,70 @@ export function WatchlistsPanel({
           )}
         </span>
 
-        <span className="wl-move-wrap" ref={popOpen ? movePopoverWrapRef : undefined}>
+        <span className="wl-move-wrap">
           <button
             type="button"
-            className="wl-move-btn"
+            ref={(el) => {
+              moveButtonRefs.current[item.symbol] = el;
+            }}
+            className={popOpen ? "wl-move-btn is-open" : "wl-move-btn"}
             disabled={availableMoveTargets.length === 0}
             title={availableMoveTargets.length === 0 ? "No other watchlist" : `Add ${item.symbol} to…`}
             onClick={(event) => {
               event.stopPropagation();
-              setMovePopoverFor((current) => (current === item.symbol ? null : item.symbol));
+              openMovePopover(item.symbol);
             }}
           >
             <Plus size={14} strokeWidth={2.6} />
           </button>
-          {popOpen ? (
-            <div className="wl-move-pop" onClick={(event) => event.stopPropagation()}>
-              {availableMoveTargets.length === 0 ? (
-                <span className="wl-move-empty">Create another watchlist to add stocks.</span>
-              ) : (
-                <>
-                  <span className="wl-move-heading">Add to…</span>
-                  {availableMoveTargets.map((target) => (
-                    <button
-                      key={`row-move-${item.symbol}-${target.id}`}
-                      type="button"
-                      className="wl-move-item"
-                      onClick={() => handleQuickMove(item.symbol, target.id)}
-                    >
-                      <span className="wl-swatch-mini" style={{ background: target.color }} aria-hidden="true" />
-                      <span>{target.name}</span>
-                    </button>
-                  ))}
-                  <button
-                    type="button"
-                    className="wl-move-item wl-move-item--danger"
-                    onClick={() => {
-                      if (activeWatchlist) onRemoveFromWatchlist(activeWatchlist.id, item.symbol);
-                      setMovePopoverFor(null);
-                    }}
-                  >
-                    <Trash2 size={12} />
-                    <span>Remove from this watchlist</span>
-                  </button>
-                </>
-              )}
-            </div>
-          ) : null}
         </span>
       </div>
+    );
+  };
+
+  const renderMovePopover = () => {
+    if (!movePopoverFor || !movePopoverAnchor) return null;
+    const symbol = movePopoverFor;
+    return createPortal(
+      <div
+        ref={movePopoverEl}
+        className="wl-move-pop wl-move-pop--portal"
+        style={{ top: `${movePopoverAnchor.top}px`, left: `${movePopoverAnchor.left}px` }}
+        onClick={(event) => event.stopPropagation()}
+        role="menu"
+      >
+        {availableMoveTargets.length === 0 ? (
+          <span className="wl-move-empty">Create another watchlist to add stocks.</span>
+        ) : (
+          <>
+            <span className="wl-move-heading">Add {symbol} to…</span>
+            {availableMoveTargets.map((target) => (
+              <button
+                key={`row-move-${symbol}-${target.id}`}
+                type="button"
+                className="wl-move-item"
+                onClick={() => handleQuickMove(symbol, target.id)}
+              >
+                <span className="wl-swatch-mini" style={{ background: target.color }} aria-hidden="true" />
+                <span className="wl-move-item-label">{target.name}</span>
+              </button>
+            ))}
+            <button
+              type="button"
+              className="wl-move-item wl-move-item--danger"
+              onClick={() => {
+                if (activeWatchlist) onRemoveFromWatchlist(activeWatchlist.id, symbol);
+                setMovePopoverFor(null);
+                setMovePopoverAnchor(null);
+              }}
+            >
+              <Trash2 size={12} />
+              <span className="wl-move-item-label">Remove from this watchlist</span>
+            </button>
+          </>
+        )}
+      </div>,
+      document.body,
     );
   };
 
@@ -848,6 +898,7 @@ export function WatchlistsPanel({
           />
         </Suspense>
       ) : null}
+      {renderMovePopover()}
     </div>
   );
 }

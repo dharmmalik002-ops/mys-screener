@@ -4156,9 +4156,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               className={
                 activePage === "screener"
                   ? "screener-page-grid"
-                  : activePage === "groups" || activePage === "watchlists"
-                    ? "workspace-grid workspace-grid-sector"
-                    : "workspace-grid"
+                  : activePage === "watchlists"
+                    ? "workspace-grid workspace-grid-sector workspace-grid-watchlists"
+                    : activePage === "groups"
+                      ? "workspace-grid workspace-grid-sector"
+                      : "workspace-grid"
               }
             >
               {activePage === "screener" ? (

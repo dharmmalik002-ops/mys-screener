@@ -198,8 +198,8 @@
   top: calc(100% + 6px);
   right: 0;
   z-index: 40;
-  min-width: 200px;
-  max-height: 280px;
+  min-width: 220px;
+  max-height: 320px;
   overflow-y: auto;
   padding: 6px;
   border: 1px solid var(--st-border, #e5e7eb);
@@ -211,21 +211,60 @@
   gap: 2px;
 }
 
+/* When the popover is rendered to document.body via a portal it must
+   use fixed positioning anchored to the trigger via inline top/left. */
+.wl-move-pop.wl-move-pop--portal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: auto;
+  z-index: 1000;
+  width: 220px;
+  background: #ffffff;
+  color: #111827;
+}
+
+:root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal,
+.theme-dark .wl-move-pop.wl-move-pop--portal {
+  background: #111827;
+  color: #e5e7eb;
+  border-color: rgba(148, 163, 184, 0.25);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+}
+
+:root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal .wl-move-item,
+.theme-dark .wl-move-pop.wl-move-pop--portal .wl-move-item {
+  color: #e5e7eb;
+}
+
+:root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal .wl-move-heading,
+.theme-dark .wl-move-pop.wl-move-pop--portal .wl-move-heading {
+  color: #94a3b8;
+}
+
 .wl-move-item {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
   padding: 7px 10px;
   border: 0;
   border-radius: 7px;
   background: transparent;
   color: var(--st-text);
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: all 100ms ease;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.wl-move-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 

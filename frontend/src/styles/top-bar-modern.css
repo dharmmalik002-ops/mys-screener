@@ -297,3 +297,16 @@
 .snapshot-status-strip {
   display: none;
 }
+
+/* Watchlists page: give the table more room, shrink the chart pane so
+   the stock rows fit without squashing. Override workspace-grid-sector. */
+.workspace-grid.workspace-grid-watchlists {
+  grid-template-columns: minmax(680px, 1.4fr) minmax(420px, 0.7fr);
+  gap: 16px;
+}
+
+@media (max-width: 1280px) {
+  .workspace-grid.workspace-grid-watchlists {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
