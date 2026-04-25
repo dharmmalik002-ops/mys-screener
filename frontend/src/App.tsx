@@ -4512,6 +4512,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   universeItems={universeCatalog}
+                  groupsData={groupsData}
                   selectedSymbol={selectedSymbol}
                 />
               ) : (
