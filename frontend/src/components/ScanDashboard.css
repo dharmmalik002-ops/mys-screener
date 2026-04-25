@@ -1,0 +1,302 @@
+/* ==========================================================================
+   ScanDashboard — Stage 2 analytics widgets
+   ========================================================================== */
+
+.sd-root {
+  --sd-primary: #6366f1;
+  --sd-primary-strong: #4f46e5;
+  --sd-bg: #f9fafb;
+  --sd-surface: #ffffff;
+  --sd-border: #e5e7eb;
+  --sd-text: #111827;
+  --sd-text-soft: #6b7280;
+  --sd-pos: #10b981;
+  --sd-neg: #ef4444;
+
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
+  color: var(--sd-text);
+}
+
+/* Dark mode */
+:root[data-theme="dark"] .sd-root,
+.theme-dark .sd-root {
+  --sd-bg: #0f1320;
+  --sd-surface: rgba(255, 255, 255, 0.04);
+  --sd-border: rgba(148, 163, 184, 0.16);
+  --sd-text: #e5e7eb;
+  --sd-text-soft: #94a3b8;
+}
+
+/* ----- Rows & cards ----- */
+.sd-row {
+  display: grid;
+  gap: 14px;
+}
+
+.sd-row-summary {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.sd-row-dist {
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+}
+
+@media (max-width: 920px) {
+  .sd-row-summary,
+  .sd-row-dist {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sd-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px 16px;
+  border: 1px solid var(--sd-border);
+  border-radius: 14px;
+  background: var(--sd-surface);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  min-width: 0;
+}
+
+.sd-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.sd-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.sd-icon-indigo {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--sd-primary);
+}
+.sd-icon-violet {
+  background: rgba(139, 92, 246, 0.14);
+  color: #8b5cf6;
+}
+.sd-icon-pink {
+  background: rgba(236, 72, 153, 0.14);
+  color: #ec4899;
+}
+.sd-icon-amber {
+  background: rgba(245, 158, 11, 0.16);
+  color: #f59e0b;
+}
+
+.sd-card-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--sd-text);
+  letter-spacing: 0.01em;
+}
+
+.sd-card-sub {
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--sd-text-soft);
+}
+
+/* ----- Summary card body ----- */
+.sd-card-summary .sd-card-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 130px);
+  align-items: center;
+  gap: 12px;
+}
+
+.sd-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.sd-stat strong {
+  font-size: 1.7rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--sd-text);
+  letter-spacing: -0.01em;
+}
+
+.sd-stat small {
+  font-size: 0.74rem;
+  color: var(--sd-text-soft);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sd-stat small.sd-pos {
+  color: var(--sd-pos);
+}
+.sd-stat small.sd-neg {
+  color: var(--sd-neg);
+}
+
+/* ----- Sparkline ----- */
+.sd-spark {
+  width: 100%;
+  height: 48px;
+}
+
+.sd-spark-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  color: var(--sd-text-soft);
+}
+
+/* ----- Mini donut (Groups card) ----- */
+.sd-mini-donut {
+  position: relative;
+  width: 100%;
+  height: 84px;
+}
+
+.sd-mini-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sd-mini-donut-center strong {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sd-mini-donut-center small {
+  font-size: 0.62rem;
+  color: var(--sd-text-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sd-mini-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 84px;
+  color: var(--sd-text-soft);
+}
+
+/* ----- Distribution body (donut + legend) ----- */
+.sd-dist-body {
+  display: grid;
+  grid-template-columns: minmax(160px, 200px) minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .sd-dist-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.sd-donut-wrap {
+  position: relative;
+  width: 100%;
+  height: 170px;
+}
+
+.sd-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.sd-donut-center strong {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.sd-donut-center small {
+  font-size: 0.66rem;
+  color: var(--sd-text-soft);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ----- Legend ----- */
+.sd-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.sd-legend li {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  color: var(--sd-text);
+}
+
+.sd-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.sd-legend-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.sd-legend-value {
+  font-weight: 600;
+  color: var(--sd-text);
+  text-align: right;
+}
+
+.sd-legend-value small {
+  color: var(--sd-text-soft);
+  font-weight: 500;
+  margin-left: 2px;
+}
+
+/* ----- Bar chart wrap ----- */
+.sd-bar-wrap {
+  width: 100%;
+}
+
+/* ----- Empty ----- */
+.sd-empty {
+  padding: 24px 12px;
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--sd-text-soft);
+}

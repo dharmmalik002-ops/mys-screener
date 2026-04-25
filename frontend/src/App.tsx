@@ -74,6 +74,7 @@ const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPa
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
+const ScanDashboard = lazy(() => import("./components/ScanDashboard").then((module) => ({ default: module.ScanDashboard })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
@@ -4337,6 +4338,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         selectedSymbol={selectedSymbol}
                       />
                     ) : (
+                      <>
+                        {visibleScanItems.length > 0 ? (
+                          <ScanDashboard
+                            items={visibleScanItems}
+                            groupsData={groupsData}
+                          />
+                        ) : null}
                       <ScanTable
                         market={activeMarket}
                         loading={scanLoading}
@@ -4355,6 +4363,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         onSectorSortModeChange={setSectorGroupSortMode}
                         onExport={handleExportScanResults}
                       />
+                      </>
                     )}
                   </div>
 
