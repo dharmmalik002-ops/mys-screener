@@ -75,6 +75,8 @@ const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPane
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
 const ScanDashboard = lazy(() => import("./components/ScanDashboard").then((module) => ({ default: module.ScanDashboard })));
+const ScannerHeader = lazy(() => import("./components/ScannerHeader").then((module) => ({ default: module.ScannerHeader })));
+const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module) => ({ default: module.QueryBuilder })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
@@ -3125,6 +3127,51 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScannerRunNonce((current) => current + 1);
   };
 
+  /** Stage 3: unified "Run Scanner" handler for the new ScannerHeader CTA. */
+  const handleRunActiveScanner = () => {
+    switch (activeScanner) {
+      case "custom-scan":
+        handleApplyCustomScan();
+        return;
+      case "near-pivot":
+        handleApplyNearPivotScan();
+        return;
+      case "pull-backs":
+        handleApplyPullBackScan();
+        return;
+      case "returns":
+        handleApplyReturnsScan();
+        return;
+      case "consolidating":
+        handleApplyConsolidatingScan();
+        return;
+      case "minervini-1m":
+        handleApplyMinervini1mScan();
+        return;
+      case "minervini-5m":
+        handleApplyMinervini5mScan();
+        return;
+      default:
+        // ipo / ema-expansion / contraction / gap-up-openers — bump nonce to refetch
+        setActivePage("screener");
+        setScanLoading(true);
+        setScanResults(null);
+        setScanSectorSummaries([]);
+        setScanSectorSummariesLoading(false);
+        setScannerRunNonce((current) => current + 1);
+    }
+  };
+
+  /** Stage 3: rename the currently-active saved scanner preset. */
+  const handleRenameActiveSavedScanner = (newName: string) => {
+    if (!activeSavedScannerId) return;
+    setSavedScanners((current) =>
+      current.map((preset) =>
+        preset.id === activeSavedScannerId ? { ...preset, name: newName } : preset,
+      ),
+    );
+  };
+
   const handleResetCustomScan = () => {
     setHasAppliedFiltersOnce(true);
     setActivePage("screener");
@@ -4158,71 +4205,81 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   <div className="screener-main-stack">
                     {activeScanner !== "improving-rs" ? (
                       <section className="scanner-settings-shell">
-                        <div className="scanner-settings-bar">
-                          <div>
-                            <strong>
-                              {activeScanner === "custom-scan"
-                                ? "Custom Scanner"
-                                : activeScanner === "ipo"
-                                  ? "IPO"
+                        {(() => {
+                          const scannerTitle =
+                            activeScanner === "custom-scan"
+                              ? "Custom Screener"
+                              : activeScanner === "ipo"
+                                ? "IPO"
                                 : activeScanner === "gap-up-openers"
                                   ? "Gap Up Openers"
                                   : activeScanner === "ema-expansion"
                                     ? "Expansion"
-                                  : activeScanner === "contraction"
-                                    ? "Contraction"
-                                  : activeScanner === "near-pivot"
-                                    ? "Near Pivot"
-                                  : activeScanner === "returns"
-                                    ? "Returns"
-                                  : activeScanner === "consolidating"
-                                    ? "Consolidating"
-                                  : activeScanner === "minervini-1m"
-                                    ? "Minervini 1 Month"
-                                  : activeScanner === "minervini-5m"
-                                    ? "Minervini 5 Months"
-                                    : "Pull Backs"}
-                            </strong>
-                            <span>
-                              {activeScanner === "custom-scan"
-                                ? "Define your own universe filters and RS thresholds."
-                                : activeScanner === "ipo"
-                                  ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
+                                    : activeScanner === "contraction"
+                                      ? "Contraction"
+                                      : activeScanner === "near-pivot"
+                                        ? "Near Pivot"
+                                        : activeScanner === "returns"
+                                          ? "Returns"
+                                          : activeScanner === "consolidating"
+                                            ? "Consolidating"
+                                            : activeScanner === "minervini-1m"
+                                              ? "Minervini 1 Month"
+                                              : activeScanner === "minervini-5m"
+                                                ? "Minervini 5 Months"
+                                                : "Pull Backs";
+                          const scannerDesc =
+                            activeScanner === "custom-scan"
+                              ? "Define your own universe filters and RS thresholds."
+                              : activeScanner === "ipo"
+                                ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
                                   ? "Filter stocks by opening gap percentage."
                                   : activeScanner === "ema-expansion"
                                     ? "Built-in expansion scan using price, RVOL, and same-day liquidity rules."
-                                  : activeScanner === "contraction"
-                                    ? "Built-in contraction scan for tight 3-day pull-ins above the 50D EMA."
-                                  : activeScanner === "near-pivot"
-                                    ? "Find high-RS stocks tightening close to their pivot zone."
-                                  : activeScanner === "returns"
-                                    ? "Scan for stocks by return range with optional confirmation filters."
-                                  : activeScanner === "consolidating"
-                                    ? "Toggle multi-year-high and long-base filters independently."
-                                  : activeScanner === "minervini-1m"
-                                    ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
-                                  : activeScanner === "minervini-5m"
-                                    ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
-                              : "Find strong leaders pulling into the 10- or 20-day EMA on contraction."}
-                            </span>
-                          </div>
-
-                          <div className="scanner-settings-actions">
-                            <button type="button" className="tool-pill" onClick={() => setShowScannerSettings((current) => !current)}>
-                              {showScannerSettings ? "Hide Settings" : "Show Settings"}
-                            </button>
-                            {isSavableScannerMode(activeScanner) ? (
-                              <button type="button" className="tool-pill" onClick={() => void handleSaveCurrentScanner()} disabled={savingScanner}>
-                                {savingScanner
-                                  ? "Saving..."
-                                  : activeSavedScannerId && savedScanners.some((item) => item.id === activeSavedScannerId && item.mode === activeScanner)
-                                    ? "Update Scanner"
-                                    : "Save Scanner"}
-                              </button>
-                            ) : null}
-                          </div>
-                        </div>
+                                    : activeScanner === "contraction"
+                                      ? "Built-in contraction scan for tight 3-day pull-ins above the 50D EMA."
+                                      : activeScanner === "near-pivot"
+                                        ? "Find high-RS stocks tightening close to their pivot zone."
+                                        : activeScanner === "returns"
+                                          ? "Scan for stocks by return range with optional confirmation filters."
+                                          : activeScanner === "consolidating"
+                                            ? "Toggle multi-year-high and long-base filters independently."
+                                            : activeScanner === "minervini-1m"
+                                              ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
+                                              : activeScanner === "minervini-5m"
+                                                ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
+                                                : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                          const activeSavedPreset =
+                            activeSavedScannerId
+                              ? savedScanners.find(
+                                  (item) =>
+                                    item.id === activeSavedScannerId && item.mode === activeScanner,
+                                ) ?? null
+                              : null;
+                          const savableMode = isSavableScannerMode(activeScanner);
+                          return (
+                            <ScannerHeader
+                              title={scannerTitle}
+                              description={scannerDesc}
+                              resultCount={
+                                scanResults && scanResults.scan.id === activeScanner
+                                  ? scanResults.total_hits
+                                  : null
+                              }
+                              activeSavedName={activeSavedPreset?.name ?? null}
+                              onRenameActiveSaved={handleRenameActiveSavedScanner}
+                              settingsOpen={showScannerSettings}
+                              onToggleSettings={() => setShowScannerSettings((c) => !c)}
+                              onRunScanner={handleRunActiveScanner}
+                              loading={scanLoading}
+                              isSavable={savableMode}
+                              savedExists={Boolean(activeSavedPreset)}
+                              onSaveScanner={() => void handleSaveCurrentScanner()}
+                              saving={savingScanner}
+                            />
+                          );
+                        })()}
 
                         {showScannerSettings
                           ? activeScanner === "ipo"
@@ -4314,13 +4371,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                   />
                                 )
                               : (
-                                <CustomScannerPanel
-                                  filters={customFilters}
-                                  onFiltersChange={setCustomFilters}
-                                  onApply={handleApplyCustomScan}
-                                  onReset={handleResetCustomScan}
-                                  patternOptions={patternOptions}
-                                />
+                                <>
+                                  <QueryBuilder
+                                    filters={customFilters}
+                                    defaults={DEFAULT_CUSTOM_FILTERS}
+                                    onFiltersChange={setCustomFilters}
+                                    onAddFilter={() => {
+                                      const el = document.getElementById("scanner-form-anchor");
+                                      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }}
+                                  />
+                                  <div id="scanner-form-anchor" />
+                                  <CustomScannerPanel
+                                    filters={customFilters}
+                                    onFiltersChange={setCustomFilters}
+                                    onApply={handleApplyCustomScan}
+                                    onReset={handleResetCustomScan}
+                                    patternOptions={patternOptions}
+                                  />
+                                </>
                               )
                           : null}
                       </section>
