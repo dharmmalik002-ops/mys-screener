@@ -102,11 +102,14 @@ class PostgresWatchlistsStore:
         )
 
     def _ensure_schema_with_cursor(self, cursor: psycopg.Cursor) -> None:
+        # Fresh deploys land on this DDL. We persist updated_at as a
+        # TIMESTAMPTZ because the application passes a Python datetime
+        # straight through psycopg — using BIGINT raises DatatypeMismatch.
         cursor.execute(
             """
             CREATE TABLE IF NOT EXISTS watchlists_state (
                 market TEXT PRIMARY KEY,
-                updated_at BIGINT,
+                updated_at TIMESTAMPTZ,
                 active_watchlist_id TEXT,
                 payload JSONB NOT NULL,
                 storage_version INTEGER NOT NULL DEFAULT 1,
@@ -115,6 +118,36 @@ class PostgresWatchlistsStore:
             )
             """
         )
+        # Self-migration for tables created by older revisions of this
+        # store: an early build named the JSONB column `state_json`, and
+        # didn't have the active_watchlist_id / storage_version /
+        # created_at / server_updated_at columns. These statements are
+        # all idempotent so they're safe to run on every boot.
+        cursor.execute(
+            """
+            DO $$
+            BEGIN
+                IF EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'watchlists_state'
+                      AND column_name = 'state_json'
+                )
+                AND NOT EXISTS (
+                    SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = 'public'
+                      AND table_name = 'watchlists_state'
+                      AND column_name = 'payload'
+                ) THEN
+                    EXECUTE 'ALTER TABLE watchlists_state RENAME COLUMN state_json TO payload';
+                END IF;
+            END $$;
+            """
+        )
+        cursor.execute("ALTER TABLE watchlists_state ADD COLUMN IF NOT EXISTS active_watchlist_id TEXT")
+        cursor.execute("ALTER TABLE watchlists_state ADD COLUMN IF NOT EXISTS storage_version INTEGER NOT NULL DEFAULT 1")
+        cursor.execute("ALTER TABLE watchlists_state ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
+        cursor.execute("ALTER TABLE watchlists_state ADD COLUMN IF NOT EXISTS server_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()")
         cursor.execute(
             """
             CREATE INDEX IF NOT EXISTS watchlists_state_updated_at_idx
