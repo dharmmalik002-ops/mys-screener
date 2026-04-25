@@ -4016,18 +4016,22 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             </div>
           </div>
 
-          <div className="nav-mode-toggle">
-            <span>Data Mode</span>
-            <div className="mode-switch">
-              <span className="tool-pill active" title={autoRefreshSchedule.detail}>
-                {autoRefreshSchedule.label}
-              </span>
-            </div>
-          </div>
+          {activePage !== "home" ? (
+            <>
+              <div className="nav-mode-toggle">
+                <span>Data Mode</span>
+                <div className="mode-switch">
+                  <span className="tool-pill active" title={autoRefreshSchedule.detail}>
+                    {autoRefreshSchedule.label}
+                  </span>
+                </div>
+              </div>
 
-          <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing}>
-            {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
-          </button>
+              <button type="button" className="nav-button" onClick={() => void handleRefresh("manual")} disabled={refreshing}>
+                {refreshing ? "Refreshing..." : "Refresh Close Snapshot"}
+              </button>
+            </>
+          ) : null}
         </div>
       </header>
 

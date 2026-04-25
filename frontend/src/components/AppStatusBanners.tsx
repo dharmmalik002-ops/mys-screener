@@ -48,7 +48,7 @@ export function AppStatusBanners({
             <p>{startupDetail}</p>
             <div className="startup-checklist">
               <div>1. Connecting to backend</div>
-              <div>2. Restoring cached market snapshot</div>
+              <div>2. Restoring cached market data</div>
               <div>3. Loading dashboard and charts</div>
             </div>
             <button type="button" className="nav-button primary startup-retry-button" onClick={onRetry}>
