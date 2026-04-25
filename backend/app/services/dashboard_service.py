@@ -3776,29 +3776,7 @@ class DashboardService:
 
     @staticmethod
     def _top_industry_groups_response(response: IndustryGroupsResponse) -> IndustryGroupsResponse:
-        top_groups = sorted(
-            response.groups,
-            key=lambda group: (
-                group.return_3m,
-                group.return_1m,
-                group.return_6m,
-                group.score,
-            ),
-            reverse=True,
-        )[:10]
-        reranked_groups = [
-            group.model_copy(update={"rank": index, "rank_label": f"#{index}"})
-            for index, group in enumerate(top_groups, start=1)
-        ]
-        top_group_ids = {group.group_id for group in reranked_groups}
-        return response.model_copy(
-            update={
-                "total_groups": len(reranked_groups),
-                "groups": reranked_groups,
-                "master": [item for item in response.master if item.group_id in top_group_ids],
-                "stocks": [item for item in response.stocks if item.final_group_id in top_group_ids],
-            }
-        )
+        return response
 
     def _resolve_group_benchmark(self, snapshots: list[StockSnapshot]) -> tuple[str, list[StockSnapshot]]:
         if self._market_key() == "india":
