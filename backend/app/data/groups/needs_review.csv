@@ -1,0 +1,757 @@
+symbol,company_name,raw_sector,raw_industry,business_desc,suggested_group_id,confidence_score,review_reason
+RELIANCE,Reliance Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+BAJFINANCE,Bajaj Finance Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+BAJAJFINSV,Bajaj Finserv Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+NTPC,NTPC Limited,Market Leaders,Unclassified,,,0.00,no_match
+ETERNAL,ETERNAL LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+ADANIENT,Adani Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+ADANIPOWER,Adani Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+NESTLEIND,Nestle India Limited,Market Leaders,Unclassified,,fmcg_staples,0.26,low_keyword_confidence
+JIOFIN,Jio Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRASIM,Grasim Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+DLF,DLF Limited,Market Leaders,Unclassified,,,0.00,no_match
+TRENT,Trent Limited,Market Leaders,Unclassified,,,0.00,no_match
+VBL,Varun Beverages Limited,Market Leaders,Unclassified,,packaged_foods_bev,0.32,low_keyword_confidence
+PIDILITIND,Pidilite Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+BAJAJHLDNG,Bajaj Holdings & Investment Limited,Market Leaders,Unclassified,,,0.00,no_match
+BRITANNIA,Britannia Industries Limited,Market Leaders,Unclassified,,fmcg_staples,0.26,low_keyword_confidence
+TATACAP,Tata Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+CHOLAFIN,Cholamandalam Investment and Finance Company Limited,Market Leaders,Unclassified,,vehicle_finance_nbfcs,0.29,low_keyword_confidence
+SHRIRAMFIN,Shriram Finance Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+SOLARINDS,Solar Industries India Limited,Market Leaders,Unclassified,,,0.00,no_match
+GAIL,GAIL (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+BOSCHLTD,Bosch Limited,Market Leaders,Unclassified,,,0.00,no_match
+ABB,ABB India Limited,Market Leaders,Unclassified,,electrical_equipment,0.26,low_keyword_confidence
+CUMMINSIND,Cummins India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TATACONSUM,TATA CONSUMER PRODUCTS LIMITED,Market Leaders,Unclassified,,tea_coffee_plantations,0.31,low_keyword_confidence
+LGEINDIA,LG Electronics India Limited,Market Leaders,Unclassified,,,0.00,no_match
+ADANIENSOL,Adani Energy Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+DRREDDY,Dr. Reddy's Laboratories Limited,Market Leaders,Unclassified,,,0.00,no_match
+IDBI,IDBI Bank Limited,Market Leaders,Unclassified,,,0.00,no_match
+SWIGGY,Swiggy Limited,Market Leaders,Unclassified,,retail_electronics_omni,0.28,low_keyword_confidence
+BSE,BSE Limited,Market Leaders,Unclassified,,,0.00,no_match
+RECLTD,REC Limited,Market Leaders,Unclassified,,,0.00,no_match
+GROWW,Billionbrains Garage Ventures Limited,Market Leaders,Unclassified,,,0.00,no_match
+WAAREEENER,Waaree Energies Limited,Market Leaders,Unclassified,,,0.00,no_match
+PERSISTENT,Persistent Systems Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.32,low_keyword_confidence
+BHARTIHEXA,Bharti Hexacom Limited,Market Leaders,Unclassified,,,0.00,no_match
+NAUKRI,Info Edge (India) Limited,Market Leaders,Unclassified,,retail_electronics_omni,0.28,low_keyword_confidence
+SRF,SRF Limited,Market Leaders,Unclassified,,,0.00,no_match
+MEESHO,Meesho Limited,Market Leaders,Unclassified,,,0.00,no_match
+NTPCGREEN,NTPC Green Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+NHPC,NHPC Limited,Market Leaders,Unclassified,,,0.00,no_match
+ABCAPITAL,Aditya Birla Capital Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+OFSS,Oracle Financial Services Software Limited,Market Leaders,Unclassified,,midcap_it_services,0.28,low_keyword_confidence
+LENSKART,Lenskart Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+GVT&D,GE Vernova T&D India Limited,Market Leaders,Unclassified,,,0.00,no_match
+UNOMINDA,UNO Minda Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+NYKAA,FSN E Commerce Ventures Limited,Market Leaders,Unclassified,,,0.00,no_match
+COROMANDEL,Coromandel International Limited,Market Leaders,Unclassified,,,0.00,no_match
+PATANJALI,Patanjali Foods Limited,Market Leaders,Unclassified,,,0.00,no_match
+HDBFS,HDB Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+LTF,L&T Finance Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+BHARATFORG,Bharat Forge Limited,Market Leaders,Unclassified,,auto_anc_forgings_castings,0.34,low_keyword_confidence
+FACT,Fertilizers and Chemicals Travancore Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIINDIA,Tube Investments of India Limited,Market Leaders,Unclassified,,,0.00,no_match
+UPL,UPL Limited,Market Leaders,Unclassified,,,0.00,no_match
+PIIND,PI Industries Limited,Market Leaders,Unclassified,,agrochemicals,0.32,low_keyword_confidence
+MFSL,Max Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+KALYANKJIL,Kalyan Jewellers India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TATACOMM,Tata Communications Limited,Market Leaders,Unclassified,,,0.00,no_match
+AIIL,Authum Investment & Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+PREMIERENE,Premier Energies Limited,Market Leaders,Unclassified,,,0.00,no_match
+HEXT,Hexaware Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+LTTS,L&T Technology Services Limited,Market Leaders,Unclassified,,midcap_it_services,0.29,low_keyword_confidence
+HUDCO,Housing & Urban Development Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+ENDURANCE,Endurance Technologies Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+ASTRAL,Astral Limited,Market Leaders,Unclassified,,,0.00,no_match
+THERMAX,Thermax Limited,Market Leaders,Unclassified,,,0.00,no_match
+PWL,Physicswallah Limited,Market Leaders,Unclassified,,,0.00,no_match
+TATAINVEST,Tata Investment Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+GODREJIND,Godrej Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+POONAWALLA,Poonawalla Fincorp Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+KPRMILL,K.P.R. Mill Limited,Market Leaders,Unclassified,,,0.00,no_match
+CHOLAHLDNG,Cholamandalam Financial Holdings Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+3MINDIA,3M India Limited,Market Leaders,Unclassified,,,0.00,no_match
+PIRAMALFIN,Piramal Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+SJVN,SJVN Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACC,ACC Limited,Market Leaders,Unclassified,,,0.00,no_match
+TATAELXSI,Tata Elxsi Limited,Market Leaders,Unclassified,,midcap_it_services,0.29,low_keyword_confidence
+NLCINDIA,NLC India Limited,Market Leaders,Unclassified,,,0.00,no_match
+AWL,AWL Agri Business Limited,Market Leaders,Unclassified,,,0.00,no_match
+KPITTECH,KPIT Technologies Limited,Market Leaders,Unclassified,,midcap_it_services,0.29,low_keyword_confidence
+EXIDEIND,Exide Industries Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+HONAUT,Honeywell Automation India Limited,Market Leaders,Unclassified,,industrial_automation_drives,0.32,low_keyword_confidence
+METROBRAND,Metro Brands Limited,Market Leaders,Unclassified,,,0.00,no_match
+AIAENG,AIA Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+COHANCE,Cohance Lifesciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+GLAND,Gland Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+NBCC,NBCC (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+ITI,ITI Limited,Market Leaders,Unclassified,,,0.00,no_match
+AEGISVOPAK,Aegis Vopak Terminals Limited,Market Leaders,Unclassified,,,0.00,no_match
+TATATECH,Tata Technologies Limited,Market Leaders,Unclassified,,erd_engineering_tech,0.32,low_keyword_confidence
+PINELABS,Pine Labs Limited,Market Leaders,Unclassified,,,0.00,no_match
+IKS,Inventurus Knowledge Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+TVSHLTD,TVS Holdings Limited,Market Leaders,Unclassified,,,0.00,no_match
+IRB,IRB Infrastructure Developers Limited,Market Leaders,Unclassified,,,0.00,no_match
+AFFLE,Affle 3i Limited,Market Leaders,Unclassified,,,0.00,no_match
+AEGISLOG,Aegis Logistics Limited,Market Leaders,Unclassified,,city_gas_distribution,0.31,low_keyword_confidence
+NAVINFLUOR,Navin Fluorine International Limited,Market Leaders,Unclassified,,dyes_pigments_fluorochem,0.30,low_keyword_confidence
+LALPATHLAB,Dr. Lal Path Labs Ltd.,Market Leaders,Unclassified,,,0.00,no_match
+AMBER,Amber Enterprises India Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.31,low_keyword_confidence
+ZFCVINDIA,ZF Commercial Vehicle Control Systems India Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.34,low_keyword_confidence
+MRPL,Mangalore Refinery and Petrochemicals Limited,Market Leaders,Unclassified,,oil_marketing_refining,0.33,low_keyword_confidence
+SHYAMMETL,Shyam Metalics And Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+EIHOTEL,EIH Limited,Market Leaders,Unclassified,,,0.00,no_match
+WOCKPHARMA,Wockhardt Limited,Market Leaders,Unclassified,,,0.00,no_match
+PTCIL,Ptc Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+KIOCL,KIOCL Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANAPPURAM,Manappuram Finance Limited,Market Leaders,Unclassified,,gold_loan_nbfcs,0.34,low_keyword_confidence
+HSCL,Himadri Speciality Chemical Limited,Market Leaders,Unclassified,,ev_components_charging,0.28,low_keyword_confidence
+ASAHIINDIA,Asahi India Glass Limited,Market Leaders,Unclassified,,,0.00,no_match
+ASTRAZEN,AstraZeneca Pharma India Limited,Market Leaders,Unclassified,,,0.00,no_match
+HBLENGINE,HBL Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAGILITY,SAGILITY LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+JYOTICNC,Jyoti CNC Automation Limited,Market Leaders,Unclassified,,,0.00,no_match
+IIFL,IIFL Finance Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+HATSUN,Hatsun Agro Product Limited,Market Leaders,Unclassified,,dairy_protein_foods,0.34,low_keyword_confidence
+CREDITACC,CREDITACCESS GRAMEEN LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+URBANCO,Urban Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+JSWHL,JSW Holdings Limited,Market Leaders,Unclassified,,,0.00,no_match
+ONESOURCE,Onesource Specialty Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+ATHERENERG,Ather Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUNDRMFAST,Sundram Fasteners Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+OLAELEC,Ola Electric Mobility Limited,Market Leaders,Unclassified,,,0.00,no_match
+ECLERX,eClerx Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+BASF,BASF India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TENNIND,Tenneco Clean Air India Limited,Market Leaders,Unclassified,,,0.00,no_match
+CROMPTON,Crompton Greaves Consumer Electricals Limited,Market Leaders,Unclassified,,consumer_electronics_appliances,0.25,low_keyword_confidence
+BIKAJI,Bikaji Foods International Limited,Market Leaders,Unclassified,,packaged_foods_bev,0.32,low_keyword_confidence
+ATUL,Atul Limited,Market Leaders,Unclassified,,,0.00,no_match
+SARDAEN,Sarda Energy & Minerals Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAILIFE,Sai Life Sciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+CGCL,Capri Global Capital Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+ARE&M,Amara Raja Energy & Mobility Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+MAHSCOOTER,Maharashtra Scooters Limited,Market Leaders,Unclassified,,,0.00,no_match
+FIVESTAR,Five-Star Business Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+CARBORUNIV,Carborundum Universal Limited,Market Leaders,Unclassified,,,0.00,no_match
+NAVA,NAVA LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+CENTURYPLY,Century Plyboards (India) Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+BEML,BEML Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANYAVAR,Vedant Fashions Limited,Market Leaders,Unclassified,,,0.00,no_match
+ABLBL,Aditya Birla Lifestyle Brands Limited,Market Leaders,Unclassified,,,0.00,no_match
+TBOTEK,TBO Tek Limited,Market Leaders,Unclassified,,,0.00,no_match
+CONCORDBIO,Concord Biotech Limited,Market Leaders,Unclassified,,biotech_vaccines,0.31,low_keyword_confidence
+TRAVELFOOD,Travel Food Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+CPPLUS,Aditya Infotech Limited,Market Leaders,Unclassified,,,0.00,no_match
+SOBHA,Sobha Limited,Market Leaders,Unclassified,,,0.00,no_match
+LMW,LMW Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACMESOLAR,Acme Solar Holdings Limited,Market Leaders,Unclassified,,,0.00,no_match
+IRCON,Ircon International Limited,Market Leaders,Unclassified,,railways_epc_rolling_stock,0.33,low_keyword_confidence
+GABRIEL,Gabriel India Limited,Market Leaders,Unclassified,,,0.00,no_match
+ELGIEQUIP,Elgi Equipments Limited,Market Leaders,Unclassified,,,0.00,no_match
+NATCOPHARM,Natco Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+CHOICEIN,Choice International Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIGNATURE,Signatureglobal (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+CIEINDIA,CIE Automotive India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TECHNOE,Techno Electric & Engineering Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+JMFINANCIL,JM Financial Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+GPIL,Godawari Power And Ispat limited,Market Leaders,Unclassified,,,0.00,no_match
+AKZOINDIA,Akzo Nobel India Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+CAPLIPOINT,Caplin Point Laboratories Limited,Market Leaders,Unclassified,,,0.00,no_match
+IGIL,International Gemmological Institute (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+DOMS,DOMS Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+LTFOODS,LT Foods Limited,Market Leaders,Unclassified,,,0.00,no_match
+AGARWALEYE,Dr. Agarwal's Health Care Limited,Market Leaders,Unclassified,,,0.00,no_match
+JBMA,JBM Auto Limited,Market Leaders,Unclassified,,,0.00,no_match
+RRKABEL,R R Kabel Limited,Market Leaders,Unclassified,,,0.00,no_match
+GALLANTT,Gallantt Ispat Limited,Market Leaders,Unclassified,,,0.00,no_match
+IFCI,IFCI Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDIAMART,Indiamart Intermesh Limited,Market Leaders,Unclassified,,,0.00,no_match
+PARADEEP,Paradeep Phosphates Limited,Market Leaders,Unclassified,,,0.00,no_match
+TRIDENT,Trident Limited,Market Leaders,Unclassified,,,0.00,no_match
+INTELLECT,Intellect Design Arena Limited,Market Leaders,Unclassified,,midcap_it_services,0.28,low_keyword_confidence
+FINEORG,Fine Organic Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+NUVOCO,Nuvoco Vistas Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+BATAINDIA,Bata India Limited,Market Leaders,Unclassified,,footwear_luggage,0.33,low_keyword_confidence
+SWANCORP,SWAN CORP LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+KIRLOSENG,Kirloskar Oil Engines Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLS,BLS International Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+EMMVEE,Emmvee Photovoltaic Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+SPLPETRO,Supreme Petrochem Limited,Market Leaders,Unclassified,,,0.00,no_match
+ZYDUSWELL,Zydus Wellness Limited,Market Leaders,Unclassified,,,0.00,no_match
+PCBL,PCBL Chemical Limited,Market Leaders,Unclassified,,,0.00,no_match
+CEMPRO,Cemindia Projects Limited,Market Leaders,Unclassified,,,0.00,no_match
+ZENTEC,Zen Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+JAINREC,Jain Resource Recycling Limited,Market Leaders,Unclassified,,,0.00,no_match
+IEX,Indian Energy Exchange Limited,Market Leaders,Unclassified,,amc_exchanges_depositories,0.29,low_keyword_confidence
+CYIENT,Cyient Limited,Market Leaders,Unclassified,,midcap_it_services,0.29,low_keyword_confidence
+MINDACORP,Minda Corporation Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+BELRISE,Belrise Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+CELLO,Cello World Limited,Market Leaders,Unclassified,,,0.00,no_match
+ANURAS,Anupam Rasayan India Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRANULES,Granules India Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRAVITA,Gravita India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TEGA,Tega Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+NCC,NCC Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACE,Action Construction Equipment Limited,Market Leaders,Unclassified,,,0.00,no_match
+ELECON,Elecon Engineering Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+EMBDL,Embassy Developments Limited,Market Leaders,Unclassified,,,0.00,no_match
+JINDALSAW,Jindal Saw Limited,Market Leaders,Unclassified,,,0.00,no_match
+WELSPUNLIV,Welspun Living Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACUTAAS,Acutaas Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAMMAANCAP,Sammaan Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+INGERRAND,Ingersoll Rand (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLUEJET,Blue Jet Healthcare Limited,Market Leaders,Unclassified,,,0.00,no_match
+CARTRADE,Cartrade Tech Limited,Market Leaders,Unclassified,,,0.00,no_match
+TSFINV,TSF INVESTMENTS LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+SBFC,Sbfc Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+TITAGARH,TITAGARH RAIL SYSTEMS LIMITED,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.30,low_keyword_confidence
+SHRIPISTON,Shriram Pistons & Rings Limited,Market Leaders,Unclassified,,,0.00,no_match
+ALIVUS,Alivus Life Sciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+ENGINERSIN,Engineers India Limited,Market Leaders,Unclassified,,,0.00,no_match
+J&KBANK,The Jammu & Kashmir Bank Limited,Market Leaders,Unclassified,,,0.00,no_match
+OLECTRA,Olectra Greentech Limited,Market Leaders,Unclassified,,commercial_vehicles,0.30,low_keyword_confidence
+GRINFRA,G R Infraprojects Limited,Market Leaders,Unclassified,,,0.00,no_match
+SANOFICONR,Sanofi Consumer Healthcare India Limited,Market Leaders,Unclassified,,,0.00,no_match
+WAAREERTL,Waaree Renewable Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+VIKRAMSOLR,Vikram Solar Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRAPHITE,Graphite India Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLACKBUCK,BLACKBUCK LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+INOXINDIA,INOX India Limited,Market Leaders,Unclassified,,,0.00,no_match
+RUBICON,Rubicon Research Limited,Market Leaders,Unclassified,,,0.00,no_match
+AETHER,Aether Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+AZAD,Azad Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+EDELWEISS,Edelweiss Financial Services Limited,Market Leaders,Unclassified,,diversified_nbfcs,0.32,low_keyword_confidence
+NAZARA,Nazara Technologies Limited,Market Leaders,Unclassified,,media_broadcasting,0.30,low_keyword_confidence
+IXIGO,Le Travenues Technology Limited,Market Leaders,Unclassified,,,0.00,no_match
+VESUVIUS,Vesuvius India Limited,Market Leaders,Unclassified,,,0.00,no_match
+GENUSPOWER,Genus Power Infrastructures Limited,Market Leaders,Unclassified,,,0.00,no_match
+RELINFRA,Reliance Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+HEG,HEG Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHAILY,Shaily Engineering Plastics Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIMETECHNO,Time Technoplast Limited,Market Leaders,Unclassified,,,0.00,no_match
+BANCOINDIA,Banco Products (I) Limited,Market Leaders,Unclassified,,,0.00,no_match
+IIFLCAPS,IIFL Capital Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+ASKAUTOLTD,ASK Automotive Limited,Market Leaders,Unclassified,,,0.00,no_match
+MEDPLUS,Medplus Health Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+MMTC,MMTC Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUDARSCHEM,Sudarshan Chemical Industries Limited,Market Leaders,Unclassified,,dyes_pigments_fluorochem,0.30,low_keyword_confidence
+RHIM,RHI MAGNESITA INDIA LTD,Market Leaders,Unclassified,,,0.00,no_match
+AEQUS,Aequs Limited,Market Leaders,Unclassified,,,0.00,no_match
+TRANSRAILL,Transrail Lighting Limited,Market Leaders,Unclassified,,,0.00,no_match
+HCG,Healthcare Global Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+NESCO,Nesco Limited,Market Leaders,Unclassified,,,0.00,no_match
+KRBL,KRBL Limited,Market Leaders,Unclassified,,,0.00,no_match
+VARROC,Varroc Engineering Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+SANSERA,Sansera Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLUESTONE,BlueStone Jewellery and Lifestyle Limited,Market Leaders,Unclassified,,,0.00,no_match
+WABAG,VA Tech Wabag Limited,Market Leaders,Unclassified,,,0.00,no_match
+LLOYDSENT,Lloyds Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+TTKPRESTIG,TTK Prestige Limited,Market Leaders,Unclassified,,,0.00,no_match
+DBREALTY,Valor Estate Limited,Market Leaders,Unclassified,,,0.00,no_match
+MARKSANS,Marksans Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+TCI,Transport Corporation of India Limited,Market Leaders,Unclassified,,ports_port_services,0.31,low_keyword_confidence
+BBOX,Black Box Limited,Market Leaders,Unclassified,,,0.00,no_match
+POWERMECH,Power Mech Projects Limited,Market Leaders,Unclassified,,,0.00,no_match
+ORKLAINDIA,Orkla India Limited,Market Leaders,Unclassified,,,0.00,no_match
+SOUTHBANK,The South Indian Bank Limited,Market Leaders,Unclassified,,private_banks,0.25,low_keyword_confidence
+JAIBALAJI,Jai Balaji Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+JSLL,Jeena Sikho Lifecare Limited,Market Leaders,Unclassified,,,0.00,no_match
+PCJEWELLER,PC Jeweller Limited,Market Leaders,Unclassified,,,0.00,no_match
+CORONA,CORONA Remedies Limited,Market Leaders,Unclassified,,,0.00,no_match
+TANLA,Tanla Platforms Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANORAMA,Manorama Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARVIND,Arvind Limited,Market Leaders,Unclassified,,,0.00,no_match
+PNGJL,P N Gadgil Jewellers Limited,Market Leaders,Unclassified,,,0.00,no_match
+CAMPUS,Campus Activewear Limited,Market Leaders,Unclassified,,,0.00,no_match
+RELIGARE,Religare Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+GMRP&UI,Gmr Power And Urban Infra Limited,Market Leaders,Unclassified,,,0.00,no_match
+BECTORFOOD,Mrs. Bectors Food Specialities Limited,Market Leaders,Unclassified,,,0.00,no_match
+WEWORK,WeWork India Management Limited,Market Leaders,Unclassified,,,0.00,no_match
+RCF,Rashtriya Chemicals and Fertilizers Limited,Market Leaders,Unclassified,,,0.00,no_match
+ESABINDIA,Esab India Limited,Market Leaders,Unclassified,,,0.00,no_match
+STAR,Strides Pharma Science Limited,Market Leaders,Unclassified,,,0.00,no_match
+DIACABS,Diamond Power Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRWRHITECH,Garware Hi-Tech Films Limited,Market Leaders,Unclassified,,,0.00,no_match
+CERA,Cera Sanitaryware Limited,Market Leaders,Unclassified,,home_furnishings,0.26,low_keyword_confidence
+KALPATARU,Kalpataru Limited,Market Leaders,Unclassified,,,0.00,no_match
+GSFC,Gujarat State Fertilizers & Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+GARFIBRES,Garware Technical Fibres Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACI,Archean Chemical Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+MAXESTATES,Max Estates Limited,Market Leaders,Unclassified,,,0.00,no_match
+THOMASCOOK,Thomas Cook  (India)  Limited,Market Leaders,Unclassified,,hotels,0.30,low_keyword_confidence
+SUDEEPPHRM,Sudeep Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+AARTIPHARM,Aarti Pharmalabs Limited,Market Leaders,Unclassified,,,0.00,no_match
+THANGAMAYL,Thangamayil Jewellery Limited,Market Leaders,Unclassified,,,0.00,no_match
+RUSTOMJEE,Keystone Realtors Limited,Market Leaders,Unclassified,,,0.00,no_match
+AJAXENGG,Ajax Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+ETHOSLTD,Ethos Limited,Market Leaders,Unclassified,,,0.00,no_match
+LLOYDSENGG,LLOYDS ENGINEERING WORKS LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+REDTAPE,Redtape Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIPSMUSIC,Tips Music Limited,Market Leaders,Unclassified,,,0.00,no_match
+ATLANTAELE,Atlanta Electricals Limited,Market Leaders,Unclassified,,,0.00,no_match
+EPIGRAL,Epigral Limited,Market Leaders,Unclassified,,,0.00,no_match
+INOXGREEN,Inox Green Energy Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+BALUFORGE,Balu Forge Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+GANESHHOU,GANESH HOUSING LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+RTNINDIA,RattanIndia Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+PFOCUS,Prime Focus Limited,Market Leaders,Unclassified,,,0.00,no_match
+WELENT,Welspun Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAYMONDLSL,Raymond Lifestyle Limited,Market Leaders,Unclassified,,,0.00,no_match
+ISGEC,Isgec Heavy Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+PRAJIND,Praj Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+RATEGAIN,Rategain Travel Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+EPL,EPL Limited,Market Leaders,Unclassified,,,0.00,no_match
+AURIONPRO,Aurionpro Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+JUSTDIAL,Just Dial Limited,Market Leaders,Unclassified,,,0.00,no_match
+PGIL,Pearl Global Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+CUPID,Cupid Limited,Market Leaders,Unclassified,,,0.00,no_match
+AHLUCONT,Ahluwalia Contracts (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+PARKHOSPS,Park Medi World Limited,Market Leaders,Unclassified,,,0.00,no_match
+JKPAPER,JK Paper Limited,Market Leaders,Unclassified,,,0.00,no_match
+SURYAROSNI,Surya Roshni Limited,Market Leaders,Unclassified,,,0.00,no_match
+HNDFDS,Hindustan Foods Limited,Market Leaders,Unclassified,,,0.00,no_match
+RTNPOWER,RattanIndia Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+GREENLAM,Greenlam Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUPRAJIT,Suprajit Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+JAYNECOIND,Jayaswal Neco Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+WAKEFIT,Wakefit Innovations Limited,Market Leaders,Unclassified,,,0.00,no_match
+HGINFRA,H.G. Infra Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUBROS,Subros Limited,Market Leaders,Unclassified,,,0.00,no_match
+AXISCADES,AXISCADES Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOKEX,Gokaldas Exports Limited,Market Leaders,Unclassified,,ports_port_services,0.33,low_keyword_confidence
+CHEMPLASTS,Chemplast Sanmar Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHARDAMOTR,Sharda Motor Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+PICCADIL,Piccadily Agro Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDIAGLYCO,India Glycols Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANINFRA,Man Infraconstruction Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIIL,Technocraft Industries (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+PILANIINVS,Pilani Investment and Industries Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+SMARTWORKS,Smartworks Coworking Spaces Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUPRIYA,Supriya Lifescience Limited,Market Leaders,Unclassified,,,0.00,no_match
+GHCL,GHCL Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAATVIKGL,Saatvik Green Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+EMUDHRA,eMudhra Limited,Market Leaders,Unclassified,,,0.00,no_match
+MASFIN,MAS Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+SKIPPER,Skipper Limited,Market Leaders,Unclassified,,,0.00,no_match
+SENCO,Senco Gold Limited,Market Leaders,Unclassified,,,0.00,no_match
+STYL,Seshaasai Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+RESPONIND,Responsive Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+BANSALWIRE,Bansal Wire Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+CRIZAC,Crizac Limited,Market Leaders,Unclassified,,,0.00,no_match
+AGI,AGI Greenpac Limited,Market Leaders,Unclassified,,,0.00,no_match
+CAPILLARY,Capillary Technologies India Limited,Market Leaders,Unclassified,,,0.00,no_match
+KNRCON,KNR Constructions Limited,Market Leaders,Unclassified,,,0.00,no_match
+GMMPFAUDLR,GMM Pfaudler Limited,Market Leaders,Unclassified,,,0.00,no_match
+DYNAMATECH,Dynamatic Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+E2E,E2E Networks Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOKULAGRO,Gokul Agro Resources Limited,Market Leaders,Unclassified,,,0.00,no_match
+FEDFINA,Fedbank Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+KINGFA,Kingfa Science & Technology (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+KRN,KRN Heat Exchanger and Refrigeration Limited,Market Leaders,Unclassified,,amc_exchanges_depositories,0.29,low_keyword_confidence
+DATAMATICS,Datamatics Global Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+WEBELSOLAR,Websol Energy System Limited,Market Leaders,Unclassified,,,0.00,no_match
+PTC,PTC India Limited,Market Leaders,Unclassified,,,0.00,no_match
+ITDC,India Tourism Development Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+ORIANA,Oriana Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIS,SIS LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+SEQUENT,Sequent Scientific Limited,Market Leaders,Unclassified,,,0.00,no_match
+PDSL,PDS Limited,Market Leaders,Unclassified,,,0.00,no_match
+SMLMAH,SML Mahindra Limited,Market Leaders,Unclassified,,,0.00,no_match
+HCC,Hindustan Construction Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+ENTERO,Entero Healthcare Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+JKIL,J.Kumar Infraprojects Limited,Market Leaders,Unclassified,,,0.00,no_match
+MIDWESTLTD,Midwest Limited,Market Leaders,Unclassified,,,0.00,no_match
+ANUP,The Anup Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+GREAVESCOT,Greaves Cotton Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUVEN,Suven Life Sciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+LGBBROSLTD,LG Balakrishnan & Bros Limited,Market Leaders,Unclassified,,,0.00,no_match
+SKYGOLD,SKY GOLD AND DIAMONDS LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+REFEX,Refex Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+TARC,TARC Limited,Market Leaders,Unclassified,,,0.00,no_match
+DBCORP,D.B.Corp Limited,Market Leaders,Unclassified,,,0.00,no_match
+INNOVACAP,Innova Captab Limited,Market Leaders,Unclassified,,,0.00,no_match
+NEPHROPLUS,Nephrocare Health Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+BALAMINES,Balaji Amines Limited,Market Leaders,Unclassified,,,0.00,no_match
+NACLIND,NACL Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+CIGNITITEC,Cigniti Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+SJS,S.J.S. Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+BOSCH-HCIL,BOSCH HOME COMFORT INDIA LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+NFL,National Fertilizers Limited,Market Leaders,Unclassified,,,0.00,no_match
+SPARC,Sun Pharma Advanced Research Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+PACEDIGITK,Pace Digitek Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAIN,Rain Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+CEIGALL,Ceigall India Limited,Market Leaders,Unclassified,,,0.00,no_match
+SGMART,SG Mart Limited,Market Leaders,Unclassified,,,0.00,no_match
+GUJTHEM,Gujarat Themis Biosyn Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOPAL,Gopal Snacks Limited,Market Leaders,Unclassified,,packaged_foods_bev,0.32,low_keyword_confidence
+BHARATRAS,Bharat Rasayan Limited,Market Leaders,Unclassified,,,0.00,no_match
+LUMAXIND,Lumax Industries Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+ZOTA,Zota Health Care LImited,Market Leaders,Unclassified,,,0.00,no_match
+AVANTEL,Avantel Limited,Market Leaders,Unclassified,,,0.00,no_match
+EIEL,Enviro Infra Engineers Limited,Market Leaders,Unclassified,,,0.00,no_match
+HUBTOWN,Hubtown Limited,Market Leaders,Unclassified,,,0.00,no_match
+KITEX,Kitex Garments Limited,Market Leaders,Unclassified,,,0.00,no_match
+NORTHARC,Northern Arc Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+JAMNAAUTO,Jamna Auto Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+DCAL,Dishman Carbogen Amcis Limited,Market Leaders,Unclassified,,,0.00,no_match
+AWFIS,Awfis Space Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+MOSCHIP,Moschip Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAMKY,Ramky Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOLDIAM,Goldiam International Limited,Market Leaders,Unclassified,,,0.00,no_match
+JTEKTINDIA,Jtekt India Limited,Market Leaders,Unclassified,,,0.00,no_match
+HEMIPROP,Hemisphere Properties India Limited,Market Leaders,Unclassified,,,0.00,no_match
+63MOONS,63 moons technologies limited,Market Leaders,Unclassified,,,0.00,no_match
+KIRLOSIND,Kirloskar Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SINDHUTRAD,Sindhu Trade Links Limited,Market Leaders,Unclassified,,,0.00,no_match
+BOROLTD,Borosil Limited,Market Leaders,Unclassified,,,0.00,no_match
+CAMLINFINE,Camlin Fine Sciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+UFLEX,UFLEX Limited,Market Leaders,Unclassified,,,0.00,no_match
+VAIBHAVGBL,Vaibhav Global Limited,Market Leaders,Unclassified,,,0.00,no_match
+RPGLIFE,RPG Life Sciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAYMOND,Raymond Limited,Market Leaders,Unclassified,,,0.00,no_match
+ORCHPHARMA,Orchid Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+MPSLTD,MPS Limited,Market Leaders,Unclassified,,,0.00,no_match
+MCLOUD,Magellanic Cloud Limited,Market Leaders,Unclassified,,,0.00,no_match
+TRUALT,TruAlt Bioenergy Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOODLUCK,Goodluck India Limited,Market Leaders,Unclassified,,,0.00,no_match
+VADILALIND,Vadilal Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+EBGNG,GNG Electronics Limited,Market Leaders,Unclassified,,,0.00,no_match
+QUESS,Quess Corp Limited,Market Leaders,Unclassified,,,0.00,no_match
+WONDERLA,Wonderla Holidays Limited,Market Leaders,Unclassified,,,0.00,no_match
+GREENPLY,Greenply Industries Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+NEOGEN,Neogen Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+INTERARCH,Interarch Building Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+PRECWIRE,Precision Wires India Limited,Market Leaders,Unclassified,,,0.00,no_match
+KOLTEPATIL,Kolte - Patil Developers Limited,Market Leaders,Unclassified,,,0.00,no_match
+JINDWORLD,Jindal Worldwide Limited,Market Leaders,Unclassified,,,0.00,no_match
+MBAPL,Madhya Bharat Agro Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+MEDIASSIST,Medi Assist Healthcare Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+NPST,Network People Services Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+CENTUM,Centum Electronics Limited,Market Leaders,Unclassified,,,0.00,no_match
+NSIL,Nalwa Sons Investments Limited,Market Leaders,Unclassified,,,0.00,no_match
+GKENERGY,GK Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDOSTAR,IndoStar Capital Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+ROLEXRINGS,Rolex Rings Limited,Market Leaders,Unclassified,,,0.00,no_match
+ADVENZYMES,Advanced Enzyme Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHAREINDIA,Share India Securities Limited,Market Leaders,Unclassified,,,0.00,no_match
+POCL,Pondy Oxides & Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+GUFICBIO,Gufic Biosciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+UNICHEMLAB,Unichem Laboratories Limited,Market Leaders,Unclassified,,,0.00,no_match
+MSTCLTD,Mstc Limited,Market Leaders,Unclassified,,,0.00,no_match
+ROSSARI,Rossari Biotech Limited,Market Leaders,Unclassified,,biotech_vaccines,0.32,low_keyword_confidence
+JUBLCPL,Jubilant Agri and Consumer Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+CYIENTDLM,Cyient Dlm Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.32,low_keyword_confidence
+SUNCLAY,Sundaram Clayton Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+RPEL,Raghav Productivity Enhancers Limited,Market Leaders,Unclassified,,,0.00,no_match
+BALMLAWRIE,Balmer Lawrie & Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+FOSECOIND,Foseco India Limited,Market Leaders,Unclassified,,,0.00,no_match
+DPABHUSHAN,D. P. Abhushan Limited,Market Leaders,Unclassified,,,0.00,no_match
+SSWL,Steel Strips Wheels Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDOTHAI,Indo Thai Securities Limited,Market Leaders,Unclassified,,,0.00,no_match
+GREENPANEL,Greenpanel Industries Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+BBL,Bharat Bijlee Limited,Market Leaders,Unclassified,,,0.00,no_match
+PROTEAN,Protean eGov Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+VISHNU,Vishnu Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAMBHV,Sambhv Steel Tubes Limited,Market Leaders,Unclassified,,,0.00,no_match
+BOMDYEING,Bombay Dyeing & Mfg Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+HLEGLAS,HLE Glascoat Limited,Market Leaders,Unclassified,,,0.00,no_match
+HIKAL,Hikal Limited,Market Leaders,Unclassified,,,0.00,no_match
+FLAIR,Flair Writing Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+KKCL,Kewal Kiran Clothing Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARKADE,Arkade Developers Limited,Market Leaders,Unclassified,,,0.00,no_match
+PSPPROJECT,PSP Projects Limited,Market Leaders,Unclassified,,,0.00,no_match
+STYLAMIND,Stylam Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+KRISHANA,Krishana Phoschem Limited,Market Leaders,Unclassified,,,0.00,no_match
+GATEWAY,Gateway Distriparks Limited,Market Leaders,Unclassified,,,0.00,no_match
+PRABHA,Prabha Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+IMAGICAA,Imagicaaworld Entertainment Limited,Market Leaders,Unclassified,,,0.00,no_match
+DDEVPLSTIK,Ddev Plastiks Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+PENIND,Pennar Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+WSTCSTPAPR,West Coast Paper Mills Limited,Market Leaders,Unclassified,,,0.00,no_match
+GANECOS,Ganesha Ecosphere Limited,Market Leaders,Unclassified,,,0.00,no_match
+KDDL,KDDL Limited,Market Leaders,Unclassified,,,0.00,no_match
+MAITHANALL,Maithan Alloys Limited,Market Leaders,Unclassified,,,0.00,no_match
+POLYPLEX,Polyplex Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIYSIL,Siyaram Silk Mills Limited,Market Leaders,Unclassified,,,0.00,no_match
+EUROPRATIK,Euro Pratik Sales Limited,Market Leaders,Unclassified,,,0.00,no_match
+HPL,HPL Electric & Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+EASEMYTRIP,Easy Trip Planners Limited,Market Leaders,Unclassified,,travel_ota,0.33,low_keyword_confidence
+ASHIANA,Ashiana Housing Limited,Market Leaders,Unclassified,,,0.00,no_match
+BRIGHOTEL,Brigade Hotel Ventures Limited,Market Leaders,Unclassified,,,0.00,no_match
+SANDHAR,Sandhar Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHK,S H Kelkar and Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+TFCILTD,Tourism Finance Corporation of India Limited,Market Leaders,Unclassified,,,0.00,no_match
+SUNDROP,Sundrop Brands Limited,Market Leaders,Unclassified,,,0.00,no_match
+EFCIL,EFC (I) Limited,Market Leaders,Unclassified,,,0.00,no_match
+ORISSAMINE,The Orissa Minerals Development Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+VEEDOL,Veedol Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+TEAMLEASE,Teamlease Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+AGIIL,Agi Infra Limited,Market Leaders,Unclassified,,,0.00,no_match
+NOCIL,NOCIL Limited,Market Leaders,Unclassified,,,0.00,no_match
+PREMEXPLN,Premier Explosives Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANINDS,Man Industries (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIRUMALCHM,Thirumalai Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+SANGHVIMOV,Sanghvi Movers Limited,Market Leaders,Unclassified,,,0.00,no_match
+FMGOETZE,Federal-Mogul Goetze (India) Limited.,Market Leaders,Unclassified,,,0.00,no_match
+SBCL,Shivalik Bimetal Controls Limited,Market Leaders,Unclassified,,,0.00,no_match
+FCL,Fineotex Chemical Limited,Market Leaders,Unclassified,,,0.00,no_match
+VIMTALABS,Vimta Labs Limited,Market Leaders,Unclassified,,,0.00,no_match
+MARINE,Marine Electricals (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARVSMART,Arvind SmartSpaces Limited,Market Leaders,Unclassified,,,0.00,no_match
+KPEL,K.P. Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+GIPCL,Gujarat Industries Power Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+ALPEXSOLAR,Alpex Solar Limited,Market Leaders,Unclassified,,,0.00,no_match
+PRAKASH,Prakash Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SABTNL,Sri Adhikari Brothers Television Network Limited,Market Leaders,Unclassified,,,0.00,no_match
+RPSGVENT,RPSG VENTURES LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+BCG,Brightcom Group Limited,Market Leaders,Unclassified,,,0.00,no_match
+BFUTILITIE,BF Utilities Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAMCOIND,Ramco Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+EPACKPEB,EPack Prefab Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+POKARNA,Pokarna Limited,Market Leaders,Unclassified,,,0.00,no_match
+JTLIND,JTL INDUSTRIES LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+EVEREADY,Eveready Industries India Limited,Market Leaders,Unclassified,,,0.00,no_match
+CARRARO,Carraro India Limited,Market Leaders,Unclassified,,,0.00,no_match
+NRBBEARING,NRB Bearing Limited,Market Leaders,Unclassified,,,0.00,no_match
+HONDAPOWER,Honda India Power Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAKSOFT,Saksoft Limited,Market Leaders,Unclassified,,,0.00,no_match
+MOREPENLAB,Morepen Laboratories Limited,Market Leaders,Unclassified,,,0.00,no_match
+HIRECT,Hind Rectifiers Limited,Market Leaders,Unclassified,,,0.00,no_match
+VENUSPIPES,Venus Pipes & Tubes Limited,Market Leaders,Unclassified,,,0.00,no_match
+MTNL,Mahanagar Telephone Nigam Limited,Market Leaders,Unclassified,,,0.00,no_match
+ALEMBICLTD,Alembic Limited,Market Leaders,Unclassified,,,0.00,no_match
+DIGITIDE,Digitide Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+NUCLEUS,Nucleus Software Exports Limited,Market Leaders,Unclassified,,ports_port_services,0.33,low_keyword_confidence
+SERVOTECH,Servotech Renewable Power System Limited,Market Leaders,Unclassified,,,0.00,no_match
+AUTOAXLES,Automotive Axles Limited,Market Leaders,Unclassified,,,0.00,no_match
+LAOPALA,La Opala RG Limited,Market Leaders,Unclassified,,,0.00,no_match
+HINDWAREAP,Hindware Home Innovation Limited,Market Leaders,Unclassified,,,0.00,no_match
+JAYKAY,Jaykay Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+WINDMACHIN,Windsor Machines Limited,Market Leaders,Unclassified,,,0.00,no_match
+SOLARWORLD,Solarworld Energy Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIRCA,Sirca Paints India Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+VIKRAN,Vikran Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+KALAMANDIR,Sai Silks (Kalamandir) Limited,Market Leaders,Unclassified,,,0.00,no_match
+CARYSIL,CARYSIL LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+KCP,KCP Limited,Market Leaders,Unclassified,,,0.00,no_match
+BEPL,Bhansali Engineering Polymers Limited,Market Leaders,Unclassified,,,0.00,no_match
+KMEW,Knowledge Marine & Engineering Works Limited,Market Leaders,Unclassified,,,0.00,no_match
+XPROINDIA,Xpro India Limited,Market Leaders,Unclassified,,,0.00,no_match
+REPCOHOME,Repco Home Finance Limited,Market Leaders,Unclassified,,housing_finance,0.31,low_keyword_confidence
+ADFFOODS,ADF Foods Limited,Market Leaders,Unclassified,,,0.00,no_match
+GRMOVER,GRM Overseas Limited,Market Leaders,Unclassified,,,0.00,no_match
+DIAMONDYD,Prataap Snacks Limited,Market Leaders,Unclassified,,packaged_foods_bev,0.32,low_keyword_confidence
+CAPACITE,Capacite Infraprojects Limited,Market Leaders,Unclassified,,,0.00,no_match
+ROSSTECH,Rossell Techsys Limited,Market Leaders,Unclassified,,,0.00,no_match
+FILATEX,Filatex India Limited,Market Leaders,Unclassified,,,0.00,no_match
+JINDALPOLY,Jindal Poly Films Limited,Market Leaders,Unclassified,,,0.00,no_match
+MONARCH,Monarch Networth Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+TASTYBITE,Tasty Bite Eatables Limited,Market Leaders,Unclassified,,,0.00,no_match
+AEROFLEX,Aeroflex Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+HGS,Hinduja Global Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+JAICORPLTD,Jai Corp Limited,Market Leaders,Unclassified,,,0.00,no_match
+MOLDTKPAC,Mold-Tek Packaging Limited,Market Leaders,Unclassified,,,0.00,no_match
+COSMOFIRST,COSMO FIRST LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+PFS,PTC India Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+MBEL,M & B Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+BAJEL,Bajel Projects Limited,Market Leaders,Unclassified,,,0.00,no_match
+KSHINTL,KSH International Limited,Market Leaders,Unclassified,,,0.00,no_match
+INSECTICID,Insecticides (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+NDRAUTO,Ndr Auto Components Limited,Market Leaders,Unclassified,,auto_anc_powertrain,0.32,low_keyword_confidence
+FINOPB,Fino Payments Bank Limited,Market Leaders,Unclassified,,,0.00,no_match
+STYLEBAAZA,Baazar Style Retail Limited,Market Leaders,Unclassified,,,0.00,no_match
+LANDMARK,Landmark Cars Limited,Market Leaders,Unclassified,,,0.00,no_match
+MAYURUNIQ,Mayur Uniquoters Ltd,Market Leaders,Unclassified,,,0.00,no_match
+GENESYS,Genesys International Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+GVPIL,GE Power India Limited,Market Leaders,Unclassified,,,0.00,no_match
+SULA,Sula Vineyards Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIMPLEXINF,Simplex Infrastructures Limited,Market Leaders,Unclassified,,,0.00,no_match
+SGFIN,SG Finserve Limited,Market Leaders,Unclassified,,,0.00,no_match
+CANTABIL,Cantabil Retail India Limited,Market Leaders,Unclassified,,,0.00,no_match
+DELTACORP,Delta Corp Limited,Market Leaders,Unclassified,,,0.00,no_match
+STUDDS,Studds Accessories Limited,Market Leaders,Unclassified,,,0.00,no_match
+SASKEN,Sasken Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+RANEHOLDIN,Rane Holdings Limited,Market Leaders,Unclassified,,,0.00,no_match
+IDEAFORGE,Ideaforge Technology Limited,Market Leaders,Unclassified,,,0.00,no_match
+RPTECH,Rashi Peripherals Limited,Market Leaders,Unclassified,,,0.00,no_match
+ACCELYA,Accelya Solutions India Limited,Market Leaders,Unclassified,,,0.00,no_match
+VENKEYS,Venky's (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+TIL,TIL Limited,Market Leaders,Unclassified,,,0.00,no_match
+YASHO,Yasho Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDIANHUME,Indian Hume Pipe Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+MOL,Meghmani Organics Limited,Market Leaders,Unclassified,,,0.00,no_match
+UGROCAP,Ugro Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+THEJO,Thejo Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+HITECH,Hi-Tech Pipes Limited,Market Leaders,Unclassified,,,0.00,no_match
+AMRUTANJAN,Amrutanjan Health Care Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHRINGARMS,Shringar House of Mangalsutra Limited,Market Leaders,Unclassified,,,0.00,no_match
+WHEELS,Wheels India Limited,Market Leaders,Unclassified,,,0.00,no_match
+APCOTEXIND,Apcotex Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+PIXTRANS,Pix Transmissions Limited,Market Leaders,Unclassified,,,0.00,no_match
+UNIPARTS,Uniparts India Limited,Market Leaders,Unclassified,,,0.00,no_match
+WAAREEINDO,Indosolar Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAJRATAN,Rajratan Global Wire Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDNIPPON,India Nippon Electricals Limited,Market Leaders,Unclassified,,,0.00,no_match
+VINCOFE,Vintage Coffee And Beverages Limited,Market Leaders,Unclassified,,,0.00,no_match
+MUKANDLTD,Mukand Limited,Market Leaders,Unclassified,,,0.00,no_match
+DYCL,Dynamic Cables Limited,Market Leaders,Unclassified,,,0.00,no_match
+NELCO,NELCO Limited,Market Leaders,Unclassified,,,0.00,no_match
+MSPL,MSP Steel & Power Limited,Market Leaders,Unclassified,,,0.00,no_match
+NITINSPIN,Nitin Spinners Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAMCOSYS,Ramco Systems Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.33,low_keyword_confidence
+NIBE,NIBE Limited,Market Leaders,Unclassified,,,0.00,no_match
+LAXMIDENTL,Laxmi Dental Limited,Market Leaders,Unclassified,,,0.00,no_match
+ALLTIME,All Time Plastics Limited,Market Leaders,Unclassified,,,0.00,no_match
+VIDHIING,Vidhi Specialty Food Ingredients Limited,Market Leaders,Unclassified,,,0.00,no_match
+RHETAN,Rhetan TMT Limited,Market Leaders,Unclassified,,,0.00,no_match
+WENDT,Wendt (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+UNITECH,Unitech Limited,Market Leaders,Unclassified,,,0.00,no_match
+MOTISONS,Motisons Jewellers Limited,Market Leaders,Unclassified,,,0.00,no_match
+DEEDEV,DEE Development Engineers Limited,Market Leaders,Unclassified,,,0.00,no_match
+ADOR,Ador Welding Limited,Market Leaders,Unclassified,,,0.00,no_match
+GARUDA,Garuda Construction and Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+PRECAM,Precision Camshafts Limited,Market Leaders,Unclassified,,,0.00,no_match
+ASTEC,Astec LifeSciences Limited,Market Leaders,Unclassified,,,0.00,no_match
+BETA,Beta Drugs Limited,Market Leaders,Unclassified,,,0.00,no_match
+FUSION,Fusion Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+TALBROAUTO,Talbros Automotive Components Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLSE,BLS E-Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+NAVKARCORP,Navkar Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+SPMLINFRA,SPML Infra Limited,Market Leaders,Unclassified,,,0.00,no_match
+JYOTISTRUC,Jyoti Structures Limited,Market Leaders,Unclassified,,,0.00,no_match
+JGCHEM,J.G.Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+GOCLCORP,GOCL Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+HUHTAMAKI,Huhtamaki India Limited,Market Leaders,Unclassified,,,0.00,no_match
+QUICKHEAL,Quick Heal Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+JINDRILL,Jindal Drilling And Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLISSGVS,Bliss GVS Pharma Limited,Market Leaders,Unclassified,,,0.00,no_match
+SANGHIIND,Sanghi Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SANSTAR,Sanstar Limited,Market Leaders,Unclassified,,,0.00,no_match
+EXPLEOSOL,Expleo Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+DAMCAPITAL,Dam Capital Advisors Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARMANFIN,Arman Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARIHANTSUP,Arihant Superstructures Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAMASTEEL,Rama Steel Tubes Limited,Market Leaders,Unclassified,,,0.00,no_match
+DOLPHIN,Dolphin Offshore Enterprises (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+RAJOOENG,Rajoo Engineers Limited,Market Leaders,Unclassified,,,0.00,no_match
+STANLEY,Stanley Lifestyles Limited,Market Leaders,Unclassified,,,0.00,no_match
+MUFIN,Mufin Green Finance Limited,Market Leaders,Unclassified,,,0.00,no_match
+JNKINDIA,JNK India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TARSONS,Tarsons Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+HIMATSEIDE,Himatsingka Seide Limited,Market Leaders,Unclassified,,,0.00,no_match
+SOLEX,Solex Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+UDS,Updater Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+SYNCOMF,Syncom Formulations (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+IGARASHI,Igarashi Motors India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TINNARUBR,Tinna Rubber and Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+GREENPOWER,Orient Green Power Company Limited,Market Leaders,Unclassified,,,0.00,no_match
+AIMTRON,Aimtron Electronics Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHANTIGOLD,Shanti Gold International Limited,Market Leaders,Unclassified,,,0.00,no_match
+MASTERTR,Master Trust Limited,Market Leaders,Unclassified,,,0.00,no_match
+IKIO,IKIO Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+AWHCL,Antony Waste Handling Cell Limited,Market Leaders,Unclassified,,,0.00,no_match
+STALLION,Stallion India Fluorochemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+LGHL,Laxmi Goldorna House Limited,Market Leaders,Unclassified,,,0.00,no_match
+OMAXE,Omaxe Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHRIRAMPPS,Shriram Properties Limited,Market Leaders,Unclassified,,,0.00,no_match
+IVALUE,Ivalue Infosolutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+FINKURVE,Finkurve Financial Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+QUADFUTURE,Quadrant Future Tek Limited,Market Leaders,Unclassified,,,0.00,no_match
+PLATIND,Platinum Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+ORIENTTECH,Orient Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+ANDHRAPAP,ANDHRA PAPER LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+SALASAR,Salasar Techno Engineering Limited,Market Leaders,Unclassified,,,0.00,no_match
+SMCGLOBAL,Smc Global Securities Limited,Market Leaders,Unclassified,,,0.00,no_match
+CENTRUM,Centrum Capital Limited,Market Leaders,Unclassified,,,0.00,no_match
+DOLATALGO,Dolat Algotech Limited,Market Leaders,Unclassified,,,0.00,no_match
+NIITLTD,NIIT Limited,Market Leaders,Unclassified,,,0.00,no_match
+GPTINFRA,GPT Infraprojects Limited,Market Leaders,Unclassified,,,0.00,no_match
+BIRLANU,BirlaNu Limited,Market Leaders,Unclassified,,,0.00,no_match
+RISHABH,Rishabh Instruments Limited,Market Leaders,Unclassified,,,0.00,no_match
+ASIANENE,Asian Energy Services Limited,Market Leaders,Unclassified,,,0.00,no_match
+GANDHAR,Gandhar Oil Refinery (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+BAJAJHCARE,Bajaj Healthcare Limited,Market Leaders,Unclassified,,,0.00,no_match
+PARACABLES,Paramount Communications Limited,Market Leaders,Unclassified,,,0.00,no_match
+VPRPL,Vishnu Prakash R Punglia Limited,Market Leaders,Unclassified,,,0.00,no_match
+SALZERELEC,Salzer Electronics Limited,Market Leaders,Unclassified,,,0.00,no_match
+MANAKCOAT,Manaksia Coated Metals & Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIGACHI,Sigachi Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+INFOBEAN,InfoBeans Techno. Ltd.,Market Leaders,Unclassified,,,0.00,no_match
+BLKASHYAP,B. L. Kashyap and Sons Limited,Market Leaders,Unclassified,,,0.00,no_match
+SPORTKING,Sportking India Limited,Market Leaders,Unclassified,,,0.00,no_match
+GODAVARIB,Godavari Biorefineries Limited,Market Leaders,Unclassified,,,0.00,no_match
+JARO,Jaro Institute of Technology Management and Research Limited,Market Leaders,Unclassified,,,0.00,no_match
+SURAJEST,Suraj Estate Developers Limited,Market Leaders,Unclassified,,,0.00,no_match
+UNIECOM,Unicommerce Esolutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+MADRASFERT,Madras Fertilizers Limited,Market Leaders,Unclassified,,,0.00,no_match
+HARIOMPIPE,Hariom Pipe Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHANKARA,Shankara Building Products Limited,Market Leaders,Unclassified,,building_products,0.32,low_keyword_confidence
+GNA,GNA Axles Limited,Market Leaders,Unclassified,,,0.00,no_match
+RIIL,Reliance Industrial Infrastructure Limited,Market Leaders,Unclassified,,,0.00,no_match
+VMARCIND,V Marc India Limited,Market Leaders,Unclassified,,,0.00,no_match
+TAC,TAC Infosec Limited,Market Leaders,Unclassified,,,0.00,no_match
+RGL,Renaissance Global Limited,Market Leaders,Unclassified,,,0.00,no_match
+SIGNPOST,Signpost India Limited,Market Leaders,Unclassified,,,0.00,no_match
+BALAJITELE,Balaji Telefilms Limited,Market Leaders,Unclassified,,,0.00,no_match
+ATULAUTO,Atul Auto Limited,Market Leaders,Unclassified,,,0.00,no_match
+AGARIND,Agarwal Industrial Corporation Limited,Market Leaders,Unclassified,,,0.00,no_match
+DIFFNKG,Diffusion Engineers Limited,Market Leaders,Unclassified,,,0.00,no_match
+ONEPOINT,One Point One Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+RICOAUTO,Rico Auto Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+AURUM,Aurum PropTech Limited,Market Leaders,Unclassified,,,0.00,no_match
+BUTTERFLY,Butterfly Gandhimathi Appliances Limited,Market Leaders,Unclassified,,consumer_electronics_appliances,0.25,low_keyword_confidence
+MICEL,Mic Electronics Limited,Market Leaders,Unclassified,,,0.00,no_match
+BHARATWIRE,Bharat Wire Ropes Limited,Market Leaders,Unclassified,,,0.00,no_match
+VASCONEQ,Vascon Engineers Limited,Market Leaders,Unclassified,,,0.00,no_match
+WALCHANNAG,Walchandnagar Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+TEXINFRA,Texmaco Infrastructure & Holdings Limited,Market Leaders,Unclassified,,,0.00,no_match
+WCIL,Western Carriers (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+GPTHEALTH,GPT Healthcare Limited,Market Leaders,Unclassified,,,0.00,no_match
+IRMENERGY,IRM Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+SHREEPUSHK,Shree Pushkar Chemicals & Fertilisers Limited,Market Leaders,Unclassified,,,0.00,no_match
+MEIL,Mangal Electrical Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+GTPL,GTPL Hathway Limited,Market Leaders,Unclassified,,,0.00,no_match
+TBZ,Tribhovandas Bhimji Zaveri Limited,Market Leaders,Unclassified,,,0.00,no_match
+BAJAJINDEF,Indef Manufacturing Limited,Market Leaders,Unclassified,,,0.00,no_match
+STLNETWORK,STL Networks Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARISINFRA,Arisinfra Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+CONTROLPR,Control Print Limited,Market Leaders,Unclassified,,,0.00,no_match
+JINDALPHOT,Jindal Photo Limited,Market Leaders,Unclassified,,,0.00,no_match
+ELECTHERM,Electrotherm (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+ABINFRA,A B Infrabuild Limited,Market Leaders,Unclassified,,,0.00,no_match
+KROSS,Kross Limited,Market Leaders,Unclassified,,,0.00,no_match
+ZUARI,Zuari Agro Chemicals Limited,Market Leaders,Unclassified,,,0.00,no_match
+KELLTONTEC,Kellton Tech Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+RACLGEAR,RACL Geartech Limited,Market Leaders,Unclassified,,,0.00,no_match
+BLUSPRING,Bluspring Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+BCLIND,Bcl Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+NELCAST,Nelcast Limited,Market Leaders,Unclassified,,,0.00,no_match
+EIMCOELECO,Eimco Elecon (India) Limited,Market Leaders,Unclassified,,,0.00,no_match
+MEGASOFT,Megasoft Limited,Market Leaders,Unclassified,,,0.00,no_match
+STERTOOLS,Sterling Tools Limited,Market Leaders,Unclassified,,,0.00,no_match
+GEMAROMA,Gem Aromatics Limited,Market Leaders,Unclassified,,,0.00,no_match
+EXCELSOFT,Excelsoft Technologies Limited,Market Leaders,Unclassified,,,0.00,no_match
+IZMO,IZMO Limited,Market Leaders,Unclassified,,,0.00,no_match
+ANTELOPUS,Antelopus Selan Energy Limited,Market Leaders,Unclassified,,,0.00,no_match
+MATRIMONY,Matrimony.Com Limited,Market Leaders,Unclassified,,,0.00,no_match
+PDMJEPAPER,Pudumjee Paper Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+OMINFRAL,OM INFRA LIMITED,Market Leaders,Unclassified,,,0.00,no_match
+VIDYAWIRES,Vidya Wires Limited,Market Leaders,Unclassified,,,0.00,no_match
+MAMATA,Mamata Machinery Limited,Market Leaders,Unclassified,,,0.00,no_match
+ESTER,Ester Industries Limited,Market Leaders,Unclassified,,,0.00,no_match
+TNPL,Tamil Nadu Newsprint & Papers Limited,Market Leaders,Unclassified,,,0.00,no_match
+GANESHCP,Ganesh Consumer Products Limited,Market Leaders,Unclassified,,,0.00,no_match
+ARIHANTCAP,Arihant Capital Markets Limited,Market Leaders,Unclassified,,,0.00,no_match
+SCODATUBES,Scoda Tubes Limited,Market Leaders,Unclassified,,,0.00,no_match
+INDOFARM,Indo Farm Equipment Limited,Market Leaders,Unclassified,,,0.00,no_match
+CEWATER,Concord Enviro Systems Limited,Market Leaders,Unclassified,,ems_electronics_manufacturing,0.31,low_keyword_confidence
+RADHIKAJWE,Radhika Jeweltech Limited,Market Leaders,Unclassified,,,0.00,no_match
+NDTV,New Delhi Television Limited,Market Leaders,Unclassified,,,0.00,no_match
+KHAICHEM,Khaitan Chemicals & Fertilizers Limited,Market Leaders,Unclassified,,,0.00,no_match
+AEROENTER,Aeroflex Enterprises Limited,Market Leaders,Unclassified,,,0.00,no_match
+DHARMAJ,Dharmaj Crop Guard Limited,Market Leaders,Unclassified,,,0.00,no_match
+BHARATSE,Bharat Seats Limited,Market Leaders,Unclassified,,,0.00,no_match
+DENTA,Denta Water and Infra Solutions Limited,Market Leaders,Unclassified,,,0.00,no_match
+SAHANA,Sahana System Limited,Market Leaders,Unclassified,,,0.00,no_match

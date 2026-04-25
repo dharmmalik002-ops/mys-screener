@@ -1,0 +1,598 @@
+{
+  "_meta": {
+    "description": "Keyword rules for deterministic classification into 96-group taxonomy. Matched against lowercased (company_name + ' | ' + sector + ' | ' + raw_industry + ' | ' + symbol). Each rule scored: hits(positive) * weight - hits(negative) * 2.",
+    "updated_on": "2026-04-25"
+  },
+  "rules": {
+    "private_banks": {
+      "positive_keywords": ["private sector bank", "hdfc bank", "icici bank", "axis bank", "kotak mahindra bank", "indusind bank", "yes bank", "idfc first", "federal bank", "rbl bank", "bandhan bank", "city union bank", "karur vysya", "south indian bank", "csb bank", "dhanlaxmi bank", "dcb bank", "karnataka bank", "j&k bank", "tamilnad mercantile"],
+      "negative_keywords": ["psu", "public sector", "small finance", "payments bank", "nbfc"],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.0
+    },
+    "psu_banks": {
+      "positive_keywords": ["public sector bank", "sbi", "state bank of india", "pnb", "punjab national", "bank of baroda", "canara bank", "union bank of india", "indian bank", "bank of india", "central bank of india", "uco bank", "indian overseas bank", "bank of maharashtra", "punjab & sind"],
+      "negative_keywords": ["private", "small finance", "nbfc"],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.0
+    },
+    "small_finance_banks": {
+      "positive_keywords": ["small finance bank", "au small finance", "ujjivan small", "equitas small", "esaf small", "suryoday", "capital small", "jana small", "fincare", "utkarsh small", "unity small"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.1
+    },
+    "diversified_nbfcs": {
+      "positive_keywords": ["nbfc", "non banking financial", "bajaj finance", "bajaj finserv", "cholamandalam", "l&t finance", "m&m financial", "shriram finance", "piramal enterprise", "jm financial", "edelweiss", "iifl finance", "poonawalla fincorp", "capri global", "manappuram finance", "aditya birla capital"],
+      "negative_keywords": ["housing finance", "micro finance", "microfinance", "gold loan", "vehicle finance", "two wheeler finance"],
+      "preferred_parent": "financials",
+      "confidence_weight": 0.9
+    },
+    "vehicle_finance_nbfcs": {
+      "positive_keywords": ["vehicle finance", "auto finance", "commercial vehicle finance", "mahindra finance", "shriram transport", "sundaram finance", "tata motors finance", "cholamandalam investment"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.1
+    },
+    "housing_finance": {
+      "positive_keywords": ["housing finance", "home loans", "mortgage", "lic housing", "pnb housing", "can fin homes", "aavas", "aptus value", "home first", "repco home", "india shelter", "indiabulls housing", "gic housing"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.2
+    },
+    "gold_loan_nbfcs": {
+      "positive_keywords": ["gold loan", "muthoot finance", "muthoot microfin", "manappuram", "iifl gold"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.3
+    },
+    "microfinance": {
+      "positive_keywords": ["micro finance", "microfinance", "mfi ", "credit access grameen", "fusion micro", "spandana sphoorty", "ujjivan", "satin creditcare", "arohan", "belstar", "bharat financial"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.2
+    },
+    "broking_wealth": {
+      "positive_keywords": ["broking", "stockbroking", "wealth management", "angel one", "motilal oswal", "icici securities", "hdfc securities", "kotak securities", "iifl securities", "nuvama wealth", "anand rathi", "geojit", "5paisa", "360 one wam", "prudent corp"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.1
+    },
+    "amc_exchanges_depositories": {
+      "positive_keywords": ["asset management", "mutual fund", "hdfc amc", "uti amc", "nippon life india asset", "aditya birla sun life", "nuvama", "bse ltd", "multi commodity exchange", "mcx", "cdsl", "nsdl", "depository", "exchange"],
+      "negative_keywords": ["stock exchange commission"],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.2
+    },
+    "life_insurance": {
+      "positive_keywords": ["life insurance", "lic of india", "sbi life", "hdfc life", "icici prudential life", "max life", "bajaj allianz life"],
+      "negative_keywords": ["general insurance"],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.3
+    },
+    "general_insurance": {
+      "positive_keywords": ["general insurance", "icici lombard", "go digit", "star health", "niva bupa", "new india assurance", "general insurance corporation", "gic re"],
+      "negative_keywords": ["life insurance"],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.3
+    },
+    "fintech_payments": {
+      "positive_keywords": ["fintech", "paytm", "one 97", "policybazaar", "pb fintech", "infibeam", "niyogin", "easy trip", "paisalo"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.0
+    },
+    "credit_rating_market_infra": {
+      "positive_keywords": ["crisil", "icra", "care ratings", "credit rating", "computer age management", "cams services", "kfin technologies", "registrar and transfer"],
+      "negative_keywords": [],
+      "preferred_parent": "financials",
+      "confidence_weight": 1.3
+    },
+
+    "tier1_it_services": {
+      "positive_keywords": ["tata consultancy", "tcs ", "infosys", "wipro", "hcl technologies", "tech mahindra", "lti mindtree", "ltimindtree"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.3
+    },
+    "midcap_it_services": {
+      "positive_keywords": ["mphasis", "coforge", "persistent systems", "l&t technology services", "kpit technologies", "cyient", "birlasoft", "mastek", "zensar", "sonata software", "firstsource", "intellect design", "oracle financial services", "tata elxsi", "happiest minds", "latent view", "nazara", "route mobile"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.1
+    },
+    "erd_engineering_tech": {
+      "positive_keywords": ["engineering r&d", "er&d", "l&t technology", "tata technologies", "cyient", "tata elxsi", "kpit"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 0.9
+    },
+    "software_saas": {
+      "positive_keywords": ["saas", "software products", "ramco systems", "nucleus software", "intellect design", "oracle financial", "majesco", "newgen software", "zaggle prepaid", "indegene", "mapmyindia", "ce info systems", "zomato", "nykaa", "info edge", "naukri", "swiggy"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.0
+    },
+    "it_hardware_distribution": {
+      "positive_keywords": ["redington", "it hardware", "computers hardware", "hcl infosystems", "ibull", "d-link", "netweb technologies"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.1
+    },
+    "ems_electronics_manufacturing": {
+      "positive_keywords": ["ems ", "electronics manufacturing services", "dixon technologies", "amber enterprises", "kaynes technology", "syrma sgs", "avalon technologies", "cyient dlm", "pg electroplast", "epack durable"],
+      "negative_keywords": [],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.3
+    },
+    "consumer_electronics_appliances": {
+      "positive_keywords": ["consumer electronics", "household appliances", "havells", "crompton", "bajaj electricals", "symphony", "whirlpool", "ifb industries", "butterfly gandhimathi", "orient electric", "tti ", "stove kraft", "usha martin", "v-guard", "polycab wires", "eureka forbes"],
+      "negative_keywords": ["wires"],
+      "preferred_parent": "technology",
+      "confidence_weight": 1.0
+    },
+
+    "telecom_services": {
+      "positive_keywords": ["telecom - cellular", "bharti airtel", "reliance jio", "vodafone idea", "tata teleservices", "mtnl", "bsnl"],
+      "negative_keywords": ["telecom infrastructure", "telecom - infrastructure", "telecom equipment"],
+      "preferred_parent": "telecom",
+      "confidence_weight": 1.3
+    },
+    "telecom_equipment_fiber": {
+      "positive_keywords": ["telecom - infrastructure", "telecom - equipment", "indus towers", "sterlite technologies", "tejas networks", "hfcl", "railtel", "gtl infrastructure", "vindhya telelinks", "himachal futuristic", "optiemus"],
+      "negative_keywords": [],
+      "preferred_parent": "telecom",
+      "confidence_weight": 1.2
+    },
+    "data_centers_digital_infra": {
+      "positive_keywords": ["data center", "data centre", "cloud infra", "nxtra", "netmagic", "colocation"],
+      "negative_keywords": [],
+      "preferred_parent": "telecom",
+      "confidence_weight": 1.2
+    },
+
+    "electrical_equipment": {
+      "positive_keywords": ["heavy electrical", "electrical equipment", "abb india", "siemens", "schneider electric", "bharat heavy electricals", "bhel", "cg power", "crompton greaves", "triveni turbine", "voltamp"],
+      "negative_keywords": ["cables", "transformer"],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.0
+    },
+    "wires_cables": {
+      "positive_keywords": ["wires & cables", "wires and cables", "cables - electricals", "polycab", "kei industries", "finolex cables", "ram ratna wires", "universal cables", "rr kabel", "apar industries"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.3
+    },
+    "transformers_td_equipment": {
+      "positive_keywords": ["transformer", "t&d equipment", "transmission equipment", "ge t&d", "hitachi energy", "transformers and rectifiers", "voltamp transformers", "shilchar technologies", "danish power"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.3
+    },
+    "industrial_automation_drives": {
+      "positive_keywords": ["industrial automation", "drives", "control systems", "rockwell automation", "honeywell automation", "abb india"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 0.9
+    },
+    "pumps_valves_flow_control": {
+      "positive_keywords": ["pumps", "valves", "kirloskar brothers", "shakti pumps", "kirloskar pneumatic", "roto pumps", "ksb ", "grindwell norton", "wpil", "jash engineering", "flow control", "kbl"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.2
+    },
+    "bearings_industrial_components": {
+      "positive_keywords": ["bearings", "schaeffler", "timken", "skf india", "nrb bearings", "menon bearings", "industrial products"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.1
+    },
+    "aerospace_defense": {
+      "positive_keywords": ["aerospace", "defense", "defence", "hindustan aeronautics", "bharat electronics", "bharat dynamics", "data patterns", "paras defence", "mtar technologies", "astra microwave", "mishra dhatu", "cochin shipyard", "mazagon dock", "garden reach shipbuilders", "bemag"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.3
+    },
+    "railways_epc_rolling_stock": {
+      "positive_keywords": ["railway", "railways", "rail vikas", "ircon", "rites", "texmaco rail", "titagarh rail", "jupiter wagons", "bemco hydraulics", "hindustan copper"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.3
+    },
+    "construction_infra_epc": {
+      "positive_keywords": ["civil construction", "epc", "infrastructure construction", "larsen & toubro", "larsen and toubro", "l&t ltd", "ncc ltd", "dilip buildcon", "kec international", "kalpataru projects", "patel engineering", "gmr airports", "gmr infra", "ashoka buildcon", "ircon", "pnc infratech", "jkumar infraprojects", "afcons"],
+      "negative_keywords": ["railway rolling stock", "ports"],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.0
+    },
+    "building_products": {
+      "positive_keywords": ["building products", "plywood", "laminates", "century plyboards", "greenply", "greenpanel", "merino", "sanitary ware", "cera sanitaryware", "hsil", "kajaria ceramics", "somany", "granites", "marbles", "paints", "asian paints", "berger paints", "kansai nerolac", "indigo paints", "akzo nobel"],
+      "negative_keywords": ["tiles", "ceramics"],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 0.9
+    },
+    "hvac_cooling_refrigeration": {
+      "positive_keywords": ["hvac", "refrigeration", "air conditioning", "blue star", "voltas", "johnson controls hitachi", "amber enterprises"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.2
+    },
+    "industrial_gases": {
+      "positive_keywords": ["industrial gases", "linde india", "inox air", "gujarat fluorochemicals gases", "air liquide"],
+      "negative_keywords": [],
+      "preferred_parent": "capital_goods",
+      "confidence_weight": 1.3
+    },
+
+    "logistics_surface": {
+      "positive_keywords": ["logistics", "tci express", "transport corporation of india", "mahindra logistics", "blue dart", "container corporation of india", "concor", "delhivery", "allcargo", "vrl logistics", "gati ", "tvs supply chain", "snowman logistics", "apollo tyres"],
+      "negative_keywords": ["ports", "shipping", "airline"],
+      "preferred_parent": "transport",
+      "confidence_weight": 1.2
+    },
+    "ports_port_services": {
+      "positive_keywords": ["port ", "ports", "adani ports", "jsw infrastructure", "gujarat pipavav", "dredging"],
+      "negative_keywords": ["sports", "airport"],
+      "preferred_parent": "transport",
+      "confidence_weight": 1.3
+    },
+    "shipping": {
+      "positive_keywords": ["shipping", "shipping corporation", "great eastern shipping", "scindia steam", "shreyas shipping", "seamec"],
+      "negative_keywords": ["ship building"],
+      "preferred_parent": "transport",
+      "confidence_weight": 1.3
+    },
+    "aviation_airports": {
+      "positive_keywords": ["airline", "airport", "indigo airlines", "interglobe aviation", "spicejet", "gmr airports"],
+      "negative_keywords": [],
+      "preferred_parent": "transport",
+      "confidence_weight": 1.3
+    },
+
+    "passenger_vehicles": {
+      "positive_keywords": ["passenger cars", "utility vehicles", "maruti suzuki", "mahindra & mahindra", "tata motors", "hyundai motor"],
+      "negative_keywords": ["commercial vehicles", "two wheeler", "tractor"],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.2
+    },
+    "commercial_vehicles": {
+      "positive_keywords": ["commercial vehicles", "ashok leyland", "eicher motors", "vst tillers tractors", "force motors", "sml isuzu", "olectra greentech"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.2
+    },
+    "two_wheelers": {
+      "positive_keywords": ["2/3 wheelers", "two wheeler", "bajaj auto", "hero motocorp", "tvs motor", "eicher royal enfield"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.3
+    },
+    "auto_anc_powertrain": {
+      "positive_keywords": ["auto components", "auto ancillary", "bosch ltd", "exide industries", "amara raja", "sundram fasteners", "uno minda", "minda corporation", "varroc engineering", "bharat forge", "endurance technologies", "lumax industries", "sundaram clayton", "mrf ltd"],
+      "negative_keywords": ["tyres", "wiring", "forgings", "castings"],
+      "preferred_parent": "auto",
+      "confidence_weight": 0.9
+    },
+    "auto_anc_tyres": {
+      "positive_keywords": ["tyres", "tyre", "rubber products", "apollo tyres", "mrf", "ceat ", "balkrishna industries", "jk tyre", "goodyear india", "tvs srichakra"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.3
+    },
+    "auto_anc_wiring_lighting": {
+      "positive_keywords": ["wiring harness", "automotive lighting", "motherson sumi", "samvardhana motherson", "fiem industries", "lumax auto technologies", "pricol"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.3
+    },
+    "auto_anc_forgings_castings": {
+      "positive_keywords": ["forgings", "castings", "bharat forge", "ramkrishna forgings", "mm forgings", "craftsman automation", "sundaram-clayton", "happy forgings"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.3
+    },
+    "ev_components_charging": {
+      "positive_keywords": ["electric vehicle", "ev charging", "olectra greentech", "exide energy", "himadri speciality"],
+      "negative_keywords": [],
+      "preferred_parent": "auto",
+      "confidence_weight": 1.1
+    },
+
+    "cement": {
+      "positive_keywords": ["cement", "ultratech cement", "ambuja cements", "acc ltd", "shree cement", "dalmia bharat", "jk cement", "ramco cements", "prism johnson", "heidelberg cement", "birla corporation", "india cements"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.3
+    },
+    "ceramics_tiles": {
+      "positive_keywords": ["ceramics", "tiles", "kajaria ceramics", "somany ceramics", "orient bell", "asian granito", "nitco", "rak ceramics"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.3
+    },
+    "pipes_plastic_bm": {
+      "positive_keywords": ["pvc pipes", "cpvc pipes", "plastic pipes", "supreme industries", "finolex industries", "astral ltd", "prince pipes", "apollo pipes", "nilkamal"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.3
+    },
+    "steel": {
+      "positive_keywords": ["iron & steel", "iron and steel", "tata steel", "jsw steel", "sail ", "steel authority", "jindal steel", "rashtriya ispat", "kalyani steels"],
+      "negative_keywords": ["stainless", "special alloy"],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.2
+    },
+    "stainless_special_alloys": {
+      "positive_keywords": ["stainless steel", "special alloy", "jindal stainless", "maharashtra seamless", "welspun corp", "apl apollo", "ratnamani metals", "mukand ltd"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.2
+    },
+    "non_ferrous_metals": {
+      "positive_keywords": ["aluminium", "copper", "zinc", "hindalco", "vedanta", "nalco", "national aluminium", "hindustan zinc", "hindustan copper"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.3
+    },
+    "mining_minerals": {
+      "positive_keywords": ["coal india", "coal ", "nmdc", "gmdc", "gujarat mineral", "ferro alloys", "manganese ore", "moil", "sandur manganese", "diversified metals", "ashapura minechem", "lloyds metals"],
+      "negative_keywords": [],
+      "preferred_parent": "materials",
+      "confidence_weight": 1.2
+    },
+
+    "commodity_chemicals": {
+      "positive_keywords": ["carbon black", "petrochemicals", "phillips carbon", "himadri speciality chemical", "gujarat alkalies", "dcm shriram", "chambal fertilizers", "tata chemicals", "dcw ", "gnfc ", "deepak fertilisers", "gujarat narmada"],
+      "negative_keywords": ["specialty"],
+      "preferred_parent": "chemicals",
+      "confidence_weight": 1.0
+    },
+    "specialty_chemicals": {
+      "positive_keywords": ["specialty chemicals", "speciality chemicals", "pi industries", "srf ltd", "navin fluorine", "aarti industries", "laxmi organic", "alkyl amines", "vinati organics", "fine organics", "gujarat fluorochemicals", "deepak nitrite", "clean science", "tatva chintan", "rossari biotech", "jubilant ingrevia", "atul ltd", "galaxy surfactants", "sudarshan chemical", "privi speciality"],
+      "negative_keywords": ["agrochemical", "pesticide"],
+      "preferred_parent": "chemicals",
+      "confidence_weight": 1.1
+    },
+    "agrochemicals": {
+      "positive_keywords": ["pesticides", "agrochemicals", "upl ltd", "pi industries", "bayer cropscience", "rallis india", "insecticides india", "dhanuka agritech", "sumitomo chemical india", "india pesticides", "bhagiradha chemicals", "best agrolife", "heranba industries", "sharda cropchem"],
+      "negative_keywords": [],
+      "preferred_parent": "chemicals",
+      "confidence_weight": 1.3
+    },
+    "dyes_pigments_fluorochem": {
+      "positive_keywords": ["dyes", "pigments", "sudarshan chemical", "kiri industries", "sadhana nitro", "bodal chemicals", "dynemic products", "navin fluorine", "sreyas industries"],
+      "negative_keywords": [],
+      "preferred_parent": "chemicals",
+      "confidence_weight": 1.2
+    },
+    "gas_distribution_equipment": {
+      "positive_keywords": ["gas distribution equipment", "gas regulators", "everest kanto", "confidence petroleum", "cylinders"],
+      "negative_keywords": ["city gas"],
+      "preferred_parent": "chemicals",
+      "confidence_weight": 1.1
+    },
+
+    "oil_marketing_refining": {
+      "positive_keywords": ["refineries & marketing", "oil marketing", "lubricants", "indian oil", "bharat petroleum", "hindustan petroleum", "ioc ", "bpcl", "hpcl", "castrol india", "gulf oil lubricants", "mangalore refinery", "chennai petroleum"],
+      "negative_keywords": ["upstream"],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.3
+    },
+    "upstream_oil_gas": {
+      "positive_keywords": ["oil exploration", "upstream oil", "oil & natural gas corporation", "ongc", "oil india", "hindustan oil exploration", "selan exploration", "deep industries", "alphageo"],
+      "negative_keywords": [],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.3
+    },
+    "city_gas_distribution": {
+      "positive_keywords": ["city gas", "cgd ", "gujarat gas", "indraprastha gas", "mahanagar gas", "gail india", "aegis logistics", "gspl", "gujarat state petronet", "petronet lng", "adani total gas", "adani gas"],
+      "negative_keywords": [],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.3
+    },
+
+    "hospitals": {
+      "positive_keywords": ["hospital", "healthcare service provider", "apollo hospitals", "fortis healthcare", "max healthcare", "narayana hrudayalaya", "krsnaa diagnostics", "shalby", "aster dm", "rainbow children", "kovai medical", "medica", "hcg ", "global health", "jupiter wagons hospitals", "yatharth hospital"],
+      "negative_keywords": ["diagnostic"],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+    "diagnostics": {
+      "positive_keywords": ["diagnostics", "dr lal pathlabs", "metropolis healthcare", "thyrocare", "vijaya diagnostic", "krsnaa diagnostics"],
+      "negative_keywords": [],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+    "pharma_formulations": {
+      "positive_keywords": ["pharmaceuticals", "sun pharmaceutical", "dr reddy's", "cipla", "lupin", "aurobindo pharma", "torrent pharma", "zydus lifesciences", "alkem laboratories", "ipca laboratories", "mankind pharma", "glenmark pharma", "eris lifesciences", "jb chemicals", "abbot india", "pfizer", "glaxosmithkline pharma", "ajanta pharma", "fdc ", "sanofi india", "emcure pharma"],
+      "negative_keywords": ["api", "active pharmaceutical ingredient"],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.1
+    },
+    "pharma_apis": {
+      "positive_keywords": ["api ", "active pharmaceutical ingredient", "divi's laboratories", "laurus labs", "suven pharmaceuticals", "solara active", "neuland laboratories", "jubilant pharmova", "aarti drugs"],
+      "negative_keywords": [],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+    "cdmo_crams": {
+      "positive_keywords": ["cdmo", "crams", "contract research", "syngene", "piramal pharma", "suven pharma", "ngl fine-chem", "anthem biosciences"],
+      "negative_keywords": [],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+    "biotech_vaccines": {
+      "positive_keywords": ["biotechnology", "biotech", "vaccines", "biocon", "panacea biotec", "indian immunologicals", "serum institute", "bharat biotech"],
+      "negative_keywords": [],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+    "medical_devices": {
+      "positive_keywords": ["medical devices", "medical equipment", "poly medicure", "opto circuits", "stove kraft medical", "rossari medical", "health care global"],
+      "negative_keywords": [],
+      "preferred_parent": "healthcare",
+      "confidence_weight": 1.3
+    },
+
+    "fmcg_staples": {
+      "positive_keywords": ["hindustan unilever", "nestle india", "britannia industries", "marico", "dabur", "godrej consumer", "colgate palmolive", "emami", "jyothy labs", "bajaj consumer", "honasa consumer", "gillette", "tata consumer products", "procter & gamble", "household products", "personal care"],
+      "negative_keywords": ["packaged food"],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.0
+    },
+    "packaged_foods_bev": {
+      "positive_keywords": ["packaged foods", "ready to eat", "nestle india", "britannia", "bikaji foods", "gopal snacks", "mrs bector", "prataap snacks", "hatsun agro", "parag milk", "varun beverages", "kaveri seeds", "kellogg", "edible oil", "adani wilmar"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 0.9
+    },
+    "qsr_restaurants": {
+      "positive_keywords": ["restaurant", "qsr", "jubilant foodworks", "westlife foodworld", "devyani international", "sapphire foods", "barbeque nation", "speciality restaurants", "coffee day enterprises"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.3
+    },
+    "alcoholic_beverages": {
+      "positive_keywords": ["breweries", "distilleries", "united spirits", "united breweries", "radico khaitan", "globus spirits", "tilaknagar industries", "som distilleries", "gm breweries", "allied blenders"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.3
+    },
+    "tobacco": {
+      "positive_keywords": ["itc limited", "vst industries", "godfrey phillips", "golden tobacco"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.3
+    },
+    "retail_grocery_value": {
+      "positive_keywords": ["dmart", "avenue supermarts", "vishal mega mart", "star bazaar", "more retail", "spencer's retail", "diversified retail"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.3
+    },
+    "retail_fashion_lifestyle": {
+      "positive_keywords": ["trent ltd", "shoppers stop", "aditya birla fashion", "v-mart retail", "v2 retail", "go fashion", "arvind fashions", "bata india", "relaxo footwears", "speciality retail", "titan company"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.0
+    },
+    "retail_electronics_omni": {
+      "positive_keywords": ["electronics mart", "aditya vision", "poorvika", "nykaa", "info edge", "firstcry", "brainbees", "zomato", "swiggy", "e-retail", "e-commerce"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.1
+    },
+    "hotels": {
+      "positive_keywords": ["hotels", "indian hotels", "eih ltd", "chalet hotels", "lemon tree hotels", "mahindra holidays", "thomas cook", "oriental hotels", "taj gvk", "royal orchid"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.3
+    },
+    "travel_ota": {
+      "positive_keywords": ["travel services", "online travel", "easy trip planners", "yatra online", "ixigo", "makemytrip", "thomas cook"],
+      "negative_keywords": ["hotel"],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.3
+    },
+    "multiplex_exhibition": {
+      "positive_keywords": ["multiplex", "cinema", "pvr inox", "inox leisure", "film exhibition"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.3
+    },
+    "media_broadcasting": {
+      "positive_keywords": ["media & entertainment", "tv broadcasting", "zee entertainment", "sun tv network", "tv18 broadcast", "network18", "digital entertainment", "print media", "jagran prakashan", "dish tv", "saregama", "tips industries", "nazara technologies", "dbcorp", "ht media", "hathway cable", "den networks"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.2
+    },
+    "education_test_prep": {
+      "positive_keywords": ["education", "test prep", "s chand", "navneet education", "mt educare", "career point", "aakash educational", "veranda learning", "byju's", "upgrad"],
+      "negative_keywords": [],
+      "preferred_parent": "retail_media",
+      "confidence_weight": 1.3
+    },
+
+    "apparel_textiles": {
+      "positive_keywords": ["garments & apparels", "apparels", "textiles", "other textile products", "welspun india", "raymond ltd", "vardhman textiles", "kpr mill", "gokaldas exports", "trident ltd", "alok industries", "indo count", "page industries", "lux industries", "rupa & company", "dollar industries", "monte carlo fashions", "arvind ltd"],
+      "negative_keywords": ["footwear"],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.0
+    },
+    "home_furnishings": {
+      "positive_keywords": ["furniture", "home furnishing", "houseware", "welspun home", "sheela foam", "cera sanitaryware", "nilkamal ltd", "ibull home products", "stovekraft", "tcpl packaging", "butterfly gandhimathi"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.0
+    },
+    "footwear_luggage": {
+      "positive_keywords": ["footwear", "bata india", "relaxo", "mirza international", "khadim india", "liberty shoes", "vip industries", "safari industries"],
+      "negative_keywords": [],
+      "preferred_parent": "consumer",
+      "confidence_weight": 1.3
+    },
+
+    "tractors_agri_machinery": {
+      "positive_keywords": ["tractors", "escorts kubota", "vst tillers", "swaraj engines", "agri machinery", "mahindra tractors"],
+      "negative_keywords": [],
+      "preferred_parent": "agri_food",
+      "confidence_weight": 1.3
+    },
+    "sugar": {
+      "positive_keywords": ["sugar", "balrampur chini", "bannari amman sugars", "eid parry", "dhampur sugar", "triveni engineering", "dalmia bharat sugar", "shree renuka", "dcm shriram industries", "dwarikesh sugar", "rajshree sugars", "ugar sugar"],
+      "negative_keywords": [],
+      "preferred_parent": "agri_food",
+      "confidence_weight": 1.3
+    },
+    "tea_coffee_plantations": {
+      "positive_keywords": ["tea & coffee", "tea and coffee", "tata consumer", "ccl products", "tata coffee", "mcleod russel", "jay shree tea", "bombay burmah", "harrisons malayalam", "goodricke", "dhunseri ventures"],
+      "negative_keywords": [],
+      "preferred_parent": "agri_food",
+      "confidence_weight": 1.2
+    },
+    "dairy_protein_foods": {
+      "positive_keywords": ["dairy products", "milk", "hatsun agro", "parag milk", "heritage foods", "kwality ltd", "dodla dairy", "prabhat dairy"],
+      "negative_keywords": [],
+      "preferred_parent": "agri_food",
+      "confidence_weight": 1.3
+    },
+    "poultry_aqua_animal_health": {
+      "positive_keywords": ["poultry", "aquaculture", "seafood", "animal feed", "venky's india", "avanti feeds", "godrej agrovet", "kaveri seed", "srinivasa hatcheries", "waterbase", "apex frozen"],
+      "negative_keywords": [],
+      "preferred_parent": "agri_food",
+      "confidence_weight": 1.3
+    },
+
+    "real_estate_developers": {
+      "positive_keywords": ["real estate", "realty", "residential", "commercial projects", "dlf ltd", "godrej properties", "oberoi realty", "prestige estates", "brigade enterprises", "phoenix mills", "sobha ltd", "sunteck realty", "macrotech developers", "lodha", "puravankara", "kolte-patil", "mahindra lifespace", "signature global", "anant raj"],
+      "negative_keywords": ["reit"],
+      "preferred_parent": "real_estate",
+      "confidence_weight": 1.2
+    },
+    "reits_commercial_re": {
+      "positive_keywords": ["reit", "embassy office parks", "mindspace business parks", "brookfield india", "nexus select"],
+      "negative_keywords": [],
+      "preferred_parent": "real_estate",
+      "confidence_weight": 1.3
+    },
+
+    "power_generation": {
+      "positive_keywords": ["power generation", "ntpc ltd", "tata power", "jsw energy", "cesc ", "torrent power", "reliance power", "jaiprakash power", "kalpataru power", "nava ltd"],
+      "negative_keywords": ["transmission", "distribution", "renewable", "solar", "wind"],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.1
+    },
+    "power_utilities_distribution": {
+      "positive_keywords": ["power - transmission", "power distribution", "power trading", "power grid corporation", "nhpc ltd", "sjvn ltd", "power finance corporation", "rec ltd", "indian energy exchange", "iex"],
+      "negative_keywords": ["renewable", "solar", "wind"],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.2
+    },
+    "renewable_energy": {
+      "positive_keywords": ["renewable energy", "solar power", "wind power", "suzlon energy", "inox wind", "adani green energy", "kpi green energy", "websol energies", "sterling & wilson renewable", "waaree renewables", "borosil renewables", "nhpc renewables"],
+      "negative_keywords": [],
+      "preferred_parent": "energy",
+      "confidence_weight": 1.3
+    }
+  }
+}

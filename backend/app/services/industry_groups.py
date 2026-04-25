@@ -1,13 +1,35 @@
+"""
+Industry-group ranking engine (96-group taxonomy).
+
+Pipeline:
+  1. Universe filter: Indian listed, market_cap_cr > 1000.
+  2. Classify each stock via IndustryClassifier (override -> keyword -> peer -> needs_review).
+  3. Group by primary_group_id. Groups with < 5 stocks get unstable_flag=true and are
+     merged into a synthetic parent bucket (`__parent__<parent>`) for ranking only.
+  4. Compute 126d / 63d / 21d total returns (using stock_return_126d / 60d / 20d as the
+     pragmatic mapping over the existing snapshot fields).
+  5. Winsorize each return series within the group at 5th/95th percentile.
+  6. group_score = 0.50 * median(126d) + 0.30 * median(63d) + 0.20 * median(21d)
+  7. Dense rank descending by group_score.
+  8. rank_change_1w / 1m / 3m read from on-disk daily rank snapshots (5d / 20d / 60d ago).
+"""
+
 from __future__ import annotations
 
 import json
-import re
+import logging
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from statistics import median
 from typing import Iterable
 
+from app.data.groups.taxonomy import (
+    GROUPS_BY_ID,
+    PARENT_LABEL,
+    parent_bucket_id,
+    parent_bucket_name,
+)
 from app.models.market import (
     IndustryGroupFilters,
     IndustryGroupMasterItem,
@@ -17,229 +39,23 @@ from app.models.market import (
     IndustryGroupTopStock,
     StockSnapshot,
 )
+from app.services.industry_classifier import IndustryClassifier
 
-GROUP_MIN_MARKET_CAP_CR = 800.0
+logger = logging.getLogger(__name__)
+
+GROUP_MIN_MARKET_CAP_CR = 1000.0
 GROUP_MIN_AVG_DAILY_VALUE_CR = 1.0
-GROUP_MIN_STOCKS = 4
-GROUP_KEEP_THRESHOLD = GROUP_MIN_STOCKS
+GROUP_MIN_STOCKS = 5
 
-INDIA_DIRECT_GROUP_MAP: dict[str, str] = {
-    "Pharmaceuticals": "Pharma",
-    "Biotechnology": "Pharma",
-    "Auto Components & Equipments": "Auto Ancillaries",
-    "Civil Construction": "EPC & Construction",
-    "Residential Commercial Projects": "Realty Developers",
-    "Non Banking Financial Company (NBFC)": "NBFCs",
-    "Computers - Software & Consulting": "IT Services",
-    "Aerospace & Defense": "Defence",
-    "Cement & Cement Products": "Cement",
-    "Private Sector Bank": "Private Banks",
-    "Public Sector Bank": "PSU Banks",
-    "Other Bank": "Other Banks",
-    "Gems Jewellery And Watches": "Jewellery",
-    "Other Textile Products": "Textiles",
-    "Hospital": "Hospitals",
-    "Healthcare Service Provider": "Hospitals",
-    "Healthcare Research Analytics & Technology": "Hospitals",
-    "Diversified Commercial Services": "Business Services",
-    "Stockbroking & Allied": "Brokerages & Wealth",
-    "Exchange and Data Platform": "Brokerages & Wealth",
-    "Depositories Clearing Houses and Other Intermediaries": "Brokerages & Wealth",
-    "Ratings": "Brokerages & Wealth",
-    "Logistics Solution Provider": "Logistics",
-    "Pesticides & Agrochemicals": "Agro Chemicals",
-    "Garments & Apparels": "Apparel & Fashion",
-    "Breweries & Distilleries": "Alcoholic Beverages",
-    "Compressors Pumps & Diesel Engines": "Industrial Machinery",
-    "Housing Finance Company": "Housing Finance",
-    "Plastic Products - Industrial": "Industrial Plastics",
-    "Speciality Retail": "Retail Specialty",
-    "Packaged Foods": "FMCG Foods",
-    "Other Food Products": "FMCG Foods",
-    "Meat Products including Poultry": "FMCG Foods",
-    "Seafood": "FMCG Foods",
-    "Tea & Coffee": "FMCG Foods",
-    "Other Agricultural Products": "Agri Commodities",
-    "Animal Feed": "Agri Commodities",
-    "Cables - Electricals": "Cables & Wires",
-    "E-Retail/ E-Commerce": "E-Commerce",
-    "Internet & Catalogue Retail": "E-Commerce",
-    "Financial Institution": "Financial Institutions",
-    "Other Financial Services": "Financial Institutions",
-    "Tour Travel Related Services": "Travel & Aviation",
-    "Airline": "Travel & Aviation",
-    "Airport & Airport services": "Travel & Aviation",
-    "Amusement Parks/ Other Recreation": "Travel & Aviation",
-    "2/3 Wheelers": "Auto 2W",
-    "Asset Management Company": "Asset Managers",
-    "Financial Technology (Fintech)": "Fintech",
-    "LPG/CNG/PNG/LNG Supplier": "Gas Utilities",
-    "Gas Transmission/Marketing": "Gas Utilities",
-    "Passenger Cars & Utility Vehicles": "Auto PV",
-    "Refineries & Marketing": "OMCs & Refining",
-    "Lubricants": "OMCs & Refining",
-    "Restaurants": "Restaurants & QSR",
-    "Telecom - Cellular & Fixed line services": "Telecom Services",
-    "Tyres & Rubber Products": "Tyres & Rubber",
-    "Diversified Retail": "Retail Value",
-    "Edible Oil": "Edible Oils",
-    "Furniture Home Furnishing": "Home Furnishings",
-    "Houseware": "Home Furnishings",
-    "Integrated Power Utilities": "Power Utilities",
-    "Power - Transmission": "Power Utilities",
-    "Power Distribution": "Power Utilities",
-    "Power Trading": "Power Utilities",
-    "Water Supply & Management": "Power Utilities",
-    "Waste Management": "Power Utilities",
-    "Paper & Paper Products": "Paper",
-    "Plywood Boards/ Laminates": "Plywood & Laminates",
-    "Trading & Distributors": "Trading & Distribution",
-    "Unclassified": "Special Situations",
-    "Consumer Electronics": "Consumer Electronics",
-    "Plastic Products - Consumer": "Consumer Electronics",
-    "Household Appliances": "Home Appliances",
-    "Paints": "Paints",
-    "Software Products": "Software Products",
-    "IT Enabled Services": "IT Enabled Services",
-    "Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO)": "IT Enabled Services",
-    "Computers Hardware & Equipments": "Hardware & Peripherals",
-    "Dairy Products": "Dairy",
-    "Microfinance Institutions": "NBFCs",
-    "Heavy Electrical Equipment": "Capital Goods Electrical",
-    "Other Electrical Equipment": "Capital Goods Electrical",
-    "Industrial Products": "Capital Goods Industrial",
-    "Other Industrial Products": "Capital Goods Industrial",
-    "Iron & Steel Products": "Steel & Steel Products",
-    "Iron & Steel": "Steel & Steel Products",
-    "Investment Company": "Investment Holdings",
-    "Holding Company": "Investment Holdings",
-    "Diversified": "Investment Holdings",
-    "General Insurance": "Insurance",
-    "Life Insurance": "Insurance",
-    "Insurance Distributors": "Insurance",
-    "Financial Products Distributor": "Insurance",
-    "Media & Entertainment": "Media & Broadcasting",
-    "TV Broadcasting & Software Production": "Media & Broadcasting",
-    "Advertising & Media Agencies": "Media & Broadcasting",
-    "Digital Entertainment": "Media & Broadcasting",
-    "Film Production Distribution & Exhibition": "Media & Broadcasting",
-    "Print Media": "Media & Broadcasting",
-    "Printing & Publication": "Media & Broadcasting",
-    "Telecom - Infrastructure": "Telecom Infra & Equipment",
-    "Telecom - Equipment & Accessories": "Telecom Infra & Equipment",
-    "Commercial Vehicles": "Auto CV & Tractors",
-    "Tractors": "Auto CV & Tractors",
-    "Construction Vehicles": "Auto CV & Tractors",
-    "Oil Exploration & Production": "Oil Upstream & Services",
-    "Oil Equipment & Services": "Oil Upstream & Services",
-    "Offshore Support Solution Drilling": "Oil Upstream & Services",
-    "Oil Storage & Transportation": "Oil Upstream & Services",
-    "Medical Equipment & Supplies": "Medical Devices",
-    "Aluminium": "Non-Ferrous Metals",
-    "Copper": "Non-Ferrous Metals",
-    "Zinc": "Non-Ferrous Metals",
-    "Aluminium Copper & Zinc Products": "Non-Ferrous Metals",
-    "Glass - Consumer": "Building Materials",
-    "Glass - Industrial": "Building Materials",
-    "Granites & Marbles": "Building Materials",
-    "Sanitary Ware": "Building Materials",
-    "Ceramics": "Building Materials",
-    "Other Construction Materials": "Building Materials",
-    "Dyes And Pigments": "Specialty Chemicals",
-    "Industrial Gases": "Specialty Chemicals",
-    "Explosives": "Specialty Chemicals",
-    "Carbon Black": "Commodity Chemicals",
-    "Petrochemicals": "Commodity Chemicals",
-    "Shipping": "Shipping & Ports",
-    "Ship Building & Allied Services": "Shipping & Ports",
-    "Port & Port services": "Shipping & Ports",
-    "Dredging": "Shipping & Ports",
-    "Electrodes & Refractories": "Electrodes & Refractories",
-    "Coal": "Metals & Mining Others",
-    "Diversified Metals": "Metals & Mining Others",
-    "Ferro & Silica Manganese": "Metals & Mining Others",
-    "Trading - Metals": "Metals & Mining Others",
-    "Trading - Minerals": "Metals & Mining Others",
-    "Household Products": "Personal Care",
-    "Personal Care": "Personal Care",
-    "Leather And Leather Products": "Textiles",
-    "Rubber": "Tyres & Rubber",
-    "Footwear": "Footwear",
-    "Other Consumer Services": "Consumer Services",
-    "Education": "Consumer Services",
-    "E-Learning": "Consumer Services",
-}
+WINSORIZE_LOWER = 0.05
+WINSORIZE_UPPER = 0.95
 
-SECTOR_FALLBACK_GROUP_MAP: dict[str, str] = {
-    "Financial Services": "Financial Institutions",
-    "Capital Goods": "Capital Goods Industrial",
-    "Healthcare": "Hospitals",
-    "Chemicals": "Specialty Chemicals",
-    "Construction": "EPC & Construction",
-    "Construction Materials": "Building Materials",
-    "Consumer Services": "Consumer Services",
-    "Consumer Durables": "Consumer Electronics",
-    "Fast Moving Consumer Goods": "FMCG Foods",
-    "Information Technology": "IT Services",
-    "Oil Gas & Consumable Fuels": "OMCs & Refining",
-    "Metals & Mining": "Metals & Mining Others",
-    "Power": "Power Utilities",
-    "Services": "Business Services",
-    "Telecommunication": "Telecom Services",
-    "Textiles": "Textiles",
-    "Media Entertainment & Publication": "Media & Broadcasting",
-    "Realty": "Realty Developers",
-    "Forest Materials": "Paper",
-    "Utilities": "Power Utilities",
-    "Automobile and Auto Components": "Auto Ancillaries",
-    "Unclassified": "Special Situations",
-}
+SCORE_WEIGHT_126D = 0.50
+SCORE_WEIGHT_63D = 0.30
+SCORE_WEIGHT_21D = 0.20
 
-INDIA_GROUP_NAME_ALIASES: dict[str, str] = {
-    "Other Banks": "Small Finance Banks",
-    "Special Situations": "Special Situations & SME Leaders",
-    "Trading & Distribution": "Trading Houses & Distribution",
-    "Consumer Services": "Education, Staffing & Retail Services",
-    "Metals & Mining Others": "Mining, Coal & Alloys",
-    "Power Utilities": "Power Utilities & Grids",
-    "Retail Value": "Value Retail",
-    "Auto 2W": "Two-Wheeler OEMs",
-    "Auto PV": "Passenger Vehicle OEMs",
-    "Auto CV & Tractors": "CVs, Tractors & CE",
-}
-
-
-def _slugify(value: str) -> str:
-    slug = re.sub(r"[^a-z0-9]+", "-", value.strip().lower())
-    slug = re.sub(r"-+", "-", slug).strip("-")
-    return slug or "misc-group"
-
-
-def _safe_mean(values: Iterable[float]) -> float:
-    numbers = [float(value) for value in values]
-    return sum(numbers) / len(numbers) if numbers else 0.0
-
-
-def _winsorized_mean(values: Iterable[float], lower_quantile: float = 0.1, upper_quantile: float = 0.9) -> float:
-    numbers = sorted(float(value) for value in values)
-    if not numbers:
-        return 0.0
-    if len(numbers) < 4:
-        return _safe_mean(numbers)
-
-    last_index = len(numbers) - 1
-    lower_index = max(0, min(last_index, int(round(last_index * lower_quantile))))
-    upper_index = max(0, min(last_index, int(round(last_index * upper_quantile))))
-    lower_value = numbers[lower_index]
-    upper_value = numbers[upper_index]
-    clipped = [min(max(value, lower_value), upper_value) for value in numbers]
-    return _safe_mean(clipped)
-
-
-def _safe_pct(numerator: int, denominator: int) -> float:
-    if denominator <= 0:
-        return 0.0
-    return round((numerator / denominator) * 100, 2)
+RANK_HISTORY_DIR = Path(__file__).resolve().parent.parent / "data" / "rank_history"
+RANK_HISTORY_LOOKBACKS = {"1w": 5, "1m": 20, "3m": 60}
 
 
 def _avg_traded_value_50d_cr(snapshot: StockSnapshot) -> float:
@@ -249,88 +65,54 @@ def _avg_traded_value_50d_cr(snapshot: StockSnapshot) -> float:
     return round((average_volume * snapshot.last_price) / 10_000_000, 2)
 
 
-def _finalize_group_name(group_name: str, market_key: str) -> str:
-    if market_key == "india":
-        return INDIA_GROUP_NAME_ALIASES.get(group_name, group_name)
-    return group_name
+def _safe_pct(numerator: int, denominator: int) -> float:
+    if denominator <= 0:
+        return 0.0
+    return round((numerator / denominator) * 100, 2)
 
 
-def _broad_parent_group_name(parent_sector: str, market_key: str) -> str:
-    normalized_sector = str(parent_sector or "Unclassified").strip() or "Unclassified"
-    if normalized_sector.lower() == "unclassified":
-        return _finalize_group_name("Special Situations", market_key) if market_key == "india" else "Miscellaneous"
-    suffix = "Diversified" if market_key == "india" else "Others"
-    return _finalize_group_name(f"{normalized_sector} {suffix}", market_key)
+def _safe_mean(values: Iterable[float]) -> float:
+    nums = [float(v) for v in values]
+    return sum(nums) / len(nums) if nums else 0.0
 
 
-def _group_family(parent_sector: str) -> str:
-    sector = str(parent_sector or "").strip().lower()
-    if any(token in sector for token in ("bank", "financial", "finance", "insurance")):
-        return "Financials"
-    if any(token in sector for token in ("auto", "consumer", "fmcg", "durable", "retail", "textile", "media")):
-        return "Consumer"
-    if any(token in sector for token in ("capital", "construction", "industrial", "services", "logistics")):
-        return "Industrials"
-    if any(token in sector for token in ("chemical", "material", "metal", "mining", "cement", "paper")):
-        return "Materials"
-    if any(token in sector for token in ("health", "pharma", "hospital")):
-        return "Healthcare"
-    if any(token in sector for token in ("information", "technology", "telecom")):
-        return "Technology & Telecom"
-    if any(token in sector for token in ("oil", "gas", "power", "energy", "utility")):
-        return "Energy & Utilities"
-    if not sector or sector == "unclassified":
-        return "Special Situations"
-    return "Diversified"
+def _winsorize(values: list[float], lower: float = WINSORIZE_LOWER, upper: float = WINSORIZE_UPPER) -> list[float]:
+    if not values:
+        return []
+    if len(values) < 4:
+        return list(values)
+    sorted_vals = sorted(values)
+    n = len(sorted_vals)
+    lo_idx = max(0, min(n - 1, int(round((n - 1) * lower))))
+    hi_idx = max(0, min(n - 1, int(round((n - 1) * upper))))
+    lo = sorted_vals[lo_idx]
+    hi = sorted_vals[hi_idx]
+    return [min(max(v, lo), hi) for v in values]
 
 
-def _family_group_name(family: str, market_key: str) -> str:
-    normalized_family = str(family or "Diversified").strip() or "Diversified"
-    if normalized_family == "Special Situations":
-        return _finalize_group_name("Special Situations", market_key) if market_key == "india" else "Miscellaneous"
-    return f"{normalized_family} Diversified"
+def _winsorized_median(values: list[float]) -> float:
+    clipped = _winsorize(values)
+    return float(median(clipped)) if clipped else 0.0
 
 
-def _friendly_group_name(raw_industry: str, sector: str, market_key: str, raw_counts: Counter[str]) -> str:
-    normalized_raw = str(raw_industry or "Unclassified").strip() or "Unclassified"
-    normalized_sector = str(sector or "Unclassified").strip() or "Unclassified"
-
-    if market_key == "india":
-        mapped = INDIA_DIRECT_GROUP_MAP.get(normalized_raw)
-        if mapped:
-            return _finalize_group_name(mapped, market_key)
-        if raw_counts.get(normalized_raw, 0) >= GROUP_KEEP_THRESHOLD:
-            return _finalize_group_name(normalized_raw, market_key)
-        return _finalize_group_name(SECTOR_FALLBACK_GROUP_MAP.get(normalized_sector, normalized_raw), market_key)
-
-    if raw_counts.get(normalized_raw, 0) >= GROUP_KEEP_THRESHOLD and normalized_raw.lower() != "unclassified":
-        return normalized_raw
-    if normalized_sector.lower() != "unclassified":
-        return f"{normalized_sector} Others"
-    return "Miscellaneous"
+def _winsorized_mean(values: list[float]) -> float:
+    return _safe_mean(_winsorize(values))
 
 
 def _majority_label(values: Iterable[str], fallback: str = "Unclassified") -> str:
-    labels = [str(value or "").strip() for value in values if str(value or "").strip()]
+    labels = [str(v or "").strip() for v in values if str(v or "").strip()]
     if not labels:
         return fallback
     return Counter(labels).most_common(1)[0][0]
 
 
-def _rank_metric_percentiles(items: list[dict[str, object]], metric_key: str) -> dict[str, float]:
-    if not items:
-        return {}
-    ordered = sorted(
-        ((float(item.get(metric_key, 0.0) or 0.0), str(item.get("group_id") or "")) for item in items),
-        key=lambda value: (value[0], value[1]),
+def _snapshot_eligible(snapshot: StockSnapshot) -> bool:
+    return (
+        snapshot.exchange in {"NSE", "BSE"}
+        and snapshot.market_cap_crore > GROUP_MIN_MARKET_CAP_CR
+        and _avg_traded_value_50d_cr(snapshot) >= GROUP_MIN_AVG_DAILY_VALUE_CR
+        and snapshot.last_price > 0
     )
-    if len(ordered) == 1:
-        return {ordered[0][1]: 100.0}
-    total = len(ordered) - 1
-    return {
-        group_id: round((index / total) * 100, 2)
-        for index, (_, group_id) in enumerate(ordered)
-    }
 
 
 def _resolve_strength_bucket(rank: int) -> str:
@@ -344,171 +126,55 @@ def _resolve_strength_bucket(rank: int) -> str:
 
 
 def _resolve_trend_label(score_change_1w: float | None, rank_change_1w: int | None) -> str:
-    if score_change_1w is None or rank_change_1w is None:
+    if score_change_1w is None and rank_change_1w is None:
         return "Stable"
-    if score_change_1w >= 1.5 or rank_change_1w >= 3:
+    if (score_change_1w or 0) >= 1.5 or (rank_change_1w or 0) >= 3:
         return "Improving"
-    if score_change_1w <= -1.5 or rank_change_1w <= -3:
+    if (score_change_1w or 0) <= -1.5 or (rank_change_1w or 0) <= -3:
         return "Weakening"
     return "Stable"
 
 
-def _snapshot_is_eligible(snapshot: StockSnapshot, market_key: str) -> bool:
-    return (
-        snapshot.exchange in {"NSE", "BSE"}
-        and snapshot.market_cap_crore > GROUP_MIN_MARKET_CAP_CR
-        and _avg_traded_value_50d_cr(snapshot) >= GROUP_MIN_AVG_DAILY_VALUE_CR
-        and snapshot.last_price > 0
-    )
-
-
-def _merge_small_groups(
-    grouped_snapshots: dict[str, list[StockSnapshot]],
-    grouped_parent_sectors: dict[str, list[str]],
-    stock_rows: list[IndustryGroupStockItem],
-    market_key: str,
-) -> tuple[dict[str, list[StockSnapshot]], dict[str, list[str]], list[IndustryGroupStockItem]]:
-    if not grouped_snapshots or all(len(members) >= GROUP_MIN_STOCKS for members in grouped_snapshots.values()):
-        return grouped_snapshots, grouped_parent_sectors, stock_rows
-
-    rows_by_group: dict[str, list[IndustryGroupStockItem]] = defaultdict(list)
-    for row in stock_rows:
-        rows_by_group[row.final_group_id].append(row)
-
-    final_snapshots: dict[str, list[StockSnapshot]] = defaultdict(list)
-    final_parent_sectors: dict[str, list[str]] = defaultdict(list)
-    final_stock_rows: dict[str, list[IndustryGroupStockItem]] = defaultdict(list)
-    final_group_names: dict[str, str] = {}
-
-    def add_group(
-        group_name: str,
-        group_members: list[StockSnapshot],
-        group_rows: list[IndustryGroupStockItem],
-        parent_sectors: list[str],
-    ) -> None:
-        group_id = _slugify(group_name)
-        resolved_name = final_group_names.setdefault(group_id, group_name)
-        final_snapshots[group_id].extend(group_members)
-        final_parent_sectors[group_id].extend(parent_sectors)
-        final_stock_rows[group_id].extend(
-            row.model_copy(update={"final_group_id": group_id, "final_group_name": resolved_name})
-            for row in group_rows
-        )
-
-    def bucket_group_name(group_id: str) -> str:
-        return rows_by_group[group_id][0].final_group_name if rows_by_group[group_id] else group_id
-
-    def bucket_parent_sector(group_id: str) -> str:
-        return _majority_label(grouped_parent_sectors[group_id])
-
-    def add_existing_bucket(group_id: str) -> None:
-        add_group(
-            bucket_group_name(group_id),
-            grouped_snapshots[group_id],
-            rows_by_group[group_id],
-            grouped_parent_sectors[group_id],
-        )
-
-    def merge_bucket_into_name(group_id: str, group_name: str) -> None:
-        add_group(
-            group_name,
-            grouped_snapshots[group_id],
-            rows_by_group[group_id],
-            grouped_parent_sectors[group_id],
-        )
-
-    def merge_bucket_into_existing(group_id: str, target_group_id: str) -> None:
-        target_name = final_group_names[target_group_id]
-        merge_bucket_into_name(group_id, target_name)
-
-    def largest_final_group(candidates: list[str]) -> str | None:
-        if not candidates:
-            return None
-        return max(candidates, key=lambda candidate: len(final_snapshots[candidate]))
-
-    small_group_ids: list[str] = []
-    for group_id, members in grouped_snapshots.items():
-        if len(members) >= GROUP_MIN_STOCKS:
-            add_existing_bucket(group_id)
-        else:
-            small_group_ids.append(group_id)
-
-    remaining_group_ids: list[str] = []
-    groups_by_parent_sector: dict[str, list[str]] = defaultdict(list)
-    for group_id in small_group_ids:
-        groups_by_parent_sector[bucket_parent_sector(group_id)].append(group_id)
-
-    for parent_sector, group_ids in groups_by_parent_sector.items():
-        member_count = sum(len(grouped_snapshots[group_id]) for group_id in group_ids)
-        same_sector_targets = [
-            group_id
-            for group_id in final_snapshots
-            if _majority_label(final_parent_sectors[group_id]) == parent_sector
-        ]
-        if member_count >= GROUP_MIN_STOCKS:
-            broad_name = _broad_parent_group_name(parent_sector, market_key)
-            for group_id in group_ids:
-                merge_bucket_into_name(group_id, broad_name)
-            continue
-        target_group_id = largest_final_group(same_sector_targets)
-        if target_group_id is not None:
-            for group_id in group_ids:
-                merge_bucket_into_existing(group_id, target_group_id)
-            continue
-        remaining_group_ids.extend(group_ids)
-
-    final_remaining_group_ids: list[str] = []
-    groups_by_family: dict[str, list[str]] = defaultdict(list)
-    for group_id in remaining_group_ids:
-        groups_by_family[_group_family(bucket_parent_sector(group_id))].append(group_id)
-
-    for family, group_ids in groups_by_family.items():
-        member_count = sum(len(grouped_snapshots[group_id]) for group_id in group_ids)
-        same_family_targets = [
-            group_id
-            for group_id in final_snapshots
-            if _group_family(_majority_label(final_parent_sectors[group_id])) == family
-        ]
-        if member_count >= GROUP_MIN_STOCKS:
-            family_name = _family_group_name(family, market_key)
-            for group_id in group_ids:
-                merge_bucket_into_name(group_id, family_name)
-            continue
-        target_group_id = largest_final_group(same_family_targets)
-        if target_group_id is not None:
-            for group_id in group_ids:
-                merge_bucket_into_existing(group_id, target_group_id)
-            continue
-        final_remaining_group_ids.extend(group_ids)
-
-    if final_remaining_group_ids:
-        remaining_count = sum(len(grouped_snapshots[group_id]) for group_id in final_remaining_group_ids)
-        target_group_id = largest_final_group(list(final_snapshots))
-        if remaining_count >= GROUP_MIN_STOCKS or target_group_id is None:
-            fallback_name = "Diversified Small Groups" if market_key == "india" else "Miscellaneous"
-            for group_id in final_remaining_group_ids:
-                merge_bucket_into_name(group_id, fallback_name)
-        else:
-            for group_id in final_remaining_group_ids:
-                merge_bucket_into_existing(group_id, target_group_id)
-
-    merged_stock_rows = [row for group_rows in final_stock_rows.values() for row in group_rows]
-    return dict(final_snapshots), dict(final_parent_sectors), merged_stock_rows
-
-
-def _benchmark_return_summary(benchmark_snapshots: list[StockSnapshot]) -> dict[str, float]:
+def _benchmark_returns(benchmark_snapshots: list[StockSnapshot]) -> dict[str, float]:
     if not benchmark_snapshots:
         return {"return_1m": 0.0, "return_3m": 0.0, "return_6m": 0.0}
     return {
-        "return_1m": round(_winsorized_mean(snapshot.stock_return_20d for snapshot in benchmark_snapshots), 2),
-        "return_3m": round(_winsorized_mean(snapshot.stock_return_60d for snapshot in benchmark_snapshots), 2),
-        "return_6m": round(_winsorized_mean(snapshot.stock_return_126d for snapshot in benchmark_snapshots), 2),
+        "return_1m": round(_winsorized_mean([s.stock_return_20d for s in benchmark_snapshots]), 2),
+        "return_3m": round(_winsorized_mean([s.stock_return_60d for s in benchmark_snapshots]), 2),
+        "return_6m": round(_winsorized_mean([s.stock_return_126d for s in benchmark_snapshots]), 2),
     }
 
 
 def _group_description(group_name: str, market_key: str) -> str:
     market_label = "Indian" if market_key == "india" else "US"
-    return f"{market_label} listed {group_name.lower()} stocks passing the working liquidity and market-cap filter."
+    return f"{market_label} listed {group_name.lower()} stocks (market cap > Rs {int(GROUP_MIN_MARKET_CAP_CR)} Cr)."
+
+
+def _load_rank_history(lookback_days: int, generated_at: datetime) -> dict[str, int]:
+    """Read on-disk rank snapshot from `lookback_days` trading-days ago. Returns {group_id: rank}."""
+    if not RANK_HISTORY_DIR.exists():
+        return {}
+    files = sorted(RANK_HISTORY_DIR.glob("ranks_*.json"))
+    if not files:
+        return {}
+    target_idx = max(0, len(files) - 1 - lookback_days)
+    target_file = files[target_idx]
+    try:
+        payload = json.loads(target_file.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        logger.warning("Failed to read rank history %s: %s", target_file, exc)
+        return {}
+    return {str(row.get("groupId")): int(row.get("rank", 0)) for row in payload if row.get("groupId")}
+
+
+def _save_rank_history(rank_payload: list[dict], generated_at: datetime) -> None:
+    RANK_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
+    stamp = generated_at.astimezone(timezone.utc).strftime("%Y%m%d")
+    out = RANK_HISTORY_DIR / f"ranks_{stamp}.json"
+    try:
+        out.write_text(json.dumps(rank_payload, separators=(",", ":")), encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Failed to save rank history to %s: %s", out, exc)
 
 
 def _build_group_payload(
@@ -516,133 +182,114 @@ def _build_group_payload(
     benchmark_snapshots: list[StockSnapshot],
     market_key: str,
 ) -> tuple[list[dict[str, object]], list[IndustryGroupStockItem], list[IndustryGroupMasterItem]]:
-    eligible_snapshots = [snapshot for snapshot in snapshots if _snapshot_is_eligible(snapshot, market_key)]
-    raw_counts: Counter[str] = Counter(str(snapshot.sub_sector or "Unclassified") for snapshot in eligible_snapshots)
-    benchmark_returns = _benchmark_return_summary(benchmark_snapshots)
+    eligible = [s for s in snapshots if _snapshot_eligible(s)]
+    benchmark = _benchmark_returns(benchmark_snapshots)
 
-    # Phase 1: initial classification of each eligible snapshot into its raw group.
-    initial_groups: dict[str, list[StockSnapshot]] = defaultdict(list)
-    initial_parents: dict[str, list[str]] = defaultdict(list)
-    initial_raw_industry: dict[str, list[str]] = defaultdict(list)
-    initial_group_name: dict[str, str] = {}
-    for snapshot in eligible_snapshots:
-        raw_industry = str(snapshot.sub_sector or "Unclassified") or "Unclassified"
-        group_name = _friendly_group_name(raw_industry, snapshot.sector, market_key, raw_counts)
-        group_id = _slugify(group_name)
-        initial_groups[group_id].append(snapshot)
-        initial_parents[group_id].append(snapshot.sector or "Unclassified")
-        initial_raw_industry[group_id].append(raw_industry)
-        initial_group_name[group_id] = group_name
+    classifier = IndustryClassifier()
+    classifier.reset_needs_review()
 
-    # Phase 2: merge groups with < MIN_GROUP_STOCKS stocks into the largest group
-    # within the same parent sector (falls back to global largest if needed).
-    MIN_GROUP_STOCKS = 4
-    majority_parent = {gid: _majority_label(parents) for gid, parents in initial_parents.items()}
-    hosts_by_sector: dict[str, list[tuple[str, int]]] = defaultdict(list)
-    for gid, members in initial_groups.items():
-        if len(members) >= MIN_GROUP_STOCKS:
-            hosts_by_sector[majority_parent[gid]].append((gid, len(members)))
+    classify_results = {}
+    for snap in eligible:
+        classify_results[snap.symbol] = classifier.classify(
+            symbol=snap.symbol,
+            company_name=snap.name or "",
+            raw_sector=snap.sector or "",
+            raw_industry=snap.sub_sector or "",
+        )
+    try:
+        review_count = classifier.write_needs_review()
+        if review_count:
+            logger.info("industry_classifier flagged %d stocks for needs_review", review_count)
+    except Exception as exc:
+        logger.warning("Failed to write needs_review.csv: %s", exc)
 
-    merge_map: dict[str, str] = {}
-    global_candidates = sorted(
-        [(gid, len(members)) for gid, members in initial_groups.items() if len(members) >= MIN_GROUP_STOCKS],
-        key=lambda x: x[1],
-        reverse=True,
-    )
+    # Bucket by primary_group_id; unclassified -> parent bucket "__unclassified__".
+    raw_groups: dict[str, list[StockSnapshot]] = defaultdict(list)
+    snap_classification: dict[str, tuple[str, float, str]] = {}
+    for snap in eligible:
+        result = classify_results.get(snap.symbol)
+        gid = result.primary_group_id if result and result.primary_group_id else None
+        if gid is None or gid not in GROUPS_BY_ID:
+            # No primary group: bucket under unclassified parent.
+            bucket = "__parent__unclassified"
+        else:
+            bucket = gid
+        raw_groups[bucket].append(snap)
+        snap_classification[snap.symbol] = (
+            gid or "",
+            result.confidence if result else 0.0,
+            result.source_layer if result else "needs_review",
+        )
 
-    for gid, members in initial_groups.items():
-        if len(members) >= MIN_GROUP_STOCKS:
-            continue
-        
-        # 1. Try to find largest group in same sector
-        sector_candidates = hosts_by_sector.get(majority_parent[gid], [])
-        if sector_candidates:
-            merge_map[gid] = max(sector_candidates, key=lambda item: item[1])[0]
-            continue
-            
-        # 2. Fallback to global largest group
-        if global_candidates:
-            merge_map[gid] = global_candidates[0][0]
-        # 3. If everything is too small (rare), keep it as is
+    # Apply parent-bucket merge for under-5 groups.
+    final_groups: dict[str, list[StockSnapshot]] = defaultdict(list)
+    unstable_origin: dict[str, set[str]] = defaultdict(set)  # final_id -> set of original ids merged in
+    for gid, members in raw_groups.items():
+        if gid in GROUPS_BY_ID and len(members) < GROUP_MIN_STOCKS:
+            parent = GROUPS_BY_ID[gid].parent
+            target = parent_bucket_id(parent)
+            final_groups[target].extend(members)
+            unstable_origin[target].add(gid)
+        else:
+            final_groups[gid].extend(members)
 
-    # Phase 3: apply merges to grouped snapshots + build stock rows with final ids.
     stock_rows: list[IndustryGroupStockItem] = []
-    grouped_snapshots: dict[str, list[StockSnapshot]] = defaultdict(list)
-    grouped_parent_sectors: dict[str, list[str]] = defaultdict(list)
-    for gid, members in initial_groups.items():
-        target_gid = merge_map.get(gid, gid)
-        target_name = initial_group_name.get(target_gid, initial_group_name[gid])
-        parent_entries = initial_parents[gid]
-        raw_entries = initial_raw_industry[gid]
-        grouped_snapshots[target_gid].extend(members)
-        grouped_parent_sectors[target_gid].extend(parent_entries)
-        for snapshot, raw_industry in zip(members, raw_entries):
-            stock_rows.append(
-                IndustryGroupStockItem(
-                    symbol=snapshot.symbol,
-                    company_name=snapshot.name,
-                    exchange=snapshot.exchange,
-                    market_cap_cr=round(snapshot.market_cap_crore, 2),
-                    avg_traded_value_50d_cr=_avg_traded_value_50d_cr(snapshot),
-                    sector=snapshot.sector,
-                    raw_industry=raw_industry,
-                    final_group_id=target_gid,
-                    final_group_name=target_name,
-                    last_price=round(snapshot.last_price, 2),
-                    change_pct=round(snapshot.change_pct, 2),
-                    return_1m=round(snapshot.stock_return_20d, 2),
-                    return_3m=round(snapshot.stock_return_60d, 2),
-                    return_6m=round(snapshot.stock_return_126d, 2),
-                    return_1y=round(snapshot.stock_return_12m, 2),
-                    rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
-                )
-            )
-
-    grouped_snapshots, grouped_parent_sectors, stock_rows = _merge_small_groups(
-        grouped_snapshots,
-        grouped_parent_sectors,
-        stock_rows,
-        market_key,
-    )
-
     group_rows: list[dict[str, object]] = []
     master_rows: list[IndustryGroupMasterItem] = []
-    stock_rows_by_group: dict[str, list[IndustryGroupStockItem]] = defaultdict(list)
-    for stock_row in stock_rows:
-        stock_rows_by_group[stock_row.final_group_id].append(stock_row)
 
-    for group_id, members in grouped_snapshots.items():
-        group_name = stock_rows_by_group[group_id][0].final_group_name
-        parent_sector = _majority_label(grouped_parent_sectors[group_id])
-        return_1m_values = [snapshot.stock_return_20d for snapshot in members]
-        return_3m_values = [snapshot.stock_return_60d for snapshot in members]
-        return_6m_values = [snapshot.stock_return_126d for snapshot in members]
-        return_1m = round(_winsorized_mean(return_1m_values), 2)
-        return_3m = round(_winsorized_mean(return_3m_values), 2)
-        return_6m = round(_winsorized_mean(return_6m_values), 2)
-        median_return_1m = round(float(median(return_1m_values)), 2) if return_1m_values else 0.0
-        median_return_3m = round(float(median(return_3m_values)), 2) if return_3m_values else 0.0
-        median_return_6m = round(float(median(return_6m_values)), 2) if return_6m_values else 0.0
-        relative_return_1m = round(return_1m - benchmark_returns["return_1m"], 2)
-        relative_return_3m = round(return_3m - benchmark_returns["return_3m"], 2)
-        relative_return_6m = round(return_6m - benchmark_returns["return_6m"], 2)
-        median_relative_1m = median_return_1m - benchmark_returns["return_1m"]
-        median_relative_3m = median_return_3m - benchmark_returns["return_3m"]
-        median_relative_6m = median_return_6m - benchmark_returns["return_6m"]
-        blended_relative_1m = round((relative_return_1m * 0.6) + (median_relative_1m * 0.4), 2)
-        blended_relative_3m = round((relative_return_3m * 0.6) + (median_relative_3m * 0.4), 2)
-        blended_relative_6m = round((relative_return_6m * 0.6) + (median_relative_6m * 0.4), 2)
+    for final_gid, members in final_groups.items():
+        if final_gid in GROUPS_BY_ID:
+            group_def = GROUPS_BY_ID[final_gid]
+            group_name = group_def.name
+            parent_sector = PARENT_LABEL.get(group_def.parent, group_def.parent.title())
+            unstable = False
+        elif final_gid.startswith("__parent__"):
+            parent = final_gid.removeprefix("__parent__")
+            group_name = parent_bucket_name(parent)
+            parent_sector = PARENT_LABEL.get(parent, parent.title())
+            unstable = True
+        else:
+            group_name = final_gid
+            parent_sector = "Unclassified"
+            unstable = True
 
-        positive_3m = _safe_pct(sum(1 for snapshot in members if snapshot.stock_return_60d > 0), len(members))
-        positive_6m = _safe_pct(sum(1 for snapshot in members if snapshot.stock_return_126d > 0), len(members))
-        outperform_3m = _safe_pct(sum(1 for snapshot in members if snapshot.stock_return_60d > benchmark_returns["return_3m"]), len(members))
-        outperform_6m = _safe_pct(sum(1 for snapshot in members if snapshot.stock_return_126d > benchmark_returns["return_6m"]), len(members))
+        ret_126 = [s.stock_return_126d for s in members]
+        ret_63 = [s.stock_return_60d for s in members]
+        ret_21 = [s.stock_return_20d for s in members]
+
+        med_126 = _winsorized_median(ret_126)
+        med_63 = _winsorized_median(ret_63)
+        med_21 = _winsorized_median(ret_21)
+
+        score = round(
+            (SCORE_WEIGHT_126D * med_126)
+            + (SCORE_WEIGHT_63D * med_63)
+            + (SCORE_WEIGHT_21D * med_21),
+            2,
+        )
+
+        win_mean_126 = round(_winsorized_mean(ret_126), 2)
+        win_mean_63 = round(_winsorized_mean(ret_63), 2)
+        win_mean_21 = round(_winsorized_mean(ret_21), 2)
+
+        relative_1m = round(win_mean_21 - benchmark["return_1m"], 2)
+        relative_3m = round(win_mean_63 - benchmark["return_3m"], 2)
+        relative_6m = round(win_mean_126 - benchmark["return_6m"], 2)
+
+        positive_3m = _safe_pct(sum(1 for s in members if s.stock_return_60d > 0), len(members))
+        positive_6m = _safe_pct(sum(1 for s in members if s.stock_return_126d > 0), len(members))
+        outperform_3m = _safe_pct(
+            sum(1 for s in members if s.stock_return_60d > benchmark["return_3m"]), len(members)
+        )
+        outperform_6m = _safe_pct(
+            sum(1 for s in members if s.stock_return_126d > benchmark["return_6m"]), len(members)
+        )
         above_50dma = _safe_pct(
-            sum(1 for snapshot in members if (snapshot.sma50 or snapshot.ema50 or 0) > 0 and snapshot.last_price > (snapshot.sma50 or snapshot.ema50 or 0)),
+            sum(1 for s in members if (s.sma50 or s.ema50 or 0) > 0 and s.last_price > (s.sma50 or s.ema50 or 0)),
             len(members),
         )
         above_200dma = _safe_pct(
-            sum(1 for snapshot in members if (snapshot.sma200 or 0) > 0 and snapshot.last_price > (snapshot.sma200 or 0)),
+            sum(1 for s in members if (s.sma200 or 0) > 0 and s.last_price > (s.sma200 or 0)),
             len(members),
         )
         breadth_score = round(_safe_mean([positive_3m, positive_6m, outperform_3m, outperform_6m]), 2)
@@ -650,101 +297,102 @@ def _build_group_payload(
 
         sorted_members = sorted(
             members,
-            key=lambda snapshot: (
-                snapshot.rs_rating if snapshot.rs_eligible else -1,
-                snapshot.stock_return_126d,
-                snapshot.stock_return_60d,
-                snapshot.change_pct,
+            key=lambda s: (
+                s.rs_rating if s.rs_eligible else -1,
+                s.stock_return_126d,
+                s.stock_return_60d,
+                s.change_pct,
             ),
             reverse=True,
         )
         top_constituents = [
             IndustryGroupTopStock(
-                symbol=snapshot.symbol,
-                company_name=snapshot.name,
-                rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
-                return_1m=round(snapshot.stock_return_20d, 2),
-                return_3m=round(snapshot.stock_return_60d, 2),
-                return_6m=round(snapshot.stock_return_126d, 2),
-                relative_return_3m=round(snapshot.stock_return_60d - benchmark_returns["return_3m"], 2),
-                relative_return_6m=round(snapshot.stock_return_126d - benchmark_returns["return_6m"], 2),
+                symbol=s.symbol,
+                company_name=s.name,
+                rs_rating=s.rs_rating if s.rs_eligible else None,
+                return_1m=round(s.stock_return_20d, 2),
+                return_3m=round(s.stock_return_60d, 2),
+                return_6m=round(s.stock_return_126d, 2),
+                relative_return_3m=round(s.stock_return_60d - benchmark["return_3m"], 2),
+                relative_return_6m=round(s.stock_return_126d - benchmark["return_6m"], 2),
             )
-            for snapshot in sorted_members[:5]
+            for s in sorted_members[:5]
         ]
         laggards = sorted(
             members,
-            key=lambda snapshot: (
-                snapshot.rs_rating if snapshot.rs_eligible else -1,
-                snapshot.stock_return_126d,
-                snapshot.stock_return_60d,
+            key=lambda s: (
+                s.rs_rating if s.rs_eligible else -1,
+                s.stock_return_126d,
+                s.stock_return_60d,
             ),
         )
-        concentration_penalty = round(
-            min(
-                12.0,
-                max(0.0, (sorted_members[0].stock_return_126d if sorted_members else 0.0) - median_return_6m) * 0.08
-                + max(0, 5 - len(members)) * 1.75,
-            ),
-            2,
-        )
+
+        for snap in sorted_members:
+            classification = snap_classification.get(snap.symbol, ("", 0.0, ""))
+            stock_rows.append(
+                IndustryGroupStockItem(
+                    symbol=snap.symbol,
+                    company_name=snap.name,
+                    exchange=snap.exchange,
+                    market_cap_cr=round(snap.market_cap_crore, 2),
+                    avg_traded_value_50d_cr=_avg_traded_value_50d_cr(snap),
+                    sector=snap.sector or "Unclassified",
+                    raw_industry=snap.sub_sector or "Unclassified",
+                    final_group_id=final_gid,
+                    final_group_name=group_name,
+                    last_price=round(snap.last_price, 2),
+                    change_pct=round(snap.change_pct, 2),
+                    return_1m=round(snap.stock_return_20d, 2),
+                    return_3m=round(snap.stock_return_60d, 2),
+                    return_6m=round(snap.stock_return_126d, 2),
+                    return_1y=round(snap.stock_return_12m, 2),
+                    rs_rating=snap.rs_rating if snap.rs_eligible else None,
+                    classification_source=classification[2] or None,
+                    classification_confidence=round(classification[1], 3) if classification[1] else None,
+                )
+            )
 
         group_rows.append(
             {
-                "group_id": group_id,
+                "group_id": final_gid,
                 "group_name": group_name,
                 "parent_sector": parent_sector,
                 "description": _group_description(group_name, market_key),
                 "stock_count": len(members),
-                "return_1m": return_1m,
-                "return_3m": return_3m,
-                "return_6m": return_6m,
-                "relative_return_1m": relative_return_1m,
-                "relative_return_3m": relative_return_3m,
-                "relative_return_6m": relative_return_6m,
-                "median_return_1m": median_return_1m,
-                "median_return_3m": median_return_3m,
-                "median_return_6m": median_return_6m,
+                "unstable_flag": unstable,
+                "return_1m": win_mean_21,
+                "return_3m": win_mean_63,
+                "return_6m": win_mean_126,
+                "relative_return_1m": relative_1m,
+                "relative_return_3m": relative_3m,
+                "relative_return_6m": relative_6m,
+                "median_return_1m": round(med_21, 2),
+                "median_return_3m": round(med_63, 2),
+                "median_return_6m": round(med_126, 2),
                 "pct_above_50dma": above_50dma,
                 "pct_above_200dma": above_200dma,
                 "pct_outperform_benchmark_3m": outperform_3m,
                 "pct_outperform_benchmark_6m": outperform_6m,
                 "breadth_score": breadth_score,
                 "trend_health_score": trend_health_score,
-                "blended_relative_1m": blended_relative_1m,
-                "blended_relative_3m": blended_relative_3m,
-                "blended_relative_6m": blended_relative_6m,
-                "leaders": [snapshot.symbol for snapshot in sorted_members[:3]],
-                "laggards": [snapshot.symbol for snapshot in laggards[:3]],
+                "leaders": [s.symbol for s in sorted_members[:3]],
+                "laggards": [s.symbol for s in laggards[:3]],
                 "top_constituents": top_constituents,
-                "symbols": [snapshot.symbol for snapshot in sorted_members],
-                "concentration_penalty": concentration_penalty,
+                "symbols": [s.symbol for s in sorted_members],
+                "score": score,
             }
         )
 
         master_rows.append(
             IndustryGroupMasterItem(
-                group_id=group_id,
+                group_id=final_gid,
                 group_name=group_name,
                 parent_sector=parent_sector,
                 description=_group_description(group_name, market_key),
                 stock_count=len(members),
-                symbols=sorted(snapshot.symbol for snapshot in members),
+                symbols=sorted(s.symbol for s in members),
             )
         )
-
-    percentile_1m = _rank_metric_percentiles(group_rows, "blended_relative_1m")
-    percentile_3m = _rank_metric_percentiles(group_rows, "blended_relative_3m")
-    percentile_6m = _rank_metric_percentiles(group_rows, "blended_relative_6m")
-    for row in group_rows:
-        group_id = str(row["group_id"])
-        pre_penalty_score = (
-            (percentile_6m.get(group_id, 0.0) * 0.40)
-            + (percentile_3m.get(group_id, 0.0) * 0.25)
-            + (percentile_1m.get(group_id, 0.0) * 0.20)
-            + (float(row["breadth_score"]) * 0.10)
-            + (float(row["trend_health_score"]) * 0.05)
-        )
-        row["score"] = round(max(0.0, min(100.0, pre_penalty_score - float(row["concentration_penalty"]))), 2)
 
     group_rows.sort(key=lambda row: (-float(row["score"]), str(row["group_name"])))
     stock_rows.sort(key=lambda row: (row.final_group_name, row.symbol))
@@ -763,30 +411,56 @@ def build_industry_groups_response(
     market_key: str,
 ) -> IndustryGroupsResponse:
     group_rows, stock_rows, master_rows = _build_group_payload(snapshots, benchmark_snapshots, market_key)
-    previous_rows, _, _ = _build_group_payload(previous_snapshots, previous_benchmark_snapshots, market_key)
-    previous_rank_map = {
-        str(row["group_id"]): {"rank": index + 1, "score": float(row.get("score", 0.0) or 0.0)}
-        for index, row in enumerate(sorted(previous_rows, key=lambda row: (-float(row["score"]), str(row["group_name"]))))
-    }
+
+    # rank_change_1w from in-memory previous snapshots (legacy path) — fallback only
+    legacy_prev_map: dict[str, dict[str, float]] = {}
+    if previous_snapshots:
+        prev_rows, _, _ = _build_group_payload(
+            previous_snapshots, previous_benchmark_snapshots, market_key
+        )
+        legacy_prev_map = {
+            str(r["group_id"]): {"rank": idx + 1, "score": float(r["score"])}
+            for idx, r in enumerate(prev_rows)
+        }
+
+    history_1w = _load_rank_history(RANK_HISTORY_LOOKBACKS["1w"], generated_at)
+    history_1m = _load_rank_history(RANK_HISTORY_LOOKBACKS["1m"], generated_at)
+    history_3m = _load_rank_history(RANK_HISTORY_LOOKBACKS["3m"], generated_at)
 
     ranked_groups: list[IndustryGroupRankItem] = []
+    rank_payload_for_history: list[dict] = []
     for index, row in enumerate(group_rows, start=1):
-        previous = previous_rank_map.get(str(row["group_id"]))
-        rank_change_1w = (int(previous["rank"]) - index) if previous is not None else None
-        score_change_1w = round(float(row["score"]) - float(previous["score"]), 2) if previous is not None else None
+        gid = str(row["group_id"])
+
+        rank_change_1w: int | None = None
+        if gid in history_1w:
+            rank_change_1w = history_1w[gid] - index
+        elif gid in legacy_prev_map:
+            rank_change_1w = int(legacy_prev_map[gid]["rank"]) - index
+
+        rank_change_1m = (history_1m[gid] - index) if gid in history_1m else None
+        rank_change_3m = (history_3m[gid] - index) if gid in history_3m else None
+
+        score_change_1w: float | None = None
+        if gid in legacy_prev_map:
+            score_change_1w = round(float(row["score"]) - legacy_prev_map[gid]["score"], 2)
+
         ranked_groups.append(
             IndustryGroupRankItem(
                 rank=index,
                 rank_label=f"#{index}",
                 rank_change_1w=rank_change_1w,
+                rank_change_1m=rank_change_1m,
+                rank_change_3m=rank_change_3m,
                 score_change_1w=score_change_1w,
                 strength_bucket=_resolve_strength_bucket(index),
                 trend_label=_resolve_trend_label(score_change_1w, rank_change_1w),
-                group_id=str(row["group_id"]),
+                group_id=gid,
                 group_name=str(row["group_name"]),
                 parent_sector=str(row["parent_sector"]),
                 description=str(row["description"]),
                 stock_count=int(row["stock_count"]),
+                unstable_flag=bool(row.get("unstable_flag", False)),
                 score=float(row["score"]),
                 return_1m=float(row["return_1m"]),
                 return_3m=float(row["return_3m"]),
@@ -809,6 +483,11 @@ def build_industry_groups_response(
                 symbols=list(row["symbols"]),
             )
         )
+        rank_payload_for_history.append(
+            {"groupId": gid, "rank": index, "score": float(row["score"])}
+        )
+
+    _save_rank_history(rank_payload_for_history, generated_at)
 
     as_of_date = generated_at.astimezone(timezone.utc).date().isoformat()
     return IndustryGroupsResponse(
@@ -858,6 +537,8 @@ def write_industry_group_files(
                 "rank": item.rank,
                 "rankLabel": item.rank_label,
                 "rankChange1w": item.rank_change_1w,
+                "rankChange1m": item.rank_change_1m,
+                "rankChange3m": item.rank_change_3m,
                 "scoreChange1w": item.score_change_1w,
                 "strengthBucket": item.strength_bucket,
                 "trendLabel": item.trend_label,
@@ -866,11 +547,18 @@ def write_industry_group_files(
                 "parentSector": item.parent_sector,
                 "description": item.description,
                 "score": item.score,
+                "stockCount": item.stock_count,
+                "unstableFlag": item.unstable_flag,
                 "returns": {"1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
                 "relativeReturns": {
                     "1m": item.relative_return_1m,
                     "3m": item.relative_return_3m,
                     "6m": item.relative_return_6m,
+                },
+                "medianReturns": {
+                    "1m": item.median_return_1m,
+                    "3m": item.median_return_3m,
+                    "6m": item.median_return_6m,
                 },
                 "breadth": {
                     "above50dma": item.pct_above_50dma,
@@ -878,7 +566,6 @@ def write_industry_group_files(
                     "positive3m": item.breadth_score,
                     "positive6m": item.pct_outperform_benchmark_6m,
                 },
-                "stockCount": item.stock_count,
                 "leaders": item.leaders,
                 "laggards": item.laggards,
                 "symbols": item.symbols,
@@ -892,6 +579,7 @@ def write_industry_group_files(
             "groupId": item.group_id,
             "groupName": item.group_name,
             "score": item.score,
+            "unstableFlag": item.unstable_flag,
             "return1m": item.return_1m,
             "return3m": item.return_3m,
             "return6m": item.return_6m,
@@ -902,11 +590,13 @@ def write_industry_group_files(
             "above200dma": item.pct_above_200dma,
             "breadthScore": item.breadth_score,
             "leaders": item.leaders,
-            "topConstituents": [top_stock.model_dump(mode="json") for top_stock in item.top_constituents],
+            "topConstituents": [t.model_dump(mode="json") for t in item.top_constituents],
             "strengthBucket": item.strength_bucket,
             "trendLabel": item.trend_label,
             "scoreChange1w": item.score_change_1w,
             "rankChange1w": item.rank_change_1w,
+            "rankChange1m": item.rank_change_1m,
+            "rankChange3m": item.rank_change_3m,
         }
         for item in response.groups
     ]
@@ -928,6 +618,8 @@ def write_industry_group_files(
             "return6m": item.return_6m,
             "return1y": item.return_1y,
             "rsRating": item.rs_rating,
+            "classificationSource": item.classification_source,
+            "classificationConfidence": item.classification_confidence,
         }
         for item in response.stocks
     ]

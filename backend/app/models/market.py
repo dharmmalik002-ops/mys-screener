@@ -1030,12 +1030,16 @@ class IndustryGroupStockItem(BaseModel):
     return_6m: float
     return_1y: float
     rs_rating: int | None = None
+    classification_source: str | None = None
+    classification_confidence: float | None = None
 
 
 class IndustryGroupRankItem(BaseModel):
     rank: int
     rank_label: str
     rank_change_1w: int | None = None
+    rank_change_1m: int | None = None
+    rank_change_3m: int | None = None
     score_change_1w: float | None = None
     strength_bucket: str
     trend_label: str
@@ -1044,6 +1048,7 @@ class IndustryGroupRankItem(BaseModel):
     parent_sector: str
     description: str
     stock_count: int
+    unstable_flag: bool = False
     score: float
     return_1m: float
     return_3m: float

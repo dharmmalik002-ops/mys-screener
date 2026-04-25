@@ -1,0 +1,151 @@
+raw_sector,raw_industry,alias_group_id
+Financial Services,Private Sector Bank,private_banks
+Financial Services,Public Sector Bank,psu_banks
+Financial Services,Other Bank,small_finance_banks
+Financial Services,Non Banking Financial Company (NBFC),diversified_nbfcs
+Financial Services,Microfinance Institutions,microfinance
+Financial Services,Housing Finance Company,housing_finance
+Financial Services,Asset Management Company,amc_exchanges_depositories
+Financial Services,Exchange and Data Platform,amc_exchanges_depositories
+Financial Services,Depositories Clearing Houses and Other Intermediaries,amc_exchanges_depositories
+Financial Services,Stockbroking & Allied,broking_wealth
+Financial Services,Ratings,credit_rating_market_infra
+Financial Services,Life Insurance,life_insurance
+Financial Services,General Insurance,general_insurance
+Financial Services,Insurance Distributors,general_insurance
+Financial Services,Financial Products Distributor,broking_wealth
+Financial Services,Financial Technology (Fintech),fintech_payments
+Financial Services,Financial Institution,diversified_nbfcs
+Financial Services,Other Financial Services,diversified_nbfcs
+Financial Services,Investment Company,diversified_nbfcs
+Financial Services,Holding Company,diversified_nbfcs
+Information Technology,Computers - Software & Consulting,tier1_it_services
+Information Technology,Software Products,software_saas
+Information Technology,IT Enabled Services,midcap_it_services
+Information Technology,Business Process Outsourcing (BPO)/ Knowledge Process Outsourcing (KPO),midcap_it_services
+Information Technology,Computers Hardware & Equipments,it_hardware_distribution
+Consumer Durables,Consumer Electronics,consumer_electronics_appliances
+Consumer Durables,Household Appliances,consumer_electronics_appliances
+Consumer Durables,Plastic Products - Consumer,consumer_electronics_appliances
+Telecommunication,Telecom - Cellular & Fixed line services,telecom_services
+Telecommunication,Telecom - Infrastructure,telecom_equipment_fiber
+Telecommunication,Telecom - Equipment & Accessories,telecom_equipment_fiber
+Capital Goods,Heavy Electrical Equipment,electrical_equipment
+Capital Goods,Other Electrical Equipment,electrical_equipment
+Capital Goods,Cables - Electricals,wires_cables
+Capital Goods,Industrial Products,bearings_industrial_components
+Capital Goods,Other Industrial Products,bearings_industrial_components
+Capital Goods,Compressors Pumps & Diesel Engines,pumps_valves_flow_control
+Capital Goods,Aerospace & Defense,aerospace_defense
+Construction,Civil Construction,construction_infra_epc
+Construction,Residential Commercial Projects,real_estate_developers
+Realty,Residential Commercial Projects,real_estate_developers
+Realty,Realty,real_estate_developers
+Construction Materials,Cement & Cement Products,cement
+Construction Materials,Glass - Consumer,building_products
+Construction Materials,Glass - Industrial,building_products
+Construction Materials,Granites & Marbles,building_products
+Construction Materials,Sanitary Ware,building_products
+Construction Materials,Ceramics,ceramics_tiles
+Construction Materials,Other Construction Materials,building_products
+Services,Logistics Solution Provider,logistics_surface
+Services,Tour Travel Related Services,travel_ota
+Services,Diversified Commercial Services,broking_wealth
+Services,Consumer Services,education_test_prep
+Services,Other Consumer Services,education_test_prep
+Services,Education,education_test_prep
+Services,E-Learning,education_test_prep
+Services,Airline,aviation_airports
+Services,Airport & Airport services,aviation_airports
+Services,Amusement Parks/ Other Recreation,multiplex_exhibition
+Services,Restaurants,qsr_restaurants
+Services,Speciality Retail,retail_fashion_lifestyle
+Services,E-Retail/ E-Commerce,retail_electronics_omni
+Services,Internet & Catalogue Retail,retail_electronics_omni
+Services,Diversified Retail,retail_grocery_value
+Services,Port & Port services,ports_port_services
+Services,Shipping,shipping
+Services,Ship Building & Allied Services,shipping
+Services,Dredging,ports_port_services
+Services,Oil Storage & Transportation,upstream_oil_gas
+Services,Offshore Support Solution Drilling,upstream_oil_gas
+Automobile and Auto Components,2/3 Wheelers,two_wheelers
+Automobile and Auto Components,Passenger Cars & Utility Vehicles,passenger_vehicles
+Automobile and Auto Components,Commercial Vehicles,commercial_vehicles
+Automobile and Auto Components,Tractors,tractors_agri_machinery
+Automobile and Auto Components,Construction Vehicles,commercial_vehicles
+Automobile and Auto Components,Auto Components & Equipments,auto_anc_powertrain
+Automobile and Auto Components,Tyres & Rubber Products,auto_anc_tyres
+Automobile and Auto Components,Rubber,auto_anc_tyres
+Healthcare,Pharmaceuticals,pharma_formulations
+Healthcare,Biotechnology,biotech_vaccines
+Healthcare,Hospital,hospitals
+Healthcare,Healthcare Service Provider,hospitals
+Healthcare,Healthcare Research Analytics & Technology,diagnostics
+Healthcare,Medical Equipment & Supplies,medical_devices
+Chemicals,Pesticides & Agrochemicals,agrochemicals
+Chemicals,Dyes And Pigments,dyes_pigments_fluorochem
+Chemicals,Industrial Gases,industrial_gases
+Chemicals,Explosives,specialty_chemicals
+Chemicals,Carbon Black,commodity_chemicals
+Chemicals,Petrochemicals,commodity_chemicals
+Oil Gas & Consumable Fuels,Refineries & Marketing,oil_marketing_refining
+Oil Gas & Consumable Fuels,Lubricants,oil_marketing_refining
+Oil Gas & Consumable Fuels,Oil Exploration & Production,upstream_oil_gas
+Oil Gas & Consumable Fuels,Oil Equipment & Services,upstream_oil_gas
+Oil Gas & Consumable Fuels,LPG/CNG/PNG/LNG Supplier,city_gas_distribution
+Oil Gas & Consumable Fuels,Gas Transmission/Marketing,city_gas_distribution
+Oil Gas & Consumable Fuels,Coal,mining_minerals
+Power,Integrated Power Utilities,power_utilities_distribution
+Power,Power - Transmission,power_utilities_distribution
+Power,Power Distribution,power_utilities_distribution
+Power,Power Trading,power_utilities_distribution
+Power,Power Generation,power_generation
+Utilities,Water Supply & Management,power_utilities_distribution
+Utilities,Waste Management,power_utilities_distribution
+Metals & Mining,Iron & Steel,steel
+Metals & Mining,Iron & Steel Products,steel
+Metals & Mining,Aluminium,non_ferrous_metals
+Metals & Mining,Copper,non_ferrous_metals
+Metals & Mining,Zinc,non_ferrous_metals
+Metals & Mining,Aluminium Copper & Zinc Products,non_ferrous_metals
+Metals & Mining,Diversified Metals,non_ferrous_metals
+Metals & Mining,Ferro & Silica Manganese,stainless_special_alloys
+Metals & Mining,Trading - Metals,mining_minerals
+Metals & Mining,Trading - Minerals,mining_minerals
+Metals & Mining,Coal,mining_minerals
+Fast Moving Consumer Goods,Packaged Foods,packaged_foods_bev
+Fast Moving Consumer Goods,Other Food Products,packaged_foods_bev
+Fast Moving Consumer Goods,Meat Products including Poultry,poultry_aqua_animal_health
+Fast Moving Consumer Goods,Seafood,poultry_aqua_animal_health
+Fast Moving Consumer Goods,Tea & Coffee,tea_coffee_plantations
+Fast Moving Consumer Goods,Edible Oil,packaged_foods_bev
+Fast Moving Consumer Goods,Dairy Products,dairy_protein_foods
+Fast Moving Consumer Goods,Animal Feed,poultry_aqua_animal_health
+Fast Moving Consumer Goods,Other Agricultural Products,packaged_foods_bev
+Fast Moving Consumer Goods,Sugar,sugar
+Fast Moving Consumer Goods,Breweries & Distilleries,alcoholic_beverages
+Fast Moving Consumer Goods,Cigarettes & Tobacco Products,tobacco
+Fast Moving Consumer Goods,Personal Care,fmcg_staples
+Fast Moving Consumer Goods,Household Products,fmcg_staples
+Textiles,Garments & Apparels,apparel_textiles
+Textiles,Other Textile Products,apparel_textiles
+Textiles,Leather And Leather Products,apparel_textiles
+Consumer Durables,Furniture Home Furnishing,home_furnishings
+Consumer Durables,Houseware,home_furnishings
+Consumer Durables,Footwear,footwear_luggage
+Consumer Durables,Gems Jewellery And Watches,retail_fashion_lifestyle
+Consumer Durables,Paints,specialty_chemicals
+Consumer Durables,Plywood Boards/ Laminates,building_products
+Media Entertainment & Publication,Media & Entertainment,media_broadcasting
+Media Entertainment & Publication,TV Broadcasting & Software Production,media_broadcasting
+Media Entertainment & Publication,Advertising & Media Agencies,media_broadcasting
+Media Entertainment & Publication,Digital Entertainment,media_broadcasting
+Media Entertainment & Publication,Film Production Distribution & Exhibition,multiplex_exhibition
+Media Entertainment & Publication,Print Media,media_broadcasting
+Media Entertainment & Publication,Printing & Publication,media_broadcasting
+Forest Materials,Paper & Paper Products,packaged_foods_bev
+Capital Goods,Plastic Products - Industrial,pipes_plastic_bm
+Capital Goods,Trading & Distributors,bearings_industrial_components
+Services,Hotel & Resorts,hotels
+Consumer Services,Hotel & Resorts,hotels
