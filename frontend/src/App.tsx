@@ -75,6 +75,7 @@ const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPane
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
 const ScanDashboard = lazy(() => import("./components/ScanDashboard").then((module) => ({ default: module.ScanDashboard })));
+const ScanFooter = lazy(() => import("./components/ScanFooter").then((module) => ({ default: module.ScanFooter })));
 const ScannerHeader = lazy(() => import("./components/ScannerHeader").then((module) => ({ default: module.ScannerHeader })));
 const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module) => ({ default: module.QueryBuilder })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
@@ -4432,6 +4433,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         onSectorSortModeChange={setSectorGroupSortMode}
                         onExport={handleExportScanResults}
                       />
+                      {visibleScanItems.length > 0 ? (
+                        <ScanFooter
+                          loading={scanLoading}
+                          items={visibleScanItems}
+                          generatedAt={scanResults?.generated_at ?? null}
+                        />
+                      ) : null}
                       </>
                     )}
                   </div>
