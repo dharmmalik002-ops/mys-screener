@@ -339,6 +339,180 @@ function Heatmap({ closed }: { closed: ClosedTrade[] }) {
   );
 }
 
+// ─── Win / Loss Donut ──────────────────────────────────────────────────────────
+function WinLossDonut({ winners, losers }: { winners: number; losers: number }) {
+  const total = winners + losers;
+  const wins = total > 0 ? winners / total : 0;
+  const winRate = total > 0 ? Math.round(wins * 100) : 0;
+  // SVG donut math
+  const r = 56;
+  const c = 2 * Math.PI * r;
+  const winLen = c * wins;
+  const lossLen = c * (1 - wins);
+  return (
+    <div className="tj-donut-wrap">
+      <svg viewBox="0 0 160 160" className="tj-donut-svg" aria-hidden>
+        <defs>
+          <linearGradient id="tjWinG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="var(--positive)" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="var(--positive)" stopOpacity="0.65" />
+          </linearGradient>
+          <linearGradient id="tjLossG" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="var(--negative)" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="var(--negative)" stopOpacity="0.6" />
+          </linearGradient>
+        </defs>
+        <circle cx="80" cy="80" r={r} fill="none" stroke="var(--line)" strokeWidth="14" />
+        {total > 0 ? (
+          <>
+            <circle
+              cx="80" cy="80" r={r} fill="none"
+              stroke="url(#tjLossG)" strokeWidth="14"
+              strokeDasharray={`${lossLen} ${c}`}
+              strokeDashoffset={-winLen}
+              transform="rotate(-90 80 80)"
+              strokeLinecap="butt"
+            />
+            <circle
+              cx="80" cy="80" r={r} fill="none"
+              stroke="url(#tjWinG)" strokeWidth="14"
+              strokeDasharray={`${winLen} ${c}`}
+              transform="rotate(-90 80 80)"
+              strokeLinecap="butt"
+            />
+          </>
+        ) : null}
+      </svg>
+      <div className="tj-donut-center">
+        <span className="tj-donut-value">{winRate}%</span>
+        <span className="tj-donut-label">Win rate</span>
+      </div>
+      <div className="tj-donut-legend">
+        <span className="tj-donut-leg pos"><span className="tj-donut-swatch pos" />Winners <strong>{winners}</strong></span>
+        <span className="tj-donut-leg neg"><span className="tj-donut-swatch neg" />Losers <strong>{losers}</strong></span>
+      </div>
+    </div>
+  );
+}
+
+// ─── Setup Breakdown ───────────────────────────────────────────────────────────
+function SetupBreakdown({ closed }: { closed: ClosedTrade[] }) {
+  if (!closed.length) return <div className="tj-placeholder">No closed trades yet</div>;
+  const map: Record<string, { count: number; pnl: number; wins: number }> = {};
+  closed.forEach(t => {
+    const key = (t.setupType || "Unspecified").trim() || "Unspecified";
+    const row = map[key] || { count: 0, pnl: 0, wins: 0 };
+    row.count += 1; row.pnl += t.pnl; if (t.pnl > 0) row.wins += 1;
+    map[key] = row;
+  });
+  const rows = Object.entries(map)
+    .map(([setup, v]) => ({ setup, ...v, winRate: v.count > 0 ? (v.wins / v.count) * 100 : 0 }))
+    .sort((a, b) => b.pnl - a.pnl);
+  const maxAbs = Math.max(1, ...rows.map(r => Math.abs(r.pnl)));
+  return (
+    <div className="tj-setup-list">
+      {rows.map(r => {
+        const pct = (Math.abs(r.pnl) / maxAbs) * 100;
+        const positive = r.pnl >= 0;
+        return (
+          <div key={r.setup} className="tj-setup-row">
+            <div className="tj-setup-meta">
+              <span className="tj-setup-name">{r.setup}</span>
+              <span className="tj-setup-stats">{r.count} trades · WR {r.winRate.toFixed(0)}%</span>
+            </div>
+            <div className="tj-setup-bar-track">
+              <div
+                className={`tj-setup-bar ${positive ? "pos" : "neg"}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className={`tj-setup-pnl ${positive ? "pos" : "neg"}`}>{fmtPnl(r.pnl)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Hold-time Histogram ──────────────────────────────────────────────────────
+function HoldTimeHistogram({ closed }: { closed: ClosedTrade[] }) {
+  if (!closed.length) return <div className="tj-placeholder">No closed trades yet</div>;
+  const buckets: Array<{ label: string; max: number; wins: number; losses: number; pnl: number }> = [
+    { label: "1d", max: 1, wins: 0, losses: 0, pnl: 0 },
+    { label: "2-5d", max: 5, wins: 0, losses: 0, pnl: 0 },
+    { label: "6-15d", max: 15, wins: 0, losses: 0, pnl: 0 },
+    { label: "16-30d", max: 30, wins: 0, losses: 0, pnl: 0 },
+    { label: "1-3m", max: 90, wins: 0, losses: 0, pnl: 0 },
+    { label: ">3m", max: Infinity, wins: 0, losses: 0, pnl: 0 },
+  ];
+  closed.forEach(t => {
+    const a = getSafeTime(t.entryDate);
+    const b = getSafeTime(t.exitDate);
+    if (!a || !b) return;
+    const days = Math.max(0, Math.round((b - a) / (1000 * 60 * 60 * 24)));
+    const idx = buckets.findIndex(bk => days <= bk.max);
+    const bucket = idx >= 0 ? buckets[idx] : buckets[buckets.length - 1];
+    bucket.pnl += t.pnl;
+    if (t.pnl >= 0) bucket.wins += 1; else bucket.losses += 1;
+  });
+  const maxCount = Math.max(1, ...buckets.map(b => b.wins + b.losses));
+  return (
+    <div className="tj-hold-grid">
+      {buckets.map(b => {
+        const total = b.wins + b.losses;
+        const heightPct = (total / maxCount) * 100;
+        const winShare = total > 0 ? (b.wins / total) * 100 : 0;
+        return (
+          <div key={b.label} className="tj-hold-col" title={`${b.label}: ${total} trades · ${fmtPnl(b.pnl)}`}>
+            <div className="tj-hold-bar-area">
+              <div className="tj-hold-bar" style={{ height: `${heightPct}%` }}>
+                <span className="tj-hold-bar-pos" style={{ height: `${winShare}%` }} />
+              </div>
+              {total > 0 ? <span className="tj-hold-count">{total}</span> : null}
+            </div>
+            <span className="tj-hold-label">{b.label}</span>
+            <span className={`tj-hold-pnl ${b.pnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(b.pnl)}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── Day-of-week winrate ──────────────────────────────────────────────────────
+function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
+  if (!closed.length) return <div className="tj-placeholder">No closed trades yet</div>;
+  const labels = ["Mon", "Tue", "Wed", "Thu", "Fri"];
+  const stats = labels.map(label => ({ label, wins: 0, losses: 0, pnl: 0 }));
+  closed.forEach(t => {
+    const ts = getSafeTime(t.exitDate);
+    if (!ts) return;
+    const dow = new Date(ts).getDay();
+    if (dow < 1 || dow > 5) return;
+    const slot = stats[dow - 1];
+    slot.pnl += t.pnl;
+    if (t.pnl >= 0) slot.wins += 1; else slot.losses += 1;
+  });
+  return (
+    <div className="tj-dow-grid">
+      {stats.map(s => {
+        const total = s.wins + s.losses;
+        const wr = total > 0 ? (s.wins / total) * 100 : 0;
+        return (
+          <div key={s.label} className="tj-dow-cell">
+            <span className="tj-dow-label">{s.label}</span>
+            <div className="tj-dow-ring" style={{ background: `conic-gradient(var(--positive) ${wr}%, var(--negative) ${wr}% ${total > 0 ? 100 : 0}%, var(--line) ${total > 0 ? 100 : 0}% 100%)` }}>
+              <span className="tj-dow-ring-inner">{total > 0 ? `${wr.toFixed(0)}%` : "—"}</span>
+            </div>
+            <span className={`tj-dow-pnl ${s.pnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(s.pnl)}</span>
+            <span className="tj-dow-meta">{total} trades</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
@@ -1155,6 +1329,26 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 </div>
               </div>
             </div>
+          </div>
+
+          <div className="tj-chart-row tj-chart-trio">
+            <div className="tj-card">
+              <div className="tj-card-hdr">Win / Loss Mix</div>
+              <WinLossDonut winners={winners.length} losers={losers.length} />
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Hold Time vs Outcome</div>
+              <HoldTimeHistogram closed={closedTrades} />
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Day of Week</div>
+              <DayOfWeekStats closed={closedTrades} />
+            </div>
+          </div>
+
+          <div className="tj-card" style={{ marginBottom: 16 }}>
+            <div className="tj-card-hdr">Setup Performance</div>
+            <SetupBreakdown closed={closedTrades} />
           </div>
 
           <div className="tj-card" style={{ marginBottom: 16 }}>

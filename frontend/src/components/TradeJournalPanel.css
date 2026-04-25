@@ -1033,3 +1033,653 @@
   background: #f1f5f9;
   border-color: #cbd5e1;
 }
+
+/* ============================================================================
+   MODERN JOURNAL — visual refresh (Stage 2026-04-25)
+   Scoped to .tj-root so the rest of the app is untouched.
+   These rules sit at the end of the file so they win on tied specificity.
+   ============================================================================ */
+
+.tj-root {
+  --tj-accent: var(--accent, #6366f1);
+  --tj-accent-strong: #4f46e5;
+  --tj-pos: var(--positive, #10b981);
+  --tj-neg: var(--negative, #ef4444);
+  --tj-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px rgba(15, 23, 42, 0.05);
+  background:
+    radial-gradient(900px 360px at -10% -20%, color-mix(in srgb, var(--tj-accent) 7%, transparent), transparent),
+    var(--bg);
+}
+
+.tj-root::before,
+.tj-root::after {
+  display: none;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.tj-root .tj-header {
+  padding: 14px 24px 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+}
+
+.tj-root .tj-brand-icon {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
+  color: #fff;
+  font-size: 1.05rem;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--tj-accent) 32%, transparent);
+}
+
+.tj-root .tj-brand-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.tj-root .tj-brand-sub {
+  font-size: 0.74rem;
+  color: var(--text-muted);
+  margin-top: 1px;
+}
+
+.tj-root .tj-equity-input {
+  padding: 8px 12px;
+  border-radius: 9px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 0.84rem;
+  background: var(--surface);
+  border-color: var(--line);
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.tj-root .tj-equity-input:focus {
+  border-color: color-mix(in srgb, var(--tj-accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tj-accent) 14%, transparent);
+}
+
+.tj-root .tj-cloud-badge {
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  background: color-mix(in srgb, var(--tj-accent) 12%, transparent);
+  color: var(--tj-accent);
+  border: 1px solid color-mix(in srgb, var(--tj-accent) 28%, transparent);
+}
+
+.tj-root .tj-btn {
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* ── Tab bar ────────────────────────────────────────────────────────────── */
+.tj-root .tj-tabbar {
+  padding: 8px 22px;
+  background: transparent;
+  border-bottom: 1px solid var(--line);
+  gap: 4px;
+}
+
+.tj-root .tj-tabbtn {
+  padding: 7px 13px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9px;
+  border-color: transparent;
+}
+
+.tj-root .tj-tabbtn:hover {
+  background: color-mix(in srgb, var(--tj-accent) 8%, transparent);
+  border-color: transparent;
+  color: var(--tj-accent);
+}
+
+.tj-root .tj-tabbtn.active {
+  background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 6px 16px color-mix(in srgb, var(--tj-accent) 26%, transparent);
+}
+
+.tj-root .tj-tabbtn.active .tj-tabbadge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+
+.tj-root .tj-tabbadge {
+  position: static;
+  margin-left: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tj-accent) 18%, transparent);
+  color: var(--tj-accent);
+  font-size: 0.66rem;
+  font-weight: 700;
+}
+
+/* ── Page + cards ───────────────────────────────────────────────────────── */
+.tj-root .tj-page {
+  padding: 18px 24px 28px;
+}
+
+.tj-root .tj-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: var(--tj-card-shadow);
+}
+
+.tj-root .tj-card-hdr {
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
+/* ── KPI cards ──────────────────────────────────────────────────────────── */
+.tj-root .tj-kpis {
+  gap: 12px;
+}
+
+.tj-root .tj-kpi {
+  position: relative;
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--tj-card-shadow);
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.tj-root .tj-kpi::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tj-accent) 6%, transparent),
+    transparent 60%
+  );
+  opacity: 0.7;
+}
+
+.tj-root .tj-kpi.pos {
+  border-left: 3px solid var(--tj-pos);
+}
+.tj-root .tj-kpi.pos::before {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tj-pos) 9%, transparent), transparent 60%);
+}
+
+.tj-root .tj-kpi.neg {
+  border-left: 3px solid var(--tj-neg);
+}
+.tj-root .tj-kpi.neg::before {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tj-neg) 9%, transparent), transparent 60%);
+}
+
+.tj-root .tj-kpi:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--tj-accent) 30%, transparent);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.08), 0 1px 0 rgba(15, 23, 42, 0.04);
+}
+
+.tj-root .tj-kpi-label {
+  font-size: 0.66rem;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.tj-root .tj-kpi-value {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin-top: 4px;
+}
+
+.tj-root .tj-kpi-sub {
+  font-size: 0.7rem;
+  margin-top: 6px;
+  color: var(--text-muted);
+}
+
+/* ── Toggle group + dashboard control bar ──────────────────────────────── */
+.tj-root .tj-toggle-group {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 0;
+}
+
+.tj-root .tj-toggle-btn {
+  font-size: 0.74rem;
+  font-weight: 600;
+  padding: 5px 11px;
+  border-radius: 7px;
+}
+
+.tj-root .tj-toggle-btn.active {
+  background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
+  color: #fff;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--tj-accent) 28%, transparent);
+}
+
+/* ── Three-up new analytics row ────────────────────────────────────────── */
+.tj-root .tj-chart-trio {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.9fr) 1.4fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+@media (max-width: 1100px) {
+  .tj-root .tj-chart-trio {
+    grid-template-columns: 1fr 1fr;
+  }
+  .tj-root .tj-chart-trio > .tj-card:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 720px) {
+  .tj-root .tj-chart-trio {
+    grid-template-columns: 1fr;
+  }
+  .tj-root .tj-chart-trio > .tj-card:last-child {
+    grid-column: auto;
+  }
+}
+
+/* ── Win / Loss donut ───────────────────────────────────────────────────── */
+.tj-donut-wrap {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 6px 0 4px;
+}
+
+.tj-donut-svg {
+  width: 160px;
+  height: 160px;
+  display: block;
+}
+
+.tj-donut-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  text-align: center;
+  line-height: 1;
+}
+
+.tj-donut-value {
+  font-size: 1.6rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.tj-donut-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.tj-donut-legend {
+  display: flex;
+  gap: 14px;
+  margin-top: 12px;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.tj-donut-leg {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tj-donut-leg strong {
+  color: var(--text);
+  font-weight: 700;
+  margin-left: 2px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tj-donut-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+.tj-donut-swatch.pos { background: var(--tj-pos); }
+.tj-donut-swatch.neg { background: var(--tj-neg); }
+.tj-donut-leg.pos { color: var(--tj-pos); }
+.tj-donut-leg.neg { color: var(--tj-neg); }
+
+/* ── Hold-time histogram ────────────────────────────────────────────────── */
+.tj-hold-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  align-items: end;
+  height: 200px;
+}
+
+.tj-hold-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  height: 100%;
+}
+
+.tj-hold-bar-area {
+  position: relative;
+  width: 28px;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.tj-hold-bar {
+  position: relative;
+  width: 100%;
+  border-radius: 6px 6px 2px 2px;
+  background: color-mix(in srgb, var(--tj-neg) 60%, transparent);
+  overflow: hidden;
+  transition: filter 140ms ease;
+  min-height: 2px;
+}
+
+.tj-hold-bar:hover {
+  filter: brightness(1.08);
+}
+
+.tj-hold-bar-pos {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(180deg, var(--tj-pos), color-mix(in srgb, var(--tj-pos) 70%, transparent));
+}
+
+.tj-hold-count {
+  position: absolute;
+  top: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.66rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.tj-hold-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.tj-hold-pnl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tj-hold-pnl.pos { color: var(--tj-pos); }
+.tj-hold-pnl.neg { color: var(--tj-neg); }
+
+/* ── Day-of-week ring chart ─────────────────────────────────────────────── */
+.tj-dow-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+}
+
+.tj-dow-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 4px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+  border: 1px solid var(--line);
+}
+
+.tj-dow-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tj-dow-ring {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.tj-dow-ring::after {
+  content: "";
+  position: absolute;
+  inset: 6px;
+  border-radius: 50%;
+  background: var(--surface);
+}
+
+.tj-dow-ring-inner {
+  position: relative;
+  z-index: 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.tj-dow-pnl {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.tj-dow-pnl.pos { color: var(--tj-pos); }
+.tj-dow-pnl.neg { color: var(--tj-neg); }
+
+.tj-dow-meta {
+  font-size: 0.62rem;
+  color: var(--text-muted);
+}
+
+/* ── Setup performance breakdown ────────────────────────────────────────── */
+.tj-setup-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tj-setup-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.9fr) 2fr 90px;
+  align-items: center;
+  gap: 12px;
+}
+
+.tj-setup-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tj-setup-name {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tj-setup-stats {
+  font-size: 0.68rem;
+  color: var(--text-muted);
+}
+
+.tj-setup-bar-track {
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  overflow: hidden;
+  border: 1px solid var(--line);
+}
+
+.tj-setup-bar {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 240ms ease;
+}
+
+.tj-setup-bar.pos {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tj-pos) 70%, transparent), var(--tj-pos));
+}
+
+.tj-setup-bar.neg {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--tj-neg) 70%, transparent), var(--tj-neg));
+}
+
+.tj-setup-pnl {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+.tj-setup-pnl.pos { color: var(--tj-pos); }
+.tj-setup-pnl.neg { color: var(--tj-neg); }
+
+/* ── Existing dist + WL grids: tighter ──────────────────────────────────── */
+.tj-root .tj-dist-bar {
+  border-radius: 4px 4px 1px 1px;
+}
+
+.tj-root .tj-dist-bar.pos {
+  background: linear-gradient(180deg, var(--tj-pos), color-mix(in srgb, var(--tj-pos) 65%, transparent));
+  opacity: 0.95;
+}
+
+.tj-root .tj-dist-bar.neg {
+  background: linear-gradient(180deg, var(--tj-neg), color-mix(in srgb, var(--tj-neg) 65%, transparent));
+  opacity: 0.95;
+}
+
+.tj-root .tj-wl-row {
+  border-bottom-color: var(--line);
+}
+
+.tj-root .tj-wl-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--tj-accent) 14%, transparent);
+  color: var(--tj-accent);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+/* ── Symbol scoreboard cards ────────────────────────────────────────────── */
+.tj-root .tj-board-row {
+  border-radius: 11px;
+  padding: 10px 12px;
+  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.tj-root .tj-board-row:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--tj-accent) 50%, transparent);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.08);
+}
+
+.tj-root .tj-board-sym {
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+/* ── Heatmap polish ─────────────────────────────────────────────────────── */
+.tj-root .tj-hm-tile {
+  width: 13px;
+  height: 13px;
+  border-radius: 3px;
+}
+
+.tj-root .tj-hm-grid,
+.tj-root .tj-hm-dow-row {
+  grid-template-columns: repeat(7, 13px);
+}
+
+.tj-root .tj-hm-tile.win-1 {
+  background: color-mix(in srgb, var(--tj-pos) 45%, transparent);
+}
+
+.tj-root .tj-hm-tile.win-3 {
+  background: linear-gradient(135deg, var(--tj-pos), color-mix(in srgb, var(--tj-pos) 75%, var(--tj-accent)));
+}
+
+.tj-root .tj-hm-tile.loss-1 {
+  background: color-mix(in srgb, var(--tj-neg) 45%, transparent);
+}
+
+.tj-root .tj-hm-tile.loss-3 {
+  background: linear-gradient(135deg, var(--tj-neg), #b91c1c);
+}
+
+/* ── Light theme: lighten gradients on KPIs and donut ───────────────────── */
+:root[data-theme="light"] .tj-root .tj-kpi::before {
+  opacity: 0.5;
+}
+
+:root[data-theme="light"] .tj-root .tj-dow-cell {
+  background: #f8fafc;
+}
+
+:root[data-theme="light"] .tj-root .tj-setup-bar-track {
+  background: #f1f5f9;
+}
+
+:root[data-theme="light"] .tj-root .tj-board-row:hover {
+  background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--tj-accent) 5%, #fff));
+}
+
