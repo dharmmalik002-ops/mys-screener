@@ -1,4 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import type { IChartApi, ISeriesApi, UTCTimestamp } from "lightweight-charts";
 
 import {
@@ -1084,7 +1085,7 @@ export function HomePanel({
         {renderMoverPanel("Most Active", "Highest relative volume in the current universe", "active", topVolumeSpikes)}
       </section>
 
-      {moverModal ? (
+      {moverModal && typeof document !== "undefined" ? createPortal(
         <div className="mover-modal-backdrop" onClick={() => setMoverModal(null)}>
           <div className="mover-modal" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="chart-modal-close" onClick={() => setMoverModal(null)}>
@@ -1099,7 +1100,8 @@ export function HomePanel({
               {moverModalItems.map((item) => renderMoverRow(item, moverModal, `modal-${moverModal}`))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       ) : null}
 
       {gridTarget ? (

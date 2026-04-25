@@ -2552,7 +2552,7 @@ button {
 .mover-modal-backdrop {
   position: fixed;
   inset: 0;
-  z-index: 10002;
+  z-index: 10050;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2564,7 +2564,7 @@ button {
 .mover-modal {
   position: relative;
   width: min(760px, 96vw);
-  max-height: min(82dvh, 860px);
+  max-height: min(86dvh, 860px);
   overflow: auto;
   display: flex;
   flex-direction: column;
@@ -2576,6 +2576,19 @@ button {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 94%, transparent), color-mix(in srgb, var(--surface) 96%, transparent)),
     radial-gradient(circle at top left, rgba(76, 154, 255, 0.12), transparent 34%);
   box-shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 640px) {
+  .mover-modal-backdrop {
+    padding: 14px;
+  }
+
+  .mover-modal {
+    width: min(100%, 760px);
+    max-height: min(88dvh, 860px);
+    padding: 20px 14px 14px;
+    border-radius: 22px;
+  }
 }
 
 .mover-modal-head {
