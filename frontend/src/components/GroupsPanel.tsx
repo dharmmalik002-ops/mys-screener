@@ -231,20 +231,8 @@ export function GroupsPanel({
     };
   }, [data, focusRequest]);
 
-  /* KPIs */
   const allGroups = data?.groups ?? [];
   const totalGroups = data?.total_groups ?? allGroups.length;
-  const topPerformer = useMemo(() => {
-    return [...allGroups].sort((a, b) => b.return_1m - a.return_1m)[0] ?? null;
-  }, [allGroups]);
-  const topLoser = useMemo(() => {
-    return [...allGroups].sort((a, b) => a.return_1m - b.return_1m)[0] ?? null;
-  }, [allGroups]);
-  const avgChange = useMemo(() => {
-    if (!allGroups.length) return 0;
-    return allGroups.reduce((sum, g) => sum + g.return_1m, 0) / allGroups.length;
-  }, [allGroups]);
-  const advancingGroups = useMemo(() => allGroups.filter((g) => g.return_1m >= 0).length, [allGroups]);
 
   const pageSubtitle = data
     ? `${data.total_groups} ranked groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
@@ -261,40 +249,6 @@ export function GroupsPanel({
   return (
     <Panel title="Industry Groups" subtitle={pageSubtitle}>
       <div className="gp-root">
-        {/* ===== KPI BAR ===== */}
-        <div className="gp-kpis">
-          <div className="gp-kpi">
-            <div className="gp-kpi-label">Total Groups</div>
-            <div className="gp-kpi-value">{totalGroups}</div>
-          </div>
-          <div className="gp-kpi">
-            <div className="gp-kpi-label">Advancing (1M)</div>
-            <div className="gp-kpi-value gp-pos">{advancingGroups}</div>
-          </div>
-          <div className="gp-kpi">
-            <div className="gp-kpi-label">Avg 1M Change</div>
-            <div className={`gp-kpi-value ${metricClass(avgChange)}`}>{formatReturn(avgChange)}</div>
-          </div>
-          <div className="gp-kpi">
-            <div className="gp-kpi-label">Top Performer</div>
-            <div className="gp-kpi-value gp-kpi-pair">
-              <span>{topPerformer?.group_name ?? "—"}</span>
-              {topPerformer ? (
-                <span className={`gp-kpi-sub ${metricClass(topPerformer.return_1m)}`}>{formatReturn(topPerformer.return_1m)}</span>
-              ) : null}
-            </div>
-          </div>
-          <div className="gp-kpi">
-            <div className="gp-kpi-label">Bottom Performer</div>
-            <div className="gp-kpi-value gp-kpi-pair">
-              <span>{topLoser?.group_name ?? "—"}</span>
-              {topLoser ? (
-                <span className={`gp-kpi-sub ${metricClass(topLoser.return_1m)}`}>{formatReturn(topLoser.return_1m)}</span>
-              ) : null}
-            </div>
-          </div>
-        </div>
-
         {/* ===== TOOLBAR ===== */}
         <div className="gp-toolbar">
           <div className="gp-toolbar-left">

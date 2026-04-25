@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import {
   getChart,
@@ -312,18 +313,6 @@ export function HomePanel({
     [groups],
   );
 
-  // Select 4 snapshot cards (prefer indices, skip commodities)
-  const snapshotCards = useMemo(() => {
-    const indices = macroItems.filter((m) => m.symbol.startsWith("^"));
-    const picked = indices.slice(0, 4);
-    while (picked.length < 4 && macroItems.length > picked.length) {
-      const next = macroItems.find((m) => !picked.includes(m));
-      if (!next) break;
-      picked.push(next);
-    }
-    return picked;
-  }, [macroItems]);
-
   const [viewAllMode, setViewAllMode] = useState<ViewAllMode | null>(null);
 
   const allGainers = useMemo(() => {
@@ -358,7 +347,7 @@ export function HomePanel({
     return out;
   }
 
-  const niftyPoint = snapshotCards.find((c) => c.symbol === "^NSEI");
+  const niftyPoint = macroItems.find((c) => c.symbol === "^NSEI");
   const niftyPrice = niftyPoint?.price ?? null;
   const niftyChange = niftyPoint?.change_pct ?? null;
 
@@ -431,52 +420,6 @@ export function HomePanel({
           </div>
         </div>
 
-        {/* Market Snapshot */}
-        <div className="homepro-snapshot">
-          <div className="homepro-section-head">
-            <div className="homepro-section-title">Market Snapshot</div>
-            <button className="homepro-link" onClick={() => onOpenGroups()}>View All Indices</button>
-          </div>
-
-          <div className="homepro-snapshot-grid">
-            {snapshotCards.length === 0 ? (
-              Array.from({ length: 4 }).map((_, i) => (
-                <div key={`snap-skel-${i}`} className="homepro-mini" aria-hidden>
-                  <div className="homepro-skel" style={{ width: 70, height: 10 }} />
-                  <div className="homepro-skel" style={{ width: 90, height: 18 }} />
-                  <div className="homepro-skel" style={{ width: 50, height: 10 }} />
-                </div>
-              ))
-            ) : snapshotCards.map((card, i) => {
-              const up = (card.change_pct ?? 0) >= 0;
-              const color = up ? "#10b981" : "#ef4444";
-              const fill = up ? "rgba(16, 185, 129, 0.15)" : "rgba(239, 68, 68, 0.15)";
-              return (
-                <button
-                  key={`snap-${card.symbol}`}
-                  type="button"
-                  className="homepro-mini"
-                  onClick={() => onPickSymbol(card.symbol)}
-                  style={{ textAlign: "left", cursor: "pointer" }}
-                >
-                  <div className="homepro-mini-label">{card.label}</div>
-                  <div className="homepro-mini-price">
-                    {card.price !== null ? card.price.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}
-                  </div>
-                  <div className="homepro-mini-chg" style={{ color }}>
-                    {card.change_pct !== null ? formatReturn(card.change_pct) : ""}
-                  </div>
-                  <MiniSparkline
-                    values={genMockSparkline(i + 11, card.change_pct ?? 0)}
-                    color={color}
-                    fill={fill}
-                  />
-                </button>
-              );
-            })}
-          </div>
-
-        </div>
       </div>
 
       {/* ============ ROW 2 — Groups + Breadth + Nifty ============ */}
@@ -754,7 +697,7 @@ function ViewAllModal({
     };
   }, [onClose]);
 
-  return (
+  return createPortal(
     <div className="homepro-modal-overlay" onClick={onClose}>
       <div className="homepro-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="homepro-modal-head">
@@ -815,7 +758,8 @@ function ViewAllModal({
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
