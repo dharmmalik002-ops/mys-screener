@@ -111,11 +111,13 @@
 /* ----- Performance stats ----- */
 .sf-stats {
   display: grid;
+  /* Always 2-cols inside the narrow Performance card so text doesn't clip.
+     The card itself spans full width on tablet/mobile. */
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px 16px;
+  gap: 8px 10px;
 }
 
-@media (min-width: 720px) {
+@media (min-width: 1280px) {
   .sf-card-perf .sf-stats {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -124,8 +126,8 @@
 .sf-stat {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: 9px;
+  padding: 9px 10px;
   border: 1px solid var(--sf-border);
   border-radius: 10px;
   background: var(--sf-bg);
@@ -136,9 +138,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   flex: 0 0 auto;
 }
 
@@ -146,18 +148,22 @@
   display: grid;
   gap: 1px;
   min-width: 0;
+  flex: 1 1 auto;
 }
 
 .sf-stat-text small {
-  font-size: 0.66rem;
-  letter-spacing: 0.06em;
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--sf-text-soft);
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sf-stat-text strong {
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--sf-text);
   white-space: nowrap;

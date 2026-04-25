@@ -27,12 +27,20 @@ type ScanDashboardProps = {
 type CapBucket = { key: string; label: string; min: number; max: number; color: string };
 
 const CAP_BUCKETS: CapBucket[] = [
-  { key: "mega", label: "Mega (> ₹2L Cr)", min: 200000, max: Infinity, color: "#6366f1" },
-  { key: "large", label: "Large (₹50K–2L Cr)", min: 50000, max: 200000, color: "#8b5cf6" },
-  { key: "mid", label: "Mid (₹10K–50K Cr)", min: 10000, max: 50000, color: "#ec4899" },
-  { key: "small", label: "Small (₹1K–10K Cr)", min: 1000, max: 10000, color: "#f59e0b" },
-  { key: "micro", label: "Micro (< ₹1K Cr)", min: 0, max: 1000, color: "#10b981" },
+  { key: "mega", label: "Mega", min: 200000, max: Infinity, color: "#6366f1" },
+  { key: "large", label: "Large", min: 50000, max: 200000, color: "#8b5cf6" },
+  { key: "mid", label: "Mid", min: 10000, max: 50000, color: "#ec4899" },
+  { key: "small", label: "Small", min: 1000, max: 10000, color: "#f59e0b" },
+  { key: "micro", label: "Micro", min: 0, max: 1000, color: "#10b981" },
 ];
+
+const CAP_RANGE_LABEL: Record<string, string> = {
+  mega: "> ₹2L Cr",
+  large: "₹50K – 2L Cr",
+  mid: "₹10K – 50K Cr",
+  small: "₹1K – 10K Cr",
+  micro: "< ₹1K Cr",
+};
 
 /* ---------- Sub-components ---------- */
 
@@ -260,7 +268,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
           ) : (
             <div className="sd-dist-body">
               <div className="sd-donut-wrap">
-                <ResponsiveContainer width="100%" height={170}>
+                <ResponsiveContainer width="100%" height={140}>
                   <PieChart>
                     <Pie
                       data={capData}
@@ -268,8 +276,8 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                       nameKey="label"
                       cx="50%"
                       cy="50%"
-                      innerRadius={48}
-                      outerRadius={75}
+                      innerRadius={38}
+                      outerRadius={62}
                       paddingAngle={1.5}
                       isAnimationActive={false}
                     >
@@ -302,9 +310,13 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                   return (
                     <li key={b.key}>
                       <span className="sd-legend-dot" style={{ background: b.color }} />
-                      <span className="sd-legend-label">{b.label}</span>
+                      <span className="sd-legend-label">
+                        <strong>{b.label}</strong>
+                        <small>{CAP_RANGE_LABEL[b.key]}</small>
+                      </span>
                       <span className="sd-legend-value">
-                        {b.value} <small>· {pct.toFixed(0)}%</small>
+                        {b.value}
+                        <small>{pct.toFixed(0)}%</small>
                       </span>
                     </li>
                   );

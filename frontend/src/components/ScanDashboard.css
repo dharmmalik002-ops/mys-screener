@@ -41,7 +41,7 @@
 }
 
 .sd-row-dist {
-  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 }
 
 @media (max-width: 920px) {
@@ -203,12 +203,12 @@
 /* ----- Distribution body (donut + legend) ----- */
 .sd-dist-body {
   display: grid;
-  grid-template-columns: minmax(160px, 200px) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 760px) {
   .sd-dist-body {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -217,7 +217,7 @@
 .sd-donut-wrap {
   position: relative;
   width: 100%;
-  height: 170px;
+  height: 140px;
 }
 
 .sd-donut-center {
@@ -250,42 +250,67 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 0.78rem;
+  gap: 5px;
 }
 
 .sd-legend li {
   display: grid;
-  grid-template-columns: 12px minmax(0, 1fr) auto;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   color: var(--sd-text);
+  padding: 2px 0;
 }
 
 .sd-legend-dot {
-  width: 10px;
-  height: 10px;
+  width: 9px;
+  height: 9px;
   border-radius: 3px;
   display: inline-block;
+  align-self: center;
 }
 
 .sd-legend-label {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.sd-legend-label strong {
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--sd-text);
+  line-height: 1.15;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-weight: 500;
+}
+
+.sd-legend-label small {
+  font-size: 0.62rem;
+  color: var(--sd-text-soft);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sd-legend-value {
-  font-weight: 600;
+  font-weight: 700;
   color: var(--sd-text);
   text-align: right;
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.15;
 }
 
 .sd-legend-value small {
   color: var(--sd-text-soft);
   font-weight: 500;
-  margin-left: 2px;
+  font-size: 0.6rem;
 }
 
 /* ----- Bar chart wrap ----- */
