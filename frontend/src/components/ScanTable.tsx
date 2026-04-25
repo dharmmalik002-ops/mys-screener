@@ -1,13 +1,51 @@
-import { Suspense, lazy, type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Suspense,
+  lazy,
+  type CSSProperties,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import {
+  Table2,
+  LayoutGrid,
+  LineChart as LineChartIcon,
+  ArrowUpDown,
+  Columns3,
+  Download,
+  Eye,
+  EyeOff,
+  Plus,
+  ChevronDown,
+} from "lucide-react";
 
-import { getChartGridSeries, type ChartBar, type ChartGridTimeframe, type MarketKey, type ScanDescriptor, type ScanMatch, type ScanSectorSummary } from "../lib/api";
+import {
+  getChartGridSeries,
+  type ChartBar,
+  type ChartGridTimeframe,
+  type MarketKey,
+  type ScanDescriptor,
+  type ScanMatch,
+  type ScanSectorSummary,
+} from "../lib/api";
 import { useMinWidth, useVirtualRows } from "../lib/virtualRows";
-import type { ChartGridChartStyle, ChartGridDisplayCard, ChartGridDisplayMode, ChartGridSortBy, ChartGridStat } from "./ChartGridModal";
+import type {
+  ChartGridChartStyle,
+  ChartGridDisplayCard,
+  ChartGridDisplayMode,
+  ChartGridSortBy,
+  ChartGridStat,
+} from "./ChartGridModal";
 import { Panel } from "./Panel";
 
-const ChartGridModal = lazy(() => import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })));
+import "./ScanTable.css";
+
+const ChartGridModal = lazy(() =>
+  import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })),
+);
 const SCAN_SLOT_GAP = 6;
-const SCAN_ROW_SLOT_HEIGHT = 82;
+const SCAN_ROW_SLOT_HEIGHT = 76;
 const SCAN_HEADER_SLOT_HEIGHT = 64;
 
 type ScanTableEntry =
@@ -26,45 +64,177 @@ type ScanTableEntry =
       item: ScanMatch;
     };
 
+type ViewMode = "table" | "grid" | "chart";
+
+type SortBy =
+  | "change_desc"
+  | "change_asc"
+  | "rs_desc"
+  | "rs_asc"
+  | "rvol_desc"
+  | "price_desc"
+  | "price_asc"
+  | "mcap_desc";
+
+type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "gap";
+
+const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
+  { value: "change_desc", label: "Change % (high → low)" },
+  { value: "change_asc", label: "Change % (low → high)" },
+  { value: "rs_desc", label: "RS Rating (high → low)" },
+  { value: "rs_asc", label: "RS Rating (low → high)" },
+  { value: "rvol_desc", label: "Relative Volume" },
+  { value: "price_desc", label: "Price (high → low)" },
+  { value: "price_asc", label: "Price (low → high)" },
+  { value: "mcap_desc", label: "Market Cap" },
+];
+
+const COLUMN_DEFS: Array<{ key: ColumnKey; label: string }> = [
+  { key: "spark", label: "Sparkline" },
+  { key: "rs", label: "RS Rating" },
+  { key: "rs1m", label: "RS 1M Ago" },
+  { key: "rvol", label: "Rel Volume" },
+  { key: "gap", label: "Gap %" },
+];
+
+/* ---------- Logo helpers (mirrors GroupsPanel) ---------- */
+const LOGO_MAP: Record<string, string> = {
+  RELIANCE: "reliance-industries",
+  TCS: "tata-consultancy-services",
+  HDFCBANK: "hdfc-bank",
+  INFY: "infosys",
+  ICICIBANK: "icici-bank",
+  SBIN: "state-bank-of-india",
+  BHARTIARTL: "bharti-airtel",
+  LICI: "lic-of-india",
+  ITC: "itc",
+  HINDUNILVR: "hindustan-unilever",
+  LT: "larsen-and-toubro",
+  BAJFINANCE: "bajaj-finance",
+  MARUTI: "maruti-suzuki",
+  ASIANPAINT: "asian-paints",
+  AXISBANK: "axis-bank",
+  ADANIENT: "adani-enterprises",
+  SUNPHARMA: "sun-pharma",
+  TITAN: "titan",
+  ULTRACEMCO: "ultratech-cement",
+  WIPRO: "wipro",
+  NTPC: "ntpc",
+  ONGC: "ongc",
+  JSWSTEEL: "jsw-steel",
+  "M&M": "mahindra-and-mahindra",
+  POWERGRID: "power-grid",
+  HCLTECH: "hcl-technologies",
+  KOTAKBANK: "kotak-mahindra-bank",
+  COALINDIA: "coal-india",
+  ADANIPORTS: "adani-ports",
+  TATASTEEL: "tata-steel",
+  GRASIM: "grasim",
+  HINDALCO: "hindalco",
+  TECHM: "tech-mahindra",
+  NESTLEIND: "nestle-india",
+  BAJAJFINSV: "bajaj-finserv",
+  SBILIFE: "sbi-life-insurance",
+  DRREDDY: "dr-reddys-labs",
+  CIPLA: "cipla",
+  INDUSINDBK: "indusind-bank",
+  TATAMOTORS: "tata-motors",
+  BPCL: "bpcl",
+  BRITANNIA: "britannia",
+  EICHERMOT: "eicher-motors",
+  DIVISLAB: "divis-labs",
+  APOLLOHOSP: "apollo-hospitals",
+  UPL: "upl",
+  HEROMOTOCO: "hero-motocorp",
+  "BAJAJ-AUTO": "bajaj-auto",
+  LTIM: "lti-mindtree",
+};
+
+function getLogoUrl(symbol: string): string | null {
+  const id = LOGO_MAP[symbol.replace("^", "").toUpperCase()];
+  return id ? `https://s3-symbol-logo.tradingview.com/${id}.svg` : null;
+}
+
+function initials(symbol: string): string {
+  return symbol.slice(0, 2).toUpperCase();
+}
+
+/* ---------- Inline sparkline (synthesized from change/3M/1Y) ---------- */
+function MiniSpark({ item, color }: { item: ScanMatch; color: string }) {
+  // Synthesize a 7-point trajectory using available return windows so each
+  // ticker has a deterministic shape that reflects its momentum.
+  const r12m = item.stock_return_12m ?? 0;
+  const r3m = item.stock_return_60d ?? r12m / 4;
+  const r1m = item.stock_return_20d ?? r3m / 3;
+  const rDay = Number.isFinite(item.change_pct) ? item.change_pct : 0;
+
+  // Build 7 normalized points (0=baseline 100, then weighted blend of windows).
+  const pts: number[] = [
+    100,
+    100 + r12m * 0.15,
+    100 + r12m * 0.4,
+    100 + r12m * 0.65,
+    100 + r12m * 0.85 + r3m * 0.2,
+    100 + r12m * 0.95 + r3m * 0.6 + r1m * 0.4,
+    100 + r12m + r3m * 0.7 + r1m * 0.9 + rDay * 0.5,
+  ];
+
+  const minV = Math.min(...pts);
+  const maxV = Math.max(...pts);
+  const range = Math.max(0.001, maxV - minV);
+  const W = 80;
+  const H = 26;
+  const path = pts
+    .map((v, i) => {
+      const x = (i / (pts.length - 1)) * W;
+      const y = H - ((v - minV) / range) * H;
+      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="st-spark-svg" aria-hidden>
+      <path d={path} stroke={color} strokeWidth={1.6} fill="none" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+/* ---------- RS rating badge ---------- */
+function RsBadge({ rs }: { rs: number | null | undefined }) {
+  if (rs === null || rs === undefined || !Number.isFinite(rs)) {
+    return <span className="st-rs-badge st-rs-muted">—</span>;
+  }
+  const tone = rs >= 80 ? "hi" : rs >= 60 ? "mid" : "lo";
+  return <span className={`st-rs-badge st-rs-${tone}`}>{Math.round(rs)}</span>;
+}
+
+/* ---------- Existing helpers (kept) ---------- */
 function formatListingDate(value: string | null | undefined) {
-  if (!value) {
-    return null;
-  }
-
+  if (!value) return null;
   const [year, month, day] = value.split("-");
-  if (!year || !month || !day) {
-    return value;
-  }
-
+  if (!year || !month || !day) return value;
   return `${day}-${month}-${year}`;
 }
 
-type ScanTableProps = {
-  market: MarketKey;
-  loading: boolean;
-  sectorSummaryLoading: boolean;
-  scan: ScanDescriptor | null;
-  items: ScanMatch[];
-  sectorSummaries: ScanSectorSummary[];
-  onPickSymbol: (symbol: string) => void;
-  onRequestAddToWatchlist: (symbol: string) => void;
-  selectedSymbol: string | null;
-  sortMode: "change" | "rs";
-  onSortModeChange: (mode: "change" | "rs") => void;
-  arrangementMode: "flat" | "sector";
-  onArrangementModeChange: (mode: "flat" | "sector") => void;
-  sectorSortMode: "1W" | "1M" | "count-desc" | "count-asc";
-  onSectorSortModeChange: (mode: "1W" | "1M" | "count-desc" | "count-asc") => void;
-  onExport: () => void;
-};
-
 function formatPrice(value: number, market: MarketKey) {
   void market;
-  return `₹${value.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `₹${value.toLocaleString("en-IN", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }
 
 function sectorAccentColor(label: string): string {
-  const palette = ["#5dd6a2", "#58a6ff", "#f7b955", "#ff8a65", "#c792ea", "#5eead4", "#f472b6", "#a3e635"];
+  const palette = [
+    "#5dd6a2",
+    "#58a6ff",
+    "#f7b955",
+    "#ff8a65",
+    "#c792ea",
+    "#5eead4",
+    "#f472b6",
+    "#a3e635",
+  ];
   let hash = 0;
   for (const character of label) {
     hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
@@ -72,13 +242,29 @@ function sectorAccentColor(label: string): string {
   return palette[hash % palette.length];
 }
 
-function sortScanItems(items: ScanMatch[], sortMode: "change" | "rs") {
-  return [...items].sort((left, right) => {
-    if (sortMode === "change") {
-      return right.change_pct - left.change_pct;
+function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
+  const sorted = [...items];
+  sorted.sort((left, right) => {
+    switch (sortBy) {
+      case "change_desc":
+        return right.change_pct - left.change_pct;
+      case "change_asc":
+        return left.change_pct - right.change_pct;
+      case "rs_desc":
+        return (right.rs_rating ?? -Infinity) - (left.rs_rating ?? -Infinity);
+      case "rs_asc":
+        return (left.rs_rating ?? Infinity) - (right.rs_rating ?? Infinity);
+      case "rvol_desc":
+        return (right.relative_volume ?? 0) - (left.relative_volume ?? 0);
+      case "price_desc":
+        return right.last_price - left.last_price;
+      case "price_asc":
+        return left.last_price - right.last_price;
+      case "mcap_desc":
+        return (right.market_cap_crore ?? 0) - (left.market_cap_crore ?? 0);
     }
-    return (right.rs_rating ?? Number.NEGATIVE_INFINITY) - (left.rs_rating ?? Number.NEGATIVE_INFINITY);
   });
+  return sorted;
 }
 
 function sectorSortValue(
@@ -101,9 +287,7 @@ function formatSectorLine(
   summary: ScanSectorSummary | undefined,
   sectorSortMode: "1W" | "1M" | "count-desc" | "count-asc",
 ) {
-  if (!summary) {
-    return "";
-  }
+  if (!summary) return "";
   const label =
     sectorSortMode === "1W"
       ? `1W ${summary.sector_return_1w >= 0 ? "+" : ""}${summary.sector_return_1w.toFixed(2)}%`
@@ -116,41 +300,55 @@ function formatSectorLine(
 }
 
 function selectedReturnForGrid(item: ScanMatch, timeframe: ChartGridTimeframe) {
-  if (timeframe === "3M") {
-    return item.stock_return_60d ?? item.stock_return_20d ?? item.change_pct;
-  }
-  if (timeframe === "6M") {
-    return item.stock_return_12m ?? item.stock_return_60d ?? item.change_pct;
-  }
-  if (timeframe === "1Y") {
-    return item.stock_return_12m ?? item.stock_return_60d ?? item.change_pct;
-  }
+  if (timeframe === "3M") return item.stock_return_60d ?? item.stock_return_20d ?? item.change_pct;
+  if (timeframe === "6M") return item.stock_return_12m ?? item.stock_return_60d ?? item.change_pct;
+  if (timeframe === "1Y") return item.stock_return_12m ?? item.stock_return_60d ?? item.change_pct;
   return item.stock_return_12m ?? item.stock_return_60d ?? item.change_pct;
 }
 
 function fallbackSparkline(returnPct: number) {
   const now = Math.floor(Date.now() / 1000);
   const baseline = 100;
-  const current = baseline * (1 + (returnPct / 100));
+  const current = baseline * (1 + returnPct / 100);
   return [
-    { time: now - (63 * 24 * 60 * 60), value: Number(baseline.toFixed(4)) },
+    { time: now - 63 * 24 * 60 * 60, value: Number(baseline.toFixed(4)) },
     { time: now, value: Number(current.toFixed(4)) },
   ];
 }
 
-function scanRowDetail(item: ScanMatch) {
+function scanRowSubtitle(item: ScanMatch) {
   const listingDate = formatListingDate(item.listing_date);
-  const categoryLabel = item.sub_sector && item.sub_sector !== item.sector ? item.sub_sector : item.sector;
+  const categoryLabel =
+    item.sub_sector && item.sub_sector !== item.sector ? item.sub_sector : item.sector;
   const baseLabel =
     item.gap_pct !== null && item.gap_pct !== undefined
-      ? `RS ${item.rs_rating ?? "--"} · Gap ${item.gap_pct.toFixed(2)}%`
-      : `RS ${item.rs_rating ?? "--"} · ${categoryLabel}`;
+      ? `${categoryLabel} · Gap ${item.gap_pct.toFixed(2)}%`
+      : categoryLabel;
   return listingDate ? `${baseLabel} · Listed ${listingDate}` : baseLabel;
 }
 
 function scanEntryHeight(entry: ScanTableEntry) {
   return entry.type === "header" ? SCAN_HEADER_SLOT_HEIGHT : SCAN_ROW_SLOT_HEIGHT;
 }
+
+type ScanTableProps = {
+  market: MarketKey;
+  loading: boolean;
+  sectorSummaryLoading: boolean;
+  scan: ScanDescriptor | null;
+  items: ScanMatch[];
+  sectorSummaries: ScanSectorSummary[];
+  onPickSymbol: (symbol: string) => void;
+  onRequestAddToWatchlist: (symbol: string) => void;
+  selectedSymbol: string | null;
+  sortMode: "change" | "rs";
+  onSortModeChange: (mode: "change" | "rs") => void;
+  arrangementMode: "flat" | "sector";
+  onArrangementModeChange: (mode: "flat" | "sector") => void;
+  sectorSortMode: "1W" | "1M" | "count-desc" | "count-asc";
+  onSectorSortModeChange: (mode: "1W" | "1M" | "count-desc" | "count-asc") => void;
+  onExport: () => void;
+};
 
 export function ScanTable({
   market,
@@ -170,7 +368,12 @@ export function ScanTable({
   onSectorSortModeChange,
   onExport,
 }: ScanTableProps) {
+  /* ----- Refs ----- */
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const sortMenuRef = useRef<HTMLDivElement | null>(null);
+  const colsMenuRef = useRef<HTMLDivElement | null>(null);
+
+  /* ----- Existing grid-modal state (kept) ----- */
   const [gridOpen, setGridOpen] = useState(false);
   const [gridColumns, setGridColumns] = useState(4);
   const [gridRows, setGridRows] = useState(3);
@@ -178,19 +381,55 @@ export function ScanTable({
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
+
+  /* ----- Stage 4 new state ----- */
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
+  const [sortBy, setSortBy] = useState<SortBy>(
+    sortMode === "rs" ? "rs_desc" : "change_desc",
+  );
+  const [sortMenuOpen, setSortMenuOpen] = useState(false);
+  const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(
+    () => new Set<ColumnKey>(["spark", "rs", "rvol"]),
+  );
+
+  /* Keep parent's sortMode in sync with the new sortBy when feasible */
+  useEffect(() => {
+    if (sortBy === "change_desc" || sortBy === "change_asc") onSortModeChange("change");
+    else if (sortBy === "rs_desc" || sortBy === "rs_asc") onSortModeChange("rs");
+  }, [sortBy, onSortModeChange]);
+
+  /* Click-outside for popovers */
+  useEffect(() => {
+    if (!sortMenuOpen && !colsMenuOpen) return;
+    const handler = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (sortMenuRef.current && !sortMenuRef.current.contains(t)) setSortMenuOpen(false);
+      if (colsMenuRef.current && !colsMenuRef.current.contains(t)) setColsMenuOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sortMenuOpen, colsMenuOpen]);
+
+  /* ----- Layout ----- */
   const hasWideTableLayout = useMinWidth(1180);
   const showSortToggle = scan?.id !== "custom-scan";
+
   const summaryBySector = useMemo(
     () => Object.fromEntries(sectorSummaries.map((summary) => [summary.sector, summary])),
     [sectorSummaries],
   );
-  const sortedItems = useMemo(() => (showSortToggle ? sortScanItems(items, sortMode) : items), [items, showSortToggle, sortMode]);
+
+  const sortedItems = useMemo(
+    () => (showSortToggle ? applySort(items, sortBy) : items),
+    [items, showSortToggle, sortBy],
+  );
+
   const sectorGroups = useMemo(() => {
     const grouped = sortedItems.reduce<Record<string, ScanMatch[]>>((accumulator, item) => {
       accumulator[item.sector] = [...(accumulator[item.sector] ?? []), item];
       return accumulator;
     }, {});
-
     return Object.entries(grouped).sort((left, right) => {
       const leftValue = sectorSortValue(summaryBySector[left[0]], left[1], sectorSortMode);
       const rightValue = sectorSortValue(summaryBySector[right[0]], right[1], sectorSortMode);
@@ -209,7 +448,6 @@ export function ScanTable({
         item,
       }));
     }
-
     return sectorGroups.flatMap(([sector, sectorItems], index) => {
       const summary = summaryBySector[sector];
       const accent = sectorAccentColor(sector);
@@ -222,11 +460,14 @@ export function ScanTable({
         count: summary?.current_hits ?? sectorItems.length,
         isFirst: index === 0,
       } satisfies ScanTableEntry;
-      const rows = sectorItems.map((item) => ({
-        key: `row:${item.scan_id}:${item.symbol}`,
-        type: "row",
-        item,
-      }) satisfies ScanTableEntry);
+      const rows = sectorItems.map(
+        (item) =>
+          ({
+            key: `row:${item.scan_id}:${item.symbol}`,
+            type: "row",
+            item,
+          }) satisfies ScanTableEntry,
+      );
       return [header, ...rows];
     });
   }, [arrangementMode, sectorGroups, sortedItems, summaryBySector]);
@@ -244,27 +485,29 @@ export function ScanTable({
       lastAutoScrolledEntryKeyRef.current = null;
       return;
     }
-
-    const selectedEntry = tableEntries.find((entry) => entry.type === "row" && entry.item.symbol === selectedSymbol);
+    const selectedEntry = tableEntries.find(
+      (entry) => entry.type === "row" && entry.item.symbol === selectedSymbol,
+    );
     const selectedEntryKey = selectedEntry?.key ?? null;
-    if (!selectedEntryKey) {
-      return;
-    }
-
-    if (lastAutoScrolledEntryKeyRef.current === selectedEntryKey) {
-      return;
-    }
-
+    if (!selectedEntryKey) return;
+    if (lastAutoScrolledEntryKeyRef.current === selectedEntryKey) return;
     lastAutoScrolledEntryKeyRef.current = selectedEntryKey;
-
     if (shouldVirtualize) {
       scrollToKey(selectedEntryKey);
       return;
     }
-
     const activeRow = rowRefs.current[selectedSymbol];
     activeRow?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [arrangementMode, scrollToKey, sectorSortMode, selectedSymbol, shouldVirtualize, sortMode, sortedItems, tableEntries]);
+  }, [
+    arrangementMode,
+    scrollToKey,
+    sectorSortMode,
+    selectedSymbol,
+    shouldVirtualize,
+    sortBy,
+    sortedItems,
+    tableEntries,
+  ]);
 
   const gridCards = useMemo<ChartGridDisplayCard[]>(() => {
     return sortedItems.map((item) => {
@@ -302,13 +545,24 @@ export function ScanTable({
     const topSector = sortedItems[0]?.sector ?? "--";
     return [
       { label: "Stocks", value: `${sortedItems.length}` },
-      { label: "Advancing", value: `${advancing}`, tone: advancing >= declining ? "positive" : "neutral" },
-      { label: "Declining", value: `${declining}`, tone: declining > advancing ? "negative" : "neutral" },
+      {
+        label: "Advancing",
+        value: `${advancing}`,
+        tone: advancing >= declining ? "positive" : "neutral",
+      },
+      {
+        label: "Declining",
+        value: `${declining}`,
+        tone: declining > advancing ? "negative" : "neutral",
+      },
       { label: "Top Sector", value: topSector },
     ];
   }, [sortedItems]);
 
-  async function loadGridSeries(symbols: string[], timeframe: ChartGridTimeframe): Promise<Record<string, ChartBar[]>> {
+  async function loadGridSeries(
+    symbols: string[],
+    timeframe: ChartGridTimeframe,
+  ): Promise<Record<string, ChartBar[]>> {
     const payload = await getChartGridSeries(symbols, timeframe, market);
     return payload.items.reduce<Record<string, ChartBar[]>>((accumulator, item) => {
       accumulator[item.symbol] = item.bars;
@@ -316,19 +570,50 @@ export function ScanTable({
     }, {});
   }
 
+  /* Reactive grid template based on column visibility */
+  const gridTemplate = useMemo(() => {
+    const cols: string[] = ["minmax(220px, 1.6fr)"]; // Stock + logo
+    cols.push("88px"); // Price
+    cols.push("84px"); // Change %
+    if (visibleCols.has("spark")) cols.push("90px");
+    if (visibleCols.has("rs")) cols.push("64px");
+    if (visibleCols.has("rs1m")) cols.push("64px");
+    if (visibleCols.has("rvol")) cols.push("60px");
+    if (visibleCols.has("gap")) cols.push("64px");
+    cols.push("44px"); // Watch
+    return cols.join(" ");
+  }, [visibleCols]);
+
+  const handleViewMode = (mode: ViewMode) => {
+    setViewMode(mode);
+    if (mode === "grid") {
+      setGridOpen(true);
+    } else if (mode === "chart") {
+      // Ensure first item is selected so chart panel shows something useful
+      const first = sortedItems[0];
+      if (first) onPickSymbol(first.symbol);
+    }
+  };
+
   const renderEntry = (entry: ScanTableEntry, virtualHeight?: number) => {
     if (entry.type === "header") {
       return (
         <div
           key={entry.key}
-          className={entry.isFirst ? "scan-sector-header scan-sector-header-first" : "scan-sector-header"}
-          style={{
-            "--sector-accent": entry.accent,
-            ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
-          } as CSSProperties}
+          className={
+            entry.isFirst ? "scan-sector-header scan-sector-header-first" : "scan-sector-header"
+          }
+          style={
+            {
+              "--sector-accent": entry.accent,
+              ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
+            } as CSSProperties
+          }
         >
           <div>
-            <strong>{entry.sector} ({entry.count})</strong>
+            <strong>
+              {entry.sector} ({entry.count})
+            </strong>
             <small>{formatSectorLine(entry.summary, sectorSortMode)}</small>
           </div>
         </div>
@@ -336,10 +621,15 @@ export function ScanTable({
     }
 
     const { item } = entry;
+    const logoUrl = getLogoUrl(item.symbol);
+    const up = item.change_pct >= 0;
+    const sparkColor = up ? "#10b981" : "#ef4444";
+    const isActive = selectedSymbol === item.symbol;
+
     return (
       <div
         key={entry.key}
-        className={selectedSymbol === item.symbol ? "scan-row active" : "scan-row"}
+        className={`scan-row st-row${isActive ? " active" : ""}`}
         ref={
           shouldVirtualize
             ? undefined
@@ -347,128 +637,310 @@ export function ScanTable({
                 rowRefs.current[item.symbol] = element;
               }
         }
-        style={virtualHeight ? { height: `${virtualHeight}px` } : undefined}
+        style={
+          {
+            "--st-grid": gridTemplate,
+            ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
+          } as CSSProperties
+        }
       >
-        <button type="button" className="scan-row-main" onClick={() => onPickSymbol(item.symbol)}>
-          <span>
+        <button
+          type="button"
+          className="scan-row-main st-row-main"
+          onClick={() => onPickSymbol(item.symbol)}
+        >
+          <span className="st-logo">
+            {logoUrl ? (
+              <img
+                src={logoUrl}
+                alt=""
+                onError={(e) => {
+                  e.currentTarget.style.display = "none";
+                }}
+              />
+            ) : (
+              <span className="st-logo-fallback">{initials(item.symbol)}</span>
+            )}
+          </span>
+          <span className="st-name">
             <strong>{item.symbol}</strong>
-            <small>{scanRowDetail(item)}</small>
+            <small>{scanRowSubtitle(item)}</small>
           </span>
         </button>
-        <span>{formatPrice(item.last_price, market)}</span>
-        <span className={item.change_pct >= 0 ? "positive-text" : "negative-text"}>{item.change_pct.toFixed(2)}%</span>
-        <span>{item.rs_rating ?? "--"}</span>
-        <span>{item.rs_rating_1m_ago ?? "--"}</span>
-        <span>{item.relative_volume.toFixed(2)}x</span>
-        <span>{item.gap_pct !== null && item.gap_pct !== undefined ? `${item.gap_pct.toFixed(2)}%` : "--"}</span>
-        <button type="button" className="tool-pill small" onClick={() => onRequestAddToWatchlist(item.symbol)}>
-          Add
+
+        <span className="st-price">{formatPrice(item.last_price, market)}</span>
+
+        <span className={`st-change ${up ? "positive-text" : "negative-text"}`}>
+          {item.change_pct >= 0 ? "+" : ""}
+          {item.change_pct.toFixed(2)}%
+        </span>
+
+        {visibleCols.has("spark") ? (
+          <span className="st-spark">
+            <MiniSpark item={item} color={sparkColor} />
+          </span>
+        ) : null}
+
+        {visibleCols.has("rs") ? (
+          <span className="st-cell-center">
+            <RsBadge rs={item.rs_rating} />
+          </span>
+        ) : null}
+
+        {visibleCols.has("rs1m") ? (
+          <span className="st-cell-center">
+            <RsBadge rs={item.rs_rating_1m_ago} />
+          </span>
+        ) : null}
+
+        {visibleCols.has("rvol") ? (
+          <span className="st-cell-center st-rvol">
+            {item.relative_volume.toFixed(2)}×
+          </span>
+        ) : null}
+
+        {visibleCols.has("gap") ? (
+          <span className="st-cell-center">
+            {item.gap_pct !== null && item.gap_pct !== undefined
+              ? `${item.gap_pct.toFixed(2)}%`
+              : "—"}
+          </span>
+        ) : null}
+
+        <button
+          type="button"
+          className="st-watch-btn"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRequestAddToWatchlist(item.symbol);
+          }}
+          title={`Add ${item.symbol} to watchlist`}
+        >
+          <Plus size={14} strokeWidth={2.4} />
         </button>
       </div>
     );
   };
+
+  const headTemplate: CSSProperties = { "--st-grid": gridTemplate } as CSSProperties;
+
+  /* ----- Suppress legacy showSortToggle UI; new dropdown owns sort ----- */
+  void sortMode;
+  void onSortModeChange;
 
   return (
     <Panel
       title={scan?.name ?? "Loading scan"}
       subtitle={
         scan
-          ? `${scan.hit_count} matches across the filtered universe${sectorSummaryLoading ? " · Updating sector history…" : ""} · Use Up/Down arrows to move between charts`
+          ? `${scan.hit_count} matches across the filtered universe${
+              sectorSummaryLoading ? " · Updating sector history…" : ""
+            }`
           : "Fetching results"
       }
-      actions={(
-        <div className="scan-sort-toggle">
-          {showSortToggle ? (
-            <>
-              <button
-                type="button"
-                className={sortMode === "change" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSortModeChange("change")}
-              >
-                Change %
-              </button>
-              <button
-                type="button"
-                className={sortMode === "rs" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSortModeChange("rs")}
-              >
-                RS
-              </button>
-            </>
-          ) : null}
-          <button
-            type="button"
-            className={arrangementMode === "flat" ? "tool-pill active" : "tool-pill"}
-            onClick={() => onArrangementModeChange("flat")}
-          >
-            Flat
-          </button>
-          <button
-            type="button"
-            className={arrangementMode === "sector" ? "tool-pill active" : "tool-pill"}
-            onClick={() => onArrangementModeChange("sector")}
-          >
-            By Sector
-          </button>
+      actions={
+        <div className="st-actions">
+          {/* View tabs */}
+          <div className="st-view-tabs" role="tablist" aria-label="Result view mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "table"}
+              className={`st-view-tab${viewMode === "table" ? " is-active" : ""}`}
+              onClick={() => handleViewMode("table")}
+              title="Table view"
+            >
+              <Table2 size={13} strokeWidth={2.2} />
+              <span>Table</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "grid"}
+              className={`st-view-tab${viewMode === "grid" ? " is-active" : ""}`}
+              onClick={() => handleViewMode("grid")}
+              disabled={items.length === 0}
+              title="Grid view"
+            >
+              <LayoutGrid size={13} strokeWidth={2.2} />
+              <span>Grid</span>
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={viewMode === "chart"}
+              className={`st-view-tab${viewMode === "chart" ? " is-active" : ""}`}
+              onClick={() => handleViewMode("chart")}
+              disabled={items.length === 0}
+              title="Open first stock chart"
+            >
+              <LineChartIcon size={13} strokeWidth={2.2} />
+              <span>Chart</span>
+            </button>
+          </div>
+
+          {/* Sort By dropdown */}
+          <div className="st-pop-wrap" ref={sortMenuRef}>
+            <button
+              type="button"
+              className="st-btn"
+              onClick={() => {
+                setSortMenuOpen((o) => !o);
+                setColsMenuOpen(false);
+              }}
+              title="Sort by"
+            >
+              <ArrowUpDown size={13} strokeWidth={2.2} />
+              <span>Sort By</span>
+              <ChevronDown size={12} />
+            </button>
+            {sortMenuOpen ? (
+              <div className="st-pop">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`st-pop-item${sortBy === opt.value ? " is-active" : ""}`}
+                    onClick={() => {
+                      setSortBy(opt.value);
+                      setSortMenuOpen(false);
+                    }}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Columns dropdown */}
+          <div className="st-pop-wrap" ref={colsMenuRef}>
+            <button
+              type="button"
+              className="st-btn"
+              onClick={() => {
+                setColsMenuOpen((o) => !o);
+                setSortMenuOpen(false);
+              }}
+              title="Choose columns"
+            >
+              <Columns3 size={13} strokeWidth={2.2} />
+              <span>Columns</span>
+              <ChevronDown size={12} />
+            </button>
+            {colsMenuOpen ? (
+              <div className="st-pop">
+                {COLUMN_DEFS.map((c) => {
+                  const on = visibleCols.has(c.key);
+                  return (
+                    <button
+                      key={c.key}
+                      type="button"
+                      className="st-pop-item st-pop-toggle"
+                      onClick={() =>
+                        setVisibleCols((current) => {
+                          const next = new Set(current);
+                          if (next.has(c.key)) next.delete(c.key);
+                          else next.add(c.key);
+                          return next;
+                        })
+                      }
+                    >
+                      {on ? <Eye size={12} /> : <EyeOff size={12} />}
+                      <span>{c.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            ) : null}
+          </div>
+
+          {/* Layout (sector / flat) */}
+          <div className="st-seg">
+            <button
+              type="button"
+              className={`st-seg-btn${arrangementMode === "flat" ? " is-active" : ""}`}
+              onClick={() => onArrangementModeChange("flat")}
+              title="Flat list"
+            >
+              Flat
+            </button>
+            <button
+              type="button"
+              className={`st-seg-btn${arrangementMode === "sector" ? " is-active" : ""}`}
+              onClick={() => onArrangementModeChange("sector")}
+              title="Group by sector"
+            >
+              By Sector
+            </button>
+          </div>
+
           {arrangementMode === "sector" ? (
-            <>
-              <button
-                type="button"
-                className={sectorSortMode === "1W" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSectorSortModeChange("1W")}
-              >
-                Best 1W
-              </button>
-              <button
-                type="button"
-                className={sectorSortMode === "1M" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSectorSortModeChange("1M")}
-              >
-                Best 1M
-              </button>
-              <button
-                type="button"
-                className={sectorSortMode === "count-desc" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSectorSortModeChange("count-desc")}
-              >
-                Most Stocks
-              </button>
-              <button
-                type="button"
-                className={sectorSortMode === "count-asc" ? "tool-pill active" : "tool-pill"}
-                onClick={() => onSectorSortModeChange("count-asc")}
-              >
-                Fewest Stocks
-              </button>
-            </>
+            <select
+              className="st-select"
+              value={sectorSortMode}
+              onChange={(e) =>
+                onSectorSortModeChange(
+                  e.target.value as "1W" | "1M" | "count-desc" | "count-asc",
+                )
+              }
+              aria-label="Sector ordering"
+            >
+              <option value="1W">Sectors: Best 1W</option>
+              <option value="1M">Sectors: Best 1M</option>
+              <option value="count-desc">Sectors: Most stocks</option>
+              <option value="count-asc">Sectors: Fewest stocks</option>
+            </select>
           ) : null}
-          <button type="button" className="tool-pill" onClick={onExport} disabled={items.length === 0}>
-            Export TXT
-          </button>
-          <button type="button" className="tool-pill" onClick={() => setGridOpen(true)} disabled={items.length === 0}>
-            Open Grid
+
+          {/* Export */}
+          <button
+            type="button"
+            className="st-btn"
+            onClick={onExport}
+            disabled={items.length === 0}
+          >
+            <Download size={13} strokeWidth={2.2} />
+            <span>Export</span>
           </button>
         </div>
-      )}
+      }
     >
-      <div className="scan-table">
-        <div className="scan-table-head">
+      <div className="scan-table st-card">
+        <div className="scan-table-head st-head" style={headTemplate}>
           <span>Stock</span>
-          <span>Price</span>
-          <span>Change</span>
-          <span>RS Rating</span>
-          <span>RS 1M Ago</span>
-          <span>RVOL</span>
-          <span>Gap</span>
-          <span>Watch</span>
+          <span className="st-num">Price</span>
+          <span className="st-num">Change</span>
+          {visibleCols.has("spark") ? <span className="st-num">Trend</span> : null}
+          {visibleCols.has("rs") ? <span className="st-num">RS</span> : null}
+          {visibleCols.has("rs1m") ? <span className="st-num">RS 1M</span> : null}
+          {visibleCols.has("rvol") ? <span className="st-num">RVOL</span> : null}
+          {visibleCols.has("gap") ? <span className="st-num">Gap</span> : null}
+          <span></span>
         </div>
-        <div ref={shouldVirtualize ? containerRef : undefined} className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}>
+        <div
+          ref={shouldVirtualize ? containerRef : undefined}
+          className={
+            shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"
+          }
+        >
           {items.length === 0 ? (
-            <div className="empty-state">{loading ? "Fetching results for this screener..." : "No symbols match this scan at the current filter."}</div>
+            <div className="empty-state">
+              {loading
+                ? "Fetching results for this screener..."
+                : "No symbols match this scan at the current filter."}
+            </div>
           ) : shouldVirtualize ? (
-            <div className="scan-table-virtual-spacer" style={{ height: `${totalHeight}px` }}>
+            <div
+              className="scan-table-virtual-spacer"
+              style={{ height: `${totalHeight}px` }}
+            >
               {visibleRows.map((row) => (
-                <div key={row.key} className="scan-table-virtual-slot" style={{ top: `${row.top}px`, height: `${row.height}px` }}>
+                <div
+                  key={row.key}
+                  className="scan-table-virtual-slot"
+                  style={{ top: `${row.top}px`, height: `${row.height}px` }}
+                >
                   {renderEntry(row.item, Math.max(0, row.height - SCAN_SLOT_GAP))}
                 </div>
               ))}
@@ -478,6 +950,7 @@ export function ScanTable({
           )}
         </div>
       </div>
+
       {gridOpen ? (
         <Suspense fallback={null}>
           <ChartGridModal
@@ -499,7 +972,10 @@ export function ScanTable({
             onChartStyleChange={setGridChartStyle}
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGridSeries}
-            onClose={() => setGridOpen(false)}
+            onClose={() => {
+              setGridOpen(false);
+              if (viewMode === "grid") setViewMode("table");
+            }}
           />
         </Suspense>
       ) : null}

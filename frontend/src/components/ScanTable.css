@@ -1,0 +1,419 @@
+/* ==========================================================================
+   ScanTable — Stage 4 modernized table
+   ========================================================================== */
+
+.st-card {
+  --st-primary: #6366f1;
+  --st-primary-strong: #4f46e5;
+  --st-bg: #f9fafb;
+  --st-surface: #ffffff;
+  --st-border: #e5e7eb;
+  --st-text: #111827;
+  --st-text-soft: #6b7280;
+  --st-pos: #10b981;
+  --st-neg: #ef4444;
+  --st-amber: #f59e0b;
+  font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
+}
+
+:root[data-theme="dark"] .st-card,
+.theme-dark .st-card {
+  --st-bg: #0f1320;
+  --st-surface: rgba(255, 255, 255, 0.04);
+  --st-border: rgba(148, 163, 184, 0.18);
+  --st-text: #e5e7eb;
+  --st-text-soft: #94a3b8;
+}
+
+/* ----- Controls bar (rendered as Panel actions) ----- */
+.st-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* View tabs */
+.st-view-tabs {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--st-bg, #f9fafb);
+}
+
+.st-view-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--st-text-soft, #6b7280);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.st-view-tab:hover:not(:disabled) {
+  color: var(--st-primary, #6366f1);
+}
+
+.st-view-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.st-view-tab.is-active {
+  background: var(--st-surface, #ffffff);
+  color: var(--st-primary, #6366f1);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+/* Generic button */
+.st-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 9px;
+  background: var(--st-surface, #ffffff);
+  color: var(--st-text, #111827);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.st-btn:hover:not(:disabled) {
+  border-color: var(--st-primary, #6366f1);
+  color: var(--st-primary, #6366f1);
+}
+
+.st-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Popover menus */
+.st-pop-wrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.st-pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 30;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 10px;
+  background: var(--st-surface, #ffffff);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.st-pop-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--st-text, #111827);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 100ms ease;
+  white-space: nowrap;
+}
+
+.st-pop-item:hover {
+  background: rgba(99, 102, 241, 0.08);
+  color: var(--st-primary, #6366f1);
+}
+
+.st-pop-item.is-active {
+  background: rgba(99, 102, 241, 0.14);
+  color: var(--st-primary-strong, #4f46e5);
+  font-weight: 600;
+}
+
+.st-pop-toggle svg {
+  flex: 0 0 auto;
+  color: var(--st-text-soft);
+}
+
+/* Segmented control (Flat / By Sector) */
+.st-seg {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 9px;
+  background: var(--st-bg, #f9fafb);
+}
+
+.st-seg-btn {
+  border: 0;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: 6px;
+  color: var(--st-text-soft, #6b7280);
+  font-family: inherit;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.st-seg-btn:hover {
+  color: var(--st-primary, #6366f1);
+}
+
+.st-seg-btn.is-active {
+  background: var(--st-surface, #ffffff);
+  color: var(--st-primary, #6366f1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+.st-select {
+  padding: 6px 10px;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--st-surface, #ffffff);
+  color: var(--st-text, #111827);
+  font-family: inherit;
+  font-size: 0.76rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* ----- Table header (override existing .scan-table-head when in st-card) ----- */
+.st-card .scan-table-head.st-head,
+.st-card .st-row {
+  display: grid;
+  grid-template-columns: var(--st-grid);
+  gap: 10px;
+  align-items: center;
+}
+
+.st-card .st-head {
+  padding: 10px 14px;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-text-soft);
+}
+
+.st-card .st-head .st-num {
+  text-align: right;
+  padding-right: 4px;
+}
+
+/* ----- Row override ----- */
+.st-card .scan-row.st-row {
+  padding: 10px 14px;
+  min-height: 64px;
+  border-radius: 10px;
+}
+
+.st-row-main {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+}
+
+/* ----- Logo ----- */
+.st-logo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: var(--st-bg, #f9fafb);
+  border: 1px solid var(--st-border, #e5e7eb);
+  overflow: hidden;
+}
+
+.st-logo img {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.st-logo-fallback {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--st-primary-strong, #4f46e5);
+}
+
+.st-name {
+  display: grid !important;
+  gap: 2px;
+  min-width: 0;
+}
+
+.st-name strong {
+  font-size: 0.92rem !important;
+  font-weight: 700;
+  color: var(--st-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-name small {
+  font-size: 0.72rem;
+  color: var(--st-text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ----- Numeric cells ----- */
+.st-price {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--st-text);
+}
+
+.st-change {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.st-change.positive-text {
+  color: var(--st-pos);
+}
+.st-change.negative-text {
+  color: var(--st-neg);
+}
+
+.st-cell-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.8rem;
+  color: var(--st-text);
+}
+
+.st-rvol {
+  color: var(--st-text);
+  font-weight: 600;
+}
+
+/* ----- Sparkline ----- */
+.st-spark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.st-spark-svg {
+  width: 80px;
+  height: 26px;
+  display: block;
+}
+
+/* ----- RS badge (circular) ----- */
+.st-rs-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.74rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+  color: #fff;
+  flex: 0 0 auto;
+}
+
+.st-rs-hi {
+  background: linear-gradient(135deg, #10b981, #059669);
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.32);
+}
+
+.st-rs-mid {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.32);
+}
+
+.st-rs-lo {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.32);
+}
+
+.st-rs-muted {
+  background: var(--st-bg);
+  color: var(--st-text-soft);
+  border: 1px dashed var(--st-border);
+  box-shadow: none;
+}
+
+/* ----- Watch button ----- */
+.st-watch-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 9px;
+  background: var(--st-surface, #ffffff);
+  color: var(--st-text-soft);
+  cursor: pointer;
+  transition: all 120ms ease;
+  margin-left: auto;
+}
+
+.st-watch-btn:hover {
+  background: linear-gradient(135deg, var(--st-primary, #6366f1), var(--st-primary-strong, #4f46e5));
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.32);
+  transform: translateY(-1px);
+}
+
+/* ----- Active row ----- */
+.st-card .scan-row.st-row.active {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.06);
+  box-shadow: inset 3px 0 0 var(--st-primary);
+}
+
+/* Make sure dark mode hover/active feel right */
+:root[data-theme="dark"] .st-card .scan-row.st-row,
+.theme-dark .st-card .scan-row.st-row {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+:root[data-theme="dark"] .st-card .scan-row.st-row:hover,
+.theme-dark .st-card .scan-row.st-row:hover {
+  background: rgba(99, 102, 241, 0.1);
+}
