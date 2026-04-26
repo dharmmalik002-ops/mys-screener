@@ -1,1 +1,387 @@
 symbol,primary_group_id,note,updated_on
+RELIANCE,oil_marketing_refining,Reliance Industries — refining + petchem dominant,2026-04-26
+NTPC,power_generation,NTPC Limited — thermal + green generation,2026-04-26
+NHPC,power_generation,NHPC — hydro generation,2026-04-26
+SJVN,power_generation,SJVN — hydro/renewable generation,2026-04-26
+NLCINDIA,power_generation,NLC India — lignite/thermal,2026-04-26
+NTPCGREEN,renewable_energy,NTPC Green Energy — renewables arm,2026-04-26
+ADANIPOWER,power_generation,Adani Power — thermal generation,2026-04-26
+ADANIENSOL,power_utilities_distribution,Adani Energy Solutions — transmission,2026-04-26
+PTC,power_utilities_distribution,PTC India — power trading,2026-04-26
+RECLTD,diversified_nbfcs,REC Ltd — power infra NBFC,2026-04-26
+HUDCO,housing_finance,Housing & Urban Development Corp,2026-04-26
+GAIL,city_gas_distribution,GAIL India — gas pipeline + LPG,2026-04-26
+MRPL,oil_marketing_refining,Mangalore Refinery & Petrochem,2026-04-26
+IRMENERGY,city_gas_distribution,IRM Energy — city gas distribution,2026-04-26
+AEGISLOG,city_gas_distribution,Aegis Logistics — LPG terminals,2026-04-26
+AEGISVOPAK,ports_port_services,Aegis Vopak — bulk liquid storage at ports,2026-04-26
+BAJFINANCE,diversified_nbfcs,Bajaj Finance,2026-04-26
+BAJAJFINSV,diversified_nbfcs,Bajaj Finserv — holdco for finance + insurance,2026-04-26
+BAJAJHLDNG,diversified_nbfcs,Bajaj Holdings — investment company,2026-04-26
+JIOFIN,diversified_nbfcs,Jio Financial Services,2026-04-26
+TATACAP,diversified_nbfcs,Tata Capital,2026-04-26
+TATAINVEST,diversified_nbfcs,Tata Investment Corp,2026-04-26
+HDBFS,diversified_nbfcs,HDB Financial Services,2026-04-26
+LTF,diversified_nbfcs,L&T Finance,2026-04-26
+ABCAPITAL,diversified_nbfcs,Aditya Birla Capital,2026-04-26
+CHOLAHLDNG,diversified_nbfcs,Cholamandalam Investment & Finance Holding,2026-04-26
+CHOLAFIN,vehicle_finance_nbfcs,Cholamandalam Investment & Finance,2026-04-26
+SHRIRAMFIN,vehicle_finance_nbfcs,Shriram Finance,2026-04-26
+POONAWALLA,diversified_nbfcs,Poonawalla Fincorp,2026-04-26
+PIRAMALFIN,diversified_nbfcs,Piramal Finance,2026-04-26
+INDOSTAR,diversified_nbfcs,IndoStar Capital Finance,2026-04-26
+EDELWEISS,diversified_nbfcs,Edelweiss Financial Services,2026-04-26
+JMFINANCIL,broking_wealth,JM Financial,2026-04-26
+IIFL,diversified_nbfcs,IIFL Finance,2026-04-26
+IIFLCAPS,broking_wealth,IIFL Capital Services,2026-04-26
+SHAREINDIA,broking_wealth,Share India Securities,2026-04-26
+ARIHANTCAP,broking_wealth,Arihant Capital Markets,2026-04-26
+CENTRUM,broking_wealth,Centrum Capital,2026-04-26
+DAMCAPITAL,broking_wealth,DAM Capital Advisors,2026-04-26
+SMCGLOBAL,broking_wealth,SMC Global Securities,2026-04-26
+CHOICEIN,broking_wealth,Choice International,2026-04-26
+GROWW,broking_wealth,Groww (Billionbrains Garage),2026-04-26
+NUCLEUS,fintech_payments,Nucleus Software Exports,2026-04-26
+PROTEAN,fintech_payments,Protean eGov Technologies,2026-04-26
+PINELABS,fintech_payments,Pine Labs,2026-04-26
+NPST,fintech_payments,Network People Services Tech,2026-04-26
+63MOONS,fintech_payments,63 Moons Technologies,2026-04-26
+BSE,amc_exchanges_depositories,BSE Limited,2026-04-26
+IEX,amc_exchanges_depositories,Indian Energy Exchange,2026-04-26
+MFSL,life_insurance,Max Financial Services — Max Life parent,2026-04-26
+SBFC,housing_finance,SBFC Finance,2026-04-26
+ABLBL,housing_finance,Aadhar Housing,2026-04-26
+REPCOHOME,housing_finance,Repco Home Finance,2026-04-26
+SAMMAANCAP,housing_finance,Sammaan Capital,2026-04-26
+CGCL,housing_finance,Capri Global Capital,2026-04-26
+CREDITACC,microfinance,CreditAccess Grameen,2026-04-26
+ARMANFIN,microfinance,Arman Financial Services,2026-04-26
+FUSION,microfinance,Fusion Micro Finance,2026-04-26
+MASFIN,diversified_nbfcs,MAS Financial Services,2026-04-26
+SGFIN,diversified_nbfcs,SG Finserve,2026-04-26
+UGROCAP,diversified_nbfcs,UGRO Capital,2026-04-26
+FEDFINA,diversified_nbfcs,Fedbank Financial Services,2026-04-26
+TFCILTD,diversified_nbfcs,Tourism Finance Corp of India,2026-04-26
+TSFINV,diversified_nbfcs,TVS Holdings,2026-04-26
+JSWHL,diversified_nbfcs,JSW Holdings,2026-04-26
+PILANIINVS,diversified_nbfcs,Pilani Investment & Industries,2026-04-26
+IDBI,psu_banks,IDBI Bank,2026-04-26
+IFCI,diversified_nbfcs,IFCI,2026-04-26
+J&KBANK,psu_banks,J&K Bank,2026-04-26
+SOUTHBANK,private_banks,South Indian Bank,2026-04-26
+TATAELXSI,erd_engineering_tech,Tata Elxsi,2026-04-26
+TATATECH,erd_engineering_tech,Tata Technologies,2026-04-26
+LTTS,erd_engineering_tech,L&T Technology Services,2026-04-26
+KPITTECH,erd_engineering_tech,KPIT Technologies,2026-04-26
+CYIENT,erd_engineering_tech,Cyient,2026-04-26
+EXPLEOSOL,erd_engineering_tech,Expleo Solutions,2026-04-26
+AXISCADES,erd_engineering_tech,AxisCades,2026-04-26
+PERSISTENT,tier1_it_services,Persistent Systems,2026-04-26
+ECLERX,midcap_it_services,eClerx Services,2026-04-26
+INTELLECT,software_saas,Intellect Design Arena,2026-04-26
+RAMCOSYS,software_saas,Ramco Systems,2026-04-26
+AFFLE,software_saas,Affle India,2026-04-26
+OFSS,software_saas,Oracle Financial Services Software,2026-04-26
+SAKSOFT,midcap_it_services,Saksoft,2026-04-26
+DATAMATICS,midcap_it_services,Datamatics Business Solutions,2026-04-26
+CIGNITITEC,midcap_it_services,Cigniti Technologies,2026-04-26
+KELLTONTEC,midcap_it_services,Kellton Tech,2026-04-26
+INFOBEAN,midcap_it_services,InfoBeans Tech,2026-04-26
+TANLA,software_saas,Tanla Platforms,2026-04-26
+INDIAMART,software_saas,IndiaMART InterMESH,2026-04-26
+NAUKRI,software_saas,Info Edge (Naukri),2026-04-26
+MATRIMONY,software_saas,Matrimony.com,2026-04-26
+NIITLTD,education_test_prep,NIIT Limited,2026-04-26
+QUICKHEAL,software_saas,Quick Heal Technologies,2026-04-26
+ACCELYA,software_saas,Accelya Solutions India,2026-04-26
+MEGASOFT,software_saas,Megasoft,2026-04-26
+EMUDHRA,software_saas,eMudhra,2026-04-26
+GENESYS,software_saas,Genesys International,2026-04-26
+IXIGO,travel_ota,Le Travenues Tech (ixigo),2026-04-26
+IKS,software_saas,IKS Health,2026-04-26
+BBOX,midcap_it_services,Black Box,2026-04-26
+TATACOMM,telecom_services,Tata Communications,2026-04-26
+BHARTIHEXA,telecom_services,Bharti Hexacom,2026-04-26
+STLNETWORK,telecom_equipment_fiber,Sterlite Networks,2026-04-26
+AVANTEL,telecom_equipment_fiber,Avantel,2026-04-26
+HONAUT,industrial_automation_drives,Honeywell Automation India,2026-04-26
+ABB,electrical_equipment,ABB India,2026-04-26
+THERMAX,industrial_automation_drives,Thermax,2026-04-26
+CUMMINSIND,industrial_automation_drives,Cummins India,2026-04-26
+AIAENG,bearings_industrial_components,AIA Engineering,2026-04-26
+CARBORUNIV,bearings_industrial_components,Carborundum Universal,2026-04-26
+TIINDIA,bearings_industrial_components,Tube Investments of India,2026-04-26
+NRBBEARING,bearings_industrial_components,NRB Bearings,2026-04-26
+ELGIEQUIP,pumps_valves_flow_control,Elgi Equipments,2026-04-26
+ESABINDIA,electrical_equipment,Esab India,2026-04-26
+GRAPHITE,bearings_industrial_components,Graphite India,2026-04-26
+ISGEC,industrial_automation_drives,Isgec Heavy Engineering,2026-04-26
+KIRLOSENG,industrial_automation_drives,Kirloskar Oil Engines,2026-04-26
+KIRLOSIND,industrial_automation_drives,Kirloskar Industries,2026-04-26
+LMW,industrial_automation_drives,Lakshmi Machine Works,2026-04-26
+INGERRAND,industrial_automation_drives,Ingersoll-Rand India,2026-04-26
+AJAXENGG,industrial_automation_drives,Ajax Engineering,2026-04-26
+ELECON,industrial_automation_drives,Elecon Engineering,2026-04-26
+ELECTHERM,industrial_automation_drives,Electrotherm,2026-04-26
+ATLANTAELE,electrical_equipment,Atlanta Electricals,2026-04-26
+LLOYDSENGG,industrial_automation_drives,Lloyds Engineering Works,2026-04-26
+LLOYDSENT,industrial_automation_drives,Lloyds Enterprises,2026-04-26
+SALZERELEC,electrical_equipment,Salzer Electronics,2026-04-26
+HONDAPOWER,industrial_automation_drives,Honda India Power Products,2026-04-26
+BBL,transformers_td_equipment,Bharat Bijlee,2026-04-26
+BAJEL,transformers_td_equipment,Bajel Projects,2026-04-26
+GVT&D,transformers_td_equipment,GE Vernova T&D,2026-04-26
+SKIPPER,transformers_td_equipment,Skipper,2026-04-26
+KALPATARU,transformers_td_equipment,Kalpataru Projects International,2026-04-26
+TRANSRAILL,transformers_td_equipment,Transrail Lighting,2026-04-26
+GENUSPOWER,power_utilities_distribution,Genus Power Infrastructures (smart meters),2026-04-26
+PARACABLES,wires_cables,Paramount Communications,2026-04-26
+BANSALWIRE,wires_cables,Bansal Wire Industries,2026-04-26
+RRKABEL,wires_cables,RR Kabel,2026-04-26
+BHARATWIRE,wires_cables,Bharat Wire Ropes,2026-04-26
+VIDYAWIRES,wires_cables,Vidya Wires,2026-04-26
+PRECWIRE,wires_cables,Precision Wires India,2026-04-26
+BHARATFORG,auto_anc_forgings_castings,Bharat Forge,2026-04-26
+ROLEXRINGS,auto_anc_forgings_castings,Rolex Rings,2026-04-26
+SANSERA,auto_anc_powertrain,Sansera Engineering,2026-04-26
+PRECAM,auto_anc_powertrain,Precision Camshafts,2026-04-26
+WHEELS,auto_anc_powertrain,Wheels India,2026-04-26
+GNA,auto_anc_powertrain,GNA Axles,2026-04-26
+GABRIEL,auto_anc_powertrain,Gabriel India,2026-04-26
+TALBROAUTO,auto_anc_powertrain,Talbros Automotive Components,2026-04-26
+JAMNAAUTO,auto_anc_powertrain,Jamna Auto Industries,2026-04-26
+JTEKTINDIA,auto_anc_powertrain,Jtekt India,2026-04-26
+JBMA,auto_anc_powertrain,JBM Auto,2026-04-26
+ASKAUTOLTD,auto_anc_powertrain,ASK Automotive,2026-04-26
+BELRISE,auto_anc_powertrain,Belrise Industries,2026-04-26
+AUTOAXLES,auto_anc_powertrain,Automotive Axles,2026-04-26
+INDNIPPON,auto_anc_wiring_lighting,India Nippon Electricals,2026-04-26
+IGARASHI,auto_anc_powertrain,Igarashi Motors India,2026-04-26
+SHARDAMOTR,auto_anc_powertrain,Sharda Motor Industries,2026-04-26
+SUBROS,auto_anc_powertrain,Subros (auto AC),2026-04-26
+ENDURANCE,auto_anc_powertrain,Endurance Technologies,2026-04-26
+EXIDEIND,auto_anc_powertrain,Exide Industries (batteries),2026-04-26
+ARE&M,auto_anc_powertrain,Amara Raja Energy & Mobility,2026-04-26
+LUMAXIND,auto_anc_wiring_lighting,Lumax Industries,2026-04-26
+MINDACORP,auto_anc_wiring_lighting,Minda Corporation,2026-04-26
+UNOMINDA,auto_anc_wiring_lighting,UNO Minda,2026-04-26
+VARROC,auto_anc_wiring_lighting,Varroc Engineering,2026-04-26
+BOSCHLTD,auto_anc_powertrain,Bosch Limited,2026-04-26
+PIXTRANS,auto_anc_powertrain,Pix Transmissions,2026-04-26
+NDRAUTO,auto_anc_powertrain,NDR Auto Components,2026-04-26
+ZFCVINDIA,auto_anc_powertrain,ZF Commercial Vehicle Control Systems India,2026-04-26
+ATULAUTO,commercial_vehicles,Atul Auto (3-wheelers),2026-04-26
+OLAELEC,two_wheelers,Ola Electric Mobility,2026-04-26
+ATHERENERG,two_wheelers,Ather Energy,2026-04-26
+OLECTRA,ev_components_charging,Olectra Greentech (e-buses),2026-04-26
+SERVOTECH,ev_components_charging,Servotech Renewable Power,2026-04-26
+WAAREEENER,renewable_energy,Waaree Energies,2026-04-26
+WAAREEINDO,renewable_energy,Waaree Renewable Technologies,2026-04-26
+WAAREERTL,renewable_energy,Waaree RTL,2026-04-26
+ACMESOLAR,renewable_energy,Acme Solar Holdings,2026-04-26
+PREMIERENE,renewable_energy,Premier Energies,2026-04-26
+VIKRAMSOLR,renewable_energy,Vikram Solar,2026-04-26
+ALPEXSOLAR,renewable_energy,Alpex Solar,2026-04-26
+WEBELSOLAR,renewable_energy,Websol Energy System,2026-04-26
+EMMVEE,renewable_energy,EMMVEE Photovoltaic Power,2026-04-26
+INOXGREEN,renewable_energy,Inox Green Energy,2026-04-26
+SAATVIKGL,renewable_energy,Saatvik Green Energy,2026-04-26
+SOLARWORLD,renewable_energy,Solar World Energy Solutions,2026-04-26
+SOLEX,renewable_energy,Solex Energy,2026-04-26
+ORIANA,renewable_energy,Oriana Power,2026-04-26
+GKENERGY,renewable_energy,GK Energy,2026-04-26
+GREENPOWER,renewable_energy,Green Power International,2026-04-26
+SOLARINDS,aerospace_defense,Solar Industries (explosives + defense),2026-04-26
+IDEAFORGE,aerospace_defense,IdeaForge Technology,2026-04-26
+NIBE,aerospace_defense,Nibe Limited,2026-04-26
+AZAD,aerospace_defense,Azad Engineering,2026-04-26
+PTCIL,aerospace_defense,PTC Industries,2026-04-26
+TITAGARH,railways_epc_rolling_stock,Titagarh Rail Systems,2026-04-26
+JNKINDIA,industrial_automation_drives,JNK India (process furnaces),2026-04-26
+BEML,railways_epc_rolling_stock,BEML,2026-04-26
+IRCON,railways_epc_rolling_stock,IRCON International,2026-04-26
+INDIANHUME,construction_infra_epc,Indian Hume Pipe,2026-04-26
+NCC,construction_infra_epc,NCC Limited,2026-04-26
+HCC,construction_infra_epc,Hindustan Construction,2026-04-26
+HGINFRA,construction_infra_epc,HG Infra Engineering,2026-04-26
+KNRCON,construction_infra_epc,KNR Constructions,2026-04-26
+PSPPROJECT,construction_infra_epc,PSP Projects,2026-04-26
+JKIL,construction_infra_epc,J Kumar Infraprojects,2026-04-26
+AHLUCONT,construction_infra_epc,Ahluwalia Contracts,2026-04-26
+CAPACITE,construction_infra_epc,Capacit'e Infraprojects,2026-04-26
+CEIGALL,construction_infra_epc,Ceigall India,2026-04-26
+SIMPLEXINF,construction_infra_epc,Simplex Infrastructures,2026-04-26
+RAMKY,construction_infra_epc,Ramky Infrastructure,2026-04-26
+WABAG,construction_infra_epc,Va Tech Wabag (water EPC),2026-04-26
+POWERMECH,construction_infra_epc,Power Mech Projects,2026-04-26
+INTERARCH,construction_infra_epc,Interarch Building Products,2026-04-26
+NBCC,construction_infra_epc,NBCC India,2026-04-26
+ADANIENT,diversified_nbfcs,Adani Enterprises (incubator/holdco — best fit),2026-04-26
+DLF,real_estate_developers,DLF,2026-04-26
+SOBHA,real_estate_developers,Sobha,2026-04-26
+OMAXE,real_estate_developers,Omaxe,2026-04-26
+ARKADE,real_estate_developers,Arkade Developers,2026-04-26
+KOLTEPATIL,real_estate_developers,Kolte-Patil Developers,2026-04-26
+MAXESTATES,real_estate_developers,Max Estates,2026-04-26
+MANINFRA,real_estate_developers,Man Infraconstruction,2026-04-26
+DBREALTY,real_estate_developers,DB Realty,2026-04-26
+ASHIANA,real_estate_developers,Ashiana Housing,2026-04-26
+HUBTOWN,real_estate_developers,Hubtown,2026-04-26
+RUSTOMJEE,real_estate_developers,Keystone Realtors (Rustomjee),2026-04-26
+SIGNATURE,real_estate_developers,Signature Global,2026-04-26
+ARVSMART,real_estate_developers,Arvind SmartSpaces,2026-04-26
+HEMIPROP,real_estate_developers,Hemisphere Properties,2026-04-26
+BLKASHYAP,real_estate_developers,B L Kashyap & Sons,2026-04-26
+DRREDDY,pharma_formulations,Dr. Reddy's Laboratories,2026-04-26
+NATCOPHARM,pharma_formulations,Natco Pharma,2026-04-26
+ALEMBICLTD,pharma_formulations,Alembic Limited,2026-04-26
+AARTIPHARM,pharma_formulations,Aarti Pharmalabs,2026-04-26
+ALIVUS,pharma_formulations,Alivus Life Sciences,2026-04-26
+WOCKPHARMA,pharma_formulations,Wockhardt,2026-04-26
+ASTRAZEN,pharma_formulations,AstraZeneca Pharma India,2026-04-26
+BAJAJHCARE,pharma_formulations,Bajaj Healthcare,2026-04-26
+BLISSGVS,pharma_formulations,Bliss GVS Pharma,2026-04-26
+CAPLIPOINT,pharma_formulations,Caplin Point Laboratories,2026-04-26
+RPGLIFE,pharma_formulations,RPG Life Sciences,2026-04-26
+MARKSANS,pharma_formulations,Marksans Pharma,2026-04-26
+MOREPENLAB,pharma_formulations,Morepen Laboratories,2026-04-26
+SUDEEPPHRM,pharma_formulations,Sudeep Pharma,2026-04-26
+ORCHPHARMA,pharma_formulations,Orchid Pharma,2026-04-26
+GUFICBIO,pharma_formulations,Gufic BioSciences,2026-04-26
+SANOFICONR,pharma_formulations,Sanofi Consumer Healthcare India,2026-04-26
+GRANULES,pharma_apis,Granules India,2026-04-26
+SUVEN,pharma_apis,Suven Life Sciences,2026-04-26
+SEQUENT,pharma_apis,Sequent Scientific,2026-04-26
+SIGACHI,pharma_apis,Sigachi Industries,2026-04-26
+CONCORDBIO,cdmo_crams,Concord Biotech,2026-04-26
+COHANCE,cdmo_crams,Cohance Lifesciences,2026-04-26
+GLAND,cdmo_crams,Gland Pharma,2026-04-26
+HIKAL,cdmo_crams,Hikal,2026-04-26
+SAILIFE,cdmo_crams,Sai Life Sciences,2026-04-26
+ONESOURCE,cdmo_crams,OneSource Specialty Pharma,2026-04-26
+LALPATHLAB,diagnostics,Dr. Lal PathLabs,2026-04-26
+HCG,hospitals,Healthcare Global Enterprises,2026-04-26
+NEPHROPLUS,hospitals,NephroPlus Health Services,2026-04-26
+PARKHOSPS,hospitals,Park Medi World,2026-04-26
+GPTHEALTH,hospitals,GPT Healthcare,2026-04-26
+INSECTICID,agrochemicals,Insecticides India,2026-04-26
+PIIND,agrochemicals,PI Industries,2026-04-26
+COROMANDEL,agrochemicals,Coromandel International,2026-04-26
+NAVINFLUOR,specialty_chemicals,Navin Fluorine International,2026-04-26
+PIDILITIND,specialty_chemicals,Pidilite Industries,2026-04-26
+AKZOINDIA,specialty_chemicals,Akzo Nobel India (paints),2026-04-26
+HSCL,specialty_chemicals,Himadri Speciality Chemical,2026-04-26
+GHCL,commodity_chemicals,GHCL,2026-04-26
+NEOGEN,specialty_chemicals,Neogen Chemicals,2026-04-26
+CHEMPLASTS,commodity_chemicals,Chemplast Sanmar,2026-04-26
+NOCIL,specialty_chemicals,NOCIL (rubber chemicals),2026-04-26
+EPIGRAL,specialty_chemicals,Epigral Limited,2026-04-26
+BLUEJET,specialty_chemicals,Blue Jet Healthcare,2026-04-26
+ASTRAL,pipes_plastic_bm,Astral Limited,2026-04-26
+HARIOMPIPE,pipes_plastic_bm,Hariom Pipe Industries,2026-04-26
+EPL,pipes_plastic_bm,EPL Limited (laminated tubes),2026-04-26
+CENTURYPLY,building_products,Century Plyboards,2026-04-26
+GREENPLY,building_products,Greenply Industries,2026-04-26
+GREENPANEL,building_products,Greenpanel Industries,2026-04-26
+GREENLAM,building_products,Greenlam Industries,2026-04-26
+CERA,ceramics_tiles,Cera Sanitaryware,2026-04-26
+HINDWAREAP,consumer_electronics_appliances,Hindware Home Innovation,2026-04-26
+ACC,cement,ACC,2026-04-26
+NUVOCO,cement,Nuvoco Vistas Corp,2026-04-26
+GRASIM,cement,Grasim Industries (UltraTech parent + chemicals),2026-04-26
+JAIBALAJI,steel,Jai Balaji Industries,2026-04-26
+JINDALSAW,steel,Jindal Saw,2026-04-26
+JSLL,stainless_special_alloys,Jindal Stainless,2026-04-26
+SHYAMMETL,steel,Shyam Metalics,2026-04-26
+RAMASTEEL,steel,Rama Steel Tubes,2026-04-26
+MAITHANALL,stainless_special_alloys,Maithan Alloys,2026-04-26
+GRAVITA,mining_minerals,Gravita India (lead recycling),2026-04-26
+KIOCL,mining_minerals,KIOCL (iron ore mining),2026-04-26
+ORISSAMINE,mining_minerals,Orissa Minerals Development,2026-04-26
+ADANIPORTS,ports_port_services,Adani Ports & SEZ,2026-04-26
+GATEWAY,ports_port_services,Gateway Distriparks,2026-04-26
+TCI,logistics_surface,Transport Corporation of India,2026-04-26
+NAVKARCORP,logistics_surface,Navkar Corporation,2026-04-26
+BLACKBUCK,logistics_surface,Blackbuck (Zinka Logistics),2026-04-26
+BRITANNIA,packaged_foods_bev,Britannia Industries,2026-04-26
+NESTLEIND,packaged_foods_bev,Nestle India,2026-04-26
+TATACONSUM,fmcg_staples,Tata Consumer Products,2026-04-26
+HATSUN,dairy_protein_foods,Hatsun Agro Product,2026-04-26
+BIKAJI,packaged_foods_bev,Bikaji Foods International,2026-04-26
+BECTORFOOD,packaged_foods_bev,Mrs. Bectors Food Specialities,2026-04-26
+TASTYBITE,packaged_foods_bev,Tasty Bite Eatables,2026-04-26
+VBL,packaged_foods_bev,Varun Beverages,2026-04-26
+LTFOODS,packaged_foods_bev,LT Foods (Daawat),2026-04-26
+GOPAL,packaged_foods_bev,Gopal Snacks,2026-04-26
+ADFFOODS,packaged_foods_bev,ADF Foods,2026-04-26
+KRBL,packaged_foods_bev,KRBL (India Gate rice),2026-04-26
+AWL,fmcg_staples,Adani Wilmar,2026-04-26
+PATANJALI,fmcg_staples,Patanjali Foods,2026-04-26
+ORKLAINDIA,fmcg_staples,Orkla India (MTR Foods),2026-04-26
+ZYDUSWELL,fmcg_staples,Zydus Wellness,2026-04-26
+AMRUTANJAN,fmcg_staples,Amrutanjan Health Care,2026-04-26
+VENKEYS,poultry_aqua_animal_health,Venky's India,2026-04-26
+SULA,alcoholic_beverages,Sula Vineyards,2026-04-26
+EIHOTEL,hotels,EIH (Oberoi Hotels),2026-04-26
+BRIGHOTEL,hotels,Brigade Hotel Ventures,2026-04-26
+ITDC,hotels,India Tourism Development Corp,2026-04-26
+THOMASCOOK,travel_ota,Thomas Cook India,2026-04-26
+EASEMYTRIP,travel_ota,Easy Trip Planners,2026-04-26
+TBOTEK,travel_ota,TBO Tek,2026-04-26
+TRAVELFOOD,qsr_restaurants,Travel Food Services,2026-04-26
+IMAGICAA,multiplex_exhibition,Imagicaaworld Entertainment,2026-04-26
+DBCORP,media_broadcasting,DB Corp,2026-04-26
+NDTV,media_broadcasting,New Delhi Television,2026-04-26
+TIPSMUSIC,media_broadcasting,Tips Music,2026-04-26
+NAZARA,media_broadcasting,Nazara Technologies,2026-04-26
+SABTNL,media_broadcasting,Sun TV Network ancillary,2026-04-26
+TRENT,retail_fashion_lifestyle,Trent (Tata Westside),2026-04-26
+VMARCIND,retail_fashion_lifestyle,V-Mart Retail,2026-04-26
+PCJEWELLER,retail_fashion_lifestyle,PC Jeweller,2026-04-26
+LANDMARK,retail_electronics_omni,Landmark Cars (auto retail),2026-04-26
+STYLEBAAZA,retail_fashion_lifestyle,Style Baazar Retail,2026-04-26
+KKCL,apparel_textiles,Kewal Kiran Clothing,2026-04-26
+MANYAVAR,apparel_textiles,Vedant Fashions (Manyavar),2026-04-26
+ARVIND,apparel_textiles,Arvind,2026-04-26
+GOKEX,apparel_textiles,Gokaldas Exports,2026-04-26
+GARFIBRES,apparel_textiles,Garware Technical Fibres,2026-04-26
+HIMATSEIDE,apparel_textiles,Himatsingka Seide,2026-04-26
+KITEX,apparel_textiles,Kitex Garments,2026-04-26
+KPRMILL,apparel_textiles,K.P.R. Mill,2026-04-26
+TRIDENT,home_furnishings,Trident,2026-04-26
+WELSPUNLIV,home_furnishings,Welspun Living,2026-04-26
+STANLEY,home_furnishings,Stanley Lifestyles,2026-04-26
+CARYSIL,home_furnishings,Carysil,2026-04-26
+LAOPALA,home_furnishings,La Opala RG,2026-04-26
+TTKPRESTIG,consumer_electronics_appliances,TTK Prestige,2026-04-26
+BUTTERFLY,consumer_electronics_appliances,Butterfly Gandhimathi Appliances,2026-04-26
+CROMPTON,consumer_electronics_appliances,Crompton Greaves Consumer Electricals,2026-04-26
+AMBER,ems_electronics_manufacturing,Amber Enterprises India,2026-04-26
+CYIENTDLM,ems_electronics_manufacturing,Cyient DLM,2026-04-26
+CAMPUS,footwear_luggage,Campus Activewear,2026-04-26
+BATAINDIA,footwear_luggage,Bata India,2026-04-26
+METROBRAND,footwear_luggage,Metro Brands,2026-04-26
+REDTAPE,footwear_luggage,Redtape (Mirza International offshoot),2026-04-26
+ETERNAL,retail_electronics_omni,Eternal (Zomato — food + quick commerce),2026-04-26
+NYKAA,retail_electronics_omni,FSN E-Commerce (Nykaa),2026-04-26
+SWIGGY,retail_electronics_omni,Swiggy,2026-04-26
+MEESHO,retail_electronics_omni,Meesho,2026-04-26
+LENSKART,retail_electronics_omni,Lenskart Solutions,2026-04-26
+FLAIR,consumer_electronics_appliances,Flair Writing Industries,2026-04-26
+AURIONPRO,software_saas,Aurionpro Solutions,2026-04-26
+RATEGAIN,software_saas,RateGain Travel Technologies,2026-04-26
+JUSTDIAL,software_saas,Just Dial,2026-04-26
+EXCELSOFT,software_saas,Excelsoft Technologies,2026-04-26
+KALYANKJIL,retail_fashion_lifestyle,Kalyan Jewellers India,2026-04-26
+SENCO,retail_fashion_lifestyle,Senco Gold,2026-04-26
+GOLDIAM,retail_fashion_lifestyle,Goldiam International,2026-04-26
+RADHIKAJWE,retail_fashion_lifestyle,Radhika Jewellers,2026-04-26
+TBZ,retail_fashion_lifestyle,Tribhovandas Bhimji Zaveri,2026-04-26
+SHANTIGOLD,retail_fashion_lifestyle,Shanti Gold International,2026-04-26
+SKYGOLD,retail_fashion_lifestyle,Sky Gold,2026-04-26
+PNGJL,retail_fashion_lifestyle,P N Gadgil Jewellers,2026-04-26
+MOTISONS,retail_fashion_lifestyle,Motisons Jewellers,2026-04-26
+DPABHUSHAN,retail_fashion_lifestyle,D P Abhushan,2026-04-26
+THANGAMAYL,retail_fashion_lifestyle,Thangamayil Jewellery,2026-04-26
+KDDL,retail_fashion_lifestyle,KDDL Limited (Ethos parent),2026-04-26
+ETHOSLTD,retail_fashion_lifestyle,Ethos (luxury watch retail),2026-04-26
