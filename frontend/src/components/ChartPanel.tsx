@@ -693,6 +693,69 @@ function updateKindLabel(kind: CompanyFundamentals["recent_updates"][number]["ki
   return "News";
 }
 
+// ─── RVOL helpers ─────────────────────────────────────────────────────────────
+type RvolEntry = {
+  time: number;
+  rvol50: number;
+  turnoverRvol50: number;
+  volume: number;
+  avgVolume: number;
+  turnover: number;
+  avgTurnover: number;
+};
+
+function computeRvolBars(bars: ChartBar[], period = 50): RvolEntry[] {
+  const result: RvolEntry[] = [];
+  for (let i = period; i < bars.length; i++) {
+    const prior = bars.slice(i - period, i);
+    const avgVolume = prior.reduce((s, b) => s + b.volume, 0) / period;
+    const avgTurnover = prior.reduce((s, b) => s + b.volume * b.close, 0) / period;
+    const bar = bars[i];
+    const turnover = bar.volume * bar.close;
+    result.push({
+      time: bar.time,
+      rvol50: avgVolume > 0 ? bar.volume / avgVolume : 0,
+      turnoverRvol50: avgTurnover > 0 ? turnover / avgTurnover : 0,
+      volume: bar.volume,
+      avgVolume,
+      turnover,
+      avgTurnover,
+    });
+  }
+  return result;
+}
+
+function rvolToneColor(rvol: number) {
+  if (rvol >= 3) return "#00d2ff";
+  if (rvol >= 2) return "#39ff14";
+  if (rvol >= 1) return "#ffd36f";
+  return "#8b949e";
+}
+
+function formatVolumeShort(v: number, market: MarketKey) {
+  if (market === "india") {
+    if (v >= 1e7) return `${(v / 1e7).toFixed(2)} Cr`;
+    if (v >= 1e5) return `${(v / 1e5).toFixed(1)} L`;
+    if (v >= 1e3) return `${(v / 1e3).toFixed(1)} K`;
+    return `${Math.round(v)}`;
+  }
+  if (v >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(1)}K`;
+  return `${Math.round(v)}`;
+}
+
+function formatTurnoverShort(t: number, market: MarketKey) {
+  if (market === "india") {
+    const cr = t / 1e7;
+    if (cr >= 1000) return `₹${(cr / 1000).toFixed(1)}K Cr`;
+    return `₹${cr.toFixed(1)} Cr`;
+  }
+  if (t >= 1e9) return `$${(t / 1e9).toFixed(2)}B`;
+  if (t >= 1e6) return `$${(t / 1e6).toFixed(2)}M`;
+  return `$${(t / 1e3).toFixed(1)}K`;
+}
+
 function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: ChartBar[] | null) {
   if (!benchmarkBars || primaryBars.length < 2 || benchmarkBars.length < 2) {
     return [];
@@ -776,6 +839,8 @@ export function ChartPanel({
   const annotationsRef = useRef(annotations);
   const onAnnotationsChangeRef = useRef(onAnnotationsChange);
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
+  const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
+  const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -791,6 +856,10 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [showRvol, setShowRvol] = useState(false);
+  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(null);
+  const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
+  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
@@ -810,6 +879,15 @@ export function ChartPanel({
     () => (showBenchmarkOverlay ? buildBenchmarkOverlaySeries(activeBars, safeBenchmarkBars) : []),
     [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
   );
+  const rvolData = useMemo(() => (showRvol ? computeRvolBars(activeBars, 50) : []), [activeBars, showRvol]);
+  const currentRvol = useMemo<RvolEntry | null>(() => {
+    if (!rvolData.length) return null;
+    if (hoveredBar) {
+      const entry = [...rvolData].reverse().find((e) => e.time <= hoveredBar.time);
+      return entry ?? rvolData[rvolData.length - 1];
+    }
+    return rvolData[rvolData.length - 1];
+  }, [rvolData, hoveredBar]);
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
@@ -1416,6 +1494,41 @@ export function ChartPanel({
     });
   }, [drawingTool]);
 
+  const handleRvolDragStart = (event: ReactPointerEvent<HTMLDivElement>) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const widget = rvolWidgetRef.current;
+    const stage = stageRef.current;
+    if (!widget || !stage) return;
+    const widgetRect = widget.getBoundingClientRect();
+    const stageRect = stage.getBoundingClientRect();
+    rvolDragRef.current = {
+      startPX: event.clientX,
+      startPY: event.clientY,
+      startWX: widgetRect.left - stageRect.left,
+      startWY: widgetRect.top - stageRect.top,
+    };
+    const onMove = (ev: PointerEvent) => {
+      if (!rvolDragRef.current) return;
+      const stageNow = stageRef.current;
+      if (!stageNow) return;
+      const stageRectNow = stageNow.getBoundingClientRect();
+      const dx = ev.clientX - rvolDragRef.current.startPX;
+      const dy = ev.clientY - rvolDragRef.current.startPY;
+      const newX = Math.max(0, Math.min(rvolDragRef.current.startWX + dx, stageRectNow.width - 40));
+      const newY = Math.max(0, Math.min(rvolDragRef.current.startWY + dy, stageRectNow.height - 40));
+      setRvolPos({ x: newX, y: newY });
+    };
+    const onUp = () => {
+      rvolDragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
   const handleLoadFullHistory = async () => {
     if (!symbol || historyLoading) return;
     if (extendedHistory) {
@@ -1899,6 +2012,14 @@ export function ChartPanel({
                     {indicator.label}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  className={showRvol ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => setShowRvol((v) => !v)}
+                  title="Relative Volume vs 50-day average. Helps spot unusual activity."
+                >
+                  RVOL
+                </button>
               </div>
               {symbol ? (
                 <button type="button" className="tool-pill" onClick={() => onAddToWatchlist?.(symbol)}>
@@ -2124,6 +2245,88 @@ export function ChartPanel({
             >
               +
             </button>
+          ) : null}
+          {showRvol && currentRvol ? (
+            <div
+              ref={rvolWidgetRef}
+              className={`rvol-widget rvol-widget--${rvolScale}`}
+              style={{
+                ...(rvolPos ? { left: rvolPos.x, top: rvolPos.y, bottom: "auto", right: "auto" } : {}),
+                borderColor: `color-mix(in srgb, ${rvolAccentColor} 45%, transparent)`,
+              }}
+            >
+              <div className="rvol-widget-header" onPointerDown={handleRvolDragStart}>
+                <span className="rvol-widget-title" style={{ color: rvolAccentColor }}>
+                  RVOL <span className="rvol-widget-subtitle">vs 50d avg</span>
+                </span>
+                <div className="rvol-widget-controls" onPointerDown={(e) => e.stopPropagation()}>
+                  {(["sm", "md", "lg"] as const).map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      className={`rvol-size-btn${rvolScale === s ? " active" : ""}`}
+                      onClick={() => setRvolScale(s)}
+                      style={rvolScale === s ? { borderColor: rvolAccentColor, color: rvolAccentColor } : {}}
+                      title={s === "sm" ? "Small" : s === "md" ? "Medium" : "Large"}
+                    >
+                      {s === "sm" ? "S" : s === "md" ? "M" : "L"}
+                    </button>
+                  ))}
+                  <input
+                    type="color"
+                    className="rvol-color-input"
+                    value={rvolAccentColor}
+                    onChange={(e) => setRvolAccentColor(e.target.value)}
+                    title="Widget colour"
+                  />
+                  <button
+                    type="button"
+                    className="rvol-close-btn"
+                    onClick={() => setShowRvol(false)}
+                    title="Hide widget"
+                    aria-label="Close RVOL widget"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+              <div className="rvol-widget-row">
+                <span className="rvol-label">Vol</span>
+                <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.rvol50) }}>
+                  {currentRvol.rvol50.toFixed(2)}×
+                </span>
+                <span className="rvol-bar-track">
+                  <span
+                    className="rvol-bar-fill"
+                    style={{
+                      width: `${Math.min(currentRvol.rvol50 / 4, 1) * 100}%`,
+                      background: rvolToneColor(currentRvol.rvol50),
+                    }}
+                  />
+                </span>
+              </div>
+              <div className="rvol-widget-row">
+                <span className="rvol-label">Turn</span>
+                <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.turnoverRvol50) }}>
+                  {currentRvol.turnoverRvol50.toFixed(2)}×
+                </span>
+                <span className="rvol-bar-track">
+                  <span
+                    className="rvol-bar-fill"
+                    style={{
+                      width: `${Math.min(currentRvol.turnoverRvol50 / 4, 1) * 100}%`,
+                      background: rvolToneColor(currentRvol.turnoverRvol50),
+                    }}
+                  />
+                </span>
+              </div>
+              <div className="rvol-widget-detail">
+                {formatVolumeShort(currentRvol.volume, market)} / avg {formatVolumeShort(currentRvol.avgVolume, market)}
+              </div>
+              <div className="rvol-widget-detail">
+                {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
+              </div>
+            </div>
           ) : null}
         <div className="chart-stage-meta">
             <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>

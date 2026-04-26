@@ -7407,3 +7407,149 @@ button {
   overflow-x: auto;
   padding-bottom: 4px;
 }
+
+/* ─── RVOL widget — draggable, resizable, custom colour ─────────────────── */
+.rvol-widget {
+  position: absolute;
+  bottom: 22%;
+  left: 14px;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  backdrop-filter: blur(6px);
+  font-size: 0.68rem;
+  min-width: 180px;
+  box-shadow: 0 4px 18px rgba(2, 8, 22, 0.28);
+  pointer-events: auto;
+  user-select: none;
+}
+
+.rvol-widget--sm { min-width: 150px; padding: 6px 8px; font-size: 0.62rem; }
+.rvol-widget--md { min-width: 190px; padding: 8px 10px; font-size: 0.68rem; }
+.rvol-widget--lg { min-width: 240px; padding: 12px 14px; font-size: 0.78rem; }
+
+.rvol-widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  cursor: grab;
+  margin-bottom: 3px;
+}
+.rvol-widget-header:active { cursor: grabbing; }
+
+.rvol-widget-title {
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.rvol-widget--sm .rvol-widget-title { font-size: 0.62rem; }
+.rvol-widget--md .rvol-widget-title { font-size: 0.72rem; }
+.rvol-widget--lg .rvol-widget-title { font-size: 0.86rem; }
+
+.rvol-widget-subtitle {
+  font-weight: 400;
+  font-size: 0.60rem;
+  color: var(--text-soft);
+  margin-left: 4px;
+}
+
+.rvol-widget-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.rvol-size-btn {
+  padding: 1px 5px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  line-height: 1.4;
+  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+.rvol-size-btn:hover { color: var(--text); }
+.rvol-size-btn.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.rvol-color-input {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  padding: 1px;
+  cursor: pointer;
+  background: transparent;
+}
+.rvol-color-input::-webkit-color-swatch-wrapper { padding: 0; }
+.rvol-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+
+.rvol-close-btn {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+}
+.rvol-close-btn:hover {
+  color: var(--negative, #ef4444);
+  border-color: color-mix(in srgb, var(--negative, #ef4444) 50%, transparent);
+}
+
+.rvol-widget-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rvol-label {
+  width: 32px;
+  color: var(--text-soft);
+  flex-shrink: 0;
+}
+
+.rvol-value {
+  width: 44px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.rvol-bar-track {
+  flex: 1;
+  height: 5px;
+  background: color-mix(in srgb, var(--line-strong) 40%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.rvol-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.15s ease;
+}
+
+.rvol-widget-detail {
+  font-size: 0.58rem;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.rvol-widget--lg .rvol-widget-detail { font-size: 0.7rem; }
