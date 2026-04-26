@@ -1421,7 +1421,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
   const [activeSavedScannerId, setActiveSavedScannerId] = useState<string | null>(null);
-  const [scanArrangementMode, setScanArrangementMode] = useState<"flat" | "sector">("flat");
+  const [scanArrangementMode, setScanArrangementMode] = useState<"flat" | "sector" | "group">("flat");
   const [sectorGroupSortMode, setSectorGroupSortMode] = useState<SectorGroupSortMode>("1W");
   const [groupsFocusRequest, setGroupsFocusRequest] = useState<GroupFocusRequest | null>(null);
   const [scannerRunNonce, setScannerRunNonce] = useState(0);
@@ -4422,6 +4422,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         onArrangementModeChange={setScanArrangementMode}
                         sectorSortMode={sectorGroupSortMode}
                         onSectorSortModeChange={setSectorGroupSortMode}
+                        groupsData={groupsData}
                         onExport={handleExportScanResults}
                       />
                       {visibleScanItems.length > 0 ? (

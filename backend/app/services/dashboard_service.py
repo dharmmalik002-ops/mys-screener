@@ -314,10 +314,14 @@ class DashboardService:
 
     @staticmethod
     def _chart_bar_limit(timeframe: str) -> int:
+        # Initial chart payload is intentionally lean: enough for 200dma /
+        # 52-week-high / 1y RS-line context, with the "Load Full History"
+        # button extending to ~5 years on demand. Cuts initial response
+        # size and Yahoo fetch time roughly in half vs the prior 1300.
         if timeframe == "1D":
-            return 1300
+            return 600
         if timeframe == "1W":
-            return 520
+            return 260
         if timeframe == "1h":
             return 1400
         return 500
@@ -1269,7 +1273,16 @@ class DashboardService:
             if cached_snapshot_at >= snapshot_updated_at and now - cached_at <= self._chart_response_cache_ttl(timeframe):
                 return cached_response
 
-        bars = await self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe))
+        # Brand-new IPOs sometimes have no Yahoo history yet (the data feed
+        # lags listing by 1-2 sessions). Rather than 500-ing the whole
+        # request, return a graceful empty ChartResponse so the frontend can
+        # surface a "Limited history available" state and still show the
+        # snapshot summary.
+        try:
+            bars = await self.provider.get_chart(symbol, timeframe, bars=self._chart_bar_limit(timeframe))
+        except Exception as exc:
+            logger.info("get_chart fell back to empty bars for %s (%s): %s", symbol, timeframe, exc)
+            bars = []
         snapshots: list[StockSnapshot] = []
         if not symbol.startswith("^"):
             try:

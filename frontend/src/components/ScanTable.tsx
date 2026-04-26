@@ -24,6 +24,7 @@ import {
   getChartGridSeries,
   type ChartBar,
   type ChartGridTimeframe,
+  type IndustryGroupsResponse,
   type MarketKey,
   type ScanDescriptor,
   type ScanMatch,
@@ -55,6 +56,7 @@ type ScanTableEntry =
       sector: string;
       accent: string;
       summary: ScanSectorSummary | undefined;
+      subtitle?: string;
       count: number;
       isFirst: boolean;
     }
@@ -331,6 +333,8 @@ function scanEntryHeight(entry: ScanTableEntry) {
   return entry.type === "header" ? SCAN_HEADER_SLOT_HEIGHT : SCAN_ROW_SLOT_HEIGHT;
 }
 
+type ArrangementMode = "flat" | "sector" | "group";
+
 type ScanTableProps = {
   market: MarketKey;
   loading: boolean;
@@ -343,10 +347,11 @@ type ScanTableProps = {
   selectedSymbol: string | null;
   sortMode: "change" | "rs";
   onSortModeChange: (mode: "change" | "rs") => void;
-  arrangementMode: "flat" | "sector";
-  onArrangementModeChange: (mode: "flat" | "sector") => void;
+  arrangementMode: ArrangementMode;
+  onArrangementModeChange: (mode: ArrangementMode) => void;
   sectorSortMode: "1W" | "1M" | "count-desc" | "count-asc";
   onSectorSortModeChange: (mode: "1W" | "1M" | "count-desc" | "count-asc") => void;
+  groupsData?: IndustryGroupsResponse | null;
   onExport: () => void;
 };
 
@@ -366,6 +371,7 @@ export function ScanTable({
   onArrangementModeChange,
   sectorSortMode,
   onSectorSortModeChange,
+  groupsData = null,
   onExport,
 }: ScanTableProps) {
   /* ----- Refs ----- */
@@ -440,7 +446,89 @@ export function ScanTable({
     });
   }, [sectorSortMode, sortedItems, summaryBySector]);
 
+  // Group bucketing: resolve each item's industry group via groupsData and
+  // sort buckets by rank ascending (rank #1 = top of list).
+  const groupContextBySymbol = useMemo(() => {
+    const map = new Map<string, { groupId: string; groupName: string; rank: number; totalGroups: number }>();
+    if (!groupsData) return map;
+    const total = groupsData.total_groups || groupsData.groups.length;
+    const rankByGroupId = new Map<string, { rank: number; name: string }>();
+    for (const g of groupsData.groups) {
+      rankByGroupId.set(g.group_id, { rank: g.rank, name: g.group_name });
+    }
+    for (const stock of groupsData.stocks) {
+      const meta = rankByGroupId.get(stock.final_group_id);
+      if (!meta) continue;
+      map.set(stock.symbol.toUpperCase(), {
+        groupId: stock.final_group_id,
+        groupName: meta.name,
+        rank: meta.rank,
+        totalGroups: total,
+      });
+    }
+    return map;
+  }, [groupsData]);
+
+  const groupBuckets = useMemo(() => {
+    const grouped = new Map<string, { rank: number; name: string; total: number; items: ScanMatch[] }>();
+    const unranked: ScanMatch[] = [];
+    for (const item of sortedItems) {
+      const ctx = groupContextBySymbol.get(item.symbol.toUpperCase());
+      if (!ctx) {
+        unranked.push(item);
+        continue;
+      }
+      const bucket = grouped.get(ctx.groupId) ?? { rank: ctx.rank, name: ctx.groupName, total: ctx.totalGroups, items: [] };
+      bucket.items.push(item);
+      grouped.set(ctx.groupId, bucket);
+    }
+    const ordered = Array.from(grouped.entries()).sort((a, b) => a[1].rank - b[1].rank);
+    return { ordered, unranked };
+  }, [groupContextBySymbol, sortedItems]);
+
   const tableEntries = useMemo<ScanTableEntry[]>(() => {
+    if (arrangementMode === "group" && groupsData) {
+      const entries: ScanTableEntry[] = [];
+      groupBuckets.ordered.forEach(([groupId, bucket], index) => {
+        entries.push({
+          key: `gheader:${groupId}`,
+          type: "header",
+          sector: `${bucket.name} · #${bucket.rank}`,
+          accent: sectorAccentColor(bucket.name),
+          summary: undefined,
+          subtitle: `Group rank ${bucket.rank} of ${bucket.total} · ${bucket.items.length} stock${bucket.items.length === 1 ? "" : "s"} in this scan`,
+          count: bucket.items.length,
+          isFirst: index === 0,
+        });
+        for (const item of bucket.items) {
+          entries.push({
+            key: `row:${item.scan_id}:${item.symbol}`,
+            type: "row",
+            item,
+          });
+        }
+      });
+      if (groupBuckets.unranked.length > 0) {
+        entries.push({
+          key: "gheader:unranked",
+          type: "header",
+          sector: "Ungrouped",
+          accent: "#94a3b8",
+          summary: undefined,
+          subtitle: `${groupBuckets.unranked.length} stock${groupBuckets.unranked.length === 1 ? "" : "s"} without a resolved group`,
+          count: groupBuckets.unranked.length,
+          isFirst: groupBuckets.ordered.length === 0,
+        });
+        for (const item of groupBuckets.unranked) {
+          entries.push({
+            key: `row:${item.scan_id}:${item.symbol}`,
+            type: "row",
+            item,
+          });
+        }
+      }
+      return entries;
+    }
     if (arrangementMode !== "sector") {
       return sortedItems.map((item) => ({
         key: `row:${item.scan_id}:${item.symbol}`,
@@ -470,7 +558,7 @@ export function ScanTable({
       );
       return [header, ...rows];
     });
-  }, [arrangementMode, sectorGroups, sortedItems, summaryBySector]);
+  }, [arrangementMode, groupBuckets, groupsData, sectorGroups, sortedItems, summaryBySector]);
 
   const shouldVirtualize = hasWideTableLayout && tableEntries.length > 120;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
@@ -616,7 +704,7 @@ export function ScanTable({
             <strong>
               {entry.sector} ({entry.count})
             </strong>
-            <small>{formatSectorLine(entry.summary, sectorSortMode)}</small>
+            <small>{entry.subtitle ?? formatSectorLine(entry.summary, sectorSortMode)}</small>
           </div>
         </div>
       );
@@ -857,7 +945,7 @@ export function ScanTable({
             ) : null}
           </div>
 
-          {/* Layout (sector / flat) */}
+          {/* Layout (flat / sector / industry group) */}
           <div className="st-seg">
             <button
               type="button"
@@ -874,6 +962,15 @@ export function ScanTable({
               title="Group by sector"
             >
               By Sector
+            </button>
+            <button
+              type="button"
+              className={`st-seg-btn${arrangementMode === "group" ? " is-active" : ""}`}
+              onClick={() => onArrangementModeChange("group")}
+              title="Group by industry group, ordered by group rank (#1 first)"
+              disabled={!groupsData}
+            >
+              By Group
             </button>
           </div>
 
