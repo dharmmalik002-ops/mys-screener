@@ -4,6 +4,7 @@ import asyncio
 import csv
 import io
 import json
+import logging
 import re
 import time
 from bisect import bisect_left, bisect_right
@@ -13,6 +14,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 import pandas as pd
+
+logger = logging.getLogger(__name__)
 
 from app.core.config import Settings
 from app.models.market import (
