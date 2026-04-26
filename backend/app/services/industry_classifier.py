@@ -29,8 +29,17 @@ OVERRIDES_PATH = DATA_DIR / "manual_group_overrides.csv"
 KEYWORDS_PATH = DATA_DIR / "keyword_rules.json"
 PEER_ALIASES_PATH = DATA_DIR / "peer_group_aliases.csv"
 NEEDS_REVIEW_PATH = DATA_DIR / "needs_review.csv"
+BUSINESS_DESC_PATH = DATA_DIR / "business_descriptions.json"
 
-CONFIDENCE_THRESHOLD = 0.35
+# Companion fundamentals cache populated by the chart/fundamentals path.
+# We read its `about` field opportunistically so symbols a user has browsed
+# at least once contribute a business description to the classifier without
+# any manual upkeep.
+FUNDAMENTALS_CACHE_PATH = (
+    Path(__file__).resolve().parent.parent.parent / "data" / "free_fundamentals.json"
+)
+
+CONFIDENCE_THRESHOLD = 0.25
 
 
 @dataclass
@@ -48,6 +57,7 @@ class IndustryClassifier:
         self._keyword_rules: dict[str, dict] = {}
         self._peer_aliases: dict[tuple[str, str], str] = {}
         self._peer_aliases_by_industry: dict[str, str] = {}
+        self._business_descriptions: dict[str, str] = {}
         self._needs_review_rows: list[dict[str, str]] = []
         self._load()
 
@@ -78,11 +88,46 @@ class IndustryClassifier:
                     if raw_industry:
                         self._peer_aliases_by_industry.setdefault(raw_industry, group_id)
 
+        # Authoritative manually-curated descriptions (highest priority).
+        if BUSINESS_DESC_PATH.exists():
+            try:
+                with BUSINESS_DESC_PATH.open(encoding="utf-8") as fh:
+                    payload = json.load(fh)
+                if isinstance(payload, dict):
+                    for sym, desc in payload.items():
+                        if isinstance(sym, str) and isinstance(desc, str) and desc.strip():
+                            self._business_descriptions[sym.strip().upper()] = desc.strip()
+            except Exception as exc:
+                logger.warning("Failed to load %s: %s", BUSINESS_DESC_PATH, exc)
+
+        # Opportunistic merge from the fundamentals cache. Any symbol that has
+        # been browsed at least once will have a populated `about` field, which
+        # we use as a fallback when the curated JSON doesn't cover it. This is
+        # how the classifier organically improves over time without manual upkeep.
+        if FUNDAMENTALS_CACHE_PATH.exists():
+            try:
+                with FUNDAMENTALS_CACHE_PATH.open(encoding="utf-8") as fh:
+                    cache_payload = json.load(fh)
+                if isinstance(cache_payload, dict):
+                    for sym, entry in cache_payload.items():
+                        if not isinstance(entry, dict):
+                            continue
+                        text = entry.get("about") or entry.get("business_summary")
+                        if not isinstance(text, str) or not text.strip():
+                            continue
+                        sym_upper = str(sym).strip().upper()
+                        # Don't clobber an authoritative description.
+                        if sym_upper and sym_upper not in self._business_descriptions:
+                            self._business_descriptions[sym_upper] = text.strip()
+            except Exception as exc:
+                logger.warning("Failed to merge fundamentals descriptions from %s: %s", FUNDAMENTALS_CACHE_PATH, exc)
+
         logger.info(
-            "industry_classifier loaded: %d overrides, %d keyword rules, %d peer aliases",
+            "industry_classifier loaded: %d overrides, %d keyword rules, %d peer aliases, %d business descriptions",
             len(self._overrides),
             len(self._keyword_rules),
             len(self._peer_aliases),
+            len(self._business_descriptions),
         )
 
     def classify(
@@ -101,6 +146,11 @@ class IndustryClassifier:
                 confidence=1.0,
                 source_layer="override",
             )
+
+        # Fall back to the cached business description (curated JSON or
+        # fundamentals cache) when the caller didn't pass one explicitly.
+        if not (business_desc or "").strip() and sym in self._business_descriptions:
+            business_desc = self._business_descriptions[sym]
 
         haystack = " ".join(
             (company_name or "", raw_sector or "", raw_industry or "", business_desc or "")
