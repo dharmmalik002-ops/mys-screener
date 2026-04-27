@@ -456,3 +456,54 @@
   font-size: 0.84rem;
   color: var(--st-text-soft);
 }
+
+/* ----- Arrange-by-group layout ----- */
+.wl-arrange-spacer {
+  flex: 1 1 auto;
+}
+
+.wl-group-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.wl-group-header {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 14px 6px;
+  margin-top: 8px;
+  border-bottom: 1px solid var(--st-border, #e5e7eb);
+}
+
+.wl-group-header.is-first {
+  margin-top: 0;
+}
+
+.wl-group-header strong {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--st-text);
+  letter-spacing: -0.01em;
+}
+
+.wl-group-header small {
+  font-size: 0.72rem;
+  color: var(--st-text-soft);
+}
+
+.wl-group-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, var(--st-primary, #6366f1), var(--st-primary-strong, #4f46e5));
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}

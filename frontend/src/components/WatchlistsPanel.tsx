@@ -65,6 +65,8 @@ type WatchlistsPanelProps = {
 };
 
 type GroupRankInfo = {
+  groupId: string | null;
+  groupName: string | null;
   groupRank: number | null;
   rankInGroup: number | null;
   groupSize: number | null;
@@ -81,6 +83,8 @@ type WatchlistDisplayItem = {
   stock_return_20d: number | null;
   stock_return_60d: number | null;
   stock_return_12m: number | null;
+  groupId: string | null;
+  groupName: string | null;
   groupRank: number | null;
   rankInGroup: number | null;
   groupSize: number | null;
@@ -200,9 +204,9 @@ function buildGroupRankIndex(payload: IndustryGroupsResponse | null): Map<string
   const index = new Map<string, GroupRankInfo>();
   if (!payload) return index;
 
-  const groupRankById = new Map<string, number>();
+  const groupMetaById = new Map<string, { rank: number; name: string }>();
   for (const group of payload.groups) {
-    groupRankById.set(group.group_id, group.rank);
+    groupMetaById.set(group.group_id, { rank: group.rank, name: group.group_name });
   }
 
   const stocksByGroup = new Map<string, IndustryGroupStockItem[]>();
@@ -214,10 +218,12 @@ function buildGroupRankIndex(payload: IndustryGroupsResponse | null): Map<string
 
   stocksByGroup.forEach((members, groupId) => {
     const sorted = sortGroupMembers(members);
-    const groupRank = groupRankById.get(groupId) ?? null;
+    const meta = groupMetaById.get(groupId);
     sorted.forEach((member, idx) => {
       index.set(member.symbol.toUpperCase(), {
-        groupRank,
+        groupId,
+        groupName: meta?.name ?? null,
+        groupRank: meta?.rank ?? null,
         rankInGroup: idx + 1,
         groupSize: sorted.length,
       });
@@ -264,6 +270,7 @@ export function WatchlistsPanel({
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
+  const [arrangementMode, setArrangementMode] = useState<"flat" | "group">("flat");
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
@@ -286,6 +293,8 @@ export function WatchlistsPanel({
         .map((symbol) => {
           const match = lookup.get(symbol);
           const rankInfo = groupRankIndex.get(symbol.toUpperCase()) ?? {
+            groupId: null,
+            groupName: null,
             groupRank: null,
             rankInGroup: null,
             groupSize: null,
@@ -303,6 +312,8 @@ export function WatchlistsPanel({
               stock_return_20d: match.stock_return_20d ?? null,
               stock_return_60d: match.stock_return_60d ?? null,
               stock_return_12m: match.stock_return_12m ?? null,
+              groupId: rankInfo.groupId,
+              groupName: rankInfo.groupName,
               groupRank: rankInfo.groupRank,
               rankInGroup: rankInfo.rankInGroup,
               groupSize: rankInfo.groupSize,
@@ -321,6 +332,8 @@ export function WatchlistsPanel({
             stock_return_20d: null,
             stock_return_60d: null,
             stock_return_12m: null,
+            groupId: rankInfo.groupId,
+            groupName: rankInfo.groupName,
             groupRank: rankInfo.groupRank,
             rankInGroup: rankInfo.rankInGroup,
             groupSize: rankInfo.groupSize,
@@ -333,6 +346,34 @@ export function WatchlistsPanel({
         }),
     [activeWatchlist?.symbols, groupRankIndex, lookup],
   );
+
+  // Bucket the watchlist by industry group for the "By Group" arrangement.
+  // Groups are sorted by group_rank ascending (#1 first); anything without
+  // a resolved group falls into a trailing "Ungrouped" bucket.
+  const groupedView = useMemo(() => {
+    type Bucket = { groupId: string; groupName: string; rank: number; items: WatchlistDisplayItem[] };
+    const buckets = new Map<string, Bucket>();
+    const ungrouped: WatchlistDisplayItem[] = [];
+    for (const item of activeItems) {
+      if (!item.groupId || item.groupRank === null || !item.groupName) {
+        ungrouped.push(item);
+        continue;
+      }
+      const existing = buckets.get(item.groupId);
+      if (existing) {
+        existing.items.push(item);
+      } else {
+        buckets.set(item.groupId, {
+          groupId: item.groupId,
+          groupName: item.groupName,
+          rank: item.groupRank,
+          items: [item],
+        });
+      }
+    }
+    const ordered = Array.from(buckets.values()).sort((a, b) => a.rank - b.rank);
+    return { ordered, ungrouped };
+  }, [activeItems]);
 
   const availableMoveTargets = useMemo(
     () => watchlists.filter((watchlist) => watchlist.id !== activeWatchlist?.id),
@@ -837,6 +878,26 @@ export function WatchlistsPanel({
               >
                 Remove Selected
               </button>
+              <span className="wl-arrange-spacer" aria-hidden="true" />
+              <div className="st-seg" role="tablist" aria-label="Arrange watchlist">
+                <button
+                  type="button"
+                  className={`st-seg-btn${arrangementMode === "flat" ? " is-active" : ""}`}
+                  onClick={() => setArrangementMode("flat")}
+                  title="Flat list (sorted by RS rating)"
+                >
+                  Flat
+                </button>
+                <button
+                  type="button"
+                  className={`st-seg-btn${arrangementMode === "group" ? " is-active" : ""}`}
+                  onClick={() => setArrangementMode("group")}
+                  disabled={!groupsData}
+                  title="Bucket by industry group, ordered by group rank (#1 first)"
+                >
+                  By Group
+                </button>
+              </div>
             </div>
 
             <div className="scan-table">
@@ -850,11 +911,42 @@ export function WatchlistsPanel({
                 <span></span>
               </div>
               <div
-                ref={shouldVirtualize ? containerRef : undefined}
-                className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}
+                ref={arrangementMode === "flat" && shouldVirtualize ? containerRef : undefined}
+                className={
+                  arrangementMode === "flat" && shouldVirtualize
+                    ? "scan-table-body scan-table-body-virtual"
+                    : "scan-table-body"
+                }
               >
                 {activeItems.length === 0 ? (
                   <div className="empty-state">This watchlist is empty. Add stocks from scanners, groups, or the chart.</div>
+                ) : arrangementMode === "group" ? (
+                  <>
+                    {groupedView.ordered.map((bucket, idx) => (
+                      <div key={`gh:${bucket.groupId}`} className="wl-group-section">
+                        <div className={idx === 0 ? "wl-group-header is-first" : "wl-group-header"}>
+                          <strong>
+                            {bucket.groupName} <span className="wl-group-rank">#{bucket.rank}</span>
+                          </strong>
+                          <small>
+                            {bucket.items.length} stock{bucket.items.length === 1 ? "" : "s"} from this watchlist
+                          </small>
+                        </div>
+                        {bucket.items.map((item) => renderWatchlistRow(item))}
+                      </div>
+                    ))}
+                    {groupedView.ungrouped.length > 0 ? (
+                      <div className="wl-group-section">
+                        <div className={groupedView.ordered.length === 0 ? "wl-group-header is-first" : "wl-group-header"}>
+                          <strong>Ungrouped</strong>
+                          <small>
+                            {groupedView.ungrouped.length} stock{groupedView.ungrouped.length === 1 ? "" : "s"} without a resolved industry group
+                          </small>
+                        </div>
+                        {groupedView.ungrouped.map((item) => renderWatchlistRow(item))}
+                      </div>
+                    ) : null}
+                  </>
                 ) : shouldVirtualize ? (
                   <div className="scan-table-virtual-spacer" style={{ height: `${totalHeight}px` }}>
                     {visibleRows.map((row) => (
