@@ -3464,7 +3464,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         };
       });
     });
-    setActiveWatchlistId(watchlistId);
   };
 
   const handleRemoveFromWatchlist = (watchlistId: string, symbol: string) => {
@@ -3522,8 +3521,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         return watchlist;
       });
     });
-
-    setActiveWatchlistId(toWatchlistId);
   };
 
   const handleExportWatchlist = (watchlistId: string) => {
