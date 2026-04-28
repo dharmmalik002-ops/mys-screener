@@ -1341,25 +1341,6 @@ function downloadTextFile(filename: string, contents: string) {
   window.URL.revokeObjectURL(url);
 }
 
-function pickNextSymbolAfterRemoval(symbols: string[], removing: string[], anchor: string): string | null {
-  const anchorIndex = symbols.indexOf(anchor);
-  if (anchorIndex === -1) {
-    return null;
-  }
-  const removingSet = new Set(removing);
-  for (let i = anchorIndex + 1; i < symbols.length; i += 1) {
-    if (!removingSet.has(symbols[i])) {
-      return symbols[i];
-    }
-  }
-  for (let i = anchorIndex - 1; i >= 0; i -= 1) {
-    if (!removingSet.has(symbols[i])) {
-      return symbols[i];
-    }
-  }
-  return null;
-}
-
 export default function App({ initialMarket, useMarketRoutes = false }: AppProps) {
   const bootstrapMarket = initialMarket ?? readActiveMarket();
   const initialPreferences = readChartPreferences(bootstrapMarket);
@@ -1463,6 +1444,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const pageVisibleSymbolsRef = useRef<string[]>([]);
   const chartNavigationSymbolsRef = useRef<string[] | null>(null);
   const selectedSymbolRef = useRef<string | null>(null);
+  const previousActiveWatchlistSymbolsRef = useRef<{ id: string | null; symbols: string[] }>({ id: null, symbols: [] });
   const activeMarketRef = useRef(activeMarket);
   const timeframeRef = useRef(timeframe);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
@@ -3030,12 +3012,37 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
 
     if (!activeWatchlist.symbols.length) {
+      previousActiveWatchlistSymbolsRef.current = { id: activeWatchlist.id, symbols: [] };
       return;
     }
 
     if (!selectedSymbol || !activeWatchlist.symbols.includes(selectedSymbol)) {
-      setSelectedSymbol(activeWatchlist.symbols[0]);
+      const prev = previousActiveWatchlistSymbolsRef.current;
+      const sameWatchlist = prev.id === activeWatchlist.id;
+      let nextSymbol: string | null = null;
+      if (sameWatchlist && selectedSymbol) {
+        const oldIndex = prev.symbols.indexOf(selectedSymbol);
+        if (oldIndex !== -1) {
+          for (let i = oldIndex + 1; i < prev.symbols.length; i += 1) {
+            if (activeWatchlist.symbols.includes(prev.symbols[i])) {
+              nextSymbol = prev.symbols[i];
+              break;
+            }
+          }
+          if (!nextSymbol) {
+            for (let i = oldIndex - 1; i >= 0; i -= 1) {
+              if (activeWatchlist.symbols.includes(prev.symbols[i])) {
+                nextSymbol = prev.symbols[i];
+                break;
+              }
+            }
+          }
+        }
+      }
+      setSelectedSymbol(nextSymbol ?? activeWatchlist.symbols[0]);
     }
+
+    previousActiveWatchlistSymbolsRef.current = { id: activeWatchlist.id, symbols: activeWatchlist.symbols };
   }, [activePage, activeWatchlist, selectedSymbol]);
 
   useEffect(() => {
@@ -3464,17 +3471,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (!normalizedSymbol) {
       return;
     }
-    if (
-      activeWatchlist &&
-      activeWatchlist.id !== watchlistId &&
-      selectedSymbol === normalizedSymbol &&
-      activeWatchlist.symbols.includes(normalizedSymbol)
-    ) {
-      const nextSymbol = pickNextSymbolAfterRemoval(activeWatchlist.symbols, [normalizedSymbol], normalizedSymbol);
-      if (nextSymbol && nextSymbol !== selectedSymbol) {
-        setSelectedSymbol(nextSymbol);
-      }
-    }
     setWatchlists((current) => {
       if (!current.some((watchlist) => watchlist.id === watchlistId)) {
         return current;
@@ -3525,18 +3521,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     );
     if (normalizedSymbols.length === 0) {
       return;
-    }
-
-    if (
-      activeWatchlistId === fromWatchlistId &&
-      activeWatchlist &&
-      selectedSymbol &&
-      normalizedSymbols.includes(selectedSymbol)
-    ) {
-      const nextSymbol = pickNextSymbolAfterRemoval(activeWatchlist.symbols, normalizedSymbols, selectedSymbol);
-      if (nextSymbol && nextSymbol !== selectedSymbol) {
-        setSelectedSymbol(nextSymbol);
-      }
     }
 
     setWatchlists((current) => {
