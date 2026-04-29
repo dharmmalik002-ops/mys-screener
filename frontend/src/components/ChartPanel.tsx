@@ -70,6 +70,13 @@ type RvolPoint = {
   averageVolume: number | null;
 };
 
+type RvolWidgetSettings = {
+  enabled: boolean;
+  pos: { x: number; y: number } | null;
+  accentColor: string;
+  scale: "sm" | "md" | "lg";
+};
+
 type ChartAnchor = {
   time: number;
   price: number;
@@ -294,6 +301,7 @@ const FUTURE_DRAW_EXTENSION_BARS = 96;
 const CHART_FAVORITES_STORAGE_KEY = "stockScanner.chartFavorites.v1";
 const FAVORITES_WIDGET_STORAGE_KEY = "stockScanner.favoritesWidget.v1";
 const POCKET_PIVOT_STORAGE_KEY = "stockScanner.pocketPivotWidget.v1";
+const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
   enabled: true,
   itemIds: ["tool:trendline", "tool:measure", "overlay:rvol"],
@@ -314,6 +322,12 @@ const DEFAULT_POCKET_PIVOT_WIDGET: PocketPivotWidgetState = {
   height: 172,
   dotColor: "#ffd36f",
   dotSize: 1.8,
+};
+const DEFAULT_RVOL_WIDGET: RvolWidgetSettings = {
+  enabled: false,
+  pos: null,
+  accentColor: "#00d2ff",
+  scale: "md",
 };
 const FAVORITE_ITEMS: Array<{ id: FavoriteItemId; label: string; kind: "Tool" | "Indicator" | "Overlay" | "Action" }> = [
   ...DRAWING_TOOLS.filter((tool) => tool.key !== "none").map((tool) => ({
@@ -392,15 +406,23 @@ function computeSma(bars: ChartBar[], length: number) {
     return [];
   }
 
-  return bars.slice(length - 1).map((bar, offset) => {
-    const startIndex = offset;
-    const window = bars.slice(startIndex, startIndex + length);
-    const average = window.reduce((sum, item) => sum + item.close, 0) / window.length;
-    return {
-      time: bar.time as UTCTimestamp,
-      value: Number(average.toFixed(2)),
-    };
-  });
+  const points: Array<{ time: UTCTimestamp; value: number }> = [];
+  let sum = 0;
+
+  for (let index = 0; index < bars.length; index += 1) {
+    sum += bars[index]?.close ?? 0;
+    if (index >= length) {
+      sum -= bars[index - length]?.close ?? 0;
+    }
+    if (index >= length - 1) {
+      points.push({
+        time: bars[index].time as UTCTimestamp,
+        value: Number((sum / length).toFixed(2)),
+      });
+    }
+  }
+
+  return points;
 }
 
 function computeVolumeSma(bars: ChartBar[], length: number) {
@@ -408,38 +430,47 @@ function computeVolumeSma(bars: ChartBar[], length: number) {
     return [];
   }
 
-  return bars.slice(length - 1).map((bar, offset) => {
-    const startIndex = offset;
-    const window = bars.slice(startIndex, startIndex + length);
-    const average = window.reduce((sum, item) => sum + item.volume, 0) / window.length;
-    return {
-      time: bar.time as UTCTimestamp,
-      value: Number(average.toFixed(2)),
-    };
-  });
+  const points: Array<{ time: UTCTimestamp; value: number }> = [];
+  let sum = 0;
+
+  for (let index = 0; index < bars.length; index += 1) {
+    sum += bars[index]?.volume ?? 0;
+    if (index >= length) {
+      sum -= bars[index - length]?.volume ?? 0;
+    }
+    if (index >= length - 1) {
+      points.push({
+        time: bars[index].time as UTCTimestamp,
+        value: Number((sum / length).toFixed(2)),
+      });
+    }
+  }
+
+  return points;
 }
 
 function computeRvolPoints(bars: ChartBar[], length = 50): RvolPoint[] {
-  return bars.map((bar, index) => {
-    const startIndex = Math.max(0, index - length);
-    const window = bars.slice(startIndex, index);
-    if (!window.length) {
-      return {
-        time: bar.time,
-        value: null,
-        volume: bar.volume,
-        averageVolume: null,
-      };
-    }
+  const points: RvolPoint[] = [];
+  let priorVolumeSum = 0;
 
-    const averageVolume = window.reduce((sum, item) => sum + item.volume, 0) / window.length;
-    return {
+  for (let index = 0; index < bars.length; index += 1) {
+    const bar = bars[index];
+    const windowLength = Math.min(index, length);
+    const averageVolume = windowLength > 0 ? priorVolumeSum / windowLength : null;
+    points.push({
       time: bar.time,
-      value: averageVolume > 0 ? Number((bar.volume / averageVolume).toFixed(2)) : null,
+      value: averageVolume && averageVolume > 0 ? Number((bar.volume / averageVolume).toFixed(2)) : null,
       volume: bar.volume,
       averageVolume,
-    };
-  });
+    });
+
+    priorVolumeSum += bar.volume;
+    if (index >= length) {
+      priorVolumeSum -= bars[index - length]?.volume ?? 0;
+    }
+  }
+
+  return points;
 }
 
 function computePocketPivotBars(bars: ChartBar[]) {
@@ -795,6 +826,32 @@ function readPocketPivotWidgetState(): PocketPivotWidgetState {
   }
 }
 
+function readRvolWidgetSettings(): RvolWidgetSettings {
+  if (typeof window === "undefined") {
+    return DEFAULT_RVOL_WIDGET;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(RVOL_WIDGET_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_RVOL_WIDGET;
+    }
+    const parsed = JSON.parse(raw) as Partial<RvolWidgetSettings>;
+    const parsedPos = parsed.pos && typeof parsed.pos === "object" ? parsed.pos : null;
+    const scale = parsed.scale === "sm" || parsed.scale === "lg" || parsed.scale === "md" ? parsed.scale : DEFAULT_RVOL_WIDGET.scale;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_RVOL_WIDGET.enabled,
+      pos: parsedPos && typeof parsedPos.x === "number" && typeof parsedPos.y === "number"
+        ? { x: clamp(parsedPos.x, 0, 1200), y: clamp(parsedPos.y, 0, 900) }
+        : null,
+      accentColor: typeof parsed.accentColor === "string" ? parsed.accentColor : DEFAULT_RVOL_WIDGET.accentColor,
+      scale,
+    };
+  } catch {
+    return DEFAULT_RVOL_WIDGET;
+  }
+}
+
 function pointToSegmentDist(px: number, py: number, x1: number, y1: number, x2: number, y2: number) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -905,10 +962,17 @@ type RvolEntry = {
 
 function computeRvolBars(bars: ChartBar[], period = 50): RvolEntry[] {
   const result: RvolEntry[] = [];
+  let volumeSum = 0;
+  let turnoverSum = 0;
+
+  for (let i = 0; i < period && i < bars.length; i += 1) {
+    volumeSum += bars[i].volume;
+    turnoverSum += bars[i].volume * bars[i].close;
+  }
+
   for (let i = period; i < bars.length; i++) {
-    const prior = bars.slice(i - period, i);
-    const avgVolume = prior.reduce((s, b) => s + b.volume, 0) / period;
-    const avgTurnover = prior.reduce((s, b) => s + b.volume * b.close, 0) / period;
+    const avgVolume = volumeSum / period;
+    const avgTurnover = turnoverSum / period;
     const bar = bars[i];
     const turnover = bar.volume * bar.close;
     result.push({
@@ -920,6 +984,10 @@ function computeRvolBars(bars: ChartBar[], period = 50): RvolEntry[] {
       turnover,
       avgTurnover,
     });
+
+    const outgoing = bars[i - period];
+    volumeSum += bar.volume - outgoing.volume;
+    turnoverSum += turnover - (outgoing.volume * outgoing.close);
   }
   return result;
 }
@@ -1070,10 +1138,11 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
-  const [showRvol, setShowRvol] = useState(false);
-  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(null);
-  const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
-  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
+  const initialRvolWidget = useMemo(() => readRvolWidgetSettings(), []);
+  const [showRvol, setShowRvol] = useState(initialRvolWidget.enabled);
+  const [rvolPos, setRvolPos] = useState<{ x: number; y: number } | null>(initialRvolWidget.pos);
+  const [rvolAccentColor, setRvolAccentColor] = useState(initialRvolWidget.accentColor);
+  const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">(initialRvolWidget.scale);
   const [favoritesSettings, setFavoritesSettings] = useState<FavoritesSettings>(() => readFavoritesSettings());
   const [favoritesWidget, setFavoritesWidget] = useState<FavoritesWidgetState>(() => readFavoritesWidgetState());
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
@@ -1102,8 +1171,13 @@ export function ChartPanel({
   const currentRvol = useMemo<RvolEntry | null>(() => {
     if (!rvolData.length) return null;
     if (hoveredBar) {
-      const entry = [...rvolData].reverse().find((e) => e.time <= hoveredBar.time);
-      return entry ?? rvolData[rvolData.length - 1];
+      for (let index = rvolData.length - 1; index >= 0; index -= 1) {
+        const entry = rvolData[index];
+        if (entry.time <= hoveredBar.time) {
+          return entry;
+        }
+      }
+      return rvolData[rvolData.length - 1];
     }
     return rvolData[rvolData.length - 1];
   }, [rvolData, hoveredBar]);
@@ -1198,6 +1272,22 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [pocketPivotWidget]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        RVOL_WIDGET_STORAGE_KEY,
+        JSON.stringify({
+          enabled: showRvol,
+          pos: rvolPos,
+          accentColor: rvolAccentColor,
+          scale: rvolScale,
+        } satisfies RvolWidgetSettings),
+      );
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [rvolAccentColor, rvolPos, rvolScale, showRvol]);
 
   useEffect(() => {
     return () => {
