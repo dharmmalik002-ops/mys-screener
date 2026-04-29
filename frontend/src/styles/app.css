@@ -5096,10 +5096,18 @@ button {
   margin-bottom: 18px;
 }
 
-.chart-stage-watchlist-add {
+.chart-stage-quick-actions {
   position: absolute;
   top: 12px;
   right: 12px;
+  z-index: 6;
+  display: grid;
+  gap: 7px;
+}
+
+.chart-stage-action-button,
+.chart-stage-watchlist-add {
+  position: relative;
   z-index: 4;
   width: 34px;
   height: 34px;
@@ -5112,9 +5120,22 @@ button {
   box-shadow: 0 10px 22px rgba(2, 8, 22, 0.24);
 }
 
+.chart-stage-action-button:hover,
 .chart-stage-watchlist-add:hover {
   border-color: color-mix(in srgb, var(--accent) 72%, transparent);
   background: color-mix(in srgb, var(--surface) 96%, transparent);
+}
+
+.chart-stage-action-button.danger {
+  border-color: color-mix(in srgb, var(--danger) 55%, transparent);
+  color: var(--danger);
+}
+
+.chart-stage-action-button.journal {
+  border-color: color-mix(in srgb, var(--warning) 58%, transparent);
+  color: var(--warning);
+  font-size: 0.85rem;
+  font-weight: 900;
 }
 
 @media (max-width: 1320px) {
@@ -5892,10 +5913,64 @@ button {
   min-width: 72px;
 }
 
+.pocket-pivot-control select {
+  min-width: 74px;
+  padding: 5px 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-soft) 68%, transparent);
+  color: var(--text);
+  font-size: 0.76rem;
+}
+
 .pocket-pivot-control strong {
   min-width: 42px;
   color: var(--text);
   font-size: 0.76rem;
+}
+
+.pocket-pivot-notes {
+  display: grid;
+  gap: 6px;
+  min-height: 88px;
+}
+
+.pocket-pivot-notes-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.pocket-pivot-notes-head span {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pocket-pivot-notes-head small {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pocket-pivot-notes textarea {
+  width: 100%;
+  min-height: 84px;
+  resize: vertical;
+  padding: 8px 9px;
+  border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 64%, transparent);
+  line-height: 1.45;
+}
+
+.pocket-pivot-note-controls {
+  display: grid;
+  gap: 8px;
 }
 
 .pocket-pivot-resize {

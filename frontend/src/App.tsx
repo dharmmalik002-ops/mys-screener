@@ -1130,6 +1130,10 @@ function normalizeWatchlistsStatePayload(
   return { watchlists, activeWatchlistId };
 }
 
+function normalizeJournalChartSymbol(symbol: string) {
+  return symbol.trim().toUpperCase().replace(/\.(NS|BO|BSE|NSE)$/i, "");
+}
+
 function watchlistsStateSignature(watchlists: LocalWatchlist[], activeWatchlistId: string | null) {
   return JSON.stringify({ watchlists, active_watchlist_id: activeWatchlistId });
 }
@@ -3363,6 +3367,20 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setChartOpen(true);
   };
 
+  const handleJournalOpenSymbolChart = (symbol: string) => {
+    handlePickSymbol(normalizeJournalChartSymbol(symbol));
+  };
+
+  const handleChartAddToJournal = (symbol: string, suggestedPrice?: number) => {
+    const normalizedSymbol = normalizeJournalChartSymbol(symbol);
+    if (!normalizedSymbol) {
+      return;
+    }
+    setJournalAddRequest({ symbol: normalizedSymbol, suggestedPrice });
+    setActivePage("journal");
+    setChartOpen(false);
+  };
+
   const handlePickSymbolWithContext = (symbol: string, contextSymbols: string[]) => {
     const scoped = Array.from(new Set(contextSymbols.filter(Boolean)));
     chartNavigationSymbolsRef.current = scoped.length > 0 ? scoped : null;
@@ -4130,7 +4148,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               market={activeMarket}
               addRequest={journalAddRequest}
               onAddRequestHandled={() => setJournalAddRequest(null)}
-              onOpenSymbolChart={handlePickSymbol}
+              onOpenSymbolChart={handleJournalOpenSymbolChart}
             />
           </Suspense>
         ) : null}
@@ -4493,6 +4511,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     annotations={activeAnnotations}
                     onAnnotationsChange={handleAnnotationsChange}
                     onAddToWatchlist={setWatchlistPickerSymbol}
+                    onAddToJournal={handleChartAddToJournal}
                     searchOptions={universeCatalog}
                     onSearchSymbol={handleChartSearchSubmit}
                     onOpenGroup={handleOpenChartGroupModal}
@@ -4569,6 +4588,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   annotations={activeAnnotations}
                   onAnnotationsChange={handleAnnotationsChange}
                   onAddToWatchlist={setWatchlistPickerSymbol}
+                  onRemoveFromWatchlist={
+                    activePage === "watchlists" && activeWatchlist
+                      ? (symbol) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
+                      : undefined
+                  }
+                  onAddToJournal={handleChartAddToJournal}
                   searchOptions={universeCatalog}
                   onSearchSymbol={handleChartSearchSubmit}
                   onOpenGroup={handleOpenChartGroupModal}
@@ -4637,6 +4662,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                 annotations={activeAnnotations}
                 onAnnotationsChange={handleAnnotationsChange}
                 onAddToWatchlist={setWatchlistPickerSymbol}
+                onRemoveFromWatchlist={
+                  activePage === "watchlists" && activeWatchlist
+                    ? (symbol) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
+                    : undefined
+                }
+                onAddToJournal={handleChartAddToJournal}
                 searchOptions={universeCatalog}
                 onSearchSymbol={handleChartSearchSubmit}
                 onOpenGroup={handleOpenChartGroupModal}
