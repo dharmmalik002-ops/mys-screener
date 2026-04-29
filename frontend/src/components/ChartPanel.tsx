@@ -61,6 +61,14 @@ type PocketPivotWidgetState = {
   height: number;
   dotColor: string;
   dotSize: number;
+};
+
+type NotesWidgetState = {
+  enabled: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
   noteColor: string;
   noteFont: string;
   noteFontSize: number;
@@ -80,7 +88,7 @@ type RvolWidgetSettings = {
   scale: "sm" | "md" | "lg";
 };
 
-type PocketPivotNoteStyle = Pick<PocketPivotWidgetState, "noteColor" | "noteFont" | "noteFontSize">;
+type PocketPivotNoteStyle = Pick<NotesWidgetState, "noteColor" | "noteFont" | "noteFontSize">;
 type PocketPivotNotesMap = Record<string, string>;
 
 type ChartAnchor = {
@@ -310,6 +318,7 @@ const CHART_FAVORITES_STORAGE_KEY = "stockScanner.chartFavorites.v1";
 const FAVORITES_WIDGET_STORAGE_KEY = "stockScanner.favoritesWidget.v1";
 const POCKET_PIVOT_STORAGE_KEY = "stockScanner.pocketPivotWidget.v1";
 const POCKET_PIVOT_NOTES_STORAGE_KEY = "stockScanner.pocketPivotNotes.v1";
+const NOTES_WIDGET_STORAGE_KEY = "stockScanner.notesWidget.v1";
 const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
   enabled: true,
@@ -331,6 +340,13 @@ const DEFAULT_POCKET_PIVOT_WIDGET: PocketPivotWidgetState = {
   height: 172,
   dotColor: "#ffd36f",
   dotSize: 1.8,
+};
+const DEFAULT_NOTES_WIDGET: NotesWidgetState = {
+  enabled: false,
+  x: 280,
+  y: 86,
+  width: 280,
+  height: 220,
   noteColor: "#f8fafc",
   noteFont: "Inter, system-ui, sans-serif",
   noteFontSize: 13,
@@ -832,12 +848,35 @@ function readPocketPivotWidgetState(): PocketPivotWidgetState {
       height: clamp(Number(parsed.height ?? DEFAULT_POCKET_PIVOT_WIDGET.height), 130, 360),
       dotColor: typeof parsed.dotColor === "string" ? parsed.dotColor : DEFAULT_POCKET_PIVOT_WIDGET.dotColor,
       dotSize: clamp(Number(parsed.dotSize ?? DEFAULT_POCKET_PIVOT_WIDGET.dotSize), 0.5, 8),
-      noteColor: typeof parsed.noteColor === "string" ? parsed.noteColor : DEFAULT_POCKET_PIVOT_WIDGET.noteColor,
-      noteFont: typeof parsed.noteFont === "string" ? parsed.noteFont : DEFAULT_POCKET_PIVOT_WIDGET.noteFont,
-      noteFontSize: clamp(Number(parsed.noteFontSize ?? DEFAULT_POCKET_PIVOT_WIDGET.noteFontSize), 10, 28),
     };
   } catch {
     return DEFAULT_POCKET_PIVOT_WIDGET;
+  }
+}
+
+function readNotesWidgetState(): NotesWidgetState {
+  if (typeof window === "undefined") {
+    return DEFAULT_NOTES_WIDGET;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(NOTES_WIDGET_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_NOTES_WIDGET;
+    }
+    const parsed = JSON.parse(raw) as Partial<NotesWidgetState>;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_NOTES_WIDGET.enabled,
+      x: clamp(Number(parsed.x ?? DEFAULT_NOTES_WIDGET.x), 0, 1200),
+      y: clamp(Number(parsed.y ?? DEFAULT_NOTES_WIDGET.y), 0, 900),
+      width: clamp(Number(parsed.width ?? DEFAULT_NOTES_WIDGET.width), 220, 520),
+      height: clamp(Number(parsed.height ?? DEFAULT_NOTES_WIDGET.height), 160, 480),
+      noteColor: typeof parsed.noteColor === "string" ? parsed.noteColor : DEFAULT_NOTES_WIDGET.noteColor,
+      noteFont: typeof parsed.noteFont === "string" ? parsed.noteFont : DEFAULT_NOTES_WIDGET.noteFont,
+      noteFontSize: clamp(Number(parsed.noteFontSize ?? DEFAULT_NOTES_WIDGET.noteFontSize), 10, 28),
+    };
+  } catch {
+    return DEFAULT_NOTES_WIDGET;
   }
 }
 
@@ -1157,6 +1196,12 @@ export function ChartPanel({
     startClientY: number;
     startState: PocketPivotWidgetState;
   } | null>(null);
+  const notesWidgetDragRef = useRef<{
+    mode: "move" | "resize";
+    startClientX: number;
+    startClientY: number;
+    startState: NotesWidgetState;
+  } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -1180,6 +1225,7 @@ export function ChartPanel({
   const [favoritesSettings, setFavoritesSettings] = useState<FavoritesSettings>(() => readFavoritesSettings());
   const [favoritesWidget, setFavoritesWidget] = useState<FavoritesWidgetState>(() => readFavoritesWidgetState());
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
+  const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
@@ -1309,6 +1355,14 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [pocketPivotWidget]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(NOTES_WIDGET_STORAGE_KEY, JSON.stringify(notesWidget));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [notesWidget]);
 
   useEffect(() => {
     try {
@@ -2014,6 +2068,21 @@ export function ChartPanel({
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
+  const beginNotesWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    notesWidgetDragRef.current = {
+      mode,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startState: notesWidget,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
   const beginFavoritesWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
     if (event.button !== 0) {
       return;
@@ -2046,7 +2115,7 @@ export function ChartPanel({
   };
 
   const updatePocketPivotNoteStyle = (patch: Partial<PocketPivotNoteStyle>) => {
-    setPocketPivotWidget((current) => ({ ...current, ...patch }));
+    setNotesWidget((current) => ({ ...current, ...patch }));
   };
 
   const updatePocketPivotNote = (value: string) => {
@@ -2177,6 +2246,29 @@ export function ChartPanel({
         return;
       }
 
+      const notesDrag = notesWidgetDragRef.current;
+      if (notesDrag) {
+        const dx = event.clientX - notesDrag.startClientX;
+        const dy = event.clientY - notesDrag.startClientY;
+        setNotesWidget((current) => {
+          const maxX = Math.max(stageWidth - notesDrag.startState.width - 8, 0);
+          const maxY = Math.max(stageHeight - notesDrag.startState.height - 8, 0);
+          if (notesDrag.mode === "resize") {
+            return {
+              ...current,
+              width: clamp(notesDrag.startState.width + dx, 220, Math.max(stageWidth - notesDrag.startState.x - 8, 240)),
+              height: clamp(notesDrag.startState.height + dy, 160, Math.max(stageHeight - notesDrag.startState.y - 8, 180)),
+            };
+          }
+          return {
+            ...current,
+            x: clamp(notesDrag.startState.x + dx, 0, maxX),
+            y: clamp(notesDrag.startState.y + dy, 0, maxY),
+          };
+        });
+        return;
+      }
+
       const activeDrag = floatingWidgetDragRef.current;
       if (!activeDrag) {
         return;
@@ -2206,6 +2298,7 @@ export function ChartPanel({
     const stopDragging = () => {
       favoritesWidgetDragRef.current = null;
       floatingWidgetDragRef.current = null;
+      notesWidgetDragRef.current = null;
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -2743,6 +2836,15 @@ export function ChartPanel({
               Pocket Pivot
             </button>
           </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={notesWidget.enabled ? "tool-pill active" : "tool-pill"}
+              onClick={() => setNotesWidget((current) => ({ ...current, enabled: !current.enabled }))}
+            >
+              Notes
+            </button>
+          </div>
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
       ) : null}
@@ -3094,36 +3196,57 @@ export function ChartPanel({
                 />
                 <strong>{pocketPivotWidget.dotSize}px</strong>
               </label>
-              <div className="pocket-pivot-notes">
-                <div className="pocket-pivot-notes-head">
-                  <span>Notes</span>
-                  <small>{normalizedSymbol || "No symbol"}</small>
-                </div>
-                <textarea
-                  value={pocketPivotNote}
-                  onChange={(event) => updatePocketPivotNote(event.target.value)}
-                  placeholder="Add pocket pivot notes for this stock..."
-                  style={{
-                    color: pocketPivotWidget.noteColor,
-                    fontFamily: pocketPivotWidget.noteFont,
-                    fontSize: `${pocketPivotWidget.noteFontSize}px`,
-                  }}
-                  disabled={!normalizedSymbol}
-                />
+              <div className="pocket-pivot-resize" onPointerDown={(event) => beginPocketPivotWidgetDrag(event, "resize")} />
+            </div>
+          ) : null}
+          {notesWidget.enabled ? (
+            <div
+              className="notes-widget"
+              style={{
+                left: `${clamp(notesWidget.x, 0, Math.max(stageWidth - notesWidget.width - 8, 0))}px`,
+                top: `${clamp(notesWidget.y, 0, Math.max(stageHeight - notesWidget.height - 8, 0))}px`,
+                width: `${notesWidget.width}px`,
+                minHeight: `${notesWidget.height}px`,
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className="notes-widget-head" onPointerDown={(event) => beginNotesWidgetDrag(event, "move")}>
+                <strong>Notes</strong>
+                <small>{normalizedSymbol || "No symbol"}</small>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setNotesWidget((current) => ({ ...current, enabled: false }))}
+                  aria-label="Close Notes widget"
+                >
+                  ×
+                </button>
               </div>
+              <textarea
+                className="notes-widget-textarea"
+                value={pocketPivotNote}
+                onChange={(event) => updatePocketPivotNote(event.target.value)}
+                placeholder="Add notes for this stock..."
+                style={{
+                  color: notesWidget.noteColor,
+                  fontFamily: notesWidget.noteFont,
+                  fontSize: `${notesWidget.noteFontSize}px`,
+                }}
+                disabled={!normalizedSymbol}
+              />
               <div className="pocket-pivot-note-controls">
                 <label className="pocket-pivot-control">
                   <span>Text Color</span>
                   <input
                     type="color"
-                    value={pocketPivotWidget.noteColor}
+                    value={notesWidget.noteColor}
                     onChange={(event) => updatePocketPivotNoteStyle({ noteColor: event.target.value })}
                   />
                 </label>
                 <label className="pocket-pivot-control">
                   <span>Font</span>
                   <select
-                    value={pocketPivotWidget.noteFont}
+                    value={notesWidget.noteFont}
                     onChange={(event) => updatePocketPivotNoteStyle({ noteFont: event.target.value })}
                   >
                     <option value="Inter, system-ui, sans-serif">Sans</option>
@@ -3138,13 +3261,13 @@ export function ChartPanel({
                     min="10"
                     max="28"
                     step="1"
-                    value={pocketPivotWidget.noteFontSize}
+                    value={notesWidget.noteFontSize}
                     onChange={(event) => updatePocketPivotNoteStyle({ noteFontSize: Number(event.target.value) })}
                   />
-                  <strong>{pocketPivotWidget.noteFontSize}px</strong>
+                  <strong>{notesWidget.noteFontSize}px</strong>
                 </label>
               </div>
-              <div className="pocket-pivot-resize" onPointerDown={(event) => beginPocketPivotWidgetDrag(event, "resize")} />
+              <div className="notes-widget-resize" onPointerDown={(event) => beginNotesWidgetDrag(event, "resize")} />
             </div>
           ) : null}
           <div
