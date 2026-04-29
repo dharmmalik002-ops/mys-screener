@@ -37,6 +37,29 @@ export type ChartGroupSummary = {
 };
 
 type DrawingTool = "none" | "hline" | "vline" | "trendline" | "ray" | "rectangle" | "measure" | "text";
+type FavoriteItemId = `tool:${DrawingTool}` | `indicator:${IndicatorKey}` | "action:load-full-history" | "overlay:rvol" | "overlay:pocket-pivot";
+
+type FavoritesSettings = {
+  enabled: boolean;
+  itemIds: FavoriteItemId[];
+};
+
+type PocketPivotWidgetState = {
+  enabled: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  dotColor: string;
+  dotSize: number;
+};
+
+type RvolPoint = {
+  time: number;
+  value: number | null;
+  volume: number;
+  averageVolume: number | null;
+};
 
 type ChartAnchor = {
   time: number;
@@ -259,6 +282,36 @@ const CHART_PALETTES: Record<
 };
 const RIGHT_EDGE_PADDING_BARS = 12;
 const FUTURE_DRAW_EXTENSION_BARS = 96;
+const CHART_FAVORITES_STORAGE_KEY = "stockScanner.chartFavorites.v1";
+const POCKET_PIVOT_STORAGE_KEY = "stockScanner.pocketPivotWidget.v1";
+const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
+  enabled: true,
+  itemIds: ["tool:trendline", "tool:measure", "overlay:rvol"],
+};
+const DEFAULT_POCKET_PIVOT_WIDGET: PocketPivotWidgetState = {
+  enabled: false,
+  x: 18,
+  y: 86,
+  width: 240,
+  height: 172,
+  dotColor: "#ffd36f",
+  dotSize: 1.8,
+};
+const FAVORITE_ITEMS: Array<{ id: FavoriteItemId; label: string; kind: "Tool" | "Indicator" | "Overlay" | "Action" }> = [
+  ...DRAWING_TOOLS.filter((tool) => tool.key !== "none").map((tool) => ({
+    id: `tool:${tool.key}` as FavoriteItemId,
+    label: tool.label,
+    kind: "Tool" as const,
+  })),
+  ...INDICATORS.map((indicator) => ({
+    id: `indicator:${indicator.key}` as FavoriteItemId,
+    label: indicator.label,
+    kind: "Indicator" as const,
+  })),
+  { id: "overlay:rvol", label: "RVOL", kind: "Overlay" },
+  { id: "overlay:pocket-pivot", label: "Pocket Pivot", kind: "Overlay" },
+  { id: "action:load-full-history", label: "Full History", kind: "Action" },
+];
 
 function supportedTimeframes(market: MarketKey): ChartTimeframe[] {
   return ["1D", "1W"];
@@ -346,6 +399,61 @@ function computeVolumeSma(bars: ChartBar[], length: number) {
       value: Number(average.toFixed(2)),
     };
   });
+}
+
+function computeRvolPoints(bars: ChartBar[], length = 50): RvolPoint[] {
+  return bars.map((bar, index) => {
+    const startIndex = Math.max(0, index - length);
+    const window = bars.slice(startIndex, index);
+    if (!window.length) {
+      return {
+        time: bar.time,
+        value: null,
+        volume: bar.volume,
+        averageVolume: null,
+      };
+    }
+
+    const averageVolume = window.reduce((sum, item) => sum + item.volume, 0) / window.length;
+    return {
+      time: bar.time,
+      value: averageVolume > 0 ? Number((bar.volume / averageVolume).toFixed(2)) : null,
+      volume: bar.volume,
+      averageVolume,
+    };
+  });
+}
+
+function computePocketPivotBars(bars: ChartBar[]) {
+  const matches: Array<ChartBar & { rvol: number | null }> = [];
+  const rvolPoints = computeRvolPoints(bars);
+
+  for (let index = 1; index < bars.length; index += 1) {
+    const current = bars[index];
+    const previous = bars[index - 1];
+    if (!current || !previous || current.close <= previous.close) {
+      continue;
+    }
+
+    let highestDownVolume = 0;
+    const firstLookbackIndex = Math.max(1, index - 10);
+    for (let lookbackIndex = firstLookbackIndex; lookbackIndex < index; lookbackIndex += 1) {
+      const lookback = bars[lookbackIndex];
+      const lookbackPrevious = bars[lookbackIndex - 1];
+      if (lookback && lookbackPrevious && lookback.close < lookbackPrevious.close) {
+        highestDownVolume = Math.max(highestDownVolume, lookback.volume);
+      }
+    }
+
+    if (highestDownVolume > 0 && current.volume > highestDownVolume) {
+      matches.push({
+        ...current,
+        rvol: rvolPoints[index]?.value ?? null,
+      });
+    }
+  }
+
+  return matches;
 }
 
 function computeVwap(bars: ChartBar[]) {
@@ -596,6 +704,55 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
+function readFavoritesSettings(): FavoritesSettings {
+  if (typeof window === "undefined") {
+    return DEFAULT_FAVORITES_SETTINGS;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(CHART_FAVORITES_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_FAVORITES_SETTINGS;
+    }
+    const parsed = JSON.parse(raw) as Partial<FavoritesSettings>;
+    const validIds = new Set(FAVORITE_ITEMS.map((item) => item.id));
+    const itemIds = Array.isArray(parsed.itemIds)
+      ? parsed.itemIds.filter((id): id is FavoriteItemId => typeof id === "string" && validIds.has(id as FavoriteItemId))
+      : DEFAULT_FAVORITES_SETTINGS.itemIds;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_FAVORITES_SETTINGS.enabled,
+      itemIds,
+    };
+  } catch {
+    return DEFAULT_FAVORITES_SETTINGS;
+  }
+}
+
+function readPocketPivotWidgetState(): PocketPivotWidgetState {
+  if (typeof window === "undefined") {
+    return DEFAULT_POCKET_PIVOT_WIDGET;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(POCKET_PIVOT_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_POCKET_PIVOT_WIDGET;
+    }
+    const parsed = JSON.parse(raw) as Partial<PocketPivotWidgetState>;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_POCKET_PIVOT_WIDGET.enabled,
+      x: clamp(Number(parsed.x ?? DEFAULT_POCKET_PIVOT_WIDGET.x), 0, 1200),
+      y: clamp(Number(parsed.y ?? DEFAULT_POCKET_PIVOT_WIDGET.y), 0, 900),
+      width: clamp(Number(parsed.width ?? DEFAULT_POCKET_PIVOT_WIDGET.width), 190, 460),
+      height: clamp(Number(parsed.height ?? DEFAULT_POCKET_PIVOT_WIDGET.height), 130, 360),
+      dotColor: typeof parsed.dotColor === "string" ? parsed.dotColor : DEFAULT_POCKET_PIVOT_WIDGET.dotColor,
+      dotSize: clamp(Number(parsed.dotSize ?? DEFAULT_POCKET_PIVOT_WIDGET.dotSize), 0.5, 8),
+    };
+  } catch {
+    return DEFAULT_POCKET_PIVOT_WIDGET;
+  }
+}
+
 function pointToSegmentDist(px: number, py: number, x1: number, y1: number, x2: number, y2: number) {
   const dx = x2 - x1;
   const dy = y2 - y1;
@@ -776,6 +933,15 @@ export function ChartPanel({
   const annotationsRef = useRef(annotations);
   const onAnnotationsChangeRef = useRef(onAnnotationsChange);
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
+  const overlayFrameRef = useRef<number | null>(null);
+  const crosshairFrameRef = useRef<number | null>(null);
+  const pendingCrosshairParamRef = useRef<any>(null);
+  const floatingWidgetDragRef = useRef<{
+    mode: "move" | "resize";
+    startClientX: number;
+    startClientY: number;
+    startState: PocketPivotWidgetState;
+  } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -791,6 +957,10 @@ export function ChartPanel({
   const [benchmarkBars, setBenchmarkBars] = useState<ChartBar[] | null>(null);
   const [benchmarkLoading, setBenchmarkLoading] = useState(false);
   const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
+  const [favoritesSettings, setFavoritesSettings] = useState<FavoritesSettings>(() => readFavoritesSettings());
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [showRvolWidget, setShowRvolWidget] = useState(() => readFavoritesSettings().itemIds.includes("overlay:rvol"));
+  const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
@@ -800,6 +970,11 @@ export function ChartPanel({
     [extendedHistory, rsLineMarkers],
   );
   const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
+  const rvolPoints = useMemo(() => computeRvolPoints(activeBars), [activeBars]);
+  const latestRvolPoint = rvolPoints[rvolPoints.length - 1] ?? null;
+  const hoveredRvolPoint = hoveredBar ? rvolPoints.find((point) => point.time === hoveredBar.time) ?? null : latestRvolPoint;
+  const pocketPivotBars = useMemo(() => computePocketPivotBars(activeBars), [activeBars]);
+  const latestPocketPivot = pocketPivotBars[pocketPivotBars.length - 1] ?? null;
   const futureWhitespaceTimes = useMemo(
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
@@ -813,6 +988,15 @@ export function ChartPanel({
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
+  const scheduleOverlayUpdate = () => {
+    if (overlayFrameRef.current !== null) {
+      return;
+    }
+    overlayFrameRef.current = window.requestAnimationFrame(() => {
+      overlayFrameRef.current = null;
+      setOverlayVersion((version) => version + 1);
+    });
+  };
 
   useEffect(() => {
     if (!availableTimeframes.includes(timeframe)) {
@@ -862,12 +1046,39 @@ export function ChartPanel({
 
   useEffect(() => {
     annotationsRef.current = annotations;
-    setOverlayVersion((version) => version + 1);
+    scheduleOverlayUpdate();
   }, [annotations]);
 
   useEffect(() => {
     onAnnotationsChangeRef.current = onAnnotationsChange;
   }, [onAnnotationsChange]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_FAVORITES_STORAGE_KEY, JSON.stringify(favoritesSettings));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [favoritesSettings]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(POCKET_PIVOT_STORAGE_KEY, JSON.stringify(pocketPivotWidget));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [pocketPivotWidget]);
+
+  useEffect(() => {
+    return () => {
+      if (overlayFrameRef.current !== null) {
+        window.cancelAnimationFrame(overlayFrameRef.current);
+      }
+      if (crosshairFrameRef.current !== null) {
+        window.cancelAnimationFrame(crosshairFrameRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     setDrawingTool("none");
@@ -1192,6 +1403,20 @@ export function ChartPanel({
     ];
 
     mainSeries.setData(ohlcvData);
+    if (pocketPivotWidget.enabled) {
+      mainSeries.setMarkers(
+        pocketPivotBars.map((bar) => ({
+          time: bar.time as UTCTimestamp,
+          position: "belowBar",
+          shape: "circle",
+          color: pocketPivotWidget.dotColor,
+          text: "",
+          size: pocketPivotWidget.dotSize,
+        })) as any,
+      );
+    } else {
+      mainSeries.setMarkers([]);
+    }
     if (benchmarkOverlayData.length) {
       const benchmarkSeries = chart.addLineSeries({
         color: "#ffb347",
@@ -1270,9 +1495,9 @@ export function ChartPanel({
     }
 
     const updateOverlay = () => {
-      setOverlayVersion((version) => version + 1);
+      scheduleOverlayUpdate();
     };
-    const handleCrosshairMove = (param: any) => {
+    const processCrosshairMove = (param: any) => {
       if (!param?.time) {
         setHoveredRsPoint(null);
         setHoveredBar(null);
@@ -1352,6 +1577,16 @@ export function ChartPanel({
       const fallbackPoint = [...safeRsLine].reverse().find((point) => point.time <= hoveredTime) ?? null;
       setHoveredRsPoint(fallbackPoint);
     };
+    const handleCrosshairMove = (param: any) => {
+      pendingCrosshairParamRef.current = param;
+      if (crosshairFrameRef.current !== null) {
+        return;
+      }
+      crosshairFrameRef.current = window.requestAnimationFrame(() => {
+        crosshairFrameRef.current = null;
+        processCrosshairMove(pendingCrosshairParamRef.current);
+      });
+    };
 
     chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
     chart.subscribeCrosshairMove(handleCrosshairMove);
@@ -1380,11 +1615,11 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeRsLine, safeRsLineMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
-      setOverlayVersion((version) => version + 1);
+      scheduleOverlayUpdate();
     };
 
     window.addEventListener("resize", handleResize);
@@ -1433,6 +1668,50 @@ export function ChartPanel({
     } finally {
       setHistoryLoading(false);
     }
+  };
+
+  const toggleFavoriteItem = (itemId: FavoriteItemId) => {
+    setFavoritesSettings((current) => ({
+      ...current,
+      itemIds: current.itemIds.includes(itemId)
+        ? current.itemIds.filter((id) => id !== itemId)
+        : [...current.itemIds, itemId],
+    }));
+  };
+
+  const runFavoriteItem = (itemId: FavoriteItemId) => {
+    if (itemId.startsWith("tool:")) {
+      switchDrawingTool(itemId.slice("tool:".length) as DrawingTool);
+      return;
+    }
+    if (itemId.startsWith("indicator:")) {
+      onToggleIndicator(itemId.slice("indicator:".length) as IndicatorKey);
+      return;
+    }
+    if (itemId === "overlay:rvol") {
+      setShowRvolWidget((current) => !current);
+      return;
+    }
+    if (itemId === "overlay:pocket-pivot") {
+      setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }));
+      return;
+    }
+    void handleLoadFullHistory();
+  };
+
+  const beginPocketPivotWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    floatingWidgetDragRef.current = {
+      mode,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startState: pocketPivotWidget,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
   const stageWidth = containerRef.current?.clientWidth ?? 0;
@@ -1523,6 +1802,48 @@ export function ChartPanel({
       window.removeEventListener("pointercancel", stopDragging);
     };
   }, [draggingAnnotationHandle, activeBars]);
+
+  useEffect(() => {
+    const handlePointerMove = (event: PointerEvent) => {
+      const activeDrag = floatingWidgetDragRef.current;
+      if (!activeDrag) {
+        return;
+      }
+
+      const deltaX = event.clientX - activeDrag.startClientX;
+      const deltaY = event.clientY - activeDrag.startClientY;
+      setPocketPivotWidget((current) => {
+        const maxX = Math.max(stageWidth - activeDrag.startState.width - 8, 0);
+        const maxY = Math.max(stageHeight - activeDrag.startState.height - 8, 0);
+        if (activeDrag.mode === "resize") {
+          return {
+            ...current,
+            width: clamp(activeDrag.startState.width + deltaX, 190, Math.max(stageWidth - activeDrag.startState.x - 8, 220)),
+            height: clamp(activeDrag.startState.height + deltaY, 130, Math.max(stageHeight - activeDrag.startState.y - 8, 150)),
+          };
+        }
+
+        return {
+          ...current,
+          x: clamp(activeDrag.startState.x + deltaX, 0, maxX),
+          y: clamp(activeDrag.startState.y + deltaY, 0, maxY),
+        };
+      });
+    };
+
+    const stopDragging = () => {
+      floatingWidgetDragRef.current = null;
+    };
+
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopDragging);
+    window.addEventListener("pointercancel", stopDragging);
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopDragging);
+      window.removeEventListener("pointercancel", stopDragging);
+    };
+  }, [stageHeight, stageWidth]);
 
   const horizontalLineOverlays = annotations
     .filter((annotation): annotation is Extract<ChartAnnotation, { type: "hline" }> => annotation.type === "hline")
@@ -1789,6 +2110,7 @@ export function ChartPanel({
     () => buildSymbolSuggestions(searchOptions, deferredChartSearchQuery, 100),
     [deferredChartSearchQuery, searchOptions],
   );
+  const favoriteItems = FAVORITE_ITEMS.filter((item) => favoritesSettings.itemIds.includes(item.id));
 
   const handleChartSearchSubmit = (query: string) => {
     const trimmed = query.trim();
@@ -2022,6 +2344,63 @@ export function ChartPanel({
           >
             {historyLoading ? "Loading..." : extendedHistory ? "Show Recent History" : "Load Full History"}
           </button>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={favoritesSettings.enabled ? "tool-pill active" : "tool-pill"}
+              onClick={() => setFavoritesOpen((current) => !current)}
+            >
+              Favourites
+            </button>
+            {favoritesOpen ? (
+              <div className="chart-widget-popover chart-favourites-popover">
+                <label className="chart-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={favoritesSettings.enabled}
+                    onChange={(event) => setFavoritesSettings((current) => ({ ...current, enabled: event.target.checked }))}
+                  />
+                  <span>Show Favourites</span>
+                </label>
+                {favoritesSettings.enabled && favoriteItems.length > 0 ? (
+                  <div className="chart-favourite-actions">
+                    {favoriteItems.map((item) => (
+                      <button
+                        key={`fav-action-${item.id}`}
+                        type="button"
+                        className="tool-pill small"
+                        onClick={() => runFavoriteItem(item.id)}
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="chart-favourite-manage">
+                  {FAVORITE_ITEMS.map((item) => (
+                    <button
+                      key={`fav-manage-${item.id}`}
+                      type="button"
+                      className={favoritesSettings.itemIds.includes(item.id) ? "chart-favourite-option active" : "chart-favourite-option"}
+                      onClick={() => toggleFavoriteItem(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.kind}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={pocketPivotWidget.enabled ? "tool-pill active" : "tool-pill"}
+              onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }))}
+            >
+              Pocket Pivot
+            </button>
+          </div>
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
       ) : null}
@@ -2133,8 +2512,72 @@ export function ChartPanel({
             <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
               {hoveredRsPoint ? `RS Rating ${Math.round(hoveredRsPoint.value)} on ${formatChartDateFromTimestamp(hoveredRsPoint.time)}` : "RS Rating line is plotted below price."}
             </span>
+            {showRvolWidget ? (
+              <span className="chart-stage-label chart-rvol-label" style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                RVOL {hoveredRvolPoint?.value === null || hoveredRvolPoint?.value === undefined ? "—" : `${formatValue(hoveredRvolPoint.value, 2)}x`}
+              </span>
+            ) : null}
             {draftTrendStart ? <span className="chart-stage-label emphasis" style={{ background: palette.background, borderColor: palette.borderColor }}>{chartSubtitle(drawingTool, draftTrendStart, chartStyle)}</span> : null}
           </div>
+          {pocketPivotWidget.enabled ? (
+            <div
+              className="pocket-pivot-widget"
+              style={{
+                left: `${clamp(pocketPivotWidget.x, 0, Math.max(stageWidth - pocketPivotWidget.width - 8, 0))}px`,
+                top: `${clamp(pocketPivotWidget.y, 0, Math.max(stageHeight - pocketPivotWidget.height - 8, 0))}px`,
+                width: `${pocketPivotWidget.width}px`,
+                minHeight: `${pocketPivotWidget.height}px`,
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className="pocket-pivot-widget-head" onPointerDown={(event) => beginPocketPivotWidgetDrag(event, "move")}>
+                <strong>Pocket Pivot</strong>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: false }))}
+                  aria-label="Close Pocket Pivot widget"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="pocket-pivot-widget-body">
+                <div>
+                  <span>Found</span>
+                  <strong>{pocketPivotBars.length}</strong>
+                </div>
+                <div>
+                  <span>Latest</span>
+                  <strong>{latestPocketPivot ? formatChartDateFromTimestamp(latestPocketPivot.time, market) : "—"}</strong>
+                </div>
+                <div>
+                  <span>Latest RVOL</span>
+                  <strong>{latestPocketPivot?.rvol == null ? "—" : `${formatValue(latestPocketPivot.rvol, 2)}x`}</strong>
+                </div>
+              </div>
+              <label className="pocket-pivot-control">
+                <span>Dot Color</span>
+                <input
+                  type="color"
+                  value={pocketPivotWidget.dotColor}
+                  onChange={(event) => setPocketPivotWidget((current) => ({ ...current, dotColor: event.target.value }))}
+                />
+              </label>
+              <label className="pocket-pivot-control">
+                <span>Dot Size</span>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="8"
+                  step="0.5"
+                  value={pocketPivotWidget.dotSize}
+                  onChange={(event) => setPocketPivotWidget((current) => ({ ...current, dotSize: Number(event.target.value) }))}
+                />
+                <strong>{pocketPivotWidget.dotSize}px</strong>
+              </label>
+              <div className="pocket-pivot-resize" onPointerDown={(event) => beginPocketPivotWidgetDrag(event, "resize")} />
+            </div>
+          ) : null}
           <div
             ref={stageRef}
             className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}

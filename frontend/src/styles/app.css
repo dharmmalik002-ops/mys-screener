@@ -5635,6 +5635,82 @@ button {
   font-size: 0.8rem;
 }
 
+.chart-widget-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.chart-widget-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 40;
+  width: min(360px, calc(100vw - 32px));
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+}
+
+.chart-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.chart-toggle-row input {
+  width: 16px;
+  height: 16px;
+}
+
+.chart-favourite-actions,
+.chart-favourite-manage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chart-favourite-actions {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.chart-favourite-option {
+  display: grid;
+  gap: 2px;
+  min-width: 96px;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chart-favourite-option:hover,
+.chart-favourite-option.active {
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface-soft));
+}
+
+.chart-favourite-option span {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.chart-favourite-option small {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
 .draft-color-row {
   display: flex;
   align-items: center;
@@ -5651,6 +5727,117 @@ button {
   border-radius: 6px;
   cursor: pointer;
   background: transparent;
+}
+
+.chart-rvol-label {
+  font-weight: 800;
+}
+
+.pocket-pivot-widget {
+  position: absolute;
+  z-index: 14;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--warning) 48%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+  color: var(--text);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.pocket-pivot-widget-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: grab;
+  user-select: none;
+}
+
+.pocket-pivot-widget-head strong {
+  font-size: 0.86rem;
+}
+
+.pocket-pivot-widget-head button {
+  width: 24px;
+  height: 24px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+}
+
+.pocket-pivot-widget-body {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.pocket-pivot-widget-body div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
+}
+
+.pocket-pivot-widget-body span,
+.pocket-pivot-control span {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.pocket-pivot-widget-body strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.82rem;
+}
+
+.pocket-pivot-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pocket-pivot-control input[type="color"] {
+  width: 32px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+}
+
+.pocket-pivot-control input[type="range"] {
+  flex: 1;
+  min-width: 72px;
+}
+
+.pocket-pivot-control strong {
+  min-width: 42px;
+  color: var(--text);
+  font-size: 0.76rem;
+}
+
+.pocket-pivot-resize {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  width: 18px;
+  height: 18px;
+  border-right: 2px solid color-mix(in srgb, var(--warning) 60%, transparent);
+  border-bottom: 2px solid color-mix(in srgb, var(--warning) 60%, transparent);
+  cursor: nwse-resize;
 }
 
 /* ── Annotation floating edit panel ── */
