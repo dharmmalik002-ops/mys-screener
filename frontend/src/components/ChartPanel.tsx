@@ -44,6 +44,15 @@ type FavoritesSettings = {
   itemIds: FavoriteItemId[];
 };
 
+type FavoritesWidgetState = {
+  enabled: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  accentColor: string;
+};
+
 type PocketPivotWidgetState = {
   enabled: boolean;
   x: number;
@@ -283,10 +292,19 @@ const CHART_PALETTES: Record<
 const RIGHT_EDGE_PADDING_BARS = 12;
 const FUTURE_DRAW_EXTENSION_BARS = 96;
 const CHART_FAVORITES_STORAGE_KEY = "stockScanner.chartFavorites.v1";
+const FAVORITES_WIDGET_STORAGE_KEY = "stockScanner.favoritesWidget.v1";
 const POCKET_PIVOT_STORAGE_KEY = "stockScanner.pocketPivotWidget.v1";
 const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
   enabled: true,
   itemIds: ["tool:trendline", "tool:measure", "overlay:rvol"],
+};
+const DEFAULT_FAVORITES_WIDGET: FavoritesWidgetState = {
+  enabled: false,
+  x: 18,
+  y: 274,
+  width: 276,
+  height: 260,
+  accentColor: "#6ea8ff",
 };
 const DEFAULT_POCKET_PIVOT_WIDGET: PocketPivotWidgetState = {
   enabled: false,
@@ -728,6 +746,30 @@ function readFavoritesSettings(): FavoritesSettings {
   }
 }
 
+function readFavoritesWidgetState(): FavoritesWidgetState {
+  if (typeof window === "undefined") {
+    return DEFAULT_FAVORITES_WIDGET;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(FAVORITES_WIDGET_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_FAVORITES_WIDGET;
+    }
+    const parsed = JSON.parse(raw) as Partial<FavoritesWidgetState>;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_FAVORITES_WIDGET.enabled,
+      x: clamp(Number(parsed.x ?? DEFAULT_FAVORITES_WIDGET.x), 0, 1200),
+      y: clamp(Number(parsed.y ?? DEFAULT_FAVORITES_WIDGET.y), 0, 900),
+      width: clamp(Number(parsed.width ?? DEFAULT_FAVORITES_WIDGET.width), 210, 520),
+      height: clamp(Number(parsed.height ?? DEFAULT_FAVORITES_WIDGET.height), 170, 460),
+      accentColor: typeof parsed.accentColor === "string" ? parsed.accentColor : DEFAULT_FAVORITES_WIDGET.accentColor,
+    };
+  } catch {
+    return DEFAULT_FAVORITES_WIDGET;
+  }
+}
+
 function readPocketPivotWidgetState(): PocketPivotWidgetState {
   if (typeof window === "undefined") {
     return DEFAULT_POCKET_PIVOT_WIDGET;
@@ -1001,6 +1043,12 @@ export function ChartPanel({
   const overlayFrameRef = useRef<number | null>(null);
   const crosshairFrameRef = useRef<number | null>(null);
   const pendingCrosshairParamRef = useRef<any>(null);
+  const favoritesWidgetDragRef = useRef<{
+    mode: "move" | "resize";
+    startClientX: number;
+    startClientY: number;
+    startState: FavoritesWidgetState;
+  } | null>(null);
   const floatingWidgetDragRef = useRef<{
     mode: "move" | "resize";
     startClientX: number;
@@ -1027,7 +1075,7 @@ export function ChartPanel({
   const [rvolAccentColor, setRvolAccentColor] = useState("#00d2ff");
   const [rvolScale, setRvolScale] = useState<"sm" | "md" | "lg">("md");
   const [favoritesSettings, setFavoritesSettings] = useState<FavoritesSettings>(() => readFavoritesSettings());
-  const [favoritesOpen, setFavoritesOpen] = useState(false);
+  const [favoritesWidget, setFavoritesWidget] = useState<FavoritesWidgetState>(() => readFavoritesWidgetState());
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
@@ -1134,6 +1182,14 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [favoritesSettings]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(FAVORITES_WIDGET_STORAGE_KEY, JSON.stringify(favoritesWidget));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [favoritesWidget]);
 
   useEffect(() => {
     try {
@@ -1823,6 +1879,37 @@ export function ChartPanel({
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
+  const beginFavoritesWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    favoritesWidgetDragRef.current = {
+      mode,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startState: favoritesWidget,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const isFavoriteItemActive = (itemId: FavoriteItemId) => {
+    if (itemId.startsWith("tool:")) {
+      return drawingTool === itemId.slice("tool:".length);
+    }
+    if (itemId.startsWith("indicator:")) {
+      return indicatorKeys.includes(itemId.slice("indicator:".length) as IndicatorKey);
+    }
+    if (itemId === "overlay:rvol") {
+      return showRvol;
+    }
+    if (itemId === "overlay:pocket-pivot") {
+      return pocketPivotWidget.enabled;
+    }
+    return Boolean(extendedHistory);
+  };
+
   const stageWidth = containerRef.current?.clientWidth ?? 0;
   const stageHeight = containerRef.current?.clientHeight ?? 0;
 
@@ -1914,6 +2001,30 @@ export function ChartPanel({
 
   useEffect(() => {
     const handlePointerMove = (event: PointerEvent) => {
+      const favoritesDrag = favoritesWidgetDragRef.current;
+      if (favoritesDrag) {
+        const deltaX = event.clientX - favoritesDrag.startClientX;
+        const deltaY = event.clientY - favoritesDrag.startClientY;
+        setFavoritesWidget((current) => {
+          const maxX = Math.max(stageWidth - favoritesDrag.startState.width - 8, 0);
+          const maxY = Math.max(stageHeight - favoritesDrag.startState.height - 8, 0);
+          if (favoritesDrag.mode === "resize") {
+            return {
+              ...current,
+              width: clamp(favoritesDrag.startState.width + deltaX, 210, Math.max(stageWidth - favoritesDrag.startState.x - 8, 240)),
+              height: clamp(favoritesDrag.startState.height + deltaY, 170, Math.max(stageHeight - favoritesDrag.startState.y - 8, 190)),
+            };
+          }
+
+          return {
+            ...current,
+            x: clamp(favoritesDrag.startState.x + deltaX, 0, maxX),
+            y: clamp(favoritesDrag.startState.y + deltaY, 0, maxY),
+          };
+        });
+        return;
+      }
+
       const activeDrag = floatingWidgetDragRef.current;
       if (!activeDrag) {
         return;
@@ -1941,6 +2052,7 @@ export function ChartPanel({
     };
 
     const stopDragging = () => {
+      favoritesWidgetDragRef.current = null;
       floatingWidgetDragRef.current = null;
     };
 
@@ -2464,50 +2576,11 @@ export function ChartPanel({
           <div className="chart-widget-menu">
             <button
               type="button"
-              className={favoritesSettings.enabled ? "tool-pill active" : "tool-pill"}
-              onClick={() => setFavoritesOpen((current) => !current)}
+              className={favoritesWidget.enabled ? "tool-pill active" : "tool-pill"}
+              onClick={() => setFavoritesWidget((current) => ({ ...current, enabled: !current.enabled }))}
             >
               Favourites
             </button>
-            {favoritesOpen ? (
-              <div className="chart-widget-popover chart-favourites-popover">
-                <label className="chart-toggle-row">
-                  <input
-                    type="checkbox"
-                    checked={favoritesSettings.enabled}
-                    onChange={(event) => setFavoritesSettings((current) => ({ ...current, enabled: event.target.checked }))}
-                  />
-                  <span>Show Favourites</span>
-                </label>
-                {favoritesSettings.enabled && favoriteItems.length > 0 ? (
-                  <div className="chart-favourite-actions">
-                    {favoriteItems.map((item) => (
-                      <button
-                        key={`fav-action-${item.id}`}
-                        type="button"
-                        className="tool-pill small"
-                        onClick={() => runFavoriteItem(item.id)}
-                      >
-                        {item.label}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-                <div className="chart-favourite-manage">
-                  {FAVORITE_ITEMS.map((item) => (
-                    <button
-                      key={`fav-manage-${item.id}`}
-                      type="button"
-                      className={favoritesSettings.itemIds.includes(item.id) ? "chart-favourite-option active" : "chart-favourite-option"}
-                      onClick={() => toggleFavoriteItem(item.id)}
-                    >
-                      <span>{item.label}</span>
-                      <small>{item.kind}</small>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
           <div className="chart-widget-menu">
             <button
@@ -2620,6 +2693,82 @@ export function ChartPanel({
             >
               +
             </button>
+          ) : null}
+          {favoritesWidget.enabled ? (
+            <div
+              className="favorites-floating-widget"
+              style={{
+                left: `${clamp(favoritesWidget.x, 0, Math.max(stageWidth - favoritesWidget.width - 8, 0))}px`,
+                top: `${clamp(favoritesWidget.y, 0, Math.max(stageHeight - favoritesWidget.height - 8, 0))}px`,
+                width: `${favoritesWidget.width}px`,
+                minHeight: `${favoritesWidget.height}px`,
+                borderColor: `color-mix(in srgb, ${favoritesWidget.accentColor} 52%, transparent)`,
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className="favorites-widget-head" onPointerDown={(event) => beginFavoritesWidgetDrag(event, "move")}>
+                <strong style={{ color: favoritesWidget.accentColor }}>Favourites</strong>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setFavoritesWidget((current) => ({ ...current, enabled: false }))}
+                  aria-label="Close Favourites widget"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="favorites-widget-actions">
+                {favoritesSettings.enabled && favoriteItems.length > 0 ? (
+                  favoriteItems.map((item) => (
+                    <button
+                      key={`fav-widget-action-${item.id}`}
+                      type="button"
+                      className={isFavoriteItemActive(item.id) ? "favorites-widget-action active" : "favorites-widget-action"}
+                      style={isFavoriteItemActive(item.id) ? { borderColor: favoritesWidget.accentColor, color: favoritesWidget.accentColor } : undefined}
+                      onClick={() => runFavoriteItem(item.id)}
+                    >
+                      <span>{item.label}</span>
+                      <small>{item.kind}</small>
+                    </button>
+                  ))
+                ) : (
+                  <span className="favorites-widget-empty">No favourites selected</span>
+                )}
+              </div>
+              <div className="favorites-widget-controls">
+                <label className="chart-toggle-row">
+                  <input
+                    type="checkbox"
+                    checked={favoritesSettings.enabled}
+                    onChange={(event) => setFavoritesSettings((current) => ({ ...current, enabled: event.target.checked }))}
+                  />
+                  <span>Enabled</span>
+                </label>
+                <label className="favorites-widget-color">
+                  <span>Colour</span>
+                  <input
+                    type="color"
+                    value={favoritesWidget.accentColor}
+                    onChange={(event) => setFavoritesWidget((current) => ({ ...current, accentColor: event.target.value }))}
+                  />
+                </label>
+              </div>
+              <div className="favorites-widget-manage">
+                {FAVORITE_ITEMS.map((item) => (
+                  <button
+                    key={`fav-widget-manage-${item.id}`}
+                    type="button"
+                    className={favoritesSettings.itemIds.includes(item.id) ? "chart-favourite-option active" : "chart-favourite-option"}
+                    style={favoritesSettings.itemIds.includes(item.id) ? { borderColor: favoritesWidget.accentColor } : undefined}
+                    onClick={() => toggleFavoriteItem(item.id)}
+                  >
+                    <span>{item.label}</span>
+                    <small>{item.kind}</small>
+                  </button>
+                ))}
+              </div>
+              <div className="favorites-widget-resize" onPointerDown={(event) => beginFavoritesWidgetDrag(event, "resize")} />
+            </div>
           ) : null}
           {showRvol && currentRvol ? (
             <div
