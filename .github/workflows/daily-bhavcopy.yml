@@ -102,7 +102,10 @@ jobs:
             --exclude '.github' \
             --exclude '.venv' \
             --exclude 'backend/.venv' \
+            --exclude 'backend/venv' \
             --exclude 'frontend/node_modules' \
+            --exclude 'frontend/public/api/free_snapshots.json' \
+            --exclude 'frontend/public/api/free_snapshots_us.json' \
             --exclude 'test-results' \
             --exclude 'tmp' \
             --exclude 'backend/data/chart_cache' \
