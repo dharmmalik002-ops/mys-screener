@@ -1,20 +1,22 @@
-name: Daily NSE Bhavcopy Patch
+name: Daily Bhavcopy Patch (BSE primary)
 
 on:
-  # NSE often publishes the official CM Bhavcopy sometime between ~5:30–6:30 PM IST.
-  # Check repeatedly through that window so the site updates much closer to publication time.
-  # NOTE: NSE archives geo-block non-Indian IPs (GitHub Actions servers are outside India).
-  #       The script now falls back to yfinance (Yahoo Finance) which is globally accessible.
+  # BSE publishes the official equity bhavcopy CSV by ~4:00 PM IST and — unlike NSE —
+  # is reachable from non-Indian IPs (GitHub Actions runners). The script tries BSE
+  # first, then falls back to NSE (geo-blocked) and yfinance.
+  # We schedule the first attempt at 4:20 PM IST and retry through 6:30 PM IST in case
+  # BSE is briefly unavailable.
   schedule:
-    - cron: "10 12 * * 1-5"  # 5:40 PM IST
-    - cron: "25 12 * * 1-5"  # 5:55 PM IST
-    - cron: "40 12 * * 1-5"  # 6:10 PM IST
-    - cron: "55 12 * * 1-5"  # 6:25 PM IST
-    - cron: "10 13 * * 1-5"  # 6:40 PM IST
-    - cron: "25 13 * * 1-5"  # 6:55 PM IST
-    - cron: "00 14 * * 1-5"  # 7:30 PM IST final retry
+    - cron: "50 10 * * 1-5"  # 4:20 PM IST  (primary — BSE just published)
+    - cron: "10 11 * * 1-5"  # 4:40 PM IST  (retry 1)
+    - cron: "30 11 * * 1-5"  # 5:00 PM IST  (retry 2)
+    - cron: "00 12 * * 1-5"  # 5:30 PM IST  (retry 3)
+    - cron: "00 13 * * 1-5"  # 6:30 PM IST  (final retry)
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   bhavcopy:
