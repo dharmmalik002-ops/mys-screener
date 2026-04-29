@@ -5559,10 +5559,14 @@ button {
   color: var(--text);
   font-size: 0.82rem;
   line-height: 1.4;
+  pointer-events: auto;
+  cursor: grab;
+  user-select: none;
 }
 
 .chart-note.selected {
   box-shadow: 0 0 0 2px currentColor;
+  cursor: grabbing;
 }
 
 /* ── Drawing toolbar (new row below Technical / Fundamental tabs) ── */
@@ -6125,6 +6129,20 @@ button {
 
 .annotation-edit-delete:hover {
   background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.annotation-edit-edit {
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--accent);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.annotation-edit-edit:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .annotation-edit-close {

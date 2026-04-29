@@ -2161,7 +2161,7 @@ export function ChartPanel({
   };
 
   const startAnnotationHandleDrag = (
-    event: ReactPointerEvent<SVGGElement>,
+    event: ReactPointerEvent<Element>,
     annotationId: string,
     handleKey: AnnotationHandleKey,
   ) => {
@@ -2178,6 +2178,23 @@ export function ChartPanel({
     if (anchor) {
       updateAnnotationAnchor(annotationId, handleKey, anchor);
     }
+  };
+
+  const editTextAnnotation = (annotationId: string) => {
+    const target = annotationsRef.current.find((a) => a.id === annotationId);
+    if (!target || target.type !== "text") {
+      return;
+    }
+    const next = window.prompt("Edit chart text", target.text);
+    if (next === null) {
+      return;
+    }
+    const trimmed = next.trim();
+    if (!trimmed) {
+      deleteAnnotation(annotationId);
+      return;
+    }
+    updateAnnotation(annotationId, { text: trimmed } as any);
   };
 
   const deleteAnnotation = (id: string) => {
@@ -2465,9 +2482,11 @@ export function ChartPanel({
             top: `${Math.max(point.y - 12, 10)}px`,
             borderColor: isSel ? color : undefined,
             color: isSel ? color : undefined,
-            cursor: "pointer",
           }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}
+          onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
+          onClick={(event) => { event.stopPropagation(); selectAnnotation(annotation.id); }}
+          onDoubleClick={(event) => { event.stopPropagation(); editTextAnnotation(annotation.id); }}
+          title="Drag to move • Double-click to edit"
         >
           {annotation.text}
         </div>
@@ -3402,7 +3421,16 @@ export function ChartPanel({
                       </button>
                     ))}
                   </div>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    className="annotation-edit-edit"
+                    onClick={() => editTextAnnotation(selectedAnnotation.id)}
+                    title="Edit text"
+                  >
+                    Edit
+                  </button>
+                )}
                 <button
                   type="button"
                   className="annotation-edit-delete"
