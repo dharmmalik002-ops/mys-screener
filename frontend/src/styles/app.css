@@ -6338,31 +6338,13 @@ button {
   background: var(--surface-strong);
 }
 
-.chart-modal-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: stretch;
-  width: 100%;
-}
-
-.chart-modal-stage {
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.chart-modal-widget-reopen {
+.chart-modal-widget-toggle {
   position: absolute;
   top: 14px;
-  right: 86px;
-  z-index: 6;
-  background: rgba(99, 102, 241, 0.18);
-  border: 1px solid rgba(99, 102, 241, 0.55);
+  right: 90px;
+  z-index: 1090;
+  background: rgba(13, 17, 23, 0.85);
+  border: 1px solid rgba(99, 102, 241, 0.45);
   color: #c7d2fe;
   font-size: 12px;
   font-weight: 600;
@@ -6370,11 +6352,18 @@ button {
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
 
-.chart-modal-widget-reopen:hover {
-  background: rgba(99, 102, 241, 0.28);
+.chart-modal-widget-toggle:hover {
+  background: rgba(99, 102, 241, 0.22);
+  color: #ffffff;
+  border-color: rgba(99, 102, 241, 0.7);
+}
+
+.chart-modal-widget-toggle.is-active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border-color: transparent;
   color: #ffffff;
 }
 

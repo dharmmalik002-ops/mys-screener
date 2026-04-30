@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 
 import type { IndustryGroupStockItem, MarketKey } from "../lib/api";
 import "./GroupStocksWidget.css";
@@ -17,6 +25,13 @@ export type GroupStocksWidgetContext = {
 type CompareLayout = "horizontal" | "vertical";
 type PaneId = "A" | "B";
 
+export type WidgetRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 type GroupStocksWidgetProps = {
   market: MarketKey;
   context: GroupStocksWidgetContext;
@@ -25,11 +40,18 @@ type GroupStocksWidgetProps = {
   activePane: PaneId;
   compareMode: boolean;
   compareLayout: CompareLayout;
+  rect: WidgetRect;
+  onRectChange: (rect: WidgetRect) => void;
   onClose: () => void;
   onSelectMember: (symbol: string) => void;
   onToggleCompare: () => void;
   onLayoutChange: (layout: CompareLayout) => void;
 };
+
+const MIN_WIDTH = 240;
+const MIN_HEIGHT = 320;
+const MAX_WIDTH = 640;
+const MAX_HEIGHT = 1200;
 
 function fmtChange(value: number | null | undefined) {
   if (value === null || value === undefined || Number.isNaN(value)) return "--";
@@ -56,6 +78,8 @@ export function GroupStocksWidget({
   activePane,
   compareMode,
   compareLayout,
+  rect,
+  onRectChange,
   onClose,
   onSelectMember,
   onToggleCompare,
@@ -65,6 +89,78 @@ export function GroupStocksWidget({
 
   const [query, setQuery] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
+  const dragStateRef = useRef<{
+    mode: "move" | "resize";
+    pointerId: number;
+    startX: number;
+    startY: number;
+    initial: WidgetRect;
+  } | null>(null);
+  const [isInteracting, setIsInteracting] = useState(false);
+
+  const clampRect = useCallback((next: WidgetRect): WidgetRect => {
+    const vw = typeof window !== "undefined" ? window.innerWidth : 1280;
+    const vh = typeof window !== "undefined" ? window.innerHeight : 800;
+    const width = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, Math.min(next.width, vw - 16)));
+    const height = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, Math.min(next.height, vh - 16)));
+    const x = Math.max(8, Math.min(next.x, vw - width - 8));
+    const y = Math.max(8, Math.min(next.y, vh - height - 8));
+    return { x, y, width, height };
+  }, []);
+
+  const startDrag = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+      event.preventDefault();
+      event.stopPropagation();
+      dragStateRef.current = {
+        mode,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        initial: { ...rect },
+      };
+      setIsInteracting(true);
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // capture is best-effort
+      }
+    },
+    [rect],
+  );
+
+  const handlePointerMove = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      const state = dragStateRef.current;
+      if (!state || state.pointerId !== event.pointerId) return;
+      const dx = event.clientX - state.startX;
+      const dy = event.clientY - state.startY;
+      if (state.mode === "move") {
+        onRectChange(clampRect({ ...state.initial, x: state.initial.x + dx, y: state.initial.y + dy }));
+      } else {
+        onRectChange(
+          clampRect({
+            ...state.initial,
+            width: state.initial.width + dx,
+            height: state.initial.height + dy,
+          }),
+        );
+      }
+    },
+    [clampRect, onRectChange],
+  );
+
+  const finishDrag = useCallback((event: ReactPointerEvent<HTMLDivElement>) => {
+    const state = dragStateRef.current;
+    if (!state || state.pointerId !== event.pointerId) return;
+    try {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    } catch {
+      // ignore
+    }
+    dragStateRef.current = null;
+    setIsInteracting(false);
+  }, []);
 
   const filteredMembers = useMemo(() => {
     const trimmed = query.trim().toUpperCase();
@@ -93,9 +189,29 @@ export function GroupStocksWidget({
     setQuery(event.target.value);
   };
 
+  const widgetStyle = {
+    left: `${rect.x}px`,
+    top: `${rect.y}px`,
+    width: `${rect.width}px`,
+    height: `${rect.height}px`,
+  };
+  const widgetClass = `group-stocks-widget ${isInteracting ? "is-interacting" : ""}`;
+
   return (
-    <div className="group-stocks-widget" role="complementary" aria-label="Group stocks">
-      <div className="gsw-header">
+    <div
+      className={widgetClass}
+      role="complementary"
+      aria-label="Group stocks"
+      style={widgetStyle}
+    >
+      <div
+        className="gsw-header"
+        onPointerDown={(event) => startDrag(event, "move")}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+      >
+        <div className="gsw-drag-handle" aria-hidden="true">⋮⋮</div>
         <div className="gsw-title-block">
           <span className="gsw-eyebrow">{context.parentSector}</span>
           <h4 className="gsw-title">{context.groupName}</h4>
@@ -109,6 +225,7 @@ export function GroupStocksWidget({
           type="button"
           className="gsw-close"
           onClick={onClose}
+          onPointerDown={(event) => event.stopPropagation()}
           aria-label="Close group stocks"
           title="Close"
         >
@@ -225,6 +342,18 @@ export function GroupStocksWidget({
             );
           })
         )}
+      </div>
+
+      <div
+        className="gsw-resize-handle"
+        onPointerDown={(event) => startDrag(event, "resize")}
+        onPointerMove={handlePointerMove}
+        onPointerUp={finishDrag}
+        onPointerCancel={finishDrag}
+        role="slider"
+        aria-label="Resize widget"
+      >
+        <span aria-hidden="true">⤡</span>
       </div>
     </div>
   );

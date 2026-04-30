@@ -89,7 +89,44 @@ const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
 const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
 const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v2";
+const GROUP_WIDGET_RECT_KEY = "mr-malik-group-widget-rect:v1";
+const GROUP_WIDGET_OPEN_KEY = "mr-malik-group-widget-open:v1";
 const THEME_KEY = "mr-malik-theme:v1";
+
+type GroupWidgetRect = { x: number; y: number; width: number; height: number };
+
+function readGroupWidgetRect(): GroupWidgetRect {
+  const fallback: GroupWidgetRect = { x: 24, y: 80, width: 300, height: 520 };
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = window.localStorage.getItem(GROUP_WIDGET_RECT_KEY);
+    if (!raw) return fallback;
+    const parsed = JSON.parse(raw);
+    if (
+      parsed &&
+      typeof parsed.x === "number" &&
+      typeof parsed.y === "number" &&
+      typeof parsed.width === "number" &&
+      typeof parsed.height === "number"
+    ) {
+      return parsed;
+    }
+  } catch {
+    // ignore corrupted storage
+  }
+  return fallback;
+}
+
+function readGroupWidgetOpen(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = window.localStorage.getItem(GROUP_WIDGET_OPEN_KEY);
+    if (raw === null) return true;
+    return raw === "1";
+  } catch {
+    return true;
+  }
+}
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
 const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
@@ -1379,7 +1416,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [chartError, setChartError] = useState<string | null>(null);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartCacheState, setChartCacheState] = useState<"cached" | "live" | null>(null);
-  const [groupWidgetOpen, setGroupWidgetOpen] = useState(true);
+  const [groupWidgetOpen, setGroupWidgetOpen] = useState<boolean>(readGroupWidgetOpen);
+  const [groupWidgetRect, setGroupWidgetRect] = useState<GroupWidgetRect>(readGroupWidgetRect);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLayout, setCompareLayout] = useState<"horizontal" | "vertical">("horizontal");
   const [compareDividerRatio, setCompareDividerRatio] = useState(0.5);
@@ -2750,9 +2788,26 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       setChartBLoading(false);
       setChartBError(null);
       setChartBCacheState(null);
-      setGroupWidgetOpen(true);
     }
   }, [chartOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(GROUP_WIDGET_OPEN_KEY, groupWidgetOpen ? "1" : "0");
+    } catch {
+      // ignore quota
+    }
+  }, [groupWidgetOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(GROUP_WIDGET_RECT_KEY, JSON.stringify(groupWidgetRect));
+    } catch {
+      // ignore quota
+    }
+  }, [groupWidgetRect]);
 
   useEffect(() => {
     if (!selectedSymbol || !displayedChart) {
@@ -4886,10 +4941,22 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <button type="button" className="chart-modal-close" onClick={() => setChartOpen(false)}>
               Close
             </button>
-            <div className="chart-modal-body">
-              <div className="chart-modal-stage">
-                <Suspense fallback={<DeferredPanelPlaceholder compact />}>
-                  <ChartCompareLayout
+            {groupWidgetContext ? (
+              <button
+                type="button"
+                className={
+                  groupWidgetOpen
+                    ? "chart-modal-widget-toggle is-active"
+                    : "chart-modal-widget-toggle"
+                }
+                onClick={() => setGroupWidgetOpen((prev) => !prev)}
+                title={groupWidgetOpen ? "Hide group stocks" : "Show group stocks"}
+              >
+                {groupWidgetOpen ? "Hide Group" : "Show Group"}
+              </button>
+            ) : null}
+            <Suspense fallback={<DeferredPanelPlaceholder compact />}>
+              <ChartCompareLayout
                     compareMode={compareMode}
                     layout={compareLayout}
                     activePane={activePane}
@@ -4993,34 +5060,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     }
                   />
                 </Suspense>
-              </div>
-              {groupWidgetOpen && groupWidgetContext ? (
-                <Suspense fallback={null}>
-                  <GroupStocksWidget
-                    market={activeMarket}
-                    context={groupWidgetContext}
-                    selectedSymbolA={selectedSymbol}
-                    selectedSymbolB={paneBSymbol}
-                    activePane={activePane}
-                    compareMode={compareMode}
-                    compareLayout={compareLayout}
-                    onClose={() => setGroupWidgetOpen(false)}
-                    onSelectMember={handleGroupWidgetSelect}
-                    onToggleCompare={handleToggleCompareMode}
-                    onLayoutChange={setCompareLayout}
-                  />
-                </Suspense>
-              ) : !groupWidgetOpen ? (
-                <button
-                  type="button"
-                  className="chart-modal-widget-reopen"
-                  onClick={() => setGroupWidgetOpen(true)}
-                  title="Show group stocks"
-                >
-                  Show Group
-                </button>
-              ) : null}
-            </div>
+            {groupWidgetOpen && groupWidgetContext ? (
+              <Suspense fallback={null}>
+                <GroupStocksWidget
+                  market={activeMarket}
+                  context={groupWidgetContext}
+                  selectedSymbolA={selectedSymbol}
+                  selectedSymbolB={paneBSymbol}
+                  activePane={activePane}
+                  compareMode={compareMode}
+                  compareLayout={compareLayout}
+                  rect={groupWidgetRect}
+                  onRectChange={setGroupWidgetRect}
+                  onClose={() => setGroupWidgetOpen(false)}
+                  onSelectMember={handleGroupWidgetSelect}
+                  onToggleCompare={handleToggleCompareMode}
+                  onLayoutChange={setCompareLayout}
+                />
+              </Suspense>
+            ) : null}
           </div>
         </div>
       ) : null}
