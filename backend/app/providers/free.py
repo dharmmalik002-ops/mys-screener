@@ -3181,6 +3181,196 @@ class FreeMarketDataProvider:
         temp_path.write_text(json.dumps(rows, indent=2), encoding="utf-8")
         os.replace(temp_path, self.snapshot_cache_path)
 
+    def _bhavcopy_patch_path(self) -> Path:
+        return self.backend_root / "data" / "bhavcopy_patch.json"
+
+    def _bhavcopy_status_path(self) -> Path:
+        return self.backend_root / "data" / "bhavcopy_status.json"
+
+    def _last_applied_bhavcopy_date(self) -> date | None:
+        path = self._bhavcopy_status_path()
+        if not path.exists():
+            return None
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        if not isinstance(payload, dict):
+            return None
+        raw = payload.get("date")
+        if not raw:
+            return None
+        try:
+            return date.fromisoformat(str(raw))
+        except ValueError:
+            return None
+
+    def _read_bhavcopy_patch_payload(self) -> dict[str, Any] | None:
+        path = self._bhavcopy_patch_path()
+        if not path.exists():
+            return None
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        return payload if isinstance(payload, dict) else None
+
+    def apply_committed_bhavcopy_patch(self, *, force: bool = False) -> dict[str, Any]:
+        """Roll the on-disk EOD bhavcopy patch into ``free_snapshots.json``.
+
+        The daily-bhavcopy GitHub Action commits ``backend/data/bhavcopy_patch.json``
+        with that day's BSE closes. The HF deploy bundle excludes the (huge)
+        ``free_snapshots.json``, so on cold start the Space has yesterday's snapshot
+        rows; this method merges today's closes in so dashboard / scanner endpoints
+        immediately serve fresh prices.
+
+        Idempotent: bails out if ``bhavcopy_status.json`` already records the same
+        (or newer) date, unless ``force=True``.
+        """
+        payload = self._read_bhavcopy_patch_payload()
+        if payload is None:
+            return {"status": "noop", "reason": "no_patch_file", "snapshots_updated": 0}
+
+        patch_date_raw = payload.get("date")
+        try:
+            patch_date = date.fromisoformat(str(patch_date_raw)) if patch_date_raw else None
+        except ValueError:
+            patch_date = None
+        if patch_date is None:
+            return {"status": "noop", "reason": "invalid_patch_date", "snapshots_updated": 0}
+
+        last_applied = self._last_applied_bhavcopy_date()
+        if not force and last_applied is not None and last_applied >= patch_date:
+            return {
+                "status": "noop",
+                "reason": "already_applied",
+                "snapshots_updated": 0,
+                "date": patch_date.isoformat(),
+            }
+
+        symbols_payload = payload.get("symbols")
+        if not isinstance(symbols_payload, dict) or not symbols_payload:
+            return {
+                "status": "noop",
+                "reason": "no_symbols",
+                "snapshots_updated": 0,
+                "date": patch_date.isoformat(),
+            }
+
+        if not self.snapshot_cache_path.exists():
+            return {"status": "error", "reason": "no_snapshot_cache", "snapshots_updated": 0}
+
+        try:
+            rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
+        except Exception:
+            return {"status": "error", "reason": "snapshot_load_failed", "snapshots_updated": 0}
+        if not isinstance(rows, list):
+            return {"status": "error", "reason": "bad_snapshot_shape", "snapshots_updated": 0}
+
+        normalized_patch: dict[str, dict[str, Any]] = {}
+        for raw_symbol, record in symbols_payload.items():
+            if not isinstance(record, dict):
+                continue
+            normalized_patch[str(raw_symbol).strip().upper()] = record
+
+        updated = 0
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            symbol = str(row.get("symbol") or "").strip().upper()
+            if not symbol:
+                continue
+            record = normalized_patch.get(symbol)
+            if record is None:
+                continue
+
+            try:
+                new_close = float(record.get("c"))
+                new_high = float(record.get("h"))
+                new_low = float(record.get("l"))
+                new_open = float(record.get("o"))
+            except (TypeError, ValueError):
+                continue
+            try:
+                new_volume = float(record.get("v") or 0)
+            except (TypeError, ValueError):
+                new_volume = 0.0
+
+            old_last_price = row.get("last_price")
+            old_day_high = row.get("day_high")
+            old_day_low = row.get("day_low")
+
+            try:
+                prev_close = float(old_last_price) if old_last_price is not None else 0.0
+            except (TypeError, ValueError):
+                prev_close = 0.0
+
+            if prev_close > 0:
+                row["previous_close"] = round(prev_close, 4)
+            try:
+                if old_day_high is not None:
+                    row["previous_day_high"] = round(float(old_day_high), 4)
+                if old_day_low is not None:
+                    row["previous_day_low"] = round(float(old_day_low), 4)
+            except (TypeError, ValueError):
+                pass
+
+            row["last_price"] = round(new_close, 4)
+            row["day_high"] = round(new_high, 4)
+            row["day_low"] = round(new_low, 4)
+            row["volume"] = int(new_volume)
+
+            if prev_close > 0:
+                row["change_pct"] = round((new_close - prev_close) / prev_close * 100.0, 4)
+                row["gap_pct"] = round((new_open - prev_close) / prev_close * 100.0, 4)
+
+            for arr_key, value in (
+                ("recent_highs", round(new_high, 4)),
+                ("recent_lows", round(new_low, 4)),
+                ("recent_volumes", int(new_volume)),
+            ):
+                arr = row.get(arr_key)
+                if isinstance(arr, list) and arr:
+                    rolled = list(arr[-19:]) + [value]
+                    row[arr_key] = rolled
+
+            updated += 1
+
+        if updated == 0:
+            return {
+                "status": "noop",
+                "reason": "no_symbol_match",
+                "snapshots_updated": 0,
+                "date": patch_date.isoformat(),
+            }
+
+        self._write_snapshot_rows(rows)
+
+        source_label = str(payload.get("source") or "BSE").lower()
+        status_payload = {
+            "date": patch_date.isoformat(),
+            "source": source_label,
+            "snapshots_updated": updated,
+            "chart_caches_updated": 0,
+            "applied_at": datetime.now(timezone.utc).isoformat(),
+        }
+        self._bhavcopy_status_path().write_text(json.dumps(status_payload, indent=2), encoding="utf-8")
+
+        self._seed_snapshot_cache_restored_at = None
+
+        return {
+            "status": "ok",
+            "snapshots_updated": updated,
+            "date": patch_date.isoformat(),
+            "source": source_label,
+        }
+
+    def apply_bhavcopy_eod(self) -> dict[str, Any]:
+        """Live EOD path. Inside HF Spaces NSE/BSE direct fetches are typically
+        geo-blocked; we trust the GitHub-Action-committed patch file as the
+        source of truth."""
+        return self.apply_committed_bhavcopy_patch()
+
     def _should_rebuild_snapshot_history(self, rows: list[dict[str, Any]], force_refresh: bool) -> bool:
         if not rows:
             return True

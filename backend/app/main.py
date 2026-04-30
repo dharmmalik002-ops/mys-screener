@@ -173,9 +173,50 @@ def schedule_startup_cache_warm(app: FastAPI, market_name: str, service_obj, tim
     task.add_done_callback(_cleanup)
 
 
+def apply_bhavcopy_patch_on_startup() -> None:
+    """Roll any committed bhavcopy patch into the live snapshot before serving.
+
+    The HF deploy excludes the heavy ``free_snapshots.json`` from the bundle,
+    so cold starts begin with stale prices from the previous baked snapshot.
+    Without this, dashboard / scanner endpoints serve yesterday's prices until
+    the next watchdog tick. Running this once on startup keeps prices in sync
+    with whatever the daily-bhavcopy GitHub Action last committed.
+    """
+    try:
+        result = india_provider.apply_committed_bhavcopy_patch()
+    except Exception as exc:
+        logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
+        return
+    if result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0:
+        try:
+            service._clear_runtime_caches()
+        except Exception:
+            pass
+        logger.info(
+            "Applied bhavcopy patch on startup: date=%s symbols_updated=%s source=%s",
+            result.get("date"),
+            result.get("snapshots_updated"),
+            result.get("source"),
+        )
+    else:
+        logger.info(
+            "Bhavcopy patch on startup status=%s reason=%s date=%s",
+            result.get("status"),
+            result.get("reason"),
+            result.get("date"),
+        )
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.startup_warm_tasks = set()
+    apply_bhavcopy_patch_on_startup()
+    scheduler.add_job(
+        apply_bhavcopy_patch_on_startup,
+        CronTrigger(hour=16, minute=45, timezone=IST),
+        id="india_bhavcopy_patch_apply",
+        replace_existing=True,
+    )
     scheduler.add_job(
         daily_listed_universe_refresh_job,
         CronTrigger(hour=16, minute=0, timezone=IST),
@@ -184,7 +225,7 @@ async def lifespan(app: FastAPI):
         replace_existing=True,
     )
     scheduler.start()
-    logger.info("Scheduler started — India refresh 4:00 PM IST")
+    logger.info("Scheduler started — India refresh 4:00 PM IST, bhavcopy patch apply 4:45 PM IST")
     if settings.startup_cache_warm_enabled:
         startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)
         schedule_startup_cache_warm(app, "india", service, startup_warm_timeout_seconds)
