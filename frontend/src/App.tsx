@@ -3367,6 +3367,35 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setChartOpen(true);
   };
 
+  const handlePrefetchSymbol = (symbol: string) => {
+    if (!symbol || symbol === selectedSymbolRef.current) {
+      return;
+    }
+    if (timeframe !== "1D" && timeframe !== "1W") {
+      return;
+    }
+    const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
+    if (prewarmingChartKeysRef.current.has(cacheKey)) {
+      return;
+    }
+    if (readCachedChart(activeMarket, symbol, timeframe)) {
+      return;
+    }
+    prewarmingChartKeysRef.current.add(cacheKey);
+    void (async () => {
+      try {
+        const payload = await getChart(symbol, timeframe, activeMarket);
+        if (payload.symbol === symbol && payload.timeframe === timeframe) {
+          storeCachedChart(activeMarket, symbol, timeframe, payload);
+        }
+      } catch {
+        // Hover prefetch is best-effort; explicit clicks will retry on demand.
+      } finally {
+        prewarmingChartKeysRef.current.delete(cacheKey);
+      }
+    })();
+  };
+
   const handleJournalOpenSymbolChart = (symbol: string) => {
     handlePickSymbol(normalizeJournalChartSymbol(symbol));
   };
@@ -4545,6 +4574,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onMoveSymbols={handleMoveWatchlistSymbols}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
+                  onPrefetchSymbol={handlePrefetchSymbol}
                   universeItems={universeCatalog}
                   groupsData={groupsData}
                   selectedSymbol={selectedSymbol}

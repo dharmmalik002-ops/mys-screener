@@ -1,6 +1,7 @@
 import {
   Suspense,
   lazy,
+  useCallback,
   useDeferredValue,
   useEffect,
   useMemo,
@@ -59,6 +60,7 @@ type WatchlistsPanelProps = {
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
+  onPrefetchSymbol?: (symbol: string) => void;
   universeItems: ScanMatch[];
   groupsData: IndustryGroupsResponse | null;
   selectedSymbol: string | null;
@@ -247,6 +249,7 @@ export function WatchlistsPanel({
   onMoveSymbols,
   onRequestAddToWatchlist,
   onPickSymbol,
+  onPrefetchSymbol,
   universeItems,
   groupsData,
   selectedSymbol,
@@ -263,6 +266,29 @@ export function WatchlistsPanel({
   const [movePopoverAnchor, setMovePopoverAnchor] = useState<{ top: number; left: number } | null>(null);
   const moveButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const movePopoverEl = useRef<HTMLDivElement | null>(null);
+  const prefetchTimerRef = useRef<number | null>(null);
+  const requestPrefetchSymbol = useCallback(
+    (symbol: string) => {
+      if (!onPrefetchSymbol) {
+        return;
+      }
+      if (prefetchTimerRef.current !== null) {
+        window.clearTimeout(prefetchTimerRef.current);
+      }
+      prefetchTimerRef.current = window.setTimeout(() => {
+        prefetchTimerRef.current = null;
+        onPrefetchSymbol(symbol);
+      }, 150);
+    },
+    [onPrefetchSymbol],
+  );
+  const cancelPrefetch = useCallback(() => {
+    if (prefetchTimerRef.current !== null) {
+      window.clearTimeout(prefetchTimerRef.current);
+      prefetchTimerRef.current = null;
+    }
+  }, []);
+  useEffect(() => () => cancelPrefetch(), [cancelPrefetch]);
   const [gridOpen, setGridOpen] = useState(false);
   const [gridColumns, setGridColumns] = useState(4);
   const [gridRows, setGridRows] = useState(3);
@@ -567,6 +593,9 @@ export function WatchlistsPanel({
             ...(virtualHeight ? { height: `${virtualHeight}px` } : {}),
           } as CSSProperties
         }
+        onMouseEnter={() => requestPrefetchSymbol(item.symbol)}
+        onMouseLeave={cancelPrefetch}
+        onFocus={() => requestPrefetchSymbol(item.symbol)}
       >
         <button
           type="button"
