@@ -3240,7 +3240,21 @@ class FreeMarketDataProvider:
             return {"status": "noop", "reason": "invalid_patch_date", "snapshots_updated": 0}
 
         last_applied = self._last_applied_bhavcopy_date()
-        if not force and last_applied is not None and last_applied >= patch_date:
+        # Bumped to 2 in the fix that uses bhavcopy "p" (PREVCLOSE) for change_pct
+        # / gap_pct / previous_close. v1 status files were written by buggy apply
+        # that derived prev_close from the snapshot's stale last_price.
+        APPLY_SCHEMA_VERSION = 2
+        status_path = self._bhavcopy_status_path()
+        saved_version = 1
+        if status_path.exists():
+            try:
+                _existing = json.loads(status_path.read_text(encoding="utf-8"))
+                if isinstance(_existing, dict):
+                    saved_version = int(_existing.get("schema_version") or 1)
+            except Exception:
+                saved_version = 1
+        needs_schema_upgrade = saved_version < APPLY_SCHEMA_VERSION
+        if not force and not needs_schema_upgrade and last_applied is not None and last_applied >= patch_date:
             return {
                 "status": "noop",
                 "reason": "already_applied",
@@ -3295,15 +3309,28 @@ class FreeMarketDataProvider:
                 new_volume = float(record.get("v") or 0)
             except (TypeError, ValueError):
                 new_volume = 0.0
+            try:
+                bhav_prev_close = float(record.get("p") or 0)
+            except (TypeError, ValueError):
+                bhav_prev_close = 0.0
 
-            old_last_price = row.get("last_price")
             old_day_high = row.get("day_high")
             old_day_low = row.get("day_low")
 
-            try:
-                prev_close = float(old_last_price) if old_last_price is not None else 0.0
-            except (TypeError, ValueError):
-                prev_close = 0.0
+            # The bhavcopy's "p" is the authoritative previous close (PREVCLOSE
+            # column on BSE/NSE EOD CSV). Use it whenever it's present; this is
+            # what makes top-gainer / top-loser % match the official daily move
+            # even when the snapshot we started from was several days stale.
+            # Fall back to the snapshot's prior last_price only if "p" is missing
+            # (e.g. yfinance fallback path doesn't populate it).
+            prev_close: float
+            if bhav_prev_close > 0:
+                prev_close = bhav_prev_close
+            else:
+                try:
+                    prev_close = float(row.get("last_price") or 0)
+                except (TypeError, ValueError):
+                    prev_close = 0.0
 
             if prev_close > 0:
                 row["previous_close"] = round(prev_close, 4)
@@ -3331,8 +3358,11 @@ class FreeMarketDataProvider:
             ):
                 arr = row.get(arr_key)
                 if isinstance(arr, list) and arr:
-                    rolled = list(arr[-19:]) + [value]
-                    row[arr_key] = rolled
+                    # Idempotent roll: only push today's bar if it isn't already
+                    # the most-recent element. Lets us safely re-apply when the
+                    # schema bumps without double-counting.
+                    if arr[-1] != value:
+                        row[arr_key] = list(arr[-19:]) + [value]
 
             updated += 1
 
@@ -3353,6 +3383,7 @@ class FreeMarketDataProvider:
             "snapshots_updated": updated,
             "chart_caches_updated": 0,
             "applied_at": datetime.now(timezone.utc).isoformat(),
+            "schema_version": APPLY_SCHEMA_VERSION,
         }
         self._bhavcopy_status_path().write_text(json.dumps(status_payload, indent=2), encoding="utf-8")
 
