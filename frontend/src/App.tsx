@@ -64,6 +64,8 @@ import { AppStatusBanners } from "./components/AppStatusBanners";
 
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
 const ChartGroupModal = lazy(() => import("./components/ChartGroupModal"));
+const ChartCompareLayout = lazy(() => import("./components/ChartCompareLayout").then((module) => ({ default: module.ChartCompareLayout })));
+const GroupStocksWidget = lazy(() => import("./components/GroupStocksWidget").then((module) => ({ default: module.GroupStocksWidget })));
 const ConsolidatingScannerPanel = lazy(() => import("./components/ConsolidatingScannerPanel").then((module) => ({ default: module.ConsolidatingScannerPanel })));
 const CustomScannerPanel = lazy(() => import("./components/CustomScannerPanel").then((module) => ({ default: module.CustomScannerPanel })));
 const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").then((module) => ({ default: module.GapUpScannerPanel })));
@@ -1377,6 +1379,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [chartError, setChartError] = useState<string | null>(null);
   const [chartLoading, setChartLoading] = useState(false);
   const [chartCacheState, setChartCacheState] = useState<"cached" | "live" | null>(null);
+  const [groupWidgetOpen, setGroupWidgetOpen] = useState(true);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareLayout, setCompareLayout] = useState<"horizontal" | "vertical">("horizontal");
+  const [compareDividerRatio, setCompareDividerRatio] = useState(0.5);
+  const [paneBSymbol, setPaneBSymbol] = useState<string | null>(null);
+  const [activePane, setActivePane] = useState<"A" | "B">("A");
+  const [chartB, setChartB] = useState<ChartResponse | null>(null);
+  const [chartBLoading, setChartBLoading] = useState(false);
+  const [chartBError, setChartBError] = useState<string | null>(null);
+  const [chartBCacheState, setChartBCacheState] = useState<"cached" | "live" | null>(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
   const [fundamentalsError, setFundamentalsError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState<AppPage>("home");
@@ -1439,6 +1451,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [bootstrapNonce, setBootstrapNonce] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const chartRequestIdRef = useRef(0);
+  const chartBRequestIdRef = useRef(0);
+  const paneBSymbolRef = useRef<string | null>(null);
+  const activePaneRef = useRef<"A" | "B">("A");
+  const compareModeRef = useRef(false);
+  const groupNavOverrideRef = useRef<string[] | null>(null);
   const fundamentalsRequestIdRef = useRef(0);
   const scanRequestIdRef = useRef(0);
   const scanSectorSummaryRequestIdRef = useRef(0);
@@ -1639,6 +1656,62 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
   };
 
+  const loadChartForPaneB = async (
+    symbol: string,
+    chartTimeframe: ChartTimeframe,
+    market: MarketKey,
+  ) => {
+    const cachedChart = readCachedChart(market, symbol, chartTimeframe);
+    const fallbackChart = cachedChart ?? buildIndexFallbackChart(sectorTabData, symbol, chartTimeframe, market);
+
+    if (fallbackChart) {
+      setChartB(fallbackChart);
+      setChartBError(null);
+      setChartBCacheState(cachedChart ? "cached" : null);
+      setChartBLoading(!cachedChart);
+      if (cachedChart) {
+        return cachedChart;
+      }
+    } else {
+      setChartBLoading(true);
+    }
+
+    const requestId = chartBRequestIdRef.current + 1;
+    chartBRequestIdRef.current = requestId;
+
+    try {
+      const payload = await getChart(symbol, chartTimeframe, market);
+      if (chartBRequestIdRef.current !== requestId) {
+        return fallbackChart;
+      }
+      if (payload.symbol !== symbol || payload.timeframe !== chartTimeframe) {
+        setChartBLoading(false);
+        return fallbackChart;
+      }
+      storeCachedChart(market, symbol, chartTimeframe, payload);
+      setChartB(payload);
+      setChartBError(null);
+      setChartBLoading(false);
+      setChartBCacheState("live");
+      return payload;
+    } catch (loadError) {
+      if (chartBRequestIdRef.current !== requestId) {
+        return fallbackChart;
+      }
+      setChartBLoading(false);
+      if (fallbackChart) {
+        setChartB(fallbackChart);
+        setChartBCacheState(cachedChart ? "cached" : null);
+        setChartBError(
+          loadError instanceof Error ? `${loadError.message}. Showing cached chart.` : "Failed to refresh chart. Showing cached chart.",
+        );
+        return fallbackChart;
+      }
+      setChartBCacheState(null);
+      throw loadError;
+    }
+  };
+
   const applyChartPreferences = (preferences: ReturnType<typeof readChartPreferences>) => {
     setChartPanelTab(preferences.chartPanelTab);
     setTimeframe(preferences.timeframe);
@@ -1705,6 +1778,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setChartError(null);
     setChartLoading(false);
     setChartCacheState(null);
+    setPaneBSymbol(null);
+    setChartB(null);
+    setChartBLoading(false);
+    setChartBError(null);
+    setChartBCacheState(null);
+    setCompareMode(false);
+    setActivePane("A");
     setFundamentalsBySymbol({});
     setFundamentalsError(null);
     setActiveMarket(nextMarket);
@@ -2231,6 +2311,45 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [timeframe]);
 
   useEffect(() => {
+    paneBSymbolRef.current = paneBSymbol;
+  }, [paneBSymbol]);
+
+  useEffect(() => {
+    activePaneRef.current = activePane;
+  }, [activePane]);
+
+  useEffect(() => {
+    compareModeRef.current = compareMode;
+  }, [compareMode]);
+
+  useEffect(() => {
+    if (!compareMode || !chartOpen || !paneBSymbol) {
+      chartBRequestIdRef.current += 1;
+      if (!compareMode || !paneBSymbol) {
+        setChartB(null);
+        setChartBError(null);
+        setChartBLoading(false);
+        setChartBCacheState(null);
+      }
+      return;
+    }
+    const symbolForB = paneBSymbol;
+    const timeframeForB = timeframe;
+    const marketForB = activeMarket;
+    void (async () => {
+      try {
+        await loadChartForPaneB(symbolForB, timeframeForB, marketForB);
+      } catch (loadError) {
+        setChartBError(loadError instanceof Error ? loadError.message : "Failed to load chart");
+      }
+    })();
+    return () => {
+      chartBRequestIdRef.current += 1;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeMarket, chartOpen, compareMode, paneBSymbol, timeframe]);
+
+  useEffect(() => {
     if (
       !selectedSymbol ||
       chartPanelTab !== "fundamentals" ||
@@ -2573,9 +2692,67 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     };
   }, [activeChartGroupContext]);
 
+  const paneBDisplayedChart = chartB && paneBSymbol && chartB.symbol === paneBSymbol && chartB.timeframe === timeframe ? chartB : null;
+  const paneBChartKey = paneBSymbol ? `${paneBSymbol}:${timeframe}` : null;
+  const paneBAnnotations = paneBChartKey ? savedDrawings[paneBChartKey] ?? [] : [];
+  const paneBFundamentals = paneBSymbol ? fundamentalsBySymbol[paneBSymbol] ?? null : null;
+  const paneBChartGroupContext = useMemo(
+    () => resolveChartGroupContext(paneBSymbol, groupsData),
+    [groupsData, paneBSymbol],
+  );
+  const paneBChartGroupSummary = useMemo<ChartGroupSummary | null>(() => {
+    if (!paneBChartGroupContext) return null;
+    return {
+      groupId: paneBChartGroupContext.groupId,
+      groupName: paneBChartGroupContext.groupName,
+      groupRank: paneBChartGroupContext.groupRank,
+      groupRankLabel: paneBChartGroupContext.groupRankLabel,
+      stockRank: paneBChartGroupContext.stockRank,
+      stockCount: paneBChartGroupContext.stockCount,
+    };
+  }, [paneBChartGroupContext]);
+
+  const handlePaneBAnnotationsChange = (annotations: ChartAnnotation[]) => {
+    if (!paneBChartKey) return;
+    setSavedDrawings((current) => ({ ...current, [paneBChartKey]: annotations }));
+  };
+
+  const groupWidgetContext = useMemo(() => {
+    if (!activeChartGroupContext) return null;
+    return {
+      groupId: activeChartGroupContext.groupId,
+      groupName: activeChartGroupContext.groupName,
+      parentSector: activeChartGroupContext.parentSector,
+      groupRankLabel: activeChartGroupContext.groupRankLabel,
+      stockCount: activeChartGroupContext.stockCount,
+      members: activeChartGroupContext.members,
+    };
+  }, [activeChartGroupContext]);
+
+  useEffect(() => {
+    if (chartOpen && groupWidgetOpen && activeChartGroupContext) {
+      groupNavOverrideRef.current = activeChartGroupContext.members.map((member) => member.symbol);
+    } else {
+      groupNavOverrideRef.current = null;
+    }
+  }, [chartOpen, groupWidgetOpen, activeChartGroupContext]);
+
   useEffect(() => {
     setChartGroupModalContext(null);
   }, [activeMarket, selectedSymbol]);
+
+  useEffect(() => {
+    if (!chartOpen) {
+      setCompareMode(false);
+      setActivePane("A");
+      setPaneBSymbol(null);
+      setChartB(null);
+      setChartBLoading(false);
+      setChartBError(null);
+      setChartBCacheState(null);
+      setGroupWidgetOpen(true);
+    }
+  }, [chartOpen]);
 
   useEffect(() => {
     if (!selectedSymbol || !displayedChart) {
@@ -3082,13 +3259,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       }
 
       const symbols = chartOpen
-        ? chartNavigationSymbolsRef.current?.length
-          ? chartNavigationSymbolsRef.current
-          : pageVisibleSymbolsRef.current
+        ? groupNavOverrideRef.current?.length
+          ? groupNavOverrideRef.current
+          : chartNavigationSymbolsRef.current?.length
+            ? chartNavigationSymbolsRef.current
+            : pageVisibleSymbolsRef.current
         : shouldHandleGroupsNavigation && chartNavigationSymbolsRef.current?.length
           ? chartNavigationSymbolsRef.current
           : visibleSymbolsRef.current;
-      const currentSymbol = selectedSymbolRef.current;
+      const targetActivePane = activePaneRef.current;
+      const isPaneBNav = chartOpen && compareModeRef.current && targetActivePane === "B";
+      const currentSymbol = isPaneBNav ? paneBSymbolRef.current : selectedSymbolRef.current;
       if (!symbols.length || !currentSymbol) {
         return;
       }
@@ -3098,28 +3279,28 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         return;
       }
 
-      if (event.key === "ArrowUp") {
-        event.preventDefault();
-        const previousIndex = (currentIndex - 1 + symbols.length) % symbols.length;
-        const previousSymbol = symbols[previousIndex];
-        if (previousSymbol && previousSymbol !== currentSymbol) {
-          setSelectedSymbol(previousSymbol);
-          if (chartOpen) {
-            setChartOpen(true);
-          }
-        }
-      }
-
-      if (event.key === "ArrowDown") {
-        event.preventDefault();
-        const nextIndex = (currentIndex + 1) % symbols.length;
-        const nextSymbol = symbols[nextIndex];
-        if (nextSymbol && nextSymbol !== currentSymbol) {
+      const applySymbol = (nextSymbol: string) => {
+        if (!nextSymbol || nextSymbol === currentSymbol) return;
+        if (isPaneBNav) {
+          setPaneBSymbol(nextSymbol);
+        } else {
           setSelectedSymbol(nextSymbol);
           if (chartOpen) {
             setChartOpen(true);
           }
         }
+      };
+
+      if (event.key === "ArrowUp") {
+        event.preventDefault();
+        const previousIndex = (currentIndex - 1 + symbols.length) % symbols.length;
+        applySymbol(symbols[previousIndex]);
+      }
+
+      if (event.key === "ArrowDown") {
+        event.preventDefault();
+        const nextIndex = (currentIndex + 1) % symbols.length;
+        applySymbol(symbols[nextIndex]);
       }
     };
 
@@ -3135,6 +3316,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (compareModeRef.current) {
+          setCompareMode(false);
+          setActivePane("A");
+          return;
+        }
         setChartOpen(false);
       }
     };
@@ -3703,6 +3889,49 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
     handlePickSymbol(match.symbol);
+  };
+
+  const handlePaneSearchSubmit = (pane: "A" | "B", query: string) => {
+    const match = findUniverseMatch(query);
+    if (!match) return;
+    if (pane === "B" && compareMode) {
+      setPaneBSymbol(match.symbol);
+      setActivePane("B");
+    } else {
+      setSelectedSymbol(match.symbol);
+      setChartOpen(true);
+      setActivePane("A");
+    }
+  };
+
+  const handleToggleCompareMode = () => {
+    if (compareMode) {
+      setCompareMode(false);
+      setActivePane("A");
+      return;
+    }
+    const context = activeChartGroupContext;
+    let leaderSymbol: string | null = null;
+    if (context && context.members.length > 0) {
+      const sel = (selectedSymbol ?? "").toUpperCase();
+      leaderSymbol =
+        context.members.find((member) => member.symbol.toUpperCase() !== sel)?.symbol ??
+        context.members[0]?.symbol ??
+        null;
+    }
+    if (!leaderSymbol) return;
+    setPaneBSymbol(leaderSymbol);
+    setCompareMode(true);
+    setActivePane("B");
+  };
+
+  const handleGroupWidgetSelect = (symbol: string) => {
+    if (compareMode && activePane === "B") {
+      setPaneBSymbol(symbol);
+    } else {
+      setSelectedSymbol(symbol);
+      setActivePane("A");
+    }
   };
 
   const handleGroupSearchSubmit = async (overrideQuery?: string) => {
@@ -4657,54 +4886,141 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <button type="button" className="chart-modal-close" onClick={() => setChartOpen(false)}>
               Close
             </button>
-            <Suspense fallback={<DeferredPanelPlaceholder compact />}>
-              <ChartPanel
-                key={`modal-${activeChartKey ?? "empty-chart"}`}
-                market={activeMarket}
-                symbol={selectedSymbol}
-                bars={displayedChart?.bars ?? []}
-                rsLine={displayedChart?.rs_line ?? []}
-                rsLineMarkers={displayedChart?.rs_line_markers ?? []}
-                summary={displayedChart?.summary ?? null}
-                panelTab={chartPanelTab}
-                onPanelTabChange={setChartPanelTab}
-                chartError={chartError}
-                chartLoading={chartLoading}
-                chartCacheState={chartCacheState}
-                fundamentals={activeFundamentals}
-                fundamentalsLoading={fundamentalsLoading}
-                fundamentalsError={fundamentalsError}
-                groupSummary={activeChartGroupSummary}
-                timeframe={timeframe}
-                onTimeframeChange={handleTimeframeChange}
-                chartStyle={chartStyle}
-                onChartStyleChange={setChartStyle}
-                chartPalette={chartPalette}
-                onChartPaletteChange={setChartPalette}
-                showBenchmarkOverlay={showBenchmarkOverlay}
-                onShowBenchmarkOverlayChange={setShowBenchmarkOverlay}
-                indicatorKeys={indicatorKeys}
-                onToggleIndicator={handleToggleIndicator}
-                chartColors={chartColors}
-                onChartColorsChange={handleChartColorsChange}
-                drawingColor={chartDrawingColor}
-                onDrawingColorChange={setChartDrawingColor}
-                annotations={activeAnnotations}
-                onAnnotationsChange={handleAnnotationsChange}
-                onAddToWatchlist={setWatchlistPickerSymbol}
-                onRemoveFromWatchlist={
-                  activePage === "watchlists" && activeWatchlist
-                    ? (symbol) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
-                    : undefined
-                }
-                onAddToJournal={handleChartAddToJournal}
-                searchOptions={universeCatalog}
-                onSearchSymbol={handleChartSearchSubmit}
-                onOpenGroup={handleOpenChartGroupModal}
-                onRefreshChart={handleChartRefresh}
-                expanded
-              />
-            </Suspense>
+            <div className="chart-modal-body">
+              <div className="chart-modal-stage">
+                <Suspense fallback={<DeferredPanelPlaceholder compact />}>
+                  <ChartCompareLayout
+                    compareMode={compareMode}
+                    layout={compareLayout}
+                    activePane={activePane}
+                    dividerRatio={compareDividerRatio}
+                    onDividerRatioChange={setCompareDividerRatio}
+                    onActivePaneChange={setActivePane}
+                    paneA={
+                      <ChartPanel
+                        key={`modal-A-${activeChartKey ?? "empty-chart"}`}
+                        market={activeMarket}
+                        symbol={selectedSymbol}
+                        bars={displayedChart?.bars ?? []}
+                        rsLine={displayedChart?.rs_line ?? []}
+                        rsLineMarkers={displayedChart?.rs_line_markers ?? []}
+                        summary={displayedChart?.summary ?? null}
+                        panelTab={chartPanelTab}
+                        onPanelTabChange={setChartPanelTab}
+                        chartError={chartError}
+                        chartLoading={chartLoading}
+                        chartCacheState={chartCacheState}
+                        fundamentals={activeFundamentals}
+                        fundamentalsLoading={fundamentalsLoading}
+                        fundamentalsError={fundamentalsError}
+                        groupSummary={activeChartGroupSummary}
+                        timeframe={timeframe}
+                        onTimeframeChange={handleTimeframeChange}
+                        chartStyle={chartStyle}
+                        onChartStyleChange={setChartStyle}
+                        chartPalette={chartPalette}
+                        onChartPaletteChange={setChartPalette}
+                        showBenchmarkOverlay={showBenchmarkOverlay}
+                        onShowBenchmarkOverlayChange={setShowBenchmarkOverlay}
+                        indicatorKeys={indicatorKeys}
+                        onToggleIndicator={handleToggleIndicator}
+                        chartColors={chartColors}
+                        onChartColorsChange={handleChartColorsChange}
+                        drawingColor={chartDrawingColor}
+                        onDrawingColorChange={setChartDrawingColor}
+                        annotations={activeAnnotations}
+                        onAnnotationsChange={handleAnnotationsChange}
+                        onAddToWatchlist={setWatchlistPickerSymbol}
+                        onRemoveFromWatchlist={
+                          activePage === "watchlists" && activeWatchlist
+                            ? (symbol) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
+                            : undefined
+                        }
+                        onAddToJournal={handleChartAddToJournal}
+                        searchOptions={universeCatalog}
+                        onSearchSymbol={(query) => handlePaneSearchSubmit("A", query)}
+                        onOpenGroup={handleOpenChartGroupModal}
+                        onRefreshChart={handleChartRefresh}
+                        expanded
+                      />
+                    }
+                    paneB={
+                      <ChartPanel
+                        key={`modal-B-${paneBChartKey ?? "empty-chart"}`}
+                        market={activeMarket}
+                        symbol={paneBSymbol}
+                        bars={paneBDisplayedChart?.bars ?? []}
+                        rsLine={paneBDisplayedChart?.rs_line ?? []}
+                        rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
+                        summary={paneBDisplayedChart?.summary ?? null}
+                        panelTab={chartPanelTab}
+                        onPanelTabChange={setChartPanelTab}
+                        chartError={chartBError}
+                        chartLoading={chartBLoading}
+                        chartCacheState={chartBCacheState}
+                        fundamentals={paneBFundamentals}
+                        fundamentalsLoading={false}
+                        fundamentalsError={null}
+                        groupSummary={paneBChartGroupSummary}
+                        timeframe={timeframe}
+                        onTimeframeChange={handleTimeframeChange}
+                        chartStyle={chartStyle}
+                        onChartStyleChange={setChartStyle}
+                        chartPalette={chartPalette}
+                        onChartPaletteChange={setChartPalette}
+                        showBenchmarkOverlay={showBenchmarkOverlay}
+                        onShowBenchmarkOverlayChange={setShowBenchmarkOverlay}
+                        indicatorKeys={indicatorKeys}
+                        onToggleIndicator={handleToggleIndicator}
+                        chartColors={chartColors}
+                        onChartColorsChange={handleChartColorsChange}
+                        drawingColor={chartDrawingColor}
+                        onDrawingColorChange={setChartDrawingColor}
+                        annotations={paneBAnnotations}
+                        onAnnotationsChange={handlePaneBAnnotationsChange}
+                        onAddToWatchlist={setWatchlistPickerSymbol}
+                        onAddToJournal={handleChartAddToJournal}
+                        searchOptions={universeCatalog}
+                        onSearchSymbol={(query) => handlePaneSearchSubmit("B", query)}
+                        onOpenGroup={handleOpenChartGroupModal}
+                        onRefreshChart={() => {
+                          if (paneBSymbol) {
+                            void loadChartForPaneB(paneBSymbol, timeframe, activeMarket).catch(() => {});
+                          }
+                        }}
+                        expanded
+                      />
+                    }
+                  />
+                </Suspense>
+              </div>
+              {groupWidgetOpen && groupWidgetContext ? (
+                <Suspense fallback={null}>
+                  <GroupStocksWidget
+                    market={activeMarket}
+                    context={groupWidgetContext}
+                    selectedSymbolA={selectedSymbol}
+                    selectedSymbolB={paneBSymbol}
+                    activePane={activePane}
+                    compareMode={compareMode}
+                    compareLayout={compareLayout}
+                    onClose={() => setGroupWidgetOpen(false)}
+                    onSelectMember={handleGroupWidgetSelect}
+                    onToggleCompare={handleToggleCompareMode}
+                    onLayoutChange={setCompareLayout}
+                  />
+                </Suspense>
+              ) : !groupWidgetOpen ? (
+                <button
+                  type="button"
+                  className="chart-modal-widget-reopen"
+                  onClick={() => setGroupWidgetOpen(true)}
+                  title="Show group stocks"
+                >
+                  Show Group
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}

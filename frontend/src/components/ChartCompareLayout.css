@@ -1,0 +1,106 @@
+.chart-compare-single {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chart-compare-layout {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  background: #0d1117;
+}
+
+.chart-compare-layout.horizontal {
+  flex-direction: row;
+}
+
+.chart-compare-layout.vertical {
+  flex-direction: column;
+}
+
+.chart-compare-layout.is-dragging {
+  user-select: none;
+}
+
+.chart-compare-layout.is-dragging .chart-compare-pane {
+  pointer-events: none;
+}
+
+.chart-compare-pane {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: #0d1117;
+  outline: 2px solid transparent;
+  outline-offset: -2px;
+  transition: outline-color 0.18s ease;
+}
+
+.chart-compare-pane.pane-a.is-active {
+  outline-color: rgba(99, 102, 241, 0.7);
+}
+
+.chart-compare-pane.pane-b.is-active {
+  outline-color: rgba(34, 197, 94, 0.7);
+}
+
+.chart-compare-pane > * {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+.chart-compare-divider {
+  position: relative;
+  flex-shrink: 0;
+  background: rgba(48, 54, 61, 0.95);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.chart-compare-layout.horizontal > .chart-compare-divider {
+  width: 6px;
+  cursor: col-resize;
+}
+
+.chart-compare-layout.vertical > .chart-compare-divider {
+  height: 6px;
+  cursor: row-resize;
+}
+
+.chart-compare-divider:hover,
+.chart-compare-layout.is-dragging > .chart-compare-divider {
+  background: rgba(99, 102, 241, 0.65);
+}
+
+.chart-compare-divider-grip {
+  background: rgba(255, 255, 255, 0.18);
+  border-radius: 2px;
+}
+
+.chart-compare-layout.horizontal .chart-compare-divider-grip {
+  width: 2px;
+  height: 32px;
+}
+
+.chart-compare-layout.vertical .chart-compare-divider-grip {
+  width: 32px;
+  height: 2px;
+}
+
+.chart-compare-divider:hover .chart-compare-divider-grip,
+.chart-compare-layout.is-dragging .chart-compare-divider-grip {
+  background: rgba(255, 255, 255, 0.55);
+}
