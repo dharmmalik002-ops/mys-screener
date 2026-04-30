@@ -814,12 +814,13 @@ const DEFAULT_PRODUCTION_API_BASES = [
   "https://stock-scanner-backend.onrender.com",
 ];
 const REQUEST_TIMEOUT_MS = (() => {
-  const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 12000);
+  const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 20000);
   if (!Number.isFinite(parsed) || parsed < 1000) {
-    return 12000;
+    return 20000;
   }
   return parsed;
 })();
+const RETRY_BACKOFF_MS = 400;
 function defaultApiBases() {
   const isBrowser = typeof window !== "undefined";
   const hostname = isBrowser ? window.location.hostname.toLowerCase() : "";
@@ -1686,17 +1687,22 @@ async function request<T>(
 ): Promise<T> {
   let lastError: Error | null = null;
   const timeoutMs = options?.timeoutMs ?? REQUEST_TIMEOUT_MS;
+  const bases = orderedApiBases();
 
-  for (const base of orderedApiBases()) {
+  for (let i = 0; i < bases.length; i += 1) {
+    const base = bases[i];
     try {
-      const url = init?.method && init.method !== "GET" 
-        ? `${base}${path}` 
+      const url = init?.method && init.method !== "GET"
+        ? `${base}${path}`
         : `${base}${path}${path.includes("?") ? "&" : "?"}_v=${Date.now()}`;
       const response = await fetchWithTimeoutMs(url, timeoutMs, init);
 
       if (!response.ok) {
         if (RETRYABLE_STATUS_CODES.has(response.status)) {
           lastError = new Error(`Request failed: ${response.status}`);
+          if (i < bases.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
+          }
           continue;
         }
         throw new Error(`Request failed: ${response.status}`);
@@ -1713,9 +1719,18 @@ async function request<T>(
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
-        continue;
+      } else if (error instanceof TypeError) {
+        // Browser-level fetch failure ("Failed to fetch"). Treat as transient
+        // so we back off briefly and try the next base instead of bailing
+        // immediately — usually the HF Space is mid-restart or briefly
+        // overloaded.
+        lastError = new Error("Network request failed, retrying...");
+      } else {
+        lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
       }
-      lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+      if (i < bases.length - 1) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
+      }
     }
   }
 
