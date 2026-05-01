@@ -43,8 +43,8 @@ from app.services.industry_classifier import IndustryClassifier
 
 logger = logging.getLogger(__name__)
 
-GROUP_MIN_MARKET_CAP_CR = 1000.0
-GROUP_MIN_AVG_DAILY_VALUE_CR = 1.0
+GROUP_MIN_MARKET_CAP_CR = 250.0
+GROUP_MIN_AVG_DAILY_VALUE_CR = 0.25
 GROUP_MIN_STOCKS = 5
 
 WINSORIZE_LOWER = 0.05

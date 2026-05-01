@@ -1750,6 +1750,26 @@ export function getDashboard(market: MarketKey) {
   return request<DashboardResponse>(withMarket("/api/dashboard", market), undefined, undefined, normalizeDashboardResponse);
 }
 
+// Lightweight ping used to keep the HF Space warm while the user has the
+// tab open. HF free Spaces sleep after ~30 minutes idle; a periodic ping
+// avoids the cold-start that surfaces as "Network request failed, retrying".
+export async function pingBackendHealth(): Promise<boolean> {
+  const bases = orderedApiBases();
+  for (const base of bases) {
+    try {
+      const url = `${base}/api/health?_v=${Date.now()}`;
+      const response = await fetchWithTimeoutMs(url, 8000);
+      if (response.ok) {
+        preferredApiBase = base;
+        return true;
+      }
+    } catch {
+      // try next base
+    }
+  }
+  return false;
+}
+
 export function getScanCounts(market: MarketKey) {
   return request<ScanDescriptor[]>(
     withMarket("/api/scan-counts", market),

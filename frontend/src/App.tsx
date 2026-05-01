@@ -29,6 +29,7 @@ import {
   getScanCounts,
   getScanResults,
   getWatchlistsState,
+  pingBackendHealth,
   refreshMarketData,
   runCustomScan,
   saveWatchlistsState,
@@ -2334,6 +2335,36 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }, 60_000);
 
     return () => window.clearInterval(intervalId);
+  }, []);
+
+  // Keep the HF Space warm while the user has the tab open. Free Spaces
+  // sleep after ~30 minutes idle which surfaces in the UI as
+  // "Network request failed, retrying... Showing cached market snapshot".
+  // A 4-minute /api/health ping while the document is visible avoids that.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+
+    let cancelled = false;
+    const KEEP_ALIVE_INTERVAL_MS = 4 * 60 * 1000;
+
+    const fire = () => {
+      if (cancelled) return;
+      if (document.visibilityState !== "visible") return;
+      void pingBackendHealth().catch(() => {});
+    };
+
+    fire();
+    const intervalId = window.setInterval(fire, KEEP_ALIVE_INTERVAL_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") fire();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
   }, []);
 
   useEffect(() => {
