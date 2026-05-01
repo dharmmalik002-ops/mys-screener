@@ -3240,10 +3240,12 @@ class FreeMarketDataProvider:
             return {"status": "noop", "reason": "invalid_patch_date", "snapshots_updated": 0}
 
         last_applied = self._last_applied_bhavcopy_date()
-        # Bumped to 2 in the fix that uses bhavcopy "p" (PREVCLOSE) for change_pct
-        # / gap_pct / previous_close. v1 status files were written by buggy apply
-        # that derived prev_close from the snapshot's stale last_price.
-        APPLY_SCHEMA_VERSION = 2
+        # v3 (2026-05-01): yfinance fallback now populates "p" from yesterday's
+        # close, AND the apply path falls back to existing previous_close (not
+        # last_price) when re-applying a yfinance patch with p=0. The v2 apply
+        # produced inflated change_pct on yfinance fallback days because the
+        # seed snapshot's last_price was several days stale.
+        APPLY_SCHEMA_VERSION = 3
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3318,19 +3320,38 @@ class FreeMarketDataProvider:
             old_day_low = row.get("day_low")
 
             # The bhavcopy's "p" is the authoritative previous close (PREVCLOSE
-            # column on BSE/NSE EOD CSV). Use it whenever it's present; this is
-            # what makes top-gainer / top-loser % match the official daily move
-            # even when the snapshot we started from was several days stale.
-            # Fall back to the snapshot's prior last_price only if "p" is missing
-            # (e.g. yfinance fallback path doesn't populate it).
+            # column on BSE/NSE EOD CSV — yfinance fetches it from the prior
+            # trading day's close). Use it whenever it's present; this is what
+            # makes top-gainer / top-loser % match the official daily move even
+            # when the snapshot we started from was several days stale.
+            #
+            # If "p" is missing AND this row's last_price already equals the new
+            # close (i.e. we previously applied this same date's patch), don't
+            # overwrite previous_close — keep whatever was stored before, which
+            # is the only correct value. Only when last_price is genuinely stale
+            # (different from new_close) do we treat it as yesterday's close.
+            try:
+                existing_last_price = float(row.get("last_price") or 0)
+            except (TypeError, ValueError):
+                existing_last_price = 0.0
+            try:
+                existing_prev_close = float(row.get("previous_close") or 0)
+            except (TypeError, ValueError):
+                existing_prev_close = 0.0
+
             prev_close: float
             if bhav_prev_close > 0:
                 prev_close = bhav_prev_close
+            elif existing_last_price > 0 and abs(existing_last_price - new_close) > 1e-6:
+                # Snapshot's last_price is yesterday's close (we are applying for
+                # the first time today).
+                prev_close = existing_last_price
+            elif existing_prev_close > 0:
+                # Re-apply: last_price is already today's close, fall back to the
+                # previously-recorded previous_close so change_pct stays correct.
+                prev_close = existing_prev_close
             else:
-                try:
-                    prev_close = float(row.get("last_price") or 0)
-                except (TypeError, ValueError):
-                    prev_close = 0.0
+                prev_close = 0.0
 
             if prev_close > 0:
                 row["previous_close"] = round(prev_close, 4)

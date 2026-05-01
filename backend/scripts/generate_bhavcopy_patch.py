@@ -290,8 +290,40 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
     if not tickers:
         return None
 
-    start_str = trade_date.strftime("%Y-%m-%d")
+    # Fetch a 7-calendar-day window so we have at least 2 trading days. The last
+    # bar on/before trade_date is today's close; the bar before that is the
+    # authoritative previous close ("p"). Without "p" the apply path falls back
+    # to the snapshot's stale last_price which produces wildly inflated %change.
+    start_str = (trade_date - timedelta(days=7)).strftime("%Y-%m-%d")
     end_str = (trade_date + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    def _extract_latest_two(sub) -> tuple[dict, float] | None:
+        """Return (latest_row_dict, prev_close) or None if not enough data."""
+        if sub is None or sub.empty:
+            return None
+        sub = sub.dropna(subset=["Close"])
+        if sub.empty:
+            return None
+        latest = sub.iloc[-1]
+        c = float(latest.get("Close") or 0)
+        if c <= 0:
+            return None
+        prev_close = 0.0
+        if len(sub) >= 2:
+            try:
+                prev_close = float(sub.iloc[-2].get("Close") or 0)
+            except (TypeError, ValueError):
+                prev_close = 0.0
+        return (
+            {
+                "o": float(latest.get("Open") or 0),
+                "h": float(latest.get("High") or 0),
+                "l": float(latest.get("Low") or 0),
+                "c": c,
+                "v": int(float(latest.get("Volume") or 0)),
+            },
+            prev_close,
+        )
 
     result: dict[str, dict] = {}
     CHUNK = 200  # yfinance handles ~200 tickers per batch well
@@ -316,38 +348,23 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
                     sym = ticker.replace(".NS", "")
                     try:
                         sub = df.xs(ticker, axis=1, level=1)
-                        if sub.empty:
+                        extracted = _extract_latest_two(sub)
+                        if extracted is None:
                             continue
-                        row = sub.iloc[-1]
-                        c = float(row.get("Close") or 0)
-                        if c <= 0:
-                            continue
-                        result[sym] = {
-                            "o": float(row.get("Open") or 0),
-                            "h": float(row.get("High") or 0),
-                            "l": float(row.get("Low") or 0),
-                            "c": c,
-                            "v": int(float(row.get("Volume") or 0)),
-                            "p": 0.0,  # prev_close not available from yfinance batch
-                        }
+                        rec, prev_close = extracted
+                        rec["p"] = prev_close
+                        result[sym] = rec
                     except Exception:
                         continue
             else:
                 # Single-ticker result: columns are simple field names
                 sym = chunk[0].replace(".NS", "")
-                if df.empty:
+                extracted = _extract_latest_two(df)
+                if extracted is None:
                     continue
-                row = df.iloc[-1]
-                c = float(row.get("Close") or 0)
-                if c > 0:
-                    result[sym] = {
-                        "o": float(row.get("Open") or 0),
-                        "h": float(row.get("High") or 0),
-                        "l": float(row.get("Low") or 0),
-                        "c": c,
-                        "v": int(float(row.get("Volume") or 0)),
-                        "p": 0.0,
-                    }
+                rec, prev_close = extracted
+                rec["p"] = prev_close
+                result[sym] = rec
         except Exception as exc:
             logger.warning("yfinance chunk %s failed: %s", i // CHUNK + 1, exc)
             continue
