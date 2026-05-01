@@ -48,13 +48,11 @@ async def refresh_market_if_due(market_name: str, service: DashboardService) -> 
 
     result = await run_market_close_maintenance(market_name, service)
     LOGGER.info(
-        "%s refresh mode=%s snapshot_updated_at=%s warmed_1d_charts=%s/%s failed=%s",
+        "%s refresh mode=%s snapshot_updated_at=%s prewarmed_chart_count=%s",
         market_name.upper(),
         result.get("refresh_mode"),
         result.get("snapshot_updated_at"),
         result.get("prewarmed_chart_count"),
-        result.get("prewarmed_chart_attempt_count"),
-        result.get("chart_warm_failed_count"),
     )
 
 

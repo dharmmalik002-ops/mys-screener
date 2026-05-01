@@ -83,13 +83,11 @@ async def daily_listed_universe_refresh_job(market_name: str, market_service: Da
         result = await run_market_close_maintenance(market_name, market_service)
         snapshots = await provider_obj.get_snapshots(settings_obj.market_cap_min_crore)
         logger.info(
-            "%s close maintenance complete: mode=%s snapshot=%s charts=%s/%s failed=%s stocks=%d",
+            "%s close maintenance complete: mode=%s snapshot=%s charts=%s stocks=%d",
             market_name.upper(),
             result.get("refresh_mode"),
             result.get("snapshot_updated_at"),
             result.get("prewarmed_chart_count"),
-            result.get("prewarmed_chart_attempt_count"),
-            result.get("chart_warm_failed_count"),
             len(snapshots),
         )
 
