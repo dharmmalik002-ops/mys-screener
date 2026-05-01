@@ -916,7 +916,11 @@ class FreeMarketDataProvider:
             "ticker": str(self._resolve_ticker(symbol)).strip().upper(),
             "bars": [bar.model_dump(mode="json") for bar in bars],
         }
-        self._chart_cache_path(symbol, timeframe).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        path = self._chart_cache_path(symbol, timeframe)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        temp_path = path.with_suffix(f"{path.suffix}.{uuid.uuid4().hex}.tmp")
+        temp_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        os.replace(temp_path, path)
 
     def _read_chart_cache(
         self,
