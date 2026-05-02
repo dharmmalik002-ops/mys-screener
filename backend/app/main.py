@@ -4,6 +4,7 @@ import logging
 import os
 from contextlib import asynccontextmanager
 from datetime import datetime
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -211,21 +212,46 @@ def apply_bhavcopy_patch_on_startup() -> None:
 async def lifespan(app: FastAPI):
     app.state.startup_warm_tasks = set()
     apply_bhavcopy_patch_on_startup()
-    scheduler.add_job(
-        apply_bhavcopy_patch_on_startup,
-        CronTrigger(hour=16, minute=45, timezone=IST),
-        id="india_bhavcopy_patch_apply",
-        replace_existing=True,
-    )
-    scheduler.add_job(
-        daily_listed_universe_refresh_job,
-        CronTrigger(hour=16, minute=0, timezone=IST),
-        args=["india", service, settings, IST],
-        id="india_daily_listed_universe_refresh",
-        replace_existing=True,
-    )
-    scheduler.start()
-    logger.info("Scheduler started — India refresh 4:00 PM IST, bhavcopy patch apply 4:45 PM IST")
+
+    # Multi-worker safety: only the worker that wins this filesystem lock runs
+    # the scheduler. Without this, every Uvicorn worker would fire the same
+    # cron jobs, doubling/tripling the daily refresh + bhavcopy work.
+    scheduler_lock_path = Path("/tmp/scanner_scheduler.lock")
+    is_scheduler_owner = False
+    try:
+        scheduler_lock_fd = os.open(
+            scheduler_lock_path,
+            os.O_CREAT | os.O_EXCL | os.O_RDWR,
+            0o644,
+        )
+        os.write(scheduler_lock_fd, str(os.getpid()).encode())
+        os.close(scheduler_lock_fd)
+        is_scheduler_owner = True
+        app.state.scheduler_lock_path = scheduler_lock_path
+    except FileExistsError:
+        is_scheduler_owner = False
+
+    if is_scheduler_owner:
+        scheduler.add_job(
+            apply_bhavcopy_patch_on_startup,
+            CronTrigger(hour=16, minute=45, timezone=IST),
+            id="india_bhavcopy_patch_apply",
+            replace_existing=True,
+        )
+        scheduler.add_job(
+            daily_listed_universe_refresh_job,
+            CronTrigger(hour=16, minute=0, timezone=IST),
+            args=["india", service, settings, IST],
+            id="india_daily_listed_universe_refresh",
+            replace_existing=True,
+        )
+        scheduler.start()
+        logger.info(
+            "Scheduler started (pid=%s) — India refresh 4:00 PM IST, bhavcopy patch apply 4:45 PM IST",
+            os.getpid(),
+        )
+    else:
+        logger.info("Scheduler skipped on this worker (pid=%s); another worker holds the lock", os.getpid())
     if settings.startup_cache_warm_enabled:
         startup_warm_timeout_seconds = min(max(settings.refresh_timeout_seconds, 15), 60)
         schedule_startup_cache_warm(app, "india", service, startup_warm_timeout_seconds)
@@ -241,7 +267,12 @@ async def lifespan(app: FastAPI):
         task.cancel()
     if startup_tasks:
         await asyncio.gather(*startup_tasks, return_exceptions=True)
-    scheduler.shutdown()
+    if is_scheduler_owner:
+        scheduler.shutdown()
+        try:
+            scheduler_lock_path.unlink(missing_ok=True)
+        except OSError:
+            pass
 
 
 app = FastAPI(title=settings.app_name, lifespan=lifespan)

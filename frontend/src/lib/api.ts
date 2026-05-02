@@ -1824,10 +1824,14 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
 }
 
 export function getScanResults(scanId: string, market: MarketKey, options?: ScanRequestOptions) {
+  // 60s timeout: scan endpoints rebuild their cache on the first hit after a
+  // snapshot reload (3-8s warm, 30-50s on a Space cold-start). The default 20s
+  // would fire AbortError mid-warmup and leave the panel showing
+  // "Request timed out".
   return request<ScanResultsResponse>(
     withScanOptions(`/api/scans/${scanId}`, market, options),
     undefined,
-    undefined,
+    { timeoutMs: 60_000 },
     normalizeScanResultsResponse,
   );
 }
@@ -1839,7 +1843,7 @@ export function runCustomScan(body: CustomScanRequest, market: MarketKey, option
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }, undefined, normalizeScanResultsResponse);
+  }, { timeoutMs: 60_000 }, normalizeScanResultsResponse);
 }
 
 export function getChart(symbol: string, timeframe: string, market: MarketKey) {
@@ -2096,6 +2100,10 @@ export function getGapUpOpeners(
   );
 }
 
+// Same 60s budget as the GET scan endpoints — these all share the same
+// snapshot/scan-cache rebuild path and can run long after a Space restart.
+const SCAN_POST_TIMEOUT_MS = 60_000;
+
 export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, options?: ScanRequestOptions) {
   return request<ScanResultsResponse>(withScanOptions("/api/near-pivot", market, options), {
     method: "POST",
@@ -2103,7 +2111,7 @@ export function getNearPivotScan(body: NearPivotScanRequest, market: MarketKey, 
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }, undefined, normalizeScanResultsResponse);
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
 }
 
 export function getPullBackScan(body: PullBackScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -2113,7 +2121,7 @@ export function getPullBackScan(body: PullBackScanRequest, market: MarketKey, op
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }, undefined, normalizeScanResultsResponse);
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
 }
 
 export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -2123,7 +2131,7 @@ export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, opti
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }, undefined, normalizeScanResultsResponse);
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
 }
 
 export function getConsolidatingScan(body: ConsolidatingScanRequest, market: MarketKey, options?: ScanRequestOptions) {
@@ -2133,7 +2141,7 @@ export function getConsolidatingScan(body: ConsolidatingScanRequest, market: Mar
       "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
-  }, undefined, normalizeScanResultsResponse);
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
 }
 
 export function getIndustryGroups(market: MarketKey) {
