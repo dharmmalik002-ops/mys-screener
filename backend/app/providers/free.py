@@ -3269,16 +3269,17 @@ class FreeMarketDataProvider:
             return {"status": "noop", "reason": "invalid_patch_date", "snapshots_updated": 0}
 
         last_applied = self._last_applied_bhavcopy_date()
-        # v4 (2026-05-02): apply now seeds the snapshot file from the baked
-        # seed JSONs when it's missing AND treats a missing snapshot as a
-        # force-apply trigger. Before v4 the apply silently returned
-        # "no_snapshot_cache" on every cold start (because the snapshot file
-        # is excluded from the HF deploy bundle), so the seed's stale
-        # change_pct values were served until the next snapshot rebuild.
+        # v5 (2026-05-02): apply now also recomputes the windowed returns
+        # (5d / 20d / 40d / 60d / 126d / 189d / 12m / 504d) from the stored
+        # baseline closes so industry groups, RS, scanners and sector
+        # rotation never compute against a months-old stock_return_*.
+        # v4 (2026-05-02): apply seeds the snapshot file from the baked seed
+        # JSONs when it's missing AND treats a missing snapshot as a
+        # force-apply trigger.
         # v3 (2026-05-01): yfinance fallback populates "p" from yesterday's
         # close + apply path falls back to existing previous_close on p=0
         # re-apply.
-        APPLY_SCHEMA_VERSION = 4
+        APPLY_SCHEMA_VERSION = 5
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3424,6 +3425,28 @@ class FreeMarketDataProvider:
             if prev_close > 0:
                 row["change_pct"] = round((new_close - prev_close) / prev_close * 100.0, 4)
                 row["gap_pct"] = round((new_open - prev_close) / prev_close * 100.0, 4)
+
+            # Recompute window returns from the stored baselines so industry
+            # groups, RS, scanners and dashboard sectors all use today's prices.
+            # Without this, the seed snapshot's months-old stock_return_20d /
+            # 60d / 126d would survive the patch and leak into every downstream
+            # consumer.
+            for return_key, baseline_key in (
+                ("stock_return_5d", "baseline_close_5d"),
+                ("stock_return_20d", "baseline_close_20d"),
+                ("stock_return_40d", "baseline_close_40d"),
+                ("stock_return_60d", "baseline_close_60d"),
+                ("stock_return_126d", "baseline_close_126d"),
+                ("stock_return_189d", "baseline_close_189d"),
+                ("stock_return_12m", "baseline_close_252d"),
+                ("stock_return_504d", "baseline_close_504d"),
+            ):
+                try:
+                    baseline_value = float(row.get(baseline_key) or 0)
+                except (TypeError, ValueError):
+                    baseline_value = 0.0
+                if baseline_value > 0:
+                    row[return_key] = round(((new_close / baseline_value) - 1) * 100.0, 2)
 
             for arr_key, value in (
                 ("recent_highs", round(new_high, 4)),
