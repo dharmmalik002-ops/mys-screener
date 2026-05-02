@@ -3279,7 +3279,12 @@ class FreeMarketDataProvider:
         # v3 (2026-05-01): yfinance fallback populates "p" from yesterday's
         # close + apply path falls back to existing previous_close on p=0
         # re-apply.
-        APPLY_SCHEMA_VERSION = 5
+        # v6 (2026-05-02): apply path now lifts stale high_52w / ath /
+        # multi_year_high / high_6m / month_high / week_high / range_high_20d
+        # (and their low counterparts) when today's bar pushes past them, so
+        # the "near 52W high" / "ATH breakout" / "near ATL" scanners stop
+        # accepting stocks whose stale extreme is now below the live price.
+        APPLY_SCHEMA_VERSION = 6
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3425,6 +3430,47 @@ class FreeMarketDataProvider:
             if prev_close > 0:
                 row["change_pct"] = round((new_close - prev_close) / prev_close * 100.0, 4)
                 row["gap_pct"] = round((new_open - prev_close) / prev_close * 100.0, 4)
+
+            # Lift stale high/low extreme fields when the new bar pushes past
+            # them. Without this, the seed snapshot's months-old high_52w /
+            # ath / month_high stay frozen — and as soon as today's price
+            # exceeds the stale level, every "near 52W high" / "ATH breakout"
+            # / "near ATH" scanner falsely accepts the stock because the gap
+            # calculation flips positive. Range fields (range_high_20d,
+            # high_6m) are similarly lifted; the *_prev fields are
+            # deliberately NOT touched because they represent the prior
+            # snapshot baseline that scanners diff against.
+            for high_key in (
+                "high_52w",
+                "ath",
+                "multi_year_high",
+                "high_3y",
+                "high_6m",
+                "high_3m",
+                "month_high",
+                "week_high",
+                "range_high_20d",
+            ):
+                try:
+                    existing_high = float(row.get(high_key) or 0)
+                except (TypeError, ValueError):
+                    existing_high = 0.0
+                if new_high > existing_high:
+                    row[high_key] = round(new_high, 4)
+
+            for low_key in (
+                "low_52w",
+                "atl",
+                "month_low",
+                "week_low",
+                "range_low_20d",
+            ):
+                try:
+                    existing_low = float(row.get(low_key) or 0)
+                except (TypeError, ValueError):
+                    existing_low = 0.0
+                if existing_low <= 0 or new_low < existing_low:
+                    row[low_key] = round(new_low, 4)
 
             # Recompute window returns from the stored baselines so industry
             # groups, RS, scanners and dashboard sectors all use today's prices.
