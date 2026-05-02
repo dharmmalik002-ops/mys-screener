@@ -848,7 +848,13 @@ function defaultApiBases() {
 const FALLBACK_API_BASES = defaultApiBases().filter(
   (value, index, array) => array.indexOf(value) === index,
 );
-const RETRYABLE_STATUS_CODES = new Set([404, 502, 503, 504]);
+// 500 is included because HF Spaces occasionally return a transient 500 when
+// the Uvicorn worker is mid-recycle or a cache miss races a snapshot reload —
+// almost always self-healing within a second or two. 404 is included because
+// after a Space cold-start, the route table can briefly 404 before the
+// FastAPI app finishes booting.
+const RETRYABLE_STATUS_CODES = new Set([404, 500, 502, 503, 504]);
+const SAME_BASE_RETRY_STATUS_CODES = new Set([500, 502, 503, 504]);
 let preferredApiBase: string | null = null;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1702,6 +1708,15 @@ async function request<T>(
         if (!response.ok) {
           if (RETRYABLE_STATUS_CODES.has(response.status)) {
             lastError = new Error(`Request failed: ${response.status}`);
+            // Retry on the same base for transient 5xx — same rationale as
+            // TypeError handling: HF Spaces self-heal in a second or two.
+            if (
+              SAME_BASE_RETRY_STATUS_CODES.has(response.status)
+              && attempt < SAME_BASE_RETRY_ATTEMPTS
+            ) {
+              await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
+              continue;
+            }
             break;
           }
           throw new Error(`Request failed: ${response.status}`);
