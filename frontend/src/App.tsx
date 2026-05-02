@@ -3227,15 +3227,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
+    // Order: stocks AFTER the selected one first (most likely next clicks),
+    // then stocks BEFORE it. If nothing is selected yet (e.g. scan results
+    // just loaded), fall back to the natural order — first 20 visible.
     const orderedSymbols = selectedSymbol && visibleSymbols.includes(selectedSymbol)
       ? [
           ...visibleSymbols.slice(visibleSymbols.indexOf(selectedSymbol) + 1),
           ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
         ]
       : visibleSymbols;
+    const PREFETCH_AHEAD = 20;
     const symbolsToWarm = orderedSymbols
       .filter((symbol) => symbol && symbol !== selectedSymbol)
-      .slice(0, 4);
+      .slice(0, PREFETCH_AHEAD);
 
     if (symbolsToWarm.length === 0) {
       return;
@@ -3244,13 +3248,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     let cancelled = false;
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        for (const symbol of symbolsToWarm) {
-          if (cancelled) {
-            return;
-          }
+        // Run with concurrency = 4 so multiple charts download in parallel
+        // without overwhelming the HF Space (which has limited request slots).
+        const CONCURRENCY = 4;
+        const queue = [...symbolsToWarm];
+        const fetchOne = async (symbol: string) => {
           const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
           if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
-            continue;
+            return;
           }
           prewarmingChartKeysRef.current.add(cacheKey);
           try {
@@ -3263,9 +3268,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           } finally {
             prewarmingChartKeysRef.current.delete(cacheKey);
           }
-        }
+        };
+        const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+          while (!cancelled && queue.length > 0) {
+            const symbol = queue.shift();
+            if (!symbol) return;
+            await fetchOne(symbol);
+          }
+        });
+        await Promise.all(workers);
       })();
-    }, 150);
+    }, 100);
 
     return () => {
       cancelled = true;
