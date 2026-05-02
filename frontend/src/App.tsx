@@ -2729,7 +2729,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         : activePage === "watchlists"
             ? "Watchlist Stocks"
             : activeScanner === "improving-rs"
-              ? "RS Leaders"
+              ? "52W High RS"
               : "Matches";
   const visibleScanItems =
     activePage !== "screener" || activeScanner === "improving-rs"
@@ -4543,7 +4543,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               {activePage === "screener" ? (
                 <>
                   <div className="metric-card">
-                    <span>{activeScanner === "improving-rs" ? "RS Leaders" : "Filtered Stocks"}</span>
+                    <span>{activeScanner === "improving-rs" ? "52W High RS" : "Filtered Stocks"}</span>
                     <strong>{activeViewMetric}</strong>
                   </div>
                   <div className="metric-card">
@@ -4817,8 +4817,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         market={activeMarket}
                         data={improvingRsData}
                         loading={improvingRsLoading}
-                        window={improvingRsWindow}
-                        onWindowChange={setImprovingRsWindow}
                         onPickSymbol={handlePickSymbol}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
                         selectedSymbol={selectedSymbol}

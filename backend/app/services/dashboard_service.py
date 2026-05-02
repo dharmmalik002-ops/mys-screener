@@ -1108,17 +1108,18 @@ class DashboardService:
         historical_runner,
         include_sector_summaries: bool,
     ) -> ScanResultsResponse:
-        sector_summaries = (
-            await self._build_scan_sector_summaries(
-                scan_key=scan_key,
-                request_signature=request_signature,
-                snapshots=snapshots,
-                items=items,
-                historical_runner=historical_runner,
-            )
-            if include_sector_summaries
-            else []
-        )
+        sector_summaries: list[ScanSectorSummary] = []
+        if include_sector_summaries:
+            try:
+                sector_summaries = await self._build_scan_sector_summaries(
+                    scan_key=scan_key,
+                    request_signature=request_signature,
+                    snapshots=snapshots,
+                    items=items,
+                    historical_runner=historical_runner,
+                )
+            except Exception as exc:
+                logger.warning("Failed to build sector summaries for scan %s: %s", scan_key, exc)
         return ScanResultsResponse(
             scan=scan,
             generated_at=self._snapshot_updated_at(),
@@ -1127,6 +1128,57 @@ class DashboardService:
             items=items,
             sector_summaries=sector_summaries,
         )
+
+    def _cached_daily_closes_for_symbol(self, symbol: str, limit: int = 540) -> list[float]:
+        history_reader = getattr(self.provider, "_history_frame_from_cached_bars", None)
+        if not callable(history_reader):
+            return []
+
+        try:
+            history = history_reader(symbol, limit, allow_legacy=True)
+        except Exception:
+            return []
+
+        if history is None or history.empty or "Close" not in history.columns:
+            return []
+
+        closes = []
+        for value in history["Close"].tail(limit).tolist():
+            try:
+                close = float(value)
+            except (TypeError, ValueError):
+                continue
+            if close > 0:
+                closes.append(close)
+        return closes
+
+    def _is_current_rs_rating_52w_high(self, snapshot: StockSnapshot, ordered_scores: list[float]) -> tuple[bool, int | None, int | None]:
+        if not snapshot.rs_eligible or not ordered_scores:
+            return False, None, None
+        if int(snapshot.rs_rating or 0) <= int(snapshot.rs_rating_1d_ago or 0):
+            return False, None, None
+
+        closes = self._cached_daily_closes_for_symbol(snapshot.symbol)
+        if len(closes) < 505:
+            return False, None, None
+
+        if snapshot.last_price > 0:
+            closes[-1] = float(snapshot.last_price)
+
+        first_index = max(252, len(closes) - 253)
+        ratings: list[int] = []
+        for index in range(first_index, len(closes)):
+            score = self._weighted_rs_score_for_index(closes, index)
+            if score is None:
+                continue
+            ratings.append(int(round(self._score_to_rs_rating(score, ordered_scores))))
+
+        if len(ratings) < 253:
+            return False, None, None
+
+        current_rating = ratings[-1]
+        prior_high = max(ratings[:-1])
+        return current_rating > prior_high, current_rating, prior_high
 
     @staticmethod
     def _filter_scan_items_by_liquidity(items: list[ScanMatch], min_liquidity_crore: float | None) -> list[ScanMatch]:
@@ -3387,17 +3439,12 @@ class DashboardService:
         cached = self._improving_rs_cache.get(window)
         if cached is not None and cached.generated_at >= snapshot_updated_at:
             return cached
-        previous_field = {
-            "1D": "rs_rating_1d_ago",
-            "1W": "rs_rating_1w_ago",
-            "1M": "rs_rating_1m_ago",
-        }[window]
 
+        ordered_scores = sorted(snapshot.rs_weighted_score for snapshot in snapshots if snapshot.rs_eligible)
         items: list[ImprovingRsItem] = []
         for snapshot in snapshots:
-            previous_rating = int(getattr(snapshot, previous_field, snapshot.rs_rating) or 0)
-            current_rating = int(snapshot.rs_rating or 0)
-            if current_rating <= 0 or previous_rating <= 0 or current_rating <= previous_rating:
+            is_rs_high, current_rating, prior_52w_high = self._is_current_rs_rating_52w_high(snapshot, ordered_scores)
+            if not is_rs_high or current_rating is None or prior_52w_high is None:
                 continue
 
             items.append(
@@ -3410,24 +3457,17 @@ class DashboardService:
                     market_cap_crore=snapshot.market_cap_crore,
                     last_price=snapshot.last_price,
                     change_pct=snapshot.change_pct,
-                    rs_rating=current_rating if snapshot.rs_eligible else None,
+                    rs_rating=current_rating,
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-                    improvement_1d=current_rating - snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
-                    improvement_1w=current_rating - snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
-                    improvement_1m=current_rating - snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
+                    improvement_1d=current_rating - prior_52w_high,
+                    improvement_1w=current_rating - prior_52w_high,
+                    improvement_1m=current_rating - prior_52w_high,
                 )
             )
 
-        if window == "1D":
-            sort_key = lambda item: (item.improvement_1d, item.rs_rating, item.change_pct, item.market_cap_crore)
-        elif window == "1W":
-            sort_key = lambda item: (item.improvement_1w, item.rs_rating, item.change_pct, item.market_cap_crore)
-        else:
-            sort_key = lambda item: (item.improvement_1m, item.rs_rating, item.change_pct, item.market_cap_crore)
-
-        items.sort(key=sort_key, reverse=True)
+        items.sort(key=lambda item: (item.rs_rating or 0, item.change_pct, item.market_cap_crore), reverse=True)
 
         response = ImprovingRsResponse(
             generated_at=snapshot_updated_at,

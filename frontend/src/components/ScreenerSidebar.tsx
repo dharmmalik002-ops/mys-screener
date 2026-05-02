@@ -66,7 +66,7 @@ const ITEMS: SidebarItem[] = [
   { mode: "contraction", title: "Contraction", hint: "Tight ranges", Icon: Minimize2 },
   { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
   { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },
-  { mode: "improving-rs", title: "Improving RS", hint: "Relative strength", Icon: Activity },
+  { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
 
 export function ScreenerSidebar({

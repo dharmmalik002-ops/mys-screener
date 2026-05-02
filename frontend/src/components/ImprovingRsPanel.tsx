@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-import type { ImprovingRsItem, ImprovingRsResponse, ImprovingRsWindow, MarketKey } from "../lib/api";
+import type { ImprovingRsItem, ImprovingRsResponse, MarketKey } from "../lib/api";
 import { useMinWidth, useVirtualRows } from "../lib/virtualRows";
 import { Panel } from "./Panel";
 
@@ -10,8 +10,6 @@ type ImprovingRsPanelProps = {
   market: MarketKey;
   data: ImprovingRsResponse | null;
   loading?: boolean;
-  window: ImprovingRsWindow;
-  onWindowChange: (window: ImprovingRsWindow) => void;
   onPickSymbol: (symbol: string) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   selectedSymbol: string | null;
@@ -23,24 +21,10 @@ function formatPrice(value: number, market: MarketKey) {
   return `${symbol}${value.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-const WINDOW_OPTIONS: ImprovingRsWindow[] = ["1D", "1W", "1M"];
-
-function deltaForWindow(item: ImprovingRsItem, window: ImprovingRsWindow) {
-  if (window === "1D") {
-    return item.improvement_1d;
-  }
-  if (window === "1W") {
-    return item.improvement_1w;
-  }
-  return item.improvement_1m;
-}
-
 export function ImprovingRsPanel({
   market,
   data,
   loading = false,
-  window,
-  onWindowChange,
   onPickSymbol,
   onRequestAddToWatchlist,
   selectedSymbol,
@@ -67,11 +51,11 @@ export function ImprovingRsPanel({
 
     const activeRow = rowRefs.current[selectedSymbol];
     activeRow?.scrollIntoView({ block: "nearest", inline: "nearest" });
-  }, [items, scrollToKey, selectedSymbol, shouldVirtualize, window]);
+  }, [items, scrollToKey, selectedSymbol, shouldVirtualize]);
 
   const renderRow = (item: ImprovingRsItem, virtualHeight?: number) => (
     <div
-      key={`improving-rs-${item.symbol}`}
+      key={`high-rs-${item.symbol}`}
       className={selectedSymbol === item.symbol ? "scan-row improving-rs-row active" : "scan-row improving-rs-row"}
       ref={
         shouldVirtualize
@@ -94,7 +78,7 @@ export function ImprovingRsPanel({
       <span>{item.rs_rating_1d_ago}</span>
       <span>{item.rs_rating_1w_ago}</span>
       <span>{item.rs_rating_1m_ago}</span>
-      <span className="positive-text">+{deltaForWindow(item, window)}</span>
+      <span className="positive-text">52W High</span>
       <button type="button" className="tool-pill small" onClick={() => onRequestAddToWatchlist(item.symbol)}>
         Add
       </button>
@@ -103,22 +87,8 @@ export function ImprovingRsPanel({
 
   return (
     <Panel
-      title="Improving RS"
-      subtitle={data ? `${data.total_hits} stocks with improving RS ratings over ${window}` : "Loading RS improvement board"}
-      actions={
-        <div className="scan-sort-toggle">
-          {WINDOW_OPTIONS.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={window === option ? "tool-pill active" : "tool-pill"}
-              onClick={() => onWindowChange(option)}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      }
+      title="52 Week High RS"
+      subtitle={data ? `${data.total_hits} stocks printed a fresh 52-week high in RS rating today` : "Loading 52-week RS highs"}
       className="improving-rs-panel"
     >
       <div className="scan-table">
@@ -130,12 +100,12 @@ export function ImprovingRsPanel({
           <span>1D Ago</span>
           <span>1W Ago</span>
           <span>1M Ago</span>
-          <span>Improve</span>
+          <span>Signal</span>
           <span>Watch</span>
         </div>
         <div ref={shouldVirtualize ? containerRef : undefined} className={shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"}>
           {!items.length ? (
-            <div className="empty-state">{loading ? "Loading improving RS leaders..." : "No stocks are improving in this RS window."}</div>
+            <div className="empty-state">{loading ? "Loading 52-week RS highs..." : "No stocks printed a 52-week high RS rating today."}</div>
           ) : shouldVirtualize ? (
             <div className="scan-table-virtual-spacer" style={{ height: `${totalHeight}px` }}>
               {visibleRows.map((row) => (

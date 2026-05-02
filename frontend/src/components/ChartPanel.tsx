@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type StockOverview } from "../lib/api";
+import { getChartHistory, getFundamentals, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
@@ -37,7 +37,7 @@ export type ChartGroupSummary = {
 };
 
 type DrawingTool = "none" | "hline" | "vline" | "trendline" | "ray" | "rectangle" | "measure" | "text";
-type FavoriteItemId = `tool:${DrawingTool}` | `indicator:${IndicatorKey}` | "action:load-full-history" | "overlay:rvol" | "overlay:pocket-pivot";
+type FavoriteItemId = `tool:${DrawingTool}` | `indicator:${IndicatorKey}` | "action:load-full-history" | "overlay:rvol" | "overlay:pocket-pivot" | "overlay:earnings";
 
 type FavoritesSettings = {
   enabled: boolean;
@@ -72,6 +72,16 @@ type NotesWidgetState = {
   noteColor: string;
   noteFont: string;
   noteFontSize: number;
+};
+
+type EarningsWidgetState = {
+  enabled: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  accentColor: string;
+  quarters: number;
 };
 
 type RvolPoint = {
@@ -319,6 +329,7 @@ const FAVORITES_WIDGET_STORAGE_KEY = "stockScanner.favoritesWidget.v1";
 const POCKET_PIVOT_STORAGE_KEY = "stockScanner.pocketPivotWidget.v1";
 const POCKET_PIVOT_NOTES_STORAGE_KEY = "stockScanner.pocketPivotNotes.v1";
 const NOTES_WIDGET_STORAGE_KEY = "stockScanner.notesWidget.v1";
+const EARNINGS_WIDGET_STORAGE_KEY = "stockScanner.earningsWidget.v1";
 const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
   enabled: true,
@@ -351,6 +362,15 @@ const DEFAULT_NOTES_WIDGET: NotesWidgetState = {
   noteFont: "Inter, system-ui, sans-serif",
   noteFontSize: 13,
 };
+const DEFAULT_EARNINGS_WIDGET: EarningsWidgetState = {
+  enabled: false,
+  x: 574,
+  y: 86,
+  width: 380,
+  height: 260,
+  accentColor: "#4bf0b3",
+  quarters: 4,
+};
 const DEFAULT_RVOL_WIDGET: RvolWidgetSettings = {
   enabled: false,
   pos: null,
@@ -370,6 +390,7 @@ const FAVORITE_ITEMS: Array<{ id: FavoriteItemId; label: string; kind: "Tool" | 
   })),
   { id: "overlay:rvol", label: "RVOL", kind: "Overlay" },
   { id: "overlay:pocket-pivot", label: "Pocket Pivot", kind: "Overlay" },
+  { id: "overlay:earnings", label: "Earnings", kind: "Overlay" },
   { id: "action:load-full-history", label: "Full History", kind: "Action" },
 ];
 
@@ -880,6 +901,31 @@ function readNotesWidgetState(): NotesWidgetState {
   }
 }
 
+function readEarningsWidgetState(): EarningsWidgetState {
+  if (typeof window === "undefined") {
+    return DEFAULT_EARNINGS_WIDGET;
+  }
+
+  try {
+    const raw = window.localStorage.getItem(EARNINGS_WIDGET_STORAGE_KEY);
+    if (!raw) {
+      return DEFAULT_EARNINGS_WIDGET;
+    }
+    const parsed = JSON.parse(raw) as Partial<EarningsWidgetState>;
+    return {
+      enabled: parsed.enabled ?? DEFAULT_EARNINGS_WIDGET.enabled,
+      x: clamp(Number(parsed.x ?? DEFAULT_EARNINGS_WIDGET.x), 0, 1200),
+      y: clamp(Number(parsed.y ?? DEFAULT_EARNINGS_WIDGET.y), 0, 900),
+      width: clamp(Number(parsed.width ?? DEFAULT_EARNINGS_WIDGET.width), 300, 640),
+      height: clamp(Number(parsed.height ?? DEFAULT_EARNINGS_WIDGET.height), 190, 560),
+      accentColor: typeof parsed.accentColor === "string" ? parsed.accentColor : DEFAULT_EARNINGS_WIDGET.accentColor,
+      quarters: clamp(Math.round(Number(parsed.quarters ?? DEFAULT_EARNINGS_WIDGET.quarters)), 1, 8),
+    };
+  } catch {
+    return DEFAULT_EARNINGS_WIDGET;
+  }
+}
+
 function readPocketPivotNotes(): PocketPivotNotesMap {
   if (typeof window === "undefined") {
     return {};
@@ -1202,6 +1248,12 @@ export function ChartPanel({
     startClientY: number;
     startState: NotesWidgetState;
   } | null>(null);
+  const earningsWidgetDragRef = useRef<{
+    mode: "move" | "resize";
+    startClientX: number;
+    startClientY: number;
+    startState: EarningsWidgetState;
+  } | null>(null);
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -1227,6 +1279,10 @@ export function ChartPanel({
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
+  const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
+  const [earningsFundamentals, setEarningsFundamentals] = useState<CompanyFundamentals | null>(null);
+  const [earningsLoading, setEarningsLoading] = useState(false);
+  const [earningsError, setEarningsError] = useState<string | null>(null);
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
@@ -1240,6 +1296,12 @@ export function ChartPanel({
   const latestPocketPivot = pocketPivotBars[pocketPivotBars.length - 1] ?? null;
   const normalizedSymbol = symbol?.trim().toUpperCase() ?? "";
   const pocketPivotNote = normalizedSymbol ? pocketPivotNotes[normalizedSymbol] ?? "" : "";
+  const earningsSource = fundamentals?.symbol === symbol
+    ? fundamentals
+    : earningsFundamentals?.symbol === symbol
+      ? earningsFundamentals
+      : null;
+  const visibleQuarterlyResults = (earningsSource?.quarterly_results ?? []).slice(0, earningsWidget.quarters);
   const futureWhitespaceTimes = useMemo(
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
@@ -1374,6 +1436,48 @@ export function ChartPanel({
 
   useEffect(() => {
     try {
+      window.localStorage.setItem(EARNINGS_WIDGET_STORAGE_KEY, JSON.stringify(earningsWidget));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [earningsWidget]);
+
+  useEffect(() => {
+    if (!earningsWidget.enabled || !symbol || earningsSource) {
+      setEarningsLoading(false);
+      return;
+    }
+
+    let active = true;
+    setEarningsLoading(true);
+    setEarningsError(null);
+
+    void getFundamentals(symbol, market)
+      .then((payload) => {
+        if (!active || payload.symbol !== symbol) {
+          return;
+        }
+        setEarningsFundamentals(payload);
+        setEarningsError(null);
+      })
+      .catch((error: unknown) => {
+        if (active) {
+          setEarningsError(error instanceof Error ? error.message : "Failed to load earnings");
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setEarningsLoading(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [earningsSource, earningsWidget.enabled, market, symbol]);
+
+  useEffect(() => {
+    try {
       window.localStorage.setItem(
         RVOL_WIDGET_STORAGE_KEY,
         JSON.stringify({
@@ -1409,6 +1513,8 @@ export function ChartPanel({
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
     setExtendedHistory(null);
+    setEarningsFundamentals(null);
+    setEarningsError(null);
   }, [symbol, timeframe]);
 
   useEffect(() => {
@@ -2050,6 +2156,10 @@ export function ChartPanel({
       setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }));
       return;
     }
+    if (itemId === "overlay:earnings") {
+      setEarningsWidget((current) => ({ ...current, enabled: !current.enabled }));
+      return;
+    }
     void handleLoadFullHistory();
   };
 
@@ -2083,6 +2193,21 @@ export function ChartPanel({
     event.currentTarget.setPointerCapture?.(event.pointerId);
   };
 
+  const beginEarningsWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
+    if (event.button !== 0) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    earningsWidgetDragRef.current = {
+      mode,
+      startClientX: event.clientX,
+      startClientY: event.clientY,
+      startState: earningsWidget,
+    };
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
   const beginFavoritesWidgetDrag = (event: ReactPointerEvent<HTMLDivElement>, mode: "move" | "resize") => {
     if (event.button !== 0) {
       return;
@@ -2110,6 +2235,9 @@ export function ChartPanel({
     }
     if (itemId === "overlay:pocket-pivot") {
       return pocketPivotWidget.enabled;
+    }
+    if (itemId === "overlay:earnings") {
+      return earningsWidget.enabled;
     }
     return Boolean(extendedHistory);
   };
@@ -2286,6 +2414,29 @@ export function ChartPanel({
         return;
       }
 
+      const earningsDrag = earningsWidgetDragRef.current;
+      if (earningsDrag) {
+        const dx = event.clientX - earningsDrag.startClientX;
+        const dy = event.clientY - earningsDrag.startClientY;
+        setEarningsWidget((current) => {
+          const maxX = Math.max(stageWidth - earningsDrag.startState.width - 8, 0);
+          const maxY = Math.max(stageHeight - earningsDrag.startState.height - 8, 0);
+          if (earningsDrag.mode === "resize") {
+            return {
+              ...current,
+              width: clamp(earningsDrag.startState.width + dx, 300, Math.max(stageWidth - earningsDrag.startState.x - 8, 320)),
+              height: clamp(earningsDrag.startState.height + dy, 190, Math.max(stageHeight - earningsDrag.startState.y - 8, 220)),
+            };
+          }
+          return {
+            ...current,
+            x: clamp(earningsDrag.startState.x + dx, 0, maxX),
+            y: clamp(earningsDrag.startState.y + dy, 0, maxY),
+          };
+        });
+        return;
+      }
+
       const activeDrag = floatingWidgetDragRef.current;
       if (!activeDrag) {
         return;
@@ -2316,6 +2467,7 @@ export function ChartPanel({
       favoritesWidgetDragRef.current = null;
       floatingWidgetDragRef.current = null;
       notesWidgetDragRef.current = null;
+      earningsWidgetDragRef.current = null;
     };
 
     window.addEventListener("pointermove", handlePointerMove);
@@ -2864,6 +3016,15 @@ export function ChartPanel({
               Notes
             </button>
           </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={earningsWidget.enabled ? "tool-pill active" : "tool-pill"}
+              onClick={() => setEarningsWidget((current) => ({ ...current, enabled: !current.enabled }))}
+            >
+              Earnings
+            </button>
+          </div>
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
       ) : null}
@@ -3216,6 +3377,88 @@ export function ChartPanel({
                 <strong>{pocketPivotWidget.dotSize}px</strong>
               </label>
               <div className="pocket-pivot-resize" onPointerDown={(event) => beginPocketPivotWidgetDrag(event, "resize")} />
+            </div>
+          ) : null}
+          {earningsWidget.enabled ? (
+            <div
+              className="earnings-widget"
+              style={{
+                left: `${clamp(earningsWidget.x, 0, Math.max(stageWidth - earningsWidget.width - 8, 0))}px`,
+                top: `${clamp(earningsWidget.y, 0, Math.max(stageHeight - earningsWidget.height - 8, 0))}px`,
+                width: `${earningsWidget.width}px`,
+                minHeight: `${earningsWidget.height}px`,
+                borderColor: withOpacity(earningsWidget.accentColor, 0.54),
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+            >
+              <div className="earnings-widget-head" onPointerDown={(event) => beginEarningsWidgetDrag(event, "move")}>
+                <strong>Earnings</strong>
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={() => setEarningsWidget((current) => ({ ...current, enabled: false }))}
+                  aria-label="Close Earnings widget"
+                >
+                  x
+                </button>
+              </div>
+              <div className="earnings-widget-controls">
+                <label className="pocket-pivot-control">
+                  <span>Color</span>
+                  <input
+                    type="color"
+                    value={earningsWidget.accentColor}
+                    onChange={(event) => setEarningsWidget((current) => ({ ...current, accentColor: event.target.value }))}
+                  />
+                </label>
+                <label className="pocket-pivot-control">
+                  <span>Quarters</span>
+                  <input
+                    type="range"
+                    min="1"
+                    max="8"
+                    step="1"
+                    value={earningsWidget.quarters}
+                    onChange={(event) => setEarningsWidget((current) => ({ ...current, quarters: Number(event.target.value) }))}
+                  />
+                  <strong>{earningsWidget.quarters}</strong>
+                </label>
+              </div>
+              <div className="earnings-widget-body">
+                {!symbol ? (
+                  <div className="earnings-widget-empty">Pick a stock.</div>
+                ) : earningsLoading ? (
+                  <div className="earnings-widget-empty">Loading earnings...</div>
+                ) : earningsError ? (
+                  <div className="earnings-widget-empty">{earningsError}</div>
+                ) : visibleQuarterlyResults.length ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Quarter</th>
+                        <th>Sales</th>
+                        <th>OPM</th>
+                        <th>Net</th>
+                        <th>EPS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleQuarterlyResults.map((item) => (
+                        <tr key={`earnings-${item.period}`}>
+                          <td>{item.period}</td>
+                          <td>{formatAmountValue(item.sales_crore, 0)}</td>
+                          <td>{formatPercentValue(item.operating_margin_pct)}</td>
+                          <td>{formatAmountValue(item.net_profit_crore, 0)}</td>
+                          <td>{formatValue(item.eps, 2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : (
+                  <div className="earnings-widget-empty">No quarterly earnings data available.</div>
+                )}
+              </div>
+              <div className="earnings-widget-resize" onPointerDown={(event) => beginEarningsWidgetDrag(event, "resize")} />
             </div>
           ) : null}
           {notesWidget.enabled ? (
