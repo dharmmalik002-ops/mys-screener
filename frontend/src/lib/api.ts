@@ -811,7 +811,6 @@ export type RefreshResponse = {
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 const DEFAULT_PRODUCTION_API_BASES = [
   "https://dharmmalik-stock-scanner-backend.hf.space",
-  "https://stock-scanner-backend.onrender.com",
 ];
 const REQUEST_TIMEOUT_MS = (() => {
   const parsed = Number(import.meta.env.VITE_API_TIMEOUT_MS ?? 20000);
@@ -821,6 +820,8 @@ const REQUEST_TIMEOUT_MS = (() => {
   return parsed;
 })();
 const RETRY_BACKOFF_MS = 400;
+const SAME_BASE_RETRY_ATTEMPTS = 2;
+const SAME_BASE_RETRY_BACKOFF_MS = 1500;
 function defaultApiBases() {
   const isBrowser = typeof window !== "undefined";
   const hostname = isBrowser ? window.location.hostname.toLowerCase() : "";
@@ -837,15 +838,11 @@ function defaultApiBases() {
     return localhostBases;
   }
 
-  return [
-    "",
-    API_BASE,
-    ...DEFAULT_PRODUCTION_API_BASES,
-    "http://127.0.0.1:8001",
-    "http://localhost:8001",
-    "http://127.0.0.1:8000",
-    "http://localhost:8000",
-  ];
+  // Production: only the Vercel rewrite ("") and the HF Space directly.
+  // Localhost fallbacks would always TypeError from a browser on HTTPS
+  // (mixed-content + connection refused), turning a transient HF blip into
+  // a misleading "Network request failed, retrying..." message.
+  return ["", API_BASE, ...DEFAULT_PRODUCTION_API_BASES];
 }
 
 const FALLBACK_API_BASES = defaultApiBases().filter(
@@ -1691,46 +1688,51 @@ async function request<T>(
 
   for (let i = 0; i < bases.length; i += 1) {
     const base = bases[i];
-    try {
-      const url = init?.method && init.method !== "GET"
-        ? `${base}${path}`
-        : `${base}${path}${path.includes("?") ? "&" : "?"}_v=${Date.now()}`;
-      const response = await fetchWithTimeoutMs(url, timeoutMs, init);
+    // Retry on the same base for transient browser-level fetch failures
+    // (TypeError "Failed to fetch") — usually a Vercel/HF cold-start blip
+    // that clears within a couple of seconds. Hopping bases too eagerly
+    // hides the recovery and surfaces a misleading error to the user.
+    for (let attempt = 0; attempt <= SAME_BASE_RETRY_ATTEMPTS; attempt += 1) {
+      try {
+        const url = init?.method && init.method !== "GET"
+          ? `${base}${path}`
+          : `${base}${path}${path.includes("?") ? "&" : "?"}_v=${Date.now()}`;
+        const response = await fetchWithTimeoutMs(url, timeoutMs, init);
 
-      if (!response.ok) {
-        if (RETRYABLE_STATUS_CODES.has(response.status)) {
-          lastError = new Error(`Request failed: ${response.status}`);
-          if (i < bases.length - 1) {
-            await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
+        if (!response.ok) {
+          if (RETRYABLE_STATUS_CODES.has(response.status)) {
+            lastError = new Error(`Request failed: ${response.status}`);
+            break;
           }
-          continue;
+          throw new Error(`Request failed: ${response.status}`);
         }
-        throw new Error(`Request failed: ${response.status}`);
-      }
 
-      const contentType = response.headers.get("content-type") ?? "";
-      if (!contentType.toLowerCase().includes("application/json")) {
-        throw new Error("API returned a non-JSON response");
-      }
+        const contentType = response.headers.get("content-type") ?? "";
+        if (!contentType.toLowerCase().includes("application/json")) {
+          throw new Error("API returned a non-JSON response");
+        }
 
-      const payload = await response.json();
-      preferredApiBase = base;
-      return normalize ? normalize(payload) : payload as T;
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
-      } else if (error instanceof TypeError) {
-        // Browser-level fetch failure ("Failed to fetch"). Treat as transient
-        // so we back off briefly and try the next base instead of bailing
-        // immediately — usually the HF Space is mid-restart or briefly
-        // overloaded.
-        lastError = new Error("Network request failed, retrying...");
-      } else {
-        lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+        const payload = await response.json();
+        preferredApiBase = base;
+        return normalize ? normalize(payload) : payload as T;
+      } catch (error) {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+          break;
+        } else if (error instanceof TypeError) {
+          lastError = new Error("Backend is waking up, please wait...");
+          if (attempt < SAME_BASE_RETRY_ATTEMPTS) {
+            await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
+            continue;
+          }
+        } else {
+          lastError = error instanceof Error ? error : new Error("Failed to reach market data API");
+          break;
+        }
       }
-      if (i < bases.length - 1) {
-        await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
-      }
+    }
+    if (i < bases.length - 1) {
+      await new Promise((resolve) => setTimeout(resolve, RETRY_BACKOFF_MS));
     }
   }
 
