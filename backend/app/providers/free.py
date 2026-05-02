@@ -84,6 +84,35 @@ QUOTE_DOWNLOAD_BATCH_SIZE = 200
 NSE_DIRECT_QUOTE_FALLBACK_MAX_SYMBOLS = 60
 UNIVERSE_CACHE_VERSION = 3
 UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS = 2
+RECENT_IPO_BYPASS_DAYS = 365
+
+
+def _row_passes_universe_filter(row: dict, market_cap_min_crore: float) -> bool:
+    """Universe eligibility: market cap >= threshold, OR recently listed.
+
+    Newly listed IPOs almost always have market cap below the universe
+    threshold for a few weeks/months — the IPO scanner and the IPO Debut
+    sort exist exactly for those names, so we never want the universe
+    filter to silently drop them.
+    """
+    try:
+        market_cap = float(row.get("market_cap_crore", 0) or 0)
+    except (TypeError, ValueError):
+        market_cap = 0.0
+    if market_cap >= market_cap_min_crore:
+        return True
+    listing_value = row.get("listing_date")
+    if not listing_value:
+        return False
+    try:
+        if isinstance(listing_value, date) and not isinstance(listing_value, datetime):
+            listed = listing_value
+        else:
+            listed = date.fromisoformat(str(listing_value)[:10])
+    except (TypeError, ValueError):
+        return False
+    days_since = (date.today() - listed).days
+    return 0 <= days_since <= RECENT_IPO_BYPASS_DAYS
 SNAPSHOT_HISTORY_PERIOD = "3y"
 RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache"}
 MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^CNXSC", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
@@ -413,7 +442,7 @@ class FreeMarketDataProvider:
             cached_rows = self._load_json_rows(self.snapshot_cache_path)
             if not cached_rows or not self._snapshot_schema_ok(cached_rows):
                 raise
-            payload = [row for row in cached_rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
+            payload = [row for row in cached_rows if _row_passes_universe_filter(row, market_cap_min_crore)]
             self._last_refresh_metadata = self._default_refresh_metadata()
         snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, payload)
         self._snapshots_memory_cache[float(market_cap_min_crore)] = (*self._snapshot_memory_signature(), snapshots)
@@ -458,7 +487,7 @@ class FreeMarketDataProvider:
 
     def _load_cached_snapshot_rows(self, market_cap_min_crore: float) -> list[dict[str, Any]]:
         rows = self._load_valid_cached_snapshot_rows()
-        return [row for row in rows if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore]
+        return [row for row in rows if _row_passes_universe_filter(row, market_cap_min_crore)]
 
     def _materialize_snapshot_rows(self, rows: list[dict[str, Any]]) -> list[StockSnapshot]:
         return [StockSnapshot.model_validate(self._with_snapshot_fallbacks(row)) for row in rows]
@@ -532,7 +561,7 @@ class FreeMarketDataProvider:
             filtered_rows = [
                 row
                 for row in active_rows
-                if float(row.get("market_cap_crore", 0) or 0) >= market_cap_min_crore
+                if _row_passes_universe_filter(row, market_cap_min_crore)
             ]
             snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, filtered_rows)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
@@ -3868,7 +3897,7 @@ class FreeMarketDataProvider:
                     self._write_snapshot_rows(working_rows)
                     self._last_refresh_metadata["historical_rebuild"] = True
 
-                filtered = [row for row in working_rows if float(row.get("market_cap_crore", 0)) >= market_cap_min_crore]
+                filtered = [row for row in working_rows if _row_passes_universe_filter(row, market_cap_min_crore)]
                 if filtered and (
                     force_refresh
                     or self._last_refresh_metadata["historical_rebuild"]
@@ -3881,7 +3910,7 @@ class FreeMarketDataProvider:
         self._write_snapshot_rows(snapshots)
         self._last_refresh_metadata["historical_rebuild"] = True
 
-        return [row for row in snapshots if float(row.get("market_cap_crore", 0)) >= market_cap_min_crore]
+        return [row for row in snapshots if _row_passes_universe_filter(row, market_cap_min_crore)]
 
     def _refresh_snapshot_rows_live(self, rows: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], dict[str, Any]]:
         if not rows:
@@ -4490,7 +4519,7 @@ class FreeMarketDataProvider:
             not force_refresh
             or self._is_fresh(self.universe_cache_path, max_age_hours=UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS)
         ):
-            filtered = [row for row in rows if float(row.get("market_cap_crore", 0)) >= market_cap_min_crore]
+            filtered = [row for row in rows if _row_passes_universe_filter(row, market_cap_min_crore)]
             if filtered:
                 return sorted(filtered, key=lambda item: (-float(item.get("market_cap_crore", 0) or 0), str(item.get("symbol") or "")))
 
