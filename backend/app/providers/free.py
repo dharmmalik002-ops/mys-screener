@@ -3436,40 +3436,44 @@ class FreeMarketDataProvider:
             # ath / month_high stay frozen — and as soon as today's price
             # exceeds the stale level, every "near 52W high" / "ATH breakout"
             # / "near ATH" scanner falsely accepts the stock because the gap
-            # calculation flips positive. Range fields (range_high_20d,
-            # high_6m) are similarly lifted; the *_prev fields are
-            # deliberately NOT touched because they represent the prior
-            # snapshot baseline that scanners diff against.
-            for high_key in (
-                "high_52w",
-                "ath",
-                "multi_year_high",
-                "high_3y",
-                "high_6m",
-                "high_3m",
-                "month_high",
-                "week_high",
-                "range_high_20d",
+            # calculation flips positive. When we do lift a level, we first
+            # snapshot the old value into the matching *_prev field so
+            # breakout scanners (breakout-52w, breakout-ath) keep a valid
+            # "yesterday's level" to diff against.
+            for high_key, prev_key in (
+                ("high_52w", "high_52w_prev"),
+                ("ath", "ath_prev"),
+                ("multi_year_high", None),
+                ("high_3y", None),
+                ("high_6m", "high_6m_prev"),
+                ("high_3m", None),
+                ("month_high", "month_high_prev"),
+                ("week_high", "week_high_prev"),
+                ("range_high_20d", None),
             ):
                 try:
                     existing_high = float(row.get(high_key) or 0)
                 except (TypeError, ValueError):
                     existing_high = 0.0
                 if new_high > existing_high:
+                    if prev_key and existing_high > 0:
+                        row[prev_key] = round(existing_high, 4)
                     row[high_key] = round(new_high, 4)
 
-            for low_key in (
-                "low_52w",
-                "atl",
-                "month_low",
-                "week_low",
-                "range_low_20d",
+            for low_key, prev_key in (
+                ("low_52w", "low_52w_prev"),
+                ("atl", None),
+                ("month_low", None),
+                ("week_low", None),
+                ("range_low_20d", None),
             ):
                 try:
                     existing_low = float(row.get(low_key) or 0)
                 except (TypeError, ValueError):
                     existing_low = 0.0
                 if existing_low <= 0 or new_low < existing_low:
+                    if prev_key and existing_low > 0:
+                        row[prev_key] = round(existing_low, 4)
                     row[low_key] = round(new_low, 4)
 
             # Recompute window returns from the stored baselines so industry
