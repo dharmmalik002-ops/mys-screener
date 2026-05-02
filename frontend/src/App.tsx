@@ -3236,7 +3236,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
         ]
       : visibleSymbols;
-    const PREFETCH_AHEAD = 20;
+    const PREFETCH_AHEAD = 30;
     const symbolsToWarm = orderedSymbols
       .filter((symbol) => symbol && symbol !== selectedSymbol)
       .slice(0, PREFETCH_AHEAD);
@@ -3245,12 +3245,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    let cancelled = false;
+    let stopQueue = false;
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        // Run with concurrency = 4 so multiple charts download in parallel
+        // Run with concurrency = 6 so multiple charts download in parallel
         // without overwhelming the HF Space (which has limited request slots).
-        const CONCURRENCY = 4;
+        const CONCURRENCY = 6;
         const queue = [...symbolsToWarm];
         const fetchOne = async (symbol: string) => {
           const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
@@ -3260,7 +3260,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           prewarmingChartKeysRef.current.add(cacheKey);
           try {
             const payload = await getChart(symbol, timeframe, activeMarket);
-            if (!cancelled && payload.symbol === symbol && payload.timeframe === timeframe) {
+            // Cache regardless of stopQueue — the network call already
+            // completed, throwing it away wastes the work and forces a
+            // re-fetch when the user revisits this symbol.
+            if (payload.symbol === symbol && payload.timeframe === timeframe) {
               storeCachedChart(activeMarket, symbol, timeframe, payload);
             }
           } catch {
@@ -3270,7 +3273,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           }
         };
         const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
-          while (!cancelled && queue.length > 0) {
+          while (!stopQueue && queue.length > 0) {
             const symbol = queue.shift();
             if (!symbol) return;
             await fetchOne(symbol);
@@ -3278,10 +3281,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         });
         await Promise.all(workers);
       })();
-    }, 100);
+    }, 80);
 
     return () => {
-      cancelled = true;
+      stopQueue = true;
       window.clearTimeout(timeoutId);
     };
   }, [activeMarket, activePage, selectedSymbol, timeframe, visibleSymbolsKey]);

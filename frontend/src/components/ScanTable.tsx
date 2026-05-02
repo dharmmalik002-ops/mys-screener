@@ -76,7 +76,9 @@ type SortBy =
   | "rvol_desc"
   | "price_desc"
   | "price_asc"
-  | "mcap_desc";
+  | "mcap_desc"
+  | "listing_desc"
+  | "listing_asc";
 
 type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "gap";
 
@@ -89,6 +91,8 @@ const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
   { value: "price_desc", label: "Price (high → low)" },
   { value: "price_asc", label: "Price (low → high)" },
   { value: "mcap_desc", label: "Market Cap" },
+  { value: "listing_desc", label: "IPO Debut (newest first)" },
+  { value: "listing_asc", label: "IPO Debut (oldest first)" },
 ];
 
 const COLUMN_DEFS: Array<{ key: ColumnKey; label: string }> = [
@@ -264,9 +268,25 @@ function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
         return left.last_price - right.last_price;
       case "mcap_desc":
         return (right.market_cap_crore ?? 0) - (left.market_cap_crore ?? 0);
+      case "listing_desc": {
+        const lt = listingTimestamp(left.listing_date);
+        const rt = listingTimestamp(right.listing_date);
+        return rt - lt;
+      }
+      case "listing_asc": {
+        const lt = listingTimestamp(left.listing_date);
+        const rt = listingTimestamp(right.listing_date);
+        return lt - rt;
+      }
     }
   });
   return sorted;
+}
+
+function listingTimestamp(value: string | null | undefined): number {
+  if (!value) return 0;
+  const t = Date.parse(value);
+  return Number.isFinite(t) ? t : 0;
 }
 
 function sectorSortValue(
