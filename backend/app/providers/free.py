@@ -3269,12 +3269,16 @@ class FreeMarketDataProvider:
             return {"status": "noop", "reason": "invalid_patch_date", "snapshots_updated": 0}
 
         last_applied = self._last_applied_bhavcopy_date()
-        # v3 (2026-05-01): yfinance fallback now populates "p" from yesterday's
-        # close, AND the apply path falls back to existing previous_close (not
-        # last_price) when re-applying a yfinance patch with p=0. The v2 apply
-        # produced inflated change_pct on yfinance fallback days because the
-        # seed snapshot's last_price was several days stale.
-        APPLY_SCHEMA_VERSION = 3
+        # v4 (2026-05-02): apply now seeds the snapshot file from the baked
+        # seed JSONs when it's missing AND treats a missing snapshot as a
+        # force-apply trigger. Before v4 the apply silently returned
+        # "no_snapshot_cache" on every cold start (because the snapshot file
+        # is excluded from the HF deploy bundle), so the seed's stale
+        # change_pct values were served until the next snapshot rebuild.
+        # v3 (2026-05-01): yfinance fallback populates "p" from yesterday's
+        # close + apply path falls back to existing previous_close on p=0
+        # re-apply.
+        APPLY_SCHEMA_VERSION = 4
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3285,7 +3289,30 @@ class FreeMarketDataProvider:
             except Exception:
                 saved_version = 1
         needs_schema_upgrade = saved_version < APPLY_SCHEMA_VERSION
-        if not force and not needs_schema_upgrade and last_applied is not None and last_applied >= patch_date:
+
+        # On HF cold start the working snapshot file is excluded from the
+        # deploy bundle; if it's missing, materialise it from the baked seed
+        # files first so the patch always lands on a real snapshot. We ALSO
+        # treat "snapshot was missing" as a force-apply trigger — otherwise
+        # the bailout below would skip the apply because last_applied says
+        # we already ran today, even though the actual snapshot file is gone
+        # and the seed contains multi-day-old change_pct values.
+        snapshot_was_missing = not self.snapshot_cache_path.exists()
+        if snapshot_was_missing:
+            try:
+                seeded = self._restore_snapshot_cache_from_seed()
+            except Exception:
+                seeded = []
+            if not seeded or not self.snapshot_cache_path.exists():
+                return {"status": "error", "reason": "no_snapshot_cache", "snapshots_updated": 0}
+
+        if (
+            not force
+            and not needs_schema_upgrade
+            and not snapshot_was_missing
+            and last_applied is not None
+            and last_applied >= patch_date
+        ):
             return {
                 "status": "noop",
                 "reason": "already_applied",
@@ -3301,9 +3328,6 @@ class FreeMarketDataProvider:
                 "snapshots_updated": 0,
                 "date": patch_date.isoformat(),
             }
-
-        if not self.snapshot_cache_path.exists():
-            return {"status": "error", "reason": "no_snapshot_cache", "snapshots_updated": 0}
 
         try:
             rows = json.loads(self.snapshot_cache_path.read_text(encoding="utf-8"))
