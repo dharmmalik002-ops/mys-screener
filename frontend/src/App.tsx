@@ -782,6 +782,20 @@ function buildUniverseCatalogFromIndustryGroups(data: IndustryGroupsResponse | n
   }));
 }
 
+function buildUniverseCatalogFromDashboard(data: DashboardResponse | null): ScanMatch[] {
+  if (!data) return [];
+  const seen = new Set<string>();
+  const out: ScanMatch[] = [];
+  for (const bucket of [data.top_gainers, data.top_losers, data.top_volume_spikes]) {
+    for (const item of bucket) {
+      if (!item?.symbol || seen.has(item.symbol)) continue;
+      seen.add(item.symbol);
+      out.push(item);
+    }
+  }
+  return out;
+}
+
 async function fetchIndexRibbonItems(market: MarketKey): Promise<RibbonItem[]> {
   const ribbonConfig = INDEX_RIBBON_CONFIG[market];
   try {
@@ -1974,6 +1988,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
 
         setDashboard(dashboardPayload);
+        // Seed the universe catalog from dashboard immediately so the symbol
+        // search, watchlist suggestions, and "X stocks in universe" count
+        // never sit empty while the heavier /api/groups call is in flight.
+        // Industry groups, when they arrive, replace this with the full
+        // 1000+ symbol catalog.
+        setUniverseCatalog((current) =>
+          current.length > 0 ? current : buildUniverseCatalogFromDashboard(dashboardPayload),
+        );
         updateMarketViewCache(activeMarket, { dashboard: dashboardPayload });
         setSelectedSymbol((current) => current ?? dashboardPayload.top_gainers[0]?.symbol ?? null);
         setLoading(false);

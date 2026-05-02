@@ -1747,7 +1747,17 @@ function withMarket(path: string, market: MarketKey) {
 }
 
 export function getDashboard(market: MarketKey) {
-  return request<DashboardResponse>(withMarket("/api/dashboard", market), undefined, undefined, normalizeDashboardResponse);
+  // 60s timeout: HF Space cold starts (after a deploy or 30+ min idle) can
+  // take 30-50s before the first /api/dashboard responds. With the default
+  // 20s timeout, fresh-browser users would just see "0 universe" for a few
+  // minutes after every restart. 60s tolerates the cold start on the very
+  // first hit; warm calls return in 1-3s.
+  return request<DashboardResponse>(
+    withMarket("/api/dashboard", market),
+    undefined,
+    { timeoutMs: 60_000 },
+    normalizeDashboardResponse,
+  );
 }
 
 // Lightweight ping used to keep the HF Space warm while the user has the
@@ -2110,7 +2120,13 @@ export function getConsolidatingScan(body: ConsolidatingScanRequest, market: Mar
 }
 
 export function getIndustryGroups(market: MarketKey) {
-  return request<IndustryGroupsResponse>(withMarket("/api/groups", market), undefined, undefined, normalizeIndustryGroupsResponse);
+  // Groups computation is heavy and can take 20-40s on a cold Space.
+  return request<IndustryGroupsResponse>(
+    withMarket("/api/groups", market),
+    undefined,
+    { timeoutMs: 60_000 },
+    normalizeIndustryGroupsResponse,
+  );
 }
 
 export function getImprovingRs(window: ImprovingRsWindow, market: MarketKey) {
