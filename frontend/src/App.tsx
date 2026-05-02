@@ -89,7 +89,7 @@ const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
 const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
-const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v2";
+const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v3";
 const GROUP_WIDGET_RECT_KEY = "mr-malik-group-widget-rect:v1";
 const GROUP_WIDGET_OPEN_KEY = "mr-malik-group-widget-open:v1";
 const THEME_KEY = "mr-malik-theme:v1";
@@ -136,8 +136,10 @@ const ACTIVE_WATCHLIST_KEY = "mr-malik-active-watchlist:v1";
 const SCANNER_SETTINGS_KEY = "mr-malik-scanner-settings:v1";
 const SAVED_SCANNERS_KEY = "mr-malik-saved-scanners:v1";
 const ACTIVE_MARKET_KEY = "mr-malik-active-market:v1";
-const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v1";
-const MARKET_VIEW_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
+// Cap at 6 hours so a stale cache never outlives the next bhavcopy update.
+// Previously 24 h kept yesterday's snapshot visible for an entire trading day.
+const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
 type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal";
