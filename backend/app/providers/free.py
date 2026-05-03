@@ -3409,7 +3409,10 @@ class FreeMarketDataProvider:
         # do not depend on a warm chart-cache download.
         # v8 (2026-05-03): verify the snapshot rows themselves before trusting
         # the status file's already-applied marker.
-        APPLY_SCHEMA_VERSION = 8
+        # v9 (2026-05-03): rescale market_cap_crore by the price-move ratio
+        # on apply so the earnings widget / dashboard show the cap at the
+        # current close instead of the seed-snapshot price.
+        APPLY_SCHEMA_VERSION = 9
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3586,6 +3589,16 @@ class FreeMarketDataProvider:
             except (TypeError, ValueError):
                 pass
 
+            # Capture the OLD last_price BEFORE we overwrite — used below to
+            # rescale market_cap_crore in proportion to the price move so the
+            # earnings widget / dashboard / scanners reflect the cap at the
+            # current close instead of whatever price the seed snapshot was
+            # generated against.
+            try:
+                old_last_price = float(row.get("last_price") or 0)
+            except (TypeError, ValueError):
+                old_last_price = 0.0
+
             row["last_price"] = round(new_close, 4)
             row["day_high"] = round(new_high, 4)
             row["day_low"] = round(new_low, 4)
@@ -3594,6 +3607,21 @@ class FreeMarketDataProvider:
             if prev_close > 0:
                 row["change_pct"] = round((new_close - prev_close) / prev_close * 100.0, 4)
                 row["gap_pct"] = round((new_open - prev_close) / prev_close * 100.0, 4)
+
+            # Recompute market_cap_crore in proportion to the price move.
+            # market_cap = shares_outstanding × price, and shares_outstanding
+            # is stable day-to-day for the universe we cover, so the ratio
+            # rescale is correct without needing the share count stored on
+            # the row. Without this, the earnings widget shows a market cap
+            # frozen at the seed snapshot's price (often ~10-20% off the
+            # current close).
+            try:
+                stored_mcap = float(row.get("market_cap_crore") or 0)
+            except (TypeError, ValueError):
+                stored_mcap = 0.0
+            if stored_mcap > 0 and old_last_price > 0 and new_close > 0:
+                rescaled = stored_mcap * (float(new_close) / old_last_price)
+                row["market_cap_crore"] = round(rescaled, 2)
 
             # Lift stale high/low extreme fields when the new bar pushes past
             # them. Without this, the seed snapshot's months-old high_52w /
