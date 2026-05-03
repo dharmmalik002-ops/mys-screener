@@ -3471,10 +3471,10 @@ export function ChartPanel({
               <div className="earnings-widget-body">
                 {!symbol ? (
                   <div className="earnings-widget-empty">Pick a stock.</div>
-                ) : earningsLoading ? (
-                  <div className="earnings-widget-empty">Loading earnings...</div>
-                ) : earningsError ? (
+                ) : earningsError && !earningsSource ? (
                   <div className="earnings-widget-empty">{earningsError}</div>
+                ) : !earningsSource ? (
+                  <div className="earnings-widget-empty">Loading earnings...</div>
                 ) : visibleQuarterlyResults.length ? (
                   <>
                     <div className="earnings-widget-metrics">
