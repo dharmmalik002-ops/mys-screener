@@ -1,4 +1,11 @@
 # Full Project Handover — Indian Stock Scanner
+
+> ⚠️ **The authoritative handover is `CLAUDE_CODE_HANDOVER.md` (updated 2026-05-03).**
+> Read that one first for current Schema versions, scanner correctness fixes, earnings
+> widget architecture, watchlist multi-list rules, and known data-coverage gaps.
+> The sections below stay useful for credentials & high-level workflow but the
+> day-to-day technical details have moved.
+
 # Feed this file to Claude Code at session start with:
 # "Read this file for full project context: HANDOVER_FULL.md"
 

@@ -1,5 +1,11 @@
 # Stock Scanner — Claude Code Handover
 
+> ⚠️ **This document is from 2026-04-25 and is no longer the authoritative handover.**
+> The current handover lives at **`CLAUDE_CODE_HANDOVER.md`** (last updated 2026-05-03).
+> Read that one first. The architecture sections below are still accurate but the
+> "Recent Commits", "Schema versions", "Key settings" and "Common gotchas" sections
+> have been superseded.
+
 **Purpose:** Everything an incoming Claude Code session needs to understand this project, ship changes, and deploy them.
 **Audience:** A new Claude Code agent with no prior context on this codebase.
 **Last updated:** 2026-04-25 — after the 5-stage Scanner UI modernisation.
