@@ -61,6 +61,7 @@ type WatchlistsPanelProps = {
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
   onPrefetchSymbol?: (symbol: string) => void;
+  onImportSymbols?: (watchlistId: string, raw: string) => { added: number; duplicates: number };
   universeItems: ScanMatch[];
   groupsData: IndustryGroupsResponse | null;
   selectedSymbol: string | null;
@@ -250,10 +251,14 @@ export function WatchlistsPanel({
   onRequestAddToWatchlist,
   onPickSymbol,
   onPrefetchSymbol,
+  onImportSymbols,
   universeItems,
   groupsData,
   selectedSymbol,
 }: WatchlistsPanelProps) {
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importMessage, setImportMessage] = useState<string | null>(null);
   const marketLabel = market === "india" ? "India" : "US";
   const hasWideTableLayout = useMinWidth(1180);
   const [newWatchlistName, setNewWatchlistName] = useState("");
@@ -818,6 +823,20 @@ export function WatchlistsPanel({
               <button type="button" className="st-btn" onClick={() => onExportWatchlist(activeWatchlist.id)}>
                 Export .txt
               </button>
+              {onImportSymbols ? (
+                <button
+                  type="button"
+                  className="st-btn"
+                  onClick={() => {
+                    setImportMessage(null);
+                    setImportText("");
+                    setImportOpen(true);
+                  }}
+                  title={`Paste tickers (NSE:RELIANCE, BSE:RELIANCE, RELIANCE) to add into ${activeWatchlist.name}`}
+                >
+                  Import
+                </button>
+              ) : null}
               <button
                 type="button"
                 className="st-btn"
@@ -1020,6 +1039,72 @@ export function WatchlistsPanel({
         </Suspense>
       ) : null}
       {renderMovePopover()}
+      {importOpen && activeWatchlist ? (
+        <div
+          className="watchlist-import-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setImportOpen(false);
+            }
+          }}
+        >
+          <div className="watchlist-import-modal" onClick={(event) => event.stopPropagation()}>
+            <header>
+              <strong>Import to "{activeWatchlist.name}"</strong>
+              <button
+                type="button"
+                className="st-btn"
+                onClick={() => setImportOpen(false)}
+                aria-label="Close import"
+              >
+                x
+              </button>
+            </header>
+            <p className="watchlist-import-hint">
+              Paste tickers separated by commas, spaces, or newlines. Accepts <code>NSE:RELIANCE</code>,{" "}
+              <code>BSE:RELIANCE</code>, <code>NSE/BSE:RELIANCE</code>, <code>RELIANCE-EQ</code>, or just <code>RELIANCE</code>.
+            </p>
+            <textarea
+              value={importText}
+              onChange={(event) => setImportText(event.target.value)}
+              placeholder={"NSE:RELIANCE, NSE:TCS\nBSE:HDFCBANK\nINFY"}
+              rows={8}
+              autoFocus
+            />
+            {importMessage ? <div className="watchlist-import-message">{importMessage}</div> : null}
+            <footer>
+              <button
+                type="button"
+                className="st-btn"
+                onClick={() => setImportOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="st-btn primary"
+                onClick={() => {
+                  if (!onImportSymbols || !activeWatchlist) return;
+                  const result = onImportSymbols(activeWatchlist.id, importText);
+                  if (result.added === 0 && result.duplicates === 0) {
+                    setImportMessage("No valid tickers found in the pasted text.");
+                    return;
+                  }
+                  setImportMessage(
+                    `Added ${result.added} ticker${result.added === 1 ? "" : "s"}` +
+                      (result.duplicates > 0
+                        ? `, skipped ${result.duplicates} already in this watchlist.`
+                        : "."),
+                  );
+                  setImportText("");
+                }}
+              >
+                Add to watchlist
+              </button>
+            </footer>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

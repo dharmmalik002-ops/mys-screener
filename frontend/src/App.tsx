@@ -783,6 +783,29 @@ function buildUniverseCatalogFromIndustryGroups(data: IndustryGroupsResponse | n
   }));
 }
 
+// Parse a free-form pasted block of tickers into a deduped list of symbols.
+// Handles broker-export prefixes ("NSE:RELIANCE", "BSE:RELIANCE",
+// "NSE/BSE:RELIANCE"), trailing series ("RELIANCE-EQ"), and a mix of
+// commas / semicolons / whitespace / newlines as separators.
+function parseImportedSymbols(raw: string): string[] {
+  if (!raw) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const token of raw.split(/[\s,;]+/)) {
+    const trimmed = token.trim();
+    if (!trimmed) continue;
+    // Drop everything before the last colon ("NSE:" / "BSE:" / "NSE/BSE:")
+    // and any trailing series suffix after the last hyphen ("-EQ", "-BE").
+    let symbol = trimmed.includes(":") ? trimmed.slice(trimmed.lastIndexOf(":") + 1) : trimmed;
+    symbol = symbol.replace(/-[A-Z]{1,3}$/i, "");
+    symbol = symbol.replace(/[^A-Za-z0-9_-]/g, "").toUpperCase();
+    if (!symbol || seen.has(symbol)) continue;
+    seen.add(symbol);
+    out.push(symbol);
+  }
+  return out;
+}
+
 function buildUniverseCatalogFromDashboard(data: DashboardResponse | null): ScanMatch[] {
   if (!data) return [];
   const seen = new Set<string>();
@@ -3849,21 +3872,57 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (!current.some((watchlist) => watchlist.id === watchlistId)) {
         return current;
       }
-
       return current.map((watchlist) => {
-        const nextSymbols = watchlist.symbols.filter((item) => item !== normalizedSymbol);
         if (watchlist.id !== watchlistId) {
-          return nextSymbols.length === watchlist.symbols.length
-            ? watchlist
-            : { ...watchlist, symbols: nextSymbols };
+          // Leave other watchlists alone — a symbol can live in multiple
+          // watchlists at once (e.g. a stock can be in "Watching" AND
+          // "Priority"). The previous "remove from all then add" pattern
+          // turned every add-to-X click into a move, which is wrong.
+          return watchlist;
         }
-
-        return {
-          ...watchlist,
-          symbols: [...nextSymbols, normalizedSymbol],
-        };
+        if (watchlist.symbols.includes(normalizedSymbol)) {
+          return watchlist;
+        }
+        return { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol] };
       });
     });
+  };
+
+  // Bulk-import handler. Accepts free-form text where each line / token is
+  // one of: "NSE:RELIANCE", "BSE:RELIANCE", "NSE/BSE:RELIANCE", or just
+  // "RELIANCE". Splits on commas, semicolons, whitespace, and newlines so
+  // the user can paste from a broker watchlist export, a Tijori share, etc.
+  // Adds to the named watchlist without disturbing membership in others.
+  const handleImportToWatchlist = (watchlistId: string, raw: string): { added: number; duplicates: number } => {
+    const normalizedSymbols = parseImportedSymbols(raw);
+    if (normalizedSymbols.length === 0) {
+      return { added: 0, duplicates: 0 };
+    }
+    let added = 0;
+    let duplicates = 0;
+    setWatchlists((current) => {
+      if (!current.some((watchlist) => watchlist.id === watchlistId)) {
+        return current;
+      }
+      return current.map((watchlist) => {
+        if (watchlist.id !== watchlistId) {
+          return watchlist;
+        }
+        const existing = new Set(watchlist.symbols);
+        const next = [...watchlist.symbols];
+        for (const symbol of normalizedSymbols) {
+          if (existing.has(symbol)) {
+            duplicates += 1;
+            continue;
+          }
+          existing.add(symbol);
+          next.push(symbol);
+          added += 1;
+        }
+        return added > 0 ? { ...watchlist, symbols: next } : watchlist;
+      });
+    });
+    return { added, duplicates };
   };
 
   const handleRemoveFromWatchlist = (watchlistId: string, symbol: string) => {
@@ -4994,6 +5053,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   onPrefetchSymbol={handlePrefetchSymbol}
+                  onImportSymbols={handleImportToWatchlist}
                   universeItems={universeCatalog}
                   groupsData={groupsData}
                   selectedSymbol={selectedSymbol}
