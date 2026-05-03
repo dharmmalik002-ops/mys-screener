@@ -774,9 +774,14 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
     change_1_day_ago = _daily_change_n_days_ago(snapshot, 1)
     change_2_days_ago = _daily_change_n_days_ago(snapshot, 2)
-    if change_1_day_ago is None or change_2_days_ago is None:
-        return None
-    if abs(change_1_day_ago) > 2.5 or abs(change_2_days_ago) > 3.5:
+    has_three_day_context = change_1_day_ago is not None and change_2_days_ago is not None
+    if has_three_day_context:
+        if abs(change_1_day_ago) > 2.5 or abs(change_2_days_ago) > 3.5:
+            has_three_day_context = False
+    elif snapshot.history_source != "bhavcopy_patch" and not any(
+        _snapshot_float(snapshot, field_name) not in (None, 0)
+        for field_name in ("baseline_close_5d", "baseline_close_20d", "baseline_close_60d", "baseline_close_63d")
+    ):
         return None
 
     if snapshot.last_price <= ema50 or snapshot.last_price <= 30:
@@ -806,14 +811,20 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
 
     best_trigger_label, best_trigger_return = max(matched_triggers, key=lambda item: item[1])
-    tightness_score = (
-        max(0.0, 2.5 - abs(snapshot.change_pct))
-        + max(0.0, 2.5 - abs(change_1_day_ago))
-        + max(0.0, 3.5 - abs(change_2_days_ago))
-    )
+    tightness_score = max(0.0, 2.5 - abs(snapshot.change_pct))
+    if has_three_day_context:
+        assert change_1_day_ago is not None and change_2_days_ago is not None
+        tightness_score += max(0.0, 2.5 - abs(change_1_day_ago)) + max(0.0, 3.5 - abs(change_2_days_ago))
+    else:
+        tightness_score += 3.0
     score = 72 + (tightness_score * 1.8) + min(best_trigger_return, 40.0) * 0.35 + min(avg_volume_50d / 50_000, 4.0) * 1.5
+    contraction_label = (
+        f"3-day contraction: {snapshot.change_pct:+.2f}%, {change_1_day_ago:+.2f}%, {change_2_days_ago:+.2f}%"
+        if has_three_day_context
+        else f"EOD contraction: {snapshot.change_pct:+.2f}% with cached run-up context"
+    )
     reasons = [
-        f"3-day contraction: {snapshot.change_pct:+.2f}%, {change_1_day_ago:+.2f}%, {change_2_days_ago:+.2f}%",
+        contraction_label,
         f"Above 50D EMA ({ema50:.2f}) and within 25% of 50D SMA ({sma50:.2f})",
         f"{best_trigger_label} trigger hit at +{best_trigger_return:.2f}% with volume {snapshot.volume:,}",
     ]

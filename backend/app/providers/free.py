@@ -3284,7 +3284,12 @@ class FreeMarketDataProvider:
         # (and their low counterparts) when today's bar pushes past them, so
         # the "near 52W high" / "ATH breakout" / "near ATL" scanners stop
         # accepting stocks whose stale extreme is now below the live price.
-        APPLY_SCHEMA_VERSION = 6
+        # v7 (2026-05-03): recompute RS score/rating and roll recent closes /
+        # chart points from the committed EOD bar so RS and contraction scans
+        # do not depend on a warm chart-cache download.
+        # v8 (2026-05-03): verify the snapshot rows themselves before trusting
+        # the status file's already-applied marker.
+        APPLY_SCHEMA_VERSION = 8
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3312,20 +3317,6 @@ class FreeMarketDataProvider:
             if not seeded or not self.snapshot_cache_path.exists():
                 return {"status": "error", "reason": "no_snapshot_cache", "snapshots_updated": 0}
 
-        if (
-            not force
-            and not needs_schema_upgrade
-            and not snapshot_was_missing
-            and last_applied is not None
-            and last_applied >= patch_date
-        ):
-            return {
-                "status": "noop",
-                "reason": "already_applied",
-                "snapshots_updated": 0,
-                "date": patch_date.isoformat(),
-            }
-
         symbols_payload = payload.get("symbols")
         if not isinstance(symbols_payload, dict) or not symbols_payload:
             return {
@@ -3347,6 +3338,55 @@ class FreeMarketDataProvider:
             if not isinstance(record, dict):
                 continue
             normalized_patch[str(raw_symbol).strip().upper()] = record
+
+        checked_current_rows = 0
+        patched_current_rows = 0
+        for row in rows:
+            if checked_current_rows >= 50:
+                break
+            if not isinstance(row, dict):
+                continue
+            symbol = str(row.get("symbol") or "").strip().upper()
+            record = normalized_patch.get(symbol)
+            if record is None:
+                continue
+            new_close = self._to_float(record.get("c"))
+            row_close = self._to_float(row.get("last_price"))
+            if new_close in (None, 0) or row_close in (None, 0):
+                continue
+            checked_current_rows += 1
+            row_session_date = self._parse_row_date(row.get("history_session_date") or row.get("history_as_of_date"))
+            recent_closes = row.get("recent_closes")
+            recent_close = (
+                self._to_float(recent_closes[-1])
+                if isinstance(recent_closes, list) and recent_closes
+                else None
+            )
+            if (
+                str(row.get("history_source") or "").strip().lower() == "bhavcopy_patch"
+                and row_session_date is not None
+                and row_session_date >= patch_date
+                and abs(float(row_close) - float(new_close)) <= 0.01
+                and (recent_close is None or abs(float(recent_close) - float(new_close)) <= 0.01)
+                and "rs_weighted_score_1d_ago" in row
+            ):
+                patched_current_rows += 1
+
+        snapshot_patch_is_current = checked_current_rows > 0 and patched_current_rows == checked_current_rows
+        if (
+            not force
+            and not needs_schema_upgrade
+            and not snapshot_was_missing
+            and snapshot_patch_is_current
+            and last_applied is not None
+            and last_applied >= patch_date
+        ):
+            return {
+                "status": "noop",
+                "reason": "already_applied",
+                "snapshots_updated": 0,
+                "date": patch_date.isoformat(),
+            }
 
         updated = 0
         for row in rows:
@@ -3397,6 +3437,10 @@ class FreeMarketDataProvider:
                 existing_prev_close = float(row.get("previous_close") or 0)
             except (TypeError, ValueError):
                 existing_prev_close = 0.0
+            try:
+                existing_rs_weighted_score = float(row.get("rs_weighted_score") or 0)
+            except (TypeError, ValueError):
+                existing_rs_weighted_score = 0.0
 
             prev_close: float
             if bhav_prev_close > 0:
@@ -3498,6 +3542,38 @@ class FreeMarketDataProvider:
                 if baseline_value > 0:
                     row[return_key] = round(((new_close / baseline_value) - 1) * 100.0, 2)
 
+            row["rs_weighted_score_1d_ago"] = round(existing_rs_weighted_score, 4)
+            row["rs_weighted_score"] = round(self._weighted_rs_score_from_price(row, new_close), 4)
+            row["history_as_of_date"] = patch_date.isoformat()
+            row["history_session_date"] = patch_date.isoformat()
+            row["history_source"] = "bhavcopy_patch"
+
+            recent_closes = row.get("recent_closes")
+            if not isinstance(recent_closes, list) or not recent_closes:
+                recent_closes = []
+                chart_points = row.get("chart_grid_points")
+                if isinstance(chart_points, list):
+                    for point in chart_points[-19:]:
+                        if not isinstance(point, dict):
+                            continue
+                        close_value = self._to_float(point.get("value"))
+                        if close_value not in (None, 0):
+                            recent_closes.append(round(float(close_value), 4))
+            if recent_closes:
+                if self._to_float(recent_closes[-1]) != new_close:
+                    row["recent_closes"] = [round(float(value), 4) for value in recent_closes[-19:] if self._to_float(value) not in (None, 0)] + [round(new_close, 4)]
+            else:
+                row["recent_closes"] = [round(prev_close, 4), round(new_close, 4)] if prev_close > 0 else [round(new_close, 4)]
+
+            chart_points = row.get("chart_grid_points")
+            if isinstance(chart_points, list):
+                patch_timestamp = int(datetime.combine(patch_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+                next_point = {"time": patch_timestamp, "value": round(new_close, 4)}
+                if not chart_points or int((chart_points[-1] or {}).get("time") or 0) != patch_timestamp:
+                    row["chart_grid_points"] = chart_points[-239:] + [next_point]
+                else:
+                    chart_points[-1] = next_point
+
             for arr_key, value in (
                 ("recent_highs", round(new_high, 4)),
                 ("recent_lows", round(new_low, 4)),
@@ -3510,6 +3586,10 @@ class FreeMarketDataProvider:
                     # schema bumps without double-counting.
                     if arr[-1] != value:
                         row[arr_key] = list(arr[-19:]) + [value]
+                elif arr_key == "recent_volumes" and int(new_volume) > 0:
+                    row[arr_key] = [int(new_volume)]
+                elif arr_key in {"recent_highs", "recent_lows"}:
+                    row[arr_key] = [value]
 
             updated += 1
 
@@ -3521,6 +3601,7 @@ class FreeMarketDataProvider:
                 "date": patch_date.isoformat(),
             }
 
+        rows = self._apply_rs_rating(rows)
         self._write_snapshot_rows(rows)
 
         source_label = str(payload.get("source") or "BSE").lower()
@@ -6042,6 +6123,37 @@ class FreeMarketDataProvider:
         del history
         return instrument.get("listing_date")
 
+    def _chart_bars_from_snapshot_points(self, symbol: str, bars: int) -> list[ChartBar]:
+        snapshot = self._load_snapshot_from_cache(symbol)
+        if snapshot is None or not snapshot.chart_grid_points:
+            return []
+
+        output: list[ChartBar] = []
+        for point in snapshot.chart_grid_points[-bars:]:
+            close = self._to_float(point.value)
+            if close in (None, 0):
+                continue
+            output.append(
+                ChartBar(
+                    time=int(point.time),
+                    open=round(float(close), 2),
+                    high=round(float(close), 2),
+                    low=round(float(close), 2),
+                    close=round(float(close), 2),
+                    volume=0,
+                )
+            )
+
+        session_bar = self._snapshot_session_bar(symbol)
+        if session_bar is not None:
+            session_date = self._chart_bar_trade_date(session_bar)
+            if output and self._chart_bar_trade_date(output[-1]) == session_date:
+                output[-1] = session_bar
+            else:
+                output.append(session_bar)
+
+        return output[-bars:]
+
     def _fetch_chart_bars(self, symbol: str, timeframe: str, bars: int) -> list[ChartBar]:
         if self.eod_only_mode and timeframe in {"15m", "30m", "1h"}:
             timeframe = "1D"
@@ -6073,7 +6185,18 @@ class FreeMarketDataProvider:
         else:
             interval = interval_map.get(timeframe, "1d")
             period = period_map.get(timeframe, "max")
-            history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
+            history = pd.DataFrame()
+            if timeframe == "1D":
+                history = self._history_frame_from_cached_bars(symbol, bars, allow_legacy=True)
+                if self._history_has_minimum_bars(history):
+                    history = self._apply_snapshot_row_to_daily_history(symbol, history)
+                else:
+                    snapshot_bars = self._chart_bars_from_snapshot_points(symbol, bars)
+                    if len(snapshot_bars) >= min(30, bars):
+                        return snapshot_bars
+
+            if history.empty:
+                history = self._download_history_frame(ticker=ticker, period=period, interval=interval)
             if timeframe == "1D":
                 history = self._split_adjusted_history(history)
                 if not self.eod_only_mode:

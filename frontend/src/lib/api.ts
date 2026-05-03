@@ -232,6 +232,32 @@ export type QuarterlyResultItem = {
   net_profit_crore: number | null;
   eps: number | null;
   result_document_url: string | null;
+  sales_qoq_pct?: number | null;
+  sales_yoy_pct?: number | null;
+  eps_qoq_pct?: number | null;
+  eps_yoy_pct?: number | null;
+  net_profit_qoq_pct?: number | null;
+  net_profit_yoy_pct?: number | null;
+};
+
+export type CompanyEarningsSummary = {
+  symbol: string;
+  name: string;
+  sector: string | null;
+  sub_sector: string | null;
+  fetched_at: string;
+  source: string;
+  valuation: Partial<ValuationSnapshot>;
+  metrics: {
+    pct_from_52w_high?: number | null;
+    pct_from_52w_low?: number | null;
+    adr_pct_20?: number | null;
+    relative_volume?: number | null;
+    turnover_1d_crore?: number | null;
+    avg_turnover_50d_crore?: number | null;
+  };
+  quarterly_results: QuarterlyResultItem[];
+  data_warnings: string[];
 };
 
 export type ProfitLossItem = {
@@ -1345,7 +1371,7 @@ function normalizeChartGridSeriesResponse(value: unknown): ChartGridSeriesRespon
 
 function normalizeCompanyFundamentals(value: unknown): CompanyFundamentals {
   const raw = isRecord(value) ? value : {};
-  const aiSummary = isRecord(raw.ai_news_summary)
+  const aiSummary: AISummary | null = isRecord(raw.ai_news_summary)
     ? {
         generated_at: readString(raw.ai_news_summary.generated_at),
         summary: readString(raw.ai_news_summary.summary),
@@ -1382,6 +1408,12 @@ function normalizeCompanyFundamentals(value: unknown): CompanyFundamentals {
         net_profit_crore: readNullableNumber(entry.net_profit_crore),
         eps: readNullableNumber(entry.eps),
         result_document_url: readNullableString(entry.result_document_url),
+        sales_qoq_pct: readNullableNumber(entry.sales_qoq_pct),
+        sales_yoy_pct: readNullableNumber(entry.sales_yoy_pct),
+        eps_qoq_pct: readNullableNumber(entry.eps_qoq_pct),
+        eps_yoy_pct: readNullableNumber(entry.eps_yoy_pct),
+        net_profit_qoq_pct: readNullableNumber(entry.net_profit_qoq_pct),
+        net_profit_yoy_pct: readNullableNumber(entry.net_profit_yoy_pct),
       };
     }),
     profit_loss: mapArray(raw.profit_loss, (item) => {
@@ -1612,6 +1644,57 @@ function normalizeCompanyFundamentals(value: unknown): CompanyFundamentals {
         impact: readNullableString(entry.impact) ?? undefined,
       };
     }),
+  };
+}
+
+function normalizeQuarterlyResultItem(value: unknown): QuarterlyResultItem {
+  const entry = isRecord(value) ? value : {};
+  return {
+    period: readString(entry.period),
+    sales_crore: readNullableNumber(entry.sales_crore),
+    expenses_crore: readNullableNumber(entry.expenses_crore),
+    operating_profit_crore: readNullableNumber(entry.operating_profit_crore),
+    operating_margin_pct: readNullableNumber(entry.operating_margin_pct),
+    profit_before_tax_crore: readNullableNumber(entry.profit_before_tax_crore),
+    net_profit_crore: readNullableNumber(entry.net_profit_crore),
+    eps: readNullableNumber(entry.eps),
+    result_document_url: readNullableString(entry.result_document_url),
+    sales_qoq_pct: readNullableNumber(entry.sales_qoq_pct),
+    sales_yoy_pct: readNullableNumber(entry.sales_yoy_pct),
+    eps_qoq_pct: readNullableNumber(entry.eps_qoq_pct),
+    eps_yoy_pct: readNullableNumber(entry.eps_yoy_pct),
+    net_profit_qoq_pct: readNullableNumber(entry.net_profit_qoq_pct),
+    net_profit_yoy_pct: readNullableNumber(entry.net_profit_yoy_pct),
+  };
+}
+
+function normalizeCompanyEarningsSummary(value: unknown): CompanyEarningsSummary {
+  const raw = isRecord(value) ? value : {};
+  const valuation = isRecord(raw.valuation) ? raw.valuation : {};
+  const metrics = isRecord(raw.metrics) ? raw.metrics : {};
+  return {
+    symbol: readString(raw.symbol),
+    name: readString(raw.name),
+    sector: readNullableString(raw.sector),
+    sub_sector: readNullableString(raw.sub_sector),
+    fetched_at: readString(raw.fetched_at),
+    source: readString(raw.source),
+    valuation: {
+      market_cap_crore: readNullableNumber(valuation.market_cap_crore),
+      pe_ratio: readNullableNumber(valuation.pe_ratio),
+      roe_pct: readNullableNumber(valuation.roe_pct),
+      operating_margin_pct: readNullableNumber(valuation.operating_margin_pct),
+    },
+    metrics: {
+      pct_from_52w_high: readNullableNumber(metrics.pct_from_52w_high),
+      pct_from_52w_low: readNullableNumber(metrics.pct_from_52w_low),
+      adr_pct_20: readNullableNumber(metrics.adr_pct_20),
+      relative_volume: readNullableNumber(metrics.relative_volume),
+      turnover_1d_crore: readNullableNumber(metrics.turnover_1d_crore),
+      avg_turnover_50d_crore: readNullableNumber(metrics.avg_turnover_50d_crore),
+    },
+    quarterly_results: mapArray(raw.quarterly_results, normalizeQuarterlyResultItem),
+    data_warnings: readStringArray(raw.data_warnings),
   };
 }
 
@@ -1888,6 +1971,15 @@ export function getFundamentals(symbol: string, market: MarketKey) {
     undefined,
     undefined,
     normalizeCompanyFundamentals,
+  );
+}
+
+export function getEarningsSummary(symbol: string, market: MarketKey) {
+  return request<CompanyEarningsSummary>(
+    `/api/earnings/${encodeURIComponent(symbol)}?market=${market}`,
+    undefined,
+    { timeoutMs: 15000 },
+    normalizeCompanyEarningsSummary,
   );
 }
 

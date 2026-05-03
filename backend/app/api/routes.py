@@ -38,7 +38,7 @@ def build_router(service):
 
     @router.get("/health")
     async def health():
-        return {"ok": True}
+        return {"ok": True, "scanner_patch": "eod-scanners-v10"}
 
     @router.get("/dashboard")
     async def dashboard(market: str = Query(default="india")):
@@ -232,6 +232,10 @@ def build_router(service):
     async def fundamentals(symbol: str, market: str = Query(default="india")):
         return await resolve_service(market).get_fundamentals(symbol=symbol.upper())
 
+    @router.get("/earnings/{symbol}")
+    async def earnings(symbol: str, market: str = Query(default="india")):
+        return await resolve_service(market).get_earnings_summary(symbol=symbol.upper())
+
     @router.get("/live-news")
     async def live_news(
         market: str = Query(default="india"),
@@ -297,7 +301,7 @@ def build_router(service):
     @router.get("/{market_name}/health")
     async def namespaced_health(market_name: str):
         resolve_service(market_name)
-        return {"ok": True}
+        return {"ok": True, "market": market_name, "scanner_patch": "eod-scanners-v10"}
 
     @router.get("/{market_name}/dashboard")
     async def namespaced_dashboard(market_name: str):
@@ -482,5 +486,9 @@ def build_router(service):
     @router.get("/{market_name}/fundamentals/{symbol}", response_model=CompanyFundamentals)
     async def namespaced_fundamentals(market_name: str, symbol: str):
         return await resolve_service(market_name).get_fundamentals(symbol=symbol.upper())
+
+    @router.get("/{market_name}/earnings/{symbol}")
+    async def namespaced_earnings(market_name: str, symbol: str):
+        return await resolve_service(market_name).get_earnings_summary(symbol=symbol.upper())
 
     return router

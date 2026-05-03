@@ -6015,6 +6015,9 @@ button {
 
 .earnings-widget-head strong {
   font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .earnings-widget-head button {
@@ -6036,6 +6039,45 @@ button {
 .earnings-widget-body {
   min-height: 0;
   overflow: auto;
+}
+
+.earnings-widget-metrics,
+.earnings-widget-range {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  border-top: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  font-size: 0.78rem;
+}
+
+.earnings-widget-range {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 6px;
+}
+
+.earnings-widget-metrics span,
+.earnings-widget-metrics strong,
+.earnings-widget-range span,
+.earnings-widget-range strong {
+  min-width: 0;
+  padding: 7px 6px;
+  border-right: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.earnings-widget-metrics span,
+.earnings-widget-range span {
+  color: var(--text-soft);
+}
+
+.earnings-widget-metrics strong,
+.earnings-widget-range strong {
+  color: var(--text);
+  font-weight: 700;
 }
 
 .earnings-widget-body table {
@@ -6065,6 +6107,14 @@ button {
   color: var(--text-soft);
   font-size: 0.66rem;
   text-transform: uppercase;
+}
+
+.earnings-widget-body td.positive {
+  color: var(--positive);
+}
+
+.earnings-widget-body td.negative {
+  color: var(--danger);
 }
 
 .earnings-widget-empty {

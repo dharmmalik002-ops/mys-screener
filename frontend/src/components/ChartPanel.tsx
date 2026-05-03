@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, getFundamentals, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyFundamentals, type MarketKey, type StockOverview } from "../lib/api";
+import { getChartHistory, getEarningsSummary, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
@@ -926,6 +926,18 @@ function readEarningsWidgetState(): EarningsWidgetState {
   }
 }
 
+function quarterSortValue(period: string | null | undefined) {
+  const [monthPart = "", yearPart = "0"] = String(period ?? "").replace(/[-']/g, " ").trim().split(/\s+/);
+  const month = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"].indexOf(monthPart.slice(0, 3).toLowerCase()) + 1;
+  const parsedYear = Number(yearPart);
+  const year = Number.isFinite(parsedYear) ? (parsedYear < 100 ? parsedYear + 2000 : parsedYear) : 0;
+  return year * 100 + Math.max(month, 0);
+}
+
+function sortQuarterlyResultsLatestFirst(items: QuarterlyResultItem[]) {
+  return [...items].sort((left, right) => quarterSortValue(right.period) - quarterSortValue(left.period));
+}
+
 function readPocketPivotNotes(): PocketPivotNotesMap {
   if (typeof window === "undefined") {
     return {};
@@ -1280,7 +1292,7 @@ export function ChartPanel({
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
-  const [earningsFundamentals, setEarningsFundamentals] = useState<CompanyFundamentals | null>(null);
+  const [earningsSummary, setEarningsSummary] = useState<CompanyEarningsSummary | null>(null);
   const [earningsLoading, setEarningsLoading] = useState(false);
   const [earningsError, setEarningsError] = useState<string | null>(null);
   const palette = CHART_PALETTES[chartPalette];
@@ -1296,12 +1308,22 @@ export function ChartPanel({
   const latestPocketPivot = pocketPivotBars[pocketPivotBars.length - 1] ?? null;
   const normalizedSymbol = symbol?.trim().toUpperCase() ?? "";
   const pocketPivotNote = normalizedSymbol ? pocketPivotNotes[normalizedSymbol] ?? "" : "";
-  const earningsSource = fundamentals?.symbol === symbol
-    ? fundamentals
-    : earningsFundamentals?.symbol === symbol
-      ? earningsFundamentals
-      : null;
-  const visibleQuarterlyResults = (earningsSource?.quarterly_results ?? []).slice(0, earningsWidget.quarters);
+  const earningsSource = fundamentals?.symbol === symbol ? fundamentals : earningsSummary?.symbol === symbol ? earningsSummary : null;
+  const visibleQuarterlyResults = sortQuarterlyResultsLatestFirst(earningsSource?.quarterly_results ?? []).slice(0, earningsWidget.quarters);
+  const earningsValuation = earningsSource?.valuation ?? null;
+  const earningsMetrics = earningsSummary?.symbol === symbol
+    ? earningsSummary.metrics
+    : {
+        pct_from_52w_high: summary?.pct_from_52w_high,
+        pct_from_52w_low: summary?.pct_from_52w_low,
+        adr_pct_20: summary?.adr_pct_20,
+        relative_volume: summary?.relative_volume,
+        turnover_1d_crore: null,
+        avg_turnover_50d_crore: summary?.avg_rupee_volume_30d_crore,
+      };
+  const earningsTitle = earningsSource
+    ? `${earningsSource.sector ?? "Unclassified"}↔${earningsSource.sub_sector ?? "Unclassified"}`
+    : "Earnings";
   const futureWhitespaceTimes = useMemo(
     () => buildFutureWhitespaceTimes(activeBars, timeframe, FUTURE_DRAW_EXTENSION_BARS),
     [activeBars, timeframe],
@@ -1452,12 +1474,12 @@ export function ChartPanel({
     setEarningsLoading(true);
     setEarningsError(null);
 
-    void getFundamentals(symbol, market)
+    void getEarningsSummary(symbol, market)
       .then((payload) => {
         if (!active || payload.symbol !== symbol) {
           return;
         }
-        setEarningsFundamentals(payload);
+        setEarningsSummary(payload);
         setEarningsError(null);
       })
       .catch((error: unknown) => {
@@ -1513,7 +1535,7 @@ export function ChartPanel({
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
     setExtendedHistory(null);
-    setEarningsFundamentals(null);
+    setEarningsSummary(null);
     setEarningsError(null);
   }, [symbol, timeframe]);
 
@@ -3392,7 +3414,7 @@ export function ChartPanel({
               onPointerDown={(event) => event.stopPropagation()}
             >
               <div className="earnings-widget-head" onPointerDown={(event) => beginEarningsWidgetDrag(event, "move")}>
-                <strong>Earnings</strong>
+                <strong>{earningsTitle}</strong>
                 <button
                   type="button"
                   onPointerDown={(event) => event.stopPropagation()}
@@ -3432,28 +3454,54 @@ export function ChartPanel({
                 ) : earningsError ? (
                   <div className="earnings-widget-empty">{earningsError}</div>
                 ) : visibleQuarterlyResults.length ? (
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Quarter</th>
-                        <th>Sales</th>
-                        <th>OPM</th>
-                        <th>Net</th>
-                        <th>EPS</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {visibleQuarterlyResults.map((item) => (
-                        <tr key={`earnings-${item.period}`}>
-                          <td>{item.period}</td>
-                          <td>{formatAmountValue(item.sales_crore, 0)}</td>
-                          <td>{formatPercentValue(item.operating_margin_pct)}</td>
-                          <td>{formatAmountValue(item.net_profit_crore, 0)}</td>
-                          <td>{formatValue(item.eps, 2)}</td>
+                  <>
+                    <div className="earnings-widget-metrics">
+                      <span>MCap</span>
+                      <strong>{formatAmountValue(earningsValuation?.market_cap_crore, 1)}</strong>
+                      <span>P/E</span>
+                      <strong>{formatValue(earningsValuation?.pe_ratio, 1)}</strong>
+                      <span>ROE</span>
+                      <strong>{formatPercentValue(earningsValuation?.roe_pct)}</strong>
+                    </div>
+                    <table>
+                      <thead>
+                        <tr>
+                          <th>Qtr</th>
+                          <th>EPS</th>
+                          <th>YoY%</th>
+                          <th>Sales</th>
+                          <th>YoY%</th>
+                          <th>OPM</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {visibleQuarterlyResults.map((item) => (
+                          <tr key={`earnings-${item.period}`}>
+                            <td>{item.period}</td>
+                            <td className={(item.eps ?? 0) >= 0 ? "positive" : "negative"}>{formatValue(item.eps, 1)}</td>
+                            <td className={(item.eps_yoy_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(item.eps_yoy_pct)}</td>
+                            <td>{formatValue(item.sales_crore, 1)}</td>
+                            <td className={(item.sales_yoy_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(item.sales_yoy_pct)}</td>
+                            <td className={(item.operating_margin_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatPercentValue(item.operating_margin_pct)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="earnings-widget-range">
+                      <span>▼ 52W HIGH</span>
+                      <strong>{formatPercentValue(earningsMetrics.pct_from_52w_high)}</strong>
+                      <span>TOver ₹ | 1D</span>
+                      <strong>{formatAmountValue(earningsMetrics.turnover_1d_crore, 2)}</strong>
+                      <span>▲ 52W LOW</span>
+                      <strong>{formatPercentValue(earningsMetrics.pct_from_52w_low)}</strong>
+                      <span>Avg TOver | 50</span>
+                      <strong>{formatAmountValue(earningsMetrics.avg_turnover_50d_crore, 2)}</strong>
+                      <span>ADR | 20</span>
+                      <strong>{formatPercentValue(earningsMetrics.adr_pct_20)}</strong>
+                      <span>RVOL(x) | 50</span>
+                      <strong>{formatValue(earningsMetrics.relative_volume, 2)}</strong>
+                    </div>
+                  </>
                 ) : (
                   <div className="earnings-widget-empty">No quarterly earnings data available.</div>
                 )}

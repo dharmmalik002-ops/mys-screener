@@ -1155,12 +1155,27 @@ class DashboardService:
     def _is_current_rs_rating_52w_high(self, snapshot: StockSnapshot, ordered_scores: list[float]) -> tuple[bool, int | None, int | None]:
         if not snapshot.rs_eligible or not ordered_scores:
             return False, None, None
-        if int(snapshot.rs_rating or 0) <= int(snapshot.rs_rating_1d_ago or 0):
-            return False, None, None
 
         closes = self._cached_daily_closes_for_symbol(snapshot.symbol)
         if len(closes) < 505:
-            return False, None, None
+            current_rating = int(snapshot.rs_rating or 0)
+            prior_ratings = [
+                int(value)
+                for value in (
+                    snapshot.rs_rating_1d_ago,
+                    snapshot.rs_rating_1w_ago,
+                    snapshot.rs_rating_1m_ago,
+                )
+                if value not in (None, 0)
+            ]
+            if current_rating <= 0 or not prior_ratings:
+                return False, None, None
+            prior_high = max(prior_ratings)
+            # Some deploys only have the latest EOD bhavcopy snapshot and the
+            # stored 1D/1W/1M RS checkpoints, not a warm 520-bar chart cache.
+            # In that case keep the scanner useful by selecting stocks whose
+            # current EOD RS rating is at the highest available checkpoint.
+            return current_rating >= prior_high, current_rating, prior_high
 
         if snapshot.last_price > 0:
             closes[-1] = float(snapshot.last_price)
@@ -1178,7 +1193,7 @@ class DashboardService:
 
         current_rating = ratings[-1]
         prior_high = max(ratings[:-1])
-        return current_rating > prior_high, current_rating, prior_high
+        return current_rating >= prior_high, current_rating, prior_high
 
     @staticmethod
     def _filter_scan_items_by_liquidity(items: list[ScanMatch], min_liquidity_crore: float | None) -> list[ScanMatch]:
@@ -1206,6 +1221,16 @@ class DashboardService:
         value = closes[-(days + 1)]
         return round(float(value), 4)
 
+    @staticmethod
+    def _ema_from_closes(closes: list[float], period: int) -> float | None:
+        if len(closes) < period:
+            return None
+        multiplier = 2.0 / (period + 1)
+        ema = sum(closes[:period]) / period
+        for close in closes[period:]:
+            ema = (close * multiplier) + (ema * (1.0 - multiplier))
+        return round(float(ema), 2)
+
     @classmethod
     def _snapshot_with_contraction_history(cls, snapshot: StockSnapshot, bars: list[ChartBar]) -> StockSnapshot:
         closes = [round(float(bar.close), 2) for bar in bars if getattr(bar, "close", None) not in (None, 0)]
@@ -1218,6 +1243,23 @@ class DashboardService:
             "recent_volumes": volumes,
         }
 
+        last_close = closes[-1]
+        previous_close = closes[-2]
+        updates["last_price"] = last_close
+        updates["previous_close"] = previous_close
+        if previous_close > 0:
+            updates["change_pct"] = round(((last_close / previous_close) - 1.0) * 100.0, 2)
+        positive_volumes = [volume for volume in volumes if volume > 0]
+        if positive_volumes:
+            updates["volume"] = positive_volumes[-1]
+        if len(positive_volumes) >= 50:
+            updates["avg_volume_50d"] = int(sum(positive_volumes[-50:]) / 50)
+        if len(closes) >= 50:
+            updates["sma50"] = round(sum(closes[-50:]) / 50, 2)
+            ema50 = cls._ema_from_closes(closes, 50)
+            if ema50 is not None:
+                updates["ema50"] = ema50
+
         for field_name, days in (
             ("baseline_close_5d", 5),
             ("baseline_close_20d", 20),
@@ -1227,11 +1269,29 @@ class DashboardService:
             baseline_close = cls._baseline_close_from_bars(closes, days)
             if baseline_close is not None:
                 updates[field_name] = baseline_close
+                if baseline_close > 0:
+                    return_key = {
+                        "baseline_close_5d": "stock_return_5d",
+                        "baseline_close_20d": "stock_return_20d",
+                        "baseline_close_60d": "stock_return_60d",
+                        "baseline_close_63d": "stock_return_60d",
+                    }.get(field_name)
+                    if return_key:
+                        updates[return_key] = round(((last_close / baseline_close) - 1.0) * 100.0, 2)
 
         return snapshot.model_copy(update=updates)
 
-    async def _build_contraction_snapshots(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
-        candidates = [snapshot for snapshot in snapshots if self._contraction_snapshot_needs_enrichment(snapshot)]
+    async def _build_contraction_snapshots(
+        self,
+        snapshots: list[StockSnapshot],
+        *,
+        force_chart_refresh: bool = False,
+    ) -> list[StockSnapshot]:
+        candidates = (
+            snapshots
+            if force_chart_refresh
+            else [snapshot for snapshot in snapshots if self._contraction_snapshot_needs_enrichment(snapshot)]
+        )
         if not candidates:
             return snapshots
 
@@ -1251,16 +1311,38 @@ class DashboardService:
             snapshot_by_symbol[snapshot.symbol] = snapshot
         return [snapshot_by_symbol[snapshot.symbol] for snapshot in snapshots]
 
+    @staticmethod
+    def _contraction_recovery_candidates(snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
+        ranked: list[tuple[float, StockSnapshot]] = []
+        for snapshot in snapshots:
+            if snapshot.last_price <= 20:
+                continue
+            momentum = max(
+                float(snapshot.stock_return_5d or 0.0),
+                float(snapshot.stock_return_20d or 0.0),
+                float(snapshot.stock_return_60d or 0.0),
+                float(snapshot.stock_return_12m or 0.0),
+            )
+            trend_anchor = max(float(snapshot.ema50 or 0.0), float(snapshot.sma50 or 0.0))
+            if momentum < 3.0 and trend_anchor > 0 and snapshot.last_price <= trend_anchor:
+                continue
+            liquidity_score = float(snapshot.avg_rupee_volume_30d_crore or 0.0)
+            ranked.append((momentum + min(liquidity_score, 50.0) * 0.2, snapshot))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [snapshot for _, snapshot in ranked[:120]]
+
     async def _get_contraction_scan_items(
         self,
         snapshots: list[StockSnapshot],
         min_liquidity_crore: float | None,
     ) -> list[ScanMatch]:
         enriched_snapshots = await self._build_contraction_snapshots(snapshots)
-        return self._filter_scan_items_by_liquidity(
+        items = self._filter_scan_items_by_liquidity(
             run_scan(SCAN_BY_ID["contraction"], enriched_snapshots),
             min_liquidity_crore,
         )
+        return items
+
 
     async def get_scan_results(
         self,
@@ -3278,6 +3360,129 @@ class DashboardService:
         snapshots = await self._snapshots()
         snapshot = next((item for item in snapshots if item.symbol == symbol), None)
         return await self.provider.get_fundamentals(symbol=symbol, snapshot=snapshot)
+
+    @staticmethod
+    def _quarter_sort_key(period: str | None) -> tuple[int, int]:
+        if not period:
+            return (0, 0)
+        cleaned = str(period).replace("'", " ").replace("-", " ").strip()
+        parts = [part for part in cleaned.split() if part]
+        month_lookup = {
+            "jan": 1,
+            "feb": 2,
+            "mar": 3,
+            "apr": 4,
+            "may": 5,
+            "jun": 6,
+            "jul": 7,
+            "aug": 8,
+            "sep": 9,
+            "oct": 10,
+            "nov": 11,
+            "dec": 12,
+        }
+        month = month_lookup.get(parts[0][:3].lower(), 0) if parts else 0
+        year = 0
+        for part in reversed(parts):
+            if part.isdigit():
+                year = int(part)
+                if year < 100:
+                    year += 2000
+                break
+        return (year, month)
+
+    @staticmethod
+    def _growth_pct(current: float | None, previous: float | None) -> float | None:
+        if current is None or previous in (None, 0):
+            return None
+        return round(((float(current) / float(previous)) - 1) * 100.0, 2)
+
+    def _earnings_rows(self, quarterly_results: list) -> list[dict[str, object]]:
+        rows = [
+            item.model_dump(mode="python") if hasattr(item, "model_dump") else dict(item)
+            for item in quarterly_results
+        ]
+        rows.sort(key=lambda item: self._quarter_sort_key(str(item.get("period") or "")), reverse=True)
+        by_period = {str(item.get("period") or ""): item for item in rows}
+        older_first = list(reversed(rows))
+        for index, item in enumerate(older_first):
+            prior_quarter = older_first[index - 1] if index >= 1 else None
+            prior_year = older_first[index - 4] if index >= 4 else None
+            item["sales_qoq_pct"] = self._growth_pct(item.get("sales_crore"), prior_quarter.get("sales_crore") if prior_quarter else None)
+            item["sales_yoy_pct"] = self._growth_pct(item.get("sales_crore"), prior_year.get("sales_crore") if prior_year else None)
+            item["eps_qoq_pct"] = self._growth_pct(item.get("eps"), prior_quarter.get("eps") if prior_quarter else None)
+            item["eps_yoy_pct"] = self._growth_pct(item.get("eps"), prior_year.get("eps") if prior_year else None)
+            item["net_profit_qoq_pct"] = self._growth_pct(item.get("net_profit_crore"), prior_quarter.get("net_profit_crore") if prior_quarter else None)
+            item["net_profit_yoy_pct"] = self._growth_pct(item.get("net_profit_crore"), prior_year.get("net_profit_crore") if prior_year else None)
+            by_period[str(item.get("period") or "")] = item
+        return [by_period[str(item.get("period") or "")] for item in rows]
+
+    async def get_earnings_summary(self, symbol: str) -> dict[str, object]:
+        snapshots = await self._snapshots()
+        snapshot = next((item for item in snapshots if item.symbol == symbol), None)
+        provider_cached = getattr(self.provider, "get_fundamentals_cached", None)
+        fundamentals: CompanyFundamentals | None = None
+        if callable(provider_cached):
+            fundamentals = await provider_cached(symbol, snapshot=snapshot, max_age_hours=None)
+
+        source = "cache"
+        warnings: list[str] = []
+        if fundamentals is None or not fundamentals.quarterly_results:
+            fetch_page = getattr(self.provider, "_fetch_screener_company_page", None)
+            parse_page = getattr(self.provider, "_parse_screener_company_page", None)
+            if callable(fetch_page) and callable(parse_page):
+                try:
+                    html = await asyncio.wait_for(asyncio.to_thread(fetch_page, symbol), timeout=12.0)
+                    parsed = await asyncio.to_thread(parse_page, symbol, html)
+                    quarterly_results = parsed.get("quarterly_results") or []
+                    valuation = parsed.get("valuation") or {}
+                    source = "screener"
+                    return {
+                        "symbol": symbol,
+                        "name": (snapshot.name if snapshot else None) or parsed.get("name") or symbol,
+                        "sector": (snapshot.sector if snapshot else None) or parsed.get("sector"),
+                        "sub_sector": (snapshot.sub_sector if snapshot else None) or parsed.get("sub_sector"),
+                        "fetched_at": datetime.now(timezone.utc).isoformat(),
+                        "source": source,
+                        "valuation": {
+                            "market_cap_crore": snapshot.market_cap_crore if snapshot else valuation.get("market_cap_crore"),
+                            "pe_ratio": valuation.get("pe_ratio"),
+                            "roe_pct": valuation.get("roe_pct"),
+                            "operating_margin_pct": valuation.get("operating_margin_pct"),
+                        },
+                        "metrics": self._earnings_snapshot_metrics(snapshot),
+                        "quarterly_results": self._earnings_rows(quarterly_results),
+                        "data_warnings": [],
+                    }
+                except Exception as exc:
+                    warnings.append(f"Screener earnings refresh timed out or failed: {exc}")
+
+        valuation_payload = fundamentals.valuation.model_dump(mode="python") if fundamentals and fundamentals.valuation else {}
+        return {
+            "symbol": symbol,
+            "name": (snapshot.name if snapshot else None) or (fundamentals.name if fundamentals else symbol),
+            "sector": (snapshot.sector if snapshot else None) or (fundamentals.sector if fundamentals else None),
+            "sub_sector": (snapshot.sub_sector if snapshot else None) or (fundamentals.sub_sector if fundamentals else None),
+            "fetched_at": (fundamentals.fetched_at.isoformat() if fundamentals else datetime.now(timezone.utc).isoformat()),
+            "source": source,
+            "valuation": valuation_payload,
+            "metrics": self._earnings_snapshot_metrics(snapshot),
+            "quarterly_results": self._earnings_rows(fundamentals.quarterly_results if fundamentals else []),
+            "data_warnings": warnings,
+        }
+
+    @staticmethod
+    def _earnings_snapshot_metrics(snapshot: StockSnapshot | None) -> dict[str, float | None]:
+        if snapshot is None:
+            return {}
+        return {
+            "pct_from_52w_high": snapshot.pct_from_52w_high,
+            "pct_from_52w_low": snapshot.pct_from_52w_low,
+            "adr_pct_20": snapshot.adr_pct_20,
+            "relative_volume": snapshot.relative_volume,
+            "turnover_1d_crore": round((snapshot.volume * snapshot.last_price) / 10_000_000, 2),
+            "avg_turnover_50d_crore": round((snapshot.avg_volume_50d * snapshot.last_price) / 10_000_000, 2) if snapshot.avg_volume_50d else None,
+        }
 
     async def get_gap_up_openers(
         self,
