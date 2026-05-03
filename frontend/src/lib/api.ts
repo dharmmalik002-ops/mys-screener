@@ -144,6 +144,10 @@ export type WatchlistsStateResponse = {
 type ScanRequestOptions = {
   includeSectorSummaries?: boolean;
   minLiquidityCrore?: number | null;
+  // Expansion-scanner-only overrides. The route ignores these for any other
+  // scan_id, so the panel can leave them undefined when not relevant.
+  expansionMinChangePct?: number | null;
+  expansionMinRelativeVolume?: number | null;
 };
 
 export type MarketKey = "india";
@@ -1897,6 +1901,12 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
   }
   if (typeof options?.minLiquidityCrore === "number" && Number.isFinite(options.minLiquidityCrore)) {
     params.set("min_liquidity_crore", String(options.minLiquidityCrore));
+  }
+  if (typeof options?.expansionMinChangePct === "number" && Number.isFinite(options.expansionMinChangePct)) {
+    params.set("expansion_min_change_pct", String(options.expansionMinChangePct));
+  }
+  if (typeof options?.expansionMinRelativeVolume === "number" && Number.isFinite(options.expansionMinRelativeVolume)) {
+    params.set("expansion_min_relative_volume", String(options.expansionMinRelativeVolume));
   }
   const query = params.toString();
   if (!query) {

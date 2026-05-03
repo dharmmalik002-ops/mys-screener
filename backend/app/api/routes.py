@@ -59,12 +59,20 @@ def build_router(service):
         market: str = Query(default="india"),
         include_sector_summaries: bool = Query(default=False),
         min_liquidity_crore: float | None = Query(default=None, ge=0.0),
+        # Expansion scanner thresholds — exposed so the panel can let users
+        # tune the day-change% and 50-day RVOL gates without rebuilding the
+        # backend. Falls back to the strict defaults (6.5%, 3.0x) when
+        # omitted, preserving the IBD-style screen behaviour.
+        expansion_min_change_pct: float | None = Query(default=None, ge=0.0, le=100.0),
+        expansion_min_relative_volume: float | None = Query(default=None, ge=0.0, le=50.0),
     ):
         try:
             return await resolve_service(market).get_scan_results(
                 scan_id,
                 include_sector_summaries=include_sector_summaries,
                 min_liquidity_crore=min_liquidity_crore,
+                expansion_min_change_pct=expansion_min_change_pct,
+                expansion_min_relative_volume=expansion_min_relative_volume,
             )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=f"Unknown scan: {scan_id}") from error
@@ -322,12 +330,16 @@ def build_router(service):
         scan_id: str,
         include_sector_summaries: bool = Query(default=False),
         min_liquidity_crore: float | None = Query(default=None, ge=0.0),
+        expansion_min_change_pct: float | None = Query(default=None, ge=0.0, le=100.0),
+        expansion_min_relative_volume: float | None = Query(default=None, ge=0.0, le=50.0),
     ):
         try:
             return await resolve_service(market_name).get_scan_results(
                 scan_id,
                 include_sector_summaries=include_sector_summaries,
                 min_liquidity_crore=min_liquidity_crore,
+                expansion_min_change_pct=expansion_min_change_pct,
+                expansion_min_relative_volume=expansion_min_relative_volume,
             )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=f"Unknown scan: {scan_id}") from error

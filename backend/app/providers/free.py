@@ -487,6 +487,26 @@ class FreeMarketDataProvider:
             return None
         return datetime.fromtimestamp(self.snapshot_cache_path.stat().st_mtime, tz=timezone.utc)
 
+    def _earnings_recent_year_floor(self) -> int:
+        # Anchor "what counts as a recent quarterly year" to the snapshot's
+        # session date so the rule degrades gracefully if the system clock is
+        # ahead of the data. Indian companies file Q4 results 1-3 months
+        # after fiscal year end, so we accept the snapshot's year and the one
+        # before it as "fresh enough".
+        anchor: datetime | None = None
+        try:
+            patch_path = self._bhavcopy_status_path()
+            if patch_path.exists():
+                payload = json.loads(patch_path.read_text(encoding="utf-8"))
+                date_text = payload.get("date") if isinstance(payload, dict) else None
+                if isinstance(date_text, str):
+                    anchor = datetime.fromisoformat(date_text)
+        except Exception:
+            anchor = None
+        if anchor is None:
+            anchor = self.get_snapshot_updated_at() or datetime.now(timezone.utc)
+        return anchor.year - 1
+
     def _load_valid_cached_snapshot_rows(self) -> list[dict[str, Any]]:
         rows = self._load_json_rows(self.snapshot_cache_path)
         if not rows or not self._snapshot_schema_ok(rows):
@@ -1900,13 +1920,35 @@ class FreeMarketDataProvider:
             f"{SCREENER_URL}/{symbol}/consolidated/",
             f"{SCREENER_URL}/{symbol}/",
         ]
+        # Pick the URL whose page actually contains a recent year in its
+        # Quarterly Results section. Some tickers (e.g. JAYNECOIND) have a
+        # /consolidated/ page that legitimately stops at 2016 because the
+        # filing was discontinued, while /{symbol}/ (standalone) carries the
+        # live quarterly cadence. Returning the first 200 like the old code
+        # silently surfaced 10-year-old quarters as "latest".
+        recent_year_floor = self._earnings_recent_year_floor()
         with httpx.Client(timeout=30, headers=headers, follow_redirects=True) as client:
+            best_html: str | None = None
+            best_year = -1
             for url in candidates:
-                response = client.get(url)
+                try:
+                    response = client.get(url)
+                except Exception:
+                    continue
                 if response.status_code >= 400:
                     continue
-                if "Quarterly Results" in response.text and "Profit & Loss" in response.text:
-                    return response.text
+                text = response.text
+                if "Quarterly Results" not in text or "Profit & Loss" not in text:
+                    continue
+                year_tokens = [int(match) for match in re.findall(r"20\d{2}", text)]
+                latest_year = max(year_tokens) if year_tokens else 0
+                if latest_year >= recent_year_floor:
+                    return text
+                if latest_year > best_year:
+                    best_html = text
+                    best_year = latest_year
+            if best_html is not None:
+                return best_html
         raise RuntimeError(f"Could not load Screener page for {symbol}")
 
     def _parse_screener_company_page(self, symbol: str, html: str) -> dict[str, Any]:
@@ -2565,11 +2607,19 @@ class FreeMarketDataProvider:
     def _select_table(self, tables: list[pd.DataFrame], table_type: str) -> pd.DataFrame | None:
         best_frame: pd.DataFrame | None = None
         best_score = -1
+        # The scanner's data is anchored to the snapshot's "as-of" date and we
+        # only ever care about quarterly / profit-loss tables that include
+        # results from the last ~2 years. Hard-coding "recent year" against
+        # today's clock would make this brittle, so derive it from the
+        # snapshot session date when available.
+        recent_year_floor = self._earnings_recent_year_floor()
         for frame in tables:
             if frame.empty or frame.shape[1] < 3:
                 continue
             first_column = frame.iloc[:, 0].astype(str).map(self._normalize_label)
             headers = " ".join(self._clean_text(column).lower() for column in frame.columns[1:])
+            year_tokens = [int(match) for match in re.findall(r"20\d{2}", headers)]
+            latest_year = max(year_tokens) if year_tokens else 0
             score = 0
             if table_type == "quarterly":
                 if {"sales", "netprofit"}.issubset(set(first_column)):
@@ -2578,6 +2628,14 @@ class FreeMarketDataProvider:
                     score += 4
                 if "ttm" in headers:
                     score -= 1
+                # Heavily favour quarterly tables that actually contain a
+                # recent year; penalise ones where the freshest column is
+                # already 2+ years stale (the bug for JAYNECOIND was a yearly
+                # P&L spillover being scored above the real quarterly table).
+                if latest_year >= recent_year_floor:
+                    score += 6
+                elif latest_year and latest_year < recent_year_floor - 1:
+                    score -= 8
             elif table_type == "profit_loss":
                 if {"sales", "netprofit"}.issubset(set(first_column)):
                     score += 5
@@ -2654,7 +2712,46 @@ class FreeMarketDataProvider:
             for index, period in enumerate(periods)
             if period
         ]
-        return results[-8:]
+        # Sort by parsed period date and keep the 8 most recent quarters.
+        # The previous `results[-8:]` slice assumed screener.in always lays
+        # out columns oldest-on-the-left → newest-on-the-right. For some
+        # tickers (e.g. JAYNECOIND) the column order is reversed or the
+        # table contains a tail of stale rows, and the slice silently
+        # returned 8 quarters from 2016 as if they were the latest. Date
+        # parsing makes that impossible — if the screener data genuinely
+        # stops in 2016, we surface those (and the YoY/QoQ growth deltas
+        # are still meaningful for the panel) rather than mis-labelling
+        # them as today.
+        results.sort(key=self._period_sort_key, reverse=True)
+        return results[:8]
+
+    @staticmethod
+    def _period_sort_key(item: "QuarterlyResultItem") -> tuple[int, int]:
+        # Convert "Mar 2026" / "Q4 FY26" / "March 2026" → (year, month).
+        # Anything we can't parse sorts to the bottom (year=0).
+        text = (item.period or "").strip().lower()
+        if not text:
+            return (0, 0)
+        text = text.replace("'", " ").replace("-", " ").replace("/", " ").strip()
+        tokens = text.split()
+        month_lookup = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        }
+        month = 0
+        year = 0
+        for token in tokens:
+            key = token[:3].lower()
+            if key in month_lookup and month == 0:
+                month = month_lookup[key]
+                continue
+            digits = "".join(ch for ch in token if ch.isdigit())
+            if digits and year == 0:
+                parsed = int(digits)
+                if parsed < 100:
+                    parsed += 2000
+                year = parsed
+        return (year, month)
 
     def _parse_profit_loss_table(self, frame: pd.DataFrame | None) -> list[ProfitLossItem]:
         if frame is None:

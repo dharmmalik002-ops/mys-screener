@@ -13,6 +13,7 @@ import type {
 } from "./components/ChartPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
+import { Panel } from "./components/Panel";
 import {
   type ChartBar,
   getChart,
@@ -1474,6 +1475,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [appliedReturnsFilters, setAppliedReturnsFilters] = useState<ReturnsScanRequest>(initialScannerSettings.appliedReturnsFilters);
   const [consolidatingFilters, setConsolidatingFilters] = useState<ConsolidatingScanRequest>(initialScannerSettings.consolidatingFilters);
   const [appliedConsolidatingFilters, setAppliedConsolidatingFilters] = useState<ConsolidatingScanRequest>(initialScannerSettings.appliedConsolidatingFilters);
+  // Expansion scanner overrides — let users widen the day-change% / RVOL gates
+  // when the IBD-default 6.5%/3.0x feels too strict for the current data.
+  const [expansionMinChangePct, setExpansionMinChangePct] = useState<number>(6.5);
+  const [appliedExpansionMinChangePct, setAppliedExpansionMinChangePct] = useState<number>(6.5);
+  const [expansionMinRelativeVolume, setExpansionMinRelativeVolume] = useState<number>(3.0);
+  const [appliedExpansionMinRelativeVolume, setAppliedExpansionMinRelativeVolume] = useState<number>(3.0);
   const [sectorSortBy, setSectorSortBy] = useState<SectorSortBy>("1D");
   const [sectorSortOrder, setSectorSortOrder] = useState<"asc" | "desc">("desc");
   const [sectorVisibleSymbols, setSectorVisibleSymbols] = useState<string[]>([]);
@@ -2925,7 +2932,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return getScanResults("ipo", activeMarket, options);
     }
     if (activeScanner === "ema-expansion") {
-      return getScanResults("ema-expansion", activeMarket, options);
+      return getScanResults("ema-expansion", activeMarket, {
+        ...options,
+        expansionMinChangePct: appliedExpansionMinChangePct,
+        expansionMinRelativeVolume: appliedExpansionMinRelativeVolume,
+      });
     }
     if (activeScanner === "contraction") {
       return getScanResults("contraction", activeMarket, options);
@@ -3014,7 +3025,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return getScanResults("ipo", activeMarket, options);
     }
     if (preset.mode === "ema-expansion") {
-      return getScanResults("ema-expansion", activeMarket, options);
+      return getScanResults("ema-expansion", activeMarket, {
+        ...options,
+        expansionMinChangePct: appliedExpansionMinChangePct,
+        expansionMinRelativeVolume: appliedExpansionMinRelativeVolume,
+      });
     }
     if (preset.mode === "contraction") {
       return getScanResults("contraction", activeMarket, options);
@@ -4764,6 +4779,64 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onApply={handleApplyConsolidatingScan}
                                     onReset={handleResetConsolidatingScan}
                                   />
+                                )
+                              : activeScanner === "ema-expansion"
+                                ? (
+                                  <Panel
+                                    title="Expansion thresholds"
+                                    subtitle="Stocks with day change ≥ X% AND 50-day RVOL > Yx (plus liquidity floors). Defaults follow IBD's expansion screen."
+                                    actions={(
+                                      <div className="custom-panel-actions">
+                                        <button
+                                          type="button"
+                                          className="nav-button ghost"
+                                          onClick={() => {
+                                            setAppliedExpansionMinChangePct(expansionMinChangePct);
+                                            setAppliedExpansionMinRelativeVolume(expansionMinRelativeVolume);
+                                          }}
+                                        >
+                                          Apply
+                                        </button>
+                                        <button
+                                          type="button"
+                                          className="nav-button ghost"
+                                          onClick={() => {
+                                            setExpansionMinChangePct(6.5);
+                                            setExpansionMinRelativeVolume(3.0);
+                                            setAppliedExpansionMinChangePct(6.5);
+                                            setAppliedExpansionMinRelativeVolume(3.0);
+                                          }}
+                                        >
+                                          Reset
+                                        </button>
+                                      </div>
+                                    )}
+                                  >
+                                    <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
+                                      <label>
+                                        <span>Min Day Change %</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={100}
+                                          step={0.1}
+                                          value={expansionMinChangePct}
+                                          onChange={(event) => setExpansionMinChangePct(Number(event.target.value) || 0)}
+                                        />
+                                      </label>
+                                      <label>
+                                        <span>Min 50-Day RVOL (x)</span>
+                                        <input
+                                          type="number"
+                                          min={0}
+                                          max={50}
+                                          step={0.1}
+                                          value={expansionMinRelativeVolume}
+                                          onChange={(event) => setExpansionMinRelativeVolume(Number(event.target.value) || 0)}
+                                        />
+                                      </label>
+                                    </div>
+                                  </Panel>
                                 )
                               : activeScanner === "minervini-1m"
                                 ? (

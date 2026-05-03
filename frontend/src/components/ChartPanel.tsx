@@ -74,6 +74,8 @@ type NotesWidgetState = {
   noteFontSize: number;
 };
 
+type EarningsGrowthMode = "yoy" | "qoq";
+
 type EarningsWidgetState = {
   enabled: boolean;
   x: number;
@@ -82,6 +84,7 @@ type EarningsWidgetState = {
   height: number;
   accentColor: string;
   quarters: number;
+  growthMode: EarningsGrowthMode;
 };
 
 type RvolPoint = {
@@ -370,6 +373,7 @@ const DEFAULT_EARNINGS_WIDGET: EarningsWidgetState = {
   height: 260,
   accentColor: "#4bf0b3",
   quarters: 4,
+  growthMode: "yoy",
 };
 const DEFAULT_RVOL_WIDGET: RvolWidgetSettings = {
   enabled: false,
@@ -920,6 +924,7 @@ function readEarningsWidgetState(): EarningsWidgetState {
       height: clamp(Number(parsed.height ?? DEFAULT_EARNINGS_WIDGET.height), 190, 560),
       accentColor: typeof parsed.accentColor === "string" ? parsed.accentColor : DEFAULT_EARNINGS_WIDGET.accentColor,
       quarters: clamp(Math.round(Number(parsed.quarters ?? DEFAULT_EARNINGS_WIDGET.quarters)), 1, 8),
+      growthMode: parsed.growthMode === "qoq" ? "qoq" : "yoy",
     };
   } catch {
     return DEFAULT_EARNINGS_WIDGET;
@@ -3445,6 +3450,23 @@ export function ChartPanel({
                   />
                   <strong>{earningsWidget.quarters}</strong>
                 </label>
+                <label className="pocket-pivot-control">
+                  <span>Growth</span>
+                  <button
+                    type="button"
+                    className={earningsWidget.growthMode === "yoy" ? "earnings-growth-toggle active" : "earnings-growth-toggle"}
+                    onClick={() => setEarningsWidget((current) => ({ ...current, growthMode: "yoy" }))}
+                  >
+                    YoY
+                  </button>
+                  <button
+                    type="button"
+                    className={earningsWidget.growthMode === "qoq" ? "earnings-growth-toggle active" : "earnings-growth-toggle"}
+                    onClick={() => setEarningsWidget((current) => ({ ...current, growthMode: "qoq" }))}
+                  >
+                    QoQ
+                  </button>
+                </label>
               </div>
               <div className="earnings-widget-body">
                 {!symbol ? (
@@ -3468,23 +3490,27 @@ export function ChartPanel({
                         <tr>
                           <th>Qtr</th>
                           <th>EPS</th>
-                          <th>YoY%</th>
+                          <th>{earningsWidget.growthMode === "qoq" ? "QoQ%" : "YoY%"}</th>
                           <th>Sales</th>
-                          <th>YoY%</th>
+                          <th>{earningsWidget.growthMode === "qoq" ? "QoQ%" : "YoY%"}</th>
                           <th>OPM</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {visibleQuarterlyResults.map((item) => (
-                          <tr key={`earnings-${item.period}`}>
-                            <td>{item.period}</td>
-                            <td className={(item.eps ?? 0) >= 0 ? "positive" : "negative"}>{formatValue(item.eps, 1)}</td>
-                            <td className={(item.eps_yoy_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(item.eps_yoy_pct)}</td>
-                            <td>{formatValue(item.sales_crore, 1)}</td>
-                            <td className={(item.sales_yoy_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(item.sales_yoy_pct)}</td>
-                            <td className={(item.operating_margin_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatPercentValue(item.operating_margin_pct)}</td>
-                          </tr>
-                        ))}
+                        {visibleQuarterlyResults.map((item) => {
+                          const epsGrowth = earningsWidget.growthMode === "qoq" ? item.eps_qoq_pct : item.eps_yoy_pct;
+                          const salesGrowth = earningsWidget.growthMode === "qoq" ? item.sales_qoq_pct : item.sales_yoy_pct;
+                          return (
+                            <tr key={`earnings-${item.period}`}>
+                              <td>{item.period}</td>
+                              <td className={(item.eps ?? 0) >= 0 ? "positive" : "negative"}>{formatValue(item.eps, 1)}</td>
+                              <td className={(epsGrowth ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(epsGrowth)}</td>
+                              <td>{formatValue(item.sales_crore, 1)}</td>
+                              <td className={(salesGrowth ?? 0) >= 0 ? "positive" : "negative"}>{formatSignedPercentValue(salesGrowth)}</td>
+                              <td className={(item.operating_margin_pct ?? 0) >= 0 ? "positive" : "negative"}>{formatPercentValue(item.operating_margin_pct)}</td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                     <div className="earnings-widget-range">

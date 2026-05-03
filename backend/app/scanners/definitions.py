@@ -654,9 +654,18 @@ def run_e_and_c_scan(
 
 
 def _ema_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    return _ema_expansion_with_thresholds(snapshot, min_change_pct=6.5, min_relative_volume=3.0)
+
+
+def _ema_expansion_with_thresholds(
+    snapshot: StockSnapshot,
+    *,
+    min_change_pct: float,
+    min_relative_volume: float,
+) -> tuple[float, list[str]] | None:
     avg_vol_50 = snapshot.avg_volume_50d or 0
     volume = snapshot.volume or 0
-    
+
     # 1. 50-day average volume floor (>= 25,000)
     # 2. Daily volume floor (> 50,000)
     # 3. Price floor (> 30)
@@ -665,17 +674,42 @@ def _ema_expansion(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
     rvol_50 = volume / avg_vol_50
 
-    # 4. Change % floor (>= 6.5%)
-    # 5. RVOL floor (> 3.0x)
-    if snapshot.change_pct >= 6.5 and rvol_50 > 3.0:
+    if snapshot.change_pct >= min_change_pct and rvol_50 > min_relative_volume:
         score = 75 + rvol_50 * 2 + snapshot.change_pct
         return round(score, 2), [
             "Expansion setup",
             f"Daily Change: {snapshot.change_pct}%",
             f"50-Day RVOL: {rvol_50:.2f}x",
-            f"Price: {snapshot.last_price:.2f}"
+            f"Price: {snapshot.last_price:.2f}",
         ]
     return None
+
+
+def run_expansion_scan(
+    snapshots: list[StockSnapshot],
+    *,
+    min_change_pct: float = 6.5,
+    min_relative_volume: float = 3.0,
+) -> list[ScanMatch]:
+    """Re-run the expansion scan with user-tunable thresholds.
+
+    The static `ema-expansion` scan in SCANS uses the IBD-default 6.5%/3.0x
+    gates. The route also accepts query overrides so the panel can let users
+    relax or tighten those gates without a Custom Scanner round-trip.
+    """
+    matches: list[ScanMatch] = []
+    for snapshot in snapshots:
+        result = _ema_expansion_with_thresholds(
+            snapshot,
+            min_change_pct=min_change_pct,
+            min_relative_volume=min_relative_volume,
+        )
+        if result is None:
+            continue
+        score, reasons = result
+        matches.append(build_scan_match("ema-expansion", snapshot, score, reasons))
+    matches.sort(key=lambda item: item.score, reverse=True)
+    return matches
 
 
 def _pct_change_between(current: float | None, previous: float | None) -> float | None:

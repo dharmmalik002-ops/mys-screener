@@ -76,6 +76,7 @@ from app.scanners.definitions import (
     SCANS,
     run_consolidating_scan,
     run_custom_scan,
+    run_expansion_scan,
     run_scan,
     run_returns_scan,
     scan_catalog_with_counts,
@@ -1349,6 +1350,8 @@ class DashboardService:
         scan_id: str,
         include_sector_summaries: bool = True,
         min_liquidity_crore: float | None = None,
+        expansion_min_change_pct: float | None = None,
+        expansion_min_relative_volume: float | None = None,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         scanners, results = self._scan_catalog(snapshots)
@@ -1358,10 +1361,38 @@ class DashboardService:
 
         if scan_id == "contraction":
             items = await self._get_contraction_scan_items(snapshots, min_liquidity_crore)
+        elif scan_id == "ema-expansion" and (
+            expansion_min_change_pct is not None or expansion_min_relative_volume is not None
+        ):
+            # User-tunable thresholds — re-run the expansion scan with the
+            # overrides instead of returning the cached IBD-default 6.5/3.0
+            # output. This lets the panel let users dial the gates without a
+            # custom-scan round-trip.
+            min_change = (
+                float(expansion_min_change_pct)
+                if expansion_min_change_pct is not None
+                else 6.5
+            )
+            min_rvol = (
+                float(expansion_min_relative_volume)
+                if expansion_min_relative_volume is not None
+                else 3.0
+            )
+            items = self._filter_scan_items_by_liquidity(
+                run_expansion_scan(snapshots, min_change_pct=min_change, min_relative_volume=min_rvol),
+                min_liquidity_crore,
+            )
         else:
             items = self._filter_scan_items_by_liquidity(results[scan_id], min_liquidity_crore)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
-        request_signature = scan_id if min_liquidity_crore is None else f"{scan_id}:{min_liquidity_crore:.2f}"
+        signature_parts = [scan_id]
+        if min_liquidity_crore is not None:
+            signature_parts.append(f"liq={min_liquidity_crore:.2f}")
+        if expansion_min_change_pct is not None:
+            signature_parts.append(f"chg={expansion_min_change_pct:.2f}")
+        if expansion_min_relative_volume is not None:
+            signature_parts.append(f"rvol={expansion_min_relative_volume:.2f}")
+        request_signature = ":".join(signature_parts)
         return await self._scan_results_response(
             scan=descriptor,
             scan_key=scan_id,
@@ -3420,6 +3451,17 @@ class DashboardService:
     async def get_earnings_summary(self, symbol: str) -> dict[str, object]:
         snapshots = await self._snapshots()
         snapshot = next((item for item in snapshots if item.symbol == symbol), None)
+
+        # 1. Disk cache lookup (6-hour TTL). The chart widget hits this
+        # endpoint on every symbol change, and Screener results don't move
+        # on intra-day cadence — caching avoids both Screener rate limits
+        # and the 25s timeout window the panel sometimes surfaces as
+        # "timed out".
+        cached_payload = self._read_earnings_cache(symbol)
+        if cached_payload is not None and self._earnings_payload_is_fresh(cached_payload):
+            cached_payload["metrics"] = self._earnings_snapshot_metrics(snapshot)
+            return cached_payload
+
         provider_cached = getattr(self.provider, "get_fundamentals_cached", None)
         fundamentals: CompanyFundamentals | None = None
         if callable(provider_cached):
@@ -3432,12 +3474,15 @@ class DashboardService:
             parse_page = getattr(self.provider, "_parse_screener_company_page", None)
             if callable(fetch_page) and callable(parse_page):
                 try:
-                    html = await asyncio.wait_for(asyncio.to_thread(fetch_page, symbol), timeout=12.0)
+                    # 25s budget so the dual-URL retry inside the screener
+                    # fetch (consolidated → standalone) has room to resolve
+                    # before the panel surfaces a "timed out" toast.
+                    html = await asyncio.wait_for(asyncio.to_thread(fetch_page, symbol), timeout=25.0)
                     parsed = await asyncio.to_thread(parse_page, symbol, html)
                     quarterly_results = parsed.get("quarterly_results") or []
                     valuation = parsed.get("valuation") or {}
                     source = "screener"
-                    return {
+                    payload = {
                         "symbol": symbol,
                         "name": (snapshot.name if snapshot else None) or parsed.get("name") or symbol,
                         "sector": (snapshot.sector if snapshot else None) or parsed.get("sector"),
@@ -3454,8 +3499,20 @@ class DashboardService:
                         "quarterly_results": self._earnings_rows(quarterly_results),
                         "data_warnings": [],
                     }
+                    # Persist the freshly-parsed payload so the next chart
+                    # load (or a parallel tab) skips the 25s round-trip.
+                    self._write_earnings_cache(symbol, payload)
+                    return payload
                 except Exception as exc:
                     warnings.append(f"Screener earnings refresh timed out or failed: {exc}")
+                    # If the live fetch failed, fall back to a stale cache
+                    # payload before returning the fundamentals-only response
+                    # — the table is more useful than an empty one even if
+                    # it's a few hours old.
+                    if cached_payload is not None:
+                        cached_payload["metrics"] = self._earnings_snapshot_metrics(snapshot)
+                        cached_payload.setdefault("data_warnings", []).extend(warnings)
+                        return cached_payload
 
         valuation_payload = fundamentals.valuation.model_dump(mode="python") if fundamentals and fundamentals.valuation else {}
         return {
@@ -3483,6 +3540,87 @@ class DashboardService:
             "turnover_1d_crore": round((snapshot.volume * snapshot.last_price) / 10_000_000, 2),
             "avg_turnover_50d_crore": round((snapshot.avg_volume_50d * snapshot.last_price) / 10_000_000, 2) if snapshot.avg_volume_50d else None,
         }
+
+    # ── Earnings disk cache (per-symbol JSON, 6-hour TTL) ──────────────────
+    # The chart widget queries /api/earnings/<symbol> on every symbol change.
+    # Without a persistent cache it cold-fetches Screener every time, which
+    # both burns the 25s timeout window and risks rate limits. Mirrors the
+    # framework the user proposed (scrape on a slow cadence, expose own API
+    # backed by a local store) without the GitHub-Actions / DB dependency.
+    EARNINGS_CACHE_TTL_SECONDS = 6 * 60 * 60
+
+    def _earnings_cache_dir(self) -> Path:
+        backend_root = getattr(self.provider, "backend_root", None)
+        base = Path(backend_root) if backend_root else Path(__file__).resolve().parent.parent.parent
+        cache_dir = base / "data" / "earnings_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def _earnings_cache_path(self, symbol: str) -> Path:
+        safe = "".join(ch for ch in (symbol or "").upper() if ch.isalnum() or ch in {"-", "_"})
+        return self._earnings_cache_dir() / f"{safe or 'unknown'}.json"
+
+    def _read_earnings_cache(self, symbol: str) -> dict[str, object] | None:
+        path = self._earnings_cache_path(symbol)
+        if not path.exists():
+            return None
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return None
+        if (time.time() - mtime) > self.EARNINGS_CACHE_TTL_SECONDS:
+            return None
+        try:
+            return json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+
+    def _write_earnings_cache(self, symbol: str, payload: dict[str, object]) -> None:
+        path = self._earnings_cache_path(symbol)
+        try:
+            path.write_text(json.dumps(payload, default=str), encoding="utf-8")
+        except OSError:
+            # Disk write failures shouldn't break the request — the in-memory
+            # response is still returned to the caller.
+            pass
+
+    def _earnings_payload_is_fresh(self, payload: dict[str, object]) -> bool:
+        # A cached payload is "fresh enough" only if its top quarterly entry
+        # is within ~18 months of the snapshot date. Without this, the
+        # JAYNECOIND-style scrape that surfaced 2016 quarters as "latest"
+        # would survive in cache forever.
+        quarters = payload.get("quarterly_results") or []
+        if not isinstance(quarters, list) or not quarters:
+            return False
+        latest = quarters[0]
+        if not isinstance(latest, dict):
+            return False
+        period_text = str(latest.get("period") or "").strip().lower()
+        if not period_text:
+            return False
+        month_lookup = {
+            "jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6,
+            "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12,
+        }
+        tokens = period_text.replace("'", " ").replace("-", " ").split()
+        month = 0
+        year = 0
+        for token in tokens:
+            key = token[:3].lower()
+            if key in month_lookup and month == 0:
+                month = month_lookup[key]
+                continue
+            digits = "".join(ch for ch in token if ch.isdigit())
+            if digits and year == 0:
+                parsed = int(digits)
+                if parsed < 100:
+                    parsed += 2000
+                year = parsed
+        if not year:
+            return False
+        anchor = self._snapshot_updated_at()
+        latest_age_months = (anchor.year - year) * 12 + (anchor.month - max(month, 1))
+        return latest_age_months <= 18
 
     async def get_gap_up_openers(
         self,
