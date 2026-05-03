@@ -376,6 +376,158 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
     return result
 
 
+def _fetch_yfinance_universe_bars(trade_date: date) -> dict[str, dict] | None:
+    """Fetch OHLCV from yfinance for every `.NS` ticker in the universe at trade_date.
+
+    Returns ``{SYMBOL: {"o","h","l","c","v","p"}}`` or None on failure.
+
+    Used to enrich the BSE bhavcopy with NSE-side volumes (BSE bhavcopy only
+    captures the BSE-segment volume, which is a small fraction of total Indian
+    trading for NSE-primary names like MTARTECH / MEESHO / HFCL — making RVOL
+    look artificially low and breaking the Expansion scanner). Also supplies
+    OHLCV for NSE-only names that BSE doesn't list at all (BSE Ltd., CDSL,
+    MARINE).
+    """
+    try:
+        import yfinance as yf
+        import pandas as pd
+    except ImportError:
+        logger.warning("yfinance/pandas not installed; skipping volume enrichment")
+        return None
+
+    universe_path = DATA_DIR / "free_universe.json"
+    if not universe_path.exists():
+        return None
+
+    try:
+        universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    if not isinstance(universe, list):
+        return None
+
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    if not tickers:
+        return None
+
+    start_str = (trade_date - timedelta(days=7)).strftime("%Y-%m-%d")
+    end_str = (trade_date + timedelta(days=1)).strftime("%Y-%m-%d")
+    target_str = trade_date.isoformat()
+
+    def _row_for_target(sub) -> tuple[dict, float] | None:
+        if sub is None or sub.empty:
+            return None
+        sub = sub.dropna(subset=["Close"])
+        if sub.empty:
+            return None
+        idx = pd.to_datetime(sub.index).strftime("%Y-%m-%d")
+        mask = idx == target_str
+        if not mask.any():
+            return None
+        target_row = sub[mask].iloc[-1]
+        c = float(target_row.get("Close") or 0)
+        if c <= 0:
+            return None
+        prev_close = 0.0
+        prior = sub[idx < target_str]
+        if not prior.empty:
+            try:
+                prev_close = float(prior.iloc[-1].get("Close") or 0)
+            except (TypeError, ValueError):
+                prev_close = 0.0
+        return (
+            {
+                "o": float(target_row.get("Open") or 0),
+                "h": float(target_row.get("High") or 0),
+                "l": float(target_row.get("Low") or 0),
+                "c": c,
+                "v": int(float(target_row.get("Volume") or 0)),
+            },
+            prev_close,
+        )
+
+    result: dict[str, dict] = {}
+    CHUNK = 200
+    for i in range(0, len(tickers), CHUNK):
+        chunk = tickers[i : i + CHUNK]
+        try:
+            df = yf.download(
+                chunk,
+                start=start_str,
+                end=end_str,
+                auto_adjust=False,
+                progress=False,
+                threads=True,
+            )
+        except Exception as exc:
+            logger.warning("yfinance enrich chunk %s failed: %s", i // CHUNK + 1, exc)
+            continue
+        if df is None or df.empty:
+            continue
+        if isinstance(df.columns, pd.MultiIndex):
+            for ticker in chunk:
+                sym = ticker.replace(".NS", "")
+                try:
+                    sub = df.xs(ticker, axis=1, level=1)
+                except Exception:
+                    continue
+                extracted = _row_for_target(sub)
+                if extracted is None:
+                    continue
+                rec, prev_close = extracted
+                rec["p"] = prev_close
+                result[sym] = rec
+        else:
+            sym = chunk[0].replace(".NS", "")
+            extracted = _row_for_target(df)
+            if extracted is None:
+                continue
+            rec, prev_close = extracted
+            rec["p"] = prev_close
+            result[sym] = rec
+
+    if not result:
+        return None
+    logger.info("yfinance enrichment: %s symbols for %s", len(result), trade_date.isoformat())
+    return result
+
+
+def _enrich_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date) -> dict[str, dict]:
+    """Overlay yfinance NSE volumes on BSE rows + add NSE-only symbols.
+
+    BSE record's OHLC and "p" are kept (they're authoritative for BSE-listed
+    names); only "v" is replaced with the yfinance NSE volume so RVOL is
+    apples-to-apples against the snapshot's NSE-based avg_volume_20d. Symbols
+    present only on yfinance (NSE-only listings) are added with full OHLCV.
+    """
+    yf_symbols = _fetch_yfinance_universe_bars(trade_date)
+    if not yf_symbols:
+        logger.warning("yfinance enrichment unavailable; using raw BSE volumes (RVOL may be understated)")
+        return bse_symbols
+
+    merged = dict(bse_symbols)
+    overlaid = 0
+    added = 0
+    for sym, yf_rec in yf_symbols.items():
+        yf_vol = int(yf_rec.get("v") or 0)
+        if sym in merged:
+            if yf_vol > 0:
+                merged[sym] = {**merged[sym], "v": yf_vol}
+                overlaid += 1
+        else:
+            # NSE-only symbol (e.g. BSE Ltd., CDSL, MARINE) — add full record.
+            if yf_rec.get("c"):
+                merged[sym] = yf_rec
+                added += 1
+    logger.info(
+        "BSE+yfinance merge: %s BSE rows, %s NSE-volume overlaid, %s NSE-only added",
+        len(bse_symbols),
+        overlaid,
+        added,
+    )
+    return merged
+
+
 def _patch_already_current(target_date: date) -> bool:
     """Return True if bhavcopy_patch.json already has data for target_date."""
     if not OUTPUT_PATH.exists():
@@ -408,7 +560,12 @@ def main() -> int:
         if _patch_already_current(target):
             logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(bse_symbols))
             return 0
-        _write_patch(target, bse_symbols, "BSE")
+        # BSE bhavcopy carries only the BSE-segment volume, which collapses RVOL
+        # for NSE-primary names. Overlay yfinance NSE volumes (and add NSE-only
+        # symbols missing from BSE) so daily volume is comparable to the
+        # snapshot's NSE-based avg_volume_20d.
+        merged = _enrich_bse_with_yfinance(bse_symbols, target)
+        _write_patch(target, merged, "BSE+YF")
         return 0
 
     logger.info("BSE unavailable for %s. Trying NSE archives.", target)

@@ -663,23 +663,23 @@ def _ema_expansion_with_thresholds(
     min_change_pct: float,
     min_relative_volume: float,
 ) -> tuple[float, list[str]] | None:
-    avg_vol_50 = snapshot.avg_volume_50d or 0
+    avg_vol_20 = snapshot.avg_volume_20d or 0
     volume = snapshot.volume or 0
 
-    # 1. 50-day average volume floor (>= 25,000)
+    # 1. 20-day average volume floor (>= 25,000)
     # 2. Daily volume floor (> 50,000)
     # 3. Price floor (> 30)
-    if avg_vol_50 < 25000 or volume <= 50000 or snapshot.last_price <= 30:
+    if avg_vol_20 < 25000 or volume <= 50000 or snapshot.last_price <= 30:
         return None
 
-    rvol_50 = volume / avg_vol_50
+    rvol_20 = volume / avg_vol_20
 
-    if snapshot.change_pct >= min_change_pct and rvol_50 > min_relative_volume:
-        score = 75 + rvol_50 * 2 + snapshot.change_pct
+    if snapshot.change_pct >= min_change_pct and rvol_20 > min_relative_volume:
+        score = 75 + rvol_20 * 2 + snapshot.change_pct
         return round(score, 2), [
             "Expansion setup",
             f"Daily Change: {snapshot.change_pct}%",
-            f"50-Day RVOL: {rvol_50:.2f}x",
+            f"20-Day RVOL: {rvol_20:.2f}x",
             f"Price: {snapshot.last_price:.2f}",
         ]
     return None
@@ -906,7 +906,7 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("relative-strength", "Relative Strengths", "Setups", "Composite RS leaders across 20D and 60D.", _relative_strength),
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
-    ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, RVOL > 3.0, and liquidity floors (AvgVol > 25k, Vol > 50k, Price > 30).", _ema_expansion),
+    ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, 20-day RVOL > 3.0, and liquidity floors (AvgVol20 > 25k, Vol > 50k, Price > 30).", _ema_expansion),
 ]
 
 SCAN_BY_ID = {scan.id: scan for scan in SCANS}

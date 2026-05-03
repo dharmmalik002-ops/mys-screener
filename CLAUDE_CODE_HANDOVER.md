@@ -76,7 +76,7 @@ This is normal — snapshot is reconstructed from seed files and bhavcopy patch 
 - Idempotent — skips re-apply if `bhavcopy_status.json` already shows same date + matching schema version.
 - Force-reapply: bump `APPLY_SCHEMA_VERSION` in `providers/free.py`. Each version bump re-runs the apply on every cold start until the status file catches up.
 
-**APPLY_SCHEMA_VERSION history (current = 9):**
+**APPLY_SCHEMA_VERSION history (current = 10):**
 | Version | What the apply path now does |
 |--------|-------------------------------|
 | v3 | yfinance fallback populates `p` (prev close); fall back to existing `previous_close` when `p=0` on re-apply |
@@ -85,6 +85,7 @@ This is normal — snapshot is reconstructed from seed files and bhavcopy patch 
 | v7 | Recompute RS score / rating + roll `recent_closes` / `chart_grid_points` from the EOD bar so RS / contraction don't depend on a warm chart cache |
 | v8 | Verify the snapshot rows themselves before trusting the status file's already-applied marker |
 | v9 | Rescale `market_cap_crore` by the price-move ratio so the earnings widget / dashboard show the cap at the current close instead of the seed-snapshot price |
+| v10 | Force re-apply against yfinance-enriched patch (`source: BSE+YF`). BSE bhavcopy carries only BSE-segment volumes — RVOL collapsed for NSE-primary movers (MTARTECH, MEESHO, HFCL, CEMPRO) and the Expansion scanner returned almost nothing. Generator now overlays NSE volumes from yfinance and adds NSE-only symbols (BSE Ltd., CDSL, MARINE) the BSE CSV can never carry. |
 
 **Snapshot freshness guard (added 2026-05-03):** `_scan_eligible_snapshots` now drops rows whose `history_session_date` is older than the latest applied `bhavcopy_status.date`. This prevents NSE-only stocks (BSE Ltd., CDSL, MARINE — they're not in BSE's bhavcopy CSV) from surfacing in scanners with their stale seed-day `change_pct` / volume. The filter is a no-op when no patch has ever been applied (fresh deploy / fresh seed), so it can't regress safe behavior.
 
@@ -218,7 +219,7 @@ group_score = 0.50 × winsorized_median(126d returns)   ← ~6 months
 5. **IPO charts:** first load is slow (~5–8 s) because there's no chart cache yet — yfinance live fetch. Subsequent loads are instant (cache populated). RS line won't appear until the stock has 252 trading days of history.
 6. **`GET /api/dashboard` slow after deploy** — this is snapshot cold-start, not a regression.
 7. **`AGENTS.md` no longer exists** in the repo. Coding rules live in §10 above and in Claude memory (`feedback_coding_rules.md`).
-8. **BSE bhavcopy doesn't cover NSE-only stocks.** BSE Ltd. (the exchange itself, NSE ticker `BSE`), CDSL, MARINE, etc. trade only on NSE — they're not in BSE's EOD CSV at all (verified by ISIN grep). With BSE-source patches, those rows keep stale seed-day values. The staleness guard in `_scan_eligible_snapshots` (§4) hides them from scanners. **Proper long-term fix:** UNION BSE patch + yfinance for missing universe symbols inside `generate_bhavcopy_patch.py`. Not done yet.
+8. **BSE bhavcopy doesn't cover NSE-only stocks.** BSE Ltd. (the exchange itself, NSE ticker `BSE`), CDSL, MARINE, etc. trade only on NSE — they're not in BSE's EOD CSV at all (verified by ISIN grep). **Now mitigated:** `generate_bhavcopy_patch.py` overlays yfinance NSE volumes onto BSE rows AND adds NSE-only symbols missing from BSE (`_enrich_bse_with_yfinance`). The patch source label is `BSE+YF` when yfinance enrichment ran. The staleness guard in `_scan_eligible_snapshots` is still the safety net for symbols neither source covers.
 9. **`history_source` whitelist trap (§4).** Any new code that writes a fresh `history_source` value MUST also be added to `RELIABLE_HISTORY_SOURCES`. Otherwise `_normalize_snapshot_volume_baselines` zeros every `avg_volume_*` field and collapses RVOL / liquidity-floored scanners to ~0 hits. Wide-scope failure mode — be paranoid here.
 10. **Charts wickless after a regression?** Check `_fetch_chart_bars` for any new fallback that synthesises bars from `chart_grid_points` (those are close-only, so OHLC collapses to flat candles). Bump `CHART_CACHE_VERSION` to invalidate any wickless caches that got persisted before the fix.
 11. **Earnings widget showing 2016 quarters?** The screener.in parser's table picker now boosts tables containing a recent year (`_earnings_recent_year_floor`) and the row-level filter drops columns where every headline field is null/zero. Both must stay in sync — see `_select_table` and `_quarterly_row_has_data` in `providers/free.py`.

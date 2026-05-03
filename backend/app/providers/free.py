@@ -3412,7 +3412,12 @@ class FreeMarketDataProvider:
         # v9 (2026-05-03): rescale market_cap_crore by the price-move ratio
         # on apply so the earnings widget / dashboard show the cap at the
         # current close instead of the seed-snapshot price.
-        APPLY_SCHEMA_VERSION = 9
+        # v10 (2026-05-03): force re-apply against yfinance-enriched patch
+        # ("BSE+YF" source) — BSE bhavcopy carries only BSE-segment volumes,
+        # which collapsed RVOL for NSE-primary movers (MTARTECH, MEESHO,
+        # HFCL, CEMPRO) and broke the Expansion scanner. The generator now
+        # overlays NSE volumes from yfinance.
+        APPLY_SCHEMA_VERSION = 10
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
