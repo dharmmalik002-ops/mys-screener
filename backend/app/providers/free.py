@@ -71,7 +71,9 @@ YAHOO_QUOTE_URL = "https://query1.finance.yahoo.com/v7/finance/quote"
 YAHOO_CHART_URL = "https://query1.finance.yahoo.com/v8/finance/chart"
 FUNDAMENTALS_CACHE_VERSION = 10
 SNAPSHOT_CACHE_VERSION = 15
-CHART_CACHE_VERSION = 4
+CHART_CACHE_VERSION = 5  # bumped to invalidate any wickless caches written by the
+# brief regression where _chart_bars_from_snapshot_points seeded the cache with
+# open=high=low=close from the snapshot's close-only chart_grid_points.
 IST = timezone(timedelta(hours=5, minutes=30))
 MARKET_OPEN_MINUTES_IST = (9 * 60) + 15
 MARKET_CLOSE_MINUTES_IST = (15 * 60) + 30
@@ -6190,10 +6192,12 @@ class FreeMarketDataProvider:
                 history = self._history_frame_from_cached_bars(symbol, bars, allow_legacy=True)
                 if self._history_has_minimum_bars(history):
                     history = self._apply_snapshot_row_to_daily_history(symbol, history)
-                else:
-                    snapshot_bars = self._chart_bars_from_snapshot_points(symbol, bars)
-                    if len(snapshot_bars) >= min(30, bars):
-                        return snapshot_bars
+                # The previous fallback to _chart_bars_from_snapshot_points
+                # synthesised bars with open=high=low=close from the snapshot's
+                # close-only chart_grid_points, which rendered as wickless
+                # candles in the chart panel. Skip the synthesis fallback —
+                # if the cache is cold, the yfinance download below provides
+                # real OHLC.
 
             if history.empty:
                 history = self._download_history_frame(ticker=ticker, period=period, interval=interval)

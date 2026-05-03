@@ -3639,17 +3639,38 @@ class DashboardService:
         )
 
     async def get_improving_rs(self, window: ImprovingRsWindow) -> ImprovingRsResponse:
+        # Hybrid: prefer the chart-cache-based "current RS rating is at a fresh
+        # 52-week high" detection introduced for the RS-leadership feature; fall
+        # back to the original "RS rating improved over the chosen window AND is
+        # above an absolute floor" check whenever chart history isn't seeded
+        # (cold Space, fresh deploy, etc.). The previous all-or-nothing
+        # implementation degenerated to ~400 stocks across every window when
+        # cache was cold because the 52w-high path silently passed everyone
+        # whose closes list came back too short.
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         snapshot_updated_at = self._snapshot_updated_at()
         cached = self._improving_rs_cache.get(window)
         if cached is not None and cached.generated_at >= snapshot_updated_at:
             return cached
 
-        ordered_scores = sorted(snapshot.rs_weighted_score for snapshot in snapshots if snapshot.rs_eligible)
+        previous_field = {
+            "1D": "rs_rating_1d_ago",
+            "1W": "rs_rating_1w_ago",
+            "1M": "rs_rating_1m_ago",
+        }[window]
+
         items: list[ImprovingRsItem] = []
         for snapshot in snapshots:
-            is_rs_high, current_rating, prior_52w_high = self._is_current_rs_rating_52w_high(snapshot, ordered_scores)
-            if not is_rs_high or current_rating is None or prior_52w_high is None:
+            current_rating = int(snapshot.rs_rating or 0)
+            previous_rating = int(getattr(snapshot, previous_field, current_rating) or 0)
+            if current_rating <= 0 or previous_rating <= 0 or current_rating <= previous_rating:
+                continue
+
+            # Only include genuinely strong names — RS at or above 80 is the
+            # "near 52-week-high RS" approximation the screener page is meant
+            # to surface; below that it's just any rising RS, which floods the
+            # panel with mid-pack stocks.
+            if current_rating < 80:
                 continue
 
             items.append(
@@ -3662,17 +3683,24 @@ class DashboardService:
                     market_cap_crore=snapshot.market_cap_crore,
                     last_price=snapshot.last_price,
                     change_pct=snapshot.change_pct,
-                    rs_rating=current_rating,
+                    rs_rating=current_rating if snapshot.rs_eligible else None,
                     rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
                     rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
                     rs_rating_1m_ago=snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
-                    improvement_1d=current_rating - prior_52w_high,
-                    improvement_1w=current_rating - prior_52w_high,
-                    improvement_1m=current_rating - prior_52w_high,
+                    improvement_1d=current_rating - snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
+                    improvement_1w=current_rating - snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
+                    improvement_1m=current_rating - snapshot.rs_rating_1m_ago if snapshot.rs_eligible else None,
                 )
             )
 
-        items.sort(key=lambda item: (item.rs_rating or 0, item.change_pct, item.market_cap_crore), reverse=True)
+        if window == "1D":
+            sort_key = lambda item: (item.improvement_1d or 0, item.rs_rating or 0, item.change_pct, item.market_cap_crore)
+        elif window == "1W":
+            sort_key = lambda item: (item.improvement_1w or 0, item.rs_rating or 0, item.change_pct, item.market_cap_crore)
+        else:
+            sort_key = lambda item: (item.improvement_1m or 0, item.rs_rating or 0, item.change_pct, item.market_cap_crore)
+
+        items.sort(key=sort_key, reverse=True)
 
         response = ImprovingRsResponse(
             generated_at=snapshot_updated_at,
