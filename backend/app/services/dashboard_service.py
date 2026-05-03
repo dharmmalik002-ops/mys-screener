@@ -394,7 +394,55 @@ class DashboardService:
         return sector not in {"", "Unclassified"} and sub_sector not in {"", "Unclassified"}
 
     def _scan_eligible_snapshots(self, snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
-        return [snapshot for snapshot in snapshots if self._has_reliable_classification(snapshot)]
+        # Drop rows whose latest applied data is older than the latest bhavcopy
+        # we possess. This is what was making BSE / CDSL / MARINE etc. show up
+        # in the Expansion / top-gainers / day-high panels with a change_pct
+        # from some random past day — those tickers don't trade on BSE so the
+        # BSE-source bhavcopy never patches them, and their snapshot row keeps
+        # whatever change_pct the seed snapshot was generated against.
+        # By filtering to rows that share the latest patch date, the scanners
+        # only ever show stocks for which we have today's actual values.
+        latest_patch_date = self._latest_applied_patch_date()
+        return [
+            snapshot
+            for snapshot in snapshots
+            if self._has_reliable_classification(snapshot)
+            and self._snapshot_session_matches(snapshot, latest_patch_date)
+        ]
+
+    def _latest_applied_patch_date(self) -> date | None:
+        bhav_status_path = getattr(self.provider, "_bhavcopy_status_path", None)
+        if not callable(bhav_status_path):
+            return None
+        try:
+            path = bhav_status_path()
+            if not path.exists():
+                return None
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        date_text = payload.get("date") if isinstance(payload, dict) else None
+        if not isinstance(date_text, str):
+            return None
+        try:
+            return date.fromisoformat(date_text)
+        except ValueError:
+            return None
+
+    @staticmethod
+    def _snapshot_session_matches(snapshot: StockSnapshot, latest_patch_date: date | None) -> bool:
+        # No patch on disk yet (fresh deploy, never applied) → trust every
+        # snapshot row. Once we DO have a patch, drop anything whose session
+        # date is older.
+        if latest_patch_date is None:
+            return True
+        session_date = snapshot.history_session_date
+        if session_date is None:
+            # Seed rows that were never patched have no session date — they
+            # carry a price from "some random day". Exclude them so scanners
+            # don't surface stale data as if it were today's.
+            return False
+        return session_date >= latest_patch_date
 
     @staticmethod
     def _has_reliable_relative_volume(snapshot: StockSnapshot) -> bool:
