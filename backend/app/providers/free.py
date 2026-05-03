@@ -116,7 +116,16 @@ def _row_passes_universe_filter(row: dict, market_cap_min_crore: float) -> bool:
     days_since = (date.today() - listed).days
     return 0 <= days_since <= RECENT_IPO_BYPASS_DAYS
 SNAPSHOT_HISTORY_PERIOD = "3y"
-RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache"}
+# Sources whose snapshot rows are trusted to carry valid avg_volume_20d /
+# avg_volume_30d / avg_volume_50d baselines. "bhavcopy_patch" is included
+# because the apply path does NOT recompute those baselines (it only
+# overwrites the day's OHLC + window returns), so the seed-derived 20/30/50
+# day averages survive intact and remain valid to within ~5% drift. Without
+# bhavcopy_patch in this set, every snapshot is silently zeroed on load,
+# which collapses relative_volume to 0 and breaks every scanner that filters
+# on RVOL or rupee-turnover (custom-scan liquidity, ema-expansion,
+# contraction, day-high, prev-day-high-break, near-day-high, etc.).
+RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache", "bhavcopy_patch"}
 MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^CNXSC", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
 RS_LOOKBACKS: tuple[tuple[int, float], ...] = ((63, 0.4), (126, 0.2), (189, 0.2), (252, 0.2))
 RETURN_1W_BARS = 5
