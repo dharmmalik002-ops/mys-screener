@@ -2712,18 +2712,30 @@ class FreeMarketDataProvider:
             for index, period in enumerate(periods)
             if period
         ]
+        # Drop columns where every meaningful field came back blank — those
+        # are typically "TTM" / "estimate" / projected-quarter columns
+        # screener.in places at the right edge of its quarterly table. Without
+        # this filter, KRISHANA-style tickers surfaced "Mar 2026" with sales
+        # / eps / net_profit all None as the "latest" quarter, hiding the
+        # Dec 2025 results that actually carried numbers.
+        results = [item for item in results if self._quarterly_row_has_data(item)]
         # Sort by parsed period date and keep the 8 most recent quarters.
         # The previous `results[-8:]` slice assumed screener.in always lays
         # out columns oldest-on-the-left → newest-on-the-right. For some
         # tickers (e.g. JAYNECOIND) the column order is reversed or the
         # table contains a tail of stale rows, and the slice silently
-        # returned 8 quarters from 2016 as if they were the latest. Date
-        # parsing makes that impossible — if the screener data genuinely
-        # stops in 2016, we surface those (and the YoY/QoQ growth deltas
-        # are still meaningful for the panel) rather than mis-labelling
-        # them as today.
+        # returned 8 quarters from 2016 as if they were the latest.
         results.sort(key=self._period_sort_key, reverse=True)
         return results[:8]
+
+    @staticmethod
+    def _quarterly_row_has_data(item: "QuarterlyResultItem") -> bool:
+        # A quarter "has data" if at least one of the headline fields is a
+        # real number — this is what the panel actually renders.
+        for value in (item.sales_crore, item.net_profit_crore, item.eps, item.operating_profit_crore):
+            if value is not None and float(value) != 0.0:
+                return True
+        return False
 
     @staticmethod
     def _period_sort_key(item: "QuarterlyResultItem") -> tuple[int, int]:

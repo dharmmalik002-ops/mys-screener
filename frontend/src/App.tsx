@@ -4723,10 +4723,61 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             )
                             : activeScanner === "ema-expansion"
                               ? (
-                                <div className="scanner-settings-note">
-                                  <strong>Built-in scan</strong>
-                                  <span>The Expansion screener uses the backend expansion rules and only shows expansion matches.</span>
-                                </div>
+                                <Panel
+                                  title="Expansion thresholds"
+                                  subtitle="Stocks with day change ≥ X% AND 50-day RVOL > Yx (plus liquidity floors). Defaults follow IBD's expansion screen."
+                                  actions={(
+                                    <div className="custom-panel-actions">
+                                      <button
+                                        type="button"
+                                        className="nav-button ghost"
+                                        onClick={() => {
+                                          setAppliedExpansionMinChangePct(expansionMinChangePct);
+                                          setAppliedExpansionMinRelativeVolume(expansionMinRelativeVolume);
+                                        }}
+                                      >
+                                        Apply
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="nav-button ghost"
+                                        onClick={() => {
+                                          setExpansionMinChangePct(6.5);
+                                          setExpansionMinRelativeVolume(3.0);
+                                          setAppliedExpansionMinChangePct(6.5);
+                                          setAppliedExpansionMinRelativeVolume(3.0);
+                                        }}
+                                      >
+                                        Reset
+                                      </button>
+                                    </div>
+                                  )}
+                                >
+                                  <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
+                                    <label>
+                                      <span>Min Day Change %</span>
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        max={100}
+                                        step={0.1}
+                                        value={expansionMinChangePct}
+                                        onChange={(event) => setExpansionMinChangePct(Number(event.target.value) || 0)}
+                                      />
+                                    </label>
+                                    <label>
+                                      <span>Min 50-Day RVOL (x)</span>
+                                      <input
+                                        type="number"
+                                        min={0}
+                                        max={50}
+                                        step={0.1}
+                                        value={expansionMinRelativeVolume}
+                                        onChange={(event) => setExpansionMinRelativeVolume(Number(event.target.value) || 0)}
+                                      />
+                                    </label>
+                                  </div>
+                                </Panel>
                               )
                               : activeScanner === "contraction"
                                 ? (
@@ -4779,64 +4830,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onApply={handleApplyConsolidatingScan}
                                     onReset={handleResetConsolidatingScan}
                                   />
-                                )
-                              : activeScanner === "ema-expansion"
-                                ? (
-                                  <Panel
-                                    title="Expansion thresholds"
-                                    subtitle="Stocks with day change ≥ X% AND 50-day RVOL > Yx (plus liquidity floors). Defaults follow IBD's expansion screen."
-                                    actions={(
-                                      <div className="custom-panel-actions">
-                                        <button
-                                          type="button"
-                                          className="nav-button ghost"
-                                          onClick={() => {
-                                            setAppliedExpansionMinChangePct(expansionMinChangePct);
-                                            setAppliedExpansionMinRelativeVolume(expansionMinRelativeVolume);
-                                          }}
-                                        >
-                                          Apply
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="nav-button ghost"
-                                          onClick={() => {
-                                            setExpansionMinChangePct(6.5);
-                                            setExpansionMinRelativeVolume(3.0);
-                                            setAppliedExpansionMinChangePct(6.5);
-                                            setAppliedExpansionMinRelativeVolume(3.0);
-                                          }}
-                                        >
-                                          Reset
-                                        </button>
-                                      </div>
-                                    )}
-                                  >
-                                    <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
-                                      <label>
-                                        <span>Min Day Change %</span>
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={100}
-                                          step={0.1}
-                                          value={expansionMinChangePct}
-                                          onChange={(event) => setExpansionMinChangePct(Number(event.target.value) || 0)}
-                                        />
-                                      </label>
-                                      <label>
-                                        <span>Min 50-Day RVOL (x)</span>
-                                        <input
-                                          type="number"
-                                          min={0}
-                                          max={50}
-                                          step={0.1}
-                                          value={expansionMinRelativeVolume}
-                                          onChange={(event) => setExpansionMinRelativeVolume(Number(event.target.value) || 0)}
-                                        />
-                                      </label>
-                                    </div>
-                                  </Panel>
                                 )
                               : activeScanner === "minervini-1m"
                                 ? (
