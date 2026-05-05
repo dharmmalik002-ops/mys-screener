@@ -9,6 +9,7 @@ import {
 } from "react";
 
 import type { IndustryGroupStockItem, MarketKey } from "../lib/api";
+import { useLatestQuarters, type QuarterInfo } from "../lib/latestQuarter";
 import "./GroupStocksWidget.css";
 
 type GroupMember = IndustryGroupStockItem & { group_member_rank: number };
@@ -85,7 +86,15 @@ export function GroupStocksWidget({
   onToggleCompare,
   onLayoutChange,
 }: GroupStocksWidgetProps) {
-  void market;
+  const memberSymbols = useMemo(() => context.members.map((m) => m.symbol), [context.members]);
+  const quarterMap = useLatestQuarters(memberSymbols, market, { concurrency: 4 });
+  const groupMaxRank = useMemo(() => {
+    let maxRank = 0;
+    Object.values(quarterMap).forEach((q) => {
+      if (q && q.rank > maxRank) maxRank = q.rank;
+    });
+    return maxRank;
+  }, [quarterMap]);
 
   const [query, setQuery] = useState("");
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -288,6 +297,7 @@ export function GroupStocksWidget({
       <div className="gsw-table-head">
         <span>#</span>
         <span>Symbol</span>
+        <span title="Latest reported quarter">Last Q</span>
         <span>1D</span>
         <span>RS</span>
       </div>
@@ -332,6 +342,23 @@ export function GroupStocksWidget({
                     <small>{member.company_name}</small>
                   ) : null}
                 </span>
+                {(() => {
+                  const q = quarterMap[member.symbol] as QuarterInfo | null | undefined;
+                  if (q === undefined) {
+                    return <span className="gsw-quarter loading" title="Loading…">…</span>;
+                  }
+                  if (!q) {
+                    return <span className="gsw-quarter na" title="No quarterly data">—</span>;
+                  }
+                  const isLatest = groupMaxRank > 0 && q.rank === groupMaxRank;
+                  const isBehind = groupMaxRank > 0 && q.rank < groupMaxRank;
+                  const cls = isLatest ? "latest" : isBehind ? "behind" : "neutral";
+                  return (
+                    <span className={`gsw-quarter ${cls}`} title={q.raw}>
+                      {q.short}
+                    </span>
+                  );
+                })()}
                 <span className={`gsw-change ${changeClass(member.change_pct)}`}>
                   {fmtChange(member.change_pct)}
                 </span>
