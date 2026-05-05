@@ -783,19 +783,6 @@ export function WatchlistsPanel({
                   <small>{watchlist.symbols.length} stocks</small>
                 </span>
               </button>
-              <button
-                type="button"
-                className="news-trigger-btn news-trigger-btn--icon"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openNewsForWatchlist(watchlist);
-                }}
-                disabled={watchlist.symbols.length === 0}
-                title={watchlist.symbols.length === 0 ? "Add stocks to see news" : `News for ${watchlist.name}`}
-                aria-label={`News for ${watchlist.name}`}
-              >
-                📰
-              </button>
               <span
                 className="wl-swatch"
                 style={{ background: watchlist.color }}

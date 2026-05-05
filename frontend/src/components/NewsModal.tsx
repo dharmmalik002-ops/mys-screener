@@ -15,23 +15,25 @@ export type NewsModalProps = {
 };
 
 type NewsItem = { title: string; link: string; summary: string; date: string; source: string; ts: number };
-type SymbolNews = { symbol: string; items: NewsItem[]; latestResultPeriod: string | null; latestResultRaw: string | null; loading: boolean; error: string | null };
+type SymbolNews = {
+  symbol: string;
+  results: NewsItem[];
+  general: NewsItem[];
+  resultPeriod: string | null;
+  resultAnnouncedDate: string | null;
+  resultAnnouncedTs: number;
+  loading: boolean;
+};
 
 const CORP_ANNOUNCE_PATTERNS = [
   /\bcorporate announcement\b/i,
-  /\boutcome of board meeting\b/i,
   /\binsider trading\b/i,
-  /\bdisclosure under\b/i,
-  /\bdisclosures under\b/i,
-  /\bsubmission of\b/i,
+  /\bdisclosures? under regulation\b/i,
   /\bcompliance certificate\b/i,
   /\bpostal ballot\b/i,
-  /\bpledge\b/i,
+  /\bpledge of\b/i,
   /\bsast\b/i,
-  /\bregulation 30\b/i,
   /\bregulation 7\(2\)\b/i,
-  /\bbse\s*:\s*5\d{5}\b/i,
-  /\bnse\s*:\s*[A-Z]+\b/i,
   /\bvotes? cast\b/i,
 ];
 
@@ -42,10 +44,9 @@ const CORP_SOURCE_PATTERNS = [
   /\bnseindia\.com\b/i,
 ];
 
-function isCorporateAnnouncement(title: string, source: string): boolean {
-  const haystack = `${title} ${source}`;
+function isCorporateNoise(title: string, source: string): boolean {
   if (CORP_SOURCE_PATTERNS.some((re) => re.test(source))) return true;
-  return CORP_ANNOUNCE_PATTERNS.some((re) => re.test(haystack));
+  return CORP_ANNOUNCE_PATTERNS.some((re) => re.test(title));
 }
 
 function cleanSummary(html: string): string {
@@ -65,36 +66,56 @@ function parseDate(raw: string | undefined): { display: string; ts: number } {
   };
 }
 
-async function fetchSymbolNews(symbol: string): Promise<NewsItem[]> {
+function formatDateOnly(ts: number): string {
+  if (!ts) return "";
+  return new Date(ts).toLocaleDateString([], { day: "2-digit", month: "short", year: "numeric" });
+}
+
+type RawRssItem = { title?: string; link?: string; description?: string; pubDate?: string; author?: string };
+
+async function rssSearch(query: string): Promise<NewsItem[]> {
   const cb = Date.now();
-  const company = symbol.replace(/\.(NS|BO)$/i, "");
-  const q = encodeURIComponent(`${company} stock OR shares -site:bseindia.com -site:nseindia.com when:7d`);
-  const feedUrl = `https://news.google.com/rss/search?q=${q}&hl=en-IN&gl=IN&ceid=IN:en&cb=${cb}`;
+  const feedUrl = `https://news.google.com/rss/search?q=${encodeURIComponent(query)}&hl=en-IN&gl=IN&ceid=IN:en&cb=${cb}`;
   try {
     const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
     const data = await res.json();
     if (data.status !== "ok" || !data.items?.length) return [];
-    type RawRssItem = { title?: string; link?: string; description?: string; pubDate?: string; author?: string };
-    const cleaned = (data.items as RawRssItem[])
+    return (data.items as RawRssItem[])
       .map((item) => {
-        const title = (item.title || "").trim();
-        const sourceMatch = title.match(/-\s*([^-]+)$/);
+        const fullTitle = (item.title || "").trim();
+        const sourceMatch = fullTitle.match(/\s+-\s+([^-]+)$/);
         const source = sourceMatch ? sourceMatch[1].trim() : (item.author || "");
-        const titleClean = sourceMatch ? title.replace(/\s*-\s*[^-]+$/, "").trim() : title;
+        const titleClean = sourceMatch ? fullTitle.replace(/\s+-\s+[^-]+$/, "").trim() : fullTitle;
         const summary = cleanSummary(item.description || "") || "Click to read full article.";
         const dateInfo = parseDate(item.pubDate);
         return { title: titleClean, link: item.link || "", summary, date: dateInfo.display, source, ts: dateInfo.ts };
       })
-      .filter((x) => x.title && !isCorporateAnnouncement(x.title, x.source))
-      .sort((a, b) => b.ts - a.ts)
-      .slice(0, 6);
-    return cleaned;
+      .filter((x) => x.title && !isCorporateNoise(x.title, x.source))
+      .sort((a, b) => b.ts - a.ts);
   } catch {
     return [];
   }
 }
 
-async function fetchLatestResult(symbol: string, market: MarketKey): Promise<string | null> {
+const RESULT_KEYWORDS = /\b(results?|earnings|quarter(?:ly)?|q[1-4]|profit|net profit|revenue|topline|bottomline|ebitda|margin|guidance|reports? q[1-4])\b/i;
+
+async function fetchSymbolNews(symbol: string): Promise<{ results: NewsItem[]; general: NewsItem[] }> {
+  const company = symbol.replace(/\.(NS|BO)$/i, "");
+
+  const resultsQuery = `${company} (results OR earnings OR quarterly OR Q1 OR Q2 OR Q3 OR Q4 OR profit) -site:bseindia.com -site:nseindia.com when:90d`;
+  const generalQuery = `${company} stock OR shares -site:bseindia.com -site:nseindia.com when:7d`;
+
+  const [resultsRaw, generalRaw] = await Promise.all([rssSearch(resultsQuery), rssSearch(generalQuery)]);
+
+  const results = resultsRaw.filter((x) => RESULT_KEYWORDS.test(x.title)).slice(0, 5);
+
+  const seen = new Set(results.map((r) => r.link));
+  const general = generalRaw.filter((x) => !seen.has(x.link)).slice(0, 6);
+
+  return { results, general };
+}
+
+async function fetchResultPeriod(symbol: string, market: MarketKey): Promise<string | null> {
   try {
     const r = await getEarningsSummary(symbol, market);
     return r?.quarterly_results?.[0]?.period || null;
@@ -118,14 +139,17 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
     }
     aborted.current = false;
     setLoadingAll(true);
-    setRows(symbolList.map((s) => ({ symbol: s, items: [], latestResultPeriod: null, latestResultRaw: null, loading: true, error: null })));
+    setRows(symbolList.map((s) => ({ symbol: s, results: [], general: [], resultPeriod: null, resultAnnouncedDate: null, resultAnnouncedTs: 0, loading: true })));
     for (let i = 0; i < symbolList.length; i++) {
       if (aborted.current) return;
       const sym = symbolList[i];
-      const [items, period] = await Promise.all([fetchSymbolNews(sym), fetchLatestResult(sym, market)]);
+      const [news, period] = await Promise.all([fetchSymbolNews(sym), fetchResultPeriod(sym, market)]);
       if (aborted.current) return;
-      setRows((prev) => prev.map((r) => (r.symbol === sym ? { ...r, items, latestResultPeriod: period, latestResultRaw: period, loading: false, error: items.length === 0 ? "No recent news." : null } : r)));
-      if (i < symbolList.length - 1) await new Promise((r) => setTimeout(r, 450));
+      const latestResult = news.results[0];
+      const announcedTs = latestResult?.ts || 0;
+      const announcedDate = announcedTs ? formatDateOnly(announcedTs) : null;
+      setRows((prev) => prev.map((r) => (r.symbol === sym ? { ...r, ...news, resultPeriod: period, resultAnnouncedDate: announcedDate, resultAnnouncedTs: announcedTs, loading: false } : r)));
+      if (i < symbolList.length - 1) await new Promise((r) => setTimeout(r, 350));
     }
     setLoadingAll(false);
   }, [symbolList, market]);
@@ -154,7 +178,7 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
   if (!isOpen) return null;
 
   const totalLoaded = rows.filter((r) => !r.loading).length;
-  const totalItems = rows.reduce((s, r) => s + r.items.length, 0);
+  const totalItems = rows.reduce((s, r) => s + r.results.length + r.general.length, 0);
 
   return createPortal(
     <div className="news-modal-overlay" onClick={(e) => { if ((e.target as HTMLElement).classList.contains("news-modal-overlay")) onClose(); }}>
@@ -167,7 +191,7 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
               <div className="news-modal-sub">
                 {loadingAll
                   ? `Fetching… ${totalLoaded}/${symbolList.length} symbols`
-                  : `${symbolList.length} symbols · ${totalItems} headlines · Latest 7 days`}
+                  : `${symbolList.length} symbols · ${totalItems} headlines · Results (90d) + News (7d)`}
               </div>
             </div>
           </div>
@@ -189,36 +213,71 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
             <div className="news-empty">No symbols to fetch news for. Add stocks first.</div>
           )}
           <div className="news-grid">
-            {rows.map((row) => (
-              <article key={row.symbol} className="news-card">
-                <header className="news-card-head">
-                  <div className="news-sym">{row.symbol}</div>
-                  {row.latestResultPeriod ? (
-                    <div className="news-result-pill" title="Latest reported result period">📅 Result: {row.latestResultPeriod}</div>
-                  ) : !row.loading ? (
-                    <div className="news-result-pill news-result-pill--muted">📅 Result: —</div>
-                  ) : null}
-                </header>
-                {row.loading && <div className="news-card-loading">Loading…</div>}
-                {!row.loading && row.items.length === 0 && (
-                  <div className="news-card-empty">No recent news houses coverage in last 7 days.</div>
-                )}
-                {!row.loading && row.items.length > 0 && (
-                  <ul className="news-list">
-                    {row.items.map((item, i) => (
-                      <li key={i} className="news-item">
-                        <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
-                        <div className="news-item-meta">
-                          {item.source && <span className="news-item-source">{item.source}</span>}
-                          {item.date && <span className="news-item-date">🕐 {item.date}</span>}
-                        </div>
-                        {item.summary && <p className="news-item-summary">{item.summary}</p>}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </article>
-            ))}
+            {rows.map((row) => {
+              const announceLabel = row.resultAnnouncedDate
+                ? `Result announced ${row.resultAnnouncedDate}${row.resultPeriod ? ` · ${row.resultPeriod}` : ""}`
+                : row.resultPeriod
+                  ? `Latest reported ${row.resultPeriod}`
+                  : "";
+              return (
+                <article key={row.symbol} className="news-card">
+                  <header className="news-card-head">
+                    <div className="news-sym">{row.symbol}</div>
+                    {announceLabel ? (
+                      <div className="news-result-pill" title="Latest result announcement coverage">📅 {announceLabel}</div>
+                    ) : !row.loading ? (
+                      <div className="news-result-pill news-result-pill--muted">📅 No result data</div>
+                    ) : null}
+                  </header>
+
+                  {row.loading && <div className="news-card-loading">Loading…</div>}
+
+                  {!row.loading && (
+                    <>
+                      <section className="news-section">
+                        <div className="news-section-title news-section-results">📊 Latest Results Coverage</div>
+                        {row.results.length === 0 ? (
+                          <div className="news-card-empty">No result-related coverage in last 90 days.</div>
+                        ) : (
+                          <ul className="news-list">
+                            {row.results.map((item, i) => (
+                              <li key={`r-${i}`} className="news-item">
+                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
+                                <div className="news-item-meta">
+                                  {item.source && <span className="news-item-source">{item.source}</span>}
+                                  {item.date && <span className="news-item-date">🕐 {item.date}</span>}
+                                </div>
+                                {item.summary && <p className="news-item-summary">{item.summary}</p>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+
+                      <section className="news-section">
+                        <div className="news-section-title news-section-general">📰 Recent News (7d)</div>
+                        {row.general.length === 0 ? (
+                          <div className="news-card-empty">No news-house coverage in last 7 days.</div>
+                        ) : (
+                          <ul className="news-list">
+                            {row.general.map((item, i) => (
+                              <li key={`g-${i}`} className="news-item">
+                                <a href={item.link} target="_blank" rel="noopener noreferrer" className="news-item-title">{item.title}</a>
+                                <div className="news-item-meta">
+                                  {item.source && <span className="news-item-source">{item.source}</span>}
+                                  {item.date && <span className="news-item-date">🕐 {item.date}</span>}
+                                </div>
+                                {item.summary && <p className="news-item-summary">{item.summary}</p>}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    </>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </div>
       </div>
