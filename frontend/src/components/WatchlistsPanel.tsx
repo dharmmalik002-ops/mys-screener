@@ -31,6 +31,7 @@ import type {
   ChartGridStat,
 } from "./ChartGridModal";
 import { Panel } from "./Panel";
+import { NewsModal } from "./NewsModal";
 
 import "./ScanTable.css";
 import "./WatchlistsPanel.css";
@@ -295,6 +296,12 @@ export function WatchlistsPanel({
   }, []);
   useEffect(() => () => cancelPrefetch(), [cancelPrefetch]);
   const [gridOpen, setGridOpen] = useState(false);
+  const [newsOpen, setNewsOpen] = useState(false);
+  const [newsContext, setNewsContext] = useState<{ title: string; symbols: string[]; accent: string } | null>(null);
+  const openNewsForWatchlist = useCallback((wl: LocalWatchlist) => {
+    setNewsContext({ title: `News · ${wl.name}`, symbols: wl.symbols, accent: wl.color || "#ff6b6b" });
+    setNewsOpen(true);
+  }, []);
   const [gridColumns, setGridColumns] = useState(4);
   const [gridRows, setGridRows] = useState(3);
   const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
@@ -776,6 +783,19 @@ export function WatchlistsPanel({
                   <small>{watchlist.symbols.length} stocks</small>
                 </span>
               </button>
+              <button
+                type="button"
+                className="news-trigger-btn news-trigger-btn--icon"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  openNewsForWatchlist(watchlist);
+                }}
+                disabled={watchlist.symbols.length === 0}
+                title={watchlist.symbols.length === 0 ? "Add stocks to see news" : `News for ${watchlist.name}`}
+                aria-label={`News for ${watchlist.name}`}
+              >
+                📰
+              </button>
               <span
                 className="wl-swatch"
                 style={{ background: watchlist.color }}
@@ -844,6 +864,15 @@ export function WatchlistsPanel({
                 disabled={activeItems.length === 0}
               >
                 Open Grid
+              </button>
+              <button
+                type="button"
+                className="news-trigger-btn"
+                onClick={() => openNewsForWatchlist(activeWatchlist)}
+                disabled={activeWatchlist.symbols.length === 0}
+                title={activeWatchlist.symbols.length === 0 ? "Add stocks to see news" : `Open news for ${activeWatchlist.name}`}
+              >
+                <span className="news-trigger-emoji">📰</span> News
               </button>
               <button type="button" className="st-btn" onClick={() => onDeleteWatchlist(activeWatchlist.id)}>
                 Delete
@@ -1105,6 +1134,14 @@ export function WatchlistsPanel({
           </div>
         </div>
       ) : null}
+      <NewsModal
+        isOpen={newsOpen}
+        onClose={() => setNewsOpen(false)}
+        title={newsContext?.title ?? "News"}
+        symbols={newsContext?.symbols ?? []}
+        market={market}
+        accentColor={newsContext?.accent}
+      />
     </div>
   );
 }

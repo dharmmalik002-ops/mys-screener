@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getChart, getJournalData, saveJournalData, type MarketKey } from "../lib/api";
+import { NewsModal } from "./NewsModal";
 import "./TradeJournalPanel.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -523,8 +524,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [posMeta, setPosMeta] = useState<Record<string, PosMeta>>(() => lsGet(LS_META, {}));
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
-  const [fetchingNews, setFetchingNews] = useState(false);
-  const [newsItems, setNewsItems] = useState<Array<{ symbol: string; items: Array<{ title: string; link: string; summary: string; date: string }> }>>([]);
+  const [newsModalOpen, setNewsModalOpen] = useState(false);
   const [backendSyncing, setBackendSyncing] = useState(false);
   const [equityInput, setEquityInput] = useState(String(startEquity));
 
@@ -1010,42 +1010,6 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     setOpenPosCats(next); lsSet(LS_POSITIONS, next); dragSymbol.current = null;
   }
 
-  // ── News fetch ────────────────────────────────────────────────────────────
-  async function fetchNews() {
-    if (!openPositions.length) { alert("No open positions."); return; }
-    setFetchingNews(true); setNewsItems([]);
-    const results: typeof newsItems = [];
-    for (const pos of openPositions) {
-      const ticker = posMeta[pos.symbol]?.fetchTicker || (pos.symbol.includes(".") ? pos.symbol : pos.symbol + ".NS");
-      let items: typeof results[0]["items"] = [];
-      try {
-        const cb = Date.now();
-        let feedUrl = `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${ticker}&region=IN&lang=en-IN&cb=${cb}`;
-        let res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-        let data = await res.json();
-        if (data.status !== "ok" || !data.items?.length) {
-          const q = encodeURIComponent(`${pos.symbol} stock india when:3d`);
-          feedUrl = `https://news.google.com/rss/search?q=${q}&hl=en-IN&gl=IN&ceid=IN:en&cb=${cb}`;
-          res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`);
-          data = await res.json();
-        }
-        if (data.status === "ok" && data.items?.length) {
-          items = data.items.slice(0, 5).map((item: { title: string; link: string; description?: string; pubDate?: string }) => {
-            let summary = (item.description || "").replace(/<[^>]*>/g, "").trim().replace(/&nbsp;/g, " ").replace(/&amp;/g, "&");
-            if (summary.length < 20) summary = "Click to view full article.";
-            else if (summary.length > 200) summary = summary.slice(0, 200) + "…";
-            let dateStr = item.pubDate || "";
-            try { dateStr = new Date(item.pubDate?.replace(/-/g, "/") || "").toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); } catch { /* ignore */ }
-            return { title: item.title, link: item.link, summary, date: dateStr };
-          });
-        }
-      } catch { /* ignore */ }
-      results.push({ symbol: pos.symbol, items });
-      await new Promise(r => setTimeout(r, 600));
-    }
-    setNewsItems(results); setFetchingNews(false);
-  }
-
   // ── Quick calc ────────────────────────────────────────────────────────────
   function runCalc() {
     const cap = parseFloat(calcCap) || 0, rp = parseFloat(calcRisk) || 0;
@@ -1226,16 +1190,25 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
       {/* ── Tabs ── */}
       <div className="tj-tabbar">
-        {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer", "News Radar"].map((t, i) => (
+        {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer"].map((t, i) => (
           <button
             key={t}
             className={`tj-tabbtn ${activeTab === i ? "active" : ""}`}
-            onClick={() => { setActiveTab(i); if (i === 6 && !fetchingNews && !newsItems.length) fetchNews(); }}
+            onClick={() => { setActiveTab(i); }}
           >
             {t}
             {i === 2 && openPositions.length > 0 && <span className="tj-tabbadge">{openPositions.length}</span>}
           </button>
         ))}
+        <button
+          type="button"
+          className="tj-tabbtn news-trigger-btn news-tab-btn"
+          onClick={() => setNewsModalOpen(true)}
+          disabled={openPositions.length === 0}
+          title={openPositions.length === 0 ? "Add a position first" : "Open news for all open positions (full-screen)"}
+        >
+          <span className="news-trigger-emoji">📰</span> News Radar
+        </button>
       </div>
 
       {/* ── Tab 0: Dashboard ── */}
@@ -1455,6 +1428,15 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             </div>
             <div className="tj-kanban-actions">
               {syncStatus && <span className="tj-sync-status">{syncStatus}</span>}
+              <button
+                type="button"
+                className="news-trigger-btn"
+                onClick={() => setNewsModalOpen(true)}
+                disabled={openPositions.length === 0}
+                title={openPositions.length === 0 ? "No open positions" : "Open full-screen news widget"}
+              >
+                <span className="news-trigger-emoji">📰</span> News
+              </button>
               <button className={`tj-btn primary ${syncing ? "loading" : ""}`} onClick={syncPrices} disabled={syncing}>
                 {syncing ? "Syncing…" : "⟳ Sync Prices"}
               </button>
@@ -1630,34 +1612,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         </div>
       )}
 
-      {/* ── Tab 6: News Radar ── */}
-      {activeTab === 6 && (
-        <div className="tj-page">
-          <div className="tj-news-topbar">
-            <span className="tj-card-hdr" style={{ margin: 0 }}>News for Open Positions</span>
-            <button className={`tj-btn primary ${fetchingNews ? "loading" : ""}`} onClick={fetchNews} disabled={fetchingNews}>
-              {fetchingNews ? "Fetching…" : "⟳ Refresh"}
-            </button>
-          </div>
-          {fetchingNews && <div className="tj-loading-state">Fetching latest headlines…</div>}
-          {!fetchingNews && newsItems.length === 0 && openPositions.length === 0 && <div className="tj-empty-page">No open positions.</div>}
-          {!fetchingNews && newsItems.length === 0 && openPositions.length > 0 && <div className="tj-empty-page">Click Refresh to load headlines.</div>}
-          <div className="tj-news-grid">
-            {newsItems.map(n => (
-              <div key={n.symbol} className="tj-news-card">
-                <div className="tj-news-sym">📰 {n.symbol}</div>
-                {n.items.length === 0 ? <div className="tj-news-none">No recent news found.</div> : n.items.map((item, i) => (
-                  <div key={i} className="tj-news-item">
-                    <a href={item.link} target="_blank" rel="noopener noreferrer" className="tj-news-title">{item.title}</a>
-                    <div className="tj-news-summary">{item.summary}</div>
-                    <div className="tj-news-date">🕐 {item.date}</div>
-                  </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      {/* News Radar is now a full-screen modal triggered from the tab/button (see NewsModal mount below) */}
 
       {/* ── Modals ── */}
       {modal && (
@@ -1750,6 +1705,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           </div>
         </div>
       )}
+      <NewsModal
+        isOpen={newsModalOpen}
+        onClose={() => setNewsModalOpen(false)}
+        title="News · Open Positions"
+        symbols={openPositions.map(p => p.symbol)}
+        market={market ?? "india"}
+        accentColor="#06d6a0"
+      />
     </div>
   );
 }
