@@ -12,7 +12,7 @@ interface Trade {
   setupType: string; stoploss: number; target: number; tags: string[];
   remarks: string; img?: string; vcp?: VCP;
 }
-interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; }
+interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; prev_close?: number; }
 interface ClosedTrade {
   symbol: string; qty: number; entryPx: number; exitPx: number;
   entryDate: string; exitDate: string; pnl: number; perc: number;
@@ -765,9 +765,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         const ticker = posMeta[pos.symbol]?.fetchTicker || pos.symbol;
         const result = await getChart(ticker, "1D", mkt);
         const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
+        const prevClose = result.bars[result.bars.length - 2]?.close ?? null;
         if (price && isFinite(price)) {
           if (!updated[pos.symbol]) updated[pos.symbol] = {};
           updated[pos.symbol].cmp = price;
+          if (prevClose && isFinite(prevClose)) updated[pos.symbol].prev_close = prevClose;
           anyUpdated = true;
         }
       } catch { /* ignore */ }
@@ -796,9 +798,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       try {
         const result = await getChart(pos.symbol, "1D", mkt);
         const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
+        const prevClose = result.bars[result.bars.length - 2]?.close ?? null;
         if (price && isFinite(price)) {
           if (!updated[pos.symbol]) updated[pos.symbol] = {};
           updated[pos.symbol].cmp = price;
+          if (prevClose && isFinite(prevClose)) updated[pos.symbol].prev_close = prevClose;
           updatedCount++;
         } else {
           failed.push(pos.symbol);
@@ -1024,6 +1028,21 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   function posForCat(cat: OpenPosCat) { return openPositions.filter(p => (openPosCats[p.symbol] || "full") === cat); }
   const totalUnrealized = openPositions.reduce((s, p) => { const cmp = posMeta[p.symbol]?.cmp || p.avgPx; return s + (cmp - p.avgPx) * p.qty; }, 0);
   const totalRisk = openPositions.reduce((s, p) => { const sl = posMeta[p.symbol]?.sl || p.avgPx * 0.92; return s + (p.avgPx - sl) * p.qty; }, 0);
+  const totalTodayPnl = openPositions.reduce((s, p) => {
+    const meta = posMeta[p.symbol];
+    if (!meta?.cmp || !meta?.prev_close) return s;
+    return s + (meta.cmp - meta.prev_close) * p.qty;
+  }, 0);
+  const todayBaseValue = openPositions.reduce((s, p) => {
+    const meta = posMeta[p.symbol];
+    if (!meta?.prev_close) return s;
+    return s + meta.prev_close * p.qty;
+  }, 0);
+  const hasTodayData = todayBaseValue > 0;
+  const deployedPctEquity = startEquity > 0 ? (totalInvested / startEquity) * 100 : 0;
+  const unrealPctDeployed = totalInvested > 0 ? (totalUnrealized / totalInvested) * 100 : 0;
+  const riskPctEquity = startEquity > 0 ? (totalRisk / startEquity) * 100 : 0;
+  const todayPctBase = hasTodayData ? (totalTodayPnl / todayBaseValue) * 100 : 0;
   const symbolScoreboard = useMemo(() => {
     const stats: Record<string, { symbol: string; realized: number; unrealized: number; wins: number; losses: number; openQty: number }> = {};
 
@@ -1098,6 +1117,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const riskPct = p.avgPx > 0 ? ((p.avgPx - sl) / p.avgPx) * 100 : 0;
     const posSize = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
     const hasLive = cmp > 0;
+    // Reward = (target - avg_px) * qty using the latest buy lot's target
+    const latestBuy = p.buyIndices.length > 0 ? trades[p.buyIndices[p.buyIndices.length - 1]] : null;
+    const target = latestBuy?.target ?? 0;
+    const hasTarget = target > 0 && target > p.avgPx;
+    const rewardAmt = hasTarget ? (target - p.avgPx) * p.qty : 0;
+    const rewardPct = hasTarget && p.avgPx > 0 ? ((target - p.avgPx) / p.avgPx) * 100 : 0;
+    const rrRatio = hasTarget && riskAmt > 0 ? rewardAmt / riskAmt : 0;
     return (
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
         <div className="tj-kcard-header">
@@ -1122,6 +1148,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
           {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Risk</span><span className="neg">₹{fmt(riskAmt, 0)} <small>({riskPct.toFixed(1)}%)</small></span></div>
+          {hasTarget ? (
+            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="pos">₹{fmt(rewardAmt, 0)} <small>({rewardPct.toFixed(1)}%) · {rrRatio.toFixed(1)}R</small></span></div>
+          ) : (
+            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">— <small>(set Target)</small></span></div>
+          )}
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Size</span><span>{posSize.toFixed(1)}%</span></div>
         </div>
         {p.tags.length > 0 && <div className="tj-chip-row">{p.tags.slice(0, 4).map(t => <span key={t} className="tj-chip sm">{t}</span>)}</div>}
@@ -1421,10 +1452,30 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         <div className="tj-page">
           <div className="tj-kanban-topbar">
             <div className="tj-kanban-metrics">
-              <div className="tj-km"><span>Deployed</span><strong>₹{fmt(totalInvested, 0)}</strong></div>
-              <div className="tj-km"><span>Positions</span><strong>{openPositions.length}</strong></div>
-              <div className={`tj-km ${totalUnrealized >= 0 ? "pos" : "neg"}`}><span>Unrealized P&L</span><strong>{fmtPnl(totalUnrealized)}</strong></div>
-              <div className="tj-km neg"><span>Total Risk</span><strong>₹{fmt(totalRisk, 0)}</strong></div>
+              <div className="tj-kbox tj-kbox-deployed">
+                <span className="tj-kbox-label">Total Deployed</span>
+                <strong className="tj-kbox-value">₹{fmt(totalInvested, 0)}</strong>
+                <span className="tj-kbox-sub">{deployedPctEquity.toFixed(1)}% of equity · {openPositions.length} positions</span>
+              </div>
+              <div className={`tj-kbox tj-kbox-unreal ${totalUnrealized >= 0 ? "pos" : "neg"}`}>
+                <span className="tj-kbox-label">Unrealized P&L</span>
+                <strong className="tj-kbox-value">{fmtPnl(totalUnrealized)}</strong>
+                <span className="tj-kbox-sub">{fmtPerc(unrealPctDeployed)} on deployed</span>
+              </div>
+              <div className="tj-kbox tj-kbox-risk neg">
+                <span className="tj-kbox-label">Total Risk</span>
+                <strong className="tj-kbox-value">₹{fmt(totalRisk, 0)}</strong>
+                <span className="tj-kbox-sub">{riskPctEquity.toFixed(2)}% of equity</span>
+              </div>
+              <div className={`tj-kbox tj-kbox-today ${hasTodayData ? (totalTodayPnl >= 0 ? "pos" : "neg") : ""}`}>
+                <span className="tj-kbox-label">Today's P&L</span>
+                <strong className="tj-kbox-value">
+                  {hasTodayData ? fmtPnl(totalTodayPnl) : "—"}
+                </strong>
+                <span className="tj-kbox-sub">
+                  {hasTodayData ? `${fmtPerc(todayPctBase)} on prev close` : "Sync prices to compute"}
+                </span>
+              </div>
             </div>
             <div className="tj-kanban-actions">
               {syncStatus && <span className="tj-sync-status">{syncStatus}</span>}

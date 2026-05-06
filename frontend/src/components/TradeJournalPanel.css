@@ -613,10 +613,14 @@
 }
 
 .tj-kanban-metrics {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  gap: 12px;
+  flex: 1 1 100%;
 }
+@media (max-width: 1100px) { .tj-kanban-metrics { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .tj-kanban-metrics { grid-template-columns: 1fr; } }
+
 .tj-km {
   display: flex;
   flex-direction: column;
@@ -626,6 +630,55 @@
 .tj-km strong { font-size: 0.95rem; font-weight: 700; color: var(--text); }
 .tj-km.pos strong { color: var(--positive); }
 .tj-km.neg strong { color: var(--negative); }
+
+/* New boxed KPI tiles for Open Positions header */
+.tj-kbox {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  background: var(--surface, rgba(255,255,255,0.03));
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  border-radius: 12px;
+  border-left-width: 4px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 140ms ease, border-color 140ms ease;
+}
+.tj-kbox:hover { transform: translateY(-1px); }
+
+.tj-kbox-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+.tj-kbox-value {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.tj-kbox-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.tj-kbox-deployed { border-left-color: #6366f1; }
+.tj-kbox-unreal   { border-left-color: #8b949e; }
+.tj-kbox-risk     { border-left-color: #ff6b6b; }
+.tj-kbox-today    { border-left-color: #22c55e; }
+
+.tj-kbox.pos .tj-kbox-value { color: var(--positive, #22c55e); }
+.tj-kbox.pos { border-left-color: #22c55e; }
+.tj-kbox.neg .tj-kbox-value { color: var(--negative, #ff6b6b); }
+.tj-kbox.neg { border-left-color: #ff6b6b; }
+
+.tj-kcard-metric .muted { color: var(--text-muted); opacity: 0.7; }
 
 .tj-kanban-actions { display: flex; align-items: center; gap: 8px; }
 .tj-sync-status { font-size: 0.78rem; color: var(--text-muted); }
