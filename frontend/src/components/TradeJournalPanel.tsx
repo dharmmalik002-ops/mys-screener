@@ -1148,10 +1148,10 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           {hasReward ? (
             <div className={`tj-kcard-metric ${rMultiple >= 0 ? "pos" : "neg"}`}>
               <span className="tj-kcard-ml">Reward</span>
-              <span>{rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R <small>({fmtPerc(uPerc)} ÷ {riskPct.toFixed(1)}%)</small></span>
+              <span>{rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R</span>
             </div>
           ) : (
-            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">— <small>(needs CMP & SL)</small></span></div>
+            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">—</span></div>
           )}
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Size</span><span>{posSize.toFixed(1)}%</span></div>
         </div>
