@@ -1117,13 +1117,10 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const riskPct = p.avgPx > 0 ? ((p.avgPx - sl) / p.avgPx) * 100 : 0;
     const posSize = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
     const hasLive = cmp > 0;
-    // Reward = (target - avg_px) * qty using the latest buy lot's target
-    const latestBuy = p.buyIndices.length > 0 ? trades[p.buyIndices[p.buyIndices.length - 1]] : null;
-    const target = latestBuy?.target ?? 0;
-    const hasTarget = target > 0 && target > p.avgPx;
-    const rewardAmt = hasTarget ? (target - p.avgPx) * p.qty : 0;
-    const rewardPct = hasTarget && p.avgPx > 0 ? ((target - p.avgPx) / p.avgPx) * 100 : 0;
-    const rrRatio = hasTarget && riskAmt > 0 ? rewardAmt / riskAmt : 0;
+    // Reward as R-multiple: current unrealized % divided by risk %.
+    // E.g. risk 2%, price +4% → +2.0R; risk 2%, price -4% → -2.0R.
+    const rMultiple = hasLive && riskPct > 0 ? uPerc / riskPct : 0;
+    const hasReward = hasLive && riskPct > 0;
     return (
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
         <div className="tj-kcard-header">
@@ -1148,10 +1145,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
           {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Risk</span><span className="neg">₹{fmt(riskAmt, 0)} <small>({riskPct.toFixed(1)}%)</small></span></div>
-          {hasTarget ? (
-            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="pos">₹{fmt(rewardAmt, 0)} <small>({rewardPct.toFixed(1)}%) · {rrRatio.toFixed(1)}R</small></span></div>
+          {hasReward ? (
+            <div className={`tj-kcard-metric ${rMultiple >= 0 ? "pos" : "neg"}`}>
+              <span className="tj-kcard-ml">Reward</span>
+              <span>{rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R <small>({fmtPerc(uPerc)} ÷ {riskPct.toFixed(1)}%)</small></span>
+            </div>
           ) : (
-            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">— <small>(set Target)</small></span></div>
+            <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">— <small>(needs CMP & SL)</small></span></div>
           )}
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Size</span><span>{posSize.toFixed(1)}%</span></div>
         </div>
