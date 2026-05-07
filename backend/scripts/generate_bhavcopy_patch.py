@@ -492,40 +492,150 @@ def _fetch_yfinance_universe_bars(trade_date: date) -> dict[str, dict] | None:
     return result
 
 
-def _enrich_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date) -> dict[str, dict]:
-    """Overlay yfinance NSE volumes on BSE rows + add NSE-only symbols.
+def _is_record_sane(rec: dict, *, sym: str = "") -> bool:
+    """Reject obviously broken OHLC records before they pollute the patch.
 
-    BSE record's OHLC and "p" are kept (they're authoritative for BSE-listed
-    names); only "v" is replaced with the yfinance NSE volume so RVOL is
-    apples-to-apples against the snapshot's NSE-based avg_volume_20d. Symbols
-    present only on yfinance (NSE-only listings) are added with full OHLCV.
+    Indian equity daily price bands are at most ±20% (most are 5/10/20%). An
+    EOD bar showing |close − prev| > 22% is almost always a stale BSE last-tick
+    on an illiquid line. We also reject internally inconsistent OHLC (high<low,
+    close outside [low,high] beyond a 0.5% rounding margin) and any record
+    whose close is non-positive.
     """
-    yf_symbols = _fetch_yfinance_universe_bars(trade_date)
-    if not yf_symbols:
-        logger.warning("yfinance enrichment unavailable; using raw BSE volumes (RVOL may be understated)")
-        return bse_symbols
+    try:
+        o = float(rec.get("o") or 0)
+        h = float(rec.get("h") or 0)
+        l = float(rec.get("l") or 0)
+        c = float(rec.get("c") or 0)
+        p = float(rec.get("p") or 0)
+        v = float(rec.get("v") or 0)
+    except (TypeError, ValueError):
+        return False
 
-    merged = dict(bse_symbols)
-    overlaid = 0
-    added = 0
-    for sym, yf_rec in yf_symbols.items():
-        yf_vol = int(yf_rec.get("v") or 0)
-        if sym in merged:
-            if yf_vol > 0:
-                merged[sym] = {**merged[sym], "v": yf_vol}
-                overlaid += 1
+    if c <= 0:
+        return False
+
+    if h > 0 and l > 0:
+        if h < l:
+            return False
+        margin = max(0.005 * c, 0.01)
+        if c > h + margin or c < l - margin:
+            return False
+        if o > 0 and (o > h + margin or o < l - margin):
+            return False
+
+    if p > 0:
+        chg_pct = abs(c - p) / p * 100.0
+        if chg_pct > 22.0 and v < 5000:
+            # Beyond the 20% circuit limit on negligible volume → almost
+            # certainly a stale BSE last-tick or auction print.
+            logger.warning(
+                "drop %s: |close-prev|=%.2f%% with vol=%s (likely stale tick)",
+                sym, chg_pct, int(v),
+            )
+            return False
+        # Even with non-trivial volume, rule out impossible swings (>40% in
+        # a single session is not a real Indian equity move).
+        if chg_pct > 40.0:
+            logger.warning(
+                "drop %s: |close-prev|=%.2f%% (exceeds plausible daily range)",
+                sym, chg_pct,
+            )
+            return False
+
+    if h > 0 and l > 0 and c > 0:
+        rng_pct = (h - l) / c * 100.0
+        if rng_pct > 30.0 and v < 5000:
+            logger.warning(
+                "drop %s: range=%.2f%% with vol=%s (likely BSE illiquid print)",
+                sym, rng_pct, int(v),
+            )
+            return False
+
+    return True
+
+
+def _merge_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date) -> dict[str, dict]:
+    """Combine BSE bhavcopy with yfinance NSE bars; the universe is NSE-keyed.
+
+    Priority:
+      1. yfinance .NS bar (authoritative NSE OHLC + prev close + NSE volume).
+      2. BSE row when yfinance has no entry (covers BSE-only listings or YF
+         transient gaps; we still validate the row before keeping it).
+
+    BSE OHLC is **not** trusted for NSE-primary names: BSE-segment liquidity is
+    usually a small fraction of NSE volume, so BSE last-tick can stay frozen at
+    a stale price band hit and produce wildly wrong candles / change_pct on the
+    UI even when the same stock traded normally on NSE. This is the bug class
+    that previously caused "today's EOD shows strange candlesticks".
+
+    Every record (from either source) is run through ``_is_record_sane`` before
+    inclusion so a single bad row can't poison the whole patch.
+    """
+    yf_symbols = _fetch_yfinance_universe_bars(trade_date) or {}
+    if not yf_symbols:
+        logger.warning("yfinance unavailable; falling back to BSE-only OHLC (illiquid names may show wrong candles)")
+
+    merged: dict[str, dict] = {}
+    yf_used = 0
+    bse_used = 0
+    yf_only = 0
+    bse_only = 0
+    rejected = 0
+    cross_corrected = 0
+
+    all_keys = set(bse_symbols) | set(yf_symbols)
+    for sym in all_keys:
+        bse_rec = bse_symbols.get(sym)
+        yf_rec = yf_symbols.get(sym)
+
+        chosen = None
+        if yf_rec and _is_record_sane(yf_rec, sym=sym):
+            chosen = dict(yf_rec)
+            if bse_rec is None:
+                yf_only += 1
+            else:
+                yf_used += 1
+                # Cross-validate close: if yfinance and BSE disagree by more
+                # than 5%, log it (this is rare but worth observing).
+                try:
+                    yc = float(yf_rec.get("c") or 0)
+                    bc = float(bse_rec.get("c") or 0)
+                    if yc > 0 and bc > 0 and abs(yc - bc) / yc > 0.05:
+                        cross_corrected += 1
+                        logger.info(
+                            "%s: BSE close=%.2f vs YF close=%.2f (>5%%); using YF",
+                            sym, bc, yc,
+                        )
+                except (TypeError, ValueError):
+                    pass
+        elif bse_rec and _is_record_sane(bse_rec, sym=sym):
+            chosen = dict(bse_rec)
+            if yf_rec is None:
+                bse_only += 1
+            else:
+                bse_used += 1
         else:
-            # NSE-only symbol (e.g. BSE Ltd., CDSL, MARINE) — add full record.
-            if yf_rec.get("c"):
-                merged[sym] = yf_rec
-                added += 1
+            rejected += 1
+            continue
+
+        merged[sym] = chosen
+
     logger.info(
-        "BSE+yfinance merge: %s BSE rows, %s NSE-volume overlaid, %s NSE-only added",
-        len(bse_symbols),
-        overlaid,
-        added,
+        "merge for %s: total=%s | yfinance(both)=%s yfinance(only)=%s bse(both)=%s bse(only)=%s rejected=%s cross_diverged=%s",
+        trade_date.isoformat(),
+        len(merged),
+        yf_used,
+        yf_only,
+        bse_used,
+        bse_only,
+        rejected,
+        cross_corrected,
     )
     return merged
+
+
+# Backwards-compatible alias (old name used elsewhere).
+_enrich_bse_with_yfinance = _merge_bse_with_yfinance
 
 
 def _patch_already_current(target_date: date) -> bool:
@@ -554,18 +664,21 @@ def main() -> int:
     target = _last_trading_day()
     logger.info("Fetching EOD Bhavcopy for %s", target.isoformat())
 
-    # --- Phase 1: BSE bhavcopy (authoritative, no geo-blocking, available ~4:24 PM IST) ---
+    # --- Phase 1: BSE bhavcopy (no geo-blocking, available ~4:24 PM IST) merged with yfinance NSE bars. ---
+    # The universe is NSE-keyed (.NS), so yfinance .NS data IS the authoritative
+    # NSE feed and is preferred over BSE-segment OHLC for any symbol it covers.
+    # BSE remains the fallback for BSE-only listings or YF transient gaps; both
+    # sources are validated through _is_record_sane before inclusion.
     bse_symbols = _fetch_from_bse(target)
     if bse_symbols:
         if _patch_already_current(target):
             logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(bse_symbols))
             return 0
-        # BSE bhavcopy carries only the BSE-segment volume, which collapses RVOL
-        # for NSE-primary names. Overlay yfinance NSE volumes (and add NSE-only
-        # symbols missing from BSE) so daily volume is comparable to the
-        # snapshot's NSE-based avg_volume_20d.
-        merged = _enrich_bse_with_yfinance(bse_symbols, target)
-        _write_patch(target, merged, "BSE+YF")
+        merged = _merge_bse_with_yfinance(bse_symbols, target)
+        if not merged:
+            logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
+            return 1
+        _write_patch(target, merged, "YF+BSE")
         return 0
 
     logger.info("BSE unavailable for %s. Trying NSE archives.", target)
@@ -575,22 +688,26 @@ def main() -> int:
     if csv_text:
         symbols = _parse_bhavcopy_csv(csv_text)
         if symbols:
-            if _patch_already_current(target):
-                logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
+            symbols = {s: r for s, r in symbols.items() if _is_record_sane(r, sym=s)}
+            if symbols:
+                if _patch_already_current(target):
+                    logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
+                    return 0
+                _write_patch(target, symbols, "NSE")
                 return 0
-            _write_patch(target, symbols, "NSE")
-            return 0
 
     logger.warning("NSE unavailable for %s. Trying yfinance fallback.", target)
 
     # --- Phase 3: yfinance fallback for today (globally accessible via Yahoo Finance) ---
     yf_symbols = _fetch_from_yfinance(target)
     if yf_symbols:
-        if _patch_already_current(target):
-            logger.info("Patch already current for %s. No update needed.", target.isoformat())
+        yf_symbols = {s: r for s, r in yf_symbols.items() if _is_record_sane(r, sym=s)}
+        if yf_symbols:
+            if _patch_already_current(target):
+                logger.info("Patch already current for %s. No update needed.", target.isoformat())
+                return 0
+            _write_patch(target, yf_symbols, "YFINANCE")
             return 0
-        _write_patch(target, yf_symbols, "YFINANCE")
-        return 0
 
     logger.warning("yfinance unavailable for %s. Trying previous trading day.", target)
 
@@ -600,20 +717,24 @@ def main() -> int:
         prev -= timedelta(days=1)
     bse_prev = _fetch_from_bse(prev)
     if bse_prev:
-        if _patch_already_current(prev):
-            logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(bse_prev))
+        merged_prev = _merge_bse_with_yfinance(bse_prev, prev)
+        if merged_prev:
+            if _patch_already_current(prev):
+                logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(merged_prev))
+                return 0
+            _write_patch(prev, merged_prev, "YF+BSE")
             return 0
-        _write_patch(prev, bse_prev, "BSE")
-        return 0
     csv_text = _fetch_bhavcopy_csv(prev)
     if csv_text:
         symbols = _parse_bhavcopy_csv(csv_text)
         if symbols:
-            if _patch_already_current(prev):
-                logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(symbols))
+            symbols = {s: r for s, r in symbols.items() if _is_record_sane(r, sym=s)}
+            if symbols:
+                if _patch_already_current(prev):
+                    logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(symbols))
+                    return 0
+                _write_patch(prev, symbols, "NSE")
                 return 0
-            _write_patch(prev, symbols, "NSE")
-            return 0
 
     logger.error("Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.")
     return 1
