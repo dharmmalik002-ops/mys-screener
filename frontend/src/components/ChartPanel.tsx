@@ -334,6 +334,45 @@ const POCKET_PIVOT_NOTES_STORAGE_KEY = "stockScanner.pocketPivotNotes.v1";
 const NOTES_WIDGET_STORAGE_KEY = "stockScanner.notesWidget.v1";
 const EARNINGS_WIDGET_STORAGE_KEY = "stockScanner.earningsWidget.v1";
 const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
+const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
+
+type ChartRangeKey = "3M" | "6M" | "1Y" | "FULL";
+const CHART_RANGE_OPTIONS: { value: ChartRangeKey; label: string }[] = [
+  { value: "3M", label: "3M" },
+  { value: "6M", label: "6M" },
+  { value: "1Y", label: "1Y" },
+  { value: "FULL", label: "Full" },
+];
+const DEFAULT_CHART_RANGE: ChartRangeKey = "1Y";
+
+function readChartRange(): ChartRangeKey {
+  if (typeof window === "undefined") return DEFAULT_CHART_RANGE;
+  try {
+    const raw = window.localStorage.getItem(CHART_RANGE_STORAGE_KEY);
+    if (raw && CHART_RANGE_OPTIONS.some((opt) => opt.value === raw)) {
+      return raw as ChartRangeKey;
+    }
+  } catch {
+    /* ignore */
+  }
+  return DEFAULT_CHART_RANGE;
+}
+
+function barsForChartRange(timeframe: ChartTimeframe, range: ChartRangeKey): number | null {
+  if (range === "FULL") return null;
+  const monthsByRange: Record<Exclude<ChartRangeKey, "FULL">, number> = { "3M": 3, "6M": 6, "1Y": 12 };
+  const months = monthsByRange[range];
+  // Approximate trading-bar counts per month for each timeframe.
+  const barsPerMonth: Record<ChartTimeframe, number> = {
+    "1D": 21,
+    "1W": 4.33,
+    "1h": 132, // ~6.25 trading hours/day × 21 trading days
+    "30m": 264,
+    "15m": 528,
+  } as Record<ChartTimeframe, number>;
+  const perMonth = barsPerMonth[timeframe] ?? 21;
+  return Math.max(20, Math.round(perMonth * months));
+}
 const DEFAULT_FAVORITES_SETTINGS: FavoritesSettings = {
   enabled: true,
   itemIds: ["tool:trendline", "tool:measure", "overlay:rvol"],
@@ -1300,6 +1339,7 @@ export function ChartPanel({
   const [earningsSummary, setEarningsSummary] = useState<CompanyEarningsSummary | null>(null);
   const [earningsLoading, setEarningsLoading] = useState(false);
   const [earningsError, setEarningsError] = useState<string | null>(null);
+  const [chartRange, setChartRange] = useState<ChartRangeKey>(() => readChartRange());
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
@@ -1468,6 +1508,35 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [earningsWidget]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_RANGE_STORAGE_KEY, chartRange);
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+    const chart = chartRef.current;
+    if (!chart || activeBars.length === 0) {
+      return;
+    }
+    const rangeBars = barsForChartRange(timeframe, chartRange);
+    if (chartRange === "FULL" || rangeBars === null) {
+      chart.timeScale().fitContent();
+      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
+      return;
+    }
+    const endIndex = Math.max(0, activeBars.length - 1);
+    const startIndex = Math.max(0, activeBars.length - rangeBars);
+    if (activeBars.length > rangeBars) {
+      chart.timeScale().setVisibleLogicalRange({
+        from: startIndex,
+        to: endIndex + RIGHT_EDGE_PADDING_BARS,
+      });
+    } else {
+      chart.timeScale().fitContent();
+      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
+    }
+  }, [chartRange, activeBars, timeframe]);
 
   useEffect(() => {
     if (!earningsWidget.enabled || !symbol || earningsSource) {
@@ -2043,10 +2112,14 @@ export function ChartPanel({
     chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
     chart.subscribeCrosshairMove(handleCrosshairMove);
 
-    const visibleBars = defaultVisibleBars(timeframe);
+    const rangeBars = barsForChartRange(timeframe, chartRange);
+    const visibleBars = rangeBars ?? defaultVisibleBars(timeframe);
     const endIndex = Math.max(0, activeBars.length - 1);
     const startIndex = Math.max(0, activeBars.length - visibleBars);
-    if (activeBars.length > visibleBars) {
+    if (chartRange === "FULL") {
+      chart.timeScale().fitContent();
+      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
+    } else if (activeBars.length > visibleBars) {
       chart.timeScale().setVisibleLogicalRange({
         from: startIndex,
         to: endIndex + RIGHT_EDGE_PADDING_BARS,
@@ -3051,6 +3124,21 @@ export function ChartPanel({
             >
               Earnings
             </button>
+          </div>
+          <div className="chart-widget-menu chart-range-menu">
+            <select
+              className="tool-pill chart-range-select"
+              value={chartRange}
+              onChange={(event) => setChartRange(event.target.value as ChartRangeKey)}
+              title="Chart visible range"
+              aria-label="Chart visible range"
+            >
+              {CHART_RANGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
           {selectedAnnotation ? <span className="chart-save-pill">Drag endpoints</span> : null}
         </div>
