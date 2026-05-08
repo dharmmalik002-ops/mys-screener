@@ -492,6 +492,9 @@ function LastTradesTable({
     running += trade.pnl;
     cumulativeFor.set(trade, running);
   });
+  const totalPnl = recent.reduce((sum, t) => sum + t.pnl, 0);
+  const totalPerc = recent.reduce((sum, t) => sum + t.perc, 0);
+  const avgInvested = recent.reduce((sum, t) => sum + t.posSizePct, 0) / recent.length;
 
   return (
     <div className="tj-recent-wrap">
@@ -532,6 +535,15 @@ function LastTradesTable({
             );
           })}
         </tbody>
+        <tfoot>
+          <tr className="tj-recent-total-row">
+            <td colSpan={3}>Total · {recent.length} trade{recent.length !== 1 ? "s" : ""}</td>
+            <td className="num muted">{avgInvested.toFixed(1)}% avg</td>
+            <td className={`num ${totalPerc >= 0 ? "pos" : "neg"}`}>{fmtPerc(totalPerc)}</td>
+            <td className={`num ${totalPnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(totalPnl)}</td>
+            <td className={`num ${totalPnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(totalPnl)}</td>
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

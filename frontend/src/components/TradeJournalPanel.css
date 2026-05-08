@@ -1929,6 +1929,23 @@
 .tj-recent-table td.pos { color: var(--positive); font-weight: 600; }
 .tj-recent-table td.neg { color: var(--negative); font-weight: 600; }
 
+.tj-recent-table tfoot .tj-recent-total-row td {
+  padding: 9px 10px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-top: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--tj-accent, var(--accent, #6ea8ff)) 8%, transparent);
+}
+.tj-recent-table tfoot .tj-recent-total-row td:first-child {
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.tj-recent-table tfoot .tj-recent-total-row td.muted { color: var(--text-muted); font-weight: 500; }
+.tj-recent-table tfoot .tj-recent-total-row td.pos { color: var(--positive); }
+.tj-recent-table tfoot .tj-recent-total-row td.neg { color: var(--negative); }
+
 /* ─── Lite dashboard pass (less padding, smaller headers) ────────────────── */
 .tj-page-dashboard.tj-lite .tj-kpis {
   gap: 8px;
