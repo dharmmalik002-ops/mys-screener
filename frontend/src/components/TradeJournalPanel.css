@@ -621,72 +621,154 @@
   text-decoration: none;
 }
 
-/* ─── Heatmap ────────────────────────────────────────────────────────────── */
-.tj-hm-root {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px 10px;
-}
-
-.tj-hm-month {
+/* ─── Monthly P&L Calendar ─────────────────────────────────────────────────── */
+.tj-cal-root {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 10px;
 }
 
-.tj-hm-month-title {
-  font-size: 0.66rem;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  text-align: center;
-  margin-bottom: 3px;
-}
-
-.tj-hm-dow-row {
+.tj-cal-toolbar {
   display: grid;
-  grid-template-columns: repeat(7, 11px);
-  gap: 2px;
-}
-
-.tj-hm-dow {
-  font-size: 0.55rem;
-  color: var(--text-muted);
-  text-align: center;
-  line-height: 11px;
-}
-
-.tj-hm-grid {
-  display: grid;
-  grid-template-columns: repeat(7, 11px);
-  gap: 2px;
-}
-
-.tj-hm-tile {
-  width: 11px;
-  height: 11px;
-  border-radius: 2px;
-  cursor: default;
-}
-.tj-hm-tile.empty { background: var(--surface-strong); }
-.tj-hm-tile.win-1 { background: color-mix(in srgb, var(--positive) 55%, transparent); }
-.tj-hm-tile.win-3 { background: var(--positive); }
-.tj-hm-tile.loss-1 { background: color-mix(in srgb, var(--negative) 55%, transparent); }
-.tj-hm-tile.loss-3 { background: var(--negative); }
-.tj-hm-tile:hover { outline: 1.5px solid var(--accent); }
-
-.tj-hm-legend {
-  width: 100%;
-  display: flex;
+  grid-template-columns: auto 1fr auto auto;
   align-items: center;
-  gap: 6px;
-  font-size: 0.72rem;
-  color: var(--text-muted);
-  flex-wrap: wrap;
-  margin-top: 4px;
+  gap: 10px;
+  padding: 4px 2px;
 }
-.tj-hm-legend .tj-hm-tile { display: inline-block; }
+
+.tj-cal-title-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.tj-cal-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.2px;
+}
+
+.tj-cal-subtotal {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.tj-cal-subtotal.pos { color: var(--positive); }
+.tj-cal-subtotal.neg { color: var(--negative); }
+
+.tj-cal-nav,
+.tj-cal-today {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+}
+.tj-cal-nav {
+  font-size: 1.1rem;
+  line-height: 1;
+  padding: 4px 12px;
+  min-width: 36px;
+}
+.tj-cal-nav:hover,
+.tj-cal-today:hover {
+  background: var(--surface);
+  border-color: var(--accent);
+}
+
+.tj-cal-dow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.tj-cal-dow-cell {
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 8px 0;
+  letter-spacing: 0.3px;
+}
+
+.tj-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.tj-cal-cell {
+  position: relative;
+  background: var(--surface);
+  min-height: 78px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  cursor: default;
+  transition: background 0.12s;
+}
+.tj-cal-cell.out {
+  background: var(--surface-strong);
+  opacity: 0.45;
+}
+.tj-cal-cell.today {
+  outline: 1.5px solid var(--accent);
+  outline-offset: -1.5px;
+}
+.tj-cal-cell.pos {
+  background: color-mix(in srgb, var(--positive) 8%, var(--surface));
+}
+.tj-cal-cell.neg {
+  background: color-mix(in srgb, var(--negative) 8%, var(--surface));
+}
+
+.tj-cal-day {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1;
+}
+
+.tj-cal-amt {
+  margin-top: auto;
+  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  padding-bottom: 4px;
+}
+.tj-cal-cell.pos .tj-cal-amt { color: var(--positive); }
+.tj-cal-cell.neg .tj-cal-amt { color: var(--negative); }
+
+.tj-cal-empty {
+  margin-top: auto;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  padding-bottom: 4px;
+}
+
+@media (max-width: 720px) {
+  .tj-cal-cell {
+    min-height: 58px;
+    padding: 5px 6px;
+  }
+  .tj-cal-amt { font-size: 0.82rem; }
+  .tj-cal-empty { font-size: 0.7rem; }
+  .tj-cal-day { font-size: 0.7rem; }
+  .tj-cal-dow-cell { font-size: 0.68rem; padding: 5px 0; }
+}
 
 /* ─── Trade Log ──────────────────────────────────────────────────────────── */
 .tj-log-toolbar {
@@ -1220,9 +1302,6 @@
 :root[data-theme="light"] .tj-kcol-badge {
   background: #f1f5f9;
   border-color: #e2e8f0;
-}
-:root[data-theme="light"] .tj-hm-tile.empty {
-  background: #e2e8f0;
 }
 :root[data-theme="light"] .tj-action-btn.ghost {
   background: #f1f5f9;
@@ -1831,34 +1910,6 @@
 .tj-root .tj-board-sym {
   font-weight: 800;
   letter-spacing: 0.02em;
-}
-
-/* ── Heatmap polish ─────────────────────────────────────────────────────── */
-.tj-root .tj-hm-tile {
-  width: 13px;
-  height: 13px;
-  border-radius: 3px;
-}
-
-.tj-root .tj-hm-grid,
-.tj-root .tj-hm-dow-row {
-  grid-template-columns: repeat(7, 13px);
-}
-
-.tj-root .tj-hm-tile.win-1 {
-  background: color-mix(in srgb, var(--tj-pos) 45%, transparent);
-}
-
-.tj-root .tj-hm-tile.win-3 {
-  background: linear-gradient(135deg, var(--tj-pos), color-mix(in srgb, var(--tj-pos) 75%, var(--tj-accent)));
-}
-
-.tj-root .tj-hm-tile.loss-1 {
-  background: color-mix(in srgb, var(--tj-neg) 45%, transparent);
-}
-
-.tj-root .tj-hm-tile.loss-3 {
-  background: linear-gradient(135deg, var(--tj-neg), #b91c1c);
 }
 
 /* ── Light theme: lighten gradients on KPIs and donut ───────────────────── */

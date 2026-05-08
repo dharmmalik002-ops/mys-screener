@@ -549,63 +549,107 @@ function LastTradesTable({
   );
 }
 
-// ─── Monthly Heatmap ───────────────────────────────────────────────────────────
-function Heatmap({ closed }: { closed: ClosedTrade[] }) {
-  const byDay: Record<string, number> = {};
-  closed.forEach(c => {
-    const d = (c.exitDate || "").split("T")[0];
-    if (d) byDay[d] = (byDay[d] || 0) + c.pnl;
-  });
-
-  const now = new Date();
-  const months = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date(now.getFullYear(), now.getMonth() - 11 + i, 1);
-    const year = date.getFullYear(), month = date.getMonth();
-    const label = date.toLocaleString("default", { month: "short", year: "2-digit" });
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDow = new Date(year, month, 1).getDay(); // 0=Sun
-    const days = Array.from({ length: daysInMonth }, (_, di) => {
-      const dayStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(di + 1).padStart(2, "0")}`;
-      return { dayStr, pnl: byDay[dayStr] };
+// ─── Monthly P&L Calendar ──────────────────────────────────────────────────────
+function MonthlyCalendar({ closed }: { closed: ClosedTrade[] }) {
+  const byDay = useMemo(() => {
+    const m: Record<string, number> = {};
+    closed.forEach(c => {
+      const d = (c.exitDate || "").split("T")[0];
+      if (d) m[d] = (m[d] || 0) + c.pnl;
     });
-    return { label, days, firstDow };
-  });
+    return m;
+  }, [closed]);
 
-  function tileClass(pnl: number | undefined) {
-    if (pnl === undefined) return "empty";
-    if (pnl > 10000) return "win-3";
-    if (pnl > 0) return "win-1";
-    if (pnl < -10000) return "loss-3";
-    return "loss-1";
+  const today = new Date();
+  const [view, setView] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+
+  const year = view.getFullYear();
+  const month = view.getMonth();
+  const monthLabel = view.toLocaleString("default", { month: "short", year: "numeric" });
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDow = new Date(year, month, 1).getDay();
+  const daysInPrev = new Date(year, month, 0).getDate();
+
+  // Build 6-week grid (42 cells)
+  const cells: { date: Date; inMonth: boolean }[] = [];
+  for (let i = 0; i < firstDow; i++) {
+    const d = new Date(year, month - 1, daysInPrev - firstDow + 1 + i);
+    cells.push({ date: d, inMonth: false });
+  }
+  for (let d = 1; d <= daysInMonth; d++) {
+    cells.push({ date: new Date(year, month, d), inMonth: true });
+  }
+  while (cells.length < 42) {
+    const last = cells[cells.length - 1].date;
+    cells.push({ date: new Date(last.getFullYear(), last.getMonth(), last.getDate() + 1), inMonth: false });
   }
 
-  const DOW_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+  function dayKey(d: Date) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  // Monthly P&L total
+  const monthlyPnl = useMemo(() => {
+    let sum = 0;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const k = `${year}-${String(month + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
+      if (byDay[k] !== undefined) sum += byDay[k];
+    }
+    return sum;
+  }, [byDay, year, month, daysInMonth]);
+
+  const todayKey = dayKey(today);
+  const DOW = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  function shift(delta: number) {
+    setView(new Date(year, month + delta, 1));
+  }
+  function goToday() {
+    setView(new Date(today.getFullYear(), today.getMonth(), 1));
+  }
 
   return (
-    <div className="tj-hm-root">
-      {months.map(m => (
-        <div key={m.label} className="tj-hm-month">
-          <div className="tj-hm-month-title">{m.label}</div>
-          <div className="tj-hm-dow-row">{DOW_LABELS.map((d, i) => <span key={i} className="tj-hm-dow">{d}</span>)}</div>
-          <div className="tj-hm-grid">
-            {/* Empty cells before first day */}
-            {Array.from({ length: m.firstDow }, (_, i) => <div key={`e${i}`} className="tj-hm-tile empty" />)}
-            {m.days.map(({ dayStr, pnl }) => (
-              <div
-                key={dayStr}
-                className={`tj-hm-tile ${tileClass(pnl)}`}
-                title={pnl !== undefined ? `${dayStr}: ${fmtPnl(pnl)}` : dayStr}
-              />
-            ))}
+    <div className="tj-cal-root">
+      <div className="tj-cal-toolbar">
+        <button type="button" className="tj-cal-nav" onClick={() => shift(-1)} aria-label="Previous month">‹</button>
+        <div className="tj-cal-title-wrap">
+          <div className="tj-cal-title">{monthLabel}</div>
+          <div className={`tj-cal-subtotal ${monthlyPnl >= 0 ? "pos" : "neg"}`}>
+            Monthly P/L: {monthlyPnl >= 0 ? "₹" : "−₹"}{fmt(Math.abs(monthlyPnl), 0)}
           </div>
         </div>
-      ))}
-      <div className="tj-hm-legend">
-        <span className="tj-hm-tile win-3" /><span>High gain</span>
-        <span className="tj-hm-tile win-1" /><span>Gain</span>
-        <span className="tj-hm-tile empty" style={{ border: "1px solid var(--line)" }} /><span>No trade</span>
-        <span className="tj-hm-tile loss-1" /><span>Loss</span>
-        <span className="tj-hm-tile loss-3" /><span>High loss</span>
+        <button type="button" className="tj-cal-nav" onClick={() => shift(1)} aria-label="Next month">›</button>
+        <button type="button" className="tj-cal-today" onClick={goToday}>Today</button>
+      </div>
+      <div className="tj-cal-dow">
+        {DOW.map(d => <div key={d} className="tj-cal-dow-cell">{d}</div>)}
+      </div>
+      <div className="tj-cal-grid">
+        {cells.map(({ date, inMonth }, idx) => {
+          const k = dayKey(date);
+          const pnl = byDay[k];
+          const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+          const isToday = k === todayKey;
+          const cls = [
+            "tj-cal-cell",
+            !inMonth ? "out" : "",
+            isToday ? "today" : "",
+            inMonth && pnl !== undefined ? (pnl >= 0 ? "pos" : "neg") : "",
+          ].filter(Boolean).join(" ");
+          return (
+            <div key={idx} className={cls} title={inMonth && pnl !== undefined ? `${k}: ${fmtPnl(pnl)}` : k}>
+              <span className="tj-cal-day">{date.getDate()}</span>
+              {inMonth && pnl !== undefined && (
+                <span className="tj-cal-amt">
+                  {pnl >= 0 ? "₹" : "−₹"}{fmt(Math.abs(pnl), 0)}
+                </span>
+              )}
+              {inMonth && pnl === undefined && !isWeekend && (
+                <span className="tj-cal-empty">No Trades</span>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -1654,7 +1698,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
           <div className="tj-card">
             <div className="tj-card-hdr">Monthly Consistency</div>
-            <Heatmap closed={closedTrades} />
+            <MonthlyCalendar closed={closedTrades} />
           </div>
         </div>
       )}
