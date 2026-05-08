@@ -470,6 +470,73 @@ function PnlDistribution({
   );
 }
 
+// ─── Last Trades Table ─────────────────────────────────────────────────────────
+function LastTradesTable({
+  closed,
+  onOpenSymbolChart,
+}: {
+  closed: ClosedTrade[];
+  onOpenSymbolChart?: (symbol: string) => void;
+}) {
+  if (!closed.length) {
+    return <div className="tj-empty">No closed trades yet</div>;
+  }
+  const recent = [...closed]
+    .sort((a, b) => getSafeTime(b.exitDate) - getSafeTime(a.exitDate))
+    .slice(0, 10);
+  // Cumulative computed oldest → newest within the 10-trade window so the
+  // top (newest) row shows the running total of the period.
+  const cumulativeFor = new Map<ClosedTrade, number>();
+  let running = 0;
+  [...recent].reverse().forEach((trade) => {
+    running += trade.pnl;
+    cumulativeFor.set(trade, running);
+  });
+
+  return (
+    <div className="tj-recent-wrap">
+      <table className="tj-recent-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Symbol</th>
+            <th>Exit</th>
+            <th className="num">% Invested</th>
+            <th className="num">% P&amp;L</th>
+            <th className="num">Total P&amp;L</th>
+            <th className="num">Cumulative</th>
+          </tr>
+        </thead>
+        <tbody>
+          {recent.map((trade, idx) => {
+            const cum = cumulativeFor.get(trade) ?? 0;
+            return (
+              <tr key={`${trade.symbol}-${trade.exitDate}-${idx}`}>
+                <td className="muted">{idx + 1}</td>
+                <td>
+                  <button
+                    type="button"
+                    className="tj-symbol-link tj-symbol-link-inline"
+                    onClick={() => onOpenSymbolChart?.(trade.symbol)}
+                    title="Open big chart"
+                  >
+                    {trade.symbol}
+                  </button>
+                </td>
+                <td className="muted">{trade.exitDate?.slice(0, 10) || "—"}</td>
+                <td className="num">{trade.posSizePct.toFixed(1)}%</td>
+                <td className={`num ${trade.perc >= 0 ? "pos" : "neg"}`}>{fmtPerc(trade.perc)}</td>
+                <td className={`num ${trade.pnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(trade.pnl)}</td>
+                <td className={`num ${cum >= 0 ? "pos" : "neg"}`}>{fmtPnl(cum)}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 // ─── Monthly Heatmap ───────────────────────────────────────────────────────────
 function Heatmap({ closed }: { closed: ClosedTrade[] }) {
   const byDay: Record<string, number> = {};
@@ -1235,52 +1302,6 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const unrealPctDeployed = totalInvested > 0 ? (totalUnrealized / totalInvested) * 100 : 0;
   const riskPctEquity = startEquity > 0 ? (totalRisk / startEquity) * 100 : 0;
   const todayPctBase = hasTodayData ? (totalTodayPnl / todayBaseValue) * 100 : 0;
-  const symbolScoreboard = useMemo(() => {
-    const stats: Record<string, { symbol: string; realized: number; unrealized: number; wins: number; losses: number; openQty: number }> = {};
-
-    closedTrades.forEach((trade) => {
-      const symbol = trade.symbol.toUpperCase();
-      if (!stats[symbol]) {
-        stats[symbol] = { symbol, realized: 0, unrealized: 0, wins: 0, losses: 0, openQty: 0 };
-      }
-      stats[symbol].realized += trade.pnl;
-      if (trade.pnl > 0) stats[symbol].wins += 1;
-      else stats[symbol].losses += 1;
-    });
-
-    openPositions.forEach((position) => {
-      const symbol = position.symbol.toUpperCase();
-      if (!stats[symbol]) {
-        stats[symbol] = { symbol, realized: 0, unrealized: 0, wins: 0, losses: 0, openQty: 0 };
-      }
-      const cmp = posMeta[position.symbol]?.cmp || position.avgPx;
-      stats[symbol].unrealized += (cmp - position.avgPx) * position.qty;
-      stats[symbol].openQty += position.qty;
-    });
-
-    return Object.values(stats)
-      .map((row) => {
-        const closedCount = row.wins + row.losses;
-        return {
-          ...row,
-          combined: row.realized + row.unrealized,
-          winRate: closedCount > 0 ? (row.wins / closedCount) * 100 : 0,
-        };
-      })
-      .filter((row) => {
-        const score = dashboardMetric === "combined" ? row.combined : row.realized;
-        if (dashboardFocus === "winners") return score >= 0;
-        if (dashboardFocus === "losers") return score < 0;
-        return true;
-      })
-      .sort((a, b) => {
-        const aScore = dashboardMetric === "combined" ? a.combined : a.realized;
-        const bScore = dashboardMetric === "combined" ? b.combined : b.realized;
-        if (bScore !== aScore) return bScore - aScore;
-        return b.winRate - a.winRate;
-      });
-  }, [closedTrades, dashboardFocus, dashboardMetric, openPositions, posMeta]);
-
   // ── Per-symbol score map + focus filter (drives Equity Curve + Distribution charts) ──
   const symbolScoreMap = useMemo(() => {
     const map: Record<string, { realized: number; unrealized: number; combined: number }> = {};
@@ -1482,7 +1503,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
       {/* ── Tab 0: Dashboard ── */}
       {activeTab === 0 && (
-        <div className="tj-page">
+        <div className="tj-page tj-page-dashboard tj-lite">
           <div className="tj-kpis">
             <div className={`tj-kpi ${totalPnl >= 0 ? "pos" : "neg"}`}>
               <div className="tj-kpi-label">Total Realized P&L</div>
@@ -1611,31 +1632,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             <SetupBreakdown closed={closedTrades} />
           </div>
 
-          <div className="tj-card" style={{ marginBottom: 16 }}>
-            <div className="tj-card-hdr">Interactive Symbol Scoreboard</div>
-            {symbolScoreboard.length === 0 ? (
-              <div className="tj-empty">No symbol data yet</div>
-            ) : (
-              <div className="tj-board-list">
-                {symbolScoreboard.slice(0, 12).map((row) => {
-                  const activePnl = dashboardMetric === "combined" ? row.combined : row.realized;
-                  return (
-                    <button
-                      type="button"
-                      key={row.symbol}
-                      className="tj-board-row"
-                      onClick={() => onOpenSymbolChart?.(row.symbol)}
-                      title="Open big chart"
-                    >
-                      <span className="tj-board-sym">{row.symbol}</span>
-                      <span className={activePnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(activePnl)}</span>
-                      <span className="tj-board-meta">WR {row.winRate.toFixed(0)}% · Open Qty {Math.round(row.openQty)}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-            <div className="tj-card-note">Click any symbol to open the full-size chart.</div>
+          <div className="tj-card tj-recent-card">
+            <div className="tj-card-hdr">
+              Last 10 Trades
+              <span className="tj-card-hdr-sub">Most recent at top · Cumulative over the window</span>
+            </div>
+            <LastTradesTable closed={closedTrades} onOpenSymbolChart={onOpenSymbolChart} />
           </div>
 
           <div className="tj-card">

@@ -1878,3 +1878,152 @@
   background: linear-gradient(180deg, #fff, color-mix(in srgb, var(--tj-accent) 5%, #fff));
 }
 
+/* ─── Last Trades Table ──────────────────────────────────────────────────── */
+.tj-recent-card {
+  margin-bottom: 12px;
+}
+
+.tj-recent-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: var(--radius-sm, 8px);
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-strong, var(--surface)) 60%, transparent);
+}
+
+.tj-recent-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.tj-recent-table thead th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-size: 0.65rem;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-strong, var(--surface)) 80%, transparent);
+  position: sticky;
+  top: 0;
+}
+.tj-recent-table thead th.num { text-align: right; }
+
+.tj-recent-table tbody td {
+  padding: 8px 10px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.tj-recent-table tbody tr:last-child td {
+  border-bottom: none;
+}
+.tj-recent-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--tj-accent, var(--accent, #6ea8ff)) 6%, transparent);
+}
+
+.tj-recent-table td.num { text-align: right; }
+.tj-recent-table td.muted { color: var(--text-muted); }
+.tj-recent-table td.pos { color: var(--positive); font-weight: 600; }
+.tj-recent-table td.neg { color: var(--negative); font-weight: 600; }
+
+/* ─── Lite dashboard pass (less padding, smaller headers) ────────────────── */
+.tj-page-dashboard.tj-lite .tj-kpis {
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tj-root .tj-page-dashboard.tj-lite .tj-kpi {
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.tj-page-dashboard.tj-lite .tj-kpi-label {
+  font-size: 0.65rem;
+  letter-spacing: 0.3px;
+}
+
+.tj-page-dashboard.tj-lite .tj-kpi-value {
+  font-size: 1.18rem;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+.tj-page-dashboard.tj-lite .tj-kpi-sub {
+  font-size: 0.66rem;
+}
+
+.tj-page-dashboard.tj-lite .tj-dashboard-controlbar {
+  padding: 6px 8px;
+  margin-bottom: 10px;
+}
+
+.tj-root .tj-page-dashboard.tj-lite .tj-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.tj-page-dashboard.tj-lite .tj-card-hdr {
+  font-size: 0.7rem;
+  margin-bottom: 8px;
+  letter-spacing: 0.4px;
+}
+
+.tj-page-dashboard.tj-lite .tj-card-hdr-sub {
+  font-size: 0.62rem;
+}
+
+.tj-page-dashboard.tj-lite .tj-chart-row {
+  margin-bottom: 10px;
+}
+
+.tj-page-dashboard.tj-lite .tj-chart-row.two-col {
+  gap: 10px;
+}
+
+.tj-page-dashboard.tj-lite .tj-eq-svg {
+  height: 260px !important;
+}
+
+.tj-page-dashboard.tj-lite .tj-dist-summary {
+  padding: 6px 10px;
+  gap: 6px;
+}
+
+.tj-page-dashboard.tj-lite .tj-dist-summary-label {
+  font-size: 0.6rem;
+}
+
+.tj-page-dashboard.tj-lite .tj-dist-summary-value {
+  font-size: 0.86rem;
+}
+
+.tj-page-dashboard.tj-lite .tj-dist-chart {
+  height: 178px;
+}
+
+.tj-page-dashboard.tj-lite .tj-dist-bar-area {
+  height: 150px;
+}
+
+.tj-page-dashboard.tj-lite .tj-wl-row {
+  padding: 4px 6px;
+}
+
+.tj-page-dashboard.tj-lite .tj-wl-title {
+  font-size: 0.72rem;
+  margin-bottom: 4px;
+}
+
+.tj-page-dashboard.tj-lite .tj-recent-table {
+  font-size: 0.78rem;
+}
+
+.tj-page-dashboard.tj-lite .tj-recent-table thead th,
+.tj-page-dashboard.tj-lite .tj-recent-table tbody td {
+  padding: 6px 9px;
+}
+
