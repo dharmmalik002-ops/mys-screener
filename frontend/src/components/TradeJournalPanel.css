@@ -786,6 +786,8 @@
 /* ─── Calendar Day Modal ───────────────────────────────────────────────────── */
 .tj-cal-modal {
   max-width: 720px;
+  align-self: flex-start;
+  margin-top: 4vh;
 }
 
 .tj-cal-modal-summary {
