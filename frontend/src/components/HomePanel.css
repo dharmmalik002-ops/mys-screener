@@ -455,9 +455,9 @@
 /* --- Last 10 Days A/D mini chart --- */
 .homepro-breadth-history {
   width: 100%;
-  margin-top: 10px;
+  margin-top: 14px;
   border-top: 1px solid var(--hp-border);
-  padding-top: 10px;
+  padding-top: 14px;
 }
 
 .homepro-breadth-history-head {
@@ -466,9 +466,60 @@
   color: var(--hp-muted);
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   text-align: center;
 }
+
+.homepro-breadth-history-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.homepro-breadth-history-summary {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 10px;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--hp-surface-strong, #0f172a) 70%, transparent),
+    transparent);
+  border: 1px solid var(--hp-border);
+  border-radius: 8px;
+  min-height: 70px;
+}
+
+.homepro-breadth-history-summary-date {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hp-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.homepro-breadth-history-summary-pcts {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.homepro-breadth-history-summary-pcts .pos { color: #10b981; }
+.homepro-breadth-history-summary-pcts .neg { color: #ef4444; }
+.homepro-breadth-history-summary-pcts .muted { color: var(--hp-muted); font-weight: 500; }
+
+.homepro-breadth-history-summary-counts {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.homepro-breadth-history-summary-counts .pos { color: #10b981; }
+.homepro-breadth-history-summary-counts .neg { color: #ef4444; }
+.homepro-breadth-history-summary-counts .muted { color: var(--hp-muted); }
 
 .homepro-breadth-history-bars {
   display: grid;
@@ -481,31 +532,66 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 3px;
+  gap: 4px;
   min-width: 0;
+  padding: 4px 2px 2px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, transform 0.12s;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+}
+
+.homepro-breadth-history-day:hover,
+.homepro-breadth-history-day.active {
+  background: color-mix(in srgb, var(--hp-surface-strong, #1e293b) 70%, transparent);
+  border-color: var(--hp-border);
+  transform: translateY(-1px);
 }
 
 .homepro-breadth-history-stack {
-  height: 60px;
+  height: 72px;
   display: flex;
   flex-direction: column;
-  border-radius: 3px;
+  border-radius: 4px;
   overflow: hidden;
   background: var(--hp-surface-strong, #1f2937);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--hp-border) 50%, transparent);
 }
 
-.homepro-breadth-history-seg.adv { background: #10b981; }
-.homepro-breadth-history-seg.unc { background: #cbd5e1; }
-.homepro-breadth-history-seg.dec { background: #ef4444; }
+.homepro-breadth-history-day:hover .homepro-breadth-history-stack,
+.homepro-breadth-history-day.active .homepro-breadth-history-stack {
+  box-shadow: inset 0 0 0 1px var(--hp-border), 0 2px 6px rgba(0,0,0,0.18);
+}
+
+.homepro-breadth-history-seg {
+  width: 100%;
+  transition: filter 0.12s;
+}
+.homepro-breadth-history-seg.adv {
+  background: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+.homepro-breadth-history-seg.unc { background: #94a3b8; }
+.homepro-breadth-history-seg.dec {
+  background: linear-gradient(180deg, #f87171 0%, #dc2626 100%);
+}
+
+.homepro-breadth-history-day:hover .homepro-breadth-history-seg,
+.homepro-breadth-history-day.active .homepro-breadth-history-seg {
+  filter: brightness(1.15);
+}
 
 .homepro-breadth-history-pct {
-  font-size: 10px;
+  font-size: 10.5px;
   font-weight: 700;
   text-align: center;
   font-variant-numeric: tabular-nums;
 }
-.homepro-breadth-history-pct.pos { color: #059669; }
-.homepro-breadth-history-pct.neg { color: #dc2626; }
+.homepro-breadth-history-pct.pos { color: #10b981; }
+.homepro-breadth-history-pct.neg { color: #ef4444; }
 
 .homepro-breadth-history-date {
   font-size: 9.5px;
@@ -514,6 +600,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.homepro-breadth-history-day.active .homepro-breadth-history-date {
+  color: var(--hp-text);
+  font-weight: 600;
 }
 
 .homepro-breadth-history-empty {

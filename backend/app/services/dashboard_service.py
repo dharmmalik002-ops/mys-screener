@@ -287,6 +287,7 @@ class DashboardService:
         self._industry_groups_cache: IndustryGroupsResponse | None = None
         self._market_health_cache: MarketHealthResponse | None = None
         self._sector_rotation_cache = None
+        self._breadth_history_cache: tuple[datetime, list[BreadthDayCounts]] | None = None
         # Resolve money-flow storage path next to data/
         from pathlib import Path
         _backend_root = Path(__file__).resolve().parents[2]
@@ -615,49 +616,66 @@ class DashboardService:
             total=len(snapshots),
         )
 
-    @staticmethod
-    def _breadth_history_from_snapshots(snapshots: list[StockSnapshot], days: int = 10) -> list[BreadthDayCounts]:
-        """Daily advance/decline counts over the last `days` trading sessions.
+    def _breadth_history_from_chart_cache(
+        self,
+        snapshots: list[StockSnapshot],
+        days: int = 10,
+    ) -> list[BreadthDayCounts]:
+        """Daily advance/decline counts from the real per-stock 1D chart cache.
 
-        Derived on-the-fly from each snapshot's `chart_grid_points` (last 240
-        daily closes), so it works without any persisted history file: for
-        each consecutive (prev, curr) pair we attribute the change to the
-        date of `curr`, and aggregate across the universe.
+        Avoids `chart_grid_points` because that series is sparse-sampled
+        (step ≈ 2.17 with 520→240 downsample) so consecutive points are
+        usually 2–3 trading days apart, which silently turns the count into
+        a 2-day change rather than day-over-day breadth.
+
+        Reads the last `days+1` daily bars per symbol via the provider's
+        chart-cache reader (already sanitized to drop holiday zombies and
+        yfinance duplicates), then aggregates close[d] vs close[d-1] across
+        the universe per session date.
         """
         if not snapshots or days <= 0:
             return []
 
-        # date -> (advances, declines, unchanged)
+        read_chart_cache = getattr(self.provider, "_read_chart_cache", None)
+        if not callable(read_chart_cache):
+            return []
+
         per_day: dict[str, list[int]] = {}
 
-        for snap in snapshots:
-            points = snap.chart_grid_points or []
-            if len(points) < 2:
-                continue
-            # Walk only the tail we care about — `days+1` points yields up to
-            # `days` change observations.
-            tail = points[-(days + 1):]
-            prev_value: float | None = None
-            for point in tail:
-                value = float(point.value or 0)
-                if value <= 0:
-                    prev_value = value if value > 0 else prev_value
+        def _process(symbol: str) -> None:
+            try:
+                bars = read_chart_cache(symbol, "1D", days + 1)
+            except Exception:
+                return
+            if not bars or len(bars) < 2:
+                return
+            prev_close: float | None = None
+            for bar in bars:
+                close = float(getattr(bar, "close", 0) or 0)
+                if close <= 0:
                     continue
-                if prev_value is None or prev_value <= 0:
-                    prev_value = value
+                if prev_close is None or prev_close <= 0:
+                    prev_close = close
                     continue
-                # Date of the current bar — chart_grid_points are stamped at
-                # 00:00 UTC of the trading day, so .date() in UTC is correct.
-                dt = datetime.fromtimestamp(int(point.time or 0), tz=timezone.utc)
-                date_key = dt.date().isoformat()
+                ts = int(getattr(bar, "time", 0) or 0)
+                date_key = datetime.fromtimestamp(ts, tz=timezone.utc).date().isoformat()
                 bucket = per_day.setdefault(date_key, [0, 0, 0])
-                if value > prev_value:
+                if close > prev_close:
                     bucket[0] += 1
-                elif value < prev_value:
+                elif close < prev_close:
                     bucket[1] += 1
                 else:
                     bucket[2] += 1
-                prev_value = value
+                prev_close = close
+
+        # Read in parallel — chart caches are tiny JSON blobs, but the
+        # universe is ~1.3k stocks, so threads keep the wall-clock under a
+        # couple of seconds.
+        from concurrent.futures import ThreadPoolExecutor
+
+        symbols = [str(s.symbol or "").strip().upper() for s in snapshots if s.symbol]
+        with ThreadPoolExecutor(max_workers=16) as ex:
+            list(ex.map(_process, symbols))
 
         if not per_day:
             return []
@@ -673,6 +691,19 @@ class DashboardService:
             )
             for d in ordered_dates
         ]
+
+    def _breadth_history_cached(
+        self,
+        snapshots: list[StockSnapshot],
+        snapshot_updated_at: datetime,
+        days: int = 10,
+    ) -> list[BreadthDayCounts]:
+        cached = self._breadth_history_cache
+        if cached is not None and cached[0] >= snapshot_updated_at and len(cached[1]) >= days:
+            return cached[1][-days:]
+        history = self._breadth_history_from_chart_cache(snapshots, days=days)
+        self._breadth_history_cache = (snapshot_updated_at, history)
+        return history
 
     def _calculate_market_breadth(self, universe_name: str, universe_stocks: list[StockSnapshot]) -> UniverseBreadth:
         total = len(universe_stocks)
@@ -804,7 +835,9 @@ class DashboardService:
             )
 
         breadth_today = self._breadth_today_from_snapshots(scan_snapshots)
-        breadth_history = self._breadth_history_from_snapshots(scan_snapshots, days=10)
+        breadth_history = await asyncio.to_thread(
+            self._breadth_history_cached, scan_snapshots, snapshot_updated_at, 10
+        )
 
         response = DashboardResponse(
             app_name=self.settings.app_name,

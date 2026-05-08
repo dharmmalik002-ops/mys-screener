@@ -206,6 +206,8 @@ function Donut({ segments, size = 180 }: { segments: { value: number; color: str
 }
 
 function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
+  const [activeIdx, setActiveIdx] = useState<number | null>(null);
+
   if (!history || history.length === 0) {
     return (
       <div className="homepro-breadth-history-empty">
@@ -214,33 +216,67 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
     );
   }
   const days = history.slice(-10);
+  const focused = activeIdx !== null ? days[activeIdx] : days[days.length - 1];
+  const focusedTotal = Math.max(1, focused.total);
+  const focusedAdvPct = (focused.advances / focusedTotal) * 100;
+  const focusedDecPct = (focused.declines / focusedTotal) * 100;
+
+  const labelFor = (d: BreadthDayCounts, opts: { long?: boolean } = {}) => {
+    const dt = new Date(d.date + "T00:00:00");
+    if (Number.isNaN(dt.getTime())) return d.date.slice(5);
+    return dt.toLocaleDateString("en-IN", opts.long
+      ? { weekday: "short", day: "numeric", month: "short" }
+      : { day: "numeric", month: "short" }
+    );
+  };
+
   return (
-    <div className="homepro-breadth-history-bars">
-      {days.map((d) => {
-        const total = Math.max(1, d.total);
-        const advPct = (d.advances / total) * 100;
-        const decPct = (d.declines / total) * 100;
-        const uncPct = Math.max(0, 100 - advPct - decPct);
-        const label = (() => {
-          const dt = new Date(d.date + "T00:00:00");
-          if (Number.isNaN(dt.getTime())) return d.date.slice(5);
-          return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
-        })();
-        const advLeads = d.advances >= d.declines;
-        return (
-          <div className="homepro-breadth-history-day" key={d.date} title={`${label}: ${d.advances}↑ / ${d.declines}↓ / ${d.unchanged}=`}>
-            <div className="homepro-breadth-history-stack" aria-hidden="true">
-              <div className="homepro-breadth-history-seg adv" style={{ height: `${advPct}%` }} />
-              <div className="homepro-breadth-history-seg unc" style={{ height: `${uncPct}%` }} />
-              <div className="homepro-breadth-history-seg dec" style={{ height: `${decPct}%` }} />
-            </div>
-            <div className={`homepro-breadth-history-pct ${advLeads ? "pos" : "neg"}`}>
-              {Math.round(advPct)}%
-            </div>
-            <div className="homepro-breadth-history-date">{label}</div>
-          </div>
-        );
-      })}
+    <div className="homepro-breadth-history-wrap">
+      <div className="homepro-breadth-history-summary">
+        <div className="homepro-breadth-history-summary-date">
+          {labelFor(focused, { long: true })}
+        </div>
+        <div className="homepro-breadth-history-summary-pcts">
+          <span className="pos">↑ {focusedAdvPct.toFixed(1)}%</span>
+          <span className="muted">·</span>
+          <span className="neg">↓ {focusedDecPct.toFixed(1)}%</span>
+        </div>
+        <div className="homepro-breadth-history-summary-counts">
+          <span className="pos">{focused.advances.toLocaleString("en-IN")} adv</span>
+          <span className="neg">{focused.declines.toLocaleString("en-IN")} dec</span>
+          <span className="muted">{focused.unchanged.toLocaleString("en-IN")} flat</span>
+        </div>
+      </div>
+      <div className="homepro-breadth-history-bars" onMouseLeave={() => setActiveIdx(null)}>
+        {days.map((d, idx) => {
+          const total = Math.max(1, d.total);
+          const advPct = (d.advances / total) * 100;
+          const decPct = (d.declines / total) * 100;
+          const uncPct = Math.max(0, 100 - advPct - decPct);
+          const advLeads = d.advances >= d.declines;
+          const isActive = idx === (activeIdx ?? days.length - 1);
+          return (
+            <button
+              type="button"
+              className={`homepro-breadth-history-day${isActive ? " active" : ""}`}
+              key={d.date}
+              onMouseEnter={() => setActiveIdx(idx)}
+              onFocus={() => setActiveIdx(idx)}
+              aria-label={`${labelFor(d, { long: true })}: ${d.advances} advancing, ${d.declines} declining, ${d.unchanged} flat`}
+            >
+              <div className="homepro-breadth-history-stack" aria-hidden="true">
+                <div className="homepro-breadth-history-seg adv" style={{ height: `${advPct}%` }} />
+                <div className="homepro-breadth-history-seg unc" style={{ height: `${uncPct}%` }} />
+                <div className="homepro-breadth-history-seg dec" style={{ height: `${decPct}%` }} />
+              </div>
+              <div className={`homepro-breadth-history-pct ${advLeads ? "pos" : "neg"}`}>
+                {Math.round(advPct)}%
+              </div>
+              <div className="homepro-breadth-history-date">{labelFor(d)}</div>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
