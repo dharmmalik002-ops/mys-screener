@@ -1009,7 +1009,18 @@ class FreeMarketDataProvider:
             cached_bars = [ChartBar.model_validate(item) for item in bar_payload]
         except Exception:
             return []
-        if str(timeframe or "").strip().upper() == "1D" and cached_bars and not self._is_trading_day_ist(
+        is_daily = str(timeframe or "").strip().upper() == "1D"
+        if is_daily and cached_bars:
+            sanitized = self._sanitize_daily_chart_bars(cached_bars)
+            if sanitized != cached_bars:
+                # Persist the cleanup so subsequent reads (and any code that
+                # peeks at the file directly) see the trimmed series.
+                try:
+                    self._write_chart_cache(symbol, timeframe, sanitized)
+                except Exception:
+                    pass
+                cached_bars = sanitized
+        if is_daily and cached_bars and not self._is_trading_day_ist(
             self._chart_bar_trade_date(cached_bars[-1])
         ):
             return []
@@ -6408,6 +6419,8 @@ class FreeMarketDataProvider:
 
         history = history.tail(bars)
         chart_bars = self._history_to_chart_bars(history)
+        if timeframe == "1D":
+            chart_bars = self._sanitize_daily_chart_bars(chart_bars)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
         return chart_bars
@@ -6689,6 +6702,62 @@ class FreeMarketDataProvider:
         weekly.index = pd.DatetimeIndex(last_dates.to_list())
         weekly.index.name = history.index.name
         return weekly.dropna(subset=["Close"]).sort_index()
+
+    def _sanitize_daily_chart_bars(self, bars: list[ChartBar]) -> list[ChartBar]:
+        """Drop chart bars that are demonstrably bogus.
+
+        Catches three failure modes:
+          * "yfinance duplicate today" — last bar's H/L/C exactly match the
+            prior bar (yfinance occasionally emits a today-stamped bar before
+            the real session prints land).
+          * "flat zombie bar" — O==H==L==C with V==0, which is what every
+            stock looks like on a market holiday after a stale roll.
+          * "future-dated bar" — a bar whose date is past today's IST date.
+          * "holiday bar" — bar dated on a known NSE holiday (Saturday/Sunday
+            are already excluded by the trading-day check that callers run).
+
+        We strip from the right repeatedly: a stale bar at the tail can sit
+        directly after another stale bar (e.g. a zombie bar on a holiday
+        followed by a duplicate bar today), and we want to keep peeling until
+        we land on a real session.
+        """
+        if not bars:
+            return bars
+        cleaned = list(bars)
+        today_ist = self._current_ist_date()
+
+        def _is_zombie(bar: ChartBar) -> bool:
+            return (
+                int(bar.volume or 0) == 0
+                and round(bar.open, 2) == round(bar.high, 2) == round(bar.low, 2) == round(bar.close, 2)
+            )
+
+        def _is_duplicate(curr: ChartBar, prev: ChartBar) -> bool:
+            return (
+                round(curr.high, 2) == round(prev.high, 2)
+                and round(curr.low, 2) == round(prev.low, 2)
+                and round(curr.close, 2) == round(prev.close, 2)
+                and int(curr.volume or 0) == int(prev.volume or 0)
+            )
+
+        # Drop future-dated, holiday-dated, and zombie bars anywhere in the
+        # series. (Holiday/zombie bars commonly appear mid-series when a stale
+        # roll happened on a non-trading day, e.g. Maharashtra Day stamps
+        # close=close, V=0 across the universe.)
+        cleaned = [
+            bar for bar in cleaned
+            if self._chart_bar_trade_date(bar) <= today_ist
+            and self._is_trading_day_ist(self._chart_bar_trade_date(bar))
+            and not _is_zombie(bar)
+        ]
+
+        # Peel any remaining duplicate-of-previous bar from the tail. yfinance
+        # sometimes emits a today-stamped bar before real session data lands;
+        # if the tail bar's H/L/C/V matches the previous bar exactly, drop it.
+        while len(cleaned) >= 2 and _is_duplicate(cleaned[-1], cleaned[-2]):
+            cleaned.pop()
+
+        return cleaned
 
     def _history_to_chart_bars(self, history: pd.DataFrame) -> list[ChartBar]:
         bars: list[ChartBar] = []
