@@ -149,85 +149,145 @@ function fmtPnl(n: number) { return `${n >= 0 ? "+" : "−"}₹${fmt(Math.abs(n)
 function fmtPerc(n: number) { return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`; }
 
 // ─── Equity Curve ──────────────────────────────────────────────────────────────
-function EquityCurve({ closed, startEquity }: { closed: ClosedTrade[]; startEquity: number }) {
+type EquityCurvePoint = { x: number; y: number; val: number; date: string; label: string };
+
+function EquityCurve({
+  closed,
+  startEquity,
+  unrealizedTail,
+  metric,
+  focus,
+}: {
+  closed: ClosedTrade[];
+  startEquity: number;
+  unrealizedTail: number;
+  metric: "combined" | "realized";
+  focus: "all" | "winners" | "losers";
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const [hover, setHover] = useState<{ idx: number; pts: EquityCurvePoint[]; rect: DOMRect } | null>(null);
+
+  const sortedClosed = useMemo(
+    () => [...closed].sort((a, b) => getSafeTime(a.exitDate) - getSafeTime(b.exitDate)),
+    [closed],
+  );
+
+  const points = useMemo<EquityCurvePoint[]>(() => {
+    if (!sortedClosed.length) return [];
+    let eq = startEquity;
+    const pts: EquityCurvePoint[] = [
+      { x: 0, y: 0, val: eq, date: sortedClosed[0].entryDate, label: "Start" },
+    ];
+    sortedClosed.forEach((t) => {
+      eq += t.pnl;
+      pts.push({ x: 0, y: 0, val: eq, date: t.exitDate, label: t.symbol });
+    });
+    if (metric === "combined" && Math.abs(unrealizedTail) > 1) {
+      const last = pts[pts.length - 1];
+      pts.push({ x: 0, y: 0, val: last.val + unrealizedTail, date: last.date, label: "Now (incl. unrealized)" });
+    }
+    return pts;
+  }, [sortedClosed, startEquity, metric, unrealizedTail]);
 
   const draw = useCallback(() => {
     if (!svgRef.current || !containerRef.current) return;
-    const W = containerRef.current.clientWidth || 600, H = 240;
-    const pad = { t: 16, r: 20, b: 36, l: 70 };
-    const innerW = W - pad.l - pad.r, innerH = H - pad.t - pad.b;
+    const W = containerRef.current.clientWidth || 600;
+    const H = 320;
+    const pad = { t: 18, r: 20, b: 38, l: 72 };
+    const innerW = W - pad.l - pad.r;
+    const innerH = H - pad.t - pad.b;
 
-    if (!closed.length) {
-      svgRef.current.innerHTML = `<text x="${W / 2}" y="${H / 2}" fill="var(--text-muted)" font-size="13" text-anchor="middle" dominant-baseline="middle">No closed trades yet</text>`;
-      svgRef.current.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svgRef.current.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    svgRef.current.style.height = `${H}px`;
+
+    if (!points.length) {
+      const focusLabel = focus === "all" ? "" : ` (${focus} only)`;
+      svgRef.current.innerHTML = `<text x="${W / 2}" y="${H / 2}" fill="var(--text-muted)" font-size="13" text-anchor="middle" dominant-baseline="middle">No closed trades yet${focusLabel}</text>`;
       return;
     }
 
-    const sorted = [...closed].sort((a, b) => getSafeTime(a.exitDate) - getSafeTime(b.exitDate));
-    let eq = startEquity;
-    const pts: Array<{ x: number; y: number; val: number; date: string }> = [{ x: 0, y: 0, val: eq, date: sorted[0].entryDate }];
-    sorted.forEach(t => { eq += t.pnl; pts.push({ x: 0, y: 0, val: eq, date: t.exitDate }); });
-
-    const minV = Math.min(...pts.map(p => p.val));
-    const maxV = Math.max(...pts.map(p => p.val));
+    const minV = Math.min(...points.map((p) => p.val), startEquity);
+    const maxV = Math.max(...points.map((p) => p.val), startEquity);
     const vRange = Math.max(maxV - minV, 1);
 
-    pts.forEach((p, i) => {
-      p.x = pad.l + (i / Math.max(pts.length - 1, 1)) * innerW;
+    points.forEach((p, i) => {
+      p.x = pad.l + (i / Math.max(points.length - 1, 1)) * innerW;
       p.y = pad.t + (1 - (p.val - minV) / vRange) * innerH;
     });
 
-    const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
-    const areaPath = linePath + ` L${pts[pts.length - 1].x.toFixed(1)},${(pad.t + innerH).toFixed(1)} L${pad.l},${(pad.t + innerH).toFixed(1)} Z`;
+    const linePath = points.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+    const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(1)},${(pad.t + innerH).toFixed(1)} L${pad.l.toFixed(1)},${(pad.t + innerH).toFixed(1)} Z`;
 
-    // Y-axis ticks
     const yTicks = 5;
     const yTickLines = Array.from({ length: yTicks + 1 }, (_, i) => {
       const frac = i / yTicks;
       const val = minV + frac * vRange;
       const y = pad.t + (1 - frac) * innerH;
+      const isStart = Math.abs(val - startEquity) / Math.max(Math.abs(startEquity), 1) < 0.02;
+      const label = Math.abs(val) >= 1e7
+        ? `₹${(val / 1e7).toFixed(2)}Cr`
+        : Math.abs(val) >= 1e5
+        ? `₹${(val / 1e5).toFixed(2)}L`
+        : `₹${(val / 1000).toFixed(0)}k`;
       return `
-        <line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W - pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1"/>
-        <text x="${pad.l - 8}" y="${y.toFixed(1)}" fill="var(--text-muted)" font-size="10" text-anchor="end" dominant-baseline="middle">₹${(val / 1000).toFixed(0)}k</text>
+        <line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W - pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${isStart ? "0" : "3 3"}" opacity="${isStart ? "0.6" : "0.45"}"/>
+        <text x="${pad.l - 8}" y="${y.toFixed(1)}" fill="var(--text-muted)" font-size="10.5" text-anchor="end" dominant-baseline="middle">${label}</text>
       `;
     }).join("");
 
-    // X-axis date labels (up to 6)
-    const xLabelCount = Math.min(pts.length, 6);
-    const xStep = Math.floor((pts.length - 1) / Math.max(xLabelCount - 1, 1));
+    const xLabelCount = Math.min(points.length, 6);
+    const xStep = Math.max(1, Math.floor((points.length - 1) / Math.max(xLabelCount - 1, 1)));
     const xLabels = Array.from({ length: xLabelCount }, (_, i) => {
-      const pt = pts[Math.min(i * xStep, pts.length - 1)];
+      const pt = points[Math.min(i * xStep, points.length - 1)];
       const label = pt.date ? pt.date.slice(0, 7) : "";
-      return `<text x="${pt.x.toFixed(1)}" y="${(pad.t + innerH + 16).toFixed(1)}" fill="var(--text-muted)" font-size="9.5" text-anchor="middle">${label}</text>`;
+      return `<text x="${pt.x.toFixed(1)}" y="${(pad.t + innerH + 18).toFixed(1)}" fill="var(--text-muted)" font-size="10" text-anchor="middle">${label}</text>`;
     }).join("");
 
-    const finalVal = pts[pts.length - 1].val;
+    const finalVal = points[points.length - 1].val;
     const isPositive = finalVal >= startEquity;
+    const stroke = isPositive ? "var(--positive)" : "var(--negative)";
+    const peakIdx = points.reduce((bi, p, i) => (p.val > points[bi].val ? i : bi), 0);
+    const troughIdx = points.reduce((bi, p, i) => (p.val < points[bi].val ? i : bi), 0);
+    const peak = points[peakIdx];
+    const trough = points[troughIdx];
 
-    svgRef.current.setAttribute("viewBox", `0 0 ${W} ${H}`);
+    const startY = pad.t + (1 - (startEquity - minV) / vRange) * innerH;
+
     svgRef.current.innerHTML = `
       <defs>
         <linearGradient id="eqGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="${isPositive ? "var(--positive)" : "var(--negative)"}" stop-opacity="0.28"/>
-          <stop offset="100%" stop-color="${isPositive ? "var(--positive)" : "var(--negative)"}" stop-opacity="0.02"/>
+          <stop offset="0%" stop-color="${stroke}" stop-opacity="0.36"/>
+          <stop offset="60%" stop-color="${stroke}" stop-opacity="0.10"/>
+          <stop offset="100%" stop-color="${stroke}" stop-opacity="0.0"/>
+        </linearGradient>
+        <linearGradient id="eqLine" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stop-color="${stroke}" stop-opacity="0.85"/>
+          <stop offset="100%" stop-color="${stroke}" stop-opacity="1"/>
         </linearGradient>
         <clipPath id="eqClip">
           <rect x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}"/>
         </clipPath>
+        <filter id="eqGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
       </defs>
       <rect x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}" fill="none"/>
       ${yTickLines}
+      <line x1="${pad.l}" y1="${startY.toFixed(1)}" x2="${(W - pad.r).toFixed(1)}" y2="${startY.toFixed(1)}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>
+      <text x="${(W - pad.r - 4).toFixed(1)}" y="${(startY - 4).toFixed(1)}" fill="var(--text-muted)" font-size="9.5" text-anchor="end">Start ₹${(startEquity / 1000).toFixed(0)}k</text>
       <g clip-path="url(#eqClip)">
         <path d="${areaPath}" fill="url(#eqGrad)"/>
-        <path d="${linePath}" fill="none" stroke="${isPositive ? "var(--positive)" : "var(--negative)"}" stroke-width="2"/>
+        <path d="${linePath}" fill="none" stroke="url(#eqLine)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" filter="url(#eqGlow)"/>
+        <circle cx="${peak.x.toFixed(1)}" cy="${peak.y.toFixed(1)}" r="3.5" fill="var(--positive)" stroke="var(--surface)" stroke-width="1.5"/>
+        <circle cx="${trough.x.toFixed(1)}" cy="${trough.y.toFixed(1)}" r="3.5" fill="var(--negative)" stroke="var(--surface)" stroke-width="1.5"/>
       </g>
       ${xLabels}
       <line x1="${pad.l}" y1="${pad.t}" x2="${pad.l}" y2="${pad.t + innerH}" stroke="var(--line-strong)" stroke-width="1"/>
       <line x1="${pad.l}" y1="${pad.t + innerH}" x2="${W - pad.r}" y2="${pad.t + innerH}" stroke="var(--line-strong)" stroke-width="1"/>
     `;
-  }, [closed, startEquity]);
+  }, [points, startEquity, focus]);
 
   useEffect(() => {
     draw();
@@ -237,42 +297,174 @@ function EquityCurve({ closed, startEquity }: { closed: ClosedTrade[]; startEqui
     return () => ro.disconnect();
   }, [draw]);
 
+  const handleMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (!points.length || !svgRef.current) return;
+    const rect = svgRef.current.getBoundingClientRect();
+    const px = event.clientX - rect.left;
+    let bestIdx = 0;
+    let bestDist = Infinity;
+    points.forEach((p, i) => {
+      const screenX = (p.x / (containerRef.current?.clientWidth || rect.width)) * rect.width;
+      const dist = Math.abs(screenX - px);
+      if (dist < bestDist) {
+        bestDist = dist;
+        bestIdx = i;
+      }
+    });
+    setHover({ idx: bestIdx, pts: points, rect });
+  };
+  const handleLeave = () => setHover(null);
+
+  const tooltip = hover && hover.pts[hover.idx]
+    ? (() => {
+        const p = hover.pts[hover.idx];
+        const W = containerRef.current?.clientWidth || hover.rect.width;
+        const screenX = (p.x / W) * hover.rect.width;
+        const left = Math.max(8, Math.min(screenX - 90, hover.rect.width - 188));
+        const delta = p.val - startEquity;
+        const deltaPct = startEquity > 0 ? (delta / startEquity) * 100 : 0;
+        return (
+          <div className="tj-eq-tooltip" style={{ left, top: 8 }}>
+            <div className="tj-eq-tooltip-row strong">{p.label}</div>
+            <div className="tj-eq-tooltip-row muted">{p.date?.slice(0, 10) || "—"}</div>
+            <div className="tj-eq-tooltip-row">Equity {`₹${fmt(p.val, 0)}`}</div>
+            <div className={`tj-eq-tooltip-row ${delta >= 0 ? "pos" : "neg"}`}>
+              {fmtPnl(delta)} <span className="tj-eq-tooltip-pct">({fmtPerc(deltaPct)})</span>
+            </div>
+          </div>
+        );
+      })()
+    : null;
+
   return (
-    <div ref={containerRef} style={{ width: "100%" }}>
-      <svg ref={svgRef} style={{ width: "100%", height: 240, display: "block" }} />
+    <div ref={containerRef} className="tj-eq-wrap" style={{ width: "100%", position: "relative" }}>
+      <svg
+        ref={svgRef}
+        className="tj-eq-svg"
+        style={{ width: "100%", height: 320, display: "block" }}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+      />
+      {tooltip}
     </div>
   );
 }
 
 // ─── P&L Distribution ─────────────────────────────────────────────────────────
-function PnlDistribution({ closed }: { closed: ClosedTrade[] }) {
-  if (!closed.length) return <div className="tj-placeholder">No closed trades yet</div>;
-  const percs = closed.map(c => c.perc);
-  const binMap: Record<number, number> = {};
-  percs.forEach(p => { const b = Math.round(p); binMap[b] = (binMap[b] || 0) + 1; });
-  const bins = Object.entries(binMap).map(([b, c]) => ({ bin: Number(b), count: c })).sort((a, b) => a.bin - b.bin);
-  const maxCount = Math.max(...bins.map(b => b.count), 1);
+const PNL_BIN_EDGES: number[] = [-100, -25, -15, -10, -5, -2, 0, 2, 5, 10, 15, 25, 100];
+
+function makePnlBins(percs: number[]) {
+  const bins: { from: number; to: number; label: string; count: number; mid: number; isWin: boolean }[] = [];
+  for (let i = 0; i < PNL_BIN_EDGES.length - 1; i += 1) {
+    const from = PNL_BIN_EDGES[i];
+    const to = PNL_BIN_EDGES[i + 1];
+    const isWin = from >= 0;
+    let label: string;
+    if (i === 0) label = `<${to}%`;
+    else if (i === PNL_BIN_EDGES.length - 2) label = `>${from}%`;
+    else label = `${from}→${to}%`;
+    bins.push({ from, to, label, count: 0, mid: (from + to) / 2, isWin });
+  }
+  percs.forEach((p) => {
+    let idx = bins.findIndex((b) => p >= b.from && p < b.to);
+    if (idx === -1) idx = p >= bins[bins.length - 1].to ? bins.length - 1 : 0;
+    bins[idx].count += 1;
+  });
+  return bins;
+}
+
+function PnlDistribution({
+  closed,
+  focus,
+}: {
+  closed: ClosedTrade[];
+  focus: "all" | "winners" | "losers";
+}) {
+  const [hovered, setHovered] = useState<number | null>(null);
+
+  if (!closed.length) {
+    const focusLabel = focus === "all" ? "" : ` (${focus} only)`;
+    return <div className="tj-placeholder">No closed trades yet{focusLabel}</div>;
+  }
+
+  const percs = closed.map((c) => c.perc);
+  const bins = makePnlBins(percs);
+  const maxCount = Math.max(...bins.map((b) => b.count), 1);
+  const total = closed.length;
+  const winnerCount = closed.filter((c) => c.pnl > 0).length;
+  const loserCount = total - winnerCount;
+  const avgPerc = percs.reduce((a, b) => a + b, 0) / total;
+  const bestPerc = Math.max(...percs);
+  const worstPerc = Math.min(...percs);
+  const winRate = total > 0 ? (winnerCount / total) * 100 : 0;
 
   return (
     <div className="tj-dist-wrap">
-      <div className="tj-dist-chart">
-        {bins.map(({ bin, count }) => (
-          <div key={bin} className="tj-dist-col" title={`${bin > 0 ? "+" : ""}${bin}% : ${count} trade${count !== 1 ? "s" : ""}`}>
-            <div className="tj-dist-bar-area">
-              <div
-                className={`tj-dist-bar ${bin >= 0 ? "pos" : "neg"}`}
-                style={{ height: `${(count / maxCount) * 100}%` }}
-              />
-              {count > 0 && <span className="tj-dist-count">{count}</span>}
-            </div>
-            <div className="tj-dist-label">{bin > 0 ? "+" : ""}{bin}%</div>
-          </div>
-        ))}
+      <div className="tj-dist-summary">
+        <div className="tj-dist-summary-cell">
+          <span className="tj-dist-summary-label">Trades</span>
+          <strong className="tj-dist-summary-value">{total}</strong>
+        </div>
+        <div className="tj-dist-summary-cell pos">
+          <span className="tj-dist-summary-label">Winners</span>
+          <strong className="tj-dist-summary-value">
+            {winnerCount} <span className="tj-dist-summary-pct">({total ? Math.round((winnerCount / total) * 100) : 0}%)</span>
+          </strong>
+        </div>
+        <div className="tj-dist-summary-cell neg">
+          <span className="tj-dist-summary-label">Losers</span>
+          <strong className="tj-dist-summary-value">
+            {loserCount} <span className="tj-dist-summary-pct">({total ? Math.round((loserCount / total) * 100) : 0}%)</span>
+          </strong>
+        </div>
+        <div className="tj-dist-summary-cell">
+          <span className="tj-dist-summary-label">Win rate</span>
+          <strong className="tj-dist-summary-value">{winRate.toFixed(1)}%</strong>
+        </div>
+        <div className="tj-dist-summary-cell">
+          <span className="tj-dist-summary-label">Avg %</span>
+          <strong className={`tj-dist-summary-value ${avgPerc >= 0 ? "pos" : "neg"}`}>{fmtPerc(avgPerc)}</strong>
+        </div>
+        <div className="tj-dist-summary-cell">
+          <span className="tj-dist-summary-label">Best / Worst</span>
+          <strong className="tj-dist-summary-value">
+            <span className="pos">{fmtPerc(bestPerc)}</span> / <span className="neg">{fmtPerc(worstPerc)}</span>
+          </strong>
+        </div>
       </div>
-      <div className="tj-dist-stats">
-        <span className="tj-dist-stat pos">Winners: {closed.filter(c => c.pnl > 0).length}</span>
-        <span className="tj-dist-stat neg">Losers: {closed.filter(c => c.pnl <= 0).length}</span>
-        <span className="tj-dist-stat">Avg: {fmtPerc(percs.reduce((a, b) => a + b, 0) / percs.length)}</span>
+
+      <div className="tj-dist-chart-wrap">
+        <div className="tj-dist-chart">
+          {bins.map((b, i) => {
+            const heightPct = b.count > 0 ? (b.count / maxCount) * 100 : 0;
+            const sharePct = total > 0 ? (b.count / total) * 100 : 0;
+            const active = hovered === i;
+            return (
+              <div
+                key={i}
+                className={`tj-dist-col ${active ? "active" : ""}`}
+                onMouseEnter={() => setHovered(i)}
+                onMouseLeave={() => setHovered((current) => (current === i ? null : current))}
+                title={`${b.label} · ${b.count} trade${b.count !== 1 ? "s" : ""} (${sharePct.toFixed(1)}%)`}
+              >
+                <div className="tj-dist-bar-area">
+                  {b.count > 0 && (
+                    <div className="tj-dist-bar-top">
+                      <span className="tj-dist-count">{b.count}</span>
+                      <span className="tj-dist-share">{sharePct.toFixed(0)}%</span>
+                    </div>
+                  )}
+                  <div
+                    className={`tj-dist-bar ${b.isWin ? "pos" : "neg"} ${active ? "active" : ""}`}
+                    style={{ height: `${heightPct}%` }}
+                  />
+                </div>
+                <div className={`tj-dist-label ${b.isWin ? "pos" : "neg"}`}>{b.label}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="tj-dist-baseline" />
       </div>
     </div>
   );
@@ -1089,6 +1281,52 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       });
   }, [closedTrades, dashboardFocus, dashboardMetric, openPositions, posMeta]);
 
+  // ── Per-symbol score map + focus filter (drives Equity Curve + Distribution charts) ──
+  const symbolScoreMap = useMemo(() => {
+    const map: Record<string, { realized: number; unrealized: number; combined: number }> = {};
+    closedTrades.forEach((t) => {
+      const sym = t.symbol.toUpperCase();
+      if (!map[sym]) map[sym] = { realized: 0, unrealized: 0, combined: 0 };
+      map[sym].realized += t.pnl;
+    });
+    openPositions.forEach((pos) => {
+      const sym = pos.symbol.toUpperCase();
+      if (!map[sym]) map[sym] = { realized: 0, unrealized: 0, combined: 0 };
+      const cmp = posMeta[pos.symbol]?.cmp || pos.avgPx;
+      map[sym].unrealized += (cmp - pos.avgPx) * pos.qty;
+    });
+    Object.values(map).forEach((entry) => {
+      entry.combined = entry.realized + entry.unrealized;
+    });
+    return map;
+  }, [closedTrades, openPositions, posMeta]);
+
+  const focusedSymbolSet = useMemo(() => {
+    if (dashboardFocus === "all") return null;
+    const allowed = new Set<string>();
+    Object.entries(symbolScoreMap).forEach(([sym, score]) => {
+      const value = dashboardMetric === "combined" ? score.combined : score.realized;
+      if (dashboardFocus === "winners" && value >= 0) allowed.add(sym);
+      else if (dashboardFocus === "losers" && value < 0) allowed.add(sym);
+    });
+    return allowed;
+  }, [symbolScoreMap, dashboardFocus, dashboardMetric]);
+
+  const focusedClosedTrades = useMemo(() => {
+    if (!focusedSymbolSet) return closedTrades;
+    return closedTrades.filter((t) => focusedSymbolSet.has(t.symbol.toUpperCase()));
+  }, [closedTrades, focusedSymbolSet]);
+
+  const focusedUnrealized = useMemo(() => {
+    if (dashboardMetric !== "combined") return 0;
+    return openPositions.reduce((sum, pos) => {
+      const sym = pos.symbol.toUpperCase();
+      if (focusedSymbolSet && !focusedSymbolSet.has(sym)) return sum;
+      const cmp = posMeta[pos.symbol]?.cmp || pos.avgPx;
+      return sum + (cmp - pos.avgPx) * pos.qty;
+    }, 0);
+  }, [openPositions, posMeta, focusedSymbolSet, dashboardMetric]);
+
   // ── Save new setup ────────────────────────────────────────────────────────
   function saveNewSetup() {
     if (!newSetupName.trim()) return;
@@ -1282,15 +1520,33 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
           <div className="tj-chart-row">
             <div className="tj-card full-width">
-              <div className="tj-card-hdr">Equity Curve</div>
-              <EquityCurve closed={closedTrades} startEquity={startEquity} />
+              <div className="tj-card-hdr">
+                Equity Curve
+                <span className="tj-card-hdr-sub">
+                  {dashboardMetric === "combined" ? "Combined" : "Realized"}
+                  {dashboardFocus !== "all" ? ` · ${dashboardFocus === "winners" ? "Winners" : "Losers"}` : ""}
+                  {focusedSymbolSet ? ` · ${focusedSymbolSet.size} symbol${focusedSymbolSet.size !== 1 ? "s" : ""}` : ""}
+                </span>
+              </div>
+              <EquityCurve
+                closed={focusedClosedTrades}
+                startEquity={startEquity}
+                unrealizedTail={focusedUnrealized}
+                metric={dashboardMetric}
+                focus={dashboardFocus}
+              />
             </div>
           </div>
 
           <div className="tj-chart-row two-col">
             <div className="tj-card">
-              <div className="tj-card-hdr">P&L Distribution</div>
-              <PnlDistribution closed={closedTrades} />
+              <div className="tj-card-hdr">
+                P&L Distribution
+                <span className="tj-card-hdr-sub">
+                  {dashboardFocus !== "all" ? `${dashboardFocus === "winners" ? "Winners" : "Losers"} only` : "All trades"}
+                </span>
+              </div>
+              <PnlDistribution closed={focusedClosedTrades} focus={dashboardFocus} />
             </div>
             <div className="tj-card">
               <div className="tj-card-hdr">Top Winners vs Losers</div>
