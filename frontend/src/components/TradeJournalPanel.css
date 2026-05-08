@@ -715,7 +715,20 @@
   justify-content: flex-start;
   align-items: stretch;
   cursor: default;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.12s;
+  text-align: inherit;
+  font: inherit;
+  color: inherit;
+  border: none;
+  width: 100%;
+}
+.tj-cal-cell.clickable { cursor: pointer; }
+.tj-cal-cell.clickable:hover {
+  filter: brightness(1.15);
+}
+.tj-cal-cell.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 .tj-cal-cell.out {
   background: var(--surface-strong);
@@ -768,6 +781,56 @@
   .tj-cal-empty { font-size: 0.7rem; }
   .tj-cal-day { font-size: 0.7rem; }
   .tj-cal-dow-cell { font-size: 0.68rem; padding: 5px 0; }
+}
+
+/* ─── Calendar Day Modal ───────────────────────────────────────────────────── */
+.tj-cal-modal {
+  max-width: 720px;
+}
+
+.tj-cal-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+.tj-cal-modal-summary > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.tj-cal-modal-stat-label {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  font-weight: 600;
+}
+
+.tj-cal-modal-stat-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.tj-cal-modal-stat-val.pos { color: var(--positive); }
+.tj-cal-modal-stat-val.neg { color: var(--negative); }
+
+.tj-cal-modal-table-wrap {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.tj-cal-modal-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 2px;
 }
 
 /* ─── Trade Log ──────────────────────────────────────────────────────────── */

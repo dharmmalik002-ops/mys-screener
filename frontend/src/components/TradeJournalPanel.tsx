@@ -550,18 +550,28 @@ function LastTradesTable({
 }
 
 // ─── Monthly P&L Calendar ──────────────────────────────────────────────────────
-function MonthlyCalendar({ closed }: { closed: ClosedTrade[] }) {
-  const byDay = useMemo(() => {
-    const m: Record<string, number> = {};
+function MonthlyCalendar({
+  closed,
+  onOpenSymbolChart,
+}: {
+  closed: ClosedTrade[];
+  onOpenSymbolChart?: (symbol: string) => void;
+}) {
+  const { byDay, tradesByDay } = useMemo(() => {
+    const totals: Record<string, number> = {};
+    const trades: Record<string, ClosedTrade[]> = {};
     closed.forEach(c => {
       const d = (c.exitDate || "").split("T")[0];
-      if (d) m[d] = (m[d] || 0) + c.pnl;
+      if (!d) return;
+      totals[d] = (totals[d] || 0) + c.pnl;
+      (trades[d] ||= []).push(c);
     });
-    return m;
+    return { byDay: totals, tradesByDay: trades };
   }, [closed]);
 
   const today = new Date();
   const [view, setView] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   const year = view.getFullYear();
   const month = view.getMonth();
@@ -630,16 +640,22 @@ function MonthlyCalendar({ closed }: { closed: ClosedTrade[] }) {
           const pnl = byDay[k];
           const isWeekend = date.getDay() === 0 || date.getDay() === 6;
           const isToday = k === todayKey;
+          const hasTrades = inMonth && pnl !== undefined;
           const cls = [
             "tj-cal-cell",
             !inMonth ? "out" : "",
             isToday ? "today" : "",
-            inMonth && pnl !== undefined ? (pnl >= 0 ? "pos" : "neg") : "",
+            hasTrades ? (pnl >= 0 ? "pos" : "neg") : "",
+            hasTrades ? "clickable" : "",
           ].filter(Boolean).join(" ");
-          return (
-            <div key={idx} className={cls} title={inMonth && pnl !== undefined ? `${k}: ${fmtPnl(pnl)}` : k}>
+          const baseProps = {
+            className: cls,
+            title: hasTrades ? `${k}: ${fmtPnl(pnl)} · click for details` : k,
+          };
+          const inner = (
+            <>
               <span className="tj-cal-day">{date.getDate()}</span>
-              {inMonth && pnl !== undefined && (
+              {hasTrades && (
                 <span className="tj-cal-amt">
                   {pnl >= 0 ? "₹" : "−₹"}{fmt(Math.abs(pnl), 0)}
                 </span>
@@ -647,9 +663,114 @@ function MonthlyCalendar({ closed }: { closed: ClosedTrade[] }) {
               {inMonth && pnl === undefined && !isWeekend && (
                 <span className="tj-cal-empty">No Trades</span>
               )}
-            </div>
+            </>
+          );
+          return hasTrades ? (
+            <button key={idx} type="button" {...baseProps} onClick={() => setSelectedDay(k)}>
+              {inner}
+            </button>
+          ) : (
+            <div key={idx} {...baseProps}>{inner}</div>
           );
         })}
+      </div>
+      {selectedDay && (
+        <CalendarDayModal
+          dayKey={selectedDay}
+          trades={tradesByDay[selectedDay] || []}
+          onClose={() => setSelectedDay(null)}
+          onOpenSymbolChart={onOpenSymbolChart}
+        />
+      )}
+    </div>
+  );
+}
+
+function CalendarDayModal({
+  dayKey,
+  trades,
+  onClose,
+  onOpenSymbolChart,
+}: {
+  dayKey: string;
+  trades: ClosedTrade[];
+  onClose: () => void;
+  onOpenSymbolChart?: (symbol: string) => void;
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) { if (e.key === "Escape") onClose(); }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const totalPnl = trades.reduce((s, t) => s + t.pnl, 0);
+  const wins = trades.filter(t => t.pnl > 0).length;
+  const losses = trades.length - wins;
+  const dateLabel = new Date(dayKey + "T00:00:00").toLocaleDateString("en-IN", {
+    weekday: "long", day: "numeric", month: "short", year: "numeric",
+  });
+
+  return (
+    <div className="tj-overlay" onClick={onClose}>
+      <div className="tj-modal tj-cal-modal" onClick={e => e.stopPropagation()}>
+        <button type="button" className="tj-modal-x" onClick={onClose} aria-label="Close">×</button>
+        <div className="tj-modal-title">{dateLabel}</div>
+        <div className="tj-cal-modal-summary">
+          <div>
+            <span className="tj-cal-modal-stat-label">Day P&L</span>
+            <span className={`tj-cal-modal-stat-val ${totalPnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(totalPnl)}</span>
+          </div>
+          <div>
+            <span className="tj-cal-modal-stat-label">Trades</span>
+            <span className="tj-cal-modal-stat-val">{trades.length}</span>
+          </div>
+          <div>
+            <span className="tj-cal-modal-stat-label">W / L</span>
+            <span className="tj-cal-modal-stat-val">
+              <span className="pos">{wins}</span> / <span className="neg">{losses}</span>
+            </span>
+          </div>
+        </div>
+        {trades.length === 0 ? (
+          <div className="tj-empty">No trades</div>
+        ) : (
+          <div className="tj-cal-modal-table-wrap">
+            <table className="tj-recent-table">
+              <thead>
+                <tr>
+                  <th>Symbol</th>
+                  <th className="num">Qty</th>
+                  <th className="num">Entry</th>
+                  <th className="num">Exit</th>
+                  <th className="num">% P&amp;L</th>
+                  <th className="num">P&amp;L</th>
+                </tr>
+              </thead>
+              <tbody>
+                {trades.map((t, i) => (
+                  <tr key={`${t.symbol}-${t.exitDate}-${i}`}>
+                    <td>
+                      <button
+                        type="button"
+                        className="tj-symbol-link tj-symbol-link-inline"
+                        onClick={() => { onOpenSymbolChart?.(t.symbol); onClose(); }}
+                        title="Open big chart"
+                      >
+                        {t.symbol}
+                      </button>
+                      {t.setupType && <div className="tj-cal-modal-sub">{t.setupType}</div>}
+                    </td>
+                    <td className="num">{t.qty}</td>
+                    <td className="num">{fmt(t.entryPx)}</td>
+                    <td className="num">{fmt(t.exitPx)}</td>
+                    <td className={`num ${t.perc >= 0 ? "pos" : "neg"}`}>{fmtPerc(t.perc)}</td>
+                    <td className={`num ${t.pnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(t.pnl)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -1698,7 +1819,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
           <div className="tj-card">
             <div className="tj-card-hdr">Monthly Consistency</div>
-            <MonthlyCalendar closed={closedTrades} />
+            <MonthlyCalendar closed={closedTrades} onOpenSymbolChart={onOpenSymbolChart} />
           </div>
         </div>
       )}
