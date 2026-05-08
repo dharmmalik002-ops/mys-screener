@@ -4,6 +4,7 @@ import { createPortal } from "react-dom";
 import {
   getChart,
   getMarketOverview,
+  type BreadthDayCounts,
   type ChartBar,
   type DashboardResponse,
   type IndustryGroupsResponse,
@@ -204,6 +205,46 @@ function Donut({ segments, size = 180 }: { segments: { value: number; color: str
   );
 }
 
+function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
+  if (!history || history.length === 0) {
+    return (
+      <div className="homepro-breadth-history-empty">
+        Building 10-day history…
+      </div>
+    );
+  }
+  const days = history.slice(-10);
+  return (
+    <div className="homepro-breadth-history-bars">
+      {days.map((d) => {
+        const total = Math.max(1, d.total);
+        const advPct = (d.advances / total) * 100;
+        const decPct = (d.declines / total) * 100;
+        const uncPct = Math.max(0, 100 - advPct - decPct);
+        const label = (() => {
+          const dt = new Date(d.date + "T00:00:00");
+          if (Number.isNaN(dt.getTime())) return d.date.slice(5);
+          return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+        })();
+        const advLeads = d.advances >= d.declines;
+        return (
+          <div className="homepro-breadth-history-day" key={d.date} title={`${label}: ${d.advances}↑ / ${d.declines}↓ / ${d.unchanged}=`}>
+            <div className="homepro-breadth-history-stack" aria-hidden="true">
+              <div className="homepro-breadth-history-seg adv" style={{ height: `${advPct}%` }} />
+              <div className="homepro-breadth-history-seg unc" style={{ height: `${uncPct}%` }} />
+              <div className="homepro-breadth-history-seg dec" style={{ height: `${decPct}%` }} />
+            </div>
+            <div className={`homepro-breadth-history-pct ${advLeads ? "pos" : "neg"}`}>
+              {Math.round(advPct)}%
+            </div>
+            <div className="homepro-breadth-history-date">{label}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
   const width = 640;
   if (!bars || bars.length < 2) {
@@ -298,15 +339,15 @@ export function HomePanel({
   const topLosers = (dashboard?.top_losers ?? []).slice(0, 5);
   const mostActive = (dashboard?.top_volume_spikes ?? []).slice(0, 5);
 
-  // Breadth proxy (we don't have true market-wide breadth, approximate from top lists)
-  const advances = Math.round(universeCount * 0.62);
-  const declines = Math.round(universeCount * 0.34);
-  const unchanged = Math.max(0, universeCount - advances - declines);
-  const advPct = universeCount > 0 ? (advances / universeCount) * 100 : 0;
-
-  // 52w high/low proxy
-  const high52 = 128;
-  const low52 = 34;
+  // Real market-wide breadth from the dashboard endpoint. Falls back to
+  // zeros when the snapshot hasn't computed it yet (older deploys).
+  const breadthToday = dashboard?.breadth_today ?? null;
+  const breadthHistory = dashboard?.breadth_history ?? [];
+  const breadthTotal = breadthToday?.total ?? 0;
+  const advances = breadthToday?.advances ?? 0;
+  const declines = breadthToday?.declines ?? 0;
+  const unchanged = breadthToday?.unchanged ?? 0;
+  const advPct = breadthTotal > 0 ? (advances / breadthTotal) * 100 : 0;
 
   const topGroups = useMemo<IndustryGroupRankItem[]>(
     () => (groups?.groups ?? []).slice(0, 10),
@@ -492,7 +533,7 @@ export function HomePanel({
               />
               <div className="homepro-donut-center">
                 <div>
-                  <strong>{universeCount.toLocaleString("en-IN")}</strong>
+                  <strong>{breadthTotal.toLocaleString("en-IN")}</strong>
                   <small>Stocks</small>
                 </div>
               </div>
@@ -500,27 +541,23 @@ export function HomePanel({
             <div className="homepro-legend">
               <div className="homepro-legend-row">
                 <span><span className="homepro-legend-swatch" style={{ background: "#10b981" }} />Advancing</span>
-                <span><strong>{advances}</strong> ({((advances / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+                <span><strong>{advances}</strong> ({((advances / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
               </div>
               <div className="homepro-legend-row">
                 <span><span className="homepro-legend-swatch" style={{ background: "#ef4444" }} />Declining</span>
-                <span><strong>{declines}</strong> ({((declines / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+                <span><strong>{declines}</strong> ({((declines / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
               </div>
               <div className="homepro-legend-row">
                 <span><span className="homepro-legend-swatch" style={{ background: "#cbd5e1" }} />Unchanged</span>
-                <span><strong>{unchanged}</strong> ({((unchanged / Math.max(1, universeCount)) * 100).toFixed(1)}%)</span>
+                <span><strong>{unchanged}</strong> ({((unchanged / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
               </div>
             </div>
 
-            <div className="homepro-hl-bar">
-              <div className="homepro-hl-label">
-                <span>52 Week High / Low</span>
+            <div className="homepro-breadth-history">
+              <div className="homepro-breadth-history-head">
+                <span>Last 10 Days A/D</span>
               </div>
-              <div className="homepro-hl-track" />
-              <div className="homepro-hl-vals">
-                <span className="low">Low: {low52}</span>
-                <span className="high">High: {high52}</span>
-              </div>
+              <BreadthHistoryChart history={breadthHistory} />
             </div>
           </div>
         </div>

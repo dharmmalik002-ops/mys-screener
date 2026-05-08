@@ -452,6 +452,77 @@
 .homepro-hl-vals .low { color: var(--hp-red); }
 .homepro-hl-vals .high { color: var(--hp-green); }
 
+/* --- Last 10 Days A/D mini chart --- */
+.homepro-breadth-history {
+  width: 100%;
+  margin-top: 10px;
+  border-top: 1px solid var(--hp-border);
+  padding-top: 10px;
+}
+
+.homepro-breadth-history-head {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--hp-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.homepro-breadth-history-bars {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 4px;
+  align-items: end;
+}
+
+.homepro-breadth-history-day {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 3px;
+  min-width: 0;
+}
+
+.homepro-breadth-history-stack {
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--hp-surface-strong, #1f2937);
+}
+
+.homepro-breadth-history-seg.adv { background: #10b981; }
+.homepro-breadth-history-seg.unc { background: #cbd5e1; }
+.homepro-breadth-history-seg.dec { background: #ef4444; }
+
+.homepro-breadth-history-pct {
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.homepro-breadth-history-pct.pos { color: #059669; }
+.homepro-breadth-history-pct.neg { color: #dc2626; }
+
+.homepro-breadth-history-date {
+  font-size: 9.5px;
+  color: var(--hp-muted);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.homepro-breadth-history-empty {
+  font-size: 12px;
+  color: var(--hp-muted);
+  text-align: center;
+  padding: 14px 0;
+}
+
 /* --- Nifty chart --- */
 .homepro-nifty {
   flex: 1;

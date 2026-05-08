@@ -642,6 +642,14 @@ class DashboardSection(BaseModel):
     items: list[ScanMatch]
 
 
+class BreadthDayCounts(BaseModel):
+    date: str
+    advances: int
+    declines: int
+    unchanged: int
+    total: int
+
+
 class DashboardResponse(BaseModel):
     app_name: str
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -655,6 +663,8 @@ class DashboardResponse(BaseModel):
     top_losers: list[ScanMatch]
     top_volume_spikes: list[ScanMatch]
     recent_alerts: list[AlertItem]
+    breadth_today: BreadthDayCounts | None = None
+    breadth_history: list[BreadthDayCounts] = Field(default_factory=list)
 
 
 class IndexQuoteItem(BaseModel):

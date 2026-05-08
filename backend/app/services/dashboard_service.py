@@ -21,6 +21,7 @@ from app.core.config import Settings
 from app.models.market import (
     AlertItem,
     BhavcopyStatusResponse,
+    BreadthDayCounts,
     ChartGridCard,
     ChartGridResponse,
     ChartGridSeriesItem,
@@ -595,6 +596,84 @@ class DashboardService:
         age_hours = round(age_minutes / 60, 1)
         return f"Snapshot {age_hours}h old"
 
+    @staticmethod
+    def _breadth_today_from_snapshots(snapshots: list[StockSnapshot]) -> BreadthDayCounts | None:
+        if not snapshots:
+            return None
+        # `today_iso` is purely descriptive; the snapshot rows already share
+        # a session via `_scan_eligible_snapshots`, which filters to whichever
+        # day's bhavcopy patch was last applied.
+        today_iso = datetime.now(timezone.utc).astimezone(IST).date().isoformat()
+        advances = sum(1 for s in snapshots if s.change_pct > 0)
+        declines = sum(1 for s in snapshots if s.change_pct < 0)
+        unchanged = len(snapshots) - advances - declines
+        return BreadthDayCounts(
+            date=today_iso,
+            advances=advances,
+            declines=declines,
+            unchanged=unchanged,
+            total=len(snapshots),
+        )
+
+    @staticmethod
+    def _breadth_history_from_snapshots(snapshots: list[StockSnapshot], days: int = 10) -> list[BreadthDayCounts]:
+        """Daily advance/decline counts over the last `days` trading sessions.
+
+        Derived on-the-fly from each snapshot's `chart_grid_points` (last 240
+        daily closes), so it works without any persisted history file: for
+        each consecutive (prev, curr) pair we attribute the change to the
+        date of `curr`, and aggregate across the universe.
+        """
+        if not snapshots or days <= 0:
+            return []
+
+        # date -> (advances, declines, unchanged)
+        per_day: dict[str, list[int]] = {}
+
+        for snap in snapshots:
+            points = snap.chart_grid_points or []
+            if len(points) < 2:
+                continue
+            # Walk only the tail we care about — `days+1` points yields up to
+            # `days` change observations.
+            tail = points[-(days + 1):]
+            prev_value: float | None = None
+            for point in tail:
+                value = float(point.value or 0)
+                if value <= 0:
+                    prev_value = value if value > 0 else prev_value
+                    continue
+                if prev_value is None or prev_value <= 0:
+                    prev_value = value
+                    continue
+                # Date of the current bar — chart_grid_points are stamped at
+                # 00:00 UTC of the trading day, so .date() in UTC is correct.
+                dt = datetime.fromtimestamp(int(point.time or 0), tz=timezone.utc)
+                date_key = dt.date().isoformat()
+                bucket = per_day.setdefault(date_key, [0, 0, 0])
+                if value > prev_value:
+                    bucket[0] += 1
+                elif value < prev_value:
+                    bucket[1] += 1
+                else:
+                    bucket[2] += 1
+                prev_value = value
+
+        if not per_day:
+            return []
+
+        ordered_dates = sorted(per_day.keys())[-days:]
+        return [
+            BreadthDayCounts(
+                date=d,
+                advances=per_day[d][0],
+                declines=per_day[d][1],
+                unchanged=per_day[d][2],
+                total=per_day[d][0] + per_day[d][1] + per_day[d][2],
+            )
+            for d in ordered_dates
+        ]
+
     def _calculate_market_breadth(self, universe_name: str, universe_stocks: list[StockSnapshot]) -> UniverseBreadth:
         total = len(universe_stocks)
         if total == 0:
@@ -724,6 +803,9 @@ class DashboardService:
                 )
             )
 
+        breadth_today = self._breadth_today_from_snapshots(scan_snapshots)
+        breadth_history = self._breadth_history_from_snapshots(scan_snapshots, days=10)
+
         response = DashboardResponse(
             app_name=self.settings.app_name,
             generated_at=snapshot_updated_at,
@@ -746,6 +828,8 @@ class DashboardService:
                 for item in top_volume
             ],
             recent_alerts=alerts,
+            breadth_today=breadth_today,
+            breadth_history=breadth_history,
         )
         self._dashboard_cache = response
         import gc

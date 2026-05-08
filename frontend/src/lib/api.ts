@@ -41,6 +41,14 @@ export type AlertItem = {
   created_at: string;
 };
 
+export type BreadthDayCounts = {
+  date: string;
+  advances: number;
+  declines: number;
+  unchanged: number;
+  total: number;
+};
+
 export type DashboardResponse = {
   app_name: string;
   generated_at: string;
@@ -54,6 +62,8 @@ export type DashboardResponse = {
   top_losers: ScanMatch[];
   top_volume_spikes: ScanMatch[];
   recent_alerts: AlertItem[];
+  breadth_today: BreadthDayCounts | null;
+  breadth_history: BreadthDayCounts[];
 };
 
 export type IndexQuoteItem = {
@@ -987,6 +997,21 @@ export function normalizeDashboardResponse(value: unknown): DashboardResponse {
     top_losers: mapArray(raw.top_losers, normalizeScanMatch),
     top_volume_spikes: mapArray(raw.top_volume_spikes, normalizeScanMatch),
     recent_alerts: mapArray(raw.recent_alerts, normalizeAlertItem),
+    breadth_today: normalizeBreadthDayCounts(raw.breadth_today),
+    breadth_history: mapArray(raw.breadth_history, (item) => normalizeBreadthDayCounts(item) ?? {
+      date: "", advances: 0, declines: 0, unchanged: 0, total: 0,
+    }).filter((item) => item.date !== ""),
+  };
+}
+
+function normalizeBreadthDayCounts(value: unknown): BreadthDayCounts | null {
+  if (!isRecord(value)) return null;
+  return {
+    date: readString(value.date),
+    advances: readNumber(value.advances),
+    declines: readNumber(value.declines),
+    unchanged: readNumber(value.unchanged),
+    total: readNumber(value.total),
   };
 }
 
