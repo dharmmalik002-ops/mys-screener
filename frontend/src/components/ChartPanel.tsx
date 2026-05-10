@@ -3230,6 +3230,11 @@ export function ChartPanel({
               <div className="empty-state-subtitle">If the intraday feed is slow, try Refresh Chart once more.</div>
             ) : null}
           </div>
+        ) : !chartLoading && !chartError && activeBars.length === 0 ? (
+          <div className="empty-state">
+            <div>No chart data available for {symbol} on {timeframe}.</div>
+            <div className="empty-state-subtitle">Try a different timeframe or refresh — the data feed may be temporarily unavailable.</div>
+          </div>
         ) : (
         <div className="chart-stage">
           {symbol ? (

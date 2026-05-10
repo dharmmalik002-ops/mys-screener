@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import io
 import json
+import logging
 import os
 import re
 import subprocess
@@ -249,6 +250,9 @@ INDEX_SYMBOL_TO_NSE_NAME = {
     "^CNXMETAL": "NIFTY METAL",
     "^CNXREALTY": "NIFTY REALTY",
 }
+
+
+logger = logging.getLogger(__name__)
 
 
 class FreeMarketDataProvider:
@@ -985,6 +989,7 @@ class FreeMarketDataProvider:
         bars: int,
         *,
         allow_legacy: bool = False,
+        skip_scale_check: bool = False,
     ) -> list[ChartBar]:
         path = self._chart_cache_path(symbol, timeframe)
         if not path.exists():
@@ -1020,11 +1025,14 @@ class FreeMarketDataProvider:
                 except Exception:
                     pass
                 cached_bars = sanitized
-        if is_daily and cached_bars and not self._is_trading_day_ist(
-            self._chart_bar_trade_date(cached_bars[-1])
+        if (
+            is_daily
+            and cached_bars
+            and not skip_scale_check
+            and not self._is_trading_day_ist(self._chart_bar_trade_date(cached_bars[-1]))
         ):
             return []
-        if not self._chart_bars_match_symbol_scale(symbol, cached_bars):
+        if not skip_scale_check and not self._chart_bars_match_symbol_scale(symbol, cached_bars):
             return []
         return cached_bars[-bars:]
 
@@ -1519,10 +1527,11 @@ class FreeMarketDataProvider:
                 refreshed_weekly = await asyncio.to_thread(self._refresh_cached_weekly_chart_from_daily_cache, symbol, bars)
                 if refreshed_weekly:
                     return refreshed_weekly
+        cache_cold = not cached_bars
         try:
             chart_bars = await asyncio.wait_for(
                 asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
-                timeout=self._chart_fetch_timeout_seconds(timeframe),
+                timeout=self._chart_fetch_timeout_seconds(timeframe, cache_cold=cache_cold),
             )
             if len(chart_bars) < min_required_bars:
                 legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
@@ -1530,20 +1539,39 @@ class FreeMarketDataProvider:
                     return cached_bars
                 if len(legacy_bars) >= min_required_bars:
                     return legacy_bars
+                stale_bars = await asyncio.to_thread(
+                    self._read_chart_cache, symbol, timeframe, bars,
+                    allow_legacy=True, skip_scale_check=True,
+                )
+                if len(stale_bars) >= min_required_bars:
+                    logger.info("get_chart serving stale cache (scale check skipped) for %s/%s", symbol, timeframe)
+                    return stale_bars
             await asyncio.to_thread(self._write_chart_cache, symbol, timeframe, chart_bars)
             return chart_bars
-        except Exception:
+        except Exception as exc:
             if cached_bars:
                 return cached_bars
+            stale_bars = await asyncio.to_thread(
+                self._read_chart_cache, symbol, timeframe, bars,
+                allow_legacy=True, skip_scale_check=True,
+            )
+            if stale_bars:
+                logger.info(
+                    "get_chart fetch failed for %s/%s (%s); serving stale cache",
+                    symbol, timeframe, exc,
+                )
+                return stale_bars
             raise
 
-    @staticmethod
-    def _chart_fetch_timeout_seconds(timeframe: str) -> float:
+    def _chart_fetch_timeout_seconds(self, timeframe: str, *, cache_cold: bool = False) -> float:
+        # Cold-cache cold-start fetches need extra headroom: yfinance can take
+        # 15-20s for BSE-only (.BO) tickers that aren't in its hot path. Once
+        # the cache lands, subsequent fetches are fast.
         if timeframe in {"15m", "30m", "1h"}:
             return 12.0
         if timeframe == "1D":
-            return 8.0
-        return 6.0
+            return 25.0 if cache_cold else 12.0
+        return 12.0 if cache_cold else 6.0
 
     def _is_chart_cache_fresh(self, symbol: str, timeframe: str) -> bool:
         path = self._chart_cache_path(symbol, timeframe)
