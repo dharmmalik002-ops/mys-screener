@@ -1111,6 +1111,11 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
   }
 
   const seenIds = new Set<string>();
+  // Exclusive-membership enforcement: a symbol belongs to exactly one
+  // watchlist. The first watchlist in the array that claims a symbol
+  // keeps it; every subsequent occurrence is stripped. This also cleans
+  // up legacy state from before exclusivity was enforced.
+  const claimedSymbols = new Set<string>();
   const output: LocalWatchlist[] = [];
 
   for (const item of value) {
@@ -1129,15 +1134,19 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
       continue;
     }
 
-    const symbols = Array.isArray(candidate.symbols)
-      ? Array.from(
-          new Set(
-            candidate.symbols
-              .map((symbol) => normalizeStoredSymbol(symbol))
-              .filter((symbol): symbol is string => Boolean(symbol)),
-          ),
-        )
-      : [];
+    const symbols: string[] = [];
+    if (Array.isArray(candidate.symbols)) {
+      const seenInThisList = new Set<string>();
+      for (const rawSymbol of candidate.symbols) {
+        const symbol = normalizeStoredSymbol(rawSymbol);
+        if (!symbol || seenInThisList.has(symbol) || claimedSymbols.has(symbol)) {
+          continue;
+        }
+        seenInThisList.add(symbol);
+        claimedSymbols.add(symbol);
+        symbols.push(symbol);
+      }
+    }
     const color = normalizeWatchlistColor(candidate.color, DEFAULT_WATCHLIST_COLORS[output.length % DEFAULT_WATCHLIST_COLORS.length]);
 
     seenIds.add(id);
