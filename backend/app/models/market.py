@@ -903,6 +903,9 @@ class ChartResponse(BaseModel):
     summary: StockOverview | None = None
     rs_line: list[ChartLinePoint] = Field(default_factory=list)
     rs_line_markers: list[ChartLineMarker] = Field(default_factory=list)
+    # Markers for earnings announcement days — rendered as "E" pips by
+    # the chart panel. Sourced from data/earnings_metrics.json.
+    earnings_markers: list[ChartLineMarker] = Field(default_factory=list)
 
 
 class FundamentalsResponse(CompanyFundamentals):

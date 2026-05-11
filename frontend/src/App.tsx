@@ -1002,6 +1002,7 @@ function buildIndexFallbackChart(
     summary: null,
     rs_line: [],
     rs_line_markers: [],
+    earnings_markers: [],
   };
 }
 
@@ -5009,6 +5010,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     bars={displayedChart?.bars ?? []}
                     rsLine={displayedChart?.rs_line ?? []}
                     rsLineMarkers={displayedChart?.rs_line_markers ?? []}
+                    earningsMarkers={displayedChart?.earnings_markers ?? []}
                     summary={displayedChart?.summary ?? null}
                     panelTab={chartPanelTab}
                     onPanelTabChange={setChartPanelTab}
@@ -5088,6 +5090,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   bars={displayedChart?.bars ?? []}
                   rsLine={displayedChart?.rs_line ?? []}
                   rsLineMarkers={displayedChart?.rs_line_markers ?? []}
+                  earningsMarkers={displayedChart?.earnings_markers ?? []}
                   summary={displayedChart?.summary ?? null}
                   panelTab={chartPanelTab}
                   onPanelTabChange={setChartPanelTab}
@@ -5184,6 +5187,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         bars={displayedChart?.bars ?? []}
                         rsLine={displayedChart?.rs_line ?? []}
                         rsLineMarkers={displayedChart?.rs_line_markers ?? []}
+                        earningsMarkers={displayedChart?.earnings_markers ?? []}
                         summary={displayedChart?.summary ?? null}
                         panelTab={chartPanelTab}
                         onPanelTabChange={setChartPanelTab}
@@ -5232,6 +5236,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         bars={paneBDisplayedChart?.bars ?? []}
                         rsLine={paneBDisplayedChart?.rs_line ?? []}
                         rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
+                        earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
                         summary={paneBDisplayedChart?.summary ?? null}
                         panelTab={chartPanelTab}
                         onPanelTabChange={setChartPanelTab}

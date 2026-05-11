@@ -368,6 +368,48 @@ class DashboardService:
         snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
         return self._with_earnings_metrics(snapshots)
 
+    def _build_earnings_markers(self, symbol: str, bars: list) -> list:
+        """Return ChartLineMarker entries stamping each result-announcement
+        day in the cache. Used by the chart panel to draw "E" pips.
+
+        We snap to the chart bar's exact timestamp (yfinance returns
+        UTC-midnight, the chart bars are stored the same way) so the
+        marker lands on the candle rather than between candles.
+        """
+        if not bars:
+            return []
+        try:
+            from app.models.market import ChartLineMarker
+            from app.services.earnings_metrics import load_metrics_file, metrics_file_path
+            from datetime import date as _date_cls, datetime as _dt_cls, timezone as _tz
+
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None or not metrics_file_path(backend_root).exists():
+                return []
+            metrics = load_metrics_file(backend_root)
+            entry = metrics.get(symbol.upper())
+            if not entry:
+                return []
+            raw_date = entry.get("earnings_date")
+            if not isinstance(raw_date, str):
+                return []
+            earnings_date = _date_cls.fromisoformat(raw_date)
+            # Find the chart bar whose date matches (or is the first
+            # session at-or-after) the earnings date.
+            target_time: int | None = None
+            target_value: float | None = None
+            for bar in bars:
+                bar_date = _dt_cls.fromtimestamp(int(bar.time), tz=_tz.utc).date()
+                if bar_date >= earnings_date:
+                    target_time = int(bar.time)
+                    target_value = float(bar.high)
+                    break
+            if target_time is None or target_value is None:
+                return []
+            return [ChartLineMarker(time=target_time, value=target_value, label="E", color="#f59e0b")]
+        except Exception:
+            return []
+
     def _with_earnings_metrics(self, snapshots):
         """Merge sidecar earnings metrics onto each snapshot.
 
@@ -1686,6 +1728,7 @@ class DashboardService:
         summary = build_stock_overview(snapshot) if snapshot else None
         if summary is not None:
             summary = self._with_chart_summary(summary, bars, rs_line, snapshot.previous_close if snapshot else None)
+        earnings_markers = self._build_earnings_markers(symbol, bars)
         response = ChartResponse(
             symbol=symbol,
             timeframe=timeframe,
@@ -1693,6 +1736,7 @@ class DashboardService:
             summary=summary,
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
+            earnings_markers=earnings_markers,
         )
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
         return response
@@ -1723,6 +1767,7 @@ class DashboardService:
             summary=summary,
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
+            earnings_markers=self._build_earnings_markers(symbol, bars),
         )
 
     async def get_chart_full_history(self, symbol: str, timeframe: str):

@@ -189,6 +189,7 @@ type ChartPanelProps = {
   bars: ChartBar[];
   rsLine: ChartLinePoint[];
   rsLineMarkers: ChartLineMarker[];
+  earningsMarkers?: ChartLineMarker[];
   summary: StockOverview | null;
   panelTab: ChartPanelTab;
   onPanelTabChange: (tab: ChartPanelTab) => void;
@@ -1230,6 +1231,7 @@ export function ChartPanel({
   bars,
   rsLine,
   rsLineMarkers,
+  earningsMarkers,
   summary,
   panelTab,
   onPanelTabChange,
@@ -1347,6 +1349,10 @@ export function ChartPanel({
   const safeRsLineMarkers = useMemo(
     () => sanitizeLineMarkers(extendedHistory?.rs_line_markers ?? rsLineMarkers),
     [extendedHistory, rsLineMarkers],
+  );
+  const safeEarningsMarkers = useMemo(
+    () => sanitizeLineMarkers(extendedHistory?.earnings_markers ?? earningsMarkers ?? []),
+    [extendedHistory, earningsMarkers],
   );
   const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
   const pocketPivotBars = useMemo(() => computePocketPivotBars(activeBars), [activeBars]);
@@ -1924,20 +1930,34 @@ export function ChartPanel({
     ];
 
     mainSeries.setData(ohlcvData);
+    const combinedMarkers: any[] = [];
     if (pocketPivotWidget.enabled) {
-      mainSeries.setMarkers(
-        pocketPivotBars.map((bar) => ({
+      for (const bar of pocketPivotBars) {
+        combinedMarkers.push({
           time: bar.time as UTCTimestamp,
           position: "belowBar",
           shape: "circle",
           color: pocketPivotWidget.dotColor,
           text: "",
           size: pocketPivotWidget.dotSize,
-        })) as any,
-      );
-    } else {
-      mainSeries.setMarkers([]);
+        });
+      }
     }
+    // Earnings "E" pip — one per result announcement day within the
+    // currently-loaded window.
+    for (const marker of safeEarningsMarkers) {
+      combinedMarkers.push({
+        time: marker.time as UTCTimestamp,
+        position: "aboveBar",
+        shape: "circle",
+        color: marker.color || "#f59e0b",
+        text: marker.label || "E",
+        size: 1.2,
+      });
+    }
+    // lightweight-charts requires markers sorted by time.
+    combinedMarkers.sort((left, right) => Number(left.time) - Number(right.time));
+    mainSeries.setMarkers(combinedMarkers);
     if (benchmarkOverlayData.length) {
       const benchmarkSeries = chart.addLineSeries({
         color: "#ffb347",
@@ -2140,7 +2160,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeRsLine, safeRsLineMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
