@@ -129,6 +129,14 @@ class StockSnapshot(BaseModel):
     history_session_date: date | None = None
     history_bars: int = 0
     history_source: str | None = None
+    # Positive-earnings scanner inputs. Populated from
+    # data/earnings_metrics.json at snapshot read time. All optional so
+    # absence means "no recent confirmed earnings".
+    latest_earnings_date: date | None = None
+    earnings_close_in_range_pct: float | None = None
+    earnings_next_day_gap_pct: float | None = None
+    earnings_day_rvol_50d: float | None = None
+    earnings_return_5d_pct: float | None = None
 
     @property
     def relative_volume(self) -> float:

@@ -365,7 +365,63 @@ class DashboardService:
         return timedelta(minutes=10)
 
     async def _snapshots(self):
-        return await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+        snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
+        return self._with_earnings_metrics(snapshots)
+
+    def _with_earnings_metrics(self, snapshots):
+        """Merge sidecar earnings metrics onto each snapshot.
+
+        Loads ``data/earnings_metrics.json`` once and stamps the matching
+        fields on each StockSnapshot. Computation happens out-of-band
+        (see ``scripts/compute_earnings_metrics.py``) so the read path
+        stays cheap. Skipped on US market and when the file is missing.
+        """
+        if not snapshots:
+            return snapshots
+        try:
+            from app.services.earnings_metrics import load_metrics_file, metrics_file_path
+            from datetime import date as _date_cls
+
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                return snapshots
+            cache_path = metrics_file_path(backend_root)
+            if not cache_path.exists():
+                return snapshots
+            cached_mtime = cache_path.stat().st_mtime
+            cached = getattr(self, "_earnings_metrics_cache", None)
+            if cached and cached[0] == cached_mtime:
+                metrics = cached[1]
+            else:
+                metrics = load_metrics_file(backend_root)
+                self._earnings_metrics_cache = (cached_mtime, metrics)
+            if not metrics:
+                return snapshots
+            patched: list = []
+            for snapshot in snapshots:
+                entry = metrics.get(snapshot.symbol.upper())
+                if not entry:
+                    patched.append(snapshot)
+                    continue
+                try:
+                    earnings_date_raw = entry.get("earnings_date")
+                    earnings_date_value = (
+                        _date_cls.fromisoformat(earnings_date_raw)
+                        if isinstance(earnings_date_raw, str)
+                        else None
+                    )
+                except Exception:
+                    earnings_date_value = None
+                patched.append(snapshot.model_copy(update={
+                    "latest_earnings_date": earnings_date_value,
+                    "earnings_close_in_range_pct": entry.get("close_in_range_pct"),
+                    "earnings_next_day_gap_pct": entry.get("next_day_gap_pct"),
+                    "earnings_day_rvol_50d": entry.get("day_rvol_50d"),
+                    "earnings_return_5d_pct": entry.get("return_5d_pct"),
+                }))
+            return patched
+        except Exception:
+            return snapshots
 
     def _snapshot_updated_at(self) -> datetime:
         return self.provider.get_snapshot_updated_at() or datetime.now(timezone.utc)

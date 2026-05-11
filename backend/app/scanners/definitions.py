@@ -865,6 +865,65 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
+# Positive Earnings: stocks that confirmed a strong reaction to their
+# latest quarterly result. Conditions (all required):
+#   * result announced within the last 60 days,
+#   * close in the top 25% of the candle on the earnings day OR the day
+#     after,
+#   * gap up >= 1% on the session after earnings,
+#   * earnings-day volume >= 2x the prior 50-day average volume,
+#   * +10% or better return measured 5 sessions from the earnings day.
+POSITIVE_EARNINGS_LOOKBACK_DAYS = 60
+POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE = 0.75
+POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT = 1.0
+POSITIVE_EARNINGS_MIN_DAY_RVOL = 2.0
+POSITIVE_EARNINGS_MIN_RETURN_5D_PCT = 10.0
+
+
+def _positive_earnings(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    earnings_date = snapshot.latest_earnings_date
+    if earnings_date is None:
+        return None
+    today = date.today()
+    age_days = (today - earnings_date).days
+    if age_days < 0 or age_days > POSITIVE_EARNINGS_LOOKBACK_DAYS:
+        return None
+
+    close_in_range = snapshot.earnings_close_in_range_pct
+    next_day_gap = snapshot.earnings_next_day_gap_pct
+    day_rvol = snapshot.earnings_day_rvol_50d
+    return_5d = snapshot.earnings_return_5d_pct
+    if close_in_range is None or next_day_gap is None or day_rvol is None or return_5d is None:
+        return None
+
+    if close_in_range < POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE:
+        return None
+    if next_day_gap < POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT:
+        return None
+    if day_rvol < POSITIVE_EARNINGS_MIN_DAY_RVOL:
+        return None
+    if return_5d < POSITIVE_EARNINGS_MIN_RETURN_5D_PCT:
+        return None
+
+    # Score blends the 5-day reaction with volume confirmation so the
+    # strongest names rank first.
+    score = round(
+        min(return_5d, 80.0) * 0.6
+        + min(day_rvol, 10.0) * 4.0
+        + min(next_day_gap, 15.0) * 0.8
+        + (close_in_range * 10.0),
+        2,
+    )
+    reasons = [
+        f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
+        f"Close at {round(close_in_range * 100)}% of candle range (>=75%)",
+        f"Next-day gap +{next_day_gap:.2f}% (>=1%)",
+        f"Earnings-day volume {day_rvol:.2f}x of 50D avg (>=2x)",
+        f"+{return_5d:.2f}% over 5 sessions post-earnings (>=10%)",
+    ]
+    return score, reasons
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -907,6 +966,13 @@ SCANS: list[ScanDefinition] = [
     ScanDefinition("minervini-1m", "Minervini 1 Month", "Setups", "Trend template names with price above key SMAs, rising 200 SMA, and strong 52-week positioning.", _minervini_1m),
     ScanDefinition("minervini-5m", "Minervini 5 Months", "Setups", "Trend template names with price above key SMAs, a rising 200 SMA over 1 and 5 months, and strong 52-week positioning.", _minervini_5m),
     ScanDefinition("ema-expansion", "Expansion", "Setups", "Price gain >= 6.5%, 20-day RVOL > 3.0, and liquidity floors (AvgVol20 > 25k, Vol > 50k, Price > 30).", _ema_expansion),
+    ScanDefinition(
+        "positive-earnings",
+        "Positive Earnings",
+        "Setups",
+        "Result declared in last 60 days with a strong post-earnings reaction: top-quartile close, +1% gap up, 2x volume, and +10% over 5 sessions.",
+        _positive_earnings,
+    ),
 ]
 
 SCAN_BY_ID = {scan.id: scan for scan in SCANS}
