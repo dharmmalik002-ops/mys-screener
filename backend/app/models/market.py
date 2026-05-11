@@ -807,20 +807,11 @@ class StockOverview(BaseModel):
     gap_pct: float
 
 
-CustomScanPattern = Literal[
-    "any",
-    "consolidating",
-    "breakout-ath",
-    "breakout-52w",
-    "breakout-range",
-    "volume-price",
-    "strong-nifty",
-    "strong-sector",
-    "clean-pullback",
-    "darvas-box",
-    "pivot-breakout",
-    "relative-strength",
-]
+# Keep this as a plain string instead of a Literal so the backend can tolerate
+# new scanner ids landing in customFilters from older client builds without
+# returning 422 Unprocessable Entity (the user otherwise has to clear local
+# storage). Unknown patterns fall through to "any" in `_passes_custom_filters`.
+CustomScanPattern = str
 
 CustomSortBy = Literal[
     "pattern",

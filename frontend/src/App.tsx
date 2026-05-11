@@ -12,6 +12,7 @@ import type {
   IndicatorKey,
 } from "./components/ChartPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
+import { DEFAULT_POSITIVE_EARNINGS_FILTERS, type PositiveEarningsFilters } from "./components/PositiveEarningsScannerPanel";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import { Panel } from "./components/Panel";
 import {
@@ -74,6 +75,7 @@ const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").th
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
 const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then((module) => ({ default: module.ImprovingRsPanel })));
 const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPanel").then((module) => ({ default: module.MinerviniScannerPanel })));
+const PositiveEarningsScannerPanel = lazy(() => import("./components/PositiveEarningsScannerPanel").then((module) => ({ default: module.PositiveEarningsScannerPanel })));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
@@ -1498,6 +1500,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   );
   const [appliedMinervini1mMinLiquidityCrore, setAppliedMinervini1mMinLiquidityCrore] = useState<number | null>(
     initialScannerSettings.appliedMinervini1mMinLiquidityCrore,
+  );
+  const [positiveEarningsFilters, setPositiveEarningsFilters] = useState<PositiveEarningsFilters>(
+    DEFAULT_POSITIVE_EARNINGS_FILTERS,
+  );
+  const [appliedPositiveEarningsFilters, setAppliedPositiveEarningsFilters] = useState<PositiveEarningsFilters>(
+    DEFAULT_POSITIVE_EARNINGS_FILTERS,
   );
   const [minervini5mMinLiquidityCrore, setMinervini5mMinLiquidityCrore] = useState<number | null>(
     initialScannerSettings.minervini5mMinLiquidityCrore,
@@ -3004,7 +3012,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return getScanResults("minervini-5m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini5mMinLiquidityCrore });
     }
     if (activeScanner === "positive-earnings") {
-      return getScanResults("positive-earnings", activeMarket, options);
+      return getScanResults("positive-earnings", activeMarket, {
+        ...options,
+        positiveEarningsMinCloseInRangePct: appliedPositiveEarningsFilters.minCloseInRangePct,
+        positiveEarningsMinNextDayGapPct: appliedPositiveEarningsFilters.minNextDayGapPct,
+        positiveEarningsMinDayRvol: appliedPositiveEarningsFilters.minDayRvol,
+        positiveEarningsMinReturn5dPct: appliedPositiveEarningsFilters.minReturn5dPct,
+        positiveEarningsLookbackDays: appliedPositiveEarningsFilters.lookbackDays,
+      });
     }
     if (activeScanner === "custom-scan" && !hasAppliedFiltersOnce) {
       return Promise.resolve(null);
@@ -3552,6 +3567,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       case "minervini-5m":
         handleApplyMinervini5mScan();
         return;
+      case "positive-earnings":
+        handleApplyPositiveEarningsScan();
+        return;
       default:
         // ipo / ema-expansion / contraction / gap-up-openers — bump nonce to refetch
         setActivePage("screener");
@@ -3729,6 +3747,29 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScanSectorSummariesLoading(false);
     setMinervini5mMinLiquidityCrore(null);
     setAppliedMinervini5mMinLiquidityCrore(null);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleApplyPositiveEarningsScan = () => {
+    setActivePage("screener");
+    setActiveScanner("positive-earnings");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setAppliedPositiveEarningsFilters(positiveEarningsFilters);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleResetPositiveEarningsScan = () => {
+    setActivePage("screener");
+    setActiveScanner("positive-earnings");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setPositiveEarningsFilters(DEFAULT_POSITIVE_EARNINGS_FILTERS);
+    setAppliedPositiveEarningsFilters(DEFAULT_POSITIVE_EARNINGS_FILTERS);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -4949,10 +4990,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                 )
                               : activeScanner === "positive-earnings"
                                 ? (
-                                  <div className="scanner-settings-note">
-                                    <strong>Built-in scan</strong>
-                                    <span>Stocks with a strong reaction to results in the last 60 days: top-quartile close on the earnings day or next, gap up ≥1%, volume ≥2× the 50-day average, and ≥10% over 5 sessions. No additional filters.</span>
-                                  </div>
+                                  <PositiveEarningsScannerPanel
+                                    filters={positiveEarningsFilters}
+                                    onFiltersChange={setPositiveEarningsFilters}
+                                    onApply={handleApplyPositiveEarningsScan}
+                                    onReset={handleResetPositiveEarningsScan}
+                                  />
                                 )
                               : (
                                 <>

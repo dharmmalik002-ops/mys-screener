@@ -65,6 +65,14 @@ def build_router(service):
         # omitted, preserving the IBD-style screen behaviour.
         expansion_min_change_pct: float | None = Query(default=None, ge=0.0, le=100.0),
         expansion_min_relative_volume: float | None = Query(default=None, ge=0.0, le=50.0),
+        # Positive Earnings scanner thresholds — all four reaction gates
+        # plus the recency window. Omitted values fall back to the spec
+        # defaults (75% / 1% / 2x / 10% / 60 days).
+        positive_earnings_min_close_in_range_pct: float | None = Query(default=None, ge=0.0, le=1.0),
+        positive_earnings_min_next_day_gap_pct: float | None = Query(default=None, ge=-50.0, le=50.0),
+        positive_earnings_min_day_rvol: float | None = Query(default=None, ge=0.0, le=50.0),
+        positive_earnings_min_return_5d_pct: float | None = Query(default=None, ge=-100.0, le=200.0),
+        positive_earnings_lookback_days: int | None = Query(default=None, ge=1, le=365),
     ):
         try:
             return await resolve_service(market).get_scan_results(
@@ -73,6 +81,11 @@ def build_router(service):
                 min_liquidity_crore=min_liquidity_crore,
                 expansion_min_change_pct=expansion_min_change_pct,
                 expansion_min_relative_volume=expansion_min_relative_volume,
+                positive_earnings_min_close_in_range_pct=positive_earnings_min_close_in_range_pct,
+                positive_earnings_min_next_day_gap_pct=positive_earnings_min_next_day_gap_pct,
+                positive_earnings_min_day_rvol=positive_earnings_min_day_rvol,
+                positive_earnings_min_return_5d_pct=positive_earnings_min_return_5d_pct,
+                positive_earnings_lookback_days=positive_earnings_lookback_days,
             )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=f"Unknown scan: {scan_id}") from error
@@ -332,6 +345,11 @@ def build_router(service):
         min_liquidity_crore: float | None = Query(default=None, ge=0.0),
         expansion_min_change_pct: float | None = Query(default=None, ge=0.0, le=100.0),
         expansion_min_relative_volume: float | None = Query(default=None, ge=0.0, le=50.0),
+        positive_earnings_min_close_in_range_pct: float | None = Query(default=None, ge=0.0, le=1.0),
+        positive_earnings_min_next_day_gap_pct: float | None = Query(default=None, ge=-50.0, le=50.0),
+        positive_earnings_min_day_rvol: float | None = Query(default=None, ge=0.0, le=50.0),
+        positive_earnings_min_return_5d_pct: float | None = Query(default=None, ge=-100.0, le=200.0),
+        positive_earnings_lookback_days: int | None = Query(default=None, ge=1, le=365),
     ):
         try:
             return await resolve_service(market_name).get_scan_results(
@@ -340,6 +358,11 @@ def build_router(service):
                 min_liquidity_crore=min_liquidity_crore,
                 expansion_min_change_pct=expansion_min_change_pct,
                 expansion_min_relative_volume=expansion_min_relative_volume,
+                positive_earnings_min_close_in_range_pct=positive_earnings_min_close_in_range_pct,
+                positive_earnings_min_next_day_gap_pct=positive_earnings_min_next_day_gap_pct,
+                positive_earnings_min_day_rvol=positive_earnings_min_day_rvol,
+                positive_earnings_min_return_5d_pct=positive_earnings_min_return_5d_pct,
+                positive_earnings_lookback_days=positive_earnings_lookback_days,
             )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=f"Unknown scan: {scan_id}") from error

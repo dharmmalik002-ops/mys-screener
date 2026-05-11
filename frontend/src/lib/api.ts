@@ -158,6 +158,12 @@ type ScanRequestOptions = {
   // scan_id, so the panel can leave them undefined when not relevant.
   expansionMinChangePct?: number | null;
   expansionMinRelativeVolume?: number | null;
+  // Positive-earnings-scanner overrides.
+  positiveEarningsMinCloseInRangePct?: number | null;
+  positiveEarningsMinNextDayGapPct?: number | null;
+  positiveEarningsMinDayRvol?: number | null;
+  positiveEarningsMinReturn5dPct?: number | null;
+  positiveEarningsLookbackDays?: number | null;
 };
 
 export type MarketKey = "india";
@@ -1934,6 +1940,21 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
   }
   if (typeof options?.expansionMinRelativeVolume === "number" && Number.isFinite(options.expansionMinRelativeVolume)) {
     params.set("expansion_min_relative_volume", String(options.expansionMinRelativeVolume));
+  }
+  if (typeof options?.positiveEarningsMinCloseInRangePct === "number" && Number.isFinite(options.positiveEarningsMinCloseInRangePct)) {
+    params.set("positive_earnings_min_close_in_range_pct", String(options.positiveEarningsMinCloseInRangePct));
+  }
+  if (typeof options?.positiveEarningsMinNextDayGapPct === "number" && Number.isFinite(options.positiveEarningsMinNextDayGapPct)) {
+    params.set("positive_earnings_min_next_day_gap_pct", String(options.positiveEarningsMinNextDayGapPct));
+  }
+  if (typeof options?.positiveEarningsMinDayRvol === "number" && Number.isFinite(options.positiveEarningsMinDayRvol)) {
+    params.set("positive_earnings_min_day_rvol", String(options.positiveEarningsMinDayRvol));
+  }
+  if (typeof options?.positiveEarningsMinReturn5dPct === "number" && Number.isFinite(options.positiveEarningsMinReturn5dPct)) {
+    params.set("positive_earnings_min_return_5d_pct", String(options.positiveEarningsMinReturn5dPct));
+  }
+  if (typeof options?.positiveEarningsLookbackDays === "number" && Number.isFinite(options.positiveEarningsLookbackDays)) {
+    params.set("positive_earnings_lookback_days", String(options.positiveEarningsLookbackDays));
   }
   const query = params.toString();
   if (!query) {

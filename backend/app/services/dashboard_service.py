@@ -1615,6 +1615,11 @@ class DashboardService:
         min_liquidity_crore: float | None = None,
         expansion_min_change_pct: float | None = None,
         expansion_min_relative_volume: float | None = None,
+        positive_earnings_min_close_in_range_pct: float | None = None,
+        positive_earnings_min_next_day_gap_pct: float | None = None,
+        positive_earnings_min_day_rvol: float | None = None,
+        positive_earnings_min_return_5d_pct: float | None = None,
+        positive_earnings_lookback_days: int | None = None,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         scanners, results = self._scan_catalog(snapshots)
@@ -1624,6 +1629,47 @@ class DashboardService:
 
         if scan_id == "contraction":
             items = await self._get_contraction_scan_items(snapshots, min_liquidity_crore)
+        elif scan_id == "positive-earnings" and (
+            positive_earnings_min_close_in_range_pct is not None
+            or positive_earnings_min_next_day_gap_pct is not None
+            or positive_earnings_min_day_rvol is not None
+            or positive_earnings_min_return_5d_pct is not None
+            or positive_earnings_lookback_days is not None
+        ):
+            from app.scanners.definitions import (
+                POSITIVE_EARNINGS_LOOKBACK_DAYS,
+                POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE,
+                POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT,
+                POSITIVE_EARNINGS_MIN_DAY_RVOL,
+                POSITIVE_EARNINGS_MIN_RETURN_5D_PCT,
+                ScanDefinition,
+                build_scan_match,
+                make_positive_earnings_evaluator,
+            )
+            evaluator = make_positive_earnings_evaluator(
+                lookback_days=positive_earnings_lookback_days or POSITIVE_EARNINGS_LOOKBACK_DAYS,
+                min_close_in_range_pct=positive_earnings_min_close_in_range_pct
+                    if positive_earnings_min_close_in_range_pct is not None
+                    else POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE,
+                min_next_day_gap_pct=positive_earnings_min_next_day_gap_pct
+                    if positive_earnings_min_next_day_gap_pct is not None
+                    else POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT,
+                min_day_rvol=positive_earnings_min_day_rvol
+                    if positive_earnings_min_day_rvol is not None
+                    else POSITIVE_EARNINGS_MIN_DAY_RVOL,
+                min_return_5d_pct=positive_earnings_min_return_5d_pct
+                    if positive_earnings_min_return_5d_pct is not None
+                    else POSITIVE_EARNINGS_MIN_RETURN_5D_PCT,
+            )
+            adhoc_items = []
+            for snapshot in snapshots:
+                outcome = evaluator(snapshot)
+                if outcome is None:
+                    continue
+                score, reasons = outcome
+                adhoc_items.append(build_scan_match("positive-earnings", snapshot, score, reasons))
+            adhoc_items.sort(key=lambda match: match.score, reverse=True)
+            items = self._filter_scan_items_by_liquidity(adhoc_items, min_liquidity_crore)
         elif scan_id == "ema-expansion" and (
             expansion_min_change_pct is not None or expansion_min_relative_volume is not None
         ):
@@ -1655,6 +1701,16 @@ class DashboardService:
             signature_parts.append(f"chg={expansion_min_change_pct:.2f}")
         if expansion_min_relative_volume is not None:
             signature_parts.append(f"rvol={expansion_min_relative_volume:.2f}")
+        if positive_earnings_min_close_in_range_pct is not None:
+            signature_parts.append(f"pe_close={positive_earnings_min_close_in_range_pct:.2f}")
+        if positive_earnings_min_next_day_gap_pct is not None:
+            signature_parts.append(f"pe_gap={positive_earnings_min_next_day_gap_pct:.2f}")
+        if positive_earnings_min_day_rvol is not None:
+            signature_parts.append(f"pe_rvol={positive_earnings_min_day_rvol:.2f}")
+        if positive_earnings_min_return_5d_pct is not None:
+            signature_parts.append(f"pe_ret5={positive_earnings_min_return_5d_pct:.2f}")
+        if positive_earnings_lookback_days is not None:
+            signature_parts.append(f"pe_look={positive_earnings_lookback_days}")
         request_signature = ":".join(signature_parts)
         return await self._scan_results_response(
             scan=descriptor,

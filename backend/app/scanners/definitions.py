@@ -880,48 +880,63 @@ POSITIVE_EARNINGS_MIN_DAY_RVOL = 2.0
 POSITIVE_EARNINGS_MIN_RETURN_5D_PCT = 10.0
 
 
-def _positive_earnings(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
-    earnings_date = snapshot.latest_earnings_date
-    if earnings_date is None:
-        return None
-    today = date.today()
-    age_days = (today - earnings_date).days
-    if age_days < 0 or age_days > POSITIVE_EARNINGS_LOOKBACK_DAYS:
-        return None
+def make_positive_earnings_evaluator(
+    *,
+    lookback_days: int = POSITIVE_EARNINGS_LOOKBACK_DAYS,
+    min_close_in_range_pct: float = POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE,
+    min_next_day_gap_pct: float = POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT,
+    min_day_rvol: float = POSITIVE_EARNINGS_MIN_DAY_RVOL,
+    min_return_5d_pct: float = POSITIVE_EARNINGS_MIN_RETURN_5D_PCT,
+) -> ScannerFn:
+    """Factory for a parameterized Positive Earnings evaluator.
 
-    close_in_range = snapshot.earnings_close_in_range_pct
-    next_day_gap = snapshot.earnings_next_day_gap_pct
-    day_rvol = snapshot.earnings_day_rvol_50d
-    return_5d = snapshot.earnings_return_5d_pct
-    if close_in_range is None or next_day_gap is None or day_rvol is None or return_5d is None:
-        return None
+    Defaults match the IBD-style spec the scanner shipped with; the
+    frontend lets users relax or tighten each gate via the panel.
+    """
+    def _evaluator(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+        earnings_date = snapshot.latest_earnings_date
+        if earnings_date is None:
+            return None
+        today = date.today()
+        age_days = (today - earnings_date).days
+        if age_days < 0 or age_days > lookback_days:
+            return None
 
-    if close_in_range < POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE:
-        return None
-    if next_day_gap < POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT:
-        return None
-    if day_rvol < POSITIVE_EARNINGS_MIN_DAY_RVOL:
-        return None
-    if return_5d < POSITIVE_EARNINGS_MIN_RETURN_5D_PCT:
-        return None
+        close_in_range = snapshot.earnings_close_in_range_pct
+        next_day_gap = snapshot.earnings_next_day_gap_pct
+        day_rvol = snapshot.earnings_day_rvol_50d
+        return_5d = snapshot.earnings_return_5d_pct
+        if close_in_range is None or next_day_gap is None or day_rvol is None or return_5d is None:
+            return None
 
-    # Score blends the 5-day reaction with volume confirmation so the
-    # strongest names rank first.
-    score = round(
-        min(return_5d, 80.0) * 0.6
-        + min(day_rvol, 10.0) * 4.0
-        + min(next_day_gap, 15.0) * 0.8
-        + (close_in_range * 10.0),
-        2,
-    )
-    reasons = [
-        f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
-        f"Close at {round(close_in_range * 100)}% of candle range (>=75%)",
-        f"Next-day gap +{next_day_gap:.2f}% (>=1%)",
-        f"Earnings-day volume {day_rvol:.2f}x of 50D avg (>=2x)",
-        f"+{return_5d:.2f}% over 5 sessions post-earnings (>=10%)",
-    ]
-    return score, reasons
+        if close_in_range < min_close_in_range_pct:
+            return None
+        if next_day_gap < min_next_day_gap_pct:
+            return None
+        if day_rvol < min_day_rvol:
+            return None
+        if return_5d < min_return_5d_pct:
+            return None
+
+        score = round(
+            min(return_5d, 80.0) * 0.6
+            + min(day_rvol, 10.0) * 4.0
+            + min(next_day_gap, 15.0) * 0.8
+            + (close_in_range * 10.0),
+            2,
+        )
+        reasons = [
+            f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
+            f"Close at {round(close_in_range * 100)}% of candle range (>={round(min_close_in_range_pct * 100)}%)",
+            f"Next-day gap +{next_day_gap:.2f}% (>={min_next_day_gap_pct:.1f}%)",
+            f"Earnings-day volume {day_rvol:.2f}x of 50D avg (>={min_day_rvol:.1f}x)",
+            f"+{return_5d:.2f}% over 5 sessions post-earnings (>={min_return_5d_pct:.1f}%)",
+        ]
+        return score, reasons
+    return _evaluator
+
+
+_positive_earnings = make_positive_earnings_evaluator()
 
 
 SCANS: list[ScanDefinition] = [
@@ -1272,13 +1287,20 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
 
 
 def _custom_score(snapshot: StockSnapshot, request: CustomScanRequest) -> tuple[float, list[str], str]:
-    if request.pattern != "any":
-        scan = SCAN_BY_ID[request.pattern]
-        outcome = scan.evaluator(snapshot)
-        if not outcome:
-            raise ValueError("pattern did not match")
-        score, reasons = outcome
-        return score, reasons, scan.name
+    if request.pattern and request.pattern != "any":
+        scan = SCAN_BY_ID.get(request.pattern)
+        if scan is None:
+            # Unknown / stale pattern (e.g. from older client state) —
+            # fall through to the generic "any" scoring below instead of
+            # erroring. This keeps the Custom Scanner usable when a
+            # scanner is removed from the dropdown.
+            pass
+        else:
+            outcome = scan.evaluator(snapshot)
+            if not outcome:
+                raise ValueError("pattern did not match")
+            score, reasons = outcome
+            return score, reasons, scan.name
 
     rs_component = snapshot.rs_rating if snapshot.rs_eligible else 0
     score = (
