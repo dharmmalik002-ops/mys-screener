@@ -48,6 +48,15 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Refresh earnings metrics
+        # Feeds the Positive Earnings scanner. Tolerate partial coverage
+        # (yfinance has gaps for some smaller names) and never fail the
+        # whole workflow when only this step trips.
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python backend/scripts/compute_earnings_metrics.py --workers 6
+
       - name: Commit and push if updated
         if: steps.patch.outputs.changed == 'true'
         run: |
@@ -72,6 +81,11 @@ jobs:
           SOURCE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(str(d.get('source','NSE')).upper())")
           SYMS=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(len(d['symbols']))")
           git add backend/data/bhavcopy_patch.json
+          # Stage refreshed earnings metrics alongside the bhavcopy
+          # patch so a single commit ships both daily.
+          if [ -f backend/data/earnings_metrics.json ]; then
+            git add backend/data/earnings_metrics.json
+          fi
           git commit -m "data: ${SOURCE} EOD bhavcopy patch for ${DATE} (${SYMS} symbols) [skip ci]"
           retry 3 git push origin HEAD:main
 
