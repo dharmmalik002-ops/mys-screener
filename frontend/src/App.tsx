@@ -3872,18 +3872,20 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (!current.some((watchlist) => watchlist.id === watchlistId)) {
         return current;
       }
+      // Exclusive membership: a symbol lives in exactly one watchlist.
+      // Adding to the target removes it from every other watchlist so
+      // "Move here" actually moves instead of duplicating.
       return current.map((watchlist) => {
-        if (watchlist.id !== watchlistId) {
-          // Leave other watchlists alone — a symbol can live in multiple
-          // watchlists at once (e.g. a stock can be in "Watching" AND
-          // "Priority"). The previous "remove from all then add" pattern
-          // turned every add-to-X click into a move, which is wrong.
+        if (watchlist.id === watchlistId) {
+          if (watchlist.symbols.includes(normalizedSymbol)) {
+            return watchlist;
+          }
+          return { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol] };
+        }
+        if (!watchlist.symbols.includes(normalizedSymbol)) {
           return watchlist;
         }
-        if (watchlist.symbols.includes(normalizedSymbol)) {
-          return watchlist;
-        }
-        return { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol] };
+        return { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol) };
       });
     });
   };
@@ -3892,7 +3894,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   // one of: "NSE:RELIANCE", "BSE:RELIANCE", "NSE/BSE:RELIANCE", or just
   // "RELIANCE". Splits on commas, semicolons, whitespace, and newlines so
   // the user can paste from a broker watchlist export, a Tijori share, etc.
-  // Adds to the named watchlist without disturbing membership in others.
+  // Imported symbols are moved into the target watchlist — they're removed
+  // from any other watchlist they're currently in to keep memberships
+  // exclusive.
   const handleImportToWatchlist = (watchlistId: string, raw: string): { added: number; duplicates: number } => {
     const normalizedSymbols = parseImportedSymbols(raw);
     if (normalizedSymbols.length === 0) {
@@ -3904,9 +3908,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       if (!current.some((watchlist) => watchlist.id === watchlistId)) {
         return current;
       }
+      const importedSet = new Set(normalizedSymbols);
       return current.map((watchlist) => {
         if (watchlist.id !== watchlistId) {
-          return watchlist;
+          if (!watchlist.symbols.some((item) => importedSet.has(item))) {
+            return watchlist;
+          }
+          return { ...watchlist, symbols: watchlist.symbols.filter((item) => !importedSet.has(item)) };
         }
         const existing = new Set(watchlist.symbols);
         const next = [...watchlist.symbols];
@@ -3962,13 +3970,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       }
 
       return current.map((watchlist) => {
-        if (watchlist.id === fromWatchlistId) {
-          return {
-            ...watchlist,
-            symbols: watchlist.symbols.filter((item) => !normalizedSymbols.includes(item)),
-          };
-        }
-
         if (watchlist.id === toWatchlistId) {
           const merged = Array.from(new Set([...watchlist.symbols, ...normalizedSymbols]));
           return {
@@ -3977,7 +3978,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           };
         }
 
-        return watchlist;
+        // Exclusive membership: strip the moved symbols from every other
+        // watchlist (source plus any stragglers from pre-exclusivity data).
+        if (!watchlist.symbols.some((item) => normalizedSymbols.includes(item))) {
+          return watchlist;
+        }
+        return {
+          ...watchlist,
+          symbols: watchlist.symbols.filter((item) => !normalizedSymbols.includes(item)),
+        };
       });
     });
   };
