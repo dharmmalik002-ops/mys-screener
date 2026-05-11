@@ -7,6 +7,7 @@ import {
   Minimize2,
   Crosshair,
   Activity,
+  Award,
   BarChart3,
   Layers,
   Trash2,
@@ -29,7 +30,8 @@ export type ScreenerMode =
   | "returns"
   | "consolidating"
   | "minervini-1m"
-  | "minervini-5m";
+  | "minervini-5m"
+  | "positive-earnings";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -66,6 +68,7 @@ const ITEMS: SidebarItem[] = [
   { mode: "contraction", title: "Contraction", hint: "Tight ranges", Icon: Minimize2 },
   { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
   { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },
+  { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
 

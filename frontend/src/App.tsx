@@ -1327,12 +1327,14 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "ipo",
       "gap-up-openers",
       "ema-expansion",
+      "contraction",
       "near-pivot",
       "pull-backs",
       "returns",
       "consolidating",
       "minervini-1m",
       "minervini-5m",
+      "positive-earnings",
     ]);
     return Array.isArray(parsed)
       ? parsed
@@ -1388,6 +1390,9 @@ function scannerModeLabel(mode: SavableScannerMode): string {
   }
   if (mode === "minervini-5m") {
     return "Minervini 5 Months";
+  }
+  if (mode === "positive-earnings") {
+    return "Positive Earnings";
   }
   return mode;
 }
@@ -2744,7 +2749,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeWatchlistId, watchlists]);
 
   const patternOptions = applyScannerDisplayAliases(dashboard?.scanners ?? DEFAULT_SCANNERS).filter(
-    (scanner) => scanner.category === "Setups" && scanner.id !== "custom-scan",
+    // "positive-earnings" is exposed as its own sidebar scanner; including
+    // it in the Custom Scanner's pattern dropdown would let the user POST
+    // a pattern value the CustomScanRequest schema doesn't allow (422).
+    (scanner) => scanner.category === "Setups" && scanner.id !== "custom-scan" && scanner.id !== "positive-earnings",
   );
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
@@ -2994,6 +3002,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (activeScanner === "minervini-5m") {
       return getScanResults("minervini-5m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini5mMinLiquidityCrore });
+    }
+    if (activeScanner === "positive-earnings") {
+      return getScanResults("positive-earnings", activeMarket, options);
     }
     if (activeScanner === "custom-scan" && !hasAppliedFiltersOnce) {
       return Promise.resolve(null);
@@ -4699,6 +4710,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "consolidating": activeScanner === "consolidating" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "consolidating" ? scanResults.total_hits : 0,
                       "minervini-1m": activeScanner === "minervini-1m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-1m" ? scanResults.total_hits : 0,
                       "minervini-5m": activeScanner === "minervini-5m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-5m" ? scanResults.total_hits : 0,
+                      "positive-earnings": activeScanner === "positive-earnings" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "positive-earnings" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -4737,7 +4749,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                               ? "Minervini 1 Month"
                                               : activeScanner === "minervini-5m"
                                                 ? "Minervini 5 Months"
-                                                : "Pull Backs";
+                                                : activeScanner === "positive-earnings"
+                                                  ? "Positive Earnings"
+                                                  : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -4759,7 +4773,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                               ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
                                               : activeScanner === "minervini-5m"
                                                 ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
-                                                : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                : activeScanner === "positive-earnings"
+                                                  ? "Stocks with a strong confirmed reaction to the latest quarterly result in the last 60 days: top-quartile close, +1% gap up, 2x volume, +10% over 5 sessions."
+                                                  : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(
@@ -4930,6 +4946,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onApply={handleApplyMinervini5mScan}
                                     onReset={handleResetMinervini5mScan}
                                   />
+                                )
+                              : activeScanner === "positive-earnings"
+                                ? (
+                                  <div className="scanner-settings-note">
+                                    <strong>Built-in scan</strong>
+                                    <span>Stocks with a strong reaction to results in the last 60 days: top-quartile close on the earnings day or next, gap up ≥1%, volume ≥2× the 50-day average, and ≥10% over 5 sessions. No additional filters.</span>
+                                  </div>
                                 )
                               : (
                                 <>
