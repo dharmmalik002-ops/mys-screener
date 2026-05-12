@@ -34,9 +34,21 @@ from pathlib import Path
 from typing import Any, Callable, Iterable
 
 import pandas as pd
+import requests
 import yfinance as yf
 
 BarsLoader = Callable[[str, str], list[dict[str, Any]]]
+
+BSE_ANN_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
+BSE_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124 Safari/537.36"
+    ),
+    "Accept": "application/json, text/plain, */*",
+    "Referer": "https://www.bseindia.com/",
+    "Origin": "https://www.bseindia.com",
+}
 
 LOGGER = logging.getLogger(__name__)
 
@@ -149,6 +161,74 @@ def _bars_to_frame(bars: list[dict[str, Any]]) -> pd.DataFrame:
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
     frame = frame.sort_values("date").reset_index(drop=True)
     return frame
+
+
+def fetch_bse_result_filings(lookback_days: int = 60) -> dict[str, date]:
+    """Fetch BSE 'Result' category announcements for the last `lookback_days`.
+
+    Returns a map keyed by BSE scrip code (e.g. "500325") to the most
+    recent result-announcement date. BSE is the regulator of record so
+    every listed company files there, which makes this a reliable
+    quarter-after-quarter source — yfinance and Screener both lag and
+    miss small caps. Failure to reach BSE returns an empty dict so the
+    rest of the pipeline still works via the volume fallback.
+    """
+    today = datetime.now(timezone.utc).astimezone().date()
+    cutoff = today - timedelta(days=lookback_days)
+    params_base = {
+        "strCat": "Result",
+        "strPrevDate": cutoff.strftime("%Y%m%d"),
+        "strToDate": today.strftime("%Y%m%d"),
+        # `strSearch=P` is required — empty string returns {} on this endpoint.
+        "strSearch": "P",
+        "strscrip": "",
+        "strType": "C",
+    }
+    filings: dict[str, date] = {}
+    session = requests.Session()
+    session.headers.update(BSE_HEADERS)
+    # Prime cookies once; the API rejects bare requests sometimes.
+    try:
+        session.get("https://www.bseindia.com/corporates/ann.html", timeout=15)
+    except Exception:
+        pass
+    total_pages: int | None = None
+    for page in range(1, 100):
+        if total_pages is not None and page > total_pages:
+            break
+        params = {**params_base, "pageno": str(page)}
+        try:
+            response = session.get(BSE_ANN_URL, params=params, timeout=25)
+            response.raise_for_status()
+            payload = response.json()
+        except Exception as exc:
+            LOGGER.warning("BSE Result filings page %d failed: %s", page, exc)
+            break
+        rows = payload.get("Table") or []
+        if not rows:
+            break
+        if total_pages is None:
+            try:
+                total_pages = int(rows[0].get("TotalPageCnt") or 0) or None
+            except Exception:
+                total_pages = None
+        for row in rows:
+            scrip = str(row.get("SCRIP_CD") or "").strip()
+            news_dt = str(row.get("NEWS_DT") or row.get("DissemDT") or "").strip()
+            if not scrip or not news_dt:
+                continue
+            try:
+                parsed = datetime.fromisoformat(news_dt.split(".")[0]).date()
+            except Exception:
+                continue
+            existing = filings.get(scrip)
+            if existing is None or parsed > existing:
+                filings[scrip] = parsed
+    LOGGER.info(
+        "BSE result filings: %d unique scrips in last %d days (across %s pages)",
+        len(filings), lookback_days, total_pages,
+    )
+    return filings
 
 
 def _fetch_yfinance_earnings_date(ticker: str, lookback_days: int) -> date | None:
@@ -285,7 +365,13 @@ def _compute_one(
     ticker: str,
     bars_loader: BarsLoader,
     lookback_days: int,
+    *,
+    bse_filing_date: date | None = None,
 ) -> EarningsMetrics | None:
+    # Source priority for the announcement date:
+    #   1. BSE corporate filing (regulator of record, every listed co.)
+    #   2. yfinance.earnings_dates (covers liquid NSE names well)
+    #   3. Volume-anchor scan (best-effort fallback)
     yf_earnings_date = _fetch_yfinance_earnings_date(ticker, lookback_days)
 
     bars = bars_loader(symbol, ticker)
@@ -294,36 +380,49 @@ def _compute_one(
         return None
 
     event_idx: int | None = None
-    source = "yfinance"
+    source = "bse"
 
-    # Step 1: try to anchor on yfinance's reported date.
-    if yf_earnings_date is not None:
-        on_or_after = frame[frame["date"] >= yf_earnings_date]
-        if not on_or_after.empty:
-            candidate_idx = int(on_or_after.index[0])
-            # Sanity-check the candidate's volume. If rvol on the
-            # yf-reported day is clearly below an earnings spike, the
-            # date is almost certainly wrong — look around for the real
-            # reaction day.
-            prior = frame.iloc[max(0, candidate_idx - 50):candidate_idx]
+    def _anchor_to_session(anchor_date: date) -> int | None:
+        on_or_after = frame[frame["date"] >= anchor_date]
+        if on_or_after.empty:
+            return None
+        return int(on_or_after.index[0])
+
+    # Step 1: BSE filing date is authoritative for Indian listed stocks.
+    if bse_filing_date is not None:
+        candidate = _anchor_to_session(bse_filing_date)
+        if candidate is not None:
+            event_idx = candidate
+            source = "bse"
+
+    # Step 2: yfinance fallback, with a sanity check on the day's volume.
+    if event_idx is None and yf_earnings_date is not None:
+        candidate = _anchor_to_session(yf_earnings_date)
+        if candidate is not None:
+            prior = frame.iloc[max(0, candidate - 50):candidate]
             avg_vol = float(prior["volume"].mean()) if not prior.empty else 0.0
-            day_vol = float(frame.iloc[candidate_idx]["volume"] or 0)
+            day_vol = float(frame.iloc[candidate]["volume"] or 0)
             day_rvol = (day_vol / avg_vol) if avg_vol > 0 else 0.0
             if day_rvol >= 1.5:
-                event_idx = candidate_idx
+                event_idx = candidate
+                source = "yfinance"
 
-    # Step 2: when yfinance's date didn't pan out (or was missing),
-    # fall back to the highest-volume bullish day in the lookback window.
-    if event_idx is None:
+    # Step 3: when yfinance's day failed the sanity check, search ±7
+    # sessions of its hint for a real volume spike. Skipped entirely
+    # when both BSE and yfinance had nothing — without a verified
+    # anchor, the highest-volume day could be any non-earnings event
+    # (block deal, news, sector rally) and would mislabel the scanner.
+    if event_idx is None and (bse_filing_date is not None or yf_earnings_date is not None):
+        anchor = bse_filing_date or yf_earnings_date
         event_idx = _detect_high_volume_reaction_day(
             frame,
             lookback_days=lookback_days,
-            anchor_date=yf_earnings_date,
-            anchor_window_days=7 if yf_earnings_date else lookback_days,
+            anchor_date=anchor,
+            anchor_window_days=7,
             min_rvol_50d=1.8,
         )
         if event_idx is not None:
-            source = "yfinance+volume-anchor" if yf_earnings_date else "volume-anchor"
+            source = "anchor+volume"
 
     if event_idx is None or event_idx < 0 or event_idx >= len(frame):
         return None
@@ -386,19 +485,38 @@ def compute_metrics(
     bars_loader: BarsLoader,
     lookback_days: int = EARNINGS_LOOKBACK_DAYS,
     max_workers: int = 4,
+    bse_filing_dates: dict[str, date] | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Compute metrics for every symbol in `universe`."""
-    pairs = [
-        (str(item.get("symbol") or "").upper(), str(item.get("ticker") or "").strip())
+    """Compute metrics for every symbol in `universe`.
+
+    When `bse_filing_dates` is provided (keyed by BSE scrip code as
+    string), each stock's announcement date is sourced from BSE first
+    and only falls through to yfinance / volume detection when BSE has
+    no entry. Universe entries should include a `bse_code` field.
+    """
+    triples = [
+        (
+            str(item.get("symbol") or "").upper(),
+            str(item.get("ticker") or "").strip(),
+            str(item.get("bse_code") or "").strip(),
+        )
         for item in universe
         if str(item.get("symbol") or "").strip()
     ]
     results: dict[str, dict[str, Any]] = {}
+    bse_map = bse_filing_dates or {}
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         future_map = {
-            pool.submit(_compute_one, symbol, ticker, bars_loader, lookback_days): symbol
-            for symbol, ticker in pairs
+            pool.submit(
+                _compute_one,
+                symbol,
+                ticker,
+                bars_loader,
+                lookback_days,
+                bse_filing_date=bse_map.get(bse_code),
+            ): symbol
+            for symbol, ticker, bse_code in triples
             if ticker
         }
         for index, future in enumerate(as_completed(future_map), start=1):

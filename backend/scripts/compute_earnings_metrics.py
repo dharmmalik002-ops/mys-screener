@@ -21,6 +21,7 @@ from app.services.earnings_metrics import (  # noqa: E402  (sys.path mutated abo
     EARNINGS_LOOKBACK_DAYS,
     chart_cache_bars_loader_factory,
     compute_metrics,
+    fetch_bse_result_filings,
     load_metrics_file,
     save_metrics_file,
     yfinance_bars_loader,
@@ -77,11 +78,14 @@ def main() -> int:
     else:
         bars_loader = lambda _symbol, ticker: yfinance_bars_loader(ticker)
 
+    bse_filing_dates = fetch_bse_result_filings(args.lookback_days)
+
     fresh = compute_metrics(
         universe,
         bars_loader=bars_loader,
         lookback_days=args.lookback_days,
         max_workers=args.workers,
+        bse_filing_dates=bse_filing_dates,
     )
 
     if args.merge:
