@@ -339,10 +339,10 @@ const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
 
 type ChartRangeKey = "3M" | "6M" | "1Y" | "FULL";
 const CHART_RANGE_OPTIONS: { value: ChartRangeKey; label: string }[] = [
-  { value: "3M", label: "3M" },
-  { value: "6M", label: "6M" },
-  { value: "1Y", label: "1Y" },
-  { value: "FULL", label: "Full" },
+  { value: "3M", label: "3M  (a)" },
+  { value: "6M", label: "6M  (s)" },
+  { value: "1Y", label: "1Y  (d)" },
+  { value: "FULL", label: "Full  (f)" },
 ];
 const DEFAULT_CHART_RANGE: ChartRangeKey = "1Y";
 
@@ -1514,6 +1514,44 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [earningsWidget]);
+
+  // Keyboard shortcuts for swapping chart range without taking hands off
+  // the keyboard. Skip when focus is in a text input so typing isn't
+  // hijacked, and require no Cmd/Ctrl/Meta/Alt so browser combos still
+  // work (Cmd+A select-all, Ctrl+F find, etc.).
+  useEffect(() => {
+    const SHORTCUT_TO_RANGE: Record<string, ChartRangeKey> = {
+      a: "3M",
+      s: "6M",
+      d: "1Y",
+      f: "FULL",
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      if (target) {
+        const tagName = target.tagName;
+        if (
+          tagName === "INPUT"
+          || tagName === "TEXTAREA"
+          || tagName === "SELECT"
+          || target.isContentEditable
+        ) {
+          return;
+        }
+      }
+      const range = SHORTCUT_TO_RANGE[event.key.toLowerCase()];
+      if (!range) {
+        return;
+      }
+      event.preventDefault();
+      setChartRange(range);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     try {
