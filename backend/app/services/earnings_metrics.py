@@ -223,34 +223,114 @@ def chart_cache_bars_loader_factory(chart_cache_dir: Path) -> BarsLoader:
     return _load
 
 
+def _detect_high_volume_reaction_day(
+    frame: pd.DataFrame,
+    *,
+    lookback_days: int,
+    anchor_date: date | None = None,
+    anchor_window_days: int = 7,
+    min_rvol_50d: float = 1.8,
+) -> int | None:
+    """Find the most likely earnings-reaction day in the cached chart.
+
+    yfinance's `earnings_dates` is often the period-end or estimate date
+    for Indian stocks, not the announcement day. Symptom: rvol on the
+    yf-reported day is < 1, which can't be earnings. Detect the real
+    print by scanning recent sessions for a volume spike (>= 1.8x the
+    prior 50-day average). If `anchor_date` is provided, prefer days
+    within ± anchor_window_days of it.
+    """
+    if frame.empty:
+        return None
+    recent = frame.tail(lookback_days)
+    if recent.empty:
+        return None
+
+    best_idx: int | None = None
+    best_score = 0.0
+    for pos in recent.index:
+        prior = frame.iloc[max(0, int(pos) - 50):int(pos)]
+        if prior.empty:
+            continue
+        avg_vol = float(prior["volume"].mean()) if "volume" in prior.columns else 0.0
+        if avg_vol <= 0:
+            continue
+        row = frame.iloc[int(pos)]
+        vol = float(row["volume"] or 0)
+        if vol <= 0:
+            continue
+        rvol = vol / avg_vol
+        if rvol < min_rvol_50d:
+            continue
+
+        score = rvol
+        if anchor_date is not None:
+            bar_date = row["date"]
+            delta_days = abs((bar_date - anchor_date).days)
+            if delta_days > anchor_window_days:
+                continue
+            # Closer to the anchor gets a small bonus so identical-rvol
+            # ties resolve to the yfinance-reported neighborhood.
+            score += max(0.0, (anchor_window_days - delta_days) / anchor_window_days)
+
+        if score > best_score:
+            best_score = score
+            best_idx = int(pos)
+
+    return best_idx
+
+
 def _compute_one(
     symbol: str,
     ticker: str,
     bars_loader: BarsLoader,
     lookback_days: int,
 ) -> EarningsMetrics | None:
-    earnings_date = _fetch_yfinance_earnings_date(ticker, lookback_days)
-    if earnings_date is None:
-        return None
+    yf_earnings_date = _fetch_yfinance_earnings_date(ticker, lookback_days)
 
     bars = bars_loader(symbol, ticker)
     frame = _bars_to_frame(bars)
     if frame.empty:
         return None
 
-    # Locate the trading-day index for the earnings date. If the
-    # announcement was after-hours or on a non-trading day, snap to the
-    # next available session — that's the day the move actually prints.
-    on_or_after = frame[frame["date"] >= earnings_date]
-    if on_or_after.empty:
-        return None
-    event_idx = int(on_or_after.index[0])
-    if event_idx < 0 or event_idx >= len(frame):
+    event_idx: int | None = None
+    source = "yfinance"
+
+    # Step 1: try to anchor on yfinance's reported date.
+    if yf_earnings_date is not None:
+        on_or_after = frame[frame["date"] >= yf_earnings_date]
+        if not on_or_after.empty:
+            candidate_idx = int(on_or_after.index[0])
+            # Sanity-check the candidate's volume. If rvol on the
+            # yf-reported day is clearly below an earnings spike, the
+            # date is almost certainly wrong — look around for the real
+            # reaction day.
+            prior = frame.iloc[max(0, candidate_idx - 50):candidate_idx]
+            avg_vol = float(prior["volume"].mean()) if not prior.empty else 0.0
+            day_vol = float(frame.iloc[candidate_idx]["volume"] or 0)
+            day_rvol = (day_vol / avg_vol) if avg_vol > 0 else 0.0
+            if day_rvol >= 1.5:
+                event_idx = candidate_idx
+
+    # Step 2: when yfinance's date didn't pan out (or was missing),
+    # fall back to the highest-volume bullish day in the lookback window.
+    if event_idx is None:
+        event_idx = _detect_high_volume_reaction_day(
+            frame,
+            lookback_days=lookback_days,
+            anchor_date=yf_earnings_date,
+            anchor_window_days=7 if yf_earnings_date else lookback_days,
+            min_rvol_50d=1.8,
+        )
+        if event_idx is not None:
+            source = "yfinance+volume-anchor" if yf_earnings_date else "volume-anchor"
+
+    if event_idx is None or event_idx < 0 or event_idx >= len(frame):
         return None
 
+    earnings_date_resolved = frame.iloc[event_idx]["date"]
     event_row = frame.iloc[event_idx]
     next_row = frame.iloc[event_idx + 1] if event_idx + 1 < len(frame) else None
-    plus5_row = frame.iloc[event_idx + 5] if event_idx + 5 < len(frame) else None
 
     pos_event = _close_in_range_pct(
         float(event_row["open"]), float(event_row["high"]),
@@ -278,18 +358,25 @@ def _compute_one(
             if avg_vol_50 > 0:
                 day_rvol = round(float(event_row["volume"]) / avg_vol_50, 3)
 
+    # Forward-return: use up to 5 sessions, falling back to whatever
+    # we have if the earnings landed within the last week (the user
+    # otherwise sees zero matches every Monday morning).
     return_5d_pct: float | None = None
-    if plus5_row is not None and _is_finite(event_row["close"]) and _is_finite(plus5_row["close"]) and float(event_row["close"]) > 0:
-        return_5d_pct = round((float(plus5_row["close"]) / float(event_row["close"]) - 1.0) * 100.0, 3)
+    available_forward = len(frame) - 1 - event_idx
+    if available_forward >= 1 and _is_finite(event_row["close"]) and float(event_row["close"]) > 0:
+        sessions_used = min(5, available_forward)
+        forward_row = frame.iloc[event_idx + sessions_used]
+        if _is_finite(forward_row["close"]):
+            return_5d_pct = round((float(forward_row["close"]) / float(event_row["close"]) - 1.0) * 100.0, 3)
 
     return EarningsMetrics(
         symbol=symbol.upper(),
-        earnings_date=earnings_date,
+        earnings_date=earnings_date_resolved,
         close_in_range_pct=round(close_pos, 4) if close_pos is not None else None,
         next_day_gap_pct=next_day_gap_pct,
         day_rvol_50d=day_rvol,
         return_5d_pct=return_5d_pct,
-        source="yfinance",
+        source=source,
     )
 
 
