@@ -2290,9 +2290,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     activeScanner,
     appliedConsolidatingFilters,
     appliedCustomFilters,
+    appliedExpansionMinChangePct,
+    appliedExpansionMinRelativeVolume,
     appliedMinervini1mMinLiquidityCrore,
     appliedMinervini5mMinLiquidityCrore,
     appliedNearPivotFilters,
+    appliedPositiveEarningsFilters,
     appliedPullBackFilters,
     appliedReturnsFilters,
     gapUpMinLiquidityCrore,
@@ -2351,7 +2354,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     activeScanner,
     appliedConsolidatingFilters,
     appliedCustomFilters,
+    appliedExpansionMinChangePct,
+    appliedExpansionMinRelativeVolume,
     appliedNearPivotFilters,
+    appliedPositiveEarningsFilters,
     appliedPullBackFilters,
     appliedReturnsFilters,
     gapUpMinLiquidityCrore,
@@ -4896,6 +4902,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                         onClick={() => {
                                           setAppliedExpansionMinChangePct(expansionMinChangePct);
                                           setAppliedExpansionMinRelativeVolume(expansionMinRelativeVolume);
+                                          // Force a refetch even when applied values
+                                          // are identical to the previous run.
+                                          setScannerRunNonce((current) => current + 1);
                                         }}
                                       >
                                         Apply
@@ -4908,6 +4917,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                           setExpansionMinRelativeVolume(3.0);
                                           setAppliedExpansionMinChangePct(6.5);
                                           setAppliedExpansionMinRelativeVolume(3.0);
+                                          setScannerRunNonce((current) => current + 1);
                                         }}
                                       >
                                         Reset
