@@ -398,6 +398,33 @@ function persistMarketViewCache(market: MarketKey, entry: MarketViewCacheEntry) 
   }
 }
 
+// Patterns the Custom Scanner's dropdown still surfaces. Anything outside
+// this set is a scanner that has been promoted to its own sidebar mode
+// (e.g. "positive-earnings") — if it lingers in saved customFilters, the
+// scan still runs the restrictive evaluator and returns ~0 hits, so reset
+// to "any" on load.
+const CUSTOM_SCAN_PATTERN_ALLOWLIST = new Set<string>([
+  "any",
+  "consolidating",
+  "breakout-ath",
+  "breakout-52w",
+  "breakout-range",
+  "volume-price",
+  "strong-nifty",
+  "strong-sector",
+  "clean-pullback",
+  "darvas-box",
+  "pivot-breakout",
+  "relative-strength",
+]);
+
+function sanitizeCustomFiltersPattern<T extends { pattern?: string }>(filters: T): T {
+  if (filters.pattern && !CUSTOM_SCAN_PATTERN_ALLOWLIST.has(filters.pattern)) {
+    return { ...filters, pattern: "any" } as T;
+  }
+  return filters;
+}
+
 const DEFAULT_CUSTOM_FILTERS: CustomScanRequest = {
   min_price: null,
   max_price: null,
@@ -1272,8 +1299,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
     }
     const parsed = JSON.parse(raw) as Partial<PersistedScannerSettings>;
     return {
-      customFilters: mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, parsed.customFilters),
-      appliedCustomFilters: mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, parsed.appliedCustomFilters),
+      customFilters: sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, parsed.customFilters)),
+      appliedCustomFilters: sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, parsed.appliedCustomFilters)),
       hasAppliedFiltersOnce: Boolean(parsed.hasAppliedFiltersOnce),
       gapUpThreshold:
         typeof parsed.gapUpThreshold === "number" && Number.isFinite(parsed.gapUpThreshold) ? parsed.gapUpThreshold : 1,
@@ -3078,7 +3105,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const runSavedScannerRequest = (preset: SavedScannerPreset, includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
     if (preset.mode === "custom-scan") {
-      return runCustomScan(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters), activeMarket, options);
+      return runCustomScan(sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters)), activeMarket, options);
     }
     if (preset.mode === "ipo") {
       return getScanResults("ipo", activeMarket, options);
@@ -3245,7 +3272,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScannerRunNonce((current) => current + 1);
 
     if (preset.mode === "custom-scan") {
-      const nextFilters = mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters);
+      const nextFilters = sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters));
       setCustomFilters(nextFilters);
       setAppliedCustomFilters(nextFilters);
       setHasAppliedFiltersOnce(true);
