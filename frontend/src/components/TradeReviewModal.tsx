@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { getTradeReview, writeTradeReview, normalizeJournalSymbol } from "../lib/journal";
 import "./TradeJournalPanel.css";
@@ -52,7 +53,7 @@ export function TradeReviewModal({ symbol, exitDate, onClose }: TradeReviewModal
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="tj-overlay trade-review-overlay" onClick={handleClose}>
       <div
         className="tj-modal trade-review-modal"
@@ -114,6 +115,7 @@ export function TradeReviewModal({ symbol, exitDate, onClose }: TradeReviewModal
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
