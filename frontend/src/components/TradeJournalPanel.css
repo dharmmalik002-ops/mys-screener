@@ -1308,6 +1308,13 @@
 }
 
 /* ─── Trade Review modal ─────────────────────────────────────────────────── */
+.trade-review-overlay {
+  /* Sit above the full-screen chart modal (.chart-modal-backdrop is 9999) and
+     the chart-group modal (10001) so reviewers can open the widget without
+     dismissing the chart underneath. */
+  z-index: 10010;
+}
+
 .trade-review-modal {
   max-width: 560px;
 }

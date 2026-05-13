@@ -53,7 +53,7 @@ export function TradeReviewModal({ symbol, exitDate, onClose }: TradeReviewModal
   };
 
   return (
-    <div className="tj-overlay" onClick={handleClose}>
+    <div className="tj-overlay trade-review-overlay" onClick={handleClose}>
       <div
         className="tj-modal trade-review-modal"
         onClick={(event) => event.stopPropagation()}
