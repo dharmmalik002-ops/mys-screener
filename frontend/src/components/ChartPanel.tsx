@@ -3,6 +3,7 @@ import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
 import { getChartHistory, getEarningsSummary, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
+import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
@@ -190,6 +191,8 @@ type ChartPanelProps = {
   rsLine: ChartLinePoint[];
   rsLineMarkers: ChartLineMarker[];
   earningsMarkers?: ChartLineMarker[];
+  tradeMarkers?: ChartTradeMarker[];
+  onSellMarkerClick?: (symbol: string, exitDate: string) => void;
   summary: StockOverview | null;
   panelTab: ChartPanelTab;
   onPanelTabChange: (tab: ChartPanelTab) => void;
@@ -1060,6 +1063,48 @@ function nearestBarTime(bars: ChartBar[], targetTime: number) {
   return Math.abs(left - targetTime) <= Math.abs(right - targetTime) ? left : right;
 }
 
+function parseTradeDateToSeconds(value: string): number | null {
+  if (!value) return null;
+  const trimmed = String(value).trim();
+  if (!trimmed) return null;
+  const dateOnly = trimmed.split("T")[0];
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateOnly);
+  if (!match) {
+    const fallback = Date.parse(trimmed);
+    return Number.isFinite(fallback) ? Math.floor(fallback / 1000) : null;
+  }
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  // Anchor at ~mid-day IST (06:30 UTC) so we snap to a sensible intraday bar
+  // when timeframe < daily, and a clean daily bar when timeframe >= daily.
+  const utcMs = Date.UTC(year, month - 1, day, 6, 30, 0);
+  return Number.isFinite(utcMs) ? Math.floor(utcMs / 1000) : null;
+}
+
+function findClosestBarTime(bars: ChartBar[], targetTime: number): number | null {
+  if (!bars.length) return null;
+  let lo = 0;
+  let hi = bars.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (bars[mid].time < targetTime) lo = mid + 1;
+    else hi = mid;
+  }
+  const after = bars[lo];
+  const before = lo > 0 ? bars[lo - 1] : null;
+  if (!before) return after.time;
+  return Math.abs(after.time - targetTime) <= Math.abs(before.time - targetTime)
+    ? after.time
+    : before.time;
+}
+
+type SnappedTradeMarker = {
+  time: number;
+  type: "buy" | "sell";
+  entries: Array<{ price: number; qty: number; date: string }>;
+};
+
 function findBarIndexAtOrBefore(bars: ChartBar[], targetTime: number) {
   if (!bars.length) {
     return -1;
@@ -1232,6 +1277,8 @@ export function ChartPanel({
   rsLine,
   rsLineMarkers,
   earningsMarkers,
+  tradeMarkers,
+  onSellMarkerClick,
   summary,
   panelTab,
   onPanelTabChange,
@@ -1282,6 +1329,8 @@ export function ChartPanel({
   const pointerMovedRef = useRef(false);
   const annotationsRef = useRef(annotations);
   const onAnnotationsChangeRef = useRef(onAnnotationsChange);
+  const onSellMarkerClickRef = useRef(onSellMarkerClick);
+  const symbolRef = useRef(symbol);
   const annotationDragRef = useRef<ActiveAnnotationDrag | null>(null);
   const rvolWidgetRef = useRef<HTMLDivElement | null>(null);
   const rvolDragRef = useRef<{ startPX: number; startPY: number; startWX: number; startWY: number } | null>(null);
@@ -1317,6 +1366,7 @@ export function ChartPanel({
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
   const [hoveredRsPoint, setHoveredRsPoint] = useState<ChartLinePoint | null>(null);
   const [hoveredBar, setHoveredBar] = useState<HoveredPriceBar | null>(null);
+  const [hoveredTradeMarkers, setHoveredTradeMarkers] = useState<SnappedTradeMarker[]>([]);
   const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
   const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
   const [, setOverlayVersion] = useState(0);
@@ -1354,6 +1404,27 @@ export function ChartPanel({
     () => sanitizeLineMarkers(extendedHistory?.earnings_markers ?? earningsMarkers ?? []),
     [extendedHistory, earningsMarkers],
   );
+  const snappedTradeMarkers = useMemo<SnappedTradeMarker[]>(() => {
+    const list = tradeMarkers ?? [];
+    if (!list.length) return [];
+    const baseBars = sanitizeChartBars(extendedHistory?.bars ?? bars);
+    if (!baseBars.length) return [];
+    const groups = new Map<string, SnappedTradeMarker>();
+    for (const trade of list) {
+      const t = parseTradeDateToSeconds(trade.date);
+      if (t === null) continue;
+      const snapped = findClosestBarTime(baseBars, t);
+      if (snapped === null) continue;
+      const key = `${snapped}|${trade.type}`;
+      let group = groups.get(key);
+      if (!group) {
+        group = { time: snapped, type: trade.type, entries: [] };
+        groups.set(key, group);
+      }
+      group.entries.push({ price: trade.price, qty: trade.qty, date: trade.date });
+    }
+    return Array.from(groups.values()).sort((a, b) => a.time - b.time);
+  }, [tradeMarkers, extendedHistory, bars]);
   const safeBenchmarkBars = useMemo(() => sanitizeChartBars(benchmarkBars ?? []), [benchmarkBars]);
   const pocketPivotBars = useMemo(() => computePocketPivotBars(activeBars), [activeBars]);
   const latestPocketPivot = pocketPivotBars[pocketPivotBars.length - 1] ?? null;
@@ -1466,6 +1537,14 @@ export function ChartPanel({
   useEffect(() => {
     onAnnotationsChangeRef.current = onAnnotationsChange;
   }, [onAnnotationsChange]);
+
+  useEffect(() => {
+    onSellMarkerClickRef.current = onSellMarkerClick;
+  }, [onSellMarkerClick]);
+
+  useEffect(() => {
+    symbolRef.current = symbol;
+  }, [symbol]);
 
   useEffect(() => {
     try {
@@ -1649,6 +1728,7 @@ export function ChartPanel({
     setHoverAnchor(null);
     setHoveredRsPoint(null);
     setHoveredBar(null);
+    setHoveredTradeMarkers([]);
     setSelectedAnnotationId(null);
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
@@ -1993,6 +2073,17 @@ export function ChartPanel({
         size: 1.2,
       });
     }
+    // Trade journal "B"/"S" markers — one per buy/sell on the chart's symbol.
+    for (const marker of snappedTradeMarkers) {
+      combinedMarkers.push({
+        time: marker.time as UTCTimestamp,
+        position: marker.type === "buy" ? "belowBar" : "aboveBar",
+        shape: marker.type === "buy" ? "arrowUp" : "arrowDown",
+        color: marker.type === "buy" ? "#10b981" : "#ef4444",
+        text: marker.type === "buy" ? "B" : "S",
+        size: 1.5,
+      });
+    }
     // lightweight-charts requires markers sorted by time.
     combinedMarkers.sort((left, right) => Number(left.time) - Number(right.time));
     mainSeries.setMarkers(combinedMarkers);
@@ -2080,6 +2171,7 @@ export function ChartPanel({
       if (!param?.time) {
         setHoveredRsPoint(null);
         setHoveredBar(null);
+        setHoveredTradeMarkers([]);
         return;
       }
 
@@ -2087,8 +2179,12 @@ export function ChartPanel({
       if (hoveredTime === null) {
         setHoveredRsPoint(null);
         setHoveredBar(null);
+        setHoveredTradeMarkers([]);
         return;
       }
+
+      const matchedTradeMarkers = snappedTradeMarkers.filter((m) => m.time === hoveredTime);
+      setHoveredTradeMarkers(matchedTradeMarkers);
 
       const priceData = param.seriesData?.get?.(mainSeries) as
         | {
@@ -2167,8 +2263,35 @@ export function ChartPanel({
       });
     };
 
+    const handleChartClick = (param: any) => {
+      if (drawingToolRef.current !== "none") return;
+      const onClickSell = onSellMarkerClickRef.current;
+      if (!onClickSell) return;
+      if (!param?.time || !param?.point) return;
+      const clickedTime = normalizeChartTime(param.time);
+      if (clickedTime === null) return;
+      const sellMarker = snappedTradeMarkers.find(
+        (m) => m.time === clickedTime && m.type === "sell",
+      );
+      if (!sellMarker) return;
+      const bar = activeBars[findBarIndexAtOrBefore(activeBars, clickedTime)];
+      if (!bar) return;
+      const barHighY = mainSeries.priceToCoordinate(bar.high);
+      if (typeof barHighY === "number" && Number.isFinite(barHighY)) {
+        // S markers sit above the bar — click must be near/above the bar's high.
+        // 24px tolerance keeps clicks forgiving without intercepting clicks
+        // on B markers further down the candle.
+        if (param.point.y > barHighY + 24) return;
+      }
+      const exitDate = sellMarker.entries[0]?.date;
+      const sym = symbolRef.current;
+      if (!exitDate || !sym) return;
+      onClickSell(sym, exitDate);
+    };
+
     chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
     chart.subscribeCrosshairMove(handleCrosshairMove);
+    chart.subscribeClick(handleChartClick);
 
     const rangeBars = barsForChartRange(timeframe, chartRange);
     const visibleBars = rangeBars ?? defaultVisibleBars(timeframe);
@@ -2194,11 +2317,12 @@ export function ChartPanel({
     return () => {
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateOverlay);
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
+      chart.unsubscribeClick(handleChartClick);
       chart.remove();
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeRsLine, safeRsLineMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -2901,6 +3025,15 @@ export function ChartPanel({
     : summary
       ? "Hover the chart to inspect OHLC detail."
       : null;
+  const tradeHoverLines = hoveredTradeMarkers.length
+    ? hoveredTradeMarkers.flatMap((marker) =>
+        marker.entries.map((entry) => {
+          const label = marker.type === "buy" ? "B" : "S";
+          const qtyText = entry.qty ? ` × ${formatValue(entry.qty, 0)}` : "";
+          return `${label} ${formatPriceValue(entry.price, 2)}${qtyText}`;
+        }),
+      )
+    : [];
   const chartSearchSuggestions = useMemo(
     () => buildSymbolSuggestions(searchOptions, deferredChartSearchQuery, 100),
     [deferredChartSearchQuery, searchOptions],
@@ -3493,6 +3626,21 @@ export function ChartPanel({
               <span>{priceLine1}</span>
               {priceLine2 ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
             </span>
+            {tradeHoverLines.length ? (
+              <span
+                className="chart-stage-label chart-stage-label--trade"
+                style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}
+              >
+                {tradeHoverLines.map((line, idx) => (
+                  <span
+                    key={`trade-hover-${idx}`}
+                    style={{ color: line.startsWith("B") ? "#10b981" : "#ef4444" }}
+                  >
+                    {line}
+                  </span>
+                ))}
+              </span>
+            ) : null}
             <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
               {hoveredRsPoint ? `RS Rating ${Math.round(hoveredRsPoint.value)} on ${formatChartDateFromTimestamp(hoveredRsPoint.time)}` : "RS Rating line is plotted below price."}
             </span>

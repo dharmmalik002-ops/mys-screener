@@ -5187,6 +5187,17 @@ button {
   border-radius: 14px;
 }
 
+.chart-stage-label--trade {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  border-radius: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .chart-stage-label.emphasis {
   border-color: color-mix(in srgb, var(--warning) 36%, transparent);
   color: var(--warning);

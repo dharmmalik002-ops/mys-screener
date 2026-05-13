@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getChart, getJournalData, saveJournalData, type MarketKey } from "../lib/api";
+import { notifyJournalUpdated } from "../lib/journal";
 import { NewsModal } from "./NewsModal";
 import "./TradeJournalPanel.css";
 
@@ -1055,7 +1056,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   }, [buildPayload]);
 
   const saveTrades = useCallback((next: Trade[]) => {
-    setTrades(next); lsSet(LS_DATA, next);
+    setTrades(next); lsSet(LS_DATA, next); notifyJournalUpdated();
     syncToBackend(next, startEquity, setups, openPosCats, posMeta);
   }, [startEquity, setups, openPosCats, posMeta, syncToBackend]);
 
@@ -1068,7 +1069,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       const localTrades = lsGet<Trade[]>(LS_DATA, []);
       if (localTrades.length === 0 && Array.isArray(r.trades) && (r.trades as Trade[]).length > 0) {
         const rt = r.trades as Trade[];
-        setTrades(rt); lsSet(LS_DATA, rt);
+        setTrades(rt); lsSet(LS_DATA, rt); notifyJournalUpdated();
       }
       if (!localTrades.length && typeof r.startEquity === "number" && r.startEquity > 0) {
         setStartEquity(r.startEquity); setEquityInput(String(r.startEquity));

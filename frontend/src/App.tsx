@@ -61,12 +61,14 @@ import {
   normalizeSectorTabResponse,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
+import { tradeMarkersForSymbol, useJournalTrades } from "./lib/journal";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
 import { AppStatusBanners } from "./components/AppStatusBanners";
 
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
 const ChartGroupModal = lazy(() => import("./components/ChartGroupModal"));
+const TradeReviewModal = lazy(() => import("./components/TradeReviewModal").then((module) => ({ default: module.TradeReviewModal })));
 const ChartCompareLayout = lazy(() => import("./components/ChartCompareLayout").then((module) => ({ default: module.ChartCompareLayout })));
 const GroupStocksWidget = lazy(() => import("./components/GroupStocksWidget").then((module) => ({ default: module.GroupStocksWidget })));
 const ConsolidatingScannerPanel = lazy(() => import("./components/ConsolidatingScannerPanel").then((module) => ({ default: module.ConsolidatingScannerPanel })));
@@ -1570,6 +1572,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
   const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
+  const [tradeReviewContext, setTradeReviewContext] = useState<{ symbol: string; exitDate: string } | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
   const [activeSavedScannerId, setActiveSavedScannerId] = useState<string | null>(null);
   const [scanArrangementMode, setScanArrangementMode] = useState<"flat" | "sector" | "group">("flat");
@@ -2874,6 +2877,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     };
   }, [activeChartGroupContext]);
 
+  const journalTrades = useJournalTrades();
+  const activeTradeMarkers = useMemo(
+    () => tradeMarkersForSymbol(journalTrades, selectedSymbol),
+    [journalTrades, selectedSymbol],
+  );
+  const paneBTradeMarkers = useMemo(
+    () => tradeMarkersForSymbol(journalTrades, paneBSymbol),
+    [journalTrades, paneBSymbol],
+  );
+
   const paneBDisplayedChart = chartB && paneBSymbol && chartB.symbol === paneBSymbol && chartB.timeframe === timeframe ? chartB : null;
   const paneBChartKey = paneBSymbol ? `${paneBSymbol}:${timeframe}` : null;
   const paneBAnnotations = paneBChartKey ? savedDrawings[paneBChartKey] ?? [] : [];
@@ -3853,6 +3866,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setJournalAddRequest({ symbol: normalizedSymbol, suggestedPrice });
     setActivePage("journal");
     setChartOpen(false);
+  };
+
+  const handleSellMarkerClick = (symbol: string, exitDate: string) => {
+    const normalizedSymbol = normalizeJournalChartSymbol(symbol);
+    if (!normalizedSymbol || !exitDate) return;
+    setTradeReviewContext({ symbol: normalizedSymbol, exitDate });
   };
 
   const handlePickSymbolWithContext = (symbol: string, contextSymbols: string[]) => {
@@ -5114,6 +5133,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     rsLine={displayedChart?.rs_line ?? []}
                     rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                     earningsMarkers={displayedChart?.earnings_markers ?? []}
+                    tradeMarkers={activeTradeMarkers}
+                    onSellMarkerClick={handleSellMarkerClick}
                     summary={displayedChart?.summary ?? null}
                     panelTab={chartPanelTab}
                     onPanelTabChange={setChartPanelTab}
@@ -5194,6 +5215,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   rsLine={displayedChart?.rs_line ?? []}
                   rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                   earningsMarkers={displayedChart?.earnings_markers ?? []}
+                  tradeMarkers={activeTradeMarkers}
+                  onSellMarkerClick={handleSellMarkerClick}
                   summary={displayedChart?.summary ?? null}
                   panelTab={chartPanelTab}
                   onPanelTabChange={setChartPanelTab}
@@ -5252,6 +5275,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           />
         </Suspense>
       ) : null}
+
+      {tradeReviewContext ? (
+        <Suspense fallback={null}>
+          <TradeReviewModal
+            symbol={tradeReviewContext.symbol}
+            exitDate={tradeReviewContext.exitDate}
+            onClose={() => setTradeReviewContext(null)}
+          />
+        </Suspense>
+      ) : null}
       </main>
 
       {chartOpen ? (
@@ -5291,6 +5324,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={displayedChart?.rs_line ?? []}
                         rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                         earningsMarkers={displayedChart?.earnings_markers ?? []}
+                        tradeMarkers={activeTradeMarkers}
+                        onSellMarkerClick={handleSellMarkerClick}
                         summary={displayedChart?.summary ?? null}
                         panelTab={chartPanelTab}
                         onPanelTabChange={setChartPanelTab}
@@ -5340,6 +5375,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={paneBDisplayedChart?.rs_line ?? []}
                         rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
                         earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
+                        tradeMarkers={paneBTradeMarkers}
+                        onSellMarkerClick={handleSellMarkerClick}
                         summary={paneBDisplayedChart?.summary ?? null}
                         panelTab={chartPanelTab}
                         onPanelTabChange={setChartPanelTab}
