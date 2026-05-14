@@ -1160,7 +1160,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       if (ex.getFullYear() !== fy || ex.getMonth() + 1 !== fm) return false;
     }
     return true;
-  });
+  }).sort((a, b) => getSafeTime(b.exitDate) - getSafeTime(a.exitDate));
 
   // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
