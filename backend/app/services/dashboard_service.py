@@ -1627,7 +1627,21 @@ class DashboardService:
         if descriptor is None:
             raise KeyError(scan_id)
 
-        if scan_id == "contraction":
+        if scan_id == "ipo":
+            # Recent IPOs (especially listing-day stocks) often don't yet share a
+            # history_session_date with today's bhavcopy patch, and BSE-listed IPOs
+            # may lack a finalized sector/sub_sector classification. Both conditions
+            # cause _scan_eligible_snapshots to drop them silently, so freshly listed
+            # stocks never surface in the IPO panel even though that panel is
+            # specifically designed to spotlight them. Re-run the IPO scan against
+            # the full snapshot set; the IPO scanner already enforces its own
+            # listing-date window (0–365 days), so no other scanners are affected.
+            ipo_snapshots = await self._snapshots()
+            items = self._filter_scan_items_by_liquidity(
+                run_scan(SCAN_BY_ID["ipo"], ipo_snapshots),
+                min_liquidity_crore,
+            )
+        elif scan_id == "contraction":
             items = await self._get_contraction_scan_items(snapshots, min_liquidity_crore)
         elif scan_id == "positive-earnings" and (
             positive_earnings_min_close_in_range_pct is not None
