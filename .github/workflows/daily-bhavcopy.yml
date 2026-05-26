@@ -4,14 +4,26 @@ on:
   # BSE publishes the official equity bhavcopy CSV by ~4:00 PM IST and — unlike NSE —
   # is reachable from non-Indian IPs (GitHub Actions runners). The script tries BSE
   # first, then falls back to NSE (geo-blocked) and yfinance.
-  # We schedule the first attempt at 4:20 PM IST and retry through 6:30 PM IST in case
-  # BSE is briefly unavailable.
+  #
+  # IMPORTANT: GitHub Actions delays/drops scheduled runs whose minute lands on heavy
+  # boundaries (:00, :15, :30, :45). Yesterday's runs were 2-3 hours late and today's
+  # didn't fire at all. We use OFF-PEAK minutes plus self-healing from keep-alive.yml
+  # (which dispatches this workflow if today's patch is still missing past 4:30 PM IST).
   schedule:
-    - cron: "50 10 * * 1-5"  # 4:20 PM IST  (primary — BSE just published)
-    - cron: "10 11 * * 1-5"  # 4:40 PM IST  (retry 1)
-    - cron: "30 11 * * 1-5"  # 5:00 PM IST  (retry 2)
-    - cron: "00 12 * * 1-5"  # 5:30 PM IST  (retry 3)
-    - cron: "00 13 * * 1-5"  # 6:30 PM IST  (final retry)
+    - cron: "53 10 * * 1-5"  # 4:23 PM IST  (primary — BSE just published)
+    - cron: "07 11 * * 1-5"  # 4:37 PM IST  (retry 1)
+    - cron: "23 11 * * 1-5"  # 4:53 PM IST  (retry 2)
+    - cron: "47 11 * * 1-5"  # 5:17 PM IST  (retry 3)
+    - cron: "23 12 * * 1-5"  # 5:53 PM IST  (retry 4)
+    - cron: "53 12 * * 1-5"  # 6:23 PM IST  (final retry)
+  # Trigger when the workflow file itself is updated (so cron tweaks fire immediately).
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/daily-bhavcopy.yml"
+  # Allow keep-alive.yml (and external schedulers) to fire this without WEB UI access.
+  repository_dispatch:
+    types: [bhavcopy-trigger]
   # Allow manual trigger from GitHub Actions UI
   workflow_dispatch:
 

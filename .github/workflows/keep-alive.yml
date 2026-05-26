@@ -10,6 +10,10 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+  actions: write
+
 jobs:
   ping-backend:
     name: Ping HF health endpoint
@@ -32,3 +36,58 @@ jobs:
           fi
 
           echo "Backend is awake."
+
+      # Self-healing: GitHub's scheduled cron is best-effort and has been delaying/
+      # dropping the daily-bhavcopy runs. Keep-alive fires every 5 min reliably, so
+      # we use it as a watchdog — if today's bhavcopy patch is still missing past
+      # 4:30 PM IST on a weekday, fire the bhavcopy workflow via workflow_dispatch.
+      # The bhavcopy job's own "Log skip" step makes redundant invocations cheap.
+      - name: Watchdog — dispatch bhavcopy if today's patch is missing
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -uo pipefail
+          IST_DOW=$(TZ='Asia/Kolkata' date +%u)        # 1=Mon … 7=Sun
+          IST_HOUR=$(TZ='Asia/Kolkata' date +%H)
+          IST_MIN=$(TZ='Asia/Kolkata' date +%M)
+          IST_DATE=$(TZ='Asia/Kolkata' date +%F)        # YYYY-MM-DD
+          echo "IST now: ${IST_DATE} ${IST_HOUR}:${IST_MIN} (dow=${IST_DOW})"
+
+          # Weekend → no bhavcopy expected.
+          if [ "$IST_DOW" -gt 5 ]; then
+            echo "Weekend in IST — skipping."
+            exit 0
+          fi
+
+          # Active window: 16:30 IST → 22:00 IST.
+          if [ "$IST_HOUR" -lt 16 ] || [ "$IST_HOUR" -gt 21 ]; then
+            echo "Outside watchdog window — skipping."
+            exit 0
+          fi
+          if [ "$IST_HOUR" -eq 16 ] && [ "$IST_MIN" -lt 30 ]; then
+            echo "Too early (before 16:30 IST) — skipping."
+            exit 0
+          fi
+
+          PATCH_URL="https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/main/backend/data/bhavcopy_patch.json"
+          PATCH_DATE=$(curl -s -L --max-time 30 "$PATCH_URL" \
+            | python3 -c "import json,sys; print(json.load(sys.stdin).get('date',''))" 2>/dev/null || echo "")
+          echo "Current bhavcopy patch date: ${PATCH_DATE:-<unknown>}"
+
+          if [ "$PATCH_DATE" = "$IST_DATE" ]; then
+            echo "Bhavcopy already current for ${IST_DATE} — nothing to do."
+            exit 0
+          fi
+
+          echo "Bhavcopy stale (last=${PATCH_DATE}, today=${IST_DATE}). Dispatching daily-bhavcopy.yml…"
+          HTTP_CODE=$(curl -s -o /tmp/dispatch.json -w "%{http_code}" -X POST \
+            -H "Authorization: token ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/daily-bhavcopy.yml/dispatches" \
+            -d '{"ref":"main"}')
+          echo "Dispatch HTTP: ${HTTP_CODE}"
+          cat /tmp/dispatch.json || true
+          if [ "$HTTP_CODE" != "204" ]; then
+            echo "WARN: dispatch returned ${HTTP_CODE} (expected 204). Will retry on next keep-alive tick."
+          fi
