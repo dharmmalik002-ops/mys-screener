@@ -3855,7 +3855,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   };
 
   const handleJournalOpenSymbolChart = (symbol: string) => {
-    handlePickSymbol(normalizeJournalChartSymbol(symbol));
+    const stripped = normalizeJournalChartSymbol(symbol);
+    if (!stripped) return;
+    const match = findUniverseMatch(stripped);
+    handlePickSymbol(match?.symbol ?? stripped);
   };
 
   const handleChartAddToJournal = (symbol: string, suggestedPrice?: number) => {
