@@ -1638,6 +1638,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     // R-multiple is only defined while there is genuine downside (slDistance > 0).
     const rMultiple = hasLive && hasOpenRisk ? (cmp - avgEntry) / slDistance : 0;
 
+    // Position size as a fraction of starting equity — i.e. how much of the
+    // total portfolio is parked in this name. Shown inline next to the
+    // invested amount because that's the most natural place for it.
+    const positionSizePct = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+
     // Portfolio impact (per user definition): how much this position's CURRENT
     // unrealized P&L moves total equity, expressed as a % of starting equity.
     // Positive = lifting equity, negative = dragging it down. Book weight kept
@@ -1671,7 +1676,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           <span className="tj-kcard-qty">×{Math.round(totalQty)}</span>
         </div>
         <div className="tj-kcard-metrics">
-          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg / Invested</span><span>₹{fmt(avgEntry)} · ₹{fmt(p.totalInvested, 0)}</span></div>
+          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg / Invested</span><span title="Weighted-avg entry · total invested (size as % of starting equity)">₹{fmt(avgEntry)} · ₹{fmt(p.totalInvested, 0)} <small>({positionSizePct.toFixed(1)}%)</small></span></div>
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
           {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
           <div className="tj-kcard-metric">
