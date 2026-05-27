@@ -1452,6 +1452,33 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     setModal(null);
   }
 
+  // ── Lock-breakeven helper ──────────────────────────────────────────────────
+  // Sells N shares at CMP such that, if the remaining shares get stopped out
+  // at SL, the realized profit from the sale exactly cancels the loss from
+  // the remainder. Derivation (using weighted avg as the cost basis):
+  //   (cmp − avg) × N  =  (avg − SL) × (qty − N)
+  //   ⇒ N = qty × (avg − SL) / (cmp − SL)
+  // The result is rounded UP to the next whole share so the realized profit
+  // is guaranteed to be ≥ the residual risk — i.e. the trade can no longer
+  // lose money once this slice is sold.
+  function computeBreakevenSellQty(qty: number, avgEntry: number, sl: number, cmp: number): number {
+    if (qty <= 0 || avgEntry <= 0 || sl <= 0 || cmp <= 0) return 0;
+    if (avgEntry <= sl) return 0;          // SL already at/above entry → no risk to neutralize
+    if (cmp <= avgEntry) return 0;          // not yet profitable → can't hedge
+    if (cmp <= sl) return 0;                // already trading at/below SL — should have stopped out
+    const raw = (qty * (avgEntry - sl)) / (cmp - sl);
+    const rounded = Math.ceil(raw);
+    if (rounded <= 0 || rounded >= qty) return 0;
+    return rounded;
+  }
+
+  function openLockBreakevenModal(symbol: string, sellQty: number, cmp: number, maxQty: number) {
+    setModalClosePrice(String(cmp));
+    setModalCloseQty(String(sellQty));
+    setModalCloseDate(new Date().toISOString().split("T")[0]);
+    setModal({ type: "close-pos", symbol, maxQty, cmp });
+  }
+
   // ── Edit closed trade ─────────────────────────────────────────────────────
   function openEditClosedModal(sellIndex: number, buyIndices: number[]) {
     const sellTrade = trades[sellIndex], origTrade = trades[buyIndices[0]] || {} as Trade;
@@ -1588,30 +1615,41 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const sl = hasSL ? (meta.sl as number) : p.avgPx * 0.92;
 
     // All numbers below are computed off the TOTAL open quantity (p.qty) and
-    // the FIFO-weighted average entry (p.avgPx). When the user adds more
-    // shares and then sets a new stop loss via Edit SL / Review, p.avgPx is
-    // recomputed and posMeta[symbol].sl carries the new SL, so the totals
-    // reflect the rebuilt position automatically.
+    // the FIFO-weighted average entry (p.avgPx). When the user adds shares
+    // and sets a new SL, p.avgPx is recomputed and posMeta[symbol].sl carries
+    // the new SL, so the totals reflect the rebuilt position automatically.
     const totalQty = p.qty;
     const avgEntry = p.avgPx;
-    const slDistance = Math.max(0, avgEntry - sl);              // ₹ per share at risk
-    const riskAmtINR = slDistance * totalQty;                    // total ₹ at risk
+
+    // slDistance is SIGNED. When the trader adds to a winner and trails the SL
+    // up past the weighted-average entry (e.g. avg ₹106.67 with new SL ₹110),
+    // slDistance is negative — that's not "zero risk", it's GUARANTEED profit
+    // if the SL hits. We display that case as "Locked" instead of "Risk".
+    const slDistance = avgEntry - sl;                            // ₹ per share, signed
+    const riskAmtINR = slDistance * totalQty;                    // ₹ total, signed
+    const isLockedProfit = slDistance < 0;
+    const hasOpenRisk = slDistance > 0;
     const riskPctPos = avgEntry > 0 ? (slDistance / avgEntry) * 100 : 0;
-    const riskPctEquity = startEquity > 0 ? (riskAmtINR / startEquity) * 100 : 0;
+    const riskPctEquity = startEquity > 0 ? (Math.abs(riskAmtINR) / startEquity) * 100 : 0;
 
     const hasLive = cmp > 0;
     const uPnl = hasLive ? (cmp - avgEntry) * totalQty : 0;     // reward at CMP in ₹
     const uPerc = hasLive && avgEntry > 0 ? ((cmp - avgEntry) / avgEntry) * 100 : 0;
-    // R-multiple: how many "Rs" the position has moved off entry, where 1R is
-    // per-share risk. Numerator & denominator are both per-share so total qty
-    // cancels — i.e., this is identical for total or single-share view.
-    const rMultiple = hasLive && slDistance > 0 ? (cmp - avgEntry) / slDistance : 0;
-    const hasReward = hasLive && slDistance > 0;
+    // R-multiple is only defined while there is genuine downside (slDistance > 0).
+    const rMultiple = hasLive && hasOpenRisk ? (cmp - avgEntry) / slDistance : 0;
 
-    // Portfolio impact: position vs starting equity (portfolio weight) and vs
-    // total deployed (concentration inside the open book).
-    const portfolioWeight = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+    // Portfolio impact (per user definition): how much this position's CURRENT
+    // unrealized P&L moves total equity, expressed as a % of starting equity.
+    // Positive = lifting equity, negative = dragging it down. Book weight kept
+    // as a secondary detail so the trader still sees concentration.
+    const pnlImpactPct = hasLive && startEquity > 0 ? (uPnl / startEquity) * 100 : 0;
     const bookWeight = totalInvested > 0 ? (p.totalInvested / totalInvested) * 100 : 0;
+
+    // Lock-breakeven: shares to sell at CMP so that if SL hits the rest, the
+    // trade nets ~₹0. Only meaningful while position is profitable AND there
+    // is still real risk in the remaining position.
+    const breakevenSellQty = hasLive ? computeBreakevenSellQty(totalQty, avgEntry, sl, cmp) : 0;
+    const canLockBreakeven = breakevenSellQty > 0 && breakevenSellQty < totalQty;
 
     return (
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
@@ -1651,17 +1689,26 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               </button>
             </span>
           </div>
-          <div className="tj-kcard-metric">
-            <span className="tj-kcard-ml">Risk</span>
-            <span className="neg" title={`(₹${fmt(avgEntry)} − ₹${fmt(sl)}) × ${Math.round(totalQty)} shares`}>
-              ₹{fmt(riskAmtINR, 0)} <small>({riskPctPos.toFixed(1)}% pos · {riskPctEquity.toFixed(2)}% port)</small>
-            </span>
-          </div>
-          {hasReward ? (
+          {isLockedProfit ? (
+            <div className="tj-kcard-metric pos">
+              <span className="tj-kcard-ml">Locked</span>
+              <span title={`SL ₹${fmt(sl)} > Avg ₹${fmt(avgEntry)} → if SL hits, you still book (₹${fmt(sl)} − ₹${fmt(avgEntry)}) × ${Math.round(totalQty)} shares`}>
+                +₹{fmt(Math.abs(riskAmtINR), 0)} <small>({Math.abs(riskPctPos).toFixed(1)}% pos · {riskPctEquity.toFixed(2)}% port)</small>
+              </span>
+            </div>
+          ) : (
+            <div className="tj-kcard-metric">
+              <span className="tj-kcard-ml">Risk</span>
+              <span className="neg" title={`(₹${fmt(avgEntry)} − ₹${fmt(sl)}) × ${Math.round(totalQty)} shares`}>
+                ₹{fmt(riskAmtINR, 0)} <small>({riskPctPos.toFixed(1)}% pos · {riskPctEquity.toFixed(2)}% port)</small>
+              </span>
+            </div>
+          )}
+          {hasLive ? (
             <div className={`tj-kcard-metric ${uPnl >= 0 ? "pos" : "neg"}`}>
               <span className="tj-kcard-ml">Reward</span>
               <span title={`(₹${fmt(cmp)} − ₹${fmt(avgEntry)}) × ${Math.round(totalQty)} shares`}>
-                {fmtPnl(uPnl)} <small>({rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R)</small>
+                {fmtPnl(uPnl)}{hasOpenRisk ? <small> ({rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R)</small> : null}
               </span>
             </div>
           ) : (
@@ -1669,11 +1716,42 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           )}
           <div className="tj-kcard-metric">
             <span className="tj-kcard-ml">Impact</span>
-            <span title="Share of portfolio (vs starting equity) · share of open book (vs total deployed)">
-              {portfolioWeight.toFixed(1)}% port <small>· {bookWeight.toFixed(1)}% book</small>
-            </span>
+            {hasLive ? (
+              <span className={pnlImpactPct >= 0 ? "pos" : "neg"} title="Current unrealized P&L as % of starting equity · book weight (vs total deployed)">
+                {pnlImpactPct >= 0 ? "+" : ""}{pnlImpactPct.toFixed(2)}% equity <small>· {bookWeight.toFixed(1)}% book</small>
+              </span>
+            ) : (
+              <span className="muted">—</span>
+            )}
           </div>
         </div>
+        {canLockBreakeven && (
+          <div
+            style={{
+              fontSize: 11,
+              marginTop: 6,
+              padding: "6px 8px",
+              borderRadius: 4,
+              background: "rgba(34,197,94,0.08)",
+              border: "1px solid rgba(34,197,94,0.25)",
+              lineHeight: 1.4,
+            }}
+            title={`Sell ${breakevenSellQty} @ ₹${fmt(cmp)} → realized profit ≈ ₹${fmt((cmp - avgEntry) * breakevenSellQty, 0)}. If remaining ${Math.round(totalQty) - breakevenSellQty} shares hit SL ₹${fmt(sl)} → loss ≈ ₹${fmt((avgEntry - sl) * (totalQty - breakevenSellQty), 0)}. Net ≈ ₹0.`}
+          >
+            <div style={{ opacity: 0.85, marginBottom: 4 }}>
+              Sell <strong>{breakevenSellQty}</strong> @ ₹{fmt(cmp)} →
+              if SL hits remaining {Math.round(totalQty) - breakevenSellQty}, trade nets ~₹0.
+            </div>
+            <button
+              type="button"
+              className="tj-action-btn ghost"
+              style={{ width: "100%" }}
+              onClick={() => openLockBreakevenModal(p.symbol, breakevenSellQty, cmp, totalQty)}
+            >
+              Lock breakeven ({breakevenSellQty} @ ₹{fmt(cmp)})
+            </button>
+          </div>
+        )}
         {p.tags.length > 0 && <div className="tj-chip-row">{p.tags.slice(0, 4).map(t => <span key={t} className="tj-chip sm">{t}</span>)}</div>}
         <div className="tj-kcard-actions">
           <button className="tj-action-btn danger-outline" onClick={() => openCloseModal(p.symbol, p.qty, cmp || p.avgPx)}>Close</button>
