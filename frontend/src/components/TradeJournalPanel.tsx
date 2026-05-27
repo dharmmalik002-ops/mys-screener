@@ -1014,6 +1014,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     | { type: "close-pos"; symbol: string; maxQty: number; cmp: number }
     | { type: "edit-closed"; sellIndex: number; buyIndices: number[] }
     | { type: "edit-open"; symbol: string }
+    | { type: "edit-sl"; symbol: string }
     | { type: "add-setup"; }
     | { type: "add-from-screener"; symbol: string; suggestedPrice?: number };
 
@@ -1029,6 +1030,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [modalEditCustomTags, setModalEditCustomTags] = useState("");
   const [modalOpenSL, setModalOpenSL] = useState("");
   const [modalOpenFetchTicker, setModalOpenFetchTicker] = useState("");
+  const [modalOpenSetupType, setModalOpenSetupType] = useState("");
   const [newSetupName, setNewSetupName] = useState("");
 
   // Add-from-screener state
@@ -1397,22 +1399,57 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   // ── Edit open position ────────────────────────────────────────────────────
   function openReviewModal(symbol: string) {
     const meta = posMeta[symbol] || {};
+    const pos = fifo.openPositions.find(p => p.symbol === symbol);
     setModalOpenSL(String(meta.sl || ""));
     setModalOpenFetchTicker(meta.fetchTicker || (symbol.includes(".") ? symbol : symbol + ".NS"));
-    const tags = fifo.openPositions.find(p => p.symbol === symbol)?.tags || [];
-    setModalEditTags(new Set(tags));
-    setModalEditRemarks(fifo.openPositions.find(p => p.symbol === symbol)?.remarks || "");
+    setModalOpenSetupType(pos?.setupType || "");
+    setModalEditTags(new Set(pos?.tags || []));
+    setModalEditRemarks(pos?.remarks || "");
     setModal({ type: "edit-open", symbol });
   }
 
   function saveReviewEdits() {
     if (modal?.type !== "edit-open") return;
     const { symbol } = modal;
-    const nextMeta = { ...posMeta, [symbol]: { ...posMeta[symbol], sl: parseFloat(modalOpenSL) || 0, fetchTicker: modalOpenFetchTicker } };
+    const newSL = parseFloat(modalOpenSL) || 0;
+    const nextMeta = { ...posMeta, [symbol]: { ...posMeta[symbol], sl: newSL, fetchTicker: modalOpenFetchTicker } };
     setPosMeta(nextMeta); lsSet(LS_META, nextMeta);
     const openIdxs = fifo.openPositions.find(p => p.symbol === symbol)?.buyIndices || [];
-    const nextTrades = trades.map((t, i) => openIdxs.includes(i) ? { ...t, tags: [...modalEditTags], remarks: modalEditRemarks } : t);
+    const newSetupType = modalOpenSetupType.trim();
+    const nextTrades = trades.map((t, i) =>
+      openIdxs.includes(i)
+        ? {
+            ...t,
+            tags: [...modalEditTags],
+            remarks: modalEditRemarks,
+            ...(newSetupType ? { setupType: newSetupType } : {}),
+            // Propagate the new SL to the buy lots so historical exports stay in sync.
+            stoploss: newSL,
+          }
+        : t,
+    );
     saveTrades(nextTrades); setModal(null);
+  }
+
+  // ── Quick stop-loss edit (applies to the position's total open quantity) ─
+  function openEditSLModal(symbol: string) {
+    const meta = posMeta[symbol] || {};
+    setModalOpenSL(String(meta.sl || ""));
+    setModal({ type: "edit-sl", symbol });
+  }
+
+  function saveSLEdit() {
+    if (modal?.type !== "edit-sl") return;
+    const { symbol } = modal;
+    const newSL = parseFloat(modalOpenSL) || 0;
+    const nextMeta = { ...posMeta, [symbol]: { ...posMeta[symbol], sl: newSL } };
+    setPosMeta(nextMeta); lsSet(LS_META, nextMeta);
+    const openIdxs = fifo.openPositions.find(p => p.symbol === symbol)?.buyIndices || [];
+    const nextTrades = trades.map((t, i) =>
+      openIdxs.includes(i) ? { ...t, stoploss: newSL } : t,
+    );
+    saveTrades(nextTrades);
+    setModal(null);
   }
 
   // ── Edit closed trade ─────────────────────────────────────────────────────
@@ -1547,17 +1584,35 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   function KanbanCard({ p }: { p: OpenPosition }) {
     const meta = posMeta[p.symbol] || {};
     const cmp = meta.cmp || 0;
-    const sl = meta.sl || p.avgPx * 0.92;
-    const uPnl = cmp > 0 ? (cmp - p.avgPx) * p.qty : 0;
-    const uPerc = p.avgPx > 0 && cmp > 0 ? ((cmp - p.avgPx) / p.avgPx) * 100 : 0;
-    const riskAmt = (p.avgPx - sl) * p.qty;
-    const riskPct = p.avgPx > 0 ? ((p.avgPx - sl) / p.avgPx) * 100 : 0;
-    const posSize = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+    const hasSL = typeof meta.sl === "number" && (meta.sl as number) > 0;
+    const sl = hasSL ? (meta.sl as number) : p.avgPx * 0.92;
+
+    // All numbers below are computed off the TOTAL open quantity (p.qty) and
+    // the FIFO-weighted average entry (p.avgPx). When the user adds more
+    // shares and then sets a new stop loss via Edit SL / Review, p.avgPx is
+    // recomputed and posMeta[symbol].sl carries the new SL, so the totals
+    // reflect the rebuilt position automatically.
+    const totalQty = p.qty;
+    const avgEntry = p.avgPx;
+    const slDistance = Math.max(0, avgEntry - sl);              // ₹ per share at risk
+    const riskAmtINR = slDistance * totalQty;                    // total ₹ at risk
+    const riskPctPos = avgEntry > 0 ? (slDistance / avgEntry) * 100 : 0;
+    const riskPctEquity = startEquity > 0 ? (riskAmtINR / startEquity) * 100 : 0;
+
     const hasLive = cmp > 0;
-    // Reward as R-multiple: current unrealized % divided by risk %.
-    // E.g. risk 2%, price +4% → +2.0R; risk 2%, price -4% → -2.0R.
-    const rMultiple = hasLive && riskPct > 0 ? uPerc / riskPct : 0;
-    const hasReward = hasLive && riskPct > 0;
+    const uPnl = hasLive ? (cmp - avgEntry) * totalQty : 0;     // reward at CMP in ₹
+    const uPerc = hasLive && avgEntry > 0 ? ((cmp - avgEntry) / avgEntry) * 100 : 0;
+    // R-multiple: how many "Rs" the position has moved off entry, where 1R is
+    // per-share risk. Numerator & denominator are both per-share so total qty
+    // cancels — i.e., this is identical for total or single-share view.
+    const rMultiple = hasLive && slDistance > 0 ? (cmp - avgEntry) / slDistance : 0;
+    const hasReward = hasLive && slDistance > 0;
+
+    // Portfolio impact: position vs starting equity (portfolio weight) and vs
+    // total deployed (concentration inside the open book).
+    const portfolioWeight = startEquity > 0 ? (p.totalInvested / startEquity) * 100 : 0;
+    const bookWeight = totalInvested > 0 ? (p.totalInvested / totalInvested) * 100 : 0;
+
     return (
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
         <div className="tj-kcard-header">
@@ -1575,26 +1630,54 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             </button>
             {p.setupType && <span className="tj-kcard-setup">{p.setupType}</span>}
           </div>
-          <span className="tj-kcard-qty">×{Math.round(p.qty)}</span>
+          <span className="tj-kcard-qty">×{Math.round(totalQty)}</span>
         </div>
         <div className="tj-kcard-metrics">
-          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg</span><span>₹{fmt(p.avgPx)}</span></div>
+          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg / Invested</span><span>₹{fmt(avgEntry)} · ₹{fmt(p.totalInvested, 0)}</span></div>
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
           {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
-          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Risk</span><span className="neg">₹{fmt(riskAmt, 0)} <small>({riskPct.toFixed(1)}%)</small></span></div>
+          <div className="tj-kcard-metric">
+            <span className="tj-kcard-ml">SL</span>
+            <span>
+              {hasSL ? `₹${fmt(sl)}` : <span className="muted">not set</span>}
+              <button
+                type="button"
+                onClick={() => openEditSLModal(p.symbol)}
+                title="Edit stop loss (applies to total quantity)"
+                aria-label="Edit stop loss"
+                style={{ marginLeft: 6, padding: "0 6px", fontSize: 11, lineHeight: "16px", border: "1px solid var(--border, #4a5568)", borderRadius: 4, background: "transparent", color: "inherit", cursor: "pointer" }}
+              >
+                ✎
+              </button>
+            </span>
+          </div>
+          <div className="tj-kcard-metric">
+            <span className="tj-kcard-ml">Risk</span>
+            <span className="neg" title={`(₹${fmt(avgEntry)} − ₹${fmt(sl)}) × ${Math.round(totalQty)} shares`}>
+              ₹{fmt(riskAmtINR, 0)} <small>({riskPctPos.toFixed(1)}% pos · {riskPctEquity.toFixed(2)}% port)</small>
+            </span>
+          </div>
           {hasReward ? (
-            <div className={`tj-kcard-metric ${rMultiple >= 0 ? "pos" : "neg"}`}>
+            <div className={`tj-kcard-metric ${uPnl >= 0 ? "pos" : "neg"}`}>
               <span className="tj-kcard-ml">Reward</span>
-              <span>{rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R</span>
+              <span title={`(₹${fmt(cmp)} − ₹${fmt(avgEntry)}) × ${Math.round(totalQty)} shares`}>
+                {fmtPnl(uPnl)} <small>({rMultiple >= 0 ? "+" : ""}{rMultiple.toFixed(1)}R)</small>
+              </span>
             </div>
           ) : (
             <div className="tj-kcard-metric"><span className="tj-kcard-ml">Reward</span><span className="muted">—</span></div>
           )}
-          <div className="tj-kcard-metric"><span className="tj-kcard-ml">Size</span><span>{posSize.toFixed(1)}%</span></div>
+          <div className="tj-kcard-metric">
+            <span className="tj-kcard-ml">Impact</span>
+            <span title="Share of portfolio (vs starting equity) · share of open book (vs total deployed)">
+              {portfolioWeight.toFixed(1)}% port <small>· {bookWeight.toFixed(1)}% book</small>
+            </span>
+          </div>
         </div>
         {p.tags.length > 0 && <div className="tj-chip-row">{p.tags.slice(0, 4).map(t => <span key={t} className="tj-chip sm">{t}</span>)}</div>}
         <div className="tj-kcard-actions">
           <button className="tj-action-btn danger-outline" onClick={() => openCloseModal(p.symbol, p.qty, cmp || p.avgPx)}>Close</button>
+          <button className="tj-action-btn ghost" onClick={() => openEditSLModal(p.symbol)} title="Quick edit stop loss">Edit SL</button>
           <button className="tj-action-btn ghost" onClick={() => openReviewModal(p.symbol)}>Review</button>
         </div>
       </div>
@@ -2166,7 +2249,20 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             {modal.type === "edit-open" && (
               <>
                 <div className="tj-modal-title">Review Position: {modal.symbol}</div>
-                <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={modalOpenSL} onChange={e => setModalOpenSL(e.target.value)} /></div>
+                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+                  Stop loss and setup type apply to the total open quantity
+                  ({Math.round(fifo.openPositions.find(p => p.symbol === modal.symbol)?.qty || 0)} shares).
+                </div>
+                <div className="tj-form-grid-2">
+                  <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={modalOpenSL} onChange={e => setModalOpenSL(e.target.value)} /></div>
+                  <div className="tj-form-field">
+                    <label>Setup Type</label>
+                    <select className="tj-input" value={modalOpenSetupType} onChange={e => setModalOpenSetupType(e.target.value)}>
+                      <option value="">— None —</option>
+                      {setups.map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                </div>
                 <div className="tj-form-field" style={{ marginTop: 8 }}><label>Yahoo Finance Ticker</label><input className="tj-input" placeholder="e.g. RELIANCE.NS" value={modalOpenFetchTicker} onChange={e => setModalOpenFetchTicker(e.target.value)} /></div>
                 <div className="tj-card-hdr" style={{ marginTop: 12 }}>Tags</div>
                 <div className="tj-chip-row">
@@ -2179,6 +2275,33 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 </div>
                 <div className="tj-form-field" style={{ marginTop: 8 }}><label>Remarks</label><textarea className="tj-textarea" rows={2} value={modalEditRemarks} onChange={e => setModalEditRemarks(e.target.value)} /></div>
                 <button className="tj-btn primary" style={{ width: "100%", marginTop: 16 }} onClick={saveReviewEdits}>Save</button>
+              </>
+            )}
+
+            {modal.type === "edit-sl" && (
+              <>
+                <div className="tj-modal-title">Update Stop Loss · {modal.symbol}</div>
+                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+                  Applies to total open quantity
+                  ({Math.round(fifo.openPositions.find(p => p.symbol === modal.symbol)?.qty || 0)} shares).
+                  Risk recalculates as (Avg entry − SL) × total quantity.
+                </div>
+                <div className="tj-form-field">
+                  <label>Stop Loss ₹</label>
+                  <input
+                    className="tj-input"
+                    type="number"
+                    step="any"
+                    autoFocus
+                    value={modalOpenSL}
+                    onChange={e => setModalOpenSL(e.target.value)}
+                    onKeyDown={e => { if (e.key === "Enter") saveSLEdit(); }}
+                  />
+                </div>
+                <div style={{ display: "flex", gap: 8, marginTop: 16 }}>
+                  <button className="tj-btn ghost" style={{ flex: 1 }} onClick={() => setModal(null)}>Cancel</button>
+                  <button className="tj-btn primary" style={{ flex: 2 }} onClick={saveSLEdit}>Save Stop Loss</button>
+                </div>
               </>
             )}
 
