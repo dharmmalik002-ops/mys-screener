@@ -1725,7 +1725,9 @@ class DashboardService:
                 prior_peak = int(rec[3])
             except (TypeError, ValueError):
                 continue
-            if tier < 1 or tier > 4 or offset < 0 or offset >= persist:
+            # Only Quarterly+ pushes (tier ≥ 2). Monthly-only highs are excluded
+            # to keep the screener focused on significant volume events.
+            if tier < 2 or tier > 4 or offset < 0 or offset >= persist:
                 continue
             if float(snapshot.last_price or 0.0) < min_price:
                 continue
@@ -1778,7 +1780,7 @@ class DashboardService:
                 "id": "volume",
                 "name": "Volume",
                 "category": "Setups",
-                "description": "Stocks that pushed a new volume high (Monthly → Yearly) in the last ~1 month — newest pushes on top.",
+                "description": "Stocks that pushed a new Quarterly, Half-yearly, or Yearly volume high in the last ~1 month — newest pushes on top.",
                 "hit_count": len(items),
             }
             return await self._scan_results_response(

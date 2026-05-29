@@ -48,8 +48,9 @@ DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 UNIVERSE_PATH = DATA_DIR / "free_universe.json"
 OUTPUT_PATH = DATA_DIR / "volume_history.json"
 
-WINDOWS = [21, 63, 126, 252]   # tier 1..4
+WINDOWS = [21, 63, 126, 252]   # tier 1..4 (Monthly / Quarterly / Half-yearly / Yearly)
 PERSIST_SESSIONS = 21          # keep a pusher listed for ~1 trading month
+MIN_TIER = 2                   # only record Quarterly+ pushes (drop noisy Monthly-only)
 SURGE_MULT = 1.5               # push must be ≥ this × the prior 1-month avg volume
 CHUNK = 200
 
@@ -77,7 +78,10 @@ def _load_tickers() -> list[str]:
 
 def _recent_volume_event(vols: list[int]) -> list[int] | None:
     """Return [offset, tier, volume, prior_peak] for the most recent new-high
-    push within the last PERSIST_SESSIONS, or None if there wasn't one.
+    push of at least MIN_TIER (Quarterly+) within the last PERSIST_SESSIONS, or
+    None if there wasn't one. Monthly-only pushes (tier 1) are skipped so the
+    screener surfaces only the more significant quarterly / half-yearly / yearly
+    volume highs.
 
     A day qualifies for tier ``ti`` (window N) only when the FULL N-session
     prior window is available AND the day's volume STRICTLY exceeds that
@@ -118,8 +122,8 @@ def _recent_volume_event(vols: list[int]) -> list[int] | None:
                 peak = prior_peak
             else:
                 break  # failed this window ⇒ can't clear any longer one
-        if tier > 0:
-            # First (smallest k) qualifying day is the most recent push.
+        if tier >= MIN_TIER:
+            # First (smallest k) qualifying day is the most recent Quarterly+ push.
             return [k, tier, int(vol_k), int(peak)]
     return None
 
