@@ -775,6 +775,7 @@ export function ScanTable({
     const up = item.change_pct >= 0;
     const sparkColor = up ? "#10b981" : "#ef4444";
     const isActive = selectedSymbol === item.symbol;
+    const volBadge = scan?.id === "volume" ? volumeTierBadge(item) : null;
 
     return (
       <div
@@ -813,7 +814,30 @@ export function ScanTable({
             )}
           </span>
           <span className="st-name">
-            <strong>{item.symbol}</strong>
+            <strong>
+              {item.symbol}
+              {volBadge ? (
+                <span
+                  title={volBadge.title}
+                  style={{
+                    display: "inline-block",
+                    marginLeft: 6,
+                    fontSize: 9.5,
+                    fontWeight: 800,
+                    letterSpacing: "0.04em",
+                    lineHeight: "14px",
+                    color: "#fff",
+                    background: volBadge.color,
+                    border: "1px solid rgba(255,255,255,0.4)",
+                    borderRadius: 4,
+                    padding: "0 5px",
+                    verticalAlign: "middle",
+                  }}
+                >
+                  {volBadge.code}
+                </span>
+              ) : null}
+            </strong>
             <small>{scanRowSubtitle(item)}</small>
           </span>
         </button>
@@ -845,20 +869,21 @@ export function ScanTable({
 
         {visibleCols.has("rvol") ? (
           <span className="st-cell-center st-rvol" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, lineHeight: 1.1 }}>
-            {scan?.id === "volume" && volumeTierBadge(item) ? (
+            {volBadge ? (
               <span
-                title={volumeTierBadge(item)!.title}
+                title={volBadge.title}
                 style={{
                   fontSize: 8.5,
                   fontWeight: 800,
-                  letterSpacing: "0.04em",
+                  letterSpacing: "0.03em",
                   color: "#fff",
-                  background: volumeTierBadge(item)!.color,
+                  background: volBadge.color,
+                  border: "1px solid rgba(255,255,255,0.4)",
                   borderRadius: 3,
                   padding: "0 3px",
                 }}
               >
-                {volumeTierBadge(item)!.code}
+                {volBadge.code}
               </span>
             ) : null}
             <span>{item.relative_volume.toFixed(2)}×</span>
