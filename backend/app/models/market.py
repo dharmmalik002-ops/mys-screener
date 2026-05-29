@@ -123,6 +123,11 @@ class StockSnapshot(BaseModel):
     recent_highs: list[float] = Field(default_factory=list)
     recent_lows: list[float] = Field(default_factory=list)
     recent_volumes: list[int] = Field(default_factory=list)
+    # Rolling daily-volume history (up to ~252 sessions, oldest→newest) used by
+    # the Volume screener to compute max/avg traded volume over 1M/3M/6M/1Y
+    # windows. Seeded at snapshot build from full daily history; appended +
+    # trimmed by the daily bhavcopy patch (mirrors chart_grid_points upkeep).
+    volume_history: list[int] = Field(default_factory=list)
     chart_grid_points: list["ChartLinePoint"] = Field(default_factory=list)
     instrument_key: str | None = None
     history_as_of_date: date | None = None

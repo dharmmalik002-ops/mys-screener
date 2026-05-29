@@ -2,6 +2,7 @@ import type { ScanDescriptor } from "./api";
 
 export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "custom-scan", name: "Custom Scanner", category: "Custom", description: "Build your own scan.", hit_count: 0 },
+  { id: "volume", name: "Volume", category: "Setups", description: "Highest-volume stocks over 1M/3M/6M/1Y: new volume highs and relative-volume surges.", hit_count: 0 },
   { id: "day-high", name: "Day High", category: "Core", description: "Stocks trading at session highs.", hit_count: 0 },
   { id: "day-low", name: "Day Low", category: "Core", description: "Stocks trading at session lows.", hit_count: 0 },
   { id: "ipo", name: "IPO", category: "Core", description: "Stocks listed within the last 1 year.", hit_count: 0 },
@@ -42,6 +43,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
 
 export const SCANNER_BADGES: Record<string, string> = {
   "custom-scan": "CST",
+  "volume": "VOL+",
   "day-high": "DH",
   "day-low": "DL",
   "ipo": "IPO",

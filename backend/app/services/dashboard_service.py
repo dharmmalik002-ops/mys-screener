@@ -1664,6 +1664,85 @@ class DashboardService:
         )
         return items
 
+    # Volume screener window selector → (human label, trailing sessions).
+    _VOLUME_WINDOWS: dict[str, tuple[str, int]] = {
+        "1m": ("1M", 21),
+        "3m": ("3M", 63),
+        "6m": ("6M", 126),
+        "1y": ("1Y", 252),
+    }
+
+    @classmethod
+    def _resolve_volume_window(cls, window: str | None) -> tuple[str, int]:
+        key = (window or "3m").strip().lower()
+        return cls._VOLUME_WINDOWS.get(key, cls._VOLUME_WINDOWS["3m"])
+
+    def _build_volume_surge_items(
+        self,
+        snapshots: list[StockSnapshot],
+        *,
+        window_sessions: int,
+        window_label: str,
+        min_rvol: float,
+        min_liquidity_crore: float | None,
+        min_price: float = 20.0,
+    ) -> list[ScanMatch]:
+        """Volume screener: surface stocks whose latest session is either a new
+        high-water volume mark over the window OR a strong multiple of the
+        window's average volume (relative-volume surge). Ranked by RVOL, with
+        new-high names floated to the top.
+
+        Pure in-memory computation over the snapshot's ``volume_history`` field
+        (seeded at build, rolled by the daily patch) — no network, so it's as
+        fast as every other catalog scanner.
+        """
+        from app.scanners.definitions import build_scan_match
+
+        items: list[ScanMatch] = []
+        for snapshot in snapshots:
+            history = [
+                int(value)
+                for value in (getattr(snapshot, "volume_history", None) or [])
+                if value is not None and int(value) >= 0
+            ]
+            if len(history) < 2:
+                continue
+            window = history[-window_sessions:] if len(history) > window_sessions else history
+            if len(window) < 2:
+                continue
+            today_vol = window[-1]
+            if today_vol <= 0:
+                continue
+            if float(snapshot.last_price or 0.0) < min_price:
+                continue
+
+            prior = window[:-1]
+            prior_max = max(prior) if prior else 0
+            window_avg = sum(window) / len(window)
+            if window_avg <= 0:
+                continue
+
+            is_new_high = prior_max > 0 and today_vol >= prior_max
+            rvol = today_vol / window_avg
+
+            # Qualify on either signal: a fresh window-high OR an RVOL surge.
+            if not is_new_high and rvol < float(min_rvol):
+                continue
+
+            # New highs sort above pure RVOL surges; within each tier, higher
+            # RVOL ranks first.
+            score = round((1000.0 if is_new_high else 0.0) + rvol * 10.0, 2)
+            reasons: list[str] = []
+            if is_new_high:
+                reasons.append(f"New {window_label} volume high")
+            reasons.append(f"{rvol:.1f}x {window_label} avg volume")
+            reasons.append(f"Vol {today_vol:,} vs {window_label} avg {int(window_avg):,}")
+
+            items.append(build_scan_match("volume", snapshot, score, reasons[:3]))
+
+        items.sort(key=lambda match: match.score, reverse=True)
+        return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
+
 
     async def get_scan_results(
         self,
@@ -1677,8 +1756,46 @@ class DashboardService:
         positive_earnings_min_day_rvol: float | None = None,
         positive_earnings_min_return_5d_pct: float | None = None,
         positive_earnings_lookback_days: int | None = None,
+        volume_window: str | None = None,
+        volume_min_rvol: float | None = None,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
+
+        # Volume screener is computed ad-hoc (not part of the static SCANS
+        # catalog) because it's parameterized by lookback window. Handle it
+        # before the catalog lookup so the descriptor doesn't need a SCANS entry.
+        if scan_id == "volume":
+            window_label, window_sessions = self._resolve_volume_window(volume_window)
+            items = self._build_volume_surge_items(
+                snapshots,
+                window_sessions=window_sessions,
+                window_label=window_label,
+                min_rvol=volume_min_rvol if volume_min_rvol is not None else 3.0,
+                min_liquidity_crore=min_liquidity_crore,
+            )
+            descriptor = {
+                "id": "volume",
+                "name": "Volume",
+                "category": "Setups",
+                "description": f"Highest-volume stocks over the last {window_label}: new {window_label} volume highs and relative-volume surges vs the {window_label} average.",
+                "hit_count": len(items),
+            }
+            return await self._scan_results_response(
+                scan=descriptor,
+                scan_key=f"volume:{window_label}",
+                request_signature=f"volume:{window_label}:rvol={volume_min_rvol}",
+                snapshots=snapshots,
+                items=items,
+                historical_runner=lambda historical_snapshots: self._build_volume_surge_items(
+                    historical_snapshots,
+                    window_sessions=window_sessions,
+                    window_label=window_label,
+                    min_rvol=volume_min_rvol if volume_min_rvol is not None else 3.0,
+                    min_liquidity_crore=min_liquidity_crore,
+                ),
+                include_sector_summaries=include_sector_summaries,
+            )
+
         scanners, results = self._scan_catalog(snapshots)
         descriptor = next((scan for scan in scanners if scan.id == scan_id), None)
         if descriptor is None:

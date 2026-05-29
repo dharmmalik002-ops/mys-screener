@@ -3520,6 +3520,7 @@ class FreeMarketDataProvider:
             "recent_highs": [round(high, 4)],
             "recent_lows": [round(low, 4)],
             "recent_volumes": [int(volume)],
+            "volume_history": [int(volume)] if int(volume) > 0 else [],
             "chart_grid_points": [],
             "history_session_date": patch_date.isoformat(),
             "history_as_of_date": patch_date.isoformat(),
@@ -3942,6 +3943,16 @@ class FreeMarketDataProvider:
                     row[arr_key] = [int(new_volume)]
                 elif arr_key in {"recent_highs", "recent_lows"}:
                     row[arr_key] = [value]
+
+            # Roll the 1-year volume_history window for the Volume screener.
+            # Append today's volume, trim to 252 sessions, idempotent on re-apply.
+            vol_today = max(0, int(new_volume))
+            vol_hist = row.get("volume_history")
+            if isinstance(vol_hist, list) and vol_hist:
+                if vol_hist[-1] != vol_today:
+                    row["volume_history"] = list(vol_hist[-251:]) + [vol_today]
+            elif vol_today > 0:
+                row["volume_history"] = [vol_today]
 
             updated += 1
 
@@ -6498,6 +6509,9 @@ class FreeMarketDataProvider:
             "recent_highs": [round(float(value), 2) for value in high.tail(20).tolist()],
             "recent_lows": [round(float(value), 2) for value in low.tail(20).tolist()],
             "recent_volumes": [int(float(value) or 0) for value in volume.tail(20).tolist()],
+            # Up to ~252 trailing daily volumes (1 trading year) for the Volume
+            # screener's 1M/3M/6M/1Y window math. Negative/NaN coerced to 0.
+            "volume_history": [max(0, int(float(value) or 0)) for value in volume.tail(252).tolist()],
             "chart_grid_points": chart_grid_points,
             "instrument_key": instrument["ticker"],
             "history_as_of_date": latest_history_date,

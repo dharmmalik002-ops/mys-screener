@@ -164,6 +164,9 @@ type ScanRequestOptions = {
   positiveEarningsMinDayRvol?: number | null;
   positiveEarningsMinReturn5dPct?: number | null;
   positiveEarningsLookbackDays?: number | null;
+  // Volume-screener-only overrides (ignored by other scan_ids).
+  volumeWindow?: "1m" | "3m" | "6m" | "1y" | null;
+  volumeMinRvol?: number | null;
 };
 
 export type MarketKey = "india";
@@ -1955,6 +1958,12 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
   }
   if (typeof options?.positiveEarningsLookbackDays === "number" && Number.isFinite(options.positiveEarningsLookbackDays)) {
     params.set("positive_earnings_lookback_days", String(options.positiveEarningsLookbackDays));
+  }
+  if (options?.volumeWindow) {
+    params.set("volume_window", options.volumeWindow);
+  }
+  if (typeof options?.volumeMinRvol === "number" && Number.isFinite(options.volumeMinRvol)) {
+    params.set("volume_min_rvol", String(options.volumeMinRvol));
   }
   const query = params.toString();
   if (!query) {

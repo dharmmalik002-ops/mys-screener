@@ -20,6 +20,7 @@ import "./ScreenerSidebar.css";
 
 export type ScreenerMode =
   | "custom-scan"
+  | "volume"
   | "ipo"
   | "gap-up-openers"
   | "ema-expansion"
@@ -62,6 +63,7 @@ type SidebarItem = {
 
 const ITEMS: SidebarItem[] = [
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
+  { mode: "volume", title: "Volume", hint: "Highest 1M/3M/6M/1Y volume", Icon: BarChart3 },
   { mode: "ipo", title: "IPO", hint: "Recent listings", Icon: Rocket },
   { mode: "gap-up-openers", title: "Gap Up Openers", hint: "Opening gaps", Icon: TrendingUp },
   { mode: "ema-expansion", title: "Expansion", hint: "EMA expanding", Icon: Maximize2 },

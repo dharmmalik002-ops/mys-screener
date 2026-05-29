@@ -1556,6 +1556,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [appliedExpansionMinChangePct, setAppliedExpansionMinChangePct] = useState<number>(6.5);
   const [expansionMinRelativeVolume, setExpansionMinRelativeVolume] = useState<number>(3.0);
   const [appliedExpansionMinRelativeVolume, setAppliedExpansionMinRelativeVolume] = useState<number>(3.0);
+  const [volumeWindow, setVolumeWindow] = useState<"1m" | "3m" | "6m" | "1y">("3m");
   const [sectorSortBy, setSectorSortBy] = useState<SectorSortBy>("1D");
   const [sectorSortOrder, setSectorSortOrder] = useState<"asc" | "desc">("desc");
   const [sectorVisibleSymbols, setSectorVisibleSymbols] = useState<string[]>([]);
@@ -2309,6 +2310,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     loading,
     scannerRunNonce,
     scanArrangementMode,
+    volumeWindow,
   ]);
 
   useEffect(() => {
@@ -3023,6 +3025,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
+    if (activeScanner === "volume") {
+      return getScanResults("volume", activeMarket, { ...options, volumeWindow });
+    }
     if (activeScanner === "ipo") {
       return getScanResults("ipo", activeMarket, options);
     }
@@ -4796,6 +4801,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     onModeChange={handleScannerModeChange}
                     counts={{
                       "custom-scan": activeScanner === "custom-scan" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "custom-scan" ? scanResults.total_hits : 0,
+                      "volume": activeScanner === "volume" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "volume" ? scanResults.total_hits : 0,
                       "ipo": activeScanner === "ipo" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ipo" ? scanResults.total_hits : 0,
                       "gap-up-openers": activeScanner === "gap-up-openers" ? scanResults?.total_hits ?? 0 : 0,
                       "ema-expansion": activeScanner === "ema-expansion" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "ema-expansion" ? scanResults.total_hits : 0,
@@ -4827,6 +4833,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                           const scannerTitle =
                             activeScanner === "custom-scan"
                               ? "Custom Screener"
+                              : activeScanner === "volume"
+                                ? "Volume"
                               : activeScanner === "ipo"
                                 ? "IPO"
                                 : activeScanner === "gap-up-openers"
@@ -4851,6 +4859,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
+                              : activeScanner === "volume"
+                                ? "Highest-volume stocks over the selected window: new volume highs and relative-volume surges vs the window average."
                               : activeScanner === "ipo"
                                 ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
@@ -4904,7 +4914,42 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         })()}
 
                         {showScannerSettings
-                          ? activeScanner === "ipo"
+                          ? activeScanner === "volume"
+                            ? (
+                              <Panel
+                                title="Volume window"
+                                subtitle="Surface stocks at a new high-water volume mark over the window, or trading at a strong multiple of the window's average volume. Whole universe, ranked by relative volume."
+                              >
+                                <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
+                                  <label>
+                                    <span>Lookback window</span>
+                                    <div className="volume-window-tabs" role="tablist" aria-label="Volume lookback window" style={{ display: "flex", gap: 6, marginTop: 4 }}>
+                                      {([
+                                        { key: "1m", label: "1M" },
+                                        { key: "3m", label: "3M" },
+                                        { key: "6m", label: "6M" },
+                                        { key: "1y", label: "1Y" },
+                                      ] as const).map((opt) => (
+                                        <button
+                                          key={opt.key}
+                                          type="button"
+                                          className={volumeWindow === opt.key ? "nav-button primary" : "nav-button ghost"}
+                                          onClick={() => {
+                                            if (volumeWindow !== opt.key) {
+                                              setVolumeWindow(opt.key);
+                                              setScannerRunNonce((current) => current + 1);
+                                            }
+                                          }}
+                                        >
+                                          {opt.label}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </label>
+                                </div>
+                              </Panel>
+                            )
+                          : activeScanner === "ipo"
                             ? (
                               <div className="scanner-settings-note">
                                 <strong>Built-in scan</strong>

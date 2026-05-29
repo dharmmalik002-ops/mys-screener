@@ -73,6 +73,9 @@ def build_router(service):
         positive_earnings_min_day_rvol: float | None = Query(default=None, ge=0.0, le=50.0),
         positive_earnings_min_return_5d_pct: float | None = Query(default=None, ge=-100.0, le=200.0),
         positive_earnings_lookback_days: int | None = Query(default=None, ge=1, le=365),
+        # Volume screener: lookback window (1m/3m/6m/1y) and optional RVOL gate.
+        volume_window: str | None = Query(default=None),
+        volume_min_rvol: float | None = Query(default=None, ge=0.0, le=100.0),
     ):
         try:
             return await resolve_service(market).get_scan_results(
@@ -86,6 +89,8 @@ def build_router(service):
                 positive_earnings_min_day_rvol=positive_earnings_min_day_rvol,
                 positive_earnings_min_return_5d_pct=positive_earnings_min_return_5d_pct,
                 positive_earnings_lookback_days=positive_earnings_lookback_days,
+                volume_window=volume_window,
+                volume_min_rvol=volume_min_rvol,
             )
         except KeyError as error:
             raise HTTPException(status_code=404, detail=f"Unknown scan: {scan_id}") from error
