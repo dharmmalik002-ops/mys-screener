@@ -339,6 +339,21 @@ function fallbackSparkline(returnPct: number) {
   ];
 }
 
+// Volume screener tier badges. The backend's first reason encodes the longest
+// window the volume push cleared; map it to a short code + color for display
+// on the RVOL (volume-increase) cell.
+const VOLUME_TIER_BADGES: Record<string, { code: string; title: string; color: string }> = {
+  "Monthly volume high": { code: "HMV", title: "Highest Monthly Volume", color: "#64748b" },
+  "Quarterly volume high": { code: "HQV", title: "Highest Quarterly Volume", color: "#2563eb" },
+  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#0d9488" },
+  "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#16a34a" },
+};
+
+function volumeTierBadge(item: ScanMatch): { code: string; title: string; color: string } | null {
+  const first = item.reasons?.[0];
+  return first ? VOLUME_TIER_BADGES[first] ?? null : null;
+}
+
 function scanRowSubtitle(item: ScanMatch) {
   const listingDate = formatListingDate(item.listing_date);
   const categoryLabel =
@@ -829,8 +844,24 @@ export function ScanTable({
         ) : null}
 
         {visibleCols.has("rvol") ? (
-          <span className="st-cell-center st-rvol">
-            {item.relative_volume.toFixed(2)}×
+          <span className="st-cell-center st-rvol" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, lineHeight: 1.1 }}>
+            {scan?.id === "volume" && volumeTierBadge(item) ? (
+              <span
+                title={volumeTierBadge(item)!.title}
+                style={{
+                  fontSize: 8.5,
+                  fontWeight: 800,
+                  letterSpacing: "0.04em",
+                  color: "#fff",
+                  background: volumeTierBadge(item)!.color,
+                  borderRadius: 3,
+                  padding: "0 3px",
+                }}
+              >
+                {volumeTierBadge(item)!.code}
+              </span>
+            ) : null}
+            <span>{item.relative_volume.toFixed(2)}×</span>
           </span>
         ) : null}
 
