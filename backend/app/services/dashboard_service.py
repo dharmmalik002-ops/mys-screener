@@ -1556,6 +1556,32 @@ class DashboardService:
 
         return snapshot.model_copy(update=updates)
 
+    # Hard cap on how many snapshots the contraction scan will try to enrich
+    # per request, and the wall-clock budget for the whole enrichment pass.
+    # Both exist to guarantee the endpoint returns well under the 60s client
+    # timeout even on a cold Space.
+    _CONTRACTION_MAX_ENRICH = 150
+    _CONTRACTION_ENRICH_BUDGET_SECONDS = 20.0
+
+    def _read_cached_daily_bars(self, symbol: str, bars: int = 120) -> list[ChartBar]:
+        """Local-cache-only daily bars for ``symbol`` (never hits the network).
+
+        The previous contraction enrichment called ``provider.get_chart`` which,
+        on a cold chart cache, falls through to a per-symbol yfinance fetch with
+        a timeout of up to 25s EACH. On HF (where yfinance is frequently
+        geo-blocked) dozens of those stacked up and blew past the 60s client
+        timeout — the bug the user reported. Reading the on-disk cache directly
+        keeps enrichment fast and fully offline.
+        """
+        reader = getattr(self.provider, "_read_chart_cache", None)
+        if not callable(reader):
+            return []
+        try:
+            cached = reader(symbol, "1D", bars, allow_legacy=True, skip_scale_check=True)
+        except Exception:
+            return []
+        return cached or []
+
     async def _build_contraction_snapshots(
         self,
         snapshots: list[StockSnapshot],
@@ -1570,20 +1596,40 @@ class DashboardService:
         if not candidates:
             return snapshots
 
-        snapshot_by_symbol = {snapshot.symbol: snapshot for snapshot in snapshots}
-        semaphore = asyncio.Semaphore(8)
+        # Prioritize the strongest / most liquid names so the per-request cap
+        # spends its budget where a contraction setup is most likely, then
+        # bound the count hard.
+        if len(candidates) > self._CONTRACTION_MAX_ENRICH:
+            ranked = self._contraction_recovery_candidates(candidates)
+            ranked_symbols = {snap.symbol for snap in ranked[: self._CONTRACTION_MAX_ENRICH]}
+            candidates = [snap for snap in candidates if snap.symbol in ranked_symbols][
+                : self._CONTRACTION_MAX_ENRICH
+            ]
 
-        async def enrich(snapshot: StockSnapshot) -> StockSnapshot:
-            async with semaphore:
-                try:
-                    bars = await self.provider.get_chart(snapshot.symbol, "1D", bars=120)
-                except Exception:
-                    return snapshot
+        snapshot_by_symbol = {snapshot.symbol: snapshot for snapshot in snapshots}
+
+        def enrich_from_cache(snapshot: StockSnapshot) -> StockSnapshot:
+            # Pure local read + compute; no awaiting, no network.
+            bars = self._read_cached_daily_bars(snapshot.symbol, bars=120)
+            if not bars:
+                return snapshot
             return self._snapshot_with_contraction_history(snapshot, bars)
 
-        enriched = await asyncio.gather(*[enrich(snapshot) for snapshot in candidates])
-        for snapshot in enriched:
-            snapshot_by_symbol[snapshot.symbol] = snapshot
+        async def run_enrichment() -> None:
+            # Offload the synchronous file reads to a worker thread so the event
+            # loop stays responsive; chunk to keep memory flat.
+            for snapshot in candidates:
+                enriched = await asyncio.to_thread(enrich_from_cache, snapshot)
+                snapshot_by_symbol[enriched.symbol] = enriched
+
+        try:
+            await asyncio.wait_for(run_enrichment(), timeout=self._CONTRACTION_ENRICH_BUDGET_SECONDS)
+        except asyncio.TimeoutError:
+            logger.warning(
+                "contraction enrichment hit %.0fs budget; scanning with partial enrichment",
+                self._CONTRACTION_ENRICH_BUDGET_SECONDS,
+            )
+
         return [snapshot_by_symbol[snapshot.symbol] for snapshot in snapshots]
 
     @staticmethod
