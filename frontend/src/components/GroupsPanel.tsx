@@ -313,19 +313,29 @@ export function GroupsPanel({
                     <th className="gp-num">1M</th>
                     <th className="gp-num">3M</th>
                     <th className="gp-num">6M</th>
-                    <th>Top 3 Stocks</th>
+                    <th>Stocks <small style={{ opacity: 0.6, fontWeight: 500 }}>(all members for Top 20, else top 3)</small></th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredGroups.map((group) => {
                     const members = stocksByGroup.get(group.group_id) ?? [];
-                    const topThree = group.top_constituents.slice(0, 3).map((tc) => {
-                      const match = members.find((m) => m.symbol === tc.symbol);
+                    // For the top 20 ranked groups, expand the stock list to ALL
+                    // constituents (already sorted by rs_rating desc in
+                    // stocksByGroup). For deeper-ranked groups, fall back to the
+                    // condensed "top 3 constituents" view so the table doesn't
+                    // explode in height for hundreds of low-rank groups.
+                    const showAllStocks = group.rank <= 20;
+                    const stockSource = showAllStocks ? members : group.top_constituents.slice(0, 3);
+                    const displayedStocks = stockSource.map((src) => {
+                      // members[] rows already carry change_pct & rs_rating; top_constituents
+                      // rows carry rs_rating & return_1m. Normalize both into one shape.
+                      const isMember = "change_pct" in src;
+                      const match = isMember ? (src as IndustryGroupStockItem) : members.find((m) => m.symbol === src.symbol);
                       return {
-                        symbol: tc.symbol,
-                        company: tc.company_name,
-                        rs: tc.rs_rating,
-                        change_pct: match?.change_pct ?? tc.return_1m,
+                        symbol: src.symbol,
+                        company: (src as { company_name?: string }).company_name ?? match?.company_name ?? "",
+                        rs: isMember ? (src as IndustryGroupStockItem).rs_rating : (src as { rs_rating: number | null }).rs_rating,
+                        change_pct: match?.change_pct ?? (src as { return_1m?: number }).return_1m ?? 0,
                       };
                     });
                     const groupSymbols = group.symbols.length ? group.symbols : members.map((m) => m.symbol);
@@ -358,10 +368,10 @@ export function GroupsPanel({
                         <td className={`gp-num ${metricClass(group.return_3m)}`}>{formatReturn(group.return_3m)}</td>
                         <td className={`gp-num ${metricClass(group.return_6m)}`}>{formatReturn(group.return_6m)}</td>
                         <td className="gp-cell-stocks">
-                          <div className="gp-top3">
-                            {topThree.length === 0 ? (
+                          <div className={`gp-top3${showAllStocks ? " gp-all-members" : ""}`}>
+                            {displayedStocks.length === 0 ? (
                               <span className="gp-muted">No leaders</span>
-                            ) : topThree.map((s) => {
+                            ) : displayedStocks.map((s) => {
                               const logo = getLogoUrl(s.symbol);
                               const up = s.change_pct >= 0;
                               return (

@@ -529,11 +529,20 @@ class DashboardService:
         except ValueError:
             return None
 
+    # When a bhavcopy day falls back to YFINANCE only (~1.5k symbols), the
+    # remaining ~3.5k symbols in the universe still carry the previous day's
+    # session_date — strictly requiring session_date >= latest_patch_date
+    # would silently empty every scanner. We allow up to one trading week
+    # (5 calendar days) of lookback, which still rules out the truly stale
+    # CDSL / MARINE-type rows (months-old session_dates) the original guard
+    # was added to suppress.
+    _SNAPSHOT_STALE_TOLERANCE_DAYS = 5
+
     @staticmethod
     def _snapshot_session_matches(snapshot: StockSnapshot, latest_patch_date: date | None) -> bool:
         # No patch on disk yet (fresh deploy, never applied) → trust every
         # snapshot row. Once we DO have a patch, drop anything whose session
-        # date is older.
+        # date is meaningfully older.
         if latest_patch_date is None:
             return True
         session_date = snapshot.history_session_date
@@ -542,7 +551,9 @@ class DashboardService:
             # carry a price from "some random day". Exclude them so scanners
             # don't surface stale data as if it were today's.
             return False
-        return session_date >= latest_patch_date
+        if session_date >= latest_patch_date:
+            return True
+        return (latest_patch_date - session_date).days <= DashboardService._SNAPSHOT_STALE_TOLERANCE_DAYS
 
     @staticmethod
     def _has_reliable_relative_volume(snapshot: StockSnapshot) -> bool:

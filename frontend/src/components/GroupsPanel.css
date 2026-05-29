@@ -688,20 +688,35 @@ body.dark .gp-score-chip {
 }
 
 .gp-rs-circle {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  /* Bumped from 26×26 / 10.5px text → 32×32 / 13px text + outline so the
+     RS rating is legible at a glance inside each group's stock list. */
+  min-width: 32px;
+  height: 32px;
+  padding: 0 6px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  font-size: 10.5px;
+  font-size: 13px;
   font-weight: 800;
+  letter-spacing: 0.02em;
   color: #fff;
   flex: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }
 
-.gp-rs-hi { background: linear-gradient(135deg, #22c55e, #10b981); box-shadow: 0 2px 6px rgba(16, 185, 129, 0.35); }
-.gp-rs-mid { background: linear-gradient(135deg, #fbbf24, #f59e0b); box-shadow: 0 2px 6px rgba(245, 158, 11, 0.28); }
-.gp-rs-lo { background: linear-gradient(135deg, #f87171, #ef4444); box-shadow: 0 2px 6px rgba(239, 68, 68, 0.28); }
+.gp-rs-hi { background: linear-gradient(135deg, #16a34a, #047857); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.55); }
+.gp-rs-mid { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45); }
+.gp-rs-lo { background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45); }
+
+/* Show-all-members layout for top-20 groups: let chips wrap to a multi-row
+   block instead of horizontally overflowing the stocks cell. */
+.gp-top3.gp-all-members {
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
 .gp-rs-muted {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);

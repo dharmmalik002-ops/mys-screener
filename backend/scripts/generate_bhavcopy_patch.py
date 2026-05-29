@@ -661,6 +661,27 @@ def _write_patch(target_date: date, symbols: dict, source: str) -> None:
 
 
 def main() -> int:
+    # Belt-and-suspenders: even though every cron in daily-bhavcopy.yml is
+    # scheduled after market close (4:23-6:23 PM IST), refuse to run during
+    # the active session itself. A morning/intraday run would otherwise stamp
+    # a partial mid-day snapshot as if it were the EOD bhavcopy, which the
+    # rest of the system trusts as "the closing print".
+    now_ist = datetime.now(IST)
+    weekday = now_ist.weekday()  # 0=Mon … 4=Fri
+    if weekday < 5:
+        # NSE/BSE regular session: 09:15-15:30 IST. Add a 30-min grace before
+        # market open and 30-min grace after close (BSE bhavcopy publishes
+        # ~16:00 IST). Refuse anything between 08:45 and 16:00 IST.
+        block_start = now_ist.replace(hour=8, minute=45, second=0, microsecond=0)
+        block_end = now_ist.replace(hour=16, minute=0, second=0, microsecond=0)
+        if block_start <= now_ist < block_end:
+            logger.warning(
+                "Refusing to run inside market hours (now=%s IST). EOD bhavcopy "
+                "must only be fetched after 4:00 PM IST. Exiting cleanly.",
+                now_ist.strftime("%Y-%m-%d %H:%M"),
+            )
+            return 0
+
     target = _last_trading_day()
     logger.info("Fetching EOD Bhavcopy for %s", target.isoformat())
 

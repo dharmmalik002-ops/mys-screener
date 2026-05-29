@@ -18,6 +18,7 @@ import {
   EyeOff,
   Plus,
   ChevronDown,
+  Search as SearchIcon,
 } from "lucide-react";
 
 import {
@@ -415,6 +416,17 @@ export function ScanTable({
   );
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
+  // Symbol-filter applied to the scan result list itself ("does Screener A's
+  // 200 hits contain ABCD?"). Empty = show everything. Matches against symbol
+  // OR company name, case-insensitive.
+  const [symbolFilter, setSymbolFilter] = useState("");
+
+  // Reset the symbol filter whenever the underlying result set changes (a
+  // different scanner ran), so the input doesn't silently hide rows from the
+  // next scan.
+  useEffect(() => {
+    setSymbolFilter("");
+  }, [scan?.id]);
   const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(
     () => new Set<ColumnKey>(["spark", "rs", "rvol"]),
   );
@@ -446,9 +458,22 @@ export function ScanTable({
     [sectorSummaries],
   );
 
+  // Pre-filter step: narrow the scan items to whatever matches the user's
+  // symbol/company-name typed query. Then the existing sort/group/sector
+  // pipeline operates on the filtered subset.
+  const filteredItems = useMemo(() => {
+    const q = symbolFilter.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((m) => {
+      const sym = (m.symbol ?? "").toLowerCase();
+      const name = (m.name ?? "").toLowerCase();
+      return sym.includes(q) || name.includes(q);
+    });
+  }, [items, symbolFilter]);
+
   const sortedItems = useMemo(
-    () => (showSortToggle ? applySort(items, sortBy) : items),
-    [items, showSortToggle, sortBy],
+    () => (showSortToggle ? applySort(filteredItems, sortBy) : filteredItems),
+    [filteredItems, showSortToggle, sortBy],
   );
 
   const sectorGroups = useMemo(() => {
@@ -850,6 +875,43 @@ export function ScanTable({
       }
       actions={
         <div className="st-actions">
+          {/* Symbol filter — "is stock X in the current scan results?" */}
+          <div className="st-filter" style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <input
+              type="search"
+              value={symbolFilter}
+              onChange={(event) => setSymbolFilter(event.target.value)}
+              placeholder={`Find symbol in ${items.length} results…`}
+              aria-label="Filter scan results by symbol or company name"
+              className="st-filter-input"
+              style={{
+                height: 26,
+                padding: "0 10px 0 26px",
+                fontSize: 12,
+                lineHeight: "24px",
+                borderRadius: 6,
+                border: "1px solid var(--border, #2d3340)",
+                background: "var(--input-bg, rgba(13,17,23,0.6))",
+                color: "inherit",
+                width: 200,
+                outline: "none",
+              }}
+            />
+            <SearchIcon
+              size={12}
+              strokeWidth={2.2}
+              style={{ position: "absolute", left: 8, opacity: 0.55, pointerEvents: "none" }}
+            />
+            {symbolFilter ? (
+              <span
+                title={`${sortedItems.length} of ${items.length} match`}
+                style={{ marginLeft: 6, fontSize: 11, opacity: 0.7, whiteSpace: "nowrap" }}
+              >
+                {sortedItems.length}/{items.length}
+              </span>
+            ) : null}
+          </div>
+
           {/* View tabs */}
           <div className="st-view-tabs" role="tablist" aria-label="Result view mode">
             <button
