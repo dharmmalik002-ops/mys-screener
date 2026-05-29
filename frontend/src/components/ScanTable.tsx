@@ -343,10 +343,10 @@ function fallbackSparkline(returnPct: number) {
 // window the volume push cleared; map it to a short code + color for display
 // on the RVOL (volume-increase) cell.
 const VOLUME_TIER_BADGES: Record<string, { code: string; title: string; color: string }> = {
-  "Monthly volume high": { code: "HMV", title: "Highest Monthly Volume", color: "#64748b" },
-  "Quarterly volume high": { code: "HQV", title: "Highest Quarterly Volume", color: "#2563eb" },
-  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#0d9488" },
-  "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#16a34a" },
+  "Monthly volume high": { code: "HMV", title: "Highest Monthly Volume", color: "#dc2626" },
+  "Quarterly volume high": { code: "HQV", title: "Highest Quarterly Volume", color: "#16a34a" },
+  "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#2563eb" },
+  "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#111827" },
 };
 
 function volumeTierBadge(item: ScanMatch): { code: string; title: string; color: string } | null {
