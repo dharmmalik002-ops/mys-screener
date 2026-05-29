@@ -1,30 +1,37 @@
 """
-Generate volume_history.json — per-symbol windowed daily-volume aggregates that
-power the Volume screener's "highest volume over 1M/3M/6M/1Y" detection.
+Generate volume_history.json — the rolling "volume push" list that powers the
+Volume screener.
 
 Run by the daily-bhavcopy GitHub Action after the EOD bhavcopy patch. It reads
 the NSE-keyed universe, batch-downloads ~1.4 years of daily Volume via yfinance,
-and writes COMPACT aggregates (not the full series) so the committed file stays
-small:
+and for every symbol finds its MOST RECENT day, within the last
+``PERSIST_SESSIONS`` (~1 trading month), on which it printed a new volume high
+over any of the nested windows:
+
+    21 sessions  ≈ 1 month   (tier 1, "Monthly")
+    63 sessions  ≈ 3 months  (tier 2, "Quarterly")
+    126 sessions ≈ 6 months  (tier 3, "Half-yearly")
+    252 sessions ≈ 1 year    (tier 4, "Yearly")
+
+Because the windows are nested, clearing a longer window implies clearing every
+shorter one, so a single "tier" = the LONGEST window the volume cleared that day.
+
+Output is compact — only the symbols that pushed a new high in the retention
+window, each as ``[offset, tier, volume, prior_peak]``:
+
+    offset      sessions ago the push happened (0 = latest EOD session)
+    tier        1..4 (longest window cleared)
+    volume      the pushing session's volume
+    prior_peak  the prior window peak it beat (for the tier's window)
 
     {
-      "date": "YYYY-MM-DD",
-      "updated_at": "...UTC ISO...",
-      "windows": [21, 63, 126, 252],
-      "symbols": {
-        "RELIANCE": {"21": [prior_max, avg, sessions], "63": [...], "126": [...], "252": [...]},
-        ...
-      }
+      "date": "YYYY-MM-DD", "updated_at": "...", "windows": [21,63,126,252],
+      "persist_sessions": 21,
+      "symbols": {"RELIANCE": [0, 2, 41027699, 30957881], ...}
     }
 
-For each window N (21≈1M, 63≈3M, 126≈6M, 252≈1Y trading sessions):
-  - prior_max  = highest daily volume over the N sessions BEFORE the latest bar
-  - avg        = average daily volume over the N-session window
-  - sessions   = how many sessions were actually available (for honest labels)
-
-The backend flags a stock as a fresh window-high when today's traded volume
-(from the bhavcopy snapshot) meets or exceeds ``prior_max`` for the selected
-window — i.e. it just printed its highest volume in that window.
+The backend serves this as a single recency-sorted list (newest push on top),
+retaining each stock for ~1 month so post-push behavior can be tracked.
 """
 
 from __future__ import annotations
@@ -40,8 +47,10 @@ IST = ZoneInfo("Asia/Kolkata")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 UNIVERSE_PATH = DATA_DIR / "free_universe.json"
 OUTPUT_PATH = DATA_DIR / "volume_history.json"
-WINDOWS = [21, 63, 126, 252]
-MIN_SESSIONS = 5
+
+WINDOWS = [21, 63, 126, 252]   # tier 1..4
+PERSIST_SESSIONS = 21          # keep a pusher listed for ~1 trading month
+SURGE_MULT = 1.5               # push must be ≥ this × the prior 1-month avg volume
 CHUNK = 200
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -66,21 +75,53 @@ def _load_tickers() -> list[str]:
     ]
 
 
-def _aggregates_from_volumes(vols: list[int]) -> dict[str, list[int]] | None:
-    # Keep only positive trading-day volumes (drop zero-volume holidays / halts).
+def _recent_volume_event(vols: list[int]) -> list[int] | None:
+    """Return [offset, tier, volume, prior_peak] for the most recent new-high
+    push within the last PERSIST_SESSIONS, or None if there wasn't one.
+
+    A day qualifies for tier ``ti`` (window N) only when the FULL N-session
+    prior window is available AND the day's volume STRICTLY exceeds that
+    window's peak. A qualifying day must also be a genuine surge — at least
+    SURGE_MULT × the prior 1-month average volume — so flat or slowly-drifting
+    volume never registers as a "push". Nested windows ⇒ stop escalating at the
+    first window the day fails."""
+    base = WINDOWS[0]
     vols = [v for v in vols if v > 0]
-    if len(vols) < MIN_SESSIONS:
+    n_total = len(vols)
+    # Need at least a full 1-month prior window for the latest session.
+    if n_total < base + 2:
         return None
-    rec: dict[str, list[int]] = {}
-    for n in WINDOWS:
-        window = vols[-n:] if len(vols) > n else vols
-        if len(window) < MIN_SESSIONS:
-            window = vols  # fall back to all available data for short histories
-        prior = window[:-1]
-        prior_max = max(prior) if prior else 0
-        avg = sum(window) / len(window)
-        rec[str(n)] = [int(prior_max), int(avg), len(window)]
-    return rec
+
+    for k in range(PERSIST_SESSIONS):
+        idx = n_total - 1 - k
+        if idx < base:
+            break  # not enough prior history for the 1-month baseline/window
+        vol_k = vols[idx]
+        if vol_k <= 0:
+            continue
+        # Magnitude gate: must be a real surge over the recent 1-month baseline.
+        baseline = sum(vols[idx - base : idx]) / base
+        if baseline <= 0 or vol_k < SURGE_MULT * baseline:
+            continue
+        tier = 0
+        peak = 0
+        for ti, window in enumerate(WINDOWS, start=1):
+            start = idx - window
+            if start < 0:
+                break  # not enough history for this (or any longer) window
+            prior = vols[start:idx]
+            if len(prior) < window:
+                break
+            prior_peak = max(prior)
+            if prior_peak > 0 and vol_k > prior_peak:  # STRICT new high
+                tier = ti
+                peak = prior_peak
+            else:
+                break  # failed this window ⇒ can't clear any longer one
+        if tier > 0:
+            # First (smallest k) qualifying day is the most recent push.
+            return [k, tier, int(vol_k), int(peak)]
+    return None
 
 
 def main() -> int:
@@ -95,14 +136,14 @@ def main() -> int:
     if not tickers:
         logger.error("no .NS tickers in universe; aborting")
         return 1
-    logger.info("Computing volume history for %s tickers", len(tickers))
+    logger.info("Scanning volume pushes for %s tickers", len(tickers))
 
     end = datetime.now(IST).date() + timedelta(days=1)
-    start = end - timedelta(days=420)  # ~1.4y calendar → ≥ 252 trading sessions
+    start = end - timedelta(days=430)  # ~1.4y calendar → ≥ 273 trading sessions
     start_str = start.strftime("%Y-%m-%d")
     end_str = end.strftime("%Y-%m-%d")
 
-    symbols: dict[str, dict] = {}
+    symbols: dict[str, list[int]] = {}
 
     def _series_to_int_list(series) -> list[int]:
         out: list[int] = []
@@ -140,30 +181,29 @@ def main() -> int:
             for ticker in chunk:
                 if ticker not in vol_df.columns:
                     continue
-                rec = _aggregates_from_volumes(_series_to_int_list(vol_df[ticker].dropna()))
-                if rec:
-                    symbols[ticker.replace(".NS", "")] = rec
+                event = _recent_volume_event(_series_to_int_list(vol_df[ticker].dropna()))
+                if event:
+                    symbols[ticker.replace(".NS", "")] = event
         else:
-            # Single-ticker frame: flat columns.
             if "Volume" in df.columns:
-                rec = _aggregates_from_volumes(_series_to_int_list(df["Volume"].dropna()))
-                if rec:
-                    symbols[chunk[0].replace(".NS", "")] = rec
+                event = _recent_volume_event(_series_to_int_list(df["Volume"].dropna()))
+                if event:
+                    symbols[chunk[0].replace(".NS", "")] = event
 
-        logger.info("processed %s/%s tickers", min(offset + CHUNK, len(tickers)), len(tickers))
+        logger.info("processed %s/%s tickers (%s pushes so far)", min(offset + CHUNK, len(tickers)), len(tickers), len(symbols))
 
     if not symbols:
-        logger.error("no volume history computed; not writing output")
-        return 1
+        logger.warning("no volume pushes found in retention window; writing empty set")
 
     payload = {
         "date": datetime.now(IST).date().isoformat(),
         "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
         "windows": WINDOWS,
+        "persist_sessions": PERSIST_SESSIONS,
         "symbols": symbols,
     }
     OUTPUT_PATH.write_text(json.dumps(payload, separators=(",", ":")), encoding="utf-8")
-    logger.info("wrote %s with %s symbols", OUTPUT_PATH, len(symbols))
+    logger.info("wrote %s with %s volume-push symbols", OUTPUT_PATH, len(symbols))
     return 0
 
 

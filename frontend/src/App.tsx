@@ -1556,7 +1556,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [appliedExpansionMinChangePct, setAppliedExpansionMinChangePct] = useState<number>(6.5);
   const [expansionMinRelativeVolume, setExpansionMinRelativeVolume] = useState<number>(3.0);
   const [appliedExpansionMinRelativeVolume, setAppliedExpansionMinRelativeVolume] = useState<number>(3.0);
-  const [volumeWindow, setVolumeWindow] = useState<"1m" | "3m" | "6m" | "1y">("3m");
   const [sectorSortBy, setSectorSortBy] = useState<SectorSortBy>("1D");
   const [sectorSortOrder, setSectorSortOrder] = useState<"asc" | "desc">("desc");
   const [sectorVisibleSymbols, setSectorVisibleSymbols] = useState<string[]>([]);
@@ -2310,7 +2309,6 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     loading,
     scannerRunNonce,
     scanArrangementMode,
-    volumeWindow,
   ]);
 
   useEffect(() => {
@@ -3026,7 +3024,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
     if (activeScanner === "volume") {
-      return getScanResults("volume", activeMarket, { ...options, volumeWindow });
+      return getScanResults("volume", activeMarket, options);
     }
     if (activeScanner === "ipo") {
       return getScanResults("ipo", activeMarket, options);
@@ -4860,7 +4858,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
                               : activeScanner === "volume"
-                                ? "Stocks printing their highest daily volume in the selected window (1M/3M/6M/1Y). Relative volume is shown for context."
+                                ? "Stocks that pushed a new volume high in the last ~1 month, newest on top — each badged Monthly / Quarterly / Half-yearly / Yearly by the longest window it cleared."
                               : activeScanner === "ipo"
                                 ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
@@ -4916,38 +4914,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         {showScannerSettings
                           ? activeScanner === "volume"
                             ? (
-                              <Panel
-                                title="Volume window"
-                                subtitle="Surface stocks printing their highest daily volume in the selected window. Whole universe, ranked by how decisively today's volume cleared the prior window peak."
-                              >
-                                <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
-                                  <label>
-                                    <span>Lookback window</span>
-                                    <div className="volume-window-tabs" role="tablist" aria-label="Volume lookback window" style={{ display: "flex", gap: 6, marginTop: 4 }}>
-                                      {([
-                                        { key: "1m", label: "1M" },
-                                        { key: "3m", label: "3M" },
-                                        { key: "6m", label: "6M" },
-                                        { key: "1y", label: "1Y" },
-                                      ] as const).map((opt) => (
-                                        <button
-                                          key={opt.key}
-                                          type="button"
-                                          className={volumeWindow === opt.key ? "nav-button primary" : "nav-button ghost"}
-                                          onClick={() => {
-                                            if (volumeWindow !== opt.key) {
-                                              setVolumeWindow(opt.key);
-                                              setScannerRunNonce((current) => current + 1);
-                                            }
-                                          }}
-                                        >
-                                          {opt.label}
-                                        </button>
-                                      ))}
-                                    </div>
-                                  </label>
-                                </div>
-                              </Panel>
+                              <div className="scanner-settings-note">
+                                <strong>Volume push list</strong>
+                                <span>One rolling list of stocks that pushed a new volume high in the last ~1 month. Each is badged with the longest window it cleared — Monthly, Quarterly, Half-yearly, or Yearly — and the newest pushes sit on top, so stocks stay listed for about a month to track their post-push behavior.</span>
+                              </div>
                             )
                           : activeScanner === "ipo"
                             ? (

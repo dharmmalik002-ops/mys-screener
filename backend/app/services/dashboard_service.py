@@ -1664,128 +1664,82 @@ class DashboardService:
         )
         return items
 
-    # Volume screener window selector → (human label, trailing sessions).
-    _VOLUME_WINDOWS: dict[str, tuple[str, int]] = {
-        "1m": ("1M", 21),
-        "3m": ("3M", 63),
-        "6m": ("6M", 126),
-        "1y": ("1Y", 252),
+    # Volume screener tier labels (longest window the push cleared).
+    _VOLUME_TIER_LABELS: dict[int, str] = {
+        1: "Monthly",
+        2: "Quarterly",
+        3: "Half-yearly",
+        4: "Yearly",
     }
-
-    @classmethod
-    def _resolve_volume_window(cls, window: str | None) -> tuple[str, int]:
-        key = (window or "3m").strip().lower()
-        return cls._VOLUME_WINDOWS.get(key, cls._VOLUME_WINDOWS["3m"])
+    _VOLUME_PERSIST_SESSIONS = 21
 
     def _build_volume_surge_items(
         self,
         snapshots: list[StockSnapshot],
         *,
-        window_sessions: int,
-        window_label: str,
-        min_rvol: float,
         min_liquidity_crore: float | None,
         min_price: float = 20.0,
     ) -> list[ScanMatch]:
-        """Volume screener: surface stocks whose latest session is either a new
-        high-water volume mark over the window OR a strong multiple of the
-        window's average volume (relative-volume surge). Ranked by RVOL, with
-        new-high names floated to the top.
+        """Volume screener — a single rolling list of stocks that pushed a NEW
+        volume high in the last ~1 trading month, newest push on top.
 
-        STRICT definition: a stock qualifies ONLY when today's traded volume is
-        the highest in the selected window — i.e. it meets or exceeds the prior
-        N-session volume peak (a genuine monthly/quarterly/half-yearly/yearly
-        volume high). Relative volume is computed and shown, but is NOT a
-        qualifier (that previously flooded the list).
+        Reads the committed ``volume_history.json`` (built daily by
+        generate_volume_history.py from ~1.4y of yfinance daily volume), which
+        records, per symbol, its most recent volume-push within the retention
+        window as ``[offset, tier, volume, prior_peak]``:
 
-        Volume baselines come from the committed ``volume_history.json``
-        aggregates (real ~1-year daily volume backfilled from yfinance by
-        generate_volume_history.py), keyed by symbol → window → [prior_max,
-        avg, sessions]. Today's volume comes from the live bhavcopy snapshot.
-        When a symbol is missing from the file (e.g. a brand-new IPO), it falls
-        back to snapshot-resident volumes (volume_history / recent_volumes).
-        Pure in-memory — no network, no per-request file I/O beyond one cached
-        aggregates read.
+          offset      sessions ago the push happened (0 = latest EOD)
+          tier        1..4 — Monthly / Quarterly / Half-yearly / Yearly, the
+                      LONGEST window the push cleared (nested ⇒ a Yearly push is
+                      also a high over every shorter window)
+          volume      the pushing session's volume
+          prior_peak  the prior window peak it beat
+
+        Items are sorted newest-push-first (a fresh pusher slides older ones
+        down), tie-broken by tier then breakout magnitude, so each stock stays
+        listed for ~1 month after its push and post-push behavior can be
+        tracked. Pure in-memory — one cached file read, no network.
         """
         from app.scanners.definitions import build_scan_match
 
-        min_sessions = 5
-        window_key = str(window_sessions)
-
-        aggregates: dict[str, Any] = {}
+        events: dict[str, Any] = {}
         loader = getattr(self.provider, "load_volume_history_aggregates", None)
         if callable(loader):
             try:
-                aggregates = loader() or {}
+                events = loader() or {}
             except Exception:
-                aggregates = {}
+                events = {}
+        if not events:
+            return []
 
-        def _baseline_for(snapshot: StockSnapshot, today_vol: int) -> tuple[int, float, int] | None:
-            """Return (prior_max, avg, sessions) for the window, preferring the
-            committed aggregates and falling back to snapshot-resident volumes."""
-            agg = aggregates.get(snapshot.symbol)
-            if isinstance(agg, dict):
-                win = agg.get(window_key)
-                if isinstance(win, (list, tuple)) and len(win) >= 2:
-                    try:
-                        prior_max = int(win[0])
-                        avg = float(win[1])
-                        sessions = int(win[2]) if len(win) > 2 else window_sessions
-                        if avg > 0 and sessions >= min_sessions:
-                            return prior_max, avg, sessions
-                    except (TypeError, ValueError):
-                        pass
-            # Fallback: snapshot-resident series (whichever is longer).
-            vol_history = [int(v) for v in (getattr(snapshot, "volume_history", None) or []) if v is not None and int(v) >= 0]
-            recent_vol = [int(v) for v in (getattr(snapshot, "recent_volumes", None) or []) if v is not None and int(v) >= 0]
-            series = vol_history if len(vol_history) >= len(recent_vol) else recent_vol
-            if len(series) < min_sessions:
-                return None
-            window = series[-window_sessions:] if len(series) > window_sessions else series
-            if len(window) < min_sessions:
-                return None
-            # Today's bar is already the last element of the resident series, so
-            # the prior peak excludes it; the average spans the whole window.
-            prior = window[:-1] if len(window) > 1 else window
-            prior_max = max(prior) if prior else 0
-            avg = sum(window) / len(window)
-            if avg <= 0:
-                return None
-            return prior_max, avg, len(window)
-
+        persist = self._VOLUME_PERSIST_SESSIONS
         items: list[ScanMatch] = []
         for snapshot in snapshots:
+            rec = events.get(snapshot.symbol)
+            if not isinstance(rec, (list, tuple)) or len(rec) < 4:
+                continue
+            try:
+                offset = int(rec[0])
+                tier = int(rec[1])
+                push_volume = int(rec[2])
+                prior_peak = int(rec[3])
+            except (TypeError, ValueError):
+                continue
+            if tier < 1 or tier > 4 or offset < 0 or offset >= persist:
+                continue
             if float(snapshot.last_price or 0.0) < min_price:
                 continue
-            today_vol = int(snapshot.volume or 0)
-            if today_vol <= 0:
-                # Fall back to the latest resident volume if the live field is 0.
-                resident = [int(v) for v in (getattr(snapshot, "recent_volumes", None) or []) if v is not None]
-                today_vol = resident[-1] if resident else 0
-            if today_vol <= 0:
-                continue
 
-            baseline = _baseline_for(snapshot, today_vol)
-            if baseline is None:
-                continue
-            prior_max, window_avg, sessions = baseline
-            if prior_max <= 0:
-                continue
-
-            # STRICT gate: today must be a fresh window-high volume print.
-            if today_vol < prior_max:
-                continue
-
-            rvol = today_vol / window_avg if window_avg > 0 else 0.0
-            # Rank by how decisively today cleared the prior peak, then by RVOL.
-            breakout_ratio = today_vol / prior_max if prior_max > 0 else 1.0
-            score = round(breakout_ratio * 100.0 + min(rvol, 50.0), 2)
-
-            span = window_label if sessions >= window_sessions else f"{sessions}d"
+            label = self._VOLUME_TIER_LABELS.get(tier, "Monthly")
+            when = "today" if offset == 0 else f"{offset} session{'s' if offset != 1 else ''} ago"
+            breakout = (push_volume / prior_peak) if prior_peak > 0 else 1.0
+            # Recency dominates the sort (newest push on top); then tier; then
+            # how decisively the push cleared the prior peak.
+            score = round((persist - offset) * 1000.0 + tier * 100.0 + min(breakout, 50.0), 2)
             reasons = [
-                f"Highest volume in {span}",
-                f"Vol {today_vol:,} vs prior {span} peak {prior_max:,}",
-                f"{rvol:.1f}x {span} avg volume",
+                f"{label} volume high",
+                f"Pushed {when}",
+                f"Vol {push_volume:,} vs prior {label.lower()} peak {prior_peak:,}",
             ]
             items.append(build_scan_match("volume", snapshot, score, reasons))
 
@@ -1811,35 +1765,30 @@ class DashboardService:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
 
         # Volume screener is computed ad-hoc (not part of the static SCANS
-        # catalog) because it's parameterized by lookback window. Handle it
+        # catalog). It's a single rolling list of recent volume pushes, handled
         # before the catalog lookup so the descriptor doesn't need a SCANS entry.
+        # (volume_window / volume_min_rvol are accepted for API back-compat but
+        # no longer used — the list is unified across windows via tier badges.)
         if scan_id == "volume":
-            window_label, window_sessions = self._resolve_volume_window(volume_window)
             items = self._build_volume_surge_items(
                 snapshots,
-                window_sessions=window_sessions,
-                window_label=window_label,
-                min_rvol=volume_min_rvol if volume_min_rvol is not None else 3.0,
                 min_liquidity_crore=min_liquidity_crore,
             )
             descriptor = {
                 "id": "volume",
                 "name": "Volume",
                 "category": "Setups",
-                "description": f"Stocks printing their highest daily volume in the last {window_label}.",
+                "description": "Stocks that pushed a new volume high (Monthly → Yearly) in the last ~1 month — newest pushes on top.",
                 "hit_count": len(items),
             }
             return await self._scan_results_response(
                 scan=descriptor,
-                scan_key=f"volume:{window_label}",
-                request_signature=f"volume:{window_label}:rvol={volume_min_rvol}",
+                scan_key="volume",
+                request_signature="volume:rolling-1m",
                 snapshots=snapshots,
                 items=items,
                 historical_runner=lambda historical_snapshots: self._build_volume_surge_items(
                     historical_snapshots,
-                    window_sessions=window_sessions,
-                    window_label=window_label,
-                    min_rvol=volume_min_rvol if volume_min_rvol is not None else 3.0,
                     min_liquidity_crore=min_liquidity_crore,
                 ),
                 include_sector_summaries=include_sector_summaries,
