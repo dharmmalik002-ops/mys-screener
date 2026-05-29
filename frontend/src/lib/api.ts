@@ -200,6 +200,7 @@ export type ChartResponse = {
   rs_line: ChartLinePoint[];
   rs_line_markers: ChartLineMarker[];
   earnings_markers: ChartLineMarker[];
+  volume_markers: ChartLineMarker[];
 };
 
 export type ChartGridTimeframe = "3M" | "6M" | "1Y" | "2Y";
@@ -1145,6 +1146,7 @@ export function normalizeChartResponse(value: unknown): ChartResponse {
     rs_line: mapArray(raw.rs_line, normalizeChartLinePoint),
     rs_line_markers: mapArray(raw.rs_line_markers, normalizeChartLineMarker),
     earnings_markers: mapArray(raw.earnings_markers, normalizeChartLineMarker),
+    volume_markers: mapArray(raw.volume_markers, normalizeChartLineMarker),
   };
 }
 

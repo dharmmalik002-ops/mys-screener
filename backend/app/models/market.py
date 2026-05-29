@@ -902,6 +902,9 @@ class ChartResponse(BaseModel):
     # Markers for earnings announcement days — rendered as "E" pips by
     # the chart panel. Sourced from data/earnings_metrics.json.
     earnings_markers: list[ChartLineMarker] = Field(default_factory=list)
+    # Markers for the day a stock pushed a Quarterly/Half-yearly/Yearly volume
+    # high — rendered as HQV/HHV/HYV pips. Sourced from data/volume_history.json.
+    volume_markers: list[ChartLineMarker] = Field(default_factory=list)
 
 
 class FundamentalsResponse(CompanyFundamentals):

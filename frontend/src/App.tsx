@@ -1034,6 +1034,7 @@ function buildIndexFallbackChart(
     rs_line: [],
     rs_line_markers: [],
     earnings_markers: [],
+    volume_markers: [],
   };
 }
 
@@ -5151,6 +5152,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     rsLine={displayedChart?.rs_line ?? []}
                     rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                     earningsMarkers={displayedChart?.earnings_markers ?? []}
+                    volumeMarkers={displayedChart?.volume_markers ?? []}
                     tradeMarkers={activeTradeMarkers}
                     onSellMarkerClick={handleSellMarkerClick}
                     summary={displayedChart?.summary ?? null}
@@ -5233,6 +5235,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   rsLine={displayedChart?.rs_line ?? []}
                   rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                   earningsMarkers={displayedChart?.earnings_markers ?? []}
+                  volumeMarkers={displayedChart?.volume_markers ?? []}
                   tradeMarkers={activeTradeMarkers}
                   onSellMarkerClick={handleSellMarkerClick}
                   summary={displayedChart?.summary ?? null}
@@ -5342,6 +5345,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={displayedChart?.rs_line ?? []}
                         rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                         earningsMarkers={displayedChart?.earnings_markers ?? []}
+                        volumeMarkers={displayedChart?.volume_markers ?? []}
                         tradeMarkers={activeTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={displayedChart?.summary ?? null}
@@ -5393,6 +5397,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={paneBDisplayedChart?.rs_line ?? []}
                         rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
                         earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
+                        volumeMarkers={paneBDisplayedChart?.volume_markers ?? []}
                         tradeMarkers={paneBTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={paneBDisplayedChart?.summary ?? null}

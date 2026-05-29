@@ -191,6 +191,7 @@ type ChartPanelProps = {
   rsLine: ChartLinePoint[];
   rsLineMarkers: ChartLineMarker[];
   earningsMarkers?: ChartLineMarker[];
+  volumeMarkers?: ChartLineMarker[];
   tradeMarkers?: ChartTradeMarker[];
   onSellMarkerClick?: (symbol: string, exitDate: string) => void;
   summary: StockOverview | null;
@@ -1277,6 +1278,7 @@ export function ChartPanel({
   rsLine,
   rsLineMarkers,
   earningsMarkers,
+  volumeMarkers,
   tradeMarkers,
   onSellMarkerClick,
   summary,
@@ -1403,6 +1405,10 @@ export function ChartPanel({
   const safeEarningsMarkers = useMemo(
     () => sanitizeLineMarkers(extendedHistory?.earnings_markers ?? earningsMarkers ?? []),
     [extendedHistory, earningsMarkers],
+  );
+  const safeVolumeMarkers = useMemo(
+    () => sanitizeLineMarkers(extendedHistory?.volume_markers ?? volumeMarkers ?? []),
+    [extendedHistory, volumeMarkers],
   );
   const snappedTradeMarkers = useMemo<SnappedTradeMarker[]>(() => {
     const list = tradeMarkers ?? [];
@@ -2073,6 +2079,18 @@ export function ChartPanel({
         size: 1.2,
       });
     }
+    // Volume-push "HQV"/"HHV"/"HYV" pip — marks the day the stock pushed a new
+    // Quarterly/Half-yearly/Yearly volume high.
+    for (const marker of safeVolumeMarkers) {
+      combinedMarkers.push({
+        time: marker.time as UTCTimestamp,
+        position: "belowBar",
+        shape: "circle",
+        color: marker.color || "#16a34a",
+        text: marker.label || "HQV",
+        size: 1.4,
+      });
+    }
     // Trade journal "B"/"S" markers — one per buy/sell on the chart's symbol.
     for (const marker of snappedTradeMarkers) {
       combinedMarkers.push({
@@ -2322,7 +2340,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {

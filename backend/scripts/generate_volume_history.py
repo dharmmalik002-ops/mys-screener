@@ -149,16 +149,35 @@ def main() -> int:
 
     symbols: dict[str, list[int]] = {}
 
-    def _series_to_int_list(series) -> list[int]:
-        out: list[int] = []
-        for value in series.tolist():
+    def _event_with_date(series) -> list | None:
+        """Run push detection and append the push DATE (YYYY-MM-DD) so the chart
+        can mark the exact day. We zero-filter with dates kept in lock-step with
+        the volumes (mirroring _recent_volume_event's internal v>0 filter) so the
+        returned offset maps to the correct date."""
+        pairs: list[tuple] = []
+        for ts, value in zip(series.index, series.values):
             if value is None or pd.isna(value):
                 continue
             try:
-                out.append(int(float(value)))
+                vol = int(float(value))
             except (TypeError, ValueError):
                 continue
-        return out
+            if vol > 0:
+                pairs.append((ts, vol))
+        if not pairs:
+            return None
+        vols = [v for _, v in pairs]
+        event = _recent_volume_event(vols)
+        if not event:
+            return None
+        offset = event[0]
+        if 0 <= offset < len(pairs):
+            push_ts = pairs[-1 - offset][0]
+            try:
+                event = event + [push_ts.strftime("%Y-%m-%d")]
+            except Exception:
+                pass
+        return event
 
     for offset in range(0, len(tickers), CHUNK):
         chunk = tickers[offset : offset + CHUNK]
@@ -185,12 +204,12 @@ def main() -> int:
             for ticker in chunk:
                 if ticker not in vol_df.columns:
                     continue
-                event = _recent_volume_event(_series_to_int_list(vol_df[ticker].dropna()))
+                event = _event_with_date(vol_df[ticker].dropna())
                 if event:
                     symbols[ticker.replace(".NS", "")] = event
         else:
             if "Volume" in df.columns:
-                event = _recent_volume_event(_series_to_int_list(df["Volume"].dropna()))
+                event = _event_with_date(df["Volume"].dropna())
                 if event:
                     symbols[chunk[0].replace(".NS", "")] = event
 

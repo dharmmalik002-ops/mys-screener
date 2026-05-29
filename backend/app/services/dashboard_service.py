@@ -410,6 +410,54 @@ class DashboardService:
         except Exception:
             return []
 
+    # Volume-push tier → (badge code, marker color). Mirrors the frontend badge
+    # colors: HMV red, HQV green, HHV blue, HYV black.
+    _VOLUME_MARKER_STYLE: dict[int, tuple[str, str]] = {
+        1: ("HMV", "#dc2626"),
+        2: ("HQV", "#16a34a"),
+        3: ("HHV", "#2563eb"),
+        4: ("HYV", "#111827"),
+    }
+
+    def _build_volume_markers(self, symbol: str, bars: list) -> list:
+        """Return a ChartLineMarker stamping the day the stock pushed a new
+        Quarterly+ volume high (from data/volume_history.json), so the chart
+        shows exactly when the volume event happened. Snaps to the chart bar
+        whose date matches the recorded push date. Only Quarterly+ (tier ≥ 2)
+        are surfaced, matching the Volume screener.
+        """
+        if not bars:
+            return []
+        try:
+            from app.models.market import ChartLineMarker
+            from datetime import date as _date_cls, datetime as _dt_cls, timezone as _tz
+
+            loader = getattr(self.provider, "load_volume_history_aggregates", None)
+            if not callable(loader):
+                return []
+            rec = (loader() or {}).get(symbol.upper())
+            if not isinstance(rec, (list, tuple)) or len(rec) < 5:
+                return []
+            tier = int(rec[1])
+            if tier < 2:
+                return []
+            push_date = _date_cls.fromisoformat(str(rec[4]))
+            code, color = self._VOLUME_MARKER_STYLE.get(tier, ("HQV", "#16a34a"))
+            # Find the chart bar on (or first at/after) the push date.
+            target_time: int | None = None
+            target_value: float | None = None
+            for bar in bars:
+                bar_date = _dt_cls.fromtimestamp(int(bar.time), tz=_tz.utc).date()
+                if bar_date >= push_date:
+                    target_time = int(bar.time)
+                    target_value = float(bar.low)
+                    break
+            if target_time is None or target_value is None:
+                return []
+            return [ChartLineMarker(time=target_time, value=target_value, label=code, color=color)]
+        except Exception:
+            return []
+
     def _with_earnings_metrics(self, snapshots):
         """Merge sidecar earnings metrics onto each snapshot.
 
@@ -1981,6 +2029,7 @@ class DashboardService:
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
             earnings_markers=earnings_markers,
+            volume_markers=self._build_volume_markers(symbol, bars),
         )
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
         return response
@@ -2012,6 +2061,7 @@ class DashboardService:
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
             earnings_markers=self._build_earnings_markers(symbol, bars),
+            volume_markers=self._build_volume_markers(symbol, bars),
         )
 
     async def get_chart_full_history(self, symbol: str, timeframe: str):
