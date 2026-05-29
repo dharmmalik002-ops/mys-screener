@@ -2079,18 +2079,8 @@ export function ChartPanel({
         size: 1.2,
       });
     }
-    // Volume-push "HQV"/"HHV"/"HYV" pip — marks the day the stock pushed a new
-    // Quarterly/Half-yearly/Yearly volume high.
-    for (const marker of safeVolumeMarkers) {
-      combinedMarkers.push({
-        time: marker.time as UTCTimestamp,
-        position: "belowBar",
-        shape: "circle",
-        color: marker.color || "#16a34a",
-        text: marker.label || "HQV",
-        size: 1.4,
-      });
-    }
+    // (Volume-push HQV/HHV/HYV pips are attached to the volume histogram
+    // series below, not the price candles.)
     // Trade journal "B"/"S" markers — one per buy/sell on the chart's symbol.
     for (const marker of snappedTradeMarkers) {
       combinedMarkers.push({
@@ -2122,6 +2112,25 @@ export function ChartPanel({
         color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
       })),
     );
+    // Volume-push "HQV"/"HHV"/"HYV" pips ride the VOLUME histogram (not the
+    // price candles) — placed above the volume bar of the day the stock pushed
+    // a new Quarterly/Half-yearly/Yearly volume high.
+    if (safeVolumeMarkers.length) {
+      volumeSeries.setMarkers(
+        safeVolumeMarkers
+          .map((marker) => ({
+            time: marker.time as UTCTimestamp,
+            position: "aboveBar" as const,
+            shape: "circle" as const,
+            color: marker.color || "#16a34a",
+            text: marker.label || "HQV",
+            size: 1.4,
+          }))
+          .sort((left, right) => Number(left.time) - Number(right.time)),
+      );
+    } else {
+      volumeSeries.setMarkers([]);
+    }
     volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
 
     let rsSeries: any = null;
