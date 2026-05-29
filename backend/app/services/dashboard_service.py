@@ -1692,76 +1692,102 @@ class DashboardService:
         window's average volume (relative-volume surge). Ranked by RVOL, with
         new-high names floated to the top.
 
-        Pure in-memory computation — no network, so it's as fast as every other
-        catalog scanner. Volume series is sourced from whichever snapshot field
-        carries the most history: the dedicated ``volume_history`` (up to ~252
-        sessions, seeded at full snapshot build and rolled by the daily patch)
-        or, as a fallback, ``recent_volumes`` (~20 sessions, always maintained
-        by the patch). The fallback is what keeps the screener populated BEFORE
-        the first full rebuild seeds ``volume_history`` — otherwise every row
-        has an empty history and the scan returns zero results. The effective
-        window is whatever data is available, capped at the requested length,
-        so 1M works immediately and the longer windows tighten as history
-        accumulates / on the next rebuild.
+        STRICT definition: a stock qualifies ONLY when today's traded volume is
+        the highest in the selected window — i.e. it meets or exceeds the prior
+        N-session volume peak (a genuine monthly/quarterly/half-yearly/yearly
+        volume high). Relative volume is computed and shown, but is NOT a
+        qualifier (that previously flooded the list).
+
+        Volume baselines come from the committed ``volume_history.json``
+        aggregates (real ~1-year daily volume backfilled from yfinance by
+        generate_volume_history.py), keyed by symbol → window → [prior_max,
+        avg, sessions]. Today's volume comes from the live bhavcopy snapshot.
+        When a symbol is missing from the file (e.g. a brand-new IPO), it falls
+        back to snapshot-resident volumes (volume_history / recent_volumes).
+        Pure in-memory — no network, no per-request file I/O beyond one cached
+        aggregates read.
         """
         from app.scanners.definitions import build_scan_match
 
-        # Require at least this many sessions to compute a meaningful avg/high.
         min_sessions = 5
+        window_key = str(window_sessions)
+
+        aggregates: dict[str, Any] = {}
+        loader = getattr(self.provider, "load_volume_history_aggregates", None)
+        if callable(loader):
+            try:
+                aggregates = loader() or {}
+            except Exception:
+                aggregates = {}
+
+        def _baseline_for(snapshot: StockSnapshot, today_vol: int) -> tuple[int, float, int] | None:
+            """Return (prior_max, avg, sessions) for the window, preferring the
+            committed aggregates and falling back to snapshot-resident volumes."""
+            agg = aggregates.get(snapshot.symbol)
+            if isinstance(agg, dict):
+                win = agg.get(window_key)
+                if isinstance(win, (list, tuple)) and len(win) >= 2:
+                    try:
+                        prior_max = int(win[0])
+                        avg = float(win[1])
+                        sessions = int(win[2]) if len(win) > 2 else window_sessions
+                        if avg > 0 and sessions >= min_sessions:
+                            return prior_max, avg, sessions
+                    except (TypeError, ValueError):
+                        pass
+            # Fallback: snapshot-resident series (whichever is longer).
+            vol_history = [int(v) for v in (getattr(snapshot, "volume_history", None) or []) if v is not None and int(v) >= 0]
+            recent_vol = [int(v) for v in (getattr(snapshot, "recent_volumes", None) or []) if v is not None and int(v) >= 0]
+            series = vol_history if len(vol_history) >= len(recent_vol) else recent_vol
+            if len(series) < min_sessions:
+                return None
+            window = series[-window_sessions:] if len(series) > window_sessions else series
+            if len(window) < min_sessions:
+                return None
+            # Today's bar is already the last element of the resident series, so
+            # the prior peak excludes it; the average spans the whole window.
+            prior = window[:-1] if len(window) > 1 else window
+            prior_max = max(prior) if prior else 0
+            avg = sum(window) / len(window)
+            if avg <= 0:
+                return None
+            return prior_max, avg, len(window)
 
         items: list[ScanMatch] = []
         for snapshot in snapshots:
-            vol_history = [
-                int(value)
-                for value in (getattr(snapshot, "volume_history", None) or [])
-                if value is not None and int(value) >= 0
-            ]
-            recent_vol = [
-                int(value)
-                for value in (getattr(snapshot, "recent_volumes", None) or [])
-                if value is not None and int(value) >= 0
-            ]
-            # Use whichever source has more data points.
-            history = vol_history if len(vol_history) >= len(recent_vol) else recent_vol
-            if len(history) < min_sessions:
-                continue
-            window = history[-window_sessions:] if len(history) > window_sessions else history
-            if len(window) < min_sessions:
-                continue
-            today_vol = window[-1]
-            if today_vol <= 0:
-                continue
             if float(snapshot.last_price or 0.0) < min_price:
                 continue
-
-            prior = window[:-1]
-            prior_max = max(prior) if prior else 0
-            window_avg = sum(window) / len(window)
-            if window_avg <= 0:
+            today_vol = int(snapshot.volume or 0)
+            if today_vol <= 0:
+                # Fall back to the latest resident volume if the live field is 0.
+                resident = [int(v) for v in (getattr(snapshot, "recent_volumes", None) or []) if v is not None]
+                today_vol = resident[-1] if resident else 0
+            if today_vol <= 0:
                 continue
 
-            is_new_high = prior_max > 0 and today_vol >= prior_max
-            rvol = today_vol / window_avg
-
-            # Qualify on either signal: a fresh window-high OR an RVOL surge.
-            if not is_new_high and rvol < float(min_rvol):
+            baseline = _baseline_for(snapshot, today_vol)
+            if baseline is None:
+                continue
+            prior_max, window_avg, sessions = baseline
+            if prior_max <= 0:
                 continue
 
-            # If we don't yet have the full requested window of data, label by
-            # the actual number of sessions used so the reason isn't misleading.
-            effective_sessions = len(window)
-            span = window_label if effective_sessions >= window_sessions else f"{effective_sessions}d"
+            # STRICT gate: today must be a fresh window-high volume print.
+            if today_vol < prior_max:
+                continue
 
-            # New highs sort above pure RVOL surges; within each tier, higher
-            # RVOL ranks first.
-            score = round((1000.0 if is_new_high else 0.0) + rvol * 10.0, 2)
-            reasons: list[str] = []
-            if is_new_high:
-                reasons.append(f"New {span} volume high")
-            reasons.append(f"{rvol:.1f}x {span} avg volume")
-            reasons.append(f"Vol {today_vol:,} vs {span} avg {int(window_avg):,}")
+            rvol = today_vol / window_avg if window_avg > 0 else 0.0
+            # Rank by how decisively today cleared the prior peak, then by RVOL.
+            breakout_ratio = today_vol / prior_max if prior_max > 0 else 1.0
+            score = round(breakout_ratio * 100.0 + min(rvol, 50.0), 2)
 
-            items.append(build_scan_match("volume", snapshot, score, reasons[:3]))
+            span = window_label if sessions >= window_sessions else f"{sessions}d"
+            reasons = [
+                f"Highest volume in {span}",
+                f"Vol {today_vol:,} vs prior {span} peak {prior_max:,}",
+                f"{rvol:.1f}x {span} avg volume",
+            ]
+            items.append(build_scan_match("volume", snapshot, score, reasons))
 
         items.sort(key=lambda match: match.score, reverse=True)
         return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
@@ -1800,7 +1826,7 @@ class DashboardService:
                 "id": "volume",
                 "name": "Volume",
                 "category": "Setups",
-                "description": f"Highest-volume stocks over the last {window_label}: new {window_label} volume highs and relative-volume surges vs the {window_label} average.",
+                "description": f"Stocks printing their highest daily volume in the last {window_label}.",
                 "hit_count": len(items),
             }
             return await self._scan_results_response(

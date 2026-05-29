@@ -69,8 +69,24 @@ jobs:
           set -euo pipefail
           python backend/scripts/compute_earnings_metrics.py --workers 6
 
+      - name: Refresh volume history
+        id: volhist
+        # Feeds the Volume screener (true highest-volume-in-window detection).
+        # Backfills ~1y of daily volume per symbol from yfinance into compact
+        # windowed aggregates. Tolerate failures (yfinance gaps / rate limits)
+        # without failing the whole workflow.
+        continue-on-error: true
+        run: |
+          set -uo pipefail
+          python backend/scripts/generate_volume_history.py || echo "volume history generation failed (non-fatal)"
+          if git diff --quiet backend/data/volume_history.json 2>/dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Commit and push if updated
-        if: steps.patch.outputs.changed == 'true'
+        if: steps.patch.outputs.changed == 'true' || steps.volhist.outputs.changed == 'true'
         run: |
           set -euo pipefail
           retry() {
@@ -89,20 +105,26 @@ jobs:
           }
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
+          # Stage the daily data artifacts (each only if present / changed).
+          git add backend/data/bhavcopy_patch.json || true
+          if [ -f backend/data/earnings_metrics.json ]; then
+            git add backend/data/earnings_metrics.json || true
+          fi
+          if [ -f backend/data/volume_history.json ]; then
+            git add backend/data/volume_history.json || true
+          fi
+          if git diff --cached --quiet; then
+            echo "Nothing staged to commit."
+            exit 0
+          fi
           DATE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(d['date'])")
           SOURCE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(str(d.get('source','NSE')).upper())")
           SYMS=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(len(d['symbols']))")
-          git add backend/data/bhavcopy_patch.json
-          # Stage refreshed earnings metrics alongside the bhavcopy
-          # patch so a single commit ships both daily.
-          if [ -f backend/data/earnings_metrics.json ]; then
-            git add backend/data/earnings_metrics.json
-          fi
-          git commit -m "data: ${SOURCE} EOD bhavcopy patch for ${DATE} (${SYMS} symbols) [skip ci]"
+          git commit -m "data: ${SOURCE} EOD bhavcopy patch for ${DATE} (${SYMS} symbols) + volume history [skip ci]"
           retry 3 git push origin HEAD:main
 
       - name: Trigger HF deploy with clean snapshot
-        if: steps.patch.outputs.changed == 'true'
+        if: steps.patch.outputs.changed == 'true' || steps.volhist.outputs.changed == 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
@@ -153,5 +175,5 @@ jobs:
           retry 3 git push hf main:main --force
 
       - name: Log skip
-        if: steps.patch.outputs.changed == 'false'
-        run: echo "Bhavcopy patch already current — no commit needed."
+        if: steps.patch.outputs.changed == 'false' && steps.volhist.outputs.changed == 'false'
+        run: echo "Bhavcopy patch and volume history already current — no commit needed."

@@ -4860,7 +4860,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
                               : activeScanner === "volume"
-                                ? "Highest-volume stocks over the selected window: new volume highs and relative-volume surges vs the window average."
+                                ? "Stocks printing their highest daily volume in the selected window (1M/3M/6M/1Y). Relative volume is shown for context."
                               : activeScanner === "ipo"
                                 ? "Recently listed stocks from the last 12 months, ranked by recency and strength."
                                 : activeScanner === "gap-up-openers"
@@ -4918,7 +4918,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             ? (
                               <Panel
                                 title="Volume window"
-                                subtitle="Surface stocks at a new high-water volume mark over the window, or trading at a strong multiple of the window's average volume. Whole universe, ranked by relative volume."
+                                subtitle="Surface stocks printing their highest daily volume in the selected window. Whole universe, ranked by how decisively today's volume cleared the prior window peak."
                               >
                                 <div className="scan-settings-grid" style={{ marginTop: "0.65rem" }}>
                                   <label>

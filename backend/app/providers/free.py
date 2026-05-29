@@ -263,6 +263,8 @@ class FreeMarketDataProvider:
         self.company_metadata_path = self.backend_root / "data" / "free_company_metadata.json"
         self.fundamentals_cache_path = self.backend_root / "data" / "free_fundamentals.json"
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
+        self.volume_history_path = self.backend_root / "data" / "volume_history.json"
+        self._volume_history_cache: tuple[float, dict[str, Any]] | None = None
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
@@ -3374,6 +3376,34 @@ class FreeMarketDataProvider:
 
     def _bhavcopy_status_path(self) -> Path:
         return self.backend_root / "data" / "bhavcopy_status.json"
+
+    def load_volume_history_aggregates(self) -> dict[str, Any]:
+        """Return the committed per-symbol windowed volume aggregates from
+        ``volume_history.json`` (produced by generate_volume_history.py). Shape:
+        ``{symbol: {"21": [prior_max, avg, sessions], "63": [...], ...}}``.
+
+        Cached on the file's mtime so re-reads are free between deploys.
+        Returns ``{}`` when the file is absent (e.g. before the first backfill),
+        which makes the Volume screener fall back to snapshot-resident volumes.
+        """
+        path = self.volume_history_path
+        if not path.exists():
+            return {}
+        try:
+            mtime = path.stat().st_mtime
+        except OSError:
+            return {}
+        cached = self._volume_history_cache
+        if cached is not None and cached[0] == mtime:
+            return cached[1]
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return {}
+        symbols = payload.get("symbols") if isinstance(payload, dict) else None
+        result = symbols if isinstance(symbols, dict) else {}
+        self._volume_history_cache = (mtime, result)
+        return result
 
     def _last_applied_bhavcopy_date(self) -> date | None:
         path = self._bhavcopy_status_path()
