@@ -1692,23 +1692,41 @@ class DashboardService:
         window's average volume (relative-volume surge). Ranked by RVOL, with
         new-high names floated to the top.
 
-        Pure in-memory computation over the snapshot's ``volume_history`` field
-        (seeded at build, rolled by the daily patch) — no network, so it's as
-        fast as every other catalog scanner.
+        Pure in-memory computation — no network, so it's as fast as every other
+        catalog scanner. Volume series is sourced from whichever snapshot field
+        carries the most history: the dedicated ``volume_history`` (up to ~252
+        sessions, seeded at full snapshot build and rolled by the daily patch)
+        or, as a fallback, ``recent_volumes`` (~20 sessions, always maintained
+        by the patch). The fallback is what keeps the screener populated BEFORE
+        the first full rebuild seeds ``volume_history`` — otherwise every row
+        has an empty history and the scan returns zero results. The effective
+        window is whatever data is available, capped at the requested length,
+        so 1M works immediately and the longer windows tighten as history
+        accumulates / on the next rebuild.
         """
         from app.scanners.definitions import build_scan_match
 
+        # Require at least this many sessions to compute a meaningful avg/high.
+        min_sessions = 5
+
         items: list[ScanMatch] = []
         for snapshot in snapshots:
-            history = [
+            vol_history = [
                 int(value)
                 for value in (getattr(snapshot, "volume_history", None) or [])
                 if value is not None and int(value) >= 0
             ]
-            if len(history) < 2:
+            recent_vol = [
+                int(value)
+                for value in (getattr(snapshot, "recent_volumes", None) or [])
+                if value is not None and int(value) >= 0
+            ]
+            # Use whichever source has more data points.
+            history = vol_history if len(vol_history) >= len(recent_vol) else recent_vol
+            if len(history) < min_sessions:
                 continue
             window = history[-window_sessions:] if len(history) > window_sessions else history
-            if len(window) < 2:
+            if len(window) < min_sessions:
                 continue
             today_vol = window[-1]
             if today_vol <= 0:
@@ -1729,14 +1747,19 @@ class DashboardService:
             if not is_new_high and rvol < float(min_rvol):
                 continue
 
+            # If we don't yet have the full requested window of data, label by
+            # the actual number of sessions used so the reason isn't misleading.
+            effective_sessions = len(window)
+            span = window_label if effective_sessions >= window_sessions else f"{effective_sessions}d"
+
             # New highs sort above pure RVOL surges; within each tier, higher
             # RVOL ranks first.
             score = round((1000.0 if is_new_high else 0.0) + rvol * 10.0, 2)
             reasons: list[str] = []
             if is_new_high:
-                reasons.append(f"New {window_label} volume high")
-            reasons.append(f"{rvol:.1f}x {window_label} avg volume")
-            reasons.append(f"Vol {today_vol:,} vs {window_label} avg {int(window_avg):,}")
+                reasons.append(f"New {span} volume high")
+            reasons.append(f"{rvol:.1f}x {span} avg volume")
+            reasons.append(f"Vol {today_vol:,} vs {span} avg {int(window_avg):,}")
 
             items.append(build_scan_match("volume", snapshot, score, reasons[:3]))
 
