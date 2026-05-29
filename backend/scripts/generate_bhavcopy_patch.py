@@ -53,6 +53,13 @@ BHAV_URL_LEGACY_ALT = "https://archives.nseindia.com/content/historical/EQUITIES
 # New format CSV (no zip) available from ~4 PM IST: accessible from any IP globally.
 BSE_BHAV_URL = "https://www.bseindia.com/download/BhavCopy/Equity/BhavCopy_BSE_CM_0_0_0_{date_yyyymmdd}_F_0000.CSV"
 
+# Live NSE listed-equities master. Refreshed every weekday and reflects new
+# listings within hours of their first session. We fetch this so that brand-new
+# IPOs land in the daily bhavcopy patch (and therefore in the snapshot file)
+# on the day they list, not the day after the universe cache rolls over.
+NSE_LISTED_EQUITIES_URL = "https://nsearchives.nseindia.com/content/equities/EQUITY_L.csv"
+NEW_LISTING_LOOKBACK_DAYS = 365  # window inside which we track listings as IPOs
+
 HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -245,6 +252,60 @@ def _fetch_from_bse(trade_date: date) -> dict[str, dict] | None:
         return None
 
 
+def _fetch_recent_nse_listings(trade_date: date) -> dict[str, dict]:
+    """Fetch the live NSE listed-equities master and return symbols whose
+    listing_date falls within NEW_LISTING_LOOKBACK_DAYS of trade_date.
+
+    The intent is to discover IPOs that are NOT yet present in the static
+    ``free_universe.json`` file shipped with the repo, so the bhavcopy patch
+    can carry their price + metadata on day one. Returns a dict keyed by
+    NSE symbol → {listing_date, name, isin}. Empty dict on any failure
+    (NSE archive is occasionally geo-blocked from GitHub runners).
+    """
+    headers = {
+        "User-Agent": HEADERS["User-Agent"],
+        "Accept": "text/csv,*/*",
+        "Referer": "https://www.nseindia.com/",
+    }
+    try:
+        response = requests.get(NSE_LISTED_EQUITIES_URL, headers=headers, timeout=30)
+        response.raise_for_status()
+        text = response.text
+    except Exception as exc:
+        logger.warning("Could not fetch NSE listings master (%s); skipping new-IPO discovery", exc)
+        return {}
+
+    cutoff = trade_date - timedelta(days=NEW_LISTING_LOOKBACK_DAYS)
+    listings: dict[str, dict] = {}
+    reader = csv.DictReader(io.StringIO(text))
+    for raw_row in reader:
+        row = {str(key).strip(): value for key, value in raw_row.items()}
+        series = str(row.get("SERIES") or "").strip().upper()
+        if series and series != "EQ":
+            continue
+        sym = str(row.get("SYMBOL") or "").strip().upper()
+        if not sym:
+            continue
+        raw_listing = (row.get("DATE OF LISTING") or "").strip()
+        listing_dt: date | None = None
+        # NSE master uses "DD-MMM-YYYY" (e.g. "12-APR-2026"). Be forgiving.
+        for fmt in ("%d-%b-%Y", "%d-%B-%Y", "%Y-%m-%d", "%d/%m/%Y"):
+            try:
+                listing_dt = datetime.strptime(raw_listing, fmt).date()
+                break
+            except ValueError:
+                continue
+        if listing_dt is None or listing_dt < cutoff or listing_dt > trade_date:
+            continue
+        listings[sym] = {
+            "listing_date": listing_dt.isoformat(),
+            "name": str(row.get("NAME OF COMPANY") or sym).strip(),
+            "isin": str(row.get("ISIN NUMBER") or "").strip() or None,
+        }
+    logger.info("Discovered %s recent NSE listings within %s-day window", len(listings), NEW_LISTING_LOOKBACK_DAYS)
+    return listings
+
+
 def _last_trading_day() -> date:
     """Return the most recent weekday (Mon-Fri). Called after market close."""
     now_ist = datetime.now(IST)
@@ -257,12 +318,16 @@ def _last_trading_day() -> date:
     return d
 
 
-def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
+def _fetch_from_yfinance(trade_date: date, extra_tickers: list[str] | None = None) -> dict[str, dict] | None:
     """Fallback: fetch EOD prices via yfinance when NSE archives are geo-blocked.
 
     GitHub Actions servers are outside India and NSE often blocks them.  Yahoo
     Finance is globally accessible, so this ensures we always have today's data.
     Returns the same compact symbol-dict format as _parse_bhavcopy_csv, or None.
+
+    ``extra_tickers`` lets the caller inject recently listed `.NS` symbols
+    that aren't yet in ``free_universe.json``. They're fetched alongside the
+    universe so the patch carries day-1 data for brand-new IPOs.
     """
     try:
         import yfinance as yf
@@ -287,6 +352,12 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
 
     # Extract .NS tickers (already stored in the universe file)
     tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    if extra_tickers:
+        already = {t for t in tickers}
+        for extra in extra_tickers:
+            if extra and extra not in already:
+                tickers.append(extra)
+                already.add(extra)
     if not tickers:
         return None
 
@@ -376,7 +447,7 @@ def _fetch_from_yfinance(trade_date: date) -> dict[str, dict] | None:
     return result
 
 
-def _fetch_yfinance_universe_bars(trade_date: date) -> dict[str, dict] | None:
+def _fetch_yfinance_universe_bars(trade_date: date, extra_tickers: list[str] | None = None) -> dict[str, dict] | None:
     """Fetch OHLCV from yfinance for every `.NS` ticker in the universe at trade_date.
 
     Returns ``{SYMBOL: {"o","h","l","c","v","p"}}`` or None on failure.
@@ -407,6 +478,12 @@ def _fetch_yfinance_universe_bars(trade_date: date) -> dict[str, dict] | None:
         return None
 
     tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    if extra_tickers:
+        already = {t for t in tickers}
+        for extra in extra_tickers:
+            if extra and extra not in already:
+                tickers.append(extra)
+                already.add(extra)
     if not tickers:
         return None
 
@@ -554,7 +631,7 @@ def _is_record_sane(rec: dict, *, sym: str = "") -> bool:
     return True
 
 
-def _merge_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date) -> dict[str, dict]:
+def _merge_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date, extra_tickers: list[str] | None = None) -> dict[str, dict]:
     """Combine BSE bhavcopy with yfinance NSE bars; the universe is NSE-keyed.
 
     Priority:
@@ -571,7 +648,7 @@ def _merge_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date) -> 
     Every record (from either source) is run through ``_is_record_sane`` before
     inclusion so a single bad row can't poison the whole patch.
     """
-    yf_symbols = _fetch_yfinance_universe_bars(trade_date) or {}
+    yf_symbols = _fetch_yfinance_universe_bars(trade_date, extra_tickers=extra_tickers) or {}
     if not yf_symbols:
         logger.warning("yfinance unavailable; falling back to BSE-only OHLC (illiquid names may show wrong candles)")
 
@@ -649,15 +726,36 @@ def _patch_already_current(target_date: date) -> bool:
         return False
 
 
-def _write_patch(target_date: date, symbols: dict, source: str) -> None:
-    patch = {
+def _write_patch(
+    target_date: date,
+    symbols: dict,
+    source: str,
+    *,
+    new_listings: dict[str, dict] | None = None,
+) -> None:
+    patch: dict[str, object] = {
         "date": target_date.isoformat(),
         "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
         "source": source.upper(),
         "symbols": symbols,
     }
+    # Carry day-1 IPO metadata so the apply path can MATERIALIZE snapshot rows
+    # for symbols that aren't yet in free_universe.json. We only emit the
+    # subset of listings whose ticker also has price data in this patch — the
+    # apply path needs both metadata and OHLCV to seed a useful row.
+    if new_listings:
+        filtered = {sym: meta for sym, meta in new_listings.items() if sym in symbols}
+        if filtered:
+            patch["new_listings"] = filtered
     OUTPUT_PATH.write_text(json.dumps(patch, separators=(",", ":")), encoding="utf-8")
-    logger.info("Written %s date=%s source=%s symbols=%s", OUTPUT_PATH, target_date.isoformat(), source.upper(), len(symbols))
+    logger.info(
+        "Written %s date=%s source=%s symbols=%s new_listings=%s",
+        OUTPUT_PATH,
+        target_date.isoformat(),
+        source.upper(),
+        len(symbols),
+        len(patch.get("new_listings") or {}),
+    )
 
 
 def main() -> int:
@@ -685,6 +783,15 @@ def main() -> int:
     target = _last_trading_day()
     logger.info("Fetching EOD Bhavcopy for %s", target.isoformat())
 
+    # Discover recently listed NSE equities BEFORE any data fetch so each
+    # phase below can include the new IPOs in its ticker list and the patch
+    # can carry their metadata for the apply path's seed-row builder. This
+    # is what makes a day-1 IPO visible in the IPO scanner.
+    new_listings = _fetch_recent_nse_listings(target)
+    # ``.NS`` form for yfinance; only those not already in universe will be
+    # appended inside _fetch_yfinance_universe_bars / _fetch_from_yfinance.
+    extra_yf_tickers = [f"{sym}.NS" for sym in new_listings.keys()]
+
     # --- Phase 1: BSE bhavcopy (no geo-blocking, available ~4:24 PM IST) merged with yfinance NSE bars. ---
     # The universe is NSE-keyed (.NS), so yfinance .NS data IS the authoritative
     # NSE feed and is preferred over BSE-segment OHLC for any symbol it covers.
@@ -695,11 +802,11 @@ def main() -> int:
         if _patch_already_current(target):
             logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(bse_symbols))
             return 0
-        merged = _merge_bse_with_yfinance(bse_symbols, target)
+        merged = _merge_bse_with_yfinance(bse_symbols, target, extra_tickers=extra_yf_tickers)
         if not merged:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1
-        _write_patch(target, merged, "YF+BSE")
+        _write_patch(target, merged, "YF+BSE", new_listings=new_listings)
         return 0
 
     logger.info("BSE unavailable for %s. Trying NSE archives.", target)
@@ -714,20 +821,20 @@ def main() -> int:
                 if _patch_already_current(target):
                     logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
                     return 0
-                _write_patch(target, symbols, "NSE")
+                _write_patch(target, symbols, "NSE", new_listings=new_listings)
                 return 0
 
     logger.warning("NSE unavailable for %s. Trying yfinance fallback.", target)
 
     # --- Phase 3: yfinance fallback for today (globally accessible via Yahoo Finance) ---
-    yf_symbols = _fetch_from_yfinance(target)
+    yf_symbols = _fetch_from_yfinance(target, extra_tickers=extra_yf_tickers)
     if yf_symbols:
         yf_symbols = {s: r for s, r in yf_symbols.items() if _is_record_sane(r, sym=s)}
         if yf_symbols:
             if _patch_already_current(target):
                 logger.info("Patch already current for %s. No update needed.", target.isoformat())
                 return 0
-            _write_patch(target, yf_symbols, "YFINANCE")
+            _write_patch(target, yf_symbols, "YFINANCE", new_listings=new_listings)
             return 0
 
     logger.warning("yfinance unavailable for %s. Trying previous trading day.", target)

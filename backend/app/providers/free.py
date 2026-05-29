@@ -3403,6 +3403,131 @@ class FreeMarketDataProvider:
             return None
         return payload if isinstance(payload, dict) else None
 
+    def _build_ipo_seed_row(
+        self,
+        symbol: str,
+        listing_meta: dict[str, Any],
+        price_record: dict[str, Any],
+        patch_date: date,
+    ) -> dict[str, Any] | None:
+        """Build a minimal snapshot row for a freshly listed IPO.
+
+        Inputs:
+          - ``symbol``: NSE-style symbol (no suffix), already upper-cased.
+          - ``listing_meta``: ``{"listing_date","name","isin"}`` from the
+            bhavcopy patch's ``new_listings`` section (originally from
+            NSE EQUITY_L.csv).
+          - ``price_record``: ``{"o","h","l","c","v","p"}`` for today's bar.
+          - ``patch_date``: bhavcopy patch date (== today's EOD session).
+
+        Returns a dict with every REQUIRED ``StockSnapshot`` field present
+        (using the day-1 bar as the value where applicable) and history
+        markers set so the IPO scanner accepts it. ``history_session_date``
+        is set to ``patch_date`` so the scan-eligibility filter passes.
+        Returns None if the price record is unusable.
+        """
+        try:
+            close = float(price_record.get("c") or 0)
+            high = float(price_record.get("h") or close)
+            low = float(price_record.get("l") or close)
+            open_ = float(price_record.get("o") or close)
+        except (TypeError, ValueError):
+            return None
+        if close <= 0:
+            return None
+        try:
+            volume = int(float(price_record.get("v") or 0))
+        except (TypeError, ValueError):
+            volume = 0
+        try:
+            prev_close = float(price_record.get("p") or open_ or close)
+        except (TypeError, ValueError):
+            prev_close = close
+        if prev_close <= 0:
+            prev_close = open_ or close
+        change_pct = round(((close / prev_close) - 1) * 100.0, 2) if prev_close > 0 else 0.0
+
+        listing_date_text = str(listing_meta.get("listing_date") or "").strip()
+        listing_date_iso = listing_date_text or patch_date.isoformat()
+
+        name = str(listing_meta.get("name") or symbol).strip() or symbol
+
+        row: dict[str, Any] = {
+            "snapshot_cache_version": SNAPSHOT_CACHE_VERSION,
+            "symbol": symbol,
+            "ticker": f"{symbol}.NS",
+            "name": name,
+            "exchange": "NSE",
+            "listing_date": listing_date_iso,
+            "sector": "Unclassified",
+            "sub_sector": "Unclassified",
+            "isin": listing_meta.get("isin"),
+            "market_cap_crore": 0.0,
+            "last_price": round(close, 2),
+            "previous_close": round(prev_close, 2),
+            "change_pct": change_pct,
+            "volume": volume,
+            "avg_volume_20d": volume,
+            "avg_volume_30d": volume,
+            "avg_volume_50d": volume,
+            "day_high": round(high, 2),
+            "day_low": round(low, 2),
+            "previous_day_high": round(high, 2),
+            "previous_day_low": round(low, 2),
+            "week_high": round(high, 2),
+            "week_low": round(low, 2),
+            "month_high": round(high, 2),
+            "month_low": round(low, 2),
+            "ath": round(high, 2),
+            "atl": round(low, 2),
+            "high_52w": round(high, 2),
+            "low_52w": round(low, 2),
+            "high_6m": round(high, 2),
+            "low_6m": round(low, 2),
+            "high_3m": round(high, 2),
+            "high_3y": round(high, 2),
+            "multi_year_high": round(high, 2),
+            "range_high_20d": round(high, 2),
+            "range_low_20d": round(low, 2),
+            "range_high_prev_20d": round(high, 2),
+            "pivot_high": round(high, 2),
+            "darvas_high": round(high, 2),
+            "darvas_low": round(low, 2),
+            "benchmark_return_1d": 0.0,
+            "benchmark_return_5d": 0.0,
+            "benchmark_return_20d": 0.0,
+            "benchmark_return_60d": 0.0,
+            "benchmark_return_126d": 0.0,
+            "benchmark_return_252d": 0.0,
+            "sector_return_20d": 0.0,
+            "stock_return_5d": 0.0,
+            "stock_return_20d": 0.0,
+            "stock_return_40d": 0.0,
+            "stock_return_60d": 0.0,
+            "stock_return_126d": 0.0,
+            "stock_return_189d": 0.0,
+            "stock_return_12m": 0.0,
+            "stock_return_504d": 0.0,
+            "rs_rating": 0,
+            "rs_eligible": False,
+            "rs_weighted_score": 0.0,
+            "pullback_depth_pct": 0.0,
+            "trend_strength": 0.0,
+            "atr14": 0.0,
+            "adr_pct_20": 0.0,
+            "rsi_14": 50.0,
+            "recent_closes": [round(close, 4)],
+            "recent_highs": [round(high, 4)],
+            "recent_lows": [round(low, 4)],
+            "recent_volumes": [int(volume)],
+            "chart_grid_points": [],
+            "history_session_date": patch_date.isoformat(),
+            "history_as_of_date": patch_date.isoformat(),
+            "history_source": "bhavcopy_ipo_seed",
+            "history_bars": 1,
+        }
+        return row
+
     def apply_committed_bhavcopy_patch(self, *, force: bool = False) -> dict[str, Any]:
         """Roll the on-disk EOD bhavcopy patch into ``free_snapshots.json``.
 
@@ -3828,6 +3953,40 @@ class FreeMarketDataProvider:
                 "date": patch_date.isoformat(),
             }
 
+        # ── New-IPO ingestion ────────────────────────────────────────────
+        # The patch generator stamps a top-level "new_listings" section with
+        # listing-date metadata for every recently listed .NS symbol whose
+        # OHLCV is present in this patch. For each such symbol not yet in
+        # the snapshot rows, MATERIALIZE a minimal IPO seed row right now
+        # so the IPO scanner can surface it on its listing day — without
+        # waiting for the universe cache to roll over and a full snapshot
+        # rebuild to fetch it.
+        existing_symbols = {
+            str(row.get("symbol") or "").strip().upper()
+            for row in rows
+            if isinstance(row, dict) and str(row.get("symbol") or "").strip()
+        }
+        new_listings_payload = payload.get("new_listings") or {}
+        ipo_seeded = 0
+        if isinstance(new_listings_payload, dict) and new_listings_payload:
+            for raw_symbol, raw_meta in new_listings_payload.items():
+                symbol = str(raw_symbol).strip().upper()
+                if not symbol or symbol in existing_symbols:
+                    continue
+                if not isinstance(raw_meta, dict):
+                    continue
+                price_record = normalized_patch.get(symbol)
+                if not isinstance(price_record, dict):
+                    continue
+                ipo_row = self._build_ipo_seed_row(symbol, raw_meta, price_record, patch_date)
+                if ipo_row is None:
+                    continue
+                rows.append(ipo_row)
+                existing_symbols.add(symbol)
+                ipo_seeded += 1
+        if ipo_seeded:
+            logger.info("apply_committed_bhavcopy_patch: seeded %s new-listing IPO rows", ipo_seeded)
+
         rows = self._apply_rs_rating(rows)
         self._write_snapshot_rows(rows)
 
@@ -3836,6 +3995,7 @@ class FreeMarketDataProvider:
             "date": patch_date.isoformat(),
             "source": source_label,
             "snapshots_updated": updated,
+            "ipos_seeded": ipo_seeded,
             "chart_caches_updated": 0,
             "applied_at": datetime.now(timezone.utc).isoformat(),
             "schema_version": APPLY_SCHEMA_VERSION,
