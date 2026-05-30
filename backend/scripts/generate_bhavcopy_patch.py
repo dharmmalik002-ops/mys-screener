@@ -780,6 +780,8 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
     try:
         from app.services.xp_breadth import (
             CONST,
+            OUTPUT_CLAMP,
+            apply_output_calibration,
             compute_xp_series,
             daily_breadth_metrics,
         )
@@ -792,6 +794,21 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
 
     date_iso = trade_date.isoformat()
     metric_keys = ("date", "total", "advancers_4p5", "decliners", "ma10_pct", "ma20_pct")
+
+    # Restrict breadth to NSE-listed equities (the author's base), filtering out
+    # the ~2800 illiquid BSE-only micro-caps that otherwise add noise.
+    nse_filter: set[str] | None = None
+    nse_path = DATA_DIR / "nse_equity_symbols.json"
+    if nse_path.exists():
+        try:
+            doc = json.loads(nse_path.read_text(encoding="utf-8"))
+            syms = doc.get("symbols") if isinstance(doc, dict) else None
+            if isinstance(syms, list) and syms:
+                nse_filter = {str(s).strip().upper() for s in syms}
+        except Exception:
+            nse_filter = None
+    if nse_filter is None:
+        logger.warning("nse_equity_symbols.json missing/unreadable; XP breadth falls back to ALL bhavcopy equities")
 
     # Load existing artifacts.
     rolling: dict[str, list] = {}
@@ -829,14 +846,22 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
         # reuse the stored metrics and only recompute the score series.
         today = next((d for d in prior_days if isinstance(d, dict) and d.get("date") == date_iso), None)
         if today is None:
-            metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling)
+            metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling, symbol_filter=nse_filter)
         else:
             metrics = {k: today.get(k) for k in metric_keys}
     else:
-        metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling)
+        metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling, symbol_filter=nse_filter)
 
     base.append(metrics)
     series = compute_xp_series(base, const=const)
+
+    # Reuse the EM output-calibration fitted during the backfill (stored in the
+    # history doc), so daily values stay on the same EM scale.
+    out_scale = float(hist_doc.get("out_scale", 1.0))
+    out_offset = float(hist_doc.get("out_offset", 0.0))
+    clamp_doc = hist_doc.get("out_clamp")
+    out_clamp = tuple(clamp_doc) if isinstance(clamp_doc, list) and len(clamp_doc) == 2 else OUTPUT_CLAMP
+    series = apply_output_calibration(series, out_scale, out_offset, clamp=out_clamp)
 
     latest = series[-1] if series else None
     out_doc = {
@@ -844,9 +869,12 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
         "rolling_date": date_iso,
         "source": source.upper(),
         "const": const,
+        "out_scale": out_scale,
+        "out_offset": out_offset,
+        "out_clamp": list(out_clamp),
         "ma_short": 10,
         "ma_long": 20,
-        "universe": "all_bhavcopy_equities",
+        "universe": "nse_equities",
         "latest": latest,
         "days": series,
     }

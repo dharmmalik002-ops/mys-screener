@@ -104,6 +104,7 @@ def daily_breadth_metrics(
     ma_short: int = MA_SHORT,
     ma_long: int = MA_LONG,
     advancer_pct: float = ADVANCER_PCT_THRESHOLD,
+    symbol_filter: set[str] | None = None,
 ) -> tuple[dict[str, Any], dict[str, list[float]]]:
     """Compute one day's breadth inputs from the full bhavcopy.
 
@@ -132,6 +133,8 @@ def daily_breadth_metrics(
     total = 0
 
     for sym, rec in bhav.items():
+        if symbol_filter is not None and sym not in symbol_filter:
+            continue
         try:
             close = float(rec.get("c") or 0.0)
             prev = float(rec.get("p") or 0.0)
@@ -244,6 +247,66 @@ def compute_xp_series(
         )
         out.append(enriched)
 
+    return out
+
+
+OUTPUT_CLAMP = (0.0, 35.0)  # keep the calibrated score sane at market extremes
+
+
+def fit_output_calibration(
+    series: Iterable[dict[str, Any]],
+    anchors: dict[str, float],
+) -> tuple[float, float]:
+    """Least-squares fit of an affine map ``EM ≈ scale*XP + offset`` from the
+    computed (const-calibrated) XP onto the author's published EM values. This
+    stretches/shifts the proxy so its numbers line up with EM. Returns
+    (scale, offset); (1.0, 0.0) if too few anchors overlap.
+    """
+    by_date = {str(r["date"]): float(r["xp_score"]) for r in series}
+    xs: list[float] = []
+    ys: list[float] = []
+    for d, em in anchors.items():
+        v = by_date.get(str(d))
+        if v is not None:
+            xs.append(v)
+            ys.append(float(em))
+    if len(xs) < 2:
+        return (1.0, 0.0)
+    n = len(xs)
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    den = sum((x - mx) ** 2 for x in xs)
+    if den == 0:
+        return (1.0, round(my - mx, 6))
+    scale = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / den
+    offset = my - scale * mx
+    return (round(scale, 6), round(offset, 6))
+
+
+def apply_output_calibration(
+    series: list[dict[str, Any]],
+    scale: float,
+    offset: float,
+    *,
+    clamp: tuple[float, float] = OUTPUT_CLAMP,
+) -> list[dict[str, Any]]:
+    """Apply the affine EM map to each day's score and re-derive the regime.
+    Keeps the raw score under ``xp_raw`` (the recursion is rebuilt from metric
+    inputs each run, so overwriting xp_score for display is safe). A no-op when
+    scale==1 and offset==0.
+    """
+    lo, hi = clamp
+    out: list[dict[str, Any]] = []
+    for r in series:
+        raw = float(r["xp_score"])
+        val = max(lo, min(hi, scale * raw + offset))
+        label, color = regime_for(val)
+        nr = dict(r)
+        nr["xp_raw"] = round(raw, 3)
+        nr["xp_score"] = round(val, 3)
+        nr["regime"] = label
+        nr["regime_color"] = color
+        out.append(nr)
     return out
 
 

@@ -734,7 +734,7 @@ export function HomePanel({
           <div className="homepro-card-head">
             <h3>
               XP Market Breadth Score
-              <span className="homepro-xp-sub">all listed equities · EOD</span>
+              <span className="homepro-xp-sub">NSE listed · EOD · calibrated to EM</span>
             </h3>
             <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color }}>
               <strong>{xpBreadth.xp_score.toFixed(2)}</strong>

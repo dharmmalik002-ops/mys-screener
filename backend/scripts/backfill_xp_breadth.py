@@ -34,9 +34,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import generate_bhavcopy_patch as g  # noqa: E402
 from app.services.xp_breadth import (  # noqa: E402
     CONST,
+    OUTPUT_CLAMP,
+    apply_output_calibration,
     calibrate_const,
     compute_xp_series,
     daily_breadth_metrics,
+    fit_output_calibration,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -108,6 +111,21 @@ def main() -> int:
 
     logger.info("Backfilling XP breadth %s -> %s", start.isoformat(), end.isoformat())
 
+    # Restrict to NSE-listed equities (author's base) when the master is present.
+    nse_filter: set[str] | None = None
+    nse_path = g.DATA_DIR / "nse_equity_symbols.json"
+    if nse_path.exists():
+        try:
+            doc = json.loads(nse_path.read_text(encoding="utf-8"))
+            syms = doc.get("symbols") if isinstance(doc, dict) else None
+            if isinstance(syms, list) and syms:
+                nse_filter = {str(s).strip().upper() for s in syms}
+                logger.info("Filtering breadth to %s NSE-listed symbols", len(nse_filter))
+        except Exception:
+            nse_filter = None
+    if nse_filter is None:
+        logger.warning("nse_equity_symbols.json missing; computing over ALL bhavcopy equities")
+
     rolling: dict[str, list] = {}
     metrics_history: list[dict] = []
     fetched = 0
@@ -115,7 +133,7 @@ def main() -> int:
         bhav = _fetch_full_bhav(d)
         if not bhav:
             continue  # holiday or unavailable
-        metrics, rolling = daily_breadth_metrics(d.isoformat(), bhav, rolling)
+        metrics, rolling = daily_breadth_metrics(d.isoformat(), bhav, rolling, symbol_filter=nse_filter)
         metrics_history.append(metrics)
         fetched += 1
         if fetched % 25 == 0:
@@ -133,6 +151,14 @@ def main() -> int:
         logger.info("Using const=%s (no calibration anchors provided)", const)
 
     series = compute_xp_series(metrics_history, const=const)
+
+    # Fit + apply the affine EM output-calibration so the displayed numbers line
+    # up with the author's published EM values.
+    out_scale, out_offset = (1.0, 0.0)
+    if anchors:
+        out_scale, out_offset = fit_output_calibration(series, anchors)
+        logger.info("Fitted output calibration: scale=%s offset=%s", out_scale, out_offset)
+    series = apply_output_calibration(series, out_scale, out_offset)
     latest = series[-1] if series else None
 
     out_doc = {
@@ -140,9 +166,12 @@ def main() -> int:
         "rolling_date": metrics_history[-1]["date"],
         "source": "BACKFILL",
         "const": const,
+        "out_scale": out_scale,
+        "out_offset": out_offset,
+        "out_clamp": list(OUTPUT_CLAMP),
         "ma_short": 10,
         "ma_long": 20,
-        "universe": "all_bhavcopy_equities",
+        "universe": "nse_equities" if nse_filter else "all_bhavcopy_equities",
         "latest": latest,
         "days": series,
     }
