@@ -12,6 +12,7 @@ import {
   type MarketKey,
   type MarketMacroItem,
   type ScanMatch,
+  type XpBreadthScore,
 } from "../lib/api";
 
 import "./HomePanel.css";
@@ -281,6 +282,94 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   );
 }
 
+function XpBreadthChart({ xp, height = 200 }: { xp: XpBreadthScore; height?: number }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const width = 880;
+  const padL = 30;
+  const padR = 10;
+  const padY = 10;
+
+  // Prefer the live (post warm-up) series; fall back to whatever exists.
+  const live = xp.history.filter((p) => !p.warmup);
+  const points = (live.length >= 5 ? live : xp.history).slice(-160);
+  if (points.length < 2) {
+    return <div className="homepro-xp-empty">Not enough history yet — run the breadth backfill.</div>;
+  }
+
+  const scores = points.map((p) => p.xp_score);
+  const bandStops = xp.bands.flatMap((b) => [b.min, b.max].filter((v): v is number => v != null));
+  const dataMin = Math.min(...scores, ...bandStops.filter((v) => v <= Math.min(...scores) + 5));
+  const dataMax = Math.max(...scores, ...bandStops.filter((v) => v >= Math.max(...scores) - 5));
+  const yMin = Math.max(0, Math.floor(Math.min(dataMin, Math.min(...scores)) - 1));
+  const yMax = Math.ceil(Math.max(dataMax, Math.max(...scores)) + 1);
+  const range = yMax - yMin || 1;
+  const innerH = height - padY * 2;
+  const innerW = width - padL - padR;
+
+  const y = (v: number) => padY + innerH - ((v - yMin) / range) * innerH;
+  const x = (i: number) => padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+
+  const linePath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.xp_score).toFixed(1)}`)
+    .join(" ");
+  const areaPath = `${linePath} L${x(points.length - 1).toFixed(1)},${y(yMin).toFixed(1)} L${x(0).toFixed(1)},${y(yMin).toFixed(1)} Z`;
+
+  const hovered = hoverIdx != null ? points[hoverIdx] : points[points.length - 1];
+  const gridTicks = [yMin, ...xp.bands.map((b) => b.min).filter((v): v is number => v != null && v > yMin && v < yMax), yMax];
+
+  return (
+    <div className="homepro-xp-chart-wrap">
+      <svg
+        className="homepro-xp-svg"
+        viewBox={`0 0 ${width} ${height}`}
+        preserveAspectRatio="none"
+        role="img"
+        onMouseLeave={() => setHoverIdx(null)}
+        onMouseMove={(e) => {
+          const rect = e.currentTarget.getBoundingClientRect();
+          const px = ((e.clientX - rect.left) / rect.width) * width;
+          const i = Math.round(((px - padL) / innerW) * (points.length - 1));
+          setHoverIdx(Math.max(0, Math.min(points.length - 1, i)));
+        }}
+      >
+        {/* regime band backgrounds */}
+        {xp.bands.map((b) => {
+          const top = Math.min(yMax, b.max ?? yMax);
+          const bot = Math.max(yMin, b.min ?? yMin);
+          if (top <= bot) return null;
+          return (
+            <rect
+              key={b.label}
+              x={padL}
+              y={y(top)}
+              width={innerW}
+              height={Math.max(0, y(bot) - y(top))}
+              fill={b.color}
+              opacity={0.12}
+            />
+          );
+        })}
+        {/* gridlines + y labels at band boundaries */}
+        {gridTicks.map((t) => (
+          <g key={`tick-${t}`}>
+            <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} stroke="var(--hp-border, #2a2e39)" strokeWidth={0.5} opacity={0.5} />
+            <text x={padL - 4} y={y(t) + 3} textAnchor="end" fontSize={9} fill="var(--hp-muted, #9aa0aa)">{t}</text>
+          </g>
+        ))}
+        <path d={areaPath} fill={xp.regime_color} opacity={0.1} />
+        <path d={linePath} fill="none" stroke={xp.regime_color} strokeWidth={1.6} />
+        {/* last / hovered marker */}
+        <circle cx={x(hoverIdx ?? points.length - 1)} cy={y(hovered.xp_score)} r={3} fill={hovered.regime_color} stroke="#fff" strokeWidth={1} />
+      </svg>
+      <div className="homepro-xp-hover">
+        <span>{hovered.date}</span>
+        <strong style={{ color: hovered.regime_color }}>{hovered.xp_score.toFixed(2)}</strong>
+        <span>{hovered.regime}</span>
+      </div>
+    </div>
+  );
+}
+
 function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: number }) {
   const width = 640;
   if (!bars || bars.length < 2) {
@@ -384,6 +473,9 @@ export function HomePanel({
   const declines = breadthToday?.declines ?? 0;
   const unchanged = breadthToday?.unchanged ?? 0;
   const advPct = breadthTotal > 0 ? (advances / breadthTotal) * 100 : 0;
+
+  // XP market breadth score (computed EOD over all bhavcopy equities).
+  const xpBreadth = dashboard?.xp_breadth ?? null;
 
   const topGroups = useMemo<IndustryGroupRankItem[]>(
     () => (groups?.groups ?? []).slice(0, 10),
@@ -635,6 +727,35 @@ export function HomePanel({
           </div>
         </div>
       </div>
+
+      {/* ============ XP Market Breadth Score ============ */}
+      {xpBreadth && (
+        <div className="homepro-card homepro-xp-card">
+          <div className="homepro-card-head">
+            <h3>
+              XP Market Breadth Score
+              <span className="homepro-xp-sub">all listed equities · EOD</span>
+            </h3>
+            <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color }}>
+              <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
+              <span>{xpBreadth.regime}</span>
+            </div>
+          </div>
+          <XpBreadthChart xp={xpBreadth} />
+          <div className="homepro-xp-legend">
+            {xpBreadth.bands.map((b) => (
+              <span key={b.label} className="homepro-xp-legend-item">
+                <span className="homepro-legend-swatch" style={{ background: b.color }} />
+                {b.label}
+                <em>
+                  {b.min == null ? `< ${b.max}` : b.max == null ? `> ${b.min}` : `${b.min}–${b.max}`}
+                </em>
+              </span>
+            ))}
+            <span className="homepro-xp-asof">As of {xpBreadth.date}</span>
+          </div>
+        </div>
+      )}
 
       {/* ============ ROW 3 — Gainers / Losers / Most Active ============ */}
       <div className="homepro-row-bot">

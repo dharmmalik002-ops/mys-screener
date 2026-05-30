@@ -113,6 +113,14 @@ jobs:
           if [ -f backend/data/volume_history.json ]; then
             git add backend/data/volume_history.json || true
           fi
+          # XP market breadth score artifacts (history is tiny; rolling-close
+          # store is ~1 MB and used only to compute the next day's MA inputs).
+          if [ -f backend/data/xp_breadth_history.json ]; then
+            git add backend/data/xp_breadth_history.json || true
+          fi
+          if [ -f backend/data/xp_rolling_closes.json ]; then
+            git add backend/data/xp_rolling_closes.json || true
+          fi
           if git diff --cached --quiet; then
             echo "Nothing staged to commit."
             exit 0
@@ -162,7 +170,8 @@ jobs:
             --exclude 'backend/data/free_snapshots.json' \
             --exclude 'backend/data/free_snapshots_us.json' \
             --exclude 'backend/data/free_snapshots.json.gz' \
-            --exclude 'backend/data/free_snapshots_us.json.gz'
+            --exclude 'backend/data/free_snapshots_us.json.gz' \
+            --exclude 'backend/data/xp_rolling_closes.json'
           cd /tmp/hf-deploy
           git init
           git checkout -b main

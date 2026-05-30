@@ -22,6 +22,9 @@ from app.models.market import (
     AlertItem,
     BhavcopyStatusResponse,
     BreadthDayCounts,
+    XpBreadthPoint,
+    XpBreadthScore,
+    XpRegimeBand,
     ChartGridCard,
     ChartGridResponse,
     ChartGridSeriesItem,
@@ -862,6 +865,50 @@ class DashboardService:
         self._breadth_history_cache = (snapshot_updated_at, history)
         return history
 
+    def _load_xp_breadth(self, history_days: int = 260) -> XpBreadthScore | None:
+        """Load the precomputed XP market breadth score (written by the daily
+        bhavcopy job / backfill) and shape it for the dashboard. Returns None
+        when the file is absent or empty so the widget can hide gracefully."""
+        doc = self._read_json_dict(self._legacy_data_dir() / "xp_breadth_history.json")
+        if not doc:
+            return None
+        days = doc.get("days")
+        latest = doc.get("latest")
+        if not isinstance(days, list) or not days:
+            return None
+        if not isinstance(latest, dict):
+            latest = days[-1]
+
+        recent = [d for d in days if isinstance(d, dict)][-history_days:]
+        history = [
+            XpBreadthPoint(
+                date=str(d.get("date")),
+                xp_score=float(d.get("xp_score") or 0.0),
+                regime=str(d.get("regime") or ""),
+                regime_color=str(d.get("regime_color") or "#888888"),
+                warmup=bool(d.get("warmup")),
+            )
+            for d in recent
+            if d.get("date") is not None
+        ]
+
+        try:
+            from app.services.xp_breadth import regime_bands_public
+
+            bands = [XpRegimeBand(**b) for b in regime_bands_public()]
+        except Exception:
+            bands = []
+
+        return XpBreadthScore(
+            date=str(latest.get("date")),
+            xp_score=float(latest.get("xp_score") or 0.0),
+            regime=str(latest.get("regime") or ""),
+            regime_color=str(latest.get("regime_color") or "#888888"),
+            universe=str(doc.get("universe") or "") or None,
+            history=history,
+            bands=bands,
+        )
+
     def _calculate_market_breadth(self, universe_name: str, universe_stocks: list[StockSnapshot]) -> UniverseBreadth:
         total = len(universe_stocks)
         if total == 0:
@@ -995,6 +1042,7 @@ class DashboardService:
         breadth_history = await asyncio.to_thread(
             self._breadth_history_cached, scan_snapshots, snapshot_updated_at, 10
         )
+        xp_breadth = await asyncio.to_thread(self._load_xp_breadth)
 
         response = DashboardResponse(
             app_name=self.settings.app_name,
@@ -1020,6 +1068,7 @@ class DashboardService:
             recent_alerts=alerts,
             breadth_today=breadth_today,
             breadth_history=breadth_history,
+            xp_breadth=xp_breadth,
         )
         self._dashboard_cache = response
         import gc

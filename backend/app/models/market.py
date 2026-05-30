@@ -663,6 +663,33 @@ class BreadthDayCounts(BaseModel):
     total: int
 
 
+class XpBreadthPoint(BaseModel):
+    date: str
+    xp_score: float
+    regime: str
+    regime_color: str
+    warmup: bool = False
+
+
+class XpRegimeBand(BaseModel):
+    label: str
+    color: str
+    min: float | None = None
+    max: float | None = None
+
+
+class XpBreadthScore(BaseModel):
+    """XP market breadth score: current value + regime + recent history + bands."""
+
+    date: str
+    xp_score: float
+    regime: str
+    regime_color: str
+    universe: str | None = None
+    history: list[XpBreadthPoint] = Field(default_factory=list)
+    bands: list[XpRegimeBand] = Field(default_factory=list)
+
+
 class DashboardResponse(BaseModel):
     app_name: str
     generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
@@ -678,6 +705,7 @@ class DashboardResponse(BaseModel):
     recent_alerts: list[AlertItem]
     breadth_today: BreadthDayCounts | None = None
     breadth_history: list[BreadthDayCounts] = Field(default_factory=list)
+    xp_breadth: XpBreadthScore | None = None
 
 
 class IndexQuoteItem(BaseModel):

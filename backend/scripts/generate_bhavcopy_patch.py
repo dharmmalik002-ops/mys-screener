@@ -41,6 +41,19 @@ import requests
 IST = ZoneInfo("Asia/Kolkata")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_PATH = DATA_DIR / "bhavcopy_patch.json"
+# XP market breadth score artifacts. The history file is tiny (a handful of
+# numbers per day) and is the only one the HF backend reads. The rolling-close
+# store holds the trailing window needed for the MA% inputs and is used only by
+# this generator.
+XP_HISTORY_PATH = DATA_DIR / "xp_breadth_history.json"
+XP_ROLLING_PATH = DATA_DIR / "xp_rolling_closes.json"
+
+# Make the `app` package importable so we can reuse the shared XP engine
+# (backend/app/services/xp_breadth.py) without duplicating the formula here.
+_BACKEND_ROOT = Path(__file__).resolve().parents[1]
+if str(_BACKEND_ROOT) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_ROOT))
+
 RETRY_ATTEMPTS = 3
 RETRY_BACKOFF_SECONDS = 2
 
@@ -758,6 +771,101 @@ def _write_patch(
     )
 
 
+def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str) -> None:
+    """Compute the day's XP market-breadth score from the FULL bhavcopy and
+    persist it. Must be passed the all-market dict (BSE/NSE bhavcopy), NOT the
+    universe-only merged patch. Failures are logged and swallowed so a breadth
+    hiccup never breaks the price patch.
+    """
+    try:
+        from app.services.xp_breadth import (
+            CONST,
+            compute_xp_series,
+            daily_breadth_metrics,
+        )
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("XP breadth engine unavailable (%s); skipping breadth update", exc)
+        return
+
+    if not full_bhav:
+        return
+
+    date_iso = trade_date.isoformat()
+    metric_keys = ("date", "total", "advancers_4p5", "decliners", "ma10_pct", "ma20_pct")
+
+    # Load existing artifacts.
+    rolling: dict[str, list] = {}
+    if XP_ROLLING_PATH.exists():
+        try:
+            loaded = json.loads(XP_ROLLING_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                rolling = loaded
+        except Exception:
+            rolling = {}
+
+    hist_doc: dict = {}
+    if XP_HISTORY_PATH.exists():
+        try:
+            loaded = json.loads(XP_HISTORY_PATH.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                hist_doc = loaded
+        except Exception:
+            hist_doc = {}
+
+    prior_days = hist_doc.get("days")
+    if not isinstance(prior_days, list):
+        prior_days = []
+    const = float(hist_doc.get("const", CONST))
+
+    # Base metric history (inputs only), de-duped on date so reruns are idempotent.
+    base = [
+        {k: d.get(k) for k in metric_keys}
+        for d in prior_days
+        if isinstance(d, dict) and d.get("date") != date_iso
+    ]
+
+    if hist_doc.get("rolling_date") == date_iso:
+        # Today's close was already folded into the rolling store on a prior run;
+        # reuse the stored metrics and only recompute the score series.
+        today = next((d for d in prior_days if isinstance(d, dict) and d.get("date") == date_iso), None)
+        if today is None:
+            metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling)
+        else:
+            metrics = {k: today.get(k) for k in metric_keys}
+    else:
+        metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling)
+
+    base.append(metrics)
+    series = compute_xp_series(base, const=const)
+
+    latest = series[-1] if series else None
+    out_doc = {
+        "generated_at": datetime.now(IST).isoformat(),
+        "rolling_date": date_iso,
+        "source": source.upper(),
+        "const": const,
+        "ma_short": 10,
+        "ma_long": 20,
+        "universe": "all_bhavcopy_equities",
+        "latest": latest,
+        "days": series,
+    }
+    XP_HISTORY_PATH.write_text(json.dumps(out_doc, separators=(",", ":")), encoding="utf-8")
+    XP_ROLLING_PATH.write_text(json.dumps(rolling, separators=(",", ":")), encoding="utf-8")
+    if latest:
+        logger.info(
+            "XP breadth %s: score=%s regime=%s (advancers=%s decliners=%s ma10%%=%s ma20%%=%s total=%s)",
+            date_iso,
+            latest.get("xp_score"),
+            latest.get("regime"),
+            metrics.get("advancers_4p5"),
+            metrics.get("decliners"),
+            metrics.get("ma10_pct"),
+            metrics.get("ma20_pct"),
+            metrics.get("total"),
+        )
+
+
 def main() -> int:
     # Belt-and-suspenders: even though every cron in daily-bhavcopy.yml is
     # scheduled after market close (4:23-6:23 PM IST), refuse to run during
@@ -807,6 +915,7 @@ def main() -> int:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1
         _write_patch(target, merged, "YF+BSE", new_listings=new_listings)
+        _update_xp_breadth(target, bse_symbols, "BSE")
         return 0
 
     logger.info("BSE unavailable for %s. Trying NSE archives.", target)
@@ -822,6 +931,7 @@ def main() -> int:
                     logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
                     return 0
                 _write_patch(target, symbols, "NSE", new_listings=new_listings)
+                _update_xp_breadth(target, symbols, "NSE")
                 return 0
 
     logger.warning("NSE unavailable for %s. Trying yfinance fallback.", target)
@@ -851,6 +961,7 @@ def main() -> int:
                 logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(merged_prev))
                 return 0
             _write_patch(prev, merged_prev, "YF+BSE")
+            _update_xp_breadth(prev, bse_prev, "BSE")
             return 0
     csv_text = _fetch_bhavcopy_csv(prev)
     if csv_text:
@@ -862,6 +973,7 @@ def main() -> int:
                     logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(symbols))
                     return 0
                 _write_patch(prev, symbols, "NSE")
+                _update_xp_breadth(prev, symbols, "NSE")
                 return 0
 
     logger.error("Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.")

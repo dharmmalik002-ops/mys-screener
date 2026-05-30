@@ -49,6 +49,31 @@ export type BreadthDayCounts = {
   total: number;
 };
 
+export type XpBreadthPoint = {
+  date: string;
+  xp_score: number;
+  regime: string;
+  regime_color: string;
+  warmup: boolean;
+};
+
+export type XpRegimeBand = {
+  label: string;
+  color: string;
+  min: number | null;
+  max: number | null;
+};
+
+export type XpBreadthScore = {
+  date: string;
+  xp_score: number;
+  regime: string;
+  regime_color: string;
+  universe: string | null;
+  history: XpBreadthPoint[];
+  bands: XpRegimeBand[];
+};
+
 export type DashboardResponse = {
   app_name: string;
   generated_at: string;
@@ -64,6 +89,7 @@ export type DashboardResponse = {
   recent_alerts: AlertItem[];
   breadth_today: BreadthDayCounts | null;
   breadth_history: BreadthDayCounts[];
+  xp_breadth: XpBreadthScore | null;
 };
 
 export type IndexQuoteItem = {
@@ -1012,6 +1038,39 @@ export function normalizeDashboardResponse(value: unknown): DashboardResponse {
     breadth_history: mapArray(raw.breadth_history, (item) => normalizeBreadthDayCounts(item) ?? {
       date: "", advances: 0, declines: 0, unchanged: 0, total: 0,
     }).filter((item) => item.date !== ""),
+    xp_breadth: normalizeXpBreadthScore(raw.xp_breadth),
+  };
+}
+
+function normalizeXpBreadthScore(value: unknown): XpBreadthScore | null {
+  if (!isRecord(value)) return null;
+  const date = readString(value.date);
+  if (!date) return null;
+  return {
+    date,
+    xp_score: readNumber(value.xp_score),
+    regime: readString(value.regime),
+    regime_color: readString(value.regime_color, "#888888"),
+    universe: value.universe == null ? null : readString(value.universe),
+    history: mapArray(value.history, (item) => {
+      const raw = isRecord(item) ? item : {};
+      return {
+        date: readString(raw.date),
+        xp_score: readNumber(raw.xp_score),
+        regime: readString(raw.regime),
+        regime_color: readString(raw.regime_color, "#888888"),
+        warmup: raw.warmup === true,
+      } as XpBreadthPoint;
+    }).filter((item) => item.date !== ""),
+    bands: mapArray(value.bands, (item) => {
+      const raw = isRecord(item) ? item : {};
+      return {
+        label: readString(raw.label),
+        color: readString(raw.color, "#888888"),
+        min: raw.min == null ? null : readNumber(raw.min),
+        max: raw.max == null ? null : readNumber(raw.max),
+      } as XpRegimeBand;
+    }),
   };
 }
 
