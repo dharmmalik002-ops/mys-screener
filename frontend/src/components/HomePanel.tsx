@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import {
@@ -282,89 +282,176 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   );
 }
 
-function XpBreadthChart({ xp, height = 200 }: { xp: XpBreadthScore; height?: number }) {
+function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: number }) {
+  const uid = useId().replace(/[:]/g, "");
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [width, setWidth] = useState(960);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
-  const width = 880;
-  const padL = 30;
-  const padR = 10;
-  const padY = 10;
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver((entries) => {
+      const w = entries[0]?.contentRect?.width;
+      if (w) setWidth(Math.max(320, Math.round(w)));
+    });
+    ro.observe(el);
+    setWidth(Math.max(320, Math.round(el.clientWidth || 960)));
+    return () => ro.disconnect();
+  }, []);
 
   // Prefer the live (post warm-up) series; fall back to whatever exists.
   const live = xp.history.filter((p) => !p.warmup);
-  const points = (live.length >= 5 ? live : xp.history).slice(-160);
+  const points = (live.length >= 5 ? live : xp.history).slice(-180);
   if (points.length < 2) {
-    return <div className="homepro-xp-empty">Not enough history yet — run the breadth backfill.</div>;
+    return (
+      <div className="homepro-xp-chart-wrap" ref={wrapRef}>
+        <div className="homepro-xp-empty">Not enough history yet — run the breadth backfill.</div>
+      </div>
+    );
   }
 
+  const padL = 12;
+  const padR = 78; // gutter for regime labels
+  const padT = 18;
+  const padB = 26;
+  const innerW = Math.max(10, width - padL - padR);
+  const innerH = Math.max(10, height - padT - padB);
+
   const scores = points.map((p) => p.xp_score);
-  const bandStops = xp.bands.flatMap((b) => [b.min, b.max].filter((v): v is number => v != null));
-  const dataMin = Math.min(...scores, ...bandStops.filter((v) => v <= Math.min(...scores) + 5));
-  const dataMax = Math.max(...scores, ...bandStops.filter((v) => v >= Math.max(...scores) - 5));
-  const yMin = Math.max(0, Math.floor(Math.min(dataMin, Math.min(...scores)) - 1));
-  const yMax = Math.ceil(Math.max(dataMax, Math.max(...scores)) + 1);
+  const yMin = Math.max(0, Math.floor(Math.min(...scores) - 1.5));
+  const yMax = Math.ceil(Math.max(...scores) + 1.5);
   const range = yMax - yMin || 1;
-  const innerH = height - padY * 2;
-  const innerW = width - padL - padR;
 
-  const y = (v: number) => padY + innerH - ((v - yMin) / range) * innerH;
   const x = (i: number) => padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
+  const y = (v: number) =>
+    padT + innerH - ((Math.max(yMin, Math.min(yMax, v)) - yMin) / range) * innerH;
 
-  const linePath = points
-    .map((p, i) => `${i === 0 ? "M" : "L"}${x(i).toFixed(1)},${y(p.xp_score).toFixed(1)}`)
-    .join(" ");
-  const areaPath = `${linePath} L${x(points.length - 1).toFixed(1)},${y(yMin).toFixed(1)} L${x(0).toFixed(1)},${y(yMin).toFixed(1)} Z`;
+  const pts = points.map((p, i) => [x(i), y(p.xp_score)] as const);
 
-  const hovered = hoverIdx != null ? points[hoverIdx] : points[points.length - 1];
-  const gridTicks = [yMin, ...xp.bands.map((b) => b.min).filter((v): v is number => v != null && v > yMin && v < yMax), yMax];
+  // Catmull-Rom -> cubic bézier for a smooth, non-overshooting line.
+  const linePath = (() => {
+    if (pts.length < 3) return pts.map((p, i) => `${i ? "L" : "M"}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(" ");
+    let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+    const t = 0.16;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i - 1] || pts[i];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[i + 2] || p2;
+      const c1x = p1[0] + (p2[0] - p0[0]) * t;
+      const c1y = p1[1] + (p2[1] - p0[1]) * t;
+      const c2x = p2[0] - (p3[0] - p1[0]) * t;
+      const c2y = p2[1] - (p3[1] - p1[1]) * t;
+      d += ` C${c1x.toFixed(1)},${c1y.toFixed(1)} ${c2x.toFixed(1)},${c2y.toFixed(1)} ${p2[0].toFixed(1)},${p2[1].toFixed(1)}`;
+    }
+    return d;
+  })();
+  const baseY = padT + innerH;
+  const areaPath = `${linePath} L${pts[pts.length - 1][0].toFixed(1)},${baseY.toFixed(1)} L${pts[0][0].toFixed(1)},${baseY.toFixed(1)} Z`;
+
+  const hi = hoverIdx == null ? points.length - 1 : Math.max(0, Math.min(points.length - 1, hoverIdx));
+  const hovered = points[hi];
+  const hx = x(hi);
+  const hyv = y(hovered.xp_score);
+  const lineColor = xp.regime_color;
+
+  const fmtDate = (d: string) => {
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  };
+
+  // Visible regime bands (clipped to the current y-range) for shading + labels.
+  const visBands = xp.bands
+    .map((b) => {
+      const top = Math.min(yMax, b.max ?? yMax);
+      const bot = Math.max(yMin, b.min ?? yMin);
+      return { ...b, top, bot };
+    })
+    .filter((b) => b.top > b.bot);
+
+  // Tooltip placement (clamped within the plot).
+  const tipLeft = Math.max(64, Math.min(width - 64, hx));
 
   return (
-    <div className="homepro-xp-chart-wrap">
+    <div className="homepro-xp-chart-wrap" ref={wrapRef}>
       <svg
         className="homepro-xp-svg"
-        viewBox={`0 0 ${width} ${height}`}
-        preserveAspectRatio="none"
+        width={width}
+        height={height}
         role="img"
         onMouseLeave={() => setHoverIdx(null)}
         onMouseMove={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
-          const px = ((e.clientX - rect.left) / rect.width) * width;
+          const px = e.clientX - rect.left;
           const i = Math.round(((px - padL) / innerW) * (points.length - 1));
           setHoverIdx(Math.max(0, Math.min(points.length - 1, i)));
         }}
       >
-        {/* regime band backgrounds */}
-        {xp.bands.map((b) => {
-          const top = Math.min(yMax, b.max ?? yMax);
-          const bot = Math.max(yMin, b.min ?? yMin);
-          if (top <= bot) return null;
+        <defs>
+          <linearGradient id={`area-${uid}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={lineColor} stopOpacity={0.34} />
+            <stop offset="60%" stopColor={lineColor} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={lineColor} stopOpacity={0} />
+          </linearGradient>
+          <filter id={`glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+            <feGaussianBlur stdDeviation="3.2" result="b" />
+            <feMerge>
+              <feMergeNode in="b" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* regime band shading + right-edge labels */}
+        {visBands.map((b) => {
+          const yTop = y(b.top);
+          const h = Math.max(0, y(b.bot) - y(b.top));
+          const mid = yTop + h / 2;
           return (
-            <rect
-              key={b.label}
-              x={padL}
-              y={y(top)}
-              width={innerW}
-              height={Math.max(0, y(bot) - y(top))}
-              fill={b.color}
-              opacity={0.12}
-            />
+            <g key={b.label}>
+              <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={0.09} />
+              <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.35} />
+              <text x={padL + innerW + 8} y={mid + 3} fontSize={10} fontWeight={600} fill={b.color} opacity={0.9}>
+                {b.label}
+              </text>
+            </g>
           );
         })}
-        {/* gridlines + y labels at band boundaries */}
-        {gridTicks.map((t) => (
-          <g key={`tick-${t}`}>
-            <line x1={padL} x2={width - padR} y1={y(t)} y2={y(t)} stroke="var(--hp-border, #2a2e39)" strokeWidth={0.5} opacity={0.5} />
-            <text x={padL - 4} y={y(t) + 3} textAnchor="end" fontSize={9} fill="var(--hp-muted, #9aa0aa)">{t}</text>
-          </g>
-        ))}
-        <path d={areaPath} fill={xp.regime_color} opacity={0.1} />
-        <path d={linePath} fill="none" stroke={xp.regime_color} strokeWidth={1.6} />
-        {/* last / hovered marker */}
-        <circle cx={x(hoverIdx ?? points.length - 1)} cy={y(hovered.xp_score)} r={3} fill={hovered.regime_color} stroke="#fff" strokeWidth={1} />
+
+        {/* area + line */}
+        <path d={areaPath} fill={`url(#area-${uid})`} />
+        <path
+          d={linePath}
+          fill="none"
+          stroke={lineColor}
+          strokeWidth={2.4}
+          strokeLinejoin="round"
+          strokeLinecap="round"
+        />
+
+        {/* crosshair on hover */}
+        {hoverIdx != null && (
+          <line x1={hx} x2={hx} y1={padT} y2={baseY} stroke="var(--hp-text, #0f172a)" strokeWidth={1} strokeDasharray="3 3" opacity={0.25} />
+        )}
+
+        {/* current/hovered marker with glow */}
+        <circle cx={hx} cy={hyv} r={9} fill={hovered.regime_color} opacity={0.18} filter={`url(#glow-${uid})`} />
+        <circle cx={hx} cy={hyv} r={4.5} fill={hovered.regime_color} stroke="#fff" strokeWidth={2} />
+
+        {/* x-axis end dates */}
+        <text x={padL} y={height - 7} fontSize={10} fill="var(--hp-muted, #94a0b8)">{fmtDate(points[0].date)}</text>
+        <text x={padL + innerW} y={height - 7} fontSize={10} textAnchor="end" fill="var(--hp-muted, #94a0b8)">{fmtDate(points[points.length - 1].date)}</text>
       </svg>
-      <div className="homepro-xp-hover">
-        <span>{hovered.date}</span>
-        <strong style={{ color: hovered.regime_color }}>{hovered.xp_score.toFixed(2)}</strong>
-        <span>{hovered.regime}</span>
+
+      {/* floating tooltip */}
+      <div
+        className={`homepro-xp-tip${hoverIdx != null ? " show" : ""}`}
+        style={{ left: tipLeft }}
+      >
+        <span className="homepro-xp-tip-date">{fmtDate(hovered.date)}</span>
+        <span className="homepro-xp-tip-val" style={{ color: hovered.regime_color }}>{hovered.xp_score.toFixed(2)}</span>
+        <span className="homepro-xp-tip-regime" style={{ color: hovered.regime_color }}>{hovered.regime}</span>
       </div>
     </div>
   );
@@ -731,14 +818,29 @@ export function HomePanel({
       {/* ============ XP Market Breadth Score ============ */}
       {xpBreadth && (
         <div className="homepro-card homepro-xp-card">
-          <div className="homepro-card-head">
-            <h3>
-              XP Market Breadth Score
+          <div className="homepro-card-head homepro-xp-head">
+            <div className="homepro-xp-title">
+              <h3>XP Market Breadth Score</h3>
               <span className="homepro-xp-sub">NSE listed · EOD · calibrated to EM</span>
-            </h3>
-            <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color }}>
-              <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
-              <span>{xpBreadth.regime}</span>
+            </div>
+            <div className="homepro-xp-badge-wrap">
+              {(() => {
+                const h = xpBreadth.history;
+                const prev = h.length >= 2 ? h[h.length - 2].xp_score : null;
+                const delta = prev == null ? null : xpBreadth.xp_score - prev;
+                if (delta == null) return null;
+                const cls = Math.abs(delta) < 0.05 ? "flat" : delta > 0 ? "up" : "down";
+                const arrow = cls === "flat" ? "▬" : cls === "up" ? "▲" : "▼";
+                return (
+                  <span className={`homepro-xp-delta ${cls}`} title="Change vs previous session">
+                    {arrow} {Math.abs(delta).toFixed(2)}
+                  </span>
+                );
+              })()}
+              <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color, boxShadow: `0 6px 18px -6px ${xpBreadth.regime_color}` }}>
+                <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
+                <span>{xpBreadth.regime}</span>
+              </div>
             </div>
           </div>
           <XpBreadthChart xp={xpBreadth} />

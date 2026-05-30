@@ -1019,70 +1019,132 @@ body.dark .homepro-modal-close:hover {
 /* ============ XP Market Breadth Score ============ */
 .homepro-xp-card {
   margin-bottom: 16px;
+  background:
+    radial-gradient(120% 140% at 100% 0%, rgba(99, 102, 241, 0.05), transparent 55%),
+    var(--hp-card-bg);
 }
-.homepro-xp-card .homepro-card-head {
-  align-items: center;
+.homepro-xp-head {
+  align-items: flex-start;
+}
+.homepro-xp-title h3 {
+  margin: 0;
+  line-height: 1.2;
 }
 .homepro-xp-sub {
+  display: block;
   font-size: 11px;
   font-weight: 500;
   color: var(--hp-muted);
-  margin-left: 8px;
+  margin-top: 3px;
+  letter-spacing: 0.01em;
+}
+.homepro-xp-badge-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.homepro-xp-delta {
+  font-size: 12px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+.homepro-xp-delta.up {
+  color: var(--hp-green);
+  background: var(--hp-green-soft);
+}
+.homepro-xp-delta.down {
+  color: var(--hp-red);
+  background: var(--hp-red-soft);
+}
+.homepro-xp-delta.flat {
+  color: var(--hp-muted);
+  background: rgba(100, 116, 139, 0.12);
 }
 .homepro-xp-badge {
   display: inline-flex;
-  align-items: baseline;
-  gap: 8px;
-  padding: 4px 12px;
-  border-radius: 8px;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  padding: 7px 14px;
+  border-radius: 12px;
   color: #fff;
-}
-.homepro-xp-badge strong {
-  font-size: 18px;
-  font-weight: 800;
   line-height: 1;
 }
+.homepro-xp-badge strong {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
 .homepro-xp-badge span {
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   opacity: 0.95;
 }
 .homepro-xp-chart-wrap {
   position: relative;
   width: 100%;
-  margin-top: 8px;
+  margin-top: 10px;
 }
 .homepro-xp-svg {
   width: 100%;
-  height: 200px;
+  height: auto;
   display: block;
+  overflow: visible;
 }
-.homepro-xp-hover {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-  font-size: 12px;
+.homepro-xp-svg text {
+  font-variant-numeric: tabular-nums;
+}
+.homepro-xp-tip {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border-radius: 10px;
+  background: var(--hp-card-bg);
+  border: 1px solid var(--hp-border);
+  box-shadow: 0 8px 24px -8px rgba(15, 23, 42, 0.35);
+  font-size: 11.5px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.homepro-xp-tip.show {
+  opacity: 1;
+}
+.homepro-xp-tip-date {
   color: var(--hp-muted);
-  padding: 2px 4px 0;
+  font-weight: 600;
 }
-.homepro-xp-hover strong {
-  font-size: 14px;
+.homepro-xp-tip-val {
   font-weight: 800;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+.homepro-xp-tip-regime {
+  font-weight: 700;
 }
 .homepro-xp-empty {
   display: grid;
   place-items: center;
-  height: 120px;
+  height: 160px;
   color: var(--hp-muted);
   font-size: 12px;
 }
 .homepro-xp-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 8px 14px;
   align-items: center;
-  margin-top: 10px;
-  padding-top: 10px;
+  margin-top: 12px;
+  padding-top: 12px;
   border-top: 1px solid var(--hp-border);
   font-size: 11px;
   color: var(--hp-muted);
@@ -1091,10 +1153,17 @@ body.dark .homepro-modal-close:hover {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+  font-weight: 600;
+}
+.homepro-xp-legend-item .homepro-legend-swatch {
+  width: 9px;
+  height: 9px;
+  border-radius: 3px;
 }
 .homepro-xp-legend-item em {
   font-style: normal;
-  opacity: 0.7;
+  opacity: 0.6;
+  font-weight: 500;
 }
 .homepro-xp-asof {
   margin-left: auto;
