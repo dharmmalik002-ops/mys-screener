@@ -88,6 +88,10 @@ NSE_DIRECT_QUOTE_FALLBACK_MAX_SYMBOLS = 60
 UNIVERSE_CACHE_VERSION = 3
 UNIVERSE_FORCE_REFRESH_MAX_AGE_HOURS = 2
 RECENT_IPO_BYPASS_DAYS = 365
+# How long a previously-qualifying stock is carried forward when the live feeds
+# stop reporting it (transient API failure / corporate action), so a large cap
+# never silently drops out of the universe.
+UNIVERSE_CARRY_FORWARD_MAX_AGE_DAYS = 45
 
 
 def _row_passes_universe_filter(row: dict, market_cap_min_crore: float) -> bool:
@@ -97,7 +101,12 @@ def _row_passes_universe_filter(row: dict, market_cap_min_crore: float) -> bool:
     threshold for a few weeks/months — the IPO scanner and the IPO Debut
     sort exist exactly for those names, so we never want the universe
     filter to silently drop them.
+
+    Operator-pinned names (manual_universe_include.json) always pass — the
+    whole point of that list is to force-cover stocks the live feeds miss.
     """
+    if row.get("universe_manual_include"):
+        return True
     try:
         market_cap = float(row.get("market_cap_crore", 0) or 0)
     except (TypeError, ValueError):
@@ -259,6 +268,7 @@ class FreeMarketDataProvider:
     def __init__(self, gemini_api_key: str | None = None, *, eod_only_mode: bool = False) -> None:
         self.backend_root = Path(__file__).resolve().parents[2]
         self.universe_cache_path = self.backend_root / "data" / "free_universe.json"
+        self.manual_universe_include_path = self.backend_root / "data" / "manual_universe_include.json"
         self.snapshot_cache_path = self.backend_root / "data" / "free_snapshots.json"
         self.company_metadata_path = self.backend_root / "data" / "free_company_metadata.json"
         self.fundamentals_cache_path = self.backend_root / "data" / "free_fundamentals.json"
@@ -5371,6 +5381,102 @@ class FreeMarketDataProvider:
                 "universe_session_date": session_date,
                 "universe_market_cap_floor_crore": market_cap_min_crore,
             }
+
+        # --- Coverage safety net -------------------------------------------------
+        # The live BSE/NSE feeds occasionally fail to report a market cap for a
+        # genuinely large stock: NSE's anti-bot blocking, a stale/zero BSE
+        # Mktcap, or a corporate action (e.g. the Tata Motors demerger) that
+        # briefly removes a scrip from the source lists. Without a backstop those
+        # names silently fall out of the universe and never return. So:
+        #   (a) carry forward any previously-qualifying stock that vanished this
+        #       run (using its last-known market cap), and
+        #   (b) merge an operator-maintained manual include list.
+        present_symbols = {str(r.get("symbol") or "").upper() for r in rows_by_key.values()}
+        present_isins = {
+            str(r.get("isin") or "").strip().upper()
+            for r in rows_by_key.values()
+            if str(r.get("isin") or "").strip()
+        }
+
+        def register_row(new_row: dict[str, Any]) -> None:
+            sym = str(new_row.get("symbol") or "").upper()
+            row_isin = str(new_row.get("isin") or "").strip().upper() or None
+            present_symbols.add(sym)
+            if row_isin:
+                present_isins.add(row_isin)
+            rows_by_key[row_isin or f"{new_row.get('exchange') or 'NSE'}:{sym}"] = new_row
+
+        today = date.today()
+        for cached_row in cached_universe_rows:
+            symbol = str(cached_row.get("symbol") or "").upper()
+            if not symbol:
+                continue
+            isin = str(cached_row.get("isin") or "").strip().upper() or None
+            if symbol in present_symbols or (isin and isin in present_isins):
+                continue
+            cached_cap = self._to_float(cached_row.get("market_cap_crore"))
+            if cached_cap is None or cached_cap < market_cap_min_crore:
+                continue
+            session = self._parse_row_date(cached_row.get("universe_session_date"))
+            if session is not None and (today - session).days > UNIVERSE_CARRY_FORWARD_MAX_AGE_DAYS:
+                continue
+            fallback = seed_metadata(symbol, isin, cached_row)
+            register_row(
+                {
+                    **cached_row,
+                    "sector": fallback["sector"] or cached_row.get("sector"),
+                    "sub_sector": fallback["sub_sector"] or cached_row.get("sub_sector"),
+                    "listing_date": cached_row.get("listing_date") or fallback["listing_date"],
+                    "universe_version": UNIVERSE_CACHE_VERSION,
+                    "universe_session_date": session_date,
+                    "universe_market_cap_floor_crore": market_cap_min_crore,
+                    "universe_carry_forward": True,
+                }
+            )
+
+        for entry in self._load_json_rows(self.manual_universe_include_path):
+            symbol = self._normalize_symbol(entry.get("symbol"))
+            if not symbol:
+                continue
+            isin = str(entry.get("isin") or "").strip().upper() or None
+            if symbol in present_symbols or (isin and isin in present_isins):
+                continue
+            exchange = str(entry.get("exchange") or "NSE").strip().upper() or "NSE"
+            # Prefer a live cap; fall back to cache, then the operator-provided
+            # value, then the floor (the row is pinned regardless of cap).
+            market_cap_crore: float | None = None
+            if exchange == "NSE":
+                detail = self._fetch_nse_quote_details([symbol]).get(symbol, {})
+                market_cap_crore = self._to_float(detail.get("market_cap_crore"))
+            if market_cap_crore is None:
+                cached_row = cached_by_symbol.get(symbol) or (cached_by_isin.get(isin or "") if isin else None) or {}
+                market_cap_crore = self._to_float(cached_row.get("market_cap_crore"))
+            if market_cap_crore is None:
+                market_cap_crore = self._to_float(entry.get("market_cap_crore"))
+            if market_cap_crore is None:
+                market_cap_crore = float(market_cap_min_crore)
+            fallback = seed_metadata(symbol, isin, entry)
+            ticker = str(entry.get("ticker") or "").strip() or (
+                f"{symbol}.NS" if exchange == "NSE" else f"{symbol}.BO"
+            )
+            register_row(
+                {
+                    "symbol": symbol,
+                    "name": str(entry.get("name") or symbol).strip(),
+                    "exchange": exchange,
+                    "market_cap_crore": round(float(market_cap_crore), 2),
+                    "ticker": ticker,
+                    "listing_date": fallback["listing_date"] or entry.get("listing_date"),
+                    "sector": fallback["sector"],
+                    "sub_sector": fallback["sub_sector"],
+                    "isin": isin,
+                    "bse_code": str(entry.get("bse_code") or "").strip() or None,
+                    "universe_version": UNIVERSE_CACHE_VERSION,
+                    "universe_session_date": session_date,
+                    "universe_market_cap_floor_crore": market_cap_min_crore,
+                    "universe_manual_include": True,
+                }
+            )
 
         rows = list(rows_by_key.values())
         metadata_missing = [

@@ -1,0 +1,12 @@
+[
+  {
+    "_comment": "Operator safety net: symbols listed here are ALWAYS included in the scanner universe, even if the live BSE/NSE feeds fail to report a market cap (anti-bot blocking, stale BSE Mktcap, corporate actions). Add objects with {symbol, exchange, name}. market_cap_crore is an offline fallback only - a live NSE quote overrides it whenever available. Comment rows (empty symbol) are ignored.",
+    "symbol": ""
+  },
+  {
+    "symbol": "TATAMOTORS",
+    "exchange": "NSE",
+    "name": "Tata Motors Limited",
+    "market_cap_crore": 200000
+  }
+]
