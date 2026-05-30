@@ -92,16 +92,14 @@ def _logit_pct(pct: float) -> float:
     return math.log(p / (100.0 - p))
 
 
-def _sma(values: list[float], n: int) -> float | None:
-    if len(values) < n:
-        return None
-    return sum(values[-n:]) / n
+def _ema_alpha(period: int) -> float:
+    return 2.0 / (period + 1.0)
 
 
 def daily_breadth_metrics(
     date_iso: str,
     bhav: dict[str, dict[str, Any]],
-    rolling: dict[str, list[float]],
+    ma_state: dict[str, list[float]],
     *,
     ma_short: int = MA_SHORT,
     ma_long: int = MA_LONG,
@@ -109,18 +107,28 @@ def daily_breadth_metrics(
 ) -> tuple[dict[str, Any], dict[str, list[float]]]:
     """Compute one day's breadth inputs from the full bhavcopy.
 
-    ``bhav``    : {symbol: {"c": close, "p": prev_close, ...}} for the day
-                  (all equity-series symbols).
-    ``rolling`` : {symbol: [recent closes]} as of the PRIOR day. Not mutated;
-                  an updated copy (today's close appended, trimmed) is returned.
+    The 10/20-DMA percentages use EMAs (more reactive than SMAs at turning
+    points). EMA is recursive, so we persist only the per-symbol state
+    ``{symbol: [ema_short, ema_long]}`` (2 floats) rather than a window of
+    closes — smaller on disk and O(1) per symbol per day.
 
-    Returns (metrics, updated_rolling) where metrics has keys:
+    Note: ``close > EMA(including today)`` is algebraically identical to
+    ``close > prior EMA`` (since the EMA weight on the prior value is > 0), so
+    seeding the EMA with the first close introduces no self-reference bias —
+    a symbol's first day simply counts as "below" (warm-up).
+
+    ``bhav``     : {symbol: {"c": close, "p": prev_close, ...}} for the day.
+    ``ma_state`` : {symbol: [ema_short, ema_long]} as of the PRIOR day. Not
+                   mutated; an updated copy is returned.
+
+    Returns (metrics, updated_ma_state) where metrics has keys:
         date, total, advancers_4p5, decliners, ma10_pct, ma20_pct
     """
     adv = dec = 0
     above10 = below10 = above20 = below20 = 0
-    new_rolling: dict[str, list[float]] = dict(rolling)
-    keep = ma_long + 1
+    new_state: dict[str, list[float]] = dict(ma_state)
+    alpha_s = _ema_alpha(ma_short)
+    alpha_l = _ema_alpha(ma_long)
     total = 0
 
     for sym, rec in bhav.items():
@@ -140,24 +148,23 @@ def daily_breadth_metrics(
             if close < prev:
                 dec += 1
 
-        series = list(new_rolling.get(sym, ()))
-        series.append(round(close, 2))
-        if len(series) > keep:
-            series = series[-keep:]
-        new_rolling[sym] = series
+        st = new_state.get(sym)
+        if not st or len(st) < 2 or st[0] is None or st[1] is None:
+            ema_s = close  # seed on first sight
+            ema_l = close
+        else:
+            ema_s = alpha_s * close + (1.0 - alpha_s) * float(st[0])
+            ema_l = alpha_l * close + (1.0 - alpha_l) * float(st[1])
+        new_state[sym] = [round(ema_s, 4), round(ema_l, 4)]
 
-        sma_s = _sma(series, ma_short)
-        if sma_s is not None:
-            if close > sma_s:
-                above10 += 1
-            else:
-                below10 += 1
-        sma_l = _sma(series, ma_long)
-        if sma_l is not None:
-            if close > sma_l:
-                above20 += 1
-            else:
-                below20 += 1
+        if close > ema_s:
+            above10 += 1
+        else:
+            below10 += 1
+        if close > ema_l:
+            above20 += 1
+        else:
+            below20 += 1
 
     ma10_pct = (above10 / (above10 + below10) * 100.0) if (above10 + below10) else 0.0
     ma20_pct = (above20 / (above20 + below20) * 100.0) if (above20 + below20) else 0.0
@@ -170,7 +177,7 @@ def daily_breadth_metrics(
         "ma10_pct": round(ma10_pct, 2),
         "ma20_pct": round(ma20_pct, 2),
     }
-    return metrics, new_rolling
+    return metrics, new_state
 
 
 def compute_xp_series(

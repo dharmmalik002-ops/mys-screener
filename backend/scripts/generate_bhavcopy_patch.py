@@ -42,11 +42,11 @@ IST = ZoneInfo("Asia/Kolkata")
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 OUTPUT_PATH = DATA_DIR / "bhavcopy_patch.json"
 # XP market breadth score artifacts. The history file is tiny (a handful of
-# numbers per day) and is the only one the HF backend reads. The rolling-close
-# store holds the trailing window needed for the MA% inputs and is used only by
-# this generator.
+# numbers per day) and is the only one the HF backend reads. The MA-state store
+# holds the per-symbol EMA(10)/EMA(20) state needed for the MA% inputs and is
+# used only by this generator.
 XP_HISTORY_PATH = DATA_DIR / "xp_breadth_history.json"
-XP_ROLLING_PATH = DATA_DIR / "xp_rolling_closes.json"
+XP_ROLLING_PATH = DATA_DIR / "xp_ma_state.json"
 
 # Make the `app` package importable so we can reuse the shared XP engine
 # (backend/app/services/xp_breadth.py) without duplicating the formula here.
