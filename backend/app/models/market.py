@@ -626,6 +626,7 @@ class ScanMatch(BaseModel):
     avg_rupee_volume_30d_crore: float | None = None
     score: float
     pattern: str | None = None
+    volume_push_date: str | None = None  # date (YYYY-MM-DD) of the latest HQV/HHV/HYV volume push
     rs_rating: int | None = None
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None

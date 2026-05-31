@@ -79,7 +79,8 @@ type SortBy =
   | "price_asc"
   | "mcap_desc"
   | "listing_desc"
-  | "listing_asc";
+  | "listing_asc"
+  | "volume_date_desc";
 
 type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "gap";
 
@@ -279,6 +280,13 @@ function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
         const rt = listingTimestamp(right.listing_date);
         return lt - rt;
       }
+      case "volume_date_desc": {
+        // Newest high-volume push first; tie-break by score (recency→tier→breakout).
+        const lt = listingTimestamp(left.volume_push_date);
+        const rt = listingTimestamp(right.volume_push_date);
+        if (rt !== lt) return rt - lt;
+        return right.score - left.score;
+      }
     }
   });
   return sorted;
@@ -348,6 +356,13 @@ const VOLUME_TIER_BADGES: Record<string, { code: string; title: string; color: s
   "Half-yearly volume high": { code: "HHV", title: "Highest Half-yearly Volume", color: "#2563eb" },
   "Yearly volume high": { code: "HYV", title: "Highest Yearly Volume", color: "#111827" },
 };
+
+function formatVolumeDate(value: string | null | undefined): string {
+  if (!value) return "";
+  const dt = new Date(value);
+  if (isNaN(dt.getTime())) return value;
+  return dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "2-digit" });
+}
 
 function volumeTierBadge(item: ScanMatch): { code: string; title: string; color: string } | null {
   const first = item.reasons?.[0];
@@ -427,8 +442,13 @@ export function ScanTable({
   /* ----- Stage 4 new state ----- */
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [sortBy, setSortBy] = useState<SortBy>(
-    sortMode === "rs" ? "rs_desc" : "change_desc",
+    scan?.id === "volume" ? "volume_date_desc" : sortMode === "rs" ? "rs_desc" : "change_desc",
   );
+  // The volume screener is meant to read newest-high-volume-first, so force
+  // its date sort whenever the volume scan is (re)opened.
+  useEffect(() => {
+    if (scan?.id === "volume") setSortBy("volume_date_desc");
+  }, [scan?.id]);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
   // Symbol-filter applied to the scan result list itself ("does Screener A's
@@ -887,6 +907,11 @@ export function ScanTable({
               </span>
             ) : null}
             <span>{item.relative_volume.toFixed(2)}×</span>
+            {volBadge && item.volume_push_date ? (
+              <span style={{ fontSize: 8.5, color: "var(--muted, #64748b)", fontWeight: 600 }} title={`High-volume push on ${item.volume_push_date}`}>
+                {formatVolumeDate(item.volume_push_date)}
+              </span>
+            ) : null}
           </span>
         ) : null}
 
@@ -1024,7 +1049,10 @@ export function ScanTable({
             </button>
             {sortMenuOpen ? (
               <div className="st-pop">
-                {SORT_OPTIONS.map((opt) => (
+                {(scan?.id === "volume"
+                  ? [{ value: "volume_date_desc" as SortBy, label: "High-volume date (newest first)" }, ...SORT_OPTIONS]
+                  : SORT_OPTIONS
+                ).map((opt) => (
                   <button
                     key={opt.value}
                     type="button"

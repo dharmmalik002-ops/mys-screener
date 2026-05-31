@@ -1000,6 +1000,7 @@ def build_scan_match(
     reasons: list[str],
     *,
     pattern: str | None = None,
+    volume_push_date: str | None = None,
 ) -> ScanMatch:
     display_sector = scanner_sector_label(snapshot.sector, snapshot.sub_sector)
     return ScanMatch(
@@ -1017,6 +1018,7 @@ def build_scan_match(
         avg_rupee_volume_30d_crore=snapshot.avg_rupee_volume_30d_crore,
         score=score,
         pattern=pattern,
+        volume_push_date=volume_push_date,
         rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,

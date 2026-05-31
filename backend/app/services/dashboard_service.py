@@ -1822,6 +1822,7 @@ class DashboardService:
                 prior_peak = int(rec[3])
             except (TypeError, ValueError):
                 continue
+            push_date = str(rec[4]).strip() if len(rec) >= 5 and rec[4] else None
             # Only Quarterly+ pushes (tier ≥ 2). Monthly-only highs are excluded
             # to keep the screener focused on significant volume events.
             if tier < 2 or tier > 4 or offset < 0 or offset >= persist:
@@ -1835,14 +1836,20 @@ class DashboardService:
             # Recency dominates the sort (newest push on top); then tier; then
             # how decisively the push cleared the prior peak.
             score = round((persist - offset) * 1000.0 + tier * 100.0 + min(breakout, 50.0), 2)
+            pushed_reason = f"Pushed on {push_date} ({when})" if push_date else f"Pushed {when}"
             reasons = [
                 f"{label} volume high",
-                f"Pushed {when}",
+                pushed_reason,
                 f"Vol {push_volume:,} vs prior {label.lower()} peak {prior_peak:,}",
             ]
-            items.append(build_scan_match("volume", snapshot, score, reasons))
+            items.append(
+                build_scan_match("volume", snapshot, score, reasons, volume_push_date=push_date)
+            )
 
-        items.sort(key=lambda match: match.score, reverse=True)
+        # Sort by the high-volume push DATE (newest first); the score (which
+        # already encodes recency → tier → breakout) is the tiebreaker so stocks
+        # that pushed on the same date are ordered by significance.
+        items.sort(key=lambda match: (match.volume_push_date or "", match.score), reverse=True)
         return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
 
 

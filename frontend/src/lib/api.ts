@@ -21,6 +21,7 @@ export type ScanMatch = {
   avg_rupee_volume_30d_crore?: number | null;
   score: number;
   pattern?: string | null;
+  volume_push_date?: string | null;
   rs_rating?: number | null;
   rs_rating_1m_ago?: number | null;
   nifty_outperformance?: number | null;
@@ -992,6 +993,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     avg_rupee_volume_30d_crore: readNullableNumber(raw.avg_rupee_volume_30d_crore),
     score: readNumber(raw.score),
     pattern: readNullableString(raw.pattern),
+    volume_push_date: readNullableString(raw.volume_push_date),
     rs_rating: readNullableNumber(raw.rs_rating),
     rs_rating_1m_ago: readNullableNumber(raw.rs_rating_1m_ago),
     nifty_outperformance: readNullableNumber(raw.nifty_outperformance),
