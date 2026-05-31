@@ -297,6 +297,7 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(960);
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [zoomN, setZoomN] = useState<number | null>(null); // sessions to show; null = all
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -312,7 +313,11 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
 
   // Prefer the live (post warm-up) series; fall back to whatever exists.
   const live = xp.history.filter((p) => !p.warmup);
-  const points = (live.length >= 5 ? live : xp.history).slice(-400);
+  const allPoints = live.length >= 5 ? live : xp.history;
+  const maxN = allPoints.length;
+  const minN = Math.min(20, maxN);
+  const winN = Math.max(minN, Math.min(zoomN ?? maxN, maxN));
+  const points = allPoints.slice(-winN);
   if (points.length < 2) {
     return (
       <div className="homepro-xp-chart-wrap" ref={wrapRef}>
@@ -370,7 +375,7 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
 
   const fmtDate = (d: string) => {
     const dt = new Date(d);
-    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    return isNaN(dt.getTime()) ? d : dt.toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" });
   };
 
   // Visible regime bands (clipped to the current y-range) for shading + labels.
@@ -466,6 +471,41 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
         <span className="homepro-xp-tip-val" style={{ color: hovered.regime_color }}>{hovered.xp_score.toFixed(2)}</span>
         <span className="homepro-xp-tip-regime" style={{ color: hovered.regime_color }}>{hovered.regime}</span>
       </div>
+
+      {/* zoom slider */}
+      {maxN > minN && (
+        <div className="homepro-xp-zoom">
+          <button
+            type="button"
+            className="homepro-xp-zoom-btn"
+            title="Zoom in (fewer, more recent sessions)"
+            onClick={() => setZoomN(Math.max(minN, Math.round(winN / 1.5)))}
+          >
+            +
+          </button>
+          <input
+            className="homepro-xp-range"
+            type="range"
+            min={minN}
+            max={maxN}
+            value={winN}
+            onChange={(e) => setZoomN(Number(e.target.value))}
+            aria-label="Zoom: number of sessions shown"
+            title="Drag to zoom"
+          />
+          <button
+            type="button"
+            className="homepro-xp-zoom-btn"
+            title="Zoom out (more history)"
+            onClick={() => setZoomN(Math.min(maxN, Math.round(winN * 1.5)))}
+          >
+            −
+          </button>
+          <span className="homepro-xp-zoom-info">
+            {winN} sessions · from {fmtDate(points[0].date)}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

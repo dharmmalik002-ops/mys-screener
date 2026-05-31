@@ -1131,6 +1131,71 @@ body.dark .homepro-modal-close:hover {
 .homepro-xp-tip-regime {
   font-weight: 700;
 }
+.homepro-xp-zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+  padding: 0 2px;
+}
+.homepro-xp-zoom-btn {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 1px solid var(--hp-border);
+  background: var(--hp-card-bg);
+  border-radius: 7px;
+  color: var(--hp-text);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.homepro-xp-zoom-btn:hover {
+  background: var(--hp-bg);
+  border-color: var(--hp-muted);
+}
+.homepro-xp-range {
+  flex: 1 1 auto;
+  height: 4px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: linear-gradient(90deg, var(--hp-border), var(--hp-muted));
+  border-radius: 999px;
+  outline: none;
+  cursor: pointer;
+}
+.homepro-xp-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--hp-blue, #3b82f6);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+  cursor: pointer;
+}
+.homepro-xp-range::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--hp-blue, #3b82f6);
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.3);
+  cursor: pointer;
+}
+.homepro-xp-zoom-info {
+  flex: 0 0 auto;
+  font-size: 11px;
+  color: var(--hp-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  white-space: nowrap;
+}
 .homepro-xp-empty {
   display: grid;
   place-items: center;
