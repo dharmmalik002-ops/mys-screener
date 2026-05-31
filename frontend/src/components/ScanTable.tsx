@@ -82,7 +82,7 @@ type SortBy =
   | "listing_asc"
   | "volume_date_desc";
 
-type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "gap";
+type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "gap";
 
 const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
   { value: "change_desc", label: "Change % (high → low)" },
@@ -463,8 +463,17 @@ export function ScanTable({
     setSymbolFilter("");
   }, [scan?.id]);
   const [visibleCols, setVisibleCols] = useState<Set<ColumnKey>>(
-    () => new Set<ColumnKey>(["spark", "rs", "rvol"]),
+    () => new Set<ColumnKey>(scan?.id === "volume" ? ["spark", "rs", "rvol", "vdate"] : ["spark", "rs", "rvol"]),
   );
+  // Show the high-volume date column only on the volume screener.
+  useEffect(() => {
+    setVisibleCols((current) => {
+      const next = new Set(current);
+      if (scan?.id === "volume") next.add("vdate");
+      else next.delete("vdate");
+      return next;
+    });
+  }, [scan?.id]);
 
   /* Keep parent's sortMode in sync with the new sortBy when feasible */
   useEffect(() => {
@@ -749,6 +758,7 @@ export function ScanTable({
     if (visibleCols.has("rs")) cols.push("44px");
     if (visibleCols.has("rs1m")) cols.push("44px");
     if (visibleCols.has("rvol")) cols.push("48px");
+    if (visibleCols.has("vdate")) cols.push("82px");
     if (visibleCols.has("gap")) cols.push("52px");
     cols.push("32px"); // Watch
     return cols.join(" ");
@@ -907,11 +917,12 @@ export function ScanTable({
               </span>
             ) : null}
             <span>{item.relative_volume.toFixed(2)}×</span>
-            {volBadge && item.volume_push_date ? (
-              <span style={{ fontSize: 8.5, color: "var(--muted, #64748b)", fontWeight: 600 }} title={`High-volume push on ${item.volume_push_date}`}>
-                {formatVolumeDate(item.volume_push_date)}
-              </span>
-            ) : null}
+          </span>
+        ) : null}
+
+        {visibleCols.has("vdate") ? (
+          <span className="st-cell-center st-vdate" title={item.volume_push_date ? `High-volume push on ${item.volume_push_date}` : undefined}>
+            {item.volume_push_date ? formatVolumeDate(item.volume_push_date) : "—"}
           </span>
         ) : null}
 
@@ -1086,7 +1097,10 @@ export function ScanTable({
             </button>
             {colsMenuOpen ? (
               <div className="st-pop">
-                {COLUMN_DEFS.map((c) => {
+                {(scan?.id === "volume"
+                  ? [...COLUMN_DEFS, { key: "vdate" as ColumnKey, label: "High-Vol Date" }]
+                  : COLUMN_DEFS
+                ).map((c) => {
                   const on = visibleCols.has(c.key);
                   return (
                     <button
@@ -1180,6 +1194,7 @@ export function ScanTable({
           {visibleCols.has("rs") ? <span className="st-num">RS</span> : null}
           {visibleCols.has("rs1m") ? <span className="st-num">RS 1M</span> : null}
           {visibleCols.has("rvol") ? <span className="st-num">RVOL</span> : null}
+          {visibleCols.has("vdate") ? <span className="st-num">Vol Date</span> : null}
           {visibleCols.has("gap") ? <span className="st-num">Gap</span> : null}
           <span></span>
         </div>

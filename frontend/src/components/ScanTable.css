@@ -319,6 +319,13 @@
   color: var(--st-text);
 }
 
+.st-vdate {
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--st-muted, #64748b);
+}
+
 .st-rvol {
   color: var(--st-text);
   font-weight: 600;
