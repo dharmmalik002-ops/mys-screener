@@ -282,6 +282,16 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   );
 }
 
+// Per-regime band shading opacity. "Avoid Longs" reads strongly red; the
+// bullish bands are given more presence so they're easy to read while backtesting.
+const XP_BAND_OPACITY: Record<string, number> = {
+  "Avoid Longs": 0.24,
+  "Choppy / Spurt Only": 0.16,
+  "Progressive Exposure": 0.12,
+  "Swing-Friendly": 0.18,
+  "Extremely Strong": 0.22,
+};
+
 function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: number }) {
   const uid = useId().replace(/[:]/g, "");
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -302,7 +312,7 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
 
   // Prefer the live (post warm-up) series; fall back to whatever exists.
   const live = xp.history.filter((p) => !p.warmup);
-  const points = (live.length >= 5 ? live : xp.history).slice(-180);
+  const points = (live.length >= 5 ? live : xp.history).slice(-400);
   if (points.length < 2) {
     return (
       <div className="homepro-xp-chart-wrap" ref={wrapRef}>
@@ -319,8 +329,10 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   const innerH = Math.max(10, height - padT - padB);
 
   const scores = points.map((p) => p.xp_score);
-  const yMin = Math.max(0, Math.floor(Math.min(...scores) - 1.5));
-  const yMax = Math.ceil(Math.max(...scores) + 1.5);
+  // Always show the full regime ladder so every band keeps real vertical
+  // thickness (clamp the floor <= 8 and the ceiling >= 27).
+  const yMin = Math.max(0, Math.min(8, Math.floor(Math.min(...scores) - 1.5)));
+  const yMax = Math.max(27, Math.ceil(Math.max(...scores) + 1.5));
   const range = yMax - yMin || 1;
 
   const x = (i: number) => padL + (points.length === 1 ? innerW / 2 : (i / (points.length - 1)) * innerW);
@@ -408,11 +420,12 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
           const yTop = y(b.top);
           const h = Math.max(0, y(b.bot) - y(b.top));
           const mid = yTop + h / 2;
+          const fillOpacity = XP_BAND_OPACITY[b.label] ?? 0.1;
           return (
             <g key={b.label}>
-              <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={0.09} />
-              <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.35} />
-              <text x={padL + innerW + 8} y={mid + 3} fontSize={10} fontWeight={600} fill={b.color} opacity={0.9}>
+              <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={fillOpacity} />
+              <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.4} />
+              <text x={padL + innerW + 8} y={mid + 3} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
                 {b.label}
               </text>
             </g>
@@ -678,6 +691,50 @@ export function HomePanel({
 
       </div>
 
+      {/* ============ XP Market Breadth Score ============ */}
+      {xpBreadth && (
+        <div className="homepro-card homepro-xp-card">
+          <div className="homepro-card-head homepro-xp-head">
+            <div className="homepro-xp-title">
+              <h3>XP Market Breadth Score</h3>
+              <span className="homepro-xp-sub">NSE listed · EOD · calibrated to EM</span>
+            </div>
+            <div className="homepro-xp-badge-wrap">
+              {(() => {
+                const h = xpBreadth.history;
+                const prev = h.length >= 2 ? h[h.length - 2].xp_score : null;
+                const delta = prev == null ? null : xpBreadth.xp_score - prev;
+                if (delta == null) return null;
+                const cls = Math.abs(delta) < 0.05 ? "flat" : delta > 0 ? "up" : "down";
+                const arrow = cls === "flat" ? "▬" : cls === "up" ? "▲" : "▼";
+                return (
+                  <span className={`homepro-xp-delta ${cls}`} title="Change vs previous session">
+                    {arrow} {Math.abs(delta).toFixed(2)}
+                  </span>
+                );
+              })()}
+              <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color, boxShadow: `0 6px 18px -6px ${xpBreadth.regime_color}` }}>
+                <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
+                <span>{xpBreadth.regime}</span>
+              </div>
+            </div>
+          </div>
+          <XpBreadthChart xp={xpBreadth} />
+          <div className="homepro-xp-legend">
+            {xpBreadth.bands.map((b) => (
+              <span key={b.label} className="homepro-xp-legend-item">
+                <span className="homepro-legend-swatch" style={{ background: b.color }} />
+                {b.label}
+                <em>
+                  {b.min == null ? `< ${b.max}` : b.max == null ? `> ${b.min}` : `${b.min}–${b.max}`}
+                </em>
+              </span>
+            ))}
+            <span className="homepro-xp-asof">As of {xpBreadth.date}</span>
+          </div>
+        </div>
+      )}
+
       {/* ============ ROW 2 — Groups + Breadth + Nifty ============ */}
       <div className="homepro-row-mid">
         {/* Top 10 Industry Groups */}
@@ -814,50 +871,6 @@ export function HomePanel({
           </div>
         </div>
       </div>
-
-      {/* ============ XP Market Breadth Score ============ */}
-      {xpBreadth && (
-        <div className="homepro-card homepro-xp-card">
-          <div className="homepro-card-head homepro-xp-head">
-            <div className="homepro-xp-title">
-              <h3>XP Market Breadth Score</h3>
-              <span className="homepro-xp-sub">NSE listed · EOD · calibrated to EM</span>
-            </div>
-            <div className="homepro-xp-badge-wrap">
-              {(() => {
-                const h = xpBreadth.history;
-                const prev = h.length >= 2 ? h[h.length - 2].xp_score : null;
-                const delta = prev == null ? null : xpBreadth.xp_score - prev;
-                if (delta == null) return null;
-                const cls = Math.abs(delta) < 0.05 ? "flat" : delta > 0 ? "up" : "down";
-                const arrow = cls === "flat" ? "▬" : cls === "up" ? "▲" : "▼";
-                return (
-                  <span className={`homepro-xp-delta ${cls}`} title="Change vs previous session">
-                    {arrow} {Math.abs(delta).toFixed(2)}
-                  </span>
-                );
-              })()}
-              <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color, boxShadow: `0 6px 18px -6px ${xpBreadth.regime_color}` }}>
-                <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
-                <span>{xpBreadth.regime}</span>
-              </div>
-            </div>
-          </div>
-          <XpBreadthChart xp={xpBreadth} />
-          <div className="homepro-xp-legend">
-            {xpBreadth.bands.map((b) => (
-              <span key={b.label} className="homepro-xp-legend-item">
-                <span className="homepro-legend-swatch" style={{ background: b.color }} />
-                {b.label}
-                <em>
-                  {b.min == null ? `< ${b.max}` : b.max == null ? `> ${b.min}` : `${b.min}–${b.max}`}
-                </em>
-              </span>
-            ))}
-            <span className="homepro-xp-asof">As of {xpBreadth.date}</span>
-          </div>
-        </div>
-      )}
 
       {/* ============ ROW 3 — Gainers / Losers / Most Active ============ */}
       <div className="homepro-row-bot">

@@ -865,7 +865,7 @@ class DashboardService:
         self._breadth_history_cache = (snapshot_updated_at, history)
         return history
 
-    def _load_xp_breadth(self, history_days: int = 260) -> XpBreadthScore | None:
+    def _load_xp_breadth(self, history_days: int = 450) -> XpBreadthScore | None:
         """Load the precomputed XP market breadth score (written by the daily
         bhavcopy job / backfill) and shape it for the dashboard. Returns None
         when the file is absent or empty so the widget can hide gracefully."""
