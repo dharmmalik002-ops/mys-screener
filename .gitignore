@@ -1,5 +1,8 @@
 .DS_Store
 .venv/
+venv/
+backend/venv/
+backend/venv2/
 __pycache__/
 *.pyc
 node_modules/
