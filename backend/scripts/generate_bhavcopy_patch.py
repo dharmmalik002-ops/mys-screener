@@ -935,15 +935,20 @@ def main() -> int:
     # sources are validated through _is_record_sane before inclusion.
     bse_symbols = _fetch_from_bse(target)
     if bse_symbols:
+        # Refresh breadth from the FULL BSE bhavcopy first, BEFORE the price-patch
+        # "already current" guard. Otherwise a day where only the breadth is behind
+        # (e.g. the price patch was written earlier by the yfinance fallback) would
+        # short-circuit and leave the XP breadth score frozen. _update_xp_breadth
+        # is idempotent on date, so recomputing an already-stored day is harmless.
+        _update_xp_breadth(target, bse_symbols, "BSE")
         if _patch_already_current(target):
-            logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(bse_symbols))
+            logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", target.isoformat(), len(bse_symbols))
             return 0
         merged = _merge_bse_with_yfinance(bse_symbols, target, extra_tickers=extra_yf_tickers)
         if not merged:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1
         _write_patch(target, merged, "YF+BSE", new_listings=new_listings)
-        _update_xp_breadth(target, bse_symbols, "BSE")
         return 0
 
     logger.info("BSE unavailable for %s. Trying NSE archives.", target)
@@ -955,11 +960,11 @@ def main() -> int:
         if symbols:
             symbols = {s: r for s, r in symbols.items() if _is_record_sane(r, sym=s)}
             if symbols:
+                _update_xp_breadth(target, symbols, "NSE")
                 if _patch_already_current(target):
-                    logger.info("Patch already current for %s (%s symbols). No update needed.", target.isoformat(), len(symbols))
+                    logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", target.isoformat(), len(symbols))
                     return 0
                 _write_patch(target, symbols, "NSE", new_listings=new_listings)
-                _update_xp_breadth(target, symbols, "NSE")
                 return 0
 
     logger.warning("NSE unavailable for %s. Trying yfinance fallback.", target)
@@ -969,8 +974,13 @@ def main() -> int:
     if yf_symbols:
         yf_symbols = {s: r for s, r in yf_symbols.items() if _is_record_sane(r, sym=s)}
         if yf_symbols:
+            # BSE is the preferred (full-market) breadth source, but when it is
+            # unavailable the yfinance fallback MUST still advance the XP breadth
+            # series — otherwise a BSE outage silently freezes the dashboard's
+            # breadth score (this is exactly what stranded breadth at 2026-06-02).
+            _update_xp_breadth(target, yf_symbols, "YFINANCE")
             if _patch_already_current(target):
-                logger.info("Patch already current for %s. No update needed.", target.isoformat())
+                logger.info("Price patch already current for %s. Breadth refreshed; no price update needed.", target.isoformat())
                 return 0
             _write_patch(target, yf_symbols, "YFINANCE", new_listings=new_listings)
             return 0
@@ -985,11 +995,11 @@ def main() -> int:
     if bse_prev:
         merged_prev = _merge_bse_with_yfinance(bse_prev, prev)
         if merged_prev:
+            _update_xp_breadth(prev, bse_prev, "BSE")
             if _patch_already_current(prev):
-                logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(merged_prev))
+                logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", prev.isoformat(), len(merged_prev))
                 return 0
             _write_patch(prev, merged_prev, "YF+BSE")
-            _update_xp_breadth(prev, bse_prev, "BSE")
             return 0
     csv_text = _fetch_bhavcopy_csv(prev)
     if csv_text:
@@ -997,11 +1007,11 @@ def main() -> int:
         if symbols:
             symbols = {s: r for s, r in symbols.items() if _is_record_sane(r, sym=s)}
             if symbols:
+                _update_xp_breadth(prev, symbols, "NSE")
                 if _patch_already_current(prev):
-                    logger.info("Patch already current for %s (%s symbols). No update needed.", prev.isoformat(), len(symbols))
+                    logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", prev.isoformat(), len(symbols))
                     return 0
                 _write_patch(prev, symbols, "NSE")
-                _update_xp_breadth(prev, symbols, "NSE")
                 return 0
 
     logger.error("Could not fetch Bhavcopy from NSE, BSE, or yfinance for any date.")
