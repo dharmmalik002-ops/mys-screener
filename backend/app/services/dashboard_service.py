@@ -537,7 +537,12 @@ class DashboardService:
             return []
 
     def _load_price_bands(self) -> dict:
-        """mtime-cached read of data/price_bands.json → {"as_of": iso, "bands": {SYMBOL: pct|label}}."""
+        """mtime-cached read of data/price_bands.json → {"as_of": iso, "bands": {SYMBOL: pct|label}}.
+
+        The store is maintained daily by scripts/generate_bhavcopy_patch.py
+        from NSE's complete sec_list.csv (3,200+ symbols); "No Band" entries
+        mark F&O/dynamic names with no fixed daily limit.
+        """
         try:
             backend_root = getattr(self.provider, "backend_root", None)
             if backend_root is None:
