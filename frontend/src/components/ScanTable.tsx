@@ -394,6 +394,8 @@ type ScanTableProps = {
   items: ScanMatch[];
   sectorSummaries: ScanSectorSummary[];
   onPickSymbol: (symbol: string) => void;
+  // Optional best-effort chart prewarm on row hover (no-op if omitted).
+  onPrefetchSymbol?: (symbol: string) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   selectedSymbol: string | null;
   sortMode: "change" | "rs";
@@ -414,6 +416,7 @@ export function ScanTable({
   items,
   sectorSummaries,
   onPickSymbol,
+  onPrefetchSymbol,
   onRequestAddToWatchlist,
   selectedSymbol,
   sortMode,
@@ -828,6 +831,8 @@ export function ScanTable({
         <button
           type="button"
           className="scan-row-main st-row-main"
+          onMouseEnter={onPrefetchSymbol ? () => onPrefetchSymbol(item.symbol) : undefined}
+          onFocus={onPrefetchSymbol ? () => onPrefetchSymbol(item.symbol) : undefined}
           onClick={() => onPickSymbol(item.symbol)}
         >
           <span className="st-logo">

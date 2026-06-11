@@ -206,6 +206,7 @@ type MomentumBurstResultsProps = {
   items: ScanMatch[];
   loading: boolean;
   onPickSymbol: (symbol: string) => void;
+  onPrefetchSymbol?: (symbol: string) => void;
   selectedSymbol?: string | null;
 };
 
@@ -235,7 +236,7 @@ function fmt(n: number | null | undefined, digits = 2, suffix = ""): string {
   return `${n.toFixed(digits)}${suffix}`;
 }
 
-export function MomentumBurstResults({ items, loading, onPickSymbol, selectedSymbol }: MomentumBurstResultsProps) {
+export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchSymbol, selectedSymbol }: MomentumBurstResultsProps) {
   const [sortKey, setSortKey] = useState<SortKey>("default");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -352,6 +353,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, selectedSym
               <tr
                 key={m.symbol}
                 onClick={() => onPickSymbol(m.symbol)}
+                onMouseEnter={onPrefetchSymbol ? () => onPrefetchSymbol(m.symbol) : undefined}
                 style={{ cursor: "pointer", background: isSel ? "rgba(255,255,255,0.06)" : undefined }}
               >
                 <td style={{ ...td, textAlign: "left" }}>

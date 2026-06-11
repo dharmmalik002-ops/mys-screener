@@ -5155,6 +5155,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         items={visibleScanItems}
                         loading={scanLoading}
                         onPickSymbol={handlePickSymbol}
+                        onPrefetchSymbol={handlePrefetchSymbol}
                         selectedSymbol={selectedSymbol}
                       />
                     ) : (
@@ -5173,6 +5174,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         items={visibleScanItems}
                         sectorSummaries={scanSectorSummaries}
                         onPickSymbol={handlePickSymbol}
+                        onPrefetchSymbol={handlePrefetchSymbol}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
                         selectedSymbol={selectedSymbol}
                         sortMode={resultSortMode}
