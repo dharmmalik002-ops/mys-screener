@@ -611,6 +611,31 @@ class ScanDescriptor(BaseModel):
     hit_count: int = 0
 
 
+class MomentumBurstPlan(BaseModel):
+    """Per-stock output for the Momentum Burst scanner — a trade plan, not just a row.
+
+    ``tag`` is one of "Burst", "10 EMA Setup", "21 EMA Setup". Setup rows carry a
+    breakout trade plan (entry/stop/targets); fresh "Burst" rows leave the plan
+    fields ``None`` because there is no defined consolidation to trade against yet.
+    """
+
+    tag: str
+    rs_rating: int
+    burst_pct: float
+    burst_days: int
+    consolidation_days: int | None = None
+    consolidation_range_pct: float | None = None
+    dist_from_10ema_pct: float | None = None
+    dist_from_21ema_pct: float | None = None
+    volume_dryup_ratio: float | None = None
+    giveback_pct: float | None = None
+    entry: float | None = None
+    stop: float | None = None
+    risk_pct: float | None = None
+    target_2r: float | None = None
+    target_3r: float | None = None
+
+
 class ScanMatch(BaseModel):
     scan_id: str
     symbol: str
@@ -641,6 +666,8 @@ class ScanMatch(BaseModel):
     stock_return_12m: float | None = None
     gap_pct: float | None = None
     reasons: list[str] = Field(default_factory=list)
+    # Scanner-specific trade plan; only populated by the Momentum Burst scanner.
+    momentum_burst: MomentumBurstPlan | None = None
 
 
 class AlertItem(BaseModel):
@@ -804,6 +831,48 @@ class EandCScanRequest(BaseModel):
 class ConsolidatingScanRequest(BaseModel):
     enable_run_up_consolidation: bool = True
     enable_near_multi_year_breakout: bool = True
+    min_liquidity_crore: float | None = Field(default=None, ge=0.0)
+    limit: int = Field(default=1500, ge=1, le=5000)
+
+
+class MomentumBurstScanRequest(BaseModel):
+    """Momentum Burst scanner — catches fresh explosive legs (Type A) and the
+    buyable rest near the 10/21 EMA after a move (Type B). MA / price / volume /
+    RS only — no oscillators. Every threshold is editable from the panel UI.
+    """
+
+    # --- Universe & liquidity (applied first) ---
+    min_price: float = Field(default=50.0, ge=0.0, le=100000.0)
+    min_turnover_crore: float = Field(default=5.0, ge=0.0, le=10000.0)  # 20-day avg turnover
+    exclude_surveillance: bool = True  # ASM/GSM if data available, else skip gracefully
+
+    # --- Trend & RS context (all types) ---
+    min_rs_rating: int = Field(default=70, ge=1, le=99)
+
+    # --- Which candidate types to surface ---
+    include_fresh_bursts: bool = True
+    include_ema_setups: bool = True
+
+    # --- Type A: fresh momentum burst ---
+    burst_min_gain_pct: float = Field(default=15.0, ge=1.0, le=200.0)
+    burst_window_min: int = Field(default=3, ge=1, le=60)
+    burst_window_max: int = Field(default=10, ge=1, le=60)
+    burst_recency_sessions: int = Field(default=5, ge=1, le=30)
+    burst_min_volume_ratio: float = Field(default=1.5, ge=0.5, le=20.0)  # x 50-day avg vol
+
+    # --- Type B: consolidation near 10/21 EMA ---
+    setup_min_move_pct: float = Field(default=20.0, ge=1.0, le=300.0)
+    setup_move_window_min: int = Field(default=5, ge=1, le=60)
+    setup_move_window_max: int = Field(default=15, ge=1, le=90)
+    setup_move_lookback_sessions: int = Field(default=30, ge=2, le=120)
+    consolidation_min_days: int = Field(default=3, ge=2, le=40)
+    consolidation_max_days: int = Field(default=15, ge=2, le=60)
+    consolidation_max_range_pct: float = Field(default=10.0, ge=0.5, le=40.0)
+    ema_surf_distance_pct: float = Field(default=4.0, ge=0.5, le=20.0)
+    max_giveback_10ema_pct: float = Field(default=33.33, ge=1.0, le=100.0)
+    max_giveback_21ema_pct: float = Field(default=50.0, ge=1.0, le=100.0)
+    volume_dryup_ratio: float = Field(default=0.7, ge=0.1, le=2.0)
+
     min_liquidity_crore: float | None = Field(default=None, ge=0.0)
     limit: int = Field(default=1500, ge=1, le=5000)
 

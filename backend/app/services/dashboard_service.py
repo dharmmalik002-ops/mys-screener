@@ -55,6 +55,7 @@ from app.models.market import (
     MoneyFlowStockIdea,
     MoneyFlowStockIdeasHistoryResponse,
     MoneyFlowStockIdeasResponse,
+    MomentumBurstScanRequest,
     NearPivotScanRequest,
     PullBackScanRequest,
     ReturnsScanRequest,
@@ -81,6 +82,7 @@ from app.scanners.definitions import (
     run_consolidating_scan,
     run_custom_scan,
     run_expansion_scan,
+    run_momentum_burst_scan,
     run_scan,
     run_returns_scan,
     scan_catalog_with_counts,
@@ -4366,6 +4368,29 @@ class DashboardService:
             snapshots=snapshots,
             items=items,
             historical_runner=lambda historical_snapshots: run_returns_scan(request, historical_snapshots),
+            include_sector_summaries=include_sector_summaries,
+        )
+
+    async def get_momentum_burst_scan_results(
+        self,
+        request: MomentumBurstScanRequest,
+        include_sector_summaries: bool = True,
+    ) -> ScanResultsResponse:
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        items = run_momentum_burst_scan(request, snapshots)
+        return await self._scan_results_response(
+            scan={
+                "id": "momentum-burst",
+                "name": "Momentum Burst",
+                "category": "Setups",
+                "description": "Fresh explosive legs plus the buyable rest near the 10/21 EMA.",
+                "hit_count": len(items),
+            },
+            scan_key="momentum-burst",
+            request_signature=json.dumps(request.model_dump(mode="python"), sort_keys=True, default=str),
+            snapshots=snapshots,
+            items=items,
+            historical_runner=lambda historical_snapshots: run_momentum_burst_scan(request, historical_snapshots),
             include_sector_summaries=include_sector_summaries,
         )
 

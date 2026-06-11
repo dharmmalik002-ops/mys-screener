@@ -1,3 +1,4 @@
+import bisect
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -6,6 +7,8 @@ from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
     EandCScanRequest,
+    MomentumBurstPlan,
+    MomentumBurstScanRequest,
     ReturnsScanRequest,
     ScanDescriptor,
     ScanMatch,
@@ -1555,3 +1558,452 @@ def scan_catalog_with_counts(snapshots: list[StockSnapshot]) -> tuple[list[ScanD
         )
 
     return descriptors, all_results
+
+
+# ---------------------------------------------------------------------------
+# Momentum Burst scanner
+# ---------------------------------------------------------------------------
+# Catches two states using ONLY moving averages, price action, volume and RS:
+#   Type A "Burst"        — a fresh explosive leg (up >= X% in a 3-10 day window).
+#   Type B "10/21 EMA Setup" — a stock that already exploded and is now resting
+#                          (tight, contracting consolidation surfing a rising EMA).
+# No RSI / MACD / ADX / oscillators are used anywhere.
+
+_MB_BURST_TAG = "Burst"
+_MB_10EMA_TAG = "10 EMA Setup"
+_MB_21EMA_TAG = "21 EMA Setup"
+# Sort priority: 10 EMA setups first, then 21 EMA setups, then fresh bursts.
+_MB_TAG_RANK = {_MB_10EMA_TAG: 0, _MB_21EMA_TAG: 1, _MB_BURST_TAG: 2}
+
+
+def _ema_series(values: list[float], span: int) -> list[float]:
+    """Standard EMA over ``values`` (seeded with the first value), same length."""
+    if not values:
+        return []
+    k = 2.0 / (span + 1.0)
+    out: list[float] = [float(values[0])]
+    for v in values[1:]:
+        out.append(float(v) * k + out[-1] * (1.0 - k))
+    return out
+
+
+def _mb_closes(snapshot: StockSnapshot) -> list[float]:
+    """Long daily close series (~240 bars) from the snapshot's chart grid points."""
+    points = getattr(snapshot, "chart_grid_points", None) or []
+    closes: list[float] = []
+    for p in points:
+        value = getattr(p, "value", None)
+        if value is None and isinstance(p, dict):
+            value = p.get("value")
+        if value is None:
+            continue
+        try:
+            fv = float(value)
+        except (TypeError, ValueError):
+            continue
+        if fv > 0:
+            closes.append(fv)
+    return closes
+
+
+def _mb_volume_at(vols: list[int], voffset: int, close_index: int) -> float | None:
+    """Map a close-series index to the trailing ``recent_volumes`` window.
+
+    ``voffset`` is ``len(closes) - len(vols)``; volumes only cover the last ~20
+    sessions, so older indices return ``None`` (unknown) rather than crashing.
+    """
+    idx = close_index - voffset
+    if 0 <= idx < len(vols):
+        try:
+            return float(vols[idx])
+        except (TypeError, ValueError):
+            return None
+    return None
+
+
+def _mb_best_window_gain(
+    closes: list[float],
+    *,
+    win_min: int,
+    win_max: int,
+    end_lo: int,
+    end_hi: int,
+) -> tuple[float, int, int, int]:
+    """Max close-to-close gain over any window length in [win_min, win_max]
+    whose END index lies in [end_lo, end_hi]. Returns (gain_pct, days, s, e);
+    gain_pct is -inf when no valid window exists.
+    """
+    n = len(closes)
+    best = (float("-inf"), 0, -1, -1)
+    end_hi = min(end_hi, n - 1)
+    end_lo = max(end_lo, 0)
+    for e in range(end_lo, end_hi + 1):
+        for w in range(win_min, win_max + 1):
+            s = e - w
+            if s < 0:
+                continue
+            base = closes[s]
+            if base <= 0:
+                continue
+            gain = (closes[e] / base - 1.0) * 100.0
+            if gain > best[0]:
+                best = (gain, w, s, e)
+    return best
+
+
+def _mb_detect_burst(
+    closes: list[float],
+    vols: list[int],
+    ema10: list[float],
+    ema21: list[float],
+    avg_vol_50d: float | None,
+    request: MomentumBurstScanRequest,
+) -> tuple[float, int] | None:
+    """Type A — fresh explosive leg. Returns (burst_pct, burst_days) or None."""
+    n = len(closes)
+    need = request.burst_window_max + request.burst_recency_sessions + 1
+    if n < need:
+        return None
+    if not avg_vol_50d or avg_vol_50d <= 0:
+        return None  # volume confirmation is required; skip if we can't measure it
+
+    gain, days, s, e = _mb_best_window_gain(
+        closes,
+        win_min=request.burst_window_min,
+        win_max=request.burst_window_max,
+        end_lo=n - request.burst_recency_sessions,
+        end_hi=n - 1,
+    )
+    if gain < request.burst_min_gain_pct or s < 0:
+        return None
+
+    # The move must be above a rising fast EMA stack right now.
+    if not (ema10 and ema21):
+        return None
+    last_close = closes[-1]
+    if not (last_close > ema10[-1] and ema10[-1] > ema21[-1]):
+        return None
+
+    # At least one session in the move carried volume >= ratio x 50-day average.
+    voffset = n - len(vols)
+    threshold = request.burst_min_volume_ratio * avg_vol_50d
+    has_volume = False
+    for i in range(s + 1, e + 1):
+        vol = _mb_volume_at(vols, voffset, i)
+        if vol is not None and vol >= threshold:
+            has_volume = True
+            break
+    if not has_volume:
+        return None
+
+    return round(gain, 2), days
+
+
+def _mb_is_contracting(highs: list[float], lows: list[float]) -> bool:
+    """True when recent daily ranges are narrower than the first part of the rest."""
+    k = len(highs)
+    if k < 4 or len(lows) < k:
+        return False
+    ranges = [h - l for h, l in zip(highs, lows) if h is not None and l is not None]
+    if len(ranges) < 4:
+        return False
+    half = len(ranges) // 2
+    first = ranges[:half]
+    recent = ranges[half:]
+    if not first or not recent:
+        return False
+    return (sum(recent) / len(recent)) < (sum(first) / len(first))
+
+
+def _mb_detect_setup(
+    snapshot: StockSnapshot,
+    closes: list[float],
+    ema10: list[float],
+    ema21: list[float],
+    request: MomentumBurstScanRequest,
+) -> MomentumBurstPlan | None:
+    """Type B — consolidation near the 10/21 EMA after a prior burst leg.
+
+    Returns a populated MomentumBurstPlan (without tag/rs filled by the caller's
+    rs_rating) or None. Tag is set here ("10 EMA Setup" / "21 EMA Setup").
+    """
+    n = len(closes)
+    if n < max(request.setup_move_lookback_sessions, request.consolidation_max_days) + 1:
+        return None
+
+    highs = [float(v) for v in (snapshot.recent_highs or []) if v is not None]
+    lows = [float(v) for v in (snapshot.recent_lows or []) if v is not None]
+    vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    if len(highs) < request.consolidation_min_days or len(lows) < request.consolidation_min_days:
+        return None
+    if snapshot.sma50 is None:
+        return None
+
+    last_close = closes[-1]
+    cons_max = min(request.consolidation_max_days, len(highs), len(lows), len(ema10), len(ema21))
+
+    # --- 1+2. Find the consolidation AND classify the EMA surf together. ---
+    # We want the LARGEST recent window that is (a) tight, (b) contracting, and
+    # (c) surfing the 10 or 21 EMA. Checking the surf inside the loop matters:
+    # right after a steep leg the fast EMA needs a few sessions to catch up, so
+    # the surfing window is often shorter than the merely-tight window. The 10
+    # EMA tier is preferred over the 21 EMA tier when both qualify (per spec).
+    dist = request.ema_surf_distance_pct / 100.0
+
+    def _classify(k: int) -> tuple[str, float, float] | None:
+        cons_closes = closes[-k:]
+        cons_ema10 = ema10[-k:]
+        cons_ema21 = ema21[-k:]
+        surfs_10 = all(abs(c - e) <= dist * e for c, e in zip(cons_closes, cons_ema10) if e > 0)
+        no_close_below_21 = all(c >= e for c, e in zip(cons_closes, cons_ema21))
+        if request.include_ema_setups and surfs_10 and no_close_below_21:
+            return _MB_10EMA_TAG, ema10[-1], request.max_giveback_10ema_pct / 100.0
+        surfs_21 = all(abs(c - e) <= dist * e for c, e in zip(cons_closes, cons_ema21) if e > 0)
+        no_close_below_50 = all(c >= snapshot.sma50 for c in cons_closes)
+        if request.include_ema_setups and surfs_21 and no_close_below_50:
+            return _MB_21EMA_TAG, ema21[-1], request.max_giveback_21ema_pct / 100.0
+        return None
+
+    best_k = 0
+    best_range_pct = 0.0
+    tag = ""
+    surfed_ema = 0.0
+    max_giveback = 0.0
+    for k in range(cons_max, request.consolidation_min_days - 1, -1):
+        wh = highs[-k:]
+        wl = lows[-k:]
+        pivot_high = max(wh)
+        pivot_low = min(wl)
+        if pivot_high <= 0:
+            continue
+        range_pct = (pivot_high - pivot_low) / pivot_high * 100.0
+        if range_pct > request.consolidation_max_range_pct or not _mb_is_contracting(wh, wl):
+            continue
+        classification = _classify(k)
+        if classification is None:
+            continue
+        tag, surfed_ema, max_giveback = classification
+        best_k = k
+        best_range_pct = round(range_pct, 2)
+        break
+    if best_k < request.consolidation_min_days:
+        return None
+
+    cons_high = max(highs[-best_k:])
+    cons_low = min(lows[-best_k:])
+
+    # --- 3. Burst leg before the rest: >= setup_min_move_pct move in a
+    #         [move_window_min, move_window_max] window inside the lookback. ---
+    leg_end_hi = n - best_k  # leg ends at/just before the consolidation begins
+    gain, leg_days, ls, le = _mb_best_window_gain(
+        closes,
+        win_min=request.setup_move_window_min,
+        win_max=request.setup_move_window_max,
+        end_lo=n - request.setup_move_lookback_sessions,
+        end_hi=leg_end_hi,
+    )
+    if gain < request.setup_min_move_pct or ls < 0:
+        return None
+
+    # --- 4. Shallow pullback (giveback of the burst move). ---
+    move_high = max(highs[-best_k:] + [closes[le]]) if highs else closes[le]
+    move_high = max(move_high, max(closes[ls : le + 1]))
+    move_low = min(closes[ls : le + 1])
+    move_size = move_high - move_low
+    if move_size <= 0:
+        return None
+    giveback_ratio = max(0.0, (move_high - last_close) / move_size)
+    if giveback_ratio >= max_giveback:
+        return None
+
+    # --- 5. Volume dry-up: consolidation avg volume < ratio x burst-leg volume. ---
+    voffset = n - len(vols)
+    leg_vols = [v for v in (_mb_volume_at(vols, voffset, i) for i in range(ls, le + 1)) if v is not None]
+    cons_vols = [v for v in (_mb_volume_at(vols, voffset, i) for i in range(n - best_k, n)) if v is not None]
+    dryup_ratio: float | None = None
+    if cons_vols:
+        cons_avg = sum(cons_vols) / len(cons_vols)
+        if leg_vols:
+            burst_avg = sum(leg_vols) / len(leg_vols)
+        elif snapshot.avg_volume_50d:
+            burst_avg = float(snapshot.avg_volume_50d)
+        else:
+            burst_avg = 0.0
+        if burst_avg > 0:
+            dryup_ratio = round(cons_avg / burst_avg, 3)
+            if dryup_ratio >= request.volume_dryup_ratio:
+                return None
+
+    # --- 6. Trade plan: breakout entry, tighter stop, 2R/3R targets. ---
+    entry = round(cons_high, 2)
+    raw_stop = max(cons_low, surfed_ema)  # tighter (higher) of the two, => smaller risk
+    if raw_stop >= entry:
+        raw_stop = cons_low
+    stop = round(raw_stop, 2)
+    risk = entry - stop
+    risk_pct = round(risk / entry * 100.0, 2) if entry > 0 and risk > 0 else None
+    target_2r = round(entry + 2 * risk, 2) if risk > 0 else None
+    target_3r = round(entry + 3 * risk, 2) if risk > 0 else None
+
+    return MomentumBurstPlan(
+        tag=tag,
+        rs_rating=0,  # filled by the caller
+        burst_pct=round(gain, 2),
+        burst_days=leg_days,
+        consolidation_days=best_k,
+        consolidation_range_pct=best_range_pct,
+        dist_from_10ema_pct=round((last_close - ema10[-1]) / ema10[-1] * 100.0, 2) if ema10[-1] > 0 else None,
+        dist_from_21ema_pct=round((last_close - ema21[-1]) / ema21[-1] * 100.0, 2) if ema21[-1] > 0 else None,
+        volume_dryup_ratio=dryup_ratio,
+        giveback_pct=round(giveback_ratio * 100.0, 2),
+        entry=entry,
+        stop=stop,
+        risk_pct=risk_pct,
+        target_2r=target_2r,
+        target_3r=target_3r,
+    )
+
+
+def _mb_passes_universe(snapshot: StockSnapshot, request: MomentumBurstScanRequest) -> bool:
+    """Universe + liquidity + trend gate, applied before RS percentile ranking."""
+    if snapshot.last_price < request.min_price:
+        return False
+    if snapshot.avg_rupee_turnover_20d_crore < request.min_turnover_crore:
+        return False
+    if not _passes_min_liquidity(snapshot, request.min_liquidity_crore):
+        return False
+    # ASM/GSM surveillance exclusion: no surveillance flag exists on the snapshot,
+    # so this filter is skipped gracefully (request.exclude_surveillance is a no-op
+    # until a surveillance source is wired in).
+    # Trend: close > 50 SMA; and 50 SMA > 200 SMA when >= ~250 bars are available.
+    if snapshot.sma50 is None or snapshot.last_price <= snapshot.sma50:
+        return False
+    if snapshot.sma200 is not None and snapshot.sma50 <= snapshot.sma200:
+        return False
+    return True
+
+
+def _mb_blended_outperformance(snapshot: StockSnapshot) -> float:
+    """RS input: blend 1M/3M/6M outperformance vs Nifty, weighted to recency."""
+    op_1m = snapshot.stock_return_20d - snapshot.benchmark_return_20d
+    op_3m = snapshot.stock_return_60d - snapshot.benchmark_return_60d
+    op_6m = snapshot.stock_return_126d - snapshot.benchmark_return_126d
+    return 0.5 * op_1m + 0.3 * op_3m + 0.2 * op_6m
+
+
+def momentum_burst_rs_ratings(scores: list[float]) -> list[int]:
+    """Percentile-rank blended scores into RS ratings 1-99 (ties share a rating).
+
+    Exposed for unit testing the RS math independently of the snapshot plumbing.
+    """
+    n = len(scores)
+    if n == 0:
+        return []
+    if n == 1:
+        return [99]
+    sorted_scores = sorted(scores)
+    # bisect_left gives the count of values strictly less than each score, so
+    # ties share the same rating. Map that count onto the 1-99 RS scale.
+    return [
+        max(1, min(99, round(1 + 98 * (bisect.bisect_left(sorted_scores, s) / (n - 1)))))
+        for s in scores
+    ]
+
+
+def run_momentum_burst_scan(
+    request: MomentumBurstScanRequest, snapshots: list[StockSnapshot]
+) -> list[ScanMatch]:
+    """Run the Momentum Burst scanner over the snapshot universe."""
+    # --- Pass 1: universe / liquidity / trend gate + RS inputs. ---
+    pool: list[StockSnapshot] = []
+    blended: list[float] = []
+    for snapshot in snapshots:
+        try:
+            if not _mb_passes_universe(snapshot, request):
+                continue
+        except Exception:
+            continue
+        pool.append(snapshot)
+        blended.append(_mb_blended_outperformance(snapshot))
+
+    if not pool:
+        return []
+
+    # --- Pass 2: percentile RS rating across the scanned universe. ---
+    ratings = momentum_burst_rs_ratings(blended)
+    rs_by_symbol = {pool[i].symbol: ratings[i] for i in range(len(pool))}
+
+    # --- Pass 3: classify each RS-qualifying candidate. ---
+    matches: list[ScanMatch] = []
+    for snapshot in pool:
+        rs = rs_by_symbol.get(snapshot.symbol, 0)
+        if rs < request.min_rs_rating:
+            continue
+        try:
+            closes = _mb_closes(snapshot)
+            if len(closes) < 30:
+                continue  # insufficient history — skip gracefully
+            ema10 = _ema_series(closes, 10)
+            ema21 = _ema_series(closes, 21)
+            vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+
+            plan: MomentumBurstPlan | None = None
+            # Type B (the buyable rest) is the primary list; check it first.
+            if request.include_ema_setups:
+                plan = _mb_detect_setup(snapshot, closes, ema10, ema21, request)
+            # Otherwise look for a fresh explosive leg (Type A).
+            if plan is None and request.include_fresh_bursts:
+                burst = _mb_detect_burst(closes, vols, ema10, ema21, snapshot.avg_volume_50d, request)
+                if burst is not None:
+                    burst_pct, burst_days = burst
+                    plan = MomentumBurstPlan(
+                        tag=_MB_BURST_TAG,
+                        rs_rating=rs,
+                        burst_pct=burst_pct,
+                        burst_days=burst_days,
+                        dist_from_10ema_pct=round((closes[-1] - ema10[-1]) / ema10[-1] * 100.0, 2)
+                        if ema10 and ema10[-1] > 0
+                        else None,
+                        dist_from_21ema_pct=round((closes[-1] - ema21[-1]) / ema21[-1] * 100.0, 2)
+                        if ema21 and ema21[-1] > 0
+                        else None,
+                    )
+            if plan is None:
+                continue
+            plan.rs_rating = rs
+        except Exception:
+            # Never let one malformed snapshot crash the whole scan.
+            continue
+
+        score = float(rs) - _MB_TAG_RANK.get(plan.tag, 9) * 0.001  # keep RS as the visible driver
+        reasons = _mb_reasons(plan)
+        match = build_scan_match("momentum-burst", snapshot, round(score, 3), reasons, pattern=plan.tag)
+        match.rs_rating = rs  # surface the scanner's own percentile RS even if rs_eligible is False
+        match.momentum_burst = plan
+        matches.append(match)
+
+    # --- Sort: 10 EMA setups, then 21 EMA setups, then Bursts; RS desc within each. ---
+    matches.sort(
+        key=lambda m: (
+            _MB_TAG_RANK.get(m.momentum_burst.tag if m.momentum_burst else "", 9),
+            -(m.momentum_burst.rs_rating if m.momentum_burst else 0),
+            -(m.momentum_burst.burst_pct if m.momentum_burst else 0.0),
+        )
+    )
+    return matches[: request.limit]
+
+
+def _mb_reasons(plan: MomentumBurstPlan) -> list[str]:
+    reasons: list[str] = [f"RS {plan.rs_rating}"]
+    if plan.tag == _MB_BURST_TAG:
+        reasons.append(f"Fresh burst +{plan.burst_pct:.1f}% over {plan.burst_days}d")
+        if plan.dist_from_10ema_pct is not None:
+            reasons.append(f"{plan.dist_from_10ema_pct:+.1f}% vs 10 EMA")
+    else:
+        reasons.append(
+            f"{plan.tag}: +{plan.burst_pct:.1f}% leg, {plan.consolidation_days}d rest "
+            f"({plan.consolidation_range_pct:.1f}% range)"
+        )
+        if plan.volume_dryup_ratio is not None:
+            reasons.append(f"Vol dry-up {plan.volume_dryup_ratio:.2f}x")
+    return reasons[:3]

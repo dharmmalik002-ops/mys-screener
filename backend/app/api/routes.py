@@ -15,6 +15,7 @@ from app.models.market import (
     ImprovingRsResponse,
     ImprovingRsWindow,
     MarketOverviewResponse,
+    MomentumBurstScanRequest,
     NearPivotScanRequest,
     PullBackScanRequest,
     ReturnsScanRequest,
@@ -156,6 +157,17 @@ def build_router(service):
         include_sector_summaries: bool = Query(default=False),
     ):
         return await resolve_service(market).get_consolidating_scan_results(
+            request=request,
+            include_sector_summaries=include_sector_summaries,
+        )
+
+    @router.post("/momentum-burst")
+    async def momentum_burst_scan(
+        request: MomentumBurstScanRequest,
+        market: str = Query(default="india"),
+        include_sector_summaries: bool = Query(default=False),
+    ):
+        return await resolve_service(market).get_momentum_burst_scan_results(
             request=request,
             include_sector_summaries=include_sector_summaries,
         )
@@ -433,6 +445,17 @@ def build_router(service):
         include_sector_summaries: bool = Query(default=False),
     ):
         return await resolve_service(market_name).get_consolidating_scan_results(
+            request=request,
+            include_sector_summaries=include_sector_summaries,
+        )
+
+    @router.post("/{market_name}/momentum-burst")
+    async def namespaced_momentum_burst_scan(
+        market_name: str,
+        request: MomentumBurstScanRequest,
+        include_sector_summaries: bool = Query(default=False),
+    ):
+        return await resolve_service(market_name).get_momentum_burst_scan_results(
             request=request,
             include_sector_summaries=include_sector_summaries,
         )
