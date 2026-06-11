@@ -53,8 +53,9 @@ jobs:
         run: |
           set -euo pipefail
           python backend/scripts/generate_bhavcopy_patch.py
-          # Capture whether the file changed (new date vs already current)
-          if git diff --quiet backend/data/bhavcopy_patch.json; then
+          # Capture whether the patch (or the price-band-changes store, which
+          # the same script maintains) changed — new date vs already current.
+          if git diff --quiet backend/data/bhavcopy_patch.json backend/data/price_band_changes.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -112,6 +113,10 @@ jobs:
           fi
           if [ -f backend/data/volume_history.json ]; then
             git add backend/data/volume_history.json || true
+          fi
+          # NSE price-band revisions (chart band-change markers).
+          if [ -f backend/data/price_band_changes.json ]; then
+            git add backend/data/price_band_changes.json || true
           fi
           # XP market breadth score artifacts (history is tiny; the EMA-state
           # store is small and used only to compute the next day's MA inputs).

@@ -1040,6 +1040,7 @@ function buildIndexFallbackChart(
     rs_line_markers: [],
     earnings_markers: [],
     volume_markers: [],
+    band_change_markers: [],
   };
 }
 
@@ -5225,6 +5226,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                     earningsMarkers={displayedChart?.earnings_markers ?? []}
                     volumeMarkers={displayedChart?.volume_markers ?? []}
+                    bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                     tradeMarkers={activeTradeMarkers}
                     onSellMarkerClick={handleSellMarkerClick}
                     summary={displayedChart?.summary ?? null}
@@ -5308,6 +5310,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                   earningsMarkers={displayedChart?.earnings_markers ?? []}
                   volumeMarkers={displayedChart?.volume_markers ?? []}
+                    bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                   tradeMarkers={activeTradeMarkers}
                   onSellMarkerClick={handleSellMarkerClick}
                   summary={displayedChart?.summary ?? null}
@@ -5418,6 +5421,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                         earningsMarkers={displayedChart?.earnings_markers ?? []}
                         volumeMarkers={displayedChart?.volume_markers ?? []}
+                    bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                         tradeMarkers={activeTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={displayedChart?.summary ?? null}
@@ -5470,6 +5474,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
                         earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
                         volumeMarkers={paneBDisplayedChart?.volume_markers ?? []}
+                        bandChangeMarkers={paneBDisplayedChart?.band_change_markers ?? []}
                         tradeMarkers={paneBTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={paneBDisplayedChart?.summary ?? null}

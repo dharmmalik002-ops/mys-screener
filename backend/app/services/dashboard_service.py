@@ -463,6 +463,79 @@ class DashboardService:
         except Exception:
             return []
 
+    def _load_price_band_changes(self) -> dict:
+        """mtime-cached read of data/price_band_changes.json → {SYMBOL: [[date, from, to], ...]}."""
+        try:
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                return {}
+            path = Path(backend_root) / "data" / "price_band_changes.json"
+            if not path.exists():
+                return {}
+            mtime = path.stat().st_mtime
+            cached = getattr(self, "_price_band_changes_cache", None)
+            if cached and cached[0] == mtime:
+                return cached[1]
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            changes = loaded.get("changes") if isinstance(loaded, dict) else {}
+            if not isinstance(changes, dict):
+                changes = {}
+            self._price_band_changes_cache = (mtime, changes)
+            return changes
+        except Exception:
+            return {}
+
+    def _build_band_change_markers(self, symbol: str, bars: list) -> list:
+        """Return ChartLineMarker entries for each NSE price-band revision of
+        ``symbol`` inside the loaded bar window — the chart panel renders the
+        NEW band (e.g. "5%") on top of that day's candle. Each marker snaps to
+        the bar on (or the first session at/after) the revision date so it
+        lands on a candle even across holidays.
+        """
+        if not bars:
+            return []
+        try:
+            from app.models.market import ChartLineMarker
+            from datetime import date as _date_cls, datetime as _dt_cls, timezone as _tz
+
+            entries = self._load_price_band_changes().get(symbol.upper())
+            if not entries:
+                return []
+            bar_dates = [
+                ( _dt_cls.fromtimestamp(int(bar.time), tz=_tz.utc).date(), int(bar.time), float(bar.high) )
+                for bar in bars
+            ]
+            first_bar_date = bar_dates[0][0]
+            markers: list = []
+            used_times: set[int] = set()
+            for entry in entries:
+                if not isinstance(entry, (list, tuple)) or len(entry) < 3:
+                    continue
+                try:
+                    change_date = _date_cls.fromisoformat(str(entry[0]))
+                except ValueError:
+                    continue
+                if change_date < first_bar_date:
+                    continue
+                to_band = entry[2]
+                if isinstance(to_band, (int, float)):
+                    label = f"{to_band:g}%"
+                else:
+                    label = str(to_band).strip() or "?"
+                target = next((bd for bd in bar_dates if bd[0] >= change_date), None)
+                # Snap target must be close to the revision date — don't pin a
+                # months-old revision onto the first bar of a short window.
+                if target is None or (target[0] - change_date).days > 7:
+                    continue
+                if target[1] in used_times:
+                    # Two revisions snapping to one candle (gap days): keep the latest.
+                    markers = [m for m in markers if m.time != target[1]]
+                used_times.add(target[1])
+                markers.append(ChartLineMarker(time=target[1], value=target[2], label=label, color="#f7b955"))
+            return markers
+        except Exception:
+            return []
+
     def _with_earnings_metrics(self, snapshots):
         """Merge sidecar earnings metrics onto each snapshot.
 
@@ -2092,6 +2165,7 @@ class DashboardService:
             rs_line_markers=rs_line_markers,
             earnings_markers=earnings_markers,
             volume_markers=self._build_volume_markers(symbol, bars),
+            band_change_markers=self._build_band_change_markers(symbol, bars),
         )
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
         return response
@@ -2124,6 +2198,7 @@ class DashboardService:
             rs_line_markers=rs_line_markers,
             earnings_markers=self._build_earnings_markers(symbol, bars),
             volume_markers=self._build_volume_markers(symbol, bars),
+            band_change_markers=self._build_band_change_markers(symbol, bars),
         )
 
     async def get_chart_full_history(self, symbol: str, timeframe: str):

@@ -192,6 +192,7 @@ type ChartPanelProps = {
   rsLineMarkers: ChartLineMarker[];
   earningsMarkers?: ChartLineMarker[];
   volumeMarkers?: ChartLineMarker[];
+  bandChangeMarkers?: ChartLineMarker[];
   tradeMarkers?: ChartTradeMarker[];
   onSellMarkerClick?: (symbol: string, exitDate: string) => void;
   summary: StockOverview | null;
@@ -1405,6 +1406,7 @@ export function ChartPanel({
   rsLineMarkers,
   earningsMarkers,
   volumeMarkers,
+  bandChangeMarkers,
   tradeMarkers,
   onSellMarkerClick,
   summary,
@@ -1547,6 +1549,10 @@ export function ChartPanel({
   const safeVolumeMarkers = useMemo(
     () => sanitizeLineMarkers(extendedHistory?.volume_markers ?? volumeMarkers ?? []),
     [extendedHistory, volumeMarkers],
+  );
+  const safeBandChangeMarkers = useMemo(
+    () => sanitizeLineMarkers(extendedHistory?.band_change_markers ?? bandChangeMarkers ?? []),
+    [extendedHistory, bandChangeMarkers],
   );
   const snappedTradeMarkers = useMemo<SnappedTradeMarker[]>(() => {
     const list = tradeMarkers ?? [];
@@ -2264,6 +2270,18 @@ export function ChartPanel({
         size: 1.2,
       });
     }
+    // NSE price-band revisions — the NEW band % (e.g. "5%") sits on top of
+    // the candle of the day the limit changed, per the price-band-changes report.
+    for (const marker of safeBandChangeMarkers) {
+      combinedMarkers.push({
+        time: marker.time as UTCTimestamp,
+        position: "aboveBar",
+        shape: "square",
+        color: marker.color || "#f7b955",
+        text: marker.label || "",
+        size: 0.6,
+      });
+    }
     // (Volume-push HQV/HHV/HYV pips are attached to the volume histogram
     // series below, not the price candles.)
     // Trade journal "B"/"S" markers — one per buy/sell on the chart's symbol.
@@ -2572,7 +2590,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, resolvedCircuitBandPct, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, resolvedCircuitBandPct, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {

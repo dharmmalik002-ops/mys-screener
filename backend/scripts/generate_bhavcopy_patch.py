@@ -66,6 +66,17 @@ BHAV_URL_LEGACY_ALT = "https://archives.nseindia.com/content/historical/EQUITIES
 # New format CSV (no zip) available from ~4 PM IST: accessible from any IP globally.
 BSE_BHAV_URL = "https://www.bseindia.com/download/BhavCopy/Equity/BhavCopy_BSE_CM_0_0_0_{date_yyyymmdd}_F_0000.CSV"
 
+# NSE daily price-band-changes report (the data behind
+# nseindia.com/reports/price-band-changes). Published on nsearchives — the same
+# host as EQUITY_L.csv, reachable from GitHub runners most days. Each file
+# lists the band revisions for that date: Symbol, Series, Security Name, From, To.
+BAND_CHANGES_URL = "https://nsearchives.nseindia.com/content/equities/eq_band_changes_{ddmmyyyy}.csv"
+PRICE_BAND_CHANGES_PATH = DATA_DIR / "price_band_changes.json"
+# Re-scan this many calendar days on every run. Files can publish late in the
+# evening (after the last workflow retry), so a rolling window self-heals any
+# date we missed; already-fetched dates are skipped via the store's index.
+BAND_CHANGES_RESCAN_DAYS = 7
+
 # Live NSE listed-equities master. Refreshed every weekday and reflects new
 # listings within hours of their first session. We fetch this so that brand-new
 # IPOs land in the daily bhavcopy patch (and therefore in the snapshot file)
@@ -894,6 +905,106 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
         )
 
 
+def _parse_band_value(raw: str):
+    """Parse a band % cell ('10', '5', '20', 'No Band') → float or raw string."""
+    text = str(raw or "").strip()
+    if not text:
+        return None
+    try:
+        return float(text)
+    except ValueError:
+        return text  # e.g. "No Band" — keep verbatim so the UI can show it
+
+
+def update_price_band_changes(target: date, *, days_back: int = BAND_CHANGES_RESCAN_DAYS) -> None:
+    """Fetch NSE daily price-band-change CSVs and merge them into
+    ``data/price_band_changes.json``.
+
+    Store shape (compact):
+        {"updated_at": iso, "fetched_dates": ["YYYY-MM-DD", ...],
+         "changes": {"SYMBOL": [["YYYY-MM-DD", from, to], ...], ...}}
+
+    Idempotent per date: a date in ``fetched_dates`` is never re-fetched, and
+    per-symbol entries are deduped on date. Holidays / not-yet-published days
+    404 and are simply retried inside the rolling window on later runs. Any
+    failure is logged and swallowed so band changes never break the price patch.
+    """
+    try:
+        store: dict = {}
+        if PRICE_BAND_CHANGES_PATH.exists():
+            try:
+                loaded = json.loads(PRICE_BAND_CHANGES_PATH.read_text(encoding="utf-8"))
+                if isinstance(loaded, dict):
+                    store = loaded
+            except Exception:
+                store = {}
+        fetched = set(store.get("fetched_dates") or [])
+        changes: dict[str, list] = store.get("changes") if isinstance(store.get("changes"), dict) else {}
+
+        new_rows = 0
+        fetched_now: list[str] = []
+        for back in range(days_back, -1, -1):
+            day = target - timedelta(days=back)
+            if day.weekday() >= 5:
+                continue
+            day_iso = day.isoformat()
+            if day_iso in fetched:
+                continue
+            url = BAND_CHANGES_URL.format(ddmmyyyy=day.strftime("%d%m%Y"))
+            try:
+                resp = requests.get(url, headers=HEADERS, timeout=15)
+            except Exception as exc:
+                logger.info("band-changes fetch failed for %s: %s", day_iso, exc)
+                continue
+            if resp.status_code != 200 or len(resp.content) < 20:
+                # Holiday or not yet published — retried on later runs while
+                # the date stays inside the rolling window.
+                continue
+            try:
+                reader = csv.DictReader(io.StringIO(resp.text))
+                day_count = 0
+                for row in reader:
+                    cells = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k}
+                    sym = (cells.get("symbol") or "").upper()
+                    if not sym:
+                        continue
+                    from_band = _parse_band_value(cells.get("from"))
+                    to_band = _parse_band_value(cells.get("to"))
+                    if to_band is None:
+                        continue
+                    entries = changes.setdefault(sym, [])
+                    if any(e and e[0] == day_iso for e in entries):
+                        continue
+                    entries.append([day_iso, from_band, to_band])
+                    day_count += 1
+                fetched_now.append(day_iso)
+                new_rows += day_count
+                logger.info("band-changes %s: %s revisions", day_iso, day_count)
+            except Exception as exc:
+                logger.warning("band-changes parse failed for %s: %s", day_iso, exc)
+
+        if not fetched_now:
+            return
+
+        for entries in changes.values():
+            entries.sort(key=lambda e: e[0])
+        all_fetched = sorted(fetched | set(fetched_now))
+        store = {
+            "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
+            # Cap the index so the file doesn't grow unbounded; anything older
+            # than the cap is far outside the rescan window anyway.
+            "fetched_dates": all_fetched[-500:],
+            "changes": changes,
+        }
+        PRICE_BAND_CHANGES_PATH.write_text(json.dumps(store, separators=(",", ":")), encoding="utf-8")
+        logger.info(
+            "Written %s: +%s revisions across %s new date(s), %s symbols total",
+            PRICE_BAND_CHANGES_PATH.name, new_rows, len(fetched_now), len(changes),
+        )
+    except Exception as exc:  # pragma: no cover — never break the price patch
+        logger.warning("price-band-changes update failed: %s", exc)
+
+
 def main() -> int:
     # Belt-and-suspenders: even though every cron in daily-bhavcopy.yml is
     # scheduled after market close (4:23-6:23 PM IST), refuse to run during
@@ -927,6 +1038,11 @@ def main() -> int:
     # ``.NS`` form for yfinance; only those not already in universe will be
     # appended inside _fetch_yfinance_universe_bars / _fetch_from_yfinance.
     extra_yf_tickers = [f"{sym}.NS" for sym in new_listings.keys()]
+
+    # Daily NSE price-band revisions (for the chart band-change markers). Runs
+    # BEFORE the price phases because each phase returns early; failures are
+    # swallowed inside so this can never block the price patch.
+    update_price_band_changes(target)
 
     # --- Phase 1: BSE bhavcopy (no geo-blocking, available ~4:24 PM IST) merged with yfinance NSE bars. ---
     # The universe is NSE-keyed (.NS), so yfinance .NS data IS the authoritative

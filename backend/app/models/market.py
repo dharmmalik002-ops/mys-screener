@@ -1003,6 +1003,10 @@ class ChartResponse(BaseModel):
     # Markers for the day a stock pushed a Quarterly/Half-yearly/Yearly volume
     # high — rendered as HQV/HHV/HYV pips. Sourced from data/volume_history.json.
     volume_markers: list[ChartLineMarker] = Field(default_factory=list)
+    # Markers for NSE price-band revisions (nseindia.com price-band-changes
+    # report): the new band % shown on top of that day's candle. Sourced from
+    # data/price_band_changes.json (label carries the new band, e.g. "5%").
+    band_change_markers: list[ChartLineMarker] = Field(default_factory=list)
 
 
 class FundamentalsResponse(CompanyFundamentals):
