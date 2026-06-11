@@ -340,6 +340,66 @@ const NOTES_WIDGET_STORAGE_KEY = "stockScanner.notesWidget.v1";
 const EARNINGS_WIDGET_STORAGE_KEY = "stockScanner.earningsWidget.v1";
 const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
+const CIRCUIT_WIDGET_STORAGE_KEY = "stockScanner.circuitWidget.v1";
+
+// Assumed daily price band when the exchange feed doesn't supply exact limits.
+// NSE bands are 2/5/10/20% of the previous close; 0 disables the widget lines.
+const CIRCUIT_BAND_OPTIONS = [0, 2, 5, 10, 20] as const;
+const DEFAULT_CIRCUIT_BAND_PCT = 5;
+
+function readCircuitBandPct(): number {
+  if (typeof window === "undefined") return DEFAULT_CIRCUIT_BAND_PCT;
+  try {
+    const raw = window.localStorage.getItem(CIRCUIT_WIDGET_STORAGE_KEY);
+    if (raw === null) return DEFAULT_CIRCUIT_BAND_PCT;
+    const parsed = Number(JSON.parse(raw));
+    return (CIRCUIT_BAND_OPTIONS as readonly number[]).includes(parsed) ? parsed : DEFAULT_CIRCUIT_BAND_PCT;
+  } catch {
+    return DEFAULT_CIRCUIT_BAND_PCT;
+  }
+}
+
+type CircuitLimits = {
+  upper: number | null;
+  lower: number | null;
+  exact: boolean;
+  prevClose: number | null;
+};
+
+function computeCircuitLimits(summary: StockOverview | null, bandPct: number): CircuitLimits {
+  const exactUpper = summary?.upper_circuit_limit ?? null;
+  const exactLower = summary?.lower_circuit_limit ?? null;
+  if (typeof exactUpper === "number" && exactUpper > 0 && typeof exactLower === "number" && exactLower > 0) {
+    return { upper: exactUpper, lower: exactLower, exact: true, prevClose: null };
+  }
+  const denominator = summary ? 1 + summary.change_pct / 100 : 0;
+  const prevClose = summary && denominator !== 0 && summary.last_price > 0 ? summary.last_price / denominator : null;
+  if (!prevClose || prevClose <= 0 || bandPct <= 0) {
+    return { upper: exactUpper, lower: exactLower, exact: false, prevClose };
+  }
+  // If today's move already exceeds the assumed band, the stock can't be on
+  // that band — escalate to the smallest standard band that contains the move
+  // so the estimated lines stay meaningful (a +18% day implies a 20% band).
+  let effectiveBandPct = bandPct;
+  const movePct = Math.abs(summary?.change_pct ?? 0);
+  for (const option of CIRCUIT_BAND_OPTIONS) {
+    if (option >= bandPct && option >= movePct) {
+      effectiveBandPct = option;
+      break;
+    }
+  }
+  if (movePct > effectiveBandPct) {
+    // Moved beyond the widest standard band (F&O dynamic-band stock) — an
+    // estimated line would be misleading, so draw nothing.
+    return { upper: null, lower: null, exact: false, prevClose };
+  }
+  return {
+    upper: prevClose * (1 + effectiveBandPct / 100),
+    lower: prevClose * (1 - effectiveBandPct / 100),
+    exact: false,
+    prevClose,
+  };
+}
 
 type ChartRangeKey = "3M" | "6M" | "1Y" | "FULL";
 const CHART_RANGE_OPTIONS: { value: ChartRangeKey; label: string }[] = [
@@ -1387,6 +1447,11 @@ export function ChartPanel({
   const [favoritesSettings, setFavoritesSettings] = useState<FavoritesSettings>(() => readFavoritesSettings());
   const [favoritesWidget, setFavoritesWidget] = useState<FavoritesWidgetState>(() => readFavoritesWidgetState());
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
+  const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
+  const summaryCircuitLimits = useMemo(
+    () => computeCircuitLimits(summary ?? null, circuitBandPct),
+    [summary, circuitBandPct],
+  );
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
@@ -1575,6 +1640,14 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [pocketPivotWidget]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CIRCUIT_WIDGET_STORAGE_KEY, JSON.stringify(circuitBandPct));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [circuitBandPct]);
 
   useEffect(() => {
     try {
@@ -2055,13 +2128,12 @@ export function ChartPanel({
 
     mainSeries.setData(ohlcvData);
 
-    // Daily Upper/Lower Circuit Limit indicators. The backend supplies the
-    // absolute band prices on the summary (from the exchange feed); when a stock
-    // has no fixed band (e.g. F&O "dynamic" names) the values are null and we
-    // simply draw nothing. The chart is fully recreated on each effect run, so
-    // these price lines are re-added cleanly without manual removal.
-    const upperCircuit = summary?.upper_circuit_limit ?? null;
-    const lowerCircuit = summary?.lower_circuit_limit ?? null;
+    // Daily Upper/Lower Circuit Limit indicators. Uses exact band prices when
+    // the backend supplies them; otherwise derives them from the previous
+    // close and the band % selected in the Circuit Limits widget, so the lines
+    // are available on every chart. The chart is fully recreated on each
+    // effect run, so these price lines are re-added cleanly without removal.
+    const circuitLimits = computeCircuitLimits(summary ?? null, circuitBandPct);
     const lastBar = activeBars.length > 0 ? activeBars[activeBars.length - 1] : null;
     // Proximity warning: flag when the latest bar trades within 0.5% of a band.
     const nearBand = (limit: number | null): boolean => {
@@ -2070,26 +2142,27 @@ export function ChartPanel({
       const low = Number(lastBar.low) || 0;
       return (Math.abs(high - limit) / limit <= 0.005) || (Math.abs(low - limit) / limit <= 0.005);
     };
-    if (typeof upperCircuit === "number" && upperCircuit > 0) {
-      const near = nearBand(upperCircuit);
+    const circuitSuffix = circuitLimits.exact ? "" : " ~";
+    if (typeof circuitLimits.upper === "number" && circuitLimits.upper > 0) {
+      const near = nearBand(circuitLimits.upper);
       mainSeries.createPriceLine({
-        price: upperCircuit,
+        price: circuitLimits.upper,
         color: near ? "#fa5252" : "rgba(250,82,82,0.55)",
         lineWidth: 1,
         lineStyle: 2, // dashed
         axisLabelVisible: true,
-        title: near ? "UC ⚠" : "UC",
+        title: near ? `UC${circuitSuffix} ⚠` : `UC${circuitSuffix}`,
       });
     }
-    if (typeof lowerCircuit === "number" && lowerCircuit > 0) {
-      const near = nearBand(lowerCircuit);
+    if (typeof circuitLimits.lower === "number" && circuitLimits.lower > 0) {
+      const near = nearBand(circuitLimits.lower);
       mainSeries.createPriceLine({
-        price: lowerCircuit,
+        price: circuitLimits.lower,
         color: near ? "#37b24d" : "rgba(55,178,77,0.55)",
         lineWidth: 1,
         lineStyle: 2, // dashed
         axisLabelVisible: true,
-        title: near ? "LC ⚠" : "LC",
+        title: near ? `LC${circuitSuffix} ⚠` : `LC${circuitSuffix}`,
       });
     }
 
@@ -2388,7 +2461,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, circuitBandPct, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3464,9 +3537,37 @@ export function ChartPanel({
             <span>30D Traded Value</span>
             <strong>{formatAmountValue(summary.avg_rupee_volume_30d_crore)}</strong>
           </div>
-          <div className="chart-summary-chip">
-            <span>{market === "india" ? "Circuit Band" : "Circuit Limit"}</span>
-            <strong>{formatCircuitBand(summary, market)}</strong>
+          <div className="chart-summary-chip chart-circuit-widget">
+            <span>
+              Circuit Limits
+              {!summaryCircuitLimits.exact ? (
+                <select
+                  className="chart-circuit-band-select"
+                  value={circuitBandPct}
+                  onChange={(event) => setCircuitBandPct(Number(event.target.value))}
+                  aria-label="Assumed circuit band percent"
+                  title="Assumed daily price band (exchange feed has no exact limits for this stock)"
+                >
+                  {CIRCUIT_BAND_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option === 0 ? "Off" : `±${option}%`}
+                    </option>
+                  ))}
+                </select>
+              ) : null}
+            </span>
+            <strong>
+              {summaryCircuitLimits.upper != null && summaryCircuitLimits.lower != null ? (
+                <>
+                  <em className="chart-circuit-uc">UC {formatPriceValue(summaryCircuitLimits.upper)}</em>
+                  {" · "}
+                  <em className="chart-circuit-lc">LC {formatPriceValue(summaryCircuitLimits.lower)}</em>
+                  {!summaryCircuitLimits.exact ? <small className="chart-circuit-est"> est.</small> : null}
+                </>
+              ) : (
+                formatCircuitBand(summary, market)
+              )}
+            </strong>
           </div>
         </div>
       ) : null}

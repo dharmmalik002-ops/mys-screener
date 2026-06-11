@@ -1616,6 +1616,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const activeMarketRef = useRef(activeMarket);
   const timeframeRef = useRef(timeframe);
   const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
+  const hoverPrefetchTimerRef = useRef<number | null>(null);
+  const hoverPrefetchInFlightRef = useRef(0);
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
   const watchlistsSyncReadyRef = useRef<Record<MarketKey, boolean>>({ india: false });
   const watchlistsServerSignatureRef = useRef<Record<MarketKey, string | null>>({ india: null });
@@ -3396,7 +3398,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
         ]
       : visibleSymbols;
-    const PREFETCH_AHEAD = 30;
+    const PREFETCH_AHEAD = 12;
     const symbolsToWarm = orderedSymbols
       .filter((symbol) => symbol && symbol !== selectedSymbol)
       .slice(0, PREFETCH_AHEAD);
@@ -3408,9 +3410,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     let stopQueue = false;
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        // Run with concurrency = 6 so multiple charts download in parallel
-        // without overwhelming the HF Space (which has limited request slots).
-        const CONCURRENCY = 6;
+        // Keep background warm-up gentle: the free HF Space has ~2 vCPUs and a
+        // small upstream budget, so a wide prefetch fan-out delays the scans
+        // and charts the user actually asked for.
+        const CONCURRENCY = 2;
         const queue = [...symbolsToWarm];
         const fetchOne = async (symbol: string) => {
           const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
@@ -3871,26 +3874,42 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (timeframe !== "1D" && timeframe !== "1W") {
       return;
     }
-    const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
-    if (prewarmingChartKeysRef.current.has(cacheKey)) {
-      return;
+    // Hover-intent gate: sweeping the cursor across a results table must not
+    // fire a request per row — only the row the cursor rests on (160ms) is
+    // prefetched, and at most two hover prefetches run at a time so the
+    // backend's scan/chart endpoints never get starved by prefetch traffic.
+    if (hoverPrefetchTimerRef.current !== null) {
+      window.clearTimeout(hoverPrefetchTimerRef.current);
+      hoverPrefetchTimerRef.current = null;
     }
-    if (readCachedChart(activeMarket, symbol, timeframe)) {
-      return;
-    }
-    prewarmingChartKeysRef.current.add(cacheKey);
-    void (async () => {
-      try {
-        const payload = await getChart(symbol, timeframe, activeMarket);
-        if (payload.symbol === symbol && payload.timeframe === timeframe) {
-          storeCachedChart(activeMarket, symbol, timeframe, payload);
-        }
-      } catch {
-        // Hover prefetch is best-effort; explicit clicks will retry on demand.
-      } finally {
-        prewarmingChartKeysRef.current.delete(cacheKey);
+    hoverPrefetchTimerRef.current = window.setTimeout(() => {
+      hoverPrefetchTimerRef.current = null;
+      if (hoverPrefetchInFlightRef.current >= 2) {
+        return;
       }
-    })();
+      const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
+      if (prewarmingChartKeysRef.current.has(cacheKey)) {
+        return;
+      }
+      if (readCachedChart(activeMarket, symbol, timeframe)) {
+        return;
+      }
+      prewarmingChartKeysRef.current.add(cacheKey);
+      hoverPrefetchInFlightRef.current += 1;
+      void (async () => {
+        try {
+          const payload = await getChart(symbol, timeframe, activeMarket);
+          if (payload.symbol === symbol && payload.timeframe === timeframe) {
+            storeCachedChart(activeMarket, symbol, timeframe, payload);
+          }
+        } catch {
+          // Hover prefetch is best-effort; explicit clicks will retry on demand.
+        } finally {
+          prewarmingChartKeysRef.current.delete(cacheKey);
+          hoverPrefetchInFlightRef.current -= 1;
+        }
+      })();
+    }, 160);
   };
 
   const handleJournalOpenSymbolChart = (symbol: string) => {

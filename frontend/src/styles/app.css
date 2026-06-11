@@ -4360,6 +4360,50 @@ button {
   font-size: 1rem;
 }
 
+.chart-circuit-widget span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chart-circuit-widget strong {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.chart-circuit-widget em {
+  font-style: normal;
+}
+
+.chart-circuit-uc {
+  color: var(--negative);
+}
+
+.chart-circuit-lc {
+  color: var(--positive);
+}
+
+.chart-circuit-est {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.74rem;
+}
+
+.chart-circuit-band-select {
+  padding: 1px 4px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.chart-circuit-band-select:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  outline: none;
+}
+
 .chart-summary-chip-action {
   width: 100%;
   text-align: left;

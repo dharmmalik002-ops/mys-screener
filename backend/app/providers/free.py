@@ -275,6 +275,8 @@ class FreeMarketDataProvider:
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
         self.volume_history_path = self.backend_root / "data" / "volume_history.json"
         self._volume_history_cache: tuple[float, dict[str, Any]] | None = None
+        self._valid_snapshot_rows_cache: tuple[tuple[int, int], list[dict[str, Any]]] | None = None
+        self._completed_session_date_cache: tuple[float, date] | None = None
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
         self.chart_cache_dir.mkdir(parents=True, exist_ok=True)
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
@@ -287,6 +289,10 @@ class FreeMarketDataProvider:
         self._seed_snapshot_cache_restored_at: float | None = None
         self._last_refresh_metadata = self._default_refresh_metadata()
         self.eod_only_mode = bool(eod_only_mode)
+        # Cold chart fetches go upstream (yfinance); cap how many run at once so
+        # a prefetch burst can't exhaust the thread pool / trip rate limits and
+        # starve scan + dashboard requests.
+        self._chart_fetch_semaphore = asyncio.Semaphore(3)
         self.demo = DemoMarketDataProvider()
         self.ai_service = AIAnalysisService(api_key=gemini_api_key, cache_dir=self.backend_root / "data")
 
@@ -523,13 +529,35 @@ class FreeMarketDataProvider:
             anchor = self.get_snapshot_updated_at() or datetime.now(timezone.utc)
         return anchor.year - 1
 
+    def _snapshot_file_signature(self) -> tuple[int, int] | None:
+        try:
+            stat = self.snapshot_cache_path.stat()
+        except OSError:
+            return None
+        return (stat.st_mtime_ns, stat.st_size)
+
     def _load_valid_cached_snapshot_rows(self) -> list[dict[str, Any]]:
+        # The snapshot cache is a ~30MB JSON document that costs ~1s of CPU to
+        # parse. Refresh-strategy checks call this on hot request paths (every
+        # chart and scan), so the parsed rows are memoized against the file's
+        # (mtime, size) signature; any rewrite of the file invalidates it.
+        signature = self._snapshot_file_signature()
+        cached = self._valid_snapshot_rows_cache
+        if cached is not None and signature is not None and cached[0] == signature:
+            return cached[1]
         rows = self._load_json_rows(self.snapshot_cache_path)
         if not rows or not self._snapshot_schema_ok(rows):
-            return self._restore_snapshot_cache_from_seed()
+            restored_rows = self._restore_snapshot_cache_from_seed()
+            signature = self._snapshot_file_signature()
+            if signature is not None and restored_rows:
+                self._valid_snapshot_rows_cache = (signature, restored_rows)
+            return restored_rows
         normalized_rows, changed = self._normalize_cached_snapshot_rows(rows)
         if changed:
             self._write_snapshot_rows(normalized_rows)
+            signature = self._snapshot_file_signature()
+        if signature is not None:
+            self._valid_snapshot_rows_cache = (signature, normalized_rows)
         return normalized_rows
 
     def _load_cached_snapshot_rows(self, market_cap_min_crore: float) -> list[dict[str, Any]]:
@@ -820,6 +848,17 @@ class FreeMarketDataProvider:
         return self._snapshot_rows_session_date(cached_rows)
 
     def _latest_completed_market_session_date(self) -> date:
+        # Resolving the latest session can require a benchmark chart fetch from
+        # the upstream feed. This runs inside refresh-strategy checks on hot
+        # request paths, so memoize the answer briefly — it changes once a day.
+        cached = self._completed_session_date_cache
+        if cached is not None and time.monotonic() - cached[0] < 600.0:
+            return cached[1]
+        result = self._compute_latest_completed_market_session_date()
+        self._completed_session_date_cache = (time.monotonic(), result)
+        return result
+
+    def _compute_latest_completed_market_session_date(self) -> date:
         market_timezone = self._market_timezone()
         market_now = datetime.now(timezone.utc).astimezone(market_timezone)
         session_date = market_now.date()
@@ -1541,10 +1580,11 @@ class FreeMarketDataProvider:
                     return refreshed_weekly
         cache_cold = not cached_bars
         try:
-            chart_bars = await asyncio.wait_for(
-                asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
-                timeout=self._chart_fetch_timeout_seconds(timeframe, cache_cold=cache_cold),
-            )
+            async with self._chart_fetch_semaphore:
+                chart_bars = await asyncio.wait_for(
+                    asyncio.to_thread(self._fetch_chart_bars, symbol, timeframe, bars),
+                    timeout=self._chart_fetch_timeout_seconds(timeframe, cache_cold=cache_cold),
+                )
             if len(chart_bars) < min_required_bars:
                 legacy_bars = await asyncio.to_thread(self._read_chart_cache, symbol, timeframe, bars, allow_legacy=True)
                 if len(cached_bars) >= min_required_bars:

@@ -1446,8 +1446,8 @@ class DashboardService:
 
         historical_1w_snapshots = await self._historical_sector_snapshots(snapshots, sectors, 5)
         historical_1m_snapshots = await self._historical_sector_snapshots(snapshots, sectors, 20)
-        historical_1w_items = historical_runner(historical_1w_snapshots) if historical_1w_snapshots else []
-        historical_1m_items = historical_runner(historical_1m_snapshots) if historical_1m_snapshots else []
+        historical_1w_items = await asyncio.to_thread(historical_runner, historical_1w_snapshots) if historical_1w_snapshots else []
+        historical_1m_items = await asyncio.to_thread(historical_runner, historical_1m_snapshots) if historical_1m_snapshots else []
 
         historical_1w_counts: dict[str, int] = {}
         for item in historical_1w_items:
@@ -2027,7 +2027,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = run_custom_scan(request, snapshots)
+        items = await asyncio.to_thread(run_custom_scan, request, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "custom-scan",
@@ -2051,7 +2051,11 @@ class DashboardService:
         now = datetime.now(timezone.utc)
         if cached is not None:
             cached_at, cached_snapshot_at, cached_response = cached
-            if cached_snapshot_at >= snapshot_updated_at and now - cached_at <= self._chart_response_cache_ttl(timeframe):
+            # An empty-bars response usually means a transient upstream failure
+            # (rate limit / cold cache); retry it quickly instead of pinning the
+            # error for the full timeframe TTL.
+            ttl = timedelta(seconds=30) if not cached_response.bars else self._chart_response_cache_ttl(timeframe)
+            if cached_snapshot_at >= snapshot_updated_at and now - cached_at <= ttl:
                 return cached_response
 
         # Brand-new IPOs sometimes have no Yahoo history yet (the data feed
@@ -4308,7 +4312,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = self._near_pivot_items(snapshots, request)
+        items = await asyncio.to_thread(self._near_pivot_items, snapshots, request)
         return await self._scan_results_response(
             scan={
                 "id": "near-pivot",
@@ -4331,7 +4335,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = self._pull_back_items(snapshots, request)
+        items = await asyncio.to_thread(self._pull_back_items, snapshots, request)
         return await self._scan_results_response(
             scan={
                 "id": "pull-backs",
@@ -4354,7 +4358,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = run_returns_scan(request, snapshots)
+        items = await asyncio.to_thread(run_returns_scan, request, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "returns",
@@ -4377,7 +4381,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = run_momentum_burst_scan(request, snapshots)
+        items = await asyncio.to_thread(run_momentum_burst_scan, request, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "momentum-burst",
@@ -4400,7 +4404,7 @@ class DashboardService:
         include_sector_summaries: bool = True,
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
-        items = run_consolidating_scan(request, snapshots)
+        items = await asyncio.to_thread(run_consolidating_scan, request, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "consolidating",
