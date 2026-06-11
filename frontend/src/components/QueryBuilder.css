@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .qb-root {
-  --qb-primary: #6366f1;
-  --qb-primary-strong: #4f46e5;
+  --qb-primary: var(--accent);
+  --qb-primary-strong: var(--accent-strong);
   --qb-bg: #f9fafb;
   --qb-surface: #ffffff;
   --qb-border: #e5e7eb;

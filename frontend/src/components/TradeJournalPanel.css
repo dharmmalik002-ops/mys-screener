@@ -120,7 +120,7 @@
   color: var(--text-muted);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 3px 10px;
   animation: pulse 1.5s infinite;
 }
@@ -955,7 +955,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-.tj-kbox-deployed { border-left-color: #6366f1; }
+.tj-kbox-deployed { border-left-color: var(--accent); }
 .tj-kbox-unreal   { border-left-color: #8b949e; }
 .tj-kbox-risk     { border-left-color: #ff6b6b; }
 .tj-kbox-today    { border-left-color: #22c55e; }
@@ -1239,7 +1239,7 @@
 .tj-chip {
   font-size: 0.72rem;
   padding: 3px 9px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background: var(--surface-strong);
   border: 1px solid var(--line);
   color: var(--text-muted);

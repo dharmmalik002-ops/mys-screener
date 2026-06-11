@@ -35,14 +35,14 @@
   --amber-soft: rgba(245, 158, 11, 0.14);
   --warning: #f5b731;
   --accent-contrast: #060a14;
-  --shadow: 0 20px 60px rgba(2, 5, 15, 0.45);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.01));
-  --glass-border: rgba(100, 160, 255, 0.16);
-  --glass-glow: rgba(76, 154, 255, 0.12);
-  --radius-sm: 10px;
-  --radius-md: 16px;
-  --radius-lg: 22px;
-  --radius-xl: 28px;
+  --shadow: 0 8px 28px rgba(2, 5, 15, 0.32);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
+  --glass-border: rgba(100, 160, 255, 0.14);
+  --glass-glow: rgba(76, 154, 255, 0.06);
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 14px;
   --transition-fast: 150ms ease;
   --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --hero-glow:
@@ -85,10 +85,10 @@
   --amber-soft: rgba(217, 119, 6, 0.12);
   --warning: #d97706;
   --accent-contrast: #f8fafc;
-  --shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.24));
-  --glass-border: rgba(71, 85, 105, 0.14);
-  --glass-glow: rgba(37, 99, 235, 0.08);
+  --shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
+  --glass-border: rgba(71, 85, 105, 0.13);
+  --glass-glow: rgba(37, 99, 235, 0.05);
   --hero-glow:
     radial-gradient(ellipse at 20% 0%, rgba(37, 99, 235, 0.10), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(29, 78, 216, 0.08), transparent 40%),
@@ -114,15 +114,11 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background:
-    radial-gradient(ellipse 80% 60% at 15% 0%, rgba(76, 154, 255, 0.13), transparent 55%),
-    radial-gradient(ellipse 70% 50% at 85% 10%, rgba(99, 60, 255, 0.10), transparent 50%),
-    radial-gradient(ellipse 90% 70% at 50% 100%, rgba(52, 211, 153, 0.07), transparent 55%),
-    radial-gradient(ellipse 60% 40% at 70% 60%, rgba(139, 92, 246, 0.05), transparent 40%),
+    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(76, 154, 255, 0.06), transparent 60%),
     var(--bg);
-  background-size: 200% 200%, 200% 200%, 200% 200%, 100% 100%;
   color: var(--text);
   background-attachment: fixed;
-  animation: auroraShift 20s ease-in-out infinite;
+  font-variant-numeric: tabular-nums;
 }
 
 button,
@@ -180,24 +176,6 @@ button {
 @keyframes pulse-dot {
   0%, 100% { opacity: 1; transform: scale(1); }
   50% { opacity: 0.6; transform: scale(0.85); }
-}
-
-@keyframes auroraShift {
-  0% {
-    background-position: 0% 50%, 100% 0%, 50% 100%;
-  }
-  25% {
-    background-position: 50% 0%, 0% 100%, 100% 50%;
-  }
-  50% {
-    background-position: 100% 50%, 50% 0%, 0% 100%;
-  }
-  75% {
-    background-position: 50% 100%, 100% 50%, 0% 0%;
-  }
-  100% {
-    background-position: 0% 50%, 100% 0%, 50% 100%;
-  }
 }
 
 @keyframes glowPulse {
@@ -400,7 +378,7 @@ button {
   gap: 8px;
   padding: 4px;
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 74%, transparent);
   backdrop-filter: blur(12px);
   transition: all var(--transition-smooth);
@@ -573,7 +551,7 @@ button {
   margin: 0 28px;
   padding: 12px 16px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(140deg, color-mix(in srgb, var(--surface-strong) 84%, transparent), color-mix(in srgb, var(--surface) 76%, transparent)),
     var(--glass-sheen);
@@ -611,7 +589,7 @@ button {
   gap: 24px;
   padding: 28px;
   border: 1px solid var(--line);
-  border-radius: 28px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(140deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--bg-alt) 92%, transparent)),
     var(--hero-glow);
@@ -723,7 +701,7 @@ button {
 .error-banner {
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--danger) 42%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(135deg, color-mix(in srgb, var(--danger) 14%, transparent), color-mix(in srgb, var(--danger) 8%, transparent));
   color: var(--danger);
@@ -754,63 +732,49 @@ button {
   font-size: 0.88rem;
 }
 
-.startup-overlay {
+.startup-toast {
   position: fixed;
-  inset: 0;
+  right: 20px;
+  bottom: 20px;
   z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  backdrop-filter: blur(10px);
-}
-
-.startup-overlay-card {
-  width: min(100%, 520px);
-  padding: 28px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: min(calc(100% - 40px), 380px);
+  padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 28px;
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 20%, transparent), transparent 48%),
-    linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 90%, transparent), color-mix(in srgb, var(--surface) 84%, transparent));
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.34);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+  animation: slideDown 0.3s ease-out;
 }
 
-.startup-overlay-card h2 {
-  margin: 0 0 10px;
-  font-size: clamp(1.55rem, 3vw, 2rem);
-}
-
-.startup-overlay-card p {
-  margin: 0;
-  color: var(--text-muted);
-}
-
-.startup-kicker {
-  margin-bottom: 10px !important;
-  color: var(--accent-strong) !important;
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
-.startup-checklist {
+.startup-toast-copy {
   display: grid;
-  gap: 8px;
-  margin-top: 18px;
-  color: var(--text);
-  font-size: 0.95rem;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.startup-toast-copy strong {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.startup-toast-copy span {
+  color: var(--text-muted);
+  font-size: 0.8rem;
 }
 
 .startup-retry-button {
-  margin-top: 18px;
+  flex: 0 0 auto;
 }
 
 .startup-status-dot {
-  width: 12px;
-  height: 12px;
-  margin-bottom: 16px;
+  flex: 0 0 auto;
+  width: 10px;
+  height: 10px;
   border-radius: 999px;
   animation: pulse-dot 1.6s ease-in-out infinite;
 }
@@ -832,7 +796,7 @@ button {
 
 .screener-page-grid {
   display: grid;
-  grid-template-columns: 260px minmax(420px, 0.9fr) minmax(0, 1.1fr);
+  grid-template-columns: 288px minmax(400px, 0.9fr) minmax(0, 1.1fr);
   gap: 20px;
   align-items: start;
   min-height: calc(100dvh - 172px);
@@ -902,7 +866,7 @@ button {
   gap: 10px;
   padding: 14px 12px 14px 14px;
   border: 1px solid rgba(83, 147, 255, 0.26);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(160deg, rgba(33, 98, 255, 0.12), color-mix(in srgb, var(--surface-soft) 94%, transparent)),
     var(--glass-sheen);
@@ -1157,7 +1121,7 @@ button {
 .pe-modal {
   background: var(--surface-strong);
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   padding: 18px 20px;
   width: min(96vw, 1320px);
   max-width: min(96vw, 1320px);
@@ -1378,7 +1342,7 @@ button {
   gap: 10px;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 10%, transparent), transparent 36%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 78%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)),
@@ -1743,7 +1707,7 @@ button {
 .mf-stock-list-card,
 .mf-stock-qa-card {
   border: 1px solid var(--glass-border);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
 }
 
@@ -2341,7 +2305,7 @@ button {
   gap: 24px;
   padding: 28px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 78%, transparent);
-  border-radius: 28px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(140deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
     var(--glass-sheen),
@@ -2493,7 +2457,7 @@ button {
 .home-alert-row {
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -2677,7 +2641,7 @@ button {
   min-height: 148px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 22px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   backdrop-filter: blur(18px);
   color: #fff;
@@ -2890,7 +2854,7 @@ button {
   min-width: 120px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 80%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -2923,7 +2887,7 @@ button {
   min-height: clamp(170px, calc((100dvh - 320px) / var(--chart-grid-rows, 3)), 270px);
   padding: 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, rgba(16, 20, 30, 0.94), rgba(12, 16, 24, 0.98)),
     radial-gradient(circle at top left, rgba(76, 154, 255, 0.08), transparent 40%);
@@ -3197,7 +3161,7 @@ button {
   gap: 12px;
   padding: 12px 14px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 88%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
     var(--glass-sheen);
@@ -3235,7 +3199,7 @@ button {
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 78%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)),
     var(--glass-sheen);
@@ -3292,7 +3256,7 @@ button {
   gap: 0.35rem;
   padding: 1rem 1.1rem;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 78%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)),
     var(--glass-sheen);
@@ -3319,7 +3283,7 @@ button {
   gap: 6px;
   margin-bottom: 14px;
   padding: 4px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3382,7 +3346,7 @@ button {
   gap: 14px;
   padding: 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3611,11 +3575,20 @@ button {
 }
 
 .empty-state {
-  padding: 24px;
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  padding: 40px 24px;
   border: 1px dashed var(--line-strong);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   color: var(--text-soft);
   text-align: center;
+  font-size: 0.92rem;
+}
+
+.empty-state > div:first-child {
+  font-weight: 600;
+  color: var(--text);
 }
 
 .positive-text {
@@ -3677,7 +3650,7 @@ button {
   gap: 8px;
   padding: 5px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 74%, transparent);
 }
 
@@ -3694,7 +3667,7 @@ button {
 .chart-color-settings {
   min-width: 180px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 78%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3826,7 +3799,7 @@ button {
   gap: 8px;
   padding: 5px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 78%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3842,7 +3815,7 @@ button {
 .sector-summary-card {
   padding: 16px 18px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(145deg, color-mix(in srgb, var(--accent) 10%, transparent), color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3871,7 +3844,7 @@ button {
 
 .sector-card {
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(160deg, color-mix(in srgb, var(--surface-strong) 78%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3945,7 +3918,7 @@ button {
 .sector-metric {
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -3969,7 +3942,7 @@ button {
 
 .sub-sector-block {
   border: 1px solid color-mix(in srgb, var(--glass-border) 74%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 74%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -4073,7 +4046,7 @@ button {
   width: 100%;
   padding: 11px 14px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -4097,7 +4070,7 @@ button {
 .group-card {
   position: relative;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 14%, transparent), transparent 36%),
     linear-gradient(160deg, color-mix(in srgb, var(--surface-strong) 78%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
@@ -4220,7 +4193,7 @@ button {
 .group-detail-card {
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -4270,7 +4243,7 @@ button {
   flex-direction: column;
   overflow-x: auto;
   border: 1px solid color-mix(in srgb, var(--glass-border) 72%, transparent);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 74%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -4372,7 +4345,7 @@ button {
 .chart-summary-chip {
   padding: 12px 14px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
 }
 
@@ -4432,7 +4405,7 @@ button {
 
 .fundamentals-card {
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   padding: 20px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 98%, transparent), color-mix(in srgb, var(--surface) 96%, transparent));
@@ -4490,7 +4463,7 @@ button {
 .fundamentals-stat {
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
 }
 
@@ -4517,7 +4490,7 @@ button {
 .fundamentals-driver,
 .fundamentals-update {
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 14px 16px;
   background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
 }
@@ -4911,7 +4884,7 @@ button {
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-left: 4px solid transparent;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 92%, transparent);
   color: var(--text);
   text-align: left;
@@ -5061,7 +5034,7 @@ button {
   overflow: auto;
   padding: 22px;
   border: 1px solid var(--line);
-  border-radius: 26px;
+  border-radius: var(--radius-xl);
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 98%, transparent), color-mix(in srgb, var(--surface-strong) 98%, transparent));
   box-shadow: var(--shadow);
 }
@@ -5154,7 +5127,7 @@ button {
   flex-direction: column;
   min-height: 700px;
   border: 1px solid var(--line);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
 }
@@ -5636,7 +5609,7 @@ button {
   width: min(360px, calc(100vw - 32px));
   padding: 12px;
   border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
 }
@@ -5708,7 +5681,7 @@ button {
   max-height: calc(100% - 16px);
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 52%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
@@ -5865,7 +5838,7 @@ button {
   gap: 10px;
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--warning) 48%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
@@ -6175,7 +6148,7 @@ button {
   gap: 10px;
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 48%, transparent);
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
   box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
@@ -6377,7 +6350,7 @@ button {
   flex-direction: column;
   gap: 14px;
   padding: 22px;
-  border-radius: 26px;
+  border-radius: var(--radius-xl);
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
   background: color-mix(in srgb, var(--surface-strong) 94%, rgba(4, 8, 17, 0.94));
   box-shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
@@ -6431,7 +6404,7 @@ button {
 
 .chart-group-summary-card {
   padding: 12px 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface-soft) 68%, transparent);
 }
@@ -6473,7 +6446,7 @@ button {
 
 .chart-group-row {
   padding: 12px;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
 }
@@ -6722,7 +6695,7 @@ button {
 @media (max-width: 960px) {
   .chart-group-modal {
     padding: 16px;
-    border-radius: 20px;
+    border-radius: var(--radius-xl);
   }
 
   .chart-group-modal-header {
@@ -6942,13 +6915,13 @@ button {
   .chart-modal {
     width: 100%;
     max-height: calc(100dvh - 24px);
-    border-radius: 22px;
+    border-radius: var(--radius-xl);
   }
 
   .chart-grid-modal {
     width: min(98vw, 1200px);
     max-height: calc(100dvh - 24px);
-    border-radius: 24px;
+    border-radius: var(--radius-xl);
     padding: 18px;
   }
 
@@ -7061,7 +7034,7 @@ button {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 80%, transparent), color-mix(in srgb, var(--surface) 65%, transparent)),
     var(--glass-sheen);
   border: 1px solid color-mix(in srgb, var(--line-strong) 80%, transparent);
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   overflow: hidden;
   backdrop-filter: blur(16px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
@@ -7138,7 +7111,7 @@ button {
   flex-direction: column;
   gap: 6px;
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
   border: 1px solid color-mix(in srgb, var(--line) 60%, transparent);
 }
@@ -7701,7 +7674,7 @@ button {
   padding: 6px 12px;
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   border: 1px solid var(--accent);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   font-size: 0.85rem;
   color: var(--accent);
   font-weight: 500;
@@ -8080,7 +8053,7 @@ button {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
 }
 
 .chart-stage-hitbox {

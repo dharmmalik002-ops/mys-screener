@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .sf-root {
-  --sf-primary: #6366f1;
-  --sf-primary-strong: #4f46e5;
+  --sf-primary: var(--accent);
+  --sf-primary-strong: var(--accent-strong);
   --sf-bg: #f9fafb;
   --sf-surface: #ffffff;
   --sf-border: #e5e7eb;
@@ -86,12 +86,12 @@
   color: var(--sf-primary);
 }
 .sf-icon-violet {
-  background: rgba(139, 92, 246, 0.14);
-  color: #8b5cf6;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--sf-primary);
 }
 .sf-icon-pink {
-  background: rgba(236, 72, 153, 0.14);
-  color: #ec4899;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--sf-primary);
 }
 .sf-icon-emerald {
   background: rgba(16, 185, 129, 0.14);

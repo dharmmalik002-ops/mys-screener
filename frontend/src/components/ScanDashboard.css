@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .sd-root {
-  --sd-primary: #6366f1;
-  --sd-primary-strong: #4f46e5;
+  --sd-primary: var(--accent);
+  --sd-primary-strong: var(--accent-strong);
   --sd-bg: #f9fafb;
   --sd-surface: #ffffff;
   --sd-border: #e5e7eb;
@@ -80,16 +80,16 @@
 }
 
 .sd-icon-indigo {
-  background: rgba(99, 102, 241, 0.14);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
   color: var(--sd-primary);
 }
 .sd-icon-violet {
-  background: rgba(139, 92, 246, 0.14);
-  color: #8b5cf6;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--sd-primary);
 }
 .sd-icon-pink {
-  background: rgba(236, 72, 153, 0.14);
-  color: #ec4899;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--sd-primary);
 }
 .sd-icon-amber {
   background: rgba(245, 158, 11, 0.16);

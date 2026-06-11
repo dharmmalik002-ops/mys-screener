@@ -41,7 +41,7 @@
 .homepro-kpi {
   position: relative;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 16px 18px;
   min-height: 168px;
   color: var(--hp-text);
@@ -53,21 +53,12 @@
   gap: 10px;
 }
 
-.homepro-kpi-universe {
-  background: linear-gradient(155deg, #eef2ff 0%, #f5f3ff 100%);
-  border-color: rgba(139, 92, 246, 0.18);
-}
-.homepro-kpi-status {
-  background: linear-gradient(155deg, #e0f2fe 0%, #cffafe 100%);
-  border-color: rgba(59, 130, 246, 0.22);
-}
-.homepro-kpi-date {
-  background: linear-gradient(155deg, #d1fae5 0%, #a7f3d0 100%);
-  border-color: rgba(16, 185, 129, 0.22);
-}
+.homepro-kpi-universe,
+.homepro-kpi-status,
+.homepro-kpi-date,
 .homepro-kpi-breadth {
-  background: linear-gradient(155deg, #fed7aa 0%, #fdba74 100%);
-  border-color: rgba(249, 115, 22, 0.28);
+  background: var(--hp-card-bg);
+  border-color: var(--hp-border);
 }
 
 .homepro-kpi-label {
@@ -136,7 +127,7 @@
 .homepro-snapshot {
   background: var(--hp-card-bg);
   border: 1px solid var(--hp-border);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 18px;
   box-shadow: var(--hp-shadow);
   display: flex;
@@ -274,7 +265,7 @@
 .homepro-card {
   background: var(--hp-card-bg);
   border: 1px solid var(--hp-border);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 18px;
   box-shadow: var(--hp-shadow);
   display: flex;
@@ -822,7 +813,7 @@
   width: min(860px, 100%);
   max-height: 85vh;
   background: var(--hp-card-bg);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--hp-border);
   box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
   display: flex;
@@ -931,23 +922,17 @@ body.dark .homepro {
 
 :root[data-theme="dark"] .homepro-kpi-universe,
 :root.dark .homepro-kpi-universe,
-body.dark .homepro-kpi-universe {
-  background: linear-gradient(155deg, rgba(139, 92, 246, 0.14), rgba(59, 130, 246, 0.1));
-}
+body.dark .homepro-kpi-universe,
 :root[data-theme="dark"] .homepro-kpi-status,
 :root.dark .homepro-kpi-status,
-body.dark .homepro-kpi-status {
-  background: linear-gradient(155deg, rgba(59, 130, 246, 0.14), rgba(14, 165, 233, 0.1));
-}
+body.dark .homepro-kpi-status,
 :root[data-theme="dark"] .homepro-kpi-date,
 :root.dark .homepro-kpi-date,
-body.dark .homepro-kpi-date {
-  background: linear-gradient(155deg, rgba(16, 185, 129, 0.14), rgba(5, 150, 105, 0.08));
-}
+body.dark .homepro-kpi-date,
 :root[data-theme="dark"] .homepro-kpi-breadth,
 :root.dark .homepro-kpi-breadth,
 body.dark .homepro-kpi-breadth {
-  background: linear-gradient(155deg, rgba(249, 115, 22, 0.18), rgba(239, 68, 68, 0.08));
+  background: var(--hp-card-bg);
 }
 :root[data-theme="dark"] .homepro-mini,
 :root.dark .homepro-mini,

@@ -282,14 +282,14 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   );
 }
 
-// Per-regime band shading opacity. "Avoid Longs" reads strongly red; the
-// bullish bands are given more presence so they're easy to read while backtesting.
+// Per-regime band shading opacity. Kept muted so the score line stays the
+// focal point; "Avoid Longs" gets slightly more presence as the risk zone.
 const XP_BAND_OPACITY: Record<string, number> = {
-  "Avoid Longs": 0.24,
-  "Choppy / Spurt Only": 0.16,
-  "Progressive Exposure": 0.12,
-  "Swing-Friendly": 0.18,
-  "Extremely Strong": 0.22,
+  "Avoid Longs": 0.12,
+  "Choppy / Spurt Only": 0.07,
+  "Progressive Exposure": 0.05,
+  "Swing-Friendly": 0.08,
+  "Extremely Strong": 0.1,
 };
 
 function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: number }) {

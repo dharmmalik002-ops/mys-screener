@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .st-card {
-  --st-primary: #6366f1;
-  --st-primary-strong: #4f46e5;
+  --st-primary: var(--accent);
+  --st-primary-strong: var(--accent-strong);
   --st-bg: #f9fafb;
   --st-surface: #ffffff;
   --st-border: #e5e7eb;

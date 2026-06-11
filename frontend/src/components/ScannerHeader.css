@@ -3,8 +3,8 @@
    ========================================================================== */
 
 .sh-root {
-  --sh-primary: #6366f1;
-  --sh-primary-strong: #4f46e5;
+  --sh-primary: var(--accent);
+  --sh-primary-strong: var(--accent-strong);
   --sh-bg: #f9fafb;
   --sh-surface: #ffffff;
   --sh-border: #e5e7eb;

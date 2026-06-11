@@ -13,9 +13,9 @@
   --gp-green: #10b981;
   --gp-red: #ef4444;
   --gp-amber: #f59e0b;
-  --gp-violet: #8b5cf6;
+  --gp-violet: var(--accent);
   --gp-blue: #3b82f6;
-  --gp-indigo: #6366f1;
+  --gp-indigo: var(--accent);
   --gp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
   --gp-shadow-md: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
 }
@@ -150,7 +150,7 @@ body.dark .gp-pill.active {
 .gp-kpi {
   background: var(--gp-card-bg);
   border: 1px solid var(--gp-border);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 16px;
   display: flex;
   gap: 14px;
@@ -240,7 +240,7 @@ body.dark .gp-pill.active {
 .gp-card {
   background: var(--gp-card-bg);
   border: 1px solid var(--gp-border);
-  border-radius: 18px;
+  border-radius: var(--radius-xl);
   padding: 18px;
   box-shadow: var(--gp-shadow-sm);
 }
@@ -291,9 +291,8 @@ body.dark .gp-pill.active {
 }
 
 .gp-tab.active {
-  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  background: var(--accent);
   color: #fff;
-  box-shadow: 0 3px 10px rgba(99, 102, 241, 0.28);
 }
 
 .gp-empty {
@@ -663,7 +662,7 @@ body.dark .gp-score-chip {
   border-radius: 50%;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #fff;
   font-size: 9.5px;
   font-weight: 700;
@@ -693,7 +692,7 @@ body.dark .gp-score-chip {
   min-width: 32px;
   height: 32px;
   padding: 0 6px;
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   display: grid;
   place-items: center;
   font-size: 13px;
