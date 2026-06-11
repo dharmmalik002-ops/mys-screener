@@ -6,6 +6,24 @@ export type ScanDescriptor = {
   hit_count: number;
 };
 
+export type MomentumBurstPlan = {
+  tag: string; // "Burst" | "10 EMA Setup" | "21 EMA Setup"
+  rs_rating: number;
+  burst_pct: number;
+  burst_days: number;
+  consolidation_days?: number | null;
+  consolidation_range_pct?: number | null;
+  dist_from_10ema_pct?: number | null;
+  dist_from_21ema_pct?: number | null;
+  volume_dryup_ratio?: number | null;
+  giveback_pct?: number | null;
+  entry?: number | null;
+  stop?: number | null;
+  risk_pct?: number | null;
+  target_2r?: number | null;
+  target_3r?: number | null;
+};
+
 export type ScanMatch = {
   scan_id: string;
   symbol: string;
@@ -32,6 +50,7 @@ export type ScanMatch = {
   stock_return_12m?: number | null;
   gap_pct?: number | null;
   reasons: string[];
+  momentum_burst?: MomentumBurstPlan | null;
 };
 
 export type AlertItem = {
@@ -859,6 +878,65 @@ export type ReturnsScanRequest = {
   limit: number;
 };
 
+export type MomentumBurstScanRequest = {
+  // Universe & liquidity (applied first)
+  min_price: number;
+  min_turnover_crore: number;
+  exclude_surveillance: boolean;
+  // Trend & RS context
+  min_rs_rating: number;
+  // Candidate types
+  include_fresh_bursts: boolean;
+  include_ema_setups: boolean;
+  // Type A — fresh burst
+  burst_min_gain_pct: number;
+  burst_window_min: number;
+  burst_window_max: number;
+  burst_recency_sessions: number;
+  burst_min_volume_ratio: number;
+  // Type B — consolidation near the 10/21 EMA
+  setup_min_move_pct: number;
+  setup_move_window_min: number;
+  setup_move_window_max: number;
+  setup_move_lookback_sessions: number;
+  consolidation_min_days: number;
+  consolidation_max_days: number;
+  consolidation_max_range_pct: number;
+  ema_surf_distance_pct: number;
+  max_giveback_10ema_pct: number;
+  max_giveback_21ema_pct: number;
+  volume_dryup_ratio: number;
+  min_liquidity_crore: number | null;
+  limit: number;
+};
+
+export const DEFAULT_MOMENTUM_BURST_REQUEST: MomentumBurstScanRequest = {
+  min_price: 50,
+  min_turnover_crore: 5,
+  exclude_surveillance: true,
+  min_rs_rating: 70,
+  include_fresh_bursts: true,
+  include_ema_setups: true,
+  burst_min_gain_pct: 15,
+  burst_window_min: 3,
+  burst_window_max: 10,
+  burst_recency_sessions: 5,
+  burst_min_volume_ratio: 1.5,
+  setup_min_move_pct: 20,
+  setup_move_window_min: 5,
+  setup_move_window_max: 15,
+  setup_move_lookback_sessions: 30,
+  consolidation_min_days: 3,
+  consolidation_max_days: 15,
+  consolidation_max_range_pct: 10,
+  ema_surf_distance_pct: 4,
+  max_giveback_10ema_pct: 33.33,
+  max_giveback_21ema_pct: 50,
+  volume_dryup_ratio: 0.7,
+  min_liquidity_crore: null,
+  limit: 1500,
+};
+
 export type ConsolidatingScanRequest = {
   enable_run_up_consolidation: boolean;
   enable_near_multi_year_breakout: boolean;
@@ -976,6 +1054,27 @@ function normalizeScanDescriptor(value: unknown): ScanDescriptor {
   };
 }
 
+function normalizeMomentumBurstPlan(value: unknown): MomentumBurstPlan | null {
+  if (!isRecord(value)) return null;
+  return {
+    tag: readString(value.tag),
+    rs_rating: readNumber(value.rs_rating),
+    burst_pct: readNumber(value.burst_pct),
+    burst_days: readNumber(value.burst_days),
+    consolidation_days: readNullableNumber(value.consolidation_days),
+    consolidation_range_pct: readNullableNumber(value.consolidation_range_pct),
+    dist_from_10ema_pct: readNullableNumber(value.dist_from_10ema_pct),
+    dist_from_21ema_pct: readNullableNumber(value.dist_from_21ema_pct),
+    volume_dryup_ratio: readNullableNumber(value.volume_dryup_ratio),
+    giveback_pct: readNullableNumber(value.giveback_pct),
+    entry: readNullableNumber(value.entry),
+    stop: readNullableNumber(value.stop),
+    risk_pct: readNullableNumber(value.risk_pct),
+    target_2r: readNullableNumber(value.target_2r),
+    target_3r: readNullableNumber(value.target_3r),
+  };
+}
+
 function normalizeScanMatch(value: unknown): ScanMatch {
   const raw = isRecord(value) ? value : {};
   return {
@@ -1004,6 +1103,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     stock_return_12m: readNullableNumber(raw.stock_return_12m),
     gap_pct: readNullableNumber(raw.gap_pct),
     reasons: readStringArray(raw.reasons),
+    momentum_burst: normalizeMomentumBurstPlan(raw.momentum_burst),
   };
 }
 
@@ -2358,6 +2458,16 @@ export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, opti
 
 export function getConsolidatingScan(body: ConsolidatingScanRequest, market: MarketKey, options?: ScanRequestOptions) {
   return request<ScanResultsResponse>(withScanOptions("/api/consolidating", market, options), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
+}
+
+export function getMomentumBurstScan(body: MomentumBurstScanRequest, market: MarketKey, options?: ScanRequestOptions) {
+  return request<ScanResultsResponse>(withScanOptions("/api/momentum-burst", market, options), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

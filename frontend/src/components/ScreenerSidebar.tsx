@@ -11,6 +11,7 @@ import {
   BarChart3,
   Layers,
   Trash2,
+  Zap,
 } from "lucide-react";
 
 import type { MarketKey } from "../lib/api";
@@ -30,6 +31,7 @@ export type ScreenerMode =
   | "improving-rs"
   | "returns"
   | "consolidating"
+  | "momentum-burst"
   | "minervini-1m"
   | "minervini-5m"
   | "positive-earnings";
@@ -68,6 +70,7 @@ const ITEMS: SidebarItem[] = [
   { mode: "gap-up-openers", title: "Gap Up Openers", hint: "Opening gaps", Icon: TrendingUp },
   { mode: "ema-expansion", title: "Expansion", hint: "EMA expanding", Icon: Maximize2 },
   { mode: "contraction", title: "Contraction", hint: "Tight ranges", Icon: Minimize2 },
+  { mode: "momentum-burst", title: "Momentum Burst", hint: "Bursts + EMA rest setups", Icon: Zap },
   { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
   { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },
   { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },

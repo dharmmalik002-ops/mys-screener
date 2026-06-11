@@ -24,10 +24,12 @@ import {
   getGapUpOpeners,
   getIndustryGroups,
   getIndexQuotes,
+  getMomentumBurstScan,
   getNearPivotScan,
   getPullBackScan,
   getReturnsScan,
   getImprovingRs,
+  DEFAULT_MOMENTUM_BURST_REQUEST,
   getScanCounts,
   getScanResults,
   getWatchlistsState,
@@ -45,6 +47,7 @@ import {
   type IndustryGroupsResponse,
   type IndustryGroupStockItem,
   type MarketKey,
+  type MomentumBurstScanRequest,
   type NearPivotScanRequest,
   type PullBackScanRequest,
   type ReturnsScanRequest,
@@ -80,6 +83,8 @@ const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPa
 const PositiveEarningsScannerPanel = lazy(() => import("./components/PositiveEarningsScannerPanel").then((module) => ({ default: module.PositiveEarningsScannerPanel })));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
+const MomentumBurstScannerPanel = lazy(() => import("./components/MomentumBurstScannerPanel").then((module) => ({ default: module.MomentumBurstScannerPanel })));
+const MomentumBurstResults = lazy(() => import("./components/MomentumBurstScannerPanel").then((module) => ({ default: module.MomentumBurstResults })));
 const PullBackScannerPanel = lazy(() => import("./components/PullBackScannerPanel").then((module) => ({ default: module.PullBackScannerPanel })));
 const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel").then((module) => ({ default: module.ReturnsScannerPanel })));
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
@@ -151,7 +156,7 @@ type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal";
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
-type SavableScannerMode = Exclude<ScreenerMode, "improving-rs">;
+type SavableScannerMode = Exclude<ScreenerMode, "improving-rs" | "momentum-burst">;
 type SectorGroupSortMode = "1W" | "1M" | "count-desc" | "count-asc";
 
 type RibbonItem = {
@@ -1545,6 +1550,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   );
   const [nearPivotFilters, setNearPivotFilters] = useState<NearPivotScanRequest>(initialScannerSettings.nearPivotFilters);
   const [appliedNearPivotFilters, setAppliedNearPivotFilters] = useState<NearPivotScanRequest>(initialScannerSettings.appliedNearPivotFilters);
+  // Momentum Burst keeps its own draft/applied state (not part of saved scanners).
+  const [momentumBurstFilters, setMomentumBurstFilters] = useState<MomentumBurstScanRequest>(DEFAULT_MOMENTUM_BURST_REQUEST);
+  const [appliedMomentumBurstFilters, setAppliedMomentumBurstFilters] = useState<MomentumBurstScanRequest>(DEFAULT_MOMENTUM_BURST_REQUEST);
   const [pullBackFilters, setPullBackFilters] = useState<PullBackScanRequest>(initialScannerSettings.pullBackFilters);
   const [appliedPullBackFilters, setAppliedPullBackFilters] = useState<PullBackScanRequest>(initialScannerSettings.appliedPullBackFilters);
   const [returnsFilters, setReturnsFilters] = useState<ReturnsScanRequest>(initialScannerSettings.returnsFilters);
@@ -2298,6 +2306,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     appliedExpansionMinRelativeVolume,
     appliedMinervini1mMinLiquidityCrore,
     appliedMinervini5mMinLiquidityCrore,
+    appliedMomentumBurstFilters,
     appliedNearPivotFilters,
     appliedPositiveEarningsFilters,
     appliedPullBackFilters,
@@ -3055,6 +3064,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "consolidating") {
       return getConsolidatingScan(appliedConsolidatingFilters, activeMarket, options);
     }
+    if (activeScanner === "momentum-burst") {
+      return getMomentumBurstScan(appliedMomentumBurstFilters, activeMarket, options);
+    }
     if (activeScanner === "minervini-1m") {
       return getScanResults("minervini-1m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini1mMinLiquidityCrore });
     }
@@ -3751,6 +3763,29 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScanSectorSummariesLoading(false);
     setConsolidatingFilters(DEFAULT_CONSOLIDATING_FILTERS);
     setAppliedConsolidatingFilters(DEFAULT_CONSOLIDATING_FILTERS);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleApplyMomentumBurstScan = () => {
+    setActivePage("screener");
+    setActiveScanner("momentum-burst");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setAppliedMomentumBurstFilters(momentumBurstFilters);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleResetMomentumBurstScan = () => {
+    setActivePage("screener");
+    setActiveScanner("momentum-burst");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setMomentumBurstFilters(DEFAULT_MOMENTUM_BURST_REQUEST);
+    setAppliedMomentumBurstFilters(DEFAULT_MOMENTUM_BURST_REQUEST);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -5041,6 +5076,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onReset={handleResetConsolidatingScan}
                                   />
                                 )
+                              : activeScanner === "momentum-burst"
+                                ? (
+                                  <MomentumBurstScannerPanel
+                                    filters={momentumBurstFilters}
+                                    onFiltersChange={setMomentumBurstFilters}
+                                    onApply={handleApplyMomentumBurstScan}
+                                    onReset={handleResetMomentumBurstScan}
+                                  />
+                                )
                               : activeScanner === "minervini-1m"
                                 ? (
                                   <MinerviniScannerPanel
@@ -5104,6 +5148,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         loading={improvingRsLoading}
                         onPickSymbol={handlePickSymbol}
                         onRequestAddToWatchlist={setWatchlistPickerSymbol}
+                        selectedSymbol={selectedSymbol}
+                      />
+                    ) : activeScanner === "momentum-burst" ? (
+                      <MomentumBurstResults
+                        items={visibleScanItems}
+                        loading={scanLoading}
+                        onPickSymbol={handlePickSymbol}
                         selectedSymbol={selectedSymbol}
                       />
                     ) : (
