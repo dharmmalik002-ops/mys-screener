@@ -1750,17 +1750,28 @@ def _mb_detect_setup(
     # EMA tier is preferred over the 21 EMA tier when both qualify (per spec).
     dist = request.ema_surf_distance_pct / 100.0
 
+    def _surfs(cons_closes: list[float], cons_emas: list[float]) -> bool:
+        # "Closes hug the EMA during the consolidation": the stock must be
+        # surfing RIGHT NOW (latest close within band) and predominantly within
+        # band across the rest. Real consolidations have the odd noisy day, so we
+        # tolerate one outlier rather than demanding every single close — an
+        # all-or-nothing rule effectively never fires on live data.
+        if not cons_emas or cons_emas[-1] <= 0:
+            return False
+        if abs(cons_closes[-1] - cons_emas[-1]) > dist * cons_emas[-1]:
+            return False
+        violations = sum(1 for c, e in zip(cons_closes, cons_emas) if e > 0 and abs(c - e) > dist * e)
+        return violations <= 1
+
     def _classify(k: int) -> tuple[str, float, float] | None:
         cons_closes = closes[-k:]
         cons_ema10 = ema10[-k:]
         cons_ema21 = ema21[-k:]
-        surfs_10 = all(abs(c - e) <= dist * e for c, e in zip(cons_closes, cons_ema10) if e > 0)
         no_close_below_21 = all(c >= e for c, e in zip(cons_closes, cons_ema21))
-        if request.include_ema_setups and surfs_10 and no_close_below_21:
+        if request.include_ema_setups and _surfs(cons_closes, cons_ema10) and no_close_below_21:
             return _MB_10EMA_TAG, ema10[-1], request.max_giveback_10ema_pct / 100.0
-        surfs_21 = all(abs(c - e) <= dist * e for c, e in zip(cons_closes, cons_ema21) if e > 0)
         no_close_below_50 = all(c >= snapshot.sma50 for c in cons_closes)
-        if request.include_ema_setups and surfs_21 and no_close_below_50:
+        if request.include_ema_setups and _surfs(cons_closes, cons_ema21) and no_close_below_50:
             return _MB_21EMA_TAG, ema21[-1], request.max_giveback_21ema_pct / 100.0
         return None
 
