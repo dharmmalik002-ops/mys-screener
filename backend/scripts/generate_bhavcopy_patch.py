@@ -77,6 +77,15 @@ PRICE_BAND_CHANGES_PATH = DATA_DIR / "price_band_changes.json"
 # date we missed; already-fetched dates are skipped via the store's index.
 BAND_CHANGES_RESCAN_DAYS = 7
 
+# Complete current price-band list for ALL banded securities ("Securities under
+# price bands" on nseindia.com). Same nsearchives host. Symbols absent from
+# this list have no fixed band (F&O / dynamic names).
+PRICE_BANDS_URL = "https://nsearchives.nseindia.com/content/equities/sec_list.csv"
+PRICE_BANDS_PATH = DATA_DIR / "price_bands.json"
+# Sanity floor: the real list has thousands of rows; refuse to overwrite the
+# store with a truncated/garbled download.
+PRICE_BANDS_MIN_ROWS = 500
+
 # Live NSE listed-equities master. Refreshed every weekday and reflects new
 # listings within hours of their first session. We fetch this so that brand-new
 # IPOs land in the daily bhavcopy patch (and therefore in the snapshot file)
@@ -916,6 +925,61 @@ def _parse_band_value(raw: str):
         return text  # e.g. "No Band" — keep verbatim so the UI can show it
 
 
+def update_price_bands(target: date) -> None:
+    """Fetch NSE's complete current price-band list (sec_list.csv) and write
+    ``data/price_bands.json``.
+
+    Store shape:
+        {"updated_at": iso, "as_of": "YYYY-MM-DD",
+         "bands": {"SYMBOL": 5.0 | 10.0 | 20.0 | "No Band", ...}}
+
+    This is the authoritative answer to "what is SYMBOL's band today" for every
+    banded security; a symbol ABSENT from the list has no fixed band (F&O /
+    dynamic). Failures are logged and swallowed so the price patch never
+    breaks; the previous store is kept when the download looks truncated.
+    """
+    try:
+        try:
+            resp = requests.get(PRICE_BANDS_URL, headers=HEADERS, timeout=30)
+        except Exception as exc:
+            logger.info("price-bands fetch failed: %s", exc)
+            return
+        if resp.status_code != 200 or len(resp.content) < 1000:
+            logger.info("price-bands fetch unusable (status=%s, %s bytes)", resp.status_code, len(resp.content))
+            return
+
+        bands: dict[str, object] = {}
+        reader = csv.DictReader(io.StringIO(resp.text))
+        field_names = [str(name or "").strip().lower() for name in (reader.fieldnames or [])]
+        symbol_key = next((name for name in field_names if "symbol" in name), None)
+        band_key = next((name for name in field_names if "band" in name), None)
+        if not symbol_key or not band_key:
+            logger.warning("price-bands CSV headers unrecognised: %s", field_names)
+            return
+        for row in reader:
+            cells = {str(k).strip().lower(): str(v).strip() for k, v in row.items() if k}
+            sym = (cells.get(symbol_key) or "").upper()
+            if not sym:
+                continue
+            band = _parse_band_value(cells.get(band_key))
+            if band is None:
+                continue
+            bands[sym] = band
+        if len(bands) < PRICE_BANDS_MIN_ROWS:
+            logger.warning("price-bands list too small (%s rows) — keeping previous store", len(bands))
+            return
+
+        store = {
+            "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
+            "as_of": target.isoformat(),
+            "bands": bands,
+        }
+        PRICE_BANDS_PATH.write_text(json.dumps(store, separators=(",", ":")), encoding="utf-8")
+        logger.info("price_bands.json updated: %s symbols as of %s", len(bands), target.isoformat())
+    except Exception as exc:
+        logger.warning("price-bands update failed: %s", exc)
+
+
 def update_price_band_changes(target: date, *, days_back: int = BAND_CHANGES_RESCAN_DAYS) -> None:
     """Fetch NSE daily price-band-change CSVs and merge them into
     ``data/price_band_changes.json``.
@@ -1043,6 +1107,9 @@ def main() -> int:
     # BEFORE the price phases because each phase returns early; failures are
     # swallowed inside so this can never block the price patch.
     update_price_band_changes(target)
+    # Complete current band list (authoritative per-symbol band; absence = no
+    # fixed band). Same failure-isolation as above.
+    update_price_bands(target)
 
     # --- Phase 1: BSE bhavcopy (no geo-blocking, available ~4:24 PM IST) merged with yfinance NSE bars. ---
     # The universe is NSE-keyed (.NS), so yfinance .NS data IS the authoritative

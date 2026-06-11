@@ -55,7 +55,7 @@ jobs:
           python backend/scripts/generate_bhavcopy_patch.py
           # Capture whether the patch (or the price-band-changes store, which
           # the same script maintains) changed — new date vs already current.
-          if git diff --quiet backend/data/bhavcopy_patch.json backend/data/price_band_changes.json; then
+          if git diff --quiet backend/data/bhavcopy_patch.json backend/data/price_band_changes.json && git diff --quiet -- backend/data/price_bands.json && ! git ls-files --others --exclude-standard backend/data/price_bands.json | grep -q .; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -117,6 +117,10 @@ jobs:
           # NSE price-band revisions (chart band-change markers).
           if [ -f backend/data/price_band_changes.json ]; then
             git add backend/data/price_band_changes.json || true
+          fi
+          # Complete current price-band list (authoritative per-symbol bands).
+          if [ -f backend/data/price_bands.json ]; then
+            git add backend/data/price_bands.json || true
           fi
           # XP market breadth score artifacts (history is tiny; the EMA-state
           # store is small and used only to compute the next day's MA inputs).

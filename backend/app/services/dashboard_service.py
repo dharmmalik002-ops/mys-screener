@@ -536,6 +536,26 @@ class DashboardService:
         except Exception:
             return []
 
+    def _load_price_bands(self) -> dict:
+        """mtime-cached read of data/price_bands.json → {"as_of": iso, "bands": {SYMBOL: pct|label}}."""
+        try:
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                return {}
+            path = Path(backend_root) / "data" / "price_bands.json"
+            if not path.exists():
+                return {}
+            mtime = path.stat().st_mtime
+            cached = getattr(self, "_price_bands_cache", None)
+            if cached and cached[0] == mtime:
+                return cached[1]
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            store = loaded if isinstance(loaded, dict) and isinstance(loaded.get("bands"), dict) else {}
+            self._price_bands_cache = (mtime, store)
+            return store
+        except Exception:
+            return {}
+
     def _build_band_history(self, symbol: str) -> list:
         """The symbol's price-band timeline (oldest first) from the NSE
         price-band-changes data: one segment per effective band, starting with
@@ -543,19 +563,33 @@ class DashboardService:
         try:
             from app.models.market import BandHistorySegment
 
-            entries = self._load_price_band_changes().get(symbol.upper())
-            if not entries:
-                return []
-
             def to_pct(value) -> float | None:
                 return float(value) if isinstance(value, (int, float)) else None
 
-            valid = [e for e in entries if isinstance(e, (list, tuple)) and len(e) >= 3]
-            if not valid:
-                return []
-            segments = [BandHistorySegment(from_date=None, band_pct=to_pct(valid[0][1]))]
-            for entry in valid:
-                segments.append(BandHistorySegment(from_date=str(entry[0]), band_pct=to_pct(entry[2])))
+            entries = self._load_price_band_changes().get(symbol.upper())
+            valid = [e for e in (entries or []) if isinstance(e, (list, tuple)) and len(e) >= 3]
+            segments: list = []
+            if valid:
+                segments.append(BandHistorySegment(from_date=None, band_pct=to_pct(valid[0][1])))
+                for entry in valid:
+                    segments.append(BandHistorySegment(from_date=str(entry[0]), band_pct=to_pct(entry[2])))
+
+            # Authoritative current band from the complete sec_list snapshot:
+            # a symbol ABSENT from the list has no fixed band (F&O / dynamic),
+            # so its band_pct is None. This covers every stock — including the
+            # ones with no revisions in the changes window — so the chart never
+            # has to guess the current band.
+            bands_store = self._load_price_bands()
+            bands = bands_store.get("bands") if isinstance(bands_store, dict) else None
+            if isinstance(bands, dict) and bands:
+                current_pct = to_pct(bands.get(symbol.upper()))
+                if not segments:
+                    segments.append(BandHistorySegment(from_date=None, band_pct=current_pct))
+                elif segments[-1].band_pct != current_pct:
+                    as_of = bands_store.get("as_of")
+                    segments.append(
+                        BandHistorySegment(from_date=str(as_of) if as_of else None, band_pct=current_pct)
+                    )
             return segments
         except Exception:
             return []

@@ -3755,21 +3755,21 @@ export function ChartPanel({
             <strong>
               {summaryCircuitLimits.upper != null && summaryCircuitLimits.lower != null ? (
                 <>
+                  {resolvedCircuitBandPct ? (
+                    <em className="chart-circuit-band">±{resolvedCircuitBandPct}%</em>
+                  ) : null}
+                  {resolvedCircuitBandPct ? " · " : null}
                   <em className="chart-circuit-uc">UC {formatPriceValue(summaryCircuitLimits.upper)}</em>
                   {" · "}
                   <em className="chart-circuit-lc">LC {formatPriceValue(summaryCircuitLimits.lower)}</em>
                   {!summaryCircuitLimits.exact ? (
                     <small className="chart-circuit-est">
-                      {circuitBandFromNse && resolvedCircuitBandPct
-                        ? ` ±${resolvedCircuitBandPct}% NSE`
-                        : circuitBandPct === CIRCUIT_BAND_AUTO && resolvedCircuitBandPct
-                          ? ` ±${resolvedCircuitBandPct}% est.`
-                          : " est."}
+                      {circuitBandFromNse ? " NSE" : " est."}
                     </small>
                   ) : null}
                 </>
               ) : circuitBandPct === CIRCUIT_BAND_AUTO && resolvedCircuitBandPct === null ? (
-                <small className="chart-circuit-est">Dynamic band — no fixed limit</small>
+                <small className="chart-circuit-est">No fixed band (dynamic)</small>
               ) : (
                 formatCircuitBand(summary, market)
               )}

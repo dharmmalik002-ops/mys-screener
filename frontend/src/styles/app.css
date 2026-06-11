@@ -4375,6 +4375,11 @@ button {
   font-style: normal;
 }
 
+.chart-circuit-band {
+  color: var(--text);
+  font-weight: 700;
+}
+
 .chart-circuit-uc {
   color: var(--negative);
 }
