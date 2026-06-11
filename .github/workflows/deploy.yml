@@ -7,6 +7,9 @@ on:
       - "backend/**"
       - "Dockerfile"
       - "render.yaml"
+  # Manual redeploy (e.g. to ship data committed by the bhavcopy workflow,
+  # whose [skip ci] commits don't trigger this).
+  workflow_dispatch:
 
 jobs:
   deploy-hf:
