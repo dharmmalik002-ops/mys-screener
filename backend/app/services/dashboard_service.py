@@ -536,6 +536,30 @@ class DashboardService:
         except Exception:
             return []
 
+    def _build_band_history(self, symbol: str) -> list:
+        """The symbol's price-band timeline (oldest first) from the NSE
+        price-band-changes data: one segment per effective band, starting with
+        the band in force before the first known revision."""
+        try:
+            from app.models.market import BandHistorySegment
+
+            entries = self._load_price_band_changes().get(symbol.upper())
+            if not entries:
+                return []
+
+            def to_pct(value) -> float | None:
+                return float(value) if isinstance(value, (int, float)) else None
+
+            valid = [e for e in entries if isinstance(e, (list, tuple)) and len(e) >= 3]
+            if not valid:
+                return []
+            segments = [BandHistorySegment(from_date=None, band_pct=to_pct(valid[0][1]))]
+            for entry in valid:
+                segments.append(BandHistorySegment(from_date=str(entry[0]), band_pct=to_pct(entry[2])))
+            return segments
+        except Exception:
+            return []
+
     def _with_earnings_metrics(self, snapshots):
         """Merge sidecar earnings metrics onto each snapshot.
 
@@ -2166,6 +2190,7 @@ class DashboardService:
             earnings_markers=earnings_markers,
             volume_markers=self._build_volume_markers(symbol, bars),
             band_change_markers=self._build_band_change_markers(symbol, bars),
+            band_history=self._build_band_history(symbol),
         )
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
         return response
@@ -2199,6 +2224,7 @@ class DashboardService:
             earnings_markers=self._build_earnings_markers(symbol, bars),
             volume_markers=self._build_volume_markers(symbol, bars),
             band_change_markers=self._build_band_change_markers(symbol, bars),
+            band_history=self._build_band_history(symbol),
         )
 
     async def get_chart_full_history(self, symbol: str, timeframe: str):

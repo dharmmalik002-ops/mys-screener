@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, getEarningsSummary, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
+import { getChartHistory, getEarningsSummary, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
@@ -193,6 +193,7 @@ type ChartPanelProps = {
   earningsMarkers?: ChartLineMarker[];
   volumeMarkers?: ChartLineMarker[];
   bandChangeMarkers?: ChartLineMarker[];
+  bandHistory?: BandHistorySegment[];
   tradeMarkers?: ChartTradeMarker[];
   onSellMarkerClick?: (symbol: string, exitDate: string) => void;
   summary: StockOverview | null;
@@ -436,16 +437,55 @@ function detectCircuitBandPct(bars: ChartBar[]): number | null {
 }
 
 type CircuitLevelSeries = {
-  upper: { time: UTCTimestamp; value: number }[];
-  lower: { time: UTCTimestamp; value: number }[];
+  // value is omitted (whitespace point) for dynamic-band periods, which breaks
+  // the line instead of bridging across the gap.
+  upper: { time: UTCTimestamp; value?: number }[];
+  lower: { time: UTCTimestamp; value?: number }[];
   ucLockTimes: UTCTimestamp[];
   lcLockTimes: UTCTimestamp[];
 };
 
+// Resolved per-date band timeline: effective band % from `fromTime` onward
+// (UTC midnight, matching daily bar timestamps). null band = dynamic, no level.
+type BandTimelineEntry = { fromTime: number; bandPct: number | null };
+
+function buildBandTimeline(bandHistory: BandHistorySegment[]): BandTimelineEntry[] {
+  const timeline: BandTimelineEntry[] = [];
+  for (const segment of bandHistory) {
+    let fromTime = 0;
+    if (segment.from_date) {
+      const parsed = Date.parse(`${segment.from_date}T00:00:00Z`);
+      if (!Number.isFinite(parsed)) continue;
+      fromTime = parsed / 1000;
+    }
+    timeline.push({ fromTime, bandPct: segment.band_pct });
+  }
+  timeline.sort((left, right) => left.fromTime - right.fromTime);
+  return timeline;
+}
+
+function bandPctAt(timeline: BandTimelineEntry[], barTime: number, fallbackBandPct: number): number | null {
+  let effective: number | null | undefined;
+  for (const entry of timeline) {
+    if (entry.fromTime <= barTime) {
+      effective = entry.bandPct;
+    } else {
+      break;
+    }
+  }
+  return effective === undefined ? fallbackBandPct : effective;
+}
+
 // Per-bar circuit levels (each day's band applied to the previous close) plus
 // the days the stock actually locked at a circuit — close within 0.25% of the
-// band level counts as a lock.
-function computeCircuitLevelSeries(bars: ChartBar[], bandPct: number): CircuitLevelSeries {
+// band level counts as a lock. When the symbol's real NSE band timeline is
+// known, each bar uses the band in force on that date; otherwise the single
+// fallback band applies to the whole window.
+function computeCircuitLevelSeries(
+  bars: ChartBar[],
+  bandPct: number,
+  bandTimeline: BandTimelineEntry[] = [],
+): CircuitLevelSeries {
   const upper: CircuitLevelSeries["upper"] = [];
   const lower: CircuitLevelSeries["lower"] = [];
   const ucLockTimes: UTCTimestamp[] = [];
@@ -455,8 +495,14 @@ function computeCircuitLevelSeries(bars: ChartBar[], bandPct: number): CircuitLe
     const prev = bars[i - 1]?.close;
     const bar = bars[i];
     if (!prev || prev <= 0 || !bar) continue;
-    const uc = prev * (1 + bandPct / 100);
-    const lc = prev * (1 - bandPct / 100);
+    const barBandPct = bandTimeline.length ? bandPctAt(bandTimeline, Number(bar.time), bandPct) : bandPct;
+    if (barBandPct == null || barBandPct <= 0) {
+      upper.push({ time: bar.time as UTCTimestamp });
+      lower.push({ time: bar.time as UTCTimestamp });
+      continue;
+    }
+    const uc = prev * (1 + barBandPct / 100);
+    const lc = prev * (1 - barBandPct / 100);
     upper.push({ time: bar.time as UTCTimestamp, value: uc });
     lower.push({ time: bar.time as UTCTimestamp, value: lc });
     if (bar.close >= uc * (1 - LOCK_TOLERANCE)) {
@@ -1407,6 +1453,7 @@ export function ChartPanel({
   earningsMarkers,
   volumeMarkers,
   bandChangeMarkers,
+  bandHistory,
   tradeMarkers,
   onSellMarkerClick,
   summary,
@@ -1526,13 +1573,25 @@ export function ChartPanel({
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
-  // null = dynamic-band stock (Auto failed to find a fixed band); 0 = off.
+  // Real per-date NSE band timeline when known (from the price-band-changes
+  // report); empty for symbols with no recorded revisions.
+  const circuitBandTimeline = useMemo(
+    () => buildBandTimeline(extendedHistory?.band_history ?? bandHistory ?? []),
+    [extendedHistory, bandHistory],
+  );
+  // Whether Auto mode is backed by real NSE band data (vs. heuristic detection).
+  const circuitBandFromNse = circuitBandPct === CIRCUIT_BAND_AUTO && circuitBandTimeline.length > 0;
+  // null = dynamic-band stock (no fixed limit); 0 = off.
   const resolvedCircuitBandPct = useMemo(() => {
     if (circuitBandPct === CIRCUIT_BAND_AUTO) {
+      if (circuitBandTimeline.length > 0) {
+        // Current band = the last segment of the real timeline.
+        return circuitBandTimeline[circuitBandTimeline.length - 1].bandPct;
+      }
       return detectCircuitBandPct(activeBars);
     }
     return circuitBandPct;
-  }, [circuitBandPct, activeBars]);
+  }, [circuitBandPct, circuitBandTimeline, activeBars]);
   const summaryCircuitLimits = useMemo(
     () => computeCircuitLimits(summary ?? null, resolvedCircuitBandPct ?? 0),
     [summary, resolvedCircuitBandPct],
@@ -2298,8 +2357,16 @@ export function ChartPanel({
     // Historical circuit levels (TradingView-style): stepped UC/LC lines from
     // each day's previous close, plus markers on the days the stock locked at
     // a circuit. Daily bands only make sense on the 1D timeframe.
-    if (timeframe === "1D" && resolvedCircuitBandPct != null && resolvedCircuitBandPct > 0 && activeBars.length > 2) {
-      const circuitLevels = computeCircuitLevelSeries(activeBars, resolvedCircuitBandPct);
+    if (
+      timeframe === "1D" &&
+      activeBars.length > 2 &&
+      (circuitBandFromNse || (resolvedCircuitBandPct != null && resolvedCircuitBandPct > 0))
+    ) {
+      const circuitLevels = computeCircuitLevelSeries(
+        activeBars,
+        resolvedCircuitBandPct ?? 0,
+        circuitBandFromNse ? circuitBandTimeline : [],
+      );
       const circuitLineOptions = {
         lineWidth: 1 as const,
         lineStyle: 2, // dashed
@@ -2590,7 +2657,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, resolvedCircuitBandPct, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3693,7 +3760,11 @@ export function ChartPanel({
                   <em className="chart-circuit-lc">LC {formatPriceValue(summaryCircuitLimits.lower)}</em>
                   {!summaryCircuitLimits.exact ? (
                     <small className="chart-circuit-est">
-                      {circuitBandPct === CIRCUIT_BAND_AUTO && resolvedCircuitBandPct ? ` ±${resolvedCircuitBandPct}% est.` : " est."}
+                      {circuitBandFromNse && resolvedCircuitBandPct
+                        ? ` ±${resolvedCircuitBandPct}% NSE`
+                        : circuitBandPct === CIRCUIT_BAND_AUTO && resolvedCircuitBandPct
+                          ? ` ±${resolvedCircuitBandPct}% est.`
+                          : " est."}
                     </small>
                   ) : null}
                 </>

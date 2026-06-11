@@ -248,6 +248,14 @@ export type ChartResponse = {
   earnings_markers: ChartLineMarker[];
   volume_markers: ChartLineMarker[];
   band_change_markers: ChartLineMarker[];
+  band_history: BandHistorySegment[];
+};
+
+export type BandHistorySegment = {
+  // ISO date the band became effective; null = before the first known revision.
+  from_date: string | null;
+  // Band percent (2/5/10/20); null = no fixed band (dynamic / F&O).
+  band_pct: number | null;
 };
 
 export type ChartGridTimeframe = "3M" | "6M" | "1Y" | "2Y";
@@ -1310,6 +1318,16 @@ export function normalizeChartResponse(value: unknown): ChartResponse {
     earnings_markers: mapArray(raw.earnings_markers, normalizeChartLineMarker),
     volume_markers: mapArray(raw.volume_markers, normalizeChartLineMarker),
     band_change_markers: mapArray(raw.band_change_markers, normalizeChartLineMarker),
+    band_history: mapArray(raw.band_history, normalizeBandHistorySegment),
+  };
+}
+
+function normalizeBandHistorySegment(value: unknown): BandHistorySegment {
+  const raw = isRecord(value) ? value : {};
+  const pct = Number(raw.band_pct);
+  return {
+    from_date: typeof raw.from_date === "string" && raw.from_date ? raw.from_date : null,
+    band_pct: Number.isFinite(pct) && pct > 0 ? pct : null,
   };
 }
 

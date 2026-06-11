@@ -990,6 +990,13 @@ class CustomScanRequest(BaseModel):
     limit: int = Field(default=1500, ge=1, le=5000)
 
 
+class BandHistorySegment(BaseModel):
+    # ISO date the band became effective; None = before the first known revision.
+    from_date: str | None = None
+    # Band percent (2/5/10/20); None = no fixed band (dynamic / F&O).
+    band_pct: float | None = None
+
+
 class ChartResponse(BaseModel):
     symbol: str
     timeframe: str
@@ -1007,6 +1014,10 @@ class ChartResponse(BaseModel):
     # report): the new band % shown on top of that day's candle. Sourced from
     # data/price_band_changes.json (label carries the new band, e.g. "5%").
     band_change_markers: list[ChartLineMarker] = Field(default_factory=list)
+    # The symbol's daily price-band timeline (oldest first), from the same
+    # NSE report. Lets the chart draw historically-correct circuit levels per
+    # period instead of assuming one band for the whole history.
+    band_history: list[BandHistorySegment] = Field(default_factory=list)
 
 
 class FundamentalsResponse(CompanyFundamentals):

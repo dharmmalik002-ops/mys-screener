@@ -1041,6 +1041,7 @@ function buildIndexFallbackChart(
     earnings_markers: [],
     volume_markers: [],
     band_change_markers: [],
+    band_history: [],
   };
 }
 
@@ -4268,22 +4269,32 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     await openGroupsView({ groupId: context.groupId, symbol: selectedSymbol ?? context.members[0]?.symbol ?? null });
   };
 
+  // Searching a symbol outside the filtered universe (e.g. a microcap below
+  // the market-cap floor) falls back to the raw NSE symbol — the chart
+  // endpoint accepts any symbol, and a "no data" chart beats a silent no-op.
+  const rawSearchSymbol = (query: string): string | null => {
+    const cleaned = query.trim().toUpperCase().replace(/[^A-Z0-9.&-]/g, "");
+    return cleaned.length >= 2 && cleaned.length <= 20 ? cleaned : null;
+  };
+
   const handleChartSearchSubmit = (query: string) => {
     const match = findUniverseMatch(query);
-    if (!match) {
+    const symbol = match?.symbol ?? rawSearchSymbol(query);
+    if (!symbol) {
       return;
     }
-    handlePickSymbol(match.symbol);
+    handlePickSymbol(symbol);
   };
 
   const handlePaneSearchSubmit = (pane: "A" | "B", query: string) => {
     const match = findUniverseMatch(query);
-    if (!match) return;
+    const symbol = match?.symbol ?? rawSearchSymbol(query);
+    if (!symbol) return;
     if (pane === "B" && compareMode) {
-      setPaneBSymbol(match.symbol);
+      setPaneBSymbol(symbol);
       setActivePane("B");
     } else {
-      setSelectedSymbol(match.symbol);
+      setSelectedSymbol(symbol);
       setChartOpen(true);
       setActivePane("A");
     }
@@ -5227,6 +5238,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     earningsMarkers={displayedChart?.earnings_markers ?? []}
                     volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
+                    bandHistory={displayedChart?.band_history ?? []}
                     tradeMarkers={activeTradeMarkers}
                     onSellMarkerClick={handleSellMarkerClick}
                     summary={displayedChart?.summary ?? null}
@@ -5311,6 +5323,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   earningsMarkers={displayedChart?.earnings_markers ?? []}
                   volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
+                    bandHistory={displayedChart?.band_history ?? []}
                   tradeMarkers={activeTradeMarkers}
                   onSellMarkerClick={handleSellMarkerClick}
                   summary={displayedChart?.summary ?? null}
@@ -5422,6 +5435,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         earningsMarkers={displayedChart?.earnings_markers ?? []}
                         volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
+                    bandHistory={displayedChart?.band_history ?? []}
                         tradeMarkers={activeTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={displayedChart?.summary ?? null}
@@ -5475,6 +5489,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
                         volumeMarkers={paneBDisplayedChart?.volume_markers ?? []}
                         bandChangeMarkers={paneBDisplayedChart?.band_change_markers ?? []}
+                        bandHistory={paneBDisplayedChart?.band_history ?? []}
                         tradeMarkers={paneBTradeMarkers}
                         onSellMarkerClick={handleSellMarkerClick}
                         summary={paneBDisplayedChart?.summary ?? null}
