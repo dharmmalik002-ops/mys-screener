@@ -2054,6 +2054,45 @@ export function ChartPanel({
     ];
 
     mainSeries.setData(ohlcvData);
+
+    // Daily Upper/Lower Circuit Limit indicators. The backend supplies the
+    // absolute band prices on the summary (from the exchange feed); when a stock
+    // has no fixed band (e.g. F&O "dynamic" names) the values are null and we
+    // simply draw nothing. The chart is fully recreated on each effect run, so
+    // these price lines are re-added cleanly without manual removal.
+    const upperCircuit = summary?.upper_circuit_limit ?? null;
+    const lowerCircuit = summary?.lower_circuit_limit ?? null;
+    const lastBar = activeBars.length > 0 ? activeBars[activeBars.length - 1] : null;
+    // Proximity warning: flag when the latest bar trades within 0.5% of a band.
+    const nearBand = (limit: number | null): boolean => {
+      if (!limit || !lastBar) return false;
+      const high = Number(lastBar.high) || 0;
+      const low = Number(lastBar.low) || 0;
+      return (Math.abs(high - limit) / limit <= 0.005) || (Math.abs(low - limit) / limit <= 0.005);
+    };
+    if (typeof upperCircuit === "number" && upperCircuit > 0) {
+      const near = nearBand(upperCircuit);
+      mainSeries.createPriceLine({
+        price: upperCircuit,
+        color: near ? "#fa5252" : "rgba(250,82,82,0.55)",
+        lineWidth: 1,
+        lineStyle: 2, // dashed
+        axisLabelVisible: true,
+        title: near ? "UC ⚠" : "UC",
+      });
+    }
+    if (typeof lowerCircuit === "number" && lowerCircuit > 0) {
+      const near = nearBand(lowerCircuit);
+      mainSeries.createPriceLine({
+        price: lowerCircuit,
+        color: near ? "#37b24d" : "rgba(55,178,77,0.55)",
+        lineWidth: 1,
+        lineStyle: 2, // dashed
+        axisLabelVisible: true,
+        title: near ? "LC ⚠" : "LC",
+      });
+    }
+
     const combinedMarkers: any[] = [];
     if (pocketPivotWidget.enabled) {
       for (const bar of pocketPivotBars) {
@@ -2349,7 +2388,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
