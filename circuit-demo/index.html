@@ -1,0 +1,198 @@
+<!--
+  Circuit Limit demo — standalone front-end.
+
+  Pure HTML/CSS/JS + TradingView Lightweight Charts (CDN). No React/Tailwind.
+  Open this file directly in a browser AFTER starting server.py
+  (python circuit-demo/server.py). It fetches from http://127.0.0.1:8100.
+
+  How it hooks into the backend:
+    GET /api/stocks            -> populates the dropdown
+    GET /api/stock/:ticker     -> { previous_close, circuit_band_text,
+                                     upper_circuit, lower_circuit, is_dynamic,
+                                     candles: [{time, open, high, low, close}] }
+  The candle array feeds addCandlestickSeries(); upper/lower_circuit (when not
+  null) are drawn as dashed price lines. is_dynamic => no static lines.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Daily Circuit Limit Chart</title>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+  :root {
+    --bg: #131722;
+    --panel: #1c2230;
+    --border: #2a3142;
+    --text: #d1d4dc;
+    --muted: #868b96;
+    --up: #26a69a;
+    --down: #ef5350;
+    --uc: #ef5350;   /* upper circuit — subtle red */
+    --lc: #26a69a;   /* lower circuit — subtle green */
+    --warn: #f7b731;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding: 24px;
+  }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 16px; letter-spacing: 0.3px; }
+  .controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+  select {
+    background: var(--panel); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 12px; font-size: 14px; cursor: pointer; min-width: 220px;
+  }
+  /* Info panel — border turns yellow/red when price nears a circuit. */
+  #info {
+    display: flex; gap: 18px; flex-wrap: wrap; align-items: center;
+    background: var(--panel); border: 2px solid var(--border);
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-size: 13px;
+  }
+  #info.warn { border-color: var(--warn); box-shadow: 0 0 0 1px var(--warn) inset; }
+  #info.danger { border-color: var(--down); box-shadow: 0 0 0 1px var(--down) inset; }
+  #info .metric { display: flex; flex-direction: column; gap: 2px; }
+  #info .metric .label { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 0.4px; }
+  #info .metric .value { font-size: 15px; font-weight: 600; }
+  #warning { color: var(--warn); font-weight: 600; }
+  #warning.danger { color: var(--down); }
+  #chart { width: 100%; height: 460px; border: 1px solid var(--border); border-radius: 8px; }
+  .legend { margin-top: 10px; color: var(--muted); font-size: 12px; }
+  .legend .uc { color: var(--uc); } .legend .lc { color: var(--lc); }
+  .error { color: var(--down); margin-top: 12px; }
+</style>
+
+<h1>📊 Daily Upper / Lower Circuit Limit Chart</h1>
+
+<div class="controls">
+  <label for="ticker" style="color: var(--muted); font-size: 13px;">Stock</label>
+  <select id="ticker"></select>
+</div>
+
+<div id="info">
+  <div class="metric"><span class="label">Active Limit</span><span class="value" id="m-band">—</span></div>
+  <div class="metric"><span class="label">Prev Close</span><span class="value" id="m-prev">—</span></div>
+  <div class="metric"><span class="label">Upper Circuit</span><span class="value" id="m-uc" style="color: var(--uc);">—</span></div>
+  <div class="metric"><span class="label">Lower Circuit</span><span class="value" id="m-lc" style="color: var(--lc);">—</span></div>
+  <div class="metric"><span class="label">Status</span><span id="warning">—</span></div>
+</div>
+
+<div id="chart"></div>
+<div class="legend">
+  <span class="uc">— — Upper Circuit</span> &nbsp;&nbsp; <span class="lc">— — Lower Circuit</span>
+  &nbsp;&nbsp; Dashed lines span the timeline. F&amp;O "Dynamic" stocks draw no static bands.
+</div>
+<div class="error" id="error"></div>
+
+<script>
+  // Point this at the standalone backend (server.py).
+  const API_BASE = "http://127.0.0.1:8100";
+  const PROXIMITY = 0.005; // 0.5% — distance at which we raise the warning
+
+  const chart = LightweightCharts.createChart(document.getElementById("chart"), {
+    layout: { background: { color: "#131722" }, textColor: "#d1d4dc" },
+    grid: { vertLines: { color: "#2a3142" }, horzLines: { color: "#2a3142" } },
+    rightPriceScale: { borderColor: "#2a3142" },
+    timeScale: { borderColor: "#2a3142" },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+  });
+  const candleSeries = chart.addCandlestickSeries({
+    upColor: "#26a69a", downColor: "#ef5350",
+    wickUpColor: "#26a69a", wickDownColor: "#ef5350", borderVisible: false,
+  });
+  // Track price lines so we can clear them when switching stocks.
+  let priceLines = [];
+  function clearPriceLines() {
+    priceLines.forEach((pl) => candleSeries.removePriceLine(pl));
+    priceLines = [];
+  }
+
+  const el = (id) => document.getElementById(id);
+
+  async function loadTickers() {
+    const res = await fetch(`${API_BASE}/api/stocks`);
+    const list = await res.json();
+    const sel = el("ticker");
+    sel.innerHTML = "";
+    list.forEach((s) => {
+      const opt = document.createElement("option");
+      opt.value = s.ticker;
+      opt.textContent = `${s.ticker} — ${s.name}`;
+      sel.appendChild(opt);
+    });
+  }
+
+  async function loadStock(ticker) {
+    el("error").textContent = "";
+    let data;
+    try {
+      const res = await fetch(`${API_BASE}/api/stock/${ticker}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+    } catch (e) {
+      el("error").textContent = `Could not reach the backend at ${API_BASE} — is server.py running? (${e})`;
+      return;
+    }
+
+    // 1) Candles -> candlestick series.
+    candleSeries.setData(data.candles);
+    chart.timeScale().fitContent();
+
+    // 2) Info panel metrics.
+    el("m-band").textContent = data.circuit_band_text;
+    el("m-prev").textContent = `₹${data.previous_close.toFixed(2)}`;
+    el("m-uc").textContent = data.upper_circuit != null ? `₹${data.upper_circuit.toFixed(2)}` : "—";
+    el("m-lc").textContent = data.lower_circuit != null ? `₹${data.lower_circuit.toFixed(2)}` : "—";
+
+    // 3) Circuit lines — only for fixed-band stocks. Dynamic (F&O) => skip.
+    clearPriceLines();
+    if (!data.is_dynamic && data.upper_circuit != null && data.lower_circuit != null) {
+      priceLines.push(candleSeries.createPriceLine({
+        price: data.upper_circuit, color: "#ef5350", lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: "Upper Circuit",
+      }));
+      priceLines.push(candleSeries.createPriceLine({
+        price: data.lower_circuit, color: "#26a69a", lineWidth: 1,
+        lineStyle: LightweightCharts.LineStyle.Dashed, axisLabelVisible: true, title: "Lower Circuit",
+      }));
+    }
+
+    // 4) Proximity warning — does the latest candle come within 0.5% of a band?
+    const info = el("info");
+    const warning = el("warning");
+    info.classList.remove("warn", "danger");
+    warning.classList.remove("danger");
+    if (data.is_dynamic) {
+      warning.textContent = "Dynamic bands — shift intraday";
+      return;
+    }
+    const last = data.candles[data.candles.length - 1];
+    const nearUpper = Math.abs(last.high - data.upper_circuit) / data.upper_circuit <= PROXIMITY;
+    const nearLower = Math.abs(last.low - data.lower_circuit) / data.lower_circuit <= PROXIMITY;
+    if (nearUpper) {
+      info.classList.add("danger"); warning.classList.add("danger");
+      warning.textContent = "⚠ Near UPPER circuit";
+    } else if (nearLower) {
+      info.classList.add("warn");
+      warning.textContent = "⚠ Near LOWER circuit";
+    } else {
+      warning.textContent = "Within bands";
+    }
+  }
+
+  el("ticker").addEventListener("change", (e) => loadStock(e.target.value));
+
+  (async function init() {
+    try {
+      await loadTickers();
+      const first = el("ticker").value;
+      if (first) await loadStock(first);
+    } catch (e) {
+      el("error").textContent = `Could not reach the backend at ${API_BASE} — is server.py running? (${e})`;
+    }
+  })();
+</script>
