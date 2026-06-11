@@ -23,3 +23,5 @@ WORKDIR /code/backend
 # Vercel's edge proxy 500s the slowest ones. Two workers let the dashboard
 # + scan-counts + groups + ribbon calls run in parallel.
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "2"]
+
+# Redeploy marker: ships data/price_bands.json committed by the bhavcopy workflow.
