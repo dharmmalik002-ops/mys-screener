@@ -60,13 +60,16 @@ jobs:
             exit 0
           fi
 
-          # Active window: 16:30 IST → 22:00 IST.
-          if [ "$IST_HOUR" -lt 16 ] || [ "$IST_HOUR" -gt 21 ]; then
-            echo "Outside watchdog window — skipping."
+          # Active window: 16:20 IST → 23:55 IST. Wide on purpose: GitHub
+          # throttles this repo's schedules so badly that keep-alive often
+          # ticks only every 2-5 HOURS — a narrow window can miss the whole
+          # evening (2026-06-12: zero ticks landed between 16:30 and 22:00).
+          if [ "$IST_HOUR" -lt 16 ]; then
+            echo "Too early — skipping."
             exit 0
           fi
-          if [ "$IST_HOUR" -eq 16 ] && [ "$IST_MIN" -lt 30 ]; then
-            echo "Too early (before 16:30 IST) — skipping."
+          if [ "$IST_HOUR" -eq 16 ] && [ "$IST_MIN" -lt 20 ]; then
+            echo "Too early (before 16:20 IST) — skipping."
             exit 0
           fi
 

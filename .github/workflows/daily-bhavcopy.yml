@@ -138,7 +138,30 @@ jobs:
           SOURCE=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(str(d.get('source','NSE')).upper())")
           SYMS=$(python3 -c "import json; d=json.load(open('backend/data/bhavcopy_patch.json')); print(len(d['symbols']))")
           git commit -m "data: ${SOURCE} EOD bhavcopy patch for ${DATE} (${SYMS} symbols) + volume history [skip ci]"
-          retry 3 git push origin HEAD:main
+          # Race-proof push: feature commits land on main while this job runs
+          # (took the 2026-06-12 update down — three plain pushes all rejected
+          # with "fetch first"). Rebase our data commit onto the moved main and
+          # retry; if the rebase CONFLICTS, it means another run already
+          # committed today's artifacts, so check and bail out cleanly.
+          push_update() {
+            if git push origin HEAD:main; then
+              return 0
+            fi
+            git fetch origin main
+            if git rebase origin/main; then
+              git push origin HEAD:main
+              return $?
+            fi
+            git rebase --abort || true
+            REMOTE_DATE=$(git show origin/main:backend/data/bhavcopy_patch.json | python3 -c "import json,sys; print(json.load(sys.stdin).get('date',''))" 2>/dev/null || echo "")
+            if [ "$REMOTE_DATE" = "$DATE" ]; then
+              echo "Another run already pushed data for ${DATE} — nothing left to do."
+              git reset --hard origin/main
+              return 0
+            fi
+            return 1
+          }
+          retry 3 push_update
 
       - name: Trigger HF deploy with clean snapshot
         if: steps.patch.outputs.changed == 'true' || steps.volhist.outputs.changed == 'true'

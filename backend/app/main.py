@@ -208,6 +208,63 @@ def apply_bhavcopy_patch_on_startup() -> None:
         )
 
 
+def trigger_github_bhavcopy_if_stale() -> None:
+    """Watchdog: fire the GitHub daily-bhavcopy workflow when today's EOD data
+    is missing.
+
+    GitHub's own cron is best-effort and has dropped ALL six scheduled runs on
+    some days (2026-06-12), and even the keep-alive watchdog there only ticks
+    every 2-5 hours under throttling. This Space runs 24/7 with a reliable
+    APScheduler, so it is the dependable trigger of last resort: weekday
+    evenings (IST), if the served bhavcopy date is older than today, send a
+    ``repository_dispatch`` (type ``bhavcopy-trigger``) that daily-bhavcopy.yml
+    already listens for. Requires a ``GITHUB_PAT`` env/secret on the Space —
+    silently skipped when absent. Redundant fires are cheap: the workflow
+    no-ops when the patch is already current.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    try:
+        now_ist = datetime.now(IST)
+        if now_ist.weekday() >= 5:
+            return
+        today_iso = now_ist.date().isoformat()
+        patch_path = Path(__file__).resolve().parents[1] / "data" / "bhavcopy_patch.json"
+        try:
+            patch_date = str(_json.loads(patch_path.read_text(encoding="utf-8")).get("date") or "")
+        except Exception:
+            patch_date = ""
+        if patch_date == today_iso:
+            logger.info("Bhavcopy trigger watchdog: already current for %s", today_iso)
+            return
+
+        token = (os.environ.get("GITHUB_PAT") or "").strip()
+        if not token:
+            logger.info(
+                "Bhavcopy trigger watchdog: data stale (last=%s today=%s) but GITHUB_PAT is not set — skipping",
+                patch_date or "<unknown>", today_iso,
+            )
+            return
+        repo = os.environ.get("GITHUB_DATA_REPO", "dharmmalik002-ops/mys-screener")
+        response = _requests.post(
+            f"https://api.github.com/repos/{repo}/dispatches",
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Accept": "application/vnd.github+json",
+            },
+            json={"event_type": "bhavcopy-trigger"},
+            timeout=20,
+        )
+        logger.info(
+            "Bhavcopy trigger watchdog: data stale (last=%s today=%s) -> repository_dispatch HTTP %s",
+            patch_date or "<unknown>", today_iso, response.status_code,
+        )
+    except Exception as exc:
+        logger.warning("Bhavcopy trigger watchdog failed: %s", exc)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.startup_warm_tasks = set()
@@ -243,6 +300,15 @@ async def lifespan(app: FastAPI):
             CronTrigger(hour=16, minute=0, timezone=IST),
             args=["india", service, settings, IST],
             id="india_daily_listed_universe_refresh",
+            replace_existing=True,
+        )
+        # Reliable evening watchdog: GitHub's cron drops runs, so this Space
+        # fires the bhavcopy workflow itself whenever today's data is missing.
+        # Several attempts across the evening; each no-ops once data is current.
+        scheduler.add_job(
+            trigger_github_bhavcopy_if_stale,
+            CronTrigger(hour="16,17,18,19,21", minute=42, day_of_week="mon-fri", timezone=IST),
+            id="india_bhavcopy_github_trigger",
             replace_existing=True,
         )
         scheduler.start()
