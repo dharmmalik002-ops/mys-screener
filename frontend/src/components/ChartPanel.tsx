@@ -1,7 +1,7 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
-import { getChartHistory, getEarningsSummary, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
+import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
 import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
@@ -344,6 +344,16 @@ const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
 const CIRCUIT_WIDGET_STORAGE_KEY = "stockScanner.circuitWidget.v1";
 const CIRCUIT_LOCKS_STORAGE_KEY = "stockScanner.circuitLocks.v1";
+const AI_TOGGLE_STORAGE_KEY = "stockScanner.chartAi.v1";
+
+function readAiEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return JSON.parse(window.localStorage.getItem(AI_TOGGLE_STORAGE_KEY) ?? "false") === true;
+  } catch {
+    return false;
+  }
+}
 
 function readCircuitLocksEnabled(): boolean {
   if (typeof window === "undefined") return true;
@@ -1575,6 +1585,48 @@ export function ChartPanel({
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
+  const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
+  const [aiAnalysis, setAiAnalysis] = useState<AiSwingAnalysis | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const aiCacheRef = useRef<Map<string, AiSwingAnalysis>>(new Map());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AI_TOGGLE_STORAGE_KEY, JSON.stringify(aiEnabled));
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [aiEnabled]);
+
+  useEffect(() => {
+    if (!aiEnabled || !symbol) {
+      setAiAnalysis(null);
+      return;
+    }
+    const cached = aiCacheRef.current.get(symbol);
+    if (cached) {
+      setAiAnalysis(cached);
+      return;
+    }
+    let active = true;
+    setAiLoading(true);
+    setAiAnalysis(null);
+    getAiSwingAnalysis(symbol, market)
+      .then((result) => {
+        if (!active) return;
+        aiCacheRef.current.set(symbol, result);
+        setAiAnalysis(result);
+      })
+      .catch((error: unknown) => {
+        if (active) setAiAnalysis({ error: error instanceof Error ? error.message : "AI analysis failed." });
+      })
+      .finally(() => {
+        if (active) setAiLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [aiEnabled, symbol, market]);
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
@@ -2241,9 +2293,10 @@ export function ChartPanel({
     const mainSeries =
       chartStyle === "bars"
         ? chart.addBarSeries({
-            upColor: chartColors.candleUp,
-            downColor: chartColors.candleDown,
-            thinBars: false,
+            // TradingView-classic OHLC bars: thin sticks, blue up / red down.
+            upColor: "#2962ff",
+            downColor: "#f23645",
+            thinBars: true,
           })
         : chart.addCandlestickSeries({
             upColor: chartColors.candleUp,
@@ -3611,6 +3664,16 @@ export function ChartPanel({
           <div className="chart-widget-menu">
             <button
               type="button"
+              className={aiEnabled ? "tool-pill active chart-ai-pill" : "tool-pill chart-ai-pill"}
+              onClick={() => setAiEnabled((current) => !current)}
+              title="AI swing-trade read: pullback/breakout setup, entry, stop, pros & cons, tape read"
+            >
+              ✦ AI
+            </button>
+          </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
               className={notesWidget.enabled ? "tool-pill active" : "tool-pill"}
               onClick={() => setNotesWidget((current) => ({ ...current, enabled: !current.enabled }))}
             >
@@ -3758,6 +3821,71 @@ export function ChartPanel({
               )}
             </strong>
           </div>
+        </div>
+      ) : null}
+      {aiEnabled && symbol ? (
+        <div className="chart-ai-card">
+          {aiLoading ? (
+            <div className="chart-ai-loading">✦ Reading the tape on {symbol}… (market regime, group, price action, news)</div>
+          ) : aiAnalysis?.error ? (
+            <div className="chart-ai-error">{aiAnalysis.error}</div>
+          ) : aiAnalysis?.raw ? (
+            <div className="chart-ai-rawtext">{aiAnalysis.raw}</div>
+          ) : aiAnalysis ? (
+            <>
+              <div className="chart-ai-head">
+                <span className={`chart-ai-verdict ${String(aiAnalysis.verdict || "wait").toLowerCase()}`}>
+                  {aiAnalysis.verdict ?? "—"}
+                </span>
+                {aiAnalysis.setup_type && aiAnalysis.setup_type !== "None" ? (
+                  <span className="chart-ai-setup">{aiAnalysis.setup_type}</span>
+                ) : null}
+                {typeof aiAnalysis.conviction === "number" ? (
+                  <span className="chart-ai-conviction">Conviction {aiAnalysis.conviction}/10</span>
+                ) : null}
+                <strong className="chart-ai-headline">{aiAnalysis.headline}</strong>
+              </div>
+              {aiAnalysis.trade_plan && (aiAnalysis.trade_plan.entry || aiAnalysis.trade_plan.stop_loss) ? (
+                <div className="chart-ai-plan">
+                  {aiAnalysis.trade_plan.entry ? (
+                    <span title={aiAnalysis.trade_plan.entry_logic}>
+                      Entry <strong>{formatPriceValue(aiAnalysis.trade_plan.entry)}</strong>
+                    </span>
+                  ) : null}
+                  {aiAnalysis.trade_plan.stop_loss ? (
+                    <span title={aiAnalysis.trade_plan.stop_logic}>
+                      Stop <strong className="neg">{formatPriceValue(aiAnalysis.trade_plan.stop_loss)}</strong>
+                      {aiAnalysis.trade_plan.risk_pct ? ` (${aiAnalysis.trade_plan.risk_pct.toFixed(1)}%)` : ""}
+                    </span>
+                  ) : null}
+                  {aiAnalysis.trade_plan.target_1 ? (
+                    <span>
+                      Targets <strong className="pos">{formatPriceValue(aiAnalysis.trade_plan.target_1)}</strong>
+                      {aiAnalysis.trade_plan.target_2 ? <> / <strong className="pos">{formatPriceValue(aiAnalysis.trade_plan.target_2)}</strong></> : null}
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
+              {aiAnalysis.tape_read ? <p className="chart-ai-tape"><strong>Tape:</strong> {aiAnalysis.tape_read}</p> : null}
+              <div className="chart-ai-proscons">
+                {aiAnalysis.pros?.length ? (
+                  <div>
+                    <span className="chart-ai-list-title pos">For the trade</span>
+                    <ul>{aiAnalysis.pros.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                  </div>
+                ) : null}
+                {aiAnalysis.cons?.length ? (
+                  <div>
+                    <span className="chart-ai-list-title neg">Against the trade</span>
+                    <ul>{aiAnalysis.cons.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                  </div>
+                ) : null}
+              </div>
+              {aiAnalysis.market_context ? <p className="chart-ai-context">{aiAnalysis.market_context}</p> : null}
+              {aiAnalysis.invalidation ? <p className="chart-ai-context"><strong>Invalidation:</strong> {aiAnalysis.invalidation}</p> : null}
+              <small className="chart-ai-foot">AI read · {aiAnalysis.session_date ?? ""} · not financial advice — your plan, your risk.</small>
+            </>
+          ) : null}
         </div>
       ) : null}
       {panelTab === "technical" ? (

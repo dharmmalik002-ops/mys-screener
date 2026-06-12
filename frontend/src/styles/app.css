@@ -8343,3 +8343,99 @@ button {
     font-size: 0.9rem;
   }
 }
+
+
+/* =========================================================
+   Chart AI swing-trade card
+   ========================================================= */
+.chart-ai-card {
+  margin: 0 18px 12px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--accent) 5%, var(--surface-soft));
+  font-size: 0.86rem;
+  display: grid;
+  gap: 8px;
+}
+
+.chart-ai-loading,
+.chart-ai-error {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.chart-ai-error { color: var(--negative); }
+
+.chart-ai-rawtext { white-space: pre-wrap; color: var(--text); }
+
+.chart-ai-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.chart-ai-verdict {
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+}
+
+.chart-ai-verdict.take { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 45%, transparent); }
+.chart-ai-verdict.avoid { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 45%, transparent); }
+.chart-ai-verdict.wait { background: var(--amber-soft); color: var(--amber); border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent); }
+
+.chart-ai-setup,
+.chart-ai-conviction {
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.chart-ai-headline { flex: 1 1 100%; font-size: 0.92rem; }
+
+.chart-ai-plan {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-ai-plan .pos { color: var(--positive); }
+.chart-ai-plan .neg { color: var(--negative); }
+
+.chart-ai-tape,
+.chart-ai-context {
+  margin: 0;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.chart-ai-context { color: var(--text-soft); font-size: 0.8rem; }
+
+.chart-ai-proscons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.chart-ai-list-title { font-weight: 700; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.chart-ai-list-title.pos { color: var(--positive); }
+.chart-ai-list-title.neg { color: var(--negative); }
+
+.chart-ai-proscons ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
+.chart-ai-proscons li { line-height: 1.45; }
+
+.chart-ai-foot { color: var(--text-muted); font-size: 0.7rem; }
+
+.chart-ai-pill { white-space: nowrap; }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getChart, getJournalData, saveJournalData, type MarketKey } from "../lib/api";
+import { getChart, getJournalData, saveJournalData, type MarketKey , runAiJournalReview, type AiJournalReview } from "../lib/api";
 import { notifyJournalUpdated } from "../lib/journal";
 import { NewsModal } from "./NewsModal";
 import "./TradeJournalPanel.css";
@@ -1170,6 +1170,29 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     return true;
   });
 
+  // ── AI Coach ─────────────────────────────────────────────────────────────
+  const [aiReview, setAiReview] = useState<AiJournalReview | null>(null);
+  const [aiReviewLoading, setAiReviewLoading] = useState(false);
+
+  const runAiCoach = () => {
+    if (aiReviewLoading) return;
+    setAiReviewLoading(true);
+    setAiReview(null);
+    runAiJournalReview(
+      {
+        starting_equity: startEquity,
+        closed_trades: closedTrades.slice(-40).reverse(),
+        open_positions: openPositions,
+      },
+      market ?? "india",
+    )
+      .then(setAiReview)
+      .catch((error: unknown) =>
+        setAiReview({ error: error instanceof Error ? error.message : "AI review failed." }),
+      )
+      .finally(() => setAiReviewLoading(false));
+  };
+
   // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
   closedTrades.forEach(t => {
@@ -2287,6 +2310,75 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       {/* ── Tab 4: Insights ── */}
       {activeTab === 4 && (
         <div className="tj-page">
+          <div className="tj-card tj-ai-coach">
+            <div className="tj-card-hdr tj-ai-coach-hdr">
+              <span>✦ AI Coach</span>
+              <button className="tj-btn" onClick={runAiCoach} disabled={aiReviewLoading}>
+                {aiReviewLoading ? "Reviewing your trading…" : aiReview ? "Re-run review" : "Review my trading"}
+              </button>
+            </div>
+            {aiReviewLoading ? (
+              <div className="tj-empty">Reading every trade, your tags, and the live tape on your open positions…</div>
+            ) : aiReview?.error ? (
+              <div className="tj-ai-error">{aiReview.error}</div>
+            ) : aiReview?.raw ? (
+              <div className="tj-ai-raw">{aiReview.raw}</div>
+            ) : aiReview ? (
+              <div className="tj-ai-body">
+                {aiReview.overall ? <p className="tj-ai-overall">{aiReview.overall}</p> : null}
+                <div className="tj-ai-columns">
+                  {aiReview.doing_right?.length ? (
+                    <div>
+                      <div className="tj-ai-col-title pos">What you're doing right</div>
+                      <ul>{aiReview.doing_right.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                    </div>
+                  ) : null}
+                  {aiReview.doing_wrong?.length ? (
+                    <div>
+                      <div className="tj-ai-col-title neg">What's hurting you</div>
+                      <ul>{aiReview.doing_wrong.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                    </div>
+                  ) : null}
+                  {aiReview.fixes?.length ? (
+                    <div>
+                      <div className="tj-ai-col-title">Fixes</div>
+                      <ul>{aiReview.fixes.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                    </div>
+                  ) : null}
+                </div>
+                {aiReview.open_positions?.length ? (
+                  <div className="tj-ai-positions">
+                    <div className="tj-ai-col-title">Open positions</div>
+                    <table className="tj-table">
+                      <thead><tr><th>Symbol</th><th>Status</th><th>Tape read</th><th>Action</th></tr></thead>
+                      <tbody>
+                        {aiReview.open_positions.map((position) => (
+                          <tr key={position.symbol}>
+                            <td><strong>{position.symbol}</strong></td>
+                            <td>
+                              <span className={`tj-ai-status ${String(position.status || "").toLowerCase()}`}>
+                                {position.status ?? "—"}
+                              </span>
+                            </td>
+                            <td>{position.read ?? "—"}</td>
+                            <td>{position.action ?? "—"}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
+                {aiReview.one_lesson ? (
+                  <p className="tj-ai-lesson"><strong>This week's lesson:</strong> {aiReview.one_lesson}</p>
+                ) : null}
+              </div>
+            ) : (
+              <div className="tj-empty">
+                Get a coach-grade critique: what's working, what's costing you money, and a live read on every open
+                position (accumulation vs distribution, hold or act).
+              </div>
+            )}
+          </div>
           <div className="tj-insights-top">
             <div className="tj-card">
               <div className="tj-card-hdr">Hold Time</div>

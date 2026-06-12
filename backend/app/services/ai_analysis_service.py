@@ -1,5 +1,6 @@
 """AI-powered company analysis using Google Gemini."""
 
+import asyncio
 import json
 import logging
 import time
@@ -961,6 +962,113 @@ IMPORTANT:
                 continue
 
         raise Exception("AI chart analysis is currently unavailable. No model succeeded.")
+
+
+    @staticmethod
+    def _parse_json_response(text: str) -> dict[str, Any]:
+        """Parse a model response that should be JSON; tolerate code fences and
+        stray prose. Falls back to {"raw": text} so the UI can still render."""
+        cleaned = (text or "").strip()
+        if cleaned.startswith("```"):
+            cleaned = cleaned.split("\n", 1)[-1]
+            if cleaned.endswith("```"):
+                cleaned = cleaned[: -3]
+        start = cleaned.find("{")
+        end = cleaned.rfind("}")
+        if start != -1 and end > start:
+            try:
+                parsed = json.loads(cleaned[start : end + 1])
+                if isinstance(parsed, dict):
+                    return parsed
+            except Exception:
+                pass
+        return {"raw": (text or "").strip()}
+
+    async def _generate_json(self, prompt: str) -> dict[str, Any]:
+        if not self._client:
+            raise ValueError("AI analysis requires a Gemini API key.")
+        last_error: Exception | None = None
+        for model in self._MODELS:
+            try:
+                result = await asyncio.to_thread(
+                    self._client.models.generate_content,
+                    model=model,
+                    contents=prompt,
+                )
+                if result.text:
+                    return self._parse_json_response(result.text)
+            except Exception as exc:
+                last_error = exc
+                logger.warning("AI JSON generation failed on %s: %s. Trying next…", model, exc)
+                continue
+        raise Exception(f"AI is currently unavailable. No model succeeded ({last_error}).")
+
+    async def swing_trade_analysis(self, context: dict[str, Any]) -> dict[str, Any]:
+        """Elite pullback/breakout swing-trade read of one chart.
+
+        ``context`` carries everything the caller could gather: bars_table,
+        key_levels, summary lines, group line, regime line, news headlines.
+        Returns structured JSON for the chart AI card.
+        """
+        prompt = (
+            "You are one of the best swing traders in the world, specializing EXCLUSIVELY in "
+            "pullback entries and breakout entries on Indian (NSE) stocks, holding a few days to a few weeks. "
+            "You read price action and volume like Minervini and Qullamaggie: accumulation vs distribution, "
+            "tightness, character changes, where the buyers/sellers showed their hand.\n\n"
+            f"STOCK: {context.get('symbol')}\n"
+            f"MARKET ENVIRONMENT: {context.get('regime_line', 'unknown')}\n"
+            f"INDUSTRY GROUP: {context.get('group_line', 'unknown')}\n"
+            f"SNAPSHOT: {context.get('summary_line', 'n/a')}\n"
+            f"DAILY PRICE BAND: {context.get('band_line', 'n/a')}\n\n"
+            f"RECENT DAILY BARS (oldest to newest):\n{context.get('bars_table', 'n/a')}\n\n"
+            f"KEY LEVELS:\n{context.get('key_levels', 'n/a')}\n\n"
+            f"RECENT HEADLINES (may be empty):\n{context.get('news_lines', 'none available')}\n\n"
+            "TASK: Decide whether a pullback or breakout swing trade is available here RIGHT NOW. "
+            "Read the tape bar by bar in the recent window: who is in control, is volume confirming, "
+            "is there accumulation (tight closes, up-volume dominance, supported dips) or distribution "
+            "(churning, heavy down-volume, failed rallies)? Respect the market regime — fighting a weak "
+            "tape needs an exceptional setup.\n\n"
+            "Respond with ONLY a JSON object, no prose outside it:\n"
+            "{\n"
+            '  "verdict": "TAKE" | "WAIT" | "AVOID",\n'
+            '  "setup_type": "Pullback" | "Breakout" | "None",\n'
+            '  "conviction": 1-10,\n'
+            '  "headline": "one-line summary of the situation",\n'
+            '  "tape_read": "2-4 sentences of close price-action analysis: accumulation/distribution, key bars, volume tells",\n'
+            '  "trade_plan": {"entry": number|null, "entry_logic": "...", "stop_loss": number|null, "stop_logic": "...", "target_1": number|null, "target_2": number|null, "risk_pct": number|null},\n'
+            '  "pros": ["...", "..."],\n'
+            '  "cons": ["...", "..."],\n'
+            '  "market_context": "1-2 sentences: regime + group behaviour and how they affect this trade",\n'
+            '  "invalidation": "what would kill this idea"\n'
+            "}\n"
+            "Numbers must respect the actual price levels in the data. If verdict is AVOID, trade_plan values may be null "
+            "but still explain in entry_logic what WOULD need to happen first."
+        )
+        return await self._generate_json(prompt)
+
+    async def journal_review(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Full trading-coach critique of the user's journal."""
+        prompt = (
+            "You are a world-class swing-trading coach (pullbacks and breakouts, multi-day to multi-week holds, "
+            "Indian markets). Your student shows you their full trading journal. Be a great teacher: honest, "
+            "specific, constructive — praise what works, call out what's hurting them with evidence from THEIR "
+            "trades, and give concrete fixes. Reference actual symbols and numbers from the data.\n\n"
+            f"STARTING EQUITY: {payload.get('starting_equity')}\n"
+            f"MARKET ENVIRONMENT: {payload.get('regime_line', 'unknown')}\n\n"
+            f"CLOSED TRADES (most recent first):\n{payload.get('closed_trades_table', 'none')}\n\n"
+            f"BEHAVIOUR TAGS USED: {payload.get('tags_summary', 'none')}\n\n"
+            f"OPEN POSITIONS WITH RECENT PRICE ACTION:\n{payload.get('open_positions_block', 'none')}\n\n"
+            "Respond with ONLY a JSON object:\n"
+            "{\n"
+            '  "overall": "3-5 sentence honest assessment of this trader right now",\n'
+            '  "doing_right": ["specific strength with evidence", "..."],\n'
+            '  "doing_wrong": ["specific mistake with evidence and its cost", "..."],\n'
+            '  "fixes": ["concrete actionable improvement", "..."],\n'
+            '  "open_positions": [{"symbol": "...", "status": "HEALTHY" | "WATCH" | "ACT", "read": "accumulation/distribution read of its recent bars", "action": "specific action or what to monitor"}],\n'
+            '  "one_lesson": "the single most important lesson for this trader this week"\n'
+            "}"
+        )
+        return await self._generate_json(prompt)
 
 
 def parse_ai_management_guidance(raw: list[dict[str, Any]]) -> list[ManagementGuidance]:

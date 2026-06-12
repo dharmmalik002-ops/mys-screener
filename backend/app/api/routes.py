@@ -54,6 +54,17 @@ def build_router(service):
     async def scan_counts(market: str = Query(default="india")):
         return await resolve_service(market).get_scan_counts()
 
+    @router.post("/ai/swing-analysis")
+    async def ai_swing_analysis(payload: dict, market: str = Query(default="india")):
+        symbol = str(payload.get("symbol") or "").strip()
+        if not symbol:
+            raise HTTPException(status_code=400, detail="symbol is required")
+        return await resolve_service(market).get_ai_swing_analysis(symbol)
+
+    @router.post("/ai/journal-review")
+    async def ai_journal_review(payload: dict, market: str = Query(default="india")):
+        return await resolve_service(market).get_ai_journal_review(payload)
+
     @router.get("/scanner-scorecard")
     async def scanner_scorecard(market: str = Query(default="india")):
         return await resolve_service(market).get_scanner_scorecard()

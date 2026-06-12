@@ -2085,6 +2085,211 @@ class DashboardService:
             logger.warning("scan decoration failed for %s: %s", scan_key, exc)
             return items
 
+    async def get_ai_swing_analysis(self, symbol: str) -> dict:
+        """Gather full context (bars, snapshot, group, regime, band, headlines)
+        and ask the AI for an elite pullback/breakout read. Cached per
+        (symbol, session) so repeated toggles don't burn quota."""
+        symbol = symbol.upper()
+        session_iso = self._current_session_iso() or "unknown"
+        cache = getattr(self, "_ai_swing_cache", None)
+        if cache is None:
+            cache = {}
+            self._ai_swing_cache = cache
+        cached = cache.get((symbol, session_iso))
+        if cached is not None:
+            return cached
+
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is None or not ai.available:
+            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+
+        bars = []
+        try:
+            bars = await self.provider.get_chart(symbol, "1D", bars=120)
+        except Exception:
+            bars = []
+        if len(bars) < 30:
+            return {"error": "Not enough chart history for an AI read."}
+
+        recent = bars[-60:]
+        rows = ["Date | Open | High | Low | Close | Volume | Chg%"]
+        prev_close = None
+        for bar in recent:
+            chg = ((bar.close / prev_close - 1) * 100) if prev_close else 0.0
+            day = datetime.fromtimestamp(int(bar.time), tz=timezone.utc).strftime("%Y-%m-%d")
+            rows.append(f"{day} | {bar.open:.2f} | {bar.high:.2f} | {bar.low:.2f} | {bar.close:.2f} | {int(bar.volume):,} | {chg:+.2f}%")
+            prev_close = bar.close
+        bars_table = "\n".join(rows)
+
+        closes = [b.close for b in recent]
+        highs = [b.high for b in recent]
+        lows = [b.low for b in recent]
+        volumes = [b.volume for b in recent]
+        avg_vol_20 = sum(volumes[-20:]) / max(1, min(len(volumes), 20))
+        key_levels = (
+            f"- Current: {closes[-1]:.2f}\n"
+            f"- 20-bar high/low: {max(highs[-20:]):.2f} / {min(lows[-20:]):.2f}\n"
+            f"- 60-bar high/low: {max(highs):.2f} / {min(lows):.2f}\n"
+            f"- Latest volume vs 20-bar avg: {volumes[-1] / avg_vol_20:.2f}x"
+        )
+
+        summary_line = "n/a"
+        group_line = "unknown"
+        regime_line = "unknown"
+        try:
+            snapshots = await self._snapshots()
+            snapshot = next((item for item in snapshots if item.symbol == symbol), None)
+            if snapshot is not None:
+                summary_line = (
+                    f"RS rating {snapshot.rs_rating} (1M ago {snapshot.rs_rating_1m_ago}); "
+                    f"20D return {snapshot.stock_return_20d:+.1f}%; 60D {snapshot.stock_return_60d:+.1f}%; "
+                    f"RVOL {snapshot.relative_volume:.2f}x; ADR {snapshot.adr_pct_20:.1f}%; "
+                    f"mcap Rs {snapshot.market_cap_crore:,.0f} Cr; sector {snapshot.sector}"
+                )
+        except Exception:
+            pass
+        try:
+            groups_cache = self._industry_groups_cache
+            if groups_cache is not None:
+                for group in groups_cache.groups:
+                    if symbol in (group.symbols or []):
+                        group_line = (
+                            f"{group.group_name} — rank #{group.rank} of {groups_cache.total_groups}, "
+                            f"1W rank change {group.rank_change_1w:+d}; " if group.rank_change_1w is not None else f"{group.group_name} — rank #{group.rank}; "
+                        )
+                        group_line += f"{group.pct_above_50dma:.0f}% of members above 50DMA"
+                        break
+        except Exception:
+            pass
+        try:
+            dashboard = self._dashboard_cache
+            xp = getattr(dashboard, "xp_breadth", None) if dashboard else None
+            breadth = getattr(dashboard, "breadth_today", None) if dashboard else None
+            if xp is not None:
+                regime_line = f"XP breadth regime: {xp.regime} (score {xp.xp_score:.1f})"
+            if breadth is not None and getattr(breadth, "total", 0):
+                regime_line += f"; today {breadth.advances} advances / {breadth.declines} declines"
+        except Exception:
+            pass
+
+        band_line = "n/a"
+        try:
+            segments = self._build_band_history(symbol)
+            if segments:
+                current_band = segments[-1].band_pct
+                band_line = f"±{current_band:g}% daily circuit band" if current_band else "No fixed band (dynamic)"
+        except Exception:
+            pass
+
+        news_lines = "none available"
+        try:
+            from app.services.rss_news_service import get_rss_service
+
+            service_obj = get_rss_service()
+            items = await asyncio.wait_for(service_obj.get_all_news(limit=40), timeout=6.0)
+            name_token = symbol.lower()
+            matched = [i for i in items if name_token in str(i.get("title", "")).lower()][:4]
+            general = [i for i in items[:4]]
+            lines = [f"- [stock] {i.get('title')}" for i in matched] + [f"- [market] {i.get('title')}" for i in general]
+            if lines:
+                news_lines = "\n".join(lines[:8])
+        except Exception:
+            pass
+
+        context = {
+            "symbol": symbol,
+            "bars_table": bars_table,
+            "key_levels": key_levels,
+            "summary_line": summary_line,
+            "group_line": group_line,
+            "regime_line": regime_line,
+            "band_line": band_line,
+            "news_lines": news_lines,
+        }
+        try:
+            result = await ai.swing_trade_analysis(context)
+        except Exception as exc:
+            return {"error": str(exc)}
+        result["symbol"] = symbol
+        result["session_date"] = session_iso
+        cache[(symbol, session_iso)] = result
+        if len(cache) > 200:
+            cache.pop(next(iter(cache)))
+        return result
+
+    async def get_ai_journal_review(self, payload: dict) -> dict:
+        """Coach-grade review of the journal. The frontend sends trades and
+        open positions; we enrich each open symbol with its recent tape."""
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is None or not ai.available:
+            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+
+        closed = payload.get("closed_trades") or []
+        rows = ["Symbol | Setup | Entry | Exit | EntryDate | ExitDate | P&L | % | Tags"]
+        for t in closed[:40]:
+            rows.append(
+                f"{t.get('symbol')} | {t.get('setupType') or '-'} | {t.get('entryPx')} | {t.get('exitPx')} | "
+                f"{str(t.get('entryDate'))[:10]} | {str(t.get('exitDate'))[:10]} | {t.get('pnl'):.0f} | "
+                f"{t.get('perc'):+.1f}% | {','.join(t.get('tags') or [])}"
+            )
+        closed_table = "\n".join(rows) if len(rows) > 1 else "none"
+
+        tag_counts: dict[str, int] = {}
+        for t in closed:
+            for tag in t.get("tags") or []:
+                tag_counts[tag] = tag_counts.get(tag, 0) + 1
+        tags_summary = ", ".join(f"{k}×{v}" for k, v in sorted(tag_counts.items(), key=lambda kv: -kv[1])) or "none"
+
+        open_blocks = []
+        snapshots_by_symbol = {}
+        try:
+            snapshots_by_symbol = {s.symbol: s for s in await self._snapshots()}
+        except Exception:
+            pass
+        for pos in (payload.get("open_positions") or [])[:12]:
+            symbol = str(pos.get("symbol") or "").upper()
+            block = [f"{symbol}: qty {pos.get('qty')}, avg {pos.get('avgPx')}, setup {pos.get('setupType') or '-'}"]
+            snapshot = snapshots_by_symbol.get(symbol)
+            if snapshot is not None:
+                pnl_pct = ((snapshot.last_price / float(pos.get("avgPx") or snapshot.last_price)) - 1) * 100
+                block.append(
+                    f"  now {snapshot.last_price:.2f} ({pnl_pct:+.1f}% on position); RS {snapshot.rs_rating}; "
+                    f"20D {snapshot.stock_return_20d:+.1f}%"
+                )
+            try:
+                bars = await self.provider.get_chart(symbol, "1D", bars=25)
+                if bars:
+                    line = ", ".join(
+                        f"{datetime.fromtimestamp(int(b.time), tz=timezone.utc).strftime('%d%b')}:{b.close:.1f}/v{int(b.volume/1000)}k"
+                        for b in bars[-10:]
+                    )
+                    block.append(f"  last 10 bars (close/vol): {line}")
+            except Exception:
+                pass
+            open_blocks.append("\n".join(block))
+
+        regime_line = "unknown"
+        try:
+            dashboard = self._dashboard_cache
+            xp = getattr(dashboard, "xp_breadth", None) if dashboard else None
+            if xp is not None:
+                regime_line = f"{xp.regime} (XP {xp.xp_score:.1f})"
+        except Exception:
+            pass
+
+        try:
+            return await ai.journal_review(
+                {
+                    "starting_equity": payload.get("starting_equity"),
+                    "regime_line": regime_line,
+                    "closed_trades_table": closed_table,
+                    "tags_summary": tags_summary,
+                    "open_positions_block": "\n\n".join(open_blocks) or "none",
+                }
+            )
+        except Exception as exc:
+            return {"error": str(exc)}
+
     async def get_scanner_scorecard(self) -> ScannerScorecardResponse:
         """Forward performance of past scanner hits: for every recorded
         session before today, how have those picks done since? Answers

@@ -2179,6 +2179,75 @@ export type ScannerScorecardResponse = {
   rows: ScannerScorecardRow[];
 };
 
+export type AiSwingTradePlan = {
+  entry?: number | null;
+  entry_logic?: string;
+  stop_loss?: number | null;
+  stop_logic?: string;
+  target_1?: number | null;
+  target_2?: number | null;
+  risk_pct?: number | null;
+};
+
+export type AiSwingAnalysis = {
+  error?: string;
+  raw?: string;
+  symbol?: string;
+  session_date?: string;
+  verdict?: "TAKE" | "WAIT" | "AVOID" | string;
+  setup_type?: string;
+  conviction?: number;
+  headline?: string;
+  tape_read?: string;
+  trade_plan?: AiSwingTradePlan;
+  pros?: string[];
+  cons?: string[];
+  market_context?: string;
+  invalidation?: string;
+};
+
+export function getAiSwingAnalysis(symbol: string, market: MarketKey): Promise<AiSwingAnalysis> {
+  return request<AiSwingAnalysis>(
+    withMarket("/api/ai/swing-analysis", market),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ symbol }),
+    },
+    { timeoutMs: 90000 },
+  );
+}
+
+export type AiJournalPosition = {
+  symbol: string;
+  status?: string;
+  read?: string;
+  action?: string;
+};
+
+export type AiJournalReview = {
+  error?: string;
+  raw?: string;
+  overall?: string;
+  doing_right?: string[];
+  doing_wrong?: string[];
+  fixes?: string[];
+  open_positions?: AiJournalPosition[];
+  one_lesson?: string;
+};
+
+export function runAiJournalReview(payload: unknown, market: MarketKey): Promise<AiJournalReview> {
+  return request<AiJournalReview>(
+    withMarket("/api/ai/journal-review", market),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    { timeoutMs: 120000 },
+  );
+}
+
 export function getScannerScorecard(market: MarketKey): Promise<ScannerScorecardResponse> {
   return request<ScannerScorecardResponse>(withMarket("/api/scanner-scorecard", market));
 }

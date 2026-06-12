@@ -2223,3 +2223,63 @@
   padding: 6px 9px;
 }
 
+
+
+/* ----- AI Coach ----- */
+.tj-ai-coach { margin-bottom: 14px; }
+
+.tj-ai-coach-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tj-ai-error { color: var(--negative); font-size: 0.84rem; padding: 8px 0; }
+.tj-ai-raw { white-space: pre-wrap; font-size: 0.85rem; line-height: 1.55; }
+
+.tj-ai-body { display: grid; gap: 12px; padding-top: 6px; }
+
+.tj-ai-overall { margin: 0; line-height: 1.6; font-size: 0.9rem; }
+
+.tj-ai-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
+}
+
+.tj-ai-col-title {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-soft);
+  margin-bottom: 4px;
+}
+
+.tj-ai-col-title.pos { color: var(--positive); }
+.tj-ai-col-title.neg { color: var(--negative); }
+
+.tj-ai-columns ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 0.84rem; line-height: 1.5; }
+
+.tj-ai-status {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.tj-ai-status.healthy { background: var(--positive-soft); color: var(--positive); }
+.tj-ai-status.watch { background: var(--amber-soft); color: var(--amber); }
+.tj-ai-status.act { background: var(--negative-soft); color: var(--negative); }
+
+.tj-ai-lesson {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  line-height: 1.55;
+  font-size: 0.88rem;
+}

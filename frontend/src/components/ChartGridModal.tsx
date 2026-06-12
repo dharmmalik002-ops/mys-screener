@@ -63,8 +63,8 @@ type ChartGridModalProps = {
 };
 
 const GRID_TIMEFRAMES: ChartGridTimeframe[] = ["3M", "6M", "1Y", "2Y"];
-const GRID_COLUMNS = [2, 3, 4, 5, 6];
-const GRID_ROWS = [2, 3, 4, 5];
+const GRID_COLUMNS = [1, 2, 3, 4, 5, 6];
+const GRID_ROWS = [1, 2, 3, 4, 5];
 const GRID_STYLES: Array<{ value: ChartGridChartStyle; label: string }> = [
   { value: "line", label: "Line" },
   { value: "candles", label: "Candles" },
