@@ -1944,14 +1944,7 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
         # missing either MA are excluded rather than given the benefit.
         sma50 = snapshot.sma50
         sma200 = snapshot.sma200
-        if (
-            not sma50
-            or not sma200
-            or snapshot.last_price <= sma50
-            or snapshot.last_price <= sma200
-            or sma50 <= sma200
-            or (snapshot.sma200_1m_ago and sma200 < snapshot.sma200_1m_ago * 0.995)
-        ):
+        if not sma50 or snapshot.last_price <= sma50:
             continue
 
         closes = snapshot.recent_closes or []
@@ -1962,63 +1955,75 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
         ema10 = snapshot.ema10
         ema21 = snapshot.ema20
         volumes = snapshot.recent_volumes or []
-        if len(closes) >= 10 and ema21:
-            best_burst = 0.0
-            burst_days = 0
-            burst_has_volume = False
-            # The strong upmove must be RECENT: its peak within the last 15
-            # sessions (windows starting earlier than that are ignored).
-            earliest_start = max(0, len(closes) - 15)
-            for window in (3, 4, 5, 6, 7):
-                for i in range(earliest_start, len(closes) - window):
+        # --- A) Pullback/flag after an institutional-volume burst (v3) ---
+        # Pattern learned from EXICOM/SANDHAR/SAVITA/ATGL/SUPRIYA: violent
+        # 18%+ leg in 2-5 days on a 6-month/1-year-record volume day, then a
+        # short (2-8 session) TIGHT digestion with protected lows and volume
+        # dry-up while the rising 10 EMA converges into price.
+        ema10 = snapshot.ema10
+        ema21 = snapshot.ema20
+        if len(closes) >= 12 and ema10 and ema21 and len(volumes) == len(closes):
+            n = len(closes)
+            best = None  # (gain, base_idx, peak_idx)
+            for window in (2, 3, 4, 5):
+                for i in range(max(0, n - 18), n - window):
                     base = closes[i]
                     if base <= 0:
                         continue
-                    gain = (max(closes[i + 1 : i + 1 + window]) / base - 1) * 100
-                    if gain > best_burst:
-                        best_burst, burst_days = gain, window
-                        # Strong volume footprint: at least one burst day at
-                        # 1.5x the 20-day average volume.
-                        if snapshot.avg_volume_20d > 0 and len(volumes) == len(closes):
-                            burst_has_volume = max(volumes[i + 1 : i + 1 + window], default=0) >= snapshot.avg_volume_20d * 1.5
-                        else:
-                            burst_has_volume = snapshot.relative_volume >= 1.2
-            if best_burst >= 15.0 and burst_has_volume:
-                surf_ema = None
-                tolerance = 0.04
-                for label, ema in (("10 EMA", ema10), ("21 EMA", ema21)):
-                    if not ema:
-                        continue
-                    recent = closes[-2:]
-                    surf_days = sum(1 for c in recent if abs(c - ema) / ema <= tolerance)
-                    # "Stayed there 1 or 2 days": latest close must be at the EMA,
-                    # one prior close there strengthens it but isn't required.
-                    # Above the 21 EMA, or surfing at most 2% below it.
-                    if surf_days >= 1 and abs(closes[-1] - ema) / ema <= tolerance and closes[-1] >= ema21 * 0.98:
-                        surf_ema = (label, ema)
-                        break
-                if surf_ema is not None:
-                    label, ema = surf_ema
-                    # Orderly: the pullback hasn't broken structure (still above 21 EMA zone).
-                    stop = min(ema * 0.97, min(lows[-3:]) if lows[-3:] else ema * 0.97)
-                    risk_pct = (1 - stop / snapshot.last_price) * 100
-                    if risk_pct <= 6.5:
-                        score = 80 + snapshot.rs_rating * 0.2 + best_burst * 0.2
-                        matches.append(
-                            build_scan_match(
-                                "bread-butter",
-                                snapshot,
-                                round(score, 2),
-                                [
-                                    f"Pullback surfing {label}",
-                                    f"+{best_burst:.0f}% burst in {burst_days} days, now {abs(snapshot.last_price - ema) / ema * 100:.1f}% from {label}",
-                                    f"Entry ~{ema:.2f}, stop {stop:.2f} (risk {max(risk_pct, 0):.1f}%, cap 6%)",
-                                ],
-                            ).model_copy(update={"pattern": "Pullback"})
-                        )
-                        continue
+                    seg = closes[i + 1 : i + 1 + window]
+                    peak_rel = max(range(len(seg)), key=lambda k: seg[k])
+                    gain = (seg[peak_rel] / base - 1) * 100
+                    if best is None or gain > best[0]:
+                        best = (gain, i, i + 1 + peak_rel)
+            if best and best[0] >= 18.0:
+                gain, base_idx, peak_idx = best
+                days_since_peak = n - 1 - peak_idx
+                burst_vol = max(volumes[base_idx + 1 : peak_idx + 1], default=0)
+                vol_hist = snapshot.volume_history or []
+                six_month_high = max(vol_hist[-126:], default=0)
+                record_volume = six_month_high > 0 and burst_vol >= six_month_high * 0.95
+                strong_volume = record_volume or (snapshot.avg_volume_20d > 0 and burst_vol >= snapshot.avg_volume_20d * 4)
+                if strong_volume and 2 <= days_since_peak <= 10:
+                    peak = closes[peak_idx]
+                    base = closes[base_idx]
+                    giveback = (peak - closes[-1]) / max(peak - base, 1e-9)
+                    rest_lows = lows[peak_idx:] if len(lows) == n else lows[-(days_since_peak + 1):]
+                    shelf_ok = min(rest_lows) > 0 and (max(rest_lows) / min(rest_lows) - 1) * 100 <= 4.5
+                    rest_vols = volumes[peak_idx + 1 :]
+                    dryup = (sum(rest_vols) / len(rest_vols)) <= burst_vol * 0.6 if rest_vols else True
+                    dist10 = (closes[-1] - ema10) / ema10 * 100
+                    ema_ok = (abs(dist10) <= 2.5) or (0 <= dist10 <= 8.5 and ema10 > ema21)
+                    pivot = max(highs[base_idx:], default=peak)
+                    below_pivot = (pivot / closes[-1] - 1) * 100
+                    sma200_ok = bool(sma200 and snapshot.last_price > sma200) or record_volume
+                    if giveback <= 0.45 and shelf_ok and dryup and ema_ok and 0 <= below_pivot <= 7 and sma200_ok:
+                        stop = min(rest_lows) * 0.995
+                        risk_pct = (1 - stop / snapshot.last_price) * 100
+                        if risk_pct <= 6.5:
+                            tag = "CoC" if record_volume and (not sma200 or snapshot.last_price <= sma200) else ""
+                            score = 85 + snapshot.rs_rating * 0.15 + gain * 0.2
+                            matches.append(
+                                build_scan_match(
+                                    "bread-butter",
+                                    snapshot,
+                                    round(score, 2),
+                                    [
+                                        ("Pullback flag (CoC)" if tag else "Pullback flag"),
+                                        f"+{gain:.0f}% in {peak_idx - base_idx}d on {'6M/1Y-record' if record_volume else '4x'} volume, resting {days_since_peak}d, {dist10:+.1f}% from 10EMA",
+                                        f"Entry ~{closes[-1]:.2f}, stop {stop:.2f} (risk {max(risk_pct, 0):.1f}%, cap 6%)",
+                                    ],
+                                ).model_copy(update={"pattern": "Pullback"})
+                            )
+                            continue
 
-        # --- B) Orderly pre-breakout base ---
+        # --- B) Orderly pre-breakout base (full Stage 2 required) ---
+        if (
+            not sma200
+            or snapshot.last_price <= sma200
+            or sma50 <= sma200
+            or (snapshot.sma200_1m_ago and sma200 < snapshot.sma200_1m_ago * 0.995)
+        ):
+            continue
         if len(closes) < 12 or len(highs) < 12 or len(lows) < 12:
             continue
         window_high = max(highs[-12:])

@@ -8568,3 +8568,30 @@ button {
   cursor: pointer;
   line-height: 1;
 }
+
+
+/* TradingView-quality grid bars: crisp 1px strokes regardless of card
+   stretch, classic blue/red, no baseline clutter. */
+.chart-grid-ohlc line,
+.chart-grid-ohlc rect {
+  vector-effect: non-scaling-stroke;
+}
+
+.chart-grid-ohlc .chart-grid-sparkline-baseline {
+  display: none;
+}
+
+.chart-grid-ohlc .chart-grid-candle.positive line,
+.chart-grid-ohlc .chart-grid-bar.positive line {
+  stroke: #2962ff !important;
+  stroke-width: 1.4px;
+}
+
+.chart-grid-ohlc .chart-grid-candle.negative line,
+.chart-grid-ohlc .chart-grid-bar.negative line {
+  stroke: #f23645 !important;
+  stroke-width: 1.4px;
+}
+
+.chart-grid-ohlc .chart-grid-candle.positive rect { fill: #2962ff !important; stroke: none; }
+.chart-grid-ohlc .chart-grid-candle.negative rect { fill: #f23645 !important; stroke: none; }
