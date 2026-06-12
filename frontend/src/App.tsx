@@ -1617,7 +1617,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const previousActiveWatchlistSymbolsRef = useRef<{ id: string | null; symbols: string[] }>({ id: null, symbols: [] });
   const activeMarketRef = useRef(activeMarket);
   const timeframeRef = useRef(timeframe);
-  const prewarmingChartKeysRef = useRef<Set<string>>(new Set());
+  // In-flight prewarm requests keyed by chart cache key. A Map of promises
+  // (not a Set) so an explicit chart open can await the request already in
+  // flight instead of issuing a duplicate fetch.
+  const prewarmingChartPromisesRef = useRef<Map<string, Promise<ChartResponse>>>(new Map());
   const hoverPrefetchTimerRef = useRef<number | null>(null);
   const hoverPrefetchInFlightRef = useRef(0);
   const chartCompatibilityRecoveryRef = useRef<Set<string>>(new Set());
@@ -1758,7 +1761,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     chartRequestIdRef.current = requestId;
 
     try {
-      const payload = await getChart(symbol, chartTimeframe, market);
+      // Reuse an in-flight prewarm request for this exact chart instead of
+      // issuing a duplicate fetch — the warm-up is usually most of the way
+      // done by the time the user clicks.
+      const inFlightPrewarm = prewarmingChartPromisesRef.current.get(buildChartCacheKey(market, symbol, chartTimeframe));
+      const payload = await (inFlightPrewarm ?? getChart(symbol, chartTimeframe, market));
       const requestStillMatchesSelection =
         activeMarketRef.current === market &&
         selectedSymbolRef.current === symbol &&
@@ -1831,7 +1838,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     chartBRequestIdRef.current = requestId;
 
     try {
-      const payload = await getChart(symbol, chartTimeframe, market);
+      const inFlightPrewarm = prewarmingChartPromisesRef.current.get(buildChartCacheKey(market, symbol, chartTimeframe));
+      const payload = await (inFlightPrewarm ?? getChart(symbol, chartTimeframe, market));
       if (chartBRequestIdRef.current !== requestId) {
         return fallbackChart;
       }
@@ -2868,7 +2876,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         : navigationSeed,
     ),
   );
-  const visibleSymbolsKey = visibleSymbols.join("|");
+  const navigationSeedKey = navigationSeed.join("|");
   const displayedChart = chart && chart.symbol === selectedSymbol && chart.timeframe === timeframe ? chart : null;
   const activeChartKey = selectedSymbol ? `${selectedSymbol}:${timeframe}` : null;
   const activeAnnotations = activeChartKey ? savedDrawings[activeChartKey] ?? [] : [];
@@ -3391,19 +3399,27 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return;
     }
 
-    // Order: stocks AFTER the selected one first (most likely next clicks),
-    // then stocks BEFORE it. If nothing is selected yet (e.g. scan results
-    // just loaded), fall back to the natural order — first 20 visible.
-    const orderedSymbols = selectedSymbol && visibleSymbols.includes(selectedSymbol)
-      ? [
-          ...visibleSymbols.slice(visibleSymbols.indexOf(selectedSymbol) + 1),
-          ...visibleSymbols.slice(0, visibleSymbols.indexOf(selectedSymbol)),
-        ]
-      : visibleSymbols;
-    const PREFETCH_AHEAD = 12;
-    const symbolsToWarm = orderedSymbols
-      .filter((symbol) => symbol && symbol !== selectedSymbol)
-      .slice(0, PREFETCH_AHEAD);
+    // Sliding prewarm window so chart navigation never waits:
+    // - results just loaded (nothing selected): warm the first 20 charts;
+    // - a chart is selected: warm 15 ahead + 5 behind it, nearest first.
+    // Moving to the next chart slides the window — everything already warmed
+    // is skipped via the cache check, so each step costs ~one fetch (the new
+    // symbol entering the window). NOTE: window positions come from the
+    // natural results order (navigationSeed), NOT visibleSymbols, which
+    // hoists the open symbol to index 0 and would anchor the window to the
+    // top of the list.
+    const PREFETCH_INITIAL = 20;
+    const PREFETCH_AHEAD = 15;
+    const PREFETCH_BEHIND = 5;
+    const orderedList = navigationSeed.filter(Boolean);
+    const selectedIndex = selectedSymbol ? orderedList.indexOf(selectedSymbol) : -1;
+    const symbolsToWarm =
+      selectedIndex === -1
+        ? orderedList.filter((symbol) => symbol !== selectedSymbol).slice(0, PREFETCH_INITIAL)
+        : [
+            ...orderedList.slice(selectedIndex + 1, selectedIndex + 1 + PREFETCH_AHEAD),
+            ...orderedList.slice(Math.max(0, selectedIndex - PREFETCH_BEHIND), selectedIndex).reverse(),
+          ];
 
     if (symbolsToWarm.length === 0) {
       return;
@@ -3412,19 +3428,20 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     let stopQueue = false;
     const timeoutId = window.setTimeout(() => {
       void (async () => {
-        // Keep background warm-up gentle: the free HF Space has ~2 vCPUs and a
-        // small upstream budget, so a wide prefetch fan-out delays the scans
-        // and charts the user actually asked for.
-        const CONCURRENCY = 2;
+        // Concurrency matches the backend's 3-slot cold chart-fetch
+        // semaphore, so the warm-up uses the full budget without ever
+        // queueing scans or user-initiated chart loads behind it.
+        const CONCURRENCY = 3;
         const queue = [...symbolsToWarm];
         const fetchOne = async (symbol: string) => {
           const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
-          if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartKeysRef.current.has(cacheKey)) {
+          if (readCachedChart(activeMarket, symbol, timeframe) || prewarmingChartPromisesRef.current.has(cacheKey)) {
             return;
           }
-          prewarmingChartKeysRef.current.add(cacheKey);
+          const request = getChart(symbol, timeframe, activeMarket);
+          prewarmingChartPromisesRef.current.set(cacheKey, request);
           try {
-            const payload = await getChart(symbol, timeframe, activeMarket);
+            const payload = await request;
             // Cache regardless of stopQueue — the network call already
             // completed, throwing it away wastes the work and forces a
             // re-fetch when the user revisits this symbol.
@@ -3434,7 +3451,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           } catch {
             // Ignore prewarm failures and let explicit chart loads retry on demand.
           } finally {
-            prewarmingChartKeysRef.current.delete(cacheKey);
+            prewarmingChartPromisesRef.current.delete(cacheKey);
           }
         };
         const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
@@ -3452,7 +3469,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       stopQueue = true;
       window.clearTimeout(timeoutId);
     };
-  }, [activeMarket, activePage, selectedSymbol, timeframe, visibleSymbolsKey]);
+  }, [activeMarket, activePage, selectedSymbol, timeframe, navigationSeedKey]);
 
   useEffect(() => {
     if (activePage !== "watchlists" || !activeWatchlist) {
@@ -3890,24 +3907,25 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         return;
       }
       const cacheKey = buildChartCacheKey(activeMarket, symbol, timeframe);
-      if (prewarmingChartKeysRef.current.has(cacheKey)) {
+      if (prewarmingChartPromisesRef.current.has(cacheKey)) {
         return;
       }
       if (readCachedChart(activeMarket, symbol, timeframe)) {
         return;
       }
-      prewarmingChartKeysRef.current.add(cacheKey);
+      const request = getChart(symbol, timeframe, activeMarket);
+      prewarmingChartPromisesRef.current.set(cacheKey, request);
       hoverPrefetchInFlightRef.current += 1;
       void (async () => {
         try {
-          const payload = await getChart(symbol, timeframe, activeMarket);
+          const payload = await request;
           if (payload.symbol === symbol && payload.timeframe === timeframe) {
             storeCachedChart(activeMarket, symbol, timeframe, payload);
           }
         } catch {
           // Hover prefetch is best-effort; explicit clicks will retry on demand.
         } finally {
-          prewarmingChartKeysRef.current.delete(cacheKey);
+          prewarmingChartPromisesRef.current.delete(cacheKey);
           hoverPrefetchInFlightRef.current -= 1;
         }
       })();
