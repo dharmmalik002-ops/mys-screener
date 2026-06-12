@@ -3670,7 +3670,15 @@ class FreeMarketDataProvider:
         # and the apply path also rejects any record that violates basic
         # OHLC sanity (close outside [low,high], > circuit-limit moves on
         # tiny volume, etc.) so a single bad row can't poison the snapshot.
-        APPLY_SCHEMA_VERSION = 11
+        # v12 (2026-06-12): consume the per-symbol indicator blocks ("i") the
+        # patch generator now ships — fresh recent_closes/highs/lows/volumes,
+        # EMAs/SMAs, RS + window baselines, avg volumes and rolling extremes
+        # recomputed from a ~2-year adjusted history. Before this, those
+        # fields stayed frozen at the seed-snapshot build date (months stale),
+        # which broke the Bread & Butter pullback leg, made snapshot RS
+        # ratings drift from the chart's RS line, and left "X% from 10EMA"
+        # style readings wildly wrong (ATGL: 39% vs ~3% real).
+        APPLY_SCHEMA_VERSION = 12
         status_path = self._bhavcopy_status_path()
         saved_version = 1
         if status_path.exists():
@@ -3748,7 +3756,10 @@ class FreeMarketDataProvider:
                 and row_session_date is not None
                 and row_session_date >= patch_date
                 and abs(float(row_close) - float(new_close)) <= 0.01
-                and (recent_close is None or abs(float(recent_close) - float(new_close)) <= 0.01)
+                # recent_closes may come from the patch's adjusted-history
+                # indicator block, which can differ from the official close by
+                # a small dividend-adjustment factor — allow 0.5% here.
+                and (recent_close is None or abs(float(recent_close) - float(new_close)) <= max(0.01, 0.005 * float(new_close)))
                 and "rs_weighted_score_1d_ago" in row
             ):
                 patched_current_rows += 1
@@ -3908,6 +3919,13 @@ class FreeMarketDataProvider:
                 rescaled = stored_mcap * (float(new_close) / old_last_price)
                 row["market_cap_crore"] = round(rescaled, 2)
 
+            # Overwrite the seed-stale derived fields (recent-bar arrays, EMAs/
+            # SMAs, RS + window baselines, avg volumes, rolling extremes) with
+            # the patch's freshly recomputed indicator block, when present.
+            # Applied BEFORE the extremes lift / window-return / RS sections so
+            # they all operate on fresh values.
+            ind_result = self._apply_patch_indicator_block(row, record.get("i"), patch_date, new_close)
+
             # Lift stale high/low extreme fields when the new bar pushes past
             # them. Without this, the seed snapshot's months-old high_52w /
             # ath / month_high stay frozen — and as soon as today's price
@@ -3975,28 +3993,32 @@ class FreeMarketDataProvider:
                 if baseline_value > 0:
                     row[return_key] = round(((new_close / baseline_value) - 1) * 100.0, 2)
 
-            row["rs_weighted_score_1d_ago"] = round(existing_rs_weighted_score, 4)
+            if not ind_result["rs_history_set"]:
+                row["rs_weighted_score_1d_ago"] = round(existing_rs_weighted_score, 4)
             row["rs_weighted_score"] = round(self._weighted_rs_score_from_price(row, new_close), 4)
             row["history_as_of_date"] = patch_date.isoformat()
             row["history_session_date"] = patch_date.isoformat()
             row["history_source"] = "bhavcopy_patch"
 
-            recent_closes = row.get("recent_closes")
-            if not isinstance(recent_closes, list) or not recent_closes:
-                recent_closes = []
-                chart_points = row.get("chart_grid_points")
-                if isinstance(chart_points, list):
-                    for point in chart_points[-19:]:
-                        if not isinstance(point, dict):
-                            continue
-                        close_value = self._to_float(point.get("value"))
-                        if close_value not in (None, 0):
-                            recent_closes.append(round(float(close_value), 4))
-            if recent_closes:
-                if self._to_float(recent_closes[-1]) != new_close:
-                    row["recent_closes"] = [round(float(value), 4) for value in recent_closes[-19:] if self._to_float(value) not in (None, 0)] + [round(new_close, 4)]
-            else:
-                row["recent_closes"] = [round(prev_close, 4), round(new_close, 4)] if prev_close > 0 else [round(new_close, 4)]
+            if not ind_result["covers_today"]:
+                # No fresh indicator block carrying today's bar — fall back to
+                # rolling today's bar onto whatever arrays the row already has.
+                recent_closes = row.get("recent_closes")
+                if not isinstance(recent_closes, list) or not recent_closes:
+                    recent_closes = []
+                    chart_points = row.get("chart_grid_points")
+                    if isinstance(chart_points, list):
+                        for point in chart_points[-19:]:
+                            if not isinstance(point, dict):
+                                continue
+                            close_value = self._to_float(point.get("value"))
+                            if close_value not in (None, 0):
+                                recent_closes.append(round(float(close_value), 4))
+                if recent_closes:
+                    if self._to_float(recent_closes[-1]) != new_close:
+                        row["recent_closes"] = [round(float(value), 4) for value in recent_closes[-19:] if self._to_float(value) not in (None, 0)] + [round(new_close, 4)]
+                else:
+                    row["recent_closes"] = [round(prev_close, 4), round(new_close, 4)] if prev_close > 0 else [round(new_close, 4)]
 
             chart_points = row.get("chart_grid_points")
             if isinstance(chart_points, list):
@@ -4007,22 +4029,23 @@ class FreeMarketDataProvider:
                 else:
                     chart_points[-1] = next_point
 
-            for arr_key, value in (
-                ("recent_highs", round(new_high, 4)),
-                ("recent_lows", round(new_low, 4)),
-                ("recent_volumes", int(new_volume)),
-            ):
-                arr = row.get(arr_key)
-                if isinstance(arr, list) and arr:
-                    # Idempotent roll: only push today's bar if it isn't already
-                    # the most-recent element. Lets us safely re-apply when the
-                    # schema bumps without double-counting.
-                    if arr[-1] != value:
-                        row[arr_key] = list(arr[-19:]) + [value]
-                elif arr_key == "recent_volumes" and int(new_volume) > 0:
-                    row[arr_key] = [int(new_volume)]
-                elif arr_key in {"recent_highs", "recent_lows"}:
-                    row[arr_key] = [value]
+            if not ind_result["covers_today"]:
+                for arr_key, value in (
+                    ("recent_highs", round(new_high, 4)),
+                    ("recent_lows", round(new_low, 4)),
+                    ("recent_volumes", int(new_volume)),
+                ):
+                    arr = row.get(arr_key)
+                    if isinstance(arr, list) and arr:
+                        # Idempotent roll: only push today's bar if it isn't already
+                        # the most-recent element. Lets us safely re-apply when the
+                        # schema bumps without double-counting.
+                        if arr[-1] != value:
+                            row[arr_key] = list(arr[-19:]) + [value]
+                    elif arr_key == "recent_volumes" and int(new_volume) > 0:
+                        row[arr_key] = [int(new_volume)]
+                    elif arr_key in {"recent_highs", "recent_lows"}:
+                        row[arr_key] = [value]
 
             # Roll the 1-year volume_history window for the Volume screener.
             # Append today's volume, trim to 252 sessions, idempotent on re-apply.
@@ -4101,6 +4124,131 @@ class FreeMarketDataProvider:
             "date": patch_date.isoformat(),
             "source": source_label,
         }
+
+    # Maps the compact keys of the patch's per-symbol indicator block ("i",
+    # produced by backend/scripts/generate_bhavcopy_patch.py from a fresh
+    # ~2-year adjusted yfinance history) onto snapshot-row fields.
+    _IND_SCALAR_FIELDS: dict[str, str] = {
+        "e10": "ema10", "e20": "ema20", "e50": "ema50", "e200": "ema200",
+        "s20": "sma20", "s50": "sma50", "s150": "sma150", "s200": "sma200",
+        "s200_1m": "sma200_1m_ago", "s200_5m": "sma200_5m_ago", "we20": "weekly_ema20",
+        "atr": "atr14", "adr": "adr_pct_20", "rsi": "rsi_14",
+        "b5": "baseline_close_5d", "b20": "baseline_close_20d", "b40": "baseline_close_40d",
+        "b60": "baseline_close_60d", "b63": "baseline_close_63d", "b126": "baseline_close_126d",
+        "b189": "baseline_close_189d", "b252": "baseline_close_252d", "b504": "baseline_close_504d",
+        "q1": "rs_baseline_close_q1", "q2": "rs_baseline_close_q2",
+        "q3": "rs_baseline_close_q3", "q4": "rs_baseline_close_q4",
+        "r12m_1d": "stock_return_12m_1d_ago", "r12m_1w": "stock_return_12m_1w_ago",
+        "r12m_1m": "stock_return_12m_1m_ago",
+        "wh": "week_high", "wl": "week_low", "whp": "week_high_prev", "wlp": "week_low_prev",
+        "mh": "month_high", "ml": "month_low", "mhp": "month_high_prev", "mlp": "month_low_prev",
+        "h3m": "high_3m", "h6m": "high_6m", "l6m": "low_6m",
+        "h6mp": "high_6m_prev", "l6mp": "low_6m_prev",
+        "h52": "high_52w", "l52": "low_52w", "h52p": "high_52w_prev", "l52p": "low_52w_prev",
+        "rh20": "range_high_20d", "rh20p": "range_high_prev_20d",
+        "ph": "pivot_high", "dh": "darvas_high", "dl": "darvas_low",
+    }
+    _IND_VOLUME_FIELDS: dict[str, str] = {
+        "av20": "avg_volume_20d", "av30": "avg_volume_30d", "av50": "avg_volume_50d",
+    }
+
+    def _apply_patch_indicator_block(
+        self,
+        row: dict[str, Any],
+        ind: Any,
+        patch_date: date,
+        new_close: float,
+    ) -> dict[str, bool]:
+        """Overwrite seed-stale derived fields on a snapshot row with the
+        patch's freshly recomputed indicator block.
+
+        Returns {"covers_today": ..., "rs_history_set": ...} so the caller
+        knows whether the recent-bar arrays already include the patch-date bar
+        (skip the legacy one-bar roll) and whether the historical RS scores
+        were refreshed. Defensive throughout: any malformed/stale/diverging
+        block is ignored and the legacy roll-forward behaviour kicks in.
+        """
+        result = {"covers_today": False, "rs_history_set": False}
+        if not isinstance(ind, dict):
+            return result
+
+        ind_date = self._parse_row_date(ind.get("d"))
+        if ind_date is None or ind_date > patch_date or (patch_date - ind_date).days > 7:
+            return result
+        closes = ind.get("rc")
+        if not isinstance(closes, list) or len(closes) < 5:
+            return result
+        last_ind_close = self._to_float(closes[-1])
+        if last_ind_close in (None, 0):
+            return result
+        # The block is computed on dividend/split-adjusted history; the latest
+        # bar should match the official close to within a small factor. A big
+        # divergence means broken data (e.g. a mis-mapped ticker) — skip it.
+        if new_close > 0 and abs(float(last_ind_close) - new_close) / new_close > 0.12:
+            return result
+
+        highs = ind.get("rh")
+        lows = ind.get("rl")
+        volumes = ind.get("rv")
+
+        def _clean_floats(values: Any) -> list[float] | None:
+            if not isinstance(values, list) or len(values) != len(closes):
+                return None
+            cleaned: list[float] = []
+            for value in values:
+                parsed = self._to_float(value)
+                if parsed in (None, 0):
+                    return None
+                cleaned.append(round(float(parsed), 4))
+            return cleaned
+
+        clean_closes = _clean_floats(closes)
+        clean_highs = _clean_floats(highs)
+        clean_lows = _clean_floats(lows)
+        if clean_closes is None:
+            return result
+        row["recent_closes"] = clean_closes
+        if clean_highs is not None:
+            row["recent_highs"] = clean_highs
+        if clean_lows is not None:
+            row["recent_lows"] = clean_lows
+        if isinstance(volumes, list) and len(volumes) == len(closes):
+            try:
+                row["recent_volumes"] = [max(0, int(value)) for value in volumes]
+            except (TypeError, ValueError):
+                pass
+
+        for ind_key, field in self._IND_SCALAR_FIELDS.items():
+            parsed = self._to_float(ind.get(ind_key))
+            if parsed is not None and parsed != 0:
+                row[field] = round(float(parsed), 4)
+        for ind_key, field in self._IND_VOLUME_FIELDS.items():
+            try:
+                parsed_volume = int(ind.get(ind_key))
+            except (TypeError, ValueError):
+                continue
+            if parsed_volume >= 0:
+                row[field] = parsed_volume
+
+        if all(self._to_float(ind.get(key)) not in (None, 0) for key in ("q1", "q2", "q3", "q4")):
+            row["rs_eligible"] = True
+
+        rs_history_pairs = (
+            ("rsw1d", "rs_weighted_score_1d_ago", "rs_eligible_1d_ago"),
+            ("rsw1w", "rs_weighted_score_1w_ago", "rs_eligible_1w_ago"),
+            ("rsw1m", "rs_weighted_score_1m_ago", "rs_eligible_1m_ago"),
+        )
+        for ind_key, score_field, eligible_field in rs_history_pairs:
+            parsed = self._to_float(ind.get(ind_key))
+            if parsed is None:
+                continue
+            row[score_field] = round(float(parsed), 4)
+            row[eligible_field] = True
+            if ind_key == "rsw1d":
+                result["rs_history_set"] = True
+
+        result["covers_today"] = ind_date == patch_date
+        return result
 
     def apply_bhavcopy_eod(self) -> dict[str, Any]:
         """Live EOD path. Inside HF Spaces NSE/BSE direct fetches are typically

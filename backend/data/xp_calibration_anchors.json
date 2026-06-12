@@ -1,5 +1,5 @@
 {
-  "_comment": "Author's published Stocksgeeks MBI 2.0 'EM' scores, used to calibrate the XP `const` so the regime bands align for our (all-bhavcopy ~4000) universe. XP is the open-source proxy for EM and shares EM's band structure, so EM values are valid XP calibration targets. Source: finallynitin MBI 2.0 table (ASIANENE chart), last refreshed 2026-05-29 3:40pm EOD.",
+  "_comment": "Author's published Stocksgeeks MBI 2.0 'EM' scores, used to calibrate the XP `const` so the regime bands align for our (all-bhavcopy ~4000) universe. XP is the open-source proxy for EM and shares EM's band structure, so EM values are valid XP calibration targets. Source: finallynitin MBI 2.0 table (ASIANENE chart), last refreshed 2026-06-12 EOD. NOTE: editing this file triggers an automatic const + output-map recalibration on the next daily bhavcopy run (and the daily generator drops partial-coverage bhavcopy days before fitting).",
   "source": "Stocksgeeks MBI 2.0 (EM column)",
   "anchors": {
     "2026-05-15": 9,
@@ -11,6 +11,7 @@
     "2026-05-25": 16,
     "2026-05-26": 17,
     "2026-05-27": 19,
-    "2026-05-29": 18
+    "2026-05-29": 18,
+    "2026-06-12": 10.5
   }
 }

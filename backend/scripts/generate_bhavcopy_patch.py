@@ -748,6 +748,334 @@ def _merge_bse_with_yfinance(bse_symbols: dict[str, dict], trade_date: date, ext
 _enrich_bse_with_yfinance = _merge_bse_with_yfinance
 
 
+# ── Per-symbol indicator blocks ──────────────────────────────────────────────
+# The HF Space cold-starts from baked seed snapshots that can be WEEKS or
+# MONTHS old. The apply path rolls one bar per applied day, so the recent-bar
+# arrays / EMAs / SMAs / RS baselines on the snapshot rows stay frozen at the
+# seed build date (verified: ATGL showed 39% from the 10EMA vs ~3% real).
+# To heal that, the daily patch carries a compact per-symbol indicator block
+# ("i") recomputed from a fresh ~2-year yfinance history; the apply path
+# overwrites the stale fields with it. Computations mirror
+# FreeDataProvider._history_to_snapshot (backend/app/providers/free.py).
+INDICATOR_HISTORY_DAYS = 800  # calendar days (~545 trading bars; covers b504)
+INDICATOR_MAX_BAR_LAG_DAYS = 7  # skip blocks whose latest bar is older than this
+RECENT_BARS = 20
+
+# Mirrors RS_LOOKBACKS / RETURN_*_BARS in free.py.
+_RS_LOOKBACKS = ((63, 0.4), (126, 0.2), (189, 0.2), (252, 0.2))
+_MIN_RS_HISTORY_BARS = 63
+_BASELINE_LOOKBACKS = {
+    "b5": 5, "b20": 21, "b40": 40, "b60": 63, "b63": 63,
+    "b126": 126, "b189": 189, "b252": 252, "b504": 504,
+}
+
+
+def _effective_lookback(n_bars: int, lookback: int, offset: int = 0, *, allow_partial: bool = True) -> int | None:
+    available = n_bars - offset - 1
+    if available < 1:
+        return None
+    if available >= lookback:
+        return lookback
+    return available if allow_partial else None
+
+
+def _baseline_at(closes, lookback: int, offset: int = 0, *, allow_partial: bool = True) -> float | None:
+    eff = _effective_lookback(len(closes), lookback, offset, allow_partial=allow_partial)
+    if eff is None:
+        return None
+    value = float(closes[-offset - eff - 1])
+    return value if value > 0 else None
+
+
+def _adaptive_rs_lookbacks(n_bars: int, offset: int) -> list[tuple[int, float]]:
+    available = _effective_lookback(n_bars, 252, offset, allow_partial=True)
+    if available is None or available < _MIN_RS_HISTORY_BARS:
+        return []
+    if available >= 252:
+        return list(_RS_LOOKBACKS)
+    lookbacks: list[tuple[int, float]] = []
+    previous = 0
+    for fraction, weight in zip((0.25, 0.5, 0.75, 1.0), (0.4, 0.2, 0.2, 0.2)):
+        candidate = max(1, int(round(available * fraction)))
+        candidate = max(candidate, previous + 1)
+        candidate = min(candidate, available)
+        lookbacks.append((candidate, weight))
+        previous = candidate
+    return lookbacks
+
+
+def _weighted_rs_score_at(closes, offset: int) -> float | None:
+    lookbacks = _adaptive_rs_lookbacks(len(closes), offset)
+    if not lookbacks:
+        return None
+    score = 0.0
+    for lookback, weight in lookbacks:
+        eff = _effective_lookback(len(closes), lookback, offset, allow_partial=False)
+        if eff is None:
+            return None
+        baseline = float(closes[-offset - eff - 1])
+        current = float(closes[-offset - 1])
+        if baseline <= 0:
+            return None
+        score += (((current / baseline) - 1) * 100.0) * weight
+    return score
+
+
+def _return_pct_as_of(closes, lookback: int, offset: int) -> float | None:
+    eff = _effective_lookback(len(closes), lookback, offset, allow_partial=True)
+    if eff is None:
+        return None
+    baseline = float(closes[-offset - eff - 1])
+    if baseline <= 0:
+        return None
+    return ((float(closes[-offset - 1]) / baseline) - 1) * 100.0
+
+
+def _window_extreme(values, window: int, *, exclude_last: bool, use_max: bool) -> float | None:
+    subset = values[-window:]
+    if exclude_last and len(subset) > 1:
+        subset = subset[:-1]
+    if len(subset) == 0:
+        return None
+    return float(max(subset) if use_max else min(subset))
+
+
+def _indicator_block_from_history(sub, trade_date: date) -> dict | None:
+    """Build the compact indicator block for one symbol from its (split- and
+    dividend-adjusted) daily history DataFrame. Returns None when the data is
+    too thin or too stale to be trusted."""
+    import pandas as pd
+
+    if sub is None or sub.empty:
+        return None
+    sub = sub.dropna(subset=["Close"])
+    sub = sub[sub["Close"] > 0]
+    if len(sub) < 30:
+        return None
+    # Never let a stray next-session bar contaminate the EOD block.
+    idx_dates = pd.to_datetime(sub.index).date
+    sub = sub[idx_dates <= trade_date]
+    if len(sub) < 30:
+        return None
+    last_bar_date = pd.to_datetime(sub.index[-1]).date()
+    if (trade_date - last_bar_date).days > INDICATOR_MAX_BAR_LAG_DAYS:
+        return None
+
+    close = sub["Close"].astype(float)
+    high = sub["High"].fillna(close).astype(float)
+    low = sub["Low"].fillna(close).astype(float)
+    volume = sub["Volume"].fillna(0).astype(float)
+    closes = close.tolist()
+    highs = high.tolist()
+    lows = low.tolist()
+    n = len(closes)
+
+    def ema(span: int) -> float | None:
+        if n < span:
+            return None
+        value = close.ewm(span=span, adjust=False).mean().iloc[-1]
+        return None if pd.isna(value) else round(float(value), 2)
+
+    def sma(window: int) -> float | None:
+        if n < window:
+            return None
+        value = close.rolling(window=window, min_periods=window).mean().iloc[-1]
+        return None if pd.isna(value) else round(float(value), 2)
+
+    block: dict[str, object] = {
+        "d": last_bar_date.isoformat(),
+        "rc": [round(v, 2) for v in closes[-RECENT_BARS:]],
+        "rh": [round(v, 2) for v in highs[-RECENT_BARS:]],
+        "rl": [round(v, 2) for v in lows[-RECENT_BARS:]],
+        "rv": [max(0, int(v)) for v in volume.tolist()[-RECENT_BARS:]],
+    }
+
+    for key, span in (("e10", 10), ("e20", 20), ("e50", 50), ("e200", 200)):
+        value = ema(span)
+        if value is not None:
+            block[key] = value
+    for key, window in (("s20", 20), ("s50", 50), ("s150", 150), ("s200", 200)):
+        value = sma(window)
+        if value is not None:
+            block[key] = value
+    sma200_series = close.rolling(window=200, min_periods=200).mean().dropna()
+    if len(sma200_series) > 21:
+        block["s200_1m"] = round(float(sma200_series.iloc[-22]), 2)
+    if len(sma200_series) > 105:
+        block["s200_5m"] = round(float(sma200_series.iloc[-106]), 2)
+    if isinstance(close.index, pd.DatetimeIndex):
+        weekly_close = close.resample("W-FRI").last().dropna()
+        if len(weekly_close) >= 20:
+            value = weekly_close.ewm(span=20, adjust=False).mean().iloc[-1]
+            if not pd.isna(value):
+                block["we20"] = round(float(value), 2)
+
+    for key, window in (("av20", 20), ("av30", 30), ("av50", 50)):
+        block[key] = int(volume.tail(window).mean() or 0)
+
+    previous_close_series = close.shift(1).fillna(close.iloc[0])
+    true_range = pd.concat(
+        [
+            (high - low).abs(),
+            (high - previous_close_series).abs(),
+            (low - previous_close_series).abs(),
+        ],
+        axis=1,
+    ).max(axis=1)
+    block["atr"] = round(float(true_range.rolling(window=14, min_periods=1).mean().iloc[-1]), 2)
+
+    delta = close.diff()
+    gain = delta.where(delta > 0, 0.0).ewm(alpha=1 / 14, adjust=False).mean()
+    loss = -delta.where(delta < 0, 0.0).ewm(alpha=1 / 14, adjust=False).mean()
+    rsi_series = 100 - (100 / (1 + (gain / loss)))
+    if not rsi_series.empty and not pd.isna(rsi_series.iloc[-1]):
+        block["rsi"] = round(float(rsi_series.iloc[-1]), 2)
+
+    adr_ranges = (high.tail(20) - low.tail(20)).dropna()
+    adr_closes = close.tail(20)
+    if not adr_ranges.empty and not adr_closes.empty and float(adr_closes.mean()) > 0:
+        block["adr"] = round((float(adr_ranges.mean()) / float(adr_closes.mean())) * 100.0, 2)
+
+    for key, lookback in _BASELINE_LOOKBACKS.items():
+        value = _baseline_at(closes, lookback)
+        if value is not None:
+            block[key] = round(value, 4)
+
+    rs_lookbacks = _adaptive_rs_lookbacks(n, 0)
+    for key, position in (("q1", 0), ("q2", 1), ("q3", 2), ("q4", 3)):
+        if len(rs_lookbacks) > position:
+            value = _baseline_at(closes, rs_lookbacks[position][0], allow_partial=False)
+            if value is not None:
+                block[key] = round(value, 4)
+    for key, offset in (("rsw", 0), ("rsw1d", 1), ("rsw1w", 5), ("rsw1m", 21)):
+        value = _weighted_rs_score_at(closes, offset)
+        if value is not None:
+            block[key] = round(value, 4)
+    for key, offset in (("r12m_1d", 1), ("r12m_1w", 5), ("r12m_1m", 21)):
+        value = _return_pct_as_of(closes, 252, offset)
+        if value is not None:
+            block[key] = round(value, 2)
+
+    # Rolling-window extremes (mirrors the seed builder's windows; ATH / ATL /
+    # multi-year levels need full listing history and are NOT shipped — the
+    # apply path keeps its lift-only logic for those).
+    for key, values, window, exclude, use_max in (
+        ("wh", highs, 5, False, True),
+        ("whp", highs, 6, True, True),
+        ("wl", lows, 5, False, False),
+        ("wlp", lows, 6, True, False),
+        ("mh", highs, 21, False, True),
+        ("mhp", highs, 22, True, True),
+        ("ml", lows, 21, False, False),
+        ("mlp", lows, 22, True, False),
+        ("h3m", highs, 63, False, True),
+        ("h6m", highs, 126, False, True),
+        ("h6mp", highs, 127, True, True),
+        ("l6m", lows, 126, False, False),
+        ("l6mp", lows, 127, True, False),
+        ("h52", highs, 252, False, True),
+        ("h52p", highs, 253, True, True),
+        ("l52", lows, 252, False, False),
+        ("l52p", lows, 253, True, False),
+        ("rh20", highs, 20, False, True),
+        ("rh20p", highs, 21, True, True),
+        ("ph", highs, 10, True, True),
+        ("dh", highs, 15, True, True),
+        ("dl", lows, 15, True, False),
+    ):
+        value = _window_extreme(values, window, exclude_last=exclude, use_max=use_max)
+        if value is not None:
+            block[key] = round(value, 2)
+
+    return block
+
+
+def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_tickers: list[str] | None = None) -> int:
+    """Fetch ~2y of adjusted daily bars for the universe and attach an "i"
+    indicator block to each patch record. Mutates ``symbols`` in place and
+    returns the number of blocks attached. Any failure is logged and swallowed
+    — the price patch must never be blocked by indicator enrichment."""
+    try:
+        import yfinance as yf
+        import pandas as pd
+    except ImportError:
+        logger.warning("yfinance/pandas not installed; skipping indicator blocks")
+        return 0
+
+    universe_path = DATA_DIR / "free_universe.json"
+    if not universe_path.exists():
+        return 0
+    try:
+        universe = json.loads(universe_path.read_text(encoding="utf-8"))
+    except Exception:
+        return 0
+    if not isinstance(universe, list):
+        return 0
+
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    if extra_tickers:
+        already = set(tickers)
+        for extra in extra_tickers:
+            if extra and extra not in already:
+                tickers.append(extra)
+                already.add(extra)
+    # Only fetch tickers whose symbol actually has a price record in this patch.
+    tickers = [t for t in tickers if t.replace(".NS", "") in symbols]
+    if not tickers:
+        return 0
+
+    start_str = (trade_date - timedelta(days=INDICATOR_HISTORY_DAYS)).strftime("%Y-%m-%d")
+    end_str = (trade_date + timedelta(days=1)).strftime("%Y-%m-%d")
+
+    attached = 0
+    CHUNK = 200
+    for i in range(0, len(tickers), CHUNK):
+        chunk = tickers[i : i + CHUNK]
+        try:
+            # auto_adjust=True so split (and dividend) adjusted closes feed the
+            # EMAs — raw closes would carry split discontinuities straight into
+            # every moving average.
+            df = yf.download(
+                chunk,
+                start=start_str,
+                end=end_str,
+                auto_adjust=True,
+                progress=False,
+                threads=True,
+            )
+        except Exception as exc:
+            logger.warning("indicator chunk %s download failed: %s", i // CHUNK + 1, exc)
+            continue
+        if df is None or df.empty:
+            continue
+        if isinstance(df.columns, pd.MultiIndex):
+            for ticker in chunk:
+                sym = ticker.replace(".NS", "")
+                try:
+                    sub = df.xs(ticker, axis=1, level=1)
+                except Exception:
+                    continue
+                try:
+                    block = _indicator_block_from_history(sub, trade_date)
+                except Exception:
+                    continue
+                if block and sym in symbols:
+                    symbols[sym]["i"] = block
+                    attached += 1
+        else:
+            sym = chunk[0].replace(".NS", "")
+            try:
+                block = _indicator_block_from_history(df, trade_date)
+            except Exception:
+                block = None
+            if block and sym in symbols:
+                symbols[sym]["i"] = block
+                attached += 1
+
+    logger.info("indicator blocks attached: %s/%s universe symbols for %s", attached, len(tickers), trade_date.isoformat())
+    return attached
+
+
 def _patch_already_current(target_date: date) -> bool:
     """Return True if bhavcopy_patch.json already has data for target_date."""
     if not OUTPUT_PATH.exists():
@@ -791,6 +1119,68 @@ def _write_patch(
     )
 
 
+# A bhavcopy that covers far fewer NSE symbols than usual (e.g. a truncated
+# BSE download) produces wildly skewed breadth inputs — 2026-06-09 landed with
+# total=1543 vs the usual ~2010 and inflated ma10% by ~15 points. Days below
+# this fraction of the median universe size are rejected on write and filtered
+# out of the stored history on every recompute.
+XP_PARTIAL_DAY_MIN_RATIO = 0.8
+XP_ANCHORS_PATH = DATA_DIR / "xp_calibration_anchors.json"
+
+
+def _median(values: list[float]) -> float | None:
+    if not values:
+        return None
+    ordered = sorted(values)
+    mid = len(ordered) // 2
+    if len(ordered) % 2:
+        return ordered[mid]
+    return (ordered[mid - 1] + ordered[mid]) / 2.0
+
+
+def _xp_partial_day_floor(days: list[dict]) -> float | None:
+    totals = [float(d.get("total") or 0) for d in days if isinstance(d, dict)]
+    med = _median([t for t in totals if t > 0])
+    if med is None:
+        return None
+    return XP_PARTIAL_DAY_MIN_RATIO * med
+
+
+def _drop_partial_breadth_days(days: list[dict]) -> list[dict]:
+    floor = _xp_partial_day_floor(days)
+    if floor is None:
+        return days
+    kept: list[dict] = []
+    for d in days:
+        total = float(d.get("total") or 0)
+        if 0 < total < floor:
+            logger.warning("XP breadth: dropping partial-coverage day %s (total=%s, floor=%.0f)", d.get("date"), int(total), floor)
+            continue
+        kept.append(d)
+    return kept
+
+
+def _load_xp_anchors() -> tuple[dict[str, float], str | None]:
+    """Load the author's published EM anchor values plus a stable fingerprint,
+    so committing new anchors triggers a one-time recalibration on the next
+    daily run."""
+    if not XP_ANCHORS_PATH.exists():
+        return {}, None
+    try:
+        doc = json.loads(XP_ANCHORS_PATH.read_text(encoding="utf-8"))
+        loaded = doc.get("anchors") if isinstance(doc, dict) else None
+        anchors = {str(k): float(v) for k, v in loaded.items()} if isinstance(loaded, dict) else {}
+    except Exception as exc:
+        logger.warning("Could not read XP calibration anchors: %s", exc)
+        return {}, None
+    if not anchors:
+        return {}, None
+    import hashlib
+
+    fingerprint = hashlib.sha256(json.dumps(anchors, sort_keys=True).encode("utf-8")).hexdigest()[:16]
+    return anchors, fingerprint
+
+
 def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str) -> None:
     """Compute the day's XP market-breadth score from the FULL bhavcopy and
     persist it. Must be passed the all-market dict (BSE/NSE bhavcopy), NOT the
@@ -802,8 +1192,10 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
             CONST,
             OUTPUT_CLAMP,
             apply_output_calibration,
+            calibrate_const,
             compute_xp_series,
             daily_breadth_metrics,
+            fit_output_calibration,
         )
     except Exception as exc:  # pragma: no cover - defensive
         logger.warning("XP breadth engine unavailable (%s); skipping breadth update", exc)
@@ -854,14 +1246,18 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
         prior_days = []
     const = float(hist_doc.get("const", CONST))
 
-    # Base metric history (inputs only), de-duped on date so reruns are idempotent.
+    # Base metric history (inputs only), de-duped on date so reruns are
+    # idempotent, with partial-coverage days filtered out so a truncated
+    # bhavcopy can't keep poisoning the recursion.
     base = [
         {k: d.get(k) for k in metric_keys}
         for d in prior_days
         if isinstance(d, dict) and d.get("date") != date_iso
     ]
+    base = _drop_partial_breadth_days(base)
 
-    if hist_doc.get("rolling_date") == date_iso:
+    already_rolled = hist_doc.get("rolling_date") == date_iso
+    if already_rolled:
         # Today's close was already folded into the rolling store on a prior run;
         # reuse the stored metrics and only recompute the score series.
         today = next((d for d in prior_days if isinstance(d, dict) and d.get("date") == date_iso), None)
@@ -872,13 +1268,48 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
     else:
         metrics, rolling = daily_breadth_metrics(date_iso, full_bhav, rolling, symbol_filter=nse_filter)
 
-    base.append(metrics)
-    series = compute_xp_series(base, const=const)
+    # Partial-day guard for TODAY: a truncated bhavcopy must not enter the
+    # series. If the rolling store hasn't folded today yet, skip the whole
+    # update so a later (complete) run can do it cleanly.
+    floor = _xp_partial_day_floor(base)
+    today_total = float(metrics.get("total") or 0)
+    if floor is not None and 0 < today_total < floor:
+        if not already_rolled:
+            logger.warning(
+                "XP breadth %s: bhavcopy looks partial (total=%s, floor=%.0f); skipping breadth update",
+                date_iso, int(today_total), floor,
+            )
+            return
+        logger.warning(
+            "XP breadth %s: stored metrics look partial (total=%s, floor=%.0f); excluding today from the series",
+            date_iso, int(today_total), floor,
+        )
+    else:
+        base.append(metrics)
 
-    # Reuse the EM output-calibration fitted during the backfill (stored in the
-    # history doc), so daily values stay on the same EM scale.
+    # Output calibration: reuse the stored fit, but when the committed anchors
+    # file changes (new published EM values added), refit const + the affine
+    # output map against the full stored metric history — pure CPU, no network.
     out_scale = float(hist_doc.get("out_scale", 1.0))
     out_offset = float(hist_doc.get("out_offset", 0.0))
+    stored_fingerprint = hist_doc.get("anchors_fingerprint")
+    anchors, anchors_fingerprint = _load_xp_anchors()
+    if anchors and anchors_fingerprint and stored_fingerprint != anchors_fingerprint:
+        base_dates = {str(d.get("date")) for d in base}
+        overlap = [a for a in anchors if a in base_dates]
+        if len(overlap) >= 2:
+            const = calibrate_const(base, anchors)
+            recalibrated = compute_xp_series(base, const=const)
+            out_scale, out_offset = fit_output_calibration(recalibrated, anchors)
+            stored_fingerprint = anchors_fingerprint
+            logger.info(
+                "XP breadth: anchors changed — recalibrated const=%s out_scale=%s out_offset=%s against %s anchor(s)",
+                const, out_scale, out_offset, len(overlap),
+            )
+        else:
+            logger.warning("XP breadth: anchors changed but only %s overlap stored history; keeping previous calibration", len(overlap))
+
+    series = compute_xp_series(base, const=const)
     clamp_doc = hist_doc.get("out_clamp")
     out_clamp = tuple(clamp_doc) if isinstance(clamp_doc, list) and len(clamp_doc) == 2 else OUTPUT_CLAMP
     series = apply_output_calibration(series, out_scale, out_offset, clamp=out_clamp)
@@ -892,6 +1323,7 @@ def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str
         "out_scale": out_scale,
         "out_offset": out_offset,
         "out_clamp": list(out_clamp),
+        "anchors_fingerprint": stored_fingerprint,
         "ma_short": 10,
         "ma_long": 20,
         "universe": "nse_equities",
@@ -1131,6 +1563,7 @@ def main() -> int:
         if not merged:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1
+        _attach_indicator_blocks(merged, target, extra_tickers=extra_yf_tickers)
         _write_patch(target, merged, "YF+BSE", new_listings=new_listings)
         return 0
 
@@ -1165,6 +1598,7 @@ def main() -> int:
             if _patch_already_current(target):
                 logger.info("Price patch already current for %s. Breadth refreshed; no price update needed.", target.isoformat())
                 return 0
+            _attach_indicator_blocks(yf_symbols, target, extra_tickers=extra_yf_tickers)
             _write_patch(target, yf_symbols, "YFINANCE", new_listings=new_listings)
             return 0
 
@@ -1182,6 +1616,7 @@ def main() -> int:
             if _patch_already_current(prev):
                 logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", prev.isoformat(), len(merged_prev))
                 return 0
+            _attach_indicator_blocks(merged_prev, prev)
             _write_patch(prev, merged_prev, "YF+BSE")
             return 0
     csv_text = _fetch_bhavcopy_csv(prev)
