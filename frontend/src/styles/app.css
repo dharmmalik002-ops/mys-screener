@@ -2882,8 +2882,8 @@ button {
 
 .chart-grid-card {
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
-  gap: 12px;
+  grid-template-rows: 1fr auto auto;
+  gap: 10px;
   /* Rows directly control on-screen card height — rows=1 means ONE row of
      near-fullscreen charts, not a 270px cap. */
   min-height: clamp(200px, calc((100dvh - 340px) / var(--chart-grid-rows, 3)), 100dvh);
@@ -2972,6 +2972,77 @@ button {
   min-height: 0;
 }
 
+/* Head + chart form the clickable hit-area; the slider stays interactive. */
+.chart-grid-card-hit {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  text-align: left;
+  font: inherit;
+}
+
+.chart-grid-card-hit.clickable {
+  cursor: pointer;
+}
+
+.chart-grid-card-slider {
+  width: 100%;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--accent, #58a6ff);
+  cursor: ew-resize;
+  opacity: 0.55;
+  transition: opacity 120ms ease;
+}
+
+.chart-grid-card-slider:hover {
+  opacity: 1;
+}
+
+.chart-grid-price-scale text {
+  fill: color-mix(in srgb, var(--text-soft) 85%, transparent);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-grid-month-axis text {
+  fill: color-mix(in srgb, var(--text-soft) 75%, transparent);
+  font-size: 9.5px;
+  text-anchor: middle;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.chart-grid-ma path {
+  opacity: 0.9;
+}
+
+.chart-grid-ma-legend {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-soft);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
+.chart-grid-ma-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-grid-ma-legend i {
+  width: 12px;
+  height: 2px;
+  border-radius: 2px;
+}
+
 /* Measured pixel-space canvas the SVG renders into (1:1 units, no stretch). */
 .chart-grid-canvas {
   position: relative;
@@ -2980,10 +3051,6 @@ button {
   min-height: inherit;
 }
 
-.chart-grid-guides line {
-  stroke: rgba(148, 163, 184, 0.10);
-  stroke-width: 1;
-}
 
 .chart-grid-card-chart.normal {
   min-height: 132px;
@@ -8606,3 +8673,12 @@ button {
 
 .chart-grid-ohlc .chart-grid-candle.positive rect { fill: #2962ff !important; stroke: none; }
 .chart-grid-ohlc .chart-grid-candle.negative rect { fill: #f23645 !important; stroke: none; }
+
+/* Watchlist "Grid View" button — make the grid entry point obvious. */
+.wl-grid-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-color: color-mix(in srgb, var(--accent, #58a6ff) 45%, transparent) !important;
+  color: var(--accent, #58a6ff) !important;
+}

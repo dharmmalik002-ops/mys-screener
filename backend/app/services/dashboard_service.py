@@ -5708,10 +5708,20 @@ class DashboardService:
         if adr_pct_20 is not None:
             payload["adr_pct_20"] = adr_pct_20
         if rs_line:
-            payload["rs_rating"] = int(round(rs_line[-1].value))
-            payload["rs_rating_1d_ago"] = self._rs_rating_from_points(rs_line, 1) or payload.get("rs_rating_1d_ago")
-            payload["rs_rating_1w_ago"] = self._rs_rating_from_points(rs_line, 7) or payload.get("rs_rating_1w_ago")
-            payload["rs_rating_1m_ago"] = self._rs_rating_from_points(rs_line, 30) or payload.get("rs_rating_1m_ago")
+            # Single source of truth: the snapshot's percentile rating (what the
+            # scanner/watchlist columns show) wins whenever it exists; the
+            # chart-bar-derived RS line is only a FALLBACK for symbols whose
+            # snapshot has no rating. Recomputing the badge from chart bars made
+            # the chart disagree with the table by a few points (different
+            # baseline indexing), which read as a bug.
+            if not payload.get("rs_rating"):
+                payload["rs_rating"] = int(round(rs_line[-1].value))
+            if not payload.get("rs_rating_1d_ago"):
+                payload["rs_rating_1d_ago"] = self._rs_rating_from_points(rs_line, 1)
+            if not payload.get("rs_rating_1w_ago"):
+                payload["rs_rating_1w_ago"] = self._rs_rating_from_points(rs_line, 7)
+            if not payload.get("rs_rating_1m_ago"):
+                payload["rs_rating_1m_ago"] = self._rs_rating_from_points(rs_line, 30)
         return StockOverview.model_validate(payload)
 
     async def _build_rs_line(

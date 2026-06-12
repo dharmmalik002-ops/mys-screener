@@ -10,7 +10,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
-import { Plus, Trash2 } from "lucide-react";
+import { LayoutGrid, Plus, Trash2 } from "lucide-react";
 
 import {
   getChartGridSeries,
@@ -923,11 +923,13 @@ export function WatchlistsPanel({
               ) : null}
               <button
                 type="button"
-                className="st-btn"
+                className="st-btn wl-grid-btn"
                 onClick={() => setGridOpen(true)}
                 disabled={activeItems.length === 0}
+                title="See every stock in this watchlist as side-by-side charts"
               >
-                Open Grid
+                <LayoutGrid size={14} />
+                Grid View
               </button>
               <button
                 type="button"

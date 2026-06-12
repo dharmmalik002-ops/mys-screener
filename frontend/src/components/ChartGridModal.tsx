@@ -116,10 +116,6 @@ function safePoints(points: ChartLinePoint[]) {
   ];
 }
 
-function barsToPoints(bars: ChartBar[]) {
-  return bars.map((bar) => ({ time: bar.time, value: bar.close }));
-}
-
 function chartWindowBars(timeframe: ChartGridTimeframe) {
   return {
     "3M": 78,
@@ -226,34 +222,212 @@ function useMeasuredSize() {
   return { ref, size };
 }
 
-// All three renderers draw in MEASURED PIXEL coordinates (1:1 viewBox) the way
-// TradingView does, instead of a 100x40 box stretched to the card. Stretching
-// is what made grid candles/bars unreadable: geometry computed in fake units
-// gets smeared by the non-uniform scale.
+// All renderers draw in MEASURED PIXEL coordinates (1:1 viewBox) the way
+// TradingView does — geometry is never stretched. Right side reserves a price
+// scale; the bottom rows carry month/date labels INSIDE the chart. No grid
+// lines, per the owner's "keep it clean" instruction.
 const CHART_PAD_TOP = 8;
-const CHART_PAD_BOTTOM = 8;
-const CHART_PAD_X = 4;
+const CHART_PAD_BOTTOM = 18;
+const CHART_PAD_LEFT = 4;
+const CHART_PAD_RIGHT = 56;
+
+type OverlayLine = { key: string; color: string; values: Array<number | null> };
+
+// Moving-average overlays (same set the main chart uses).
+const MA_OVERLAYS: Array<{ key: string; label: string; color: string; kind: "ema" | "sma"; length: number }> = [
+  { key: "e10", label: "10 EMA", color: "#f7b955", kind: "ema", length: 10 },
+  { key: "e21", label: "21 EMA", color: "#ff7a59", kind: "ema", length: 21 },
+  { key: "s50", label: "50 SMA", color: "#00d2ff", kind: "sma", length: 50 },
+  { key: "s200", label: "200 SMA", color: "#c792ea", kind: "sma", length: 200 },
+];
+
+function smaOverlay(values: number[], window: number): Array<number | null> {
+  const out: Array<number | null> = new Array(values.length).fill(null);
+  let sum = 0;
+  for (let i = 0; i < values.length; i += 1) {
+    sum += values[i];
+    if (i >= window) {
+      sum -= values[i - window];
+    }
+    if (i >= window - 1) {
+      out[i] = sum / window;
+    }
+  }
+  return out;
+}
+
+function emaOverlay(values: number[], span: number): Array<number | null> {
+  const out: Array<number | null> = new Array(values.length).fill(null);
+  if (values.length < span) {
+    return out;
+  }
+  let seed = 0;
+  for (let i = 0; i < span; i += 1) {
+    seed += values[i];
+  }
+  let ema = seed / span;
+  out[span - 1] = ema;
+  const k = 2 / (span + 1);
+  for (let i = span; i < values.length; i += 1) {
+    ema = values[i] * k + ema * (1 - k);
+    out[i] = ema;
+  }
+  return out;
+}
+
+function computeMaOverlays(bars: ChartBar[]): OverlayLine[] {
+  const closes = bars.map((bar) => bar.close);
+  return MA_OVERLAYS.map((config) => ({
+    key: config.key,
+    color: config.color,
+    values: config.kind === "ema" ? emaOverlay(closes, config.length) : smaOverlay(closes, config.length),
+  }));
+}
 
 function chartScales(w: number, h: number, n: number, min: number, max: number) {
-  const innerW = Math.max(w - CHART_PAD_X * 2, 1);
+  const innerW = Math.max(w - CHART_PAD_LEFT - CHART_PAD_RIGHT, 1);
   const innerH = Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM, 1);
   const spread = Math.max(max - min, 1e-6);
   const slot = innerW / Math.max(n, 1);
-  const x = (index: number) => CHART_PAD_X + index * slot + slot / 2;
+  const x = (index: number) => CHART_PAD_LEFT + index * slot + slot / 2;
   const y = (value: number) => CHART_PAD_TOP + (1 - (value - min) / spread) * innerH;
-  return { slot, x, y };
+  return { slot, x, y, innerW, innerH };
 }
 
-function GridLines({ w, h }: { w: number; h: number }) {
-  // Three faint horizontal guides, TradingView-style.
-  const ys = [0.25, 0.5, 0.75].map((f) => CHART_PAD_TOP + f * Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM, 1));
+function formatScalePrice(value: number): string {
+  if (value >= 10_000) {
+    return value.toLocaleString("en-IN", { maximumFractionDigits: 0 });
+  }
+  if (value >= 1_000) {
+    return value.toFixed(0);
+  }
+  if (value >= 100) {
+    return value.toFixed(1);
+  }
+  return value.toFixed(2);
+}
+
+function priceTicks(min: number, max: number, count = 4): number[] {
+  const spread = Math.max(max - min, 1e-6);
+  const rawStep = spread / (count + 1);
+  const magnitude = 10 ** Math.floor(Math.log10(rawStep));
+  const residual = rawStep / magnitude;
+  const niceStep = (residual >= 5 ? 5 : residual >= 2 ? 2 : 1) * magnitude;
+  const ticks: number[] = [];
+  for (let tick = Math.ceil(min / niceStep) * niceStep; tick <= max; tick += niceStep) {
+    ticks.push(tick);
+  }
+  return ticks.slice(0, count + 2);
+}
+
+function PriceScale({ w, h, min, max }: { w: number; h: number; min: number; max: number }) {
+  const { y } = chartScales(w, h, 1, min, max);
   return (
-    <g className="chart-grid-guides" aria-hidden>
-      {ys.map((gy) => (
-        <line key={gy} x1={0} y1={gy} x2={w} y2={gy} />
+    <g className="chart-grid-price-scale" aria-hidden>
+      {priceTicks(min, max).map((tick) => (
+        <text key={tick} x={w - CHART_PAD_RIGHT + 8} y={y(tick) + 3}>
+          {formatScalePrice(tick)}
+        </text>
       ))}
     </g>
   );
+}
+
+function MonthAxis({ bars, w, h, min, max }: { bars: ChartBar[]; w: number; h: number; min: number; max: number }) {
+  const { x } = chartScales(w, h, bars.length, min, max);
+  const labels: Array<{ x: number; text: string }> = [];
+  let previousMonth = -1;
+  let previousYear = -1;
+  const spanDays = bars.length > 1 ? (bars[bars.length - 1].time - bars[0].time) / 86_400 : 0;
+  bars.forEach((bar, index) => {
+    const dateValue = new Date(bar.time * 1000);
+    if (Number.isNaN(dateValue.getTime())) {
+      return;
+    }
+    const month = dateValue.getMonth();
+    const year = dateValue.getFullYear();
+    if (index === 0 || month !== previousMonth) {
+      const showYear = spanDays > 360 && (month === 0 || index === 0);
+      labels.push({
+        x: x(index),
+        text: showYear
+          ? dateValue.toLocaleDateString(undefined, { month: "short", year: "2-digit" })
+          : dateValue.toLocaleDateString(undefined, { month: "short" }),
+      });
+      previousMonth = month;
+      previousYear = year;
+    }
+  });
+  void previousYear;
+  // Thin the labels if they would collide (~34px per label).
+  const minGap = 34;
+  const spaced: Array<{ x: number; text: string }> = [];
+  labels.forEach((label) => {
+    if (!spaced.length || label.x - spaced[spaced.length - 1].x >= minGap) {
+      spaced.push(label);
+    }
+  });
+  return (
+    <g className="chart-grid-month-axis" aria-hidden>
+      {spaced.map((label) => (
+        <text key={`${label.x}:${label.text}`} x={label.x} y={h - 4}>
+          {label.text}
+        </text>
+      ))}
+    </g>
+  );
+}
+
+function OverlayPaths({
+  overlays,
+  w,
+  h,
+  min,
+  max,
+  count,
+}: {
+  overlays: OverlayLine[];
+  w: number;
+  h: number;
+  min: number;
+  max: number;
+  count: number;
+}) {
+  const { x, y } = chartScales(w, h, count, min, max);
+  return (
+    <g className="chart-grid-ma" aria-hidden>
+      {overlays.map((overlay) => {
+        let path = "";
+        let pen = false;
+        overlay.values.forEach((value, index) => {
+          if (value === null || !Number.isFinite(value)) {
+            pen = false;
+            return;
+          }
+          path += `${pen ? "L" : "M"}${x(index).toFixed(1)},${y(value).toFixed(1)}`;
+          pen = true;
+        });
+        if (!path) {
+          return null;
+        }
+        return <path key={overlay.key} d={path} fill="none" stroke={overlay.color} strokeWidth={1.3} />;
+      })}
+    </g>
+  );
+}
+
+function overlayBounds(overlays: OverlayLine[]): [number, number] | null {
+  let min = Number.POSITIVE_INFINITY;
+  let max = Number.NEGATIVE_INFINITY;
+  overlays.forEach((overlay) => {
+    overlay.values.forEach((value) => {
+      if (value !== null && Number.isFinite(value)) {
+        min = Math.min(min, value);
+        max = Math.max(max, value);
+      }
+    });
+  });
+  return Number.isFinite(min) && Number.isFinite(max) ? [min, max] : null;
 }
 
 function Sparkline({ points }: { points: ChartLinePoint[] }) {
@@ -264,122 +438,207 @@ function Sparkline({ points }: { points: ChartLinePoint[] }) {
 
   let line = "";
   let area = "";
+  let bounds: [number, number] | null = null;
   if (w > 10 && h > 10 && normalized.length > 1) {
     const values = normalized.map((point) => point.value);
     const min = Math.min(...values);
     const max = Math.max(...values);
-    const { y } = chartScales(w, h, normalized.length, min, max);
-    const innerW = w - CHART_PAD_X * 2;
+    bounds = [min, max];
+    const { y, innerW } = chartScales(w, h, normalized.length, min, max);
     const coords = normalized.map((point, index) => {
-      const px = CHART_PAD_X + (index / (normalized.length - 1)) * innerW;
+      const px = CHART_PAD_LEFT + (index / (normalized.length - 1)) * innerW;
       return `${px.toFixed(1)},${y(point.value).toFixed(1)}`;
     });
     line = coords.join(" ");
-    area = `${CHART_PAD_X},${h - CHART_PAD_BOTTOM} ${line} ${w - CHART_PAD_X},${h - CHART_PAD_BOTTOM}`;
+    area = `${CHART_PAD_LEFT},${h - CHART_PAD_BOTTOM} ${line} ${w - CHART_PAD_RIGHT},${h - CHART_PAD_BOTTOM}`;
   }
 
   return (
     <div ref={ref} className="chart-grid-canvas">
-      {line ? (
+      {line && bounds ? (
         <svg className={`chart-grid-sparkline ${tone}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-          <GridLines w={w} h={h} />
           <polygon className="chart-grid-sparkline-area" points={area} />
           <polyline className="chart-grid-sparkline-line" points={line} />
+          <PriceScale w={w} h={h} min={bounds[0]} max={bounds[1]} />
         </svg>
       ) : null}
     </div>
   );
 }
 
-function CandlePreview({ bars }: { bars: ChartBar[] }) {
-  const { ref, size } = useMeasuredSize();
-  const { w, h } = size;
-  const ready = w > 10 && h > 10 && bars.length > 1;
-  let body: ReactNode[] = [];
-  if (ready) {
-    const values = bars.flatMap((bar) => [bar.low, bar.high]);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
-    const bodyWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
-    body = bars.map((bar, index) => {
-      const cx = x(index);
-      const openY = y(bar.open);
-      const closeY = y(bar.close);
-      const top = Math.min(openY, closeY);
-      const height = Math.max(Math.abs(closeY - openY), 1);
-      const tone = bar.close >= bar.open ? "positive" : "negative";
-      return (
-        <g key={`${bar.time}:${index}`} className={`chart-grid-candle ${tone}`}>
-          <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
-          <rect x={cx - bodyWidth / 2} y={top} width={bodyWidth} height={height} rx={bodyWidth > 4 ? 0.8 : 0} />
-        </g>
-      );
-    });
-  }
-  return (
-    <div ref={ref} className="chart-grid-canvas">
-      {ready ? (
-        <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-          <GridLines w={w} h={h} />
-          {body}
-        </svg>
-      ) : null}
-    </div>
-  );
-}
-
-function BarPreview({ bars }: { bars: ChartBar[] }) {
-  const { ref, size } = useMeasuredSize();
-  const { w, h } = size;
-  const ready = w > 10 && h > 10 && bars.length > 1;
-  let body: ReactNode[] = [];
-  if (ready) {
-    const values = bars.flatMap((bar) => [bar.low, bar.high]);
-    const min = Math.min(...values);
-    const max = Math.max(...values);
-    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
-    const tick = Math.min(Math.max(slot * 0.36, 2), 9);
-    body = bars.map((bar, index) => {
-      const cx = x(index);
-      const tone = bar.close >= bar.open ? "positive" : "negative";
-      return (
-        <g key={`${bar.time}:${index}`} className={`chart-grid-bar ${tone}`}>
-          <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
-          <line x1={cx - tick} y1={y(bar.open)} x2={cx} y2={y(bar.open)} />
-          <line x1={cx} y1={y(bar.close)} x2={cx + tick} y2={y(bar.close)} />
-        </g>
-      );
-    });
-  }
-  return (
-    <div ref={ref} className="chart-grid-canvas">
-      {ready ? (
-        <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
-          <GridLines w={w} h={h} />
-          {body}
-        </svg>
-      ) : null}
-    </div>
-  );
-}
-
-function MiniChart({
-  points,
+function OhlcChart({
   bars,
   chartStyle,
+  overlays,
 }: {
-  points: ChartLinePoint[];
   bars: ChartBar[];
   chartStyle: ChartGridChartStyle;
+  overlays: OverlayLine[];
 }) {
-  if (chartStyle === "candles" && bars.length > 1) {
-    return <CandlePreview bars={bars} />;
+  const { ref, size } = useMeasuredSize();
+  const { w, h } = size;
+  const ready = w > 10 && h > 10 && bars.length > 1;
+  let body: ReactNode[] = [];
+  let min = 0;
+  let max = 1;
+  if (ready) {
+    const values = bars.flatMap((bar) => [bar.low, bar.high]);
+    min = Math.min(...values);
+    max = Math.max(...values);
+    const maBounds = overlayBounds(overlays);
+    if (maBounds) {
+      min = Math.min(min, maBounds[0]);
+      max = Math.max(max, maBounds[1]);
+    }
+    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
+    if (chartStyle === "candles") {
+      const bodyWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
+      body = bars.map((bar, index) => {
+        const cx = x(index);
+        const openY = y(bar.open);
+        const closeY = y(bar.close);
+        const top = Math.min(openY, closeY);
+        const height = Math.max(Math.abs(closeY - openY), 1);
+        const tone = bar.close >= bar.open ? "positive" : "negative";
+        return (
+          <g key={`${bar.time}:${index}`} className={`chart-grid-candle ${tone}`}>
+            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
+            <rect x={cx - bodyWidth / 2} y={top} width={bodyWidth} height={height} rx={bodyWidth > 4 ? 0.8 : 0} />
+          </g>
+        );
+      });
+    } else {
+      const tick = Math.min(Math.max(slot * 0.36, 2), 9);
+      body = bars.map((bar, index) => {
+        const cx = x(index);
+        const tone = bar.close >= bar.open ? "positive" : "negative";
+        return (
+          <g key={`${bar.time}:${index}`} className={`chart-grid-bar ${tone}`}>
+            <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
+            <line x1={cx - tick} y1={y(bar.open)} x2={cx} y2={y(bar.open)} />
+            <line x1={cx} y1={y(bar.close)} x2={cx + tick} y2={y(bar.close)} />
+          </g>
+        );
+      });
+    }
   }
-  if (chartStyle === "bars" && bars.length > 1) {
-    return <BarPreview bars={bars} />;
-  }
-  return <Sparkline points={points} />;
+  return (
+    <div ref={ref} className="chart-grid-canvas">
+      {ready ? (
+        <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          {body}
+          <OverlayPaths overlays={overlays} w={w} h={h} min={min} max={max} count={bars.length} />
+          <PriceScale w={w} h={h} min={min} max={max} />
+          <MonthAxis bars={bars} w={w} h={h} min={min} max={max} />
+        </svg>
+      ) : null}
+    </div>
+  );
+}
+
+function GridCard({
+  card,
+  fullBars,
+  chartStyle,
+  displayMode,
+  timeframe,
+  zoomFactor,
+  globalPosition,
+}: {
+  card: ChartGridDisplayCard;
+  fullBars: ChartBar[];
+  chartStyle: ChartGridChartStyle;
+  displayMode: ChartGridDisplayMode;
+  timeframe: ChartGridTimeframe;
+  zoomFactor: number;
+  globalPosition: number;
+}) {
+  // Per-card lookback: the slider under each chart pans this card's window
+  // through the loaded ~2y of daily history. Until touched it follows the
+  // toolbar's master Date slider.
+  const [localPosition, setLocalPosition] = useState<number | null>(null);
+  const position = localPosition ?? globalPosition;
+
+  const overlaysFull = useMemo(() => (fullBars.length > 1 ? computeMaOverlays(fullBars) : []), [fullBars]);
+
+  const hasBars = fullBars.length > 1;
+  const windowSize = Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor));
+  const maxOffset = Math.max(fullBars.length - windowSize, 0);
+  const offset = Math.round((Math.max(0, Math.min(position, 100)) / 100) * maxOffset);
+  const bars = hasBars ? fullBars.slice(offset, offset + windowSize) : [];
+  const overlays = hasBars
+    ? overlaysFull.map((overlay) => ({ ...overlay, values: overlay.values.slice(offset, offset + windowSize) }))
+    : [];
+  const scopedPoints = hasBars
+    ? []
+    : visibleWindow(
+        safePoints(card.points),
+        Math.max(12, Math.round(chartWindowPoints(timeframe) * zoomFactor)),
+        position,
+      );
+  const labels = hasBars ? [] : axisLabels(scopedPoints);
+  const metaLabel = card.rsRating !== null ? `RS ${card.rsRating}` : formatMarketCap(card.marketCapCrore);
+
+  return (
+    <div className={`chart-grid-card ${displayMode}`}>
+      <button
+        type="button"
+        className={card.onClick ? "chart-grid-card-hit clickable" : "chart-grid-card-hit"}
+        onClick={card.onClick}
+        disabled={!card.onClick}
+      >
+        <div className="chart-grid-card-head">
+          <div>
+            <small className="chart-grid-card-context">{card.entityLabel}</small>
+            <strong>{card.title}</strong>
+            <small>{card.subtitle}</small>
+          </div>
+          <div className="chart-grid-card-badges">
+            {card.secondaryBadge ? (
+              <span className={badgeClassName(card.secondaryBadge.tone)}>{card.secondaryBadge.label}</span>
+            ) : null}
+            <span className={badgeClassName(card.primaryBadge.tone)}>{card.primaryBadge.label}</span>
+          </div>
+        </div>
+
+        <div className={`chart-grid-card-chart ${displayMode}`}>
+          {hasBars ? (
+            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} />
+          ) : (
+            <Sparkline points={scopedPoints} />
+          )}
+        </div>
+      </button>
+
+      {hasBars ? (
+        <input
+          type="range"
+          className="chart-grid-card-slider"
+          min={0}
+          max={100}
+          step={1}
+          value={position}
+          onChange={(event) => setLocalPosition(Number(event.target.value))}
+          title="Look back through the last ~2 years"
+          aria-label={`Scroll ${card.title} history`}
+        />
+      ) : (
+        <div className="chart-grid-card-axis">
+          {labels.map((label, index) => (
+            <span key={`${card.id}:axis:${index}`}>{label}</span>
+          ))}
+        </div>
+      )}
+
+      <div className="chart-grid-card-foot">
+        <div>
+          <small>{card.footerLabel ?? "Latest"}</small>
+          <strong>{card.footerValue}</strong>
+        </div>
+        {metaLabel ? <span className="chart-grid-meta-chip">{metaLabel}</span> : null}
+      </div>
+    </div>
+  );
 }
 
 export function ChartGridModal({
@@ -488,13 +747,15 @@ export function ChartGridModal({
     const visibleSymbols = visibleCards
       .map((card) => card.symbol)
       .filter((symbol): symbol is string => Boolean(symbol));
-    const missingSymbols = visibleSymbols.filter((symbol) => !seriesStore[`${timeframe}:${symbol}`]);
+    const missingSymbols = visibleSymbols.filter((symbol) => !seriesStore[`2Y:${symbol}`]);
     if (!missingSymbols.length) {
       return;
     }
 
     let active = true;
-    void onLoadSeries(missingSymbols, timeframe)
+    // Always fetch the full ~2y daily series; the timeframe pills and the
+    // per-card sliders slice it client-side (also powers the 200 SMA).
+    void onLoadSeries(missingSymbols, "2Y")
       .then((loaded) => {
         if (!active) {
           return;
@@ -502,7 +763,7 @@ export function ChartGridModal({
         setSeriesStore((current) => {
           const next = { ...current };
           Object.entries(loaded).forEach(([symbol, bars]) => {
-            next[`${timeframe}:${symbol}`] = bars;
+            next[`2Y:${symbol}`] = bars;
           });
           return next;
         });
@@ -641,6 +902,15 @@ export function ChartGridModal({
                 </div>
               </div>
 
+              <div className="chart-grid-ma-legend" aria-hidden>
+                {MA_OVERLAYS.map((config) => (
+                  <span key={`legend-${config.key}`}>
+                    <i style={{ background: config.color }} />
+                    {config.label}
+                  </span>
+                ))}
+              </div>
+
               <div className="sector-sort-pills chart-grid-timeframes">
                 {GRID_TIMEFRAMES.map((option) => (
                   <button
@@ -684,65 +954,18 @@ export function ChartGridModal({
           {loading ? <div className="empty-state">Loading charts...</div> : null}
           {!loading && visibleCards.length === 0 ? <div className="empty-state">No charts are available for this selection yet.</div> : null}
           {!loading
-            ? visibleCards.map((card) => {
-                const bars = card.symbol ? (seriesStore[`${timeframe}:${card.symbol}`] ?? []) : [];
-                const scopedBars = visibleWindow(
-                  bars,
-                  Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor)),
-                  rangePosition,
-                );
-                const scopedPoints = bars.length > 1
-                  ? barsToPoints(scopedBars)
-                  : visibleWindow(
-                      safePoints(card.points),
-                      Math.max(12, Math.round(chartWindowPoints(timeframe) * zoomFactor)),
-                      rangePosition,
-                    );
-                const labels = axisLabels(scopedPoints);
-                const metaLabel = card.rsRating !== null ? `RS ${card.rsRating}` : formatMarketCap(card.marketCapCrore);
-
-                return (
-                  <button
-                    key={card.id}
-                    type="button"
-                    className={card.onClick ? `chart-grid-card ${displayMode} clickable` : `chart-grid-card ${displayMode}`}
-                    onClick={card.onClick}
-                    disabled={!card.onClick}
-                  >
-                    <div className="chart-grid-card-head">
-                      <div>
-                        <small className="chart-grid-card-context">{card.entityLabel}</small>
-                        <strong>{card.title}</strong>
-                        <small>{card.subtitle}</small>
-                      </div>
-                      <div className="chart-grid-card-badges">
-                        {card.secondaryBadge ? (
-                          <span className={badgeClassName(card.secondaryBadge.tone)}>{card.secondaryBadge.label}</span>
-                        ) : null}
-                        <span className={badgeClassName(card.primaryBadge.tone)}>{card.primaryBadge.label}</span>
-                      </div>
-                    </div>
-
-                    <div className={`chart-grid-card-chart ${displayMode}`}>
-                      <MiniChart points={scopedPoints} bars={scopedBars} chartStyle={chartStyle} />
-                    </div>
-
-                    <div className="chart-grid-card-axis">
-                      {labels.map((label, index) => (
-                        <span key={`${card.id}:axis:${index}`}>{label}</span>
-                      ))}
-                    </div>
-
-                    <div className="chart-grid-card-foot">
-                      <div>
-                        <small>{card.footerLabel ?? "Latest"}</small>
-                        <strong>{card.footerValue}</strong>
-                      </div>
-                      {metaLabel ? <span className="chart-grid-meta-chip">{metaLabel}</span> : null}
-                    </div>
-                  </button>
-                );
-              })
+            ? visibleCards.map((card) => (
+                <GridCard
+                  key={card.id}
+                  card={card}
+                  fullBars={card.symbol ? (seriesStore[`2Y:${card.symbol}`] ?? []) : []}
+                  chartStyle={chartStyle}
+                  displayMode={displayMode}
+                  timeframe={timeframe}
+                  zoomFactor={zoomFactor}
+                  globalPosition={rangePosition}
+                />
+              ))
             : null}
         </div>
       </div>
