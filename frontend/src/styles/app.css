@@ -3031,10 +3031,35 @@ button {
   letter-spacing: 0.04em;
 }
 
-.chart-grid-ma-legend span {
+.chart-grid-ma-legend span,
+.chart-grid-ma-toggle {
   display: inline-flex;
   align-items: center;
   gap: 5px;
+}
+
+/* MA visibility toggles — click a legend chip to hide/show that average. */
+.chart-grid-ma-toggle {
+  padding: 3px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.08);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.chart-grid-ma-toggle:hover {
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.chart-grid-ma-toggle.is-off {
+  opacity: 0.38;
+}
+
+.chart-grid-ma-toggle.is-off i {
+  background: rgba(148, 163, 184, 0.5) !important;
 }
 
 .chart-grid-ma-legend i {

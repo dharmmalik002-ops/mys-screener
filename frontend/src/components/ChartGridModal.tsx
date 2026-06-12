@@ -235,10 +235,10 @@ type OverlayLine = { key: string; color: string; values: Array<number | null> };
 
 // Moving-average overlays (same set the main chart uses).
 const MA_OVERLAYS: Array<{ key: string; label: string; color: string; kind: "ema" | "sma"; length: number }> = [
-  { key: "e10", label: "10 EMA", color: "#f7b955", kind: "ema", length: 10 },
-  { key: "e21", label: "21 EMA", color: "#ff7a59", kind: "ema", length: 21 },
-  { key: "s50", label: "50 SMA", color: "#00d2ff", kind: "sma", length: 50 },
-  { key: "s200", label: "200 SMA", color: "#c792ea", kind: "sma", length: 200 },
+  { key: "e10", label: "10 EMA", color: "#ef4444", kind: "ema", length: 10 },
+  { key: "e21", label: "21 EMA", color: "#22c55e", kind: "ema", length: 21 },
+  { key: "s50", label: "50 SMA", color: "#3b82f6", kind: "sma", length: 50 },
+  { key: "s200", label: "200 SMA", color: "#f4f6fb", kind: "sma", length: 200 },
 ];
 
 function smaOverlay(values: number[], window: number): Array<number | null> {
@@ -544,6 +544,7 @@ function GridCard({
   timeframe,
   zoomFactor,
   globalPosition,
+  hiddenMas,
 }: {
   card: ChartGridDisplayCard;
   fullBars: ChartBar[];
@@ -552,30 +553,32 @@ function GridCard({
   timeframe: ChartGridTimeframe;
   zoomFactor: number;
   globalPosition: number;
+  hiddenMas: ReadonlySet<string>;
 }) {
-  // Per-card lookback: the slider under each chart pans this card's window
-  // through the loaded ~2y of daily history. Until touched it follows the
-  // toolbar's master Date slider.
+  // Per-card lookback: the slider EXPANDS the time horizon. The right edge is
+  // always pinned to today — at the default (100) the chart shows the selected
+  // timeframe's window ending today; dragging LEFT stretches the window back
+  // through the loaded ~2y of history while today's bar stays in view. Until
+  // touched the card follows the toolbar's master Lookback slider.
   const [localPosition, setLocalPosition] = useState<number | null>(null);
   const position = localPosition ?? globalPosition;
 
   const overlaysFull = useMemo(() => (fullBars.length > 1 ? computeMaOverlays(fullBars) : []), [fullBars]);
 
   const hasBars = fullBars.length > 1;
-  const windowSize = Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor));
-  const maxOffset = Math.max(fullBars.length - windowSize, 0);
-  const offset = Math.round((Math.max(0, Math.min(position, 100)) / 100) * maxOffset);
-  const bars = hasBars ? fullBars.slice(offset, offset + windowSize) : [];
+  const baseWindow = Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor));
+  const stretch = (100 - Math.max(0, Math.min(position, 100))) / 100; // 0 = base window, 1 = everything
+  const windowSize = Math.round(baseWindow + stretch * Math.max(fullBars.length - baseWindow, 0));
+  const bars = hasBars ? fullBars.slice(-windowSize) : [];
   const overlays = hasBars
-    ? overlaysFull.map((overlay) => ({ ...overlay, values: overlay.values.slice(offset, offset + windowSize) }))
+    ? overlaysFull
+        .filter((overlay) => !hiddenMas.has(overlay.key))
+        .map((overlay) => ({ ...overlay, values: overlay.values.slice(-windowSize) }))
     : [];
-  const scopedPoints = hasBars
-    ? []
-    : visibleWindow(
-        safePoints(card.points),
-        Math.max(12, Math.round(chartWindowPoints(timeframe) * zoomFactor)),
-        position,
-      );
+  const basePointsWindow = Math.max(12, Math.round(chartWindowPoints(timeframe) * zoomFactor));
+  const allPoints = safePoints(card.points);
+  const pointsWindow = Math.round(basePointsWindow + stretch * Math.max(allPoints.length - basePointsWindow, 0));
+  const scopedPoints = hasBars ? [] : allPoints.slice(-pointsWindow);
   const labels = hasBars ? [] : axisLabels(scopedPoints);
   const metaLabel = card.rsRating !== null ? `RS ${card.rsRating}` : formatMarketCap(card.marketCapCrore);
 
@@ -619,8 +622,8 @@ function GridCard({
           step={1}
           value={position}
           onChange={(event) => setLocalPosition(Number(event.target.value))}
-          title="Look back through the last ~2 years"
-          aria-label={`Scroll ${card.title} history`}
+          title="Drag left to extend the lookback — today\u2019s bar always stays in view"
+          aria-label={`Extend ${card.title} lookback`}
         />
       ) : (
         <div className="chart-grid-card-axis">
@@ -669,6 +672,7 @@ export function ChartGridModal({
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
   const [cleanMode, setCleanMode] = useState(false);
+  const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
   const hasMarketCapData = useMemo(() => cards.some((card) => card.marketCapCrore !== null), [cards]);
@@ -867,7 +871,7 @@ export function ChartGridModal({
               </label>
 
               <label className="chart-grid-range">
-                <span>Date</span>
+                <span>Lookback</span>
                 <input
                   type="range"
                   min={0}
@@ -876,7 +880,7 @@ export function ChartGridModal({
                   value={rangePosition}
                   onChange={(event) => setRangePosition(Number(event.target.value))}
                 />
-                <small>Earlier to latest</small>
+                <small>Drag left for more history</small>
               </label>
 
               <div className="chart-grid-zoom">
@@ -902,13 +906,32 @@ export function ChartGridModal({
                 </div>
               </div>
 
-              <div className="chart-grid-ma-legend" aria-hidden>
-                {MA_OVERLAYS.map((config) => (
-                  <span key={`legend-${config.key}`}>
-                    <i style={{ background: config.color }} />
-                    {config.label}
-                  </span>
-                ))}
+              <div className="chart-grid-ma-legend">
+                {MA_OVERLAYS.map((config) => {
+                  const hidden = hiddenMas.has(config.key);
+                  return (
+                    <button
+                      key={`legend-${config.key}`}
+                      type="button"
+                      className={hidden ? "chart-grid-ma-toggle is-off" : "chart-grid-ma-toggle"}
+                      onClick={() =>
+                        setHiddenMas((current) => {
+                          const next = new Set(current);
+                          if (next.has(config.key)) {
+                            next.delete(config.key);
+                          } else {
+                            next.add(config.key);
+                          }
+                          return next;
+                        })
+                      }
+                      title={hidden ? `Show ${config.label}` : `Hide ${config.label}`}
+                    >
+                      <i style={{ background: config.color }} />
+                      {config.label}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="sector-sort-pills chart-grid-timeframes">
@@ -964,6 +987,7 @@ export function ChartGridModal({
                   timeframe={timeframe}
                   zoomFactor={zoomFactor}
                   globalPosition={rangePosition}
+                  hiddenMas={hiddenMas}
                 />
               ))
             : null}
