@@ -11,10 +11,13 @@ import {
   BarChart3,
   Layers,
   Trash2,
+  Trophy,
   Zap,
 } from "lucide-react";
 
-import type { MarketKey } from "../lib/api";
+import { useEffect, useState } from "react";
+
+import { getScannerScorecard, type MarketKey, type ScannerScorecardRow } from "../lib/api";
 import { Panel } from "./Panel";
 
 import "./ScreenerSidebar.css";
@@ -76,6 +79,63 @@ const ITEMS: SidebarItem[] = [
   { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
+
+function ScannerScorecard({ market }: { market: MarketKey }) {
+  const [rows, setRows] = useState<ScannerScorecardRow[] | null>(null);
+  const [open, setOpen] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    getScannerScorecard(market)
+      .then((response) => {
+        if (active) setRows(response.rows.filter((row) => row.hits > 0));
+      })
+      .catch(() => {
+        if (active) setRows([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [market]);
+
+  if (rows === null || rows.length === 0) {
+    // No forward history yet (it accumulates daily) — keep the rail clean.
+    return null;
+  }
+
+  return (
+    <div className="ss-scorecard">
+      <button type="button" className="ss-section-label ss-scorecard-head" onClick={() => setOpen((v) => !v)}>
+        <Trophy size={13} />
+        <span>Scanner Scorecard</span>
+        <small>{open ? "hide" : "show"}</small>
+      </button>
+      {open ? (
+        <div className="ss-scorecard-rows">
+          {rows.map((row) => (
+            <div
+              key={row.scan_id}
+              className="ss-scorecard-row"
+              title={
+                `${row.hits} picks across ${row.sessions} sessions.` +
+                (row.best_symbol ? ` Best: ${row.best_symbol} ${row.best_return_pct}%.` : "") +
+                (row.worst_symbol ? ` Worst: ${row.worst_symbol} ${row.worst_return_pct}%.` : "")
+              }
+            >
+              <span className="ss-scorecard-name">{row.scan_name}</span>
+              <span className={`ss-scorecard-ret${(row.avg_forward_return_pct ?? 0) >= 0 ? " pos" : " neg"}`}>
+                {(row.avg_forward_return_pct ?? 0) >= 0 ? "+" : ""}
+                {row.avg_forward_return_pct?.toFixed(1)}%
+              </span>
+              <span className="ss-scorecard-win">{row.win_rate_pct?.toFixed(0)}% win</span>
+            </div>
+          ))}
+          <small className="ss-scorecard-foot">Avg return of past picks since their scan day.</small>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function ScreenerSidebar({
   market: _market,
@@ -178,6 +238,7 @@ export function ScreenerSidebar({
           )}
         </nav>
 
+        <ScannerScorecard market={_market} />
       </div>
     </Panel>
   );

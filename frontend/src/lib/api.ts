@@ -41,6 +41,8 @@ export type ScanMatch = {
   pattern?: string | null;
   volume_push_date?: string | null;
   session_date?: string | null;
+  new_since_prev?: boolean | null;
+  also_in?: string[];
   rs_rating?: number | null;
   rs_rating_1m_ago?: number | null;
   nifty_outperformance?: number | null;
@@ -1104,6 +1106,8 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     pattern: readNullableString(raw.pattern),
     volume_push_date: readNullableString(raw.volume_push_date),
     session_date: readNullableString(raw.session_date),
+    new_since_prev: typeof raw.new_since_prev === "boolean" ? raw.new_since_prev : null,
+    also_in: Array.isArray(raw.also_in) ? raw.also_in.filter((v): v is string => typeof v === "string") : [],
     rs_rating: readNullableNumber(raw.rs_rating),
     rs_rating_1m_ago: readNullableNumber(raw.rs_rating_1m_ago),
     nifty_outperformance: readNullableNumber(raw.nifty_outperformance),
@@ -2156,6 +2160,27 @@ function withScanOptions(path: string, market: MarketKey, options?: ScanRequestO
   }
   const separator = path.includes("?") ? "&" : "?";
   return `${path}${separator}${query}`;
+}
+
+export type ScannerScorecardRow = {
+  scan_id: string;
+  scan_name: string;
+  sessions: number;
+  hits: number;
+  avg_forward_return_pct: number | null;
+  win_rate_pct: number | null;
+  best_symbol: string | null;
+  best_return_pct: number | null;
+  worst_symbol: string | null;
+  worst_return_pct: number | null;
+};
+
+export type ScannerScorecardResponse = {
+  rows: ScannerScorecardRow[];
+};
+
+export function getScannerScorecard(market: MarketKey): Promise<ScannerScorecardResponse> {
+  return request<ScannerScorecardResponse>(withMarket("/api/scanner-scorecard", market));
 }
 
 export function getScanResults(scanId: string, market: MarketKey, options?: ScanRequestOptions) {

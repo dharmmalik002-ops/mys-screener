@@ -427,3 +427,25 @@
 .theme-dark .st-card .scan-row.st-row:hover {
   background: rgba(99, 102, 241, 0.1);
 }
+
+
+/* ----- Confluence + NEW chips ----- */
+.st-new-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  color: var(--accent);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 14px;
+  vertical-align: middle;
+}
+
+.st-confluence {
+  color: var(--st-primary, var(--accent));
+  font-weight: 600;
+}

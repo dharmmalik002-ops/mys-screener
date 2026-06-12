@@ -32,6 +32,8 @@ interface FIFOResult {
 export interface JournalAddRequest {
   symbol: string;
   suggestedPrice?: number;
+  suggestedStopLoss?: number;
+  setup?: string;
 }
 
 // ─── Props ──────────────────────────────────────────────────────────────────────
@@ -1096,9 +1098,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     if (!addRequest) return;
     setScreenerQty("");
     setScreenerPrice(String(addRequest.suggestedPrice || ""));
-    setScreenerSL("");
+    setScreenerSL(addRequest.suggestedStopLoss ? String(addRequest.suggestedStopLoss) : "");
     setScreenerDate(new Date().toISOString().split("T")[0]);
-    setScreenerSetup(setups[0] || DEFAULT_SETUPS[0]);
+    setScreenerSetup(
+      addRequest.setup && setups.includes(addRequest.setup)
+        ? addRequest.setup
+        : addRequest.setup || setups[0] || DEFAULT_SETUPS[0],
+    );
     setModal({ type: "add-from-screener", symbol: addRequest.symbol, suggestedPrice: addRequest.suggestedPrice });
   }, [addRequest, setups]);
 

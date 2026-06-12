@@ -499,3 +499,74 @@
 .ss-pro-cta:hover {
   background: var(--ss-primary-strong);
 }
+
+
+/* ----- Scanner scorecard ----- */
+.ss-scorecard {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ss-border);
+}
+
+.ss-scorecard-head {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  justify-content: flex-start;
+}
+
+.ss-scorecard-head small {
+  margin-left: auto;
+  color: var(--ss-muted);
+  font-size: 0.64rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.ss-scorecard-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ss-scorecard-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  background: var(--ss-surface);
+  font-size: 0.76rem;
+}
+
+.ss-scorecard-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--ss-text);
+}
+
+.ss-scorecard-ret {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.ss-scorecard-ret.pos { color: #10b981; }
+.ss-scorecard-ret.neg { color: #ef4444; }
+
+.ss-scorecard-win {
+  font-variant-numeric: tabular-nums;
+  color: var(--ss-text-soft);
+  font-size: 0.7rem;
+}
+
+.ss-scorecard-foot {
+  margin-top: 2px;
+  color: var(--ss-muted);
+  font-size: 0.66rem;
+  line-height: 1.35;
+}

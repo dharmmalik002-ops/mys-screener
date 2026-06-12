@@ -883,8 +883,21 @@ export function ScanTable({
                   {volBadge.code}
                 </span>
               ) : null}
+              {item.new_since_prev ? (
+                <span className="st-new-chip" title="Entered this scanner today (was not in the previous session's results)">
+                  NEW
+                </span>
+              ) : null}
             </strong>
-            <small>{scanRowSubtitle(item)}</small>
+            <small>
+              {scanRowSubtitle(item)}
+              {item.also_in && item.also_in.length > 0 ? (
+                <span className="st-confluence" title={`Also flagged today by: ${item.also_in.join(", ")}`}>
+                  {" · also in "}
+                  {item.also_in.join(", ")}
+                </span>
+              ) : null}
+            </small>
           </span>
         </button>
 

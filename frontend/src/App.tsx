@@ -15,6 +15,7 @@ import type { ScreenerMode } from "./components/ScreenerSidebar";
 import { DEFAULT_POSITIVE_EARNINGS_FILTERS, type PositiveEarningsFilters } from "./components/PositiveEarningsScannerPanel";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import { Panel } from "./components/Panel";
+import { CommandPalette } from "./components/CommandPalette";
 import {
   type ChartBar,
   getChart,
@@ -1581,7 +1582,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
-  const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number } | null>(null);
+  const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number; suggestedStopLoss?: number; setup?: string } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
   const [tradeReviewContext, setTradeReviewContext] = useState<{ symbol: string; exitDate: string } | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
@@ -3368,6 +3369,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setActiveSavedScannerId((current) => (current === presetId ? null : current));
   };
 
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setCommandPaletteOpen((current) => !current);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   const handleScannerModeChange = (mode: ScreenerMode) => {
     setActiveSavedScannerId(null);
     setScanLoading(true);
@@ -3930,6 +3944,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         }
       })();
     }, 160);
+  };
+
+  const handleLogPlanToJournal = (item: ScanMatch) => {
+    const plan = item.momentum_burst;
+    setJournalAddRequest({
+      symbol: item.symbol,
+      suggestedPrice: plan?.entry ?? item.last_price,
+      suggestedStopLoss: plan?.stop ?? undefined,
+      setup: plan?.tag ? `Momentum Burst — ${plan.tag}` : "Momentum Burst",
+    });
+    setActivePage("journal");
   };
 
   const handleJournalOpenSymbolChart = (symbol: string) => {
@@ -4772,6 +4797,42 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         </div>
       </header>
 
+      <CommandPalette
+        open={commandPaletteOpen}
+        onClose={() => setCommandPaletteOpen(false)}
+        symbols={universeCatalog.map((item) => ({ symbol: item.symbol, name: item.name }))}
+        groups={(groupsData?.groups ?? []).map((group) => ({ id: group.group_id, name: group.group_name, rank: group.rank }))}
+        scanners={[
+          { mode: "custom-scan", label: "Custom Scanner" },
+          { mode: "volume", label: "Volume" },
+          { mode: "ipo", label: "IPO" },
+          { mode: "gap-up-openers", label: "Gap Up Openers" },
+          { mode: "ema-expansion", label: "Expansion" },
+          { mode: "contraction", label: "Contraction" },
+          { mode: "momentum-burst", label: "Momentum Burst" },
+          { mode: "minervini-1m", label: "Minervini 1 Month" },
+          { mode: "minervini-5m", label: "Minervini 5 Months" },
+          { mode: "positive-earnings", label: "Positive Earnings" },
+          { mode: "improving-rs", label: "52 Week High RS" },
+        ]}
+        pages={[
+          { page: "home", label: "Home" },
+          { page: "screener", label: "Screener" },
+          { page: "groups", label: "Groups" },
+          { page: "watchlists", label: "Watchlists" },
+          { page: "journal", label: "Journal" },
+        ]}
+        onPickSymbol={handlePickSymbol}
+        onPickScanner={(mode) => {
+          setActivePage("screener");
+          handleScannerModeChange(mode as ScreenerMode);
+        }}
+        onPickGroup={(groupId) => {
+          void openGroupsView({ groupId });
+        }}
+        onPickPage={(page) => setActivePage(page as AppPage)}
+      />
+
       <AppStatusBanners
         error={error}
         hasBootstrappedData={hasBootstrappedData}
@@ -5205,6 +5266,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         loading={scanLoading}
                         onPickSymbol={handlePickSymbol}
                         onPrefetchSymbol={handlePrefetchSymbol}
+                        onLogPlan={handleLogPlanToJournal}
                         selectedSymbol={selectedSymbol}
                       />
                     ) : (

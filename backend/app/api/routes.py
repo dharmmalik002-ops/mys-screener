@@ -54,6 +54,10 @@ def build_router(service):
     async def scan_counts(market: str = Query(default="india")):
         return await resolve_service(market).get_scan_counts()
 
+    @router.get("/scanner-scorecard")
+    async def scanner_scorecard(market: str = Query(default="india")):
+        return await resolve_service(market).get_scanner_scorecard()
+
     @router.get("/scans/{scan_id}")
     async def scan_results(
         scan_id: str,

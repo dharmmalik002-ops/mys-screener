@@ -61,6 +61,7 @@ from app.models.market import (
     ReturnsScanRequest,
     ScanDescriptor,
     ScanMatch,
+    ScannerScorecardResponse,
     ScanSectorSummary,
     ScanResultsResponse,
     SectorCard,
@@ -1997,6 +1998,171 @@ class DashboardService:
         return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
 
 
+    # Scanners that keep a rolling per-session history (powers the scorecard
+    # and the NEW-today chips). Custom/returns-style ranking lists are
+    # excluded — their output isn't a discrete setup signal.
+    _HISTORY_SCAN_KEYS = (
+        "volume",
+        "ema-expansion",
+        "contraction",
+        "minervini-1m",
+        "minervini-5m",
+        "positive-earnings",
+        "momentum-burst",
+        "pull-backs",
+        "near-pivot",
+        "consolidating",
+    )
+
+    def _current_session_iso(self) -> str | None:
+        resolver = getattr(self.provider, "_latest_completed_market_session_date", None)
+        if not callable(resolver):
+            return None
+        try:
+            session = resolver()
+            return session.isoformat() if session else None
+        except Exception:
+            return None
+
+    def _confluence_map(self, snapshots: list[StockSnapshot]) -> dict[str, list[str]]:
+        """{symbol: [setup-scan names that flagged it today]} from the cached
+        scan catalog (one shared computation per snapshot generation)."""
+        try:
+            scanners, results = self._scan_catalog(snapshots)
+            names = {scanner.id: scanner.name for scanner in scanners if scanner.category == "Setups"}
+            mapping: dict[str, list[str]] = {}
+            for scan_id, matches in results.items():
+                name = names.get(scan_id)
+                if not name:
+                    continue
+                for match in matches:
+                    mapping.setdefault(match.symbol, []).append(name)
+            return mapping
+        except Exception:
+            return {}
+
+    def _decorate_scan_items(
+        self,
+        scan_key: str,
+        scan_name: str,
+        items: list[ScanMatch],
+        snapshots: list[StockSnapshot],
+    ) -> list[ScanMatch]:
+        """Stamp confluence badges + NEW-since-previous-session flags and
+        record today's hits in the rolling history store."""
+        try:
+            session_iso = self._current_session_iso()
+
+            previous_symbols: set[str] | None = None
+            if scan_key in self._HISTORY_SCAN_KEYS and session_iso:
+                history = self._scan_history_store.load(scan_key)
+                prior_dates = sorted((d for d in history.keys() if d < session_iso), reverse=True)
+                if prior_dates:
+                    previous_symbols = {
+                        str(row.get("symbol"))
+                        for row in history[prior_dates[0]]
+                        if isinstance(row, dict) and row.get("symbol")
+                    }
+
+            confluence = self._confluence_map(snapshots)
+            decorated: list[ScanMatch] = []
+            for item in items:
+                also_in = [name for name in confluence.get(item.symbol, []) if name != scan_name][:3]
+                new_flag = (item.symbol not in previous_symbols) if previous_symbols is not None else None
+                decorated.append(item.model_copy(update={"also_in": also_in, "new_since_prev": new_flag}))
+
+            if scan_key in self._HISTORY_SCAN_KEYS and session_iso:
+                if scan_key == "ema-expansion":
+                    payload = [item.model_dump(mode="json") for item in decorated]
+                else:
+                    payload = [
+                        {"symbol": item.symbol, "last_price": item.last_price, "score": item.score}
+                        for item in decorated
+                    ]
+                self._scan_history_store.record_once(scan_key, session_iso, payload)
+            return decorated
+        except Exception as exc:
+            logger.warning("scan decoration failed for %s: %s", scan_key, exc)
+            return items
+
+    async def get_scanner_scorecard(self) -> ScannerScorecardResponse:
+        """Forward performance of past scanner hits: for every recorded
+        session before today, how have those picks done since? Answers
+        "which of my scanners actually makes money"."""
+        snapshots = await self._snapshots()
+        return await asyncio.to_thread(self._build_scanner_scorecard, snapshots)
+
+    _SCORECARD_NAMES = {
+        "volume": "Volume",
+        "ema-expansion": "Expansion",
+        "contraction": "Contraction",
+        "minervini-1m": "Minervini 1M",
+        "minervini-5m": "Minervini 5M",
+        "positive-earnings": "Positive Earnings",
+        "momentum-burst": "Momentum Burst",
+        "pull-backs": "Pull Backs",
+        "near-pivot": "Near Pivot",
+        "consolidating": "Consolidating",
+    }
+
+    def _build_scanner_scorecard(self, snapshots: list[StockSnapshot]) -> ScannerScorecardResponse:
+        from app.models.market import ScannerScorecardResponse as _Resp, ScannerScorecardRow as _Row
+
+        session_iso = self._current_session_iso()
+        price_by_symbol = {s.symbol: s.last_price for s in snapshots if s.last_price > 0}
+        rows: list = []
+        for scan_key in self._HISTORY_SCAN_KEYS:
+            try:
+                history = self._scan_history_store.load(scan_key)
+            except Exception:
+                history = {}
+            returns: list[tuple[float, str]] = []
+            sessions = 0
+            for date_iso, items in history.items():
+                if session_iso and date_iso >= session_iso:
+                    continue  # today's hits have no forward window yet
+                counted = False
+                for raw in items:
+                    if not isinstance(raw, dict):
+                        continue
+                    symbol = str(raw.get("symbol") or "")
+                    trigger_price = raw.get("last_price")
+                    current_price = price_by_symbol.get(symbol)
+                    if not symbol or not trigger_price or not current_price:
+                        continue
+                    try:
+                        trigger = float(trigger_price)
+                    except (TypeError, ValueError):
+                        continue
+                    if trigger <= 0:
+                        continue
+                    returns.append(((current_price / trigger - 1) * 100, symbol))
+                    counted = True
+                if counted:
+                    sessions += 1
+            if not returns:
+                rows.append(_Row(scan_id=scan_key, scan_name=self._SCORECARD_NAMES.get(scan_key, scan_key), sessions=0, hits=0))
+                continue
+            values = [r for r, _ in returns]
+            best = max(returns, key=lambda r: r[0])
+            worst = min(returns, key=lambda r: r[0])
+            rows.append(
+                _Row(
+                    scan_id=scan_key,
+                    scan_name=self._SCORECARD_NAMES.get(scan_key, scan_key),
+                    sessions=sessions,
+                    hits=len(returns),
+                    avg_forward_return_pct=round(sum(values) / len(values), 2),
+                    win_rate_pct=round(100 * sum(1 for v in values if v > 0) / len(values), 1),
+                    best_symbol=best[1],
+                    best_return_pct=round(best[0], 2),
+                    worst_symbol=worst[1],
+                    worst_return_pct=round(worst[0], 2),
+                )
+            )
+        rows.sort(key=lambda r: (r.avg_forward_return_pct is None, -(r.avg_forward_return_pct or 0)))
+        return _Resp(rows=rows)
+
     def _merge_expansion_history(self, items: list[ScanMatch]) -> list[ScanMatch]:
         """Roll the Expansion scan into a 15-session tracker.
 
@@ -2175,6 +2341,9 @@ class DashboardService:
             )
         else:
             items = self._filter_scan_items_by_liquidity(results[scan_id], min_liquidity_crore)
+        items = await asyncio.to_thread(
+            self._decorate_scan_items, scan_id, str(descriptor.name), items, snapshots
+        )
         if scan_id == "ema-expansion":
             # Rolling 15-session tracker: today's hits on top, older sessions
             # below, pruned automatically after the 15th session.
@@ -4509,6 +4678,7 @@ class DashboardService:
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         items = await asyncio.to_thread(self._near_pivot_items, snapshots, request)
+        items = await asyncio.to_thread(self._decorate_scan_items, "near-pivot", "Near Pivot", items, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "near-pivot",
@@ -4532,6 +4702,7 @@ class DashboardService:
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         items = await asyncio.to_thread(self._pull_back_items, snapshots, request)
+        items = await asyncio.to_thread(self._decorate_scan_items, "pull-backs", "Pull Backs", items, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "pull-backs",
@@ -4578,6 +4749,7 @@ class DashboardService:
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         items = await asyncio.to_thread(run_momentum_burst_scan, request, snapshots)
+        items = await asyncio.to_thread(self._decorate_scan_items, "momentum-burst", "Momentum Burst", items, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "momentum-burst",
@@ -4601,6 +4773,7 @@ class DashboardService:
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         items = await asyncio.to_thread(run_consolidating_scan, request, snapshots)
+        items = await asyncio.to_thread(self._decorate_scan_items, "consolidating", "Consolidating", items, snapshots)
         return await self._scan_results_response(
             scan={
                 "id": "consolidating",

@@ -1,0 +1,103 @@
+.cmdk-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 14vh;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.cmdk {
+  width: min(92vw, 560px);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface-strong) 97%, transparent);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--bg) 55%, transparent);
+  overflow: hidden;
+}
+
+.cmdk-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-soft);
+}
+
+.cmdk-input-row input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 0.95rem;
+  outline: none;
+}
+
+.cmdk-input-row kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+}
+
+.cmdk-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.cmdk-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.cmdk-item.is-active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.cmdk-item-icon {
+  display: inline-flex;
+  color: var(--text-soft);
+}
+
+.cmdk-item-label {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.cmdk-item-sub {
+  margin-left: auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.cmdk-empty {
+  padding: 22px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}

@@ -656,6 +656,12 @@ class ScanMatch(BaseModel):
     # with a rolling history (Expansion keeps 15 sessions) so the UI can show
     # which day each stock fired.
     session_date: str | None = None
+    # True when the symbol was NOT in this scanner's previous session results
+    # (i.e. it entered the list today). None = no history available yet.
+    new_since_prev: bool | None = None
+    # Names of OTHER setup scanners that also flagged this symbol today —
+    # multi-scanner confluence is the highest-signal subset of any list.
+    also_in: list[str] = Field(default_factory=list)
     rs_rating: int | None = None
     rs_rating_1d_ago: int | None = None
     rs_rating_1w_ago: int | None = None
@@ -672,6 +678,24 @@ class ScanMatch(BaseModel):
     reasons: list[str] = Field(default_factory=list)
     # Scanner-specific trade plan; only populated by the Momentum Burst scanner.
     momentum_burst: MomentumBurstPlan | None = None
+
+
+class ScannerScorecardRow(BaseModel):
+    scan_id: str
+    scan_name: str
+    sessions: int
+    hits: int
+    avg_forward_return_pct: float | None = None
+    win_rate_pct: float | None = None
+    best_symbol: str | None = None
+    best_return_pct: float | None = None
+    worst_symbol: str | None = None
+    worst_return_pct: float | None = None
+
+
+class ScannerScorecardResponse(BaseModel):
+    generated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    rows: list[ScannerScorecardRow] = Field(default_factory=list)
 
 
 class AlertItem(BaseModel):

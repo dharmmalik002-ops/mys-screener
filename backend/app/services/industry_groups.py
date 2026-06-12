@@ -150,8 +150,50 @@ def _group_description(group_name: str, market_key: str) -> str:
     return f"{market_label} listed {group_name.lower()} stocks (market cap > Rs {int(GROUP_MIN_MARKET_CAP_CR)} Cr)."
 
 
+_rank_store = None
+
+
+def _get_rank_store():
+    """Lazy shared ScanHistoryStore for group ranks. Postgres-backed when
+    DATABASE_URL is configured, so rank history survives Space rebuilds
+    (the on-disk snapshots below are wiped on every deploy)."""
+    global _rank_store
+    if _rank_store is None:
+        try:
+            from app.core.config import get_settings
+            from app.services.scan_history_store import ScanHistoryStore
+
+            _rank_store = ScanHistoryStore(
+                get_settings().database_url,
+                RANK_HISTORY_DIR.parent / "scan_history.json",
+                keep_dates=70,
+            )
+        except Exception as exc:
+            logger.info("rank store unavailable: %s", exc)
+            _rank_store = False
+    return _rank_store or None
+
+
 def _load_rank_history(lookback_days: int, generated_at: datetime) -> dict[str, int]:
-    """Read on-disk rank snapshot from `lookback_days` trading-days ago. Returns {group_id: rank}."""
+    """Read the rank snapshot from `lookback_days` trading-days ago.
+    Prefers the persistent store; falls back to on-disk snapshots."""
+    store = _get_rank_store()
+    if store is not None:
+        try:
+            history = store.load("group-ranks")
+            dates = sorted(history.keys())
+            if dates:
+                target_idx = max(0, len(dates) - 1 - lookback_days)
+                payload = history[dates[target_idx]]
+                ranks = {
+                    str(row.get("groupId")): int(row.get("rank", 0))
+                    for row in payload
+                    if isinstance(row, dict) and row.get("groupId")
+                }
+                if ranks:
+                    return ranks
+        except Exception as exc:
+            logger.info("rank store read failed: %s", exc)
     if not RANK_HISTORY_DIR.exists():
         return {}
     files = sorted(RANK_HISTORY_DIR.glob("ranks_*.json"))
@@ -168,6 +210,12 @@ def _load_rank_history(lookback_days: int, generated_at: datetime) -> dict[str, 
 
 
 def _save_rank_history(rank_payload: list[dict], generated_at: datetime) -> None:
+    store = _get_rank_store()
+    if store is not None:
+        try:
+            store.record_once("group-ranks", generated_at.astimezone(timezone.utc).date().isoformat(), rank_payload)
+        except Exception as exc:
+            logger.info("rank store write failed: %s", exc)
     RANK_HISTORY_DIR.mkdir(parents=True, exist_ok=True)
     stamp = generated_at.astimezone(timezone.utc).strftime("%Y%m%d")
     out = RANK_HISTORY_DIR / f"ranks_{stamp}.json"

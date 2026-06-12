@@ -207,6 +207,7 @@ type MomentumBurstResultsProps = {
   loading: boolean;
   onPickSymbol: (symbol: string) => void;
   onPrefetchSymbol?: (symbol: string) => void;
+  onLogPlan?: (item: ScanMatch) => void;
   selectedSymbol?: string | null;
 };
 
@@ -236,7 +237,7 @@ function fmt(n: number | null | undefined, digits = 2, suffix = ""): string {
   return `${n.toFixed(digits)}${suffix}`;
 }
 
-export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchSymbol, selectedSymbol }: MomentumBurstResultsProps) {
+export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchSymbol, onLogPlan, selectedSymbol }: MomentumBurstResultsProps) {
   const [sortKey, setSortKey] = useState<SortKey>("default");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
 
@@ -298,6 +299,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
     { key: "default", label: "Entry", sortable: false },
     { key: "risk", label: "Stop (risk)", sortable: true },
     { key: "default", label: "2R / 3R", sortable: false },
+    { key: "default", label: "Journal", sortable: false },
   ];
 
   if (loading && rows.length === 0) {
@@ -395,6 +397,33 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
                   )}
                 </td>
                 <td style={td}>{isSetup ? `${fmt(p.target_2r)} / ${fmt(p.target_3r)}` : "—"}</td>
+                <td style={td}>
+                  {onLogPlan && isSetup && p.entry ? (
+                    <button
+                      type="button"
+                      title="Pre-fill this trade plan (entry, stop, setup) in the journal"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onLogPlan(m);
+                      }}
+                      style={{
+                        padding: "3px 9px",
+                        borderRadius: 6,
+                        border: "1px solid var(--line-strong)",
+                        background: "transparent",
+                        color: "var(--accent)",
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Log plan
+                    </button>
+                  ) : (
+                    "—"
+                  )}
+                </td>
               </tr>
             );
           })}

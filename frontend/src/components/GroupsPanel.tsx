@@ -120,6 +120,22 @@ function RankBadge({ rank }: { rank: number }) {
   return <span className="gp-rank-badge gp-rank-num">{rank}</span>;
 }
 
+function RankDelta({ change }: { change: number | null }) {
+  if (change === null || !Number.isFinite(change) || change === 0) {
+    return null;
+  }
+  const improving = change > 0;
+  return (
+    <span
+      className={`gp-rank-delta${improving ? " up" : " down"}`}
+      title={`${improving ? "Up" : "Down"} ${Math.abs(change)} rank${Math.abs(change) === 1 ? "" : "s"} vs 1 week ago — ${improving ? "improving" : "fading"} group`}
+    >
+      {improving ? "▲" : "▼"}
+      {Math.abs(change)}
+    </span>
+  );
+}
+
 function RsCircle({ rs }: { rs: number | null }) {
   if (rs === null || !Number.isFinite(rs)) {
     return <span className="gp-rs-circle gp-rs-muted">—</span>;
@@ -350,6 +366,7 @@ export function GroupsPanel({
                       >
                         <td>
                           <RankBadge rank={group.rank} />
+                          <RankDelta change={group.rank_change_1w} />
                         </td>
                         <td className="gp-cell-name">
                           <button
