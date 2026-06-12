@@ -351,11 +351,13 @@ export function WatchlistsPanel({
     setNewsContext({ title: `News · ${wl.name}`, symbols: wl.symbols, accent: wl.color || "#ff6b6b" });
     setNewsOpen(true);
   }, []);
-  const [gridColumns, setGridColumns] = useState(4);
-  const [gridRows, setGridRows] = useState(3);
-  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
+  // Defaults per the owner's spec: big side-by-side charts — 2 per row, one
+  // row filling the screen, 3 months of daily bars.
+  const [gridColumns, setGridColumns] = useState(2);
+  const [gridRows, setGridRows] = useState(1);
+  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("3M");
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
-  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
+  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const [arrangementMode, setArrangementMode] = useState<"flat" | "group">("flat");
 

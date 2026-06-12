@@ -1138,23 +1138,41 @@ def _median(values: list[float]) -> float | None:
     return (ordered[mid - 1] + ordered[mid]) / 2.0
 
 
+# Trailing window for the partial-day floor. A GLOBAL median misses partial
+# days when the universe itself grows over the year (2025-06 had ~1786 NSE
+# names vs ~2015 by 2026-06 — the global median of 1892 sat BELOW the
+# poisoned 2026-06-09 day's 1543 × 1/0.8). A short trailing window compares
+# each day only to its recent neighbourhood.
+XP_PARTIAL_DAY_TRAILING_WINDOW = 20
+XP_PARTIAL_DAY_MIN_HISTORY = 5
+
+
 def _xp_partial_day_floor(days: list[dict]) -> float | None:
+    """Coverage floor derived from the trailing median of the most recent
+    (already accepted) days. Returns None until enough history accumulates."""
     totals = [float(d.get("total") or 0) for d in days if isinstance(d, dict)]
-    med = _median([t for t in totals if t > 0])
+    recent = [t for t in totals if t > 0][-XP_PARTIAL_DAY_TRAILING_WINDOW:]
+    if len(recent) < XP_PARTIAL_DAY_MIN_HISTORY:
+        return None
+    med = _median(recent)
     if med is None:
         return None
     return XP_PARTIAL_DAY_MIN_RATIO * med
 
 
 def _drop_partial_breadth_days(days: list[dict]) -> list[dict]:
-    floor = _xp_partial_day_floor(days)
-    if floor is None:
-        return days
+    """Walk the history forward, judging each day against the trailing median
+    of the days KEPT so far — so a dropped partial day never contaminates the
+    floor used for the days after it."""
     kept: list[dict] = []
     for d in days:
         total = float(d.get("total") or 0)
-        if 0 < total < floor:
-            logger.warning("XP breadth: dropping partial-coverage day %s (total=%s, floor=%.0f)", d.get("date"), int(total), floor)
+        floor = _xp_partial_day_floor(kept)
+        if floor is not None and 0 < total < floor:
+            logger.warning(
+                "XP breadth: dropping partial-coverage day %s (total=%s, floor=%.0f)",
+                d.get("date"), int(total), floor,
+            )
             continue
         kept.append(d)
     return kept
@@ -1550,16 +1568,22 @@ def main() -> int:
     # sources are validated through _is_record_sane before inclusion.
     bse_symbols = _fetch_from_bse(target)
     if bse_symbols:
-        # Refresh breadth from the FULL BSE bhavcopy first, BEFORE the price-patch
-        # "already current" guard. Otherwise a day where only the breadth is behind
-        # (e.g. the price patch was written earlier by the yfinance fallback) would
-        # short-circuit and leave the XP breadth score frozen. _update_xp_breadth
-        # is idempotent on date, so recomputing an already-stored day is harmless.
-        _update_xp_breadth(target, bse_symbols, "BSE")
+        # Merge FIRST so breadth can see authoritative NSE (yfinance) closes for
+        # NSE-primary names — raw BSE-segment prints are exactly the data class
+        # the price merge already distrusts (stale last-ticks on illiquid BSE
+        # lines skew advancers/decliners and the MA% inputs). Breadth gets the
+        # full BSE coverage overlaid with the merged records, and still runs
+        # BEFORE the price-patch "already current" guard so a day where only
+        # breadth is behind can't freeze the XP score. _update_xp_breadth is
+        # idempotent on date, so recomputing an already-stored day is harmless.
+        merged = _merge_bse_with_yfinance(bse_symbols, target, extra_tickers=extra_yf_tickers)
+        breadth_src = dict(bse_symbols)
+        if merged:
+            breadth_src.update(merged)
+        _update_xp_breadth(target, breadth_src, "YF+BSE")
         if _patch_already_current(target):
             logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", target.isoformat(), len(bse_symbols))
             return 0
-        merged = _merge_bse_with_yfinance(bse_symbols, target, extra_tickers=extra_yf_tickers)
         if not merged:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1

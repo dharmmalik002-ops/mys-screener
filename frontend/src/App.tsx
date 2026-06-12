@@ -383,6 +383,14 @@ function readPersistedMarketViewCache(market: MarketKey): MarketViewCacheEntry {
       if (!Number.isFinite(ageMs) || ageMs > MARKET_VIEW_CACHE_MAX_AGE_MS) {
         return emptyMarketViewCacheEntry();
       }
+      // Also discard caches saved on a previous IST calendar day: an evening
+      // snapshot is younger than the 6h cap next morning but still carries
+      // yesterday's prices/RS, which made the catalog/search serve stale data.
+      const istDay = (value: Date) =>
+        new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(value);
+      if (istDay(new Date(savedAt)) !== istDay(new Date())) {
+        return emptyMarketViewCacheEntry();
+      }
     }
     return normalizeMarketViewCacheEntry(payload);
   } catch {

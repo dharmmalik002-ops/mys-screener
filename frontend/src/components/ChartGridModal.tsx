@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type UIEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
 
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
 
@@ -116,11 +116,6 @@ function safePoints(points: ChartLinePoint[]) {
   ];
 }
 
-function normalizeY(value: number, min: number, max: number) {
-  const spread = Math.max(max - min, 1e-6);
-  return 40 - (((value - min) / spread) * 32) - 4;
-}
-
 function barsToPoints(bars: ChartBar[]) {
   return bars.map((bar) => ({ time: bar.time, value: bar.close }));
 }
@@ -207,88 +202,165 @@ function sortValue(card: ChartGridDisplayCard, sortBy: ChartGridSortBy) {
   return card.selectedReturn;
 }
 
+function useMeasuredSize() {
+  const ref = useRef<HTMLDivElement | null>(null);
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) {
+      return;
+    }
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect) {
+        setSize((current) => {
+          const w = Math.round(rect.width);
+          const h = Math.round(rect.height);
+          return current.w === w && current.h === h ? current : { w, h };
+        });
+      }
+    });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, size };
+}
+
+// All three renderers draw in MEASURED PIXEL coordinates (1:1 viewBox) the way
+// TradingView does, instead of a 100x40 box stretched to the card. Stretching
+// is what made grid candles/bars unreadable: geometry computed in fake units
+// gets smeared by the non-uniform scale.
+const CHART_PAD_TOP = 8;
+const CHART_PAD_BOTTOM = 8;
+const CHART_PAD_X = 4;
+
+function chartScales(w: number, h: number, n: number, min: number, max: number) {
+  const innerW = Math.max(w - CHART_PAD_X * 2, 1);
+  const innerH = Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM, 1);
+  const spread = Math.max(max - min, 1e-6);
+  const slot = innerW / Math.max(n, 1);
+  const x = (index: number) => CHART_PAD_X + index * slot + slot / 2;
+  const y = (value: number) => CHART_PAD_TOP + (1 - (value - min) / spread) * innerH;
+  return { slot, x, y };
+}
+
+function GridLines({ w, h }: { w: number; h: number }) {
+  // Three faint horizontal guides, TradingView-style.
+  const ys = [0.25, 0.5, 0.75].map((f) => CHART_PAD_TOP + f * Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM, 1));
+  return (
+    <g className="chart-grid-guides" aria-hidden>
+      {ys.map((gy) => (
+        <line key={gy} x1={0} y1={gy} x2={w} y2={gy} />
+      ))}
+    </g>
+  );
+}
+
 function Sparkline({ points }: { points: ChartLinePoint[] }) {
+  const { ref, size } = useMeasuredSize();
   const normalized = safePoints(points);
-  const values = normalized.map((point) => point.value);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
   const tone = toneFromPoints(normalized);
+  const { w, h } = size;
 
-  const polyline = normalized
-    .map((point, index) => {
-      const x = normalized.length === 1 ? 100 : (index / (normalized.length - 1)) * 100;
-      const y = normalizeY(point.value, min, max);
-      return `${x},${y}`;
-    })
-    .join(" ");
-
-  const area = `0,36 ${polyline} 100,36`;
+  let line = "";
+  let area = "";
+  if (w > 10 && h > 10 && normalized.length > 1) {
+    const values = normalized.map((point) => point.value);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const { y } = chartScales(w, h, normalized.length, min, max);
+    const innerW = w - CHART_PAD_X * 2;
+    const coords = normalized.map((point, index) => {
+      const px = CHART_PAD_X + (index / (normalized.length - 1)) * innerW;
+      return `${px.toFixed(1)},${y(point.value).toFixed(1)}`;
+    });
+    line = coords.join(" ");
+    area = `${CHART_PAD_X},${h - CHART_PAD_BOTTOM} ${line} ${w - CHART_PAD_X},${h - CHART_PAD_BOTTOM}`;
+  }
 
   return (
-    <svg className={`chart-grid-sparkline ${tone}`} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-      <polyline className="chart-grid-sparkline-baseline" points="0,36 100,36" />
-      <polygon className="chart-grid-sparkline-area" points={area} />
-      <polyline className="chart-grid-sparkline-line" points={polyline} />
-    </svg>
+    <div ref={ref} className="chart-grid-canvas">
+      {line ? (
+        <svg className={`chart-grid-sparkline ${tone}`} width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          <GridLines w={w} h={h} />
+          <polygon className="chart-grid-sparkline-area" points={area} />
+          <polyline className="chart-grid-sparkline-line" points={line} />
+        </svg>
+      ) : null}
+    </div>
   );
 }
 
 function CandlePreview({ bars }: { bars: ChartBar[] }) {
-  const values = bars.flatMap((bar) => [bar.low, bar.high]);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const width = bars.length <= 1 ? 90 : 100 / bars.length;
-
+  const { ref, size } = useMeasuredSize();
+  const { w, h } = size;
+  const ready = w > 10 && h > 10 && bars.length > 1;
+  let body: ReactNode[] = [];
+  if (ready) {
+    const values = bars.flatMap((bar) => [bar.low, bar.high]);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
+    const bodyWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
+    body = bars.map((bar, index) => {
+      const cx = x(index);
+      const openY = y(bar.open);
+      const closeY = y(bar.close);
+      const top = Math.min(openY, closeY);
+      const height = Math.max(Math.abs(closeY - openY), 1);
+      const tone = bar.close >= bar.open ? "positive" : "negative";
+      return (
+        <g key={`${bar.time}:${index}`} className={`chart-grid-candle ${tone}`}>
+          <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
+          <rect x={cx - bodyWidth / 2} y={top} width={bodyWidth} height={height} rx={bodyWidth > 4 ? 0.8 : 0} />
+        </g>
+      );
+    });
+  }
   return (
-    <svg className="chart-grid-ohlc" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-      <line className="chart-grid-sparkline-baseline" x1="0" y1="36" x2="100" y2="36" />
-      {bars.map((bar, index) => {
-        const xCenter = (index * width) + (width / 2);
-        const bodyWidth = Math.max(width * 0.56, 1.2);
-        const openY = normalizeY(bar.open, min, max);
-        const closeY = normalizeY(bar.close, min, max);
-        const highY = normalizeY(bar.high, min, max);
-        const lowY = normalizeY(bar.low, min, max);
-        const y = Math.min(openY, closeY);
-        const height = Math.max(Math.abs(closeY - openY), 1.2);
-        const tone = bar.close >= bar.open ? "positive" : "negative";
-        return (
-          <g key={`${bar.time}:${index}`} className={`chart-grid-candle ${tone}`}>
-            <line x1={xCenter} y1={highY} x2={xCenter} y2={lowY} />
-            <rect x={xCenter - (bodyWidth / 2)} y={y} width={bodyWidth} height={height} rx="0.4" />
-          </g>
-        );
-      })}
-    </svg>
+    <div ref={ref} className="chart-grid-canvas">
+      {ready ? (
+        <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          <GridLines w={w} h={h} />
+          {body}
+        </svg>
+      ) : null}
+    </div>
   );
 }
 
 function BarPreview({ bars }: { bars: ChartBar[] }) {
-  const values = bars.flatMap((bar) => [bar.low, bar.high]);
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const width = bars.length <= 1 ? 90 : 100 / bars.length;
-
+  const { ref, size } = useMeasuredSize();
+  const { w, h } = size;
+  const ready = w > 10 && h > 10 && bars.length > 1;
+  let body: ReactNode[] = [];
+  if (ready) {
+    const values = bars.flatMap((bar) => [bar.low, bar.high]);
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
+    const tick = Math.min(Math.max(slot * 0.36, 2), 9);
+    body = bars.map((bar, index) => {
+      const cx = x(index);
+      const tone = bar.close >= bar.open ? "positive" : "negative";
+      return (
+        <g key={`${bar.time}:${index}`} className={`chart-grid-bar ${tone}`}>
+          <line x1={cx} y1={y(bar.high)} x2={cx} y2={y(bar.low)} />
+          <line x1={cx - tick} y1={y(bar.open)} x2={cx} y2={y(bar.open)} />
+          <line x1={cx} y1={y(bar.close)} x2={cx + tick} y2={y(bar.close)} />
+        </g>
+      );
+    });
+  }
   return (
-    <svg className="chart-grid-ohlc" viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
-      <line className="chart-grid-sparkline-baseline" x1="0" y1="36" x2="100" y2="36" />
-      {bars.map((bar, index) => {
-        const xCenter = (index * width) + (width / 2);
-        const openY = normalizeY(bar.open, min, max);
-        const closeY = normalizeY(bar.close, min, max);
-        const highY = normalizeY(bar.high, min, max);
-        const lowY = normalizeY(bar.low, min, max);
-        const tickWidth = Math.max(width * 0.28, 1.1);
-        const tone = bar.close >= bar.open ? "positive" : "negative";
-        return (
-          <g key={`${bar.time}:${index}`} className={`chart-grid-bar ${tone}`}>
-            <line x1={xCenter} y1={highY} x2={xCenter} y2={lowY} />
-            <line x1={xCenter - tickWidth} y1={openY} x2={xCenter} y2={openY} />
-            <line x1={xCenter} y1={closeY} x2={xCenter + tickWidth} y2={closeY} />
-          </g>
-        );
-      })}
-    </svg>
+    <div ref={ref} className="chart-grid-canvas">
+      {ready ? (
+        <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          <GridLines w={w} h={h} />
+          {body}
+        </svg>
+      ) : null}
+    </div>
   );
 }
 
