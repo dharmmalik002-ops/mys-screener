@@ -19,6 +19,7 @@ frontend/tsconfig.tsbuildinfo
 # Data and Cache
 backend/data/chart_cache/
 backend/data/chart_cache_us/
+backend/data/scan_history.json
 backend/data/news_cache/
 backend/data/*.json.gz
 backend/data/*.lock

@@ -40,6 +40,7 @@ export type ScanMatch = {
   score: number;
   pattern?: string | null;
   volume_push_date?: string | null;
+  session_date?: string | null;
   rs_rating?: number | null;
   rs_rating_1m_ago?: number | null;
   nifty_outperformance?: number | null;
@@ -1102,6 +1103,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     score: readNumber(raw.score),
     pattern: readNullableString(raw.pattern),
     volume_push_date: readNullableString(raw.volume_push_date),
+    session_date: readNullableString(raw.session_date),
     rs_rating: readNullableNumber(raw.rs_rating),
     rs_rating_1m_ago: readNullableNumber(raw.rs_rating_1m_ago),
     nifty_outperformance: readNullableNumber(raw.nifty_outperformance),

@@ -89,6 +89,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
+from app.services.scan_history_store import ScanHistoryStore
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
@@ -298,6 +299,11 @@ class DashboardService:
         _backend_root = Path(__file__).resolve().parents[2]
         self._money_flow_cache_path = _backend_root / "data" / "money_flow_reports.json"
         self._money_flow_stock_cache_path = _backend_root / "data" / "money_flow_stock_ideas.json"
+        self._scan_history_store = ScanHistoryStore(
+            settings.database_url,
+            Path(getattr(provider, "backend_root", _backend_root)) / "data" / "scan_history.json",
+            keep_dates=15,
+        )
 
     def _legacy_data_dir(self) -> Path:
         backend_root = getattr(self.provider, "backend_root", None)
@@ -1991,6 +1997,52 @@ class DashboardService:
         return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
 
 
+    def _merge_expansion_history(self, items: list[ScanMatch]) -> list[ScanMatch]:
+        """Roll the Expansion scan into a 15-session tracker.
+
+        Today's hits are pinned under the current session date (first write of
+        the day wins), then the response is rebuilt from the retained history:
+        newest session first, oldest (up to the 15th) last. A symbol that
+        re-triggers shows once, under its most recent session. Stored rows
+        keep their trigger-day numbers (price/% move/score as of that day).
+        """
+        try:
+            session_date = None
+            session_resolver = getattr(self.provider, "_latest_completed_market_session_date", None)
+            if callable(session_resolver):
+                session_date = session_resolver()
+            if session_date is None:
+                return items
+            session_iso = session_date.isoformat()
+
+            self._scan_history_store.record_once(
+                "ema-expansion",
+                session_iso,
+                [item.model_dump(mode="json") for item in items],
+            )
+            history = self._scan_history_store.load("ema-expansion")
+            if not history:
+                return items
+
+            merged: list[ScanMatch] = []
+            seen: set[str] = set()
+            for date_iso in sorted(history.keys(), reverse=True):
+                for raw in history[date_iso]:
+                    if not isinstance(raw, dict):
+                        continue
+                    symbol = str(raw.get("symbol") or "")
+                    if not symbol or symbol in seen:
+                        continue
+                    seen.add(symbol)
+                    try:
+                        merged.append(ScanMatch.model_validate({**raw, "session_date": date_iso}))
+                    except Exception:
+                        continue
+            return merged if merged else items
+        except Exception as exc:
+            logger.warning("expansion history merge failed: %s", exc)
+            return items
+
     async def get_scan_results(
         self,
         scan_id: str,
@@ -2123,6 +2175,10 @@ class DashboardService:
             )
         else:
             items = self._filter_scan_items_by_liquidity(results[scan_id], min_liquidity_crore)
+        if scan_id == "ema-expansion":
+            # Rolling 15-session tracker: today's hits on top, older sessions
+            # below, pruned automatically after the 15th session.
+            items = await asyncio.to_thread(self._merge_expansion_history, items)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         signature_parts = [scan_id]
         if min_liquidity_crore is not None:
