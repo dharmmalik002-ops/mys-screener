@@ -1939,10 +1939,19 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
             continue
         if snapshot.avg_rupee_volume_30d_crore is not None and snapshot.avg_rupee_volume_30d_crore < 5:
             continue
-        # Stage-2 context: above both the 50 and 200 SMA — non-negotiable.
-        sma50 = snapshot.sma50 or snapshot.ema50
-        sma200 = snapshot.sma200 or snapshot.ema200
-        if not sma50 or not sma200 or snapshot.last_price < sma50 or snapshot.last_price < sma200:
+        # Stage-2 context — non-negotiable: close ABOVE both the 50 and 200
+        # SMA, MAs stacked (50 over 200) and the 200 not declining. Stocks
+        # missing either MA are excluded rather than given the benefit.
+        sma50 = snapshot.sma50
+        sma200 = snapshot.sma200
+        if (
+            not sma50
+            or not sma200
+            or snapshot.last_price <= sma50
+            or snapshot.last_price <= sma200
+            or sma50 <= sma200
+            or (snapshot.sma200_1m_ago and sma200 < snapshot.sma200_1m_ago * 0.995)
+        ):
             continue
 
         closes = snapshot.recent_closes or []
@@ -1952,18 +1961,29 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
         # --- A) Pullback to the 10/21 EMA after a 15%+ burst ---
         ema10 = snapshot.ema10
         ema21 = snapshot.ema20
+        volumes = snapshot.recent_volumes or []
         if len(closes) >= 10 and ema21:
             best_burst = 0.0
             burst_days = 0
+            burst_has_volume = False
+            # The strong upmove must be RECENT: its peak within the last 15
+            # sessions (windows starting earlier than that are ignored).
+            earliest_start = max(0, len(closes) - 15)
             for window in (3, 4, 5, 6, 7):
-                for i in range(len(closes) - window):
+                for i in range(earliest_start, len(closes) - window):
                     base = closes[i]
                     if base <= 0:
                         continue
                     gain = (max(closes[i + 1 : i + 1 + window]) / base - 1) * 100
                     if gain > best_burst:
                         best_burst, burst_days = gain, window
-            if best_burst >= 15.0:
+                        # Strong volume footprint: at least one burst day at
+                        # 1.5x the 20-day average volume.
+                        if snapshot.avg_volume_20d > 0 and len(volumes) == len(closes):
+                            burst_has_volume = max(volumes[i + 1 : i + 1 + window], default=0) >= snapshot.avg_volume_20d * 1.5
+                        else:
+                            burst_has_volume = snapshot.relative_volume >= 1.2
+            if best_burst >= 15.0 and burst_has_volume:
                 surf_ema = None
                 tolerance = 0.04
                 for label, ema in (("10 EMA", ema10), ("21 EMA", ema21)):
@@ -1973,7 +1993,8 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
                     surf_days = sum(1 for c in recent if abs(c - ema) / ema <= tolerance)
                     # "Stayed there 1 or 2 days": latest close must be at the EMA,
                     # one prior close there strengthens it but isn't required.
-                    if surf_days >= 1 and abs(closes[-1] - ema) / ema <= tolerance and closes[-1] >= ema21 * 0.985:
+                    # Above the 21 EMA, or surfing at most 2% below it.
+                    if surf_days >= 1 and abs(closes[-1] - ema) / ema <= tolerance and closes[-1] >= ema21 * 0.98:
                         surf_ema = (label, ema)
                         break
                 if surf_ema is not None:
