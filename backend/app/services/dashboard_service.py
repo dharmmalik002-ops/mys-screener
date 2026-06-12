@@ -2087,17 +2087,18 @@ class DashboardService:
             logger.warning("scan decoration failed for %s: %s", scan_key, exc)
             return items
 
-    async def get_ai_swing_analysis(self, symbol: str) -> dict:
+    async def get_ai_swing_analysis(self, symbol: str, as_of: str | None = None) -> dict:
         """Gather full context (bars, snapshot, group, regime, band, headlines)
         and ask the AI for an elite pullback/breakout read. Cached per
         (symbol, session) so repeated toggles don't burn quota."""
         symbol = symbol.upper()
         session_iso = self._current_session_iso() or "unknown"
+        cache_date = as_of or session_iso
         cache = getattr(self, "_ai_swing_cache", None)
         if cache is None:
             cache = {}
             self._ai_swing_cache = cache
-        cached = cache.get((symbol, session_iso))
+        cached = cache.get((symbol, cache_date))
         if cached is not None:
             return cached
 
@@ -2110,6 +2111,14 @@ class DashboardService:
             bars = await self.provider.get_chart(symbol, "1D", bars=120)
         except Exception:
             bars = []
+        if as_of:
+            # Historical as-of read: ignore every candle after the cut-off so
+            # the verdict reflects only what was knowable on that date.
+            try:
+                cutoff = datetime.fromisoformat(as_of).replace(tzinfo=timezone.utc) + timedelta(hours=23, minutes=59)
+                bars = [b for b in bars if datetime.fromtimestamp(int(b.time), tz=timezone.utc) <= cutoff]
+            except ValueError:
+                return {"error": f"Invalid as-of date: {as_of}"}
         if len(bars) < 30:
             return {"error": "Not enough chart history for an AI read."}
 
@@ -2138,8 +2147,10 @@ class DashboardService:
         summary_line = "n/a"
         group_line = "unknown"
         regime_line = "unknown"
+        if as_of:
+            summary_line = f"HISTORICAL ANALYSIS AS OF {as_of} — judge ONLY from the bars; current snapshot/regime/news intentionally withheld."
         try:
-            snapshots = await self._snapshots()
+            snapshots = await self._snapshots() if not as_of else []
             snapshot = next((item for item in snapshots if item.symbol == symbol), None)
             if snapshot is not None:
                 summary_line = (
@@ -2213,8 +2224,8 @@ class DashboardService:
         except Exception as exc:
             return {"error": str(exc)}
         result["symbol"] = symbol
-        result["session_date"] = session_iso
-        cache[(symbol, session_iso)] = result
+        result["session_date"] = cache_date
+        cache[(symbol, cache_date)] = result
         if len(cache) > 200:
             cache.pop(next(iter(cache)))
         return result

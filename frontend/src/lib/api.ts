@@ -2206,13 +2206,13 @@ export type AiSwingAnalysis = {
   invalidation?: string;
 };
 
-export function getAiSwingAnalysis(symbol: string, market: MarketKey): Promise<AiSwingAnalysis> {
+export function getAiSwingAnalysis(symbol: string, market: MarketKey, asOf?: string | null): Promise<AiSwingAnalysis> {
   return request<AiSwingAnalysis>(
     withMarket("/api/ai/swing-analysis", market),
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symbol }),
+      body: JSON.stringify({ symbol, as_of: asOf || undefined }),
     },
     { timeoutMs: 90000 },
   );

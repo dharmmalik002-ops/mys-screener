@@ -59,7 +59,8 @@ def build_router(service):
         symbol = str(payload.get("symbol") or "").strip()
         if not symbol:
             raise HTTPException(status_code=400, detail="symbol is required")
-        return await resolve_service(market).get_ai_swing_analysis(symbol)
+        as_of = str(payload.get("as_of") or "").strip() or None
+        return await resolve_service(market).get_ai_swing_analysis(symbol, as_of=as_of)
 
     @router.post("/ai/journal-review")
     async def ai_journal_review(payload: dict, market: str = Query(default="india")):

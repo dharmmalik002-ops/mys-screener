@@ -1955,7 +1955,7 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
         if len(closes) >= 10 and ema21:
             best_burst = 0.0
             burst_days = 0
-            for window in (3, 4, 5):
+            for window in (3, 4, 5, 6, 7):
                 for i in range(len(closes) - window):
                     base = closes[i]
                     if base <= 0:
@@ -1969,9 +1969,11 @@ def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
                 for label, ema in (("10 EMA", ema10), ("21 EMA", ema21)):
                     if not ema:
                         continue
-                    recent = closes[-3:]
+                    recent = closes[-2:]
                     surf_days = sum(1 for c in recent if abs(c - ema) / ema <= tolerance)
-                    if surf_days >= 2 and closes[-1] >= ema21 * 0.985:
+                    # "Stayed there 1 or 2 days": latest close must be at the EMA,
+                    # one prior close there strengthens it but isn't required.
+                    if surf_days >= 1 and abs(closes[-1] - ema) / ema <= tolerance and closes[-1] >= ema21 * 0.985:
                         surf_ema = (label, ema)
                         break
                 if surf_ema is not None:

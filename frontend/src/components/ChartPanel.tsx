@@ -1615,6 +1615,7 @@ export function ChartPanel({
   const [aiAnalysis, setAiAnalysis] = useState<AiSwingAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const aiCacheRef = useRef<Map<string, AiSwingAnalysis>>(new Map());
+  const [aiAsOf, setAiAsOf] = useState<string>("");
 
   useEffect(() => {
     try {
@@ -1629,7 +1630,8 @@ export function ChartPanel({
       setAiAnalysis(null);
       return;
     }
-    const cached = aiCacheRef.current.get(symbol);
+    const cacheKey = `${symbol}|${aiAsOf || "live"}`;
+    const cached = aiCacheRef.current.get(cacheKey);
     if (cached) {
       setAiAnalysis(cached);
       return;
@@ -1637,10 +1639,10 @@ export function ChartPanel({
     let active = true;
     setAiLoading(true);
     setAiAnalysis(null);
-    getAiSwingAnalysis(symbol, market)
+    getAiSwingAnalysis(symbol, market, aiAsOf || null)
       .then((result) => {
         if (!active) return;
-        aiCacheRef.current.set(symbol, result);
+        aiCacheRef.current.set(cacheKey, result);
         setAiAnalysis(result);
       })
       .catch((error: unknown) => {
@@ -1652,7 +1654,7 @@ export function ChartPanel({
     return () => {
       active = false;
     };
-  }, [aiEnabled, symbol, market]);
+  }, [aiEnabled, symbol, market, aiAsOf]);
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
@@ -3860,7 +3862,23 @@ export function ChartPanel({
         </div>
       ) : null}
       {aiEnabled && symbol ? (
-        <div className="chart-ai-card">
+        <div className="chart-ai-card chart-ai-widget">
+          <div className="chart-ai-widget-bar">
+            <strong>✦ AI · {symbol}</strong>
+            <label className="chart-ai-asof" title="Analyse the chart only up to this date — later candles are ignored">
+              as of
+              <input
+                type="date"
+                value={aiAsOf}
+                onChange={(event) => setAiAsOf(event.target.value)}
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            </label>
+            {aiAsOf ? (
+              <button type="button" className="chart-ai-asof-clear" onClick={() => setAiAsOf("")}>Live</button>
+            ) : null}
+            <button type="button" className="chart-ai-close" onClick={() => setAiEnabled(false)} aria-label="Close AI widget">×</button>
+          </div>
           {aiLoading ? (
             <div className="chart-ai-loading">✦ Reading the tape on {symbol}… (market regime, group, price action, news)</div>
           ) : aiAnalysis?.error ? (
