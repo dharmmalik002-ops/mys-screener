@@ -336,6 +336,7 @@ export function ChartGridModal({
   const [rangePosition, setRangePosition] = useState(100);
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
+  const [cleanMode, setCleanMode] = useState(false);
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
   const hasMarketCapData = useMemo(() => cards.some((card) => card.marketCapCrore !== null), [cards]);
@@ -453,7 +454,7 @@ export function ChartGridModal({
 
   return (
     <div className="chart-modal-backdrop" onClick={onClose}>
-      <div ref={modalRef} className="chart-grid-modal" onClick={(event) => event.stopPropagation()} onScroll={handleScroll}>
+      <div ref={modalRef} className={cleanMode ? "chart-grid-modal chart-grid-clean" : "chart-grid-modal"} onClick={(event) => event.stopPropagation()} onScroll={handleScroll}>
         <button type="button" className="chart-modal-close" onClick={onClose}>
           Close
         </button>
@@ -502,6 +503,15 @@ export function ChartGridModal({
 
               <label className="nav-select chart-grid-select">
                 <span>Columns</span>
+                <button
+                  type="button"
+                  className={cleanMode ? "tool-pill active" : "tool-pill"}
+                  onClick={() => setCleanMode((current) => !current)}
+                  title="Just charts — hide stats and footers"
+                  style={{ marginRight: 8 }}
+                >
+                  ⛶ Clean
+                </button>
                 <select value={columns} onChange={(event) => onColumnsChange(Number(event.target.value))}>
                   {GRID_COLUMNS.map((value) => (
                     <option key={`grid-col-${value}`} value={value}>

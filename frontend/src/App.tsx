@@ -3046,6 +3046,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
+    if (activeScanner === "bread-butter") {
+      return getScanResults("bread-butter", activeMarket, options);
+    }
     if (activeScanner === "volume") {
       return getScanResults("volume", activeMarket, options);
     }
@@ -4803,6 +4806,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         symbols={universeCatalog.map((item) => ({ symbol: item.symbol, name: item.name }))}
         groups={(groupsData?.groups ?? []).map((group) => ({ id: group.group_id, name: group.group_name, rank: group.rank }))}
         scanners={[
+          { mode: "bread-butter", label: "Bread & Butter" },
           { mode: "custom-scan", label: "Custom Scanner" },
           { mode: "volume", label: "Volume" },
           { mode: "ipo", label: "IPO" },

@@ -1193,6 +1193,57 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       .finally(() => setAiReviewLoading(false));
   };
 
+  // ── Edge analytics (million-dollar journal metrics) ─────────────────────
+  const edge = useMemo(() => {
+    const sortedClosed = [...closedTrades].sort((a, b) => new Date(a.exitDate).getTime() - new Date(b.exitDate).getTime());
+    const wins = sortedClosed.filter((t) => t.pnl > 0);
+    const losses = sortedClosed.filter((t) => t.pnl <= 0);
+    const grossWin = wins.reduce((sum, t) => sum + t.pnl, 0);
+    const grossLoss = Math.abs(losses.reduce((sum, t) => sum + t.pnl, 0));
+    const avgWinPct = wins.length ? wins.reduce((sum, t) => sum + t.perc, 0) / wins.length : 0;
+    const avgLossPct = losses.length ? losses.reduce((sum, t) => sum + t.perc, 0) / losses.length : 0;
+    const winRate = sortedClosed.length ? wins.length / sortedClosed.length : 0;
+    const expectancyPct = winRate * avgWinPct + (1 - winRate) * avgLossPct;
+    // Max drawdown on the realized equity curve.
+    let equity = startEquity, peak = startEquity, maxDd = 0;
+    let streak = 0, bestStreak = 0, worstStreak = 0;
+    for (const t of sortedClosed) {
+      equity += t.pnl;
+      peak = Math.max(peak, equity);
+      maxDd = Math.max(maxDd, peak > 0 ? (peak - equity) / peak : 0);
+      streak = t.pnl > 0 ? Math.max(1, streak + 1) : Math.min(-1, streak - 1);
+      bestStreak = Math.max(bestStreak, streak);
+      worstStreak = Math.min(worstStreak, streak);
+    }
+    // Rule discipline: the trader's own caps.
+    const lossesOver4 = losses.filter((t) => t.perc < -4).length;
+    const lossesOver6 = losses.filter((t) => t.perc < -6).length;
+    // Monthly P&L
+    const monthly = new Map<string, number>();
+    for (const t of sortedClosed) {
+      const key = String(t.exitDate).slice(0, 7);
+      monthly.set(key, (monthly.get(key) ?? 0) + t.pnl);
+    }
+    const best = sortedClosed.length ? sortedClosed.reduce((a, b) => (a.perc > b.perc ? a : b)) : null;
+    const worst = sortedClosed.length ? sortedClosed.reduce((a, b) => (a.perc < b.perc ? a : b)) : null;
+    return {
+      profitFactor: grossLoss > 0 ? grossWin / grossLoss : grossWin > 0 ? Infinity : 0,
+      expectancyPct,
+      avgWinPct,
+      avgLossPct,
+      payoff: avgLossPct !== 0 ? Math.abs(avgWinPct / avgLossPct) : 0,
+      maxDdPct: maxDd * 100,
+      bestStreak,
+      worstStreak: Math.abs(worstStreak),
+      lossesOver4,
+      lossesOver6,
+      lossCount: losses.length,
+      monthly: Array.from(monthly.entries()).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6),
+      best,
+      worst,
+    };
+  }, [closedTrades, startEquity]);
+
   // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
   closedTrades.forEach(t => {
@@ -2378,6 +2429,31 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 position (accumulation vs distribution, hold or act).
               </div>
             )}
+          </div>
+          <div className="tj-insights-top" style={{ marginBottom: 14 }}>
+            <div className="tj-card" style={{ flex: 2 }}>
+              <div className="tj-card-hdr">Edge Analytics</div>
+              <div className="tj-edge-grid">
+                <div className="tj-edge-item"><span>Expectancy / trade</span><strong className={edge.expectancyPct >= 0 ? "pos" : "neg"}>{edge.expectancyPct >= 0 ? "+" : ""}{edge.expectancyPct.toFixed(2)}%</strong></div>
+                <div className="tj-edge-item"><span>Profit factor</span><strong className={edge.profitFactor >= 1.5 ? "pos" : edge.profitFactor >= 1 ? "" : "neg"}>{Number.isFinite(edge.profitFactor) ? edge.profitFactor.toFixed(2) : "∞"}</strong></div>
+                <div className="tj-edge-item"><span>Payoff (avg win / avg loss)</span><strong>{edge.payoff.toFixed(2)}</strong></div>
+                <div className="tj-edge-item"><span>Avg win / Avg loss</span><strong><em className="pos">+{edge.avgWinPct.toFixed(1)}%</em> / <em className="neg">{edge.avgLossPct.toFixed(1)}%</em></strong></div>
+                <div className="tj-edge-item"><span>Max drawdown (realized)</span><strong className="neg">−{edge.maxDdPct.toFixed(1)}%</strong></div>
+                <div className="tj-edge-item"><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></div>
+                <div className="tj-edge-item" title="Your rule: never lose more than 3-4%; hard cap 6%"><span>Rule breaches (&gt;4% / &gt;6% loss)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></div>
+                <div className="tj-edge-item"><span>Best / worst trade</span><strong>{edge.best ? `${edge.best.symbol} +${edge.best.perc.toFixed(0)}%` : "—"} / {edge.worst ? `${edge.worst.symbol} ${edge.worst.perc.toFixed(0)}%` : "—"}</strong></div>
+              </div>
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Monthly P&L</div>
+              {edge.monthly.length === 0 ? <div className="tj-empty">No data yet</div> : (
+                edge.monthly.map(([month, pnl]) => (
+                  <div key={month} className={`tj-metric-row ${pnl >= 0 ? "pos" : "neg"}`}>
+                    <span>{month}</span><strong>{fmtPnl(pnl)}</strong>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
           <div className="tj-insights-top">
             <div className="tj-card">

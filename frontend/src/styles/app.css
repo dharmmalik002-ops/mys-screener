@@ -8439,3 +8439,55 @@ button {
 .chart-ai-foot { color: var(--text-muted); font-size: 0.7rem; }
 
 .chart-ai-pill { white-space: nowrap; }
+
+
+/* =========================================================
+   Zen mode — full-viewport chart with only the search bar.
+   ========================================================= */
+.chart-panel.chart-zen {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  max-height: none;
+  border-radius: 0;
+  background: var(--bg);
+}
+
+.chart-panel.chart-zen .panel-header h2,
+.chart-panel.chart-zen .panel-kicker {
+  display: none;
+}
+
+/* Hide every toolbar/chip/card except the search form and the Zen pill row. */
+.chart-panel.chart-zen .chart-tab-switcher,
+.chart-panel.chart-zen .timeframe-switcher,
+.chart-panel.chart-zen .chart-style-switcher,
+.chart-panel.chart-zen .indicator-switcher,
+.chart-panel.chart-zen .drawing-switcher,
+.chart-panel.chart-zen .chart-summary-chips,
+.chart-panel.chart-zen .chart-summary-chip,
+.chart-panel.chart-zen .chart-ai-card,
+.chart-panel.chart-zen .chart-toolbar,
+.chart-panel.chart-zen .chart-widget-menu:not(:has(.tool-pill.active)),
+.chart-panel.chart-zen .chart-actions > *:not(.chart-search-form):not(.chart-widget-menu) {
+  display: none !important;
+}
+
+.chart-panel.chart-zen .panel-body {
+  padding: 6px 10px 10px;
+}
+
+.chart-panel.chart-zen .chart-stage,
+.chart-panel.chart-zen .chart-canvas {
+  height: calc(100vh - 110px) !important;
+  max-height: none;
+}
+
+
+/* Grid clean mode: nothing but charts, scroll through them. */
+.chart-grid-clean .chart-grid-card-foot,
+.chart-grid-clean .chart-grid-card-stats,
+.chart-grid-clean .chart-grid-badge,
+.chart-grid-clean .chart-grid-card small {
+  display: none !important;
+}

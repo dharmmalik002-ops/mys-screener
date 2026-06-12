@@ -83,6 +83,7 @@ from app.scanners.definitions import (
     run_consolidating_scan,
     run_custom_scan,
     run_expansion_scan,
+    run_bread_butter_scan,
     run_momentum_burst_scan,
     run_scan,
     run_returns_scan,
@@ -2002,6 +2003,7 @@ class DashboardService:
     # and the NEW-today chips). Custom/returns-style ranking lists are
     # excluded — their output isn't a discrete setup signal.
     _HISTORY_SCAN_KEYS = (
+        "bread-butter",
         "volume",
         "ema-expansion",
         "contraction",
@@ -2298,6 +2300,7 @@ class DashboardService:
         return await asyncio.to_thread(self._build_scanner_scorecard, snapshots)
 
     _SCORECARD_NAMES = {
+        "bread-butter": "Bread & Butter",
         "volume": "Volume",
         "ema-expansion": "Expansion",
         "contraction": "Contraction",
@@ -2436,6 +2439,28 @@ class DashboardService:
         # before the catalog lookup so the descriptor doesn't need a SCANS entry.
         # (volume_window / volume_min_rvol are accepted for API back-compat but
         # no longer used — the list is unified across windows via tier badges.)
+        if scan_id == "bread-butter":
+            items = self._filter_scan_items_by_liquidity(
+                await asyncio.to_thread(run_bread_butter_scan, snapshots), min_liquidity_crore
+            )
+            items = await asyncio.to_thread(self._decorate_scan_items, "bread-butter", "Bread & Butter", items, snapshots)
+            descriptor = {
+                "id": "bread-butter",
+                "name": "Bread & Butter",
+                "category": "Setups",
+                "description": "Your playbook: volume-expansion pullbacks to the 10/21 EMA and orderly 2-week-plus bases within a few percent of the pivot. Risk capped at 6% on every plan.",
+                "hit_count": len(items),
+            }
+            return await self._scan_results_response(
+                scan=descriptor,
+                scan_key="bread-butter",
+                request_signature="bread-butter:v1",
+                snapshots=snapshots,
+                items=items,
+                historical_runner=lambda historical_snapshots: run_bread_butter_scan(historical_snapshots),
+                include_sector_summaries=include_sector_summaries,
+            )
+
         if scan_id == "volume":
             items = self._build_volume_surge_items(
                 snapshots,

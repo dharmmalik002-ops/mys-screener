@@ -1586,6 +1586,17 @@ export function ChartPanel({
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
+  // Zen mode: nothing but the chart and the search bar.
+  const [zenMode, setZenMode] = useState(false);
+
+  useEffect(() => {
+    if (!zenMode) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setZenMode(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [zenMode]);
   const [aiAnalysis, setAiAnalysis] = useState<AiSwingAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const aiCacheRef = useRef<Map<string, AiSwingAnalysis>>(new Map());
@@ -3550,7 +3561,7 @@ export function ChartPanel({
           )}
         </div>
       }
-      className={expanded ? "chart-panel expanded" : "chart-panel"}
+      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${zenMode ? " chart-zen" : ""}`}
     >
       {panelTab === "technical" ? (
         <div className="chart-drawing-toolbar">
@@ -3659,6 +3670,16 @@ export function ChartPanel({
               onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }))}
             >
               Pocket Pivot
+            </button>
+          </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={zenMode ? "tool-pill active" : "tool-pill"}
+              onClick={() => setZenMode((current) => !current)}
+              title="Zen mode — just the chart and the search bar (Esc to exit)"
+            >
+              ⛶ Zen
             </button>
           </div>
           <div className="chart-widget-menu">

@@ -440,7 +440,7 @@ export function ScanTable({
   const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("line");
-  const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("compact");
+  const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
 
   /* ----- Stage 4 new state ----- */
   const [viewMode, setViewMode] = useState<ViewMode>("table");

@@ -23,6 +23,7 @@ import { Panel } from "./Panel";
 import "./ScreenerSidebar.css";
 
 export type ScreenerMode =
+  | "bread-butter"
   | "custom-scan"
   | "volume"
   | "ipo"
@@ -67,6 +68,7 @@ type SidebarItem = {
 };
 
 const ITEMS: SidebarItem[] = [
+  { mode: "bread-butter", title: "Bread & Butter", hint: "Your playbook: EMA pullbacks + orderly breakouts", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
   { mode: "volume", title: "Volume", hint: "Recent volume-high pushes", Icon: BarChart3 },
   { mode: "ipo", title: "IPO", hint: "Recent listings", Icon: Rocket },

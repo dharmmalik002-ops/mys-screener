@@ -1921,6 +1921,101 @@ def momentum_burst_rs_ratings(scores: list[float]) -> list[int]:
     ]
 
 
+def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
+    """Bread & Butter — the user's personal playbook, two setups only:
+
+    A) PULLBACK: a volume expansion leg (RVOL 2x+, 6%+ day, follow-through),
+       extension away from the 10/21 EMA, then an ORDERLY return to the 10/21
+       EMA — entry near the EMA so the stop is tight (risk capped at 6%).
+    B) BREAKOUT: an upmove, then 2+ weeks of orderly (non-choppy)
+       consolidation sitting within a few percent BELOW the pivot.
+
+    Composed from the Momentum Burst engine with playbook-tuned gates; every
+    match carries a trade plan whose risk never exceeds 6%.
+    """
+    from app.models.market import MomentumBurstScanRequest
+
+    matches: dict[str, ScanMatch] = {}
+
+    # A) Pullback-to-EMA: stricter burst gates per the playbook.
+    pullback_request = MomentumBurstScanRequest(
+        include_fresh_bursts=False,
+        include_ema_setups=True,
+        burst_min_gain_pct=12.0,
+        burst_window_min=2,
+        burst_window_max=8,
+        burst_min_volume_ratio=2.0,
+        min_rs_rating=70,
+    )
+    for item in run_momentum_burst_scan(pullback_request, snapshots):
+        plan = item.momentum_burst
+        if plan is None or plan.tag == "Burst":
+            continue
+        if plan.risk_pct is not None and plan.risk_pct > 6.0:
+            continue  # playbook: never risk more than 5-6% to the stop
+        reasons = [f"Pullback to {plan.tag.replace(' Setup', '')}", *item.reasons[:1]]
+        if plan.risk_pct is not None:
+            reasons.append(f"Stop risk {plan.risk_pct:.1f}% (cap 6%)")
+        matches[item.symbol] = item.model_copy(
+            update={"scan_id": "bread-butter", "pattern": "Pullback", "reasons": reasons}
+        )
+
+    # B) Orderly pre-breakout: 2+ week tight base within a few % below pivot.
+    for snapshot in snapshots:
+        if snapshot.symbol in matches:
+            continue
+        if snapshot.rs_rating < 70 or snapshot.last_price < 50:
+            continue
+        if snapshot.avg_rupee_volume_30d_crore is not None and snapshot.avg_rupee_volume_30d_crore < 5:
+            continue
+        closes = snapshot.recent_closes or []
+        highs = snapshot.recent_highs or []
+        lows = snapshot.recent_lows or []
+        if len(closes) < 12 or len(highs) < 12 or len(lows) < 12:
+            continue
+        window_high = max(highs[-12:])
+        window_low = min(lows[-12:])
+        if window_low <= 0:
+            continue
+        range_pct = (window_high / window_low - 1) * 100
+        if range_pct > 12.0:
+            continue  # not orderly enough
+        # Choppiness gate: average daily true range of the base must be small.
+        day_ranges = [
+            (h / l - 1) * 100 for h, l in zip(highs[-12:], lows[-12:]) if l > 0
+        ]
+        if day_ranges and sum(day_ranges) / len(day_ranges) > 4.2:
+            continue
+        pivot = snapshot.pivot_high or window_high
+        if pivot <= 0:
+            continue
+        below_pivot_pct = (pivot / snapshot.last_price - 1) * 100
+        if not (0.0 <= below_pivot_pct <= 6.0):
+            continue  # within a few % below the breakout price
+        if snapshot.stock_return_60d < 12 and snapshot.stock_return_126d < 20:
+            continue  # needs the prior upmove
+        stop = window_low
+        risk_pct = (1 - stop / snapshot.last_price) * 100
+        if risk_pct > 6.0:
+            stop = snapshot.last_price * 0.95
+            risk_pct = 5.0
+        score = 70 + snapshot.rs_rating * 0.2 - range_pct
+        matches[snapshot.symbol] = build_scan_match(
+            "bread-butter",
+            snapshot,
+            round(score, 2),
+            [
+                "Breakout setup",
+                f"{range_pct:.1f}% base, {below_pivot_pct:.1f}% below pivot {pivot:.2f}",
+                f"Stop {stop:.2f} (risk {risk_pct:.1f}%, cap 6%)",
+            ],
+        ).model_copy(update={"pattern": "Breakout"})
+
+    results = list(matches.values())
+    results.sort(key=lambda item: item.score, reverse=True)
+    return results
+
+
 def run_momentum_burst_scan(
     request: MomentumBurstScanRequest, snapshots: list[StockSnapshot]
 ) -> list[ScanMatch]:
