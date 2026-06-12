@@ -4394,6 +4394,22 @@ button {
   font-size: 0.74rem;
 }
 
+.chart-circuit-locks-toggle {
+  padding: 1px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: color 120ms ease, border-color 120ms ease;
+}
+
+.chart-circuit-locks-toggle.is-on {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
 .chart-circuit-band-select {
   padding: 1px 4px;
   border: 1px solid var(--line);

@@ -343,6 +343,17 @@ const EARNINGS_WIDGET_STORAGE_KEY = "stockScanner.earningsWidget.v1";
 const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
 const CIRCUIT_WIDGET_STORAGE_KEY = "stockScanner.circuitWidget.v1";
+const CIRCUIT_LOCKS_STORAGE_KEY = "stockScanner.circuitLocks.v1";
+
+function readCircuitLocksEnabled(): boolean {
+  if (typeof window === "undefined") return true;
+  try {
+    const raw = window.localStorage.getItem(CIRCUIT_LOCKS_STORAGE_KEY);
+    return raw === null ? true : JSON.parse(raw) === true;
+  } catch {
+    return true;
+  }
+}
 
 // Assumed daily price band when the exchange feed doesn't supply exact limits.
 // NSE bands are 2/5/10/20% of the previous close; 0 disables the widget lines,
@@ -1563,6 +1574,7 @@ export function ChartPanel({
   const [favoritesWidget, setFavoritesWidget] = useState<FavoritesWidgetState>(() => readFavoritesWidgetState());
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
+  const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [notesWidget, setNotesWidget] = useState<NotesWidgetState>(() => readNotesWidgetState());
   const [pocketPivotNotes, setPocketPivotNotes] = useState<PocketPivotNotesMap>(() => readPocketPivotNotes());
   const [earningsWidget, setEarningsWidget] = useState<EarningsWidgetState>(() => readEarningsWidgetState());
@@ -1786,6 +1798,14 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [circuitBandPct]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CIRCUIT_LOCKS_STORAGE_KEY, JSON.stringify(circuitLocksEnabled));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [circuitLocksEnabled]);
 
   useEffect(() => {
     try {
@@ -2196,8 +2216,9 @@ export function ChartPanel({
         textColor: palette.textColor,
       },
       grid: {
-        vertLines: { color: palette.gridColor },
-        horzLines: { color: palette.gridColor },
+        // Editorial style: plain background, no grid lines in either theme.
+        vertLines: { visible: false },
+        horzLines: { visible: false },
       },
       crosshair: {
         vertLine: { color: palette.crosshairColor },
@@ -2266,44 +2287,9 @@ export function ChartPanel({
 
     mainSeries.setData(ohlcvData);
 
-    // Daily Upper/Lower Circuit Limit indicators. Uses exact band prices when
-    // the backend supplies them; otherwise derives them from the previous
-    // close and the band % selected in the Circuit Limits widget, so the lines
-    // are available on every chart. The chart is fully recreated on each
-    // effect run, so these price lines are re-added cleanly without removal.
-    const circuitLimits = computeCircuitLimits(summary ?? null, resolvedCircuitBandPct ?? 0);
-    const lastBar = activeBars.length > 0 ? activeBars[activeBars.length - 1] : null;
-    // Proximity warning: flag when the latest bar trades within 0.5% of a band.
-    const nearBand = (limit: number | null): boolean => {
-      if (!limit || !lastBar) return false;
-      const high = Number(lastBar.high) || 0;
-      const low = Number(lastBar.low) || 0;
-      return (Math.abs(high - limit) / limit <= 0.005) || (Math.abs(low - limit) / limit <= 0.005);
-    };
-    const circuitSuffix = circuitLimits.exact ? "" : " ~";
-    if (typeof circuitLimits.upper === "number" && circuitLimits.upper > 0) {
-      const near = nearBand(circuitLimits.upper);
-      mainSeries.createPriceLine({
-        price: circuitLimits.upper,
-        color: near ? "#fa5252" : "rgba(250,82,82,0.55)",
-        lineWidth: 1,
-        lineStyle: 2, // dashed
-        axisLabelVisible: true,
-        title: near ? `UC${circuitSuffix} ⚠` : `UC${circuitSuffix}`,
-      });
-    }
-    if (typeof circuitLimits.lower === "number" && circuitLimits.lower > 0) {
-      const near = nearBand(circuitLimits.lower);
-      mainSeries.createPriceLine({
-        price: circuitLimits.lower,
-        color: near ? "#37b24d" : "rgba(55,178,77,0.55)",
-        lineWidth: 1,
-        lineStyle: 2, // dashed
-        axisLabelVisible: true,
-        title: near ? `LC${circuitSuffix} ⚠` : `LC${circuitSuffix}`,
-      });
-    }
-
+    // Circuit limits are shown in the Circuit Limits chip (values) and as
+    // optional UC/LC lock-day markers — no lines are drawn on the chart, by
+    // request, to keep the editorial look.
     const combinedMarkers: any[] = [];
     if (pocketPivotWidget.enabled) {
       for (const bar of pocketPivotBars) {
@@ -2354,10 +2340,11 @@ export function ChartPanel({
         size: 1.5,
       });
     }
-    // Historical circuit levels (TradingView-style): stepped UC/LC lines from
-    // each day's previous close, plus markers on the days the stock locked at
-    // a circuit. Daily bands only make sense on the 1D timeframe.
+    // Circuit-lock markers: a "UC"/"LC" pip on the days the stock closed at
+    // its band (per the real per-date band timeline when known). Toggleable
+    // from the Circuit Limits chip. Daily bands only make sense on 1D.
     if (
+      circuitLocksEnabled &&
       timeframe === "1D" &&
       activeBars.length > 2 &&
       (circuitBandFromNse || (resolvedCircuitBandPct != null && resolvedCircuitBandPct > 0))
@@ -2367,18 +2354,6 @@ export function ChartPanel({
         resolvedCircuitBandPct ?? 0,
         circuitBandFromNse ? circuitBandTimeline : [],
       );
-      const circuitLineOptions = {
-        lineWidth: 1 as const,
-        lineStyle: 2, // dashed
-        lineType: 1, // steps
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      };
-      const ucLevelSeries = chart.addLineSeries({ ...circuitLineOptions, color: "rgba(250,82,82,0.30)" });
-      ucLevelSeries.setData(circuitLevels.upper);
-      const lcLevelSeries = chart.addLineSeries({ ...circuitLineOptions, color: "rgba(55,178,77,0.30)" });
-      lcLevelSeries.setData(circuitLevels.lower);
       for (const lockTime of circuitLevels.ucLockTimes) {
         combinedMarkers.push({
           time: lockTime,
@@ -2657,7 +2632,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, summary?.upper_circuit_limit, summary?.lower_circuit_limit, summary?.last_price, summary?.change_pct, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3751,6 +3726,14 @@ export function ChartPanel({
                   ))}
                 </select>
               ) : null}
+              <button
+                type="button"
+                className={`chart-circuit-locks-toggle${circuitLocksEnabled ? " is-on" : ""}`}
+                onClick={() => setCircuitLocksEnabled((current) => !current)}
+                title="Show a UC/LC pip on the candles of circuit-locked days"
+              >
+                Marks {circuitLocksEnabled ? "On" : "Off"}
+              </button>
             </span>
             <strong>
               {summaryCircuitLimits.upper != null && summaryCircuitLimits.lower != null ? (
