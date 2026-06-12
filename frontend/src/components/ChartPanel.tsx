@@ -1586,8 +1586,23 @@ export function ChartPanel({
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
-  // Zen mode: nothing but the chart and the search bar.
-  const [zenMode, setZenMode] = useState(false);
+  // Zen mode: nothing but the chart and the search bar. Persisted so arrow-key
+  // navigation to the next stock stays in zen until the user exits.
+  const [zenMode, setZenMode] = useState<boolean>(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem("stockScanner.chartZen.v1") ?? "false") === true;
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.chartZen.v1", JSON.stringify(zenMode));
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [zenMode]);
 
   useEffect(() => {
     if (!zenMode) return;

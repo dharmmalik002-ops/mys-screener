@@ -8491,3 +8491,16 @@ button {
 .chart-grid-clean .chart-grid-card small {
   display: none !important;
 }
+
+
+/* Chart grid is a TRUE full-page view. */
+.chart-grid-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+}
