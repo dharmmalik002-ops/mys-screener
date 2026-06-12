@@ -782,3 +782,15 @@ body.dark .gp-score-chip {
 
 .gp-rank-delta.up { color: var(--gp-green, #10b981); }
 .gp-rank-delta.down { color: var(--gp-red, #ef4444); }
+
+
+/* ----- Leadership breadth ----- */
+.gp-breadth {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.gp-breadth.hi { color: var(--gp-green, #10b981); }
+.gp-breadth.mid { color: var(--gp-amber, #f59e0b); }
+.gp-breadth.lo { color: var(--gp-red, #ef4444); }

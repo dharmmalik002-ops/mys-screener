@@ -1,0 +1,13 @@
+{
+  "name": "Mr. Malik Scanner",
+  "short_name": "Scanner",
+  "description": "NSE/BSE momentum stock screener — scanners, groups, watchlists, and trade journal.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1021",
+  "theme_color": "#0c1021",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

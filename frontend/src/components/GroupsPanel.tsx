@@ -329,6 +329,7 @@ export function GroupsPanel({
                     <th className="gp-num">1M</th>
                     <th className="gp-num">3M</th>
                     <th className="gp-num">6M</th>
+                    <th className="gp-num" title="Leadership breadth: % of group members above their 50DMA. Broad participation beats two stocks dragging an index.">&gt;50D</th>
                     <th>Stocks <small style={{ opacity: 0.6, fontWeight: 500 }}>(all members for Top 20, else top 3)</small></th>
                   </tr>
                 </thead>
@@ -384,6 +385,14 @@ export function GroupsPanel({
                         <td className={`gp-num ${metricClass(group.return_1m)}`}>{formatReturn(group.return_1m)}</td>
                         <td className={`gp-num ${metricClass(group.return_3m)}`}>{formatReturn(group.return_3m)}</td>
                         <td className={`gp-num ${metricClass(group.return_6m)}`}>{formatReturn(group.return_6m)}</td>
+                        <td
+                          className="gp-num"
+                          title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
+                        >
+                          <span className={`gp-breadth${group.pct_above_50dma >= 70 ? " hi" : group.pct_above_50dma >= 40 ? " mid" : " lo"}`}>
+                            {Math.round(group.pct_above_50dma)}%
+                          </span>
+                        </td>
                         <td className="gp-cell-stocks">
                           <div className={`gp-top3${showAllStocks ? " gp-all-members" : ""}`}>
                             {displayedStocks.length === 0 ? (

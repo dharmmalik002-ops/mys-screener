@@ -598,3 +598,59 @@
   color: #fff;
   border-color: transparent;
 }
+
+
+/* ----- Staleness flags ----- */
+.wl-stale-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  line-height: 14px;
+  vertical-align: middle;
+}
+
+.wl-stale-chip.fading {
+  background: color-mix(in srgb, var(--amber, #f59e0b) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber, #f59e0b) 45%, transparent);
+  color: var(--amber, #f59e0b);
+}
+
+.wl-stale-chip.dead {
+  background: color-mix(in srgb, var(--negative, #ef4444) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--negative, #ef4444) 45%, transparent);
+  color: var(--negative, #ef4444);
+}
+
+/* ----- Pipeline stage chip ----- */
+.wl-stage-chip {
+  justify-self: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.wl-stage-chip.stage-near-pivot {
+  border-color: color-mix(in srgb, var(--amber, #f59e0b) 50%, transparent);
+  color: var(--amber, #f59e0b);
+}
+
+.wl-stage-chip.stage-triggered {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--accent);
+}
+
+.wl-stage-chip.stage-position {
+  border-color: color-mix(in srgb, var(--positive, #10b981) 55%, transparent);
+  color: var(--positive, #10b981);
+}

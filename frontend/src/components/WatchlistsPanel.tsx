@@ -95,6 +95,38 @@ type WatchlistDisplayItem = {
   isKnown: boolean;
 };
 
+/* ---------- Pipeline stages + staleness ---------- */
+const WATCHLIST_STAGES = ["Watching", "Near Pivot", "Triggered", "Position"] as const;
+type WatchlistStage = (typeof WATCHLIST_STAGES)[number];
+const STAGES_STORAGE_KEY = "stockScanner.watchlistStages.v1";
+
+function readStoredStages(): Record<string, WatchlistStage> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(STAGES_STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    if (!parsed || typeof parsed !== "object") return {};
+    const result: Record<string, WatchlistStage> = {};
+    for (const [symbol, stage] of Object.entries(parsed)) {
+      if ((WATCHLIST_STAGES as readonly string[]).includes(String(stage))) {
+        result[symbol] = stage as WatchlistStage;
+      }
+    }
+    return result;
+  } catch {
+    return {};
+  }
+}
+
+// Dead-momentum hygiene: a watchlist symbol whose RS rating has dropped
+// below the momentum floor is flagged so stale names don't linger unnoticed.
+function stalenessFor(item: WatchlistDisplayItem): "dead" | "fading" | null {
+  if (item.rs_rating === null) return null;
+  if (item.rs_rating < 50) return "dead";
+  if (item.rs_rating < 70) return "fading";
+  return null;
+}
+
 /* ---------- Logo helpers (mirrors ScanTable) ---------- */
 const LOGO_MAP: Record<string, string> = {
   RELIANCE: "reliance-industries",
@@ -269,6 +301,23 @@ export function WatchlistsPanel({
   const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
   const [bulkTargetWatchlistId, setBulkTargetWatchlistId] = useState<string>("");
   const [movePopoverFor, setMovePopoverFor] = useState<string | null>(null);
+  const [stages, setStages] = useState<Record<string, WatchlistStage>>(() => readStoredStages());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STAGES_STORAGE_KEY, JSON.stringify(stages));
+    } catch {
+      // Ignore storage failures.
+    }
+  }, [stages]);
+
+  const cycleStage = (symbol: string) => {
+    setStages((current) => {
+      const stage = current[symbol] ?? WATCHLIST_STAGES[0];
+      const next = WATCHLIST_STAGES[(WATCHLIST_STAGES.indexOf(stage) + 1) % WATCHLIST_STAGES.length];
+      return { ...current, [symbol]: next };
+    });
+  };
   const [movePopoverAnchor, setMovePopoverAnchor] = useState<{ top: number; left: number } | null>(null);
   const moveButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
   const movePopoverEl = useRef<HTMLDivElement | null>(null);
@@ -587,7 +636,7 @@ export function WatchlistsPanel({
   }
 
   const gridTemplate =
-    "minmax(180px, 1.8fr) 88px 76px 56px 88px 96px 36px";
+    "minmax(180px, 1.8fr) 86px 88px 76px 56px 88px 96px 36px";
 
   const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
     const logoUrl = getLogoUrl(item.symbol);
@@ -637,9 +686,35 @@ export function WatchlistsPanel({
             )}
           </span>
           <span className="st-name">
-            <strong>{item.symbol}</strong>
+            <strong>
+              {item.symbol}
+              {stalenessFor(item) ? (
+                <span
+                  className={`wl-stale-chip ${stalenessFor(item)}`}
+                  title={
+                    stalenessFor(item) === "dead"
+                      ? `RS rating ${item.rs_rating} — momentum is gone. Why is this still on the list?`
+                      : `RS rating ${item.rs_rating} — momentum fading below the 70 floor.`
+                  }
+                >
+                  {stalenessFor(item) === "dead" ? "DEAD" : "FADING"}
+                </span>
+              ) : null}
+            </strong>
             <small>{item.name}</small>
           </span>
+        </button>
+
+        <button
+          type="button"
+          className={`wl-stage-chip stage-${(stages[item.symbol] ?? "Watching").replace(/\s+/g, "-").toLowerCase()}`}
+          title="Pipeline stage — click to cycle: Watching → Near Pivot → Triggered → Position"
+          onClick={(event) => {
+            event.stopPropagation();
+            cycleStage(item.symbol);
+          }}
+        >
+          {stages[item.symbol] ?? "Watching"}
         </button>
 
         <span className="st-price">{item.isKnown ? formatPrice(item.last_price, market) : "--"}</span>
@@ -967,6 +1042,7 @@ export function WatchlistsPanel({
             <div className="scan-table">
               <div className="scan-table-head wl-head" style={headTemplate}>
                 <span>Symbol</span>
+                <span className="wl-center">Stage</span>
                 <span className="wl-right">Price</span>
                 <span className="wl-right">Change</span>
                 <span className="wl-center">RS</span>

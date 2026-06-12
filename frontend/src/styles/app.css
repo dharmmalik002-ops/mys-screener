@@ -8285,3 +8285,61 @@ button {
   font-variant-numeric: tabular-nums;
 }
 .rvol-widget--lg .rvol-widget-detail { font-size: 0.7rem; }
+
+
+/* =========================================================
+   Mobile polish — collapse the desktop work grids and let
+   data tables scroll horizontally instead of crushing.
+   ========================================================= */
+@media (max-width: 1100px) {
+  .screener-page-grid {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .screener-page-grid > .chart-panel {
+    position: static;
+    max-height: none;
+  }
+
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-metrics-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .workspace {
+    padding: 12px;
+  }
+
+  .nav-controls {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .nav-controls::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Fixed-width grid rows scroll sideways rather than overlap. */
+  .scan-table-body,
+  .st-card .scan-table-head.st-head {
+    overflow-x: auto;
+  }
+
+  .st-card .scan-row.st-row,
+  .st-card .scan-table-head.st-head {
+    min-width: 620px;
+  }
+
+  .chart-summary-chip strong {
+    font-size: 0.9rem;
+  }
+}

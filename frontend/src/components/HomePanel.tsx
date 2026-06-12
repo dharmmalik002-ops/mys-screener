@@ -660,8 +660,72 @@ export function HomePanel({
   const niftyPrice = niftyPoint?.price ?? null;
   const niftyChange = niftyPoint?.change_pct ?? null;
 
+  const briefing = (() => {
+    const xp = dashboard?.xp_breadth ?? null;
+    const breadth = dashboard?.breadth_today ?? null;
+    const improving = (groups?.groups ?? [])
+      .filter((g) => (g.rank_change_1w ?? 0) > 0)
+      .sort((a, b) => (b.rank_change_1w ?? 0) - (a.rank_change_1w ?? 0))
+      .slice(0, 3);
+    const topGroups = (groups?.groups ?? []).slice(0, 3);
+    if (!xp && !breadth && topGroups.length === 0) return null;
+    return { xp, breadth, improving, topGroups };
+  })();
+
   return (
     <div className="homepro">
+      {briefing ? (
+        <div className="homepro-briefing">
+          <div className="homepro-briefing-title">Morning Briefing · {snapshotDateLabel}</div>
+          <div className="homepro-briefing-body">
+            {briefing.xp ? (
+              <span>
+                Market regime is{" "}
+                <strong style={{ color: briefing.xp.regime_color || undefined }}>{briefing.xp.regime}</strong>
+                {" "}(XP {briefing.xp.xp_score.toFixed(1)}).
+              </span>
+            ) : null}
+            {briefing.breadth && briefing.breadth.total > 0 ? (
+              <span>
+                {" "}Breadth: <strong className={briefing.breadth.advances >= briefing.breadth.declines ? "pos" : "neg"}>
+                  {briefing.breadth.advances} adv / {briefing.breadth.declines} dec
+                </strong>.
+              </span>
+            ) : null}
+            {briefing.improving.length > 0 ? (
+              <span>
+                {" "}Improving groups:{" "}
+                {briefing.improving.map((g, i) => (
+                  <button
+                    key={g.group_id}
+                    type="button"
+                    className="homepro-briefing-link"
+                    onClick={() => onOpenGroups({ groupId: g.group_id })}
+                  >
+                    {g.group_name} (▲{g.rank_change_1w}){i < briefing.improving.length - 1 ? "," : ""}
+                  </button>
+                ))}
+                .
+              </span>
+            ) : briefing.topGroups.length > 0 ? (
+              <span>
+                {" "}Leading groups:{" "}
+                {briefing.topGroups.map((g, i) => (
+                  <button
+                    key={g.group_id}
+                    type="button"
+                    className="homepro-briefing-link"
+                    onClick={() => onOpenGroups({ groupId: g.group_id })}
+                  >
+                    {g.group_name}{i < briefing.topGroups.length - 1 ? "," : ""}
+                  </button>
+                ))}
+                .
+              </span>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       {/* ============ ROW 1 — KPIs + SNAPSHOT ============ */}
       <div className="homepro-row-top">
         {/* KPI cards */}

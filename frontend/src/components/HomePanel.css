@@ -1219,3 +1219,70 @@ body.dark .homepro-modal-close:hover {
   margin-left: auto;
   font-style: italic;
 }
+
+
+/* =========================================================
+   Morning Briefing
+   ========================================================= */
+.homepro-briefing {
+  background: var(--hp-card-bg);
+  border: 1px solid var(--hp-border);
+  border-radius: var(--radius-xl);
+  padding: 14px 18px;
+  box-shadow: var(--hp-shadow);
+}
+
+.homepro-briefing-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--hp-muted);
+  margin-bottom: 6px;
+}
+
+.homepro-briefing-body {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: var(--hp-text);
+}
+
+.homepro-briefing-body .pos { color: var(--hp-green); }
+.homepro-briefing-body .neg { color: var(--hp-red); }
+
+.homepro-briefing-link {
+  border: 0;
+  padding: 0;
+  margin-right: 4px;
+  background: transparent;
+  color: var(--hp-blue);
+  font-size: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.homepro-briefing-link:hover { text-decoration: underline; }
+
+
+/* ----- Mobile ----- */
+@media (max-width: 760px) {
+  .homepro-row-top {
+    grid-template-columns: 1fr;
+  }
+
+  .homepro-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .homepro-kpi {
+    min-height: 120px;
+  }
+
+  .homepro-snapshot-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .homepro-row-mid {
+    grid-template-columns: 1fr;
+  }
+}
