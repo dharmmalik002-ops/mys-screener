@@ -224,7 +224,7 @@ function Sparkline({ points }: { points: ChartLinePoint[] }) {
 
   const area = `0,36 ${polyline} 100,36`;
 
-  return createPortal(
+  return (
     <svg className={`chart-grid-sparkline ${tone}`} viewBox="0 0 100 40" preserveAspectRatio="none" aria-hidden="true">
       <polyline className="chart-grid-sparkline-baseline" points="0,36 100,36" />
       <polygon className="chart-grid-sparkline-area" points={area} />
@@ -453,7 +453,7 @@ export function ChartGridModal({
     setRenderCount((current) => Math.min(sortedCards.length, current + Math.max(columns * rows, 8)));
   };
 
-  return (
+  return createPortal(
     <div className="chart-modal-backdrop" onClick={onClose}>
       <div ref={modalRef} className={cleanMode ? "chart-grid-modal chart-grid-clean" : "chart-grid-modal"} onClick={(event) => event.stopPropagation()} onScroll={handleScroll}>
         <button type="button" className="chart-modal-close" onClick={onClose}>
