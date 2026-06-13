@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { getChart, getJournalData, saveJournalData, type MarketKey , runAiJournalReview, type AiJournalReview } from "../lib/api";
 import { notifyJournalUpdated } from "../lib/journal";
 import { NewsModal } from "./NewsModal";
@@ -1080,6 +1081,14 @@ function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
 export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
+  useEffect(() => {
+    if (!selectedEdge) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedEdge(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedEdge]);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
   const [setups, setSetups] = useState<string[]>(() => withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS)));
@@ -2655,17 +2664,27 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "avg_planned_risk" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "avg_planned_risk" ? null : "avg_planned_risk"))}><span>Avg planned risk</span><strong>{edge.rTradeCount ? `${edge.plannedRiskPct.toFixed(1)}%` : "—"}</strong></button>
                 <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "stop_plan_pct" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "stop_plan_pct" ? null : "stop_plan_pct"))}><span>Trades with stop plan</span><strong className={edge.plannedTradesPct >= 80 ? "pos" : edge.plannedTradesPct >= 50 ? "" : "neg"}>{edge.plannedTradesPct.toFixed(0)}%</strong></button>
               </div>
-              {selectedEdge && EDGE_GLOSSARY[selectedEdge] ? (
-                <div className="tj-edge-explain">
-                  <div className="tj-edge-explain-hdr">
-                    <strong>{EDGE_GLOSSARY[selectedEdge].title}</strong>
-                    <button type="button" className="tj-edge-explain-close" onClick={() => setSelectedEdge(null)} aria-label="Close explanation">×</button>
-                  </div>
-                  <p><span className="tj-edge-explain-tag">What it is</span>{EDGE_GLOSSARY[selectedEdge].what}</p>
-                  <p><span className="tj-edge-explain-tag">How to improve it</span>{EDGE_GLOSSARY[selectedEdge].improve}</p>
-                  <p><span className="tj-edge-explain-tag pos">What it does to your trading</span>{EDGE_GLOSSARY[selectedEdge].impact}</p>
-                </div>
-              ) : null}
+              {selectedEdge && EDGE_GLOSSARY[selectedEdge]
+                ? createPortal(
+                    <div className="tj-edge-modal-backdrop" onClick={() => setSelectedEdge(null)}>
+                      <div className="tj-edge-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+                        <div className="tj-edge-modal-hdr">
+                          <div>
+                            <small className="tj-edge-modal-eyebrow">Edge Analytics</small>
+                            <strong>{EDGE_GLOSSARY[selectedEdge].title}</strong>
+                          </div>
+                          <button type="button" className="tj-edge-modal-close" onClick={() => setSelectedEdge(null)} aria-label="Close">×</button>
+                        </div>
+                        <div className="tj-edge-modal-body">
+                          <section><span className="tj-edge-explain-tag">What it is</span><p>{EDGE_GLOSSARY[selectedEdge].what}</p></section>
+                          <section><span className="tj-edge-explain-tag">How to improve it</span><p>{EDGE_GLOSSARY[selectedEdge].improve}</p></section>
+                          <section><span className="tj-edge-explain-tag pos">What it does to your trading</span><p>{EDGE_GLOSSARY[selectedEdge].impact}</p></section>
+                        </div>
+                      </div>
+                    </div>,
+                    document.body,
+                  )
+                : null}
             </div>
             <div className="tj-card">
               <div className="tj-card-hdr">Monthly P&L</div>

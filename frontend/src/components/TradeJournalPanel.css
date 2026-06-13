@@ -2342,37 +2342,67 @@
   margin-left: 8px;
 }
 
-.tj-edge-explain {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 40%, var(--line));
-  border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--accent, #58a6ff) 8%, transparent);
-}
-.tj-edge-explain-hdr {
+/* Metric explanation opens as a centered popup widget. */
+.tj-edge-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(8, 11, 18, 0.62);
+  backdrop-filter: blur(3px);
+  animation: tj-edge-fade 120ms ease;
 }
-.tj-edge-explain-hdr strong { font-size: 0.95rem; }
-.tj-edge-explain-close {
+@keyframes tj-edge-fade { from { opacity: 0; } to { opacity: 1; } }
+.tj-edge-modal {
+  width: min(540px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 38%, var(--line));
+  border-radius: 16px;
+  background: var(--surface, #11151c);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  animation: tj-edge-pop 140ms ease;
+}
+@keyframes tj-edge-pop { from { transform: translateY(8px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
+.tj-edge-modal-hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.tj-edge-modal-eyebrow {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent, #58a6ff);
+  margin-bottom: 3px;
+}
+.tj-edge-modal-hdr strong { font-size: 1.12rem; }
+.tj-edge-modal-close {
   border: 0;
   background: none;
   color: var(--text-muted);
-  font-size: 1.2rem;
+  font-size: 1.6rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 4px;
 }
-.tj-edge-explain-close:hover { color: var(--text); }
-.tj-edge-explain p {
-  margin: 0 0 8px;
-  font-size: 0.82rem;
-  line-height: 1.5;
+.tj-edge-modal-close:hover { color: var(--text); }
+.tj-edge-modal-body { padding: 14px 18px 18px; display: grid; gap: 14px; }
+.tj-edge-modal-body section { display: grid; gap: 6px; }
+.tj-edge-modal-body p {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.55;
   color: var(--text-soft, var(--text-muted));
 }
-.tj-edge-explain p:last-child { margin-bottom: 0; }
 .tj-edge-explain-tag {
   display: inline-block;
   margin-right: 8px;
