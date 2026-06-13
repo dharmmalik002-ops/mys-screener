@@ -71,6 +71,35 @@ function withDefaultSetups(saved: string[]): string[] {
   });
 }
 
+function formatAiReviewText(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map(formatAiReviewText).filter(Boolean).join("; ");
+  }
+  if (typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    const strength = formatAiReviewText(record.strength);
+    const evidence = formatAiReviewText(record.evidence);
+    const mistake = formatAiReviewText(record.mistake);
+    const fix = formatAiReviewText(record.fix);
+    const action = formatAiReviewText(record.action);
+    const read = formatAiReviewText(record.read);
+    const parts = [strength || mistake || fix || action || read, evidence].filter(Boolean);
+    if (parts.length) return parts.join(" — ");
+    return Object.entries(record)
+      .map(([key, item]) => {
+        const text = formatAiReviewText(item);
+        return text ? `${key}: ${text}` : "";
+      })
+      .filter(Boolean)
+      .join("; ");
+  }
+  return "";
+}
+
 // ─── localStorage helpers ──────────────────────────────────────────────────────
 function lsGet<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) as T : fallback; } catch { return fallback; }
@@ -2475,24 +2504,24 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-ai-raw">{aiReview.raw}</div>
             ) : aiReview ? (
               <div className="tj-ai-body">
-                {aiReview.overall ? <p className="tj-ai-overall">{aiReview.overall}</p> : null}
+                {aiReview.overall ? <p className="tj-ai-overall">{formatAiReviewText(aiReview.overall)}</p> : null}
                 <div className="tj-ai-columns">
                   {aiReview.doing_right?.length ? (
                     <div>
                       <div className="tj-ai-col-title pos">What you're doing right</div>
-                      <ul>{aiReview.doing_right.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                      <ul>{aiReview.doing_right.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
                     </div>
                   ) : null}
                   {aiReview.doing_wrong?.length ? (
                     <div>
                       <div className="tj-ai-col-title neg">What's hurting you</div>
-                      <ul>{aiReview.doing_wrong.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                      <ul>{aiReview.doing_wrong.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
                     </div>
                   ) : null}
                   {aiReview.fixes?.length ? (
                     <div>
                       <div className="tj-ai-col-title">Fixes</div>
-                      <ul>{aiReview.fixes.map((item, index) => <li key={index}>{item}</li>)}</ul>
+                      <ul>{aiReview.fixes.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
                     </div>
                   ) : null}
                 </div>
@@ -2502,16 +2531,16 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                     <table className="tj-table">
                       <thead><tr><th>Symbol</th><th>Status</th><th>Tape read</th><th>Action</th></tr></thead>
                       <tbody>
-                        {aiReview.open_positions.map((position) => (
-                          <tr key={position.symbol}>
-                            <td><strong>{position.symbol}</strong></td>
+                        {aiReview.open_positions.map((position, index) => (
+                          <tr key={`${formatAiReviewText(position.symbol) || "position"}-${index}`}>
+                            <td><strong>{formatAiReviewText(position.symbol) || "—"}</strong></td>
                             <td>
                               <span className={`tj-ai-status ${String(position.status || "").toLowerCase()}`}>
-                                {position.status ?? "—"}
+                                {formatAiReviewText(position.status) || "—"}
                               </span>
                             </td>
-                            <td>{position.read ?? "—"}</td>
-                            <td>{position.action ?? "—"}</td>
+                            <td>{formatAiReviewText(position.read) || "—"}</td>
+                            <td>{formatAiReviewText(position.action) || "—"}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -2519,7 +2548,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                   </div>
                 ) : null}
                 {aiReview.one_lesson ? (
-                  <p className="tj-ai-lesson"><strong>This week's lesson:</strong> {aiReview.one_lesson}</p>
+                  <p className="tj-ai-lesson"><strong>This week's lesson:</strong> {formatAiReviewText(aiReview.one_lesson)}</p>
                 ) : null}
               </div>
             ) : (
