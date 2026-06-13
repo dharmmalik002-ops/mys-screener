@@ -1922,148 +1922,156 @@ def momentum_burst_rs_ratings(scores: list[float]) -> list[int]:
 
 
 def run_bread_butter_scan(snapshots: list["StockSnapshot"]) -> list[ScanMatch]:
-    """Bread & Butter — the user's personal playbook, two setups only.
+    """Bread & Butter — fresh Stage-2 impulse, then orderly 10/21 EMA rest.
 
-    Hard context filter for BOTH legs: close above the 50 SMA AND 200 SMA.
-
-    A) PULLBACK: a 15%+ leg inside 3-5 sessions (within the last ~20), then an
-       ORDERLY return to the 10 or 21 EMA — surfing it for at least 2 sessions
-       (closes within ~4% of the EMA, holding above the 21 EMA). Entry at the
-       EMA; stop below it, risk capped at 6%.
-    B) BREAKOUT: an upmove, then a 12+ session orderly base (<=12% range, low
-       chop) within 6% below the pivot. Stop at base low, capped at 6%.
+    This scanner is intentionally strict about the major trend: every candidate
+    must trade above the 50 SMA and 200 SMA, with the 50 SMA above the 200 SMA.
+    It then looks for the user's preferred structure: a recent institutional
+    push of roughly 15-20% in a few sessions, followed by a controlled pullback
+    or surf around the 10/21 EMA.
     """
     matches: list[ScanMatch] = []
     for snapshot in snapshots:
-        if snapshot.rs_rating < 65 or snapshot.last_price < 50:
+        if snapshot.rs_rating < 60 or snapshot.last_price < 30:
             continue
         if snapshot.avg_rupee_volume_30d_crore is not None and snapshot.avg_rupee_volume_30d_crore < 5:
             continue
-        # Stage-2 context — non-negotiable: close ABOVE both the 50 and 200
-        # SMA, MAs stacked (50 over 200) and the 200 not declining. Stocks
-        # missing either MA are excluded rather than given the benefit.
+
         sma50 = snapshot.sma50
         sma200 = snapshot.sma200
-        if not sma50 or snapshot.last_price <= sma50:
-            continue
-
-        closes = snapshot.recent_closes or []
-        highs = snapshot.recent_highs or []
-        lows = snapshot.recent_lows or []
-
-        # --- A) Pullback to the 10/21 EMA after a 15%+ burst ---
-        ema10 = snapshot.ema10
-        ema21 = snapshot.ema20
-        volumes = snapshot.recent_volumes or []
-        # --- A) Pullback/flag after an institutional-volume burst (v3) ---
-        # Pattern learned from EXICOM/SANDHAR/SAVITA/ATGL/SUPRIYA: violent
-        # 18%+ leg in 2-5 days on a 6-month/1-year-record volume day, then a
-        # short (2-8 session) TIGHT digestion with protected lows and volume
-        # dry-up while the rising 10 EMA converges into price.
-        ema10 = snapshot.ema10
-        ema21 = snapshot.ema20
-        if len(closes) >= 12 and ema10 and ema21 and len(volumes) == len(closes):
-            n = len(closes)
-            best = None  # (gain, base_idx, peak_idx)
-            for window in (2, 3, 4, 5):
-                for i in range(max(0, n - 18), n - window):
-                    base = closes[i]
-                    if base <= 0:
-                        continue
-                    seg = closes[i + 1 : i + 1 + window]
-                    peak_rel = max(range(len(seg)), key=lambda k: seg[k])
-                    gain = (seg[peak_rel] / base - 1) * 100
-                    if best is None or gain > best[0]:
-                        best = (gain, i, i + 1 + peak_rel)
-            if best and best[0] >= 18.0:
-                gain, base_idx, peak_idx = best
-                days_since_peak = n - 1 - peak_idx
-                burst_vol = max(volumes[base_idx + 1 : peak_idx + 1], default=0)
-                vol_hist = snapshot.volume_history or []
-                six_month_high = max(vol_hist[-126:], default=0)
-                record_volume = six_month_high > 0 and burst_vol >= six_month_high * 0.95
-                strong_volume = record_volume or (snapshot.avg_volume_20d > 0 and burst_vol >= snapshot.avg_volume_20d * 4)
-                if strong_volume and 2 <= days_since_peak <= 10:
-                    peak = closes[peak_idx]
-                    base = closes[base_idx]
-                    giveback = (peak - closes[-1]) / max(peak - base, 1e-9)
-                    rest_lows = lows[peak_idx:] if len(lows) == n else lows[-(days_since_peak + 1):]
-                    shelf_ok = min(rest_lows) > 0 and (max(rest_lows) / min(rest_lows) - 1) * 100 <= 4.5
-                    rest_vols = volumes[peak_idx + 1 :]
-                    dryup = (sum(rest_vols) / len(rest_vols)) <= burst_vol * 0.6 if rest_vols else True
-                    dist10 = (closes[-1] - ema10) / ema10 * 100
-                    ema_ok = (abs(dist10) <= 2.5) or (0 <= dist10 <= 8.5 and ema10 > ema21)
-                    pivot = max(highs[base_idx:], default=peak)
-                    below_pivot = (pivot / closes[-1] - 1) * 100
-                    sma200_ok = bool(sma200 and snapshot.last_price > sma200) or record_volume
-                    if giveback <= 0.45 and shelf_ok and dryup and ema_ok and 0 <= below_pivot <= 7 and sma200_ok:
-                        stop = min(rest_lows) * 0.995
-                        risk_pct = (1 - stop / snapshot.last_price) * 100
-                        if risk_pct <= 6.5:
-                            tag = "CoC" if record_volume and (not sma200 or snapshot.last_price <= sma200) else ""
-                            score = 85 + snapshot.rs_rating * 0.15 + gain * 0.2
-                            matches.append(
-                                build_scan_match(
-                                    "bread-butter",
-                                    snapshot,
-                                    round(score, 2),
-                                    [
-                                        ("Pullback flag (CoC)" if tag else "Pullback flag"),
-                                        f"+{gain:.0f}% in {peak_idx - base_idx}d on {'6M/1Y-record' if record_volume else '4x'} volume, resting {days_since_peak}d, {dist10:+.1f}% from 10EMA",
-                                        f"Entry ~{closes[-1]:.2f}, stop {stop:.2f} (risk {max(risk_pct, 0):.1f}%, cap 6%)",
-                                    ],
-                                ).model_copy(update={"pattern": "Pullback"})
-                            )
-                            continue
-
-        # --- B) Orderly pre-breakout base (full Stage 2 required) ---
         if (
-            not sma200
+            not sma50
+            or not sma200
+            or snapshot.last_price <= sma50
             or snapshot.last_price <= sma200
             or sma50 <= sma200
             or (snapshot.sma200_1m_ago and sma200 < snapshot.sma200_1m_ago * 0.995)
         ):
             continue
-        if len(closes) < 12 or len(highs) < 12 or len(lows) < 12:
+
+        closes = [float(v) for v in (snapshot.recent_closes or []) if v is not None]
+        highs = [float(v) for v in (snapshot.recent_highs or []) if v is not None]
+        lows = [float(v) for v in (snapshot.recent_lows or []) if v is not None]
+        volumes = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+        if len(closes) < 20 or len(highs) != len(closes) or len(lows) != len(closes) or len(volumes) != len(closes):
             continue
-        window_high = max(highs[-12:])
-        window_low = min(lows[-12:])
-        if window_low <= 0:
+
+        ema10_series = _ema_series(closes, 10)
+        ema21_series = _ema_series(closes, 21)
+        if len(ema10_series) != len(closes) or len(ema21_series) != len(closes):
             continue
-        range_pct = (window_high / window_low - 1) * 100
-        if range_pct > 12.0:
+        ema10 = snapshot.ema10 or ema10_series[-1]
+        ema21 = snapshot.ema20 or ema21_series[-1]
+        if ema10 <= 0 or ema21 <= 0 or ema10 < ema21 * 0.985:
             continue
-        day_ranges = [(h / l - 1) * 100 for h, l in zip(highs[-12:], lows[-12:]) if l > 0]
-        if day_ranges and sum(day_ranges) / len(day_ranges) > 4.2:
+
+        n = len(closes)
+        best: tuple[float, int, int, int, float] | None = None
+        for window in (2, 3, 4, 5, 6):
+            for base_idx in range(max(0, n - 28), n - window - 1):
+                base = closes[base_idx]
+                if base <= 0:
+                    continue
+                leg = closes[base_idx + 1 : base_idx + 1 + window]
+                if not leg:
+                    continue
+                peak_rel = max(range(len(leg)), key=lambda idx: leg[idx])
+                peak_idx = base_idx + 1 + peak_rel
+                gain = (leg[peak_rel] / base - 1.0) * 100.0
+                days_since_peak = n - 1 - peak_idx
+                if not (1 <= days_since_peak <= 18):
+                    continue
+                pre_vols = volumes[max(0, base_idx - 20) : base_idx]
+                pre_avg_vol = sum(pre_vols) / len(pre_vols) if pre_vols else float(snapshot.avg_volume_20d or 0)
+                burst_vol = max(volumes[base_idx + 1 : peak_idx + 1], default=0)
+                vol_multiple = burst_vol / pre_avg_vol if pre_avg_vol > 0 else 0.0
+                if best is None or (gain, vol_multiple) > (best[0], best[4]):
+                    best = (gain, base_idx, peak_idx, window, vol_multiple)
+
+        if best is None:
             continue
-        pivot = snapshot.pivot_high or window_high
-        if pivot <= 0:
+        gain, base_idx, peak_idx, window, vol_multiple = best
+        if gain < 10.0:
             continue
-        below_pivot_pct = (pivot / snapshot.last_price - 1) * 100
-        if not (0.0 <= below_pivot_pct <= 6.0):
+
+        burst_vol = max(volumes[base_idx + 1 : peak_idx + 1], default=0)
+        vol_hist = snapshot.volume_history or []
+        six_month_high = max(vol_hist[-126:], default=0)
+        record_volume = six_month_high > 0 and burst_vol >= six_month_high * 0.85
+        strong_volume = record_volume or vol_multiple >= 1.5 or (
+            snapshot.avg_volume_20d > 0 and burst_vol >= snapshot.avg_volume_20d * 1.70
+        )
+        if not strong_volume:
             continue
-        if snapshot.stock_return_60d < 12 and snapshot.stock_return_126d < 20:
+
+        peak = closes[peak_idx]
+        base = closes[base_idx]
+        impulse_range = max(peak - base, 1e-9)
+        giveback = (peak - closes[-1]) / impulse_range
+        if not (-0.25 <= giveback <= 0.85):
             continue
-        stop = window_low
+
+        rest_start = peak_idx + 1
+        rest_closes = closes[rest_start:] or closes[peak_idx:]
+        rest_highs = highs[rest_start:] or highs[peak_idx:]
+        rest_lows = lows[rest_start:] or lows[peak_idx:]
+        rest_vols = volumes[rest_start:]
+        rest_ema21 = ema21_series[rest_start:] or ema21_series[peak_idx:]
+        if len(rest_closes) < 1 or min(rest_lows) <= 0:
+            continue
+
+        rest_range_pct = (max(rest_highs) / min(rest_lows) - 1.0) * 100.0
+        avg_day_range = sum((h / l - 1.0) * 100.0 for h, l in zip(rest_highs, rest_lows) if l > 0) / max(1, len(rest_lows))
+        closes_below_21 = sum(1 for close, ema in zip(rest_closes, rest_ema21) if ema > 0 and close < ema * 0.975)
+        protected_low = min(rest_lows) >= min(base + impulse_range * 0.25, min(rest_ema21) * 0.97)
+        no_ugly_selloff = all(
+            closes[idx] >= closes[idx - 1] * 0.90 for idx in range(max(1, rest_start), n)
+        )
+        dryup = (sum(rest_vols) / len(rest_vols)) <= burst_vol * 0.90 if rest_vols else True
+        if rest_range_pct > 28.0 or avg_day_range > 9.0 or closes_below_21 > 2 or not protected_low or not no_ugly_selloff or not dryup:
+            continue
+
+        dist10 = (closes[-1] - ema10) / ema10 * 100.0
+        dist21 = (closes[-1] - ema21) / ema21 * 100.0
+        near_10 = -3.0 <= dist10 <= 8.0
+        near_21 = -3.0 <= dist21 <= 6.0
+        if not near_10 and not near_21:
+            continue
+
+        pivot = max(highs[base_idx:], default=peak)
+        below_pivot_pct = (pivot / closes[-1] - 1.0) * 100.0 if closes[-1] > 0 else 999.0
+        if not (-4.0 <= below_pivot_pct <= 20.0):
+            continue
+
+        stop = min(rest_lows) * 0.99
         risk_pct = (1 - stop / snapshot.last_price) * 100
-        if risk_pct > 6.0:
-            stop = snapshot.last_price * 0.95
-            risk_pct = 5.0
-        score = 70 + snapshot.rs_rating * 0.2 - range_pct
+        if risk_pct <= 0 or risk_pct > 12.0:
+            continue
+
+        ema_label = "10 EMA" if abs(dist10) <= abs(dist21) else "21 EMA"
+        score = (
+            72
+            + snapshot.rs_rating * 0.16
+            + min(gain, 35.0) * 0.45
+            + min(vol_multiple, 6.0) * 2.0
+            - rest_range_pct * 0.65
+            - max(abs(dist10), abs(dist21)) * 0.4
+        )
         matches.append(
             build_scan_match(
                 "bread-butter",
                 snapshot,
                 round(score, 2),
                 [
-                    "Breakout setup",
-                    f"{range_pct:.1f}% base, {below_pivot_pct:.1f}% below pivot {pivot:.2f}",
-                    f"Stop {stop:.2f} (risk {risk_pct:.1f}%, cap 6%)",
+                    f"Stage 2 {ema_label} pullback",
+                    f"+{gain:.0f}% in {peak_idx - base_idx}d on {('record' if record_volume else f'{vol_multiple:.1f}x')} volume; resting {n - 1 - peak_idx}d",
+                    f"{dist10:+.1f}% vs 10 EMA, {dist21:+.1f}% vs 21 EMA; stop {stop:.2f} (risk {risk_pct:.1f}%)",
                 ],
-            ).model_copy(update={"pattern": "Breakout"})
+                pattern=f"{ema_label} Pullback",
+            )
         )
 
-    matches.sort(key=lambda item: (item.pattern != "Pullback", -item.score))
+    matches.sort(key=lambda item: (-item.score, item.symbol))
     return matches
 
 

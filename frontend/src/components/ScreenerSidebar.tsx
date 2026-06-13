@@ -68,7 +68,7 @@ type SidebarItem = {
 };
 
 const ITEMS: SidebarItem[] = [
-  { mode: "bread-butter", title: "Bread & Butter", hint: "Your playbook: EMA pullbacks + orderly breakouts", Icon: Trophy },
+  { mode: "bread-butter", title: "Bread & Butter", hint: "Stage 2 impulse + 10/21 EMA rest", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
   { mode: "volume", title: "Volume", hint: "Recent volume-high pushes", Icon: BarChart3 },
   { mode: "ipo", title: "IPO", hint: "Recent listings", Icon: Rocket },

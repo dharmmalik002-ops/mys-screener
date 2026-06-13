@@ -2459,7 +2459,7 @@ class DashboardService:
                 "id": "bread-butter",
                 "name": "Bread & Butter",
                 "category": "Setups",
-                "description": "Your playbook: volume-expansion pullbacks to the 10/21 EMA and orderly 2-week-plus bases within a few percent of the pivot. Risk capped at 6% on every plan.",
+                "description": "Stage 2 stocks above the 50/200 SMA after a fresh 15-20% impulse, strong volume footprint, and an orderly rest around the 10/21 EMA.",
                 "hit_count": len(items),
             }
             return await self._scan_results_response(

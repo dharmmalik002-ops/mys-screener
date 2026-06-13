@@ -18,6 +18,7 @@ interface ClosedTrade {
   symbol: string; qty: number; entryPx: number; exitPx: number;
   entryDate: string; exitDate: string; pnl: number; perc: number;
   setupType: string; tags: string[]; remarks: string; img?: string; vcp?: VCP;
+  stoploss?: number; target?: number;
   equitySnapshot: number; posSizePct: number; sellIndex: number; buyIndices: number[];
 }
 interface OpenPosition {
@@ -54,9 +55,21 @@ const LS_META = "tradingJournalPosMeta";
 const PREDEFINED_TAGS = [
   "FOMO", "Early Entry", "Late Entry", "Perfect Entry", "Chased",
   "Held Well", "Sold Early", "Held Too Long", "Averaged Down",
-  "Followed Plan", "Broke Plan", "Emotional",
+  "Followed Plan", "Broke Plan", "Emotional", "Clean Pullback",
+  "Strong Volume", "Weak Volume", "Below 50 SMA", "Above 50/200 SMA",
+  "10 EMA Support", "21 EMA Support", "Poor Structure",
 ];
-const DEFAULT_SETUPS = ["VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
+const DEFAULT_SETUPS = ["Bread & Butter", "10 EMA Pullback", "21 EMA Pullback", "VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
+
+function withDefaultSetups(saved: string[]): string[] {
+  const seen = new Set<string>();
+  return [...DEFAULT_SETUPS, ...(Array.isArray(saved) ? saved : [])].filter((setup) => {
+    const key = String(setup || "").trim();
+    if (!key || seen.has(key.toLowerCase())) return false;
+    seen.add(key.toLowerCase());
+    return true;
+  });
+}
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────
 function lsGet<T>(key: string, fallback: T): T {
@@ -115,6 +128,8 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
           pnl, perc, setupType: lot.trade.setupType || trade.setupType || "",
           tags: [...(lot.trade.tags || [])], remarks: lot.trade.remarks || "",
           img: lot.trade.img, vcp: lot.trade.vcp,
+          stoploss: Number(lot.trade.stoploss) || undefined,
+          target: Number(lot.trade.target) || undefined,
           equitySnapshot: currentEquity, posSizePct,
           sellIndex: sellOrigIdx, buyIndices,
         });
@@ -958,7 +973,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [activeTab, setActiveTab] = useState(0);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
-  const [setups, setSetups] = useState<string[]>(() => lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS));
+  const [setups, setSetups] = useState<string[]>(() => withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS)));
   const [openPosCats, setOpenPosCats] = useState<Record<string, OpenPosCat>>(() => lsGet(LS_POSITIONS, {}));
   const [posMeta, setPosMeta] = useState<Record<string, PosMeta>>(() => lsGet(LS_META, {}));
   const [syncing, setSyncing] = useState(false);
@@ -1081,7 +1096,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         lsSet(LS_EQUITY, r.startEquity);
       }
       if (!localTrades.length && Array.isArray(r.setups) && (r.setups as string[]).length > 0) {
-        setSetups(r.setups as string[]); lsSet(LS_SETUPS, r.setups);
+        const mergedSetups = withDefaultSetups(r.setups as string[]);
+        setSetups(mergedSetups); lsSet(LS_SETUPS, mergedSetups);
       }
       if (!localTrades.length && r.openPosCats && typeof r.openPosCats === "object") {
         setOpenPosCats(r.openPosCats as Record<string, OpenPosCat>); lsSet(LS_POSITIONS, r.openPosCats);
@@ -1224,6 +1240,72 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       const key = String(t.exitDate).slice(0, 7);
       monthly.set(key, (monthly.get(key) ?? 0) + t.pnl);
     }
+    const rTrades = sortedClosed
+      .map((t) => {
+        const stop = Number(t.stoploss);
+        const riskPerShare = t.entryPx - stop;
+        if (!Number.isFinite(stop) || stop <= 0 || riskPerShare <= 0) return null;
+        return {
+          ...t,
+          r: (t.exitPx - t.entryPx) / riskPerShare,
+          plannedRiskPct: (riskPerShare / t.entryPx) * 100,
+        };
+      })
+      .filter((t): t is ClosedTrade & { r: number; plannedRiskPct: number } => Boolean(t));
+    const avgR = rTrades.length ? rTrades.reduce((sum, t) => sum + t.r, 0) / rTrades.length : 0;
+    const plannedRiskPct = rTrades.length ? rTrades.reduce((sum, t) => sum + t.plannedRiskPct, 0) / rTrades.length : 0;
+    const twoRCount = rTrades.filter((t) => t.r >= 2).length;
+    const minusOneRCount = rTrades.filter((t) => t.r <= -1).length;
+    const plannedTradesPct = sortedClosed.length ? (rTrades.length / sortedClosed.length) * 100 : 0;
+    const followedPlan = sortedClosed.filter((t) => t.tags?.includes("Followed Plan")).length;
+    const brokePlan = sortedClosed.filter((t) => t.tags?.includes("Broke Plan")).length;
+    const aPlusTrades = sortedClosed.filter((t) => {
+      const tags = t.tags || [];
+      const good = tags.includes("Followed Plan") || tags.includes("Perfect Entry") || tags.includes("Held Well");
+      const bad = tags.some((tag) => ["FOMO", "Chased", "Broke Plan", "Averaged Down", "Emotional"].includes(tag));
+      return good && !bad;
+    });
+    const habitCosts = new Map<string, { count: number; pnl: number }>();
+    for (const t of sortedClosed) {
+      for (const tag of t.tags || []) {
+        if (!["FOMO", "Early Entry", "Late Entry", "Chased", "Sold Early", "Held Too Long", "Averaged Down", "Broke Plan", "Emotional"].includes(tag)) continue;
+        const row = habitCosts.get(tag) ?? { count: 0, pnl: 0 };
+        row.count += 1;
+        row.pnl += t.pnl;
+        habitCosts.set(tag, row);
+      }
+    }
+    const costliestHabit = Array.from(habitCosts.entries()).sort((a, b) => a[1].pnl - b[1].pnl)[0] ?? null;
+    const holdBuckets = [
+      { label: "1d", min: 0, max: 1, trades: [] as ClosedTrade[] },
+      { label: "2-5d", min: 2, max: 5, trades: [] as ClosedTrade[] },
+      { label: "6-15d", min: 6, max: 15, trades: [] as ClosedTrade[] },
+      { label: "16-30d", min: 16, max: 30, trades: [] as ClosedTrade[] },
+      { label: "30d+", min: 31, max: Infinity, trades: [] as ClosedTrade[] },
+    ];
+    for (const t of sortedClosed) {
+      const hold = Math.max(0, (getSafeTime(t.exitDate) - getSafeTime(t.entryDate)) / 86400000);
+      const bucket = holdBuckets.find((b) => hold >= b.min && hold <= b.max);
+      bucket?.trades.push(t);
+    }
+    const bestHoldBucket = holdBuckets
+      .filter((b) => b.trades.length > 0)
+      .map((b) => ({
+        label: b.label,
+        count: b.trades.length,
+        pnl: b.trades.reduce((sum, t) => sum + t.pnl, 0),
+        winRate: (b.trades.filter((t) => t.pnl > 0).length / b.trades.length) * 100,
+      }))
+      .sort((a, b) => b.pnl - a.pnl)[0] ?? null;
+    const breadButterTrades = sortedClosed.filter((t) => {
+      const text = `${t.setupType || ""} ${(t.tags || []).join(" ")} ${t.remarks || ""}`.toLowerCase();
+      return text.includes("bread") || text.includes("pullback") || text.includes("stage 2") || text.includes("10 ema") || text.includes("21 ema");
+    });
+    const breadButterWins = breadButterTrades.filter((t) => t.pnl > 0).length;
+    const breadButterPnl = breadButterTrades.reduce((sum, t) => sum + t.pnl, 0);
+    const breadButterAvgPct = breadButterTrades.length
+      ? breadButterTrades.reduce((sum, t) => sum + t.perc, 0) / breadButterTrades.length
+      : 0;
     const best = sortedClosed.length ? sortedClosed.reduce((a, b) => (a.perc > b.perc ? a : b)) : null;
     const worst = sortedClosed.length ? sortedClosed.reduce((a, b) => (a.perc < b.perc ? a : b)) : null;
     return {
@@ -1239,6 +1321,22 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       lossesOver6,
       lossCount: losses.length,
       monthly: Array.from(monthly.entries()).sort((a, b) => b[0].localeCompare(a[0])).slice(0, 6),
+      avgR,
+      plannedRiskPct,
+      twoRCount,
+      minusOneRCount,
+      rTradeCount: rTrades.length,
+      plannedTradesPct,
+      followedPlan,
+      brokePlan,
+      aPlusCount: aPlusTrades.length,
+      aPlusWinRate: aPlusTrades.length ? (aPlusTrades.filter((t) => t.pnl > 0).length / aPlusTrades.length) * 100 : 0,
+      costliestHabit,
+      bestHoldBucket,
+      breadButterCount: breadButterTrades.length,
+      breadButterWinRate: breadButterTrades.length ? (breadButterWins / breadButterTrades.length) * 100 : 0,
+      breadButterPnl,
+      breadButterAvgPct,
       best,
       worst,
     };
@@ -1455,14 +1553,15 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         }
         if (Array.isArray(importedTrades) && importedTrades.length > 0) { saveTrades(importedTrades); }
         if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setSizerEquity(String(importedEquity)); setCalcCap(String(importedEquity)); }
-        if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(importedSetups); lsSet(LS_SETUPS, importedSetups); }
+        const mergedSetups = withDefaultSetups(importedSetups);
+        if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(mergedSetups); lsSet(LS_SETUPS, mergedSetups); }
         if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
         if (Object.keys(importedMeta).length > 0) { setPosMeta(importedMeta); lsSet(LS_META, importedMeta); }
         // Push to backend after import
         syncToBackend(
           importedTrades.length ? importedTrades : trades,
           importedEquity > 0 ? importedEquity : startEquity,
-          importedSetups.length ? importedSetups : setups,
+          importedSetups.length ? mergedSetups : setups,
           Object.keys(importedPositions).length ? importedPositions : openPosCats,
           Object.keys(importedMeta).length ? importedMeta : posMeta,
         );
@@ -2442,6 +2541,10 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <div className="tj-edge-item"><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></div>
                 <div className="tj-edge-item" title="Your rule: never lose more than 3-4%; hard cap 6%"><span>Rule breaches (&gt;4% / &gt;6% loss)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></div>
                 <div className="tj-edge-item"><span>Best / worst trade</span><strong>{edge.best ? `${edge.best.symbol} +${edge.best.perc.toFixed(0)}%` : "—"} / {edge.worst ? `${edge.worst.symbol} ${edge.worst.perc.toFixed(0)}%` : "—"}</strong></div>
+                <div className="tj-edge-item"><span>Avg R / trade</span><strong className={edge.avgR >= 0 ? "pos" : "neg"}>{edge.rTradeCount ? `${edge.avgR >= 0 ? "+" : ""}${edge.avgR.toFixed(2)}R` : "Add stops"}</strong></div>
+                <div className="tj-edge-item"><span>2R wins / -1R losses</span><strong>{edge.twoRCount} / {edge.minusOneRCount}</strong></div>
+                <div className="tj-edge-item"><span>Avg planned risk</span><strong>{edge.rTradeCount ? `${edge.plannedRiskPct.toFixed(1)}%` : "—"}</strong></div>
+                <div className="tj-edge-item"><span>Trades with stop plan</span><strong className={edge.plannedTradesPct >= 80 ? "pos" : edge.plannedTradesPct >= 50 ? "" : "neg"}>{edge.plannedTradesPct.toFixed(0)}%</strong></div>
               </div>
             </div>
             <div className="tj-card">
@@ -2453,6 +2556,41 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                   </div>
                 ))
               )}
+            </div>
+          </div>
+          <div className="tj-card" style={{ marginBottom: 14 }}>
+            <div className="tj-card-hdr">Trading Quality Dashboard</div>
+            <div className="tj-edge-grid">
+              <div className="tj-edge-item">
+                <span>Bread & Butter model</span>
+                <strong className={edge.breadButterPnl >= 0 ? "pos" : "neg"}>
+                  {edge.breadButterCount ? `${edge.breadButterCount} trades · WR ${edge.breadButterWinRate.toFixed(0)}%` : "No tagged trades"}
+                </strong>
+              </div>
+              <div className="tj-edge-item">
+                <span>Model avg / net</span>
+                <strong className={edge.breadButterPnl >= 0 ? "pos" : "neg"}>
+                  {edge.breadButterCount ? `${edge.breadButterAvgPct >= 0 ? "+" : ""}${edge.breadButterAvgPct.toFixed(1)}% · ${fmtPnl(edge.breadButterPnl)}` : "—"}
+                </strong>
+              </div>
+              <div className="tj-edge-item">
+                <span>A+ execution</span>
+                <strong>{edge.aPlusCount} trades · WR {edge.aPlusWinRate.toFixed(0)}%</strong>
+              </div>
+              <div className="tj-edge-item">
+                <span>Plan discipline</span>
+                <strong className={edge.brokePlan > edge.followedPlan ? "neg" : "pos"}>{edge.followedPlan} followed / {edge.brokePlan} broke</strong>
+              </div>
+              <div className="tj-edge-item">
+                <span>Costliest habit</span>
+                <strong className={edge.costliestHabit && edge.costliestHabit[1].pnl < 0 ? "neg" : ""}>
+                  {edge.costliestHabit ? `${edge.costliestHabit[0]} · ${fmtPnl(edge.costliestHabit[1].pnl)}` : "No mistake tags"}
+                </strong>
+              </div>
+              <div className="tj-edge-item">
+                <span>Best hold zone</span>
+                <strong>{edge.bestHoldBucket ? `${edge.bestHoldBucket.label} · ${fmtPnl(edge.bestHoldBucket.pnl)}` : "—"}</strong>
+              </div>
             </div>
           </div>
           <div className="tj-insights-top">
