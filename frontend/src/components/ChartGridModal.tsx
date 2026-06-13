@@ -60,6 +60,7 @@ type ChartGridModalProps = {
   onChartStyleChange: (value: ChartGridChartStyle) => void;
   onDisplayModeChange: (value: ChartGridDisplayMode) => void;
   onLoadSeries?: (symbols: string[], timeframe: ChartGridTimeframe) => Promise<Record<string, ChartBar[]>>;
+  onAddToWatchlist?: (symbol: string) => void;
   onClose: () => void;
 };
 
@@ -585,6 +586,7 @@ function GridCard({
   globalPosition,
   hiddenMas,
   light,
+  onAddToWatchlist,
 }: {
   card: ChartGridDisplayCard;
   fullBars: ChartBar[];
@@ -595,6 +597,7 @@ function GridCard({
   globalPosition: number;
   hiddenMas: ReadonlySet<string>;
   light: boolean;
+  onAddToWatchlist?: (symbol: string) => void;
 }) {
   // Per-card lookback: the slider EXPANDS the time horizon. The right edge is
   // always pinned to today — at the default (100) the chart shows the selected
@@ -679,7 +682,23 @@ function GridCard({
           <small>{card.footerLabel ?? "Latest"}</small>
           <strong>{card.footerValue}</strong>
         </div>
-        {metaLabel ? <span className="chart-grid-meta-chip">{metaLabel}</span> : null}
+        <div className="chart-grid-card-foot-right">
+          {metaLabel ? <span className="chart-grid-meta-chip">{metaLabel}</span> : null}
+          {card.symbol && onAddToWatchlist ? (
+            <button
+              type="button"
+              className="chart-grid-wl-btn"
+              title={`Add ${card.symbol} to a watchlist`}
+              aria-label={`Add ${card.symbol} to a watchlist`}
+              onClick={(event) => {
+                event.stopPropagation();
+                onAddToWatchlist(card.symbol!);
+              }}
+            >
+              <span aria-hidden>＋</span> Watchlist
+            </button>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -706,6 +725,7 @@ export function ChartGridModal({
   onChartStyleChange,
   onDisplayModeChange,
   onLoadSeries,
+  onAddToWatchlist,
   onClose,
 }: ChartGridModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -1057,6 +1077,7 @@ export function ChartGridModal({
                   globalPosition={rangePosition}
                   hiddenMas={hiddenMas}
                   light={lightMode}
+                  onAddToWatchlist={onAddToWatchlist}
                 />
               ))
             : null}

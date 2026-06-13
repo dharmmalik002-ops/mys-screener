@@ -1130,6 +1130,7 @@ export function WatchlistsPanel({
             onChartStyleChange={setGridChartStyle}
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGridSeries}
+            onAddToWatchlist={onRequestAddToWatchlist}
             onClose={() => setGridOpen(false)}
           />
         </Suspense>

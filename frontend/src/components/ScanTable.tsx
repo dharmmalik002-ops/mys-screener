@@ -1292,6 +1292,7 @@ export function ScanTable({
             onChartStyleChange={setGridChartStyle}
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGridSeries}
+            onAddToWatchlist={onRequestAddToWatchlist}
             onClose={() => {
               setGridOpen(false);
               if (viewMode === "grid") setViewMode("table");

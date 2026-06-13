@@ -3195,6 +3195,38 @@ button {
   font-size: 1rem;
 }
 
+/* Per-chart "add to watchlist" affordance (mirrors the big chart). */
+.chart-grid-card-foot-right {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.chart-grid-wl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 45%, transparent);
+  background: color-mix(in srgb, var(--accent, #58a6ff) 12%, transparent);
+  color: var(--accent, #58a6ff);
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+.chart-grid-wl-btn span { font-size: 0.95rem; line-height: 1; }
+.chart-grid-wl-btn:hover {
+  background: color-mix(in srgb, var(--accent, #58a6ff) 22%, transparent);
+  border-color: var(--accent, #58a6ff);
+}
+.chart-grid-modal.chart-grid-light .chart-grid-wl-btn {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.4);
+  background: rgba(37, 99, 235, 0.08);
+}
+
 .results-column,
 .chart-column {
   min-width: 0;
