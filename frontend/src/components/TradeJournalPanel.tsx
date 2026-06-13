@@ -2407,7 +2407,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-card-hdr">Quick Calculator</div>
               <div className="tj-form-stack">
                 <div className="tj-form-field"><label>Account Size (₹)</label><input className="tj-input" type="number" value={calcCap} onChange={e => setCalcCap(e.target.value)} /></div>
-                <div className="tj-form-field"><label>Risk % per Trade</label><input className="tj-input" type="number" step="0.1" value={calcRisk} onChange={e => setCalcRisk(e.target.value)} /></div>
+                <div className="tj-form-field"><label>Account Risk %</label><input className="tj-input" type="number" step="0.1" value={calcRisk} onChange={e => setCalcRisk(e.target.value)} /></div>
                 <div className="tj-form-field"><label>Entry Price</label><input className="tj-input" type="number" step="any" value={calcEntry} onChange={e => setCalcEntry(e.target.value)} /></div>
                 <div className="tj-form-field"><label>Stop Loss Price</label><input className="tj-input" type="number" step="any" value={calcStop} onChange={e => setCalcStop(e.target.value)} /></div>
                 <button className="tj-btn primary" style={{ marginTop: 4 }} onClick={runCalc}>Calculate → Apply to Form</button>
@@ -2568,7 +2568,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <div className="tj-edge-item"><span>Avg win / Avg loss</span><strong><em className="pos">+{edge.avgWinPct.toFixed(1)}%</em> / <em className="neg">{edge.avgLossPct.toFixed(1)}%</em></strong></div>
                 <div className="tj-edge-item"><span>Max drawdown (realized)</span><strong className="neg">−{edge.maxDdPct.toFixed(1)}%</strong></div>
                 <div className="tj-edge-item"><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></div>
-                <div className="tj-edge-item" title="Your rule: never lose more than 3-4%; hard cap 6%"><span>Rule breaches (&gt;4% / &gt;6% loss)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></div>
+                <div className="tj-edge-item" title="Your rule: 3-4% max loss on position value; hard cap 6% stop distance; max 1% of total equity at risk"><span>Position loss breaches (&gt;4% / &gt;6%)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></div>
                 <div className="tj-edge-item"><span>Best / worst trade</span><strong>{edge.best ? `${edge.best.symbol} +${edge.best.perc.toFixed(0)}%` : "—"} / {edge.worst ? `${edge.worst.symbol} ${edge.worst.perc.toFixed(0)}%` : "—"}</strong></div>
                 <div className="tj-edge-item"><span>Avg R / trade</span><strong className={edge.avgR >= 0 ? "pos" : "neg"}>{edge.rTradeCount ? `${edge.avgR >= 0 ? "+" : ""}${edge.avgR.toFixed(2)}R` : "Add stops"}</strong></div>
                 <div className="tj-edge-item"><span>2R wins / -1R losses</span><strong>{edge.twoRCount} / {edge.minusOneRCount}</strong></div>
@@ -2676,9 +2676,9 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             <div className="tj-card-hdr">Position Sizer</div>
             <div className="tj-form-grid-2">
               <div className="tj-form-field"><label>Account Equity (₹)</label><input className="tj-input" type="number" value={sizerEquity} onChange={e => setSizerEquity(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Risk per Trade (%)</label><input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Account Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} /></div>
               <div className="tj-form-field"><label>Entry Price (₹)</label><input className="tj-input" type="number" step="any" value={sizerEntry} onChange={e => setSizerEntry(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Stop Loss (%)</label><input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Stop Loss / Position Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} /></div>
             </div>
             <div className="tj-sizer-results">
               <div className="tj-sizer-box"><div className="tj-sizer-label">Qty to Buy</div><div className="tj-sizer-val accent">{sizerResultQty}</div></div>

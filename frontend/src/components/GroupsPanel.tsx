@@ -21,12 +21,13 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score" | "1m" | "3m" | "6m";
+type GroupSortBy = "rank" | "score" | "1w" | "1m" | "3m" | "6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
-  { value: "rank", label: "Rank" },
-  { value: "score", label: "Score" },
+  { value: "rank", label: "Fast Rank" },
+  { value: "score", label: "Fast Score" },
+  { value: "1w", label: "1W" },
   { value: "1m", label: "1M" },
   { value: "3m", label: "3M" },
   { value: "6m", label: "6M" },
@@ -177,7 +178,9 @@ export function GroupsPanel({
       members.sort((a, b) => {
         const rs = (b.rs_rating ?? -1) - (a.rs_rating ?? -1);
         if (rs !== 0) return rs;
-        return b.return_3m - a.return_3m;
+        const oneWeek = b.return_1w - a.return_1w;
+        if (oneWeek !== 0) return oneWeek;
+        return b.return_1m - a.return_1m;
       });
     }
     return grouped;
@@ -214,6 +217,7 @@ export function GroupsPanel({
     groups.sort((a, b) => {
       if (sortBy === "rank") return a.rank - b.rank;
       if (sortBy === "score") return b.score - a.score;
+      if (sortBy === "1w") return b.relative_return_1w - a.relative_return_1w;
       if (sortBy === "1m") return b.relative_return_1m - a.relative_return_1m;
       if (sortBy === "3m") return b.relative_return_3m - a.relative_return_3m;
       return b.relative_return_6m - a.relative_return_6m;
@@ -251,7 +255,7 @@ export function GroupsPanel({
   const totalGroups = data?.total_groups ?? allGroups.length;
 
   const pageSubtitle = data
-    ? `${data.total_groups} ranked groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
+    ? `${data.total_groups} fast swing groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
     : "Loading ranked industry groups";
 
   function handleGroupClick(group: IndustryGroupRankItem) {
@@ -306,7 +310,7 @@ export function GroupsPanel({
         <section className="gp-card gp-card-table">
           <div className="gp-card-head">
             <div>
-              <h3>Group Rankings</h3>
+              <h3>Fast Group Rankings</h3>
               <p className="gp-card-sub">
                 {filteredGroups.length} of {totalGroups} groups
                 {searchQuery.trim() ? ` · matching "${searchQuery.trim()}"` : ""}
@@ -326,6 +330,7 @@ export function GroupsPanel({
                     <th style={{ width: 56 }}>#</th>
                     <th>Industry Group</th>
                     <th className="gp-num">Score</th>
+                    <th className="gp-num">1W</th>
                     <th className="gp-num">1M</th>
                     <th className="gp-num">3M</th>
                     <th className="gp-num">6M</th>
@@ -382,6 +387,7 @@ export function GroupsPanel({
                         <td className="gp-num">
                           <span className="gp-score-chip">{formatScore(group.score)}</span>
                         </td>
+                        <td className={`gp-num ${metricClass(group.return_1w)}`}>{formatReturn(group.return_1w)}</td>
                         <td className={`gp-num ${metricClass(group.return_1m)}`}>{formatReturn(group.return_1m)}</td>
                         <td className={`gp-num ${metricClass(group.return_3m)}`}>{formatReturn(group.return_3m)}</td>
                         <td className={`gp-num ${metricClass(group.return_6m)}`}>{formatReturn(group.return_6m)}</td>

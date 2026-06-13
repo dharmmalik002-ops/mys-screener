@@ -764,6 +764,7 @@ export type IndustryGroupStockItem = {
   final_group_name: string;
   last_price: number;
   change_pct: number;
+  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
@@ -775,6 +776,8 @@ export type IndustryGroupRankItem = {
   rank: number;
   rank_label: string;
   rank_change_1w: number | null;
+  rank_change_1m: number | null;
+  rank_change_3m: number | null;
   score_change_1w: number | null;
   strength_bucket: string;
   trend_label: string;
@@ -784,12 +787,15 @@ export type IndustryGroupRankItem = {
   description: string;
   stock_count: number;
   score: number;
+  return_1w: number;
   return_1m: number;
   return_3m: number;
   return_6m: number;
+  relative_return_1w: number;
   relative_return_1m: number;
   relative_return_3m: number;
   relative_return_6m: number;
+  median_return_1w: number;
   median_return_1m: number;
   median_return_3m: number;
   median_return_6m: number;
@@ -1442,6 +1448,7 @@ function normalizeIndustryGroupStockItem(value: unknown): IndustryGroupStockItem
     final_group_name: readString(raw.final_group_name),
     last_price: readNumber(raw.last_price),
     change_pct: readNumber(raw.change_pct),
+    return_1w: readNumber(raw.return_1w),
     return_1m: readNumber(raw.return_1m),
     return_3m: readNumber(raw.return_3m),
     return_6m: readNumber(raw.return_6m),
@@ -1456,6 +1463,8 @@ function normalizeIndustryGroupRankItem(value: unknown): IndustryGroupRankItem {
     rank: readNumber(raw.rank),
     rank_label: readString(raw.rank_label),
     rank_change_1w: readNullableNumber(raw.rank_change_1w),
+    rank_change_1m: readNullableNumber(raw.rank_change_1m),
+    rank_change_3m: readNullableNumber(raw.rank_change_3m),
     score_change_1w: readNullableNumber(raw.score_change_1w),
     strength_bucket: readString(raw.strength_bucket),
     trend_label: readString(raw.trend_label),
@@ -1465,12 +1474,15 @@ function normalizeIndustryGroupRankItem(value: unknown): IndustryGroupRankItem {
     description: readString(raw.description),
     stock_count: readNumber(raw.stock_count),
     score: readNumber(raw.score),
+    return_1w: readNumber(raw.return_1w),
     return_1m: readNumber(raw.return_1m),
     return_3m: readNumber(raw.return_3m),
     return_6m: readNumber(raw.return_6m),
+    relative_return_1w: readNumber(raw.relative_return_1w),
     relative_return_1m: readNumber(raw.relative_return_1m),
     relative_return_3m: readNumber(raw.relative_return_3m),
     relative_return_6m: readNumber(raw.relative_return_6m),
+    median_return_1w: readNumber(raw.median_return_1w),
     median_return_1m: readNumber(raw.median_return_1m),
     median_return_3m: readNumber(raw.median_return_3m),
     median_return_6m: readNumber(raw.median_return_6m),

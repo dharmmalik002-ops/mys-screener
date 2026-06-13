@@ -1186,6 +1186,7 @@ class IndustryGroupStockItem(BaseModel):
     final_group_name: str
     last_price: float
     change_pct: float
+    return_1w: float = 0.0
     return_1m: float
     return_3m: float
     return_6m: float
@@ -1211,12 +1212,15 @@ class IndustryGroupRankItem(BaseModel):
     stock_count: int
     unstable_flag: bool = False
     score: float
+    return_1w: float = 0.0
     return_1m: float
     return_3m: float
     return_6m: float
+    relative_return_1w: float = 0.0
     relative_return_1m: float
     relative_return_3m: float
     relative_return_6m: float
+    median_return_1w: float = 0.0
     median_return_1m: float
     median_return_3m: float
     median_return_6m: float

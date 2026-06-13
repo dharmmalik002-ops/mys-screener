@@ -6,11 +6,11 @@ Pipeline:
   2. Classify each stock via IndustryClassifier (override -> keyword -> peer -> needs_review).
   3. Group by primary_group_id. Groups with < 5 stocks get unstable_flag=true and are
      merged into a synthetic parent bucket (`__parent__<parent>`) for ranking only.
-  4. Compute 126d / 63d / 21d total returns (using stock_return_126d / 60d / 20d as the
+  4. Compute 126d / 63d / 21d / 5d total returns (using stock_return_126d / 60d / 20d / 5d as the
      pragmatic mapping over the existing snapshot fields).
   5. Winsorize each return series within the group at 5th/95th percentile.
-  6. group_score = 0.50 * median(126d) + 0.30 * median(63d) + 0.20 * median(21d)
-  7. Dense rank descending by group_score.
+  6. group_score = fast swing score: 5d thrust + 20d momentum + acceleration + breadth + leaders/volume.
+  7. Dense rank descending by group_score so fresh moving groups surface first.
   8. rank_change_1w / 1m / 3m read from on-disk daily rank snapshots (5d / 20d / 60d ago).
 """
 
@@ -50,9 +50,11 @@ GROUP_MIN_STOCKS = 5
 WINSORIZE_LOWER = 0.05
 WINSORIZE_UPPER = 0.95
 
-SCORE_WEIGHT_126D = 0.50
-SCORE_WEIGHT_63D = 0.30
-SCORE_WEIGHT_21D = 0.20
+SCORE_WEIGHT_5D = 0.35
+SCORE_WEIGHT_21D = 0.25
+SCORE_WEIGHT_ACCELERATION = 0.20
+SCORE_WEIGHT_BREADTH = 0.10
+SCORE_WEIGHT_LEADERS_VOLUME = 0.10
 
 RANK_HISTORY_DIR = Path(__file__).resolve().parent.parent / "data" / "rank_history"
 RANK_HISTORY_LOOKBACKS = {"1w": 5, "1m": 20, "3m": 60}
@@ -99,6 +101,26 @@ def _winsorized_mean(values: list[float]) -> float:
     return _safe_mean(_winsorize(values))
 
 
+def _percentile_scores(values: list[float]) -> list[float]:
+    if not values:
+        return []
+    if len(values) == 1:
+        return [100.0]
+    sorted_vals = sorted((value, index) for index, value in enumerate(values))
+    scores = [0.0] * len(values)
+    idx = 0
+    while idx < len(sorted_vals):
+        end = idx
+        while end + 1 < len(sorted_vals) and sorted_vals[end + 1][0] == sorted_vals[idx][0]:
+            end += 1
+        rank_midpoint = (idx + end) / 2
+        score = round((rank_midpoint / (len(sorted_vals) - 1)) * 100, 2)
+        for _, original_index in sorted_vals[idx : end + 1]:
+            scores[original_index] = score
+        idx = end + 1
+    return scores
+
+
 def _majority_label(values: Iterable[str], fallback: str = "Unclassified") -> str:
     labels = [str(v or "").strip() for v in values if str(v or "").strip()]
     if not labels:
@@ -137,8 +159,9 @@ def _resolve_trend_label(score_change_1w: float | None, rank_change_1w: int | No
 
 def _benchmark_returns(benchmark_snapshots: list[StockSnapshot]) -> dict[str, float]:
     if not benchmark_snapshots:
-        return {"return_1m": 0.0, "return_3m": 0.0, "return_6m": 0.0}
+        return {"return_1w": 0.0, "return_1m": 0.0, "return_3m": 0.0, "return_6m": 0.0}
     return {
+        "return_1w": round(_winsorized_mean([s.stock_return_5d for s in benchmark_snapshots]), 2),
         "return_1m": round(_winsorized_mean([s.stock_return_20d for s in benchmark_snapshots]), 2),
         "return_3m": round(_winsorized_mean([s.stock_return_60d for s in benchmark_snapshots]), 2),
         "return_6m": round(_winsorized_mean([s.stock_return_126d for s in benchmark_snapshots]), 2),
@@ -304,28 +327,30 @@ def _build_group_payload(
         ret_126 = [s.stock_return_126d for s in members]
         ret_63 = [s.stock_return_60d for s in members]
         ret_21 = [s.stock_return_20d for s in members]
+        ret_5 = [s.stock_return_5d for s in members]
 
         med_126 = _winsorized_median(ret_126)
         med_63 = _winsorized_median(ret_63)
         med_21 = _winsorized_median(ret_21)
-
-        score = round(
-            (SCORE_WEIGHT_126D * med_126)
-            + (SCORE_WEIGHT_63D * med_63)
-            + (SCORE_WEIGHT_21D * med_21),
-            2,
-        )
+        med_5 = _winsorized_median(ret_5)
 
         win_mean_126 = round(_winsorized_mean(ret_126), 2)
         win_mean_63 = round(_winsorized_mean(ret_63), 2)
         win_mean_21 = round(_winsorized_mean(ret_21), 2)
+        win_mean_5 = round(_winsorized_mean(ret_5), 2)
 
+        relative_1w = round(win_mean_5 - benchmark["return_1w"], 2)
         relative_1m = round(win_mean_21 - benchmark["return_1m"], 2)
         relative_3m = round(win_mean_63 - benchmark["return_3m"], 2)
         relative_6m = round(win_mean_126 - benchmark["return_6m"], 2)
 
+        positive_1w = _safe_pct(sum(1 for s in members if s.stock_return_5d > 0), len(members))
+        positive_1m = _safe_pct(sum(1 for s in members if s.stock_return_20d > 0), len(members))
         positive_3m = _safe_pct(sum(1 for s in members if s.stock_return_60d > 0), len(members))
         positive_6m = _safe_pct(sum(1 for s in members if s.stock_return_126d > 0), len(members))
+        outperform_1w = _safe_pct(
+            sum(1 for s in members if s.stock_return_5d > benchmark["return_1w"]), len(members)
+        )
         outperform_3m = _safe_pct(
             sum(1 for s in members if s.stock_return_60d > benchmark["return_3m"]), len(members)
         )
@@ -341,14 +366,26 @@ def _build_group_payload(
             len(members),
         )
         breadth_score = round(_safe_mean([positive_3m, positive_6m, outperform_3m, outperform_6m]), 2)
+        fast_breadth_score = round(_safe_mean([positive_1w, positive_1m, outperform_1w, above_50dma]), 2)
         trend_health_score = round((above_50dma * 0.6) + (above_200dma * 0.4), 2)
+        fast_acceleration = round(med_5 - (med_21 / 4.0), 2)
+        leader_density = _safe_pct(
+            sum(1 for s in members if s.rs_eligible and s.rs_rating >= 80 and s.stock_return_5d > 0),
+            len(members),
+        )
+        volume_thrust = _safe_pct(
+            sum(1 for s in members if s.relative_volume >= 1.5 and s.change_pct > 0),
+            len(members),
+        )
+        leaders_volume_score = round((leader_density * 0.65) + (volume_thrust * 0.35), 2)
 
         sorted_members = sorted(
             members,
             key=lambda s: (
                 s.rs_rating if s.rs_eligible else -1,
-                s.stock_return_126d,
-                s.stock_return_60d,
+                s.stock_return_5d,
+                s.stock_return_20d,
+                s.relative_volume,
                 s.change_pct,
             ),
             reverse=True,
@@ -390,6 +427,7 @@ def _build_group_payload(
                     final_group_name=group_name,
                     last_price=round(snap.last_price, 2),
                     change_pct=round(snap.change_pct, 2),
+                    return_1w=round(snap.stock_return_5d, 2),
                     return_1m=round(snap.stock_return_20d, 2),
                     return_3m=round(snap.stock_return_60d, 2),
                     return_6m=round(snap.stock_return_126d, 2),
@@ -408,12 +446,15 @@ def _build_group_payload(
                 "description": _group_description(group_name, market_key),
                 "stock_count": len(members),
                 "unstable_flag": unstable,
+                "return_1w": win_mean_5,
                 "return_1m": win_mean_21,
                 "return_3m": win_mean_63,
                 "return_6m": win_mean_126,
+                "relative_return_1w": relative_1w,
                 "relative_return_1m": relative_1m,
                 "relative_return_3m": relative_3m,
                 "relative_return_6m": relative_6m,
+                "median_return_1w": round(med_5, 2),
                 "median_return_1m": round(med_21, 2),
                 "median_return_3m": round(med_63, 2),
                 "median_return_6m": round(med_126, 2),
@@ -427,7 +468,12 @@ def _build_group_payload(
                 "laggards": [s.symbol for s in laggards[:3]],
                 "top_constituents": top_constituents,
                 "symbols": [s.symbol for s in sorted_members],
-                "score": score,
+                "score": 0.0,
+                "_fast_return_5d": relative_1w,
+                "_fast_return_20d": relative_1m,
+                "_fast_acceleration": fast_acceleration,
+                "_fast_breadth": fast_breadth_score,
+                "_fast_leaders_volume": leaders_volume_score,
             }
         )
 
@@ -442,7 +488,34 @@ def _build_group_payload(
             )
         )
 
-    group_rows.sort(key=lambda row: (-float(row["score"]), str(row["group_name"])))
+    if group_rows:
+        score_inputs = {
+            "_fast_return_5d": _percentile_scores([float(row["_fast_return_5d"]) for row in group_rows]),
+            "_fast_return_20d": _percentile_scores([float(row["_fast_return_20d"]) for row in group_rows]),
+            "_fast_acceleration": _percentile_scores([float(row["_fast_acceleration"]) for row in group_rows]),
+            "_fast_breadth": _percentile_scores([float(row["_fast_breadth"]) for row in group_rows]),
+            "_fast_leaders_volume": _percentile_scores([float(row["_fast_leaders_volume"]) for row in group_rows]),
+        }
+        for idx, row in enumerate(group_rows):
+            row["score"] = round(
+                (SCORE_WEIGHT_5D * score_inputs["_fast_return_5d"][idx])
+                + (SCORE_WEIGHT_21D * score_inputs["_fast_return_20d"][idx])
+                + (SCORE_WEIGHT_ACCELERATION * score_inputs["_fast_acceleration"][idx])
+                + (SCORE_WEIGHT_BREADTH * score_inputs["_fast_breadth"][idx])
+                + (SCORE_WEIGHT_LEADERS_VOLUME * score_inputs["_fast_leaders_volume"][idx]),
+                2,
+            )
+            for transient_key in score_inputs:
+                row.pop(transient_key, None)
+
+    group_rows.sort(
+        key=lambda row: (
+            -float(row["score"]),
+            -float(row["relative_return_1w"]),
+            -float(row["relative_return_1m"]),
+            str(row["group_name"]),
+        )
+    )
     stock_rows.sort(key=lambda row: (row.final_group_name, row.symbol))
     master_rows.sort(key=lambda row: row.group_name)
     return group_rows, stock_rows, master_rows
@@ -510,12 +583,15 @@ def build_industry_groups_response(
                 stock_count=int(row["stock_count"]),
                 unstable_flag=bool(row.get("unstable_flag", False)),
                 score=float(row["score"]),
+                return_1w=float(row["return_1w"]),
                 return_1m=float(row["return_1m"]),
                 return_3m=float(row["return_3m"]),
                 return_6m=float(row["return_6m"]),
+                relative_return_1w=float(row["relative_return_1w"]),
                 relative_return_1m=float(row["relative_return_1m"]),
                 relative_return_3m=float(row["relative_return_3m"]),
                 relative_return_6m=float(row["relative_return_6m"]),
+                median_return_1w=float(row["median_return_1w"]),
                 median_return_1m=float(row["median_return_1m"]),
                 median_return_3m=float(row["median_return_3m"]),
                 median_return_6m=float(row["median_return_6m"]),
@@ -597,13 +673,15 @@ def write_industry_group_files(
                 "score": item.score,
                 "stockCount": item.stock_count,
                 "unstableFlag": item.unstable_flag,
-                "returns": {"1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
+                "returns": {"1w": item.return_1w, "1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
                 "relativeReturns": {
+                    "1w": item.relative_return_1w,
                     "1m": item.relative_return_1m,
                     "3m": item.relative_return_3m,
                     "6m": item.relative_return_6m,
                 },
                 "medianReturns": {
+                    "1w": item.median_return_1w,
                     "1m": item.median_return_1m,
                     "3m": item.median_return_3m,
                     "6m": item.median_return_6m,
@@ -628,9 +706,11 @@ def write_industry_group_files(
             "groupName": item.group_name,
             "score": item.score,
             "unstableFlag": item.unstable_flag,
+            "return1w": item.return_1w,
             "return1m": item.return_1m,
             "return3m": item.return_3m,
             "return6m": item.return_6m,
+            "relativeReturn1w": item.relative_return_1w,
             "relativeReturn1m": item.relative_return_1m,
             "relativeReturn3m": item.relative_return_3m,
             "relativeReturn6m": item.relative_return_6m,
@@ -661,6 +741,7 @@ def write_industry_group_files(
             "finalGroupName": item.final_group_name,
             "lastPrice": item.last_price,
             "changePct": item.change_pct,
+            "return1w": item.return_1w,
             "return1m": item.return_1m,
             "return3m": item.return_3m,
             "return6m": item.return_6m,

@@ -105,6 +105,14 @@ class IndustryGroupsTests(unittest.TestCase):
                 step=0.7,
             ),
             self._build_snapshot(
+                symbol="PHARMA5",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=6_800.0,
+                start_close=68.0,
+                step=0.68,
+            ),
+            self._build_snapshot(
                 symbol="AUTO1",
                 sector="Automobile and Auto Components",
                 sub_sector="Auto Components & Equipments",
@@ -135,6 +143,14 @@ class IndustryGroupsTests(unittest.TestCase):
                 market_cap_crore=5_500.0,
                 start_close=45.0,
                 step=0.55,
+            ),
+            self._build_snapshot(
+                symbol="AUTO5",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=5_300.0,
+                start_close=43.0,
+                step=0.53,
             ),
         ]
         previous_snapshots = [
@@ -171,6 +187,14 @@ class IndustryGroupsTests(unittest.TestCase):
                 step=0.5,
             ),
             self._build_snapshot(
+                symbol="PHARMA5",
+                sector="Healthcare",
+                sub_sector="Pharmaceuticals",
+                market_cap_crore=6_800.0,
+                start_close=68.0,
+                step=0.48,
+            ),
+            self._build_snapshot(
                 symbol="AUTO1",
                 sector="Automobile and Auto Components",
                 sub_sector="Auto Components & Equipments",
@@ -202,6 +226,14 @@ class IndustryGroupsTests(unittest.TestCase):
                 start_close=45.0,
                 step=0.25,
             ),
+            self._build_snapshot(
+                symbol="AUTO5",
+                sector="Automobile and Auto Components",
+                sub_sector="Auto Components & Equipments",
+                market_cap_crore=5_300.0,
+                start_close=43.0,
+                step=0.23,
+            ),
         ]
 
         response = build_industry_groups_response(
@@ -215,9 +247,9 @@ class IndustryGroupsTests(unittest.TestCase):
         )
 
         self.assertEqual(response.total_groups, 2)
-        self.assertEqual({group.group_name for group in response.groups}, {"Pharma", "Auto Ancillaries"})
-        self.assertTrue(all(group.stock_count >= 4 for group in response.groups))
-        self.assertEqual({item.final_group_name for item in response.stocks}, {"Pharma", "Auto Ancillaries"})
+        self.assertEqual({group.group_name for group in response.groups}, {"Pharma Formulations", "Auto Ancillaries - Powertrain"})
+        self.assertTrue(all(group.stock_count >= 5 for group in response.groups))
+        self.assertEqual({item.final_group_name for item in response.stocks}, {"Pharma Formulations", "Auto Ancillaries - Powertrain"})
         self.assertTrue(all(group.rank >= 1 for group in response.groups))
         self.assertTrue(any(group.score_change_1w is not None for group in response.groups))
 
@@ -236,8 +268,8 @@ class IndustryGroupsTests(unittest.TestCase):
           self.assertTrue(groups_path.exists())
           self.assertTrue(ranks_path.exists())
           self.assertTrue(stocks_path.exists())
-          self.assertIn("Pharma", groups_path.read_text(encoding="utf-8"))
-          self.assertIn("Auto Ancillaries", stocks_path.read_text(encoding="utf-8"))
+          self.assertIn("Pharma Formulations", groups_path.read_text(encoding="utf-8"))
+          self.assertIn("Auto Ancillaries - Powertrain", stocks_path.read_text(encoding="utf-8"))
 
     def test_small_industry_groups_merge_into_similar_parent_sector_group(self) -> None:
         snapshots = [
@@ -273,9 +305,85 @@ class IndustryGroupsTests(unittest.TestCase):
         )
 
         self.assertEqual(response.total_groups, 1)
-        self.assertEqual(response.groups[0].group_name, "Healthcare Diversified")
+        self.assertEqual(response.groups[0].group_name, "Healthcare (Parent bucket)")
         self.assertEqual(response.groups[0].stock_count, 4)
-        self.assertEqual({item.final_group_name for item in response.stocks}, {"Healthcare Diversified"})
+        self.assertEqual({item.final_group_name for item in response.stocks}, {"Healthcare (Parent bucket)"})
+
+    def test_fast_recent_group_momentum_outranks_slow_long_term_strength(self) -> None:
+        def tune(
+            snapshot: StockSnapshot,
+            *,
+            return_1w: float,
+            return_1m: float,
+            return_3m: float,
+            return_6m: float,
+            rs: int,
+            rvol: float,
+        ) -> StockSnapshot:
+            snapshot.stock_return_5d = return_1w
+            snapshot.stock_return_20d = return_1m
+            snapshot.stock_return_60d = return_3m
+            snapshot.stock_return_126d = return_6m
+            snapshot.rs_rating = rs
+            snapshot.rs_eligible = True
+            snapshot.volume = int(snapshot.avg_volume_20d * rvol)
+            snapshot.change_pct = max(return_1w / 2, 0.5)
+            snapshot.sma50 = snapshot.last_price * 0.9
+            snapshot.sma200 = snapshot.last_price * 0.75
+            return snapshot
+
+        fast_pharma = [
+            tune(
+                self._build_snapshot(
+                    symbol=f"FASTPHARMA{index}",
+                    sector="Healthcare",
+                    sub_sector="Pharmaceuticals",
+                    market_cap_crore=8_000.0 + index,
+                    start_close=100.0 + index,
+                    step=0.25,
+                ),
+                return_1w=7.0 + index * 0.2,
+                return_1m=15.0 + index,
+                return_3m=18.0,
+                return_6m=20.0,
+                rs=88,
+                rvol=1.8,
+            )
+            for index in range(5)
+        ]
+        stale_auto = [
+            tune(
+                self._build_snapshot(
+                    symbol=f"STALEAUTO{index}",
+                    sector="Automobile and Auto Components",
+                    sub_sector="Auto Components & Equipments",
+                    market_cap_crore=9_000.0 + index,
+                    start_close=90.0 + index,
+                    step=0.55,
+                ),
+                return_1w=-1.0,
+                return_1m=2.0,
+                return_3m=25.0,
+                return_6m=80.0,
+                rs=82,
+                rvol=0.9,
+            )
+            for index in range(5)
+        ]
+
+        response = build_industry_groups_response(
+            [*fast_pharma, *stale_auto],
+            [],
+            [],
+            [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+
+        self.assertEqual(response.groups[0].group_name, "Pharma Formulations")
+        self.assertGreater(response.groups[0].return_1w, response.groups[1].return_1w)
+        self.assertGreater(response.groups[0].score, response.groups[1].score)
 
 
 if __name__ == "__main__":

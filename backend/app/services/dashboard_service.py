@@ -5326,6 +5326,8 @@ class DashboardService:
 
         try:
             payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            if int(payload.get("cache_version") or 0) < 2:
+                return self._load_legacy_cached_industry_groups(snapshot_updated_at)
             response = IndustryGroupsResponse.model_validate(payload)
         except Exception:
             return self._load_legacy_cached_industry_groups(snapshot_updated_at)
@@ -5344,6 +5346,8 @@ class DashboardService:
             rank_payload = json.loads(ranks_path.read_text(encoding="utf-8"))
             stock_payload = json.loads(stocks_path.read_text(encoding="utf-8"))
         except Exception:
+            return None
+        if not any(isinstance(row, dict) and "return1w" in row for row in rank_payload):
             return None
 
         snapshot_date = snapshot_updated_at.astimezone(timezone.utc).date().isoformat()
@@ -5374,12 +5378,15 @@ class DashboardService:
                     description=str(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("description") or ""),
                     stock_count=int(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("stockCount") or len(base_groups.get(str(rank_row.get("groupId") or ""), {}).get("symbols") or [])),
                     score=float(rank_row.get("score", 0.0) or 0.0),
+                    return_1w=float(rank_row.get("return1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1w", 0.0)) or 0.0),
                     return_1m=float(rank_row.get("return1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1m", 0.0)) or 0.0),
                     return_3m=float(rank_row.get("return3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("3m", 0.0)) or 0.0),
                     return_6m=float(rank_row.get("return6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("6m", 0.0)) or 0.0),
+                    relative_return_1w=float(rank_row.get("relativeReturn1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("1w", 0.0)) or 0.0),
                     relative_return_1m=float(rank_row.get("relativeReturn1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("1m", 0.0)) or 0.0),
                     relative_return_3m=float(rank_row.get("relativeReturn3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("3m", 0.0)) or 0.0),
                     relative_return_6m=float(rank_row.get("relativeReturn6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("relativeReturns", {}).get("6m", 0.0)) or 0.0),
+                    median_return_1w=float(rank_row.get("return1w", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1w", 0.0)) or 0.0),
                     median_return_1m=float(rank_row.get("return1m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("1m", 0.0)) or 0.0),
                     median_return_3m=float(rank_row.get("return3m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("3m", 0.0)) or 0.0),
                     median_return_6m=float(rank_row.get("return6m", base_groups.get(str(rank_row.get("groupId") or ""), {}).get("returns", {}).get("6m", 0.0)) or 0.0),
@@ -5422,6 +5429,7 @@ class DashboardService:
                     final_group_name=str(item.get("finalGroupName") or ""),
                     last_price=float(item.get("lastPrice", 0.0) or 0.0),
                     change_pct=float(item.get("changePct", 0.0) or 0.0),
+                    return_1w=float(item.get("return1w", 0.0) or 0.0),
                     return_1m=float(item.get("return1m", 0.0) or 0.0),
                     return_3m=float(item.get("return3m", 0.0) or 0.0),
                     return_6m=float(item.get("return6m", 0.0) or 0.0),
@@ -5454,7 +5462,9 @@ class DashboardService:
     def _save_industry_groups_cache(self, response: IndustryGroupsResponse) -> None:
         cache_path = self._industry_groups_cache_path()
         cache_path.parent.mkdir(parents=True, exist_ok=True)
-        cache_path.write_text(json.dumps(response.model_dump(mode="json"), indent=2), encoding="utf-8")
+        payload = response.model_dump(mode="json")
+        payload["cache_version"] = 2
+        cache_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     @staticmethod
     def _top_industry_groups_response(response: IndustryGroupsResponse) -> IndustryGroupsResponse:

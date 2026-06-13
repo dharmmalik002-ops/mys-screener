@@ -1234,8 +1234,10 @@ class DashboardServiceIndustryGroupCacheTests(unittest.IsolatedAsyncioTestCase):
             backend_root = Path(temp_dir)
             data_dir = backend_root / "data"
             data_dir.mkdir(parents=True, exist_ok=True)
+            cache_payload = response.model_dump(mode="json")
+            cache_payload["cache_version"] = 2
             (data_dir / "industry_groups_cache.json").write_text(
-                json.dumps(response.model_dump(mode="json"), indent=2),
+                json.dumps(cache_payload, indent=2),
                 encoding="utf-8",
             )
 
