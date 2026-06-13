@@ -8699,6 +8699,54 @@ button {
 .chart-grid-ohlc .chart-grid-candle.positive rect { fill: #2962ff !important; stroke: none; }
 .chart-grid-ohlc .chart-grid-candle.negative rect { fill: #f23645 !important; stroke: none; }
 
+/* Volume histogram strip at the bottom of each grid chart. */
+.chart-grid-vol {
+  stroke: none;
+}
+.chart-grid-vol.positive { fill: rgba(41, 98, 255, 0.42); }
+.chart-grid-vol.negative { fill: rgba(242, 54, 69, 0.42); }
+
+/* ---------- White-background mode for grid charts ---------- */
+.chart-grid-modal.chart-grid-light .chart-grid-card {
+  background: #ffffff;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+.chart-grid-modal.chart-grid-light .chart-grid-card-head strong,
+.chart-grid-modal.chart-grid-light .chart-grid-card-foot strong {
+  color: #0f172a;
+}
+.chart-grid-modal.chart-grid-light .chart-grid-card-context,
+.chart-grid-modal.chart-grid-light .chart-grid-card-head small,
+.chart-grid-modal.chart-grid-light .chart-grid-card-foot small {
+  color: #64748b;
+}
+.chart-grid-modal.chart-grid-light .chart-grid-price-scale text,
+.chart-grid-modal.chart-grid-light .chart-grid-month-axis text {
+  fill: #475569;
+}
+.chart-grid-modal.chart-grid-light .chart-grid-meta-chip {
+  background: rgba(15, 23, 42, 0.06);
+  color: #0f172a;
+}
+/* Slightly deeper volume + classic green/red candles read better on white. */
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.positive line,
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-bar.positive line { stroke: #089981 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.negative line,
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-bar.negative line { stroke: #e23645 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.positive rect { fill: #089981 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.negative rect { fill: #e23645 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-vol.positive { fill: rgba(8, 153, 129, 0.40); }
+.chart-grid-modal.chart-grid-light .chart-grid-vol.negative { fill: rgba(226, 54, 69, 0.40); }
+
+.chart-modal-close kbd {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid currentColor;
+  font-size: 0.72em;
+  opacity: 0.7;
+}
+
 /* Watchlist "Grid View" button — make the grid entry point obvious. */
 .wl-grid-btn {
   display: inline-flex;

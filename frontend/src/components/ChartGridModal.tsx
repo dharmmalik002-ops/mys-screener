@@ -284,14 +284,17 @@ function computeMaOverlays(bars: ChartBar[]): OverlayLine[] {
   }));
 }
 
-function chartScales(w: number, h: number, n: number, min: number, max: number) {
+function chartScales(w: number, h: number, n: number, min: number, max: number, volumeBand = 0) {
   const innerW = Math.max(w - CHART_PAD_LEFT - CHART_PAD_RIGHT, 1);
-  const innerH = Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM, 1);
+  // The price pane reserves a strip at the bottom for the volume histogram
+  // (when volumeBand > 0); month labels sit below that, inside CHART_PAD_BOTTOM.
+  const priceH = Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM - volumeBand, 1);
   const spread = Math.max(max - min, 1e-6);
   const slot = innerW / Math.max(n, 1);
   const x = (index: number) => CHART_PAD_LEFT + index * slot + slot / 2;
-  const y = (value: number) => CHART_PAD_TOP + (1 - (value - min) / spread) * innerH;
-  return { slot, x, y, innerW, innerH };
+  const y = (value: number) => CHART_PAD_TOP + (1 - (value - min) / spread) * priceH;
+  const volTop = CHART_PAD_TOP + priceH;
+  return { slot, x, y, innerW, innerH: priceH, volTop, volH: volumeBand };
 }
 
 function formatScalePrice(value: number): string {
@@ -320,8 +323,8 @@ function priceTicks(min: number, max: number, count = 4): number[] {
   return ticks.slice(0, count + 2);
 }
 
-function PriceScale({ w, h, min, max }: { w: number; h: number; min: number; max: number }) {
-  const { y } = chartScales(w, h, 1, min, max);
+function PriceScale({ w, h, min, max, volumeBand = 0 }: { w: number; h: number; min: number; max: number; volumeBand?: number }) {
+  const { y } = chartScales(w, h, 1, min, max, volumeBand);
   return (
     <g className="chart-grid-price-scale" aria-hidden>
       {priceTicks(min, max).map((tick) => (
@@ -385,6 +388,8 @@ function OverlayPaths({
   min,
   max,
   count,
+  volumeBand = 0,
+  light = false,
 }: {
   overlays: OverlayLine[];
   w: number;
@@ -392,8 +397,10 @@ function OverlayPaths({
   min: number;
   max: number;
   count: number;
+  volumeBand?: number;
+  light?: boolean;
 }) {
-  const { x, y } = chartScales(w, h, count, min, max);
+  const { x, y } = chartScales(w, h, count, min, max, volumeBand);
   return (
     <g className="chart-grid-ma" aria-hidden>
       {overlays.map((overlay) => {
@@ -410,7 +417,10 @@ function OverlayPaths({
         if (!path) {
           return null;
         }
-        return <path key={overlay.key} d={path} fill="none" stroke={overlay.color} strokeWidth={1.3} />;
+        // The 200 SMA is white for the dark theme; on a white background flip it
+        // to near-black so it stays visible.
+        const stroke = light && overlay.key === "s200" ? "#111827" : overlay.color;
+        return <path key={overlay.key} d={path} fill="none" stroke={stroke} strokeWidth={1.3} />;
       })}
     </g>
   );
@@ -470,17 +480,26 @@ function OhlcChart({
   bars,
   chartStyle,
   overlays,
+  showVolume = true,
+  light = false,
 }: {
   bars: ChartBar[];
   chartStyle: ChartGridChartStyle;
   overlays: OverlayLine[];
+  showVolume?: boolean;
+  light?: boolean;
 }) {
   const { ref, size } = useMeasuredSize();
   const { w, h } = size;
   const ready = w > 10 && h > 10 && bars.length > 1;
   let body: ReactNode[] = [];
+  let volumeBars: ReactNode[] = [];
   let min = 0;
   let max = 1;
+  // Volume occupies a bottom strip of the chart (TradingView-style), leaving
+  // the price pane the rest. Skipped when no volume data is present.
+  const hasVolume = showVolume && ready && bars.some((bar) => (bar.volume ?? 0) > 0);
+  const volumeBand = hasVolume ? Math.max(Math.min((h - CHART_PAD_TOP - CHART_PAD_BOTTOM) * 0.24, 70), 18) : 0;
   if (ready) {
     const values = bars.flatMap((bar) => [bar.low, bar.high]);
     min = Math.min(...values);
@@ -490,7 +509,26 @@ function OhlcChart({
       min = Math.min(min, maBounds[0]);
       max = Math.max(max, maBounds[1]);
     }
-    const { slot, x, y } = chartScales(w, h, bars.length, min, max);
+    const { slot, x, y, volTop, volH } = chartScales(w, h, bars.length, min, max, volumeBand);
+    if (hasVolume) {
+      const maxVol = Math.max(...bars.map((bar) => bar.volume ?? 0), 1);
+      const volWidth = Math.max(slot * 0.6, 0.8);
+      volumeBars = bars.map((bar, index) => {
+        const vol = bar.volume ?? 0;
+        const barH = Math.max((vol / maxVol) * volH, vol > 0 ? 0.6 : 0);
+        const tone = bar.close >= bar.open ? "positive" : "negative";
+        return (
+          <rect
+            key={`v${bar.time}:${index}`}
+            className={`chart-grid-vol ${tone}`}
+            x={x(index) - volWidth / 2}
+            y={volTop + volH - barH}
+            width={volWidth}
+            height={barH}
+          />
+        );
+      });
+    }
     if (chartStyle === "candles") {
       const bodyWidth = Math.min(Math.max(slot * 0.65, 1.5), 13);
       body = bars.map((bar, index) => {
@@ -526,9 +564,10 @@ function OhlcChart({
     <div ref={ref} className="chart-grid-canvas">
       {ready ? (
         <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          {volumeBars}
           {body}
-          <OverlayPaths overlays={overlays} w={w} h={h} min={min} max={max} count={bars.length} />
-          <PriceScale w={w} h={h} min={min} max={max} />
+          <OverlayPaths overlays={overlays} w={w} h={h} min={min} max={max} count={bars.length} volumeBand={volumeBand} light={light} />
+          <PriceScale w={w} h={h} min={min} max={max} volumeBand={volumeBand} />
           <MonthAxis bars={bars} w={w} h={h} min={min} max={max} />
         </svg>
       ) : null}
@@ -545,6 +584,7 @@ function GridCard({
   zoomFactor,
   globalPosition,
   hiddenMas,
+  light,
 }: {
   card: ChartGridDisplayCard;
   fullBars: ChartBar[];
@@ -554,6 +594,7 @@ function GridCard({
   zoomFactor: number;
   globalPosition: number;
   hiddenMas: ReadonlySet<string>;
+  light: boolean;
 }) {
   // Per-card lookback: the slider EXPANDS the time horizon. The right edge is
   // always pinned to today — at the default (100) the chart shows the selected
@@ -606,7 +647,7 @@ function GridCard({
 
         <div className={`chart-grid-card-chart ${displayMode}`}>
           {hasBars ? (
-            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} />
+            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} light={light} />
           ) : (
             <Sparkline points={scopedPoints} />
           )}
@@ -672,6 +713,7 @@ export function ChartGridModal({
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
   const [cleanMode, setCleanMode] = useState(false);
+  const [lightMode, setLightMode] = useState(false);
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
@@ -681,6 +723,18 @@ export function ChartGridModal({
   useEffect(() => {
     setRangePosition(100);
   }, [timeframe]);
+
+  // ESC closes the grid (matches the backdrop click).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
 
   useEffect(() => {
     modalRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -792,9 +846,14 @@ export function ChartGridModal({
 
   return createPortal(
     <div className="chart-modal-backdrop" onClick={onClose}>
-      <div ref={modalRef} className={cleanMode ? "chart-grid-modal chart-grid-clean" : "chart-grid-modal"} onClick={(event) => event.stopPropagation()} onScroll={handleScroll}>
+      <div
+        ref={modalRef}
+        className={`chart-grid-modal${cleanMode ? " chart-grid-clean" : ""}${lightMode ? " chart-grid-light" : ""}`}
+        onClick={(event) => event.stopPropagation()}
+        onScroll={handleScroll}
+      >
         <button type="button" className="chart-modal-close" onClick={onClose}>
-          Close
+          Close <kbd>Esc</kbd>
         </button>
 
         <div className="chart-grid-modal-head">
@@ -849,6 +908,15 @@ export function ChartGridModal({
                   style={{ marginRight: 8 }}
                 >
                   ⛶ Clean
+                </button>
+                <button
+                  type="button"
+                  className={lightMode ? "tool-pill active" : "tool-pill"}
+                  onClick={() => setLightMode((current) => !current)}
+                  title="White chart background"
+                  style={{ marginRight: 8 }}
+                >
+                  ☀ White
                 </button>
                 <select value={columns} onChange={(event) => onColumnsChange(Number(event.target.value))}>
                   {GRID_COLUMNS.map((value) => (
@@ -988,6 +1056,7 @@ export function ChartGridModal({
                   zoomFactor={zoomFactor}
                   globalPosition={rangePosition}
                   hiddenMas={hiddenMas}
+                  light={lightMode}
                 />
               ))
             : null}

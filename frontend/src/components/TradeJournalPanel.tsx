@@ -61,6 +61,85 @@ const PREDEFINED_TAGS = [
 ];
 const DEFAULT_SETUPS = ["Bread & Butter", "10 EMA Pullback", "21 EMA Pullback", "VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
 
+// Plain-English coaching for every Edge Analytics metric: what it measures, how
+// to push it the right way, and what that does to your trading. Keyed to the
+// clickable metric tiles in the Edge Analytics grid.
+type EdgeGlossaryEntry = { title: string; what: string; improve: string; impact: string };
+const EDGE_GLOSSARY: Record<string, EdgeGlossaryEntry> = {
+  expectancy: {
+    title: "Expectancy / trade",
+    what: "The average % you make (or lose) on a typical trade, blending your win rate with the size of your wins and losses. It's the single best 'do I have an edge?' number — positive means the system makes money over many trades, negative means it bleeds no matter how it feels.",
+    improve: "Cut losers faster so the average loss shrinks, and let winners run to lift the average win. Often the fastest lever is dropping your worst setup entirely — review which setups have negative expectancy and stop taking them.",
+    impact: "Raising expectancy is what compounds your account. Even +0.2% per trade over hundreds of trades is the difference between a flat year and a great one; it lets you size up with confidence because you know each trade is worth taking.",
+  },
+  profit_factor: {
+    title: "Profit factor",
+    what: "Gross profit divided by gross loss — how many rupees you make for every rupee you lose. 1.0 is breakeven, above 1.5 is a solid edge, above 2.0 is excellent.",
+    improve: "Reduce the total bled on losers (tighter stops, no averaging down, exit broken setups) and avoid giving back open profit. One oversized loss can wreck this ratio, so consistent position sizing matters more than picking more winners.",
+    impact: "A higher profit factor means a smoother equity curve and shallower drawdowns, so you can stay in the game psychologically and financially through losing streaks.",
+  },
+  payoff: {
+    title: "Payoff (avg win / avg loss)",
+    what: "How big your average winner is versus your average loser. A payoff of 2 means your wins are twice the size of your losses — so you can be right less than half the time and still make money.",
+    improve: "Stop cutting winners early (use trailing stops or a partial-sell-and-hold plan) and keep losses small and uniform. Don't move your stop lower 'to give it room' — that shrinks payoff fast.",
+    impact: "A strong payoff frees you from needing a high win rate. It makes your results robust: you survive choppy periods because the few big wins more than cover the many small losses.",
+  },
+  avg_win_loss: {
+    title: "Avg win / Avg loss",
+    what: "The typical size of a winning trade and a losing trade, in %. The gap between them (together with win rate) is your whole edge.",
+    improve: "Keep average loss tightly controlled near your planned risk (3–4%). Grow average win by holding leaders through normal pullbacks instead of selling on the first red day.",
+    impact: "Tightening the loss side is usually higher-leverage than chasing bigger wins — it directly protects capital and steadies the equity curve.",
+  },
+  max_dd: {
+    title: "Max drawdown (realized)",
+    what: "The deepest peak-to-trough fall in your closed-trade equity. It's the worst pain the system has actually put you through, and a preview of what you must be able to stomach.",
+    improve: "Lower per-trade risk, avoid clustering correlated positions, and step down size during losing streaks or weak market breadth. Honour your stops — most large drawdowns come from one or two trades held too long.",
+    impact: "A shallower max drawdown means you can use larger position sizes safely and you're far less likely to abandon the system at its low point — which is exactly when most traders quit a winning method.",
+  },
+  streak: {
+    title: "Best / worst streak",
+    what: "Your longest run of consecutive wins and consecutive losses. The worst-loss streak tells you the psychological and financial endurance the system demands.",
+    improve: "You can't engineer streaks directly, but trading only A+ setups and respecting market regime (don't force trades in a weak tape) shortens losing runs. Pre-decide a 'circuit breaker' (e.g. pause after N losses).",
+    impact: "Knowing your realistic worst streak lets you size so that streak can't blow up your account — and prepares you mentally so a normal cold patch doesn't make you over-trade or revenge-trade.",
+  },
+  loss_breaches: {
+    title: "Position loss breaches (>4% / >6%)",
+    what: "How often a single trade lost more than 4% / 6% of its position value — i.e. where you broke your own stop-loss discipline.",
+    improve: "Set the stop before entering, size the position so the stop equals your planned risk, and exit the moment it's hit — no negotiating. Zero breaches is the goal.",
+    impact: "Eliminating breaches is the highest-impact fix for most traders: a handful of oversized losses is what turns a profitable system unprofitable. Plug this and your expectancy and drawdown both improve immediately.",
+  },
+  best_worst: {
+    title: "Best / worst trade",
+    what: "Your single largest winner and largest loser by %. The worst trade is a discipline check; the best shows what's possible when you let a leader run.",
+    improve: "If your worst trade dwarfs your typical loss, that's a stop-discipline or sizing problem to fix. If your best trades are small, you're likely selling winners too early.",
+    impact: "Shrinking the worst and growing the best widens your payoff and protects the account from a single catastrophic trade — the kind that sets you back months.",
+  },
+  avg_r: {
+    title: "Avg R / trade",
+    what: "Your average result measured in 'R', where 1R is the amount you risked on a trade (entry to stop). +0.5R average means you net half your risk per trade — a clean, size-independent measure of skill.",
+    improve: "Add a stop to every trade so R can be measured, take trades with at least 2–3R potential, and let winners reach those targets. Avoid trades where the logical stop is far away (poor R:R).",
+    impact: "Thinking in R standardises your trading and decouples it from rupee swings. A positive avg R that holds across position sizes means you can scale the account up safely.",
+  },
+  r_multiples: {
+    title: "2R wins / -1R losses",
+    what: "How many trades reached 2× your risk versus how many hit the full -1R stop. The ratio shows whether your winners are actually paying for your losers.",
+    improve: "Enter near support so your stop is tight (more 2R headroom), and hold to the 2R target instead of scratching trades at breakeven out of fear. Cut the -1R losers exactly at stop, never beyond.",
+    impact: "More 2R wins per -1R loss is the mathematical core of a trend-following edge — it's how a ~40% win rate still compounds strongly.",
+  },
+  avg_planned_risk: {
+    title: "Avg planned risk",
+    what: "The average % of the position you intended to risk (entry-to-stop distance) across trades that had a stop. Your playbook targets 3–4%.",
+    improve: "Keep planned risk consistent and within your rule. If it's drifting high, your stops are too loose or entries too far from support; tighten entries rather than widening stops.",
+    impact: "Consistent, controlled planned risk makes every other metric trustworthy and keeps any single trade from doing outsized damage — the foundation of survivable position sizing.",
+  },
+  stop_plan_pct: {
+    title: "Trades with stop plan",
+    what: "The share of trades where you logged a stop before entry. Above 80% is disciplined; below 50% means you're often trading without a defined risk.",
+    improve: "Make 'no stop, no trade' a hard rule — record the stop in the journal at entry. Aim to take this number to 100%.",
+    impact: "Pre-planned stops are the difference between a controlled loss and a hope-and-pray hold. Pushing this to 100% removes the trades that most often become account-damaging breaches.",
+  },
+};
+
 function withDefaultSetups(saved: string[]): string[] {
   const seen = new Set<string>();
   return [...DEFAULT_SETUPS, ...(Array.isArray(saved) ? saved : [])].filter((setup) => {
@@ -1000,6 +1079,7 @@ function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
 // ─── Main Component ────────────────────────────────────────────────────────────
 export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
+  const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
   const [setups, setSetups] = useState<string[]>(() => withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS)));
@@ -2560,21 +2640,32 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           </div>
           <div className="tj-insights-top" style={{ marginBottom: 14 }}>
             <div className="tj-card" style={{ flex: 2 }}>
-              <div className="tj-card-hdr">Edge Analytics</div>
+              <div className="tj-card-hdr">Edge Analytics <small className="tj-edge-hint">tap any metric to learn what it means &amp; how to improve it</small></div>
               <div className="tj-edge-grid">
-                <div className="tj-edge-item"><span>Expectancy / trade</span><strong className={edge.expectancyPct >= 0 ? "pos" : "neg"}>{edge.expectancyPct >= 0 ? "+" : ""}{edge.expectancyPct.toFixed(2)}%</strong></div>
-                <div className="tj-edge-item"><span>Profit factor</span><strong className={edge.profitFactor >= 1.5 ? "pos" : edge.profitFactor >= 1 ? "" : "neg"}>{Number.isFinite(edge.profitFactor) ? edge.profitFactor.toFixed(2) : "∞"}</strong></div>
-                <div className="tj-edge-item"><span>Payoff (avg win / avg loss)</span><strong>{edge.payoff.toFixed(2)}</strong></div>
-                <div className="tj-edge-item"><span>Avg win / Avg loss</span><strong><em className="pos">+{edge.avgWinPct.toFixed(1)}%</em> / <em className="neg">{edge.avgLossPct.toFixed(1)}%</em></strong></div>
-                <div className="tj-edge-item"><span>Max drawdown (realized)</span><strong className="neg">−{edge.maxDdPct.toFixed(1)}%</strong></div>
-                <div className="tj-edge-item"><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></div>
-                <div className="tj-edge-item" title="Your rule: 3-4% max loss on position value; hard cap 6% stop distance; max 1% of total equity at risk"><span>Position loss breaches (&gt;4% / &gt;6%)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></div>
-                <div className="tj-edge-item"><span>Best / worst trade</span><strong>{edge.best ? `${edge.best.symbol} +${edge.best.perc.toFixed(0)}%` : "—"} / {edge.worst ? `${edge.worst.symbol} ${edge.worst.perc.toFixed(0)}%` : "—"}</strong></div>
-                <div className="tj-edge-item"><span>Avg R / trade</span><strong className={edge.avgR >= 0 ? "pos" : "neg"}>{edge.rTradeCount ? `${edge.avgR >= 0 ? "+" : ""}${edge.avgR.toFixed(2)}R` : "Add stops"}</strong></div>
-                <div className="tj-edge-item"><span>2R wins / -1R losses</span><strong>{edge.twoRCount} / {edge.minusOneRCount}</strong></div>
-                <div className="tj-edge-item"><span>Avg planned risk</span><strong>{edge.rTradeCount ? `${edge.plannedRiskPct.toFixed(1)}%` : "—"}</strong></div>
-                <div className="tj-edge-item"><span>Trades with stop plan</span><strong className={edge.plannedTradesPct >= 80 ? "pos" : edge.plannedTradesPct >= 50 ? "" : "neg"}>{edge.plannedTradesPct.toFixed(0)}%</strong></div>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "expectancy" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "expectancy" ? null : "expectancy"))}><span>Expectancy / trade</span><strong className={edge.expectancyPct >= 0 ? "pos" : "neg"}>{edge.expectancyPct >= 0 ? "+" : ""}{edge.expectancyPct.toFixed(2)}%</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "profit_factor" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "profit_factor" ? null : "profit_factor"))}><span>Profit factor</span><strong className={edge.profitFactor >= 1.5 ? "pos" : edge.profitFactor >= 1 ? "" : "neg"}>{Number.isFinite(edge.profitFactor) ? edge.profitFactor.toFixed(2) : "∞"}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "payoff" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "payoff" ? null : "payoff"))}><span>Payoff (avg win / avg loss)</span><strong>{edge.payoff.toFixed(2)}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "avg_win_loss" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "avg_win_loss" ? null : "avg_win_loss"))}><span>Avg win / Avg loss</span><strong><em className="pos">+{edge.avgWinPct.toFixed(1)}%</em> / <em className="neg">{edge.avgLossPct.toFixed(1)}%</em></strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "max_dd" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "max_dd" ? null : "max_dd"))}><span>Max drawdown (realized)</span><strong className="neg">−{edge.maxDdPct.toFixed(1)}%</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "streak" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "streak" ? null : "streak"))}><span>Best / worst streak</span><strong>{edge.bestStreak}W / {edge.worstStreak}L</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "loss_breaches" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "loss_breaches" ? null : "loss_breaches"))}><span>Position loss breaches (&gt;4% / &gt;6%)</span><strong className={edge.lossesOver4 ? "neg" : "pos"}>{edge.lossesOver4} / {edge.lossesOver6} of {edge.lossCount}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "best_worst" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "best_worst" ? null : "best_worst"))}><span>Best / worst trade</span><strong>{edge.best ? `${edge.best.symbol} +${edge.best.perc.toFixed(0)}%` : "—"} / {edge.worst ? `${edge.worst.symbol} ${edge.worst.perc.toFixed(0)}%` : "—"}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "avg_r" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "avg_r" ? null : "avg_r"))}><span>Avg R / trade</span><strong className={edge.avgR >= 0 ? "pos" : "neg"}>{edge.rTradeCount ? `${edge.avgR >= 0 ? "+" : ""}${edge.avgR.toFixed(2)}R` : "Add stops"}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "r_multiples" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "r_multiples" ? null : "r_multiples"))}><span>2R wins / -1R losses</span><strong>{edge.twoRCount} / {edge.minusOneRCount}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "avg_planned_risk" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "avg_planned_risk" ? null : "avg_planned_risk"))}><span>Avg planned risk</span><strong>{edge.rTradeCount ? `${edge.plannedRiskPct.toFixed(1)}%` : "—"}</strong></button>
+                <button type="button" className={`tj-edge-item tj-edge-clickable${selectedEdge === "stop_plan_pct" ? " is-active" : ""}`} onClick={() => setSelectedEdge((c) => (c === "stop_plan_pct" ? null : "stop_plan_pct"))}><span>Trades with stop plan</span><strong className={edge.plannedTradesPct >= 80 ? "pos" : edge.plannedTradesPct >= 50 ? "" : "neg"}>{edge.plannedTradesPct.toFixed(0)}%</strong></button>
               </div>
+              {selectedEdge && EDGE_GLOSSARY[selectedEdge] ? (
+                <div className="tj-edge-explain">
+                  <div className="tj-edge-explain-hdr">
+                    <strong>{EDGE_GLOSSARY[selectedEdge].title}</strong>
+                    <button type="button" className="tj-edge-explain-close" onClick={() => setSelectedEdge(null)} aria-label="Close explanation">×</button>
+                  </div>
+                  <p><span className="tj-edge-explain-tag">What it is</span>{EDGE_GLOSSARY[selectedEdge].what}</p>
+                  <p><span className="tj-edge-explain-tag">How to improve it</span>{EDGE_GLOSSARY[selectedEdge].improve}</p>
+                  <p><span className="tj-edge-explain-tag pos">What it does to your trading</span>{EDGE_GLOSSARY[selectedEdge].impact}</p>
+                </div>
+              ) : null}
             </div>
             <div className="tj-card">
               <div className="tj-card-hdr">Monthly P&L</div>

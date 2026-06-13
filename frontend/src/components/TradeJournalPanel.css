@@ -2307,3 +2307,85 @@
 .tj-edge-item em { font-style: normal; }
 .tj-edge-item .pos, .tj-edge-item.pos strong { color: var(--positive); }
 .tj-edge-item .neg { color: var(--negative); }
+
+/* Clickable metric tiles open an explanation panel below the grid. */
+.tj-edge-clickable {
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+}
+.tj-edge-clickable:hover {
+  border-color: color-mix(in srgb, var(--accent, #58a6ff) 55%, transparent);
+  transform: translateY(-1px);
+}
+.tj-edge-clickable.is-active {
+  border-color: var(--accent, #58a6ff);
+  background: color-mix(in srgb, var(--accent, #58a6ff) 14%, transparent);
+}
+.tj-edge-clickable::after {
+  content: "ⓘ";
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 0.7rem;
+  opacity: 0.35;
+}
+.tj-edge-clickable { position: relative; }
+
+.tj-edge-hint {
+  font-size: 0.66rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 8px;
+}
+
+.tj-edge-explain {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 40%, var(--line));
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent, #58a6ff) 8%, transparent);
+}
+.tj-edge-explain-hdr {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.tj-edge-explain-hdr strong { font-size: 0.95rem; }
+.tj-edge-explain-close {
+  border: 0;
+  background: none;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+.tj-edge-explain-close:hover { color: var(--text); }
+.tj-edge-explain p {
+  margin: 0 0 8px;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--text-soft, var(--text-muted));
+}
+.tj-edge-explain p:last-child { margin-bottom: 0; }
+.tj-edge-explain-tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent, #58a6ff) 22%, transparent);
+  color: var(--text);
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+}
+.tj-edge-explain-tag.pos {
+  background: color-mix(in srgb, var(--positive) 24%, transparent);
+}
