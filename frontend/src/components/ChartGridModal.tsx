@@ -606,6 +606,11 @@ function GridCard({
   // touched the card follows the toolbar's master Lookback slider.
   const [localPosition, setLocalPosition] = useState<number | null>(null);
   const position = localPosition ?? globalPosition;
+  // A timeframe change (pill or a/s/d/f shortcut) is authoritative: drop any
+  // per-card slider override so every chart snaps to the chosen window at once.
+  useEffect(() => {
+    setLocalPosition(null);
+  }, [timeframe]);
 
   const overlaysFull = useMemo(() => (fullBars.length > 1 ? computeMaOverlays(fullBars) : []), [fullBars]);
 
@@ -744,17 +749,34 @@ export function ChartGridModal({
     setRangePosition(100);
   }, [timeframe]);
 
-  // ESC closes the grid (matches the backdrop click).
+  // ESC closes the grid; a/s/d/f switch the timeframe of EVERY chart at once.
   useEffect(() => {
+    const TIMEFRAME_KEYS: Record<string, ChartGridTimeframe> = {
+      a: "3M",
+      s: "6M",
+      d: "1Y",
+      f: "2Y", // full (longest loaded window)
+    };
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.stopPropagation();
         onClose();
+        return;
+      }
+      // Don't hijack typing in inputs or while modifier keys are held.
+      if (event.metaKey || event.ctrlKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target?.isContentEditable) return;
+      const tf = TIMEFRAME_KEYS[event.key.toLowerCase()];
+      if (tf) {
+        event.preventDefault();
+        onTimeframeChange(tf);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+  }, [onClose, onTimeframeChange]);
 
   useEffect(() => {
     modalRef.current?.scrollTo({ top: 0, left: 0, behavior: "auto" });
@@ -1023,16 +1045,22 @@ export function ChartGridModal({
               </div>
 
               <div className="sector-sort-pills chart-grid-timeframes">
-                {GRID_TIMEFRAMES.map((option) => (
-                  <button
-                    key={`chart-grid-timeframe-${option}`}
-                    type="button"
-                    className={timeframe === option ? "tool-pill active" : "tool-pill"}
-                    onClick={() => onTimeframeChange(option)}
-                  >
-                    {option}
-                  </button>
-                ))}
+                {GRID_TIMEFRAMES.map((option) => {
+                  const shortcut = { "3M": "a", "6M": "s", "1Y": "d", "2Y": "f" }[option];
+                  const label = option === "2Y" ? "Full" : option;
+                  return (
+                    <button
+                      key={`chart-grid-timeframe-${option}`}
+                      type="button"
+                      className={timeframe === option ? "tool-pill active" : "tool-pill"}
+                      onClick={() => onTimeframeChange(option)}
+                      title={`${label} — shortcut: ${shortcut} (applies to all charts)`}
+                    >
+                      {label}
+                      {shortcut ? <kbd className="chart-grid-tf-key">{shortcut}</kbd> : null}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
