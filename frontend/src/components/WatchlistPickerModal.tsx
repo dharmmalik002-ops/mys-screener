@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 
 import type { MarketKey } from "../lib/api";
 import type { LocalWatchlist } from "./WatchlistsPanel";
@@ -25,7 +26,7 @@ export function WatchlistPickerModal({
   const normalizedSymbol = symbol.trim().toUpperCase();
   const currentWatchlistId = watchlists.find((watchlist) => watchlist.symbols.includes(normalizedSymbol))?.id ?? null;
 
-  return (
+  return createPortal(
     <div className="watchlist-picker-backdrop" onClick={onClose}>
       <div className="watchlist-picker-modal" onClick={(event) => event.stopPropagation()}>
         <div className="watchlist-picker-head">
@@ -94,6 +95,7 @@ export function WatchlistPickerModal({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
