@@ -2419,3 +2419,80 @@
 .tj-edge-explain-tag.pos {
   background: color-mix(in srgb, var(--positive) 24%, transparent);
 }
+
+/* ── Charges: net P&L breakdown + config ───────────────────────────────────── */
+.tj-pnl-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+  border-bottom: 1px dotted color-mix(in srgb, currentColor 45%, transparent);
+}
+.tj-pnl-link:hover { opacity: 0.8; }
+
+.tj-charges-modal { max-width: 420px; }
+.tj-charges-modal .tj-edge-modal-body { gap: 0; }
+.tj-charges-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 6px 0;
+  font-size: 0.88rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--line, #2a2f3a) 60%, transparent);
+}
+.tj-charges-row span:first-child { color: var(--text-soft, var(--text-muted)); }
+.tj-charges-gross { font-weight: 600; }
+.tj-charges-total { border-top: 1px solid var(--line-strong, #3a4150); border-bottom: none; margin-top: 4px; padding-top: 8px; }
+.tj-charges-net {
+  font-size: 1rem;
+  font-weight: 700;
+  border-bottom: none;
+  margin-top: 2px;
+  padding-top: 6px;
+  border-top: 2px solid var(--line-strong, #3a4150);
+}
+.tj-charges-note {
+  margin-top: 12px;
+  font-size: 0.72rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+}
+.tj-charges-config {
+  grid-template-columns: 1fr 1fr;
+  display: grid;
+  gap: 10px 14px;
+}
+.tj-charges-config .tj-form-field { display: grid; gap: 3px; }
+.tj-charges-config .tj-form-field label { font-size: 0.72rem; color: var(--text-muted); }
+.tj-charges-config-actions { grid-column: 1 / -1; display: flex; justify-content: flex-end; }
+.tj-charges-config .tj-charges-note { grid-column: 1 / -1; margin-top: 2px; }
+
+/* Position Sizer charge estimate */
+.tj-sizer-charges {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--line, #2a2f3a) 70%, transparent);
+}
+.tj-sizer-charges-hdr {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-soft, var(--text-muted));
+  margin-bottom: 10px;
+}
+.tj-sizer-charges-note { margin-top: 8px; font-size: 0.72rem; line-height: 1.45; color: var(--text-muted); }
+.tj-prod-pill {
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: color-mix(in srgb, var(--accent, #58a6ff) 20%, transparent);
+  color: var(--text);
+}

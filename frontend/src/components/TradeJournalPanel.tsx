@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { getChart, getJournalData, saveJournalData, type MarketKey , runAiJournalReview, type AiJournalReview } from "../lib/api";
 import { notifyJournalUpdated } from "../lib/journal";
+import {
+  computeCharges, breakevenPct, DEFAULT_CHARGES, CHARGE_LABELS,
+  type ChargesConfig, type ChargesBreakdown, type Product,
+} from "../lib/chargesCalculator";
 import { NewsModal } from "./NewsModal";
 import "./TradeJournalPanel.css";
 
@@ -12,7 +16,7 @@ interface VCP { t?: string; depth?: string; vol?: string; }
 interface Trade {
   symbol: string; type: string; qty: number; price: number; date: string;
   setupType: string; stoploss: number; target: number; tags: string[];
-  remarks: string; img?: string; vcp?: VCP;
+  remarks: string; img?: string; vcp?: VCP; product?: Product;
 }
 interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; prev_close?: number; }
 interface ClosedTrade {
@@ -21,6 +25,7 @@ interface ClosedTrade {
   setupType: string; tags: string[]; remarks: string; img?: string; vcp?: VCP;
   stoploss?: number; target?: number;
   equitySnapshot: number; posSizePct: number; sellIndex: number; buyIndices: number[];
+  product: Product; grossPnl: number; charges: number; breakdown: ChargesBreakdown;
 }
 interface OpenPosition {
   symbol: string; qty: number; avgPx: number; totalInvested: number;
@@ -52,6 +57,7 @@ const LS_EQUITY = "tradingJournalEquity";
 const LS_SETUPS = "tradingJournalSetups";
 const LS_POSITIONS = "tradingJournalPositions";
 const LS_META = "tradingJournalPosMeta";
+const LS_CHARGES = "tradingJournalChargesConfig";
 
 const PREDEFINED_TAGS = [
   "FOMO", "Early Entry", "Late Entry", "Perfect Entry", "Chased",
@@ -195,7 +201,7 @@ function getSafeTime(d: string): number {
   return isNaN(t.getTime()) ? 0 : t.getTime();
 }
 
-function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
+function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: ChargesConfig): FIFOResult {
   const sorted = [...trades].sort((a, b) => {
     const ta = getSafeTime(a.date), tb = getSafeTime(b.date);
     if (ta !== tb) return ta - tb;
@@ -226,7 +232,12 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
         const matched = Math.min(lot.remaining, toSell);
         const entryPx = Number(lot.trade.price) || 0;
         const exitPx = Number(trade.price) || 0;
-        const pnl = (exitPx - entryPx) * matched;
+        const grossPnl = (exitPx - entryPx) * matched;
+        const product: Product = lot.trade.product === "intraday" ? "intraday" : "delivery";
+        const breakdown = computeCharges({
+          buyValue: entryPx * matched, sellValue: exitPx * matched, product, config: chargesConfig,
+        });
+        const pnl = grossPnl - breakdown.total;
         const perc = entryPx > 0 ? ((exitPx - entryPx) / entryPx) * 100 : 0;
         const posSizePct = currentEquity > 0 ? (entryPx * matched / currentEquity) * 100 : 0;
         currentEquity += pnl;
@@ -241,6 +252,7 @@ function calculateFIFO(trades: Trade[], startEquity: number): FIFOResult {
           target: Number(lot.trade.target) || undefined,
           equitySnapshot: currentEquity, posSizePct,
           sellIndex: sellOrigIdx, buyIndices,
+          product, grossPnl, charges: breakdown.total, breakdown,
         });
         lot.remaining -= matched; toSell -= matched;
         if (lot.remaining <= 0) buyQueues[sym].shift();
@@ -1094,6 +1106,17 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [setups, setSetups] = useState<string[]>(() => withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS)));
   const [openPosCats, setOpenPosCats] = useState<Record<string, OpenPosCat>>(() => lsGet(LS_POSITIONS, {}));
   const [posMeta, setPosMeta] = useState<Record<string, PosMeta>>(() => lsGet(LS_META, {}));
+  const [chargesConfig, setChargesConfig] = useState<ChargesConfig>(() => ({ ...DEFAULT_CHARGES, ...lsGet<Partial<ChargesConfig>>(LS_CHARGES, {}) }));
+  const [chargesPanelOpen, setChargesPanelOpen] = useState(false);
+  const [breakdownTrade, setBreakdownTrade] = useState<ClosedTrade | null>(null);
+  useEffect(() => {
+    if (!breakdownTrade && !chargesPanelOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") { setBreakdownTrade(null); setChargesPanelOpen(false); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [breakdownTrade, chargesPanelOpen]);
   const [syncing, setSyncing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<string | null>(null);
   const [newsModalOpen, setNewsModalOpen] = useState(false);
@@ -1108,6 +1131,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [fetchingEntryPrice, setFetchingEntryPrice] = useState(false);
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [entrySetup, setEntrySetup] = useState(DEFAULT_SETUPS[0]);
+  const [entryProduct, setEntryProduct] = useState<Product>("delivery");
   const [entrySL, setEntrySL] = useState("");
   const [entryTarget, setEntryTarget] = useState("");
   const [entryImg, setEntryImg] = useState("");
@@ -1135,6 +1159,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [sizerResultSL, setSizerResultSL] = useState(0);
   const [sizerResultRisk, setSizerResultRisk] = useState(0);
   const [sizerResultPos, setSizerResultPos] = useState(0);
+  const [sizerProduct, setSizerProduct] = useState<Product>("delivery");
 
   // Filters
   const [filterMonth, setFilterMonth] = useState("all");
@@ -1277,8 +1302,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   }, [activeTab]);
 
   // ── FIFO ─────────────────────────────────────────────────────────────────
-  const fifo = calculateFIFO(trades, startEquity);
+  const fifo = useMemo(() => calculateFIFO(trades, startEquity, chargesConfig), [trades, startEquity, chargesConfig]);
   const { closedTrades, openPositions } = fifo;
+
+  const updateChargesConfig = useCallback((next: ChargesConfig) => {
+    setChargesConfig(next); lsSet(LS_CHARGES, next);
+  }, []);
 
   // ── Dashboard stats ───────────────────────────────────────────────────────
   const totalPnl = closedTrades.reduce((s, t) => s + t.pnl, 0);
@@ -1636,7 +1665,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
   // ── Export / Import ───────────────────────────────────────────────────────
   function exportJSON() {
-    const payload = buildPayload(trades, startEquity, setups, openPosCats, posMeta);
+    const payload = { ...buildPayload(trades, startEquity, setups, openPosCats, posMeta), chargesConfig };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a"); a.href = URL.createObjectURL(blob);
     a.download = `TradeJournal_${new Date().toISOString().slice(0, 10)}.json`; a.click();
@@ -1675,6 +1704,10 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(mergedSetups); lsSet(LS_SETUPS, mergedSetups); }
         if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
         if (Object.keys(importedMeta).length > 0) { setPosMeta(importedMeta); lsSet(LS_META, importedMeta); }
+        const importedCharges = unwrap<Partial<ChargesConfig> | null>(data.chargesConfig, null);
+        if (importedCharges && typeof importedCharges === "object") {
+          updateChargesConfig({ ...DEFAULT_CHARGES, ...importedCharges });
+        }
         // Push to backend after import
         syncToBackend(
           importedTrades.length ? importedTrades : trades,
@@ -1712,7 +1745,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       date: entryDate, setupType: entrySetup,
       stoploss: parseFloat(entrySL) || 0, target: parseFloat(entryTarget) || 0,
       tags: [...entryTags, ...customTags], remarks: entryRemarks, img: entryImg,
-      vcp: { t: vcpT, depth: vcpDepth, vol: vcpVol },
+      vcp: { t: vcpT, depth: vcpDepth, vol: vcpVol }, product: entryProduct,
     };
     saveTrades([...trades, t]);
     setEntrySymbol(""); setEntryQty(""); setEntryPrice(""); setEntrySL(""); setEntryTarget("");
@@ -1732,7 +1765,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const t: Trade = {
       symbol: modal.symbol.trim().toUpperCase(), type: "Buy",
       qty, price, date: screenerDate, setupType: screenerSetup || DEFAULT_SETUPS[0],
-      stoploss: sl, target: 0, tags: [], remarks: "", vcp: {},
+      stoploss: sl, target: 0, tags: [], remarks: "", vcp: {}, product: "delivery",
     };
     // Update posMeta with SL if provided
     if (sl > 0) {
@@ -2036,6 +2069,13 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const breakevenSellQty = hasLive ? computeBreakevenSellQty(totalQty, avgEntry, sl, cmp) : 0;
     const canLockBreakeven = breakevenSellQty > 0 && breakevenSellQty < totalQty;
 
+    // Live estimate of exit/round-trip charges and net P&L if closed at CMP.
+    const posProduct: Product = fifo.openLotsDict[p.symbol]?.[0]?.product === "intraday" ? "intraday" : "delivery";
+    const liveCharges = hasLive
+      ? computeCharges({ buyValue: p.totalInvested, sellValue: cmp * totalQty, product: posProduct, config: chargesConfig })
+      : null;
+    const netUPnl = liveCharges ? uPnl - liveCharges.total : uPnl;
+
     return (
       <div className="tj-kcard" draggable onDragStart={() => onDragStart(p.symbol)}>
         <div className="tj-kcard-header">
@@ -2059,6 +2099,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg / Invested</span><span title="Weighted-avg entry · total invested (size as % of starting equity)">₹{fmt(avgEntry)} · ₹{fmt(p.totalInvested, 0)} <small>({positionSizePct.toFixed(1)}%)</small></span></div>
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
           {hasLive && <div className={`tj-kcard-metric tj-kcard-pnl ${uPnl >= 0 ? "pos" : "neg"}`}><span className="tj-kcard-ml">P&L</span><span>{fmtPnl(uPnl)} <small>({fmtPerc(uPerc)})</small></span></div>}
+          {hasLive && liveCharges && (
+            <div className={`tj-kcard-metric ${netUPnl >= 0 ? "pos" : "neg"}`}>
+              <span className="tj-kcard-ml">Net <small>({posProduct === "intraday" ? "MIS" : "CNC"})</small></span>
+              <span title={`After estimated round-trip charges ₹${fmt(liveCharges.total)} (brokerage + STT + exchange + SEBI + stamp + GST${posProduct === "delivery" ? " + DP" : ""}) if closed at CMP`}>
+                {fmtPnl(netUPnl)} <small>(− ₹{fmt(liveCharges.total, 0)})</small>
+              </span>
+            </div>
+          )}
           <div className="tj-kcard-metric">
             <span className="tj-kcard-ml">SL</span>
             <span>
@@ -2194,6 +2242,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             />
           </div>
           {backendSyncing && <span className="tj-cloud-badge">☁ Saving…</span>}
+          <button className="tj-btn secondary" onClick={() => setChargesPanelOpen(true)} title="Brokerage & charges (Dhan) — net P&L is shown after these costs">⚙ Charges</button>
           <button className="tj-btn secondary" onClick={exportWeeklyReview} title="Print-friendly report of the last 7 days — trades, win rate, setup breakdown, open positions">Weekly Review</button>
           <button className="tj-btn secondary" onClick={exportJSON}>↓ Export</button>
           <label className="tj-btn secondary" style={{ cursor: "pointer" }}>
@@ -2398,7 +2447,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             <div className="tj-table-wrap">
               <table className="tj-table">
                 <thead>
-                  <tr><th>Symbol</th><th>Setup</th><th>Entry ₹</th><th>Exit ₹</th><th>Entry</th><th>Exit</th><th>P&L ₹</th><th>%</th><th>Size %</th><th>Tags</th><th></th></tr>
+                  <tr><th>Symbol</th><th>Setup</th><th>Entry ₹</th><th>Exit ₹</th><th>Entry</th><th>Exit</th><th title="Net of brokerage + all statutory charges. Click a value for the breakdown.">Net P&L ₹</th><th>%</th><th>Size %</th><th>Tags</th><th></th></tr>
                 </thead>
                 <tbody>
                   {filteredClosed.map((t, i) => (
@@ -2413,7 +2462,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                       <td>{fmt(t.exitPx)}</td>
                       <td className="tj-date-cell">{t.entryDate}</td>
                       <td className="tj-date-cell">{t.exitDate}</td>
-                      <td className={t.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(t.pnl)}</td>
+                      <td className={t.pnl >= 0 ? "pos fw" : "neg fw"}>
+                        <button type="button" className="tj-pnl-link" onClick={() => setBreakdownTrade(t)} title={`Net of ₹${fmt(t.charges)} charges (${t.product === "intraday" ? "Intraday" : "Delivery"}). Click for breakdown.`}>
+                          {fmtPnl(t.pnl)}
+                        </button>
+                      </td>
                       <td className={t.perc >= 0 ? "pos" : "neg"}>{fmtPerc(t.perc)}</td>
                       <td>{t.posSizePct.toFixed(1)}%</td>
                       <td>{(t.tags || []).slice(0, 3).map(tag => <span key={tag} className="tj-chip xs">{tag}</span>)}</td>
@@ -2540,6 +2593,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                       </select>
                       <button type="button" className="tj-btn secondary" onClick={() => setModal({ type: "add-setup" })}>+</button>
                     </div>
+                  </div>
+                  <div className="tj-form-field"><label>Product</label>
+                    <select className="tj-select" value={entryProduct} onChange={e => setEntryProduct(e.target.value as Product)} title="Delivery (CNC) or Intraday (MIS) — drives the charges used for net P&L">
+                      <option value="delivery">Delivery (CNC)</option>
+                      <option value="intraday">Intraday (MIS)</option>
+                    </select>
                   </div>
                   <div className="tj-form-field"><label>Stop Loss ₹</label><input className="tj-input" type="number" step="any" value={entrySL} onChange={e => setEntrySL(e.target.value)} /></div>
                   <div className="tj-form-field"><label>Target ₹</label><input className="tj-input" type="number" step="any" value={entryTarget} onChange={e => setEntryTarget(e.target.value)} /></div>
@@ -2789,6 +2848,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-form-field"><label>Account Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} /></div>
               <div className="tj-form-field"><label>Entry Price (₹)</label><input className="tj-input" type="number" step="any" value={sizerEntry} onChange={e => setSizerEntry(e.target.value)} /></div>
               <div className="tj-form-field"><label>Stop Loss / Position Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} /></div>
+              <div className="tj-form-field"><label>Product</label>
+                <select className="tj-select" value={sizerProduct} onChange={e => setSizerProduct(e.target.value as Product)}>
+                  <option value="delivery">Delivery (CNC)</option>
+                  <option value="intraday">Intraday (MIS)</option>
+                </select>
+              </div>
             </div>
             <div className="tj-sizer-results">
               <div className="tj-sizer-box"><div className="tj-sizer-label">Qty to Buy</div><div className="tj-sizer-val accent">{sizerResultQty}</div></div>
@@ -2796,6 +2861,21 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-sizer-box"><div className="tj-sizer-label">Capital at Risk</div><div className="tj-sizer-val neg">₹{fmt(sizerResultRisk)}</div></div>
               <div className="tj-sizer-box"><div className="tj-sizer-label">Position Size</div><div className="tj-sizer-val">₹{fmt(sizerResultPos)}</div></div>
             </div>
+            {sizerResultQty > 0 && sizerResultPos > 0 && (() => {
+              const est = computeCharges({ buyValue: sizerResultPos, sellValue: sizerResultPos, product: sizerProduct, config: chargesConfig });
+              const bePct = breakevenPct(sizerResultPos, est);
+              return (
+                <div className="tj-sizer-charges">
+                  <div className="tj-sizer-charges-hdr">Estimated round-trip charges <span className="tj-prod-pill">{sizerProduct === "intraday" ? "Intraday" : "Delivery"}</span></div>
+                  <div className="tj-sizer-results">
+                    <div className="tj-sizer-box"><div className="tj-sizer-label">Round-trip charges</div><div className="tj-sizer-val neg">₹{fmt(est.total)}</div></div>
+                    <div className="tj-sizer-box"><div className="tj-sizer-label">Breakeven move</div><div className="tj-sizer-val">{bePct.toFixed(2)}%</div></div>
+                    <div className="tj-sizer-box"><div className="tj-sizer-label">Net at SL hit</div><div className="tj-sizer-val neg">{fmtPnl(-(sizerResultRisk + est.total))}</div></div>
+                  </div>
+                  <div className="tj-sizer-charges-note">Price must rise ~{bePct.toFixed(2)}% just to cover charges. Estimate assumes exit ≈ entry; edit rates under ⚙ Charges.</div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -2941,6 +3021,79 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         market={market ?? "india"}
         accentColor="#06d6a0"
       />
+
+      {/* ── Per-trade charges breakdown popup ── */}
+      {breakdownTrade && createPortal(
+        <div className="tj-edge-modal-backdrop" onClick={() => setBreakdownTrade(null)}>
+          <div className="tj-edge-modal tj-charges-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="tj-edge-modal-hdr">
+              <div>
+                <small className="tj-edge-modal-eyebrow">Charges breakdown · {breakdownTrade.product === "intraday" ? "Intraday (MIS)" : "Delivery (CNC)"}</small>
+                <strong>{breakdownTrade.symbol} · {Math.round(breakdownTrade.qty)} sh</strong>
+              </div>
+              <button type="button" className="tj-edge-modal-close" onClick={() => setBreakdownTrade(null)} aria-label="Close">×</button>
+            </div>
+            <div className="tj-edge-modal-body">
+              <div className="tj-charges-row"><span>Buy {fmt(breakdownTrade.entryPx)} → Sell {fmt(breakdownTrade.exitPx)}</span><span></span></div>
+              <div className="tj-charges-row tj-charges-gross"><span>Gross P&L</span><strong className={breakdownTrade.grossPnl >= 0 ? "pos" : "neg"}>{fmtPnl(breakdownTrade.grossPnl)}</strong></div>
+              {(["brokerage", "stt", "exchange", "sebi", "stamp", "gst", "dp"] as const).map(k => (
+                breakdownTrade.breakdown[k] > 0 ? (
+                  <div key={k} className="tj-charges-row"><span>{CHARGE_LABELS[k]}</span><span className="neg">− ₹{fmt(breakdownTrade.breakdown[k])}</span></div>
+                ) : null
+              ))}
+              <div className="tj-charges-row tj-charges-total"><span>Total charges</span><strong className="neg">− ₹{fmt(breakdownTrade.charges)}</strong></div>
+              <div className="tj-charges-row tj-charges-net"><span>Net P&L</span><strong className={breakdownTrade.pnl >= 0 ? "pos" : "neg"}>{fmtPnl(breakdownTrade.pnl)}</strong></div>
+              <div className="tj-charges-note">Charges per Dhan rates (editable under ⚙ Charges). DP charge approximated per closed delivery sell.</div>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+
+      {/* ── Charges settings popover ── */}
+      {chargesPanelOpen && createPortal(
+        <div className="tj-edge-modal-backdrop" onClick={() => setChargesPanelOpen(false)}>
+          <div className="tj-edge-modal tj-charges-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <div className="tj-edge-modal-hdr">
+              <div>
+                <small className="tj-edge-modal-eyebrow">Brokerage & charges</small>
+                <strong>Dhan / NSE equity rates</strong>
+              </div>
+              <button type="button" className="tj-edge-modal-close" onClick={() => setChargesPanelOpen(false)} aria-label="Close">×</button>
+            </div>
+            <div className="tj-edge-modal-body tj-charges-config">
+              {([
+                ["intradayBrokerageFlat", "Intraday brokerage cap (₹/order)"],
+                ["intradayBrokeragePct", "Intraday brokerage (% /order)"],
+                ["deliveryBrokerageFlat", "Delivery brokerage flat (₹/order)"],
+                ["deliveryBrokeragePct", "Delivery brokerage (% /order)"],
+                ["sttDeliveryPct", "STT delivery (% buy+sell)"],
+                ["sttIntradayPct", "STT intraday (% sell)"],
+                ["exchangePct", "Exchange txn (%)"],
+                ["sebiPct", "SEBI fee (%)"],
+                ["stampDeliveryPct", "Stamp duty delivery (% buy)"],
+                ["stampIntradayPct", "Stamp duty intraday (% buy)"],
+                ["gstPct", "GST (%)"],
+                ["dpCharge", "DP charge (₹/delivery sell)"],
+              ] as Array<[keyof ChargesConfig, string]>).map(([key, label]) => (
+                <div key={key} className="tj-form-field">
+                  <label>{label}</label>
+                  <input
+                    className="tj-input" type="number" step="any"
+                    value={chargesConfig[key]}
+                    onChange={e => updateChargesConfig({ ...chargesConfig, [key]: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              ))}
+              <div className="tj-charges-config-actions">
+                <button type="button" className="tj-btn secondary" onClick={() => updateChargesConfig({ ...DEFAULT_CHARGES })}>Reset to Dhan defaults</button>
+              </div>
+              <div className="tj-charges-note">Net P&L across the journal — equity curve, win rate, Edge Analytics — is computed after these charges. Stored on this device.</div>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </div>
   );
 }
