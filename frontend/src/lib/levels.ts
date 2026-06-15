@@ -20,7 +20,8 @@ export type Zone = {
   high: number;
   kind: "demand" | "supply";
   timeframe: "D" | "W" | "M";
-  startTime: number; // seconds (first bar of the base)
+  startTime: number; // seconds (origin/base candle)
+  endTime: number; // seconds — where the band stops: first test candle, else the latest bar
   strength: number;
   // Demand only: what the origin rally achieved (why the zone is "strong").
   achievement?: "supply" | "new-high" | "swing-high" | null;
@@ -180,13 +181,21 @@ export function computeZones(bars: ChartBar[], tf: "D" | "W" | "M"): Zone[] {
     const base = baseAt(piv.index);
     const low = base.lo;
     const high = Math.max(base.bodyHi, low * 1.001);
+    // Walk forward: a demand zone is consumed by a close below it; tested once a
+    // candle trades back down into the band (low ≤ proximal). If price then closes
+    // back above the band it has "worked" (bounced) — hide it. The band's right
+    // edge stops at the first test candle (or runs to the latest bar if untested).
     let broken = false;
-    let retests = 0;
+    let firstTestK = -1;
+    let roseAfterTest = false;
     for (let k = end + 1; k < n; k += 1) {
       if (bars[k].close < low * (1 - breakTol)) { broken = true; break; }
-      if (bars[k].low <= high && bars[k].low >= low) retests += 1;
+      if (firstTestK < 0 && bars[k].low <= high) firstTestK = k;
+      if (firstTestK >= 0 && bars[k].close > high) roseAfterTest = true;
     }
     if (broken) continue;
+    if (roseAfterTest) continue; // tested and rallied away → already worked, don't show
+    const endTime = bars[firstTestK >= 0 ? firstTestK : n - 1].time;
 
     // ── Achievement gate ──────────────────────────────────────────────────
     // Walk the rally out of the base until it first closes back below the
@@ -226,7 +235,7 @@ export function computeZones(bars: ChartBar[], tf: "D" | "W" | "M"): Zone[] {
       : null;
 
     const recency = piv.index / n;
-    raw.push({ low, high, kind: "demand", timeframe: tf, startTime: bars[piv.index].time, strength: mag * tfWeight * (1 + recency) + retests, achievement });
+    raw.push({ low, high, kind: "demand", timeframe: tf, startTime: bars[piv.index].time, endTime, strength: mag * tfWeight * (1 + recency), achievement });
   }
 
   for (const piv of highs) {
@@ -238,15 +247,18 @@ export function computeZones(bars: ChartBar[], tf: "D" | "W" | "M"): Zone[] {
     const base = baseAt(piv.index);
     const high = base.hi;
     const low = Math.min(base.bodyLo, high * 0.999);
+    // Consumed by a close above; tested once a candle trades up into the band
+    // (high ≥ proximal). The band stops at the first test candle.
     let broken = false;
-    let retests = 0;
+    let firstTestK = -1;
     for (let k = end + 1; k < n; k += 1) {
       if (bars[k].close > high * (1 + breakTol)) { broken = true; break; }
-      if (bars[k].high >= low && bars[k].high <= high) retests += 1;
+      if (firstTestK < 0 && bars[k].high >= low) firstTestK = k;
     }
     if (broken) continue;
+    const endTime = bars[firstTestK >= 0 ? firstTestK : n - 1].time;
     const recency = piv.index / n;
-    raw.push({ low, high, kind: "supply", timeframe: tf, startTime: bars[piv.index].time, strength: mag * tfWeight * (1 + recency) + retests });
+    raw.push({ low, high, kind: "supply", timeframe: tf, startTime: bars[piv.index].time, endTime, strength: mag * tfWeight * (1 + recency) });
   }
 
   // Dedupe overlapping same-kind zones — keep the stronger.

@@ -3305,12 +3305,22 @@ export function ChartPanel({
   const autoZoneOverlays = autoLevelsEnabled
     ? autoLevels.zones.map((zone, index) => {
         const ms = mainSeriesRef.current;
-        if (!ms) return null;
+        const chart = chartRef.current;
+        if (!ms || !chart) return null;
         const yHigh = ms.priceToCoordinate(zone.high);
         const yLow = ms.priceToCoordinate(zone.low);
         if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
         const top = Math.min(yHigh, yLow);
         const height = Math.max(Math.abs(yLow - yHigh), 2);
+        // Draw from the origin candle to where the band stops (first test / latest bar).
+        const ts = chart.timeScale();
+        const xStartRaw = ts.timeToCoordinate(zone.startTime as UTCTimestamp);
+        const xEndRaw = ts.timeToCoordinate(zone.endTime as UTCTimestamp);
+        if ((xStartRaw === null || xStartRaw === undefined) && (xEndRaw === null || xEndRaw === undefined)) return null;
+        const xStart = Math.max(0, xStartRaw == null ? 0 : xStartRaw);
+        const xEnd = Math.min(stageWidth, xEndRaw == null ? stageWidth : xEndRaw);
+        if (xEnd <= xStart) return null;
+        const width = Math.max(xEnd - xStart, 2);
         const demand = zone.kind === "demand";
         // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
         const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
@@ -3318,8 +3328,8 @@ export function ChartPanel({
         const label = `${tfLabel} ${demand ? "Demand" : "Supply"}`;
         return (
           <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
-            <rect x={0} y={top} width={stageWidth} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
-            <text x={6} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
+            <rect x={xStart} y={top} width={width} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
+            <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
           </g>
         );
       })

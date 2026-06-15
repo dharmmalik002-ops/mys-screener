@@ -581,17 +581,32 @@ function OhlcChart({
     if (levels) {
       const xL = CHART_PAD_LEFT;
       const xR = w - CHART_PAD_RIGHT;
+      // Last displayed bar index at or before a zone time (clamps off-screen left to 0).
+      const idxAtOrBefore = (t: number) => {
+        let idx = 0;
+        for (let i = 0; i < bars.length; i += 1) { if (bars[i].time <= t) idx = i; else break; }
+        return idx;
+      };
+      const firstTime = bars[0]?.time ?? 0;
+      const lastIdx = bars.length - 1;
       zoneRects = levels.zones.map((zone, index) => {
         const top = y(zone.high);
         const bottom = y(zone.low);
         // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
         const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
+        // Anchor at the origin candle; stop where the band ends (first test / latest bar).
+        const sIdx = idxAtOrBefore(zone.startTime);
+        const eIdx = idxAtOrBefore(zone.endTime);
+        const left = zone.startTime <= firstTime ? xL : x(sIdx);
+        const right = eIdx >= lastIdx ? xR : x(eIdx);
+        const zx = Math.max(xL, Math.min(left, right));
+        const zw = Math.max(Math.min(xR, Math.max(left, right)) - zx, 1);
         return (
           <rect
             key={`gz-${index}`}
-            x={xL}
+            x={zx}
             y={Math.min(top, bottom)}
-            width={Math.max(xR - xL, 1)}
+            width={zw}
             height={Math.max(Math.abs(bottom - top), 1)}
             fill={`${color}1f`}
             stroke={`${color}55`}
