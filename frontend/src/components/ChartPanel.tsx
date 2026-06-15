@@ -3,6 +3,7 @@ import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
+import { computeAutoLevels, type AutoLevels } from "../lib/levels";
 import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
@@ -344,7 +345,17 @@ const RVOL_WIDGET_STORAGE_KEY = "stockScanner.rvolWidget.v1";
 const CHART_RANGE_STORAGE_KEY = "stockScanner.chartRange.v1";
 const CIRCUIT_WIDGET_STORAGE_KEY = "stockScanner.circuitWidget.v1";
 const CIRCUIT_LOCKS_STORAGE_KEY = "stockScanner.circuitLocks.v1";
+const AUTO_LEVELS_STORAGE_KEY = "stockScanner.chartLevels.v1";
 const AI_TOGGLE_STORAGE_KEY = "stockScanner.chartAi.v1";
+
+function readAutoLevelsEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return JSON.parse(window.localStorage.getItem(AUTO_LEVELS_STORAGE_KEY) ?? "false") === true;
+  } catch {
+    return false;
+  }
+}
 
 function readAiEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -1585,6 +1596,7 @@ export function ChartPanel({
   const [pocketPivotWidget, setPocketPivotWidget] = useState<PocketPivotWidgetState>(() => readPocketPivotWidgetState());
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
+  const [autoLevelsEnabled, setAutoLevelsEnabled] = useState<boolean>(() => readAutoLevelsEnabled());
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
   // Zen mode: nothing but the chart and the search bar. Persisted so arrow-key
   // navigation to the next stock stays in zen until the user exits.
@@ -1665,6 +1677,12 @@ export function ChartPanel({
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
+  // Auto S/R + weekly/monthly demand-supply zones + trendlines, computed from
+  // the loaded daily bars (only when the toggle is on, to stay light).
+  const autoLevels = useMemo<AutoLevels>(
+    () => (autoLevelsEnabled ? computeAutoLevels(activeBars) : { srLevels: [], zones: [], trendlines: [] }),
+    [autoLevelsEnabled, activeBars],
+  );
   // Real per-date NSE band timeline when known (from the price-band-changes
   // report); empty for symbols with no recorded revisions.
   const circuitBandTimeline = useMemo(
@@ -1886,6 +1904,14 @@ export function ChartPanel({
       // Ignore private browsing/storage quota failures.
     }
   }, [circuitLocksEnabled]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(AUTO_LEVELS_STORAGE_KEY, JSON.stringify(autoLevelsEnabled));
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+  }, [autoLevelsEnabled]);
 
   useEffect(() => {
     try {
@@ -2555,6 +2581,22 @@ export function ChartPanel({
       );
     }
 
+    // Auto strong support/resistance — native price lines (axis-tagged,
+    // full-width, pan-safe). Zones + trendlines are drawn in the SVG overlay.
+    if (autoLevelsEnabled) {
+      for (const level of autoLevels.srLevels) {
+        const isSupport = level.kind === "support";
+        mainSeries.createPriceLine({
+          price: level.price,
+          color: isSupport ? "#22c55e" : "#ef4444",
+          lineWidth: 1,
+          lineStyle: 2, // dashed
+          axisLabelVisible: true,
+          title: isSupport ? "S" : "R",
+        });
+      }
+    }
+
     const updateOverlay = () => {
       scheduleOverlayUpdate();
     };
@@ -2713,7 +2755,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3257,6 +3299,42 @@ export function ChartPanel({
         </g>
       );
     });
+  // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
+  // computed in levels.ts and drawn in the same SVG overlay so they follow
+  // pan/zoom. Non-interactive; sit beneath the user's own drawings.
+  const autoZoneOverlays = autoLevelsEnabled
+    ? autoLevels.zones.map((zone, index) => {
+        const ms = mainSeriesRef.current;
+        if (!ms) return null;
+        const yHigh = ms.priceToCoordinate(zone.high);
+        const yLow = ms.priceToCoordinate(zone.low);
+        if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
+        const top = Math.min(yHigh, yLow);
+        const height = Math.max(Math.abs(yLow - yHigh), 2);
+        const demand = zone.kind === "demand";
+        const color = demand ? "#22c55e" : "#ef4444";
+        const label = `${zone.timeframe === "M" ? "Mthly" : "Wkly"} ${demand ? "Demand" : "Supply"}`;
+        return (
+          <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
+            <rect x={0} y={top} width={stageWidth} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
+            <text x={6} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
+          </g>
+        );
+      })
+    : null;
+  const autoTrendlineOverlays = autoLevelsEnabled
+    ? autoLevels.trendlines.map((line, index) => {
+        const p1 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t1, price: line.p1 });
+        const p2 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t2, price: line.p2 });
+        if (!p1 || !p2) return null;
+        const color = line.kind === "up" ? "#22c55e" : "#ef4444";
+        return (
+          <g key={`auto-trend-${index}`} style={{ pointerEvents: "none" }}>
+            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={color} strokeWidth={1.6} />
+          </g>
+        );
+      })
+    : null;
   const measureOverlays = annotations
     .filter((annotation): annotation is Extract<ChartAnnotation, { type: "measure" }> => annotation.type === "measure")
     .map((annotation) => {
@@ -3547,6 +3625,14 @@ export function ChartPanel({
                   title="Relative Volume vs 50-day average. Helps spot unusual activity."
                 >
                   RVOL
+                </button>
+                <button
+                  type="button"
+                  className={autoLevelsEnabled ? "indicator-pill active" : "indicator-pill"}
+                  onClick={() => setAutoLevelsEnabled((v) => !v)}
+                  title="Auto support/resistance, weekly/monthly demand-supply zones, and trendlines — strong levels only"
+                >
+                  Auto Levels
                 </button>
               </div>
               {symbol ? (
@@ -4465,6 +4551,8 @@ export function ChartPanel({
               viewBox={`0 0 ${Math.max(stageWidth, 1)} ${Math.max(stageHeight, 1)}`}
               preserveAspectRatio="none"
             >
+              {autoZoneOverlays}
+              {autoTrendlineOverlays}
               {verticalLineOverlays}
               {horizontalLineOverlays}
               {trendlineOverlays}

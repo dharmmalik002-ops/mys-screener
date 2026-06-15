@@ -2,6 +2,18 @@ import { createPortal } from "react-dom";
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
 
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
+import { computeAutoLevels, type AutoLevels } from "../lib/levels";
+
+const AUTO_LEVELS_STORAGE_KEY = "stockScanner.chartLevels.v1";
+function readAutoLevelsEnabled(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return JSON.parse(window.localStorage.getItem(AUTO_LEVELS_STORAGE_KEY) ?? "false") === true;
+  } catch {
+    return false;
+  }
+}
+const EMPTY_LEVELS: AutoLevels = { srLevels: [], zones: [], trendlines: [] };
 
 type GridTone = "positive" | "negative" | "neutral";
 
@@ -483,18 +495,22 @@ function OhlcChart({
   overlays,
   showVolume = true,
   light = false,
+  levels,
 }: {
   bars: ChartBar[];
   chartStyle: ChartGridChartStyle;
   overlays: OverlayLine[];
   showVolume?: boolean;
   light?: boolean;
+  levels?: AutoLevels;
 }) {
   const { ref, size } = useMeasuredSize();
   const { w, h } = size;
   const ready = w > 10 && h > 10 && bars.length > 1;
   let body: ReactNode[] = [];
   let volumeBars: ReactNode[] = [];
+  let zoneRects: ReactNode[] = [];
+  let srLines: ReactNode[] = [];
   let min = 0;
   let max = 1;
   // Volume occupies a bottom strip of the chart (TradingView-style), leaving
@@ -560,13 +576,43 @@ function OhlcChart({
         );
       });
     }
+    // Auto levels (subtle on small cards): shaded demand/supply zones + dashed
+    // S/R lines. Horizontal/price-only, so they render correctly on any window.
+    if (levels) {
+      const xL = CHART_PAD_LEFT;
+      const xR = w - CHART_PAD_RIGHT;
+      zoneRects = levels.zones.map((zone, index) => {
+        const top = y(zone.high);
+        const bottom = y(zone.low);
+        const color = zone.kind === "demand" ? "#22c55e" : "#ef4444";
+        return (
+          <rect
+            key={`gz-${index}`}
+            x={xL}
+            y={Math.min(top, bottom)}
+            width={Math.max(xR - xL, 1)}
+            height={Math.max(Math.abs(bottom - top), 1)}
+            fill={`${color}1f`}
+            stroke={`${color}55`}
+            strokeWidth={0.8}
+          />
+        );
+      });
+      srLines = levels.srLevels.map((level, index) => {
+        const ly = y(level.price);
+        const color = level.kind === "support" ? "#22c55e" : "#ef4444";
+        return <line key={`gsr-${index}`} x1={xL} y1={ly} x2={xR} y2={ly} stroke={color} strokeWidth={0.9} strokeDasharray="3 3" opacity={0.75} />;
+      });
+    }
   }
   return (
     <div ref={ref} className="chart-grid-canvas">
       {ready ? (
         <svg className="chart-grid-ohlc" width={w} height={h} viewBox={`0 0 ${w} ${h}`} aria-hidden="true">
+          {zoneRects}
           {volumeBars}
           {body}
+          {srLines}
           <OverlayPaths overlays={overlays} w={w} h={h} min={min} max={max} count={bars.length} volumeBand={volumeBand} light={light} />
           <PriceScale w={w} h={h} min={min} max={max} volumeBand={volumeBand} />
           <MonthAxis bars={bars} w={w} h={h} min={min} max={max} />
@@ -586,6 +632,7 @@ function GridCard({
   globalPosition,
   hiddenMas,
   light,
+  showLevels,
   onAddToWatchlist,
 }: {
   card: ChartGridDisplayCard;
@@ -597,6 +644,7 @@ function GridCard({
   globalPosition: number;
   hiddenMas: ReadonlySet<string>;
   light: boolean;
+  showLevels: boolean;
   onAddToWatchlist?: (symbol: string) => void;
 }) {
   // Per-card lookback: the slider EXPANDS the time horizon. The right edge is
@@ -613,6 +661,12 @@ function GridCard({
   }, [timeframe]);
 
   const overlaysFull = useMemo(() => (fullBars.length > 1 ? computeMaOverlays(fullBars) : []), [fullBars]);
+  // Auto S/R + weekly/monthly zones from the full 2Y series (price-only, so they
+  // render on any visible window). Trendlines are omitted on small grid cards.
+  const autoLevels = useMemo<AutoLevels>(
+    () => (showLevels && fullBars.length > 1 ? computeAutoLevels(fullBars) : EMPTY_LEVELS),
+    [showLevels, fullBars],
+  );
 
   const hasBars = fullBars.length > 1;
   const baseWindow = Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor));
@@ -655,7 +709,7 @@ function GridCard({
 
         <div className={`chart-grid-card-chart ${displayMode}`}>
           {hasBars ? (
-            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} light={light} />
+            <OhlcChart bars={bars} chartStyle={chartStyle} overlays={overlays} light={light} levels={autoLevels} />
           ) : (
             <Sparkline points={scopedPoints} />
           )}
@@ -739,6 +793,7 @@ export function ChartGridModal({
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
   const [cleanMode, setCleanMode] = useState(false);
   const [lightMode, setLightMode] = useState(false);
+  const [levelsOn, setLevelsOn] = useState<boolean>(() => readAutoLevelsEnabled());
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
@@ -960,6 +1015,25 @@ export function ChartGridModal({
                 >
                   ☀ White
                 </button>
+                <button
+                  type="button"
+                  className={levelsOn ? "tool-pill active" : "tool-pill"}
+                  onClick={() =>
+                    setLevelsOn((current) => {
+                      const next = !current;
+                      try {
+                        window.localStorage.setItem(AUTO_LEVELS_STORAGE_KEY, JSON.stringify(next));
+                      } catch {
+                        // ignore storage failures
+                      }
+                      return next;
+                    })
+                  }
+                  title="Auto support/resistance + weekly/monthly demand-supply zones"
+                  style={{ marginRight: 8 }}
+                >
+                  Auto Levels
+                </button>
                 <select value={columns} onChange={(event) => onColumnsChange(Number(event.target.value))}>
                   {GRID_COLUMNS.map((value) => (
                     <option key={`grid-col-${value}`} value={value}>
@@ -1105,6 +1179,7 @@ export function ChartGridModal({
                   globalPosition={rangePosition}
                   hiddenMas={hiddenMas}
                   light={lightMode}
+                  showLevels={levelsOn}
                   onAddToWatchlist={onAddToWatchlist}
                 />
               ))
