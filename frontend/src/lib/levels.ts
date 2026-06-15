@@ -19,9 +19,11 @@ export type Zone = {
   low: number;
   high: number;
   kind: "demand" | "supply";
-  timeframe: "W" | "M";
+  timeframe: "D" | "W" | "M";
   startTime: number; // seconds (first bar of the base)
   strength: number;
+  // Demand only: what the origin rally achieved (why the zone is "strong").
+  achievement?: "supply" | "new-high" | "swing-high" | null;
 };
 
 export type Trendline = {
@@ -141,17 +143,20 @@ function computeStrongSR(weekly: ChartBar[], daily: ChartBar[], lastClose: numbe
   return levels;
 }
 
-export function computeZones(bars: ChartBar[], tf: "W" | "M"): Zone[] {
+export function computeZones(bars: ChartBar[], tf: "D" | "W" | "M"): Zone[] {
   // Pivot-anchored demand/supply: a swing low that launched a strong up-move is
   // a demand zone (band = the base candle(s) at that low); a swing high that
   // launched a strong down-move is a supply zone. This surfaces the bases a
   // trader actually marks — including recent ones near price — instead of only
   // the untested origin at the very bottom of a trend.
   const n = bars.length;
-  const window = tf === "M" ? 1 : 2;
-  const impulsePct = tf === "M" ? 15 : 10;
-  const impulseBars = tf === "M" ? 4 : 6;
-  const tfWeight = tf === "M" ? 1.6 : 1;
+  const window = tf === "M" ? 1 : tf === "W" ? 2 : 3;
+  const impulsePct = tf === "M" ? 15 : tf === "W" ? 10 : 8;
+  const impulseBars = tf === "M" ? 4 : tf === "W" ? 6 : 10;
+  const tfWeight = tf === "M" ? 1.6 : tf === "W" ? 1 : 0.8;
+  // How far back "new high" looks (~6 months) and the rally-window cap.
+  const newHighLookback = tf === "M" ? 6 : tf === "W" ? 26 : 126;
+  const rallyCap = tf === "D" ? 40 : 20;
   const breakTol = 0.03; // a zone is only "consumed" once a close pierces it by >3%
   if (n < window * 2 + impulseBars + 1) return [];
 
@@ -182,8 +187,46 @@ export function computeZones(bars: ChartBar[], tf: "W" | "M"): Zone[] {
       if (bars[k].low <= high && bars[k].low >= low) retests += 1;
     }
     if (broken) continue;
+
+    // ── Achievement gate ──────────────────────────────────────────────────
+    // Walk the rally out of the base until it first closes back below the
+    // base-high (capped), tracking the peak high/close — that's how far the
+    // demand actually pushed price.
+    let rallyPeakHigh = -Infinity;
+    let rallyPeakClose = -Infinity;
+    const rallyEnd = Math.min(piv.index + rallyCap, n - 1);
+    for (let k = piv.index + 1; k <= rallyEnd; k += 1) {
+      if (bars[k].close < high) break;
+      rallyPeakHigh = Math.max(rallyPeakHigh, bars[k].high);
+      rallyPeakClose = Math.max(rallyPeakClose, bars[k].close);
+    }
+    if (rallyPeakHigh === -Infinity) { rallyPeakHigh = maxClose; rallyPeakClose = maxClose; }
+
+    // (b) New high vs the prior ~6 months before the base.
+    let priorHigh = -Infinity;
+    for (let k = Math.max(0, piv.index - newHighLookback); k < piv.index; k += 1) {
+      priorHigh = Math.max(priorHigh, bars[k].high);
+    }
+    const newHigh = priorHigh > 0 && rallyPeakHigh > priorHigh;
+
+    // Prior overhead swing highs (resistance / supply origins) before the base.
+    const prevHighs = highs.filter((hp) => hp.index < piv.index);
+    const nearestPrevHigh = prevHighs.length ? prevHighs[prevHighs.length - 1].price : Infinity;
+    // (a) Took out supply: the rally CLOSED above an overhead prior swing high.
+    const tookSupply = prevHighs.some((hp) => hp.price > high && rallyPeakClose > hp.price);
+    // (c) Broke recent swing high (lenient): rally peak cleared the last swing high.
+    const brokeSwing = Number.isFinite(nearestPrevHigh) && rallyPeakHigh > nearestPrevHigh;
+
+    const achievement: Zone["achievement"] = newHigh
+      ? "new-high"
+      : tookSupply
+      ? "supply"
+      : brokeSwing
+      ? "swing-high"
+      : null;
+
     const recency = piv.index / n;
-    raw.push({ low, high, kind: "demand", timeframe: tf, startTime: bars[piv.index].time, strength: mag * tfWeight * (1 + recency) + retests });
+    raw.push({ low, high, kind: "demand", timeframe: tf, startTime: bars[piv.index].time, strength: mag * tfWeight * (1 + recency) + retests, achievement });
   }
 
   for (const piv of highs) {
@@ -322,16 +365,24 @@ export function computeAutoLevels(daily: ChartBar[]): AutoLevels {
   const supports = sr.filter((l) => l.kind === "support").sort((a, b) => b.price - a.price).slice(0, MAX_SR_PER_SIDE);
   const resistances = sr.filter((l) => l.kind === "resistance").sort((a, b) => a.price - b.price).slice(0, MAX_SR_PER_SIDE);
 
-  // ---- Zones: weekly + monthly, near price, strongest few each side ----
-  const allZones = [...computeZones(weekly, "W"), ...computeZones(monthly, "M")].filter(
-    (z) => near(z.high) || near(z.low),
+  // ---- Demand: latest STRONG (achievement-gated) zone per timeframe ----
+  // Daily (green) + weekly (blue). A zone qualifies only if its origin rally
+  // achieved something (took out supply / new high / broke a swing high) and it
+  // sits near price (at/below the last close). Keep only the most recent one
+  // per timeframe — the level a trader would actually watch.
+  const demandCandidates = [...computeZones(bars, "D"), ...computeZones(weekly, "W")].filter(
+    (z) => z.kind === "demand" && z.achievement && z.high <= lastClose * 1.02 && (near(z.high) || near(z.low)),
   );
-  const demand = allZones
-    .filter((z) => z.kind === "demand" && z.high <= lastClose * 1.02)
-    .sort((a, b) => b.high - a.high || b.strength - a.strength) // nearest below first
-    .slice(0, MAX_ZONES_PER_SIDE);
-  const supply = allZones
-    .filter((z) => z.kind === "supply" && z.low >= lastClose * 0.98)
+  const latestByTf = new Map<Zone["timeframe"], Zone>();
+  for (const z of demandCandidates) {
+    const cur = latestByTf.get(z.timeframe);
+    if (!cur || z.startTime > cur.startTime) latestByTf.set(z.timeframe, z);
+  }
+  const demand = [...latestByTf.values()];
+
+  // ---- Supply: weekly + monthly, near price, strongest few (unchanged) ----
+  const supply = [...computeZones(weekly, "W"), ...computeZones(monthly, "M")]
+    .filter((z) => z.kind === "supply" && z.low >= lastClose * 0.98 && (near(z.high) || near(z.low)))
     .sort((a, b) => a.low - b.low || b.strength - a.strength) // nearest above first
     .slice(0, MAX_ZONES_PER_SIDE);
 

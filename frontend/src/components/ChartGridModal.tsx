@@ -584,7 +584,8 @@ function OhlcChart({
       zoneRects = levels.zones.map((zone, index) => {
         const top = y(zone.high);
         const bottom = y(zone.low);
-        const color = zone.kind === "demand" ? "#22c55e" : "#ef4444";
+        // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
+        const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
         return (
           <rect
             key={`gz-${index}`}

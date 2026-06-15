@@ -3312,8 +3312,10 @@ export function ChartPanel({
         const top = Math.min(yHigh, yLow);
         const height = Math.max(Math.abs(yLow - yHigh), 2);
         const demand = zone.kind === "demand";
-        const color = demand ? "#22c55e" : "#ef4444";
-        const label = `${zone.timeframe === "M" ? "Mthly" : "Wkly"} ${demand ? "Demand" : "Supply"}`;
+        // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
+        const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
+        const tfLabel = zone.timeframe === "M" ? "Mthly" : zone.timeframe === "W" ? "Wkly" : "Daily";
+        const label = `${tfLabel} ${demand ? "Demand" : "Supply"}`;
         return (
           <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
             <rect x={0} y={top} width={stageWidth} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
