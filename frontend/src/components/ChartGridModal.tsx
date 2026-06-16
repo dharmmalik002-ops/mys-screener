@@ -1,5 +1,5 @@
 import { createPortal } from "react-dom";
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode, type UIEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent } from "react";
 
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
@@ -804,6 +804,10 @@ export function ChartGridModal({
   onClose,
 }: ChartGridModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
+  const wallRef = useRef<HTMLDivElement | null>(null);
+  // Custom draggable scrollbar pinned to the right of the grid.
+  const dragRef = useRef<{ startY: number; startScroll: number; trackH: number; thumbH: number } | null>(null);
+  const [scrollbar, setScrollbar] = useState<{ top: number; left: number; height: number; thumbTop: number; thumbH: number; visible: boolean } | null>(null);
   const [rangePosition, setRangePosition] = useState(100);
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
@@ -948,13 +952,105 @@ export function ChartGridModal({
     };
   }, [onLoadSeries, seriesStore, timeframe, visibleCards]);
 
+  // Recompute the custom scrollbar's rail + thumb geometry from the live scroll
+  // metrics. The modal is centered and stationary, so the rail tracks its right edge.
+  const RAIL_TOP_PAD = 56; // clear the top-right Close button
+  const RAIL_BOTTOM_PAD = 14;
+  const updateScrollbar = useCallback(() => {
+    const el = modalRef.current;
+    if (!el) {
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    const trackH = rect.height - RAIL_TOP_PAD - RAIL_BOTTOM_PAD;
+    const scrollable = el.scrollHeight - el.clientHeight;
+    const visible = scrollable > 6 && trackH > 60;
+    const thumbH = visible ? Math.max(44, (el.clientHeight / el.scrollHeight) * trackH) : 0;
+    const thumbTop = visible && scrollable > 0 ? (el.scrollTop / scrollable) * (trackH - thumbH) : 0;
+    setScrollbar({ top: rect.top + RAIL_TOP_PAD, left: rect.right - 16, height: trackH, thumbTop, thumbH, visible });
+  }, []);
+
   const handleScroll = (event: UIEvent<HTMLDivElement>) => {
     const element = event.currentTarget;
+    updateScrollbar();
     const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 260;
     if (!nearBottom || renderCount >= sortedCards.length) {
       return;
     }
     setRenderCount((current) => Math.min(sortedCards.length, current + Math.max(columns * rows, 8)));
+  };
+
+  // Keep the scrollbar in sync with content growth (lazy-load), zoom, view and resize.
+  useEffect(() => {
+    const id = requestAnimationFrame(updateScrollbar);
+    return () => cancelAnimationFrame(id);
+  }, [updateScrollbar, visibleCards.length, displayMode, zoomFactor, stats.length, error]);
+
+  useEffect(() => {
+    const el = modalRef.current;
+    if (!el || typeof ResizeObserver === "undefined") {
+      return;
+    }
+    // Observe both the modal (viewport) and the inner wall (content grows as
+    // charts load asynchronously, which changes scrollHeight without a re-render).
+    const ro = new ResizeObserver(() => updateScrollbar());
+    ro.observe(el);
+    if (wallRef.current) {
+      ro.observe(wallRef.current);
+    }
+    window.addEventListener("resize", updateScrollbar);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", updateScrollbar);
+    };
+  }, [updateScrollbar, loading]);
+
+  // Drag the thumb (or click the track) to scroll.
+  const onThumbPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const el = modalRef.current;
+    if (!el || !scrollbar) {
+      return;
+    }
+    event.preventDefault();
+    event.stopPropagation();
+    dragRef.current = { startY: event.clientY, startScroll: el.scrollTop, trackH: scrollbar.height, thumbH: scrollbar.thumbH };
+    const onMove = (moveEvent: PointerEvent) => {
+      const drag = dragRef.current;
+      const node = modalRef.current;
+      if (!drag || !node) {
+        return;
+      }
+      const scrollable = node.scrollHeight - node.clientHeight;
+      const denom = drag.trackH - drag.thumbH;
+      if (denom <= 0) {
+        return;
+      }
+      node.scrollTop = drag.startScroll + ((moveEvent.clientY - drag.startY) * scrollable) / denom;
+      updateScrollbar();
+    };
+    const onUp = () => {
+      dragRef.current = null;
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+    };
+    window.addEventListener("pointermove", onMove);
+    window.addEventListener("pointerup", onUp);
+  };
+
+  const onTrackPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const el = modalRef.current;
+    if (!el || !scrollbar) {
+      return;
+    }
+    event.stopPropagation();
+    const offset = event.clientY - scrollbar.top - scrollbar.thumbH / 2;
+    const denom = scrollbar.height - scrollbar.thumbH;
+    if (denom <= 0) {
+      return;
+    }
+    const scrollable = el.scrollHeight - el.clientHeight;
+    el.scrollTop = Math.max(0, Math.min(scrollable, (offset / denom) * scrollable));
+    updateScrollbar();
   };
 
   return createPortal(
@@ -1172,6 +1268,7 @@ export function ChartGridModal({
         {error ? <div className="error-banner">{error}</div> : null}
 
         <div
+          ref={wallRef}
           className={`chart-grid-wall ${displayMode === "normal" ? "normal" : "compact"}`}
           style={
             {
@@ -1201,6 +1298,23 @@ export function ChartGridModal({
               ))
             : null}
         </div>
+
+        {scrollbar?.visible ? (
+          <div
+            className="chart-grid-scrollbar"
+            style={{ top: scrollbar.top, left: scrollbar.left, height: scrollbar.height }}
+            onPointerDown={onTrackPointerDown}
+            role="scrollbar"
+            aria-label="Scroll charts"
+            aria-orientation="vertical"
+          >
+            <div
+              className="chart-grid-scrollbar-thumb"
+              style={{ height: scrollbar.thumbH, transform: `translateY(${scrollbar.thumbTop}px)` }}
+              onPointerDown={onThumbPointerDown}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   , document.body);
