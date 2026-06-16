@@ -1032,6 +1032,7 @@ export function ChartGridModal({
       dragRef.current = null;
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
+      updateScrollbar();
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
