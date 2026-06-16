@@ -1299,24 +1299,29 @@ export function ChartGridModal({
               ))
             : null}
         </div>
-
-        {scrollbar?.visible ? (
-          <div
-            className="chart-grid-scrollbar"
-            style={{ top: scrollbar.top, left: scrollbar.left, height: scrollbar.height }}
-            onPointerDown={onTrackPointerDown}
-            role="scrollbar"
-            aria-label="Scroll charts"
-            aria-orientation="vertical"
-          >
-            <div
-              className="chart-grid-scrollbar-thumb"
-              style={{ height: scrollbar.thumbH, transform: `translateY(${scrollbar.thumbTop}px)` }}
-              onPointerDown={onThumbPointerDown}
-            />
-          </div>
-        ) : null}
       </div>
+
+      {/* Rendered as a backdrop child (not inside the modal): the modal's
+          backdrop-filter would make it a containing block for position:fixed,
+          causing the bar to scroll away with the content. The backdrop is
+          fixed + full-screen + non-scrolling, so the bar stays put. */}
+      {scrollbar?.visible ? (
+        <div
+          className="chart-grid-scrollbar"
+          style={{ top: scrollbar.top, left: scrollbar.left, height: scrollbar.height }}
+          onPointerDown={onTrackPointerDown}
+          onClick={(event) => event.stopPropagation()}
+          role="scrollbar"
+          aria-label="Scroll charts"
+          aria-orientation="vertical"
+        >
+          <div
+            className="chart-grid-scrollbar-thumb"
+            style={{ height: scrollbar.thumbH, transform: `translateY(${scrollbar.thumbTop}px)` }}
+            onPointerDown={onThumbPointerDown}
+          />
+        </div>
+      ) : null}
     </div>
   , document.body);
 }
