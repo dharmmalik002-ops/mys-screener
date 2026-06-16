@@ -807,6 +807,10 @@ export function ChartGridModal({
   const wallRef = useRef<HTMLDivElement | null>(null);
   // Custom draggable scrollbar pinned to the right of the grid.
   const dragRef = useRef<{ startY: number; startScroll: number; trackH: number; thumbH: number } | null>(null);
+  // Swallow the stray click that the browser fires on the backdrop right after a
+  // scrollbar press/drag (the click lands on the backdrop = common ancestor),
+  // which would otherwise close the grid.
+  const suppressBackdropCloseRef = useRef(false);
   const [scrollbar, setScrollbar] = useState<{ top: number; left: number; height: number; thumbTop: number; thumbH: number; visible: boolean } | null>(null);
   const [rangePosition, setRangePosition] = useState(100);
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
@@ -1013,6 +1017,13 @@ export function ChartGridModal({
     }
     event.preventDefault();
     event.stopPropagation();
+    suppressBackdropCloseRef.current = true;
+    const thumbEl = event.currentTarget;
+    try {
+      thumbEl.setPointerCapture(event.pointerId);
+    } catch {
+      /* ignore */
+    }
     dragRef.current = { startY: event.clientY, startScroll: el.scrollTop, trackH: scrollbar.height, thumbH: scrollbar.thumbH };
     const onMove = (moveEvent: PointerEvent) => {
       const drag = dragRef.current;
@@ -1030,9 +1041,18 @@ export function ChartGridModal({
     };
     const onUp = () => {
       dragRef.current = null;
+      try {
+        thumbEl.releasePointerCapture(event.pointerId);
+      } catch {
+        /* ignore */
+      }
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
       updateScrollbar();
+      // Reset the guard after the post-pointerup click has had a chance to fire.
+      window.setTimeout(() => {
+        suppressBackdropCloseRef.current = false;
+      }, 0);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
@@ -1044,6 +1064,10 @@ export function ChartGridModal({
       return;
     }
     event.stopPropagation();
+    suppressBackdropCloseRef.current = true;
+    window.setTimeout(() => {
+      suppressBackdropCloseRef.current = false;
+    }, 0);
     const offset = event.clientY - scrollbar.top - scrollbar.thumbH / 2;
     const denom = scrollbar.height - scrollbar.thumbH;
     if (denom <= 0) {
@@ -1055,7 +1079,16 @@ export function ChartGridModal({
   };
 
   return createPortal(
-    <div className="chart-modal-backdrop" onClick={onClose}>
+    <div
+      className="chart-modal-backdrop"
+      onClick={() => {
+        if (suppressBackdropCloseRef.current) {
+          suppressBackdropCloseRef.current = false;
+          return;
+        }
+        onClose();
+      }}
+    >
       <div
         ref={modalRef}
         className={`chart-grid-modal${cleanMode ? " chart-grid-clean" : ""}${lightMode ? " chart-grid-light" : ""}`}
