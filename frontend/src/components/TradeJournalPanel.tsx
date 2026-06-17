@@ -19,6 +19,12 @@ interface Trade {
   remarks: string; img?: string; vcp?: VCP; product?: Product;
 }
 interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; prev_close?: number; }
+interface OpenLot {
+  qty: number;
+  price: number;
+  date: string;
+  buyIndex: number;
+}
 interface ClosedTrade {
   symbol: string; qty: number; entryPx: number; exitPx: number;
   entryDate: string; exitDate: string; pnl: number; perc: number;
@@ -30,6 +36,7 @@ interface ClosedTrade {
 interface OpenPosition {
   symbol: string; qty: number; avgPx: number; totalInvested: number;
   buyIndices: number[]; tags: string[]; remarks: string; img?: string; setupType?: string;
+  lots: OpenLot[];
 }
 interface FIFOResult {
   closedTrades: ClosedTrade[]; openPositions: OpenPosition[];
@@ -212,6 +219,43 @@ function holdDays(entryDate: string, exitDate: string): number {
   return Math.max(0, Math.round((exit - entry) / 86400000));
 }
 
+function dateKey(value: string | number | Date | null | undefined): string {
+  if (!value) return "";
+  if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
+  const d = value instanceof Date ? value : new Date(value);
+  if (isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
+function validPrice(value: unknown): number | null {
+  const n = Number(value);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function chartPreviousClose(result: Awaited<ReturnType<typeof getChart>>, cmp: number | null): number | null {
+  const summary = result.summary as (typeof result.summary & { previous_close?: number | null }) | null;
+  const fromSummary = validPrice(summary?.previous_close);
+  if (fromSummary) return fromSummary;
+
+  const changePct = Number(summary?.change_pct);
+  if (cmp && Number.isFinite(changePct) && changePct > -99.9) {
+    const derived = cmp / (1 + changePct / 100);
+    const valid = validPrice(derived);
+    if (valid) return valid;
+  }
+
+  const latestBarClose = validPrice(result.bars[result.bars.length - 1]?.close);
+  const previousBarClose = validPrice(result.bars[result.bars.length - 2]?.close);
+  if (!latestBarClose) return previousBarClose;
+  if (!cmp) return previousBarClose ?? latestBarClose;
+
+  const latestLooksLikeCmp = Math.abs(latestBarClose - cmp) / cmp <= 0.0025;
+  return latestLooksLikeCmp ? (previousBarClose ?? latestBarClose) : latestBarClose;
+}
+
 function clampNumber(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -317,16 +361,19 @@ function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: Char
     if (!active.length) return;
     let totalQty = 0, totalInvested = 0;
     const buyIndices: number[] = [], tags: string[] = [];
+    const openLots: OpenLot[] = [];
     let remarks = "", img: string | undefined, setupType: string | undefined;
     active.forEach(l => {
-      totalQty += l.remaining; totalInvested += l.remaining * (Number(l.trade.price) || 0);
+      const price = Number(l.trade.price) || 0;
+      totalQty += l.remaining; totalInvested += l.remaining * price;
       buyIndices.push(l.origIdx);
+      openLots.push({ qty: l.remaining, price, date: l.trade.date, buyIndex: l.origIdx });
       (l.trade.tags || []).forEach(t => { if (!tags.includes(t)) tags.push(t); });
       if (l.trade.remarks) remarks = l.trade.remarks;
       if (l.trade.img) img = l.trade.img;
       if (l.trade.setupType) setupType = l.trade.setupType;
     });
-    openPositions.push({ symbol: sym, qty: totalQty, avgPx: totalQty > 0 ? totalInvested / totalQty : 0, totalInvested, buyIndices, tags, remarks, img, setupType });
+    openPositions.push({ symbol: sym, qty: totalQty, avgPx: totalQty > 0 ? totalInvested / totalQty : 0, totalInvested, buyIndices, tags, remarks, img, setupType, lots: openLots });
     openLotsDict[sym] = active.map(l => l.trade);
   });
 
@@ -1777,12 +1824,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         // Use fetchTicker override if set (e.g. LAURUS → LAURUSLABS); fall back to pos.symbol
         const ticker = posMeta[pos.symbol]?.fetchTicker || pos.symbol;
         const result = await getChart(ticker, "1D", mkt);
-        const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
-        const prevClose = result.bars[result.bars.length - 2]?.close ?? null;
-        if (price && isFinite(price)) {
+        const price = validPrice(result.summary?.last_price) ?? validPrice(result.bars[result.bars.length - 1]?.close);
+        const prevClose = chartPreviousClose(result, price);
+        if (price) {
           if (!updated[pos.symbol]) updated[pos.symbol] = {};
           updated[pos.symbol].cmp = price;
-          if (prevClose && isFinite(prevClose)) updated[pos.symbol].prev_close = prevClose;
+          if (prevClose) updated[pos.symbol].prev_close = prevClose;
           anyUpdated = true;
         }
       } catch { /* ignore */ }
@@ -1809,13 +1856,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const mkt: MarketKey = market ?? "india";
     for (const pos of openPositions) {
       try {
-        const result = await getChart(pos.symbol, "1D", mkt);
-        const price = result.summary?.last_price ?? result.bars[result.bars.length - 1]?.close ?? null;
-        const prevClose = result.bars[result.bars.length - 2]?.close ?? null;
-        if (price && isFinite(price)) {
+        const ticker = posMeta[pos.symbol]?.fetchTicker || pos.symbol;
+        const result = await getChart(ticker, "1D", mkt);
+        const price = validPrice(result.summary?.last_price) ?? validPrice(result.bars[result.bars.length - 1]?.close);
+        const prevClose = chartPreviousClose(result, price);
+        if (price) {
           if (!updated[pos.symbol]) updated[pos.symbol] = {};
           updated[pos.symbol].cmp = price;
-          if (prevClose && isFinite(prevClose)) updated[pos.symbol].prev_close = prevClose;
+          if (prevClose) updated[pos.symbol].prev_close = prevClose;
           updatedCount++;
         } else {
           failed.push(pos.symbol);
@@ -2191,16 +2239,27 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   function posForCat(cat: OpenPosCat) { return openPositions.filter(p => (openPosCats[p.symbol] || "full") === cat); }
   const totalUnrealized = openPositions.reduce((s, p) => { const cmp = posMeta[p.symbol]?.cmp || p.avgPx; return s + (cmp - p.avgPx) * p.qty; }, 0);
   const totalRisk = openPositions.reduce((s, p) => { const sl = posMeta[p.symbol]?.sl || p.avgPx * 0.92; return s + (p.avgPx - sl) * p.qty; }, 0);
-  const totalTodayPnl = openPositions.reduce((s, p) => {
+  const todayKeyForOpenPnl = dateKey(new Date());
+  const todayPnlParts = openPositions.reduce((acc, p) => {
     const meta = posMeta[p.symbol];
-    if (!meta?.cmp || !meta?.prev_close) return s;
-    return s + (meta.cmp - meta.prev_close) * p.qty;
-  }, 0);
-  const todayBaseValue = openPositions.reduce((s, p) => {
-    const meta = posMeta[p.symbol];
-    if (!meta?.prev_close) return s;
-    return s + meta.prev_close * p.qty;
-  }, 0);
+    const cmp = validPrice(meta?.cmp);
+    if (!cmp) return acc;
+    const lots = p.lots?.length ? p.lots : [{ qty: p.qty, price: p.avgPx, date: "", buyIndex: -1 }];
+    for (const lot of lots) {
+      const lotQty = Number(lot.qty) || 0;
+      if (lotQty <= 0) continue;
+      const boughtToday = dateKey(lot.date) === todayKeyForOpenPnl;
+      const base = boughtToday ? validPrice(lot.price) : validPrice(meta?.prev_close);
+      if (!base) continue;
+      acc.pnl += (cmp - base) * lotQty;
+      acc.base += base * lotQty;
+      acc.coveredQty += lotQty;
+      if (boughtToday) acc.intradayQty += lotQty;
+    }
+    return acc;
+  }, { pnl: 0, base: 0, coveredQty: 0, intradayQty: 0 });
+  const totalTodayPnl = todayPnlParts.pnl;
+  const todayBaseValue = todayPnlParts.base;
   const hasTodayData = todayBaseValue > 0;
   const deployedPctEquity = startEquity > 0 ? (totalInvested / startEquity) * 100 : 0;
   const unrealPctDeployed = totalInvested > 0 ? (totalUnrealized / totalInvested) * 100 : 0;
@@ -2758,7 +2817,9 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                   {hasTodayData ? fmtPnl(totalTodayPnl) : "—"}
                 </strong>
                 <span className="tj-kbox-sub">
-                  {hasTodayData ? `${fmtPerc(todayPctBase)} on prev close` : "Sync prices to compute"}
+                  {hasTodayData
+                    ? `${fmtPerc(todayPctBase)} on ${todayPnlParts.intradayQty > 0 ? "today-entry/prev-close base" : "prev close"}`
+                    : "Sync prices to compute"}
                 </span>
               </div>
             </div>

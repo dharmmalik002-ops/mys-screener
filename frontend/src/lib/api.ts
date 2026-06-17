@@ -567,6 +567,7 @@ export type StockOverview = {
   lower_circuit_limit: number | null;
   market_cap_crore: number;
   last_price: number;
+  previous_close: number | null;
   change_pct: number;
   relative_volume: number;
   avg_rupee_volume_30d_crore: number;
@@ -1295,6 +1296,7 @@ function normalizeStockOverview(value: unknown): StockOverview | null {
     lower_circuit_limit: readNullableNumber(value.lower_circuit_limit),
     market_cap_crore: readNumber(value.market_cap_crore),
     last_price: readNumber(value.last_price),
+    previous_close: readNullableNumber(value.previous_close),
     change_pct: readNumber(value.change_pct),
     relative_volume: readNumber(value.relative_volume),
     avg_rupee_volume_30d_crore: readNumber(value.avg_rupee_volume_30d_crore),
