@@ -2240,12 +2240,18 @@ export type AiJournalPosition = {
 export type AiJournalReview = {
   error?: string;
   raw?: string;
-  overall?: string;
-  doing_right?: string[];
-  doing_wrong?: string[];
-  fixes?: string[];
+  overall?: unknown;
+  doing_right?: unknown[];
+  doing_wrong?: unknown[];
+  fixes?: unknown[];
+  one_big_leak?: unknown;
+  risk_review?: unknown[];
+  setup_playbook?: unknown[];
+  do_not_trade?: unknown[];
+  next_week_rules?: unknown[];
+  monthly_report_card?: unknown;
   open_positions?: AiJournalPosition[];
-  one_lesson?: string;
+  one_lesson?: unknown;
 };
 
 export function runAiJournalReview(payload: unknown, market: MarketKey): Promise<AiJournalReview> {

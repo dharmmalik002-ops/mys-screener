@@ -1059,6 +1059,7 @@ IMPORTANT:
             f"MARKET ENVIRONMENT: {payload.get('regime_line', 'unknown')}\n\n"
             f"CLOSED TRADES (most recent first):\n{payload.get('closed_trades_table', 'none')}\n\n"
             f"BEHAVIOUR TAGS USED: {payload.get('tags_summary', 'none')}\n\n"
+            f"LOCAL ANALYTICS SUMMARY (calculated by the journal; trust these numbers when present):\n{json.dumps(payload.get('analytics_summary') or {}, ensure_ascii=False)}\n\n"
             f"OPEN POSITIONS WITH RECENT PRICE ACTION:\n{payload.get('open_positions_block', 'none')}\n\n"
             "Respond with ONLY a JSON object:\n"
             "{\n"
@@ -1066,6 +1067,12 @@ IMPORTANT:
             '  "doing_right": ["specific strength with evidence", "..."],\n'
             '  "doing_wrong": ["specific mistake with evidence and its cost", "..."],\n'
             '  "fixes": ["concrete actionable improvement", "..."],\n'
+            '  "one_big_leak": {"leak": "...", "cost": "...", "evidence": "...", "fix": "one behaviour rule for the next 10 trades"},\n'
+            '  "risk_review": ["position/account risk issue with evidence", "..."],\n'
+            '  "setup_playbook": ["which setup deserves size or review, with evidence", "..."],\n'
+            '  "do_not_trade": ["pattern or tag to block until proven, with cost", "..."],\n'
+            '  "next_week_rules": ["specific rule", "specific rule", "specific rule"],\n'
+            '  "monthly_report_card": {"grade": "A|B|C|D", "strength": "...", "weakness": "...", "focus": "one focus for next month"},\n'
             '  "open_positions": [{"symbol": "...", "status": "HEALTHY" | "WATCH" | "ACT", "read": "accumulation/distribution read of its recent bars", "action": "specific action or what to monitor"}],\n'
             '  "one_lesson": "the single most important lesson for this trader this week"\n'
             "}"

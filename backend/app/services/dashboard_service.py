@@ -2297,6 +2297,7 @@ class DashboardService:
                     "regime_line": regime_line,
                     "closed_trades_table": closed_table,
                     "tags_summary": tags_summary,
+                    "analytics_summary": payload.get("analytics_summary") or {},
                     "open_positions_block": "\n\n".join(open_blocks) or "none",
                 }
             )

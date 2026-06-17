@@ -67,6 +67,10 @@ const PREDEFINED_TAGS = [
   "10 EMA Support", "21 EMA Support", "Poor Structure",
 ];
 const DEFAULT_SETUPS = ["Bread & Butter", "10 EMA Pullback", "21 EMA Pullback", "VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
+const MISTAKE_TAGS = ["FOMO", "Early Entry", "Late Entry", "Chased", "Sold Early", "Held Too Long", "Averaged Down", "Broke Plan", "Emotional", "Below 50 SMA", "Poor Structure", "Weak Volume"];
+const QUALITY_GOOD_TAGS = ["Followed Plan", "Perfect Entry", "Held Well", "Clean Pullback", "Strong Volume", "Above 50/200 SMA", "10 EMA Support", "21 EMA Support"];
+const QUALITY_BAD_TAGS = ["FOMO", "Chased", "Broke Plan", "Averaged Down", "Emotional", "Below 50 SMA", "Poor Structure", "Weak Volume", "Late Entry"];
+const MODEL_SETUP_WORDS = ["bread", "pullback", "stage 2", "10 ema", "21 ema", "vcp", "flat base", "breakout"];
 
 // Plain-English coaching for every Edge Analytics metric: what it measures, how
 // to push it the right way, and what that does to your trading. Keyed to the
@@ -199,6 +203,53 @@ function getSafeTime(d: string): number {
   if (!d) return 0;
   const t = new Date(d.includes("T") ? d : d + "T12:00:00");
   return isNaN(t.getTime()) ? 0 : t.getTime();
+}
+
+function holdDays(entryDate: string, exitDate: string): number {
+  const entry = getSafeTime(entryDate);
+  const exit = getSafeTime(exitDate);
+  if (!entry || !exit) return 0;
+  return Math.max(0, Math.round((exit - entry) / 86400000));
+}
+
+function clampNumber(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function avgNumber(values: number[]) {
+  return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+}
+
+function qualityScoreForTrade(t: ClosedTrade) {
+  const tags = t.tags || [];
+  let score = 45;
+  const setupText = `${t.setupType || ""} ${tags.join(" ")} ${t.remarks || ""}`.toLowerCase();
+  if (MODEL_SETUP_WORDS.some((word) => setupText.includes(word))) score += 10;
+  for (const tag of QUALITY_GOOD_TAGS) if (tags.includes(tag)) score += 7;
+  for (const tag of QUALITY_BAD_TAGS) if (tags.includes(tag)) score -= 10;
+  const stop = Number(t.stoploss);
+  if (Number.isFinite(stop) && stop > 0 && t.entryPx > stop) {
+    const posRiskPct = ((t.entryPx - stop) / t.entryPx) * 100;
+    const accountRiskPct = t.equitySnapshot > 0 ? ((t.entryPx - stop) * t.qty / t.equitySnapshot) * 100 : 0;
+    if (posRiskPct >= 2 && posRiskPct <= 4.5) score += 12;
+    else if (posRiskPct <= 6) score += 6;
+    else score -= 12;
+    if (accountRiskPct <= 1) score += 10;
+    else score -= 15;
+  } else {
+    score -= 18;
+  }
+  if (t.posSizePct > 0 && t.posSizePct <= 25) score += 4;
+  if (t.perc < -6) score -= 10;
+  return clampNumber(Math.round(score), 0, 100);
+}
+
+function gradeFromScore(score: number) {
+  if (score >= 85) return "A+";
+  if (score >= 75) return "A";
+  if (score >= 65) return "B";
+  if (score >= 50) return "C";
+  return "D";
 }
 
 function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: ChargesConfig): FIFOResult {
@@ -1337,25 +1388,6 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [aiReview, setAiReview] = useState<AiJournalReview | null>(null);
   const [aiReviewLoading, setAiReviewLoading] = useState(false);
 
-  const runAiCoach = () => {
-    if (aiReviewLoading) return;
-    setAiReviewLoading(true);
-    setAiReview(null);
-    runAiJournalReview(
-      {
-        starting_equity: startEquity,
-        closed_trades: closedTrades.slice(-40).reverse(),
-        open_positions: openPositions,
-      },
-      market ?? "india",
-    )
-      .then(setAiReview)
-      .catch((error: unknown) =>
-        setAiReview({ error: error instanceof Error ? error.message : "AI review failed." }),
-      )
-      .finally(() => setAiReviewLoading(false));
-  };
-
   // ── Edge analytics (million-dollar journal metrics) ─────────────────────
   const edge = useMemo(() => {
     const sortedClosed = [...closedTrades].sort((a, b) => new Date(a.exitDate).getTime() - new Date(b.exitDate).getTime());
@@ -1488,6 +1520,223 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       worst,
     };
   }, [closedTrades, startEquity]);
+
+  const insightLab = useMemo(() => {
+    const sortedClosed = [...closedTrades].sort((a, b) => getSafeTime(a.exitDate) - getSafeTime(b.exitDate));
+    const qualityRows = sortedClosed.map((trade) => {
+      const score = qualityScoreForTrade(trade);
+      const stop = Number(trade.stoploss);
+      const hasStop = Number.isFinite(stop) && stop > 0 && trade.entryPx > stop;
+      const posRiskPct = hasStop ? ((trade.entryPx - stop) / trade.entryPx) * 100 : null;
+      const accountRiskPct = hasStop && trade.equitySnapshot > 0 ? ((trade.entryPx - stop) * trade.qty / trade.equitySnapshot) * 100 : null;
+      const rMultiple = hasStop ? (trade.exitPx - trade.entryPx) / (trade.entryPx - stop) : null;
+      return {
+        trade,
+        score,
+        grade: gradeFromScore(score),
+        posRiskPct,
+        accountRiskPct,
+        rMultiple,
+        holdDays: holdDays(trade.entryDate, trade.exitDate),
+      };
+    });
+    const mistakeRows = MISTAKE_TAGS.map((tag) => {
+      const tagged = sortedClosed.filter((trade) => (trade.tags || []).includes(tag));
+      const pnl = tagged.reduce((sum, trade) => sum + trade.pnl, 0);
+      const avgPct = avgNumber(tagged.map((trade) => trade.perc));
+      const worst = tagged.length ? tagged.reduce((a, b) => (a.pnl < b.pnl ? a : b)) : null;
+      return { tag, count: tagged.length, pnl, avgPct, worst };
+    }).filter((row) => row.count > 0).sort((a, b) => a.pnl - b.pnl);
+    const oneBigLeak = mistakeRows.find((row) => row.pnl < 0) ?? null;
+    const aPlusTrades = qualityRows
+      .filter((row) => row.score >= 80)
+      .sort((a, b) => {
+        const ar = a.rMultiple ?? -99;
+        const br = b.rMultiple ?? -99;
+        if (br !== ar) return br - ar;
+        return b.trade.pnl - a.trade.pnl;
+      })
+      .slice(0, 6);
+    const patternRows = new Map<string, { label: string; count: number; pnl: number; wins: number; example?: string }>();
+    for (const trade of sortedClosed) {
+      const labels = [
+        trade.setupType ? `Setup: ${trade.setupType}` : "",
+        ...(trade.tags || []).map((tag) => `Tag: ${tag}`),
+      ].filter(Boolean);
+      for (const label of labels) {
+        const row = patternRows.get(label) ?? { label, count: 0, pnl: 0, wins: 0, example: trade.symbol };
+        row.count += 1;
+        row.pnl += trade.pnl;
+        if (trade.pnl > 0) row.wins += 1;
+        if (!row.example || trade.pnl < 0) row.example = trade.symbol;
+        patternRows.set(label, row);
+      }
+    }
+    const doNotTrade = Array.from(patternRows.values())
+      .filter((row) => row.count >= 2 && row.pnl < 0)
+      .map((row) => ({ ...row, winRate: row.count ? (row.wins / row.count) * 100 : 0 }))
+      .sort((a, b) => a.pnl - b.pnl)
+      .slice(0, 6);
+    const sizingRows = qualityRows.filter((row) => row.posRiskPct !== null && row.accountRiskPct !== null);
+    const correctSizing = sizingRows.filter((row) => (row.accountRiskPct ?? 99) <= 1 && (row.posRiskPct ?? 99) <= 6);
+    const idealSizing = sizingRows.filter((row) => (row.accountRiskPct ?? 99) <= 1 && (row.posRiskPct ?? 99) >= 2 && (row.posRiskPct ?? 99) <= 4.5);
+    const oversized = sizingRows
+      .filter((row) => (row.accountRiskPct ?? 0) > 1 || (row.posRiskPct ?? 0) > 6)
+      .sort((a, b) => (b.accountRiskPct ?? 0) - (a.accountRiskPct ?? 0))
+      .slice(0, 5);
+    const stopPlannedPct = sortedClosed.length ? (sizingRows.length / sortedClosed.length) * 100 : 0;
+    const accountRiskOkPct = sizingRows.length ? (sizingRows.filter((row) => (row.accountRiskPct ?? 99) <= 1).length / sizingRows.length) * 100 : 0;
+    const noMistakePct = sortedClosed.length
+      ? (sortedClosed.filter((trade) => !(trade.tags || []).some((tag) => MISTAKE_TAGS.includes(tag))).length / sortedClosed.length) * 100
+      : 0;
+    const followedPlanPct = sortedClosed.length
+      ? (sortedClosed.filter((trade) => (trade.tags || []).includes("Followed Plan")).length / sortedClosed.length) * 100
+      : 0;
+    const disciplineScore = Math.round(avgNumber([stopPlannedPct, accountRiskOkPct, noMistakePct, followedPlanPct]));
+    const confidenceTags = ["High Conviction", "Medium Conviction", "Low Conviction", "A+ Setup", "B Setup", "C Setup"];
+    const confidenceRows = confidenceTags.map((tag) => {
+      const tagged = sortedClosed.filter((trade) => (trade.tags || []).includes(tag));
+      return {
+        tag,
+        count: tagged.length,
+        pnl: tagged.reduce((sum, trade) => sum + trade.pnl, 0),
+        avgPct: avgNumber(tagged.map((trade) => trade.perc)),
+      };
+    }).filter((row) => row.count > 0);
+    const openActions = openPositions.map((pos) => {
+      const meta = posMeta[pos.symbol] || {};
+      const cmp = meta.cmp || pos.avgPx;
+      const sl = typeof meta.sl === "number" && meta.sl > 0 ? meta.sl : 0;
+      const hasStop = sl > 0 && pos.avgPx > 0;
+      const riskPerShare = hasStop ? pos.avgPx - sl : 0;
+      const riskAmt = hasStop ? riskPerShare * pos.qty : 0;
+      const riskPctEquity = startEquity > 0 ? Math.abs(riskAmt / startEquity) * 100 : 0;
+      const pnlPct = pos.avgPx > 0 ? ((cmp - pos.avgPx) / pos.avgPx) * 100 : 0;
+      const rMultiple = hasStop && riskPerShare > 0 ? (cmp - pos.avgPx) / riskPerShare : null;
+      const weightPct = startEquity > 0 ? (pos.totalInvested / startEquity) * 100 : 0;
+      let status: "Healthy" | "Watch" | "Act" = "Healthy";
+      let action = "Hold while it respects your planned level.";
+      if (!hasStop) {
+        status = "Act";
+        action = "Set a stop before judging the position.";
+      } else if (riskPctEquity > 1) {
+        status = "Act";
+        action = "Reduce size or raise stop; account risk is above 1%.";
+      } else if (pnlPct < -3 || (rMultiple !== null && rMultiple <= -0.7)) {
+        status = "Watch";
+        action = "Near the danger zone; do not widen the stop.";
+      } else if (rMultiple !== null && rMultiple >= 2) {
+        status = "Healthy";
+        action = "Consider partial profit or trail stop to protect the win.";
+      }
+      return { symbol: pos.symbol, status, action, pnlPct, rMultiple, riskPctEquity, weightPct, hasStop };
+    }).sort((a, b) => {
+      const order = { Act: 0, Watch: 1, Healthy: 2 };
+      return order[a.status] - order[b.status] || b.riskPctEquity - a.riskPctEquity;
+    });
+    const setupPlaybook = Object.entries(
+      sortedClosed.reduce<Record<string, { trades: ClosedTrade[] }>>((acc, trade) => {
+        const key = trade.setupType || "Unspecified";
+        if (!acc[key]) acc[key] = { trades: [] };
+        acc[key].trades.push(trade);
+        return acc;
+      }, {}),
+    ).map(([setup, row]) => {
+      const qRows = row.trades.map((trade) => qualityRows.find((q) => q.trade === trade)).filter(Boolean) as typeof qualityRows;
+      const wins = row.trades.filter((trade) => trade.pnl > 0).length;
+      const pnl = row.trades.reduce((sum, trade) => sum + trade.pnl, 0);
+      const rValues = qRows.map((row) => row.rMultiple).filter((value): value is number => value !== null && Number.isFinite(value));
+      const holds = row.trades.map((trade) => holdDays(trade.entryDate, trade.exitDate));
+      return {
+        setup,
+        count: row.trades.length,
+        pnl,
+        winRate: row.trades.length ? (wins / row.trades.length) * 100 : 0,
+        avgR: avgNumber(rValues),
+        avgHold: avgNumber(holds),
+        avgQuality: avgNumber(qRows.map((row) => row.score)),
+      };
+    }).sort((a, b) => b.pnl - a.pnl);
+    const bestHold = edge.bestHoldBucket
+      ? `Best results have come from ${edge.bestHoldBucket.label} holds (${fmtPnl(edge.bestHoldBucket.pnl)}).`
+      : "Not enough closed trades to identify a hold-time edge.";
+    const thesisLogged = sortedClosed.filter((trade) => (trade.remarks || "").trim().length >= 20).length;
+    const thesisQualityPct = sortedClosed.length ? (thesisLogged / sortedClosed.length) * 100 : 0;
+    const monthlyRows = edge.monthly.map(([month, pnl]) => ({ month, pnl }));
+    const positiveMonths = monthlyRows.filter((row) => row.pnl > 0).length;
+    const reportGrade = disciplineScore >= 85 && edge.expectancyPct > 0 ? "A" : disciplineScore >= 70 && edge.expectancyPct >= 0 ? "B" : disciplineScore >= 55 ? "C" : "D";
+    const lossHoldAvg = avgNumber(sortedClosed.filter((trade) => trade.pnl <= 0).map((trade) => holdDays(trade.entryDate, trade.exitDate)));
+    return {
+      qualityRows,
+      mistakeRows,
+      oneBigLeak,
+      aPlusTrades,
+      doNotTrade,
+      sizingRows,
+      correctSizingPct: sizingRows.length ? (correctSizing.length / sizingRows.length) * 100 : 0,
+      idealSizingPct: sizingRows.length ? (idealSizing.length / sizingRows.length) * 100 : 0,
+      oversized,
+      stopPlannedPct,
+      accountRiskOkPct,
+      noMistakePct,
+      followedPlanPct,
+      disciplineScore,
+      confidenceRows,
+      openActions,
+      setupPlaybook,
+      bestHold,
+      loserCut: lossHoldAvg > 0 ? `Average loser is held ${lossHoldAvg.toFixed(1)} days; use that as the review deadline for weak trades.` : "Log more losses to define your cut window.",
+      thesisQualityPct,
+      reportGrade,
+      positiveMonths,
+      monthCount: monthlyRows.length,
+    };
+  }, [closedTrades, edge.bestHoldBucket, edge.expectancyPct, edge.monthly, openPositions, posMeta, startEquity]);
+
+  const runAiCoach = () => {
+    if (aiReviewLoading) return;
+    setAiReviewLoading(true);
+    setAiReview(null);
+    runAiJournalReview(
+      {
+        starting_equity: startEquity,
+        closed_trades: closedTrades.slice(-60).reverse(),
+        open_positions: openPositions,
+        analytics_summary: {
+          expectancy_pct: Number(edge.expectancyPct.toFixed(2)),
+          avg_r: Number(edge.avgR.toFixed(2)),
+          planned_trades_pct: Number(edge.plannedTradesPct.toFixed(0)),
+          discipline_score: insightLab.disciplineScore,
+          report_grade: insightLab.reportGrade,
+          one_big_leak: insightLab.oneBigLeak
+            ? { tag: insightLab.oneBigLeak.tag, count: insightLab.oneBigLeak.count, pnl: Math.round(insightLab.oneBigLeak.pnl) }
+            : null,
+          mistake_costs: insightLab.mistakeRows.slice(0, 6).map((row) => ({ tag: row.tag, count: row.count, pnl: Math.round(row.pnl), avg_pct: Number(row.avgPct.toFixed(1)) })),
+          do_not_trade: insightLab.doNotTrade.slice(0, 5).map((row) => ({ label: row.label, count: row.count, pnl: Math.round(row.pnl), win_rate: Number(row.winRate.toFixed(0)) })),
+          sizing: {
+            correct_pct: Number(insightLab.correctSizingPct.toFixed(0)),
+            ideal_pct: Number(insightLab.idealSizingPct.toFixed(0)),
+            oversized: insightLab.oversized.map((row) => ({
+              symbol: row.trade.symbol,
+              account_risk_pct: row.accountRiskPct !== null ? Number(row.accountRiskPct.toFixed(2)) : null,
+              position_risk_pct: row.posRiskPct !== null ? Number(row.posRiskPct.toFixed(1)) : null,
+            })),
+          },
+          quality: {
+            avg_score: Number(avgNumber(insightLab.qualityRows.map((row) => row.score)).toFixed(0)),
+            a_plus: insightLab.aPlusTrades.map((row) => ({ symbol: row.trade.symbol, setup: row.trade.setupType, score: row.score, r: row.rMultiple !== null ? Number(row.rMultiple.toFixed(2)) : null })),
+          },
+          open_actions: insightLab.openActions.map((row) => ({ symbol: row.symbol, status: row.status, risk_pct_equity: Number(row.riskPctEquity.toFixed(2)), action: row.action })),
+        },
+      },
+      market ?? "india",
+    )
+      .then(setAiReview)
+      .catch((error: unknown) =>
+        setAiReview({ error: error instanceof Error ? error.message : "AI review failed." }),
+      )
+      .finally(() => setAiReviewLoading(false));
+  };
 
   // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
@@ -2673,6 +2922,50 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                     </div>
                   ) : null}
                 </div>
+                {(aiReview.one_big_leak || aiReview.monthly_report_card) ? (
+                  <div className="tj-ai-columns">
+                    {aiReview.one_big_leak ? (
+                      <div>
+                        <div className="tj-ai-col-title neg">One big leak</div>
+                        <p className="tj-ai-mini-card">{formatAiReviewText(aiReview.one_big_leak)}</p>
+                      </div>
+                    ) : null}
+                    {aiReview.monthly_report_card ? (
+                      <div>
+                        <div className="tj-ai-col-title">Report card</div>
+                        <p className="tj-ai-mini-card">{formatAiReviewText(aiReview.monthly_report_card)}</p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
+                {(aiReview.risk_review?.length || aiReview.setup_playbook?.length || aiReview.do_not_trade?.length || aiReview.next_week_rules?.length) ? (
+                  <div className="tj-ai-columns">
+                    {aiReview.risk_review?.length ? (
+                      <div>
+                        <div className="tj-ai-col-title neg">Risk review</div>
+                        <ul>{aiReview.risk_review.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
+                      </div>
+                    ) : null}
+                    {aiReview.setup_playbook?.length ? (
+                      <div>
+                        <div className="tj-ai-col-title pos">Setup playbook</div>
+                        <ul>{aiReview.setup_playbook.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
+                      </div>
+                    ) : null}
+                    {aiReview.do_not_trade?.length ? (
+                      <div>
+                        <div className="tj-ai-col-title neg">Do not trade</div>
+                        <ul>{aiReview.do_not_trade.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
+                      </div>
+                    ) : null}
+                    {aiReview.next_week_rules?.length ? (
+                      <div>
+                        <div className="tj-ai-col-title">Next week rules</div>
+                        <ul>{aiReview.next_week_rules.map((item, index) => <li key={index}>{formatAiReviewText(item)}</li>)}</ul>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
                 {aiReview.open_positions?.length ? (
                   <div className="tj-ai-positions">
                     <div className="tj-ai-col-title">Open positions</div>
@@ -2756,6 +3049,191 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               )}
             </div>
           </div>
+          <div className="tj-insight-command">
+            <div className="tj-card tj-command-card">
+              <div className="tj-card-hdr">One Big Leak</div>
+              {insightLab.oneBigLeak ? (
+                <>
+                  <div className="tj-command-value neg">{insightLab.oneBigLeak.tag}</div>
+                  <div className="tj-command-sub">
+                    {insightLab.oneBigLeak.count} trades · {fmtPnl(insightLab.oneBigLeak.pnl)} · avg {insightLab.oneBigLeak.avgPct.toFixed(1)}%
+                  </div>
+                  <div className="tj-command-note">
+                    Next 10 trades: block or halve size on this behavior until the cost stops growing.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="tj-command-value pos">No major leak tagged</div>
+                  <div className="tj-command-sub">Keep tagging mistakes so the journal can find the next leak.</div>
+                </>
+              )}
+            </div>
+            <div className="tj-card tj-command-card">
+              <div className="tj-card-hdr">Discipline Score</div>
+              <div className={`tj-command-value ${insightLab.disciplineScore >= 75 ? "pos" : insightLab.disciplineScore < 55 ? "neg" : ""}`}>
+                {insightLab.disciplineScore}/100
+              </div>
+              <div className="tj-mini-bars">
+                <span>Stops {insightLab.stopPlannedPct.toFixed(0)}%</span>
+                <span>Risk ok {insightLab.accountRiskOkPct.toFixed(0)}%</span>
+                <span>No mistake {insightLab.noMistakePct.toFixed(0)}%</span>
+                <span>Plan {insightLab.followedPlanPct.toFixed(0)}%</span>
+              </div>
+            </div>
+            <div className="tj-card tj-command-card">
+              <div className="tj-card-hdr">Position Sizing Grade</div>
+              <div className={`tj-command-value ${insightLab.correctSizingPct >= 80 ? "pos" : insightLab.correctSizingPct < 60 ? "neg" : ""}`}>
+                {insightLab.sizingRows.length ? `${insightLab.correctSizingPct.toFixed(0)}% correct` : "Add stops"}
+              </div>
+              <div className="tj-command-sub">
+                Ideal 3-4% position risk: {insightLab.sizingRows.length ? `${insightLab.idealSizingPct.toFixed(0)}%` : "—"}
+              </div>
+            </div>
+            <div className="tj-card tj-command-card">
+              <div className="tj-card-hdr">Monthly Trader Grade</div>
+              <div className={`tj-command-value ${insightLab.reportGrade === "A" ? "pos" : insightLab.reportGrade === "D" ? "neg" : ""}`}>
+                {insightLab.reportGrade}
+              </div>
+              <div className="tj-command-sub">
+                {insightLab.positiveMonths}/{insightLab.monthCount || 0} profitable months · thesis logged {insightLab.thesisQualityPct.toFixed(0)}%
+              </div>
+            </div>
+          </div>
+
+          <div className="tj-insight-grid-2">
+            <div className="tj-card">
+              <div className="tj-card-hdr">Mistake Cost Dashboard</div>
+              {insightLab.mistakeRows.length === 0 ? <div className="tj-empty">No mistake tags yet</div> : (
+                <table className="tj-table tj-compact-table">
+                  <thead><tr><th>Mistake</th><th>Trades</th><th>Avg</th><th>Cost</th><th>Worst</th></tr></thead>
+                  <tbody>
+                    {insightLab.mistakeRows.slice(0, 8).map((row) => (
+                      <tr key={row.tag}>
+                        <td><span className="tj-chip sm">{row.tag}</span></td>
+                        <td>{row.count}</td>
+                        <td className={row.avgPct >= 0 ? "pos" : "neg"}>{row.avgPct.toFixed(1)}%</td>
+                        <td className={row.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(row.pnl)}</td>
+                        <td>{row.worst?.symbol ?? "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Do Not Trade Detector</div>
+              {insightLab.doNotTrade.length === 0 ? <div className="tj-empty">No repeated losing pattern yet</div> : (
+                <div className="tj-rule-list">
+                  {insightLab.doNotTrade.map((row) => (
+                    <div key={row.label} className="tj-rule-row">
+                      <strong>{row.label}</strong>
+                      <span>{row.count} trades · WR {row.winRate.toFixed(0)}% · <em className="neg">{fmtPnl(row.pnl)}</em></span>
+                      <small>Rule: skip this until 10 clean samples prove it works.</small>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="tj-insight-grid-2">
+            <div className="tj-card">
+              <div className="tj-card-hdr">A+ Trade Replay</div>
+              {insightLab.aPlusTrades.length === 0 ? <div className="tj-empty">No A+ process trades yet</div> : (
+                <div className="tj-replay-list">
+                  {insightLab.aPlusTrades.map((row) => (
+                    <button key={`${row.trade.symbol}-${row.trade.exitDate}-${row.score}`} type="button" className="tj-replay-row" onClick={() => onOpenSymbolChart?.(row.trade.symbol)}>
+                      <span><strong>{row.trade.symbol}</strong><small>{row.trade.setupType || "Unspecified"} · {row.holdDays}d hold</small></span>
+                      <span className={row.trade.pnl >= 0 ? "pos" : "neg"}>{row.grade} · {row.rMultiple !== null ? `${row.rMultiple.toFixed(1)}R` : fmtPerc(row.trade.perc)}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Trade Quality Score</div>
+              <div className="tj-quality-band">
+                {["A+", "A", "B", "C", "D"].map((grade) => {
+                  const count = insightLab.qualityRows.filter((row) => row.grade === grade).length;
+                  return <div key={grade}><strong>{count}</strong><span>{grade}</span></div>;
+                })}
+              </div>
+              <div className="tj-rule-list">
+                {insightLab.qualityRows.slice().sort((a, b) => a.score - b.score).slice(0, 4).map((row) => (
+                  <div key={`${row.trade.symbol}-${row.trade.exitDate}-${row.score}`} className="tj-rule-row">
+                    <strong>{row.trade.symbol} · {row.grade} ({row.score})</strong>
+                    <span>{row.posRiskPct !== null ? `${row.posRiskPct.toFixed(1)}% pos risk` : "no stop"} · {fmtPnl(row.trade.pnl)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="tj-card" style={{ marginBottom: 14 }}>
+            <div className="tj-card-hdr">Open Position Action Board</div>
+            {insightLab.openActions.length === 0 ? <div className="tj-empty">No open positions</div> : (
+              <table className="tj-table tj-compact-table">
+                <thead><tr><th>Symbol</th><th>Status</th><th>P&L</th><th>R</th><th>Risk</th><th>Action</th></tr></thead>
+                <tbody>
+                  {insightLab.openActions.map((row) => (
+                    <tr key={row.symbol}>
+                      <td><button type="button" className="tj-symbol-link" onClick={() => onOpenSymbolChart?.(row.symbol)}>{row.symbol}</button></td>
+                      <td><span className={`tj-ai-status ${row.status.toLowerCase()}`}>{row.status}</span></td>
+                      <td className={row.pnlPct >= 0 ? "pos" : "neg"}>{row.pnlPct >= 0 ? "+" : ""}{row.pnlPct.toFixed(1)}%</td>
+                      <td>{row.rMultiple !== null ? `${row.rMultiple >= 0 ? "+" : ""}${row.rMultiple.toFixed(1)}R` : "—"}</td>
+                      <td className={row.riskPctEquity > 1 ? "neg fw" : ""}>{row.hasStop ? `${row.riskPctEquity.toFixed(2)}% eq` : "No SL"}</td>
+                      <td>{row.action}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          <div className="tj-insight-grid-2">
+            <div className="tj-card">
+              <div className="tj-card-hdr">Setup Playbook Analytics</div>
+              {insightLab.setupPlaybook.length === 0 ? <div className="tj-empty">No setup samples yet</div> : (
+                <table className="tj-table tj-compact-table">
+                  <thead><tr><th>Setup</th><th>Trades</th><th>WR</th><th>Avg R</th><th>Hold</th><th>P&L</th></tr></thead>
+                  <tbody>
+                    {insightLab.setupPlaybook.slice(0, 8).map((row) => (
+                      <tr key={row.setup}>
+                        <td><span className="tj-chip sm">{row.setup}</span></td>
+                        <td>{row.count}</td>
+                        <td>{row.winRate.toFixed(0)}%</td>
+                        <td>{row.avgR ? `${row.avgR >= 0 ? "+" : ""}${row.avgR.toFixed(2)}R` : "—"}</td>
+                        <td>{row.avgHold.toFixed(1)}d</td>
+                        <td className={row.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(row.pnl)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">Hold, Thesis & Confidence</div>
+              <div className="tj-rule-list">
+                <div className="tj-rule-row"><strong>Best time to hold</strong><span>{insightLab.bestHold}</span><small>{insightLab.loserCut}</small></div>
+                <div className="tj-rule-row"><strong>Trade thesis logged</strong><span>{insightLab.thesisQualityPct.toFixed(0)}% of closed trades have meaningful remarks</span><small>At entry, write why buying, what proves wrong, where to add, where to sell.</small></div>
+                <div className="tj-rule-row"><strong>Market Regime P&L</strong><span>Current journal does not store historical regime per trade yet.</span><small>Next upgrade: stamp regime at entry so this can split strong, choppy and weak tape performance.</small></div>
+              </div>
+              {insightLab.confidenceRows.length ? (
+                <table className="tj-table tj-compact-table" style={{ marginTop: 10 }}>
+                  <thead><tr><th>Confidence</th><th>Trades</th><th>Avg</th><th>P&L</th></tr></thead>
+                  <tbody>
+                    {insightLab.confidenceRows.map((row) => (
+                      <tr key={row.tag}>
+                        <td>{row.tag}</td><td>{row.count}</td><td className={row.avgPct >= 0 ? "pos" : "neg"}>{row.avgPct.toFixed(1)}%</td><td className={row.pnl >= 0 ? "pos fw" : "neg fw"}>{fmtPnl(row.pnl)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : null}
+            </div>
+          </div>
+
           <div className="tj-card" style={{ marginBottom: 14 }}>
             <div className="tj-card-hdr">Trading Quality Dashboard</div>
             <div className="tj-edge-grid">
