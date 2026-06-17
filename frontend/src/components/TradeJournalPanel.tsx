@@ -73,7 +73,9 @@ const PREDEFINED_TAGS = [
   "Strong Volume", "Weak Volume", "Below 50 SMA", "Above 50/200 SMA",
   "10 EMA Support", "21 EMA Support", "Poor Structure",
 ];
-const DEFAULT_SETUPS = ["Bread & Butter", "10 EMA Pullback", "21 EMA Pullback", "VCP", "Flat Base", "Cup & Handle", "Breakout", "Pullback", "Stage 2", "Other"];
+const DEFAULT_SETUPS = ["10 EMA Pullback", "21 EMA Pullback", "Flag", "Breakout", "Low Cheat", "Cheat", "Reversal", "Other"];
+// Old built-in setups to retire from the dropdown (existing trades keep their stored value).
+const LEGACY_SETUPS = new Set(["bread & butter", "vcp", "flat base", "cup & handle", "pullback", "stage 2", "breakout pullback"]);
 const MISTAKE_TAGS = ["FOMO", "Early Entry", "Late Entry", "Chased", "Sold Early", "Held Too Long", "Averaged Down", "Broke Plan", "Emotional", "Below 50 SMA", "Poor Structure", "Weak Volume"];
 const QUALITY_GOOD_TAGS = ["Followed Plan", "Perfect Entry", "Held Well", "Clean Pullback", "Strong Volume", "Above 50/200 SMA", "10 EMA Support", "21 EMA Support"];
 const QUALITY_BAD_TAGS = ["FOMO", "Chased", "Broke Plan", "Averaged Down", "Emotional", "Below 50 SMA", "Poor Structure", "Weak Volume", "Late Entry"];
@@ -162,8 +164,9 @@ function withDefaultSetups(saved: string[]): string[] {
   const seen = new Set<string>();
   return [...DEFAULT_SETUPS, ...(Array.isArray(saved) ? saved : [])].filter((setup) => {
     const key = String(setup || "").trim();
-    if (!key || seen.has(key.toLowerCase())) return false;
-    seen.add(key.toLowerCase());
+    const lower = key.toLowerCase();
+    if (!key || seen.has(lower) || LEGACY_SETUPS.has(lower)) return false;
+    seen.add(lower);
     return true;
   });
 }
@@ -1201,7 +1204,11 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   }, [selectedEdge]);
   const [trades, setTrades] = useState<Trade[]>(() => lsGet<Trade[]>(LS_DATA, []));
   const [startEquity, setStartEquity] = useState<number>(() => lsGet<number>(LS_EQUITY, 100000));
-  const [setups, setSetups] = useState<string[]>(() => withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS)));
+  const [setups, setSetups] = useState<string[]>(() => {
+    const reconciled = withDefaultSetups(lsGet<string[]>(LS_SETUPS, DEFAULT_SETUPS));
+    lsSet(LS_SETUPS, reconciled); // purge retired setups from storage
+    return reconciled;
+  });
   const [openPosCats, setOpenPosCats] = useState<Record<string, OpenPosCat>>(() => lsGet(LS_POSITIONS, {}));
   const [posMeta, setPosMeta] = useState<Record<string, PosMeta>>(() => lsGet(LS_META, {}));
   const [chargesConfig, setChargesConfig] = useState<ChargesConfig>(() => ({ ...DEFAULT_CHARGES, ...lsGet<Partial<ChargesConfig>>(LS_CHARGES, {}) }));
@@ -1286,6 +1293,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [modalEditRemarks, setModalEditRemarks] = useState("");
   const [modalEditImg, setModalEditImg] = useState("");
   const [modalEditCustomTags, setModalEditCustomTags] = useState("");
+  const [modalEditSetupType, setModalEditSetupType] = useState("");
   const [modalOpenSL, setModalOpenSL] = useState("");
   const [modalOpenFetchTicker, setModalOpenFetchTicker] = useState("");
   const [modalOpenSetupType, setModalOpenSetupType] = useState("");
@@ -2200,6 +2208,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     setModalEditRemarks(origTrade.remarks || "");
     setModalEditImg(origTrade.img || "");
     setModalEditCustomTags("");
+    setModalEditSetupType(origTrade.setupType || "");
     setModal({ type: "edit-closed", sellIndex, buyIndices });
   }
 
@@ -2210,7 +2219,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     const finalTags = [...modalEditTags, ...customTags];
     const newEntryPx = parseFloat(modalEditEntryPx), newExitPx = parseFloat(modalEditExitPx);
     const nextTrades = trades.map((t, i) => {
-      if (buyIndices.includes(i)) return { ...t, tags: finalTags, remarks: modalEditRemarks, img: modalEditImg, ...(!isNaN(newEntryPx) && newEntryPx > 0 ? { price: newEntryPx } : {}) };
+      if (buyIndices.includes(i)) return { ...t, tags: finalTags, remarks: modalEditRemarks, img: modalEditImg, setupType: modalEditSetupType, ...(!isNaN(newEntryPx) && newEntryPx > 0 ? { price: newEntryPx } : {}) };
       if (i === sellIndex && !isNaN(newExitPx) && newExitPx > 0) return { ...t, price: newExitPx };
       return t;
     });
@@ -3421,8 +3430,9 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
       {/* News Radar is now a full-screen modal triggered from the tab/button (see NewsModal mount below) */}
 
-      {/* ── Modals ── */}
-      {modal && (
+      {/* ── Modals ── (portaled to body so they always open centered on-screen,
+            unaffected by the long page or any transformed ancestor) */}
+      {modal && createPortal(
         <div className="tj-overlay" onClick={e => { if ((e.target as HTMLElement).classList.contains("tj-overlay")) { setModal(null); onAddRequestHandled?.(); } }}>
           <div className="tj-modal">
             <button className="tj-modal-x" onClick={() => { setModal(null); onAddRequestHandled?.(); }}>✕</button>
@@ -3466,6 +3476,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <div className="tj-form-grid-2">
                   <div className="tj-form-field"><label>Avg Entry Price</label><input className="tj-input" type="number" step="any" value={modalEditEntryPx} onChange={e => setModalEditEntryPx(e.target.value)} /></div>
                   <div className="tj-form-field"><label>Exit Price</label><input className="tj-input" type="number" step="any" value={modalEditExitPx} onChange={e => setModalEditExitPx(e.target.value)} /></div>
+                  <div className="tj-form-field">
+                    <label>Setup Type</label>
+                    <select className="tj-input" value={modalEditSetupType} onChange={e => setModalEditSetupType(e.target.value)}>
+                      <option value="">— None —</option>
+                      {setups.map(s => <option key={s} value={s}>{s}</option>)}
+                      {modalEditSetupType && !setups.includes(modalEditSetupType) ? <option value={modalEditSetupType}>{modalEditSetupType}</option> : null}
+                    </select>
+                  </div>
                 </div>
                 <div className="tj-card-hdr" style={{ marginTop: 12 }}>Tags</div>
                 <div className="tj-chip-row">
@@ -3550,7 +3568,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
       <NewsModal
         isOpen={newsModalOpen}
