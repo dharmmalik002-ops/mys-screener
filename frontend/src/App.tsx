@@ -3998,6 +3998,36 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setChartOpen(true);
   };
 
+  // Mouse-clickable equivalent of the ArrowUp/ArrowDown chart navigation:
+  // step to the previous (-1) / next (+1) symbol in the current chart's context
+  // list, wrapping around. Mirrors the keydown handler's list resolution.
+  const stepChartSymbol = (direction: 1 | -1, pane: "A" | "B" = "A") => {
+    const symbols = groupNavOverrideRef.current?.length
+      ? groupNavOverrideRef.current
+      : chartNavigationSymbolsRef.current?.length
+        ? chartNavigationSymbolsRef.current
+        : pageVisibleSymbolsRef.current;
+    const usePaneB = pane === "B";
+    const currentSymbol = usePaneB ? paneBSymbolRef.current : selectedSymbolRef.current;
+    if (!symbols?.length || !currentSymbol) {
+      return;
+    }
+    const currentIndex = symbols.indexOf(currentSymbol);
+    if (currentIndex === -1) {
+      return;
+    }
+    const nextSymbol = symbols[(currentIndex + direction + symbols.length) % symbols.length];
+    if (!nextSymbol || nextSymbol === currentSymbol) {
+      return;
+    }
+    if (usePaneB) {
+      setPaneBSymbol(nextSymbol);
+    } else {
+      setSelectedSymbol(nextSymbol);
+      setChartOpen(true);
+    }
+  };
+
   const handleToggleIndicator = (indicator: IndicatorKey) => {
     setIndicatorKeys((current) =>
       current.includes(indicator) ? current.filter((item) => item !== indicator) : [...current, indicator],
@@ -5365,6 +5395,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     onSearchSymbol={handleChartSearchSubmit}
                     onOpenGroup={handleOpenChartGroupModal}
                     onRefreshChart={handleChartRefresh}
+                    onStepChart={stepChartSymbol}
                     expanded
                   />
                 </>
@@ -5455,6 +5486,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onSearchSymbol={handleChartSearchSubmit}
                   onOpenGroup={handleOpenChartGroupModal}
                   onRefreshChart={handleChartRefresh}
+                  onStepChart={stepChartSymbol}
                   expanded={activePage === "groups"}
                 />
               ) : null}
@@ -5567,6 +5599,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         onSearchSymbol={(query) => handlePaneSearchSubmit("A", query)}
                         onOpenGroup={handleOpenChartGroupModal}
                         onRefreshChart={handleChartRefresh}
+                        onStepChart={(direction) => stepChartSymbol(direction, "A")}
                         expanded
                       />
                     }
@@ -5620,6 +5653,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                             void loadChartForPaneB(paneBSymbol, timeframe, activeMarket).catch(() => {});
                           }
                         }}
+                        onStepChart={(direction) => stepChartSymbol(direction, "B")}
                         expanded
                       />
                     }

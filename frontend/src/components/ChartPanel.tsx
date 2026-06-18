@@ -230,6 +230,7 @@ type ChartPanelProps = {
   onSearchSymbol?: (query: string) => void;
   onOpenGroup?: (groupId: string) => void;
   onRefreshChart?: () => void;
+  onStepChart?: (direction: 1 | -1) => void;
   expanded?: boolean;
 };
 
@@ -1521,6 +1522,7 @@ export function ChartPanel({
   onSearchSymbol,
   onOpenGroup,
   onRefreshChart,
+  onStepChart,
   expanded = false,
 }: ChartPanelProps) {
   const searchListId = `chart-search-${useId()}`;
@@ -4097,6 +4099,28 @@ export function ChartPanel({
                   J
                 </button>
               ) : null}
+            </div>
+          ) : null}
+          {symbol && onStepChart ? (
+            <div className="chart-stage-nav" role="group" aria-label="Previous / next chart">
+              <button
+                type="button"
+                className="chart-stage-nav-button"
+                onClick={() => onStepChart(-1)}
+                aria-label="Previous chart"
+                title="Previous chart (↑)"
+              >
+                ▲
+              </button>
+              <button
+                type="button"
+                className="chart-stage-nav-button"
+                onClick={() => onStepChart(1)}
+                aria-label="Next chart"
+                title="Next chart (↓)"
+              >
+                ▼
+              </button>
             </div>
           ) : null}
           {favoritesWidget.enabled ? (

@@ -5365,6 +5365,39 @@ button {
   font-weight: 900;
 }
 
+/* Previous / next chart navigation, bottom-right of the big chart. */
+.chart-stage-nav {
+  position: absolute;
+  right: 14px;
+  bottom: 46px; /* clear the time/date axis */
+  z-index: 6;
+  display: grid;
+  gap: 7px;
+}
+.chart-stage-nav-button {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  color: var(--accent);
+  font-size: 0.8rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(2, 8, 22, 0.28);
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+}
+.chart-stage-nav-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 75%, transparent);
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+}
+.chart-stage-nav-button:active {
+  transform: scale(0.94);
+}
+
 @media (max-width: 1320px) {
   .watchlists-layout {
     grid-template-columns: 1fr;
