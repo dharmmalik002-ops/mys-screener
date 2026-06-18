@@ -5270,10 +5270,19 @@ class DashboardService:
         patch_date = self._parse_optional_date(patch_payload.get("date"))
         updated_at = self._parse_optional_datetime(patch_payload.get("updated_at")) or self._parse_optional_datetime(runtime_payload.get("applied_at"))
         source = str(patch_payload.get("source") or runtime_payload.get("source") or "").strip().upper() or None
-        today_ist = datetime.now(IST).date()
+        # "updated" means the patch covers the latest COMPLETED trading session,
+        # not that it is dated literally today. Comparing against the calendar
+        # day read false every morning before the ~4 PM IST close and all
+        # weekend even though the served data was as fresh as it could be.
+        now_ist = datetime.now(IST)
+        eod_ready = now_ist.hour * 60 + now_ist.minute >= 16 * 60 + 45  # BSE EOD applied by ~16:45 IST
+        expected = now_ist.date() if (now_ist.weekday() < 5 and eod_ready) else now_ist.date() - timedelta(days=1)
+        while expected.weekday() >= 5:  # roll Sat/Sun back to Friday's session
+            expected -= timedelta(days=1)
+        is_current = patch_date is not None and patch_date >= expected
         return BhavcopyStatusResponse(
             market=market,
-            updated=patch_date == today_ist,
+            updated=is_current,
             date=patch_date.isoformat() if patch_date is not None else None,
             updated_at=updated_at,
             source=source,
