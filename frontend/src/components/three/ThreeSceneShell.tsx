@@ -21,6 +21,16 @@ type ThreeSceneShellProps = {
   active?: boolean;
 };
 
+type IconTextureKey = "chart" | "money" | "moneyBag" | "notebook";
+type IconTextures = Record<IconTextureKey, THREE.Texture>;
+
+const ICON_PATHS: Record<IconTextureKey, string> = {
+  chart: "/3d-icons/chart.webp",
+  money: "/3d-icons/money.webp",
+  moneyBag: "/3d-icons/money-bag.webp",
+  notebook: "/3d-icons/notebook.webp",
+};
+
 const COLOR_MAP = {
   strength: MARKET_3D_COLORS.strength,
   weakness: MARKET_3D_COLORS.weakness,
@@ -52,6 +62,95 @@ function addFloor(scene: THREE.Scene, mode: VisualMode) {
     gridMaterial.opacity = mode === "premium" ? 0.26 : 0.14;
   }
   scene.add(grid);
+}
+
+function addIconCard(
+  root: THREE.Group,
+  texture: THREE.Texture,
+  position: THREE.Vector3,
+  scale: number,
+  rotation: THREE.Euler,
+  glowColor: number,
+  mode: VisualMode,
+) {
+  const card = new THREE.Group();
+  card.position.copy(position);
+  card.rotation.copy(rotation);
+  card.scale.setScalar(scale);
+  card.userData.phase = position.x + position.y + position.z;
+
+  const back = new THREE.Mesh(
+    new THREE.BoxGeometry(1.56, 1.56, 0.1),
+    material(glowColor, mode, 0.18),
+  );
+  back.position.z = -0.04;
+  card.add(back);
+
+  const texturePlane = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.36, 1.36),
+    new THREE.MeshBasicMaterial({ map: texture, transparent: false, toneMapped: false, side: THREE.DoubleSide }),
+  );
+  texturePlane.position.z = 0.03;
+  card.add(texturePlane);
+
+  const border = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(1.6, 1.6, 0.12)),
+    lineMaterial(glowColor, mode, 0.5),
+  );
+  card.add(border);
+
+  const glow = new THREE.PointLight(glowColor, mode === "premium" ? 1.45 : 0.75, 4.2);
+  glow.position.set(0, 0.1, 0.62);
+  card.add(glow);
+  root.add(card);
+  return card;
+}
+
+function addCandles(root: THREE.Group, mode: VisualMode, count = 9, width = 4.6) {
+  for (let index = 0; index < count; index += 1) {
+    const bullish = index % 4 !== 2;
+    const height = 0.28 + ((index * 7) % 9) * 0.09;
+    const x = (index / Math.max(1, count - 1) - 0.5) * width;
+    const z = -0.96 + Math.sin(index * 1.1) * 0.22;
+    const color = bullish ? MARKET_3D_COLORS.strength : MARKET_3D_COLORS.weakness;
+    const candle = new THREE.Group();
+    candle.position.set(x, -0.72 + height / 2, z);
+    candle.userData.phase = index * 0.28;
+
+    const body = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, height, 0.14),
+      material(color, mode, bullish ? 0.94 : 0.86),
+    );
+    candle.add(body);
+
+    const wick = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.014, 0.014, height + 0.34, 8),
+      material(MARKET_3D_COLORS.textGlow, mode, 0.72),
+    );
+    candle.add(wick);
+    root.add(candle);
+  }
+}
+
+function addMomentumArrow(root: THREE.Group, mode: VisualMode, color = MARKET_3D_COLORS.strength) {
+  const arrow = new THREE.Group();
+  arrow.position.set(0.65, 0.16, -0.7);
+  arrow.rotation.z = -0.38;
+  arrow.userData.phase = 0.7;
+  const shaft = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 1.8, 14),
+    material(color, mode, 0.9),
+  );
+  shaft.rotation.z = Math.PI / 2;
+  arrow.add(shaft);
+  const head = new THREE.Mesh(
+    new THREE.ConeGeometry(0.18, 0.38, 24),
+    material(color, mode, 0.96),
+  );
+  head.rotation.z = -Math.PI / 2;
+  head.position.x = 0.98;
+  arrow.add(head);
+  root.add(arrow);
 }
 
 function addRing(root: THREE.Group, ratio: number, mode: VisualMode) {
@@ -147,6 +246,41 @@ function addSignalEngine(root: THREE.Group, data: SceneDatum[], mode: VisualMode
   addTowers(root, data.slice(0, 6), mode, "scanner");
 }
 
+function addTradingObjects(root: THREE.Group, variant: ThreeSceneVariant, textures: IconTextures, mode: VisualMode) {
+  if (variant === "journal") {
+    addIconCard(root, textures.notebook, new THREE.Vector3(1.28, 0.16, 0.08), 1.38, new THREE.Euler(-0.08, -0.32, 0.02), MARKET_3D_COLORS.insight, mode);
+    addIconCard(root, textures.moneyBag, new THREE.Vector3(-1.55, -0.36, -0.36), 0.72, new THREE.Euler(0.1, 0.44, -0.06), MARKET_3D_COLORS.caution, mode);
+    addMomentumArrow(root, mode, MARKET_3D_COLORS.insight);
+    return;
+  }
+
+  if (variant === "watchlists") {
+    addIconCard(root, textures.money, new THREE.Vector3(-1.25, 0.02, -0.06), 1.02, new THREE.Euler(-0.1, 0.42, -0.05), MARKET_3D_COLORS.liquidity, mode);
+    addIconCard(root, textures.chart, new THREE.Vector3(1.45, 0.22, -0.22), 1.04, new THREE.Euler(-0.06, -0.38, 0.05), MARKET_3D_COLORS.insight, mode);
+    return;
+  }
+
+  if (variant === "groups") {
+    addIconCard(root, textures.chart, new THREE.Vector3(1.65, 0.32, -0.28), 1.08, new THREE.Euler(-0.1, -0.46, 0.04), MARKET_3D_COLORS.insight, mode);
+    addIconCard(root, textures.moneyBag, new THREE.Vector3(-1.72, -0.2, -0.44), 0.74, new THREE.Euler(0.08, 0.5, -0.06), MARKET_3D_COLORS.caution, mode);
+    addMomentumArrow(root, mode);
+    return;
+  }
+
+  if (variant === "scanner") {
+    addIconCard(root, textures.chart, new THREE.Vector3(1.46, 0.25, -0.24), 1.22, new THREE.Euler(-0.12, -0.42, 0.05), MARKET_3D_COLORS.insight, mode);
+    addIconCard(root, textures.money, new THREE.Vector3(-1.62, -0.36, -0.42), 0.76, new THREE.Euler(0.08, 0.5, -0.08), MARKET_3D_COLORS.liquidity, mode);
+    addCandles(root, mode, 8, 3.9);
+    return;
+  }
+
+  addIconCard(root, textures.chart, new THREE.Vector3(1.2, 0.3, -0.22), 1.28, new THREE.Euler(-0.1, -0.42, 0.04), MARKET_3D_COLORS.insight, mode);
+  addIconCard(root, textures.money, new THREE.Vector3(-1.55, -0.22, -0.34), 0.82, new THREE.Euler(0.08, 0.48, -0.08), MARKET_3D_COLORS.liquidity, mode);
+  addIconCard(root, textures.moneyBag, new THREE.Vector3(-0.22, 0.55, -0.78), 0.58, new THREE.Euler(-0.08, 0.12, 0.06), MARKET_3D_COLORS.caution, mode);
+  addCandles(root, mode, 9, 4.5);
+  addMomentumArrow(root, mode);
+}
+
 function addParticles(root: THREE.Group, count: number, mode: VisualMode) {
   const geometry = new THREE.SphereGeometry(0.025, 8, 8);
   const mat = material(MARKET_3D_COLORS.textGlow, mode, 0.7);
@@ -159,26 +293,32 @@ function addParticles(root: THREE.Group, count: number, mode: VisualMode) {
   }
 }
 
-function buildVariant(root: THREE.Group, props: ThreeSceneShellProps, mode: VisualMode, particleCount: number) {
+function buildVariant(root: THREE.Group, props: ThreeSceneShellProps, mode: VisualMode, particleCount: number, textures: IconTextures) {
   const { variant, data, positiveRatio = 0.55 } = props;
   if (variant === "home") {
     addRing(root, positiveRatio, mode);
     addTowers(root, data, mode, variant);
+    addTradingObjects(root, variant, textures, mode);
     addParticles(root, particleCount, mode);
   } else if (variant === "groups") {
     addTowers(root, data, mode, variant);
+    addTradingObjects(root, variant, textures, mode);
     addParticles(root, Math.floor(particleCount * 0.75), mode);
   } else if (variant === "watchlists") {
     addConstellation(root, data, mode);
+    addTradingObjects(root, variant, textures, mode);
     addParticles(root, Math.floor(particleCount * 0.5), mode);
   } else if (variant === "journal") {
     addRiskPath(root, data, mode);
+    addTradingObjects(root, variant, textures, mode);
     addParticles(root, Math.floor(particleCount * 0.45), mode);
   } else if (variant === "chart") {
     addRing(root, 0.64, mode);
     addConstellation(root, data.slice(0, 8), mode);
+    addTradingObjects(root, variant, textures, mode);
   } else {
     addSignalEngine(root, data, mode);
+    addTradingObjects(root, variant, textures, mode);
   }
 }
 
@@ -196,6 +336,15 @@ export function ThreeSceneShell({ variant, visualMode, data, positiveRatio, acti
     }
     setFallback(false);
     const config = modeConfig(visualMode, reducedMotion);
+    const textureLoader = new THREE.TextureLoader();
+    const textures = Object.fromEntries(
+      Object.entries(ICON_PATHS).map(([key, path]) => {
+        const texture = textureLoader.load(path);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 4;
+        return [key, texture];
+      }),
+    ) as IconTextures;
     const scene = new THREE.Scene();
     scene.fog = new THREE.FogExp2(0x07111f, 0.055);
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
@@ -217,7 +366,7 @@ export function ThreeSceneShell({ variant, visualMode, data, positiveRatio, acti
     const fill = new THREE.PointLight(0x8b5cf6, 2.2, 12);
     fill.position.set(-3.2, 1.8, 2.5);
     scene.add(fill);
-    buildVariant(root, { variant, visualMode, data, positiveRatio, active }, visualMode, config.particles);
+    buildVariant(root, { variant, visualMode, data, positiveRatio, active }, visualMode, config.particles, textures);
 
     let raf = 0;
     let visible = true;
@@ -240,10 +389,13 @@ export function ThreeSceneShell({ variant, visualMode, data, positiveRatio, acti
     const animate = () => {
       if (visible) {
         if (config.animate) {
-          root.rotation.y += variant === "chart" ? 0.0012 : 0.0022;
+          root.rotation.y = Math.sin(performance.now() * 0.00055) * 0.035;
           root.children.forEach((child, index) => {
             const phase = Number(child.userData.phase ?? index);
-            child.position.y += Math.sin(performance.now() * 0.0015 + phase) * 0.0008;
+            if (typeof child.userData.baseY !== "number") {
+              child.userData.baseY = child.position.y;
+            }
+            child.position.y = child.userData.baseY + Math.sin(performance.now() * 0.0015 + phase) * 0.025;
           });
         }
         renderer.render(scene, camera);
@@ -264,6 +416,7 @@ export function ThreeSceneShell({ variant, visualMode, data, positiveRatio, acti
         if (Array.isArray(mat)) mat.forEach((item) => item.dispose());
         else mat?.dispose?.();
       });
+      Object.values(textures).forEach((texture) => texture.dispose());
       mount.removeChild(renderer.domElement);
     };
   }, [active, data, positiveRatio, variant, visualMode]);
