@@ -198,6 +198,29 @@ body.dark .top-nav .mode-switch .tool-pill.active,
   color: #fff;
 }
 
+.top-nav .visual-mode-toggle {
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, transparent);
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
+}
+
+.top-nav .visual-mode-toggle select {
+  max-width: 124px;
+  border: 0;
+  border-radius: 8px;
+  padding: 5px 8px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  outline: none;
+  cursor: pointer;
+}
+
+.top-nav .visual-mode-toggle select:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
 /* Ticker ribbon refinement */
 .ticker-ribbon {
   background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);

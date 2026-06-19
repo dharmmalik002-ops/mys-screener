@@ -68,6 +68,7 @@ import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { tradeMarkersForSymbol, useJournalTrades } from "./lib/journal";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
+import { VISUAL_MODE_KEY, readVisualMode, visualModeLabel, type VisualMode } from "./lib/visualMode";
 import { AppStatusBanners } from "./components/AppStatusBanners";
 
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
@@ -97,6 +98,7 @@ const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
+const Tab3DHeader = lazy(() => import("./components/three/Tab3DHeader").then((module) => ({ default: module.Tab3DHeader })));
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
 const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
@@ -1587,6 +1589,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [scanLoading, setScanLoading] = useState(false);
   const [showScannerSettings, setShowScannerSettings] = useState(true);
   const [theme, setTheme] = useState<ThemeKey>(readTheme);
+  const [visualMode, setVisualMode] = useState<VisualMode>(readVisualMode);
   const [watchlists, setWatchlists] = useState<LocalWatchlist[]>(initialWatchlists);
   const [activeWatchlistId, setActiveWatchlistId] = useState<string | null>(readActiveWatchlistId(initialWatchlists, bootstrapMarket));
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
@@ -2656,6 +2659,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     window.localStorage.setItem(THEME_KEY, theme);
     document.documentElement.dataset.theme = theme;
   }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.localStorage.setItem(VISUAL_MODE_KEY, visualMode);
+    document.documentElement.dataset.visualMode = visualMode;
+  }, [visualMode]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -4815,6 +4826,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             <strong>{snapshotDateLabel}</strong>
           </span>
 
+          <label className="nav-mode-toggle visual-mode-toggle" title="Control premium 3D visuals">
+            <span>Visual</span>
+            <select
+              value={visualMode}
+              onChange={(event) => setVisualMode(event.target.value as VisualMode)}
+              aria-label="Visual mode"
+            >
+              {(["premium", "subtle", "performance"] as VisualMode[]).map((mode) => (
+                <option key={mode} value={mode}>{visualModeLabel(mode)}</option>
+              ))}
+            </select>
+          </label>
+
           <button
             type="button"
             className={refreshing ? "icon-btn is-spinning" : "icon-btn"}
@@ -4900,6 +4924,29 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               <div className="skeleton-block skeleton-block-lg" />
             </div>
           </div>
+        ) : null}
+
+        {!loading ? (
+          <Suspense fallback={null}>
+            <Tab3DHeader
+              page={activePage}
+              visualMode={visualMode}
+              dashboard={dashboard}
+              groups={groupsData}
+              watchlists={watchlists}
+              scannerLabel={
+                displayScan?.name
+                  ?? (activeScanner === "improving-rs"
+                    ? "52 Week High RS"
+                    : activeScanner === "momentum-burst"
+                      ? "Momentum Burst"
+                      : "Signal Engine")
+              }
+              scannerCount={activeViewCount}
+              visibleItems={visibleScanItems}
+              chartSymbol={selectedSymbol}
+            />
+          </Suspense>
         ) : null}
 
         {activePage === "home" ? (
