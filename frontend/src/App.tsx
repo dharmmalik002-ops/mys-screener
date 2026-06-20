@@ -4924,6 +4924,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               addRequest={journalAddRequest}
               onAddRequestHandled={() => setJournalAddRequest(null)}
               onOpenSymbolChart={handleJournalOpenSymbolChart}
+              groupsData={groupsData}
             />
           </Suspense>
         ) : null}

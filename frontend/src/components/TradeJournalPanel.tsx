@@ -1,6 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { getChart, getJournalData, saveJournalData, type MarketKey , runAiJournalReview, type AiJournalReview } from "../lib/api";
+import {
+  getChart,
+  getJournalData,
+  saveJournalData,
+  type MarketKey,
+  runAiJournalReview,
+  type AiJournalReview,
+  type IndustryGroupsResponse,
+  type IndustryGroupRankItem,
+  type IndustryGroupStockItem,
+} from "../lib/api";
 import { notifyJournalUpdated } from "../lib/journal";
 import {
   computeCharges, breakevenPct, DEFAULT_CHARGES, CHARGE_LABELS,
@@ -42,6 +52,28 @@ interface FIFOResult {
   closedTrades: ClosedTrade[]; openPositions: OpenPosition[];
   currentEquity: number; openLotsDict: Record<string, Trade[]>;
 }
+type GroupVerdict = "leader" | "constructive" | "watch" | "unknown";
+type OpenPositionGroupAnalysis = {
+  symbol: string;
+  groupName: string;
+  parentSector: string;
+  groupRank: number | null;
+  groupRankChange1w: number | null;
+  groupRankChange1m: number | null;
+  groupRankChange3m: number | null;
+  groupReturn1w: number | null;
+  groupReturn1m: number | null;
+  groupReturn6m: number | null;
+  stockRank: number | null;
+  stockCount: number;
+  stockReturn1w: number | null;
+  stockReturn1m: number | null;
+  stockReturn6m: number | null;
+  rsRating: number | null;
+  exposurePct: number;
+  verdict: GroupVerdict;
+  note: string;
+};
 
 export interface JournalAddRequest {
   symbol: string;
@@ -56,6 +88,7 @@ interface TradeJournalPanelProps {
   addRequest?: JournalAddRequest | null;
   onAddRequestHandled?: () => void;
   onOpenSymbolChart?: (symbol: string) => void;
+  groupsData?: IndustryGroupsResponse | null;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -387,6 +420,24 @@ function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: Char
 function fmt(n: number, dec = 2) { return n.toLocaleString("en-IN", { minimumFractionDigits: dec, maximumFractionDigits: dec }); }
 function fmtPnl(n: number) { return `${n >= 0 ? "+" : "−"}₹${fmt(Math.abs(n))}`; }
 function fmtPerc(n: number) { return `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`; }
+function normSymbol(symbol: string) { return String(symbol || "").trim().toUpperCase().replace(/\.NS$/, ""); }
+function finiteOrNull(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+function fmtMaybePct(value: number | null | undefined) {
+  const n = finiteOrNull(value);
+  return n === null ? "—" : fmtPerc(n);
+}
+function pctTone(value: number | null | undefined) {
+  const n = finiteOrNull(value);
+  if (n === null) return "";
+  return n >= 0 ? "pos" : "neg";
+}
+function rankChangeText(value: number | null | undefined) {
+  const n = finiteOrNull(value);
+  if (n === null || n === 0) return "flat";
+  return n > 0 ? `up ${Math.abs(n)}` : `down ${Math.abs(n)}`;
+}
 
 // ─── Equity Curve ──────────────────────────────────────────────────────────────
 type EquityCurvePoint = { x: number; y: number; val: number; date: string; label: string };
@@ -1191,7 +1242,7 @@ function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart }: TradeJournalPanelProps) {
+export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart, groupsData }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
   useEffect(() => {
@@ -2274,6 +2325,139 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const unrealPctDeployed = totalInvested > 0 ? (totalUnrealized / totalInvested) * 100 : 0;
   const riskPctEquity = startEquity > 0 ? (totalRisk / startEquity) * 100 : 0;
   const todayPctBase = hasTodayData ? (totalTodayPnl / todayBaseValue) * 100 : 0;
+  const openGroupAnalysis = useMemo<OpenPositionGroupAnalysis[]>(() => {
+    const groups = groupsData?.groups ?? [];
+    const stocks = groupsData?.stocks ?? [];
+    const stockBySymbol = new Map<string, IndustryGroupStockItem>();
+    const groupById = new Map<string, IndustryGroupRankItem>();
+    const stocksByGroup = new Map<string, IndustryGroupStockItem[]>();
+
+    groups.forEach((group) => groupById.set(group.group_id, group));
+    stocks.forEach((stock) => {
+      stockBySymbol.set(normSymbol(stock.symbol), stock);
+      const list = stocksByGroup.get(stock.final_group_id) ?? [];
+      list.push(stock);
+      stocksByGroup.set(stock.final_group_id, list);
+    });
+    stocksByGroup.forEach((list) => {
+      list.sort((a, b) => {
+        const aScore = (a.rs_rating ?? 0) * 4 + a.return_1m * 1.5 + a.return_6m + a.change_pct;
+        const bScore = (b.rs_rating ?? 0) * 4 + b.return_1m * 1.5 + b.return_6m + b.change_pct;
+        return bScore - aScore;
+      });
+    });
+
+    return openPositions.map((position) => {
+      const symbolKey = normSymbol(position.symbol);
+      const stock = stockBySymbol.get(symbolKey);
+      let group = stock ? groupById.get(stock.final_group_id) : undefined;
+      if (!group) {
+        group = groups.find((candidate) =>
+          candidate.symbols?.some((symbol) => normSymbol(symbol) === symbolKey) ||
+          candidate.top_constituents?.some((constituent) => normSymbol(constituent.symbol) === symbolKey)
+        );
+      }
+      const groupStocks = stock
+        ? stocksByGroup.get(stock.final_group_id) ?? []
+        : group
+          ? stocks.filter((item) => item.final_group_id === group?.group_id)
+          : [];
+      const stockRankIndex = groupStocks.findIndex((item) => normSymbol(item.symbol) === symbolKey);
+      const topConstituentRank = group?.top_constituents?.findIndex((item) => normSymbol(item.symbol) === symbolKey) ?? -1;
+      const stockRank = stockRankIndex >= 0 ? stockRankIndex + 1 : topConstituentRank >= 0 ? topConstituentRank + 1 : null;
+      const stockCount = group?.stock_count || groupStocks.length || 0;
+      const groupRank = finiteOrNull(group?.rank);
+      const groupReturn1m = finiteOrNull(group?.return_1m);
+      const groupReturn6m = finiteOrNull(group?.return_6m);
+      const exposurePct = totalInvested > 0 ? (position.totalInvested / totalInvested) * 100 : 0;
+
+      let verdict: GroupVerdict = "unknown";
+      let note = "Group data unavailable; judge only by chart and risk until the group feed loads.";
+      if (group) {
+        const groupIsLeader = groupRank !== null && groupRank <= 20;
+        const groupIsTradable = groupRank !== null && groupRank <= 40;
+        const stockIsLeader = stockRank !== null && stockRank <= Math.max(5, Math.ceil(stockCount * 0.2));
+        const groupMomentumOk = (groupReturn1m ?? 0) >= 0 && (groupReturn6m ?? 0) >= 0;
+        const groupWeak = (groupRank !== null && groupRank > 60) || (groupReturn1m !== null && groupReturn1m < 0) || (groupReturn6m !== null && groupReturn6m < 0);
+        if (groupIsLeader && stockIsLeader && groupMomentumOk) {
+          verdict = "leader";
+          note = "Leadership match: strong group plus a top-ranked stock inside it.";
+        } else if (groupWeak) {
+          verdict = "watch";
+          note = "Group tailwind is weak; avoid adding unless price action is clearly exceptional.";
+        } else if (groupIsTradable && groupMomentumOk) {
+          verdict = "constructive";
+          note = stockIsLeader ? "Good group tailwind; stock is near the top of its group." : "Group is fine, but stock is not one of the clear leaders.";
+        } else {
+          verdict = "watch";
+          note = "Mixed group strength; keep size controlled and let price prove itself.";
+        }
+      }
+
+      return {
+        symbol: position.symbol,
+        groupName: group?.group_name || stock?.final_group_name || "Unknown group",
+        parentSector: group?.parent_sector || stock?.sector || "Unknown sector",
+        groupRank,
+        groupRankChange1w: finiteOrNull(group?.rank_change_1w),
+        groupRankChange1m: finiteOrNull(group?.rank_change_1m),
+        groupRankChange3m: finiteOrNull(group?.rank_change_3m),
+        groupReturn1w: finiteOrNull(group?.return_1w),
+        groupReturn1m,
+        groupReturn6m,
+        stockRank,
+        stockCount,
+        stockReturn1w: finiteOrNull(stock?.return_1w),
+        stockReturn1m: finiteOrNull(stock?.return_1m),
+        stockReturn6m: finiteOrNull(stock?.return_6m),
+        rsRating: finiteOrNull(stock?.rs_rating),
+        exposurePct,
+        verdict,
+        note,
+      };
+    });
+  }, [groupsData, openPositions, totalInvested]);
+  const openGroupBySymbol = useMemo(() => {
+    const map = new Map<string, OpenPositionGroupAnalysis>();
+    openGroupAnalysis.forEach((row) => map.set(normSymbol(row.symbol), row));
+    return map;
+  }, [openGroupAnalysis]);
+  const openPositionAi = useMemo(() => {
+    if (!openGroupAnalysis.length) return null;
+    const knownRows = openGroupAnalysis.filter((row) => row.verdict !== "unknown");
+    const leaders = openGroupAnalysis.filter((row) => row.verdict === "leader");
+    const watch = openGroupAnalysis.filter((row) => row.verdict === "watch");
+    const unknown = openGroupAnalysis.filter((row) => row.verdict === "unknown");
+    const exposureByGroup = new Map<string, number>();
+    knownRows.forEach((row) => exposureByGroup.set(row.groupName, (exposureByGroup.get(row.groupName) ?? 0) + row.exposurePct));
+    const topGroupExposure = Array.from(exposureByGroup.entries()).sort((a, b) => b[1] - a[1])[0] ?? null;
+    const rankedRows = knownRows.filter((row) => row.groupRank !== null);
+    const avgGroupRank = rankedRows.length
+      ? rankedRows.reduce((sum, row) => sum + (row.groupRank ?? 0), 0) / rankedRows.length
+      : null;
+    const concentrationWarning = topGroupExposure && topGroupExposure[1] >= 35;
+    const headline = leaders.length >= Math.max(1, Math.ceil(openGroupAnalysis.length * 0.4))
+      ? "Open book is leaning into leadership groups."
+      : watch.length > leaders.length
+        ? "Open book needs a stricter leadership check."
+        : "Open book is mixed; let group strength decide adds.";
+    const strengths = [
+      leaders.length ? `${leaders.length} position${leaders.length === 1 ? "" : "s"} sit in leadership-quality groups.` : "No open position currently qualifies as a clear group leader.",
+      avgGroupRank !== null && Number.isFinite(avgGroupRank) ? `Average known group rank is ${avgGroupRank.toFixed(1)}.` : "Group rank coverage is not available for enough positions yet.",
+      topGroupExposure ? `Largest group exposure is ${topGroupExposure[0]} at ${topGroupExposure[1].toFixed(1)}% of deployed capital.` : "Group concentration cannot be judged yet.",
+    ];
+    const risks = [
+      watch.length ? `${watch.length} position${watch.length === 1 ? "" : "s"} need watch-list treatment because group strength is mixed or weak.` : "No obvious weak-group positions from the current group feed.",
+      concentrationWarning ? `Concentration is high in ${topGroupExposure?.[0]}; a group reversal can hit the book quickly.` : "No single group is above the 35% deployed-capital warning line.",
+      unknown.length ? `${unknown.length} position${unknown.length === 1 ? "" : "s"} could not be mapped to a group.` : "Every open position was mapped to a group.",
+    ];
+    const actions = [
+      "Add only when the stock is top-ranked inside its group and the group has positive 1M and 6M strength.",
+      "Do not average up in watch-rated groups; demand clean price action and a tight stop.",
+      concentrationWarning ? "Before the next entry, prefer a different leading group to reduce correlated risk." : "Keep the next add focused on the best group/stock combination, not just the best chart.",
+    ];
+    return { headline, strengths, risks, actions };
+  }, [openGroupAnalysis]);
   // ── Per-symbol score map + focus filter (drives Equity Curve + Distribution charts) ──
   const symbolScoreMap = useMemo(() => {
     const map: Record<string, { realized: number; unrealized: number; combined: number }> = {};
@@ -2339,6 +2523,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
   // ── Kanban Card ───────────────────────────────────────────────────────────
   function KanbanCard({ p }: { p: OpenPosition }) {
+    const groupRow = openGroupBySymbol.get(normSymbol(p.symbol));
     const meta = posMeta[p.symbol] || {};
     const cmp = meta.cmp || 0;
     const hasSL = typeof meta.sl === "number" && (meta.sl as number) > 0;
@@ -2412,6 +2597,15 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           </div>
           <span className="tj-kcard-qty">×{Math.round(totalQty)}</span>
         </div>
+        {groupRow && (
+          <div className={`tj-kcard-group tj-kcard-group-${groupRow.verdict}`}>
+            <span className="tj-kcard-group-main" title={groupRow.groupName}>{groupRow.groupName}</span>
+            <span>
+              {groupRow.groupRank !== null ? `G#${groupRow.groupRank}` : "G#—"}
+              {groupRow.stockRank !== null ? ` · S#${groupRow.stockRank}/${groupRow.stockCount || "?"}` : ""}
+            </span>
+          </div>
+        )}
         <div className="tj-kcard-metrics">
           <div className="tj-kcard-metric"><span className="tj-kcard-ml">Avg / Invested</span><span title="Weighted-avg entry · total invested (size as % of starting equity)">₹{fmt(avgEntry)} · ₹{fmt(p.totalInvested, 0)} <small>({positionSizePct.toFixed(1)}%)</small></span></div>
           {hasLive && <div className="tj-kcard-metric"><span className="tj-kcard-ml">CMP</span><span className="tj-kcard-cmp">₹{fmt(cmp)}</span></div>}
@@ -2848,6 +3042,100 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               </button>
             </div>
           </div>
+          {openPositions.length > 0 && (
+            <section className="tj-open-analysis">
+              <div className="tj-open-analysis-head">
+                <div>
+                  <h3>Open Position Group Analysis</h3>
+                  <p>Leadership check using group rank, weekly/monthly/six-month strength, stock rank inside group, and deployed exposure.</p>
+                </div>
+                <span className="tj-open-analysis-stamp">{groupsData?.as_of_date ? `Groups as of ${groupsData.as_of_date}` : "Waiting for group feed"}</span>
+              </div>
+              {openPositionAi && (
+                <div className="tj-open-ai-card">
+                  <div className="tj-open-ai-title">AI Open Book Read</div>
+                  <strong>{openPositionAi.headline}</strong>
+                  <div className="tj-open-ai-grid">
+                    <div>
+                      <span className="tj-open-ai-label pos">Strengths</span>
+                      <ul>{openPositionAi.strengths.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </div>
+                    <div>
+                      <span className="tj-open-ai-label neg">Risks</span>
+                      <ul>{openPositionAi.risks.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </div>
+                    <div>
+                      <span className="tj-open-ai-label">Next actions</span>
+                      <ul>{openPositionAi.actions.map((item) => <li key={item}>{item}</li>)}</ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div className="tj-open-group-table-wrap">
+                <table className="tj-open-group-table">
+                  <thead>
+                    <tr>
+                      <th>Stock</th>
+                      <th>Group</th>
+                      <th>Group Rank</th>
+                      <th>Group 1W / 1M / 6M</th>
+                      <th>Stock Rank</th>
+                      <th>Stock 1W / 1M / 6M</th>
+                      <th>Exposure</th>
+                      <th>Read</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {openGroupAnalysis.map((row) => (
+                      <tr key={row.symbol}>
+                        <td>
+                          <button
+                            type="button"
+                            className="tj-symbol-link tj-symbol-link-inline"
+                            onClick={() => onOpenSymbolChart?.(row.symbol)}
+                          >
+                            {row.symbol}
+                          </button>
+                        </td>
+                        <td>
+                          <strong>{row.groupName}</strong>
+                          <span>{row.parentSector}</span>
+                        </td>
+                        <td>
+                          <strong>{row.groupRank !== null ? `#${row.groupRank}` : "—"}</strong>
+                          <span>1W {rankChangeText(row.groupRankChange1w)} · 1M {rankChangeText(row.groupRankChange1m)} · 3M {rankChangeText(row.groupRankChange3m)}</span>
+                        </td>
+                        <td className="tj-open-return-cell">
+                          <span className={pctTone(row.groupReturn1w)}>{fmtMaybePct(row.groupReturn1w)}</span>
+                          <span className={pctTone(row.groupReturn1m)}>{fmtMaybePct(row.groupReturn1m)}</span>
+                          <span className={pctTone(row.groupReturn6m)}>{fmtMaybePct(row.groupReturn6m)}</span>
+                        </td>
+                        <td>
+                          <strong>{row.stockRank !== null ? `#${row.stockRank}` : "—"}{row.stockCount ? ` / ${row.stockCount}` : ""}</strong>
+                          <span>{row.rsRating !== null ? `RS ${row.rsRating.toFixed(0)}` : "RS unavailable"}</span>
+                        </td>
+                        <td className="tj-open-return-cell">
+                          <span className={pctTone(row.stockReturn1w)}>{fmtMaybePct(row.stockReturn1w)}</span>
+                          <span className={pctTone(row.stockReturn1m)}>{fmtMaybePct(row.stockReturn1m)}</span>
+                          <span className={pctTone(row.stockReturn6m)}>{fmtMaybePct(row.stockReturn6m)}</span>
+                        </td>
+                        <td>
+                          <strong>{row.exposurePct.toFixed(1)}%</strong>
+                          <span>of deployed</span>
+                        </td>
+                        <td>
+                          <span className={`tj-open-verdict tj-open-verdict-${row.verdict}`}>
+                            {row.verdict === "leader" ? "Leader" : row.verdict === "constructive" ? "Constructive" : row.verdict === "watch" ? "Watch" : "Unknown"}
+                          </span>
+                          <span>{row.note}</span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
           {openPositions.length === 0 ? (
             <div className="tj-empty-page">No open positions. Add a Buy trade in Smart Entry, or use the screener to send stocks here.</div>
           ) : (
