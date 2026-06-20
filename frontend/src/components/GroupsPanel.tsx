@@ -21,16 +21,12 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score" | "1w" | "1m" | "3m" | "6m";
+type GroupSortBy = "rank" | "score";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
   { value: "rank", label: "Fast Rank" },
   { value: "score", label: "Fast Score" },
-  { value: "1w", label: "1W" },
-  { value: "1m", label: "1M" },
-  { value: "3m", label: "3M" },
-  { value: "6m", label: "6M" },
 ];
 
 /* ---------- formatters ---------- */
@@ -50,6 +46,11 @@ function formatPrice(value: number) {
 
 function metricClass(value: number) {
   return value >= 0 ? "gp-pos" : "gp-neg";
+}
+
+function csvValue(value: string | number | null | undefined) {
+  const text = value === null || value === undefined ? "" : String(value);
+  return `"${text.replace(/"/g, '""')}"`;
 }
 
 function initials(symbol: string) {
@@ -216,11 +217,7 @@ export function GroupsPanel({
     });
     groups.sort((a, b) => {
       if (sortBy === "rank") return a.rank - b.rank;
-      if (sortBy === "score") return b.score - a.score;
-      if (sortBy === "1w") return b.relative_return_1w - a.relative_return_1w;
-      if (sortBy === "1m") return b.relative_return_1m - a.relative_return_1m;
-      if (sortBy === "3m") return b.relative_return_3m - a.relative_return_3m;
-      return b.relative_return_6m - a.relative_return_6m;
+      return b.score - a.score;
     });
     return groups;
   }, [data, searchMatches, searchQuery, sortBy, strengthFilter]);
@@ -266,6 +263,60 @@ export function GroupsPanel({
     }
   }
 
+  function handleExportTop20Stocks() {
+    const topGroups = [...(data?.groups ?? [])].sort((a, b) => a.rank - b.rank).slice(0, 20);
+    if (!topGroups.length) return;
+
+    const rows = [
+      [
+        "Group Rank",
+        "Group Name",
+        "Parent Sector",
+        "Symbol",
+        "Company Name",
+        "Last Price",
+        "Day Change %",
+        "RS Rating",
+        "Above 50DMA",
+        "Above 200DMA",
+      ],
+    ];
+    const seen = new Set<string>();
+    topGroups.forEach((group) => {
+      const members = stocksByGroup.get(group.group_id) ?? [];
+      const fallbackSymbols = group.symbols.map((symbol) => ({ symbol, company_name: "", last_price: "", change_pct: "", rs_rating: "" }));
+      const source = members.length ? members : fallbackSymbols;
+      source.forEach((stock) => {
+        const key = `${group.group_id}:${stock.symbol}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        rows.push([
+          group.rank,
+          group.group_name,
+          group.parent_sector,
+          stock.symbol,
+          stock.company_name,
+          stock.last_price,
+          stock.change_pct,
+          stock.rs_rating ?? "",
+          group.pct_above_50dma,
+          group.pct_above_200dma,
+        ]);
+      });
+    });
+
+    const csv = rows.map((row) => row.map(csvValue).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `top-20-industry-group-stocks-${data?.as_of_date ?? "latest"}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <Panel title="Industry Groups" subtitle={pageSubtitle}>
       <div className="gp-root">
@@ -281,6 +332,14 @@ export function GroupsPanel({
             />
           </div>
           <div className="gp-toolbar-right">
+            <button
+              type="button"
+              className="gp-export-btn"
+              onClick={handleExportTop20Stocks}
+              disabled={!data?.groups?.length}
+            >
+              Export Top 20 Stocks
+            </button>
             <div className="gp-tabs">
               {(["all", "top40", "top10"] as const).map((s) => (
                 <button
@@ -328,12 +387,8 @@ export function GroupsPanel({
                 <thead>
                   <tr>
                     <th style={{ width: 56 }}>#</th>
-                    <th>Industry Group</th>
+                    <th>Industry Group & Members</th>
                     <th className="gp-num">Score</th>
-                    <th className="gp-num">1W</th>
-                    <th className="gp-num">1M</th>
-                    <th className="gp-num">3M</th>
-                    <th className="gp-num">6M</th>
                     <th className="gp-num" title="Leadership breadth: % of group members above their 50DMA. Broad participation beats two stocks dragging an index.">&gt;50D</th>
                     <th>Stocks <small style={{ opacity: 0.6, fontWeight: 500 }}>(all members for Top 20, else top 3)</small></th>
                   </tr>
@@ -361,6 +416,9 @@ export function GroupsPanel({
                       };
                     });
                     const groupSymbols = group.symbols.length ? group.symbols : members.map((m) => m.symbol);
+                    const memberNames = groupSymbols.length
+                      ? groupSymbols
+                      : displayedStocks.map((stock) => stock.symbol);
 
                     return (
                       <tr
@@ -383,14 +441,23 @@ export function GroupsPanel({
                             <strong>{group.group_name}</strong>
                             <small>{group.parent_sector} · {group.stock_count} stocks</small>
                           </button>
+                          <div className="gp-member-names" aria-label={`${group.group_name} stocks`}>
+                            {memberNames.map((symbol) => (
+                              <button
+                                key={`${group.group_id}-member-${symbol}`}
+                                type="button"
+                                className={`gp-member-name${selectedSymbol === symbol ? " active" : ""}`}
+                                onClick={() => onPickSymbolWithContext(symbol, groupSymbols)}
+                                title={`Open ${symbol} chart`}
+                              >
+                                {symbol}
+                              </button>
+                            ))}
+                          </div>
                         </td>
                         <td className="gp-num">
                           <span className="gp-score-chip">{formatScore(group.score)}</span>
                         </td>
-                        <td className={`gp-num ${metricClass(group.return_1w)}`}>{formatReturn(group.return_1w)}</td>
-                        <td className={`gp-num ${metricClass(group.return_1m)}`}>{formatReturn(group.return_1m)}</td>
-                        <td className={`gp-num ${metricClass(group.return_3m)}`}>{formatReturn(group.return_3m)}</td>
-                        <td className={`gp-num ${metricClass(group.return_6m)}`}>{formatReturn(group.return_6m)}</td>
                         <td
                           className="gp-num"
                           title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
