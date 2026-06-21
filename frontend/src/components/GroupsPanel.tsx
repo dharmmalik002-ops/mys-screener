@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronUp, LayoutGrid } from "lucide-react";
 
 import type {
   IndustryGroupRankItem,
@@ -21,12 +22,16 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score";
+type GroupSortBy = "rank" | "score" | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
   { value: "rank", label: "Fast Rank" },
   { value: "score", label: "Fast Score" },
+  { value: "return_1w", label: "1W Return" },
+  { value: "return_1m", label: "1M Return" },
+  { value: "return_3m", label: "3M Return" },
+  { value: "return_6m", label: "6M Return" },
 ];
 
 /* ---------- formatters ---------- */
@@ -162,10 +167,12 @@ export function GroupsPanel({
   const [sortBy, setSortBy] = useState<GroupSortBy>("rank");
   const [strengthFilter, setStrengthFilter] = useState<GroupStrengthFilter>("all");
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
+  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
   const groupRowRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
     setFocusedGroupId(null);
+    setExpandedGroupId(null);
   }, [data, _market]);
 
   const stocksByGroup = useMemo(() => {
@@ -217,6 +224,10 @@ export function GroupsPanel({
     });
     groups.sort((a, b) => {
       if (sortBy === "rank") return a.rank - b.rank;
+      if (sortBy === "return_1w") return b.return_1w - a.return_1w;
+      if (sortBy === "return_1m") return b.return_1m - a.return_1m;
+      if (sortBy === "return_3m") return b.return_3m - a.return_3m;
+      if (sortBy === "return_6m") return b.return_6m - a.return_6m;
       return b.score - a.score;
     });
     return groups;
@@ -387,25 +398,17 @@ export function GroupsPanel({
                 <thead>
                   <tr>
                     <th style={{ width: 56 }}>#</th>
-                    <th>Industry Group & Members</th>
+                    <th>Industry Group</th>
                     <th className="gp-num">Score</th>
                     <th className="gp-num" title="Leadership breadth: % of group members above their 50DMA. Broad participation beats two stocks dragging an index.">&gt;50D</th>
-                    <th>Stocks <small style={{ opacity: 0.6, fontWeight: 500 }}>(all members for Top 20, else top 3)</small></th>
+                    <th>Top Stocks</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredGroups.map((group) => {
                     const members = stocksByGroup.get(group.group_id) ?? [];
-                    // For the top 20 ranked groups, expand the stock list to ALL
-                    // constituents (already sorted by rs_rating desc in
-                    // stocksByGroup). For deeper-ranked groups, fall back to the
-                    // condensed "top 3 constituents" view so the table doesn't
-                    // explode in height for hundreds of low-rank groups.
-                    const showAllStocks = group.rank <= 20;
-                    const stockSource = showAllStocks ? members : group.top_constituents.slice(0, 3);
+                    const stockSource = group.top_constituents.slice(0, 3);
                     const displayedStocks = stockSource.map((src) => {
-                      // members[] rows already carry change_pct & rs_rating; top_constituents
-                      // rows carry rs_rating & return_1m. Normalize both into one shape.
                       const isMember = "change_pct" in src;
                       const match = isMember ? (src as IndustryGroupStockItem) : members.find((m) => m.symbol === src.symbol);
                       return {
@@ -416,96 +419,147 @@ export function GroupsPanel({
                       };
                     });
                     const groupSymbols = group.symbols.length ? group.symbols : members.map((m) => m.symbol);
-                    const memberNames = groupSymbols.length
-                      ? groupSymbols
-                      : displayedStocks.map((stock) => stock.symbol);
+                    const gridStocks = members.length
+                      ? members
+                      : groupSymbols.map((symbol) => ({
+                        symbol,
+                        company_name: symbol,
+                        last_price: 0,
+                        change_pct: 0,
+                        rs_rating: null,
+                      }));
+                    const isExpanded = expandedGroupId === group.group_id;
 
                     return (
-                      <tr
-                        key={group.group_id}
-                        ref={(el) => {
-                          groupRowRefs.current[group.group_id] = el;
-                        }}
-                        className={`gp-row${focusedGroupId === group.group_id ? " is-focused" : ""}`}
-                      >
-                        <td>
-                          <RankBadge rank={group.rank} />
-                          <RankDelta change={group.rank_change_1w} />
-                        </td>
-                        <td className="gp-cell-name">
-                          <button
-                            type="button"
-                            className="gp-group-name-btn"
-                            onClick={() => handleGroupClick(group)}
-                          >
-                            <strong>{group.group_name}</strong>
-                            <small>{group.parent_sector} · {group.stock_count} stocks</small>
-                          </button>
-                          <div className="gp-member-names" aria-label={`${group.group_name} stocks`}>
-                            {memberNames.map((symbol) => (
-                              <button
-                                key={`${group.group_id}-member-${symbol}`}
-                                type="button"
-                                className={`gp-member-name${selectedSymbol === symbol ? " active" : ""}`}
-                                onClick={() => onPickSymbolWithContext(symbol, groupSymbols)}
-                                title={`Open ${symbol} chart`}
-                              >
-                                {symbol}
-                              </button>
-                            ))}
-                          </div>
-                        </td>
-                        <td className="gp-num">
-                          <span className="gp-score-chip">{formatScore(group.score)}</span>
-                        </td>
-                        <td
-                          className="gp-num"
-                          title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
+                      <Fragment key={group.group_id}>
+                        <tr
+                          ref={(el) => {
+                            groupRowRefs.current[group.group_id] = el;
+                          }}
+                          className={`gp-row${focusedGroupId === group.group_id ? " is-focused" : ""}${isExpanded ? " is-expanded" : ""}`}
                         >
-                          <span className={`gp-breadth${group.pct_above_50dma >= 70 ? " hi" : group.pct_above_50dma >= 40 ? " mid" : " lo"}`}>
-                            {Math.round(group.pct_above_50dma)}%
-                          </span>
-                        </td>
-                        <td className="gp-cell-stocks">
-                          <div className={`gp-top3${showAllStocks ? " gp-all-members" : ""}`}>
-                            {displayedStocks.length === 0 ? (
-                              <span className="gp-muted">No leaders</span>
-                            ) : displayedStocks.map((s) => {
-                              const logo = getLogoUrl(s.symbol);
-                              const up = s.change_pct >= 0;
-                              return (
-                                <button
-                                  key={`${group.group_id}-${s.symbol}`}
-                                  type="button"
-                                  className={`gp-stock-chip${selectedSymbol === s.symbol ? " active" : ""}`}
-                                  onClick={() => onPickSymbolWithContext(s.symbol, groupSymbols)}
-                                  onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    onRequestAddToWatchlist(s.symbol);
-                                  }}
-                                  title={`${s.company} · right-click to add to watchlist`}
-                                >
-                                  {logo ? (
-                                    <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                  ) : (
-                                    <span className="gp-stock-avatar">{initials(s.symbol)}</span>
-                                  )}
-                                  <span className="gp-stock-text">
-                                    <span className="gp-stock-sym">{s.symbol}</span>
-                                    <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>{formatReturn(s.change_pct)}</span>
-                                  </span>
-                                  <RsCircle rs={s.rs} />
-                                </button>
-                              );
-                            })}
-                          </div>
-                          {members[0] ? (
-                            <div className="gp-lead-price">
-                              <span>Lead:</span> <strong>{members[0].symbol}</strong> @ {formatPrice(members[0].last_price)}
+                          <td>
+                            <RankBadge rank={group.rank} />
+                            <RankDelta change={group.rank_change_1w} />
+                          </td>
+                          <td className="gp-cell-name">
+                            <div className="gp-group-title-row">
+                              <button
+                                type="button"
+                                className="gp-group-name-btn"
+                                onClick={() => handleGroupClick(group)}
+                              >
+                                <strong>{group.group_name}</strong>
+                                <small>{group.parent_sector} · {group.stock_count} stocks</small>
+                              </button>
+                              <button
+                                type="button"
+                                className={`gp-group-grid-toggle${isExpanded ? " active" : ""}`}
+                                onClick={() => setExpandedGroupId((current) => current === group.group_id ? null : group.group_id)}
+                                title={isExpanded ? `Hide ${group.group_name} stocks` : `Show ${group.group_name} stocks in grid`}
+                                aria-label={isExpanded ? `Hide ${group.group_name} stocks` : `Show ${group.group_name} stocks in grid`}
+                              >
+                                <LayoutGrid size={15} strokeWidth={2.2} />
+                                {isExpanded ? <ChevronUp size={14} strokeWidth={2.4} /> : <ChevronDown size={14} strokeWidth={2.4} />}
+                              </button>
                             </div>
-                          ) : null}
-                        </td>
-                      </tr>
+                          </td>
+                          <td className="gp-num">
+                            <span className="gp-score-chip">{formatScore(group.score)}</span>
+                          </td>
+                          <td
+                            className="gp-num"
+                            title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
+                          >
+                            <span className={`gp-breadth${group.pct_above_50dma >= 70 ? " hi" : group.pct_above_50dma >= 40 ? " mid" : " lo"}`}>
+                              {Math.round(group.pct_above_50dma)}%
+                            </span>
+                          </td>
+                          <td className="gp-cell-stocks">
+                            <div className="gp-top3">
+                              {displayedStocks.length === 0 ? (
+                                <span className="gp-muted">No leaders</span>
+                              ) : displayedStocks.map((s) => {
+                                const logo = getLogoUrl(s.symbol);
+                                const up = s.change_pct >= 0;
+                                return (
+                                  <button
+                                    key={`${group.group_id}-${s.symbol}`}
+                                    type="button"
+                                    className={`gp-stock-chip${selectedSymbol === s.symbol ? " active" : ""}`}
+                                    onClick={() => onPickSymbolWithContext(s.symbol, groupSymbols)}
+                                    onContextMenu={(e) => {
+                                      e.preventDefault();
+                                      onRequestAddToWatchlist(s.symbol);
+                                    }}
+                                    title={`${s.company} · right-click to add to watchlist`}
+                                  >
+                                    {logo ? (
+                                      <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                    ) : (
+                                      <span className="gp-stock-avatar">{initials(s.symbol)}</span>
+                                    )}
+                                    <span className="gp-stock-text">
+                                      <span className="gp-stock-sym">{s.symbol}</span>
+                                      <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>{formatReturn(s.change_pct)}</span>
+                                    </span>
+                                    <RsCircle rs={s.rs} />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                            {members[0] ? (
+                              <div className="gp-lead-price">
+                                <span>Lead:</span> <strong>{members[0].symbol}</strong> @ {formatPrice(members[0].last_price)}
+                              </div>
+                            ) : null}
+                          </td>
+                        </tr>
+                        {isExpanded ? (
+                          <tr className="gp-expanded-row">
+                            <td colSpan={5}>
+                              <div className="gp-expanded-panel">
+                                <div className="gp-expanded-head">
+                                  <span>{group.group_name} Stocks</span>
+                                  <strong>{gridStocks.length}</strong>
+                                </div>
+                                <div className="gp-group-stock-grid">
+                                  {gridStocks.map((stock) => {
+                                    const logo = getLogoUrl(stock.symbol);
+                                    const up = stock.change_pct >= 0;
+                                    return (
+                                      <button
+                                        key={`${group.group_id}-grid-${stock.symbol}`}
+                                        type="button"
+                                        className={`gp-stock-chip gp-grid-stock-chip${selectedSymbol === stock.symbol ? " active" : ""}`}
+                                        onClick={() => onPickSymbolWithContext(stock.symbol, groupSymbols)}
+                                        onContextMenu={(e) => {
+                                          e.preventDefault();
+                                          onRequestAddToWatchlist(stock.symbol);
+                                        }}
+                                        title={`${stock.company_name} · right-click to add to watchlist`}
+                                      >
+                                        {logo ? (
+                                          <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                        ) : (
+                                          <span className="gp-stock-avatar">{initials(stock.symbol)}</span>
+                                        )}
+                                        <span className="gp-stock-text">
+                                          <span className="gp-stock-sym">{stock.symbol}</span>
+                                          <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>
+                                            {stock.last_price ? `${formatPrice(stock.last_price)} · ` : ""}{formatReturn(stock.change_pct)}
+                                          </span>
+                                        </span>
+                                        <RsCircle rs={stock.rs_rating} />
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
                     );
                   })}
                 </tbody>

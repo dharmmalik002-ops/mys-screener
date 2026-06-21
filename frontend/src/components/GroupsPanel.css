@@ -593,8 +593,14 @@ body.dark .gp-treemap-pct {
 
 /* group name button */
 .gp-cell-name {
-  min-width: 360px;
+  min-width: 280px;
   max-width: 540px;
+}
+
+.gp-group-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .gp-group-name-btn {
@@ -602,7 +608,8 @@ body.dark .gp-treemap-pct {
   display: flex;
   flex-direction: column;
   cursor: pointer;
-  max-width: 260px;
+  max-width: 320px;
+  min-width: 0;
 }
 
 .gp-group-name-btn strong {
@@ -622,32 +629,30 @@ body.dark .gp-treemap-pct {
   color: var(--gp-indigo);
 }
 
-.gp-member-names {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 8px;
-  max-height: 84px;
-  overflow-y: auto;
-}
-
-.gp-member-name {
+.gp-group-grid-toggle {
   border: 1px solid var(--gp-border);
-  border-radius: 999px;
-  padding: 3px 7px;
+  border-radius: 10px;
+  width: 38px;
+  height: 34px;
   color: var(--gp-muted);
   background: var(--gp-card-bg-soft);
-  font-size: 10.5px;
-  font-weight: 800;
-  letter-spacing: 0.02em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
 
-.gp-member-name:hover,
-.gp-member-name.active {
+.gp-group-grid-toggle:hover,
+.gp-group-grid-toggle.active {
   color: #fff;
-  border-color: var(--gp-violet);
-  background: var(--gp-violet);
+  border-color: var(--gp-indigo);
+  background: linear-gradient(135deg, var(--gp-indigo), var(--gp-violet));
+}
+
+.gp-row.is-expanded td {
+  border-bottom-color: transparent;
 }
 
 /* score chip */
@@ -792,19 +797,68 @@ body.dark .gp-score-chip {
 .gp-rs-hi { background: linear-gradient(135deg, #16a34a, #047857); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.55); }
 .gp-rs-mid { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45); }
 .gp-rs-lo { background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45); }
-
-/* Show-all-members layout for top-20 groups: let chips wrap to a multi-row
-   block instead of horizontally overflowing the stocks cell. */
-.gp-top3.gp-all-members {
-  flex-wrap: wrap;
-  gap: 6px;
-  max-height: 240px;
-  overflow-y: auto;
-}
 .gp-rs-muted {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
   color: var(--gp-muted);
+}
+
+.gp-expanded-row td {
+  padding: 0 14px 14px 76px;
+  background:
+    linear-gradient(135deg, rgba(99, 102, 241, 0.05), transparent 38%),
+    var(--gp-card-bg);
+}
+
+.gp-expanded-panel {
+  border: 1px solid var(--gp-border);
+  border-radius: 16px;
+  padding: 12px;
+  background: var(--gp-card-bg-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+:root[data-theme="dark"] .gp-expanded-panel,
+:root.dark .gp-expanded-panel,
+body.dark .gp-expanded-panel {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.gp-expanded-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  color: var(--gp-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.gp-expanded-head strong {
+  min-width: 28px;
+  height: 22px;
+  padding: 0 8px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  background: var(--gp-indigo);
+}
+
+.gp-group-stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 8px;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.gp-grid-stock-chip {
+  min-width: 0;
 }
 
 .gp-lead-price {
