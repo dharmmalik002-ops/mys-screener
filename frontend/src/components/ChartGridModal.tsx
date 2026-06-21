@@ -73,6 +73,16 @@ type ChartGridModalProps = {
   onDisplayModeChange: (value: ChartGridDisplayMode) => void;
   onLoadSeries?: (symbols: string[], timeframe: ChartGridTimeframe) => Promise<Record<string, ChartBar[]>>;
   onAddToWatchlist?: (symbol: string) => void;
+  previousAction?: {
+    label: string;
+    disabled?: boolean;
+    onClick: () => void;
+  };
+  nextAction?: {
+    label: string;
+    disabled?: boolean;
+    onClick: () => void;
+  };
   onClose: () => void;
 };
 
@@ -801,6 +811,8 @@ export function ChartGridModal({
   onDisplayModeChange,
   onLoadSeries,
   onAddToWatchlist,
+  previousAction,
+  nextAction,
   onClose,
 }: ChartGridModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
@@ -1106,6 +1118,34 @@ export function ChartGridModal({
               <h2>{title}</h2>
               <small>{subtitle}</small>
             </div>
+            {(previousAction || nextAction) ? (
+              <div className="chart-grid-sequence-controls" aria-label={`${contextLabel} navigation`}>
+                {previousAction ? (
+                  <button
+                    type="button"
+                    className="chart-grid-sequence-btn"
+                    onClick={previousAction.onClick}
+                    disabled={previousAction.disabled}
+                    title={previousAction.label}
+                    aria-label={previousAction.label}
+                  >
+                    ‹
+                  </button>
+                ) : null}
+                {nextAction ? (
+                  <button
+                    type="button"
+                    className="chart-grid-sequence-btn"
+                    onClick={nextAction.onClick}
+                    disabled={nextAction.disabled}
+                    title={nextAction.label}
+                    aria-label={nextAction.label}
+                  >
+                    ›
+                  </button>
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="chart-grid-toolbar">
               <label className="nav-select chart-grid-select">

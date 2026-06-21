@@ -199,11 +199,11 @@ export function GroupsPanel({
   const [strengthFilter, setStrengthFilter] = useState<GroupStrengthFilter>("all");
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [gridGroupId, setGridGroupId] = useState<string | null>(null);
-  const [gridColumns, setGridColumns] = useState(3);
-  const [gridRows, setGridRows] = useState(2);
-  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("3M");
+  const [gridColumns, setGridColumns] = useState(2);
+  const [gridRows, setGridRows] = useState(1);
+  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
   const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
-  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("candles");
+  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const groupRowRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -278,6 +278,12 @@ export function GroupsPanel({
     () => (gridGroupId ? data?.groups.find((group) => group.group_id === gridGroupId) ?? null : null),
     [data, gridGroupId],
   );
+  const activeGridIndex = useMemo(
+    () => (gridGroupId ? filteredGroups.findIndex((group) => group.group_id === gridGroupId) : -1),
+    [filteredGroups, gridGroupId],
+  );
+  const previousGridGroup = activeGridIndex > 0 ? filteredGroups[activeGridIndex - 1] : null;
+  const nextGridGroup = activeGridIndex >= 0 && activeGridIndex < filteredGroups.length - 1 ? filteredGroups[activeGridIndex + 1] : null;
   const activeGridStocks = useMemo(() => {
     if (!activeGridGroup) return [];
     return stocksByGroup.get(activeGridGroup.group_id) ?? [];
@@ -640,6 +646,20 @@ export function GroupsPanel({
             onDisplayModeChange={setGridDisplayMode}
             onLoadSeries={loadGroupGridSeries}
             onAddToWatchlist={onRequestAddToWatchlist}
+            previousAction={{
+              label: previousGridGroup ? `Previous group: ${previousGridGroup.group_name}` : "No previous group",
+              disabled: !previousGridGroup,
+              onClick: () => {
+                if (previousGridGroup) setGridGroupId(previousGridGroup.group_id);
+              },
+            }}
+            nextAction={{
+              label: nextGridGroup ? `Next group: ${nextGridGroup.group_name}` : "No next group",
+              disabled: !nextGridGroup,
+              onClick: () => {
+                if (nextGridGroup) setGridGroupId(nextGridGroup.group_id);
+              },
+            }}
             onClose={() => setGridGroupId(null)}
           />
         </Suspense>
