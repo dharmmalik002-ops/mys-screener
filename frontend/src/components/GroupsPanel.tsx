@@ -1,15 +1,29 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, LayoutGrid } from "lucide-react";
+import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
+import { LayoutGrid } from "lucide-react";
 
-import type {
+import {
+  getChartGridSeries,
+  type ChartBar,
+  type ChartGridTimeframe,
   IndustryGroupRankItem,
   IndustryGroupsResponse,
   IndustryGroupStockItem,
   MarketKey,
 } from "../lib/api";
+import type {
+  ChartGridChartStyle,
+  ChartGridDisplayCard,
+  ChartGridDisplayMode,
+  ChartGridSortBy,
+  ChartGridStat,
+} from "./ChartGridModal";
 import { Panel } from "./Panel";
 
 import "./GroupsPanel.css";
+
+const ChartGridModal = lazy(() =>
+  import("./ChartGridModal").then((module) => ({ default: module.ChartGridModal })),
+);
 
 type GroupsPanelProps = {
   market: MarketKey;
@@ -151,6 +165,23 @@ function RsCircle({ rs }: { rs: number | null }) {
   return <span className={`gp-rs-circle gp-rs-${tone}`}>{Math.round(rs)}</span>;
 }
 
+function selectedReturnForGrid(stock: IndustryGroupStockItem, timeframe: ChartGridTimeframe) {
+  if (timeframe === "3M") return stock.return_3m;
+  if (timeframe === "6M") return stock.return_6m;
+  if (timeframe === "1Y") return stock.return_1y;
+  return stock.return_1y;
+}
+
+function fallbackSparkline(returnPct: number) {
+  const now = Math.floor(Date.now() / 1000);
+  const baseline = 100;
+  const current = baseline * (1 + returnPct / 100);
+  return [
+    { time: now - 63 * 24 * 60 * 60, value: Number(baseline.toFixed(4)) },
+    { time: now, value: Number(current.toFixed(4)) },
+  ];
+}
+
 /* ---------- Component ---------- */
 
 export function GroupsPanel({
@@ -167,12 +198,18 @@ export function GroupsPanel({
   const [sortBy, setSortBy] = useState<GroupSortBy>("rank");
   const [strengthFilter, setStrengthFilter] = useState<GroupStrengthFilter>("all");
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
-  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null);
+  const [gridGroupId, setGridGroupId] = useState<string | null>(null);
+  const [gridColumns, setGridColumns] = useState(3);
+  const [gridRows, setGridRows] = useState(2);
+  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("3M");
+  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
+  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("candles");
+  const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const groupRowRefs = useRef<Record<string, HTMLElement | null>>({});
 
   useEffect(() => {
     setFocusedGroupId(null);
-    setExpandedGroupId(null);
+    setGridGroupId(null);
   }, [data, _market]);
 
   const stocksByGroup = useMemo(() => {
@@ -236,6 +273,73 @@ export function GroupsPanel({
   useEffect(() => {
     onVisibleSymbolsChange(filteredGroups.flatMap((g) => g.symbols));
   }, [filteredGroups, onVisibleSymbolsChange]);
+
+  const activeGridGroup = useMemo(
+    () => (gridGroupId ? data?.groups.find((group) => group.group_id === gridGroupId) ?? null : null),
+    [data, gridGroupId],
+  );
+  const activeGridStocks = useMemo(() => {
+    if (!activeGridGroup) return [];
+    return stocksByGroup.get(activeGridGroup.group_id) ?? [];
+  }, [activeGridGroup, stocksByGroup]);
+  const activeGridSymbols = useMemo(() => {
+    if (!activeGridGroup) return [];
+    if (activeGridGroup.symbols.length) return activeGridGroup.symbols;
+    return activeGridStocks.map((stock) => stock.symbol);
+  }, [activeGridGroup, activeGridStocks]);
+  const gridCards = useMemo<ChartGridDisplayCard[]>(() => {
+    if (!activeGridGroup) return [];
+    return activeGridStocks.map((stock) => {
+      const selectedReturn = selectedReturnForGrid(stock, gridTimeframe);
+      return {
+        id: `${activeGridGroup.group_id}:${stock.symbol}`,
+        symbol: stock.symbol,
+        entityLabel: "Stock",
+        title: stock.symbol,
+        subtitle: stock.company_name || stock.final_group_name || activeGridGroup.group_name,
+        footerLabel: "Price",
+        footerValue: stock.last_price > 0 ? formatPrice(stock.last_price) : "—",
+        primaryBadge: {
+          label: `${gridTimeframe} ${formatReturn(selectedReturn)}`,
+          tone: selectedReturn >= 0 ? "positive" : "negative",
+        },
+        secondaryBadge: {
+          label: `1D ${formatReturn(stock.change_pct)}`,
+          tone: stock.change_pct >= 0 ? "positive" : "negative",
+        },
+        points: fallbackSparkline(selectedReturn),
+        selectedReturn,
+        dayReturn: stock.change_pct,
+        rsRating: stock.rs_rating ?? null,
+        marketCapCrore: stock.market_cap_cr,
+        constituents: null,
+        onClick: () => onPickSymbolWithContext(stock.symbol, activeGridSymbols),
+      };
+    });
+  }, [activeGridGroup, activeGridStocks, activeGridSymbols, gridTimeframe, onPickSymbolWithContext]);
+  const gridStats = useMemo<ChartGridStat[]>(() => {
+    if (!activeGridGroup) return [];
+    const advancing = activeGridStocks.filter((stock) => stock.change_pct > 0).length;
+    const declining = activeGridStocks.filter((stock) => stock.change_pct < 0).length;
+    return [
+      { label: "Stocks", value: `${activeGridStocks.length || activeGridGroup.stock_count}` },
+      { label: "Group Rank", value: `#${activeGridGroup.rank}` },
+      { label: "1M Group", value: formatReturn(activeGridGroup.return_1m), tone: activeGridGroup.return_1m >= 0 ? "positive" : "negative" },
+      { label: "Advancing", value: `${advancing}`, tone: advancing >= declining ? "positive" : "neutral" },
+      { label: "Declining", value: `${declining}`, tone: declining > advancing ? "negative" : "neutral" },
+    ];
+  }, [activeGridGroup, activeGridStocks]);
+
+  async function loadGroupGridSeries(
+    symbols: string[],
+    timeframe: ChartGridTimeframe,
+  ): Promise<Record<string, ChartBar[]>> {
+    const payload = await getChartGridSeries(symbols, timeframe, _market);
+    return payload.items.reduce<Record<string, ChartBar[]>>((accumulator, item) => {
+      accumulator[item.symbol] = item.bars;
+      return accumulator;
+    }, {});
+  }
 
   useEffect(() => {
     if (!focusRequest || !data) return;
@@ -419,147 +523,93 @@ export function GroupsPanel({
                       };
                     });
                     const groupSymbols = group.symbols.length ? group.symbols : members.map((m) => m.symbol);
-                    const gridStocks = members.length
-                      ? members
-                      : groupSymbols.map((symbol) => ({
-                        symbol,
-                        company_name: symbol,
-                        last_price: 0,
-                        change_pct: 0,
-                        rs_rating: null,
-                      }));
-                    const isExpanded = expandedGroupId === group.group_id;
+                    const isGridActive = gridGroupId === group.group_id;
 
                     return (
-                      <Fragment key={group.group_id}>
-                        <tr
-                          ref={(el) => {
-                            groupRowRefs.current[group.group_id] = el;
-                          }}
-                          className={`gp-row${focusedGroupId === group.group_id ? " is-focused" : ""}${isExpanded ? " is-expanded" : ""}`}
+                      <tr
+                        key={group.group_id}
+                        ref={(el) => {
+                          groupRowRefs.current[group.group_id] = el;
+                        }}
+                        className={`gp-row${focusedGroupId === group.group_id ? " is-focused" : ""}${isGridActive ? " is-expanded" : ""}`}
+                      >
+                        <td>
+                          <RankBadge rank={group.rank} />
+                          <RankDelta change={group.rank_change_1w} />
+                        </td>
+                        <td className="gp-cell-name">
+                          <div className="gp-group-title-row">
+                            <button
+                              type="button"
+                              className="gp-group-name-btn"
+                              onClick={() => handleGroupClick(group)}
+                            >
+                              <strong>{group.group_name}</strong>
+                              <small>{group.parent_sector} · {group.stock_count} stocks</small>
+                            </button>
+                            <button
+                              type="button"
+                              className={`gp-group-grid-toggle${isGridActive ? " active" : ""}`}
+                              onClick={() => setGridGroupId(group.group_id)}
+                              disabled={!members.length}
+                              title={members.length ? `Open ${group.group_name} chart grid` : `No stock chart data for ${group.group_name}`}
+                              aria-label={members.length ? `Open ${group.group_name} chart grid` : `No stock chart data for ${group.group_name}`}
+                            >
+                              <LayoutGrid size={16} strokeWidth={2.2} />
+                            </button>
+                          </div>
+                        </td>
+                        <td className="gp-num">
+                          <span className="gp-score-chip">{formatScore(group.score)}</span>
+                        </td>
+                        <td
+                          className="gp-num"
+                          title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
                         >
-                          <td>
-                            <RankBadge rank={group.rank} />
-                            <RankDelta change={group.rank_change_1w} />
-                          </td>
-                          <td className="gp-cell-name">
-                            <div className="gp-group-title-row">
-                              <button
-                                type="button"
-                                className="gp-group-name-btn"
-                                onClick={() => handleGroupClick(group)}
-                              >
-                                <strong>{group.group_name}</strong>
-                                <small>{group.parent_sector} · {group.stock_count} stocks</small>
-                              </button>
-                              <button
-                                type="button"
-                                className={`gp-group-grid-toggle${isExpanded ? " active" : ""}`}
-                                onClick={() => setExpandedGroupId((current) => current === group.group_id ? null : group.group_id)}
-                                title={isExpanded ? `Hide ${group.group_name} stocks` : `Show ${group.group_name} stocks in grid`}
-                                aria-label={isExpanded ? `Hide ${group.group_name} stocks` : `Show ${group.group_name} stocks in grid`}
-                              >
-                                <LayoutGrid size={15} strokeWidth={2.2} />
-                                {isExpanded ? <ChevronUp size={14} strokeWidth={2.4} /> : <ChevronDown size={14} strokeWidth={2.4} />}
-                              </button>
+                          <span className={`gp-breadth${group.pct_above_50dma >= 70 ? " hi" : group.pct_above_50dma >= 40 ? " mid" : " lo"}`}>
+                            {Math.round(group.pct_above_50dma)}%
+                          </span>
+                        </td>
+                        <td className="gp-cell-stocks">
+                          <div className="gp-top3">
+                            {displayedStocks.length === 0 ? (
+                              <span className="gp-muted">No leaders</span>
+                            ) : displayedStocks.map((s) => {
+                              const logo = getLogoUrl(s.symbol);
+                              const up = s.change_pct >= 0;
+                              return (
+                                <button
+                                  key={`${group.group_id}-${s.symbol}`}
+                                  type="button"
+                                  className={`gp-stock-chip${selectedSymbol === s.symbol ? " active" : ""}`}
+                                  onClick={() => onPickSymbolWithContext(s.symbol, groupSymbols)}
+                                  onContextMenu={(e) => {
+                                    e.preventDefault();
+                                    onRequestAddToWatchlist(s.symbol);
+                                  }}
+                                  title={`${s.company} · right-click to add to watchlist`}
+                                >
+                                  {logo ? (
+                                    <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
+                                  ) : (
+                                    <span className="gp-stock-avatar">{initials(s.symbol)}</span>
+                                  )}
+                                  <span className="gp-stock-text">
+                                    <span className="gp-stock-sym">{s.symbol}</span>
+                                    <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>{formatReturn(s.change_pct)}</span>
+                                  </span>
+                                  <RsCircle rs={s.rs} />
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {members[0] ? (
+                            <div className="gp-lead-price">
+                              <span>Lead:</span> <strong>{members[0].symbol}</strong> @ {formatPrice(members[0].last_price)}
                             </div>
-                          </td>
-                          <td className="gp-num">
-                            <span className="gp-score-chip">{formatScore(group.score)}</span>
-                          </td>
-                          <td
-                            className="gp-num"
-                            title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
-                          >
-                            <span className={`gp-breadth${group.pct_above_50dma >= 70 ? " hi" : group.pct_above_50dma >= 40 ? " mid" : " lo"}`}>
-                              {Math.round(group.pct_above_50dma)}%
-                            </span>
-                          </td>
-                          <td className="gp-cell-stocks">
-                            <div className="gp-top3">
-                              {displayedStocks.length === 0 ? (
-                                <span className="gp-muted">No leaders</span>
-                              ) : displayedStocks.map((s) => {
-                                const logo = getLogoUrl(s.symbol);
-                                const up = s.change_pct >= 0;
-                                return (
-                                  <button
-                                    key={`${group.group_id}-${s.symbol}`}
-                                    type="button"
-                                    className={`gp-stock-chip${selectedSymbol === s.symbol ? " active" : ""}`}
-                                    onClick={() => onPickSymbolWithContext(s.symbol, groupSymbols)}
-                                    onContextMenu={(e) => {
-                                      e.preventDefault();
-                                      onRequestAddToWatchlist(s.symbol);
-                                    }}
-                                    title={`${s.company} · right-click to add to watchlist`}
-                                  >
-                                    {logo ? (
-                                      <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                    ) : (
-                                      <span className="gp-stock-avatar">{initials(s.symbol)}</span>
-                                    )}
-                                    <span className="gp-stock-text">
-                                      <span className="gp-stock-sym">{s.symbol}</span>
-                                      <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>{formatReturn(s.change_pct)}</span>
-                                    </span>
-                                    <RsCircle rs={s.rs} />
-                                  </button>
-                                );
-                              })}
-                            </div>
-                            {members[0] ? (
-                              <div className="gp-lead-price">
-                                <span>Lead:</span> <strong>{members[0].symbol}</strong> @ {formatPrice(members[0].last_price)}
-                              </div>
-                            ) : null}
-                          </td>
-                        </tr>
-                        {isExpanded ? (
-                          <tr className="gp-expanded-row">
-                            <td colSpan={5}>
-                              <div className="gp-expanded-panel">
-                                <div className="gp-expanded-head">
-                                  <span>{group.group_name} Stocks</span>
-                                  <strong>{gridStocks.length}</strong>
-                                </div>
-                                <div className="gp-group-stock-grid">
-                                  {gridStocks.map((stock) => {
-                                    const logo = getLogoUrl(stock.symbol);
-                                    const up = stock.change_pct >= 0;
-                                    return (
-                                      <button
-                                        key={`${group.group_id}-grid-${stock.symbol}`}
-                                        type="button"
-                                        className={`gp-stock-chip gp-grid-stock-chip${selectedSymbol === stock.symbol ? " active" : ""}`}
-                                        onClick={() => onPickSymbolWithContext(stock.symbol, groupSymbols)}
-                                        onContextMenu={(e) => {
-                                          e.preventDefault();
-                                          onRequestAddToWatchlist(stock.symbol);
-                                        }}
-                                        title={`${stock.company_name} · right-click to add to watchlist`}
-                                      >
-                                        {logo ? (
-                                          <img src={logo} alt="" className="gp-stock-logo" onError={(e) => { e.currentTarget.style.display = "none"; }} />
-                                        ) : (
-                                          <span className="gp-stock-avatar">{initials(stock.symbol)}</span>
-                                        )}
-                                        <span className="gp-stock-text">
-                                          <span className="gp-stock-sym">{stock.symbol}</span>
-                                          <span className={`gp-stock-chg ${up ? "gp-pos" : "gp-neg"}`}>
-                                            {stock.last_price ? `${formatPrice(stock.last_price)} · ` : ""}{formatReturn(stock.change_pct)}
-                                          </span>
-                                        </span>
-                                        <RsCircle rs={stock.rs_rating} />
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        ) : null}
-                      </Fragment>
+                          ) : null}
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -568,6 +618,32 @@ export function GroupsPanel({
           )}
         </section>
       </div>
+      {activeGridGroup ? (
+        <Suspense fallback={null}>
+          <ChartGridModal
+            contextLabel="Group"
+            title={activeGridGroup.group_name}
+            subtitle={`${gridCards.length || activeGridGroup.stock_count} stocks · rank #${activeGridGroup.rank} · ${activeGridGroup.parent_sector}`}
+            cards={gridCards}
+            stats={gridStats}
+            columns={gridColumns}
+            rows={gridRows}
+            timeframe={gridTimeframe}
+            sortBy={gridSortBy}
+            chartStyle={gridChartStyle}
+            displayMode={gridDisplayMode}
+            onColumnsChange={setGridColumns}
+            onRowsChange={setGridRows}
+            onTimeframeChange={setGridTimeframe}
+            onSortByChange={setGridSortBy}
+            onChartStyleChange={setGridChartStyle}
+            onDisplayModeChange={setGridDisplayMode}
+            onLoadSeries={loadGroupGridSeries}
+            onAddToWatchlist={onRequestAddToWatchlist}
+            onClose={() => setGridGroupId(null)}
+          />
+        </Suspense>
+      ) : null}
     </Panel>
   );
 }
