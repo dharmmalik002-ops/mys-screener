@@ -4684,6 +4684,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   return (
     <div className="app-shell app-shell-simple">
+      {/* Liquid-glass refraction filter — referenced by backdrop-filter on the
+          nav/glass chrome (Chromium/Safari). Subtle organic displacement of the
+          background image behind the panel. */}
+      <svg className="liquid-glass-defs" width="0" height="0" aria-hidden="true" focusable="false">
+        <filter id="liquidGlass" x="-20%" y="-20%" width="140%" height="140%" colorInterpolationFilters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.012 0.012" numOctaves="2" seed="7" result="noise" />
+          <feGaussianBlur in="noise" stdDeviation="2" result="blurNoise" />
+          <feDisplacementMap in="SourceGraphic" in2="blurNoise" scale="16" xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       <div className="ticker-ribbon">
         <div className="ticker-ribbon-track">
           {[...tickerTapeItems, ...tickerTapeItems].map((item, index) => (

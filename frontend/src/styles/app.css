@@ -49,6 +49,10 @@
     radial-gradient(ellipse at 20% 0%, rgba(76, 154, 255, 0.14), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(59, 108, 239, 0.10), transparent 40%),
     radial-gradient(ellipse at 50% 100%, rgba(52, 211, 153, 0.06), transparent 50%);
+  /* Liquid-glass background image (user-provided). Missing file falls through to --hero-glow. */
+  --app-bg-image: url("/liquid-glass-bg.jpg");
+  /* Theme veil over the image: lighter at top (nav/hero glass reads), heavier lower (data stays legible). */
+  --app-veil: linear-gradient(180deg, rgba(12, 16, 33, 0.52) 0%, rgba(12, 16, 33, 0.82) 46%, rgba(12, 16, 33, 0.93) 100%);
 }
 
 :root[data-theme="light"] {
@@ -93,6 +97,8 @@
     radial-gradient(ellipse at 20% 0%, rgba(37, 99, 235, 0.10), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(29, 78, 216, 0.08), transparent 40%),
     radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.05), transparent 50%);
+  --app-bg-image: url("/liquid-glass-bg.jpg");
+  --app-veil: linear-gradient(180deg, rgba(241, 245, 249, 0.60) 0%, rgba(241, 245, 249, 0.84) 46%, rgba(241, 245, 249, 0.93) 100%);
 }
 
 * {
@@ -204,6 +210,29 @@ button {
   position: relative;
   isolation: isolate;
   animation: fadeIn 400ms ease-out;
+}
+
+/* Fixed, full-viewport background image behind everything — the scene the
+   liquid-glass chrome refracts. Dimmed by a theme veil so data stays readable.
+   If --app-bg-image 404s, the --hero-glow mesh shows through (graceful fallback). */
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-image: var(--app-veil), var(--app-bg-image), var(--hero-glow);
+  background-size: cover, cover, cover;
+  background-position: center top, center top, center top;
+  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-attachment: fixed, fixed, fixed;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .app-shell::before {
+    background-image: var(--app-veil), var(--hero-glow);
+    background-size: cover, cover;
+  }
 }
 
 .app-shell-simple {
