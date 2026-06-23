@@ -319,11 +319,31 @@
 
 .liquid-glass {
   position: relative;
+  overflow: hidden;
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 55%, transparent), color-mix(in srgb, var(--surface-strong) 42%, transparent));
   -webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
   backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
-  border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 0 -1px 1px rgba(0, 0, 0, 0.16), 0 10px 30px rgba(2, 6, 18, 0.26);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 10px 30px rgba(2, 6, 18, 0.26);
+}
+
+/* Gradient-stroke "liquid glass" rim — bright top & bottom edges, fading mid —
+   drawn as a masked ::before so it hugs any border-radius. */
+.liquid-glass::before,
+:root[data-theme] .top-nav .nav-button:not(.primary)::before,
+:root[data-theme] .top-nav .status-pill::before,
+:root[data-theme] .top-nav .icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: var(--glass-rim);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
 }
 
 @supports (backdrop-filter: url(#liquidGlass)) or (-webkit-backdrop-filter: url(#liquidGlass)) {
@@ -349,22 +369,32 @@
   }
 }
 
-/* Nav controls as frosted glass chips (the accent .primary button stays bold). */
+/* Glass chips with the gradient-stroke rim (rim comes from ::before above; the
+   accent .primary button stays bold). */
 :root[data-theme] .top-nav .nav-button:not(.primary),
-:root[data-theme] .top-nav .nav-search input,
-:root[data-theme] .top-nav .nav-search-field input,
 :root[data-theme] .top-nav .status-pill,
 :root[data-theme] .top-nav .icon-btn {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
+}
+
+/* Search input can't render ::before / keep its rounding, so use a clean border. */
+:root[data-theme] .top-nav .nav-search input,
+:root[data-theme] .top-nav .nav-search-field input {
   background: color-mix(in srgb, var(--surface) 40%, transparent);
   -webkit-backdrop-filter: blur(10px) saturate(150%);
   backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 4px 14px rgba(2, 6, 18, 0.20);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
 }
 
 :root[data-theme] .top-nav .nav-button:not(.primary):hover {
   background: color-mix(in srgb, var(--surface) 58%, transparent);
-  border-color: var(--line-strong);
 }
 
 .liquid-glass-defs {

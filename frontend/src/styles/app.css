@@ -53,6 +53,8 @@
   --app-bg-image: url("/liquid-glass-bg.jpg");
   /* Theme veil over the image: lighter at top (nav/hero glass reads), heavier lower (data stays legible). */
   --app-veil: linear-gradient(180deg, rgba(12, 16, 33, 0.52) 0%, rgba(12, 16, 33, 0.82) 46%, rgba(12, 16, 33, 0.93) 100%);
+  /* Gradient-stroke "liquid glass" rim — bright at top & bottom edges, fading mid (masked ::before). */
+  --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.16) 20%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.16) 80%, rgba(255, 255, 255, 0.5) 100%);
 }
 
 :root[data-theme="light"] {
@@ -99,6 +101,8 @@
     radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.05), transparent 50%);
   --app-bg-image: url("/liquid-glass-bg.jpg");
   --app-veil: linear-gradient(180deg, rgba(241, 245, 249, 0.60) 0%, rgba(241, 245, 249, 0.84) 46%, rgba(241, 245, 249, 0.93) 100%);
+  /* Darker rim for light theme so the glass edge reads on light surfaces. */
+  --glass-rim: linear-gradient(180deg, rgba(15, 23, 42, 0.30) 0%, rgba(15, 23, 42, 0.10) 20%, rgba(15, 23, 42, 0) 40%, rgba(15, 23, 42, 0) 60%, rgba(15, 23, 42, 0.10) 80%, rgba(15, 23, 42, 0.30) 100%);
 }
 
 * {
