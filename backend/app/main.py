@@ -174,17 +174,73 @@ def schedule_startup_cache_warm(app: FastAPI, market_name: str, service_obj, tim
     task.add_done_callback(_cleanup)
 
 
+def pull_latest_bhavcopy_patch() -> bool:
+    """Self-heal: fetch the newest committed bhavcopy patch from the public
+    GitHub raw URL and overwrite the local copy when it is for a newer date.
+
+    Daily price commits use ``[skip ci]`` and reach this Space only through the
+    workflow's HF push, which can silently fail (expired HF token, dropped run).
+    When that happens the running backend stays frozen on the last deployed
+    snapshot and every derived number — advance/decline, per-stock %, XP breadth,
+    scanners — serves *yesterday's* data. Pulling the committed patch directly
+    here (the repo is public, so no token is needed) lets the Space catch up on
+    its own each day, with zero redeploy. Returns True when a newer patch was
+    written.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    url = (
+        os.environ.get("BHAVCOPY_PATCH_URL")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data/bhavcopy_patch.json"
+    ).strip()
+    patch_path = Path(__file__).resolve().parents[1] / "data" / "bhavcopy_patch.json"
+    try:
+        local_date = ""
+        try:
+            local_date = str(_json.loads(patch_path.read_text(encoding="utf-8")).get("date") or "")
+        except Exception:
+            local_date = ""
+        resp = _requests.get(url, timeout=25)
+        if resp.status_code != 200:
+            logger.info("Bhavcopy self-update: remote HTTP %s — keeping local %s", resp.status_code, local_date or "<none>")
+            return False
+        remote = resp.json()
+        remote_date = str(remote.get("date") or "")
+        symbols = remote.get("symbols")
+        if not remote_date or not isinstance(symbols, dict) or not symbols:
+            logger.warning("Bhavcopy self-update: remote payload invalid (date=%s) — keeping local", remote_date or "<none>")
+            return False
+        if local_date and remote_date <= local_date:
+            return False  # already current (or older) — nothing to do
+        patch_path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = patch_path.with_name(patch_path.name + ".tmp")
+        tmp.write_text(resp.text, encoding="utf-8")
+        tmp.replace(patch_path)
+        logger.info(
+            "Bhavcopy self-update: pulled %s (was %s, %s symbols) from remote",
+            remote_date, local_date or "<none>", len(symbols),
+        )
+        return True
+    except Exception as exc:
+        logger.warning("Bhavcopy self-update failed: %s", exc)
+        return False
+
+
 def apply_bhavcopy_patch_on_startup() -> None:
     """Roll any committed bhavcopy patch into the live snapshot before serving.
 
     The HF deploy excludes the heavy ``free_snapshots.json`` from the bundle,
     so cold starts begin with stale prices from the previous baked snapshot.
     Without this, dashboard / scanner endpoints serve yesterday's prices until
-    the next watchdog tick. Running this once on startup keeps prices in sync
-    with whatever the daily-bhavcopy GitHub Action last committed.
+    the next watchdog tick. We first pull the freshest committed patch from the
+    public repo (self-heal when the daily HF push failed), then apply it so
+    prices stay in sync with whatever the daily-bhavcopy GitHub Action committed.
     """
+    pulled = pull_latest_bhavcopy_patch()
     try:
-        result = india_provider.apply_committed_bhavcopy_patch()
+        result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
         return
@@ -289,9 +345,12 @@ async def lifespan(app: FastAPI):
         is_scheduler_owner = False
 
     if is_scheduler_owner:
+        # Pull + apply across the evening (weekdays) so a late or retried
+        # daily-bhavcopy commit is picked up the same day even if the workflow's
+        # HF push never lands. Each run no-ops once the patch is already current.
         scheduler.add_job(
             apply_bhavcopy_patch_on_startup,
-            CronTrigger(hour=16, minute=45, timezone=IST),
+            CronTrigger(hour="16,17,18,19,21", minute=50, day_of_week="mon-fri", timezone=IST),
             id="india_bhavcopy_patch_apply",
             replace_existing=True,
         )
