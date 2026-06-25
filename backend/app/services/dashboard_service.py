@@ -2016,30 +2016,36 @@ class DashboardService:
         return True
 
     @staticmethod
-    def _weekly_demand_zone_metrics(
+    def _demand_zone_metrics(
         bars,
         current_price: float,
         request: DemandZoneScanRequest,
-    ) -> dict[str, float | int] | None:
+    ) -> dict[str, float | int | str] | None:
+        timeframe = "daily" if request.timeframe == "daily" else "weekly"
         completed = list(bars[:-1]) if len(bars) > 3 else list(bars)
-        base_min_weeks = min(request.base_min_weeks, request.base_max_weeks)
-        base_max_weeks = max(request.base_min_weeks, request.base_max_weeks)
-        if len(completed) < base_max_weeks + 12:
+        base_min_periods = min(request.base_min_weeks, request.base_max_weeks)
+        base_max_periods = max(request.base_min_weeks, request.base_max_weeks)
+        prior_lookback = 10 if timeframe == "daily" else 8
+        min_prior_rally_pct = max(8.0, request.min_departure_pct * 0.8) if timeframe == "daily" else max(10.0, request.min_departure_pct)
+        departure_window = 5 if timeframe == "daily" else 4
+        min_volume_expansion = 1.2 if timeframe == "daily" else 1.05
+        min_history = base_max_periods + prior_lookback + departure_window + 3
+        if len(completed) < min_history:
             return None
 
-        best: dict[str, float | int] | None = None
+        best: dict[str, float | int | str] | None = None
         latest_base_end = len(completed) - 2
-        earliest_base_end = max(base_min_weeks + 6, latest_base_end - request.max_zone_age_weeks)
+        earliest_base_end = max(base_min_periods + prior_lookback, latest_base_end - request.max_zone_age_weeks)
 
         for base_end in range(latest_base_end, earliest_base_end - 1, -1):
-            for base_weeks in range(base_min_weeks, base_max_weeks + 1):
-                base_start = base_end - base_weeks + 1
-                if base_start < 6 or base_end + 1 >= len(completed):
+            for base_periods in range(base_min_periods, base_max_periods + 1):
+                base_start = base_end - base_periods + 1
+                if base_start < prior_lookback or base_end + 1 >= len(completed):
                     continue
 
                 base = completed[base_start : base_end + 1]
-                prior = completed[max(0, base_start - 8) : base_start]
-                departure = completed[base_end + 1 : min(len(completed), base_end + 4)]
+                prior = completed[max(0, base_start - prior_lookback) : base_start]
+                departure = completed[base_end + 1 : min(len(completed), base_end + departure_window)]
                 if not base or not prior or not departure:
                     continue
 
@@ -2055,7 +2061,7 @@ class DashboardService:
                 if prior_low <= 0:
                     continue
                 prior_rally_pct = ((base_high - prior_low) / prior_low) * 100.0
-                if prior_rally_pct < 12.0:
+                if prior_rally_pct < min_prior_rally_pct:
                     continue
 
                 zone_low = base_low
@@ -2071,13 +2077,13 @@ class DashboardService:
                 base_avg_volume = sum(max(int(bar.volume or 0), 0) for bar in base) / max(len(base), 1)
                 departure_volume = max(max(int(bar.volume or 0), 0) for bar in departure)
                 volume_expansion = (departure_volume / base_avg_volume) if base_avg_volume > 0 else 1.0
-                if base_avg_volume > 0 and volume_expansion < 1.1:
+                if base_avg_volume > 0 and volume_expansion < min_volume_expansion:
                     continue
 
                 after_departure = completed[base_end + 1 :]
                 if any(float(bar.close) < zone_low for bar in after_departure):
                     continue
-                if any(float(bar.low) < zone_low * 0.97 for bar in after_departure):
+                if any(float(bar.low) < zone_low * (0.96 if timeframe == "daily" else 0.95) for bar in after_departure):
                     continue
 
                 if current_price < zone_low:
@@ -2086,26 +2092,33 @@ class DashboardService:
                 if distance_above_zone_pct > request.max_distance_above_zone_pct:
                     continue
 
-                zone_age_weeks = len(completed) - base_end - 1
+                zone_age_periods = len(completed) - base_end - 1
+                held_periods = sum(1 for bar in after_departure if float(bar.low) >= zone_low)
+                retests = sum(1 for bar in after_departure if zone_low <= float(bar.low) <= zone_high * 1.03)
                 score = (
                     55.0
                     + min(departure_pct, 45.0) * 0.75
                     + min(prior_rally_pct, 60.0) * 0.22
                     + max(0.0, request.max_base_range_pct - base_range_pct) * 1.25
                     + min(volume_expansion, 5.0) * 2.0
+                    + min(held_periods, 12) * (0.6 if timeframe == "daily" else 0.35)
+                    + min(retests, 4) * 1.5
                     - distance_above_zone_pct * 3.5
-                    - zone_age_weeks * 0.06
+                    - zone_age_periods * (0.025 if timeframe == "daily" else 0.06)
                 )
-                metrics: dict[str, float | int] = {
+                metrics: dict[str, float | int | str] = {
+                    "timeframe": timeframe,
                     "zone_low": round(zone_low, 2),
                     "zone_high": round(zone_high, 2),
                     "distance_above_zone_pct": round(distance_above_zone_pct, 2),
-                    "base_weeks": base_weeks,
+                    "base_periods": base_periods,
                     "base_range_pct": round(base_range_pct, 2),
                     "prior_rally_pct": round(prior_rally_pct, 2),
                     "departure_pct": round(departure_pct, 2),
                     "volume_expansion": round(volume_expansion, 2),
-                    "zone_age_weeks": zone_age_weeks,
+                    "zone_age_periods": zone_age_periods,
+                    "held_periods": held_periods,
+                    "retests": retests,
                     "score": round(score, 2),
                 }
                 if best is None or float(metrics["score"]) > float(best["score"]):
@@ -2119,33 +2132,42 @@ class DashboardService:
         request: DemandZoneScanRequest,
         semaphore: asyncio.Semaphore,
     ) -> ScanMatch | None:
+        timeframe = "daily" if request.timeframe == "daily" else "weekly"
         async with semaphore:
             try:
-                bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 20))
-                bars = await self.provider.get_chart(snapshot.symbol, "1W", bars=bar_limit)
+                if timeframe == "daily":
+                    bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 25))
+                    bars = await self.provider.get_chart(snapshot.symbol, "1D", bars=bar_limit)
+                else:
+                    bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 20))
+                    bars = await self.provider.get_chart(snapshot.symbol, "1W", bars=bar_limit)
             except Exception:
                 return None
 
-        metrics = self._weekly_demand_zone_metrics(bars, float(snapshot.last_price or 0.0), request)
+        metrics = self._demand_zone_metrics(bars, float(snapshot.last_price or 0.0), request)
         if metrics is None:
             return None
 
         distance = float(metrics["distance_above_zone_pct"])
         zone_low = float(metrics["zone_low"])
         zone_high = float(metrics["zone_high"])
-        proximity = "Inside weekly demand zone" if distance == 0 else f"{distance:.1f}% above weekly demand zone"
+        timeframe_label = "daily" if timeframe == "daily" else "weekly"
+        period_label = "day" if timeframe == "daily" else "week"
+        proximity = f"Inside {timeframe_label} demand zone" if distance == 0 else f"{distance:.1f}% above {timeframe_label} demand zone"
+        held_periods = int(metrics["held_periods"])
+        retests = int(metrics["retests"])
         reasons = [
             proximity,
             f"Zone {zone_low:.2f}-{zone_high:.2f}",
-            f"{int(metrics['base_weeks'])}-week base; departure +{float(metrics['departure_pct']):.1f}%",
-            f"RS {snapshot.rs_rating}",
+            f"{int(metrics['base_periods'])}-{period_label} base; +{float(metrics['prior_rally_pct']):.1f}% rally then +{float(metrics['departure_pct']):.1f}% departure",
+            f"Achievements: {float(metrics['volume_expansion']):.2f}x volume, held {held_periods} {period_label}{'s' if held_periods != 1 else ''}, {retests} retest{'s' if retests != 1 else ''}, RS {snapshot.rs_rating}",
         ]
         match = build_scan_match(
             "demand-zone",
             snapshot,
             round(float(metrics["score"]) + float(snapshot.rs_rating or 0) * 0.22, 2),
             reasons,
-            pattern="Weekly Demand Zone",
+            pattern="Daily Demand Zone" if timeframe == "daily" else "Weekly Demand Zone",
         )
         return match
 
@@ -2159,6 +2181,7 @@ class DashboardService:
             ),
             reverse=True,
         )
+        candidates = candidates[:320]
         semaphore = asyncio.Semaphore(16)
         raw_items = await asyncio.gather(
             *(self._demand_zone_item_for_snapshot(snapshot, request, semaphore) for snapshot in candidates),
@@ -5224,7 +5247,7 @@ class DashboardService:
                 "id": "demand-zone",
                 "name": "Demand Zone Scanner",
                 "category": "Setups",
-                "description": "Stage 2 stocks trading inside or just above a strong weekly rally-base-rally demand zone.",
+                "description": "Stage 2 stocks trading inside or just above strong daily or weekly rally-base-rally demand zones.",
                 "hit_count": len(items),
             },
             scan_key="demand-zone",

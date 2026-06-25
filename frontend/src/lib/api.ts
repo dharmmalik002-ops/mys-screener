@@ -964,6 +964,7 @@ export type ConsolidatingScanRequest = {
 };
 
 export type DemandZoneScanRequest = {
+  timeframe: "weekly" | "daily";
   max_distance_above_zone_pct: number;
   min_rs_rating: number;
   min_liquidity_crore: number;

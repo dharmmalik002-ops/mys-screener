@@ -10,6 +10,32 @@ type DemandZoneScannerPanelProps = {
   onReset: () => void;
 };
 
+const WEEKLY_DEFAULTS: DemandZoneScanRequest = {
+  timeframe: "weekly",
+  max_distance_above_zone_pct: 3,
+  min_rs_rating: 70,
+  min_liquidity_crore: 5,
+  min_departure_pct: 12,
+  base_min_weeks: 2,
+  base_max_weeks: 6,
+  max_base_range_pct: 12,
+  max_zone_age_weeks: 52,
+  limit: 1500,
+};
+
+const DAILY_DEFAULTS: DemandZoneScanRequest = {
+  timeframe: "daily",
+  max_distance_above_zone_pct: 3,
+  min_rs_rating: 70,
+  min_liquidity_crore: 5,
+  min_departure_pct: 8,
+  base_min_weeks: 3,
+  base_max_weeks: 12,
+  max_base_range_pct: 8,
+  max_zone_age_weeks: 45,
+  limit: 1500,
+};
+
 function updateNumber(
   filters: DemandZoneScanRequest,
   onFiltersChange: (filters: DemandZoneScanRequest) => void,
@@ -33,10 +59,15 @@ export function DemandZoneScannerPanel({
   onApply,
   onReset,
 }: DemandZoneScannerPanelProps) {
+  const isDaily = filters.timeframe === "daily";
+  const timeframe = isDaily ? "daily" : "weekly";
+  const periodLabel = isDaily ? "Days" : "Weeks";
+  const periodHint = isDaily ? "days" : "weeks";
+
   return (
     <Panel
       title="Demand Zone Scanner"
-      subtitle="Stage 2 stocks trading inside or within 3% above a strong weekly rally-base-rally demand zone."
+      subtitle="Stage 2 stocks trading inside or within 3% above strong rally-base-rally demand zones."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
@@ -50,6 +81,27 @@ export function DemandZoneScannerPanel({
       className="demand-zone-panel"
     >
       <div className="scanner-section-grid near-pivot-grid">
+        <label className="scanner-field">
+          <span>Demand Zone Type</span>
+          <select
+            value={timeframe}
+            onChange={(event) => {
+              const nextDefaults = event.target.value === "daily" ? DAILY_DEFAULTS : WEEKLY_DEFAULTS;
+              onFiltersChange({
+                ...nextDefaults,
+                min_rs_rating: filters.min_rs_rating,
+                min_liquidity_crore: filters.min_liquidity_crore,
+                max_distance_above_zone_pct: filters.max_distance_above_zone_pct,
+                limit: filters.limit,
+              });
+            }}
+          >
+            <option value="weekly">Weekly Demand Zones</option>
+            <option value="daily">Daily Demand Zones</option>
+          </select>
+          <small>{isDaily ? "Shorter swing zones from daily bases with strong achievements" : "Bigger weekly zones from higher-timeframe bases"}</small>
+        </label>
+
         <label className="scanner-field">
           <span>Near Zone %</span>
           <input
@@ -98,11 +150,11 @@ export function DemandZoneScannerPanel({
             value={filters.min_departure_pct}
             onChange={updateNumber(filters, onFiltersChange, "min_departure_pct", 1, 100)}
           />
-          <small>Weekly move away from the base</small>
+          <small>{isDaily ? "Daily move away from the base" : "Weekly move away from the base"}</small>
         </label>
 
         <label className="scanner-field">
-          <span>Base Min Weeks</span>
+          <span>Base Min {periodLabel}</span>
           <input
             type="number"
             min="1"
@@ -111,11 +163,11 @@ export function DemandZoneScannerPanel({
             value={filters.base_min_weeks}
             onChange={updateNumber(filters, onFiltersChange, "base_min_weeks", 1, 12)}
           />
-          <small>Default 2 weeks</small>
+          <small>Minimum base length in {periodHint}</small>
         </label>
 
         <label className="scanner-field">
-          <span>Base Max Weeks</span>
+          <span>Base Max {periodLabel}</span>
           <input
             type="number"
             min="1"
@@ -124,7 +176,7 @@ export function DemandZoneScannerPanel({
             value={filters.base_max_weeks}
             onChange={updateNumber(filters, onFiltersChange, "base_max_weeks", 1, 20)}
           />
-          <small>Default 6 weeks</small>
+          <small>Maximum base length in {periodHint}</small>
         </label>
 
         <label className="scanner-field">
@@ -141,7 +193,7 @@ export function DemandZoneScannerPanel({
         </label>
 
         <label className="scanner-field">
-          <span>Max Zone Age (Weeks)</span>
+          <span>Max Zone Age ({periodLabel})</span>
           <input
             type="number"
             min="1"
@@ -150,7 +202,7 @@ export function DemandZoneScannerPanel({
             value={filters.max_zone_age_weeks}
             onChange={updateNumber(filters, onFiltersChange, "max_zone_age_weeks", 1, 260)}
           />
-          <small>Default 52 weeks</small>
+          <small>Ignore zones older than this</small>
         </label>
 
         <label className="scanner-field">

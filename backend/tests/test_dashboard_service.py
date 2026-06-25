@@ -23,6 +23,7 @@ from app.models.market import (
     ChartLinePoint,
     ConsolidatingScanRequest,
     CustomScanRequest,
+    DemandZoneScanRequest,
     HistoricalBreadthDataPoint,
     HistoricalBreadthResponse,
     HistoricalUniverseBreadth,
@@ -124,6 +125,91 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
             step=step,
         )
         return snapshot
+
+    @staticmethod
+    def _rally_base_rally_demand_zone_bars() -> list[ChartBar]:
+        bars: list[ChartBar] = []
+        time = 1
+        for idx in range(10):
+            close = 90.0 + idx * 1.4
+            bars.append(
+                ChartBar(
+                    time=time,
+                    open=close - 0.8,
+                    high=close + 1.0,
+                    low=close - 2.0,
+                    close=close,
+                    volume=1200 + idx * 20,
+                )
+            )
+            time += 1
+        for open_price, close_price, high, low in (
+            (101.0, 103.0, 105.0, 99.0),
+            (102.5, 104.0, 105.5, 100.0),
+            (103.0, 102.0, 104.5, 100.5),
+            (102.0, 103.5, 104.2, 100.2),
+        ):
+            bars.append(
+                ChartBar(time=time, open=open_price, high=high, low=low, close=close_price, volume=1000)
+            )
+            time += 1
+        for open_price, close_price, high, low, volume in (
+            (105.0, 114.0, 116.0, 104.5, 4200),
+            (114.0, 120.0, 122.0, 112.0, 5200),
+            (119.0, 116.0, 121.0, 110.0, 2400),
+        ):
+            bars.append(
+                ChartBar(time=time, open=open_price, high=high, low=low, close=close_price, volume=volume)
+            )
+            time += 1
+        for open_price, close_price, high, low in (
+            (113.0, 110.0, 115.0, 106.0),
+            (109.0, 106.5, 111.0, 101.5),
+            (106.0, 107.5, 110.0, 100.8),
+            (107.0, 106.8, 109.5, 101.0),
+            (107.0, 106.5, 109.0, 100.5),
+        ):
+            bars.append(
+                ChartBar(time=time, open=open_price, high=high, low=low, close=close_price, volume=1400)
+            )
+            time += 1
+        bars.append(ChartBar(time=time, open=106.0, high=108.0, low=103.0, close=106.2, volume=1300))
+        return bars
+
+    def test_demand_zone_metrics_detect_weekly_rally_base_rally_retest(self) -> None:
+        request = DemandZoneScanRequest()
+        metrics = DashboardService._demand_zone_metrics(
+            self._rally_base_rally_demand_zone_bars(),
+            current_price=106.2,
+            request=request,
+        )
+
+        assert metrics is not None
+        self.assertEqual(metrics["timeframe"], "weekly")
+        self.assertLessEqual(float(metrics["distance_above_zone_pct"]), request.max_distance_above_zone_pct)
+        self.assertGreaterEqual(float(metrics["departure_pct"]), request.min_departure_pct)
+        self.assertGreaterEqual(int(metrics["retests"]), 1)
+
+    def test_demand_zone_metrics_detect_daily_rally_base_rally_retest(self) -> None:
+        request = DemandZoneScanRequest(
+            timeframe="daily",
+            min_departure_pct=8,
+            base_min_weeks=3,
+            base_max_weeks=4,
+            max_base_range_pct=8,
+            max_zone_age_weeks=45,
+        )
+        metrics = DashboardService._demand_zone_metrics(
+            self._rally_base_rally_demand_zone_bars(),
+            current_price=106.2,
+            request=request,
+        )
+
+        assert metrics is not None
+        self.assertEqual(metrics["timeframe"], "daily")
+        self.assertLessEqual(float(metrics["distance_above_zone_pct"]), request.max_distance_above_zone_pct)
+        self.assertGreaterEqual(float(metrics["volume_expansion"]), 1.2)
+        self.assertGreaterEqual(int(metrics["held_periods"]), 1)
 
     def test_watchlists_migrate_from_legacy_repo_data_to_app_state_dir(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:

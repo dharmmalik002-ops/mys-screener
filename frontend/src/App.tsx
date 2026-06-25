@@ -556,6 +556,7 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
 };
 
 const DEFAULT_DEMAND_ZONE_FILTERS: DemandZoneScanRequest = {
+  timeframe: "weekly",
   max_distance_above_zone_pct: 3,
   min_rs_rating: 70,
   min_liquidity_crore: 5,
@@ -566,6 +567,31 @@ const DEFAULT_DEMAND_ZONE_FILTERS: DemandZoneScanRequest = {
   max_zone_age_weeks: 52,
   limit: 1500,
 };
+
+const DEFAULT_DAILY_DEMAND_ZONE_FILTERS: DemandZoneScanRequest = {
+  timeframe: "daily",
+  max_distance_above_zone_pct: 3,
+  min_rs_rating: 70,
+  min_liquidity_crore: 5,
+  min_departure_pct: 8,
+  base_min_weeks: 3,
+  base_max_weeks: 12,
+  max_base_range_pct: 8,
+  max_zone_age_weeks: 45,
+  limit: 1500,
+};
+
+function demandZoneDefaultsFor(value: unknown): DemandZoneScanRequest {
+  const timeframe =
+    value && typeof value === "object" && (value as Partial<DemandZoneScanRequest>).timeframe === "daily"
+      ? "daily"
+      : "weekly";
+  return timeframe === "daily" ? DEFAULT_DAILY_DEMAND_ZONE_FILTERS : DEFAULT_DEMAND_ZONE_FILTERS;
+}
+
+function mergeDemandZoneFilters(value: unknown): DemandZoneScanRequest {
+  return mergeWithDefaults(demandZoneDefaultsFor(value), value);
+}
 
 const SUPPORTED_INDICATORS: IndicatorKey[] = ["ema10", "ema20", "ema50", "ema200", "vwap"];
 
@@ -1373,8 +1399,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
       appliedReturnsFilters: mergeWithDefaults(DEFAULT_RETURNS_FILTERS, parsed.appliedReturnsFilters),
       consolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.consolidatingFilters),
       appliedConsolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.appliedConsolidatingFilters),
-      demandZoneFilters: mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, parsed.demandZoneFilters),
-      appliedDemandZoneFilters: mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, parsed.appliedDemandZoneFilters),
+      demandZoneFilters: mergeDemandZoneFilters(parsed.demandZoneFilters),
+      appliedDemandZoneFilters: mergeDemandZoneFilters(parsed.appliedDemandZoneFilters),
     };
   } catch {
     return defaults;
@@ -3095,18 +3121,20 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   });
 
   const normalizeDemandZoneFilters = (filters: DemandZoneScanRequest): DemandZoneScanRequest => {
-    const baseMinWeeks = Math.max(1, Math.min(12, Math.round(filters.base_min_weeks || DEFAULT_DEMAND_ZONE_FILTERS.base_min_weeks)));
-    const baseMaxWeeks = Math.max(baseMinWeeks, Math.min(20, Math.round(filters.base_max_weeks || DEFAULT_DEMAND_ZONE_FILTERS.base_max_weeks)));
+    const defaults = filters.timeframe === "daily" ? DEFAULT_DAILY_DEMAND_ZONE_FILTERS : DEFAULT_DEMAND_ZONE_FILTERS;
+    const baseMinWeeks = Math.max(1, Math.min(12, Math.round(filters.base_min_weeks || defaults.base_min_weeks)));
+    const baseMaxWeeks = Math.max(baseMinWeeks, Math.min(20, Math.round(filters.base_max_weeks || defaults.base_max_weeks)));
     return {
       ...filters,
-      max_distance_above_zone_pct: Math.max(0, Math.min(20, filters.max_distance_above_zone_pct)),
-      min_rs_rating: Math.max(1, Math.min(99, Math.round(filters.min_rs_rating))),
-      min_liquidity_crore: Math.max(0, filters.min_liquidity_crore),
-      min_departure_pct: Math.max(1, Math.min(100, filters.min_departure_pct)),
+      timeframe: filters.timeframe === "daily" ? "daily" : "weekly",
+      max_distance_above_zone_pct: Math.max(0, Math.min(20, filters.max_distance_above_zone_pct ?? defaults.max_distance_above_zone_pct)),
+      min_rs_rating: Math.max(1, Math.min(99, Math.round(filters.min_rs_rating ?? defaults.min_rs_rating))),
+      min_liquidity_crore: Math.max(0, filters.min_liquidity_crore ?? defaults.min_liquidity_crore),
+      min_departure_pct: Math.max(1, Math.min(100, filters.min_departure_pct ?? defaults.min_departure_pct)),
       base_min_weeks: baseMinWeeks,
       base_max_weeks: baseMaxWeeks,
-      max_base_range_pct: Math.max(1, Math.min(50, filters.max_base_range_pct)),
-      max_zone_age_weeks: Math.max(1, Math.min(260, Math.round(filters.max_zone_age_weeks))),
+      max_base_range_pct: Math.max(1, Math.min(50, filters.max_base_range_pct ?? defaults.max_base_range_pct)),
+      max_zone_age_weeks: Math.max(1, Math.min(260, Math.round(filters.max_zone_age_weeks ?? defaults.max_zone_age_weeks))),
       limit: clampResultLimit(filters.limit),
     };
   };
@@ -3259,7 +3287,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       return getConsolidatingScan(mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, preset.consolidatingFilters), activeMarket, options);
     }
     if (preset.mode === "demand-zone") {
-      return getDemandZoneScan(mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, preset.demandZoneFilters), activeMarket, options);
+      return getDemandZoneScan(mergeDemandZoneFilters(preset.demandZoneFilters), activeMarket, options);
     }
     if (preset.mode === "minervini-1m") {
       return getScanResults("minervini-1m", activeMarket, { ...options, minLiquidityCrore: preset.minerviniMinLiquidityCrore ?? null });
@@ -3425,7 +3453,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       setConsolidatingFilters(nextFilters);
       setAppliedConsolidatingFilters(nextFilters);
     } else if (preset.mode === "demand-zone") {
-      const nextFilters = mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, preset.demandZoneFilters);
+      const nextFilters = mergeDemandZoneFilters(preset.demandZoneFilters);
       setDemandZoneFilters(nextFilters);
       setAppliedDemandZoneFilters(nextFilters);
     } else if (preset.mode === "minervini-1m") {
@@ -5179,7 +5207,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                           : activeScanner === "consolidating"
                                             ? "Toggle multi-year-high and long-base filters independently."
                                             : activeScanner === "demand-zone"
-                                              ? "Stage 2 stocks inside or within 3% above a strong weekly rally-base-rally demand zone."
+                                              ? "Stage 2 stocks inside or within 3% above strong daily or weekly rally-base-rally demand zones."
                                               : activeScanner === "minervini-1m"
                                                 ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
                                                 : activeScanner === "minervini-5m"

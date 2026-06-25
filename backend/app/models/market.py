@@ -864,6 +864,7 @@ class ConsolidatingScanRequest(BaseModel):
 
 
 class DemandZoneScanRequest(BaseModel):
+    timeframe: Literal["weekly", "daily"] = "weekly"
     max_distance_above_zone_pct: float = Field(default=3.0, ge=0.0, le=20.0)
     min_rs_rating: int = Field(default=70, ge=1, le=99)
     min_liquidity_crore: float = Field(default=5.0, ge=0.0, le=10000.0)
