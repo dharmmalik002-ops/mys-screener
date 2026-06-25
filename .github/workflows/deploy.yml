@@ -7,6 +7,7 @@ on:
       - "backend/**"
       - "Dockerfile"
       - "render.yaml"
+      - ".github/workflows/deploy.yml"
   # Manual redeploy (e.g. to ship data committed by the bhavcopy workflow,
   # whose [skip ci] commits don't trigger this).
   workflow_dispatch:
@@ -37,6 +38,7 @@ jobs:
             --exclude 'backend/.venv' \
             --exclude 'backend/venv' \
             --exclude 'frontend/node_modules' \
+            --exclude 'frontend/public/liquid-glass-bg.jpg' \
             --exclude 'frontend/public/api/free_snapshots.json' \
             --exclude 'frontend/public/api/free_snapshots_us.json' \
             --exclude 'test-results' \
