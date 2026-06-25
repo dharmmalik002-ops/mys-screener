@@ -963,6 +963,18 @@ export type ConsolidatingScanRequest = {
   limit: number;
 };
 
+export type DemandZoneScanRequest = {
+  max_distance_above_zone_pct: number;
+  min_rs_rating: number;
+  min_liquidity_crore: number;
+  min_departure_pct: number;
+  base_min_weeks: number;
+  base_max_weeks: number;
+  max_base_range_pct: number;
+  max_zone_age_weeks: number;
+  limit: number;
+};
+
 export type RefreshResponse = {
   ok: boolean;
   universe_count: number;
@@ -2594,6 +2606,16 @@ export function getReturnsScan(body: ReturnsScanRequest, market: MarketKey, opti
 
 export function getConsolidatingScan(body: ConsolidatingScanRequest, market: MarketKey, options?: ScanRequestOptions) {
   return request<ScanResultsResponse>(withScanOptions("/api/consolidating", market, options), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  }, { timeoutMs: SCAN_POST_TIMEOUT_MS }, normalizeScanResultsResponse);
+}
+
+export function getDemandZoneScan(body: DemandZoneScanRequest, market: MarketKey, options?: ScanRequestOptions) {
+  return request<ScanResultsResponse>(withScanOptions("/api/demand-zone", market, options), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

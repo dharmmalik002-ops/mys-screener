@@ -10,6 +10,7 @@ from app.models.market import (
     CompanyFundamentals,
     ConsolidatingScanRequest,
     CustomScanRequest,
+    DemandZoneScanRequest,
     IndexPeHistoryResponse,
     IndexQuotesResponse,
     ImprovingRsResponse,
@@ -173,6 +174,17 @@ def build_router(service):
         include_sector_summaries: bool = Query(default=False),
     ):
         return await resolve_service(market).get_consolidating_scan_results(
+            request=request,
+            include_sector_summaries=include_sector_summaries,
+        )
+
+    @router.post("/demand-zone")
+    async def demand_zone_scan(
+        request: DemandZoneScanRequest,
+        market: str = Query(default="india"),
+        include_sector_summaries: bool = Query(default=False),
+    ):
+        return await resolve_service(market).get_demand_zone_scan_results(
             request=request,
             include_sector_summaries=include_sector_summaries,
         )

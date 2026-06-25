@@ -35,6 +35,7 @@ export type ScreenerMode =
   | "improving-rs"
   | "returns"
   | "consolidating"
+  | "demand-zone"
   | "momentum-burst"
   | "minervini-1m"
   | "minervini-5m"
@@ -75,6 +76,7 @@ const ITEMS: SidebarItem[] = [
   { mode: "gap-up-openers", title: "Gap Up Openers", hint: "Opening gaps", Icon: TrendingUp },
   { mode: "ema-expansion", title: "Expansion", hint: "EMA expanding", Icon: Maximize2 },
   { mode: "contraction", title: "Contraction", hint: "Tight ranges", Icon: Minimize2 },
+  { mode: "demand-zone", title: "Demand Zone Scanner", hint: "Weekly RBR demand", Icon: Layers },
   { mode: "momentum-burst", title: "Momentum Burst", hint: "Bursts + EMA rest setups", Icon: Zap },
   { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
   { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },

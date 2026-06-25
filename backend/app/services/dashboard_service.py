@@ -38,6 +38,7 @@ from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
     DashboardResponse,
+    DemandZoneScanRequest,
     HistoricalBreadthDataPoint,
     IndexPeHistoryResponse,
     IndexPePoint,
@@ -88,6 +89,7 @@ from app.scanners.definitions import (
     run_scan,
     run_returns_scan,
     scan_catalog_with_counts,
+    build_scan_match,
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
@@ -1999,6 +2001,181 @@ class DashboardService:
         return self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
 
 
+    @staticmethod
+    def _passes_demand_zone_stage2(snapshot: StockSnapshot, request: DemandZoneScanRequest) -> bool:
+        if not snapshot.rs_eligible or int(snapshot.rs_rating or 0) < request.min_rs_rating:
+            return False
+        if float(snapshot.avg_rupee_volume_30d_crore or 0.0) < request.min_liquidity_crore:
+            return False
+        if not snapshot.sma50 or not snapshot.sma200 or snapshot.sma50 <= 0 or snapshot.sma200 <= 0:
+            return False
+        if snapshot.last_price <= snapshot.sma50 or snapshot.last_price <= snapshot.sma200:
+            return False
+        if snapshot.sma50 <= snapshot.sma200:
+            return False
+        return True
+
+    @staticmethod
+    def _weekly_demand_zone_metrics(
+        bars,
+        current_price: float,
+        request: DemandZoneScanRequest,
+    ) -> dict[str, float | int] | None:
+        completed = list(bars[:-1]) if len(bars) > 3 else list(bars)
+        base_min_weeks = min(request.base_min_weeks, request.base_max_weeks)
+        base_max_weeks = max(request.base_min_weeks, request.base_max_weeks)
+        if len(completed) < base_max_weeks + 12:
+            return None
+
+        best: dict[str, float | int] | None = None
+        latest_base_end = len(completed) - 2
+        earliest_base_end = max(base_min_weeks + 6, latest_base_end - request.max_zone_age_weeks)
+
+        for base_end in range(latest_base_end, earliest_base_end - 1, -1):
+            for base_weeks in range(base_min_weeks, base_max_weeks + 1):
+                base_start = base_end - base_weeks + 1
+                if base_start < 6 or base_end + 1 >= len(completed):
+                    continue
+
+                base = completed[base_start : base_end + 1]
+                prior = completed[max(0, base_start - 8) : base_start]
+                departure = completed[base_end + 1 : min(len(completed), base_end + 4)]
+                if not base or not prior or not departure:
+                    continue
+
+                base_high = max(float(bar.high) for bar in base)
+                base_low = min(float(bar.low) for bar in base)
+                if base_low <= 0:
+                    continue
+                base_range_pct = ((base_high - base_low) / base_low) * 100.0
+                if base_range_pct > request.max_base_range_pct:
+                    continue
+
+                prior_low = min(float(bar.low) for bar in prior)
+                if prior_low <= 0:
+                    continue
+                prior_rally_pct = ((base_high - prior_low) / prior_low) * 100.0
+                if prior_rally_pct < 12.0:
+                    continue
+
+                zone_low = base_low
+                zone_high = max(max(float(bar.open), float(bar.close)) for bar in base)
+                if zone_high <= 0 or zone_high < zone_low:
+                    continue
+
+                departure_high = max(float(bar.close) for bar in departure)
+                departure_pct = ((departure_high - zone_high) / zone_high) * 100.0
+                if departure_pct < request.min_departure_pct:
+                    continue
+
+                base_avg_volume = sum(max(int(bar.volume or 0), 0) for bar in base) / max(len(base), 1)
+                departure_volume = max(max(int(bar.volume or 0), 0) for bar in departure)
+                volume_expansion = (departure_volume / base_avg_volume) if base_avg_volume > 0 else 1.0
+                if base_avg_volume > 0 and volume_expansion < 1.1:
+                    continue
+
+                after_departure = completed[base_end + 1 :]
+                if any(float(bar.close) < zone_low for bar in after_departure):
+                    continue
+                if any(float(bar.low) < zone_low * 0.97 for bar in after_departure):
+                    continue
+
+                if current_price < zone_low:
+                    continue
+                distance_above_zone_pct = max(0.0, ((current_price - zone_high) / zone_high) * 100.0)
+                if distance_above_zone_pct > request.max_distance_above_zone_pct:
+                    continue
+
+                zone_age_weeks = len(completed) - base_end - 1
+                score = (
+                    55.0
+                    + min(departure_pct, 45.0) * 0.75
+                    + min(prior_rally_pct, 60.0) * 0.22
+                    + max(0.0, request.max_base_range_pct - base_range_pct) * 1.25
+                    + min(volume_expansion, 5.0) * 2.0
+                    - distance_above_zone_pct * 3.5
+                    - zone_age_weeks * 0.06
+                )
+                metrics: dict[str, float | int] = {
+                    "zone_low": round(zone_low, 2),
+                    "zone_high": round(zone_high, 2),
+                    "distance_above_zone_pct": round(distance_above_zone_pct, 2),
+                    "base_weeks": base_weeks,
+                    "base_range_pct": round(base_range_pct, 2),
+                    "prior_rally_pct": round(prior_rally_pct, 2),
+                    "departure_pct": round(departure_pct, 2),
+                    "volume_expansion": round(volume_expansion, 2),
+                    "zone_age_weeks": zone_age_weeks,
+                    "score": round(score, 2),
+                }
+                if best is None or float(metrics["score"]) > float(best["score"]):
+                    best = metrics
+
+        return best
+
+    async def _demand_zone_item_for_snapshot(
+        self,
+        snapshot: StockSnapshot,
+        request: DemandZoneScanRequest,
+        semaphore: asyncio.Semaphore,
+    ) -> ScanMatch | None:
+        async with semaphore:
+            try:
+                bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 20))
+                bars = await self.provider.get_chart(snapshot.symbol, "1W", bars=bar_limit)
+            except Exception:
+                return None
+
+        metrics = self._weekly_demand_zone_metrics(bars, float(snapshot.last_price or 0.0), request)
+        if metrics is None:
+            return None
+
+        distance = float(metrics["distance_above_zone_pct"])
+        zone_low = float(metrics["zone_low"])
+        zone_high = float(metrics["zone_high"])
+        proximity = "Inside weekly demand zone" if distance == 0 else f"{distance:.1f}% above weekly demand zone"
+        reasons = [
+            proximity,
+            f"Zone {zone_low:.2f}-{zone_high:.2f}",
+            f"{int(metrics['base_weeks'])}-week base; departure +{float(metrics['departure_pct']):.1f}%",
+            f"RS {snapshot.rs_rating}",
+        ]
+        match = build_scan_match(
+            "demand-zone",
+            snapshot,
+            round(float(metrics["score"]) + float(snapshot.rs_rating or 0) * 0.22, 2),
+            reasons,
+            pattern="Weekly Demand Zone",
+        )
+        return match
+
+    async def _demand_zone_items(self, snapshots: list[StockSnapshot], request: DemandZoneScanRequest) -> list[ScanMatch]:
+        candidates = [snapshot for snapshot in snapshots if self._passes_demand_zone_stage2(snapshot, request)]
+        candidates.sort(
+            key=lambda snapshot: (
+                int(snapshot.rs_rating or 0),
+                float(snapshot.avg_rupee_volume_30d_crore or 0.0),
+                float(snapshot.stock_return_60d or 0.0),
+            ),
+            reverse=True,
+        )
+        semaphore = asyncio.Semaphore(16)
+        raw_items = await asyncio.gather(
+            *(self._demand_zone_item_for_snapshot(snapshot, request, semaphore) for snapshot in candidates),
+            return_exceptions=True,
+        )
+        items = [item for item in raw_items if isinstance(item, ScanMatch)]
+        items.sort(
+            key=lambda item: (
+                item.score,
+                item.rs_rating or 0,
+                item.avg_rupee_volume_30d_crore or 0.0,
+            ),
+            reverse=True,
+        )
+        return items[: request.limit]
+
+
     # Scanners that keep a rolling per-session history (powers the scorecard
     # and the NEW-today chips). Custom/returns-style ranking lists are
     # excluded — their output isn't a discrete setup signal.
@@ -2014,6 +2191,7 @@ class DashboardService:
         "pull-backs",
         "near-pivot",
         "consolidating",
+        "demand-zone",
     )
 
     def _current_session_iso(self) -> str | None:
@@ -2323,6 +2501,7 @@ class DashboardService:
         "pull-backs": "Pull Backs",
         "near-pivot": "Near Pivot",
         "consolidating": "Consolidating",
+        "demand-zone": "Demand Zone Scanner",
     }
 
     def _build_scanner_scorecard(self, snapshots: list[StockSnapshot]) -> ScannerScorecardResponse:
@@ -5029,6 +5208,30 @@ class DashboardService:
             snapshots=snapshots,
             items=items,
             historical_runner=lambda historical_snapshots: run_consolidating_scan(request, historical_snapshots),
+            include_sector_summaries=include_sector_summaries,
+        )
+
+    async def get_demand_zone_scan_results(
+        self,
+        request: DemandZoneScanRequest,
+        include_sector_summaries: bool = True,
+    ) -> ScanResultsResponse:
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        items = await self._demand_zone_items(snapshots, request)
+        items = await asyncio.to_thread(self._decorate_scan_items, "demand-zone", "Demand Zone Scanner", items, snapshots)
+        return await self._scan_results_response(
+            scan={
+                "id": "demand-zone",
+                "name": "Demand Zone Scanner",
+                "category": "Setups",
+                "description": "Stage 2 stocks trading inside or just above a strong weekly rally-base-rally demand zone.",
+                "hit_count": len(items),
+            },
+            scan_key="demand-zone",
+            request_signature=json.dumps(request.model_dump(mode="python"), sort_keys=True, default=str),
+            snapshots=snapshots,
+            items=items,
+            historical_runner=lambda historical_snapshots: [],
             include_sector_summaries=include_sector_summaries,
         )
 

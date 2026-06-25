@@ -863,6 +863,18 @@ class ConsolidatingScanRequest(BaseModel):
     limit: int = Field(default=1500, ge=1, le=5000)
 
 
+class DemandZoneScanRequest(BaseModel):
+    max_distance_above_zone_pct: float = Field(default=3.0, ge=0.0, le=20.0)
+    min_rs_rating: int = Field(default=70, ge=1, le=99)
+    min_liquidity_crore: float = Field(default=5.0, ge=0.0, le=10000.0)
+    min_departure_pct: float = Field(default=12.0, ge=1.0, le=100.0)
+    base_min_weeks: int = Field(default=2, ge=1, le=12)
+    base_max_weeks: int = Field(default=6, ge=1, le=20)
+    max_base_range_pct: float = Field(default=12.0, ge=1.0, le=50.0)
+    max_zone_age_weeks: int = Field(default=52, ge=1, le=260)
+    limit: int = Field(default=1500, ge=1, le=5000)
+
+
 class MomentumBurstScanRequest(BaseModel):
     """Momentum Burst scanner — catches fresh explosive legs (Type A) and the
     buyable rest near the 10/21 EMA after a move (Type B). MA / price / volume /

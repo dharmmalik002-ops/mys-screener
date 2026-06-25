@@ -21,6 +21,7 @@ import {
   getChart,
   getConsolidatingScan,
   getDashboard,
+  getDemandZoneScan,
   getFundamentals,
   getGapUpOpeners,
   getIndustryGroups,
@@ -43,6 +44,7 @@ import {
   type ConsolidatingScanRequest,
   type CustomScanRequest,
   type DashboardResponse,
+  type DemandZoneScanRequest,
   type ImprovingRsResponse,
   type ImprovingRsWindow,
   type IndustryGroupsResponse,
@@ -77,6 +79,7 @@ const ChartCompareLayout = lazy(() => import("./components/ChartCompareLayout").
 const GroupStocksWidget = lazy(() => import("./components/GroupStocksWidget").then((module) => ({ default: module.GroupStocksWidget })));
 const ConsolidatingScannerPanel = lazy(() => import("./components/ConsolidatingScannerPanel").then((module) => ({ default: module.ConsolidatingScannerPanel })));
 const CustomScannerPanel = lazy(() => import("./components/CustomScannerPanel").then((module) => ({ default: module.CustomScannerPanel })));
+const DemandZoneScannerPanel = lazy(() => import("./components/DemandZoneScannerPanel").then((module) => ({ default: module.DemandZoneScannerPanel })));
 const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").then((module) => ({ default: module.GapUpScannerPanel })));
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
 const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then((module) => ({ default: module.ImprovingRsPanel })));
@@ -222,6 +225,7 @@ type SavedScannerPreset = {
   pullBackFilters?: PullBackScanRequest;
   returnsFilters?: ReturnsScanRequest;
   consolidatingFilters?: ConsolidatingScanRequest;
+  demandZoneFilters?: DemandZoneScanRequest;
   lastMatchCount?: number;
   lastUpdatedAt?: string | null;
   symbols?: string[];
@@ -250,6 +254,8 @@ type PersistedScannerSettings = {
   appliedReturnsFilters: ReturnsScanRequest;
   consolidatingFilters: ConsolidatingScanRequest;
   appliedConsolidatingFilters: ConsolidatingScanRequest;
+  demandZoneFilters: DemandZoneScanRequest;
+  appliedDemandZoneFilters: DemandZoneScanRequest;
 };
 
 const INDEX_RIBBON_CONFIG: Record<MarketKey, Array<{ key: string; label: string; symbol: string }>> = {
@@ -546,6 +552,18 @@ const DEFAULT_CONSOLIDATING_FILTERS: ConsolidatingScanRequest = {
   enable_run_up_consolidation: true,
   enable_near_multi_year_breakout: true,
   min_liquidity_crore: null,
+  limit: 1500,
+};
+
+const DEFAULT_DEMAND_ZONE_FILTERS: DemandZoneScanRequest = {
+  max_distance_above_zone_pct: 3,
+  min_rs_rating: 70,
+  min_liquidity_crore: 5,
+  min_departure_pct: 12,
+  base_min_weeks: 2,
+  base_max_weeks: 6,
+  max_base_range_pct: 12,
+  max_zone_age_weeks: 52,
   limit: 1500,
 };
 
@@ -1305,6 +1323,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
     appliedReturnsFilters: DEFAULT_RETURNS_FILTERS,
     consolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
     appliedConsolidatingFilters: DEFAULT_CONSOLIDATING_FILTERS,
+    demandZoneFilters: DEFAULT_DEMAND_ZONE_FILTERS,
+    appliedDemandZoneFilters: DEFAULT_DEMAND_ZONE_FILTERS,
   };
 
   if (typeof window === "undefined") {
@@ -1353,6 +1373,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
       appliedReturnsFilters: mergeWithDefaults(DEFAULT_RETURNS_FILTERS, parsed.appliedReturnsFilters),
       consolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.consolidatingFilters),
       appliedConsolidatingFilters: mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, parsed.appliedConsolidatingFilters),
+      demandZoneFilters: mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, parsed.demandZoneFilters),
+      appliedDemandZoneFilters: mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, parsed.appliedDemandZoneFilters),
     };
   } catch {
     return defaults;
@@ -1380,6 +1402,7 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "pull-backs",
       "returns",
       "consolidating",
+      "demand-zone",
       "minervini-1m",
       "minervini-5m",
       "positive-earnings",
@@ -1432,6 +1455,9 @@ function scannerModeLabel(mode: SavableScannerMode): string {
   }
   if (mode === "consolidating") {
     return "Consolidating";
+  }
+  if (mode === "demand-zone") {
+    return "Demand Zone Scanner";
   }
   if (mode === "minervini-1m") {
     return "Minervini 1 Month";
@@ -1570,6 +1596,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [appliedReturnsFilters, setAppliedReturnsFilters] = useState<ReturnsScanRequest>(initialScannerSettings.appliedReturnsFilters);
   const [consolidatingFilters, setConsolidatingFilters] = useState<ConsolidatingScanRequest>(initialScannerSettings.consolidatingFilters);
   const [appliedConsolidatingFilters, setAppliedConsolidatingFilters] = useState<ConsolidatingScanRequest>(initialScannerSettings.appliedConsolidatingFilters);
+  const [demandZoneFilters, setDemandZoneFilters] = useState<DemandZoneScanRequest>(initialScannerSettings.demandZoneFilters);
+  const [appliedDemandZoneFilters, setAppliedDemandZoneFilters] = useState<DemandZoneScanRequest>(
+    initialScannerSettings.appliedDemandZoneFilters,
+  );
   // Expansion scanner overrides — let users widen the day-change% / RVOL gates
   // when the IBD-default 6.5%/3.0x feels too strict for the current data.
   const [expansionMinChangePct, setExpansionMinChangePct] = useState<number>(6.5);
@@ -1671,6 +1701,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       void import("./components/PullBackScannerPanel");
       void import("./components/ReturnsScannerPanel");
       void import("./components/ConsolidatingScannerPanel");
+      void import("./components/DemandZoneScannerPanel");
       void import("./components/MinerviniScannerPanel");
       return;
     }
@@ -1912,6 +1943,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setAppliedReturnsFilters(settings.appliedReturnsFilters);
     setConsolidatingFilters(settings.consolidatingFilters);
     setAppliedConsolidatingFilters(settings.appliedConsolidatingFilters);
+    setDemandZoneFilters(settings.demandZoneFilters);
+    setAppliedDemandZoneFilters(settings.appliedDemandZoneFilters);
   };
 
   const handleMarketChange = (nextMarket: MarketKey) => {
@@ -2323,6 +2356,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     activeScanner,
     appliedConsolidatingFilters,
     appliedCustomFilters,
+    appliedDemandZoneFilters,
     appliedExpansionMinChangePct,
     appliedExpansionMinRelativeVolume,
     appliedMinervini1mMinLiquidityCrore,
@@ -2388,6 +2422,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     activeScanner,
     appliedConsolidatingFilters,
     appliedCustomFilters,
+    appliedDemandZoneFilters,
     appliedExpansionMinChangePct,
     appliedExpansionMinRelativeVolume,
     appliedNearPivotFilters,
@@ -2781,11 +2816,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         appliedReturnsFilters,
         consolidatingFilters,
         appliedConsolidatingFilters,
+        demandZoneFilters,
+        appliedDemandZoneFilters,
       }),
     );
   }, [
     appliedConsolidatingFilters,
     appliedCustomFilters,
+    appliedDemandZoneFilters,
     appliedMinervini1mMinLiquidityCrore,
     appliedMinervini5mMinLiquidityCrore,
     appliedNearPivotFilters,
@@ -2793,6 +2831,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     appliedReturnsFilters,
     consolidatingFilters,
     customFilters,
+    demandZoneFilters,
     gapUpMinLiquidityCrore,
     gapUpThreshold,
     hasAppliedFiltersOnce,
@@ -2824,10 +2863,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   }, [activeWatchlistId, watchlists]);
 
   const patternOptions = applyScannerDisplayAliases(dashboard?.scanners ?? DEFAULT_SCANNERS).filter(
-    // "positive-earnings" is exposed as its own sidebar scanner; including
-    // it in the Custom Scanner's pattern dropdown would let the user POST
-    // a pattern value the CustomScanRequest schema doesn't allow (422).
-    (scanner) => scanner.category === "Setups" && scanner.id !== "custom-scan" && scanner.id !== "positive-earnings",
+    // These scanners run through dedicated endpoints; including them here
+    // would POST pattern values the CustomScanRequest schema/evaluator cannot run.
+    (scanner) =>
+      scanner.category === "Setups"
+      && scanner.id !== "custom-scan"
+      && scanner.id !== "positive-earnings"
+      && scanner.id !== "demand-zone",
   );
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
@@ -3052,6 +3094,23 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     limit: clampResultLimit(filters.limit),
   });
 
+  const normalizeDemandZoneFilters = (filters: DemandZoneScanRequest): DemandZoneScanRequest => {
+    const baseMinWeeks = Math.max(1, Math.min(12, Math.round(filters.base_min_weeks || DEFAULT_DEMAND_ZONE_FILTERS.base_min_weeks)));
+    const baseMaxWeeks = Math.max(baseMinWeeks, Math.min(20, Math.round(filters.base_max_weeks || DEFAULT_DEMAND_ZONE_FILTERS.base_max_weeks)));
+    return {
+      ...filters,
+      max_distance_above_zone_pct: Math.max(0, Math.min(20, filters.max_distance_above_zone_pct)),
+      min_rs_rating: Math.max(1, Math.min(99, Math.round(filters.min_rs_rating))),
+      min_liquidity_crore: Math.max(0, filters.min_liquidity_crore),
+      min_departure_pct: Math.max(1, Math.min(100, filters.min_departure_pct)),
+      base_min_weeks: baseMinWeeks,
+      base_max_weeks: baseMaxWeeks,
+      max_base_range_pct: Math.max(1, Math.min(50, filters.max_base_range_pct)),
+      max_zone_age_weeks: Math.max(1, Math.min(260, Math.round(filters.max_zone_age_weeks))),
+      limit: clampResultLimit(filters.limit),
+    };
+  };
+
   const requestActiveScannerResults = (includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
     if (activeScanner === "bread-butter") {
@@ -3087,6 +3146,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (activeScanner === "consolidating") {
       return getConsolidatingScan(appliedConsolidatingFilters, activeMarket, options);
+    }
+    if (activeScanner === "demand-zone") {
+      return getDemandZoneScan(appliedDemandZoneFilters, activeMarket, options);
     }
     if (activeScanner === "momentum-burst") {
       return getMomentumBurstScan(appliedMomentumBurstFilters, activeMarket, options);
@@ -3152,6 +3214,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       preset.consolidatingFilters = normalizeConsolidatingFilters(
         source === "draft" ? consolidatingFilters : appliedConsolidatingFilters,
       );
+    } else if (mode === "demand-zone") {
+      preset.demandZoneFilters = normalizeDemandZoneFilters(source === "draft" ? demandZoneFilters : appliedDemandZoneFilters);
     } else if (mode === "minervini-1m") {
       preset.minerviniMinLiquidityCrore = source === "draft" ? minervini1mMinLiquidityCrore : appliedMinervini1mMinLiquidityCrore;
     } else if (mode === "minervini-5m") {
@@ -3193,6 +3257,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
     if (preset.mode === "consolidating") {
       return getConsolidatingScan(mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, preset.consolidatingFilters), activeMarket, options);
+    }
+    if (preset.mode === "demand-zone") {
+      return getDemandZoneScan(mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, preset.demandZoneFilters), activeMarket, options);
     }
     if (preset.mode === "minervini-1m") {
       return getScanResults("minervini-1m", activeMarket, { ...options, minLiquidityCrore: preset.minerviniMinLiquidityCrore ?? null });
@@ -3293,6 +3360,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       } else if (activeScanner === "consolidating" && finalizedPreset.consolidatingFilters) {
         setConsolidatingFilters(finalizedPreset.consolidatingFilters);
         setAppliedConsolidatingFilters(finalizedPreset.consolidatingFilters);
+      } else if (activeScanner === "demand-zone" && finalizedPreset.demandZoneFilters) {
+        setDemandZoneFilters(finalizedPreset.demandZoneFilters);
+        setAppliedDemandZoneFilters(finalizedPreset.demandZoneFilters);
       } else if (activeScanner === "minervini-1m") {
         setMinervini1mMinLiquidityCrore(finalizedPreset.minerviniMinLiquidityCrore ?? null);
         setAppliedMinervini1mMinLiquidityCrore(finalizedPreset.minerviniMinLiquidityCrore ?? null);
@@ -3354,6 +3424,10 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       const nextFilters = mergeWithDefaults(DEFAULT_CONSOLIDATING_FILTERS, preset.consolidatingFilters);
       setConsolidatingFilters(nextFilters);
       setAppliedConsolidatingFilters(nextFilters);
+    } else if (preset.mode === "demand-zone") {
+      const nextFilters = mergeWithDefaults(DEFAULT_DEMAND_ZONE_FILTERS, preset.demandZoneFilters);
+      setDemandZoneFilters(nextFilters);
+      setAppliedDemandZoneFilters(nextFilters);
     } else if (preset.mode === "minervini-1m") {
       setMinervini1mMinLiquidityCrore(preset.minerviniMinLiquidityCrore ?? null);
       setAppliedMinervini1mMinLiquidityCrore(preset.minerviniMinLiquidityCrore ?? null);
@@ -3670,6 +3744,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       case "consolidating":
         handleApplyConsolidatingScan();
         return;
+      case "demand-zone":
+        handleApplyDemandZoneScan();
+        return;
       case "minervini-1m":
         handleApplyMinervini1mScan();
         return;
@@ -3810,6 +3887,31 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScanSectorSummariesLoading(false);
     setConsolidatingFilters(DEFAULT_CONSOLIDATING_FILTERS);
     setAppliedConsolidatingFilters(DEFAULT_CONSOLIDATING_FILTERS);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleApplyDemandZoneScan = () => {
+    const nextFilters = normalizeDemandZoneFilters(demandZoneFilters);
+    setActivePage("screener");
+    setActiveScanner("demand-zone");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setDemandZoneFilters(nextFilters);
+    setAppliedDemandZoneFilters(nextFilters);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleResetDemandZoneScan = () => {
+    setActivePage("screener");
+    setActiveScanner("demand-zone");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setDemandZoneFilters(DEFAULT_DEMAND_ZONE_FILTERS);
+    setAppliedDemandZoneFilters(DEFAULT_DEMAND_ZONE_FILTERS);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -4861,6 +4963,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           { mode: "gap-up-openers", label: "Gap Up Openers" },
           { mode: "ema-expansion", label: "Expansion" },
           { mode: "contraction", label: "Contraction" },
+          { mode: "demand-zone", label: "Demand Zone Scanner" },
           { mode: "momentum-burst", label: "Momentum Burst" },
           { mode: "minervini-1m", label: "Minervini 1 Month" },
           { mode: "minervini-5m", label: "Minervini 5 Months" },
@@ -5007,6 +5110,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "pull-backs": activeScanner === "pull-backs" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "pull-backs" ? scanResults.total_hits : 0,
                       "returns": activeScanner === "returns" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "returns" ? scanResults.total_hits : 0,
                       "consolidating": activeScanner === "consolidating" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "consolidating" ? scanResults.total_hits : 0,
+                      "demand-zone": activeScanner === "demand-zone" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "demand-zone" ? scanResults.total_hits : 0,
                       "minervini-1m": activeScanner === "minervini-1m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-1m" ? scanResults.total_hits : 0,
                       "minervini-5m": activeScanner === "minervini-5m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-5m" ? scanResults.total_hits : 0,
                       "positive-earnings": activeScanner === "positive-earnings" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "positive-earnings" ? scanResults.total_hits : 0,
@@ -5046,13 +5150,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                           ? "Returns"
                                           : activeScanner === "consolidating"
                                             ? "Consolidating"
-                                            : activeScanner === "minervini-1m"
-                                              ? "Minervini 1 Month"
-                                              : activeScanner === "minervini-5m"
-                                                ? "Minervini 5 Months"
-                                                : activeScanner === "positive-earnings"
-                                                  ? "Positive Earnings"
-                                                  : "Pull Backs";
+                                            : activeScanner === "demand-zone"
+                                              ? "Demand Zone Scanner"
+                                              : activeScanner === "minervini-1m"
+                                                ? "Minervini 1 Month"
+                                                : activeScanner === "minervini-5m"
+                                                  ? "Minervini 5 Months"
+                                                  : activeScanner === "positive-earnings"
+                                                    ? "Positive Earnings"
+                                                    : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -5072,13 +5178,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                           ? "Scan for stocks by return range with optional confirmation filters."
                                           : activeScanner === "consolidating"
                                             ? "Toggle multi-year-high and long-base filters independently."
-                                            : activeScanner === "minervini-1m"
-                                              ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
-                                              : activeScanner === "minervini-5m"
-                                                ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
-                                                : activeScanner === "positive-earnings"
-                                                  ? "Stocks with a strong confirmed reaction to the latest quarterly result in the last 60 days: top-quartile close, +1% gap up, 2x volume, +10% over 5 sessions."
-                                                  : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                            : activeScanner === "demand-zone"
+                                              ? "Stage 2 stocks inside or within 3% above a strong weekly rally-base-rally demand zone."
+                                              : activeScanner === "minervini-1m"
+                                                ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
+                                                : activeScanner === "minervini-5m"
+                                                  ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
+                                                  : activeScanner === "positive-earnings"
+                                                    ? "Stocks with a strong confirmed reaction to the latest quarterly result in the last 60 days: top-quartile close, +1% gap up, 2x volume, +10% over 5 sessions."
+                                                    : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(
@@ -5237,6 +5345,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onFiltersChange={setConsolidatingFilters}
                                     onApply={handleApplyConsolidatingScan}
                                     onReset={handleResetConsolidatingScan}
+                                  />
+                                )
+                              : activeScanner === "demand-zone"
+                                ? (
+                                  <DemandZoneScannerPanel
+                                    filters={demandZoneFilters}
+                                    onFiltersChange={setDemandZoneFilters}
+                                    onApply={handleApplyDemandZoneScan}
+                                    onReset={handleResetDemandZoneScan}
                                   />
                                 )
                               : activeScanner === "momentum-burst"
