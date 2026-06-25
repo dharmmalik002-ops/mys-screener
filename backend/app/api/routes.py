@@ -477,6 +477,17 @@ def build_router(service):
             include_sector_summaries=include_sector_summaries,
         )
 
+    @router.post("/{market_name}/demand-zone")
+    async def namespaced_demand_zone_scan(
+        market_name: str,
+        request: DemandZoneScanRequest,
+        include_sector_summaries: bool = Query(default=False),
+    ):
+        return await resolve_service(market_name).get_demand_zone_scan_results(
+            request=request,
+            include_sector_summaries=include_sector_summaries,
+        )
+
     @router.post("/{market_name}/momentum-burst")
     async def namespaced_momentum_burst_scan(
         market_name: str,
