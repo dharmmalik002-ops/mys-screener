@@ -1827,6 +1827,27 @@ class DashboardService:
             return []
         return cached or []
 
+    def _read_cached_demand_zone_bars(self, symbol: str, timeframe: str, bars: int) -> list[ChartBar]:
+        reader = getattr(self.provider, "_read_chart_cache", None)
+        if not callable(reader):
+            return []
+        normalized_timeframe = "1D" if timeframe == "daily" else "1W"
+        try:
+            if normalized_timeframe == "1D":
+                cached = reader(symbol, "1D", bars, allow_legacy=True, skip_scale_check=True)
+                return cached or []
+
+            daily_bars = reader(symbol, "1D", max(520, bars * 7), allow_legacy=True, skip_scale_check=True)
+            aggregator = getattr(self.provider, "_aggregate_weekly_chart_bars", None)
+            if callable(aggregator) and daily_bars:
+                weekly_bars = aggregator(daily_bars)
+                if weekly_bars:
+                    return weekly_bars[-bars:]
+            cached_weekly = reader(symbol, "1W", bars, allow_legacy=True, skip_scale_check=True)
+            return cached_weekly or []
+        except Exception:
+            return []
+
     async def _build_contraction_snapshots(
         self,
         snapshots: list[StockSnapshot],
@@ -2137,10 +2158,9 @@ class DashboardService:
             try:
                 if timeframe == "daily":
                     bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 25))
-                    bars = await self.provider.get_chart(snapshot.symbol, "1D", bars=bar_limit)
                 else:
                     bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 20))
-                    bars = await self.provider.get_chart(snapshot.symbol, "1W", bars=bar_limit)
+                bars = await asyncio.to_thread(self._read_cached_demand_zone_bars, snapshot.symbol, timeframe, bar_limit)
             except Exception:
                 return None
 
