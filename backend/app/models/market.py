@@ -653,7 +653,7 @@ class ScanMatch(BaseModel):
     pattern: str | None = None
     volume_push_date: str | None = None  # date (YYYY-MM-DD) of the latest HQV/HHV/HYV volume push
     # Session date (YYYY-MM-DD) this match triggered on. Populated by scanners
-    # with a rolling history (Expansion keeps 15 sessions) so the UI can show
+    # with a rolling history (Expansion keeps 30 sessions) so the UI can show
     # which day each stock fired.
     session_date: str | None = None
     # True when the symbol was NOT in this scanner's previous session results

@@ -5269,7 +5269,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                               ? (
                                 <Panel
                                   title="Expansion thresholds"
-                                  subtitle="Stocks with day change ≥ X% AND 50-day RVOL > Yx (plus liquidity floors). Defaults follow IBD's expansion screen."
+                                  subtitle="Stocks with day change ≥ X% AND 50-day RVOL > Yx, kept for the last 30 market sessions."
                                   actions={(
                                     <div className="custom-panel-actions">
                                       <button

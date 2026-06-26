@@ -15,8 +15,6 @@ from zoneinfo import ZoneInfo
 import httpx
 import pandas as pd
 
-logger = logging.getLogger(__name__)
-
 from app.core.config import Settings
 from app.models.market import (
     AlertItem,
@@ -96,6 +94,10 @@ from app.scanners.definitions import (
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.scan_history_store import ScanHistoryStore
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
+
+logger = logging.getLogger(__name__)
+
+EXPANSION_HISTORY_SESSIONS = 30
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
     ("Nifty 50", "https://niftyindices.com/IndexConstituent/ind_nifty50list.csv"),
@@ -2468,7 +2470,10 @@ class DashboardService:
 
             previous_symbols: set[str] | None = None
             if scan_key in self._HISTORY_SCAN_KEYS and session_iso:
-                history = self._scan_history_store.load(scan_key)
+                history = self._scan_history_store.load(
+                    scan_key,
+                    keep_dates=EXPANSION_HISTORY_SESSIONS if scan_key == "ema-expansion" else None,
+                )
                 prior_dates = sorted((d for d in history.keys() if d < session_iso), reverse=True)
                 if prior_dates:
                     previous_symbols = {
@@ -2492,7 +2497,12 @@ class DashboardService:
                         {"symbol": item.symbol, "last_price": item.last_price, "score": item.score}
                         for item in decorated
                     ]
-                self._scan_history_store.record_once(scan_key, session_iso, payload)
+                self._scan_history_store.record_once(
+                    scan_key,
+                    session_iso,
+                    payload,
+                    keep_dates=EXPANSION_HISTORY_SESSIONS if scan_key == "ema-expansion" else None,
+                )
             return decorated
         except Exception as exc:
             logger.warning("scan decoration failed for %s: %s", scan_key, exc)
@@ -2796,11 +2806,11 @@ class DashboardService:
         return _Resp(rows=rows)
 
     def _merge_expansion_history(self, items: list[ScanMatch]) -> list[ScanMatch]:
-        """Roll the Expansion scan into a 15-session tracker.
+        """Roll the Expansion scan into a 30-session tracker.
 
         Today's hits are pinned under the current session date (first write of
         the day wins), then the response is rebuilt from the retained history:
-        newest session first, oldest (up to the 15th) last. A symbol that
+        newest session first, oldest (up to the 30th) last. A symbol that
         re-triggers shows once, under its most recent session. Stored rows
         keep their trigger-day numbers (price/% move/score as of that day).
         """
@@ -2817,8 +2827,9 @@ class DashboardService:
                 "ema-expansion",
                 session_iso,
                 [item.model_dump(mode="json") for item in items],
+                keep_dates=EXPANSION_HISTORY_SESSIONS,
             )
-            history = self._scan_history_store.load("ema-expansion")
+            history = self._scan_history_store.load("ema-expansion", keep_dates=EXPANSION_HISTORY_SESSIONS)
             if not history:
                 return items
 
@@ -2999,8 +3010,8 @@ class DashboardService:
             self._decorate_scan_items, scan_id, str(descriptor.name), items, snapshots
         )
         if scan_id == "ema-expansion":
-            # Rolling 15-session tracker: today's hits on top, older sessions
-            # below, pruned automatically after the 15th session.
+            # Rolling 30-session tracker: today's hits on top, older sessions
+            # below, pruned automatically after the 30th session.
             items = await asyncio.to_thread(self._merge_expansion_history, items)
         descriptor = descriptor.model_copy(update={"hit_count": len(items)})
         signature_parts = [scan_id]

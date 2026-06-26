@@ -78,11 +78,15 @@ class ScanHistoryStore:
 
     # ---- Public API ---------------------------------------------------------
 
-    def record_once(self, scan_key: str, session_date: str, items: list[dict]) -> None:
+    def _retention_limit(self, keep_dates: int | None = None) -> int:
+        return max(1, int(keep_dates if keep_dates is not None else self._keep_dates))
+
+    def record_once(self, scan_key: str, session_date: str, items: list[dict], *, keep_dates: int | None = None) -> None:
         """Pin ``items`` as the results for ``session_date`` unless that date
         is already recorded. Prunes dates beyond the retention window."""
         if not session_date:
             return
+        retention_limit = self._retention_limit(keep_dates)
         try:
             if self._postgres_enabled():
                 with self._connect() as conn, conn.cursor() as cursor:
@@ -105,7 +109,7 @@ class ScanHistoryStore:
                             LIMIT %s
                         )
                         """,
-                        (scan_key, scan_key, self._keep_dates),
+                        (scan_key, scan_key, retention_limit),
                     )
                 return
         except Exception as exc:
@@ -116,12 +120,13 @@ class ScanHistoryStore:
             per_scan = store.setdefault(scan_key, {})
             if session_date not in per_scan:
                 per_scan[session_date] = items
-            kept = sorted(per_scan.keys(), reverse=True)[: self._keep_dates]
+            kept = sorted(per_scan.keys(), reverse=True)[: retention_limit]
             store[scan_key] = {d: per_scan[d] for d in kept}
             self._write_file(store)
 
-    def load(self, scan_key: str) -> dict[str, list[dict]]:
+    def load(self, scan_key: str, *, keep_dates: int | None = None) -> dict[str, list[dict]]:
         """Return {session_date_iso: items} for the retained window."""
+        retention_limit = self._retention_limit(keep_dates)
         try:
             if self._postgres_enabled():
                 with self._connect() as conn, conn.cursor() as cursor:
@@ -133,7 +138,7 @@ class ScanHistoryStore:
                         ORDER BY session_date DESC
                         LIMIT %s
                         """,
-                        (scan_key, self._keep_dates),
+                        (scan_key, retention_limit),
                     )
                     rows = cursor.fetchall()
                 result: dict[str, list[dict]] = {}
@@ -147,5 +152,5 @@ class ScanHistoryStore:
         per_scan = self._read_file().get(scan_key)
         if not isinstance(per_scan, dict):
             return {}
-        kept = sorted(per_scan.keys(), reverse=True)[: self._keep_dates]
+        kept = sorted(per_scan.keys(), reverse=True)[: retention_limit]
         return {d: per_scan[d] if isinstance(per_scan[d], list) else [] for d in kept}

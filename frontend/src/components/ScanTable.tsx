@@ -81,7 +81,8 @@ type SortBy =
   | "mcap_desc"
   | "listing_desc"
   | "listing_asc"
-  | "volume_date_desc";
+  | "volume_date_desc"
+  | "expansion_date_desc";
 
 type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "sdate" | "gap";
 
@@ -288,6 +289,13 @@ function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
         if (rt !== lt) return rt - lt;
         return right.score - left.score;
       }
+      case "expansion_date_desc": {
+        // Newest Expansion trigger first; tie-break by score within the same session.
+        const lt = listingTimestamp(left.session_date);
+        const rt = listingTimestamp(right.session_date);
+        if (rt !== lt) return rt - lt;
+        return right.score - left.score;
+      }
     }
   });
   return sorted;
@@ -448,12 +456,19 @@ export function ScanTable({
   /* ----- Stage 4 new state ----- */
   const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [sortBy, setSortBy] = useState<SortBy>(
-    scan?.id === "volume" ? "volume_date_desc" : sortMode === "rs" ? "rs_desc" : "change_desc",
+    scan?.id === "volume"
+      ? "volume_date_desc"
+      : scan?.id === "ema-expansion"
+        ? "expansion_date_desc"
+        : sortMode === "rs"
+          ? "rs_desc"
+          : "change_desc",
   );
-  // The volume screener is meant to read newest-high-volume-first, so force
-  // its date sort whenever the volume scan is (re)opened.
+  // Date-tracked scanners are meant to read newest signal first, so force
+  // their date sort whenever that scanner is (re)opened.
   useEffect(() => {
     if (scan?.id === "volume") setSortBy("volume_date_desc");
+    if (scan?.id === "ema-expansion") setSortBy("expansion_date_desc");
   }, [scan?.id]);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
@@ -1157,6 +1172,8 @@ export function ScanTable({
               <div className="st-pop">
                 {(scan?.id === "volume"
                   ? [{ value: "volume_date_desc" as SortBy, label: "High-volume date (newest first)" }, ...SORT_OPTIONS]
+                  : scan?.id === "ema-expansion"
+                    ? [{ value: "expansion_date_desc" as SortBy, label: "Expansion date (newest first)" }, ...SORT_OPTIONS]
                   : SORT_OPTIONS
                 ).map((opt) => (
                   <button
