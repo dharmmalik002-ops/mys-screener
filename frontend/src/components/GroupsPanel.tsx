@@ -203,8 +203,8 @@ export function GroupsPanel({
   const [gridColumns, setGridColumns] = useState(2);
   const [gridRows, setGridRows] = useState(1);
   const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
-  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
-  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
+  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("rs_rating");
+  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("candles");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const groupRowRefs = useRef<Record<string, HTMLElement | null>>({});
 

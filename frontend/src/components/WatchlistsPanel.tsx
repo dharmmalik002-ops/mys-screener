@@ -356,9 +356,9 @@ export function WatchlistsPanel({
   // row filling the screen, 3 months of daily bars.
   const [gridColumns, setGridColumns] = useState(2);
   const [gridRows, setGridRows] = useState(1);
-  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("3M");
-  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("selected_return");
-  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("bars");
+  const [gridTimeframe, setGridTimeframe] = useState<ChartGridTimeframe>("6M");
+  const [gridSortBy, setGridSortBy] = useState<ChartGridSortBy>("rs_rating");
+  const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("candles");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const [arrangementMode, setArrangementMode] = useState<"flat" | "group">("flat");
 

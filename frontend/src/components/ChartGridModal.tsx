@@ -847,12 +847,12 @@ export function ChartGridModal({
   const [zoomLevelIndex, setZoomLevelIndex] = useState(GRID_ZOOM_LEVELS.length - 1);
   const [renderCount, setRenderCount] = useState(Math.max(columns * rows * 2, 12));
   const [cleanMode, setCleanMode] = useState(false);
-  const [lightMode, setLightMode] = useState(false);
+  const [lightMode, setLightMode] = useState(true);
   const [levelsOn, setLevelsOn] = useState<boolean>(() => readAutoLevelsEnabled());
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
-  const [gridArrangement, setGridArrangement] = useState<"flat" | "group">("flat");
-  const [groupRankPeriod, setGroupRankPeriod] = useState<ChartGridGroupRankPeriod>("1W");
+  const [gridArrangement, setGridArrangement] = useState<"flat" | "group">("group");
+  const [groupRankPeriod, setGroupRankPeriod] = useState<ChartGridGroupRankPeriod>("1M");
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
   const hasMarketCapData = useMemo(() => cards.some((card) => card.marketCapCrore !== null), [cards]);
   const hasConstituentData = useMemo(() => cards.some((card) => card.constituents !== null), [cards]);
