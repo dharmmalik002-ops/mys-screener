@@ -25,6 +25,7 @@ from app.models.market import (
     XpBreadthPoint,
     XpBreadthScore,
     XpRegimeBand,
+    ChartBar,
     ChartGridCard,
     ChartGridResponse,
     ChartGridSeriesItem,
@@ -1848,6 +1849,98 @@ class DashboardService:
         except Exception:
             return []
 
+    @staticmethod
+    def _aggregate_demand_zone_weekly_bars(daily_bars: list[ChartBar]) -> list[ChartBar]:
+        if not daily_bars:
+            return []
+        frame = pd.DataFrame(
+            [
+                {
+                    "Open": bar.open,
+                    "High": bar.high,
+                    "Low": bar.low,
+                    "Close": bar.close,
+                    "Volume": bar.volume,
+                }
+                for bar in daily_bars
+            ],
+            index=pd.to_datetime([int(bar.time) for bar in daily_bars], unit="s", utc=True),
+        )
+        weekly = pd.DataFrame(
+            {
+                "Open": frame["Open"].resample("W-FRI").first(),
+                "High": frame["High"].resample("W-FRI").max(),
+                "Low": frame["Low"].resample("W-FRI").min(),
+                "Close": frame["Close"].resample("W-FRI").last(),
+                "Volume": frame["Volume"].resample("W-FRI").sum(),
+            }
+        ).dropna(subset=["Close"])
+        return [
+            ChartBar(
+                time=int(timestamp.timestamp()),
+                open=round(float(row["Open"]), 2),
+                high=round(float(row["High"]), 2),
+                low=round(float(row["Low"]), 2),
+                close=round(float(row["Close"]), 2),
+                volume=int(float(row["Volume"]) or 0),
+            )
+            for timestamp, row in weekly.iterrows()
+        ]
+
+    @classmethod
+    def _snapshot_demand_zone_bars(
+        cls,
+        snapshot: StockSnapshot,
+        timeframe: str,
+        bars: int,
+    ) -> list[ChartBar]:
+        points = [
+            ChartLinePoint(time=int(point.time), value=round(float(point.value), 4))
+            for point in (snapshot.chart_grid_points or [])
+            if point.value not in (None, 0)
+        ]
+        if len(points) < 30:
+            return []
+        daily_limit = max(260, bars * 7) if timeframe == "weekly" else bars
+        points = points[-daily_limit:]
+        recent_highs = [float(value) for value in (snapshot.recent_highs or []) if value]
+        recent_lows = [float(value) for value in (snapshot.recent_lows or []) if value]
+        recent_volumes = [int(value) for value in (snapshot.recent_volumes or []) if value]
+        recent_count = min(len(points), len(recent_highs), len(recent_lows))
+        recent_start = len(points) - recent_count
+        half_range = min(max(float(snapshot.adr_pct_20 or 3.0), 1.5), 8.0) / 200.0
+        default_volume = max(int(snapshot.avg_volume_20d or snapshot.avg_volume_30d or snapshot.volume or 1), 1)
+
+        daily_bars: list[ChartBar] = []
+        previous_close = float(points[0].value)
+        for index, point in enumerate(points):
+            close = float(point.value)
+            open_price = previous_close if index > 0 else close
+            if index >= recent_start and recent_count > 0:
+                recent_index = index - recent_start
+                high = max(open_price, close, recent_highs[recent_index])
+                low = min(open_price, close, recent_lows[recent_index])
+                volume = recent_volumes[recent_index] if recent_index < len(recent_volumes) else default_volume
+            else:
+                high = max(open_price, close) * (1.0 + half_range)
+                low = min(open_price, close) * (1.0 - half_range)
+                volume = default_volume
+            daily_bars.append(
+                ChartBar(
+                    time=int(point.time),
+                    open=round(open_price, 2),
+                    high=round(high, 2),
+                    low=round(max(low, 0.01), 2),
+                    close=round(close, 2),
+                    volume=max(int(volume), 1),
+                )
+            )
+            previous_close = close
+
+        if timeframe == "weekly":
+            return cls._aggregate_demand_zone_weekly_bars(daily_bars)[-bars:]
+        return daily_bars[-bars:]
+
     async def _build_contraction_snapshots(
         self,
         snapshots: list[StockSnapshot],
@@ -2161,6 +2254,8 @@ class DashboardService:
                 else:
                     bar_limit = min(260, max(90, request.max_zone_age_weeks + max(request.base_min_weeks, request.base_max_weeks) + 20))
                 bars = await asyncio.to_thread(self._read_cached_demand_zone_bars, snapshot.symbol, timeframe, bar_limit)
+                if not bars:
+                    bars = self._snapshot_demand_zone_bars(snapshot, timeframe, bar_limit)
             except Exception:
                 return None
 
