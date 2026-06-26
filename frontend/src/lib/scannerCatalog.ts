@@ -34,7 +34,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "darvas-box", name: "Darvas Box", category: "Setups", description: "Darvas box breakouts.", hit_count: 0 },
   { id: "pivot-breakout", name: "Pivot Breakouts", category: "Setups", description: "Pivot resolutions.", hit_count: 0 },
   { id: "contraction", name: "Contraction", category: "Setups", description: "Tight 3-day contractions with liquidity floors and run-up confirmation.", hit_count: 0 },
-  { id: "demand-zone", name: "Demand Zone Scanner", category: "Setups", description: "Stage 2 stocks near strong daily or weekly rally-base-rally demand zones.", hit_count: 0 },
+  { id: "demand-zone", name: "Demand Zone Scanner", category: "Setups", description: "Stage 2 stocks within 3% of strong daily or weekly demand-zone lows.", hit_count: 0 },
   { id: "consolidating", name: "Consolidating", category: "Setups", description: "Run-up consolidations and names coiling below 3-year highs.", hit_count: 0 },
   { id: "relative-strength", name: "Relative Strengths", category: "Setups", description: "RS leaders.", hit_count: 0 },
   { id: "minervini-1m", name: "Minervini 1 Month", category: "Setups", description: "Trend template names with a rising 200 SMA and strong 52-week positioning.", hit_count: 0 },

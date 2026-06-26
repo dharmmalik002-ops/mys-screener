@@ -180,7 +180,7 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         request = DemandZoneScanRequest()
         metrics = DashboardService._demand_zone_metrics(
             self._rally_base_rally_demand_zone_bars(),
-            current_price=106.2,
+            current_price=101.5,
             request=request,
         )
 
@@ -201,7 +201,7 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         )
         metrics = DashboardService._demand_zone_metrics(
             self._rally_base_rally_demand_zone_bars(),
-            current_price=106.2,
+            current_price=101.5,
             request=request,
         )
 
@@ -210,6 +210,17 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
         self.assertLessEqual(float(metrics["distance_above_zone_pct"]), request.max_distance_above_zone_pct)
         self.assertGreaterEqual(float(metrics["volume_expansion"]), 1.2)
         self.assertGreaterEqual(int(metrics["held_periods"]), 1)
+
+    def test_demand_zone_metrics_reject_price_more_than_three_pct_from_zone_low(self) -> None:
+        request = DemandZoneScanRequest(timeframe="daily", min_departure_pct=8, base_min_weeks=3, base_max_weeks=4)
+
+        metrics = DashboardService._demand_zone_metrics(
+            self._rally_base_rally_demand_zone_bars(),
+            current_price=106.2,
+            request=request,
+        )
+
+        self.assertIsNone(metrics)
 
     def test_watchlists_migrate_from_legacy_repo_data_to_app_state_dir(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:

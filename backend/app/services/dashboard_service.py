@@ -1975,8 +1975,8 @@ class DashboardService:
 
         if zone_low <= 0 or prior_low <= 0 or current_price < zone_low:
             return None
-        distance_above_zone_pct = 0.0 if current_price <= zone_high else ((current_price - zone_high) / zone_high) * 100.0
-        if distance_above_zone_pct > request.max_distance_above_zone_pct:
+        distance_above_zone_pct = ((current_price - zone_low) / zone_low) * 100.0
+        if distance_above_zone_pct > DashboardService._demand_zone_max_distance_pct(request):
             return None
         if base_range_pct > request.max_base_range_pct * (1.35 if timeframe == "weekly" else 1.2):
             return None
@@ -2215,6 +2215,10 @@ class DashboardService:
         return True
 
     @staticmethod
+    def _demand_zone_max_distance_pct(request: DemandZoneScanRequest) -> float:
+        return min(max(float(request.max_distance_above_zone_pct or 0.0), 0.0), 3.0)
+
+    @staticmethod
     def _demand_zone_metrics(
         bars,
         current_price: float,
@@ -2287,8 +2291,8 @@ class DashboardService:
 
                 if current_price < zone_low:
                     continue
-                distance_above_zone_pct = max(0.0, ((current_price - zone_high) / zone_high) * 100.0)
-                if distance_above_zone_pct > request.max_distance_above_zone_pct:
+                distance_above_zone_pct = ((current_price - zone_low) / zone_low) * 100.0
+                if distance_above_zone_pct > DashboardService._demand_zone_max_distance_pct(request):
                     continue
 
                 zone_age_periods = len(completed) - base_end - 1
@@ -2355,7 +2359,11 @@ class DashboardService:
         zone_high = float(metrics["zone_high"])
         timeframe_label = "daily" if timeframe == "daily" else "weekly"
         period_label = "day" if timeframe == "daily" else "week"
-        proximity = f"Inside {timeframe_label} demand zone" if distance == 0 else f"{distance:.1f}% above {timeframe_label} demand zone"
+        proximity = (
+            f"At {timeframe_label} demand-zone low"
+            if distance <= 0.05
+            else f"{distance:.1f}% from {timeframe_label} demand-zone low"
+        )
         held_periods = int(metrics["held_periods"])
         retests = int(metrics["retests"])
         reasons = [
@@ -5449,7 +5457,7 @@ class DashboardService:
                 "id": "demand-zone",
                 "name": "Demand Zone Scanner",
                 "category": "Setups",
-                "description": "Stage 2 stocks trading inside or just above strong daily or weekly rally-base-rally demand zones.",
+                "description": "Stage 2 stocks trading within 3% of strong daily or weekly rally-base-rally demand-zone lows.",
                 "hit_count": len(items),
             },
             scan_key="demand-zone",

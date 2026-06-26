@@ -590,7 +590,11 @@ function demandZoneDefaultsFor(value: unknown): DemandZoneScanRequest {
 }
 
 function mergeDemandZoneFilters(value: unknown): DemandZoneScanRequest {
-  return mergeWithDefaults(demandZoneDefaultsFor(value), value);
+  const merged = mergeWithDefaults(demandZoneDefaultsFor(value), value);
+  return {
+    ...merged,
+    max_distance_above_zone_pct: Math.max(0, Math.min(3, merged.max_distance_above_zone_pct)),
+  };
 }
 
 const SUPPORTED_INDICATORS: IndicatorKey[] = ["ema10", "ema20", "ema50", "ema200", "vwap"];
@@ -3127,7 +3131,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     return {
       ...filters,
       timeframe: filters.timeframe === "daily" ? "daily" : "weekly",
-      max_distance_above_zone_pct: Math.max(0, Math.min(20, filters.max_distance_above_zone_pct ?? defaults.max_distance_above_zone_pct)),
+      max_distance_above_zone_pct: Math.max(0, Math.min(3, filters.max_distance_above_zone_pct ?? defaults.max_distance_above_zone_pct)),
       min_rs_rating: Math.max(1, Math.min(99, Math.round(filters.min_rs_rating ?? defaults.min_rs_rating))),
       min_liquidity_crore: Math.max(0, filters.min_liquidity_crore ?? defaults.min_liquidity_crore),
       min_departure_pct: Math.max(1, Math.min(100, filters.min_departure_pct ?? defaults.min_departure_pct)),
@@ -5207,7 +5211,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                           : activeScanner === "consolidating"
                                             ? "Toggle multi-year-high and long-base filters independently."
                                             : activeScanner === "demand-zone"
-                                              ? "Stage 2 stocks inside or within 3% above strong daily or weekly rally-base-rally demand zones."
+                                              ? "Stage 2 stocks within 3% of strong daily or weekly demand-zone lows."
                                               : activeScanner === "minervini-1m"
                                                 ? "Minervini 1 Month trend-template scan with an optional liquidity filter."
                                                 : activeScanner === "minervini-5m"

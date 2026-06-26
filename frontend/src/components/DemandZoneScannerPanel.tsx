@@ -67,7 +67,7 @@ export function DemandZoneScannerPanel({
   return (
     <Panel
       title="Demand Zone Scanner"
-      subtitle="Stage 2 stocks trading inside or within 3% above strong rally-base-rally demand zones."
+      subtitle="Stage 2 stocks trading within 3% of strong rally-base-rally demand-zone lows."
       actions={
         <div className="custom-panel-actions">
           <button type="button" className="nav-button ghost" onClick={onReset}>
@@ -91,7 +91,7 @@ export function DemandZoneScannerPanel({
                 ...nextDefaults,
                 min_rs_rating: filters.min_rs_rating,
                 min_liquidity_crore: filters.min_liquidity_crore,
-                max_distance_above_zone_pct: filters.max_distance_above_zone_pct,
+                max_distance_above_zone_pct: Math.max(0, Math.min(3, filters.max_distance_above_zone_pct)),
                 limit: filters.limit,
               });
             }}
@@ -107,12 +107,12 @@ export function DemandZoneScannerPanel({
           <input
             type="number"
             min="0"
-            max="20"
+            max="3"
             step="0.1"
             value={filters.max_distance_above_zone_pct}
-            onChange={updateNumber(filters, onFiltersChange, "max_distance_above_zone_pct", 0, 20)}
+            onChange={updateNumber(filters, onFiltersChange, "max_distance_above_zone_pct", 0, 3)}
           />
-          <small>Inside the zone or this far above the zone high</small>
+          <small>Maximum distance from the demand-zone low</small>
         </label>
 
         <label className="scanner-field">
