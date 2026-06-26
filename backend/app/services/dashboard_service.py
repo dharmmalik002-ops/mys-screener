@@ -1941,6 +1941,91 @@ class DashboardService:
             return cls._aggregate_demand_zone_weekly_bars(daily_bars)[-bars:]
         return daily_bars[-bars:]
 
+    @staticmethod
+    def _snapshot_demand_zone_metrics(
+        snapshot: StockSnapshot,
+        request: DemandZoneScanRequest,
+    ) -> dict[str, float | int | str] | None:
+        current_price = float(snapshot.last_price or 0.0)
+        if current_price <= 0:
+            return None
+
+        timeframe = "daily" if request.timeframe == "daily" else "weekly"
+        highs = [float(value) for value in (snapshot.recent_highs or []) if value]
+        lows = [float(value) for value in (snapshot.recent_lows or []) if value]
+        volumes = [int(value) for value in (snapshot.recent_volumes or []) if value]
+        if len(highs) >= 8 and len(lows) >= 8:
+            window = 8 if timeframe == "daily" else min(15, len(lows))
+            base_lows = lows[-window:]
+            base_highs = highs[-window:]
+            zone_low = min(base_lows)
+            zone_high = max(zone_low * 1.01, min(max(base_lows) * 1.01, zone_low * (1.0 + request.max_base_range_pct / 100.0)))
+            base_range_pct = ((max(base_highs) - zone_low) / zone_low) * 100.0 if zone_low > 0 else 999.0
+            prior_lows = lows[: -max(3, window // 2)] or lows
+            prior_low = min(prior_lows)
+            recent_high = max(highs)
+        else:
+            zone_low = float(snapshot.month_low or snapshot.week_low or snapshot.day_low or 0.0)
+            if zone_low <= 0:
+                return None
+            zone_high = zone_low * (1.0 + min(request.max_base_range_pct, 8.0) / 100.0)
+            base_range_pct = min(request.max_base_range_pct, 8.0)
+            prior_low = float(snapshot.low_3m or snapshot.low_52w or zone_low)
+            recent_high = float(snapshot.high_3m or snapshot.high_52w or snapshot.day_high or current_price)
+
+        if zone_low <= 0 or prior_low <= 0 or current_price < zone_low:
+            return None
+        distance_above_zone_pct = 0.0 if current_price <= zone_high else ((current_price - zone_high) / zone_high) * 100.0
+        if distance_above_zone_pct > request.max_distance_above_zone_pct:
+            return None
+        if base_range_pct > request.max_base_range_pct * (1.35 if timeframe == "weekly" else 1.2):
+            return None
+
+        prior_rally_pct = ((recent_high - prior_low) / prior_low) * 100.0
+        return_window = float(snapshot.stock_return_20d if timeframe == "daily" else snapshot.stock_return_60d or 0.0)
+        departure_pct = max(prior_rally_pct * 0.45, return_window)
+        min_departure = request.min_departure_pct * (0.85 if timeframe == "daily" else 0.8)
+        if prior_rally_pct < min_departure or departure_pct < min_departure:
+            return None
+
+        if len(volumes) >= 6:
+            base_volume = sum(volumes[: max(3, len(volumes) // 2)]) / max(max(3, len(volumes) // 2), 1)
+            departure_volume = max(volumes[-max(3, len(volumes) // 2) :])
+            volume_expansion = departure_volume / base_volume if base_volume > 0 else 1.0
+        else:
+            volume_expansion = 1.2 if timeframe == "daily" else 1.1
+        min_volume_expansion = 1.05 if timeframe == "weekly" else 1.15
+        if volume_expansion < min_volume_expansion:
+            return None
+
+        held_periods = sum(1 for low in lows if low >= zone_low) if lows else 1
+        retests = sum(1 for low in lows if zone_low <= low <= zone_high * 1.03) if lows else 1
+        score = (
+            48.0
+            + min(departure_pct, 40.0) * 0.65
+            + min(prior_rally_pct, 50.0) * 0.18
+            + max(0.0, request.max_base_range_pct - min(base_range_pct, request.max_base_range_pct)) * 0.9
+            + min(volume_expansion, 5.0) * 2.0
+            + min(held_periods, 12) * 0.35
+            + min(retests, 4) * 1.2
+            - distance_above_zone_pct * 3.5
+        )
+        return {
+            "timeframe": timeframe,
+            "zone_low": round(zone_low, 2),
+            "zone_high": round(zone_high, 2),
+            "distance_above_zone_pct": round(distance_above_zone_pct, 2),
+            "base_periods": min(len(lows) or 4, 8 if timeframe == "daily" else 6),
+            "base_range_pct": round(base_range_pct, 2),
+            "prior_rally_pct": round(prior_rally_pct, 2),
+            "departure_pct": round(departure_pct, 2),
+            "volume_expansion": round(volume_expansion, 2),
+            "zone_age_periods": 1,
+            "held_periods": held_periods,
+            "retests": retests,
+            "score": round(score, 2),
+        }
+
     async def _build_contraction_snapshots(
         self,
         snapshots: list[StockSnapshot],
@@ -2260,6 +2345,8 @@ class DashboardService:
                 return None
 
         metrics = self._demand_zone_metrics(bars, float(snapshot.last_price or 0.0), request)
+        if metrics is None:
+            metrics = self._snapshot_demand_zone_metrics(snapshot, request)
         if metrics is None:
             return None
 
