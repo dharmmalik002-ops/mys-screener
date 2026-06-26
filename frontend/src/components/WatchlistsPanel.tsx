@@ -27,6 +27,7 @@ import type {
   ChartGridChartStyle,
   ChartGridDisplayCard,
   ChartGridDisplayMode,
+  ChartGridGroupSection,
   ChartGridSortBy,
   ChartGridStat,
 } from "./ChartGridModal";
@@ -618,6 +619,63 @@ export function WatchlistsPanel({
     });
   }, [activeItems, activeWatchlist?.id, gridTimeframe, market, onPickSymbol]);
 
+  const gridGroupSections = useMemo<ChartGridGroupSection[]>(() => {
+    if (!groupsData) return [];
+    const cardBySymbol = new Map(gridCards.map((card) => [card.symbol?.toUpperCase() ?? "", card]));
+    const cardsByGroup = new Map<string, ChartGridDisplayCard[]>();
+    const assigned = new Set<string>();
+
+    for (const stock of groupsData.stocks) {
+      const symbol = stock.symbol.toUpperCase();
+      const card = cardBySymbol.get(symbol);
+      if (!card || !stock.final_group_id) continue;
+      const current = cardsByGroup.get(stock.final_group_id) ?? [];
+      current.push({
+        ...card,
+        entityLabel: stock.final_group_name || card.entityLabel,
+        subtitle: `${card.subtitle} · ${stock.final_group_name}`,
+      });
+      cardsByGroup.set(stock.final_group_id, current);
+      assigned.add(symbol);
+    }
+
+    const sections = groupsData.groups
+      .map((group) => {
+        const sectionCards = cardsByGroup.get(group.group_id) ?? [];
+        if (!sectionCards.length) return null;
+        return {
+          id: group.group_id,
+          title: group.group_name,
+          subtitle: `${group.parent_sector} · base rank #${group.rank} · ${sectionCards.length} watchlist stock${sectionCards.length === 1 ? "" : "s"}`,
+          baseRank: group.rank,
+          stockCount: group.stock_count,
+          returns: {
+            "1W": group.return_1w,
+            "1M": group.return_1m,
+            "3M": group.return_3m,
+            "6M": group.return_6m,
+          },
+          cards: sectionCards,
+        } satisfies ChartGridGroupSection;
+      })
+      .filter((section): section is ChartGridGroupSection => Boolean(section));
+
+    const ungrouped = gridCards.filter((card) => card.symbol && !assigned.has(card.symbol.toUpperCase()));
+    if (ungrouped.length) {
+      sections.push({
+        id: "ungrouped",
+        title: "Ungrouped",
+        subtitle: `${ungrouped.length} watchlist stock${ungrouped.length === 1 ? "" : "s"} without a resolved industry group`,
+        baseRank: 9999,
+        stockCount: ungrouped.length,
+        returns: { "1W": -999, "1M": -999, "3M": -999, "6M": -999 },
+        cards: ungrouped,
+      });
+    }
+
+    return sections;
+  }, [gridCards, groupsData]);
+
   const gridStats = useMemo<ChartGridStat[]>(() => {
     const advancing = activeItems.filter((item) => item.change_pct > 0).length;
     const declining = activeItems.filter((item) => item.change_pct < 0).length;
@@ -1116,6 +1174,7 @@ export function WatchlistsPanel({
             title={activeWatchlist?.name ?? "Watchlist Grid"}
             subtitle={`${activeItems.length} saved Indian stocks`}
             cards={gridCards}
+            groupSections={gridGroupSections}
             stats={gridStats}
             columns={gridColumns}
             rows={gridRows}

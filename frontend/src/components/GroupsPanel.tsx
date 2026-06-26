@@ -14,6 +14,7 @@ import type {
   ChartGridChartStyle,
   ChartGridDisplayCard,
   ChartGridDisplayMode,
+  ChartGridGroupSection,
   ChartGridSortBy,
   ChartGridStat,
 } from "./ChartGridModal";
@@ -323,6 +324,27 @@ export function GroupsPanel({
       };
     });
   }, [activeGridGroup, activeGridStocks, activeGridSymbols, gridTimeframe, onPickSymbolWithContext]);
+
+  const gridGroupSections = useMemo<ChartGridGroupSection[]>(() => {
+    if (!activeGridGroup || !gridCards.length) return [];
+    return [
+      {
+        id: activeGridGroup.group_id,
+        title: activeGridGroup.group_name,
+        subtitle: `${activeGridGroup.parent_sector} · base rank #${activeGridGroup.rank} · ${gridCards.length} stock${gridCards.length === 1 ? "" : "s"}`,
+        baseRank: activeGridGroup.rank,
+        stockCount: activeGridGroup.stock_count,
+        returns: {
+          "1W": activeGridGroup.return_1w,
+          "1M": activeGridGroup.return_1m,
+          "3M": activeGridGroup.return_3m,
+          "6M": activeGridGroup.return_6m,
+        },
+        cards: gridCards,
+      },
+    ];
+  }, [activeGridGroup, gridCards]);
+
   const gridStats = useMemo<ChartGridStat[]>(() => {
     if (!activeGridGroup) return [];
     const advancing = activeGridStocks.filter((stock) => stock.change_pct > 0).length;
@@ -631,6 +653,7 @@ export function GroupsPanel({
             title={activeGridGroup.group_name}
             subtitle={`${gridCards.length || activeGridGroup.stock_count} stocks · rank #${activeGridGroup.rank} · ${activeGridGroup.parent_sector}`}
             cards={gridCards}
+            groupSections={gridGroupSections}
             stats={gridStats}
             columns={gridColumns}
             rows={gridRows}

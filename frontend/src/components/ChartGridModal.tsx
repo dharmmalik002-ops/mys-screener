@@ -20,6 +20,7 @@ type GridTone = "positive" | "negative" | "neutral";
 export type ChartGridChartStyle = "line" | "candles" | "bars";
 export type ChartGridDisplayMode = "compact" | "normal";
 export type ChartGridSortBy = "selected_return" | "day_return" | "rs_rating" | "market_cap" | "constituents";
+export type ChartGridGroupRankPeriod = "1W" | "1M" | "3M" | "6M";
 
 type ChartGridBadge = {
   label: string;
@@ -51,11 +52,22 @@ export type ChartGridStat = {
   tone?: GridTone;
 };
 
+export type ChartGridGroupSection = {
+  id: string;
+  title: string;
+  subtitle?: string;
+  baseRank?: number | null;
+  stockCount?: number | null;
+  returns: Record<ChartGridGroupRankPeriod, number>;
+  cards: ChartGridDisplayCard[];
+};
+
 type ChartGridModalProps = {
   contextLabel: string;
   title: string;
   subtitle: string;
   cards: ChartGridDisplayCard[];
+  groupSections?: ChartGridGroupSection[];
   stats?: ChartGridStat[];
   columns: number;
   rows: number;
@@ -87,6 +99,12 @@ type ChartGridModalProps = {
 };
 
 const GRID_TIMEFRAMES: ChartGridTimeframe[] = ["3M", "6M", "1Y", "2Y"];
+const GROUP_RANK_PERIODS: Array<{ value: ChartGridGroupRankPeriod; label: string }> = [
+  { value: "1W", label: "Weekly" },
+  { value: "1M", label: "Monthly" },
+  { value: "3M", label: "3 Months" },
+  { value: "6M", label: "6 Months" },
+];
 const GRID_COLUMNS = [1, 2, 3, 4, 5, 6];
 const GRID_ROWS = [1, 2, 3, 4, 5];
 const GRID_STYLES: Array<{ value: ChartGridChartStyle; label: string }> = [
@@ -794,6 +812,7 @@ export function ChartGridModal({
   title,
   subtitle,
   cards,
+  groupSections = [],
   stats = [],
   columns,
   rows,
@@ -832,6 +851,8 @@ export function ChartGridModal({
   const [levelsOn, setLevelsOn] = useState<boolean>(() => readAutoLevelsEnabled());
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
+  const [gridArrangement, setGridArrangement] = useState<"flat" | "group">("flat");
+  const [groupRankPeriod, setGroupRankPeriod] = useState<ChartGridGroupRankPeriod>("1W");
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
   const hasMarketCapData = useMemo(() => cards.some((card) => card.marketCapCrore !== null), [cards]);
   const hasConstituentData = useMemo(() => cards.some((card) => card.constituents !== null), [cards]);
@@ -879,10 +900,6 @@ export function ChartGridModal({
   const zoomFactor = GRID_ZOOM_LEVELS[zoomLevelIndex];
   const zoomLabel = `${Math.round(zoomFactor * 100)}%`;
 
-  useEffect(() => {
-    setRenderCount(Math.min(cards.length, Math.max(columns * rows * 2, 12)));
-  }, [cards.length, columns, rows]);
-
   const availableSortOptions = useMemo(
     () =>
       GRID_SORT_OPTIONS.filter((option) => {
@@ -929,7 +946,55 @@ export function ChartGridModal({
     [cards, effectiveSortBy],
   );
 
-  const visibleCards = useMemo(() => sortedCards.slice(0, renderCount), [renderCount, sortedCards]);
+  const canGroupGrid = groupSections.some((section) => section.cards.length > 0);
+  const groupMode = canGroupGrid && gridArrangement === "group";
+
+  const orderedGroupSections = useMemo(
+    () =>
+      groupSections
+        .filter((section) => section.cards.length > 0)
+        .map((section) => ({
+          ...section,
+          cards: [...section.cards].sort((left, right) => {
+            const valueDiff = sortValue(right, effectiveSortBy) - sortValue(left, effectiveSortBy);
+            if (valueDiff !== 0) return valueDiff;
+            return (right.dayReturn ?? 0) - (left.dayReturn ?? 0);
+          }),
+        }))
+        .sort((left, right) => {
+          const returnDiff = (right.returns[groupRankPeriod] ?? 0) - (left.returns[groupRankPeriod] ?? 0);
+          if (returnDiff !== 0) return returnDiff;
+          return (left.baseRank ?? 9999) - (right.baseRank ?? 9999);
+        }),
+    [effectiveSortBy, groupRankPeriod, groupSections],
+  );
+
+  const totalChartCount = useMemo(
+    () => (groupMode ? orderedGroupSections.reduce((sum, section) => sum + section.cards.length, 0) : sortedCards.length),
+    [groupMode, orderedGroupSections, sortedCards.length],
+  );
+
+  useEffect(() => {
+    setRenderCount(Math.min(totalChartCount, Math.max(columns * rows * 2, 12)));
+  }, [columns, rows, totalChartCount]);
+
+  const visibleGroupSections = useMemo(() => {
+    if (!groupMode) return [];
+    let remaining = renderCount;
+    return orderedGroupSections
+      .map((section, index) => {
+        if (remaining <= 0) return null;
+        const sectionCards = section.cards.slice(0, remaining);
+        remaining -= sectionCards.length;
+        return { ...section, rankForPeriod: index + 1, cards: sectionCards };
+      })
+      .filter((section): section is ChartGridGroupSection & { rankForPeriod: number } => Boolean(section && section.cards.length));
+  }, [groupMode, orderedGroupSections, renderCount]);
+
+  const visibleCards = useMemo(
+    () => (groupMode ? visibleGroupSections.flatMap((section) => section.cards) : sortedCards.slice(0, renderCount)),
+    [groupMode, renderCount, sortedCards, visibleGroupSections],
+  );
 
   useEffect(() => {
     if (!onLoadSeries) {
@@ -990,10 +1055,10 @@ export function ChartGridModal({
     const element = event.currentTarget;
     updateScrollbar();
     const nearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < 260;
-    if (!nearBottom || renderCount >= sortedCards.length) {
+    if (!nearBottom || renderCount >= totalChartCount) {
       return;
     }
-    setRenderCount((current) => Math.min(sortedCards.length, current + Math.max(columns * rows, 8)));
+    setRenderCount((current) => Math.min(totalChartCount, current + Math.max(columns * rows, 8)));
   };
 
   // Keep the scrollbar in sync with content growth (lazy-load), zoom, view and resize.
@@ -1148,6 +1213,30 @@ export function ChartGridModal({
             ) : null}
 
             <div className="chart-grid-toolbar">
+              {canGroupGrid ? (
+                <>
+                  <label className="nav-select chart-grid-select">
+                    <span>Arrange</span>
+                    <select value={gridArrangement} onChange={(event) => setGridArrangement(event.target.value as "flat" | "group")}>
+                      <option value="flat">Flat Charts</option>
+                      <option value="group">By Group</option>
+                    </select>
+                  </label>
+                  {groupMode ? (
+                    <label className="nav-select chart-grid-select">
+                      <span>Group Rank</span>
+                      <select value={groupRankPeriod} onChange={(event) => setGroupRankPeriod(event.target.value as ChartGridGroupRankPeriod)}>
+                        {GROUP_RANK_PERIODS.map((option) => (
+                          <option key={`group-rank-${option.value}`} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : null}
+                </>
+              ) : null}
+
               <label className="nav-select chart-grid-select">
                 <span>View</span>
                 <select value={displayMode} onChange={(event) => onDisplayModeChange(event.target.value as ChartGridDisplayMode)}>
@@ -1353,7 +1442,39 @@ export function ChartGridModal({
         >
           {loading ? <div className="empty-state">Loading charts...</div> : null}
           {!loading && visibleCards.length === 0 ? <div className="empty-state">No charts are available for this selection yet.</div> : null}
-          {!loading
+          {!loading && groupMode
+            ? visibleGroupSections.map((section) => (
+                <div key={`grid-group:${section.id}`} className="chart-grid-group-block">
+                  <div className="chart-grid-group-title">
+                    <div>
+                      <strong>{section.title}</strong>
+                      <small>{section.subtitle ?? `${section.cards.length} chart${section.cards.length === 1 ? "" : "s"}`}</small>
+                    </div>
+                    <span>
+                      {groupRankPeriod} Rank #{section.rankForPeriod} · {section.returns[groupRankPeriod] >= 0 ? "+" : ""}
+                      {section.returns[groupRankPeriod].toFixed(1)}%
+                    </span>
+                  </div>
+                  {section.cards.map((card) => (
+                    <GridCard
+                      key={card.id}
+                      card={card}
+                      fullBars={card.symbol ? (seriesStore[`2Y:${card.symbol}`] ?? []) : []}
+                      chartStyle={chartStyle}
+                      displayMode={displayMode}
+                      timeframe={timeframe}
+                      zoomFactor={zoomFactor}
+                      globalPosition={rangePosition}
+                      hiddenMas={hiddenMas}
+                      light={lightMode}
+                      showLevels={levelsOn}
+                      onAddToWatchlist={onAddToWatchlist}
+                    />
+                  ))}
+                </div>
+              ))
+            : null}
+          {!loading && !groupMode
             ? visibleCards.map((card) => (
                 <GridCard
                   key={card.id}

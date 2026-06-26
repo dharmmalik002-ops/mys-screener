@@ -2993,6 +2993,58 @@ button {
   min-height: 220px;
 }
 
+.chart-grid-group-block {
+  display: contents;
+}
+
+.chart-grid-group-title {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.88), rgba(17, 24, 39, 0.72));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.chart-grid-group-title strong {
+  display: block;
+  color: var(--text-primary, #f8fafc);
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.chart-grid-group-title small,
+.chart-grid-group-title span {
+  color: var(--text-muted, #94a3b8);
+  font-size: 0.78rem;
+}
+
+.chart-grid-group-title > span {
+  white-space: nowrap;
+  border: 1px solid rgba(96, 165, 250, 0.22);
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: rgba(37, 99, 235, 0.12);
+  color: #bfdbfe;
+}
+
+.chart-grid-modal.chart-grid-light .chart-grid-group-title {
+  background: #f8fafc;
+  border-color: rgba(15, 23, 42, 0.12);
+}
+
+.chart-grid-modal.chart-grid-light .chart-grid-group-title strong {
+  color: #0f172a;
+}
+
+.chart-grid-modal.chart-grid-light .chart-grid-group-title small {
+  color: #64748b;
+}
+
 .chart-grid-card {
   display: grid;
   grid-template-rows: 1fr auto auto;
