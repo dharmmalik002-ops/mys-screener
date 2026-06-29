@@ -2,8 +2,10 @@ import asyncio
 import gc
 import logging
 import os
+import threading
+import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -25,6 +27,12 @@ class NoCacheMiddleware(BaseHTTPMiddleware):
     """Prevent browsers from caching API responses so refreshes always get fresh data."""
 
     async def dispatch(self, request: Request, call_next):
+        if request.url.path.startswith("/api/"):
+            # Self-heal stale EOD data on live traffic — see maybe_self_heal_bhavcopy.
+            try:
+                maybe_self_heal_bhavcopy()
+            except Exception:
+                pass
         response: Response = await call_next(request)
         if request.url.path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
@@ -262,6 +270,68 @@ def apply_bhavcopy_patch_on_startup() -> None:
             result.get("reason"),
             result.get("date"),
         )
+
+
+# ── Traffic-triggered bhavcopy self-heal ─────────────────────────────────────
+# The evening apply cron fires at fixed times, but a free-tier HF Space sleeps
+# and silently misses them — leaving the backend frozen on an earlier day's
+# snapshot (advance/decline, per-stock %, XP breadth, scanners all stale).
+# So we ALSO heal on live traffic: any API request (a user opening the app, or
+# the keep-alive ping) after the daily patch is committed brings the Space
+# current within minutes — no cron, no restart, no token needed (the patch is
+# pulled from the public repo). Throttled per worker and run in a background
+# thread so it adds nothing to request latency; the apply bumps free_snapshots
+# .json's mtime, which auto-invalidates the in-memory snapshot cache so the very
+# next request serves fresh numbers.
+_self_heal_lock = threading.Lock()
+_last_self_heal_monotonic = 0.0
+_SELF_HEAL_MIN_INTERVAL_S = 600  # at most once per 10 minutes per worker
+
+
+def _latest_expected_bhavcopy_date() -> str:
+    now = datetime.now(IST)
+    eod_ready = now.hour * 60 + now.minute >= 16 * 60 + 45  # BSE EOD published/applied by ~4:45 PM IST
+    cand = now.date() if (now.weekday() < 5 and eod_ready) else now.date() - timedelta(days=1)
+    while cand.weekday() >= 5:  # roll Sat/Sun back to Friday's session
+        cand -= timedelta(days=1)
+    return cand.isoformat()
+
+
+def maybe_self_heal_bhavcopy() -> None:
+    """Pull + apply the latest committed patch if the served data looks stale.
+
+    Cheap and non-blocking: a monotonic throttle gate runs first, so the file
+    check + network pull happen at most once per 10 minutes per worker, and the
+    actual apply runs in a daemon thread.
+    """
+    global _last_self_heal_monotonic
+    now_m = time.monotonic()
+    if now_m - _last_self_heal_monotonic < _SELF_HEAL_MIN_INTERVAL_S:
+        return
+    _last_self_heal_monotonic = now_m  # advance the gate regardless of outcome
+
+    import json as _json
+
+    try:
+        patch_path = Path(__file__).resolve().parents[1] / "data" / "bhavcopy_patch.json"
+        local_date = str(_json.loads(patch_path.read_text(encoding="utf-8")).get("date") or "")
+        if local_date and local_date >= _latest_expected_bhavcopy_date():
+            return  # already current for the latest trading session — skip the pull
+    except Exception:
+        pass  # can't determine staleness — fall through and let the apply decide
+
+    if not _self_heal_lock.acquire(blocking=False):
+        return  # a heal is already running in this worker
+
+    def _run() -> None:
+        try:
+            apply_bhavcopy_patch_on_startup()
+        except Exception as exc:  # never let a heal crash a request worker
+            logger.warning("Bhavcopy self-heal failed: %s", exc)
+        finally:
+            _self_heal_lock.release()
+
+    threading.Thread(target=_run, name="bhavcopy-self-heal", daemon=True).start()
 
 
 def trigger_github_bhavcopy_if_stale() -> None:
