@@ -236,6 +236,65 @@ def pull_latest_bhavcopy_patch() -> bool:
         return False
 
 
+def pull_latest_xp_breadth() -> bool:
+    """Pull the committed XP market-breadth history from the public repo.
+
+    The XP score is read from ``xp_breadth_history.json`` (written daily by the
+    bhavcopy job). Like the price patch, that file only reaches this Space via
+    the workflow's HF push, which can silently fail — leaving the breadth widget
+    frozen on an earlier day even when the snapshot itself has self-healed.
+    Pulling it directly (public repo, no token) keeps the score in lockstep with
+    the daily data. Returns True when a newer file was written.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    def _latest_date(doc: object) -> str:
+        if not isinstance(doc, dict):
+            return ""
+        latest = doc.get("latest")
+        if isinstance(latest, dict) and latest.get("date"):
+            return str(latest.get("date"))
+        days = doc.get("days")
+        if isinstance(days, list) and days and isinstance(days[-1], dict):
+            return str(days[-1].get("date") or "")
+        return ""
+
+    url = (
+        os.environ.get("XP_BREADTH_HISTORY_URL")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data/xp_breadth_history.json"
+    ).strip()
+    path = Path(__file__).resolve().parents[1] / "data" / "xp_breadth_history.json"
+    try:
+        local_date = ""
+        try:
+            local_date = _latest_date(_json.loads(path.read_text(encoding="utf-8")))
+        except Exception:
+            local_date = ""
+        resp = _requests.get(url, timeout=25)
+        if resp.status_code != 200:
+            logger.info("XP breadth self-update: remote HTTP %s — keeping local %s", resp.status_code, local_date or "<none>")
+            return False
+        remote = resp.json()
+        remote_date = _latest_date(remote)
+        days = remote.get("days") if isinstance(remote, dict) else None
+        if not remote_date or not isinstance(days, list) or not days:
+            logger.warning("XP breadth self-update: remote payload invalid — keeping local")
+            return False
+        if local_date and remote_date <= local_date:
+            return False  # already current (or older) — nothing to do
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(resp.text, encoding="utf-8")
+        tmp.replace(path)
+        logger.info("XP breadth self-update: pulled %s (was %s) from remote", remote_date, local_date or "<none>")
+        return True
+    except Exception as exc:
+        logger.warning("XP breadth self-update failed: %s", exc)
+        return False
+
+
 def apply_bhavcopy_patch_on_startup() -> None:
     """Roll any committed bhavcopy patch into the live snapshot before serving.
 
@@ -247,16 +306,21 @@ def apply_bhavcopy_patch_on_startup() -> None:
     prices stay in sync with whatever the daily-bhavcopy GitHub Action committed.
     """
     pulled = pull_latest_bhavcopy_patch()
+    xp_pulled = pull_latest_xp_breadth()
     try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
-        return
-    if result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0:
+        result = {}
+    snapshot_updated = result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0
+    # Clear runtime caches when EITHER the snapshot or the XP history advanced, so
+    # the dashboard re-reads the fresh breadth score (read fresh per build) too.
+    if snapshot_updated or xp_pulled:
         try:
             service._clear_runtime_caches()
         except Exception:
             pass
+    if snapshot_updated:
         logger.info(
             "Applied bhavcopy patch on startup: date=%s symbols_updated=%s source=%s",
             result.get("date"),
