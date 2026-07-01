@@ -93,6 +93,7 @@ from app.scanners.definitions import (
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.scan_history_store import ScanHistoryStore
+from app.services.journal_store import PostgresJournalStore
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
 
 logger = logging.getLogger(__name__)
@@ -284,6 +285,10 @@ class DashboardService:
         self.provider = provider
         self.settings = settings
         self._watchlists_store = PostgresWatchlistsStore(
+            settings.database_url,
+            connect_timeout_seconds=settings.watchlists_database_connect_timeout_seconds,
+        )
+        self._journal_store = PostgresJournalStore(
             settings.database_url,
             connect_timeout_seconds=settings.watchlists_database_connect_timeout_seconds,
         )
@@ -4641,20 +4646,45 @@ class DashboardService:
 
     def get_journal_data(self) -> dict:
         path = self._journal_data_path()
+
+        if self._journal_store.is_enabled():
+            try:
+                stored = self._journal_store.load_data()
+                if stored:
+                    self._write_json_payload(path, stored)
+                    return stored
+            except Exception:
+                pass
+
         payload = self._read_json_dict(path)
         if payload:
+            if self._journal_store.is_enabled():
+                try:
+                    self._journal_store.save_data(payload)
+                except Exception:
+                    pass
             return payload
 
         legacy_path = self._legacy_journal_data_path()
         legacy_payload = self._read_json_dict(legacy_path)
         if legacy_payload:
             self._write_json_payload(path, legacy_payload)
+            if self._journal_store.is_enabled():
+                try:
+                    self._journal_store.save_data(legacy_payload)
+                except Exception:
+                    pass
             return legacy_payload
         return {}
 
     def save_journal_data(self, payload: dict) -> dict:
         path = self._journal_data_path()
         self._write_json_payload(path, payload)
+        if self._journal_store.is_enabled():
+            try:
+                self._journal_store.save_data(payload)
+            except Exception:
+                pass
         return payload
 
     async def get_sector_rotation(self) -> "SectorRotationResponse":
