@@ -377,10 +377,33 @@ def maybe_self_heal_bhavcopy() -> None:
     import json as _json
 
     try:
-        patch_path = Path(__file__).resolve().parents[1] / "data" / "bhavcopy_patch.json"
+        expected = _latest_expected_bhavcopy_date()
+        data_dir = Path(__file__).resolve().parents[1] / "data"
+
+        patch_path = data_dir / "bhavcopy_patch.json"
         local_date = str(_json.loads(patch_path.read_text(encoding="utf-8")).get("date") or "")
-        if local_date and local_date >= _latest_expected_bhavcopy_date():
-            return  # already current for the latest trading session — skip the pull
+        bhav_current = bool(local_date) and local_date >= expected
+
+        # The XP breadth history is a SEPARATE committed file that lags on its
+        # own schedule — e.g. when BSE is geo-blocked from the CI runner the
+        # price patch self-heals via YFINANCE but XP stays behind until a
+        # full-coverage run lands. Gate on BOTH files, or a fresh price patch
+        # would short-circuit the pull and freeze the breadth score.
+        xp_current = False
+        try:
+            xp_doc = _json.loads((data_dir / "xp_breadth_history.json").read_text(encoding="utf-8"))
+            xp_latest = xp_doc.get("latest") if isinstance(xp_doc, dict) else None
+            if isinstance(xp_latest, dict) and xp_latest.get("date"):
+                xp_local_date = str(xp_latest.get("date"))
+            else:
+                days = xp_doc.get("days") if isinstance(xp_doc, dict) else None
+                xp_local_date = str(days[-1].get("date") or "") if isinstance(days, list) and days else ""
+            xp_current = bool(xp_local_date) and xp_local_date >= expected
+        except Exception:
+            xp_current = False  # can't read XP — let the pull decide
+
+        if bhav_current and xp_current:
+            return  # both current for the latest trading session — skip the pull
     except Exception:
         pass  # can't determine staleness — fall through and let the apply decide
 
