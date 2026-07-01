@@ -54,3 +54,9 @@ backend/data/live_universe.json
 !backend/data/*_seed_*.json
 !backend/data/*universe*.json
 !backend/data/bhavcopy_patch.json
+
+# Local dev / runtime artifacts — never commit or deploy
+.claude/worktrees/
+frontend/public/api/
+backend/data/free_snapshots_us*.json
+backend/data/free_universe_us.json
