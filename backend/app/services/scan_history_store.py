@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import threading
+from datetime import date, timedelta
 from pathlib import Path
 
 try:
@@ -81,9 +82,35 @@ class ScanHistoryStore:
     def _retention_limit(self, keep_dates: int | None = None) -> int:
         return max(1, int(keep_dates if keep_dates is not None else self._keep_dates))
 
-    def record_once(self, scan_key: str, session_date: str, items: list[dict], *, keep_dates: int | None = None) -> None:
+    @staticmethod
+    def _min_kept_date(dates: list[str], keep_days: int | None) -> str | None:
+        """Calendar-day floor: the oldest session date still within
+        ``keep_days`` of the newest recorded date. Guarantees a bucket is
+        retained for at least ``keep_days`` days from when it was added,
+        independent of how many trading sessions have since elapsed."""
+        if not keep_days or keep_days <= 0 or not dates:
+            return None
+        try:
+            newest = max(date.fromisoformat(d) for d in dates if d)
+        except Exception:
+            return None
+        return (newest - timedelta(days=int(keep_days))).isoformat()
+
+    def record_once(
+        self,
+        scan_key: str,
+        session_date: str,
+        items: list[dict],
+        *,
+        keep_dates: int | None = None,
+        keep_days: int | None = None,
+    ) -> None:
         """Pin ``items`` as the results for ``session_date`` unless that date
-        is already recorded. Prunes dates beyond the retention window."""
+        is already recorded. A bucket is retained while it is within the newest
+        ``keep_dates`` sessions OR within ``keep_days`` calendar days of the
+        latest session (a union — whichever keeps it longer), so a stock is
+        never dropped before ``keep_days`` days from its addition even across a
+        month boundary."""
         if not session_date:
             return
         retention_limit = self._retention_limit(keep_dates)
@@ -99,17 +126,28 @@ class ScanHistoryStore:
                         """,
                         (scan_key, session_date, json.dumps(items)),
                     )
+                    # Keep a row when it is among the newest N sessions OR still
+                    # within the calendar-day window measured from the latest
+                    # recorded session. keep_days=NULL disables the day floor.
                     cursor.execute(
                         """
                         DELETE FROM scan_history
-                        WHERE scan_key = %s AND session_date NOT IN (
+                        WHERE scan_key = %s
+                          AND session_date NOT IN (
                             SELECT session_date FROM scan_history
                             WHERE scan_key = %s
                             ORDER BY session_date DESC
                             LIMIT %s
-                        )
+                          )
+                          AND (
+                            %s::int IS NULL
+                            OR session_date < (
+                                (SELECT MAX(session_date) FROM scan_history WHERE scan_key = %s)
+                                - (%s::int * INTERVAL '1 day')
+                            )
+                          )
                         """,
-                        (scan_key, scan_key, retention_limit),
+                        (scan_key, scan_key, retention_limit, keep_days, scan_key, keep_days),
                     )
                 return
         except Exception as exc:
@@ -120,12 +158,20 @@ class ScanHistoryStore:
             per_scan = store.setdefault(scan_key, {})
             if session_date not in per_scan:
                 per_scan[session_date] = items
-            kept = sorted(per_scan.keys(), reverse=True)[: retention_limit]
+            all_dates = sorted(per_scan.keys(), reverse=True)
+            newest_n = set(all_dates[:retention_limit])
+            day_floor = self._min_kept_date(all_dates, keep_days)
+            kept = [
+                d for d in all_dates
+                if d in newest_n or (day_floor is not None and d >= day_floor)
+            ]
             store[scan_key] = {d: per_scan[d] for d in kept}
             self._write_file(store)
 
-    def load(self, scan_key: str, *, keep_dates: int | None = None) -> dict[str, list[dict]]:
-        """Return {session_date_iso: items} for the retained window."""
+    def load(self, scan_key: str, *, keep_dates: int | None = None, keep_days: int | None = None) -> dict[str, list[dict]]:
+        """Return {session_date_iso: items} for the retained window — the union
+        of the newest ``keep_dates`` sessions and everything within ``keep_days``
+        calendar days of the latest session."""
         retention_limit = self._retention_limit(keep_dates)
         try:
             if self._postgres_enabled():
@@ -136,21 +182,27 @@ class ScanHistoryStore:
                         SELECT session_date, payload FROM scan_history
                         WHERE scan_key = %s
                         ORDER BY session_date DESC
-                        LIMIT %s
                         """,
-                        (scan_key, retention_limit),
+                        (scan_key,),
                     )
                     rows = cursor.fetchall()
                 result: dict[str, list[dict]] = {}
                 for session_date, payload in rows:
                     items = payload if isinstance(payload, list) else json.loads(payload)
                     result[str(session_date)] = items if isinstance(items, list) else []
-                return result
+                return self._apply_window(result, retention_limit, keep_days)
         except Exception as exc:
             logger.info("scan-history postgres read failed (falling back to file): %s", exc)
 
         per_scan = self._read_file().get(scan_key)
         if not isinstance(per_scan, dict):
             return {}
-        kept = sorted(per_scan.keys(), reverse=True)[: retention_limit]
-        return {d: per_scan[d] if isinstance(per_scan[d], list) else [] for d in kept}
+        normalized = {d: (per_scan[d] if isinstance(per_scan[d], list) else []) for d in per_scan}
+        return self._apply_window(normalized, retention_limit, keep_days)
+
+    def _apply_window(self, buckets: dict[str, list[dict]], retention_limit: int, keep_days: int | None) -> dict[str, list[dict]]:
+        all_dates = sorted(buckets.keys(), reverse=True)
+        newest_n = set(all_dates[:retention_limit])
+        day_floor = self._min_kept_date(all_dates, keep_days)
+        kept = [d for d in all_dates if d in newest_n or (day_floor is not None and d >= day_floor)]
+        return {d: buckets[d] for d in kept}

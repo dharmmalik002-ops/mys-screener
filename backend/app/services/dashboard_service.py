@@ -99,6 +99,12 @@ from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchli
 logger = logging.getLogger(__name__)
 
 EXPANSION_HISTORY_SESSIONS = 30
+# Calendar-day floor: a stock stays in the Expansion tracker for at least this
+# many days from the session it was added, even if fewer than
+# EXPANSION_HISTORY_SESSIONS trading days have elapsed. Prevents a stock added
+# late in a month from being pruned at the month boundary (retention is the
+# UNION of the two windows — whichever keeps it longer).
+EXPANSION_HISTORY_MIN_DAYS = 30
 
 INDEX_HEATMAP_SOURCES: tuple[tuple[str, str], ...] = (
     ("Nifty 50", "https://niftyindices.com/IndexConstituent/ind_nifty50list.csv"),
@@ -2478,6 +2484,7 @@ class DashboardService:
                 history = self._scan_history_store.load(
                     scan_key,
                     keep_dates=EXPANSION_HISTORY_SESSIONS if scan_key == "ema-expansion" else None,
+                    keep_days=EXPANSION_HISTORY_MIN_DAYS if scan_key == "ema-expansion" else None,
                 )
                 prior_dates = sorted((d for d in history.keys() if d < session_iso), reverse=True)
                 if prior_dates:
@@ -2507,6 +2514,7 @@ class DashboardService:
                     session_iso,
                     payload,
                     keep_dates=EXPANSION_HISTORY_SESSIONS if scan_key == "ema-expansion" else None,
+                    keep_days=EXPANSION_HISTORY_MIN_DAYS if scan_key == "ema-expansion" else None,
                 )
             return decorated
         except Exception as exc:
@@ -2833,8 +2841,13 @@ class DashboardService:
                 session_iso,
                 [item.model_dump(mode="json") for item in items],
                 keep_dates=EXPANSION_HISTORY_SESSIONS,
+                keep_days=EXPANSION_HISTORY_MIN_DAYS,
             )
-            history = self._scan_history_store.load("ema-expansion", keep_dates=EXPANSION_HISTORY_SESSIONS)
+            history = self._scan_history_store.load(
+                "ema-expansion",
+                keep_dates=EXPANSION_HISTORY_SESSIONS,
+                keep_days=EXPANSION_HISTORY_MIN_DAYS,
+            )
             if not history:
                 return items
 
