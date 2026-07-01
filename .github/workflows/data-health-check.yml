@@ -1,0 +1,46 @@
+name: Data Health Check
+
+# Personal-use monitoring: verify the LIVE backend is serving the latest data
+# we've committed. If it's behind (stale prices / stale XP breadth) or
+# unreachable, the run FAILS and GitHub emails the repo owner — so you hear
+# about stale data instead of discovering it by opening the app. Hitting the
+# endpoints also wakes the sleeping Space, which triggers its own self-heal.
+on:
+  schedule:
+    # Off-peak minutes (GitHub drops runs on :00/:15/:30/:45). Weekday evenings IST,
+    # after EOD data should be applied. Two checks give the self-heal time to run.
+    - cron: "17 13 * * 1-5"  # 18:47 IST
+    - cron: "23 15 * * 1-5"  # 20:53 IST
+  workflow_dispatch: {}
+
+# One run at a time; a newer run supersedes an in-flight one.
+concurrency:
+  group: data-health-check
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Verify live backend is current
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          # Only the two committed data files the check compares against are needed,
+          # but a shallow full checkout is simplest and cheap.
+          sparse-checkout: |
+            backend/scripts/check_data_health.py
+            backend/data/bhavcopy_patch.json
+            backend/data/xp_breadth_history.json
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Check live data freshness
+        run: python backend/scripts/check_data_health.py
