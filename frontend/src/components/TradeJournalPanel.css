@@ -2844,3 +2844,127 @@
   background: color-mix(in srgb, var(--accent, #58a6ff) 20%, transparent);
   color: var(--text);
 }
+
+/* ===== Wisdom pack ===== */
+.tj-mentor-card {
+  margin: 14px 0 2px;
+  padding: 14px 18px;
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+}
+
+.tj-mentor-quote {
+  font-family: var(--font-display);
+  font-size: 1.02rem;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.tj-mentor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.tj-mentor-author {
+  color: var(--text-soft);
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.tj-mentor-reason {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  letter-spacing: 0.03em;
+}
+
+.tj-regime-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tj-regime-row {
+  display: grid;
+  grid-template-columns: 12px minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+  font-size: 0.84rem;
+}
+
+.tj-regime-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.tj-regime-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.tj-regime-stat {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.tj-regime-pnl {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.tj-wisdom-callout {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.tj-wisdom-callout.neg {
+  background: var(--negative-soft);
+  color: var(--negative);
+}
+
+.tj-wisdom-callout.pos {
+  background: var(--positive-soft);
+  color: var(--positive);
+}
+
+.tj-wisdom-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tj-wisdom-stat strong {
+  display: block;
+  font-size: 0.9rem;
+}
+
+.tj-wisdom-stat span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.tj-wisdom-footnote {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--line);
+  color: var(--text-muted);
+  font-size: 0.73rem;
+  line-height: 1.5;
+}

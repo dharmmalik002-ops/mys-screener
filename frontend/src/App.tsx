@@ -5090,6 +5090,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
               onAddRequestHandled={() => setJournalAddRequest(null)}
               onOpenSymbolChart={handleJournalOpenSymbolChart}
               groupsData={groupsData}
+              xpBreadth={dashboard?.xp_breadth ?? null}
             />
           </Suspense>
         ) : null}

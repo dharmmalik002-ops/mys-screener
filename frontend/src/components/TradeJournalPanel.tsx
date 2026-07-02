@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import {
   getChart,
   getJournalData,
+  getScannerScorecard,
   saveJournalData,
   type MarketKey,
   runAiJournalReview,
@@ -10,8 +11,20 @@ import {
   type IndustryGroupsResponse,
   type IndustryGroupRankItem,
   type IndustryGroupStockItem,
+  type ScannerScorecardRow,
+  type XpBreadthScore,
 } from "../lib/api";
 import { notifyJournalUpdated } from "../lib/journal";
+import {
+  buildMentorContext,
+  computeExcursion,
+  computeRegimeEdge,
+  computeTiltStats,
+  excursionKey,
+  pickMentorLesson,
+  summarizeExitQuality,
+  type TradeExcursion,
+} from "../lib/journalInsights";
 import {
   computeCharges, breakevenPct, DEFAULT_CHARGES, CHARGE_LABELS,
   type ChargesConfig, type ChargesBreakdown, type Product,
@@ -89,6 +102,7 @@ interface TradeJournalPanelProps {
   onAddRequestHandled?: () => void;
   onOpenSymbolChart?: (symbol: string) => void;
   groupsData?: IndustryGroupsResponse | null;
+  xpBreadth?: XpBreadthScore | null;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -1242,7 +1256,7 @@ function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
-export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart, groupsData }: TradeJournalPanelProps) {
+export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart, groupsData, xpBreadth }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
   useEffect(() => {
@@ -1843,6 +1857,87 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       )
       .finally(() => setAiReviewLoading(false));
   };
+
+  // ── Wisdom pack: regime edge, exit quality, tilt, mentor, scanner audit ──
+  const LS_EXCURSIONS = "tradingJournalExcursions.v1";
+  const [excursions, setExcursions] = useState<Record<string, TradeExcursion | null>>(() =>
+    lsGet<Record<string, TradeExcursion | null>>(LS_EXCURSIONS, {}),
+  );
+  const excursionBusyRef = useRef(false);
+  useEffect(() => {
+    // Compute MAE/MFE once per closed trade from daily bars, newest 40 first,
+    // one chart fetch per symbol; results are cached in localStorage forever.
+    if (excursionBusyRef.current) return;
+    const recent = [...closedTrades]
+      .sort((a, b) => getSafeTime(b.exitDate) - getSafeTime(a.exitDate))
+      .slice(0, 40)
+      .filter((t) => excursions[excursionKey(t)] === undefined);
+    if (!recent.length) return;
+    excursionBusyRef.current = true;
+    let cancelled = false;
+    (async () => {
+      const updated: Record<string, TradeExcursion | null> = {};
+      const bySymbol = new Map<string, typeof recent>();
+      recent.forEach((t) => {
+        const list = bySymbol.get(t.symbol) ?? [];
+        list.push(t);
+        bySymbol.set(t.symbol, list);
+      });
+      for (const [symbol, trades] of bySymbol) {
+        if (cancelled) break;
+        try {
+          const chart = await getChart(symbol, "1D", market ?? "india");
+          const bars = (chart.bars ?? []).map((b) => ({ time: Number(b.time), high: b.high, low: b.low }));
+          for (const trade of trades) {
+            updated[excursionKey(trade)] = computeExcursion(trade, bars);
+          }
+        } catch {
+          /* symbol fetch failed — leave undefined so a later session retries */
+        }
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      if (!cancelled && Object.keys(updated).length) {
+        setExcursions((prev) => {
+          const next = { ...prev, ...updated };
+          lsSet(LS_EXCURSIONS, next);
+          return next;
+        });
+      }
+      excursionBusyRef.current = false;
+    })();
+    return () => {
+      cancelled = true;
+      excursionBusyRef.current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [closedTrades, market]);
+
+  const regimeEdge = useMemo(
+    () => computeRegimeEdge(closedTrades, xpBreadth?.history ?? null),
+    [closedTrades, xpBreadth],
+  );
+  const exitQuality = useMemo(() => summarizeExitQuality(closedTrades, excursions), [closedTrades, excursions]);
+  const tiltStats = useMemo(() => computeTiltStats(closedTrades), [closedTrades]);
+  const mentorLesson = useMemo(() => {
+    const ctx = buildMentorContext(closedTrades, regimeEdge, exitQuality);
+    const daySeed = Math.floor(Date.now() / 86_400_000);
+    return { lesson: pickMentorLesson(ctx, daySeed), ctx };
+  }, [closedTrades, regimeEdge, exitQuality]);
+
+  const [scorecardRows, setScorecardRows] = useState<ScannerScorecardRow[] | null>(null);
+  useEffect(() => {
+    let active = true;
+    getScannerScorecard(market ?? "india")
+      .then((r) => {
+        if (active) setScorecardRows(r.rows.filter((row) => row.hits > 0));
+      })
+      .catch(() => {
+        if (active) setScorecardRows([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [market]);
 
   // ── Insights ─────────────────────────────────────────────────────────────
   const setupMap: Record<string, { wins: number; losses: number; pnl: number }> = {};
@@ -2812,6 +2907,14 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             </div>
           </div>
 
+          <div className="tj-mentor-card" title={mentorLesson.lesson.reason}>
+            <div className="tj-mentor-quote">“{mentorLesson.lesson.quote}”</div>
+            <div className="tj-mentor-meta">
+              <span className="tj-mentor-author">— {mentorLesson.lesson.author}</span>
+              <span className="tj-mentor-reason">{mentorLesson.lesson.reason}</span>
+            </div>
+          </div>
+
           <div className="tj-dashboard-controlbar">
             <div className="tj-toggle-group" role="tablist" aria-label="Dashboard metric mode">
               <button type="button" className={`tj-toggle-btn ${dashboardMetric === "combined" ? "active" : ""}`} onClick={() => setDashboardMetric("combined")}>Combined P&L</button>
@@ -2915,6 +3018,139 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           <div className="tj-card" style={{ marginBottom: 16 }}>
             <div className="tj-card-hdr">Setup Performance</div>
             <SetupBreakdown closed={closedTrades} />
+          </div>
+
+          <div className="tj-chart-row two-col">
+            <div className="tj-card">
+              <div className="tj-card-hdr">
+                Market Regime Edge
+                <span className="tj-card-hdr-sub">Each trade stamped with the XP dial on its entry day</span>
+              </div>
+              {regimeEdge.rows.length === 0 ? (
+                <div className="tj-empty">No trades overlap the XP history yet.</div>
+              ) : (
+                <>
+                  <div className="tj-regime-rows">
+                    {regimeEdge.rows.map((row) => (
+                      <div key={row.regime} className="tj-regime-row">
+                        <span className="tj-regime-dot" style={{ background: row.color }} />
+                        <span className="tj-regime-name">{row.regime}</span>
+                        <span className="tj-regime-stat">{row.trades} trades</span>
+                        <span className={`tj-regime-stat ${row.winRate >= 50 ? "pos" : "neg"}`}>{row.winRate.toFixed(0)}% win</span>
+                        <span className={`tj-regime-pnl ${row.pnl >= 0 ? "pos" : "neg"}`}>{fmtPnl(row.pnl)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  {regimeEdge.againstDialTrades > 0 ? (
+                    <div className={`tj-wisdom-callout ${regimeEdge.againstDialPnl < 0 ? "neg" : "pos"}`}>
+                      Trading against the dial ("Avoid Longs" entries): {regimeEdge.againstDialTrades} trades, {fmtPnl(regimeEdge.againstDialPnl)}
+                    </div>
+                  ) : (
+                    <div className="tj-wisdom-callout pos">No entries taken while the dial said "Avoid Longs" — discipline intact.</div>
+                  )}
+                </>
+              )}
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">
+                Exit Quality (MAE / MFE)
+                <span className="tj-card-hdr-sub">What each trade did while you held it — computed from daily bars</span>
+              </div>
+              {exitQuality.count === 0 ? (
+                <div className="tj-empty">
+                  {closedTrades.length === 0
+                    ? "No closed trades yet."
+                    : "Computing excursions from chart history… this fills in a few seconds after the journal loads."}
+                </div>
+              ) : (
+                <div className="tj-wisdom-stats">
+                  {exitQuality.avgRealizedR !== null && exitQuality.avgPeakR !== null ? (
+                    <div className="tj-wisdom-stat">
+                      <strong>{exitQuality.avgRealizedR.toFixed(2)}R banked vs {exitQuality.avgPeakR.toFixed(2)}R peak</strong>
+                      <span>average across {exitQuality.count} analysed trades with stops — the gap is your exit leak</span>
+                    </div>
+                  ) : null}
+                  {exitQuality.captureRatioPct !== null ? (
+                    <div className="tj-wisdom-stat">
+                      <strong className={exitQuality.captureRatioPct >= 60 ? "pos" : "neg"}>
+                        {exitQuality.captureRatioPct.toFixed(0)}% of the peak captured
+                      </strong>
+                      <span>on winners — below ~55% usually means selling too early</span>
+                    </div>
+                  ) : null}
+                  {exitQuality.deepDipWinnersPct !== null && exitQuality.winnersWithR > 0 ? (
+                    <div className="tj-wisdom-stat">
+                      <strong className={exitQuality.deepDipWinnersPct > 30 ? "neg" : "pos"}>
+                        {exitQuality.deepDipWinners} of {exitQuality.winnersWithR} winners dipped below -0.7R first
+                      </strong>
+                      <span>a high share here means your stops are one wiggle too tight</span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="tj-chart-row two-col">
+            <div className="tj-card">
+              <div className="tj-card-hdr">
+                Tilt Detector
+                <span className="tj-card-hdr-sub">Trades entered right after 2 consecutive losses</span>
+              </div>
+              {tiltStats.afterLossCount === 0 ? (
+                <div className="tj-empty">No post-losing-streak entries detected — nothing to measure yet.</div>
+              ) : (
+                <div className="tj-wisdom-stats">
+                  <div className="tj-wisdom-stat">
+                    <strong className={(tiltStats.afterLossWinRate ?? 0) < (tiltStats.baselineWinRate ?? 0) - 5 ? "neg" : "pos"}>
+                      {tiltStats.afterLossWinRate?.toFixed(0)}% win rate after 2 losses vs {tiltStats.baselineWinRate?.toFixed(0)}% normally
+                    </strong>
+                    <span>
+                      {tiltStats.afterLossCount} post-streak trades · avg {tiltStats.afterLossAvgPerc?.toFixed(1)}% — a large gap is revenge trading showing up in the data
+                    </span>
+                  </div>
+                  {tiltStats.reentryCount > 0 ? (
+                    <div className="tj-wisdom-stat">
+                      <strong className={tiltStats.reentryPnl < 0 ? "neg" : "pos"}>
+                        {tiltStats.reentryCount} same-stock re-entries within a week of a loss: {fmtPnl(tiltStats.reentryPnl)}
+                      </strong>
+                      <span>getting even with a stock is a trade thesis only in casinos</span>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </div>
+            <div className="tj-card">
+              <div className="tj-card-hdr">
+                You vs Your Scanners
+                <span className="tj-card-hdr-sub">Scanner picks' forward returns vs your realized trades — did discretion add value?</span>
+              </div>
+              {!scorecardRows || scorecardRows.length === 0 ? (
+                <div className="tj-empty">Scanner scorecard is still accumulating forward history.</div>
+              ) : (
+                <div className="tj-wisdom-stats">
+                  <div className="tj-wisdom-stat">
+                    <strong>
+                      You: {winRate.toFixed(0)}% win · {closedTrades.length ? (closedTrades.reduce((s, t) => s + t.perc, 0) / closedTrades.length).toFixed(1) : "0.0"}% avg
+                    </strong>
+                    <span>{closedTrades.length} closed trades (realized)</span>
+                  </div>
+                  {scorecardRows.slice(0, 4).map((row) => (
+                    <div key={row.scan_id} className="tj-wisdom-stat tj-scanner-vs-row">
+                      <strong className={(row.avg_forward_return_pct ?? 0) >= 0 ? "pos" : "neg"}>
+                        {row.scan_name}: {(row.avg_forward_return_pct ?? 0) >= 0 ? "+" : ""}
+                        {row.avg_forward_return_pct?.toFixed(1)}% avg · {row.win_rate_pct?.toFixed(0)}% win
+                      </strong>
+                      <span>{row.hits} picks over {row.sessions} sessions, unmanaged since scan day</span>
+                    </div>
+                  ))}
+                  <div className="tj-wisdom-footnote">
+                    Horizons differ (scanner picks are unmanaged) — read direction, not decimals. If the scanners
+                    beat you consistently, your filtering is subtracting edge.
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="tj-card tj-recent-card">
