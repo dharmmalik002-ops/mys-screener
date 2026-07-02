@@ -5630,6 +5630,36 @@ button {
   isolation: isolate;
 }
 
+/* Calibration ruler: fixed-position badge whose bar height always equals a 5%
+   move at the latest close (kept in sync by ChartPanel's overlay updater). */
+.chart-pct-ruler {
+  position: absolute;
+  top: 14px;
+  right: 84px;
+  display: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  z-index: 6;
+  opacity: 0.8;
+}
+
+.chart-pct-ruler-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, rgba(139, 148, 158, 0.9), rgba(139, 148, 158, 0.35));
+  box-shadow: 0 0 0 1px rgba(13, 17, 23, 0.35);
+}
+
+.chart-pct-ruler-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: rgba(139, 148, 158, 0.95);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
 .chart-panel.expanded .chart-canvas,
 .chart-panel.expanded .chart-stage {
   min-height: 380px;

@@ -608,6 +608,26 @@ function normalizeIndicatorKeys(value: unknown): IndicatorKey[] {
   return indicators.length > 0 ? indicators : ["ema20", "ema50"];
 }
 
+// Pre-2026-07 defaults. Saved preferences pin whatever the defaults were at
+// save time, so without this mapping every existing install would keep the
+// old neon candles forever. A stored value matching an old default is treated
+// as "never customized" and upgraded to the current default.
+const LEGACY_CHART_COLOR_DEFAULTS: Partial<Record<keyof ChartColorSettings, string>> = {
+  candleUp: "#00d2ff",
+  candleDown: "#ff3131",
+  volumeUp: "#00d2ff",
+  volumeDown: "#ff3131",
+};
+
+function migrateChartColor(key: keyof ChartColorSettings, value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const legacy = LEGACY_CHART_COLOR_DEFAULTS[key];
+  if (legacy && value.trim().toLowerCase() === legacy) {
+    return String(DEFAULT_CHART_COLORS[key]);
+  }
+  return value;
+}
+
 function normalizeChartColors(value: unknown): ChartColorSettings {
   if (!value || typeof value !== "object") {
     return DEFAULT_CHART_COLORS;
@@ -620,10 +640,10 @@ function normalizeChartColors(value: unknown): ChartColorSettings {
     ema50: typeof candidate.ema50 === "string" ? candidate.ema50 : DEFAULT_CHART_COLORS.ema50,
     ema200: typeof candidate.ema200 === "string" ? candidate.ema200 : DEFAULT_CHART_COLORS.ema200,
     vwap: typeof candidate.vwap === "string" ? candidate.vwap : DEFAULT_CHART_COLORS.vwap,
-    candleUp: typeof candidate.candleUp === "string" ? candidate.candleUp : DEFAULT_CHART_COLORS.candleUp,
-    candleDown: typeof candidate.candleDown === "string" ? candidate.candleDown : DEFAULT_CHART_COLORS.candleDown,
-    volumeUp: typeof candidate.volumeUp === "string" ? candidate.volumeUp : DEFAULT_CHART_COLORS.volumeUp,
-    volumeDown: typeof candidate.volumeDown === "string" ? candidate.volumeDown : DEFAULT_CHART_COLORS.volumeDown,
+    candleUp: migrateChartColor("candleUp", candidate.candleUp) ?? DEFAULT_CHART_COLORS.candleUp,
+    candleDown: migrateChartColor("candleDown", candidate.candleDown) ?? DEFAULT_CHART_COLORS.candleDown,
+    volumeUp: migrateChartColor("volumeUp", candidate.volumeUp) ?? DEFAULT_CHART_COLORS.volumeUp,
+    volumeDown: migrateChartColor("volumeDown", candidate.volumeDown) ?? DEFAULT_CHART_COLORS.volumeDown,
     rsLine: typeof candidate.rsLine === "string" ? candidate.rsLine : DEFAULT_CHART_COLORS.rsLine,
     rsMarker: typeof candidate.rsMarker === "string" ? candidate.rsMarker : DEFAULT_CHART_COLORS.rsMarker,
     rsMarkerSize:

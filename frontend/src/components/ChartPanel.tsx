@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
-import { ColorType, createChart, type UTCTimestamp } from "lightweight-charts";
+import { ColorType, createChart, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
@@ -312,10 +312,10 @@ const CHART_PALETTES: Record<
     gridColor: "rgba(0, 210, 255, 0.07)",
     crosshairColor: "rgba(0, 210, 255, 0.22)",
     borderColor: "rgba(48, 54, 61, 0.95)",
-    upColor: "#00d2ff",
-    downColor: "#ff3131",
-    volumeUpColor: "rgba(0, 210, 255, 0.38)",
-    volumeDownColor: "rgba(255, 49, 49, 0.35)",
+    upColor: "#089981",
+    downColor: "#f23645",
+    volumeUpColor: "rgba(8, 153, 129, 0.38)",
+    volumeDownColor: "rgba(242, 54, 69, 0.35)",
     rsLineColor: "#39ff14",
     rsMarkerColor: "#39ff14",
   },
@@ -348,6 +348,20 @@ const CIRCUIT_WIDGET_STORAGE_KEY = "stockScanner.circuitWidget.v1";
 const CIRCUIT_LOCKS_STORAGE_KEY = "stockScanner.circuitLocks.v1";
 const AUTO_LEVELS_STORAGE_KEY = "stockScanner.chartLevels.v1";
 const AI_TOGGLE_STORAGE_KEY = "stockScanner.chartAi.v1";
+const CHART_SCALE_STORAGE_KEY = "stockScanner.chartScaleMode.v1";
+
+export type ChartScaleMode = "log" | "linear";
+
+function readChartScaleMode(): ChartScaleMode {
+  if (typeof window === "undefined") return "log";
+  try {
+    // Log scale by default: equal candle heights read as equal % moves at any
+    // price level, which is what makes size comprehensible at a glance.
+    return window.localStorage.getItem(CHART_SCALE_STORAGE_KEY) === "linear" ? "linear" : "log";
+  } catch {
+    return "log";
+  }
+}
 
 function readAutoLevelsEnabled(): boolean {
   if (typeof window === "undefined") return false;
@@ -1528,6 +1542,8 @@ export function ChartPanel({
   const searchListId = `chart-search-${useId()}`;
   const stageRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const pctRulerBarRef = useRef<HTMLSpanElement | null>(null);
+  const pctRulerRef = useRef<HTMLDivElement | null>(null);
   const interactionLayerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const mainSeriesRef = useRef<any>(null);
@@ -1599,7 +1615,16 @@ export function ChartPanel({
   const [circuitBandPct, setCircuitBandPct] = useState<number>(() => readCircuitBandPct());
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [autoLevelsEnabled, setAutoLevelsEnabled] = useState<boolean>(() => readAutoLevelsEnabled());
+  const [scaleMode, setScaleMode] = useState<ChartScaleMode>(() => readChartScaleMode());
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_SCALE_STORAGE_KEY, scaleMode);
+    } catch {
+      // best-effort persistence only
+    }
+  }, [scaleMode]);
   // Zen mode: nothing but the chart and the search bar. Persisted so arrow-key
   // navigation to the next stock stays in zen until the user exits.
   const [zenMode, setZenMode] = useState<boolean>(() => {
@@ -2338,6 +2363,9 @@ export function ChartPanel({
       },
       rightPriceScale: {
         borderColor: palette.borderColor,
+        // Log mode makes equal pixel heights equal % moves at any price level,
+        // so candle sizes are directly comparable across the whole chart.
+        mode: scaleMode === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
       },
       timeScale: {
         borderColor: palette.borderColor,
@@ -2599,9 +2627,51 @@ export function ChartPanel({
       }
     }
 
+    // Calibration ruler: a small bar whose pixel height always equals a 5%
+    // move at the latest close, so candle heights can be read as % by eye.
+    // On the log scale that height is constant across the whole chart.
+    const updatePctRuler = () => {
+      const wrap = pctRulerRef.current;
+      const bar = pctRulerBarRef.current;
+      if (!wrap || !bar) return;
+      const lastClose = activeBars.length ? activeBars[activeBars.length - 1]?.close : null;
+      if (!lastClose || !Number.isFinite(lastClose) || lastClose <= 0) {
+        wrap.style.display = "none";
+        return;
+      }
+      const yBase = mainSeries.priceToCoordinate(lastClose);
+      const yUp = mainSeries.priceToCoordinate(lastClose * 1.05);
+      if (yBase === null || yUp === null) {
+        wrap.style.display = "none";
+        return;
+      }
+      const px = Math.abs(Number(yBase) - Number(yUp));
+      if (!Number.isFinite(px) || px < 6 || px > 320) {
+        wrap.style.display = "none";
+        return;
+      }
+      wrap.style.display = "flex";
+      bar.style.height = `${Math.round(px)}px`;
+    };
+
     const updateOverlay = () => {
+      updatePctRuler();
       scheduleOverlayUpdate();
     };
+    // priceToCoordinate returns null until the pane has laid out, and no
+    // range event fires after that first paint — retry over the first few
+    // frames until the ruler gets a real measurement.
+    let rulerRetryCount = 0;
+    let rulerRetryId: number | null = null;
+    const retryPctRuler = () => {
+      rulerRetryId = null;
+      updatePctRuler();
+      if (pctRulerRef.current?.style.display !== "flex" && rulerRetryCount < 120) {
+        rulerRetryCount += 1;
+        rulerRetryId = window.requestAnimationFrame(retryPctRuler);
+      }
+    };
+    rulerRetryId = window.requestAnimationFrame(retryPctRuler);
     const processCrosshairMove = (param: any) => {
       if (!param?.time) {
         setHoveredRsPoint(null);
@@ -2695,6 +2765,8 @@ export function ChartPanel({
       crosshairFrameRef.current = window.requestAnimationFrame(() => {
         crosshairFrameRef.current = null;
         processCrosshairMove(pendingCrosshairParamRef.current);
+        // Keep the % ruler honest during hover-driven autoscale shifts.
+        updatePctRuler();
       });
     };
 
@@ -2750,6 +2822,7 @@ export function ChartPanel({
     updateOverlay();
 
     return () => {
+      if (rulerRetryId !== null) window.cancelAnimationFrame(rulerRetryId);
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateOverlay);
       chart.unsubscribeCrosshairMove(handleCrosshairMove);
       chart.unsubscribeClick(handleChartClick);
@@ -2757,7 +2830,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe, scaleMode]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3606,6 +3679,23 @@ export function ChartPanel({
                     onClick={() => onChartStyleChange(style.key)}
                   >
                     {style.label}
+                  </button>
+                ))}
+              </div>
+              <div className="chart-style-switcher">
+                {(["log", "linear"] as const).map((modeKey) => (
+                  <button
+                    key={modeKey}
+                    type="button"
+                    className={scaleMode === modeKey ? "timeframe-pill active" : "timeframe-pill"}
+                    onClick={() => setScaleMode(modeKey)}
+                    title={
+                      modeKey === "log"
+                        ? "Log scale: equal candle heights = equal % moves anywhere on the chart"
+                        : "Linear scale: equal candle heights = equal ₹ moves"
+                    }
+                  >
+                    {modeKey === "log" ? "Log" : "Lin"}
                   </button>
                 ))}
               </div>
@@ -4570,6 +4660,14 @@ export function ChartPanel({
             className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}
           >
             <div ref={containerRef} className="chart-canvas" />
+            <div
+              ref={pctRulerRef}
+              className="chart-pct-ruler"
+              title="Calibration ruler: this bar spans a 5% move at the latest close — compare candle heights against it"
+            >
+              <span ref={pctRulerBarRef} className="chart-pct-ruler-bar" />
+              <span className="chart-pct-ruler-label">5%</span>
+            </div>
             {drawingTool !== "none" ? (
               <div
                 ref={interactionLayerRef}
