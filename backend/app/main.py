@@ -295,6 +295,60 @@ def pull_latest_xp_breadth() -> bool:
         return False
 
 
+def pull_latest_price_bands() -> bool:
+    """Pull the committed circuit-limit files from the public repo.
+
+    ``price_bands.json`` (current band per symbol) and
+    ``price_band_changes.json`` (revision history for chart markers) are
+    rewritten by the daily workflow and committed with ``[skip ci]`` — exactly
+    like the price patch, they only reach this Space via the workflow's HF
+    push, which can silently fail. Without this pull, charts keep showing the
+    circuit limits that were baked in at the last full deploy. Both readers in
+    dashboard_service are mtime-cached, so replacing the files is enough for
+    the next request to serve fresh bands. Returns True when either file
+    advanced.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    raw_base = (
+        os.environ.get("COMMITTED_DATA_RAW_BASE")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data"
+    ).strip().rstrip("/")
+    data_dir = Path(__file__).resolve().parents[1] / "data"
+    updated = False
+    for name, payload_key in (("price_bands.json", "bands"), ("price_band_changes.json", "changes")):
+        path = data_dir / name
+        try:
+            local_stamp = ""
+            try:
+                local_stamp = str(_json.loads(path.read_text(encoding="utf-8")).get("updated_at") or "")
+            except Exception:
+                local_stamp = ""
+            resp = _requests.get(f"{raw_base}/{name}", timeout=25)
+            if resp.status_code != 200:
+                logger.info("Price-band self-update (%s): remote HTTP %s — keeping local", name, resp.status_code)
+                continue
+            remote = resp.json()
+            remote_stamp = str(remote.get("updated_at") or "") if isinstance(remote, dict) else ""
+            payload = remote.get(payload_key) if isinstance(remote, dict) else None
+            if not remote_stamp or not isinstance(payload, dict) or not payload:
+                logger.warning("Price-band self-update (%s): remote payload invalid — keeping local", name)
+                continue
+            if local_stamp and remote_stamp <= local_stamp:
+                continue  # already current (or older) — nothing to do
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(path.name + ".tmp")
+            tmp.write_text(resp.text, encoding="utf-8")
+            tmp.replace(path)
+            logger.info("Price-band self-update (%s): pulled %s (was %s)", name, remote_stamp, local_stamp or "<none>")
+            updated = True
+        except Exception as exc:
+            logger.warning("Price-band self-update (%s) failed: %s", name, exc)
+    return updated
+
+
 def apply_bhavcopy_patch_on_startup() -> None:
     """Roll any committed bhavcopy patch into the live snapshot before serving.
 
@@ -307,15 +361,16 @@ def apply_bhavcopy_patch_on_startup() -> None:
     """
     pulled = pull_latest_bhavcopy_patch()
     xp_pulled = pull_latest_xp_breadth()
+    bands_pulled = pull_latest_price_bands()
     try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
         result = {}
     snapshot_updated = result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0
-    # Clear runtime caches when EITHER the snapshot or the XP history advanced, so
-    # the dashboard re-reads the fresh breadth score (read fresh per build) too.
-    if snapshot_updated or xp_pulled:
+    # Clear runtime caches when the snapshot, the XP history, or the circuit
+    # bands advanced, so charts/dashboard re-read the fresh files.
+    if snapshot_updated or xp_pulled or bands_pulled:
         try:
             service._clear_runtime_caches()
         except Exception:
@@ -402,8 +457,18 @@ def maybe_self_heal_bhavcopy() -> None:
         except Exception:
             xp_current = False  # can't read XP — let the pull decide
 
-        if bhav_current and xp_current:
-            return  # both current for the latest trading session — skip the pull
+        # Circuit bands are committed by the same evening run; same failure
+        # mode — a current price patch must not mask lagging band files.
+        bands_current = False
+        try:
+            bands_doc = _json.loads((data_dir / "price_bands.json").read_text(encoding="utf-8"))
+            bands_as_of = str(bands_doc.get("as_of") or "") if isinstance(bands_doc, dict) else ""
+            bands_current = bool(bands_as_of) and bands_as_of >= expected
+        except Exception:
+            bands_current = False  # can't read bands — let the pull decide
+
+        if bhav_current and xp_current and bands_current:
+            return  # all current for the latest trading session — skip the pull
     except Exception:
         pass  # can't determine staleness — fall through and let the apply decide
 
