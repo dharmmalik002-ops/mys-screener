@@ -19,20 +19,8 @@
 
 .positive-text { color: var(--positive) !important; font-weight: 600; }
 .negative-text { color: var(--negative) !important; font-weight: 600; }
-.metric-card strong { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em; }
-
-/* ===== 2. METRIC STRIP - uniform neutral cards, accent reserved for hover ===== */
-.metric-card,
-.metric-card:nth-child(1),.metric-card:nth-child(2),
-.metric-card:nth-child(3),.metric-card:nth-child(4) {
-  border-left-color: var(--line-strong) !important;
-}
-.metric-card:hover,
-.metric-card:nth-child(1):hover,.metric-card:nth-child(2):hover,
-.metric-card:nth-child(3):hover,.metric-card:nth-child(4):hover {
-  border-left-color: var(--accent) !important;
-  box-shadow: var(--shadow) !important;
-}
+/* ===== 2. METRIC STRIP - one slim status line; values in mono, quiet labels ===== */
+.metric-card strong { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; }
 
 /* ===== 3. MARKET TOGGLE - accent for the active market ===== */
 .home-market-toggle {
@@ -236,25 +224,7 @@
 /* ===== 15. STATUS DOT ===== */
 .status-dot { width: 9px; height: 9px; background: var(--positive); }
 
-/* ===== 16. HOME HERO CARD ===== */
-.home-hero-card {
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 50%),
-    var(--surface-strong);
-  backdrop-filter: blur(16px);
-  box-shadow: var(--shadow);
-}
-
-/* ===== 17. LANDING HERO ===== */
-.landing-hero {
-  border: 1px solid var(--line);
-  background:
-    radial-gradient(ellipse at 15% 0%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 45%),
-    var(--surface-strong);
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(16px);
-}
+/* (16/17 removed: .home-hero-card and .landing-hero are not rendered anywhere.) */
 
 /* ===== 18. SCREENER SIDEBAR PANEL ===== */
 .screener-sidebar-panel {

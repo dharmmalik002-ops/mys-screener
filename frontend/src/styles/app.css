@@ -43,16 +43,32 @@
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 14px;
+  /* Spacing scale — use these instead of ad-hoc paddings so density stays consistent. */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  /* Hairline + one soft elevation: the only two "depth" treatments chrome should use. */
+  --hairline: 1px solid var(--line);
+  --elevation: 0 1px 2px rgba(2, 5, 15, 0.25), 0 8px 24px rgba(2, 5, 15, 0.22);
   --transition-fast: 150ms ease;
   --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
   --hero-glow:
     radial-gradient(ellipse at 20% 0%, rgba(76, 154, 255, 0.14), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(59, 108, 239, 0.10), transparent 40%),
     radial-gradient(ellipse at 50% 100%, rgba(52, 211, 153, 0.06), transparent 50%);
-  /* Liquid-glass background image (user-provided). Missing file falls through to --hero-glow. */
-  --app-bg-image: url("/liquid-glass-bg.jpg");
-  /* Theme veil over the image: lighter at top (nav/hero glass reads), heavier lower (data stays legible). */
-  --app-veil: linear-gradient(180deg, rgba(12, 16, 33, 0.52) 0%, rgba(12, 16, 33, 0.82) 46%, rgba(12, 16, 33, 0.93) 100%);
+  /* Premium gradient mesh under the glass chrome (replaced the photographic
+     background: glass over a quiet mesh reads terminal-grade, not wallpaper).
+     To restore the photo: url("/liquid-glass-bg.jpg"). */
+  --app-bg-image:
+    radial-gradient(ellipse 70% 48% at 12% -6%, rgba(76, 154, 255, 0.20), transparent 62%),
+    radial-gradient(ellipse 56% 42% at 88% 4%, rgba(108, 92, 231, 0.16), transparent 60%),
+    radial-gradient(ellipse 64% 50% at 50% 112%, rgba(20, 184, 166, 0.10), transparent 58%),
+    linear-gradient(165deg, #0d1226 0%, #0b0f20 45%, #0a0e1d 100%);
+  /* Theme veil: a quiet mesh needs far less dimming than the old photo did. */
+  --app-veil: linear-gradient(180deg, rgba(12, 16, 33, 0.10) 0%, rgba(12, 16, 33, 0.38) 46%, rgba(12, 16, 33, 0.55) 100%);
   /* Gradient-stroke "liquid glass" rim — bright at top & bottom edges, fading mid (masked ::before). */
   --glass-rim: linear-gradient(180deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0.16) 20%, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, 0) 60%, rgba(255, 255, 255, 0.16) 80%, rgba(255, 255, 255, 0.5) 100%);
 }
@@ -99,8 +115,12 @@
     radial-gradient(ellipse at 20% 0%, rgba(37, 99, 235, 0.10), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(29, 78, 216, 0.08), transparent 40%),
     radial-gradient(ellipse at 50% 100%, rgba(16, 185, 129, 0.05), transparent 50%);
-  --app-bg-image: url("/liquid-glass-bg.jpg");
-  --app-veil: linear-gradient(180deg, rgba(241, 245, 249, 0.60) 0%, rgba(241, 245, 249, 0.84) 46%, rgba(241, 245, 249, 0.93) 100%);
+  --app-bg-image:
+    radial-gradient(ellipse 70% 48% at 12% -6%, rgba(37, 99, 235, 0.14), transparent 62%),
+    radial-gradient(ellipse 56% 42% at 88% 4%, rgba(124, 58, 237, 0.10), transparent 60%),
+    radial-gradient(ellipse 64% 50% at 50% 112%, rgba(13, 148, 136, 0.08), transparent 58%),
+    linear-gradient(165deg, #eef2f9 0%, #e9eef7 45%, #e6ebf4 100%);
+  --app-veil: linear-gradient(180deg, rgba(241, 245, 249, 0.20) 0%, rgba(241, 245, 249, 0.55) 46%, rgba(241, 245, 249, 0.72) 100%);
   /* Darker rim for light theme so the glass edge reads on light surfaces. */
   --glass-rim: linear-gradient(180deg, rgba(15, 23, 42, 0.30) 0%, rgba(15, 23, 42, 0.10) 20%, rgba(15, 23, 42, 0) 40%, rgba(15, 23, 42, 0) 60%, rgba(15, 23, 42, 0.10) 80%, rgba(15, 23, 42, 0.30) 100%);
 }
@@ -368,9 +388,7 @@ button {
 }
 
 .brand-cluster h1,
-.landing-copy h2,
-.panel h2,
-.home-hero-copy h2 {
+.panel h2 {
   margin: 0;
   font-family: var(--font-display);
   letter-spacing: -0.02em;
@@ -521,16 +539,14 @@ button {
 .timeframe-pill:hover,
 .indicator-pill:hover,
 .tool-pill:hover {
-  transform: translateY(-2px);
+  /* Calm hover: background shift only — no lift, no glow. */
   border-color: var(--line-strong);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .scan-row:hover {
-  transform: translateY(-2px);
+  /* Calm hover: hairline accent cue only — rows shouldn't jump under the cursor. */
   border-color: color-mix(in srgb, var(--accent) 30%, transparent);
-  box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 10%, transparent);
   border-left: 3px solid var(--accent);
 }
 
@@ -610,42 +626,21 @@ button {
   font-size: 0.92rem;
 }
 
+/* Slim one-line status strip: five ex-cards become quiet label/value pairs
+   separated by hairlines — workspace chrome, not a KPI billboard. */
 .page-metrics-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 12px;
-}
-
-.landing-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(280px, 0.75fr);
-  gap: 24px;
-  padding: 28px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-xl);
-  background:
-    linear-gradient(140deg, color-mix(in srgb, var(--surface) 94%, transparent), color-mix(in srgb, var(--bg-alt) 92%, transparent)),
-    var(--hero-glow);
-  box-shadow: var(--shadow);
-}
-
-.landing-copy {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0;
+  padding: 6px 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-strong) 62%, transparent);
+  backdrop-filter: blur(12px);
 }
 
-.landing-copy p {
-  margin: 0;
-  max-width: 66ch;
-  color: var(--text-soft);
-  line-height: 1.7;
-}
-
-.landing-copy h2 {
-  font-size: clamp(2rem, 3.8vw, 3.2rem);
-  letter-spacing: -0.045em;
-}
+/* (.landing-hero / .landing-copy removed — the old landing page is no longer rendered.) */
 
 .status-line {
   display: flex;
@@ -692,43 +687,41 @@ button {
 }
 
 .metric-card {
-  padding: 16px 18px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  border-left: 3px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
-  backdrop-filter: blur(12px);
-  transition: all var(--transition-smooth);
-  animation: fadeInUp 0.5s ease-out both;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 16px;
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: transparent;
+  transition: background var(--transition-fast);
 }
 
-.metric-card:nth-child(1) { animation-delay: 0ms; }
-.metric-card:nth-child(2) { animation-delay: 60ms; }
-.metric-card:nth-child(3) { animation-delay: 120ms; }
-.metric-card:nth-child(4) { animation-delay: 180ms; }
+.metric-card:last-child {
+  border-right: 0;
+}
 
 .metric-card:hover {
-  border-left-color: var(--accent);
-  transform: translateY(-3px);
-  box-shadow: 0 8px 28px color-mix(in srgb, var(--accent) 14%, transparent);
-  background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
 }
 
 .metric-card span {
-  display: block;
-  margin-bottom: 6px;
+  display: inline;
+  margin-bottom: 0;
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .metric-card strong {
   font-family: var(--font-display);
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.01em;
+  white-space: nowrap;
 }
 
 .error-banner {
@@ -2332,26 +2325,7 @@ button {
   to { transform: rotate(360deg); }
 }
 
-.home-hero-card {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(300px, 0.9fr);
-  gap: 24px;
-  padding: 28px;
-  border: 1px solid color-mix(in srgb, var(--glass-border) 78%, transparent);
-  border-radius: var(--radius-xl);
-  background:
-    linear-gradient(140deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
-    var(--glass-sheen),
-    var(--hero-glow);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    var(--shadow);
-  backdrop-filter: blur(28px) saturate(130%);
-}
-
-.home-hero-card.home-hero-card-minimal {
-  grid-template-columns: 1fr;
-}
+/* (.home-hero-card removed — superseded by the homepro dashboard cards.) */
 
 .home-hero-topline {
   display: flex;
@@ -3615,6 +3589,52 @@ button {
   transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
 
+/* Gear toggle for rarely-touched chart display options (scale, theme). */
+.chart-display-gear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.chart-display-gear:hover {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+}
+
+.chart-display-gear.active {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.chart-display-settings {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+  justify-content: flex-end;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
+}
+
+.chart-display-settings-label {
+  color: var(--text-muted);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .scanner-hero-grid,
 .scanner-section-grid {
   display: grid;
@@ -3974,6 +3994,30 @@ button {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+}
+
+/* Timeframe & style pickers read as ONE segmented control, not loose pills. */
+.timeframe-switcher,
+.chart-style-switcher {
+  gap: 0;
+  flex-wrap: nowrap;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+}
+
+.timeframe-switcher .timeframe-pill,
+.chart-style-switcher .timeframe-pill {
+  border: 0;
+  border-right: 1px solid var(--line);
+  border-radius: 0;
+  padding: 7px 12px;
+}
+
+.timeframe-switcher .timeframe-pill:last-child,
+.chart-style-switcher .timeframe-pill:last-child {
+  border-right: 0;
 }
 
 .chart-color-settings {
@@ -7231,14 +7275,8 @@ button {
 }
 
 @media (max-width: 1180px) {
-  .landing-hero {
-    grid-template-columns: 1fr;
-  }
-
-  .home-hero-card,
   .home-grid,
-  .home-grid-secondary,
-  .page-metrics-strip {
+  .home-grid-secondary {
     grid-template-columns: 1fr;
   }
 
@@ -7346,7 +7384,6 @@ button {
     padding: 8px 16px;
   }
 
-  .landing-hero,
   .panel-header,
   .panel-body {
     padding-left: 18px;

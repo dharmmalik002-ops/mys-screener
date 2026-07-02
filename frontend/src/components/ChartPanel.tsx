@@ -1,5 +1,6 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
+import { Settings2 } from "lucide-react";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
@@ -1616,6 +1617,9 @@ export function ChartPanel({
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [autoLevelsEnabled, setAutoLevelsEnabled] = useState<boolean>(() => readAutoLevelsEnabled());
   const [scaleMode, setScaleMode] = useState<ChartScaleMode>(() => readChartScaleMode());
+  // Rarely-touched display options (palette, log/linear) live behind a gear so
+  // the toolbar stays legible — set-once controls don't earn permanent chrome.
+  const [displaySettingsOpen, setDisplaySettingsOpen] = useState(false);
   const [aiEnabled, setAiEnabled] = useState<boolean>(() => readAiEnabled());
 
   useEffect(() => {
@@ -3682,35 +3686,50 @@ export function ChartPanel({
                   </button>
                 ))}
               </div>
-              <div className="chart-style-switcher">
-                {(["log", "linear"] as const).map((modeKey) => (
-                  <button
-                    key={modeKey}
-                    type="button"
-                    className={scaleMode === modeKey ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => setScaleMode(modeKey)}
-                    title={
-                      modeKey === "log"
-                        ? "Log scale: equal candle heights = equal % moves anywhere on the chart"
-                        : "Linear scale: equal candle heights = equal ₹ moves"
-                    }
-                  >
-                    {modeKey === "log" ? "Log" : "Lin"}
-                  </button>
-                ))}
-              </div>
-              <div className="chart-style-switcher">
-                {Object.entries(CHART_PALETTES).map(([key, value]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={chartPalette === key ? "timeframe-pill active" : "timeframe-pill"}
-                    onClick={() => onChartPaletteChange(key as ChartPaletteKey)}
-                  >
-                    {value.label}
-                  </button>
-                ))}
-              </div>
+              <button
+                type="button"
+                className={displaySettingsOpen ? "chart-display-gear active" : "chart-display-gear"}
+                onClick={() => setDisplaySettingsOpen((v) => !v)}
+                title="Display settings: price scale & theme"
+                aria-expanded={displaySettingsOpen}
+              >
+                <Settings2 size={14} strokeWidth={2.1} />
+              </button>
+              {displaySettingsOpen ? (
+                <div className="chart-display-settings">
+                  <span className="chart-display-settings-label">Scale</span>
+                  <div className="chart-style-switcher">
+                    {(["log", "linear"] as const).map((modeKey) => (
+                      <button
+                        key={modeKey}
+                        type="button"
+                        className={scaleMode === modeKey ? "timeframe-pill active" : "timeframe-pill"}
+                        onClick={() => setScaleMode(modeKey)}
+                        title={
+                          modeKey === "log"
+                            ? "Log scale: equal candle heights = equal % moves anywhere on the chart"
+                            : "Linear scale: equal candle heights = equal ₹ moves"
+                        }
+                      >
+                        {modeKey === "log" ? "Log" : "Lin"}
+                      </button>
+                    ))}
+                  </div>
+                  <span className="chart-display-settings-label">Theme</span>
+                  <div className="chart-style-switcher">
+                    {Object.entries(CHART_PALETTES).map(([key, value]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={chartPalette === key ? "timeframe-pill active" : "timeframe-pill"}
+                        onClick={() => onChartPaletteChange(key as ChartPaletteKey)}
+                      >
+                        {value.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
               <div className="indicator-switcher">
                 {INDICATORS.map((indicator) => (
                   <button

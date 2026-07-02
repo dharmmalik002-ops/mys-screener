@@ -161,7 +161,7 @@ export function ScreenerSidebar({
   return (
     <Panel
       title="Screener"
-      subtitle="Discover and save your edge"
+      subtitle={`${ITEMS.length} scanners · ${savedScanners.length} saved`}
       className="screener-sidebar-panel ss-shell"
     >
       <div className="ss-root">

@@ -1046,29 +1046,7 @@ body.dark .homepro-modal-close:hover {
   color: var(--hp-muted);
   background: rgba(100, 116, 139, 0.12);
 }
-.homepro-xp-badge {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 1px;
-  padding: 7px 14px;
-  border-radius: 12px;
-  color: #fff;
-  line-height: 1;
-}
-.homepro-xp-badge strong {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-.homepro-xp-badge span {
-  font-size: 10.5px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  opacity: 0.95;
-}
+/* (.homepro-xp-badge removed — replaced by the .homepro-xp-gauge dial.) */
 .homepro-xp-chart-wrap {
   position: relative;
   width: 100%;
@@ -1285,4 +1263,32 @@ body.dark .homepro-modal-close:hover {
   .homepro-row-mid {
     grid-template-columns: 1fr;
   }
+}
+
+/* ===== XP signature gauge (replaces the rectangular score badge) ===== */
+.homepro-xp-gauge {
+  width: 168px;
+  flex-shrink: 0;
+}
+
+.homepro-xp-gauge svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+.homepro-xp-gauge-score {
+  font-family: var(--font-mono);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.homepro-xp-gauge-regime {
+  fill: var(--text-soft);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }

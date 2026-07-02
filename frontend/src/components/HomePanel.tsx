@@ -292,6 +292,57 @@ const XP_BAND_OPACITY: Record<string, number> = {
   "Extremely Strong": 0.1,
 };
 
+/* Signature XP gauge: a semicircular arc built from the regime bands with a
+   needle at the current score — the score reads as "where on the dial am I"
+   instead of a bare number in a colored box. Domain [5, 30] covers the bands
+   (Avoid <9.5 … Extremely Strong >25) with visible headroom either side. */
+function XpGauge({ xp }: { xp: XpBreadthScore }) {
+  const LO = 5;
+  const HI = 30;
+  const CX = 80;
+  const CY = 84;
+  const R = 60;
+  const polar = (r: number, deg: number): readonly [number, number] => {
+    const rad = (deg * Math.PI) / 180;
+    return [CX + r * Math.cos(rad), CY - r * Math.sin(rad)] as const;
+  };
+  const angleFor = (value: number) => {
+    const t = (Math.min(HI, Math.max(LO, value)) - LO) / (HI - LO);
+    return 180 - 180 * t;
+  };
+  const arcPath = (a0: number, a1: number) => {
+    const [x0, y0] = polar(R, a0);
+    const [x1, y1] = polar(R, a1);
+    return `M ${x0.toFixed(2)} ${y0.toFixed(2)} A ${R} ${R} 0 0 1 ${x1.toFixed(2)} ${y1.toFixed(2)}`;
+  };
+  const segments = (xp.bands ?? [])
+    .map((band) => {
+      const v0 = Math.max(LO, band.min ?? LO);
+      const v1 = Math.min(HI, band.max ?? HI);
+      return v1 > v0 ? { color: band.color, path: arcPath(angleFor(v0), angleFor(v1)) } : null;
+    })
+    .filter((seg): seg is { color: string; path: string } => seg !== null);
+  const needleAngle = angleFor(xp.xp_score);
+  const [nx, ny] = polar(R - 14, needleAngle);
+  const [tx, ty] = polar(R + 4, needleAngle);
+  return (
+    <div className="homepro-xp-gauge" title={`XP ${xp.xp_score.toFixed(2)} — ${xp.regime}`}>
+      <svg viewBox="0 0 160 100" role="img" aria-label={`XP breadth ${xp.xp_score.toFixed(2)}, ${xp.regime}`}>
+        {segments.map((seg, i) => (
+          <path key={i} d={seg.path} fill="none" stroke={seg.color} strokeWidth={9} opacity={0.92} />
+        ))}
+        <line x1={nx} y1={ny} x2={tx} y2={ty} stroke="var(--text)" strokeWidth={2.6} strokeLinecap="round" />
+        <text x={CX} y={62} textAnchor="middle" className="homepro-xp-gauge-score" fill={xp.regime_color}>
+          {xp.xp_score.toFixed(2)}
+        </text>
+        <text x={CX} y={80} textAnchor="middle" className="homepro-xp-gauge-regime">
+          {xp.regime}
+        </text>
+      </svg>
+    </div>
+  );
+}
+
 function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: number }) {
   const uid = useId().replace(/[:]/g, "");
   const wrapRef = useRef<HTMLDivElement | null>(null);
@@ -817,10 +868,7 @@ export function HomePanel({
                   </span>
                 );
               })()}
-              <div className="homepro-xp-badge" style={{ background: xpBreadth.regime_color, boxShadow: `0 6px 18px -6px ${xpBreadth.regime_color}` }}>
-                <strong>{xpBreadth.xp_score.toFixed(2)}</strong>
-                <span>{xpBreadth.regime}</span>
-              </div>
+              <XpGauge xp={xpBreadth} />
             </div>
           </div>
           <XpBreadthChart xp={xpBreadth} />
