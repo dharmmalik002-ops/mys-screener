@@ -76,7 +76,7 @@ function pressureMeaning(share: number | null): string {
   return "Distribution — leaders are being sold on volume.";
 }
 
-export function MarketsPanel() {
+export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbol: string) => void }) {
   const [state, setState] = useState<FetchState>("loading");
   const [data, setData] = useState<MarketEnvironmentResponse | null>(null);
 
@@ -107,16 +107,16 @@ export function MarketsPanel() {
     };
     void weekRow;
     const week = (data?.history ?? []).slice(0, -1).slice(-5);
-    const weekAvg = (pick: (r: { ft3_held_pct: number | null; above_ema21_pct: number | null; score: number | null }) => number | null) => {
+    const weekAvg = (pick: (r: { structural_held_pct?: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null; score: number | null }) => number | null) => {
       const vals = week.map(pick).filter((v): v is number => v !== null && Number.isFinite(v));
       return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : null;
     };
     return [
       {
-        label: "Breakout follow-through (3d held %)",
-        today: (today.followthrough?.d3 ?? {}).held_pct ?? null,
-        yesterday: (yesterday?.followthrough?.d3 ?? {}).held_pct ?? null,
-        week: weekAvg((r) => r.ft3_held_pct),
+        label: "Base breakouts still above pivot %",
+        today: (today.structural ?? {}).held_pct ?? null,
+        yesterday: (yesterday?.structural ?? {}).held_pct ?? null,
+        week: weekAvg((r) => r.structural_held_pct ?? null),
       },
       {
         label: "Leaders above 21 EMA %",
@@ -151,6 +151,7 @@ export function MarketsPanel() {
   }
   if (!today) return null;
 
+  const structural = (today.structural ?? {}) as Record<string, number | null>;
   const ft3 = (today.followthrough?.d3 ?? {}) as Record<string, number | null>;
   const ft1 = (today.followthrough?.d1 ?? {}) as Record<string, number | null>;
   const ft5 = (today.followthrough?.d5 ?? {}) as Record<string, number | null>;
@@ -221,11 +222,13 @@ export function MarketsPanel() {
       {/* Component cards */}
       <div className="mk-grid">
         <div className="mk-card">
-          <div className="mk-card-hdr">Breakout Follow-Through</div>
-          <div className="mk-big">{num(ft3.held_pct, 0, "%")}<small> of 3-day-old breakouts held ({ft3.count ?? 0})</small></div>
-          <div className="mk-sub">1d: {num(ft1.held_pct, 0, "%")} ({ft1.count ?? 0}) · 5d: {num(ft5.held_pct, 0, "%")} ({ft5.count ?? 0})</div>
-          <div className="mk-meaning">{ftMeaning(ft3.held_pct ?? null)}</div>
-          <Spark values={(data?.history ?? []).map((h) => h.ft3_held_pct)} />
+          <div className="mk-card-hdr">Base Breakout Follow-Through</div>
+          <div className="mk-big">{num(structural.held_pct ?? null, 0, "%")}<small> of {structural.events ?? 0} base breakouts (last ~12 sessions) still above pivot</small></div>
+          <div className="mk-sub">
+            back inside base: {num(structural.back_in_base_pct ?? null, 0, "%")} · short-term clears held (1d/3d/5d): {num(ft1.held_pct, 0, "%")} / {num(ft3.held_pct, 0, "%")} / {num(ft5.held_pct, 0, "%")}
+          </div>
+          <div className="mk-meaning">{ftMeaning(structural.held_pct ?? null)}</div>
+          <Spark values={(data?.history ?? []).map((h) => h.structural_held_pct ?? null)} />
         </div>
         <div className="mk-card">
           <div className="mk-card-hdr">Today's Breakout Quality</div>
@@ -271,6 +274,57 @@ export function MarketsPanel() {
         </div>
       </div>
 
+      {/* Named evidence */}
+      <div className="mk-week">
+        <div className="mk-week-hdr">The Evidence — names, not claims</div>
+        <div className="mk-week-grid">
+          <div>
+            <div className="mk-week-sub pos-hdr">Breakouts working ({(data?.evidence?.breakouts_working ?? []).length})</div>
+            {(data?.evidence?.breakouts_working ?? []).map((e) => (
+              <div key={e.symbol} className="mk-week-row">
+                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
+                <strong className="pos">+{e.pct_vs_pivot.toFixed(1)}%</strong>
+                <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+              </div>
+            ))}
+            {(data?.evidence?.breakouts_working ?? []).length === 0 ? <div className="mk-muted">None in the last ~12 sessions.</div> : null}
+          </div>
+          <div>
+            <div className="mk-week-sub neg-hdr">Back inside the base ({(data?.evidence?.breakouts_failed ?? []).length})</div>
+            {(data?.evidence?.breakouts_failed ?? []).map((e) => (
+              <div key={e.symbol} className="mk-week-row">
+                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(e.symbol)}>{e.symbol}</button>
+                <strong className="neg">{e.pct_vs_pivot.toFixed(1)}%</strong>
+                <small>vs pivot {e.pivot} · broke {e.sessions_ago}s ago · base {e.base_len_label}</small>
+              </div>
+            ))}
+            {(data?.evidence?.breakouts_failed ?? []).length === 0 ? <div className="mk-muted">None — breakouts are holding.</div> : null}
+          </div>
+        </div>
+        <div className="mk-week-grid mk-ema-tests">
+          <div>
+            <div className="mk-week-sub pos-hdr">21 EMA tests bought</div>
+            <div className="mk-chip-row">
+              {(data?.evidence?.ema_tests?.bounced ?? []).map((e) => (
+                <button key={e.symbol} type="button" className="mk-chip pos-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
+                  {e.symbol} <small>+{e.pct_vs_ema21.toFixed(1)}%</small>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div className="mk-week-sub neg-hdr">21 EMA tests failed</div>
+            <div className="mk-chip-row">
+              {(data?.evidence?.ema_tests?.sliced ?? []).map((e) => (
+                <button key={e.symbol} type="button" className="mk-chip neg-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
+                  {e.symbol} <small>{e.pct_vs_ema21.toFixed(1)}%</small>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Last week review */}
       <div className="mk-week">
         <div className="mk-week-hdr">Last Week — what worked, what didn't</div>
@@ -280,13 +334,6 @@ export function MarketsPanel() {
             {ai?.what_worked?.length ? (
               <ul>{ai.what_worked.map((w, i) => <li key={i}>{w}</li>)}</ul>
             ) : null}
-            {(week?.scanners ?? []).filter((s) => s.avg_return_pct > 0).slice(0, 4).map((s) => (
-              <div key={s.scan_id} className="mk-week-row">
-                <span>{s.name}</span>
-                <strong className="pos">+{s.avg_return_pct.toFixed(1)}%</strong>
-                <small>{s.win_rate_pct.toFixed(0)}% win · {s.picks} picks</small>
-              </div>
-            ))}
             {(week?.top_sectors ?? []).map((s) => (
               <div key={s.sector} className="mk-week-row">
                 <span>{s.sector}</span>
@@ -302,13 +349,6 @@ export function MarketsPanel() {
             {ai?.what_didnt?.length ? (
               <ul>{ai.what_didnt.map((w, i) => <li key={i}>{w}</li>)}</ul>
             ) : null}
-            {(week?.scanners ?? []).filter((s) => s.avg_return_pct <= 0).slice(-4).map((s) => (
-              <div key={s.scan_id} className="mk-week-row">
-                <span>{s.name}</span>
-                <strong className="neg">{s.avg_return_pct.toFixed(1)}%</strong>
-                <small>{s.win_rate_pct.toFixed(0)}% win · {s.picks} picks</small>
-              </div>
-            ))}
             {(week?.bottom_sectors ?? []).map((s) => (
               <div key={s.sector} className="mk-week-row">
                 <span>{s.sector}</span>
@@ -321,8 +361,8 @@ export function MarketsPanel() {
           </div>
         </div>
         <div className="mk-footnote">
-          Scanner rows measure the forward return of every pick recorded in the last 5 sessions, unmanaged since its
-          scan day. History deepens daily — the first days after launch will show fewer comparisons.
+          Sector rows are the median 5-day return across each sector's liquid stocks. Day-vs-day and week
+          comparisons deepen automatically as daily history accumulates.
         </div>
       </div>
     </Panel>

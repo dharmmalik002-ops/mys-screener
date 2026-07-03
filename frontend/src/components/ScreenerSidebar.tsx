@@ -84,15 +84,8 @@ const ITEMS: SidebarItem[] = [
   { mode: "gap-up-openers", title: "Gap Up Openers", hint: "Opening gaps", Icon: TrendingUp },
   { mode: "ema-expansion", title: "Expansion", hint: "EMA expanding", Icon: Maximize2 },
   { mode: "contraction", title: "Contraction", hint: "Tight ranges", Icon: Minimize2 },
-  { mode: "demand-zone", title: "Demand Zone Scanner", hint: "Daily/weekly demand", Icon: Layers },
   { mode: "momentum-burst", title: "Momentum Burst", hint: "Bursts + EMA rest setups", Icon: Zap },
-  { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
-  { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },
   { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },
-  { mode: "episodic-pivot", title: "Episodic Pivot", hint: "Day-one gap from a flat base", Icon: Flame },
-  { mode: "rs-line-leads", title: "RS Line Leads", hint: "RS high before price high", Icon: LineChart },
-  { mode: "fresh-stage2", title: "Fresh Stage 2", hint: "New to the 5M trend template", Icon: Sparkles },
-  { mode: "high-tight-flag", title: "High Tight Flag", hint: "Steep pole, shallow flag", Icon: Flag },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
 

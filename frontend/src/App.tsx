@@ -5119,7 +5119,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         ) : null}
         {!loading && activePage === "markets" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <MarketsPanel />
+            <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
         {!loading && activePage === "journal" ? (

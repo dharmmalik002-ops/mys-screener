@@ -203,6 +203,8 @@ def compute_market_environment(
     ft1 = breakout_followthrough(universe, 1)
     ft3 = breakout_followthrough(universe, 3)
     ft5 = breakout_followthrough(universe, 5)
+    events = structural_breakout_events(universe)
+    structural = summarize_structural_breakouts(events)
     quality = breakout_close_quality(universe)
     ema = leader_ema_health(universe, is_leader)
     pressure = leader_volume_pressure(universe, is_leader)
@@ -213,11 +215,13 @@ def compute_market_environment(
     # against honest good/bad anchors for this universe.
     parts: list[tuple[float, float]] = []  # (score, weight)
     for score, weight in (
-        (_score_component(ft3.get("held_pct"), 30, 70), 0.30),
+        # Structural (base) breakouts are what a swing trader actually buys —
+        # momentum-noise 20d-high clears are excluded from the score entirely.
+        (_score_component(structural.get("held_pct"), 35, 75), 0.35),
         (_score_component(quality.get("strong_pct"), 20, 60), 0.15),
         (_score_component(ema.get("above_ema21_pct"), 40, 85), 0.20),
         (_score_component(pressure.get("accumulation_share_pct"), 30, 70), 0.15),
-        (_score_component(expansion.get("up_share_pct"), 30, 70), 0.10),
+        (_score_component(expansion.get("up_share_pct"), 30, 70), 0.05),
         (_score_component(
             None if thrust.get("up_4pct") is None or (thrust["up_4pct"] + thrust["down_4pct"]) == 0
             else thrust["up_4pct"] / (thrust["up_4pct"] + thrust["down_4pct"]) * 100,
@@ -244,6 +248,7 @@ def compute_market_environment(
         "score": score,
         "verdict": verdict,
         "universe": len(universe),
+        "structural": structural,
         "followthrough": {"d1": ft1, "d3": ft3, "d5": ft5},
         "close_quality": quality,
         "ema_health": ema,
@@ -251,3 +256,81 @@ def compute_market_environment(
         "range_expansion": expansion,
         "thrust": thrust,
     }
+
+def structural_breakout_events(snapshots: list[StockSnapshot], max_sessions_ago: int = 12) -> list[dict]:
+    """Base breakouts, not momentum noise: the crossing must end a real
+    consolidation (>= 8 sessions with no high at/above the pivot before the
+    cross; most bases extend past the 20-session window and are labelled
+    "4w+"). Each event carries where the stock stands vs its pivot TODAY —
+    the raw material for "breakouts are working / failing" with names."""
+    events: list[dict] = []
+    for s in snapshots:
+        closes = [float(v) for v in s.recent_closes]
+        highs = [float(v) for v in s.recent_highs]
+        n = min(len(closes), len(highs))
+        if n < 18:
+            continue
+        # most recent qualifying crossing, newest first
+        for at in range(n - 1, max(7, n - 1 - max_sessions_ago) - 1, -1):
+            if at < 8:
+                break
+            prior_high = max(highs[:at])
+            if prior_high <= 0 or closes[at] <= prior_high or closes[at - 1] > prior_high:
+                continue
+            # consolidation length: sessions since the window last printed a
+            # high at/above the pivot before the crossing day
+            last_touch = -1
+            for j in range(at - 1, -1, -1):
+                if highs[j] >= prior_high * 0.995:
+                    last_touch = j
+                    break
+            consol = at - last_touch - 1 if last_touch >= 0 else at
+            window_limited = last_touch < 0
+            if consol < 8 and not window_limited:
+                break  # continuation pop, not a base breakout — skip stock
+            pct_vs_pivot = (closes[n - 1] / prior_high - 1) * 100
+            events.append({
+                "symbol": s.symbol,
+                "sessions_ago": n - 1 - at,
+                "base_len_label": "4w+" if window_limited else f"{consol}s",
+                "pivot": round(prior_high, 2),
+                "pct_vs_pivot": round(pct_vs_pivot, 2),
+                "held": closes[n - 1] > prior_high,
+                "change_pct_today": round(s.change_pct, 2),
+            })
+            break  # one event per stock (the most recent)
+    return events
+
+
+def summarize_structural_breakouts(events: list[dict]) -> dict:
+    """Aggregate follow-through on REAL base breakouts (excluding today's,
+    which have had no chance to fail yet)."""
+    seasoned = [e for e in events if e["sessions_ago"] >= 1]
+    held = [e for e in seasoned if e["held"]]
+    return {
+        "events": len(seasoned),
+        "held_pct": _pct(len(held), len(seasoned)),
+        "back_in_base_pct": _pct(len(seasoned) - len(held), len(seasoned)),
+    }
+
+
+def leader_ema_examples(snapshots: list[StockSnapshot], is_leader) -> dict:
+    """Named leaders that tested the 21 EMA in the last 3 sessions — bounced
+    (still above) vs sliced (closed below)."""
+    bounced: list[dict] = []
+    sliced: list[dict] = []
+    for s in snapshots:
+        if not is_leader(s):
+            continue
+        e20 = s.ema20 or 0
+        if e20 <= 0:
+            continue
+        recent_lows = [float(v) for v in s.recent_lows][-3:]
+        if not recent_lows or min(recent_lows) > e20 * 1.005:
+            continue
+        entry = {"symbol": s.symbol, "pct_vs_ema21": round((s.last_price / e20 - 1) * 100, 2)}
+        (bounced if s.last_price > e20 else sliced).append(entry)
+    bounced.sort(key=lambda e: -e["pct_vs_ema21"])
+    sliced.sort(key=lambda e: e["pct_vs_ema21"])
+    return {"bounced": bounced[:12], "sliced": sliced[:12]}
+

@@ -93,7 +93,11 @@ from app.scanners.definitions import (
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
-from app.services.market_environment import compute_market_environment
+from app.services.market_environment import (
+    compute_market_environment,
+    leader_ema_examples,
+    structural_breakout_events,
+)
 from app.services.scan_history_store import ScanHistoryStore
 from app.services.journal_store import PostgresJournalStore
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
@@ -2753,10 +2757,27 @@ class DashboardService:
         page can compare today vs yesterday vs the last-week average."""
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         session_iso = self._current_session_iso()
-        today = await asyncio.to_thread(
-            compute_market_environment, snapshots, lambda s: _minervini_5m(s) is not None
-        )
+        is_leader = lambda s: _minervini_5m(s) is not None  # noqa: E731
+        today = await asyncio.to_thread(compute_market_environment, snapshots, is_leader)
         today["date"] = session_iso
+
+        def _evidence() -> dict:
+            eligible = [
+                s for s in snapshots
+                if (s.avg_volume_20d or 0) >= 50000 and s.last_price > 30
+                and len(s.recent_closes) >= 18
+            ]
+            events = structural_breakout_events(eligible)
+            seasoned = [e for e in events if e["sessions_ago"] >= 1]
+            working = sorted([e for e in seasoned if e["held"]], key=lambda e: -e["pct_vs_pivot"])[:15]
+            failed = sorted([e for e in seasoned if not e["held"]], key=lambda e: e["pct_vs_pivot"])[:15]
+            return {
+                "breakouts_working": working,
+                "breakouts_failed": failed,
+                "ema_tests": leader_ema_examples(eligible, is_leader),
+            }
+
+        evidence = await asyncio.to_thread(_evidence)
 
         if session_iso:
             try:
@@ -2788,6 +2809,7 @@ class DashboardService:
             {
                 "date": r.get("date"),
                 "score": r.get("score"),
+                "structural_held_pct": (r.get("structural") or {}).get("held_pct"),
                 "ft3_held_pct": ((r.get("followthrough") or {}).get("d3") or {}).get("held_pct"),
                 "above_ema21_pct": (r.get("ema_health") or {}).get("above_ema21_pct"),
             }
@@ -2805,9 +2827,15 @@ class DashboardService:
                         "week_avg_score": week_avg_score,
                         "week_rows": week_rows,
                         "week_review": week_review,
+                        "examples": {
+                            "breakouts_working": evidence["breakouts_working"][:8],
+                            "breakouts_failed": evidence["breakouts_failed"][:8],
+                            "ema_bounced": evidence["ema_tests"]["bounced"][:6],
+                            "ema_sliced": evidence["ema_tests"]["sliced"][:6],
+                        },
                     },
                     default=str,
-                )[:14000]
+                )[:15000]
                 try:
                     ai_doc = await asyncio.to_thread(
                         ai.generate_market_environment_review, payload, session_iso or ""
@@ -2825,42 +2853,13 @@ class DashboardService:
             "week_avg_score": week_avg_score,
             "history": slim_history,
             "week_review": week_review,
+            "evidence": evidence,
             "ai": ai_doc,
         }
 
     def _build_week_review(self, snapshots: list[StockSnapshot]) -> dict:
         """What actually paid over the last ~5 sessions: per-scanner forward
         returns of recorded picks, and sector leaders/laggards by 5D return."""
-        session_iso = self._current_session_iso()
-        price_by_symbol = {s.symbol: s.last_price for s in snapshots if s.last_price > 0}
-        scanner_rows: list[dict] = []
-        for scan_key in self._HISTORY_SCAN_KEYS:
-            try:
-                history = self._scan_history_store.load(scan_key)
-            except Exception:
-                continue
-            prior_dates = sorted(d for d in history.keys() if not session_iso or d < session_iso)[-5:]
-            returns: list[float] = []
-            for date_iso in prior_dates:
-                for raw in history.get(date_iso) or []:
-                    if not isinstance(raw, dict):
-                        continue
-                    sym = str(raw.get("symbol") or "")
-                    entry = raw.get("last_price")
-                    now = price_by_symbol.get(sym)
-                    if sym and isinstance(entry, (int, float)) and entry > 0 and now:
-                        returns.append((now / float(entry) - 1) * 100)
-            if len(returns) >= 3:
-                wins = sum(1 for r in returns if r > 0)
-                scanner_rows.append({
-                    "scan_id": scan_key,
-                    "name": self._SCORECARD_NAMES.get(scan_key, scan_key),
-                    "picks": len(returns),
-                    "avg_return_pct": round(sum(returns) / len(returns), 2),
-                    "win_rate_pct": round(wins / len(returns) * 100, 1),
-                })
-        scanner_rows.sort(key=lambda r: -(r.get("avg_return_pct") or 0))
-
         sector_returns: dict[str, list[float]] = {}
         for s in snapshots:
             if (s.avg_volume_20d or 0) < 50000:
@@ -2876,7 +2875,6 @@ class DashboardService:
         sector_rows.sort(key=lambda r: -r["median_return_5d_pct"])
 
         return {
-            "scanners": scanner_rows,
             "top_sectors": sector_rows[:4],
             "bottom_sectors": sector_rows[-4:][::-1] if len(sector_rows) >= 4 else [],
         }

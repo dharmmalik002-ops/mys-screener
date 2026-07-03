@@ -223,3 +223,37 @@
   color: var(--text-muted);
   line-height: 1.5;
 }
+
+.mk-symbol {
+  border: none;
+  background: none;
+  color: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  font-size: 0.8rem;
+}
+.mk-symbol:hover { text-decoration: underline; }
+
+.mk-ema-tests { margin-top: 12px; }
+
+.mk-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.mk-chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mk-chip small { font-weight: 500; }
+.mk-chip.pos-chip { border-color: rgba(8, 153, 129, 0.5); }
+.mk-chip.pos-chip small { color: #089981; }
+.mk-chip.neg-chip { border-color: rgba(242, 54, 69, 0.5); }
+.mk-chip.neg-chip small { color: #f23645; }

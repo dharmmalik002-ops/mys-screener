@@ -2686,6 +2686,7 @@ export type MarketEnvDay = {
   score: number | null;
   verdict: string;
   universe: number;
+  structural?: Record<string, number | null>;
   followthrough: { d1: MarketEnvComponent; d3: MarketEnvComponent; d5: MarketEnvComponent };
   close_quality: MarketEnvComponent;
   ema_health: MarketEnvComponent;
@@ -2693,16 +2694,29 @@ export type MarketEnvDay = {
   range_expansion: MarketEnvComponent;
   thrust: MarketEnvComponent;
 };
+export type BreakoutEvent = {
+  symbol: string;
+  sessions_ago: number;
+  base_len_label: string;
+  pivot: number;
+  pct_vs_pivot: number;
+  held: boolean;
+  change_pct_today: number;
+};
 export type MarketEnvironmentResponse = {
   date: string | null;
   today: MarketEnvDay;
   yesterday: MarketEnvDay | null;
   week_avg_score: number | null;
-  history: Array<{ date: string | null; score: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null }>;
+  history: Array<{ date: string | null; score: number | null; structural_held_pct?: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null }>;
   week_review: {
-    scanners: Array<{ scan_id: string; name: string; picks: number; avg_return_pct: number; win_rate_pct: number }>;
     top_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
     bottom_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
+  };
+  evidence: {
+    breakouts_working: BreakoutEvent[];
+    breakouts_failed: BreakoutEvent[];
+    ema_tests: { bounced: Array<{ symbol: string; pct_vs_ema21: number }>; sliced: Array<{ symbol: string; pct_vs_ema21: number }> };
   };
   ai: {
     headline?: string;
