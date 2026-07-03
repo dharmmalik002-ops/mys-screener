@@ -2718,6 +2718,39 @@ export type MarketEnvironmentResponse = {
     breakouts_failed: BreakoutEvent[];
     ema_tests: { bounced: Array<{ symbol: string; pct_vs_ema21: number }>; sliced: Array<{ symbol: string; pct_vs_ema21: number }> };
   };
+  posture: {
+    universe: number;
+    advances: number;
+    declines: number;
+    new_52w_highs: number;
+    new_52w_lows: number;
+    above_ema21_pct: number | null;
+    above_sma50_pct: number | null;
+    above_sma200_pct: number | null;
+  };
+  focus: Array<{
+    symbol: string;
+    name: string;
+    sector: string;
+    last_price: number;
+    change_pct: number;
+    rs_rating: number;
+    pct_from_52w_high: number;
+    score: number;
+    reasons: string[];
+  }>;
+  positions: Array<{
+    symbol: string;
+    mapped: boolean;
+    qty: number;
+    avg_px: number;
+    last_price?: number;
+    pnl_pct?: number | null;
+    change_pct?: number;
+    rs_rating?: number | null;
+    category: string;
+    advice: string;
+  }>;
   ai: {
     headline?: string;
     narrative?: string[];

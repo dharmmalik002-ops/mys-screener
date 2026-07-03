@@ -257,3 +257,101 @@
 .mk-chip.pos-chip small { color: #089981; }
 .mk-chip.neg-chip { border-color: rgba(242, 54, 69, 0.5); }
 .mk-chip.neg-chip small { color: #f23645; }
+
+.mk-posture {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.mk-posture-item {
+  flex: 1 1 120px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.mk-posture-item span {
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mk-posture-item strong {
+  font-size: 1.05rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-posture-item em { font-style: normal; }
+
+.mk-pos-list { display: flex; flex-direction: column; gap: 8px; }
+
+.mk-pos-row {
+  display: grid;
+  grid-template-columns: 110px 130px 70px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+
+.mk-pos-row .mk-pos-advice {
+  grid-column: 1 / -1;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.mk-pos-cat { font-weight: 700; font-size: 0.74rem; letter-spacing: 0.03em; text-transform: uppercase; }
+.mk-pos-row.cat-failed-breakout, .mk-pos-row.cat-broken-trend { border-color: rgba(242, 54, 69, 0.5); }
+.mk-pos-row.cat-failed-breakout .mk-pos-cat, .mk-pos-row.cat-broken-trend .mk-pos-cat { color: #f23645; }
+.mk-pos-row.cat-damaged, .mk-pos-row.cat-testing-21-ema { border-color: rgba(247, 185, 85, 0.5); }
+.mk-pos-row.cat-damaged .mk-pos-cat, .mk-pos-row.cat-testing-21-ema .mk-pos-cat { color: #f7b955; }
+.mk-pos-row.cat-breakout-working, .mk-pos-row.cat-healthy-trend { border-color: rgba(8, 153, 129, 0.45); }
+.mk-pos-row.cat-breakout-working .mk-pos-cat, .mk-pos-row.cat-healthy-trend .mk-pos-cat { color: #089981; }
+
+@media (max-width: 700px) {
+  .mk-pos-row { grid-template-columns: 1fr 1fr; }
+}
+
+.mk-focus-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 8px;
+}
+
+.mk-focus-card {
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 150ms ease-out;
+}
+
+.mk-focus-card:hover { border-color: rgba(8, 153, 129, 0.55); }
+
+.mk-focus-top { display: flex; justify-content: space-between; align-items: baseline; font-size: 0.88rem; }
+
+.mk-focus-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+
+.mk-tag {
+  font-size: 0.66rem;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+}

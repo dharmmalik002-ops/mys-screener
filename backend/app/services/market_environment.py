@@ -334,3 +334,106 @@ def leader_ema_examples(snapshots: list[StockSnapshot], is_leader) -> dict:
     sliced.sort(key=lambda e: e["pct_vs_ema21"])
     return {"bounced": bounced[:12], "sliced": sliced[:12]}
 
+def market_posture(snapshots: list[StockSnapshot]) -> dict:
+    """The context numbers a swing trader checks before anything else:
+    advance/decline, fresh 52-week highs vs lows, and % of liquid stocks
+    above the 21 EMA / 50 SMA / 200 SMA."""
+    universe = [s for s in snapshots if (s.avg_volume_20d or 0) >= 50000 and s.last_price > 30]
+    advances = sum(1 for s in universe if s.change_pct > 0)
+    declines = sum(1 for s in universe if s.change_pct < 0)
+    new_high = sum(
+        1 for s in universe
+        if s.high_52w and s.day_high and s.day_high >= s.high_52w * 0.999
+    )
+    new_low = sum(
+        1 for s in universe
+        if s.low_52w and s.day_low and s.day_low <= s.low_52w * 1.001
+    )
+    def _above(attr: str) -> float | None:
+        vals = [(s.last_price, getattr(s, attr) or 0) for s in universe if getattr(s, attr)]
+        if not vals:
+            return None
+        return round(sum(1 for price, level in vals if price > level) / len(vals) * 100, 1)
+    return {
+        "universe": len(universe),
+        "advances": advances,
+        "declines": declines,
+        "new_52w_highs": new_high,
+        "new_52w_lows": new_low,
+        "above_ema21_pct": _above("ema20"),
+        "above_sma50_pct": _above("sma50"),
+        "above_sma200_pct": _above("sma200"),
+    }
+
+
+def classify_position(s: StockSnapshot, event: dict | None) -> tuple[str, str]:
+    """Mechanical category + action for an open position, worst condition
+    first. `event` is this symbol's structural breakout event if one exists."""
+    price = s.last_price
+    sma200 = s.sma200 or 0
+    sma50 = s.sma50 or 0
+    ema21 = s.ema20 or 0
+    if event is not None and not event.get("held", True):
+        return ("Failed breakout", f"Back inside the base ({event['pct_vs_pivot']:+.1f}% vs pivot {event['pivot']}) — the setup is invalid; exit or cut to a tracking position.")
+    if sma200 > 0 and price < sma200:
+        return ("Broken trend", "Below the 200 SMA — Stage 4 territory; this is not a swing hold, exit.")
+    if sma50 > 0 and price < sma50:
+        return ("Damaged", "Below the 50 SMA — trend damaged; reduce, and demand a fast reclaim.")
+    if ema21 > 0 and price < ema21:
+        return ("Testing 21 EMA", "Closed below the 21 EMA — normal once, a leak if it lingers; watch for a reclaim within 2-3 sessions.")
+    if event is not None and event.get("held"):
+        return ("Breakout working", f"{event['pct_vs_pivot']:+.1f}% above its pivot ({event['pivot']}) — hold, stop under the pivot / 21 EMA.")
+    if ema21 > 0 and price > ema21 * 1.25:
+        return ("Extended", "More than 25% above the 21 EMA — hold the core, consider partials into strength; do not add here.")
+    return ("Healthy trend", "Riding above the 21 EMA with the moving averages stacked — hold, trail under the 21 EMA.")
+
+
+def build_focus_list(snapshots: list[StockSnapshot], events: list[dict], limit: int = 15) -> list[dict]:
+    """Strong candidates for the coming week: leaders in intact uptrends,
+    near their highs, with a reason you can act on — held breakouts first,
+    EMA resets and tight setups next."""
+    event_by_symbol = {e["symbol"]: e for e in events}
+    rows: list[dict] = []
+    for s in snapshots:
+        if (s.avg_volume_20d or 0) < 100000 or s.last_price <= 30:
+            continue
+        ema21 = s.ema20 or 0
+        sma50 = s.sma50 or 0
+        sma200 = s.sma200 or 0
+        if not (ema21 and sma50 and sma200):
+            continue
+        if s.last_price < sma50 or s.last_price < sma200 or sma50 < sma200:
+            continue
+        if not s.rs_eligible or s.rs_rating < 80:
+            continue
+        dist_high = s.pct_from_52w_high
+        if dist_high > 15:
+            continue
+        reasons: list[str] = [f"RS {s.rs_rating}"]
+        score = s.rs_rating * 0.5 + max(0.0, 15 - dist_high) * 2
+        event = event_by_symbol.get(s.symbol)
+        if event is not None and event.get("held"):
+            score += 12
+            reasons.append(f"held breakout {event['pct_vs_pivot']:+.1f}% vs pivot")
+        near_ema = ema21 > 0 and abs(s.last_price / ema21 - 1) <= 0.03
+        if near_ema:
+            score += 8
+            reasons.append("at 21 EMA reset")
+        if s.adr_pct_20 and s.adr_pct_20 <= 4:
+            score += 3
+            reasons.append(f"tight (ADR {s.adr_pct_20:.1f}%)")
+        reasons.append(f"{dist_high:.1f}% off 52w high")
+        rows.append({
+            "symbol": s.symbol,
+            "name": s.name,
+            "sector": s.sector,
+            "last_price": round(s.last_price, 2),
+            "change_pct": round(s.change_pct, 2),
+            "rs_rating": s.rs_rating,
+            "pct_from_52w_high": round(dist_high, 1),
+            "score": round(score, 1),
+            "reasons": reasons,
+        })
+    rows.sort(key=lambda r: -r["score"])
+    return rows[:limit]
+

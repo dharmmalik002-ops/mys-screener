@@ -94,8 +94,11 @@ from app.scanners.definitions import (
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.market_environment import (
+    build_focus_list,
+    classify_position,
     compute_market_environment,
     leader_ema_examples,
+    market_posture,
     structural_breakout_events,
 )
 from app.services.scan_history_store import ScanHistoryStore
@@ -2748,6 +2751,129 @@ class DashboardService:
         except Exception as exc:
             return {"error": str(exc)}
 
+    _base_age_memo: dict = {}
+
+    async def _base_age_label(self, session_iso: str | None, event: dict) -> str | None:
+        """Exact base length behind a breakout, from full daily history:
+        sessions between the previous touch of the pivot and the breakout,
+        rendered as weeks/months/years."""
+        key = (session_iso, event.get("symbol"), round(float(event.get("pivot") or 0), 2))
+        memo = type(self)._base_age_memo
+        if key in memo:
+            return memo[key]
+        if len(memo) > 300:
+            memo.clear()
+        label: str | None = None
+        try:
+            bars = await self.provider.get_chart(str(event["symbol"]), "1D", bars=800)
+        except Exception:
+            bars = []
+        pivot = float(event.get("pivot") or 0)
+        if bars and pivot > 0:
+            highs = [float(getattr(b, "high", 0) or 0) for b in bars]
+            n = len(highs)
+            breakout_idx = n - 1 - int(event.get("sessions_ago") or 0)
+            if 0 < breakout_idx < n:
+                touch_idx = -1
+                for j in range(breakout_idx - 1, -1, -1):
+                    if highs[j] >= pivot * 0.995:
+                        touch_idx = j
+                        break
+                base_sessions = breakout_idx - touch_idx - 1 if touch_idx >= 0 else breakout_idx
+                open_ended = touch_idx < 0
+                if base_sessions >= 8:
+                    if base_sessions < 25:
+                        label = f"{max(1, round(base_sessions / 5))}w"
+                    elif base_sessions < 250:
+                        label = f"{max(1, round(base_sessions / 21))}m"
+                    else:
+                        label = f"{base_sessions / 250:.1f}y"
+                    if open_ended:
+                        label += "+"
+        memo[key] = label
+        return label
+
+    def _journal_open_positions(self) -> list[dict]:
+        """Net the journal's raw buy/sell fills into open positions."""
+        try:
+            doc = self.get_journal_data()
+        except Exception:
+            return []
+        trades = doc.get("trades") if isinstance(doc, dict) else None
+        if not isinstance(trades, list):
+            return []
+        by_name: dict[str, dict] = {}
+        for fill in trades:
+            if not isinstance(fill, dict):
+                continue
+            name = str(fill.get("symbol") or "").strip().upper()
+            qty = float(fill.get("qty") or 0)
+            price = float(fill.get("price") or 0)
+            side = str(fill.get("type") or "").strip().lower()
+            if not name or qty <= 0 or price <= 0:
+                continue
+            row = by_name.setdefault(name, {"name": name, "net_qty": 0.0, "buy_qty": 0.0, "buy_value": 0.0})
+            if side.startswith("s"):
+                row["net_qty"] -= qty
+            else:
+                row["net_qty"] += qty
+                row["buy_qty"] += qty
+                row["buy_value"] += qty * price
+        out = []
+        for row in by_name.values():
+            if row["net_qty"] > 0 and row["buy_qty"] > 0:
+                out.append({
+                    "name": row["name"],
+                    "qty": row["net_qty"],
+                    "avg_px": row["buy_value"] / row["buy_qty"],
+                })
+        return out
+
+    @staticmethod
+    def _normalize_company_name(text: str) -> str:
+        cleaned = re.sub(r"[^A-Z0-9 ]", " ", str(text or "").upper())
+        for noise in (" LIMITED", " LTD", " CORPORATION", " CORP", " INDIA", " ENTERPRISES", " INDUSTRIES"):
+            cleaned = cleaned.replace(noise, " ")
+        return " ".join(cleaned.split())
+
+    async def _analyze_open_positions(self, snapshots: list[StockSnapshot], events: list[dict]) -> list[dict]:
+        positions = await asyncio.to_thread(self._journal_open_positions)
+        if not positions:
+            return []
+        by_symbol = {s.symbol: s for s in snapshots}
+        by_name = {self._normalize_company_name(s.name): s for s in snapshots}
+        event_by_symbol = {e["symbol"]: e for e in events}
+        out: list[dict] = []
+        for pos in positions:
+            raw = pos["name"]
+            snap = by_symbol.get(raw) or by_name.get(self._normalize_company_name(raw))
+            if snap is None:
+                norm = self._normalize_company_name(raw)
+                snap = next((s for key, s in by_name.items() if key.startswith(norm) or norm.startswith(key)), None)
+            if snap is None:
+                out.append({
+                    "symbol": raw, "mapped": False, "qty": pos["qty"], "avg_px": round(pos["avg_px"], 2),
+                    "category": "Unmapped", "advice": "Could not match this name to the universe (below the market-cap floor or renamed).",
+                })
+                continue
+            category, advice = classify_position(snap, event_by_symbol.get(snap.symbol))
+            pnl_pct = (snap.last_price / pos["avg_px"] - 1) * 100 if pos["avg_px"] > 0 else None
+            out.append({
+                "symbol": snap.symbol,
+                "mapped": True,
+                "qty": pos["qty"],
+                "avg_px": round(pos["avg_px"], 2),
+                "last_price": round(snap.last_price, 2),
+                "pnl_pct": round(pnl_pct, 2) if pnl_pct is not None else None,
+                "change_pct": round(snap.change_pct, 2),
+                "rs_rating": snap.rs_rating if snap.rs_eligible else None,
+                "category": category,
+                "advice": advice,
+            })
+        order = {"Failed breakout": 0, "Broken trend": 1, "Damaged": 2, "Testing 21 EMA": 3, "Extended": 4, "Breakout working": 5, "Healthy trend": 6, "Unmapped": 7}
+        out.sort(key=lambda r: order.get(r["category"], 9))
+        return out
+
     _market_env_ai_cache: dict = {}
 
     async def get_market_environment(self) -> dict:
@@ -2761,7 +2887,7 @@ class DashboardService:
         today = await asyncio.to_thread(compute_market_environment, snapshots, is_leader)
         today["date"] = session_iso
 
-        def _evidence() -> dict:
+        def _evidence() -> tuple[dict, list[dict]]:
             eligible = [
                 s for s in snapshots
                 if (s.avg_volume_20d or 0) >= 50000 and s.last_price > 30
@@ -2771,13 +2897,28 @@ class DashboardService:
             seasoned = [e for e in events if e["sessions_ago"] >= 1]
             working = sorted([e for e in seasoned if e["held"]], key=lambda e: -e["pct_vs_pivot"])[:15]
             failed = sorted([e for e in seasoned if not e["held"]], key=lambda e: e["pct_vs_pivot"])[:15]
-            return {
-                "breakouts_working": working,
-                "breakouts_failed": failed,
-                "ema_tests": leader_ema_examples(eligible, is_leader),
-            }
+            return (
+                {
+                    "breakouts_working": working,
+                    "breakouts_failed": failed,
+                    "ema_tests": leader_ema_examples(eligible, is_leader),
+                },
+                events,
+            )
 
-        evidence = await asyncio.to_thread(_evidence)
+        evidence, all_events = await asyncio.to_thread(_evidence)
+        # Precise base ages from full daily history (memoized per session/day —
+        # ~25 provider chart pulls at most, once a day, all provider-cached).
+        for event in evidence["breakouts_working"] + evidence["breakouts_failed"]:
+            try:
+                label = await self._base_age_label(session_iso, event)
+                if label:
+                    event["base_len_label"] = label
+            except Exception:
+                pass
+        posture = await asyncio.to_thread(market_posture, snapshots)
+        focus = await asyncio.to_thread(build_focus_list, snapshots, all_events)
+        positions = await self._analyze_open_positions(snapshots, all_events)
 
         if session_iso:
             try:
@@ -2833,6 +2974,12 @@ class DashboardService:
                             "ema_bounced": evidence["ema_tests"]["bounced"][:6],
                             "ema_sliced": evidence["ema_tests"]["sliced"][:6],
                         },
+                        "market_posture": posture,
+                        "open_positions": [
+                            {k: pos.get(k) for k in ("symbol", "pnl_pct", "category")}
+                            for pos in positions[:12]
+                        ],
+                        "focus_candidates": [f["symbol"] for f in focus[:10]],
                     },
                     default=str,
                 )[:15000]
@@ -2854,6 +3001,9 @@ class DashboardService:
             "history": slim_history,
             "week_review": week_review,
             "evidence": evidence,
+            "posture": posture,
+            "focus": focus,
+            "positions": positions,
             "ai": ai_doc,
         }
 

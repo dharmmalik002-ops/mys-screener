@@ -192,6 +192,32 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
         {ai?.one_rule_today ? <div className="mk-rule">Rule today: {ai.one_rule_today}</div> : null}
       </div>
 
+      {/* Market posture strip */}
+      {data?.posture ? (
+        <div className="mk-posture">
+          <div className="mk-posture-item">
+            <span>Adv / Dec</span>
+            <strong><em className="pos">{data.posture.advances}</em> / <em className="neg">{data.posture.declines}</em></strong>
+          </div>
+          <div className="mk-posture-item">
+            <span>52w High / Low today</span>
+            <strong><em className="pos">{data.posture.new_52w_highs}</em> / <em className="neg">{data.posture.new_52w_lows}</em></strong>
+          </div>
+          <div className="mk-posture-item">
+            <span>&gt; 21 EMA</span>
+            <strong>{num(data.posture.above_ema21_pct, 0, "%")}</strong>
+          </div>
+          <div className="mk-posture-item">
+            <span>&gt; 50 SMA</span>
+            <strong>{num(data.posture.above_sma50_pct, 0, "%")}</strong>
+          </div>
+          <div className="mk-posture-item">
+            <span>&gt; 200 SMA</span>
+            <strong>{num(data.posture.above_sma200_pct, 0, "%")}</strong>
+          </div>
+        </div>
+      ) : null}
+
       {/* AI daily read */}
       {ai ? (
         <div className="mk-ai">
@@ -273,6 +299,72 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           </div>
         </div>
       </div>
+
+      {/* Open positions health */}
+      {(data?.positions ?? []).length ? (
+        <div className="mk-week">
+          <div className="mk-week-hdr">Your Open Positions — health check</div>
+          <div className="mk-pos-list">
+            {(data?.positions ?? []).map((p) => (
+              <div key={p.symbol + String(p.avg_px)} className={`mk-pos-row cat-${p.category.toLowerCase().replace(/[^a-z]+/g, "-")}`}>
+                <button type="button" className="mk-symbol" onClick={() => p.mapped && onOpenSymbolChart?.(p.symbol)}>
+                  {p.symbol}
+                </button>
+                <span className="mk-pos-cat">{p.category}</span>
+                {p.pnl_pct !== null && p.pnl_pct !== undefined ? (
+                  <strong className={p.pnl_pct >= 0 ? "pos" : "neg"}>
+                    {p.pnl_pct >= 0 ? "+" : ""}{p.pnl_pct.toFixed(1)}%
+                  </strong>
+                ) : <strong>—</strong>}
+                <small>
+                  {p.mapped ? `avg ${p.avg_px} → ${p.last_price}` : `avg ${p.avg_px}`}
+                  {p.rs_rating ? ` · RS ${p.rs_rating}` : ""}
+                </small>
+                <div className="mk-pos-advice">{p.advice}</div>
+              </div>
+            ))}
+          </div>
+          <div className="mk-footnote">
+            Positions are netted from your journal's buy/sell entries and re-classified daily against the same
+            rules as the market metrics. Worst conditions listed first.
+          </div>
+        </div>
+      ) : (
+        <div className="mk-week">
+          <div className="mk-week-hdr">Your Open Positions</div>
+          <div className="mk-muted">
+            No open positions synced yet — open the Journal page once (it syncs your positions to the backend), then revisit.
+          </div>
+        </div>
+      )}
+
+      {/* Focus list */}
+      {(data?.focus ?? []).length ? (
+        <div className="mk-week">
+          <div className="mk-week-hdr">Focus for the coming week — strongest names in what's working</div>
+          <div className="mk-focus-grid">
+            {(data?.focus ?? []).map((f) => (
+              <button key={f.symbol} type="button" className="mk-focus-card" onClick={() => onOpenSymbolChart?.(f.symbol)}>
+                <div className="mk-focus-top">
+                  <strong>{f.symbol}</strong>
+                  <span className={f.change_pct >= 0 ? "pos" : "neg"}>
+                    {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
+                  </span>
+                </div>
+                <small className="mk-muted">{f.sector}</small>
+                <div className="mk-focus-tags">
+                  {f.reasons.map((r) => <span key={r} className="mk-tag">{r}</span>)}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="mk-footnote">
+            Selection: RS ≥ 80, above a stacked 50/200 SMA, within 15% of the 52-week high, liquid — ranked by RS,
+            proximity to highs, held breakouts, 21 EMA resets, and tightness. A watch list, not a buy list: each
+            still needs your entry.
+          </div>
+        </div>
+      ) : null}
 
       {/* Named evidence */}
       <div className="mk-week">
