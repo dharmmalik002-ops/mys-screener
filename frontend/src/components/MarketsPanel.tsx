@@ -215,6 +215,10 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
             <span>&gt; 200 SMA</span>
             <strong>{num(data.posture.above_sma200_pct, 0, "%")}</strong>
           </div>
+          <div className="mk-posture-note">
+            52w/MA stats measured on {data.posture.leveled_universe ?? data.posture.universe} stocks with
+            verified-fresh levels; stale-history names are excluded, not guessed.
+          </div>
         </div>
       ) : null}
 

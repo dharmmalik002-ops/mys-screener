@@ -355,3 +355,9 @@
   border: 1px solid var(--line);
   color: var(--text-muted);
 }
+
+.mk-posture-note {
+  flex-basis: 100%;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}

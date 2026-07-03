@@ -21,11 +21,32 @@ _MIN_AVG_VOL = 50_000
 _MIN_PRICE = 30.0
 
 
+def has_trustworthy_levels(s: StockSnapshot) -> bool:
+    """Guards against the stale-seed trap: for ~100 BSE-listed names the daily
+    patch carries fresh PRICES but no fresh indicator block, so 52w levels and
+    MAs silently come from a months-old baked snapshot. A stock's 52w high can
+    never sit below its own 20-day high (nor its 52w low above its 20-day
+    low) — stocks failing that consistency test are excluded from every
+    level-based statistic instead of being counted wrongly."""
+    highs = [float(v) for v in s.recent_highs if v]
+    lows = [float(v) for v in s.recent_lows if v]
+    if len(highs) < 10 or len(lows) < 10:
+        return False
+    h52 = s.high_52w or 0
+    l52 = s.low_52w or 0
+    if h52 <= 0 or l52 <= 0:
+        return False
+    if h52 < max(highs) * 0.999 or l52 > min(lows) * 1.001:
+        return False
+    return bool(s.sma200 and s.sma50 and s.ema20)
+
+
 def _eligible(snapshots: list[StockSnapshot]) -> list[StockSnapshot]:
     return [
         s for s in snapshots
         if (s.avg_volume_20d or 0) >= _MIN_AVG_VOL and s.last_price > _MIN_PRICE
         and len(s.recent_closes) >= 18 and len(s.recent_highs) >= 18 and len(s.recent_lows) >= 18
+        and has_trustworthy_levels(s)
     ]
 
 
@@ -341,21 +362,25 @@ def market_posture(snapshots: list[StockSnapshot]) -> dict:
     universe = [s for s in snapshots if (s.avg_volume_20d or 0) >= 50000 and s.last_price > 30]
     advances = sum(1 for s in universe if s.change_pct > 0)
     declines = sum(1 for s in universe if s.change_pct < 0)
+    # Levels (52w extremes, MAs) only from stocks whose indicator data passes
+    # the freshness consistency test — stale-seed BSE rows are excluded.
+    leveled = [s for s in universe if has_trustworthy_levels(s)]
     new_high = sum(
-        1 for s in universe
+        1 for s in leveled
         if s.high_52w and s.day_high and s.day_high >= s.high_52w * 0.999
     )
     new_low = sum(
-        1 for s in universe
+        1 for s in leveled
         if s.low_52w and s.day_low and s.day_low <= s.low_52w * 1.001
     )
     def _above(attr: str) -> float | None:
-        vals = [(s.last_price, getattr(s, attr) or 0) for s in universe if getattr(s, attr)]
+        vals = [(s.last_price, getattr(s, attr) or 0) for s in leveled if getattr(s, attr)]
         if not vals:
             return None
         return round(sum(1 for price, level in vals if price > level) / len(vals) * 100, 1)
     return {
         "universe": len(universe),
+        "leveled_universe": len(leveled),
         "advances": advances,
         "declines": declines,
         "new_52w_highs": new_high,
@@ -369,6 +394,8 @@ def market_posture(snapshots: list[StockSnapshot]) -> dict:
 def classify_position(s: StockSnapshot, event: dict | None) -> tuple[str, str]:
     """Mechanical category + action for an open position, worst condition
     first. `event` is this symbol's structural breakout event if one exists."""
+    if not has_trustworthy_levels(s):
+        return ("Data limited", "This name's MA/52-week levels aren't refreshed daily (BSE-history gap) — judge it on the chart, not on these rules.")
     price = s.last_price
     sma200 = s.sma200 or 0
     sma50 = s.sma50 or 0
@@ -396,6 +423,8 @@ def build_focus_list(snapshots: list[StockSnapshot], events: list[dict], limit: 
     rows: list[dict] = []
     for s in snapshots:
         if (s.avg_volume_20d or 0) < 100000 or s.last_price <= 30:
+            continue
+        if not has_trustworthy_levels(s):
             continue
         ema21 = s.ema20 or 0
         sma50 = s.sma50 or 0

@@ -384,7 +384,10 @@ def _fetch_from_yfinance(trade_date: date, extra_tickers: list[str] | None = Non
         return None
 
     # Extract .NS tickers (already stored in the universe file)
-    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    # Include BSE-listed names (.BO) too — excluding them left ~110 stocks
+    # with fresh prices but months-stale 52w/MA levels from the baked seed,
+    # which poisoned every level-based statistic for BSE symbols.
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith((".NS", ".BO"))]
     if extra_tickers:
         already = {t for t in tickers}
         for extra in extra_tickers:
@@ -449,7 +452,7 @@ def _fetch_from_yfinance(trade_date: date, extra_tickers: list[str] | None = Non
             if isinstance(df.columns, pd.MultiIndex):
                 # Multi-ticker result: columns are (field, ticker)
                 for ticker in chunk:
-                    sym = ticker.replace(".NS", "")
+                    sym = _ticker_symbol(ticker)
                     try:
                         sub = df.xs(ticker, axis=1, level=1)
                         extracted = _extract_latest_two(sub)
@@ -462,7 +465,7 @@ def _fetch_from_yfinance(trade_date: date, extra_tickers: list[str] | None = Non
                         continue
             else:
                 # Single-ticker result: columns are simple field names
-                sym = chunk[0].replace(".NS", "")
+                sym = _ticker_symbol(chunk[0])
                 extracted = _extract_latest_two(df)
                 if extracted is None:
                     continue
@@ -510,7 +513,10 @@ def _fetch_yfinance_universe_bars(trade_date: date, extra_tickers: list[str] | N
     if not isinstance(universe, list):
         return None
 
-    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    # Include BSE-listed names (.BO) too — excluding them left ~110 stocks
+    # with fresh prices but months-stale 52w/MA levels from the baked seed,
+    # which poisoned every level-based statistic for BSE symbols.
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith((".NS", ".BO"))]
     if extra_tickers:
         already = {t for t in tickers}
         for extra in extra_tickers:
@@ -576,7 +582,7 @@ def _fetch_yfinance_universe_bars(trade_date: date, extra_tickers: list[str] | N
             continue
         if isinstance(df.columns, pd.MultiIndex):
             for ticker in chunk:
-                sym = ticker.replace(".NS", "")
+                sym = _ticker_symbol(ticker)
                 try:
                     sub = df.xs(ticker, axis=1, level=1)
                 except Exception:
@@ -588,7 +594,7 @@ def _fetch_yfinance_universe_bars(trade_date: date, extra_tickers: list[str] | N
                 rec["p"] = prev_close
                 result[sym] = rec
         else:
-            sym = chunk[0].replace(".NS", "")
+            sym = _ticker_symbol(chunk[0])
             extracted = _row_for_target(df)
             if extracted is None:
                 continue
@@ -990,6 +996,11 @@ def _indicator_block_from_history(sub, trade_date: date) -> dict | None:
     return block
 
 
+def _ticker_symbol(ticker: str) -> str:
+    """Universe symbol for a Yahoo ticker (strip the .NS/.BO suffix)."""
+    return str(ticker).removesuffix(".NS").removesuffix(".BO")
+
+
 def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_tickers: list[str] | None = None) -> int:
     """Fetch ~2y of adjusted daily bars for the universe and attach an "i"
     indicator block to each patch record. Mutates ``symbols`` in place and
@@ -1012,7 +1023,10 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
     if not isinstance(universe, list):
         return 0
 
-    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith(".NS")]
+    # Include BSE-listed names (.BO) too — excluding them left ~110 stocks
+    # with fresh prices but months-stale 52w/MA levels from the baked seed,
+    # which poisoned every level-based statistic for BSE symbols.
+    tickers = [s.get("ticker", "") for s in universe if str(s.get("ticker", "")).endswith((".NS", ".BO"))]
     if extra_tickers:
         already = set(tickers)
         for extra in extra_tickers:
@@ -1020,7 +1034,7 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
                 tickers.append(extra)
                 already.add(extra)
     # Only fetch tickers whose symbol actually has a price record in this patch.
-    tickers = [t for t in tickers if t.replace(".NS", "") in symbols]
+    tickers = [t for t in tickers if _ticker_symbol(t) in symbols]
     if not tickers:
         return 0
 
@@ -1050,7 +1064,7 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
             continue
         if isinstance(df.columns, pd.MultiIndex):
             for ticker in chunk:
-                sym = ticker.replace(".NS", "")
+                sym = _ticker_symbol(ticker)
                 try:
                     sub = df.xs(ticker, axis=1, level=1)
                 except Exception:
@@ -1063,7 +1077,7 @@ def _attach_indicator_blocks(symbols: dict[str, dict], trade_date: date, extra_t
                     symbols[sym]["i"] = block
                     attached += 1
         else:
-            sym = chunk[0].replace(".NS", "")
+            sym = _ticker_symbol(chunk[0])
             try:
                 block = _indicator_block_from_history(df, trade_date)
             except Exception:

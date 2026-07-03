@@ -2720,6 +2720,7 @@ export type MarketEnvironmentResponse = {
   };
   posture: {
     universe: number;
+    leveled_universe?: number;
     advances: number;
     declines: number;
     new_52w_highs: number;
