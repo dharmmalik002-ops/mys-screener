@@ -942,6 +942,63 @@ def make_positive_earnings_evaluator(
 _positive_earnings = make_positive_earnings_evaluator()
 
 
+def _episodic_pivot(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    """Qullamaggie-style episodic pivot: a big gap-up on massive relative
+    volume out of a FLAT prior base — caught on day one, unlike the
+    positive-earnings scan which needs the 5-session follow-through."""
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.volume <= 100000 or snapshot.last_price <= 30:
+        return None
+    if snapshot.gap_pct < 4 or snapshot.change_pct < 5:
+        return None
+    rvol_20 = snapshot.volume / avg_vol_20
+    if rvol_20 <= 3:
+        return None
+    # Flat prior base: the 20D return EXCLUDING today must be a drift, not a
+    # run — an EP works because the crowd is offside, not chasing an old move.
+    prior_20d = ((1 + snapshot.stock_return_20d / 100) / (1 + snapshot.change_pct / 100) - 1) * 100
+    if abs(prior_20d) > 15:
+        return None
+    score = 80 + min(rvol_20, 12.0) * 2 + snapshot.gap_pct + snapshot.change_pct * 0.5
+    reasons = [
+        "Episodic pivot: gap from a flat base on volume",
+        f"Gap +{snapshot.gap_pct:.1f}%, day +{snapshot.change_pct:.1f}%",
+        f"20-Day RVOL {rvol_20:.1f}x",
+        f"Prior 20D drift {prior_20d:+.1f}% (flat base)",
+    ]
+    return round(score, 2), reasons
+
+
+def _rs_line_leads(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    """O'Neil tell: the RS rating is at a fresh high across its tracked
+    lookbacks while price still sits below the pivot zone — strength building
+    before the breakout, feeding cheat / low-cheat entries."""
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+    if not snapshot.rs_eligible or snapshot.rs_rating < 80:
+        return None
+    prior_best = max(snapshot.rs_rating_1d_ago, snapshot.rs_rating_1w_ago, snapshot.rs_rating_1m_ago)
+    if snapshot.rs_rating < prior_best or snapshot.rs_rating <= snapshot.rs_rating_1m_ago:
+        return None
+    # Below the pivot but within striking distance — not extended, not broken.
+    distance = snapshot.pct_from_52w_high
+    if distance < 3 or distance > 20:
+        return None
+    sma50 = snapshot.sma50 or 0
+    sma200 = snapshot.sma200 or 0
+    if sma50 <= 0 or sma200 <= 0 or snapshot.last_price < sma50 or snapshot.last_price < sma200:
+        return None
+    rs_gain_1m = snapshot.rs_rating - snapshot.rs_rating_1m_ago
+    score = 70 + snapshot.rs_rating * 0.2 + rs_gain_1m * 0.8 + max(0.0, 20 - distance) * 0.5
+    reasons = [
+        "RS line at a fresh high while price is still below the pivot",
+        f"RS {snapshot.rs_rating} (1M ago {snapshot.rs_rating_1m_ago}, +{rs_gain_1m})",
+        f"{distance:.1f}% below 52W high, above 50/200 SMA",
+    ]
+    return round(score, 2), reasons
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -991,7 +1048,39 @@ SCANS: list[ScanDefinition] = [
         "Result declared in last 60 days with a strong post-earnings reaction: top-quartile close, +1% gap up, 2x volume, and +10% over 5 sessions.",
         _positive_earnings,
     ),
+    ScanDefinition(
+        "episodic-pivot",
+        "Episodic Pivot",
+        "Setups",
+        "Day-one gap-up >= 4% on 3x+ relative volume out of a flat 20-day base — the EP caught before the follow-through, not after.",
+        _episodic_pivot,
+    ),
+    ScanDefinition(
+        "rs-line-leads",
+        "RS Line Leads",
+        "Setups",
+        "RS rating at a fresh high across 1D/1W/1M while price is still 3-20% below the 52-week high and above the 50/200 SMA.",
+        _rs_line_leads,
+    ),
 ]
+
+# Hidden from the served catalog: bearish mirror scans that have no role in a
+# long-only momentum playbook. Definitions above are kept intact — remove an
+# id from this set to bring a scan back.
+WEAKNESS_SCAN_IDS = frozenset({
+    "day-low",
+    "near-day-low",
+    "prev-day-low-break",
+    "week-low",
+    "month-low",
+    "six-month-low",
+    "low-52w",
+    "near-52w-low",
+    "all-time-low",
+    "near-atl",
+})
+
+SCANS = [scan for scan in SCANS if scan.id not in WEAKNESS_SCAN_IDS]
 
 SCAN_BY_ID = {scan.id: scan for scan in SCANS}
 

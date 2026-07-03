@@ -9,7 +9,10 @@ import {
   Activity,
   Award,
   BarChart3,
+  Flame,
   Layers,
+  LineChart,
+  Sparkles,
   Trash2,
   Trophy,
   Zap,
@@ -39,7 +42,10 @@ export type ScreenerMode =
   | "momentum-burst"
   | "minervini-1m"
   | "minervini-5m"
-  | "positive-earnings";
+  | "positive-earnings"
+  | "episodic-pivot"
+  | "rs-line-leads"
+  | "fresh-stage2";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -81,6 +87,9 @@ const ITEMS: SidebarItem[] = [
   { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: Crosshair },
   { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Long uptrend", Icon: Crosshair },
   { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },
+  { mode: "episodic-pivot", title: "Episodic Pivot", hint: "Day-one gap from a flat base", Icon: Flame },
+  { mode: "rs-line-leads", title: "RS Line Leads", hint: "RS high before price high", Icon: LineChart },
+  { mode: "fresh-stage2", title: "Fresh Stage 2", hint: "New to the 5M trend template", Icon: Sparkles },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
 

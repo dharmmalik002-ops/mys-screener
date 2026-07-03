@@ -3211,6 +3211,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "minervini-5m") {
       return getScanResults("minervini-5m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini5mMinLiquidityCrore });
     }
+    if (activeScanner === "episodic-pivot") {
+      return getScanResults("episodic-pivot", activeMarket, options);
+    }
+    if (activeScanner === "rs-line-leads") {
+      return getScanResults("rs-line-leads", activeMarket, options);
+    }
+    if (activeScanner === "fresh-stage2") {
+      return getScanResults("fresh-stage2", activeMarket, options);
+    }
     if (activeScanner === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
@@ -5167,6 +5176,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "minervini-1m": activeScanner === "minervini-1m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-1m" ? scanResults.total_hits : 0,
                       "minervini-5m": activeScanner === "minervini-5m" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "minervini-5m" ? scanResults.total_hits : 0,
                       "positive-earnings": activeScanner === "positive-earnings" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "positive-earnings" ? scanResults.total_hits : 0,
+                      "episodic-pivot": activeScanner === "episodic-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "episodic-pivot" ? scanResults.total_hits : 0,
+                      "rs-line-leads": activeScanner === "rs-line-leads" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "rs-line-leads" ? scanResults.total_hits : 0,
+                      "fresh-stage2": activeScanner === "fresh-stage2" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "fresh-stage2" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -5211,7 +5223,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                   ? "Minervini 5 Months"
                                                   : activeScanner === "positive-earnings"
                                                     ? "Positive Earnings"
-                                                    : "Pull Backs";
+                                                    : activeScanner === "episodic-pivot"
+                                                      ? "Episodic Pivot"
+                                                      : activeScanner === "rs-line-leads"
+                                                        ? "RS Line Leads"
+                                                        : activeScanner === "fresh-stage2"
+                                                          ? "Fresh Stage 2"
+                                                          : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -5239,7 +5257,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                   ? "Minervini 5 Months trend-template scan with an optional liquidity filter."
                                                   : activeScanner === "positive-earnings"
                                                     ? "Stocks with a strong confirmed reaction to the latest quarterly result in the last 60 days: top-quartile close, +1% gap up, 2x volume, +10% over 5 sessions."
-                                                    : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                    : activeScanner === "episodic-pivot"
+                                                      ? "Day-one episodic pivots: gap-up ≥4% on 3x+ relative volume out of a flat 20-day base — caught before the follow-through, not after."
+                                                      : activeScanner === "rs-line-leads"
+                                                        ? "RS rating at a fresh high across 1D/1W/1M while price is still 3–20% below the 52-week high — strength building before the breakout."
+                                                        : activeScanner === "fresh-stage2"
+                                                          ? "New entrants to the Minervini 5M trend template vs recent sessions — the delta list, not the standing leaders."
+                                                          : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(

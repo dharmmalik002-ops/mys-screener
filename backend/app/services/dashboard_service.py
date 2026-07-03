@@ -2438,6 +2438,9 @@ class DashboardService:
         "near-pivot",
         "consolidating",
         "demand-zone",
+        "episodic-pivot",
+        "rs-line-leads",
+        "fresh-stage2",
     )
 
     def _current_session_iso(self) -> str | None:
@@ -2758,6 +2761,9 @@ class DashboardService:
         "near-pivot": "Near Pivot",
         "consolidating": "Consolidating",
         "demand-zone": "Demand Zone Scanner",
+        "episodic-pivot": "Episodic Pivot",
+        "rs-line-leads": "RS Line Leads",
+        "fresh-stage2": "Fresh Stage 2",
     }
 
     def _build_scanner_scorecard(self, snapshots: list[StockSnapshot]) -> ScannerScorecardResponse:
@@ -2940,6 +2946,68 @@ class DashboardService:
             )
 
         scanners, results = self._scan_catalog(snapshots)
+
+        if scan_id == "fresh-stage2":
+            # Delta view over the Minervini 5M template: only names that are in
+            # the template TODAY but were absent from the recorded prior
+            # sessions. The standing template list shows the same ~80 leaders
+            # every day; the newcomers are the actionable ones.
+            base_items = results.get("minervini-5m", [])
+            session_iso = self._current_session_iso()
+            # Pin today's template membership so the baseline accumulates even
+            # when the Minervini 5M scanner itself is never opened (record_once
+            # is first-write-wins, so this never overwrites the decorate path).
+            if session_iso and base_items:
+                try:
+                    self._scan_history_store.record_once(
+                        "minervini-5m",
+                        session_iso,
+                        [{"symbol": item.symbol, "last_price": item.last_price, "score": item.score} for item in base_items],
+                    )
+                except Exception:
+                    pass
+            try:
+                history = self._scan_history_store.load("minervini-5m")
+            except Exception:
+                history = {}
+            prior_dates = sorted(
+                (d for d in history.keys() if not session_iso or d < session_iso),
+                reverse=True,
+            )[:5]
+            prior_symbols: set[str] = set()
+            for date_iso in prior_dates:
+                for raw in history.get(date_iso) or []:
+                    if isinstance(raw, dict) and raw.get("symbol"):
+                        prior_symbols.add(str(raw["symbol"]))
+            if prior_dates:
+                items = [item for item in base_items if item.symbol not in prior_symbols]
+            else:
+                # No baseline yet — the template history starts recording the
+                # first time Minervini 5M is opened; the delta needs a prior day.
+                items = []
+            items = self._filter_scan_items_by_liquidity(items, min_liquidity_crore)
+            items = await asyncio.to_thread(self._decorate_scan_items, "fresh-stage2", "Fresh Stage 2", items, snapshots)
+            descriptor_dict = {
+                "id": "fresh-stage2",
+                "name": "Fresh Stage 2",
+                "category": "Setups",
+                "description": (
+                    "New entrants to the Minervini 5M trend template vs the prior "
+                    f"{len(prior_dates) or 5} recorded session(s) — the delta list, not the standing leaders."
+                    + ("" if prior_dates else " Baseline builds after the template records its first session.")
+                ),
+                "hit_count": len(items),
+            }
+            return await self._scan_results_response(
+                scan=descriptor_dict,
+                scan_key="fresh-stage2",
+                request_signature=f"fresh-stage2:{len(prior_dates)}",
+                snapshots=snapshots,
+                items=items,
+                historical_runner=lambda historical_snapshots: [],
+                include_sector_summaries=include_sector_summaries,
+            )
+
         descriptor = next((scan for scan in scanners if scan.id == scan_id), None)
         if descriptor is None:
             raise KeyError(scan_id)
