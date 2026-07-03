@@ -5270,7 +5270,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                         : activeScanner === "fresh-stage2"
                                                           ? "New entrants to the Minervini 5M trend template vs recent sessions — the delta list, not the standing leaders."
                                                           : activeScanner === "high-tight-flag"
-                                                            ? "60%+ pole in ~8 weeks, then a 3–15 session flag no deeper than 25%, listed while still at or under the pivot."
+                                                            ? "60%+ pole in ~8 weeks, then a 2–15 session flag no deeper than 25%, listed while still at or under the pivot."
                                                             : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId

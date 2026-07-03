@@ -949,15 +949,17 @@ def _episodic_pivot(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     avg_vol_20 = snapshot.avg_volume_20d or 0
     if avg_vol_20 < 25000 or snapshot.volume <= 100000 or snapshot.last_price <= 30:
         return None
-    if snapshot.gap_pct < 4 or snapshot.change_pct < 5:
+    if snapshot.gap_pct < 4 or snapshot.change_pct < 4:
         return None
     rvol_20 = snapshot.volume / avg_vol_20
     if rvol_20 <= 3:
         return None
-    # Flat prior base: the 20D return EXCLUDING today must be a drift, not a
-    # run — an EP works because the crowd is offside, not chasing an old move.
+    # Not-extended prior base: the 20D return EXCLUDING today must be a drift,
+    # not a finished run. Asymmetric bounds — a beaten-down or sideways name
+    # (down to -20%) is a fine EP launchpad, and a mild uptrend (up to +30%)
+    # still leaves the crowd offside; beyond that it's chasing an old move.
     prior_20d = ((1 + snapshot.stock_return_20d / 100) / (1 + snapshot.change_pct / 100) - 1) * 100
-    if abs(prior_20d) > 15:
+    if prior_20d < -20 or prior_20d > 30:
         return None
     score = 80 + min(rvol_20, 12.0) * 2 + snapshot.gap_pct + snapshot.change_pct * 0.5
     reasons = [
@@ -1023,8 +1025,8 @@ def _high_tight_flag(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
     peak_idx = len(highs) - 1 - highs[::-1].index(peak)  # last touch of the run high
     flag_len = len(highs) - 1 - peak_idx  # sessions since that high
-    if flag_len < 3 or flag_len > 15:
-        return None  # too fresh to be a flag, or already a base
+    if flag_len < 2 or flag_len > 15:
+        return None  # peak today/yesterday isn't a flag yet; >15 is a base
 
     flag_low = min(lows[peak_idx:])
     depth = (peak - flag_low) / peak * 100
@@ -1124,7 +1126,7 @@ SCANS: list[ScanDefinition] = [
         "high-tight-flag",
         "High Tight Flag",
         "Setups",
-        "60%+ pole in ~8 weeks, then a 3-15 session flag no deeper than 25%, listed while still at or under the pivot — volume dry-up flagged.",
+        "60%+ pole in ~8 weeks, then a 2-15 session flag no deeper than 25%, listed while still at or under the pivot — volume dry-up flagged.",
         _high_tight_flag,
     ),
 ]

@@ -33,7 +33,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "episodic-pivot", name: "Episodic Pivot", category: "Setups", description: "Day-one gap-up >= 4% on 3x+ RVOL out of a flat 20-day base.", hit_count: 0 },
   { id: "rs-line-leads", name: "RS Line Leads", category: "Setups", description: "RS at a fresh high while price is still below the pivot zone.", hit_count: 0 },
   { id: "fresh-stage2", name: "Fresh Stage 2", category: "Setups", description: "New entrants to the Minervini 5M trend template vs recent sessions.", hit_count: 0 },
-  { id: "high-tight-flag", name: "High Tight Flag", category: "Setups", description: "Steep pole, shallow 3-15 session flag, at or under the pivot.", hit_count: 0 },
+  { id: "high-tight-flag", name: "High Tight Flag", category: "Setups", description: "Steep pole, shallow 2-15 session flag, at or under the pivot.", hit_count: 0 },
 ];
 
 export const SCANNER_BADGES: Record<string, string> = {
