@@ -2680,6 +2680,20 @@ export function saveWatchlistsState(
   }, undefined, normalizeWatchlistsStateResponse);
 }
 
+export type LiveBaseline = {
+  prev_close: number | null;
+  close: number | null;
+  avg_volume_20d: number | null;
+  name: string | null;
+  sector: string | null;
+};
+
+export function getLiveBaselines(symbols: string[], market: MarketKey = "india") {
+  return request<{ baselines: Record<string, LiveBaseline> }>(
+    `/api/live-baselines?symbols=${encodeURIComponent(symbols.join(","))}&market=${market}`,
+  );
+}
+
 export function getJournalData() {
   return request<Record<string, unknown>>("/api/journal");
 }

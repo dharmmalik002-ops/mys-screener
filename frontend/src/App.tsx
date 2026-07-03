@@ -97,6 +97,7 @@ const ScanFooter = lazy(() => import("./components/ScanFooter").then((module) =>
 const ScannerHeader = lazy(() => import("./components/ScannerHeader").then((module) => ({ default: module.ScannerHeader })));
 const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module) => ({ default: module.QueryBuilder })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
+const LivePanel = lazy(() => import("./components/LivePanel").then((module) => ({ default: module.LivePanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -156,7 +157,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal";
+type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live";
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
@@ -4932,6 +4933,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
           <button
             type="button"
+            className={activePage === "live" ? "nav-button primary" : "nav-button ghost"}
+            onClick={() => setActivePage("live")}
+          >
+            Live
+          </button>
+
+          <button
+            type="button"
             className={activePage === "journal" ? "nav-button primary" : "nav-button ghost"}
             onClick={() => setActivePage("journal")}
             onMouseEnter={() => prefetchPageModules("journal")}
@@ -5094,6 +5103,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
+        {!loading && activePage === "live" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            <LivePanel watchlists={watchlists} onOpenSymbolChart={handleJournalOpenSymbolChart} />
+          </Suspense>
+        ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
@@ -5106,7 +5120,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "journal" ? (
+        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">

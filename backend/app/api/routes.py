@@ -245,6 +245,35 @@ def build_router(service):
     async def bhavcopy_status(market: str = Query(default="india")):
         return resolve_service(market).get_bhavcopy_status()
 
+    @router.get("/live-baselines")
+    async def live_baselines(symbols: str = Query(default=""), market: str = Query(default="india")):
+        """EOD reference values for the Live page — ONE call at page open.
+
+        The live tick stream reaches the browser directly from the quote
+        source; this endpoint only seeds previous close / 20D average volume /
+        last EOD close per symbol so %change and RVOL can be computed
+        client-side. The live polling loop never touches this backend.
+        """
+        wanted = {s.strip().upper() for s in symbols.split(",") if s.strip()}
+        if not wanted:
+            return {"baselines": {}}
+        service_obj = resolve_service(market)
+        snapshots = await service_obj._snapshots()
+        out: dict[str, dict] = {}
+        for snap in snapshots:
+            if snap.symbol not in wanted:
+                continue
+            out[snap.symbol] = {
+                "prev_close": snap.previous_close,
+                "close": snap.last_price,
+                "avg_volume_20d": snap.avg_volume_20d,
+                "name": snap.name,
+                "sector": snap.sector,
+            }
+            if len(out) >= 200:
+                break
+        return {"baselines": out}
+
     @router.get("/journal")
     async def get_journal():
         return resolve_service("india").get_journal_data()
