@@ -3220,6 +3220,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "fresh-stage2") {
       return getScanResults("fresh-stage2", activeMarket, options);
     }
+    if (activeScanner === "high-tight-flag") {
+      return getScanResults("high-tight-flag", activeMarket, options);
+    }
     if (activeScanner === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
@@ -5179,6 +5182,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "episodic-pivot": activeScanner === "episodic-pivot" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "episodic-pivot" ? scanResults.total_hits : 0,
                       "rs-line-leads": activeScanner === "rs-line-leads" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "rs-line-leads" ? scanResults.total_hits : 0,
                       "fresh-stage2": activeScanner === "fresh-stage2" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "fresh-stage2" ? scanResults.total_hits : 0,
+                      "high-tight-flag": activeScanner === "high-tight-flag" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "high-tight-flag" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -5229,7 +5233,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                         ? "RS Line Leads"
                                                         : activeScanner === "fresh-stage2"
                                                           ? "Fresh Stage 2"
-                                                          : "Pull Backs";
+                                                          : activeScanner === "high-tight-flag"
+                                                            ? "High Tight Flag"
+                                                            : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -5263,7 +5269,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                         ? "RS rating at a fresh high across 1D/1W/1M while price is still 3–20% below the 52-week high — strength building before the breakout."
                                                         : activeScanner === "fresh-stage2"
                                                           ? "New entrants to the Minervini 5M trend template vs recent sessions — the delta list, not the standing leaders."
-                                                          : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                          : activeScanner === "high-tight-flag"
+                                                            ? "60%+ pole in ~8 weeks, then a 3–15 session flag no deeper than 25%, listed while still at or under the pivot."
+                                                            : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(

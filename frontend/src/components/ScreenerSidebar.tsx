@@ -1,4 +1,5 @@
 import {
+  Flag,
   Plus,
   Settings2,
   Rocket,
@@ -45,7 +46,8 @@ export type ScreenerMode =
   | "positive-earnings"
   | "episodic-pivot"
   | "rs-line-leads"
-  | "fresh-stage2";
+  | "fresh-stage2"
+  | "high-tight-flag";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -90,6 +92,7 @@ const ITEMS: SidebarItem[] = [
   { mode: "episodic-pivot", title: "Episodic Pivot", hint: "Day-one gap from a flat base", Icon: Flame },
   { mode: "rs-line-leads", title: "RS Line Leads", hint: "RS high before price high", Icon: LineChart },
   { mode: "fresh-stage2", title: "Fresh Stage 2", hint: "New to the 5M trend template", Icon: Sparkles },
+  { mode: "high-tight-flag", title: "High Tight Flag", hint: "Steep pole, shallow flag", Icon: Flag },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
 ];
 

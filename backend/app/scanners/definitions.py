@@ -999,6 +999,64 @@ def _rs_line_leads(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
+def _high_tight_flag(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    """O'Neil's rarest, highest-expectancy pattern: a steep pole (60%+ in ~8
+    weeks) followed by a SHALLOW, SHORT flag (3-15 sessions, <=25% deep),
+    ideally on drying volume. Listed while still inside the flag or right at
+    the pivot — not after it has already cleared."""
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+    run_40 = snapshot.stock_return_40d
+    run_20 = snapshot.stock_return_20d
+    if run_40 < 60 and run_20 < 50:
+        return None
+
+    highs = [float(v) for v in snapshot.recent_highs if v]
+    lows = [float(v) for v in snapshot.recent_lows if v]
+    vols = [int(v) for v in snapshot.recent_volumes if v is not None]
+    if len(highs) < 18 or len(lows) < len(highs):
+        return None
+
+    peak = max(highs)
+    if peak <= 0:
+        return None
+    peak_idx = len(highs) - 1 - highs[::-1].index(peak)  # last touch of the run high
+    flag_len = len(highs) - 1 - peak_idx  # sessions since that high
+    if flag_len < 3 or flag_len > 15:
+        return None  # too fresh to be a flag, or already a base
+
+    flag_low = min(lows[peak_idx:])
+    depth = (peak - flag_low) / peak * 100
+    if depth > 25:
+        return None  # a correction, not a flag
+    if snapshot.last_price > peak * 1.02:
+        return None  # already 2%+ through the pivot — the entry is gone
+
+    dryup_ratio = None
+    flag_vols = vols[peak_idx:] if len(vols) > peak_idx else []
+    if flag_vols and avg_vol_20 > 0:
+        dryup_ratio = (sum(flag_vols) / len(flag_vols)) / avg_vol_20
+
+    score = (
+        85
+        + max(run_40, run_20) * 0.1
+        + max(0.0, 25 - depth) * 0.8
+        + (10 if dryup_ratio is not None and dryup_ratio < 0.9 else 0)
+    )
+    pole = f"+{run_40:.0f}% over 40 sessions" if run_40 >= 60 else f"+{run_20:.0f}% over 20 sessions"
+    reasons = [
+        "High tight flag: steep pole, shallow flag",
+        f"Pole {pole}",
+        f"Flag: {flag_len} sessions, {depth:.1f}% deep (pivot {peak:.2f})",
+    ]
+    if dryup_ratio is not None:
+        reasons.append(
+            f"Flag volume {dryup_ratio:.2f}x of 20D avg" + (" — drying up" if dryup_ratio < 0.9 else "")
+        )
+    return round(score, 2), reasons
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -1061,6 +1119,13 @@ SCANS: list[ScanDefinition] = [
         "Setups",
         "RS rating at a fresh high across 1D/1W/1M while price is still 3-20% below the 52-week high and above the 50/200 SMA.",
         _rs_line_leads,
+    ),
+    ScanDefinition(
+        "high-tight-flag",
+        "High Tight Flag",
+        "Setups",
+        "60%+ pole in ~8 weeks, then a 3-15 session flag no deeper than 25%, listed while still at or under the pivot — volume dry-up flagged.",
+        _high_tight_flag,
     ),
 ]
 

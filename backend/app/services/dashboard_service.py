@@ -2441,6 +2441,7 @@ class DashboardService:
         "episodic-pivot",
         "rs-line-leads",
         "fresh-stage2",
+        "high-tight-flag",
     )
 
     def _current_session_iso(self) -> str | None:
@@ -2764,6 +2765,7 @@ class DashboardService:
         "episodic-pivot": "Episodic Pivot",
         "rs-line-leads": "RS Line Leads",
         "fresh-stage2": "Fresh Stage 2",
+        "high-tight-flag": "High Tight Flag",
     }
 
     def _build_scanner_scorecard(self, snapshots: list[StockSnapshot]) -> ScannerScorecardResponse:
