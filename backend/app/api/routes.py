@@ -266,6 +266,7 @@ def build_router(service):
             out[snap.symbol] = {
                 "prev_close": snap.previous_close,
                 "close": snap.last_price,
+                "volume": snap.volume,
                 "avg_volume_20d": snap.avg_volume_20d,
                 "name": snap.name,
                 "sector": snap.sector,

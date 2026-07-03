@@ -2683,6 +2683,7 @@ export function saveWatchlistsState(
 export type LiveBaseline = {
   prev_close: number | null;
   close: number | null;
+  volume: number | null;
   avg_volume_20d: number | null;
   name: string | null;
   sector: string | null;

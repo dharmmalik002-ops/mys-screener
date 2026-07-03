@@ -235,9 +235,13 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
       const prevClose = tick?.previousClose ?? base?.prev_close ?? null;
       let chgPct = tick?.changePercent ?? null;
       if (chgPct === null && ltp !== null && prevClose) chgPct = (ltp / prevClose - 1) * 100;
-      const vol = tick?.dayVolume ?? null;
+      const liveVol = tick?.dayVolume ?? null;
+      const vol = liveVol ?? base?.volume ?? null;
       const avgVol = base?.avg_volume_20d ?? null;
-      const projRvol = vol !== null && avgVol ? vol / (avgVol * elapsed) : null;
+      // Time-adjust only when the volume figure is a live intraday number;
+      // an EOD fallback is a full session's volume already.
+      const rvolElapsed = liveVol !== null && open ? elapsed : 1;
+      const projRvol = vol !== null && avgVol ? vol / (avgVol * rvolElapsed) : null;
       const dayHigh = tick?.dayHigh ?? null;
       const dayLow = tick?.dayLow ?? null;
       const crit = criteriaRef.current;

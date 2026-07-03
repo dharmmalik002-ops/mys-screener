@@ -102,7 +102,7 @@ function decodePricingData(bytes: Uint8Array): LiveTick | null {
       else if (field === 9 && wire === 0) tick.dayVolume = r.zigzag();
       else if (field === 10 && wire === 5) tick.dayHigh = r.float32();
       else if (field === 11 && wire === 5) tick.dayLow = r.float32();
-      else if (field === 12 && wire === 0) tick.marketHours = r.varint();
+      else if (field === 7 && wire === 0) tick.marketHours = r.varint();
       else if (field === 16 && wire === 5) tick.previousClose = r.float32();
       else r.skip(wire);
     }
