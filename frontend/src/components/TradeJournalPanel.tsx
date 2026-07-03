@@ -3153,6 +3153,36 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             </div>
           </div>
 
+          <div className="tj-card">
+            <div className="tj-card-hdr">
+              Mistake Bill
+              <span className="tj-card-hdr-sub">What each tagged habit actually cost — worst first</span>
+            </div>
+            {insightLab.mistakeRows.length === 0 ? (
+              <div className="tj-empty">No mistake tags on closed trades yet — tag honestly and the bill writes itself.</div>
+            ) : (
+              <div className="tj-mistake-bill">
+                {insightLab.mistakeRows.slice(0, 8).map((row) => (
+                  <div key={row.tag} className="tj-mistake-bill-row">
+                    <span className="tj-mistake-bill-tag">{row.tag}</span>
+                    <span className="tj-mistake-bill-count">{row.count} trade{row.count === 1 ? "" : "s"}</span>
+                    <span className="tj-mistake-bill-avg">avg {row.avgPct.toFixed(1)}%</span>
+                    <span className={`tj-mistake-bill-pnl ${row.pnl < 0 ? "neg" : "pos"}`}>{fmtPnl(row.pnl)}</span>
+                  </div>
+                ))}
+                {(() => {
+                  const totalLeak = insightLab.mistakeRows.filter((r) => r.pnl < 0).reduce((s, r) => s + r.pnl, 0);
+                  return totalLeak < 0 ? (
+                    <div className="tj-wisdom-footnote">
+                      Combined bill from losing habits: <strong>{fmtPnl(totalLeak)}</strong> — the raise you give
+                      yourself by fixing behavior, no new setup required.
+                    </div>
+                  ) : null;
+                })()}
+              </div>
+            )}
+          </div>
+
           <div className="tj-card tj-recent-card">
             <div className="tj-card-hdr">
               Last 10 Trades

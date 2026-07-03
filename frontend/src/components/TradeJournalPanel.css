@@ -2968,3 +2968,44 @@
   font-size: 0.73rem;
   line-height: 1.5;
 }
+
+.tj-mistake-bill {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.tj-mistake-bill-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: baseline;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.82rem;
+}
+
+.tj-mistake-bill-row:last-of-type {
+  border-bottom: none;
+}
+
+.tj-mistake-bill-tag {
+  font-weight: 600;
+}
+
+.tj-mistake-bill-count,
+.tj-mistake-bill-avg {
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.tj-mistake-bill-pnl {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  min-width: 84px;
+}
+
+.tj-mistake-bill-pnl.neg { color: var(--loss, #f23645); }
+.tj-mistake-bill-pnl.pos { color: var(--gain, #089981); }
