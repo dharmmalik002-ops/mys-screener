@@ -735,9 +735,9 @@ Return ONLY valid JSON (no markdown fences):
                     response = self._client.models.generate_content(
                         model=model_name,
                         contents=prompt,
-                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=2048),
+                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=4096),
                     )
-                    text = response.text.strip()
+                    text = (response.text or "").strip()
                     if text.startswith("```"):
                         text = text.split("\n", 1)[1] if "\n" in text else text[3:]
                     if text.endswith("```"):
