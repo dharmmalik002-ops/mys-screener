@@ -704,6 +704,61 @@ Rules:
         self._mark_quota_exhausted()
         raise RuntimeError(f"All models exhausted for money flow report: {last_exc}")
 
+    def generate_market_environment_review(self, metrics_json: str, session_iso: str) -> dict[str, Any]:
+        """Daily trader-voice read of the market environment metrics."""
+        if not self.available:
+            return {}
+
+        prompt = f"""You are an elite swing/positional trading coach for Indian equities (Minervini / O'Neil school). Session date: {session_iso}.
+
+Below are COUNTED FACTS from full-market EOD data: breakout follow-through rates (% of breakouts from 1/3/5 sessions ago still above their breakout level), close quality of today's breakouts, how Stage-2 leaders are treating their 10/21 EMAs, accumulation vs distribution among leaders, wide-range-day direction, 4%+ thrust counts, up/down volume — for TODAY, YESTERDAY, and the LAST-WEEK average, plus which scanners' picks worked over the last week and sector leaders/laggards.
+
+METRICS:
+{metrics_json}
+
+Write for a trader deciding position size TODAY. Interpret, don't recite numbers — say what the numbers MEAN and what changed vs yesterday and vs last week. Be direct about what is working and what is not.
+
+Return ONLY valid JSON (no markdown fences):
+{{
+  "headline": "one punchy sentence capturing today's environment",
+  "narrative": ["paragraph 1: today's behavior and what changed vs yesterday", "paragraph 2: the week in context — trend of follow-through and leaders", "paragraph 3: what this means for fresh entries, existing positions, and sizing"],
+  "what_worked": ["3-5 short bullets about last week: setups/sectors that paid"],
+  "what_didnt": ["3-5 short bullets: what failed or got sold into"],
+  "posture": "Press|Selective|Protect|Stand Aside",
+  "one_rule_today": "single actionable rule for today"
+}}"""
+
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(temperature=0.4, max_output_tokens=2048),
+                    )
+                    text = response.text.strip()
+                    if text.startswith("```"):
+                        text = text.split("\n", 1)[1] if "\n" in text else text[3:]
+                    if text.endswith("```"):
+                        text = text[:-3].strip()
+                    if text.startswith("json"):
+                        text = text[4:].strip()
+                    result = json.loads(text)
+                    logger.info("Market environment review generated with model %s for %s", model_name, session_iso)
+                    return result
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            time.sleep(self._RETRY_BASE_DELAY * (attempt + 1))
+                            continue
+                        break
+                    raise
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All models exhausted for market environment review: {last_exc}")
+
     def answer_company_question(self, fundamentals: CompanyFundamentals, question: str) -> str:
         """Answer a freeform company question using Gemini and existing fundamentals context."""
         cleaned_question = question.strip()

@@ -79,6 +79,7 @@ from app.models.market import (
 from app.providers.base import MarketDataProvider
 from app.scanners.definitions import (
     SCAN_BY_ID,
+    _minervini_5m,
     SCANS,
     run_consolidating_scan,
     run_custom_scan,
@@ -92,6 +93,7 @@ from app.scanners.definitions import (
     scanner_sector_label,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
+from app.services.market_environment import compute_market_environment
 from app.services.scan_history_store import ScanHistoryStore
 from app.services.journal_store import PostgresJournalStore
 from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchlists_state
@@ -2741,6 +2743,143 @@ class DashboardService:
             )
         except Exception as exc:
             return {"error": str(exc)}
+
+    _market_env_ai_cache: dict = {}
+
+    async def get_market_environment(self) -> dict:
+        """Follow-through health of the tape + daily history + week review +
+        AI narrative. Metrics are counted facts from the day's snapshots; the
+        daily result is pinned to the Postgres-backed scan history so the
+        page can compare today vs yesterday vs the last-week average."""
+        snapshots = self._scan_eligible_snapshots(await self._snapshots())
+        session_iso = self._current_session_iso()
+        today = await asyncio.to_thread(
+            compute_market_environment, snapshots, lambda s: _minervini_5m(s) is not None
+        )
+        today["date"] = session_iso
+
+        if session_iso:
+            try:
+                self._scan_history_store.record_once("market-environment", session_iso, [today], keep_dates=40)
+            except Exception:
+                pass
+        try:
+            history = self._scan_history_store.load("market-environment", keep_dates=40)
+        except Exception:
+            history = {}
+
+        hist_rows: list[dict] = []
+        for date_iso in sorted(history.keys()):
+            rows = history.get(date_iso) or []
+            if rows and isinstance(rows[0], dict) and date_iso != session_iso:
+                row = dict(rows[0])
+                row["date"] = date_iso
+                hist_rows.append(row)
+        hist_rows.append(today)
+
+        yesterday = hist_rows[-2] if len(hist_rows) >= 2 else None
+        week_rows = hist_rows[-6:-1]
+        week_scores = [r.get("score") for r in week_rows if isinstance(r.get("score"), (int, float))]
+        week_avg_score = round(sum(week_scores) / len(week_scores), 1) if week_scores else None
+
+        week_review = await asyncio.to_thread(self._build_week_review, snapshots)
+
+        slim_history = [
+            {
+                "date": r.get("date"),
+                "score": r.get("score"),
+                "ft3_held_pct": ((r.get("followthrough") or {}).get("d3") or {}).get("held_pct"),
+                "above_ema21_pct": (r.get("ema_health") or {}).get("above_ema21_pct"),
+            }
+            for r in hist_rows[-30:]
+        ]
+
+        ai_doc = self._market_env_ai_cache.get(session_iso) if session_iso else None
+        if ai_doc is None:
+            ai = getattr(self.provider, "ai_service", None)
+            if ai is not None and getattr(ai, "available", False):
+                payload = json.dumps(
+                    {
+                        "today": today,
+                        "yesterday": yesterday,
+                        "week_avg_score": week_avg_score,
+                        "week_rows": week_rows,
+                        "week_review": week_review,
+                    },
+                    default=str,
+                )[:14000]
+                try:
+                    ai_doc = await asyncio.to_thread(
+                        ai.generate_market_environment_review, payload, session_iso or ""
+                    )
+                    if session_iso and ai_doc:
+                        type(self)._market_env_ai_cache = {session_iso: ai_doc}
+                except Exception as exc:
+                    logger.info("Market environment AI review unavailable: %s", exc)
+                    ai_doc = None
+
+        return {
+            "date": session_iso,
+            "today": today,
+            "yesterday": yesterday,
+            "week_avg_score": week_avg_score,
+            "history": slim_history,
+            "week_review": week_review,
+            "ai": ai_doc,
+        }
+
+    def _build_week_review(self, snapshots: list[StockSnapshot]) -> dict:
+        """What actually paid over the last ~5 sessions: per-scanner forward
+        returns of recorded picks, and sector leaders/laggards by 5D return."""
+        session_iso = self._current_session_iso()
+        price_by_symbol = {s.symbol: s.last_price for s in snapshots if s.last_price > 0}
+        scanner_rows: list[dict] = []
+        for scan_key in self._HISTORY_SCAN_KEYS:
+            try:
+                history = self._scan_history_store.load(scan_key)
+            except Exception:
+                continue
+            prior_dates = sorted(d for d in history.keys() if not session_iso or d < session_iso)[-5:]
+            returns: list[float] = []
+            for date_iso in prior_dates:
+                for raw in history.get(date_iso) or []:
+                    if not isinstance(raw, dict):
+                        continue
+                    sym = str(raw.get("symbol") or "")
+                    entry = raw.get("last_price")
+                    now = price_by_symbol.get(sym)
+                    if sym and isinstance(entry, (int, float)) and entry > 0 and now:
+                        returns.append((now / float(entry) - 1) * 100)
+            if len(returns) >= 3:
+                wins = sum(1 for r in returns if r > 0)
+                scanner_rows.append({
+                    "scan_id": scan_key,
+                    "name": self._SCORECARD_NAMES.get(scan_key, scan_key),
+                    "picks": len(returns),
+                    "avg_return_pct": round(sum(returns) / len(returns), 2),
+                    "win_rate_pct": round(wins / len(returns) * 100, 1),
+                })
+        scanner_rows.sort(key=lambda r: -(r.get("avg_return_pct") or 0))
+
+        sector_returns: dict[str, list[float]] = {}
+        for s in snapshots:
+            if (s.avg_volume_20d or 0) < 50000:
+                continue
+            sector_returns.setdefault(s.sector or "Unclassified", []).append(s.stock_return_5d)
+        sector_rows = []
+        for sector, values in sector_returns.items():
+            if len(values) < 5:
+                continue
+            ordered = sorted(values)
+            median = ordered[len(ordered) // 2]
+            sector_rows.append({"sector": sector, "median_return_5d_pct": round(median, 2), "stocks": len(values)})
+        sector_rows.sort(key=lambda r: -r["median_return_5d_pct"])
+
+        return {
+            "scanners": scanner_rows,
+            "top_sectors": sector_rows[:4],
+            "bottom_sectors": sector_rows[-4:][::-1] if len(sector_rows) >= 4 else [],
+        }
 
     async def get_scanner_scorecard(self) -> ScannerScorecardResponse:
         """Forward performance of past scanner hits: for every recorded

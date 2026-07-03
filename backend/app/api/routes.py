@@ -245,6 +245,10 @@ def build_router(service):
     async def bhavcopy_status(market: str = Query(default="india")):
         return resolve_service(market).get_bhavcopy_status()
 
+    @router.get("/market-environment")
+    async def market_environment(market: str = Query(default="india")):
+        return await resolve_service(market).get_market_environment()
+
     @router.get("/live-baselines")
     async def live_baselines(symbols: str = Query(default=""), market: str = Query(default="india")):
         """EOD reference values for the Live page — ONE call at page open.

@@ -1,0 +1,225 @@
+.markets-panel .mk-loading {
+  padding: 32px 12px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+.mk-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.mk-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 22px;
+  border-radius: 14px;
+  border: 1px solid var(--line);
+}
+
+.mk-score strong {
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.mk-verdict {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.mk-score.press { border-color: rgba(8, 153, 129, 0.6); }
+.mk-score.press .mk-verdict { color: #089981; }
+.mk-score.selective { border-color: rgba(148, 216, 45, 0.5); }
+.mk-score.selective .mk-verdict { color: #94d82d; }
+.mk-score.protect { border-color: rgba(247, 185, 85, 0.55); }
+.mk-score.protect .mk-verdict { color: #f7b955; }
+.mk-score.aside { border-color: rgba(242, 54, 69, 0.55); }
+.mk-score.aside .mk-verdict { color: #f23645; }
+
+.mk-header-context {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.82rem;
+}
+
+.mk-rule {
+  margin-left: auto;
+  max-width: 340px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px dashed var(--line);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.mk-muted { color: var(--text-muted); }
+.markets-panel .pos { color: #089981; }
+.markets-panel .neg { color: #f23645; }
+
+.mk-spark {
+  width: 120px;
+  height: 30px;
+  color: var(--text-muted);
+  opacity: 0.9;
+}
+
+.mk-ai {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  margin-bottom: 14px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+
+.mk-ai-headline {
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 6px;
+}
+
+.mk-ai p { margin: 6px 0; }
+
+.mk-compare {
+  margin-bottom: 14px;
+  font-size: 0.82rem;
+}
+
+.mk-compare-head,
+.mk-compare-row {
+  display: grid;
+  grid-template-columns: 1fr 90px 90px 90px;
+  gap: 8px;
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.mk-compare-head {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mk-compare-row strong,
+.mk-compare-row span:not(:first-child) {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.mk-card {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.mk-card-hdr {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mk-big {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-big small {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-left: 4px;
+}
+
+.mk-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-meaning {
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.mk-week {
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.mk-week-hdr {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.mk-week-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 760px) {
+  .mk-week-grid { grid-template-columns: 1fr; }
+}
+
+.mk-week-sub {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.mk-week-sub.pos-hdr { color: #089981; }
+.mk-week-sub.neg-hdr { color: #f23645; }
+
+.mk-week ul {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.mk-week-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--line);
+  font-size: 0.8rem;
+}
+
+.mk-week-row strong { font-variant-numeric: tabular-nums; }
+.mk-week-row small { color: var(--text-muted); margin-left: auto; }
+
+.mk-footnote {
+  margin-top: 10px;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}

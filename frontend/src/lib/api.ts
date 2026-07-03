@@ -2680,6 +2680,44 @@ export function saveWatchlistsState(
   }, undefined, normalizeWatchlistsStateResponse);
 }
 
+export type MarketEnvComponent = Record<string, number | null>;
+export type MarketEnvDay = {
+  date: string | null;
+  score: number | null;
+  verdict: string;
+  universe: number;
+  followthrough: { d1: MarketEnvComponent; d3: MarketEnvComponent; d5: MarketEnvComponent };
+  close_quality: MarketEnvComponent;
+  ema_health: MarketEnvComponent;
+  volume_pressure: MarketEnvComponent;
+  range_expansion: MarketEnvComponent;
+  thrust: MarketEnvComponent;
+};
+export type MarketEnvironmentResponse = {
+  date: string | null;
+  today: MarketEnvDay;
+  yesterday: MarketEnvDay | null;
+  week_avg_score: number | null;
+  history: Array<{ date: string | null; score: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null }>;
+  week_review: {
+    scanners: Array<{ scan_id: string; name: string; picks: number; avg_return_pct: number; win_rate_pct: number }>;
+    top_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
+    bottom_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
+  };
+  ai: {
+    headline?: string;
+    narrative?: string[];
+    what_worked?: string[];
+    what_didnt?: string[];
+    posture?: string;
+    one_rule_today?: string;
+  } | null;
+};
+
+export function getMarketEnvironment(market: MarketKey = "india") {
+  return request<MarketEnvironmentResponse>(`/api/market-environment?market=${market}`);
+}
+
 export type LiveBaseline = {
   prev_close: number | null;
   close: number | null;
