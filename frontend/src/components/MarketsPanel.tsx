@@ -3,8 +3,6 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 
 import { getMarketEnvironment, type MarketEnvironmentResponse, type MarketEnvDay } from "../lib/api";
 import { Panel } from "./Panel";
-import { SymbolGridModal, type SymbolGridItem } from "./SymbolGridModal";
-import { ChartLightbox } from "./ChartLightbox";
 
 import "./MarketsPanel.css";
 
@@ -101,13 +99,17 @@ function pressureMeaning(share: number | null): string {
   return "Distribution — leaders are being sold on volume.";
 }
 
-export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbol: string) => void }) {
+export function MarketsPanel({
+  onOpenSymbolChart,
+  onOpenChartWithList,
+}: {
+  onOpenSymbolChart?: (symbol: string) => void;
+  onOpenChartWithList?: (symbol: string, symbols: string[]) => void;
+}) {
   const [state, setState] = useState<FetchState>("loading");
   const [data, setData] = useState<MarketEnvironmentResponse | null>(null);
   const [removed, setRemoved] = useState<Set<string>>(() => readRemoved());
   const [sectorStats, setSectorStats] = useState<Record<string, { kept: number; removed: number }>>(() => readSectorStats());
-  const [gridModal, setGridModal] = useState<{ title: string; subtitle?: string; items: SymbolGridItem[] } | null>(null);
-  const [focusLightbox, setFocusLightbox] = useState<number | null>(null);
 
   const load = () => {
     setState("loading");
@@ -131,6 +133,13 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
       } catch { /* ignore */ }
       return next;
     });
+  };
+
+  // Open the full app chart, arming ↑/↓ navigation through the given list when
+  // the host provides it; falls back to a plain single-symbol open.
+  const openChart = (symbol: string, list?: string[]) => {
+    if (list && list.length && onOpenChartWithList) onOpenChartWithList(symbol, list);
+    else onOpenSymbolChart?.(symbol);
   };
 
   const removeFocus = (symbol: string, sector?: string) => {
@@ -505,24 +514,15 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           <button
             type="button"
             className="mk-bigcard"
-            onClick={() =>
-              setGridModal({
-                title: "Market Leaders",
-                subtitle: `${data?.leaders?.length ?? 0} Stage-2 trend-template leaders · click any chart to open it full`,
-                items: (data?.leaders ?? []).map((l) => ({
-                  symbol: l.symbol,
-                  name: l.name,
-                  badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
-                  badgeTone: "pos",
-                  note: `${l.above_ema21 ? "above" : "below"} 21 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
-                })),
-              })
-            }
+            onClick={() => {
+              const syms = (data?.leaders ?? []).map((l) => l.symbol);
+              openChart(syms[0], syms);
+            }}
           >
             <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
             <div className="mk-bigcard-label">Market Leaders</div>
             <div className="mk-bigcard-sub">
-              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · click to see every leader's chart →
+              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · opens the full chart — ↑/↓ steps through all {data?.leaders?.length ?? 0} →
             </div>
           </button>
         ) : null}
@@ -530,24 +530,15 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           <button
             type="button"
             className="mk-bigcard"
-            onClick={() =>
-              setGridModal({
-                title: "Leading-sector breakouts, about to fire",
-                subtitle: "Names in the strongest sectors coiled 0–5% under a base pivot",
-                items: (data?.sector_breakouts ?? []).map((b) => ({
-                  symbol: b.symbol,
-                  name: b.name,
-                  badge: `${b.pct_below_pivot.toFixed(1)}% to pivot`,
-                  badgeTone: "muted",
-                  note: `${b.sector} · pivot ${b.pivot}`,
-                })),
-              })
-            }
+            onClick={() => {
+              const syms = (data?.sector_breakouts ?? []).map((b) => b.symbol);
+              openChart(syms[0], syms);
+            }}
           >
             <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
             <div className="mk-bigcard-label">Sector Breakouts Setting Up</div>
             <div className="mk-bigcard-sub">
-              Leading-sector names 0–5% under a pivot — the next to fire · click for charts →
+              Leading-sector names 0–5% under a pivot · opens the full chart — ↑/↓ steps through all →
             </div>
           </button>
         ) : null}
@@ -571,10 +562,16 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
             </div>
           ) : null}
           <div className="mk-focus-grid">
-            {focusVisible.map((f, idx) => (
+            {focusVisible.map((f) => (
               <div key={f.symbol} className="mk-focus-card">
                 <div className="mk-focus-top">
-                  <button type="button" className="mk-symbol" onClick={() => setFocusLightbox(idx)}>{f.symbol}</button>
+                  <button
+                    type="button"
+                    className="mk-symbol"
+                    onClick={() => openChart(f.symbol, focusVisible.map((x) => x.symbol))}
+                  >
+                    {f.symbol}
+                  </button>
                   <span className={f.change_pct >= 0 ? "pos" : "neg"}>
                     {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
                   </span>
@@ -742,38 +739,6 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           comparisons deepen automatically as daily history accumulates.
         </div>
       </div>
-
-      {gridModal ? (
-        <SymbolGridModal
-          title={gridModal.title}
-          subtitle={gridModal.subtitle}
-          items={gridModal.items}
-          market="india"
-          onOpenSymbolChart={(sym) => {
-            setGridModal(null);
-            onOpenSymbolChart?.(sym);
-          }}
-          onClose={() => setGridModal(null)}
-        />
-      ) : null}
-
-      {focusLightbox !== null ? (
-        <ChartLightbox
-          items={focusVisible.map((f) => ({
-            symbol: f.symbol,
-            name: f.name,
-            setup: f.setup,
-            entry: f.entry,
-            stop: f.stop,
-            buy_note: f.buy_note,
-            reasons: f.reasons,
-          }))}
-          startIndex={focusLightbox}
-          market="india"
-          onOpenFullChart={(sym) => onOpenSymbolChart?.(sym)}
-          onClose={() => setFocusLightbox(null)}
-        />
-      ) : null}
     </Panel>
   );
 }

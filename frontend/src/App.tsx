@@ -644,6 +644,7 @@ function normalizeChartColors(value: unknown): ChartColorSettings {
     vwap: typeof candidate.vwap === "string" ? candidate.vwap : DEFAULT_CHART_COLORS.vwap,
     candleUp: migrateChartColor("candleUp", candidate.candleUp) ?? DEFAULT_CHART_COLORS.candleUp,
     candleDown: migrateChartColor("candleDown", candidate.candleDown) ?? DEFAULT_CHART_COLORS.candleDown,
+    candleExpansion: typeof candidate.candleExpansion === "string" ? candidate.candleExpansion : DEFAULT_CHART_COLORS.candleExpansion,
     volumeUp: migrateChartColor("volumeUp", candidate.volumeUp) ?? DEFAULT_CHART_COLORS.volumeUp,
     volumeDown: migrateChartColor("volumeDown", candidate.volumeDown) ?? DEFAULT_CHART_COLORS.volumeDown,
     rsLine: typeof candidate.rsLine === "string" ? candidate.rsLine : DEFAULT_CHART_COLORS.rsLine,
@@ -4143,6 +4144,18 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     handlePickSymbol(match?.symbol ?? stripped);
   };
 
+  // Open the full chart modal for a symbol AND arm up/down navigation through
+  // the supplied list (Markets page: focus / leaders / sector-breakout lists).
+  const handleOpenChartWithList = (symbol: string, symbols: string[]) => {
+    const resolve = (s: string) => findUniverseMatch(normalizeJournalChartSymbol(s) || s)?.symbol ?? s;
+    const resolved = symbols.map(resolve).filter(Boolean);
+    setSelectedSymbol(resolve(symbol));
+    setChartOpen(true);
+    // Set AFTER the state updates above (handlePickSymbol clears this ref, so
+    // we intentionally do not call it) — arms arrow-key stepping over the list.
+    chartNavigationSymbolsRef.current = resolved.length ? resolved : null;
+  };
+
   const handleChartAddToJournal = (symbol: string, suggestedPrice?: number) => {
     const normalizedSymbol = normalizeJournalChartSymbol(symbol);
     if (!normalizedSymbol) {
@@ -5119,7 +5132,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         ) : null}
         {!loading && activePage === "markets" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
-            <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
+            <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} onOpenChartWithList={handleOpenChartWithList} />
           </Suspense>
         ) : null}
         {!loading && activePage === "journal" ? (

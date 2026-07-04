@@ -10,6 +10,7 @@ export const DEFAULT_CHART_COLORS: ChartColorSettings = {
   // higher up-vs-down contrast at a glance, and easy on the eyes for long use.
   candleUp: "#089981",
   candleDown: "#f23645",
+  candleExpansion: "#ffb01f",
   volumeUp: "#089981",
   volumeDown: "#f23645",
   rsLine: "#39ff14",

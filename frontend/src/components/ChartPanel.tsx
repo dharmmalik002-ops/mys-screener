@@ -23,6 +23,7 @@ export type ChartColorSettings = {
   vwap: string;
   candleUp: string;
   candleDown: string;
+  candleExpansion: string;
   volumeUp: string;
   volumeDown: string;
   rsLine: string;
@@ -1617,6 +1618,22 @@ export function ChartPanel({
   const [circuitLocksEnabled, setCircuitLocksEnabled] = useState<boolean>(() => readCircuitLocksEnabled());
   const [autoLevelsEnabled, setAutoLevelsEnabled] = useState<boolean>(() => readAutoLevelsEnabled());
   const [scaleMode, setScaleMode] = useState<ChartScaleMode>(() => readChartScaleMode());
+  const [highlightExpansion, setHighlightExpansion] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem("stockScanner.highlightExpansion.v1") !== "off";
+    } catch {
+      return true;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.highlightExpansion.v1", highlightExpansion ? "on" : "off");
+    } catch {
+      // best effort
+    }
+  }, [highlightExpansion]);
   // Rarely-touched display options (palette, log/linear) live behind a gear so
   // the toolbar stays legible — set-once controls don't earn permanent chrome.
   const [displaySettingsOpen, setDisplaySettingsOpen] = useState(false);
@@ -2415,18 +2432,43 @@ export function ChartPanel({
       scaleMargins: { top: safeRsLine.length ? 0.88 : 0.82, bottom: 0 },
     });
 
+    // Expansion candles: a big up-day on heavy volume (>= EXPANSION_MIN_CHANGE%
+    // vs the prior close AND volume >= EXPANSION_VOL_MULT x the trailing 20-bar
+    // average). lightweight-charts can't widen an individual candle, so we make
+    // them pop by painting the body + wick a distinct colour instead.
+    const EXPANSION_MIN_CHANGE = 6;
+    const EXPANSION_VOL_MULT = 2;
+    const expansionColor = chartColors.candleExpansion || "#ffb01f";
     const ohlcvData = [
-      ...activeBars.map((bar) => ({
-        time: bar.time as UTCTimestamp,
-        open: bar.open,
-        high: bar.high,
-        low: bar.low,
-        close: bar.close,
-      })),
+      ...activeBars.map((bar, i) => {
+        const prevClose = i > 0 ? activeBars[i - 1].close : bar.open;
+        const changePct = prevClose > 0 ? (bar.close / prevClose - 1) * 100 : 0;
+        const start = Math.max(0, i - 20);
+        const window = activeBars.slice(start, i);
+        const avgVol = window.length ? window.reduce((s, b) => s + (b.volume || 0), 0) / window.length : 0;
+        const isExpansion =
+          highlightExpansion
+          && changePct >= EXPANSION_MIN_CHANGE
+          && avgVol > 0
+          && (bar.volume || 0) >= avgVol * EXPANSION_VOL_MULT;
+        const point: Record<string, unknown> = {
+          time: bar.time as UTCTimestamp,
+          open: bar.open,
+          high: bar.high,
+          low: bar.low,
+          close: bar.close,
+        };
+        if (isExpansion) {
+          point.color = expansionColor;
+          point.wickColor = expansionColor;
+          point.borderColor = expansionColor;
+        }
+        return point;
+      }),
       ...futureWhitespaceTimes.map((time) => ({ time: time as UTCTimestamp })),
     ];
 
-    mainSeries.setData(ohlcvData);
+    mainSeries.setData(ohlcvData as never);
 
     // Circuit limits are shown in the Circuit Limits chip (values) and as
     // optional UC/LC lock-day markers — no lines are drawn on the chart, by
@@ -2834,7 +2876,7 @@ export function ChartPanel({
       chartRef.current = null;
       mainSeriesRef.current = null;
     };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe, scaleMode]);
+  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe, scaleMode, highlightExpansion]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3714,6 +3756,25 @@ export function ChartPanel({
                         {modeKey === "log" ? "Log" : "Lin"}
                       </button>
                     ))}
+                  </div>
+                  <span className="chart-display-settings-label">Expansion candles</span>
+                  <div className="chart-style-switcher chart-expansion-ctl">
+                    <button
+                      type="button"
+                      className={highlightExpansion ? "timeframe-pill active" : "timeframe-pill"}
+                      onClick={() => setHighlightExpansion((v) => !v)}
+                      title="Highlight big up-days on heavy volume (>=6% and 2x avg volume) in a distinct colour"
+                    >
+                      {highlightExpansion ? "On" : "Off"}
+                    </button>
+                    <input
+                      type="color"
+                      className="chart-expansion-color"
+                      value={chartColors.candleExpansion || "#ffb01f"}
+                      onChange={(event) => onChartColorsChange?.({ ...chartColors, candleExpansion: event.target.value })}
+                      title="Expansion candle colour"
+                      aria-label="Expansion candle colour"
+                    />
                   </div>
                   <span className="chart-display-settings-label">Theme</span>
                   <div className="chart-style-switcher">
