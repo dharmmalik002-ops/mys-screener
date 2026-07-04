@@ -2926,6 +2926,23 @@ class DashboardService:
         week_review_local = await asyncio.to_thread(self._build_week_review, snapshots)
         top_sector_names = [s["sector"] for s in (week_review_local.get("top_sectors") or [])]
         sector_breakouts = await asyncio.to_thread(sector_breakout_watch, snapshots, all_events, top_sector_names)
+
+        # Drop 2% / 5% circuit-band names from every actionable list — they gap
+        # straight to the limit and can't be traded as breakouts.
+        try:
+            bands = (self._load_price_bands() or {}).get("bands") or {}
+            low_band = {
+                str(sym).upper()
+                for sym, val in bands.items()
+                if isinstance(val, (int, float)) and float(val) <= 5
+            }
+        except Exception:
+            low_band = set()
+        if low_band:
+            leaders = [r for r in leaders if r["symbol"].upper() not in low_band]
+            focus = [r for r in focus if r["symbol"].upper() not in low_band]
+            sector_breakouts = [r for r in sector_breakouts if r["symbol"].upper() not in low_band]
+
         focus_review = self._focus_review(snapshots, focus, session_iso)
 
         if session_iso:
