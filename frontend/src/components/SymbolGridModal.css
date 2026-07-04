@@ -13,10 +13,13 @@
 
 .sgm-modal {
   width: min(1180px, 100%);
+  max-height: calc(100vh - 48px);
+  display: flex;
+  flex-direction: column;
   background: var(--surface, #0d1117);
   border: 1px solid var(--line);
   border-radius: 16px;
-  padding: 18px 20px 24px;
+  padding: 18px 20px 20px;
 }
 
 .sgm-head {
@@ -25,6 +28,7 @@
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 14px;
+  flex: 0 0 auto;
 }
 
 .sgm-head h2 { margin: 0; font-size: 1.1rem; }
@@ -59,6 +63,10 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding-right: 4px;
 }
 
 .sgm-cell {

@@ -4,6 +4,7 @@ import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YA
 import { getMarketEnvironment, type MarketEnvironmentResponse, type MarketEnvDay } from "../lib/api";
 import { Panel } from "./Panel";
 import { SymbolGridModal, type SymbolGridItem } from "./SymbolGridModal";
+import { ChartLightbox } from "./ChartLightbox";
 
 import "./MarketsPanel.css";
 
@@ -106,6 +107,7 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
   const [removed, setRemoved] = useState<Set<string>>(() => readRemoved());
   const [sectorStats, setSectorStats] = useState<Record<string, { kept: number; removed: number }>>(() => readSectorStats());
   const [gridModal, setGridModal] = useState<{ title: string; subtitle?: string; items: SymbolGridItem[] } | null>(null);
+  const [focusLightbox, setFocusLightbox] = useState<number | null>(null);
 
   const load = () => {
     setState("loading");
@@ -543,7 +545,7 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
             }
           >
             <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
-            <div className="mk-bigcard-label">Sector Breakouts Loading</div>
+            <div className="mk-bigcard-label">Sector Breakouts Setting Up</div>
             <div className="mk-bigcard-sub">
               Leading-sector names 0–5% under a pivot — the next to fire · click for charts →
             </div>
@@ -569,10 +571,10 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
             </div>
           ) : null}
           <div className="mk-focus-grid">
-            {focusVisible.map((f) => (
+            {focusVisible.map((f, idx) => (
               <div key={f.symbol} className="mk-focus-card">
                 <div className="mk-focus-top">
-                  <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(f.symbol)}>{f.symbol}</button>
+                  <button type="button" className="mk-symbol" onClick={() => setFocusLightbox(idx)}>{f.symbol}</button>
                   <span className={f.change_pct >= 0 ? "pos" : "neg"}>
                     {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
                   </span>
@@ -752,6 +754,24 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
             onOpenSymbolChart?.(sym);
           }}
           onClose={() => setGridModal(null)}
+        />
+      ) : null}
+
+      {focusLightbox !== null ? (
+        <ChartLightbox
+          items={focusVisible.map((f) => ({
+            symbol: f.symbol,
+            name: f.name,
+            setup: f.setup,
+            entry: f.entry,
+            stop: f.stop,
+            buy_note: f.buy_note,
+            reasons: f.reasons,
+          }))}
+          startIndex={focusLightbox}
+          market="india"
+          onOpenFullChart={(sym) => onOpenSymbolChart?.(sym)}
+          onClose={() => setFocusLightbox(null)}
         />
       ) : null}
     </Panel>
