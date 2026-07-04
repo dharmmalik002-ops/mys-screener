@@ -98,7 +98,9 @@ from app.services.market_environment import (
     classify_position,
     compute_market_environment,
     leader_ema_examples,
+    leaders_list,
     market_posture,
+    sector_breakout_watch,
     structural_breakout_events,
 )
 from app.services.scan_history_store import ScanHistoryStore
@@ -2917,8 +2919,14 @@ class DashboardService:
             except Exception:
                 pass
         posture = await asyncio.to_thread(market_posture, snapshots)
+        today["posture"] = posture  # so recorded history carries the breadth lines
         focus = await asyncio.to_thread(build_focus_list, snapshots, all_events)
         positions = await self._analyze_open_positions(snapshots, all_events)
+        leaders = await asyncio.to_thread(leaders_list, snapshots, is_leader)
+        week_review_local = await asyncio.to_thread(self._build_week_review, snapshots)
+        top_sector_names = [s["sector"] for s in (week_review_local.get("top_sectors") or [])]
+        sector_breakouts = await asyncio.to_thread(sector_breakout_watch, snapshots, all_events, top_sector_names)
+        focus_review = self._focus_review(snapshots, focus, session_iso)
 
         if session_iso:
             try:
@@ -2944,7 +2952,7 @@ class DashboardService:
         week_scores = [r.get("score") for r in week_rows if isinstance(r.get("score"), (int, float))]
         week_avg_score = round(sum(week_scores) / len(week_scores), 1) if week_scores else None
 
-        week_review = await asyncio.to_thread(self._build_week_review, snapshots)
+        week_review = week_review_local
 
         slim_history = [
             {
@@ -2952,7 +2960,10 @@ class DashboardService:
                 "score": r.get("score"),
                 "structural_held_pct": (r.get("structural") or {}).get("held_pct"),
                 "ft3_held_pct": ((r.get("followthrough") or {}).get("d3") or {}).get("held_pct"),
-                "above_ema21_pct": (r.get("ema_health") or {}).get("above_ema21_pct"),
+                "above_ema21_pct": ((r.get("posture") or {}).get("above_ema21_pct")
+                                     if r.get("posture") else (r.get("ema_health") or {}).get("above_ema21_pct")),
+                "above_sma50_pct": (r.get("posture") or {}).get("above_sma50_pct"),
+                "above_sma200_pct": (r.get("posture") or {}).get("above_sma200_pct"),
             }
             for r in hist_rows[-30:]
         ]
@@ -3003,9 +3014,69 @@ class DashboardService:
             "evidence": evidence,
             "posture": posture,
             "focus": focus,
+            "focus_review": focus_review,
+            "leaders": leaders,
+            "sector_breakouts": sector_breakouts,
             "positions": positions,
             "ai": ai_doc,
         }
+
+    def _focus_review(self, snapshots: list[StockSnapshot], focus: list[dict], session_iso: str | None) -> dict:
+        """Pin today's focus list to history, then grade the focus list from
+        ~5 sessions ago: how did the names we suggested actually behave since?
+        This is the "did they do what we thought" scorecard."""
+        if session_iso and focus:
+            try:
+                self._scan_history_store.record_once(
+                    "markets-focus",
+                    session_iso,
+                    [
+                        {"symbol": f["symbol"], "name": f.get("name"), "last_price": f.get("last_price"),
+                         "setup": f.get("setup"), "sector": f.get("sector")}
+                        for f in focus
+                    ],
+                    keep_dates=30,
+                )
+            except Exception:
+                pass
+        try:
+            history = self._scan_history_store.load("markets-focus", keep_dates=30)
+        except Exception:
+            history = {}
+        prior_dates = sorted(d for d in history.keys() if not session_iso or d < session_iso)
+        if not prior_dates:
+            return {"reviewed_date": None, "rows": [], "summary": None}
+        # The suggestion set closest to ~5 sessions back (a trading week).
+        review_date = prior_dates[-5] if len(prior_dates) >= 5 else prior_dates[0]
+        price_by_symbol = {s.symbol: s.last_price for s in snapshots if s.last_price > 0}
+        rows: list[dict] = []
+        for raw in history.get(review_date) or []:
+            if not isinstance(raw, dict):
+                continue
+            sym = str(raw.get("symbol") or "")
+            entry = raw.get("last_price")
+            now = price_by_symbol.get(sym)
+            if not sym or not isinstance(entry, (int, float)) or entry <= 0 or not now:
+                continue
+            ret = (now / float(entry) - 1) * 100
+            worked = ret >= 3  # "behaved as expected" = a tradable follow-through
+            rows.append({
+                "symbol": sym, "setup": raw.get("setup"), "sector": raw.get("sector"),
+                "entry": round(float(entry), 2), "now": round(now, 2),
+                "return_pct": round(ret, 2), "worked": worked,
+            })
+        rows.sort(key=lambda r: -r["return_pct"])
+        if rows:
+            wins = sum(1 for r in rows if r["worked"])
+            summary = {
+                "count": len(rows),
+                "worked": wins,
+                "hit_rate_pct": round(wins / len(rows) * 100, 1),
+                "avg_return_pct": round(sum(r["return_pct"] for r in rows) / len(rows), 2),
+            }
+        else:
+            summary = None
+        return {"reviewed_date": review_date, "rows": rows, "summary": summary}
 
     def _build_week_review(self, snapshots: list[StockSnapshot]) -> dict:
         """What actually paid over the last ~5 sessions: per-scanner forward

@@ -415,54 +415,159 @@ def classify_position(s: StockSnapshot, event: dict | None) -> tuple[str, str]:
     return ("Healthy trend", "Riding above the 21 EMA with the moving averages stacked — hold, trail under the 21 EMA.")
 
 
-def build_focus_list(snapshots: list[StockSnapshot], events: list[dict], limit: int = 15) -> list[dict]:
-    """Strong candidates for the coming week: leaders in intact uptrends,
-    near their highs, with a reason you can act on — held breakouts first,
-    EMA resets and tight setups next."""
+def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict | None:
+    """A single focus row with a reason and a concrete buy plan, or None if
+    the stock doesn't clear the uptrend/leadership gates."""
+    if (s.avg_volume_20d or 0) < 75000 or s.last_price <= 30:
+        return None
+    if not has_trustworthy_levels(s):
+        return None
+    ema21 = s.ema20 or 0
+    sma50 = s.sma50 or 0
+    sma200 = s.sma200 or 0
+    if not (ema21 and sma50 and sma200):
+        return None
+    if s.last_price < sma50 or s.last_price < sma200 or sma50 < sma200:
+        return None
+    if not s.rs_eligible or s.rs_rating < min_rs:
+        return None
+    dist_high = s.pct_from_52w_high
+    if dist_high > 18:
+        return None
+
+    reasons: list[str] = [f"RS {s.rs_rating}"]
+    score = s.rs_rating * 0.5 + max(0.0, 18 - dist_high) * 2
+    event = event if event and event.get("held") else None
+    near_ema = ema21 > 0 and abs(s.last_price / ema21 - 1) <= 0.03
+    tight = bool(s.adr_pct_20 and s.adr_pct_20 <= 4)
+
+    # Setup label + concrete buy plan (entry trigger, stop, note).
+    pivot = float(event["pivot"]) if event else None
+    if event:
+        setup = "Holding breakout"
+        score += 12
+        reasons.append(f"held breakout {event['pct_vs_pivot']:+.1f}% vs pivot")
+        entry = f"add on strength above {s.last_price:.2f}; ideal was the pivot {pivot:.2f}"
+        stop = f"below the pivot / 21 EMA ({ema21:.2f})"
+        note = "Already extended from the base — starter size only if chasing; full size only on the next tight rest."
+    elif near_ema:
+        setup = "21 EMA reset"
+        score += 9
+        reasons.append("pulled back to the 21 EMA")
+        entry = f"buy the reclaim of today's high once it turns up off the 21 EMA ({ema21:.2f})"
+        stop = f"below the pullback low / under the 21 EMA ({ema21:.2f})"
+        note = "Textbook continuation entry — tight stop, add on the follow-through day."
+    else:
+        setup = "Uptrend, building a base"
+        entry = f"wait for a breakout above the recent swing high; don't buy mid-range"
+        stop = "below the base low once it breaks out"
+        note = "No trigger yet — put it on the watchlist and let it set up."
+    if tight:
+        score += 3
+        reasons.append(f"tight (ADR {s.adr_pct_20:.1f}%)")
+    reasons.append(f"{dist_high:.1f}% off 52w high")
+
+    return {
+        "symbol": s.symbol,
+        "name": s.name,
+        "sector": s.sector,
+        "last_price": round(s.last_price, 2),
+        "change_pct": round(s.change_pct, 2),
+        "rs_rating": s.rs_rating,
+        "pct_from_52w_high": round(dist_high, 1),
+        "ema21": round(ema21, 2),
+        "pivot": round(pivot, 2) if pivot else None,
+        "setup": setup,
+        "score": round(score, 1),
+        "reasons": reasons,
+        "entry": entry,
+        "stop": stop,
+        "buy_note": note,
+    }
+
+
+def build_focus_list(snapshots: list[StockSnapshot], events: list[dict], limit: int = 45) -> list[dict]:
+    """Strong candidates for the coming week: leaders in intact uptrends near
+    their highs, each with a setup label and a concrete buy plan. Held
+    breakouts and EMA resets rank first. RS gate relaxes from 80 to 70 only if
+    needed to reach `limit` names."""
     event_by_symbol = {e["symbol"]: e for e in events}
     rows: list[dict] = []
+    for min_rs in (80, 72):
+        rows = []
+        for s in snapshots:
+            row = _focus_candidate(s, event_by_symbol.get(s.symbol), min_rs)
+            if row is not None:
+                rows.append(row)
+        if len(rows) >= limit:
+            break
+    rows.sort(key=lambda r: -r["score"])
+    return rows[:limit]
+
+
+def leaders_list(snapshots: list[StockSnapshot], is_leader) -> list[dict]:
+    """Every Stage-2 leader (Minervini 5M template) with the trend facts a
+    swing trader reads at a glance — for the clickable Leaders grid."""
+    out: list[dict] = []
     for s in snapshots:
-        if (s.avg_volume_20d or 0) < 100000 or s.last_price <= 30:
+        if not is_leader(s) or not has_trustworthy_levels(s):
+            continue
+        ema21 = s.ema20 or 0
+        out.append({
+            "symbol": s.symbol,
+            "name": s.name,
+            "sector": s.sector,
+            "last_price": round(s.last_price, 2),
+            "change_pct": round(s.change_pct, 2),
+            "rs_rating": s.rs_rating if s.rs_eligible else None,
+            "pct_from_52w_high": round(s.pct_from_52w_high, 1),
+            "above_ema21": bool(ema21 and s.last_price > ema21),
+        })
+    out.sort(key=lambda r: (-(r["rs_rating"] or 0), r["pct_from_52w_high"]))
+    return out
+
+
+def sector_breakout_watch(snapshots: list[StockSnapshot], events: list[dict], top_sectors: list[str], limit: int = 24) -> list[dict]:
+    """Stocks in the LEADING sectors that are coiled just under a base pivot
+    (within 5% below the recent swing high) — the next breakouts to fire if
+    the leading sectors keep working."""
+    if not top_sectors:
+        return []
+    leading = set(top_sectors)
+    event_syms = {e["symbol"] for e in events if e.get("held")}
+    rows: list[dict] = []
+    for s in snapshots:
+        if s.sector not in leading:
+            continue
+        if (s.avg_volume_20d or 0) < 75000 or s.last_price <= 30:
             continue
         if not has_trustworthy_levels(s):
             continue
-        ema21 = s.ema20 or 0
         sma50 = s.sma50 or 0
         sma200 = s.sma200 or 0
-        if not (ema21 and sma50 and sma200):
+        if not (sma50 and sma200) or s.last_price < sma200 or sma50 < sma200:
             continue
-        if s.last_price < sma50 or s.last_price < sma200 or sma50 < sma200:
+        if s.symbol in event_syms:
+            continue  # already broken out — belongs in the working list, not the watch
+        highs = [float(v) for v in s.recent_highs if v]
+        if len(highs) < 12:
             continue
-        if not s.rs_eligible or s.rs_rating < 80:
+        pivot = max(highs)
+        if pivot <= 0:
             continue
-        dist_high = s.pct_from_52w_high
-        if dist_high > 15:
-            continue
-        reasons: list[str] = [f"RS {s.rs_rating}"]
-        score = s.rs_rating * 0.5 + max(0.0, 15 - dist_high) * 2
-        event = event_by_symbol.get(s.symbol)
-        if event is not None and event.get("held"):
-            score += 12
-            reasons.append(f"held breakout {event['pct_vs_pivot']:+.1f}% vs pivot")
-        near_ema = ema21 > 0 and abs(s.last_price / ema21 - 1) <= 0.03
-        if near_ema:
-            score += 8
-            reasons.append("at 21 EMA reset")
-        if s.adr_pct_20 and s.adr_pct_20 <= 4:
-            score += 3
-            reasons.append(f"tight (ADR {s.adr_pct_20:.1f}%)")
-        reasons.append(f"{dist_high:.1f}% off 52w high")
+        below = (1 - s.last_price / pivot) * 100
+        if below < 0 or below > 5:
+            continue  # 0-5% under the pivot = coiled and close
         rows.append({
             "symbol": s.symbol,
             "name": s.name,
             "sector": s.sector,
             "last_price": round(s.last_price, 2),
             "change_pct": round(s.change_pct, 2),
-            "rs_rating": s.rs_rating,
-            "pct_from_52w_high": round(dist_high, 1),
-            "score": round(score, 1),
-            "reasons": reasons,
+            "rs_rating": s.rs_rating if s.rs_eligible else None,
+            "pivot": round(pivot, 2),
+            "pct_below_pivot": round(below, 2),
         })
-    rows.sort(key=lambda r: -r["score"])
+    rows.sort(key=lambda r: r["pct_below_pivot"])
     return rows[:limit]
 
