@@ -416,8 +416,10 @@ def classify_position(s: StockSnapshot, event: dict | None) -> tuple[str, str]:
 
 
 def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict | None:
-    """A single focus row with a reason and a concrete buy plan, or None if
-    the stock doesn't clear the uptrend/leadership gates."""
+    """A PRE-breakout base setup — a leader that is NOT extended and is coiling
+    just under (or tightly resetting into) a pivot, ready to break out in the
+    coming week. Already-broken-out and extended names are rejected: the ask is
+    stocks about to come out of a proper base, not ones that already did."""
     if (s.avg_volume_20d or 0) < 75000 or s.last_price <= 30:
         return None
     if not has_trustworthy_levels(s):
@@ -427,45 +429,62 @@ def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict 
     sma200 = s.sma200 or 0
     if not (ema21 and sma50 and sma200):
         return None
-    if s.last_price < sma50 or s.last_price < sma200 or sma50 < sma200:
+    # Stage-2 uptrend intact.
+    if s.last_price < sma200 or sma50 < sma200:
         return None
     if not s.rs_eligible or s.rs_rating < min_rs:
         return None
-    dist_high = s.pct_from_52w_high
-    if dist_high > 18:
+
+    # --- NOT extended: reject anything that has already run ---
+    ext_vs_ema = (s.last_price / ema21 - 1) * 100 if ema21 else 99
+    if ext_vs_ema > 8:
+        return None  # too far above the 21 EMA — extended, no low-risk entry left
+    if s.pct_from_52w_high < 1:
+        return None  # already at a fresh 52w high — the breakout already happened
+    if event is not None and event.get("held") and event.get("sessions_ago", 99) <= 8:
+        return None  # already broke out of its base — extended by definition
+
+    highs = [float(v) for v in s.recent_highs if v]
+    lows = [float(v) for v in s.recent_lows if v]
+    if len(highs) < 12 or len(lows) < 12:
         return None
+    pivot = max(highs)  # the base's breakout line (recent swing high)
+    if pivot <= 0:
+        return None
+    below_pivot = (1 - s.last_price / pivot) * 100  # >0 = still under the pivot
+    window_high = max(highs)
+    window_low = min(lows)
+    depth = (window_high - window_low) / window_high * 100 if window_high else 99
+    adr = s.adr_pct_20 or 0
+    tight = bool(adr and adr <= 4)
+    near_ema = abs(s.last_price / ema21 - 1) <= 0.03 and s.last_price >= ema21 * 0.97
 
     reasons: list[str] = [f"RS {s.rs_rating}"]
-    score = s.rs_rating * 0.5 + max(0.0, 18 - dist_high) * 2
-    event = event if event and event.get("held") else None
-    near_ema = ema21 > 0 and abs(s.last_price / ema21 - 1) <= 0.03
-    tight = bool(s.adr_pct_20 and s.adr_pct_20 <= 4)
+    score = s.rs_rating * 0.4
 
-    # Setup label + concrete buy plan (entry trigger, stop, note).
-    pivot = float(event["pivot"]) if event else None
-    if event:
-        setup = "Holding breakout"
-        score += 12
-        reasons.append(f"held breakout {event['pct_vs_pivot']:+.1f}% vs pivot")
-        entry = f"add on strength above {s.last_price:.2f}; ideal was the pivot {pivot:.2f}"
-        stop = f"below the pivot / 21 EMA ({ema21:.2f})"
-        note = "Already extended from the base — starter size only if chasing; full size only on the next tight rest."
-    elif near_ema:
-        setup = "21 EMA reset"
-        score += 9
-        reasons.append("pulled back to the 21 EMA")
-        entry = f"buy the reclaim of today's high once it turns up off the 21 EMA ({ema21:.2f})"
-        stop = f"below the pullback low / under the 21 EMA ({ema21:.2f})"
-        note = "Textbook continuation entry — tight stop, add on the follow-through day."
+    if 0 <= below_pivot <= 8 and depth <= 35:
+        setup = "Coiling under pivot"
+        score += 30 - below_pivot * 2 + max(0.0, 8 - (adr or 8))
+        reasons.append(f"{below_pivot:.1f}% under pivot {pivot:.2f}")
+        entry = f"buy the breakout above {pivot:.2f} on volume"
+        stop = f"below the base low ({window_low:.2f}) or the 21 EMA ({ema21:.2f})"
+        note = "Proper base, not extended — the buy-the-breakout candidate."
+    elif near_ema and s.last_price < pivot * 0.99 and depth <= 40:
+        setup = "21 EMA reset in base"
+        score += 20 + max(0.0, 8 - (adr or 8))
+        reasons.append(f"resetting at 21 EMA, {below_pivot:.1f}% under pivot")
+        entry = f"buy the reclaim of the recent swing high; pivot ~{pivot:.2f}"
+        stop = f"below the 21 EMA ({ema21:.2f})"
+        note = "Still building — put it on watch, let it tighten toward the pivot."
     else:
-        setup = "Uptrend, building a base"
-        entry = f"wait for a breakout above the recent swing high; don't buy mid-range"
-        stop = "below the base low once it breaks out"
-        note = "No trigger yet — put it on the watchlist and let it set up."
+        return None  # extended, mid-range, or no base — not what we want
+
     if tight:
-        score += 3
-        reasons.append(f"tight (ADR {s.adr_pct_20:.1f}%)")
-    reasons.append(f"{dist_high:.1f}% off 52w high")
+        score += 6
+        reasons.append(f"tight (ADR {adr:.1f}%)")
+    if depth <= 20:
+        score += 4
+        reasons.append(f"shallow base ({depth:.0f}% deep)")
 
     return {
         "symbol": s.symbol,
@@ -474,9 +493,10 @@ def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict 
         "last_price": round(s.last_price, 2),
         "change_pct": round(s.change_pct, 2),
         "rs_rating": s.rs_rating,
-        "pct_from_52w_high": round(dist_high, 1),
+        "pct_from_52w_high": round(s.pct_from_52w_high, 1),
         "ema21": round(ema21, 2),
-        "pivot": round(pivot, 2) if pivot else None,
+        "pivot": round(pivot, 2),
+        "pct_below_pivot": round(below_pivot, 2),
         "setup": setup,
         "score": round(score, 1),
         "reasons": reasons,
@@ -487,13 +507,13 @@ def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict 
 
 
 def build_focus_list(snapshots: list[StockSnapshot], events: list[dict], limit: int = 45) -> list[dict]:
-    """Strong candidates for the coming week: leaders in intact uptrends near
-    their highs, each with a setup label and a concrete buy plan. Held
-    breakouts and EMA resets rank first. RS gate relaxes from 80 to 70 only if
+    """Pre-breakout bases for the coming week: leaders coiling just under a
+    pivot or tightly resetting into one — NOT extended, not already broken out.
+    Closest-to-pivot and tightest rank first. RS gate relaxes 80->70 only if
     needed to reach `limit` names."""
     event_by_symbol = {e["symbol"]: e for e in events}
     rows: list[dict] = []
-    for min_rs in (80, 72):
+    for min_rs in (80, 70):
         rows = []
         for s in snapshots:
             row = _focus_candidate(s, event_by_symbol.get(s.symbol), min_rs)
