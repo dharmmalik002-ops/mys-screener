@@ -50,32 +50,39 @@ export function SymbolGridModal({ title, subtitle, items, market, onOpenSymbolCh
     let active = true;
     setSeries({});
     setLoading(true);
-    // Small chunks so each request stays well under the client timeout on the
-    // free-tier backend, and charts fill in PROGRESSIVELY as each chunk lands
-    // (a big leader list would otherwise risk one slow request aborting).
+    // Small chunks, fetched with LIMITED CONCURRENCY (a worker pool) so a large
+    // leader list doesn't fire dozens of parallel requests at the free-tier
+    // backend at once — which overwhelmed it and left every cell blank. Charts
+    // fill in progressively as each chunk lands.
     const chunks: string[][] = [];
-    for (let i = 0; i < symbols.length; i += 10) chunks.push(symbols.slice(i, i + 10));
-    let done = 0;
-    Promise.all(
-      chunks.map((c) =>
-        getChartGridSeries(c, timeframe, market)
-          .then((r) => {
-            if (!active) return;
-            setSeries((prev) => {
-              const next = { ...prev };
-              for (const item of (r as { items?: Array<{ symbol: string; bars: ChartBar[] }> }).items ?? []) {
-                next[item.symbol] = item.bars;
-              }
-              return next;
-            });
-          })
-          .catch(() => { /* leave this chunk blank; others still render */ })
-          .finally(() => {
-            done += 1;
-            if (active && done >= chunks.length) setLoading(false);
-          }),
-      ),
-    );
+    for (let i = 0; i < symbols.length; i += 4) chunks.push(symbols.slice(i, i + 4));
+    const CONCURRENCY = 4;
+    let cursor = 0;
+
+    const worker = async (): Promise<void> => {
+      while (active) {
+        const myChunk = chunks[cursor++];
+        if (!myChunk) return;
+        try {
+          const r = await getChartGridSeries(myChunk, timeframe, market);
+          if (!active) return;
+          setSeries((prev) => {
+            const next = { ...prev };
+            for (const item of (r as { items?: Array<{ symbol: string; bars: ChartBar[] }> }).items ?? []) {
+              next[item.symbol] = item.bars;
+            }
+            return next;
+          });
+        } catch {
+          /* leave this chunk blank; other chunks still render */
+        }
+      }
+    };
+
+    Promise.all(Array.from({ length: Math.min(CONCURRENCY, chunks.length) }, () => worker())).finally(() => {
+      if (active) setLoading(false);
+    });
+
     return () => {
       active = false;
     };
