@@ -123,6 +123,7 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
   const [, setRenderTick] = useState(0);
   const [marketOpen, setMarketOpen] = useState<boolean>(() => marketOpenNow());
   const [lastTickAt, setLastTickAt] = useState<number | null>(null);
+  const [sortKey, setSortKey] = useState<"chg" | "rvol">("chg");
 
   const ticksRef = useRef<Map<string, LiveTick>>(new Map());
   const feedRef = useRef<LiveFeed | null>(null);
@@ -267,11 +268,15 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
         triggered,
       });
     }
-    out.sort((a, b) => (b.chgPct ?? -999) - (a.chgPct ?? -999));
+    if (sortKey === "rvol") {
+      out.sort((a, b) => (b.projRvol ?? -999) - (a.projRvol ?? -999));
+    } else {
+      out.sort((a, b) => (b.chgPct ?? -999) - (a.chgPct ?? -999));
+    }
     return out;
     // renderTick drives recomputes; deps intentionally coarse.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbolsKey, baselines, marketOpen, criteria, lastTickAt]);
+  }, [symbolsKey, baselines, marketOpen, criteria, lastTickAt, sortKey]);
 
   // New-trigger alerts (flash handled by CSS class; optional beep).
   useEffect(() => {
@@ -388,6 +393,11 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
           />
           sound
         </label>
+        <span className="live-sort">
+          Sort:
+          <button type="button" className={sortKey === "chg" ? "active" : ""} onClick={() => setSortKey("chg")}>% Chg</button>
+          <button type="button" className={sortKey === "rvol" ? "active" : ""} onClick={() => setSortKey("rvol")}>RVOL</button>
+        </span>
         <span className={`live-status ${feedStatus}`}>
           {symbols.length} symbols · {statusLabel}
           {lastTickAt ? ` · last tick ${new Date(lastTickAt).toLocaleTimeString("en-IN", { hour12: false })}` : ""}

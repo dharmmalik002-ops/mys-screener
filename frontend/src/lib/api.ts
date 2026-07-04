@@ -2708,7 +2708,7 @@ export type MarketEnvironmentResponse = {
   today: MarketEnvDay;
   yesterday: MarketEnvDay | null;
   week_avg_score: number | null;
-  history: Array<{ date: string | null; score: number | null; structural_held_pct?: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null }>;
+  history: Array<{ date: string | null; score: number | null; structural_held_pct?: number | null; ft3_held_pct: number | null; above_ema21_pct: number | null; above_sma50_pct?: number | null; above_sma200_pct?: number | null }>;
   week_review: {
     top_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
     bottom_sectors: Array<{ sector: string; median_return_5d_pct: number; stocks: number }>;
@@ -2737,9 +2737,22 @@ export type MarketEnvironmentResponse = {
     change_pct: number;
     rs_rating: number;
     pct_from_52w_high: number;
+    ema21?: number | null;
+    pivot?: number | null;
+    setup?: string;
     score: number;
     reasons: string[];
+    entry?: string;
+    stop?: string;
+    buy_note?: string;
   }>;
+  focus_review: {
+    reviewed_date: string | null;
+    rows: Array<{ symbol: string; setup?: string; sector?: string; entry: number; now: number; return_pct: number; worked: boolean }>;
+    summary: { count: number; worked: number; hit_rate_pct: number; avg_return_pct: number } | null;
+  };
+  leaders: Array<{ symbol: string; name: string; sector: string; last_price: number; change_pct: number; rs_rating: number | null; pct_from_52w_high: number; above_ema21: boolean }>;
+  sector_breakouts: Array<{ symbol: string; name: string; sector: string; last_price: number; change_pct: number; rs_rating: number | null; pivot: number; pct_below_pivot: number }>;
   positions: Array<{
     symbol: string;
     mapped: boolean;

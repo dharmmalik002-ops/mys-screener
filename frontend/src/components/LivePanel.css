@@ -280,3 +280,10 @@
   border-radius: 50%;
   background: #089981;
 }
+
+.live-sort { display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; color: var(--text-muted); }
+.live-sort button {
+  padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line);
+  background: transparent; color: inherit; font-size: 0.72rem; cursor: pointer;
+}
+.live-sort button.active { background: rgba(8,153,129,0.14); border-color: rgba(8,153,129,0.5); }

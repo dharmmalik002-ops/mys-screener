@@ -1,9 +1,33 @@
 import { useEffect, useMemo, useState } from "react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
 
 import { getMarketEnvironment, type MarketEnvironmentResponse, type MarketEnvDay } from "../lib/api";
 import { Panel } from "./Panel";
+import { SymbolGridModal, type SymbolGridItem } from "./SymbolGridModal";
 
 import "./MarketsPanel.css";
+
+// Focus-list learning: which sectors the user keeps vs removes, persisted so
+// suggestions gradually bias toward the kinds of stocks the user actually wants.
+const FOCUS_REMOVED_KEY = "stockScanner.marketsFocusRemoved.v1";
+const FOCUS_SECTOR_STATS_KEY = "stockScanner.marketsFocusSectorStats.v1";
+
+function readRemoved(): Set<string> {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(FOCUS_REMOVED_KEY) ?? "[]");
+    return new Set(Array.isArray(raw) ? raw.map(String) : []);
+  } catch {
+    return new Set();
+  }
+}
+function readSectorStats(): Record<string, { kept: number; removed: number }> {
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(FOCUS_SECTOR_STATS_KEY) ?? "{}");
+    return raw && typeof raw === "object" ? raw : {};
+  } catch {
+    return {};
+  }
+}
 
 type FetchState = "loading" | "ready" | "error";
 
@@ -79,6 +103,9 @@ function pressureMeaning(share: number | null): string {
 export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbol: string) => void }) {
   const [state, setState] = useState<FetchState>("loading");
   const [data, setData] = useState<MarketEnvironmentResponse | null>(null);
+  const [removed, setRemoved] = useState<Set<string>>(() => readRemoved());
+  const [sectorStats, setSectorStats] = useState<Record<string, { kept: number; removed: number }>>(() => readSectorStats());
+  const [gridModal, setGridModal] = useState<{ title: string; subtitle?: string; items: SymbolGridItem[] } | null>(null);
 
   const load = () => {
     setState("loading");
@@ -91,6 +118,53 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
   };
 
   useEffect(load, []);
+
+  const bumpSector = (sector: string | undefined, field: "kept" | "removed") => {
+    if (!sector) return;
+    setSectorStats((prev) => {
+      const next = { ...prev, [sector]: { ...(prev[sector] ?? { kept: 0, removed: 0 }) } };
+      next[sector][field] += 1;
+      try {
+        window.localStorage.setItem(FOCUS_SECTOR_STATS_KEY, JSON.stringify(next));
+      } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  const removeFocus = (symbol: string, sector?: string) => {
+    setRemoved((prev) => {
+      const next = new Set(prev);
+      next.add(symbol);
+      try {
+        window.localStorage.setItem(FOCUS_REMOVED_KEY, JSON.stringify([...next]));
+      } catch { /* ignore */ }
+      return next;
+    });
+    bumpSector(sector, "removed");
+  };
+
+  const restoreFocus = (symbol: string) => {
+    setRemoved((prev) => {
+      const next = new Set(prev);
+      next.delete(symbol);
+      try {
+        window.localStorage.setItem(FOCUS_REMOVED_KEY, JSON.stringify([...next]));
+      } catch { /* ignore */ }
+      return next;
+    });
+  };
+
+  // Learned sector affinity: keep-rate per sector, blended toward neutral until
+  // there's enough signal. >0 = user tends to keep this sector, <0 = removes it.
+  const sectorAffinity = useMemo(() => {
+    const out: Record<string, number> = {};
+    for (const [sector, s] of Object.entries(sectorStats)) {
+      const total = s.kept + s.removed;
+      if (total < 2) continue;
+      out[sector] = Math.round(((s.kept - s.removed) / total) * 100);
+    }
+    return out;
+  }, [sectorStats]);
 
   const today: MarketEnvDay | null = data?.today ?? null;
   const yesterday = data?.yesterday ?? null;
@@ -132,6 +206,44 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
       },
     ];
   }, [data, today, yesterday]);
+
+  // Learn once per weekly review cycle: names suggested last week that the
+  // user did NOT remove are credited to their sectors as "kept".
+  useEffect(() => {
+    const reviewed = data?.focus_review?.reviewed_date;
+    if (!reviewed) return;
+    const marker = `stockScanner.marketsFocusLearned.${reviewed}`;
+    try {
+      if (window.localStorage.getItem(marker)) return;
+    } catch { return; }
+    const rows = data?.focus_review?.rows ?? [];
+    if (!rows.length) return;
+    setSectorStats((prev) => {
+      const next = { ...prev };
+      for (const r of rows) {
+        if (!r.sector || removed.has(r.symbol)) continue;
+        next[r.sector] = { ...(next[r.sector] ?? { kept: 0, removed: 0 }) };
+        next[r.sector].kept += 1;
+      }
+      try {
+        window.localStorage.setItem(FOCUS_SECTOR_STATS_KEY, JSON.stringify(next));
+        window.localStorage.setItem(marker, "1");
+      } catch { /* ignore */ }
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data?.focus_review?.reviewed_date]);
+
+  // Display focus: drop removed, re-rank with learned sector affinity, split
+  // into kept vs removed so the user can restore.
+  const focusRaw = data?.focus ?? [];
+  const focusVisible = useMemo(() => {
+    return focusRaw
+      .filter((f) => !removed.has(f.symbol))
+      .map((f) => ({ ...f, adjScore: f.score + (sectorAffinity[f.sector] ?? 0) * 0.15 }))
+      .sort((a, b) => b.adjScore - a.adjScore);
+  }, [focusRaw, removed, sectorAffinity]);
+  const focusRemovedRows = focusRaw.filter((f) => removed.has(f.symbol));
 
   if (state === "loading" && !data) {
     return (
@@ -221,6 +333,49 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           </div>
         </div>
       ) : null}
+
+      {/* Breadth trend — is participation improving? */}
+      {(() => {
+        const series = (data?.history ?? [])
+          .filter((h) => h.date)
+          .map((h) => ({
+            date: (h.date ?? "").slice(5),
+            "> 21 EMA": h.above_ema21_pct ?? null,
+            "> 50 SMA": h.above_sma50_pct ?? null,
+            "> 200 SMA": h.above_sma200_pct ?? null,
+          }));
+        if (series.length < 2) {
+          return (
+            <div className="mk-breadth">
+              <div className="mk-week-hdr">Breadth Trend</div>
+              <div className="mk-muted">Building — the multi-day breadth chart needs a few sessions of history. Today's snapshot is in the posture strip above.</div>
+            </div>
+          );
+        }
+        return (
+          <div className="mk-breadth">
+            <div className="mk-week-hdr">Breadth Trend — % of stocks above key moving averages</div>
+            <div className="mk-breadth-chart">
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={series} margin={{ top: 8, right: 12, bottom: 4, left: -18 }}>
+                  <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} />
+                  <Tooltip contentStyle={{ fontSize: 12 }} />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Line type="monotone" dataKey="> 21 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls />
+                  <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls />
+                  <Line type="monotone" dataKey="> 200 SMA" stroke="#089981" strokeWidth={2} dot={false} connectNulls />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="mk-footnote">
+              Rising lines = broadening participation (healthy); falling while the index holds = a narrowing,
+              distribution-prone tape. The 200 SMA line is the slow, structural one; the 21 EMA line is the fast swing gauge.
+            </div>
+          </div>
+        );
+      })()}
 
       {/* AI daily read */}
       {ai ? (
@@ -342,30 +497,154 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
         </div>
       )}
 
-      {/* Focus list */}
-      {(data?.focus ?? []).length ? (
+      {/* Leaders + sector-breakout cards */}
+      <div className="mk-cardrow">
+        {(data?.leaders ?? []).length ? (
+          <button
+            type="button"
+            className="mk-bigcard"
+            onClick={() =>
+              setGridModal({
+                title: "Market Leaders",
+                subtitle: `${data?.leaders?.length ?? 0} Stage-2 trend-template leaders · click any chart to open it full`,
+                items: (data?.leaders ?? []).map((l) => ({
+                  symbol: l.symbol,
+                  name: l.name,
+                  badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
+                  badgeTone: "pos",
+                  note: `${l.above_ema21 ? "above" : "below"} 21 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
+                })),
+              })
+            }
+          >
+            <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
+            <div className="mk-bigcard-label">Market Leaders</div>
+            <div className="mk-bigcard-sub">
+              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · click to see every leader's chart →
+            </div>
+          </button>
+        ) : null}
+        {(data?.sector_breakouts ?? []).length ? (
+          <button
+            type="button"
+            className="mk-bigcard"
+            onClick={() =>
+              setGridModal({
+                title: "Leading-sector breakouts, about to fire",
+                subtitle: "Names in the strongest sectors coiled 0–5% under a base pivot",
+                items: (data?.sector_breakouts ?? []).map((b) => ({
+                  symbol: b.symbol,
+                  name: b.name,
+                  badge: `${b.pct_below_pivot.toFixed(1)}% to pivot`,
+                  badgeTone: "muted",
+                  note: `${b.sector} · pivot ${b.pivot}`,
+                })),
+              })
+            }
+          >
+            <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
+            <div className="mk-bigcard-label">Sector Breakouts Loading</div>
+            <div className="mk-bigcard-sub">
+              Leading-sector names 0–5% under a pivot — the next to fire · click for charts →
+            </div>
+          </button>
+        ) : null}
+      </div>
+
+      {/* Focus list — 40+ names with a buy plan, removable, learns your taste */}
+      {focusRaw.length ? (
         <div className="mk-week">
-          <div className="mk-week-hdr">Focus for the coming week — strongest names in what's working</div>
+          <div className="mk-week-hdr">Focus for the coming week — {focusVisible.length} names, each with a plan</div>
+          {Object.keys(sectorAffinity).length ? (
+            <div className="mk-affinity">
+              Learned from your edits:
+              {Object.entries(sectorAffinity)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 6)
+                .map(([sector, v]) => (
+                  <span key={sector} className={`mk-tag ${v >= 0 ? "pos-tag" : "neg-tag"}`}>
+                    {sector} {v >= 0 ? "↑" : "↓"}
+                  </span>
+                ))}
+            </div>
+          ) : null}
           <div className="mk-focus-grid">
-            {(data?.focus ?? []).map((f) => (
-              <button key={f.symbol} type="button" className="mk-focus-card" onClick={() => onOpenSymbolChart?.(f.symbol)}>
+            {focusVisible.map((f) => (
+              <div key={f.symbol} className="mk-focus-card">
                 <div className="mk-focus-top">
-                  <strong>{f.symbol}</strong>
+                  <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(f.symbol)}>{f.symbol}</button>
                   <span className={f.change_pct >= 0 ? "pos" : "neg"}>
                     {f.change_pct >= 0 ? "+" : ""}{f.change_pct.toFixed(1)}%
                   </span>
+                  <button
+                    type="button"
+                    className="mk-focus-remove"
+                    aria-label={`Remove ${f.symbol}`}
+                    title="Remove — the page learns your preference"
+                    onClick={() => removeFocus(f.symbol, f.sector)}
+                  >
+                    ×
+                  </button>
                 </div>
-                <small className="mk-muted">{f.sector}</small>
+                <div className="mk-focus-setup">
+                  {f.setup ?? "Setup"} · <span className="mk-muted">{f.sector}</span>
+                </div>
+                {f.entry ? (
+                  <div className="mk-focus-plan">
+                    <div><em>Buy:</em> {f.entry}</div>
+                    <div><em>Stop:</em> {f.stop}</div>
+                    {f.buy_note ? <div className="mk-muted">{f.buy_note}</div> : null}
+                  </div>
+                ) : null}
                 <div className="mk-focus-tags">
                   {f.reasons.map((r) => <span key={r} className="mk-tag">{r}</span>)}
                 </div>
-              </button>
+              </div>
+            ))}
+          </div>
+          {focusRemovedRows.length ? (
+            <div className="mk-removed">
+              Removed ({focusRemovedRows.length}):
+              {focusRemovedRows.map((f) => (
+                <button key={f.symbol} type="button" className="mk-tag mk-restore" onClick={() => restoreFocus(f.symbol)}>
+                  {f.symbol} ↺
+                </button>
+              ))}
+            </div>
+          ) : null}
+          <div className="mk-footnote">
+            Selection: RS ≥ 72–80, above a stacked 50/200 SMA, within 18% of the 52-week high, liquid. Each card shows
+            the setup and a concrete plan — a watch list, not a buy list. Remove any you don't want; the page learns
+            which sectors you keep and re-ranks future lists toward them.
+          </div>
+        </div>
+      ) : null}
+
+      {/* Weekly focus review — did last week's picks do what we thought? */}
+      {data?.focus_review?.summary ? (
+        <div className="mk-week">
+          <div className="mk-week-hdr">
+            Focus scorecard — the list from {data.focus_review.reviewed_date}, graded
+          </div>
+          <div className="mk-review-summary">
+            <strong className={data.focus_review.summary.avg_return_pct >= 0 ? "pos" : "neg"}>
+              {data.focus_review.summary.avg_return_pct >= 0 ? "+" : ""}
+              {data.focus_review.summary.avg_return_pct.toFixed(1)}% avg
+            </strong>
+            <span>{data.focus_review.summary.worked}/{data.focus_review.summary.count} behaved as expected (≥3%) · {data.focus_review.summary.hit_rate_pct.toFixed(0)}% hit rate</span>
+          </div>
+          <div className="mk-review-grid">
+            {data.focus_review.rows.slice(0, 20).map((r) => (
+              <div key={r.symbol} className={`mk-review-row ${r.worked ? "won" : "lost"}`}>
+                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(r.symbol)}>{r.symbol}</button>
+                <strong className={r.return_pct >= 0 ? "pos" : "neg"}>{r.return_pct >= 0 ? "+" : ""}{r.return_pct.toFixed(1)}%</strong>
+                <small>{r.setup}</small>
+              </div>
             ))}
           </div>
           <div className="mk-footnote">
-            Selection: RS ≥ 80, above a stacked 50/200 SMA, within 15% of the 52-week high, liquid — ranked by RS,
-            proximity to highs, held breakouts, 21 EMA resets, and tightness. A watch list, not a buy list: each
-            still needs your entry.
+            Return since the suggestion day, unmanaged. "Behaved as expected" = a tradable follow-through of +3% or
+            more — the goal is that the setups fire, not that every one is green.
           </div>
         </div>
       ) : null}
@@ -461,6 +740,20 @@ export function MarketsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (symbo
           comparisons deepen automatically as daily history accumulates.
         </div>
       </div>
+
+      {gridModal ? (
+        <SymbolGridModal
+          title={gridModal.title}
+          subtitle={gridModal.subtitle}
+          items={gridModal.items}
+          market="india"
+          onOpenSymbolChart={(sym) => {
+            setGridModal(null);
+            onOpenSymbolChart?.(sym);
+          }}
+          onClose={() => setGridModal(null)}
+        />
+      ) : null}
     </Panel>
   );
 }

@@ -361,3 +361,54 @@
   font-size: 0.7rem;
   color: var(--text-muted);
 }
+
+.mk-breadth { margin-bottom: 16px; }
+.mk-breadth-chart { width: 100%; }
+
+.mk-cardrow { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+
+.mk-bigcard {
+  flex: 1 1 240px;
+  text-align: left;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 150ms ease-out;
+}
+.mk-bigcard:hover { border-color: rgba(8, 153, 129, 0.55); }
+.mk-bigcard-num { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mk-bigcard-label { font-size: 0.9rem; font-weight: 600; }
+.mk-bigcard-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
+
+.mk-affinity { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; }
+.mk-tag.pos-tag { border-color: rgba(8,153,129,0.5); color: #089981; }
+.mk-tag.neg-tag { border-color: rgba(242,54,69,0.5); color: #f23645; }
+
+.mk-focus-card { position: relative; }
+.mk-focus-top { display: flex; align-items: center; gap: 8px; }
+.mk-focus-top .pos, .mk-focus-top .neg { margin-left: auto; }
+.mk-focus-remove {
+  border: none; background: none; color: var(--text-muted);
+  font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 2px;
+}
+.mk-focus-remove:hover { color: #f23645; }
+.mk-focus-setup { font-size: 0.78rem; font-weight: 600; margin: 2px 0; }
+.mk-focus-plan { font-size: 0.74rem; line-height: 1.5; margin: 4px 0; }
+.mk-focus-plan em { font-style: normal; font-weight: 700; color: var(--text-muted); }
+
+.mk-removed { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.74rem; color: var(--text-muted); margin-top: 10px; }
+.mk-restore { cursor: pointer; background: transparent; }
+
+.mk-review-summary { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; font-size: 0.85rem; }
+.mk-review-summary strong { font-size: 1.1rem; font-variant-numeric: tabular-nums; }
+.mk-review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.mk-review-row {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); font-size: 0.8rem;
+}
+.mk-review-row.won { border-color: rgba(8,153,129,0.35); }
+.mk-review-row.lost { border-color: rgba(242,54,69,0.3); }
+.mk-review-row small { color: var(--text-muted); margin-left: auto; font-size: 0.68rem; }
