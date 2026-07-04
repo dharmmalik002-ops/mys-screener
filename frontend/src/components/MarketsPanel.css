@@ -412,3 +412,10 @@
 .mk-review-row.won { border-color: rgba(8,153,129,0.35); }
 .mk-review-row.lost { border-color: rgba(242,54,69,0.3); }
 .mk-review-row small { color: var(--text-muted); margin-left: auto; font-size: 0.68rem; }
+
+.mk-bigcard-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.mk-bigcard-actions button {
+  padding: 5px 10px; border-radius: 8px; border: 1px solid var(--line);
+  background: transparent; color: inherit; font-size: 0.74rem; cursor: pointer;
+}
+.mk-bigcard-actions button:hover { border-color: rgba(8,153,129,0.55); }

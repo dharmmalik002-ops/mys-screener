@@ -99,6 +99,8 @@ function pressureMeaning(share: number | null): string {
   return "Distribution — leaders are being sold on volume.";
 }
 
+import { SymbolGridModal, type SymbolGridItem } from "./SymbolGridModal";
+
 export function MarketsPanel({
   onOpenSymbolChart,
   onOpenChartWithList,
@@ -134,6 +136,8 @@ export function MarketsPanel({
       return next;
     });
   };
+
+  const [gridModal, setGridModal] = useState<{ title: string; subtitle?: string; items: SymbolGridItem[] } | null>(null);
 
   // Open the full app chart, arming ↑/↓ navigation through the given list when
   // the host provides it; falls back to a plain single-symbol open.
@@ -511,36 +515,78 @@ export function MarketsPanel({
       {/* Leaders + sector-breakout cards */}
       <div className="mk-cardrow">
         {(data?.leaders ?? []).length ? (
-          <button
-            type="button"
-            className="mk-bigcard"
-            onClick={() => {
-              const syms = (data?.leaders ?? []).map((l) => l.symbol);
-              openChart(syms[0], syms);
-            }}
-          >
+          <div className="mk-bigcard">
             <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
             <div className="mk-bigcard-label">Market Leaders</div>
             <div className="mk-bigcard-sub">
-              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · opens the full chart — ↑/↓ steps through all {data?.leaders?.length ?? 0} →
+              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · 2%/5% circuit-band names excluded
             </div>
-          </button>
+            <div className="mk-bigcard-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  const syms = (data?.leaders ?? []).map((l) => l.symbol);
+                  openChart(syms[0], syms);
+                }}
+              >
+                Full chart (↑/↓ steps all)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setGridModal({
+                    title: "Market Leaders",
+                    subtitle: `${data?.leaders?.length ?? 0} Stage-2 leaders · click any chart to open it full`,
+                    items: (data?.leaders ?? []).map((l) => ({
+                      symbol: l.symbol,
+                      name: l.name,
+                      badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
+                      badgeTone: "pos",
+                      note: `${l.above_ema21 ? "above" : "below"} 21 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
+                    })),
+                  })
+                }
+              >
+                ⊞ Grid view
+              </button>
+            </div>
+          </div>
         ) : null}
         {(data?.sector_breakouts ?? []).length ? (
-          <button
-            type="button"
-            className="mk-bigcard"
-            onClick={() => {
-              const syms = (data?.sector_breakouts ?? []).map((b) => b.symbol);
-              openChart(syms[0], syms);
-            }}
-          >
+          <div className="mk-bigcard">
             <div className="mk-bigcard-num">{data?.sector_breakouts?.length ?? 0}</div>
             <div className="mk-bigcard-label">Sector Breakouts Setting Up</div>
-            <div className="mk-bigcard-sub">
-              Leading-sector names 0–5% under a pivot · opens the full chart — ↑/↓ steps through all →
+            <div className="mk-bigcard-sub">Leading-sector names 0–5% under a pivot — the next to fire</div>
+            <div className="mk-bigcard-actions">
+              <button
+                type="button"
+                onClick={() => {
+                  const syms = (data?.sector_breakouts ?? []).map((b) => b.symbol);
+                  openChart(syms[0], syms);
+                }}
+              >
+                Full chart (↑/↓ steps all)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  setGridModal({
+                    title: "Leading-sector breakouts, about to fire",
+                    subtitle: "Names in the strongest sectors coiled 0–5% under a base pivot",
+                    items: (data?.sector_breakouts ?? []).map((b) => ({
+                      symbol: b.symbol,
+                      name: b.name,
+                      badge: `${b.pct_below_pivot.toFixed(1)}% to pivot`,
+                      badgeTone: "muted",
+                      note: `${b.sector} · pivot ${b.pivot}`,
+                    })),
+                  })
+                }
+              >
+                ⊞ Grid view
+              </button>
             </div>
-          </button>
+          </div>
         ) : null}
       </div>
 
@@ -739,6 +785,20 @@ export function MarketsPanel({
           comparisons deepen automatically as daily history accumulates.
         </div>
       </div>
+
+      {gridModal ? (
+        <SymbolGridModal
+          title={gridModal.title}
+          subtitle={gridModal.subtitle}
+          items={gridModal.items}
+          market="india"
+          onOpenSymbolChart={(sym) => {
+            setGridModal(null);
+            onOpenSymbolChart?.(sym);
+          }}
+          onClose={() => setGridModal(null)}
+        />
+      ) : null}
     </Panel>
   );
 }
