@@ -233,9 +233,14 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
       const tick = ticksRef.current.get(symbol);
       const base = baselines[symbol];
       const ltp = tick?.price ?? base?.close ?? null;
-      const prevClose = tick?.previousClose ?? base?.prev_close ?? null;
-      let chgPct = tick?.changePercent ?? null;
-      if (chgPct === null && ltp !== null && prevClose) chgPct = (ltp / prevClose - 1) * 100;
+      // Anchor the 1-day change to the AUTHORITATIVE previous session close
+      // from /api/live-baselines, and always recompute it from the live price.
+      // Do NOT trust the tick's streamed changePercent — some feeds stream a
+      // change relative to the day's OPEN, which makes the % wrong intraday.
+      const prevClose = base?.prev_close ?? tick?.previousClose ?? null;
+      let chgPct: number | null = null;
+      if (ltp !== null && prevClose) chgPct = (ltp / prevClose - 1) * 100;
+      else chgPct = tick?.changePercent ?? null;
       const liveVol = tick?.dayVolume ?? null;
       const vol = liveVol ?? base?.volume ?? null;
       const avgVol = base?.avg_volume_20d ?? null;
