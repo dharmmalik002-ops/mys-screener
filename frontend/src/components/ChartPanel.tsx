@@ -3603,7 +3603,15 @@ export function ChartPanel({
     : symbol
       ? `${symbol} • Live chart`
       : undefined;
-  const priceTrendClass = summary ? (summary.change_pct >= 0 ? "positive" : "negative") : "neutral";
+  // 1-day change anchored to the PREVIOUS SESSION CLOSE, computed straight
+  // from the daily bars (last close vs the prior daily bar's close) — never
+  // from the day's open. On the 1D chart the daily bars are unambiguous; on
+  // other timeframes we keep the backend's close-to-prev-close summary value.
+  const dayChangePct =
+    timeframe === "1D" && activeBars.length >= 2 && (activeBars[activeBars.length - 2]?.close ?? 0) > 0
+      ? (activeBars[activeBars.length - 1].close / activeBars[activeBars.length - 2].close - 1) * 100
+      : summary?.change_pct ?? null;
+  const priceTrendClass = dayChangePct !== null ? (dayChangePct >= 0 ? "positive" : "negative") : "neutral";
   const rsTrendClass = summary
     ? (summary.rs_rating ?? summary.rs_rating_1w_ago) >= summary.rs_rating_1w_ago
       ? "positive"
@@ -3618,7 +3626,7 @@ export function ChartPanel({
   const priceLine1 = hoveredBar
     ? `${formatChartDateFromTimestamp(hoveredBar.time, market)} · O ${formatPriceValue(hoveredBar.open, 2)} · H ${formatPriceValue(hoveredBar.high, 2)} · L ${formatPriceValue(hoveredBar.low, 2)} · C ${formatPriceValue(hoveredBar.close, 2)}`
     : summary
-      ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(summary.change_pct)}`
+      ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(dayChangePct ?? summary.change_pct)}`
       : "Hover the chart to inspect OHLC detail.";
   const priceLine2 = hoveredBar
     ? (hoveredBar.changePct !== null && hoveredBar.changeValue !== null
@@ -4023,7 +4031,7 @@ export function ChartPanel({
           </div>
           <div className={`chart-summary-chip ${priceTrendClass}`}>
             <span>1D Change</span>
-            <strong>{formatSignedPercentValue(summary.change_pct)}</strong>
+            <strong>{formatSignedPercentValue(dayChangePct ?? summary.change_pct)}</strong>
           </div>
           <div className={`chart-summary-chip strong ${rsTrendClass}`}>
             <span>RS Rating</span>
