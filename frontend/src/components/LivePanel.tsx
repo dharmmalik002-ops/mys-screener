@@ -245,18 +245,23 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
     for (const symbol of symbols) {
       const tick = ticksRef.current.get(symbol);
       const base = baselines[symbol];
-      const ltp = tick?.price ?? base?.close ?? null;
-      // Reference close for the 1-day change:
-      //  • Live tick present  -> the tick's OWN previousClose (Yahoo field 16),
-      //    which is the true prior-session close for the CURRENT live session.
-      //    The EOD baseline's prev_close is a day stale intraday, so it must
-      //    NOT be used while a live price is streaming.
-      //  • No tick (market closed / pre-stream) -> the EOD baseline prev_close.
-      // Never use the tick's streamed changePercent — some feeds report it off
-      // the day's OPEN, which is the bug we already saw.
-      const prevClose = tick
-        ? (tick.previousClose ?? base?.prev_close ?? null)
-        : (base?.prev_close ?? null);
+      // The reference "previous close" depends on WHICH price we're showing:
+      //  • Live tick present -> ltp is TODAY's intraday price, so the reference
+      //    is the last COMPLETED session's close = the bhavcopy baseline's
+      //    `close` (which is yesterday's EOD during a live session). Yahoo's
+      //    own previousClose is unreliable for NSE (it can lag a day), so the
+      //    committed bhavcopy close is the source of truth.
+      //  • No tick (market closed) -> ltp is the baseline's own EOD close, so
+      //    the reference is its prev_close.
+      let ltp: number | null;
+      let prevClose: number | null;
+      if (tick?.price != null) {
+        ltp = tick.price;
+        prevClose = base?.close ?? tick.previousClose ?? null;
+      } else {
+        ltp = base?.close ?? null;
+        prevClose = base?.prev_close ?? null;
+      }
       const chgPct = ltp !== null && prevClose ? (ltp / prevClose - 1) * 100 : null;
       const liveVol = tick?.dayVolume ?? null;
       const vol = liveVol ?? base?.volume ?? null;
