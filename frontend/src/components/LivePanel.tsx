@@ -164,7 +164,20 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
     if (!feedRef.current) {
       const feed = new LiveFeed(
         (tick) => {
-          ticksRef.current.set(tick.symbol, tick);
+          // Merge into the prior tick so slow-changing fields (previousClose,
+          // dayHigh/Low) persist across frames that only carry a price update —
+          // otherwise a price-only frame would null previousClose and the %
+          // would briefly fall back to the day-stale baseline.
+          const prev = ticksRef.current.get(tick.symbol);
+          if (prev) {
+            const merged: LiveTick = { ...prev };
+            for (const [k, v] of Object.entries(tick)) {
+              if (v !== null && v !== undefined) (merged as Record<string, unknown>)[k] = v;
+            }
+            ticksRef.current.set(tick.symbol, merged);
+          } else {
+            ticksRef.current.set(tick.symbol, tick);
+          }
           dirtyRef.current = true;
           setLastTickAt(Date.now());
         },
@@ -233,14 +246,18 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
       const tick = ticksRef.current.get(symbol);
       const base = baselines[symbol];
       const ltp = tick?.price ?? base?.close ?? null;
-      // Anchor the 1-day change to the AUTHORITATIVE previous session close
-      // from /api/live-baselines, and always recompute it from the live price.
-      // Do NOT trust the tick's streamed changePercent — some feeds stream a
-      // change relative to the day's OPEN, which makes the % wrong intraday.
-      const prevClose = base?.prev_close ?? tick?.previousClose ?? null;
-      let chgPct: number | null = null;
-      if (ltp !== null && prevClose) chgPct = (ltp / prevClose - 1) * 100;
-      else chgPct = tick?.changePercent ?? null;
+      // Reference close for the 1-day change:
+      //  • Live tick present  -> the tick's OWN previousClose (Yahoo field 16),
+      //    which is the true prior-session close for the CURRENT live session.
+      //    The EOD baseline's prev_close is a day stale intraday, so it must
+      //    NOT be used while a live price is streaming.
+      //  • No tick (market closed / pre-stream) -> the EOD baseline prev_close.
+      // Never use the tick's streamed changePercent — some feeds report it off
+      // the day's OPEN, which is the bug we already saw.
+      const prevClose = tick
+        ? (tick.previousClose ?? base?.prev_close ?? null)
+        : (base?.prev_close ?? null);
+      const chgPct = ltp !== null && prevClose ? (ltp / prevClose - 1) * 100 : null;
       const liveVol = tick?.dayVolume ?? null;
       const vol = liveVol ?? base?.volume ?? null;
       const avgVol = base?.avg_volume_20d ?? null;
