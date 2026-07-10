@@ -67,6 +67,24 @@ function resolveShell() {
   return <App />;
 }
 
+// A tab opened before a deploy holds the previous build's chunk manifest;
+// when it lazy-loads a panel, the old hashed asset can be gone and Vite emits
+// vite:preloadError ("Unable to preload CSS…"). Reload once to pick up the
+// fresh build instead of surfacing a dead-end error screen. The timestamp
+// guard prevents a reload loop if the network itself is the problem.
+window.addEventListener("vite:preloadError", (event) => {
+  const KEY = "stockScanner.preloadErrorReloadAt";
+  const last = Number(window.sessionStorage.getItem(KEY) || 0);
+  if (Date.now() - last < 60_000) return; // let the error surface rather than loop
+  try {
+    window.sessionStorage.setItem(KEY, String(Date.now()));
+  } catch {
+    // storage unavailable — still better to reload once than to strand the tab
+  }
+  event.preventDefault();
+  window.location.reload();
+});
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <RootErrorBoundary>
