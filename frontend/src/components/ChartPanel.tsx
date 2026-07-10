@@ -1,4 +1,4 @@
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
 import { Settings2 } from "lucide-react";
 
@@ -1549,6 +1549,24 @@ export function ChartPanel({
   const interactionLayerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<ReturnType<typeof createChart> | null>(null);
   const mainSeriesRef = useRef<any>(null);
+  // Incremental-update plumbing: series/price-line handles live in refs so
+  // content effects can update them without recreating the chart, and the
+  // long-lived chart handlers (crosshair/click/ruler) read fresh data through
+  // refs instead of stale effect closures.
+  const volumeSeriesRef = useRef<any>(null);
+  const volumeSmaSeriesRef = useRef<any>(null);
+  const rsSeriesRef = useRef<any>(null);
+  const benchmarkSeriesRef = useRef<any>(null);
+  const indicatorSeriesMapRef = useRef<Map<IndicatorKey, any>>(new Map());
+  const srPriceLinesRef = useRef<any[]>([]);
+  const prevCloseLineRef = useRef<any>(null);
+  const updatePctRulerRef = useRef<(() => void) | null>(null);
+  const activeBarsRef = useRef<ChartBar[]>([]);
+  const snappedTradeMarkersRef = useRef<SnappedTradeMarker[]>([]);
+  const safeRsLineRef = useRef<ChartLinePoint[]>([]);
+  // {key, chartRange, epoch} the range-init effect last applied — lets data
+  // updates for the SAME symbol/timeframe preserve the user's zoom.
+  const rangeStateRef = useRef<{ key: string; chartRange: string; epoch: number }>({ key: "", chartRange: "", epoch: -1 });
   const benchmarkHistoryCacheRef = useRef<Record<string, ChartBar[]>>({});
   const indicatorKeysRef = useRef(indicatorKeys);
   const drawingToolRef = useRef<DrawingTool>("none");
@@ -1590,6 +1608,51 @@ export function ChartPanel({
     startClientY: number;
     startState: EarningsWidgetState;
   } | null>(null);
+  // Bumped whenever the chart is (re)created so content effects re-fire
+  // against the fresh chart instance after the rare full recreations
+  // (technical-tab mount, candles<->bars switch).
+  const [chartEpoch, setChartEpoch] = useState(0);
+  // The chart container mounts BEHIND the loading/error skeletons, so the
+  // create effect must key on the node's actual attachment — a plain ref
+  // would be null on first run and the narrow deps would never retry.
+  const [containerNode, setContainerNode] = useState<HTMLDivElement | null>(null);
+  const attachChartContainer = useCallback((node: HTMLDivElement | null) => {
+    containerRef.current = node;
+    setContainerNode(node);
+  }, []);
+  const [hollowCandles, setHollowCandles] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("stockScanner.hollowCandles.v1") === "on";
+    } catch {
+      return false;
+    }
+  });
+  const [tightnessMarks, setTightnessMarks] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.localStorage.getItem("stockScanner.tightnessMarks.v1") === "on";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.hollowCandles.v1", hollowCandles ? "on" : "off");
+    } catch {
+      // best-effort persistence
+    }
+  }, [hollowCandles]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.tightnessMarks.v1", tightnessMarks ? "on" : "off");
+    } catch {
+      // best-effort persistence
+    }
+  }, [tightnessMarks]);
+
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
@@ -1725,6 +1788,36 @@ export function ChartPanel({
   const palette = CHART_PALETTES[chartPalette];
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
+  // Shared per-bar stats, computed ONCE per dataset: change vs previous close,
+  // trailing 20-bar average volume, and the derived candle/volume signals
+  // (expansion candidate, volume dry-up, inside day, NR7). Consumers apply
+  // their own display toggles at build time so toggling never recomputes this.
+  const perBarStats = useMemo(() => {
+    return activeBars.map((bar, i) => {
+      const prevClose = i > 0 ? activeBars[i - 1].close : bar.open;
+      const changePct = prevClose > 0 ? (bar.close / prevClose - 1) * 100 : 0;
+      const start = Math.max(0, i - 20);
+      let volSum = 0;
+      for (let j = start; j < i; j++) volSum += activeBars[j].volume || 0;
+      const avgVol = i > start ? volSum / (i - start) : 0;
+      const isExpansionCandidate = changePct >= 6 && avgVol > 0 && (bar.volume || 0) >= avgVol * 2;
+      const isVolumeDryUp = avgVol > 0 && (bar.volume || 0) < avgVol * 0.5;
+      const prev = i > 0 ? activeBars[i - 1] : null;
+      const insideDay = !!prev && bar.high <= prev.high && bar.low >= prev.low;
+      let nr7 = false;
+      if (i >= 6) {
+        const range = bar.high - bar.low;
+        nr7 = true;
+        for (let j = i - 6; j < i; j++) {
+          if (activeBars[j].high - activeBars[j].low <= range) {
+            nr7 = false;
+            break;
+          }
+        }
+      }
+      return { changePct, avgVol, isExpansionCandidate, isVolumeDryUp, insideDay, nr7 };
+    });
+  }, [activeBars]);
   // Auto S/R + weekly/monthly demand-supply zones + trendlines, computed from
   // the loaded daily bars (only when the toggle is on, to stay light).
   const autoLevels = useMemo<AutoLevels>(
@@ -1913,6 +2006,20 @@ export function ChartPanel({
     symbolRef.current = symbol;
   }, [symbol]);
 
+  // Fresh-data refs for the long-lived chart handlers (crosshair, click,
+  // ruler) — they must never read a stale effect closure.
+  useEffect(() => {
+    activeBarsRef.current = activeBars;
+  }, [activeBars]);
+
+  useEffect(() => {
+    snappedTradeMarkersRef.current = snappedTradeMarkers;
+  }, [snappedTradeMarkers]);
+
+  useEffect(() => {
+    safeRsLineRef.current = safeRsLine;
+  }, [safeRsLine]);
+
   useEffect(() => {
     try {
       window.localStorage.setItem(CHART_FAVORITES_STORAGE_KEY, JSON.stringify(favoritesSettings));
@@ -2023,34 +2130,6 @@ export function ChartPanel({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(CHART_RANGE_STORAGE_KEY, chartRange);
-    } catch {
-      // Ignore private browsing/storage quota failures.
-    }
-    const chart = chartRef.current;
-    if (!chart || activeBars.length === 0) {
-      return;
-    }
-    const rangeBars = barsForChartRange(timeframe, chartRange);
-    if (chartRange === "FULL" || rangeBars === null) {
-      chart.timeScale().fitContent();
-      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
-      return;
-    }
-    const endIndex = Math.max(0, activeBars.length - 1);
-    const startIndex = Math.max(0, activeBars.length - rangeBars);
-    if (activeBars.length > rangeBars) {
-      chart.timeScale().setVisibleLogicalRange({
-        from: startIndex,
-        to: endIndex + RIGHT_EDGE_PADDING_BARS,
-      });
-    } else {
-      chart.timeScale().fitContent();
-      chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
-    }
-  }, [chartRange, activeBars, timeframe]);
 
   useEffect(() => {
     if (!earningsWidget.enabled || !symbol || earningsSource) {
@@ -2358,12 +2437,18 @@ export function ChartPanel({
     commitDrawingAnchor(anchor);
   };
 
+  // ── E1: create/destroy ────────────────────────────────────────────────────
+  // The chart + core series are created ONCE per technical-tab mount (and on
+  // candles<->bars switch, which v4 cannot morph). Everything else — options,
+  // data, markers, indicators, price lines, range — is applied incrementally
+  // by the content effects below, keyed on `chartEpoch`, so toggles and data
+  // refreshes never destroy the chart or reset the user's zoom.
   useEffect(() => {
-    if (panelTab !== "technical" || !containerRef.current) {
+    if (panelTab !== "technical" || !containerNode) {
       return;
     }
 
-    const chart = createChart(containerRef.current, {
+    const chart = createChart(containerNode, {
       autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: palette.background },
@@ -2384,8 +2469,6 @@ export function ChartPanel({
       },
       rightPriceScale: {
         borderColor: palette.borderColor,
-        // Log mode makes equal pixel heights equal % moves at any price level,
-        // so candle sizes are directly comparable across the whole chart.
         mode: scaleMode === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
       },
       timeScale: {
@@ -2409,10 +2492,12 @@ export function ChartPanel({
             wickUpColor: chartColors.candleUp,
             wickDownColor: chartColors.candleDown,
             borderVisible: false,
+            // Always-visible current price: axis label + subtle native line.
+            lastValueVisible: true,
+            priceLineVisible: true,
+            priceLineWidth: 1,
+            priceLineStyle: 3, // large dashed
           });
-    mainSeries.priceScale().applyOptions({
-      scaleMargins: safeRsLine.length ? { top: 0.04, bottom: 0.32 } : { top: 0.04, bottom: 0.18 },
-    });
 
     const volumeSeries = chart.addHistogramSeries({
       color: "#00d2ff",
@@ -2428,29 +2513,280 @@ export function ChartPanel({
       lastValueVisible: false,
       crosshairMarkerVisible: false,
     });
-    volumeSeries.priceScale().applyOptions({
-      scaleMargins: { top: safeRsLine.length ? 0.88 : 0.82, bottom: 0 },
-    });
 
-    // Expansion candles: a big up-day on heavy volume (>= EXPANSION_MIN_CHANGE%
-    // vs the prior close AND volume >= EXPANSION_VOL_MULT x the trailing 20-bar
-    // average). lightweight-charts can't widen an individual candle, so we make
-    // them pop by painting the body + wick a distinct colour instead.
-    const EXPANSION_MIN_CHANGE = 6;
-    const EXPANSION_VOL_MULT = 2;
+    // Calibration ruler: a small bar whose pixel height always equals a 5%
+    // move at the latest close, so candle heights can be read as % by eye.
+    // Reads bars through the ref so it never binds a stale dataset.
+    const updatePctRuler = () => {
+      const wrap = pctRulerRef.current;
+      const bar = pctRulerBarRef.current;
+      if (!wrap || !bar) return;
+      const barsNow = activeBarsRef.current;
+      const lastClose = barsNow.length ? barsNow[barsNow.length - 1]?.close : null;
+      if (!lastClose || !Number.isFinite(lastClose) || lastClose <= 0) {
+        wrap.style.display = "none";
+        return;
+      }
+      const yBase = mainSeries.priceToCoordinate(lastClose);
+      const yUp = mainSeries.priceToCoordinate(lastClose * 1.05);
+      if (yBase === null || yUp === null) {
+        wrap.style.display = "none";
+        return;
+      }
+      const px = Math.abs(Number(yBase) - Number(yUp));
+      if (!Number.isFinite(px) || px < 6 || px > 320) {
+        wrap.style.display = "none";
+        return;
+      }
+      wrap.style.display = "flex";
+      bar.style.height = `${Math.round(px)}px`;
+    };
+    updatePctRulerRef.current = updatePctRuler;
+
+    const updateOverlay = () => {
+      updatePctRuler();
+      scheduleOverlayUpdate();
+    };
+    // priceToCoordinate returns null until the pane has laid out, and no
+    // range event fires after that first paint — retry over the first few
+    // frames until the ruler gets a real measurement.
+    let rulerRetryCount = 0;
+    let rulerRetryId: number | null = null;
+    const retryPctRuler = () => {
+      rulerRetryId = null;
+      updatePctRuler();
+      if (pctRulerRef.current?.style.display !== "flex" && rulerRetryCount < 120) {
+        rulerRetryCount += 1;
+        rulerRetryId = window.requestAnimationFrame(retryPctRuler);
+      }
+    };
+    rulerRetryId = window.requestAnimationFrame(retryPctRuler);
+
+    const processCrosshairMove = (param: any) => {
+      if (!param?.time) {
+        setHoveredRsPoint(null);
+        setHoveredBar(null);
+        setHoveredTradeMarkers([]);
+        return;
+      }
+
+      const hoveredTime = normalizeChartTime(param.time);
+      if (hoveredTime === null) {
+        setHoveredRsPoint(null);
+        setHoveredBar(null);
+        setHoveredTradeMarkers([]);
+        return;
+      }
+
+      const barsNow = activeBarsRef.current;
+      const matchedTradeMarkers = snappedTradeMarkersRef.current.filter((m) => m.time === hoveredTime);
+      setHoveredTradeMarkers(matchedTradeMarkers);
+
+      const priceData = param.seriesData?.get?.(mainSeries) as
+        | {
+            open?: number;
+            high?: number;
+            low?: number;
+            close?: number;
+          }
+        | undefined;
+      if (
+        priceData &&
+        typeof priceData.open === "number" &&
+        typeof priceData.high === "number" &&
+        typeof priceData.low === "number" &&
+        typeof priceData.close === "number"
+      ) {
+        const barIndex = findBarIndexAtOrBefore(barsNow, hoveredTime);
+        const previousClose = barIndex > 0 ? barsNow[barIndex - 1]?.close ?? null : null;
+        const changeValue = previousClose === null ? null : Number(priceData.close) - previousClose;
+        const changePct = previousClose && previousClose !== 0 && changeValue !== null ? (changeValue / previousClose) * 100 : null;
+        setHoveredBar({
+          time: hoveredTime,
+          open: Number(priceData.open),
+          high: Number(priceData.high),
+          low: Number(priceData.low),
+          close: Number(priceData.close),
+          changeValue,
+          changePct,
+        });
+      } else {
+        const fallbackIndex = findBarIndexAtOrBefore(barsNow, hoveredTime);
+        const fallbackBar = fallbackIndex >= 0 ? barsNow[fallbackIndex] : null;
+        const previousClose = fallbackIndex > 0 ? barsNow[fallbackIndex - 1]?.close ?? null : null;
+        const changeValue = fallbackBar && previousClose !== null ? fallbackBar.close - previousClose : null;
+        const changePct = changeValue !== null && previousClose && previousClose !== 0 ? (changeValue / previousClose) * 100 : null;
+        setHoveredBar(
+          fallbackBar
+            ? {
+                time: fallbackBar.time,
+                open: fallbackBar.open,
+                high: fallbackBar.high,
+                low: fallbackBar.low,
+                close: fallbackBar.close,
+                changeValue,
+                changePct,
+              }
+            : null,
+        );
+      }
+
+      const rsSeries = rsSeriesRef.current;
+      if (!rsSeries) {
+        setHoveredRsPoint(null);
+        return;
+      }
+
+      const seriesData = param.seriesData?.get?.(rsSeries) as { value?: number } | undefined;
+      if (seriesData?.value !== undefined) {
+        setHoveredRsPoint({
+          time: hoveredTime,
+          value: Number(seriesData.value),
+        });
+        return;
+      }
+
+      const fallbackPoint = [...safeRsLineRef.current].reverse().find((point) => point.time <= hoveredTime) ?? null;
+      setHoveredRsPoint(fallbackPoint);
+    };
+    const handleCrosshairMove = (param: any) => {
+      pendingCrosshairParamRef.current = param;
+      if (crosshairFrameRef.current !== null) {
+        return;
+      }
+      crosshairFrameRef.current = window.requestAnimationFrame(() => {
+        crosshairFrameRef.current = null;
+        processCrosshairMove(pendingCrosshairParamRef.current);
+        // Keep the % ruler honest during hover-driven autoscale shifts.
+        updatePctRuler();
+      });
+    };
+
+    const handleChartClick = (param: any) => {
+      if (drawingToolRef.current !== "none") return;
+      const onClickSell = onSellMarkerClickRef.current;
+      if (!onClickSell) return;
+      if (!param?.time || !param?.point) return;
+      const clickedTime = normalizeChartTime(param.time);
+      if (clickedTime === null) return;
+      const barsNow = activeBarsRef.current;
+      const sellMarker = snappedTradeMarkersRef.current.find(
+        (m) => m.time === clickedTime && m.type === "sell",
+      );
+      if (!sellMarker) return;
+      const bar = barsNow[findBarIndexAtOrBefore(barsNow, clickedTime)];
+      if (!bar) return;
+      const barHighY = mainSeries.priceToCoordinate(bar.high);
+      if (typeof barHighY === "number" && Number.isFinite(barHighY)) {
+        // S markers sit above the bar — click must be near/above the bar's high.
+        // 24px tolerance keeps clicks forgiving without intercepting clicks
+        // on B markers further down the candle.
+        if (param.point.y > barHighY + 24) return;
+      }
+      const exitDate = sellMarker.entries[0]?.date;
+      const sym = symbolRef.current;
+      if (!exitDate || !sym) return;
+      onClickSell(sym, exitDate);
+    };
+
+    chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
+    chart.subscribeCrosshairMove(handleCrosshairMove);
+    chart.subscribeClick(handleChartClick);
+
+    chartRef.current = chart;
+    mainSeriesRef.current = mainSeries;
+    volumeSeriesRef.current = volumeSeries;
+    volumeSmaSeriesRef.current = volumeSmaSeries;
+    // Re-sync every content effect against the fresh chart instance.
+    setChartEpoch((epoch) => epoch + 1);
+    updateOverlay();
+
+    return () => {
+      if (rulerRetryId !== null) window.cancelAnimationFrame(rulerRetryId);
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateOverlay);
+      chart.unsubscribeCrosshairMove(handleCrosshairMove);
+      chart.unsubscribeClick(handleChartClick);
+      chart.remove();
+      chartRef.current = null;
+      mainSeriesRef.current = null;
+      volumeSeriesRef.current = null;
+      volumeSmaSeriesRef.current = null;
+      rsSeriesRef.current = null;
+      benchmarkSeriesRef.current = null;
+      indicatorSeriesMapRef.current.clear();
+      srPriceLinesRef.current = [];
+      prevCloseLineRef.current = null;
+      updatePctRulerRef.current = null;
+      rangeStateRef.current = { key: "", chartRange: "", epoch: -1 };
+    };
+    // Initial palette/scale/timeframe/colors are read once here; E2 re-applies
+    // them incrementally, so they are intentionally NOT recreate triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [panelTab, chartStyle, containerNode]);
+
+  // ── E2: options (palette, scale mode, axis, series colors) ───────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    chart.applyOptions({
+      layout: {
+        background: { type: ColorType.Solid, color: palette.background },
+        textColor: palette.textColor,
+      },
+      crosshair: {
+        vertLine: { color: palette.crosshairColor },
+        horzLine: { color: palette.crosshairColor },
+      },
+      leftPriceScale: { visible: false, borderColor: palette.borderColor },
+      rightPriceScale: {
+        borderColor: palette.borderColor,
+        mode: scaleMode === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+      },
+      timeScale: {
+        borderColor: palette.borderColor,
+        timeVisible: timeframe === "15m" || timeframe === "30m" || timeframe === "1h",
+        rightOffset: RIGHT_EDGE_PADDING_BARS,
+      },
+    });
+    if (chartStyle !== "bars") {
+      mainSeriesRef.current?.applyOptions({
+        upColor: chartColors.candleUp,
+        downColor: chartColors.candleDown,
+        wickUpColor: chartColors.candleUp,
+        wickDownColor: chartColors.candleDown,
+      });
+    }
+    volumeSmaSeriesRef.current?.applyOptions({ color: withOpacity(chartColors.volumeUp, 0.92) });
+  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle]);
+
+  // ── E3: candle + volume data (incremental, zoom-preserving) ──────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    const mainSeries = mainSeriesRef.current;
+    const volumeSeries = volumeSeriesRef.current;
+    const volumeSmaSeries = volumeSmaSeriesRef.current;
+    if (!chart || !mainSeries || !volumeSeries || !volumeSmaSeries) return;
+
+    // Same-dataset updates (toggles, color changes, live refresh of the same
+    // symbol/timeframe) must keep the user's zoom; new datasets fall through
+    // to the range-init effect below.
+    const dataKey = `${symbol ?? ""}:${timeframe}`;
+    const sameDataset = rangeStateRef.current.key === dataKey && rangeStateRef.current.epoch === chartEpoch;
+    const savedRange = sameDataset ? chart.timeScale().getVisibleLogicalRange() : null;
+
+    // Hollow up-candles need borders; expansion overrides stay solid.
+    if (chartStyle !== "bars") {
+      mainSeries.applyOptions(
+        hollowCandles
+          ? { borderVisible: true, borderUpColor: chartColors.candleUp, borderDownColor: chartColors.candleDown }
+          : { borderVisible: false },
+      );
+    }
+
     const expansionColor = chartColors.candleExpansion || "#ffb01f";
     const ohlcvData = [
       ...activeBars.map((bar, i) => {
-        const prevClose = i > 0 ? activeBars[i - 1].close : bar.open;
-        const changePct = prevClose > 0 ? (bar.close / prevClose - 1) * 100 : 0;
-        const start = Math.max(0, i - 20);
-        const window = activeBars.slice(start, i);
-        const avgVol = window.length ? window.reduce((s, b) => s + (b.volume || 0), 0) / window.length : 0;
-        const isExpansion =
-          highlightExpansion
-          && changePct >= EXPANSION_MIN_CHANGE
-          && avgVol > 0
-          && (bar.volume || 0) >= avgVol * EXPANSION_VOL_MULT;
+        const stat = perBarStats[i];
         const point: Record<string, unknown> = {
           time: bar.time as UTCTimestamp,
           open: bar.open,
@@ -2458,18 +2794,173 @@ export function ChartPanel({
           low: bar.low,
           close: bar.close,
         };
-        if (isExpansion) {
+        if (highlightExpansion && stat?.isExpansionCandidate) {
           point.color = expansionColor;
           point.wickColor = expansionColor;
           point.borderColor = expansionColor;
+        } else if (hollowCandles && chartStyle !== "bars" && bar.close >= bar.open) {
+          // Hollow body: paint the body as background, keep border + wick
+          // in the up colour (border enabled above).
+          point.color = palette.background;
+          point.wickColor = chartColors.candleUp;
+          point.borderColor = chartColors.candleUp;
         }
         return point;
       }),
       ...futureWhitespaceTimes.map((time) => ({ time: time as UTCTimestamp })),
     ];
-
     mainSeries.setData(ohlcvData as never);
 
+    volumeSeries.setData(
+      activeBars.map((bar, i) => ({
+        time: bar.time as UTCTimestamp,
+        value: bar.volume,
+        // Dry-up days (volume < 50% of the trailing 20-bar average) render
+        // dimmed grey — the quiet contraction that precedes good entries.
+        color: perBarStats[i]?.isVolumeDryUp
+          ? "rgba(139, 148, 158, 0.22)"
+          : bar.close >= bar.open
+            ? withOpacity(chartColors.volumeUp, 0.38)
+            : withOpacity(chartColors.volumeDown, 0.35),
+      })),
+    );
+    volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
+
+    if (savedRange) {
+      chart.timeScale().setVisibleLogicalRange(savedRange);
+    }
+    updatePctRulerRef.current?.();
+    scheduleOverlayUpdate();
+  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, palette.background, symbol, timeframe]);
+
+  // ── E4: indicator line series (diffed add/remove/update) ─────────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const map = indicatorSeriesMapRef.current;
+    for (const indicator of INDICATORS) {
+      const wanted = indicatorKeys.includes(indicator.key);
+      const existing = map.get(indicator.key);
+      if (!wanted) {
+        if (existing) {
+          try {
+            chart.removeSeries(existing);
+          } catch {
+            // series may already be disposed with the chart
+          }
+          map.delete(indicator.key);
+        }
+        continue;
+      }
+      const series =
+        existing ??
+        chart.addLineSeries({
+          color: chartColors[indicator.colorKey],
+          lineWidth: indicator.key === "ema200" ? 2 : 1,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        });
+      if (!existing) map.set(indicator.key, series);
+      series.applyOptions({ color: chartColors[indicator.colorKey] });
+      series.setData(
+        indicator.key === "ema10"
+          ? computeEma(activeBars, 10)
+          : indicator.key === "ema20"
+            ? computeEma(activeBars, 20)
+            : indicator.key === "ema50"
+              ? computeEma(activeBars, 50)
+            : indicator.key === "ema200"
+              ? computeSma(activeBars, 200)
+              : computeVwap(activeBars),
+      );
+    }
+  }, [chartEpoch, indicatorKeys, activeBars, chartColors]);
+
+  // ── E5: RS pane + benchmark overlay + RS-dependent scale margins ─────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    const mainSeries = mainSeriesRef.current;
+    const volumeSeries = volumeSeriesRef.current;
+    if (!chart || !mainSeries || !volumeSeries) return;
+
+    mainSeries.priceScale().applyOptions({
+      scaleMargins: safeRsLine.length ? { top: 0.04, bottom: 0.32 } : { top: 0.04, bottom: 0.18 },
+    });
+    volumeSeries.priceScale().applyOptions({
+      scaleMargins: { top: safeRsLine.length ? 0.88 : 0.82, bottom: 0 },
+    });
+
+    if (safeRsLine.length) {
+      let rsSeries = rsSeriesRef.current;
+      if (!rsSeries) {
+        rsSeries = chart.addLineSeries({
+          color: chartColors.rsLine,
+          lineWidth: 2,
+          priceScaleId: "rs-rating",
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: true,
+        });
+        rsSeries.priceScale().applyOptions({
+          visible: false,
+          scaleMargins: { top: 0.72, bottom: 0.14 },
+        });
+        rsSeriesRef.current = rsSeries;
+      }
+      rsSeries.applyOptions({ color: chartColors.rsLine });
+      rsSeries.setData(
+        safeRsLine.map((point) => ({
+          time: point.time as UTCTimestamp,
+          value: point.value,
+        })),
+      );
+      rsSeries.setMarkers(
+        safeRsLineMarkers.map((marker) => ({
+          time: marker.time as UTCTimestamp,
+          position: "inBar",
+          shape: "circle",
+          color: chartColors.rsMarker,
+          text: "",
+          size: chartColors.rsMarkerSize,
+        })),
+      );
+    } else if (rsSeriesRef.current) {
+      try {
+        chart.removeSeries(rsSeriesRef.current);
+      } catch {
+        // disposed with chart
+      }
+      rsSeriesRef.current = null;
+    }
+
+    if (benchmarkOverlayData.length) {
+      let benchmarkSeries = benchmarkSeriesRef.current;
+      if (!benchmarkSeries) {
+        benchmarkSeries = chart.addLineSeries({
+          color: "#ffb347",
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          crosshairMarkerVisible: false,
+        });
+        benchmarkSeriesRef.current = benchmarkSeries;
+      }
+      benchmarkSeries.setData(benchmarkOverlayData);
+    } else if (benchmarkSeriesRef.current) {
+      try {
+        chart.removeSeries(benchmarkSeriesRef.current);
+      } catch {
+        // disposed with chart
+      }
+      benchmarkSeriesRef.current = null;
+    }
+  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize]);
+
+  // ── E6: main-series markers (pips, trades, circuit locks, tightness) ─────
+  useEffect(() => {
+    const mainSeries = mainSeriesRef.current;
+    if (!mainSeries) return;
     // Circuit limits are shown in the Circuit Limits chip (values) and as
     // optional UC/LC lock-day markers — no lines are drawn on the chart, by
     // request, to keep the editorial look.
@@ -2510,8 +3001,6 @@ export function ChartPanel({
         size: 0.6,
       });
     }
-    // (Volume-push HQV/HHV/HYV pips are attached to the volume histogram
-    // series below, not the price candles.)
     // Trade journal "B"/"S" markers — one per buy/sell on the chart's symbol.
     for (const marker of snappedTradeMarkers) {
       combinedMarkers.push({
@@ -2558,29 +3047,31 @@ export function ChartPanel({
         });
       }
     }
+    // Tightness marks: tiny muted pips under contraction days — square = NR7
+    // (narrowest range of 7), circle = inside day. Off by default.
+    if (tightnessMarks) {
+      for (let i = 0; i < activeBars.length; i++) {
+        const stat = perBarStats[i];
+        if (!stat || (!stat.insideDay && !stat.nr7)) continue;
+        combinedMarkers.push({
+          time: activeBars[i].time as UTCTimestamp,
+          position: "belowBar",
+          shape: stat.nr7 ? "square" : "circle",
+          color: "rgba(139, 148, 158, 0.85)",
+          text: "",
+          size: 0.5,
+        });
+      }
+    }
     // lightweight-charts requires markers sorted by time.
     combinedMarkers.sort((left, right) => Number(left.time) - Number(right.time));
     mainSeries.setMarkers(combinedMarkers);
-    if (benchmarkOverlayData.length) {
-      const benchmarkSeries = chart.addLineSeries({
-        color: "#ffb347",
-        lineWidth: 2,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      });
-      benchmarkSeries.setData(benchmarkOverlayData);
-    }
-    volumeSeries.setData(
-      activeBars.map((bar) => ({
-        time: bar.time as UTCTimestamp,
-        value: bar.volume,
-        color: bar.close >= bar.open ? withOpacity(chartColors.volumeUp, 0.38) : withOpacity(chartColors.volumeDown, 0.35),
-      })),
-    );
-    // Volume-push "HQV"/"HHV"/"HYV" pips ride the VOLUME histogram (not the
-    // price candles) — placed above the volume bar of the day the stock pushed
-    // a new Quarterly/Half-yearly/Yearly volume high.
+  }, [chartEpoch, pocketPivotWidget.enabled, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotBars, safeEarningsMarkers, safeBandChangeMarkers, snappedTradeMarkers, circuitLocksEnabled, timeframe, activeBars, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, tightnessMarks, perBarStats]);
+
+  // ── E7: volume-series markers (HQV/HHV/HYV pips) ──────────────────────────
+  useEffect(() => {
+    const volumeSeries = volumeSeriesRef.current;
+    if (!volumeSeries) return;
     if (safeVolumeMarkers.length) {
       volumeSeries.setMarkers(
         safeVolumeMarkers
@@ -2597,260 +3088,85 @@ export function ChartPanel({
     } else {
       volumeSeries.setMarkers([]);
     }
-    volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
+  }, [chartEpoch, safeVolumeMarkers]);
 
-    let rsSeries: any = null;
-    if (safeRsLine.length) {
-      rsSeries = chart.addLineSeries({
-        color: chartColors.rsLine,
-        lineWidth: 2,
-        priceScaleId: "rs-rating",
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: true,
-      });
-      rsSeries.priceScale().applyOptions({
-        visible: false,
-        scaleMargins: { top: 0.72, bottom: 0.14 },
-      });
-      rsSeries.setData(
-        safeRsLine.map((point) => ({
-          time: point.time as UTCTimestamp,
-          value: point.value,
-        })),
-      );
-      rsSeries.setMarkers(
-        safeRsLineMarkers.map((marker) => ({
-          time: marker.time as UTCTimestamp,
-          position: "inBar",
-          shape: "circle",
-          color: chartColors.rsMarker,
-          text: "",
-          size: chartColors.rsMarkerSize,
-        })),
-      );
-    }
-
-    for (const indicator of INDICATORS) {
-      if (!indicatorKeysRef.current.includes(indicator.key)) {
-        continue;
+  // ── E8: auto S/R price lines (drain-and-recreate, leak-safe) ─────────────
+  useEffect(() => {
+    const mainSeries = mainSeriesRef.current;
+    if (!mainSeries) return;
+    for (const line of srPriceLinesRef.current) {
+      try {
+        mainSeries.removePriceLine(line);
+      } catch {
+        // line already disposed with the chart
       }
-
-      const lineSeries = chart.addLineSeries({
-        color: chartColors[indicator.colorKey],
-        lineWidth: indicator.key === "ema200" ? 2 : 1,
-        priceLineVisible: false,
-        lastValueVisible: false,
-        crosshairMarkerVisible: false,
-      });
-
-      lineSeries.setData(
-        indicator.key === "ema10"
-          ? computeEma(activeBars, 10)
-          : indicator.key === "ema20"
-            ? computeEma(activeBars, 20)
-            : indicator.key === "ema50"
-              ? computeEma(activeBars, 50)
-            : indicator.key === "ema200"
-              ? computeSma(activeBars, 200)
-              : computeVwap(activeBars),
-      );
     }
-
+    srPriceLinesRef.current = [];
+    if (!autoLevelsEnabled) return;
     // Auto strong support/resistance — native price lines (axis-tagged,
     // full-width, pan-safe). Zones + trendlines are drawn in the SVG overlay.
-    if (autoLevelsEnabled) {
-      for (const level of autoLevels.srLevels) {
-        const isSupport = level.kind === "support";
-        mainSeries.createPriceLine({
-          price: level.price,
-          color: isSupport ? "#22c55e" : "#ef4444",
-          lineWidth: 1,
-          lineStyle: 2, // dashed
-          axisLabelVisible: true,
-          title: isSupport ? "S" : "R",
-        });
-      }
-    }
-
-    // Calibration ruler: a small bar whose pixel height always equals a 5%
-    // move at the latest close, so candle heights can be read as % by eye.
-    // On the log scale that height is constant across the whole chart.
-    const updatePctRuler = () => {
-      const wrap = pctRulerRef.current;
-      const bar = pctRulerBarRef.current;
-      if (!wrap || !bar) return;
-      const lastClose = activeBars.length ? activeBars[activeBars.length - 1]?.close : null;
-      if (!lastClose || !Number.isFinite(lastClose) || lastClose <= 0) {
-        wrap.style.display = "none";
-        return;
-      }
-      const yBase = mainSeries.priceToCoordinate(lastClose);
-      const yUp = mainSeries.priceToCoordinate(lastClose * 1.05);
-      if (yBase === null || yUp === null) {
-        wrap.style.display = "none";
-        return;
-      }
-      const px = Math.abs(Number(yBase) - Number(yUp));
-      if (!Number.isFinite(px) || px < 6 || px > 320) {
-        wrap.style.display = "none";
-        return;
-      }
-      wrap.style.display = "flex";
-      bar.style.height = `${Math.round(px)}px`;
-    };
-
-    const updateOverlay = () => {
-      updatePctRuler();
-      scheduleOverlayUpdate();
-    };
-    // priceToCoordinate returns null until the pane has laid out, and no
-    // range event fires after that first paint — retry over the first few
-    // frames until the ruler gets a real measurement.
-    let rulerRetryCount = 0;
-    let rulerRetryId: number | null = null;
-    const retryPctRuler = () => {
-      rulerRetryId = null;
-      updatePctRuler();
-      if (pctRulerRef.current?.style.display !== "flex" && rulerRetryCount < 120) {
-        rulerRetryCount += 1;
-        rulerRetryId = window.requestAnimationFrame(retryPctRuler);
-      }
-    };
-    rulerRetryId = window.requestAnimationFrame(retryPctRuler);
-    const processCrosshairMove = (param: any) => {
-      if (!param?.time) {
-        setHoveredRsPoint(null);
-        setHoveredBar(null);
-        setHoveredTradeMarkers([]);
-        return;
-      }
-
-      const hoveredTime = normalizeChartTime(param.time);
-      if (hoveredTime === null) {
-        setHoveredRsPoint(null);
-        setHoveredBar(null);
-        setHoveredTradeMarkers([]);
-        return;
-      }
-
-      const matchedTradeMarkers = snappedTradeMarkers.filter((m) => m.time === hoveredTime);
-      setHoveredTradeMarkers(matchedTradeMarkers);
-
-      const priceData = param.seriesData?.get?.(mainSeries) as
-        | {
-            open?: number;
-            high?: number;
-            low?: number;
-            close?: number;
-          }
-        | undefined;
-      if (
-        priceData &&
-        typeof priceData.open === "number" &&
-        typeof priceData.high === "number" &&
-        typeof priceData.low === "number" &&
-        typeof priceData.close === "number"
-      ) {
-        const barIndex = findBarIndexAtOrBefore(activeBars, hoveredTime);
-        const previousClose = barIndex > 0 ? activeBars[barIndex - 1]?.close ?? null : null;
-        const changeValue = previousClose === null ? null : Number(priceData.close) - previousClose;
-        const changePct = previousClose && previousClose !== 0 && changeValue !== null ? (changeValue / previousClose) * 100 : null;
-        setHoveredBar({
-          time: hoveredTime,
-          open: Number(priceData.open),
-          high: Number(priceData.high),
-          low: Number(priceData.low),
-          close: Number(priceData.close),
-          changeValue,
-          changePct,
-        });
-      } else {
-        const fallbackIndex = findBarIndexAtOrBefore(activeBars, hoveredTime);
-        const fallbackBar = fallbackIndex >= 0 ? activeBars[fallbackIndex] : null;
-        const previousClose = fallbackIndex > 0 ? activeBars[fallbackIndex - 1]?.close ?? null : null;
-        const changeValue = fallbackBar && previousClose !== null ? fallbackBar.close - previousClose : null;
-        const changePct = changeValue !== null && previousClose && previousClose !== 0 ? (changeValue / previousClose) * 100 : null;
-        setHoveredBar(
-          fallbackBar
-            ? {
-                time: fallbackBar.time,
-                open: fallbackBar.open,
-                high: fallbackBar.high,
-                low: fallbackBar.low,
-                close: fallbackBar.close,
-                changeValue,
-                changePct,
-              }
-            : null,
-        );
-      }
-
-      if (!rsSeries) {
-        setHoveredRsPoint(null);
-        return;
-      }
-
-      const seriesData = param.seriesData?.get?.(rsSeries) as { value?: number } | undefined;
-      if (seriesData?.value !== undefined) {
-        setHoveredRsPoint({
-          time: hoveredTime,
-          value: Number(seriesData.value),
-        });
-        return;
-      }
-
-      const fallbackPoint = [...safeRsLine].reverse().find((point) => point.time <= hoveredTime) ?? null;
-      setHoveredRsPoint(fallbackPoint);
-    };
-    const handleCrosshairMove = (param: any) => {
-      pendingCrosshairParamRef.current = param;
-      if (crosshairFrameRef.current !== null) {
-        return;
-      }
-      crosshairFrameRef.current = window.requestAnimationFrame(() => {
-        crosshairFrameRef.current = null;
-        processCrosshairMove(pendingCrosshairParamRef.current);
-        // Keep the % ruler honest during hover-driven autoscale shifts.
-        updatePctRuler();
+    srPriceLinesRef.current = autoLevels.srLevels.map((level) => {
+      const isSupport = level.kind === "support";
+      return mainSeries.createPriceLine({
+        price: level.price,
+        color: isSupport ? "#22c55e" : "#ef4444",
+        lineWidth: 1,
+        lineStyle: 2, // dashed
+        axisLabelVisible: true,
+        title: isSupport ? "S" : "R",
       });
-    };
+    });
+  }, [chartEpoch, autoLevelsEnabled, autoLevels.srLevels]);
 
-    const handleChartClick = (param: any) => {
-      if (drawingToolRef.current !== "none") return;
-      const onClickSell = onSellMarkerClickRef.current;
-      if (!onClickSell) return;
-      if (!param?.time || !param?.point) return;
-      const clickedTime = normalizeChartTime(param.time);
-      if (clickedTime === null) return;
-      const sellMarker = snappedTradeMarkers.find(
-        (m) => m.time === clickedTime && m.type === "sell",
-      );
-      if (!sellMarker) return;
-      const bar = activeBars[findBarIndexAtOrBefore(activeBars, clickedTime)];
-      if (!bar) return;
-      const barHighY = mainSeries.priceToCoordinate(bar.high);
-      if (typeof barHighY === "number" && Number.isFinite(barHighY)) {
-        // S markers sit above the bar — click must be near/above the bar's high.
-        // 24px tolerance keeps clicks forgiving without intercepting clicks
-        // on B markers further down the candle.
-        if (param.point.y > barHighY + 24) return;
+  // ── E9: previous-close reference line ─────────────────────────────────────
+  useEffect(() => {
+    const mainSeries = mainSeriesRef.current;
+    if (!mainSeries) return;
+    if (prevCloseLineRef.current) {
+      try {
+        mainSeries.removePriceLine(prevCloseLineRef.current);
+      } catch {
+        // disposed with chart
       }
-      const exitDate = sellMarker.entries[0]?.date;
-      const sym = symbolRef.current;
-      if (!exitDate || !sym) return;
-      onClickSell(sym, exitDate);
-    };
+      prevCloseLineRef.current = null;
+    }
+    if (activeBars.length < 2) return;
+    const prevClose = activeBars[activeBars.length - 2]?.close;
+    if (!prevClose || prevClose <= 0) return;
+    // The last COMPLETED bar's close — the anchor every % change on the app
+    // is measured against. Dashed and muted so it reads as reference, not data.
+    prevCloseLineRef.current = mainSeries.createPriceLine({
+      price: prevClose,
+      color: "rgba(139, 148, 158, 0.6)",
+      lineWidth: 1,
+      lineStyle: 2, // dashed
+      axisLabelVisible: true,
+      title: "PC",
+    });
+  }, [chartEpoch, activeBars]);
 
-    chart.timeScale().subscribeVisibleLogicalRangeChange(updateOverlay);
-    chart.subscribeCrosshairMove(handleCrosshairMove);
-    chart.subscribeClick(handleChartClick);
+  // ── E10: range init (default zoom) — ONLY on new dataset/range/epoch ─────
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(CHART_RANGE_STORAGE_KEY, chartRange);
+    } catch {
+      // Ignore private browsing/storage quota failures.
+    }
+    const chart = chartRef.current;
+    if (!chart || activeBars.length === 0) {
+      return;
+    }
+    const dataKey = `${symbol ?? ""}:${timeframe}`;
+    const prev = rangeStateRef.current;
+    const shouldApply = prev.key !== dataKey || prev.chartRange !== chartRange || prev.epoch !== chartEpoch;
+    if (!shouldApply) return;
+    rangeStateRef.current = { key: dataKey, chartRange, epoch: chartEpoch };
 
     const rangeBars = barsForChartRange(timeframe, chartRange);
     const visibleBars = rangeBars ?? defaultVisibleBars(timeframe);
     const endIndex = Math.max(0, activeBars.length - 1);
     const startIndex = Math.max(0, activeBars.length - visibleBars);
-    if (chartRange === "FULL") {
+    if (chartRange === "FULL" || rangeBars === null) {
       chart.timeScale().fitContent();
       chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
     } else if (activeBars.length > visibleBars) {
@@ -2862,21 +3178,7 @@ export function ChartPanel({
       chart.timeScale().fitContent();
       chart.timeScale().scrollToPosition(RIGHT_EDGE_PADDING_BARS, false);
     }
-
-    chartRef.current = chart;
-    mainSeriesRef.current = mainSeries;
-    updateOverlay();
-
-    return () => {
-      if (rulerRetryId !== null) window.cancelAnimationFrame(rulerRetryId);
-      chart.timeScale().unsubscribeVisibleLogicalRangeChange(updateOverlay);
-      chart.unsubscribeCrosshairMove(handleCrosshairMove);
-      chart.unsubscribeClick(handleChartClick);
-      chart.remove();
-      chartRef.current = null;
-      mainSeriesRef.current = null;
-    };
-  }, [activeBars, benchmarkOverlayData, chartColors, chartPalette, chartStyle, futureWhitespaceTimes, indicatorKeys, panelTab, palette.background, palette.borderColor, palette.crosshairColor, palette.gridColor, palette.textColor, pocketPivotBars, pocketPivotWidget.dotColor, pocketPivotWidget.dotSize, pocketPivotWidget.enabled, safeEarningsMarkers, safeVolumeMarkers, safeBandChangeMarkers, safeRsLine, safeRsLineMarkers, snappedTradeMarkers, resolvedCircuitBandPct, circuitBandFromNse, circuitBandTimeline, circuitLocksEnabled, autoLevelsEnabled, autoLevels.srLevels, timeframe, scaleMode, highlightExpansion]);
+  }, [chartEpoch, chartRange, activeBars, timeframe, symbol]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -3783,6 +4085,28 @@ export function ChartPanel({
                       title="Expansion candle colour"
                       aria-label="Expansion candle colour"
                     />
+                  </div>
+                  <span className="chart-display-settings-label">Hollow up candles</span>
+                  <div className="chart-style-switcher">
+                    <button
+                      type="button"
+                      className={hollowCandles ? "timeframe-pill active" : "timeframe-pill"}
+                      onClick={() => setHollowCandles((v) => !v)}
+                      title="Classic pro look: up candles render hollow (outline only), down candles stay solid"
+                    >
+                      {hollowCandles ? "On" : "Off"}
+                    </button>
+                  </div>
+                  <span className="chart-display-settings-label">Tightness marks</span>
+                  <div className="chart-style-switcher">
+                    <button
+                      type="button"
+                      className={tightnessMarks ? "timeframe-pill active" : "timeframe-pill"}
+                      onClick={() => setTightnessMarks((v) => !v)}
+                      title="Tiny pips under contraction days — square = NR7 (narrowest range of 7), circle = inside day"
+                    >
+                      {tightnessMarks ? "On" : "Off"}
+                    </button>
                   </div>
                   <span className="chart-display-settings-label">Theme</span>
                   <div className="chart-style-switcher">
@@ -4747,7 +5071,7 @@ export function ChartPanel({
             ref={stageRef}
             className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}
           >
-            <div ref={containerRef} className="chart-canvas" />
+            <div ref={attachChartContainer} className="chart-canvas" />
             <div
               ref={pctRulerRef}
               className="chart-pct-ruler"
