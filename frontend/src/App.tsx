@@ -1195,7 +1195,7 @@ function readChartPalette(market: MarketKey): ChartPaletteKey {
     return "current";
   }
   const saved = readMarketScopedValue(CHART_PALETTE_KEY, market);
-  return saved === "editorial" ? "editorial" : "current";
+  return saved === "editorial" || saved === "mono" ? saved : "current";
 }
 
 function marketDisplayLabel(market: MarketKey) {

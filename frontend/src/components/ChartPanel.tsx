@@ -14,7 +14,7 @@ export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars";
 export type ChartTimeframe = "15m" | "30m" | "1h" | "1D" | "1W";
 export type ChartPanelTab = "technical" | "fundamentals";
-export type ChartPaletteKey = "current" | "editorial";
+export type ChartPaletteKey = "current" | "editorial" | "mono";
 export type ChartColorSettings = {
   ema10: string;
   ema20: string;
@@ -334,6 +334,23 @@ const CHART_PALETTES: Record<
     volumeDownColor: "rgba(255, 107, 107, 0.25)",
     rsLineColor: "#00a6a6",
     rsMarkerColor: "#8f2dff",
+  },
+  mono: {
+    // Monochrome pro theme: white canvas, hollow up-candles / solid black
+    // down-candles, volume coloured by MEANING (heavy accumulation blue,
+    // heavy distribution red) — the DeepVue/Qullamaggie look.
+    label: "Mono",
+    background: "#ffffff",
+    textColor: "#3c4257",
+    gridColor: "rgba(0, 0, 0, 0.06)",
+    crosshairColor: "rgba(60, 66, 87, 0.35)",
+    borderColor: "rgba(60, 66, 87, 0.35)",
+    upColor: "#111827",
+    downColor: "#111827",
+    volumeUpColor: "rgba(41, 98, 255, 0.6)",
+    volumeDownColor: "rgba(239, 68, 68, 0.55)",
+    rsLineColor: "#0e7490",
+    rsMarkerColor: "#7c3aed",
   },
 };
 const RIGHT_EDGE_PADDING_BARS = 12;
@@ -2749,15 +2766,28 @@ export function ChartPanel({
       },
     });
     if (chartStyle !== "bars") {
-      mainSeriesRef.current?.applyOptions({
-        upColor: chartColors.candleUp,
-        downColor: chartColors.candleDown,
-        wickUpColor: chartColors.candleUp,
-        wickDownColor: chartColors.candleDown,
-      });
+      mainSeriesRef.current?.applyOptions(
+        chartPalette === "mono"
+          ? {
+              // Hollow-white up / solid-black down; per-point colors in the
+              // data effect finish the monochrome look.
+              upColor: "#ffffff",
+              downColor: "#111827",
+              wickUpColor: "#111827",
+              wickDownColor: "#111827",
+            }
+          : {
+              upColor: chartColors.candleUp,
+              downColor: chartColors.candleDown,
+              wickUpColor: chartColors.candleUp,
+              wickDownColor: chartColors.candleDown,
+            },
+      );
     }
-    volumeSmaSeriesRef.current?.applyOptions({ color: withOpacity(chartColors.volumeUp, 0.92) });
-  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle]);
+    volumeSmaSeriesRef.current?.applyOptions({
+      color: chartPalette === "mono" ? "rgba(60, 66, 87, 0.75)" : withOpacity(chartColors.volumeUp, 0.92),
+    });
+  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle, chartPalette]);
 
   // ── E3: candle + volume data (incremental, zoom-preserving) ──────────────
   useEffect(() => {
@@ -2774,12 +2804,16 @@ export function ChartPanel({
     const sameDataset = rangeStateRef.current.key === dataKey && rangeStateRef.current.epoch === chartEpoch;
     const savedRange = sameDataset ? chart.timeScale().getVisibleLogicalRange() : null;
 
-    // Hollow up-candles need borders; expansion overrides stay solid.
+    // Hollow up-candles (and the Mono theme, which is hollow by design)
+    // need borders; expansion overrides stay solid.
+    const isMono = chartPalette === "mono";
     if (chartStyle !== "bars") {
       mainSeries.applyOptions(
-        hollowCandles
-          ? { borderVisible: true, borderUpColor: chartColors.candleUp, borderDownColor: chartColors.candleDown }
-          : { borderVisible: false },
+        isMono
+          ? { borderVisible: true, borderUpColor: "#111827", borderDownColor: "#111827" }
+          : hollowCandles
+            ? { borderVisible: true, borderUpColor: chartColors.candleUp, borderDownColor: chartColors.candleDown }
+            : { borderVisible: false },
       );
     }
 
@@ -2798,6 +2832,12 @@ export function ChartPanel({
           point.color = expansionColor;
           point.wickColor = expansionColor;
           point.borderColor = expansionColor;
+        } else if (isMono && chartStyle !== "bars") {
+          // Monochrome: hollow white up-candles, solid black down-candles.
+          const up = bar.close >= bar.open;
+          point.color = up ? "#ffffff" : "#111827";
+          point.wickColor = "#111827";
+          point.borderColor = "#111827";
         } else if (hollowCandles && chartStyle !== "bars" && bar.close >= bar.open) {
           // Hollow body: paint the body as background, keep border + wick
           // in the up colour (border enabled above).
@@ -2817,11 +2857,17 @@ export function ChartPanel({
         value: bar.volume,
         // Dry-up days (volume < 50% of the trailing 20-bar average) render
         // dimmed grey — the quiet contraction that precedes good entries.
+        // Mono theme colours volume by MEANING: heavy (>=2x avg) up days are
+        // accumulation blue, heavy down days distribution red, the rest grey.
         color: perBarStats[i]?.isVolumeDryUp
-          ? "rgba(139, 148, 158, 0.22)"
-          : bar.close >= bar.open
-            ? withOpacity(chartColors.volumeUp, 0.38)
-            : withOpacity(chartColors.volumeDown, 0.35),
+          ? (isMono ? "rgba(148, 163, 184, 0.25)" : "rgba(139, 148, 158, 0.22)")
+          : isMono
+            ? (perBarStats[i] && perBarStats[i].avgVol > 0 && (bar.volume || 0) >= perBarStats[i].avgVol * 2
+                ? ((perBarStats[i].changePct ?? 0) >= 0 ? "rgba(41, 98, 255, 0.6)" : "rgba(239, 68, 68, 0.55)")
+                : "rgba(148, 163, 184, 0.45)")
+            : bar.close >= bar.open
+              ? withOpacity(chartColors.volumeUp, 0.38)
+              : withOpacity(chartColors.volumeDown, 0.35),
       })),
     );
     volumeSmaSeries.setData(computeVolumeSma(activeBars, 50));
@@ -2831,7 +2877,7 @@ export function ChartPanel({
     }
     updatePctRulerRef.current?.();
     scheduleOverlayUpdate();
-  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, palette.background, symbol, timeframe]);
+  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, chartPalette, palette.background, symbol, timeframe]);
 
   // ── E4: indicator line series (diffed add/remove/update) ─────────────────
   useEffect(() => {
@@ -3725,6 +3771,42 @@ export function ChartPanel({
   // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
   // computed in levels.ts and drawn in the same SVG overlay so they follow
   // pan/zoom. Non-interactive; sit beneath the user's own drawings.
+  // Expansion candles can't be drawn physically wider (the chart engine uses
+  // one width for all candles), so a soft, slightly-wider highlight band is
+  // drawn behind each one in the SVG overlay — they read thicker at a glance.
+  const expansionHighlightOverlays = highlightExpansion
+    ? activeBars.map((bar, i) => {
+        if (!perBarStats[i]?.isExpansionCandidate) return null;
+        const ms = mainSeriesRef.current;
+        const chart = chartRef.current;
+        if (!ms || !chart) return null;
+        const x = chart.timeScale().timeToCoordinate(bar.time as UTCTimestamp);
+        if (x === null || x === undefined) return null;
+        const yHigh = ms.priceToCoordinate(bar.high);
+        const yLow = ms.priceToCoordinate(bar.low);
+        if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
+        const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
+        const width = Math.max(spacing * 1.8, 8);
+        const color = chartColors.candleExpansion || "#ffb01f";
+        const top = Math.min(yHigh, yLow) - 3;
+        const height = Math.abs(yLow - yHigh) + 6;
+        return (
+          <rect
+            key={`exp-hl-${bar.time}`}
+            x={x - width / 2}
+            y={top}
+            width={width}
+            height={height}
+            rx={2}
+            fill={`${color}26`}
+            stroke={`${color}59`}
+            strokeWidth={1}
+            style={{ pointerEvents: "none" }}
+          />
+        );
+      })
+    : null;
+
   const autoZoneOverlays = autoLevelsEnabled
     ? autoLevels.zones.map((zone, index) => {
         const ms = mainSeriesRef.current;
@@ -5097,6 +5179,7 @@ export function ChartPanel({
               viewBox={`0 0 ${Math.max(stageWidth, 1)} ${Math.max(stageHeight, 1)}`}
               preserveAspectRatio="none"
             >
+              {expansionHighlightOverlays}
               {autoZoneOverlays}
               {autoTrendlineOverlays}
               {verticalLineOverlays}
