@@ -1559,6 +1559,8 @@ export function ChartPanel({
   expanded = false,
 }: ChartPanelProps) {
   const searchListId = `chart-search-${useId()}`;
+  // Per-instance base for SVG filter ids (compare mode renders two panels).
+  const overlayFilterBaseId = `chart-ovl-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
   const stageRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const pctRulerBarRef = useRef<HTMLSpanElement | null>(null);
@@ -3772,24 +3774,27 @@ export function ChartPanel({
   // computed in levels.ts and drawn in the same SVG overlay so they follow
   // pan/zoom. Non-interactive; sit beneath the user's own drawings.
   // Expansion candles can't be drawn physically wider (the chart engine uses
-  // one width for all candles), so a soft, slightly-wider highlight band is
-  // drawn behind each one in the SVG overlay — they read thicker at a glance.
+  // one width for all candles), so each one gets a soft blurred GLOW capsule
+  // behind it in the SVG overlay — a warm halo that makes the candle read
+  // heavier without boxes or borders. Hidden when zoomed far out (halos would
+  // smear together at tiny bar spacings).
   const expansionHighlightOverlays = highlightExpansion
     ? activeBars.map((bar, i) => {
         if (!perBarStats[i]?.isExpansionCandidate) return null;
         const ms = mainSeriesRef.current;
         const chart = chartRef.current;
         if (!ms || !chart) return null;
+        const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
+        if (spacing < 4) return null;
         const x = chart.timeScale().timeToCoordinate(bar.time as UTCTimestamp);
         if (x === null || x === undefined) return null;
         const yHigh = ms.priceToCoordinate(bar.high);
         const yLow = ms.priceToCoordinate(bar.low);
         if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
-        const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
-        const width = Math.max(spacing * 1.8, 8);
+        const width = Math.max(spacing * 1.35, 7);
         const color = chartColors.candleExpansion || "#ffb01f";
-        const top = Math.min(yHigh, yLow) - 3;
-        const height = Math.abs(yLow - yHigh) + 6;
+        const top = Math.min(yHigh, yLow) - 2;
+        const height = Math.abs(yLow - yHigh) + 4;
         return (
           <rect
             key={`exp-hl-${bar.time}`}
@@ -3797,10 +3802,9 @@ export function ChartPanel({
             y={top}
             width={width}
             height={height}
-            rx={2}
-            fill={`${color}26`}
-            stroke={`${color}59`}
-            strokeWidth={1}
+            rx={width / 2}
+            fill={`${color}59`}
+            filter={`url(#${overlayFilterBaseId}-exp-glow)`}
             style={{ pointerEvents: "none" }}
           />
         );
@@ -5179,6 +5183,12 @@ export function ChartPanel({
               viewBox={`0 0 ${Math.max(stageWidth, 1)} ${Math.max(stageHeight, 1)}`}
               preserveAspectRatio="none"
             >
+              <defs>
+                {/* Soft halo for expansion candles — pure blur, no hard edges. */}
+                <filter id={`${overlayFilterBaseId}-exp-glow`} x="-120%" y="-40%" width="340%" height="180%">
+                  <feGaussianBlur stdDeviation="3" />
+                </filter>
+              </defs>
               {expansionHighlightOverlays}
               {autoZoneOverlays}
               {autoTrendlineOverlays}
