@@ -415,6 +415,11 @@ type ScanTableProps = {
   onSectorSortModeChange: (mode: "1W" | "1M" | "count-desc" | "count-asc") => void;
   groupsData?: IndustryGroupsResponse | null;
   onExport: () => void;
+  // Reports the exact top-to-bottom order of the currently displayed rows
+  // (after search filter + sort + sector/group arrangement) so the parent's
+  // ArrowUp/ArrowDown chart navigation walks stocks in the SAME order the user
+  // sees — not the parent's flat pre-arrangement list.
+  onVisibleOrderChange?: (symbols: string[]) => void;
 };
 
 export function ScanTable({
@@ -436,6 +441,7 @@ export function ScanTable({
   onSectorSortModeChange,
   groupsData = null,
   onExport,
+  onVisibleOrderChange,
 }: ScanTableProps) {
   /* ----- Refs ----- */
   const rowRefs = useRef<Record<string, HTMLDivElement | null>>({});
@@ -679,6 +685,24 @@ export function ScanTable({
       return [header, ...rows];
     });
   }, [arrangementMode, groupBuckets, groupsData, sectorGroups, sortedItems, summaryBySector]);
+
+  // Lift the displayed row order to the parent for keyboard chart navigation.
+  // Keyed on the joined symbol string so we only notify when the sequence
+  // actually changes (not on every unrelated re-render), avoiding update loops.
+  const visibleRowSymbols = useMemo(
+    () =>
+      tableEntries
+        .filter((entry): entry is Extract<ScanTableEntry, { type: "row" }> => entry.type === "row")
+        .map((entry) => entry.item.symbol),
+    [tableEntries],
+  );
+  const visibleOrderKey = visibleRowSymbols.join("|");
+  useEffect(() => {
+    onVisibleOrderChange?.(visibleRowSymbols);
+    // visibleRowSymbols is derived from visibleOrderKey; depending on the key
+    // alone keeps this to one call per real order change.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleOrderKey]);
 
   const shouldVirtualize = hasWideTableLayout && tableEntries.length > 120;
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({

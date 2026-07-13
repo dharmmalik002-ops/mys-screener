@@ -1,4 +1,4 @@
-import { Suspense, lazy, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { Moon, RefreshCw, Search as SearchIcon, Sun } from "lucide-react";
 
 import type {
@@ -1679,6 +1679,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
   const [activeSavedScannerId, setActiveSavedScannerId] = useState<string | null>(null);
   const [scanArrangementMode, setScanArrangementMode] = useState<"flat" | "sector" | "group">("flat");
+  // The scan table's actual displayed row order (after its internal filter /
+  // sort / sector-group arrangement). ScanTable reports it here so ArrowUp/Down
+  // chart navigation steps through stocks in the order the user sees them,
+  // rather than the flat pre-arrangement list.
+  const [scanVisibleOrder, setScanVisibleOrder] = useState<string[]>([]);
   const [sectorGroupSortMode, setSectorGroupSortMode] = useState<SectorGroupSortMode>("1W");
   const [groupsFocusRequest, setGroupsFocusRequest] = useState<GroupFocusRequest | null>(null);
   const [scannerRunNonce, setScannerRunNonce] = useState(0);
@@ -2961,6 +2966,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
             return (right.rs_rating ?? Number.NEGATIVE_INFINITY) - (left.rs_rating ?? Number.NEGATIVE_INFINITY);
           });
   const watchlistVisibleSymbols = activeWatchlist?.symbols ?? [];
+  // On the screener, the ScanTable can regroup/re-sort rows internally (sector
+  // or group arrangement, in-table search), so the displayed order differs from
+  // the flat visibleScanItems. Use the order ScanTable reported so arrow-key
+  // navigation follows what the user sees. Momentum Burst / Improving RS render
+  // their own flat lists, so they keep the flat order.
+  const screenerNavSymbols =
+    activeScanner === "momentum-burst"
+      ? visibleScanItems.map((item) => item.symbol)
+      : scanVisibleOrder.length > 0
+        ? scanVisibleOrder
+        : visibleScanItems.map((item) => item.symbol);
   const pageVisibleSymbols =
     activePage === "screener" && activeScanner === "improving-rs"
       ? (improvingRsData?.items ?? []).map((item) => item.symbol)
@@ -2970,7 +2986,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
           ? watchlistVisibleSymbols
           : activePage === "home"
             ? (dashboard?.top_gainers ?? []).map((item) => item.symbol)
-            : visibleScanItems.map((item) => item.symbol);
+            : activePage === "screener"
+              ? screenerNavSymbols
+              : visibleScanItems.map((item) => item.symbol);
   const universeVisibleSymbols = universeCatalog.map((item) => item.symbol);
   const navigationSeed = pageVisibleSymbols.length > 0 ? pageVisibleSymbols : universeVisibleSymbols;
   const visibleSymbols = Array.from(
@@ -3708,12 +3726,19 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         return;
       }
 
+      // Priority: the list the chart was opened WITH (Markets focus, group page,
+      // etc.), then the current page's visible list (scanner rows, watchlist),
+      // and only THEN the group-sidebar members. The group override must not win
+      // over the scanner/page list — otherwise merely having the group sidebar
+      // open hijacks Up/Down onto group peers, which reads as "random" stocks.
       const symbols = chartOpen
-        ? groupNavOverrideRef.current?.length
-          ? groupNavOverrideRef.current
-          : chartNavigationSymbolsRef.current?.length
-            ? chartNavigationSymbolsRef.current
-            : pageVisibleSymbolsRef.current
+        ? chartNavigationSymbolsRef.current?.length
+          ? chartNavigationSymbolsRef.current
+          : pageVisibleSymbolsRef.current?.length
+            ? pageVisibleSymbolsRef.current
+            : groupNavOverrideRef.current?.length
+              ? groupNavOverrideRef.current
+              : []
         : shouldHandleGroupsNavigation && chartNavigationSymbolsRef.current?.length
           ? chartNavigationSymbolsRef.current
           : visibleSymbolsRef.current;
@@ -4080,6 +4105,14 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setChartOpen(true);
   };
 
+  const handleScanVisibleOrderChange = useCallback((symbols: string[]) => {
+    setScanVisibleOrder((current) =>
+      current.length === symbols.length && current.every((sym, idx) => sym === symbols[idx])
+        ? current
+        : symbols,
+    );
+  }, []);
+
   const handlePrefetchSymbol = (symbol: string) => {
     if (!symbol || symbol === selectedSymbolRef.current) {
       return;
@@ -4183,11 +4216,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   // step to the previous (-1) / next (+1) symbol in the current chart's context
   // list, wrapping around. Mirrors the keydown handler's list resolution.
   const stepChartSymbol = (direction: 1 | -1, pane: "A" | "B" = "A") => {
-    const symbols = groupNavOverrideRef.current?.length
-      ? groupNavOverrideRef.current
-      : chartNavigationSymbolsRef.current?.length
-        ? chartNavigationSymbolsRef.current
-        : pageVisibleSymbolsRef.current;
+    // Same priority as the keydown handler: armed list → page-visible list →
+    // group-sidebar members (last resort). The group override must not beat the
+    // scanner/page list.
+    const symbols = chartNavigationSymbolsRef.current?.length
+      ? chartNavigationSymbolsRef.current
+      : pageVisibleSymbolsRef.current?.length
+        ? pageVisibleSymbolsRef.current
+        : groupNavOverrideRef.current?.length
+          ? groupNavOverrideRef.current
+          : [];
     const usePaneB = pane === "B";
     const currentSymbol = usePaneB ? paneBSymbolRef.current : selectedSymbolRef.current;
     if (!symbols?.length || !currentSymbol) {
@@ -5592,6 +5630,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         onSectorSortModeChange={setSectorGroupSortMode}
                         groupsData={groupsData}
                         onExport={handleExportScanResults}
+                        onVisibleOrderChange={handleScanVisibleOrderChange}
                       />
                       {visibleScanItems.length > 0 ? (
                         <ScanFooter
