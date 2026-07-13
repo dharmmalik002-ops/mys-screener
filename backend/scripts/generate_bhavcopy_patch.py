@@ -1131,6 +1131,134 @@ def _write_patch(
         len(symbols),
         len(patch.get("new_listings") or {}),
     )
+    # Maintain the rolling authoritative EOD-bars store the backend uses to fill
+    # any recent session Yahoo drops from its daily chart history. Never allowed
+    # to break the price patch — failures are logged and swallowed.
+    _update_recent_eod_bars(target_date, symbols)
+
+
+# ── Rolling authoritative EOD bars for chart gap-fill ────────────────────────
+# Yahoo's daily chart history intermittently omits recent Indian trading days,
+# leaving holes in candlestick charts. We persist the last EOD_BARS_KEEP
+# sessions of authoritative NSE/BSE OHLCV as one small dated file each; the
+# backend pulls them and fills any missing candle. One file per session keeps
+# git churn low (one added / one removed per day) versus rewriting a big blob.
+EOD_BARS_DIR = DATA_DIR / "eod_bars"
+EOD_BARS_KEEP = 12
+
+
+def _eod_bars_from_symbols(symbols: dict) -> dict:
+    out: dict[str, list] = {}
+    for sym, rec in (symbols or {}).items():
+        if not isinstance(rec, dict):
+            continue
+        try:
+            o = round(float(rec["o"]), 2)
+            h = round(float(rec["h"]), 2)
+            l = round(float(rec["l"]), 2)
+            c = round(float(rec["c"]), 2)
+            v = int(float(rec.get("v") or 0))
+        except (KeyError, TypeError, ValueError):
+            continue
+        if c <= 0:
+            continue
+        out[str(sym).strip().upper()] = [o, h, l, c, v]
+    return out
+
+
+def _write_eod_session_file(trade_date: date, symbols: dict) -> bool:
+    bars = _eod_bars_from_symbols(symbols)
+    if not bars:
+        return False
+    EOD_BARS_DIR.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "date": trade_date.isoformat(),
+        "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
+        "symbols": bars,
+    }
+    (EOD_BARS_DIR / f"{trade_date.isoformat()}.json").write_text(
+        json.dumps(payload, separators=(",", ":")), encoding="utf-8"
+    )
+    return True
+
+
+def _recent_trading_days(target_date: date, count: int) -> list[date]:
+    days: list[date] = []
+    cursor = target_date
+    while len(days) < count:
+        if cursor.weekday() < 5:  # Mon-Fri (holidays simply yield an empty fetch)
+            days.append(cursor)
+        cursor -= timedelta(days=1)
+    return sorted(days)
+
+
+def _backfill_missing_eod_sessions(target_date: date) -> None:
+    """Fill any of the last EOD_BARS_KEEP sessions that lack a file yet.
+
+    Uses the lightweight BSE bhavcopy (one CSV per day) — authoritative for
+    candle OHLC. Only runs for days without a file, so it does real work only on
+    the first run after this feature ships (then one new day per run). Includes
+    ``target_date`` itself so the store seeds even on a re-run where the price
+    patch is already current (``_write_patch`` later upgrades the target day to
+    the higher-quality YF+BSE-merged bar).
+    """
+    EOD_BARS_DIR.mkdir(parents=True, exist_ok=True)
+    for day in _recent_trading_days(target_date, EOD_BARS_KEEP):
+        if (EOD_BARS_DIR / f"{day.isoformat()}.json").exists():
+            continue
+        try:
+            bse = _fetch_from_bse(day)
+            if not bse:
+                continue  # market holiday or BSE not yet published — skip quietly
+            sane = {s: r for s, r in bse.items() if _is_record_sane(r, sym=s)}
+            if sane:
+                _write_eod_session_file(day, sane)
+        except Exception as exc:  # never block the daily patch
+            logger.warning("EOD backfill for %s failed: %s", day.isoformat(), exc)
+
+
+def _seed_recent_eod_bars(target_date: date) -> None:
+    """Ensure the rolling EOD store covers the last EOD_BARS_KEEP sessions.
+
+    Called early in ``main()`` — BEFORE the price phases and their
+    ``_patch_already_current`` early returns — so the store is maintained on
+    every run, not only on days a fresh price patch is written. Fully isolated:
+    a failure here never blocks the daily price patch.
+    """
+    try:
+        _backfill_missing_eod_sessions(target_date)
+        _refresh_eod_bars_manifest()
+    except Exception as exc:
+        logger.warning("Rolling EOD-bars seed failed: %s", exc)
+
+
+def _refresh_eod_bars_manifest() -> None:
+    EOD_BARS_DIR.mkdir(parents=True, exist_ok=True)
+    stems = sorted(p.stem for p in EOD_BARS_DIR.glob("*.json") if p.name != "manifest.json")
+    keep = stems[-EOD_BARS_KEEP:]
+    for stale_stem in stems[:-EOD_BARS_KEEP]:
+        try:
+            (EOD_BARS_DIR / f"{stale_stem}.json").unlink()
+        except OSError:
+            pass
+    manifest = {
+        "updated_at": datetime.now(ZoneInfo("UTC")).isoformat(),
+        "sessions": keep,
+    }
+    (EOD_BARS_DIR / "manifest.json").write_text(
+        json.dumps(manifest, separators=(",", ":")), encoding="utf-8"
+    )
+
+
+def _update_recent_eod_bars(target_date: date, symbols: dict) -> None:
+    """Upgrade the target day's session file to the authoritative YF+BSE-merged
+    bar (better volumes than the BSE-only backfill) and refresh the manifest.
+    The rolling window itself is seeded earlier by _seed_recent_eod_bars."""
+    try:
+        if _write_eod_session_file(target_date, symbols):
+            _refresh_eod_bars_manifest()
+    except Exception as exc:
+        logger.warning("Rolling EOD-bars update failed: %s", exc)
 
 
 # A bhavcopy that covers far fewer NSE symbols than usual (e.g. a truncated
@@ -1534,6 +1662,14 @@ def update_price_band_changes(target: date, *, days_back: int = BAND_CHANGES_RES
 
 
 def main() -> int:
+    # Maintain the rolling authoritative EOD-bars store (last 12 sessions) that
+    # the backend uses to fill any recent candle Yahoo drops from its chart
+    # history. Runs FIRST — before the market-hours guard and the price phases'
+    # early returns — so it seeds/backfills on every invocation. It only writes
+    # a day BSE has actually published an EOD file for (today's file 404s during
+    # market hours and is skipped), so it can't stamp a partial mid-day bar.
+    _seed_recent_eod_bars(_last_trading_day())
+
     # Belt-and-suspenders: even though every cron in daily-bhavcopy.yml is
     # scheduled after market close (4:23-6:23 PM IST), refuse to run during
     # the active session itself. A morning/intraday run would otherwise stamp

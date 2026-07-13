@@ -349,6 +349,76 @@ def pull_latest_price_bands() -> bool:
     return updated
 
 
+def pull_latest_eod_bars() -> bool:
+    """Pull the rolling authoritative EOD bars from the public repo.
+
+    ``eod_bars/manifest.json`` lists the last ~12 committed session dates and
+    each ``eod_bars/<date>.json`` holds that session's per-symbol OHLCV. Yahoo's
+    daily chart history intermittently omits recent Indian trading days; these
+    bars let the chart builder fill those gaps with authoritative NSE/BSE data.
+    Like the other daily artifacts they only reach this Space via the workflow's
+    HF push (which can silently fail), so we pull them directly (public repo, no
+    token). We fetch the manifest, download any session file we are missing, and
+    prune local files no longer listed. Returns True when anything changed.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    raw_base = (
+        os.environ.get("COMMITTED_DATA_RAW_BASE")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data"
+    ).strip().rstrip("/")
+    eod_dir = Path(__file__).resolve().parents[1] / "data" / "eod_bars"
+    try:
+        resp = _requests.get(f"{raw_base}/eod_bars/manifest.json", timeout=25)
+        if resp.status_code != 200:
+            logger.info("EOD-bars self-update: manifest HTTP %s — keeping local", resp.status_code)
+            return False
+        manifest = resp.json()
+        sessions = manifest.get("sessions") if isinstance(manifest, dict) else None
+        if not isinstance(sessions, list) or not sessions:
+            logger.warning("EOD-bars self-update: manifest invalid — keeping local")
+            return False
+        wanted = [str(s).strip() for s in sessions if str(s).strip()]
+        eod_dir.mkdir(parents=True, exist_ok=True)
+        changed = False
+        for session_date in wanted:
+            target = eod_dir / f"{session_date}.json"
+            if target.exists():
+                continue
+            file_resp = _requests.get(f"{raw_base}/eod_bars/{session_date}.json", timeout=25)
+            if file_resp.status_code != 200:
+                logger.info("EOD-bars self-update: %s HTTP %s — skipping", session_date, file_resp.status_code)
+                continue
+            payload = file_resp.json()
+            if not isinstance(payload, dict) or not isinstance(payload.get("symbols"), dict):
+                continue
+            tmp = target.with_name(target.name + ".tmp")
+            tmp.write_text(file_resp.text, encoding="utf-8")
+            tmp.replace(target)
+            changed = True
+        # Prune local session files that dropped out of the rolling window.
+        keep = set(wanted)
+        for path in eod_dir.glob("*.json"):
+            if path.name == "manifest.json":
+                continue
+            if path.stem not in keep:
+                try:
+                    path.unlink()
+                    changed = True
+                except OSError:
+                    pass
+        # Refresh the manifest copy last (its mtime is not what the reader keys on).
+        (eod_dir / "manifest.json").write_text(resp.text, encoding="utf-8")
+        if changed:
+            logger.info("EOD-bars self-update: synced %s sessions from remote", len(wanted))
+        return changed
+    except Exception as exc:
+        logger.warning("EOD-bars self-update failed: %s", exc)
+        return False
+
+
 def apply_bhavcopy_patch_on_startup() -> None:
     """Roll any committed bhavcopy patch into the live snapshot before serving.
 
@@ -362,15 +432,16 @@ def apply_bhavcopy_patch_on_startup() -> None:
     pulled = pull_latest_bhavcopy_patch()
     xp_pulled = pull_latest_xp_breadth()
     bands_pulled = pull_latest_price_bands()
+    eod_bars_pulled = pull_latest_eod_bars()
     try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
         result = {}
     snapshot_updated = result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0
-    # Clear runtime caches when the snapshot, the XP history, or the circuit
-    # bands advanced, so charts/dashboard re-read the fresh files.
-    if snapshot_updated or xp_pulled or bands_pulled:
+    # Clear runtime caches when the snapshot, the XP history, the circuit bands,
+    # or the recent EOD bars advanced, so charts/dashboard re-read fresh files.
+    if snapshot_updated or xp_pulled or bands_pulled or eod_bars_pulled:
         try:
             service._clear_runtime_caches()
         except Exception:

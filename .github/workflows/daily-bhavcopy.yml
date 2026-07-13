@@ -130,6 +130,12 @@ jobs:
           if [ -f backend/data/xp_ma_state.json ]; then
             git add backend/data/xp_ma_state.json || true
           fi
+          # Rolling authoritative EOD bars (one small dated file per session +
+          # manifest) the backend uses to fill any recent candle Yahoo drops.
+          # -A picks up newly added AND pruned (removed) session files.
+          if [ -d backend/data/eod_bars ]; then
+            git add -A backend/data/eod_bars || true
+          fi
           if git diff --cached --quiet; then
             echo "Nothing staged to commit."
             exit 0

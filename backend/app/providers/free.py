@@ -275,6 +275,13 @@ class FreeMarketDataProvider:
         self.historical_breadth_cache_path = self.backend_root / "data" / "free_historical_breadth.json"
         self.volume_history_path = self.backend_root / "data" / "volume_history.json"
         self._volume_history_cache: tuple[float, dict[str, Any]] | None = None
+        # Rolling authoritative EOD bars (NSE/BSE bhavcopy) for the last ~12
+        # sessions, written daily by generate_bhavcopy_patch.py as one small
+        # dated file per session under data/eod_bars/. Yahoo's daily history
+        # intermittently omits recent Indian trading days; these bars fill the
+        # gap so charts never miss a candle we have authoritative data for.
+        self.eod_bars_dir = self.backend_root / "data" / "eod_bars"
+        self._recent_eod_bars_cache: tuple[float, dict[str, dict[str, list]]] | None = None
         self._valid_snapshot_rows_cache: tuple[tuple[int, int], list[dict[str, Any]]] | None = None
         self._completed_session_date_cache: tuple[float, date] | None = None
         self.chart_cache_dir = self.backend_root / "data" / "chart_cache"
@@ -951,7 +958,104 @@ class FreeMarketDataProvider:
         else:
             patched_bars.append(snapshot_bar)
 
+        # Fill any recent trading day Yahoo dropped with authoritative EOD bars
+        # before persisting, so the gap never re-appears on the fast cache path.
+        patched_bars = self._with_daily_eod_gaps_filled(symbol, patched_bars)
+
         self._write_chart_cache(symbol, "1D", patched_bars[-520:])
+
+    def _load_recent_eod_bars(self) -> dict[str, dict[str, list]]:
+        """Return authoritative recent EOD bars keyed ``{symbol: {date: [o,h,l,c,v]}}``.
+
+        Read from the small per-session files under ``data/eod_bars/`` (written
+        daily by generate_bhavcopy_patch.py). Cached on the newest file mtime so
+        re-reads are free between deploys. Returns ``{}`` when the directory is
+        absent (older deploys / before the first backfill), which makes the
+        gap-fill a no-op and charts fall back to the Yahoo-only behaviour.
+        """
+        directory = self.eod_bars_dir
+        if not directory.exists():
+            return {}
+        try:
+            session_files = sorted(directory.glob("*.json"))
+        except OSError:
+            return {}
+        session_files = [p for p in session_files if p.name != "manifest.json"]
+        if not session_files:
+            return {}
+        try:
+            newest_mtime = max(p.stat().st_mtime for p in session_files)
+        except OSError:
+            return {}
+        cached = self._recent_eod_bars_cache
+        if cached is not None and cached[0] == newest_mtime:
+            return cached[1]
+        merged: dict[str, dict[str, list]] = {}
+        for path in session_files:
+            try:
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            session_date = str(payload.get("date") or "").strip()
+            symbols = payload.get("symbols") if isinstance(payload, dict) else None
+            if not session_date or not isinstance(symbols, dict):
+                continue
+            for sym, ohlcv in symbols.items():
+                if not isinstance(ohlcv, (list, tuple)) or len(ohlcv) < 4:
+                    continue
+                merged.setdefault(str(sym).strip().upper(), {})[session_date] = list(ohlcv)
+        self._recent_eod_bars_cache = (newest_mtime, merged)
+        return merged
+
+    def _with_daily_eod_gaps_filled(self, symbol: str, bars: list[ChartBar]) -> list[ChartBar]:
+        """Overlay authoritative recent EOD bars onto a daily bar list, filling
+        any interior or trailing session Yahoo omitted.
+
+        Only *missing* dates are inserted — existing bars are left untouched, and
+        nothing older than the series' first bar is prepended. A lenient scale
+        guard (0.2×–5× the latest close) rejects gross unit mismatches (e.g. a
+        stale BSE paise print) while still allowing large single-day moves.
+        """
+        if not bars:
+            return bars
+        store = self._load_recent_eod_bars().get(str(symbol or "").strip().upper())
+        if not store:
+            return bars
+        by_date: dict[date, ChartBar] = {}
+        for existing in bars:
+            by_date[self._chart_bar_trade_date(existing)] = existing
+        earliest = min(by_date)
+        ref_close = float(bars[-1].close) or 0.0
+        changed = False
+        for date_str, ohlcv in store.items():
+            trade_date = self._parse_row_date(date_str)
+            if trade_date is None or trade_date in by_date or trade_date < earliest:
+                continue
+            try:
+                open_v = float(ohlcv[0])
+                high_v = float(ohlcv[1])
+                low_v = float(ohlcv[2])
+                close_v = float(ohlcv[3])
+                volume_v = int(float(ohlcv[4])) if len(ohlcv) > 4 else 0
+            except (TypeError, ValueError):
+                continue
+            if close_v <= 0:
+                continue
+            if ref_close and not (0.2 * ref_close <= close_v <= 5.0 * ref_close):
+                continue
+            timestamp = int(datetime.combine(trade_date, datetime.min.time(), tzinfo=timezone.utc).timestamp())
+            by_date[trade_date] = ChartBar(
+                time=timestamp,
+                open=round(open_v, 2),
+                high=round(max(high_v, open_v, close_v), 2),
+                low=round(min(low_v, open_v, close_v), 2),
+                close=round(close_v, 2),
+                volume=max(0, volume_v),
+            )
+            changed = True
+        if not changed:
+            return bars
+        return [by_date[d] for d in sorted(by_date)]
 
     def _apply_session_bar_to_daily_history(self, history: pd.DataFrame, bar: ChartBar) -> pd.DataFrame:
         patched = history.copy()
@@ -1563,6 +1667,8 @@ class FreeMarketDataProvider:
         cache_has_enough_data = len(cached_bars) >= min_required_bars
         cache_covers_snapshot_session = self._chart_cache_covers_snapshot_session(symbol, timeframe, cached_bars)
         if cached_bars and cache_has_enough_data and cache_covers_snapshot_session and self._is_chart_cache_fresh(symbol, timeframe):
+            if timeframe == "1D":
+                return self._with_daily_eod_gaps_filled(symbol, cached_bars)
             return cached_bars
         if timeframe == "1D" and cached_bars and cache_has_enough_data and not self.eod_only_mode:
             refreshed_bars = await asyncio.to_thread(self._refresh_cached_daily_chart_from_quote, symbol, bars)
@@ -1571,6 +1677,7 @@ class FreeMarketDataProvider:
         if timeframe == "1W" and cached_bars:
             if self.eod_only_mode:
                 daily_cache = await asyncio.to_thread(self._read_chart_cache, symbol, "1D", max(bars * 7, 260))
+                daily_cache = self._with_daily_eod_gaps_filled(symbol, daily_cache)
                 refreshed_weekly = self._aggregate_weekly_chart_bars(daily_cache)
                 if refreshed_weekly:
                     return refreshed_weekly[-bars:]
@@ -6947,6 +7054,7 @@ class FreeMarketDataProvider:
         chart_bars = self._history_to_chart_bars(history)
         if timeframe == "1D":
             chart_bars = self._sanitize_daily_chart_bars(chart_bars)
+            chart_bars = self._with_daily_eod_gaps_filled(symbol, chart_bars)
         if not self._chart_bars_match_symbol_scale(symbol, chart_bars):
             raise RuntimeError(f"Chart history scale mismatch for {symbol}")
         return chart_bars

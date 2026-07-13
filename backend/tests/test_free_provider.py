@@ -40,6 +40,8 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.provider.historical_breadth_cache_path = self.provider.backend_root / "free_historical_breadth.json"
         self.provider.chart_cache_dir = self.provider.backend_root / "chart_cache"
         self.provider.chart_cache_dir.mkdir(parents=True, exist_ok=True)
+        self.provider.eod_bars_dir = self.provider.backend_root / "eod_bars"
+        self.provider._recent_eod_bars_cache = None
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
@@ -876,6 +878,53 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(bars[-1].high, 236.7)
         self.assertEqual(bars[-1].low, 205.2)
         self.assertEqual(bars[-1].volume, 9291600)
+
+    def _write_eod_session(self, session_date: date, symbols: dict[str, list]) -> None:
+        self.provider.eod_bars_dir.mkdir(parents=True, exist_ok=True)
+        payload = {"date": session_date.isoformat(), "symbols": symbols}
+        (self.provider.eod_bars_dir / f"{session_date.isoformat()}.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
+        self.provider._recent_eod_bars_cache = None
+
+    def _daily_bar(self, session_date: date, close: float) -> ChartBar:
+        ts = int(datetime(session_date.year, session_date.month, session_date.day, tzinfo=timezone.utc).timestamp())
+        return ChartBar(time=ts, open=close - 1, high=close + 1, low=close - 2, close=close, volume=1000)
+
+    def test_eod_store_fills_interior_and_trailing_gaps_yahoo_dropped(self) -> None:
+        # Yahoo returned Mon, Tue, Thu — dropping Wed (interior) and never
+        # supplying Fri (trailing). The authoritative EOD store carries all five.
+        mon, tue, wed, thu, fri = (date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8), date(2026, 7, 9), date(2026, 7, 10))
+        yahoo_bars = [self._daily_bar(mon, 100.0), self._daily_bar(tue, 101.0), self._daily_bar(thu, 103.0)]
+        self._write_eod_session(wed, {"TEST": [101.5, 102.5, 101.0, 102.0, 5000]})
+        self._write_eod_session(fri, {"TEST": [103.0, 104.5, 102.8, 104.0, 6000]})
+
+        filled = self.provider._with_daily_eod_gaps_filled("TEST", yahoo_bars)
+        got = [self.provider._chart_bar_trade_date(b) for b in filled]
+
+        self.assertEqual(got, [mon, tue, wed, thu, fri])  # gaps filled, sorted
+        wed_bar = next(b for b in filled if self.provider._chart_bar_trade_date(b) == wed)
+        self.assertEqual((wed_bar.open, wed_bar.high, wed_bar.low, wed_bar.close, wed_bar.volume), (101.5, 102.5, 101.0, 102.0, 5000))
+        fri_bar = filled[-1]
+        self.assertEqual(fri_bar.close, 104.0)
+
+    def test_eod_store_leaves_existing_bars_untouched_and_skips_scale_mismatch(self) -> None:
+        mon, tue, wed = (date(2026, 7, 6), date(2026, 7, 7), date(2026, 7, 8))
+        yahoo_bars = [self._daily_bar(mon, 100.0), self._daily_bar(tue, 101.0), self._daily_bar(wed, 102.0)]
+        # A stale BSE paise-scale print (100× off) must be rejected, not injected;
+        # and an already-present date must never be overwritten.
+        self._write_eod_session(tue, {"TEST": [999.0, 999.0, 999.0, 999.0, 1]})  # existing date → ignored
+        self._write_eod_session(date(2026, 7, 9), {"TEST": [1.01, 1.02, 1.00, 1.01, 7000]})  # 100× low → skip
+
+        filled = self.provider._with_daily_eod_gaps_filled("TEST", yahoo_bars)
+
+        self.assertEqual(len(filled), 3)  # no bad Thu bar added
+        tue_bar = next(b for b in filled if self.provider._chart_bar_trade_date(b) == tue)
+        self.assertEqual(tue_bar.close, 101.0)  # untouched
+
+    def test_eod_store_absent_is_noop(self) -> None:
+        bars = [self._daily_bar(date(2026, 7, 6), 100.0)]
+        self.assertEqual(self.provider._with_daily_eod_gaps_filled("TEST", bars), bars)
 
 
 if __name__ == "__main__":
