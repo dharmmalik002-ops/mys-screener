@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type ChangeEvent, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { ColorType, createChart, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
 import { Settings2 } from "lucide-react";
 
@@ -260,6 +260,91 @@ const DRAWING_TOOLS: Array<{ key: DrawingTool; label: string }> = [
   { key: "measure", label: "Measure" },
   { key: "text", label: "Text" },
 ];
+
+// Left-rail drawing tools (TradingView-style vertical strip). `hint` is the
+// hover tooltip; the icons are drawn inline as SVG so they stay crisp at any
+// zoom and inherit the button colour for the active/idle states.
+const TOOL_RAIL_ITEMS: Array<{ key: DrawingTool; label: string; hint: string }> = [
+  { key: "none", label: "Cursor", hint: "Cursor / select — pan & zoom (Esc)" },
+  { key: "hline", label: "Horizontal line", hint: "Horizontal line — one click" },
+  { key: "vline", label: "Vertical line", hint: "Vertical line — one click" },
+  { key: "trendline", label: "Trendline", hint: "Trendline — click start then end" },
+  { key: "ray", label: "Ray", hint: "Ray — click start then direction" },
+  { key: "rectangle", label: "Rectangle", hint: "Rectangle / zone — click two corners" },
+  { key: "measure", label: "Measure", hint: "Measure move — click start then end" },
+  { key: "text", label: "Text", hint: "Text note — click to place" },
+];
+
+function ToolGlyph({ tool }: { tool: DrawingTool }) {
+  const stroke = {
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.6,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+  const dot = { fill: "currentColor", stroke: "none" };
+  switch (tool) {
+    case "none":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M4 3l5.4 13 2-4.9 4.9-2z" />
+        </svg>
+      );
+    case "hline":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M3 10h14" />
+          <circle cx="6" cy="10" r="1.5" {...dot} />
+          <circle cx="14" cy="10" r="1.5" {...dot} />
+        </svg>
+      );
+    case "vline":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M10 3v14" />
+          <circle cx="10" cy="6" r="1.5" {...dot} />
+          <circle cx="10" cy="14" r="1.5" {...dot} />
+        </svg>
+      );
+    case "trendline":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M5 15L15 5" />
+          <circle cx="5" cy="15" r="1.7" {...dot} />
+          <circle cx="15" cy="5" r="1.7" {...dot} />
+        </svg>
+      );
+    case "ray":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M3 17L16 4" />
+          <path {...stroke} d="M11 4h5v5" />
+        </svg>
+      );
+    case "rectangle":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <rect {...stroke} x="4" y="5.5" width="12" height="9" rx="1.5" />
+        </svg>
+      );
+    case "measure":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M4 16L16 4" />
+          <path {...stroke} d="M5.5 10l4 4M10 5.5l4 4" />
+        </svg>
+      );
+    case "text":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M5 5.5h10M10 5.5V16" />
+        </svg>
+      );
+    default:
+      return null;
+  }
+}
 type ChartColorFieldKey =
   | "ema10"
   | "ema20"
@@ -4270,47 +4355,7 @@ export function ChartPanel({
     >
       {panelTab === "technical" ? (
         <div className="chart-drawing-toolbar">
-          <label className="drawing-tool-select">
-            <select
-              value={drawingTool}
-              onChange={(event: ChangeEvent<HTMLSelectElement>) => switchDrawingTool(event.target.value as DrawingTool)}
-            >
-              {DRAWING_TOOLS.map((tool) => (
-                <option key={tool.key} value={tool.key}>
-                  {tool.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          {drawingTool !== "none" ? (
-            <label className="draft-color-row" title="Drawing color">
-              <span>Color</span>
-              <input type="color" value={drawingColor} onChange={(e) => onDrawingColorChange(e.target.value)} />
-            </label>
-          ) : null}
-          <button
-            type="button"
-            className="tool-pill"
-            onClick={() => onAnnotationsChange(annotations.slice(0, -1))}
-            disabled={!annotations.length}
-          >
-            Undo
-          </button>
-          <button
-            type="button"
-            className="tool-pill"
-            onClick={() => {
-              setDraftTrendStart(null);
-              setHoverAnchor(null);
-              setDrawingTool("none");
-              setSelectedAnnotationId(null);
-              onAnnotationsChange([]);
-            }}
-            disabled={!annotations.length && !draftTrendStart}
-          >
-            Clear All
-          </button>
-          {annotations.length > 0 && <span className="chart-save-pill">{annotations.length} saved</span>}
+          {annotations.length > 0 && <span className="chart-save-pill">{annotations.length} drawing{annotations.length === 1 ? "" : "s"} saved</span>}
           <details className="chart-color-settings">
             <summary>Indicator Colors</summary>
             <div className="chart-color-grid">
@@ -5158,6 +5203,73 @@ export function ChartPanel({
             className={drawingTool === "none" ? "chart-stage-hitbox" : "chart-stage-hitbox drawing-active"}
           >
             <div ref={attachChartContainer} className="chart-canvas" />
+            <div className="chart-tool-rail" role="toolbar" aria-label="Drawing tools" aria-orientation="vertical">
+              {TOOL_RAIL_ITEMS.map((item, idx) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`chart-tool-rail-button${idx === 1 ? " railtop" : ""}${drawingTool === item.key ? " active" : ""}`}
+                  onClick={() => switchDrawingTool(item.key)}
+                  title={item.hint}
+                  aria-label={item.label}
+                  aria-pressed={drawingTool === item.key}
+                >
+                  <ToolGlyph tool={item.key} />
+                </button>
+              ))}
+              <span className="chart-tool-rail-divider" />
+              <label
+                className="chart-tool-rail-color"
+                title="Drawing colour"
+                aria-label="Drawing colour"
+              >
+                <input type="color" value={drawingColor} onChange={(e) => onDrawingColorChange(e.target.value)} />
+              </label>
+              <button
+                type="button"
+                className="chart-tool-rail-button"
+                onClick={() => onAnnotationsChange(annotations.slice(0, -1))}
+                disabled={!annotations.length}
+                title="Undo last drawing"
+                aria-label="Undo last drawing"
+              >
+                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M7 8h6a4 4 0 010 8H6M7 8L4 5M7 8L4 11"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                className="chart-tool-rail-button danger"
+                onClick={() => {
+                  setDraftTrendStart(null);
+                  setHoverAnchor(null);
+                  setDrawingTool("none");
+                  setSelectedAnnotationId(null);
+                  onAnnotationsChange([]);
+                }}
+                disabled={!annotations.length && !draftTrendStart}
+                title="Clear all drawings"
+                aria-label="Clear all drawings"
+              >
+                <svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true">
+                  <path
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 6l8 8M14 6l-8 8"
+                  />
+                </svg>
+              </button>
+            </div>
             <div
               ref={pctRulerRef}
               className="chart-pct-ruler"

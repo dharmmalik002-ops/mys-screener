@@ -5674,6 +5674,119 @@ button {
   isolation: isolate;
 }
 
+/* Vertical drawing-tool rail, left edge of the chart (TradingView-style).
+   Sits above the interaction layer (z 9999) so tools stay clickable while a
+   drawing tool is armed. */
+.chart-tool-rail {
+  position: absolute;
+  left: 10px;
+  top: 12px;
+  max-height: calc(100% - 24px);
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 5px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  backdrop-filter: blur(9px);
+  -webkit-backdrop-filter: blur(9px);
+  box-shadow: 0 12px 30px rgba(2, 8, 22, 0.28);
+}
+
+.chart-tool-rail-button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: color-mix(in srgb, var(--text) 62%, transparent);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
+}
+
+.chart-tool-rail-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+.chart-tool-rail-button:active:not(:disabled) {
+  transform: scale(0.92);
+}
+
+.chart-tool-rail-button.active {
+  background: color-mix(in srgb, var(--accent) 20%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  color: var(--accent);
+}
+
+.chart-tool-rail-button.danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 16%, transparent);
+  color: var(--danger);
+}
+
+.chart-tool-rail-button:disabled {
+  opacity: 0.32;
+  cursor: default;
+}
+
+/* Faint separator above the first true drawing tool (below Cursor). */
+.chart-tool-rail-button.railtop {
+  margin-top: 5px;
+  border-top: 1px solid var(--line);
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  padding-top: 5px;
+  height: 35px;
+}
+
+.chart-tool-rail-divider {
+  width: 18px;
+  height: 1px;
+  margin: 3px 0;
+  background: var(--line);
+}
+
+.chart-tool-rail-color {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.chart-tool-rail-color:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.chart-tool-rail-color input[type="color"] {
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.chart-tool-rail-color input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.chart-tool-rail-color input[type="color"]::-webkit-color-swatch {
+  border: 1px solid color-mix(in srgb, var(--text) 30%, transparent);
+  border-radius: 50%;
+}
+
 /* Calibration ruler: fixed-position badge whose bar height always equals a 5%
    move at the latest close (kept in sync by ChartPanel's overlay updater). */
 .chart-pct-ruler {
@@ -5841,7 +5954,7 @@ button {
   left: 10px;
   right: 10px;
   z-index: 3;
-  padding: 0;
+  padding: 0 0 0 54px; /* clear the left drawing-tool rail */
   pointer-events: none;
 }
 
@@ -5993,7 +6106,7 @@ button {
   left: 10px;
   right: 10px;
   z-index: 3;
-  padding: 0;
+  padding: 0 0 0 54px; /* clear the left drawing-tool rail */
   pointer-events: none;
 }
 
@@ -7158,7 +7271,9 @@ button {
   left: 10px;
   right: 10px;
   z-index: 3;
-  padding: 0;
+  /* Clear the left drawing-tool rail so the OHLC / RS hover legend never sits
+     underneath it. */
+  padding: 0 0 0 54px;
   pointer-events: none;
 }
 
