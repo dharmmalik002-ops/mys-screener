@@ -142,6 +142,11 @@ class StockSnapshot(BaseModel):
     earnings_next_day_gap_pct: float | None = None
     earnings_day_rvol_50d: float | None = None
     earnings_return_5d_pct: float | None = None
+    # B-tier reaction: best single-day close-over-prev-close move within the
+    # event day and the next two sessions, with that day's volume vs the
+    # pre-event 50-day average.
+    earnings_best_pop_pct: float | None = None
+    earnings_best_pop_rvol: float | None = None
 
     @property
     def relative_volume(self) -> float:

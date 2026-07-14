@@ -2748,7 +2748,12 @@ export type MarketEnvironmentResponse = {
   }>;
   focus_review: {
     reviewed_date: string | null;
-    rows: Array<{ symbol: string; setup?: string; sector?: string; entry: number; now: number; return_pct: number; worked: boolean }>;
+    rows: Array<{
+      symbol: string; setup?: string; sector?: string; entry: number; now: number; return_pct: number; worked: boolean;
+      // Mentor-style grading against the original plan (absent on rows
+      // recorded before plan levels were pinned).
+      status?: string; why?: string; strategy?: string;
+    }>;
     summary: { count: number; worked: number; hit_rate_pct: number; avg_return_pct: number } | null;
   };
   leaders: Array<{ symbol: string; name: string; sector: string; last_price: number; change_pct: number; rs_rating: number | null; pct_from_52w_high: number; above_ema21: boolean }>;

@@ -40,6 +40,9 @@ import yfinance as yf
 BarsLoader = Callable[[str, str], list[dict[str, Any]]]
 
 BSE_ANN_URL = "https://api.bseindia.com/BseIndiaAPI/api/AnnSubCategoryGetData/w"
+# Forthcoming board-meeting-for-results calendar ("which stocks declare results
+# in the coming days"). Same host as the announcements API; not geo-blocked.
+BSE_FORTHCOMING_URL = "https://api.bseindia.com/BseIndiaAPI/api/Corpforthresults/w"
 BSE_HEADERS = {
     "User-Agent": (
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
@@ -65,6 +68,12 @@ class EarningsMetrics:
     day_rvol_50d: float | None
     return_5d_pct: float | None
     source: str
+    # B-tier reaction: the single best close-over-previous-close day within
+    # the event day and the next two sessions, plus that day's volume vs the
+    # pre-event 50-day average. Catches "up 20% on results day" immediately,
+    # before the 5-session follow-through exists.
+    best_pop_pct: float | None = None
+    best_pop_rvol: float | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -75,6 +84,8 @@ class EarningsMetrics:
             "day_rvol_50d": self.day_rvol_50d,
             "return_5d_pct": self.return_5d_pct,
             "source": self.source,
+            "best_pop_pct": self.best_pop_pct,
+            "best_pop_rvol": self.best_pop_rvol,
         }
 
 
@@ -110,6 +121,77 @@ def save_metrics_file(backend_root: Path, entries: dict[str, dict[str, Any]]) ->
         "entries": entries,
     }
     path.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")
+
+
+def calendar_file_path(backend_root: Path) -> Path:
+    return backend_root / "data" / "earnings_calendar.json"
+
+
+def load_calendar_file(backend_root: Path) -> dict[str, str]:
+    """Read the committed upcoming-results calendar: ``{SYMBOL: "YYYY-MM-DD"}``."""
+    path = calendar_file_path(backend_root)
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    upcoming = payload.get("upcoming") if isinstance(payload, dict) else None
+    if not isinstance(upcoming, dict):
+        return {}
+    return {str(sym).upper(): str(d) for sym, d in upcoming.items() if isinstance(d, str)}
+
+
+def save_calendar_file(backend_root: Path, upcoming: dict[str, str]) -> None:
+    path = calendar_file_path(backend_root)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "cache_version": 1,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "upcoming": dict(sorted(upcoming.items())),
+    }
+    path.write_text(json.dumps(payload, indent=1), encoding="utf-8")
+
+
+def fetch_bse_forthcoming_results() -> dict[str, date]:
+    """Fetch BSE's forthcoming-results calendar (board meetings scheduled to
+    declare results). Returns ``{scrip_code: meeting_date}``. This is the
+    "who reports in the coming days" feed — refreshed daily so the pipeline
+    knows which names to track for a reaction, quarter after quarter.
+    Failure returns an empty dict; the filings/yfinance anchors still work.
+    """
+    session = requests.Session()
+    session.headers.update(BSE_HEADERS)
+    try:
+        session.get("https://www.bseindia.com/corporates/Forth_Results.html", timeout=15)
+    except Exception:
+        pass
+    try:
+        response = session.get(BSE_FORTHCOMING_URL, params={"scripcode": ""}, timeout=25)
+        response.raise_for_status()
+        rows = response.json()
+    except Exception as exc:
+        LOGGER.warning("BSE forthcoming-results fetch failed: %s", exc)
+        return {}
+    if not isinstance(rows, list):
+        return {}
+    calendar: dict[str, date] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        scrip = str(row.get("scrip_Code") or "").strip()
+        raw = str(row.get("meeting_date") or "").strip()
+        if not scrip or not raw:
+            continue
+        try:
+            parsed = datetime.strptime(raw, "%d %b %Y").date()
+        except ValueError:
+            continue
+        existing = calendar.get(scrip)
+        if existing is None or parsed < existing:  # keep the nearest meeting
+            calendar[scrip] = parsed
+    LOGGER.info("BSE forthcoming results: %d scrips scheduled", len(calendar))
+    return calendar
 
 
 def _close_in_range_pct(open_: float, high: float, low: float, close: float) -> float | None:
@@ -175,15 +257,6 @@ def fetch_bse_result_filings(lookback_days: int = 60) -> dict[str, date]:
     """
     today = datetime.now(timezone.utc).astimezone().date()
     cutoff = today - timedelta(days=lookback_days)
-    params_base = {
-        "strCat": "Result",
-        "strPrevDate": cutoff.strftime("%Y%m%d"),
-        "strToDate": today.strftime("%Y%m%d"),
-        # `strSearch=P` is required — empty string returns {} on this endpoint.
-        "strSearch": "P",
-        "strscrip": "",
-        "strType": "C",
-    }
     filings: dict[str, date] = {}
     session = requests.Session()
     session.headers.update(BSE_HEADERS)
@@ -192,41 +265,56 @@ def fetch_bse_result_filings(lookback_days: int = 60) -> dict[str, date]:
         session.get("https://www.bseindia.com/corporates/ann.html", timeout=15)
     except Exception:
         pass
-    total_pages: int | None = None
-    for page in range(1, 100):
-        if total_pages is not None and page > total_pages:
-            break
-        params = {**params_base, "pageno": str(page)}
-        try:
-            response = session.get(BSE_ANN_URL, params=params, timeout=25)
-            response.raise_for_status()
-            payload = response.json()
-        except Exception as exc:
-            LOGGER.warning("BSE Result filings page %d failed: %s", page, exc)
-            break
-        rows = payload.get("Table") or []
-        if not rows:
-            break
-        if total_pages is None:
+    # The API silently returns {} for long date ranges (a 60-day query gets
+    # nothing while 14 days works), so walk the lookback in <=14-day windows.
+    window_end = today
+    while window_end >= cutoff:
+        window_start = max(cutoff, window_end - timedelta(days=13))
+        params_base = {
+            "strCat": "Result",
+            "strPrevDate": window_start.strftime("%Y%m%d"),
+            "strToDate": window_end.strftime("%Y%m%d"),
+            # `strSearch=P` is required — empty string returns {} on this endpoint.
+            "strSearch": "P",
+            "strscrip": "",
+            "strType": "C",
+        }
+        total_pages: int | None = None
+        for page in range(1, 100):
+            if total_pages is not None and page > total_pages:
+                break
+            params = {**params_base, "pageno": str(page)}
             try:
-                total_pages = int(rows[0].get("TotalPageCnt") or 0) or None
-            except Exception:
-                total_pages = None
-        for row in rows:
-            scrip = str(row.get("SCRIP_CD") or "").strip()
-            news_dt = str(row.get("NEWS_DT") or row.get("DissemDT") or "").strip()
-            if not scrip or not news_dt:
-                continue
-            try:
-                parsed = datetime.fromisoformat(news_dt.split(".")[0]).date()
-            except Exception:
-                continue
-            existing = filings.get(scrip)
-            if existing is None or parsed > existing:
-                filings[scrip] = parsed
+                response = session.get(BSE_ANN_URL, params=params, timeout=25)
+                response.raise_for_status()
+                payload = response.json()
+            except Exception as exc:
+                LOGGER.warning("BSE Result filings page %d failed: %s", page, exc)
+                break
+            rows = payload.get("Table") or []
+            if not rows:
+                break
+            if total_pages is None:
+                try:
+                    total_pages = int(rows[0].get("TotalPageCnt") or 0) or None
+                except Exception:
+                    total_pages = None
+            for row in rows:
+                scrip = str(row.get("SCRIP_CD") or "").strip()
+                news_dt = str(row.get("NEWS_DT") or row.get("DissemDT") or "").strip()
+                if not scrip or not news_dt:
+                    continue
+                try:
+                    parsed = datetime.fromisoformat(news_dt.split(".")[0]).date()
+                except Exception:
+                    continue
+                existing = filings.get(scrip)
+                if existing is None or parsed > existing:
+                    filings[scrip] = parsed
+        window_end = window_start - timedelta(days=1)
     LOGGER.info(
-        "BSE result filings: %d unique scrips in last %d days (across %s pages)",
-        len(filings), lookback_days, total_pages,
+        "BSE result filings: %d unique scrips in last %d days",
+        len(filings), lookback_days,
     )
     return filings
 
@@ -303,6 +391,85 @@ def chart_cache_bars_loader_factory(chart_cache_dir: Path) -> BarsLoader:
     return _load
 
 
+def _frame_to_bars(frame: pd.DataFrame) -> list[dict[str, Any]]:
+    """Convert a yfinance OHLCV frame into chart-cache-shaped bar dicts."""
+    bars: list[dict[str, Any]] = []
+    if frame is None or frame.empty:
+        return bars
+    for timestamp, row in frame.iterrows():
+        try:
+            close = float(row["Close"])
+        except Exception:
+            continue
+        if not _is_finite(close) or close <= 0:
+            continue
+        ts = pd.Timestamp(timestamp)
+        if ts.tzinfo is None:
+            ts = ts.tz_localize("UTC")
+        bars.append({
+            "time": int(ts.tz_convert("UTC").timestamp()),
+            "open": float(row["Open"]) if _is_finite(row.get("Open")) else close,
+            "high": float(row["High"]) if _is_finite(row.get("High")) else close,
+            "low": float(row["Low"]) if _is_finite(row.get("Low")) else close,
+            "close": close,
+            "volume": int(row["Volume"]) if _is_finite(row.get("Volume")) else 0,
+        })
+    return bars
+
+
+def batched_yfinance_bars_loader_factory(
+    tickers: list[str],
+    *,
+    period: str = "6mo",
+    chunk_size: int = 25,
+) -> BarsLoader:
+    """Prefetch daily bars for `tickers` via chunked ``yf.download`` and return
+    a loader that reads from the prefetched map.
+
+    Why: per-ticker ``yf.Ticker().history()`` calls are throttled/blocked from
+    datacenter IPs (GitHub Actions runners) — that is exactly what produced an
+    empty earnings_metrics.json every day. Batched ``yf.download`` is the same
+    call shape the daily bhavcopy job uses successfully from CI.
+    """
+    prefetched: dict[str, list[dict[str, Any]]] = {}
+    unique = [t for t in dict.fromkeys(t.strip() for t in tickers) if t]
+    for start in range(0, len(unique), chunk_size):
+        chunk = unique[start:start + chunk_size]
+        try:
+            frame = yf.download(
+                tickers=" ".join(chunk),
+                period=period,
+                interval="1d",
+                auto_adjust=False,
+                group_by="ticker",
+                threads=False,
+                progress=False,
+            )
+        except Exception as exc:
+            LOGGER.warning("batched bars download failed for chunk %d (%s)", start // chunk_size, exc)
+            continue
+        if frame is None or frame.empty:
+            continue
+        if len(chunk) == 1:
+            prefetched[chunk[0]] = _frame_to_bars(frame)
+            continue
+        for ticker in chunk:
+            try:
+                sub = frame[ticker].dropna(how="all")
+            except Exception:
+                continue
+            prefetched[ticker] = _frame_to_bars(sub)
+    LOGGER.info(
+        "batched bars: prefetched %d / %d tickers",
+        sum(1 for v in prefetched.values() if v), len(unique),
+    )
+
+    def _load(_symbol: str, ticker: str) -> list[dict[str, Any]]:
+        return prefetched.get(ticker.strip(), [])
+
+    return _load
+
+
 def _detect_high_volume_reaction_day(
     frame: pd.DataFrame,
     *,
@@ -367,12 +534,19 @@ def _compute_one(
     lookback_days: int,
     *,
     bse_filing_date: date | None = None,
+    calendar_date: date | None = None,
+    use_yfinance_dates: bool = True,
 ) -> EarningsMetrics | None:
     # Source priority for the announcement date:
     #   1. BSE corporate filing (regulator of record, every listed co.)
-    #   2. yfinance.earnings_dates (covers liquid NSE names well)
-    #   3. Volume-anchor scan (best-effort fallback)
-    yf_earnings_date = _fetch_yfinance_earnings_date(ticker, lookback_days)
+    #   2. BSE forthcoming-results calendar meeting date (once it has passed)
+    #   3. yfinance.earnings_dates (covers liquid NSE names well; skipped in
+    #      CI where per-ticker calls are throttled)
+    #   4. Volume-anchor scan (best-effort fallback)
+    today = datetime.now(timezone.utc).astimezone().date()
+    yf_earnings_date = (
+        _fetch_yfinance_earnings_date(ticker, lookback_days) if use_yfinance_dates else None
+    )
 
     bars = bars_loader(symbol, ticker)
     frame = _bars_to_frame(bars)
@@ -394,6 +568,15 @@ def _compute_one(
         if candidate is not None:
             event_idx = candidate
             source = "bse"
+
+    # Step 1.5: the scheduled board-meeting date, once it has passed, is a
+    # solid anchor for names whose filing hasn't hit the announcements feed
+    # yet (results are declared at the scheduled meeting).
+    if event_idx is None and calendar_date is not None and calendar_date <= today:
+        candidate = _anchor_to_session(calendar_date)
+        if candidate is not None:
+            event_idx = candidate
+            source = "bse-calendar"
 
     # Step 2: yfinance fallback, with a sanity check on the day's volume.
     if event_idx is None and yf_earnings_date is not None:
@@ -468,6 +651,29 @@ def _compute_one(
         if _is_finite(forward_row["close"]):
             return_5d_pct = round((float(forward_row["close"]) / float(event_row["close"]) - 1.0) * 100.0, 3)
 
+    # B-tier reaction: best single-day close-over-previous-close move within
+    # the event day and the next two sessions, with that day's volume vs the
+    # PRE-event 50-day average (uncontaminated by the reaction itself).
+    best_pop_pct: float | None = None
+    best_pop_rvol: float | None = None
+    pre_event = frame.iloc[max(0, event_idx - 50):event_idx]
+    pre_event_avg_vol = float(pre_event["volume"].mean()) if not pre_event.empty else 0.0
+    for offset in range(0, 3):
+        day_idx = event_idx + offset
+        if day_idx >= len(frame) or day_idx == 0:
+            continue
+        day_row = frame.iloc[day_idx]
+        prev_close = float(frame.iloc[day_idx - 1]["close"] or 0)
+        if not _is_finite(day_row["close"]) or prev_close <= 0:
+            continue
+        change_pct = (float(day_row["close"]) / prev_close - 1.0) * 100.0
+        if best_pop_pct is None or change_pct > best_pop_pct:
+            best_pop_pct = round(change_pct, 3)
+            if pre_event_avg_vol > 0 and _is_finite(day_row["volume"]):
+                best_pop_rvol = round(float(day_row["volume"]) / pre_event_avg_vol, 3)
+            else:
+                best_pop_rvol = None
+
     return EarningsMetrics(
         symbol=symbol.upper(),
         earnings_date=earnings_date_resolved,
@@ -476,6 +682,8 @@ def _compute_one(
         day_rvol_50d=day_rvol,
         return_5d_pct=return_5d_pct,
         source=source,
+        best_pop_pct=best_pop_pct,
+        best_pop_rvol=best_pop_rvol,
     )
 
 
@@ -486,13 +694,22 @@ def compute_metrics(
     lookback_days: int = EARNINGS_LOOKBACK_DAYS,
     max_workers: int = 4,
     bse_filing_dates: dict[str, date] | None = None,
+    calendar_dates: dict[str, date] | None = None,
+    only_anchored: bool = False,
+    use_yfinance_dates: bool = True,
 ) -> dict[str, dict[str, Any]]:
     """Compute metrics for every symbol in `universe`.
 
-    When `bse_filing_dates` is provided (keyed by BSE scrip code as
-    string), each stock's announcement date is sourced from BSE first
-    and only falls through to yfinance / volume detection when BSE has
-    no entry. Universe entries should include a `bse_code` field.
+    When `bse_filing_dates` / `calendar_dates` are provided (keyed by BSE
+    scrip code as string), each stock's announcement date is sourced from
+    BSE first and only falls through to yfinance / volume detection when
+    BSE has no entry. Universe entries should include a `bse_code` field.
+
+    ``only_anchored=True`` restricts computation to symbols with a BSE
+    filing or a passed calendar meeting — the CI mode, which avoids ~1600
+    per-ticker yfinance probes (throttled from datacenter IPs) and only
+    downloads bars for the few hundred names actually in results season.
+    ``use_yfinance_dates=False`` skips the per-ticker earnings-date call.
     """
     triples = [
         (
@@ -505,6 +722,18 @@ def compute_metrics(
     ]
     results: dict[str, dict[str, Any]] = {}
     bse_map = bse_filing_dates or {}
+    calendar_map = calendar_dates or {}
+    if only_anchored:
+        today = datetime.now(timezone.utc).astimezone().date()
+        triples = [
+            (symbol, ticker, bse_code)
+            for symbol, ticker, bse_code in triples
+            if bse_code and (
+                bse_code in bse_map
+                or (bse_code in calendar_map and calendar_map[bse_code] <= today)
+            )
+        ]
+        LOGGER.info("anchored-only mode: %d symbols have a result anchor", len(triples))
 
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         future_map = {
@@ -515,6 +744,8 @@ def compute_metrics(
                 bars_loader,
                 lookback_days,
                 bse_filing_date=bse_map.get(bse_code),
+                calendar_date=calendar_map.get(bse_code),
+                use_yfinance_dates=use_yfinance_dates,
             ): symbol
             for symbol, ticker, bse_code in triples
             if ticker

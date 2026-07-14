@@ -412,6 +412,17 @@
 .mk-review-row.won { border-color: rgba(8,153,129,0.35); }
 .mk-review-row.lost { border-color: rgba(242,54,69,0.3); }
 .mk-review-row small { color: var(--text-muted); margin-left: auto; font-size: 0.68rem; }
+/* Detailed scorecard rows: full-width cards with the why + strategy lines. */
+.mk-review-row.detailed { display: block; padding: 8px 10px; }
+.mk-review-row.detailed .mk-review-head { display: flex; align-items: baseline; gap: 8px; }
+.mk-review-row.detailed .mk-review-head small { margin-left: auto; }
+.mk-review-why { margin-top: 5px; font-size: 0.74rem; line-height: 1.45; color: var(--text); }
+.mk-review-strategy {
+  margin-top: 4px; padding: 5px 8px; border-radius: 6px;
+  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  font-size: 0.72rem; line-height: 1.45; color: var(--text-muted);
+}
+.mk-review-grid:has(.mk-review-row.detailed) { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 
 .mk-bigcard-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .mk-bigcard-actions button {

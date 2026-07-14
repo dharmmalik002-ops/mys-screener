@@ -419,6 +419,68 @@ def pull_latest_eod_bars() -> bool:
         return False
 
 
+def pull_latest_earnings_data() -> bool:
+    """Pull the committed earnings artifacts from the public repo.
+
+    ``earnings_metrics.json`` (post-result reaction metrics for the Positive
+    Earnings scanner and the chart "E" markers) and ``earnings_calendar.json``
+    (upcoming BSE results calendar) are rewritten by the daily workflow and
+    committed with ``[skip ci]`` — like every other daily artifact they only
+    reach this Space via the workflow's HF push, which can silently fail.
+    Without this pull the scanner stays frozen on whatever was baked at the
+    last full deploy. The dashboard reader is mtime-cached, so replacing the
+    files is enough. Returns True when either file advanced.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    raw_base = (
+        os.environ.get("COMMITTED_DATA_RAW_BASE")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data"
+    ).strip().rstrip("/")
+    data_dir = Path(__file__).resolve().parents[1] / "data"
+    updated = False
+    for name, payload_key in (("earnings_metrics.json", "entries"), ("earnings_calendar.json", "upcoming")):
+        path = data_dir / name
+        try:
+            local_stamp = ""
+            try:
+                local_payload = _json.loads(path.read_text(encoding="utf-8"))
+                local_stamp = str(local_payload.get("generated_at") or local_payload.get("updated_at") or "")
+            except Exception:
+                local_stamp = ""
+            resp = _requests.get(f"{raw_base}/{name}", timeout=25)
+            if resp.status_code != 200:
+                logger.info("Earnings self-update (%s): remote HTTP %s — keeping local", name, resp.status_code)
+                continue
+            remote = resp.json()
+            remote_stamp = str(remote.get("generated_at") or remote.get("updated_at") or "") if isinstance(remote, dict) else ""
+            payload = remote.get(payload_key) if isinstance(remote, dict) else None
+            if not remote_stamp or not isinstance(payload, dict):
+                logger.warning("Earnings self-update (%s): remote payload invalid — keeping local", name)
+                continue
+            # Guard: never replace populated local metrics with an empty remote.
+            if name == "earnings_metrics.json" and not payload:
+                try:
+                    local_entries = _json.loads(path.read_text(encoding="utf-8")).get("entries") or {}
+                except Exception:
+                    local_entries = {}
+                if local_entries:
+                    continue
+            if local_stamp and remote_stamp <= local_stamp:
+                continue  # already current (or older) — nothing to do
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_name(path.name + ".tmp")
+            tmp.write_text(resp.text, encoding="utf-8")
+            tmp.replace(path)
+            logger.info("Earnings self-update (%s): pulled %s (was %s)", name, remote_stamp, local_stamp or "<none>")
+            updated = True
+        except Exception as exc:
+            logger.warning("Earnings self-update (%s) failed: %s", name, exc)
+    return updated
+
+
 def apply_bhavcopy_patch_on_startup() -> None:
     """Roll any committed bhavcopy patch into the live snapshot before serving.
 
@@ -433,6 +495,7 @@ def apply_bhavcopy_patch_on_startup() -> None:
     xp_pulled = pull_latest_xp_breadth()
     bands_pulled = pull_latest_price_bands()
     eod_bars_pulled = pull_latest_eod_bars()
+    earnings_pulled = pull_latest_earnings_data()
     try:
         result = india_provider.apply_committed_bhavcopy_patch(force=pulled)
     except Exception as exc:
@@ -440,8 +503,9 @@ def apply_bhavcopy_patch_on_startup() -> None:
         result = {}
     snapshot_updated = result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0
     # Clear runtime caches when the snapshot, the XP history, the circuit bands,
-    # or the recent EOD bars advanced, so charts/dashboard re-read fresh files.
-    if snapshot_updated or xp_pulled or bands_pulled or eod_bars_pulled:
+    # the recent EOD bars, or the earnings artifacts advanced, so charts /
+    # dashboard / scanners re-read fresh files.
+    if snapshot_updated or xp_pulled or bands_pulled or eod_bars_pulled or earnings_pulled:
         try:
             service._clear_runtime_caches()
         except Exception:

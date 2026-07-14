@@ -680,10 +680,14 @@ export function MarketsPanel({
           </div>
           <div className="mk-review-grid">
             {data.focus_review.rows.slice(0, 20).map((r) => (
-              <div key={r.symbol} className={`mk-review-row ${r.worked ? "won" : "lost"}`}>
-                <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(r.symbol)}>{r.symbol}</button>
-                <strong className={r.return_pct >= 0 ? "pos" : "neg"}>{r.return_pct >= 0 ? "+" : ""}{r.return_pct.toFixed(1)}%</strong>
-                <small>{r.setup}</small>
+              <div key={r.symbol} className={`mk-review-row detailed ${r.worked ? "won" : "lost"}`}>
+                <div className="mk-review-head">
+                  <button type="button" className="mk-symbol" onClick={() => onOpenSymbolChart?.(r.symbol)}>{r.symbol}</button>
+                  <strong className={r.return_pct >= 0 ? "pos" : "neg"}>{r.return_pct >= 0 ? "+" : ""}{r.return_pct.toFixed(1)}%</strong>
+                  <small>{r.setup}</small>
+                </div>
+                {r.why ? <div className="mk-review-why">{r.why}</div> : null}
+                {r.strategy ? <div className="mk-review-strategy">{r.strategy}</div> : null}
               </div>
             ))}
           </div>

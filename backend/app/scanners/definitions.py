@@ -868,19 +868,26 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
-# Positive Earnings: stocks that confirmed a strong reaction to their
-# latest quarterly result. Conditions (all required):
-#   * result announced within the last 60 days,
-#   * close in the top 25% of the candle on the earnings day OR the day
-#     after,
-#   * gap up >= 1% on the session after earnings,
-#   * earnings-day volume >= 2x the prior 50-day average volume,
-#   * +10% or better return measured 5 sessions from the earnings day.
+# Positive Earnings: stocks with a strong reaction to their latest quarterly
+# result, graded in two tiers:
+#   Grade A — the full institutional pattern (all required):
+#     * close in the top 25% of the candle on the earnings day OR the day after,
+#     * gap up >= 1% on the session after earnings,
+#     * earnings-day volume >= 2x the prior 50-day average volume,
+#     * +10% or better return measured 5 sessions from the earnings day.
+#   Grade B — a simple violent pop (both required):
+#     * closed >= +5% over the previous close on the results day or within
+#       the next two sessions,
+#     * that day's volume >= 2x the pre-event 50-day average.
+# Grade B catches a JUSTDIAL-style +20% results day IMMEDIATELY — the A
+# pattern's 5-session follow-through doesn't exist yet on day one.
 POSITIVE_EARNINGS_LOOKBACK_DAYS = 60
 POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE = 0.75
 POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT = 1.0
 POSITIVE_EARNINGS_MIN_DAY_RVOL = 2.0
 POSITIVE_EARNINGS_MIN_RETURN_5D_PCT = 10.0
+POSITIVE_EARNINGS_MIN_POP_PCT = 5.0
+POSITIVE_EARNINGS_MIN_POP_RVOL = 2.0
 
 
 def make_positive_earnings_evaluator(
@@ -890,11 +897,14 @@ def make_positive_earnings_evaluator(
     min_next_day_gap_pct: float = POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT,
     min_day_rvol: float = POSITIVE_EARNINGS_MIN_DAY_RVOL,
     min_return_5d_pct: float = POSITIVE_EARNINGS_MIN_RETURN_5D_PCT,
+    min_pop_pct: float = POSITIVE_EARNINGS_MIN_POP_PCT,
+    min_pop_rvol: float = POSITIVE_EARNINGS_MIN_POP_RVOL,
 ) -> ScannerFn:
-    """Factory for a parameterized Positive Earnings evaluator.
+    """Factory for a parameterized Positive Earnings evaluator (A/B graded).
 
-    Defaults match the IBD-style spec the scanner shipped with; the
-    frontend lets users relax or tighten each gate via the panel.
+    A-grade defaults match the IBD-style spec the scanner shipped with;
+    B-grade is the fast "big pop on big volume" gate that surfaces names
+    the same evening their reaction prints.
     """
     def _evaluator(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         earnings_date = snapshot.latest_earnings_date
@@ -909,32 +919,56 @@ def make_positive_earnings_evaluator(
         next_day_gap = snapshot.earnings_next_day_gap_pct
         day_rvol = snapshot.earnings_day_rvol_50d
         return_5d = snapshot.earnings_return_5d_pct
-        if close_in_range is None or next_day_gap is None or day_rvol is None or return_5d is None:
-            return None
+        best_pop = snapshot.earnings_best_pop_pct
+        best_pop_rvol = snapshot.earnings_best_pop_rvol
 
-        if close_in_range < min_close_in_range_pct:
-            return None
-        if next_day_gap < min_next_day_gap_pct:
-            return None
-        if day_rvol < min_day_rvol:
-            return None
-        if return_5d < min_return_5d_pct:
-            return None
-
-        score = round(
-            min(return_5d, 80.0) * 0.6
-            + min(day_rvol, 10.0) * 4.0
-            + min(next_day_gap, 15.0) * 0.8
-            + (close_in_range * 10.0),
-            2,
+        is_grade_a = (
+            close_in_range is not None and close_in_range >= min_close_in_range_pct
+            and next_day_gap is not None and next_day_gap >= min_next_day_gap_pct
+            and day_rvol is not None and day_rvol >= min_day_rvol
+            and return_5d is not None and return_5d >= min_return_5d_pct
         )
-        reasons = [
-            f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
-            f"Close at {round(close_in_range * 100)}% of candle range (>={round(min_close_in_range_pct * 100)}%)",
-            f"Next-day gap +{next_day_gap:.2f}% (>={min_next_day_gap_pct:.1f}%)",
-            f"Earnings-day volume {day_rvol:.2f}x of 50D avg (>={min_day_rvol:.1f}x)",
-            f"+{return_5d:.2f}% over 5 sessions post-earnings (>={min_return_5d_pct:.1f}%)",
-        ]
+        is_grade_b = (
+            best_pop is not None and best_pop >= min_pop_pct
+            and best_pop_rvol is not None and best_pop_rvol >= min_pop_rvol
+        )
+        if not is_grade_a and not is_grade_b:
+            return None
+
+        if is_grade_a:
+            # A ranks above B: same formula as before plus a flat tier bonus.
+            score = round(
+                50.0
+                + min(return_5d or 0.0, 80.0) * 0.6
+                + min(day_rvol or 0.0, 10.0) * 4.0
+                + min(next_day_gap or 0.0, 15.0) * 0.8
+                + ((close_in_range or 0.0) * 10.0),
+                2,
+            )
+            reasons = [
+                "Grade A — full institutional reaction pattern",
+                f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
+                f"Close at {round((close_in_range or 0) * 100)}% of candle range (>={round(min_close_in_range_pct * 100)}%)",
+                f"Next-day gap +{next_day_gap:.2f}% (>={min_next_day_gap_pct:.1f}%)",
+                f"Earnings-day volume {day_rvol:.2f}x of 50D avg (>={min_day_rvol:.1f}x)",
+                f"+{return_5d:.2f}% over 5 sessions post-earnings (>={min_return_5d_pct:.1f}%)",
+            ]
+            if is_grade_b:
+                reasons.append(f"Results-day pop +{best_pop:.2f}% on {best_pop_rvol:.1f}x volume")
+        else:
+            score = round(
+                min(best_pop or 0.0, 40.0) * 1.0
+                + min(best_pop_rvol or 0.0, 12.0) * 2.0,
+                2,
+            )
+            reasons = [
+                "Grade B — strong results-day pop",
+                f"Earnings on {earnings_date.isoformat()} ({age_days}d ago)",
+                f"Closed +{best_pop:.2f}% on the results day or next 2 sessions (>={min_pop_pct:.0f}%)",
+                f"Pop-day volume {best_pop_rvol:.2f}x of pre-result 50D avg (>={min_pop_rvol:.1f}x)",
+            ]
+            if return_5d is not None:
+                reasons.append(f"{'+' if return_5d >= 0 else ''}{return_5d:.2f}% since the result so far")
         return score, reasons
     return _evaluator
 
@@ -1105,7 +1139,7 @@ SCANS: list[ScanDefinition] = [
         "positive-earnings",
         "Positive Earnings",
         "Setups",
-        "Result declared in last 60 days with a strong post-earnings reaction: top-quartile close, +1% gap up, 2x volume, and +10% over 5 sessions.",
+        "Result declared in last 60 days with a strong reaction, graded: A = full pattern (top-quartile close, gap up, 2x volume, +10% in 5 sessions); B = closed +5% or more on 2x volume on the results day or next two sessions.",
         _positive_earnings,
     ),
     ScanDefinition(

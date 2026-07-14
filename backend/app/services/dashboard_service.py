@@ -684,6 +684,8 @@ class DashboardService:
                     "earnings_next_day_gap_pct": entry.get("next_day_gap_pct"),
                     "earnings_day_rvol_50d": entry.get("day_rvol_50d"),
                     "earnings_return_5d_pct": entry.get("return_5d_pct"),
+                    "earnings_best_pop_pct": entry.get("best_pop_pct"),
+                    "earnings_best_pop_rvol": entry.get("best_pop_rvol"),
                 }))
             return patched
         except Exception:
@@ -3049,7 +3051,12 @@ class DashboardService:
                     session_iso,
                     [
                         {"symbol": f["symbol"], "name": f.get("name"), "last_price": f.get("last_price"),
-                         "setup": f.get("setup"), "sector": f.get("sector")}
+                         "setup": f.get("setup"), "sector": f.get("sector"),
+                         # Plan levels pinned at suggestion time so the review
+                         # can grade the trade against the ORIGINAL plan.
+                         "pivot": f.get("pivot"), "ema21": f.get("ema21"),
+                         "rs_rating": f.get("rs_rating"),
+                         "entry_text": f.get("entry"), "stop_text": f.get("stop")}
                         for f in focus
                     ],
                     keep_dates=30,
@@ -3065,23 +3072,35 @@ class DashboardService:
             return {"reviewed_date": None, "rows": [], "summary": None}
         # The suggestion set closest to ~5 sessions back (a trading week).
         review_date = prior_dates[-5] if len(prior_dates) >= 5 else prior_dates[0]
-        price_by_symbol = {s.symbol: s.last_price for s in snapshots if s.last_price > 0}
+        snap_by_symbol = {s.symbol: s for s in snapshots if s.last_price > 0}
+        # Sector 5D medians — the honest "tailwind vs drag" attribution input.
+        sector_5d: dict[str, list[float]] = {}
+        for s in snapshots:
+            if (s.avg_volume_20d or 0) >= 50000:
+                sector_5d.setdefault(s.sector or "Unclassified", []).append(s.stock_return_5d)
+        sector_median_5d = {
+            sector: sorted(vals)[len(vals) // 2]
+            for sector, vals in sector_5d.items() if len(vals) >= 5
+        }
         rows: list[dict] = []
         for raw in history.get(review_date) or []:
             if not isinstance(raw, dict):
                 continue
             sym = str(raw.get("symbol") or "")
             entry = raw.get("last_price")
-            now = price_by_symbol.get(sym)
+            snap = snap_by_symbol.get(sym)
+            now = snap.last_price if snap else None
             if not sym or not isinstance(entry, (int, float)) or entry <= 0 or not now:
                 continue
             ret = (now / float(entry) - 1) * 100
             worked = ret >= 3  # "behaved as expected" = a tradable follow-through
-            rows.append({
+            row = {
                 "symbol": sym, "setup": raw.get("setup"), "sector": raw.get("sector"),
                 "entry": round(float(entry), 2), "now": round(now, 2),
                 "return_pct": round(ret, 2), "worked": worked,
-            })
+            }
+            row.update(self._focus_review_detail(raw, snap, ret, sector_median_5d))
+            rows.append(row)
         rows.sort(key=lambda r: -r["return_pct"])
         if rows:
             wins = sum(1 for r in rows if r["worked"])
@@ -3094,6 +3113,83 @@ class DashboardService:
         else:
             summary = None
         return {"reviewed_date": review_date, "rows": rows, "summary": summary}
+
+    @staticmethod
+    def _focus_review_detail(raw: dict, snap, ret: float, sector_median_5d: dict[str, float]) -> dict:
+        """Mentor-style grading of one reviewed focus pick against its ORIGINAL
+        plan: why it worked or failed, and how the entry/exit should have been
+        (or still should be) handled — with the actual price levels."""
+        pivot = raw.get("pivot") if isinstance(raw.get("pivot"), (int, float)) else None
+        plan_ema = raw.get("ema21") if isinstance(raw.get("ema21"), (int, float)) else None
+        rs_then = raw.get("rs_rating") if isinstance(raw.get("rs_rating"), (int, float)) else None
+        sector = str(raw.get("sector") or "")
+        now = float(snap.last_price) if snap is not None else None
+        rs_now = getattr(snap, "rs_rating", None) if snap is not None else None
+        sector_5d = sector_median_5d.get(sector)
+        sector_txt = ""
+        if sector_5d is not None:
+            direction = "tailwind" if sector_5d >= 0 else "drag"
+            sector_txt = f"; sector 5D {sector_5d:+.1f}% {direction}"
+        risk_pct = None
+        if pivot and plan_ema and pivot > 0 and plan_ema < pivot:
+            risk_pct = round((1 - plan_ema / pivot) * 100, 1)
+        risk_txt = f" (−{risk_pct}% planned risk)" if risk_pct is not None else ""
+
+        if pivot is None or plan_ema is None or now is None:
+            # Old history rows recorded before plan levels were pinned.
+            if ret >= 3:
+                return {
+                    "status": "worked",
+                    "why": f"Followed through +{ret:.1f}% over the week{sector_txt}.",
+                    "strategy": "Trail the 21 EMA; take partials into strength above +20%.",
+                }
+            return {
+                "status": "faded",
+                "why": f"Drifted {ret:+.1f}% — no follow-through{sector_txt}.",
+                "strategy": "Only breakouts above a defined pivot deserve capital; a name that never triggers costs nothing.",
+            }
+
+        broke_out = now >= pivot
+        lost_ema = now < plan_ema * 0.99
+        rs_txt = f"RS {int(rs_now)}" if isinstance(rs_now, (int, float)) else (f"RS {int(rs_then)}" if rs_then else "leadership")
+
+        if broke_out and ret >= 3:
+            return {
+                "status": "broke_out",
+                "why": f"Cleared the ₹{pivot:.2f} pivot and held it — {rs_txt} did the pulling{sector_txt}.",
+                "strategy": (
+                    f"Entry was the ₹{pivot:.2f} breakout on expanding volume; initial stop ₹{plan_ema:.2f}{risk_txt}. "
+                    f"Now +{ret:.1f}%: move the stop to breakeven, trail the 21 EMA, and bank a third into any +20-25% burst."
+                ),
+            }
+        if broke_out:
+            return {
+                "status": "breakout_fragile",
+                "why": f"Poked above the ₹{pivot:.2f} pivot but net progress is only {ret:+.1f}% — a breakout without power{sector_txt}.",
+                "strategy": (
+                    f"A clean trigger closes strong above ₹{pivot:.2f} on volume. If it stalls here, the stop stays ₹{plan_ema:.2f}{risk_txt} — "
+                    f"no averaging down, no hoping."
+                ),
+            }
+        if lost_ema:
+            return {
+                "status": "base_failed",
+                "why": f"Lost the 21 EMA (₹{plan_ema:.2f}) before ever triggering the ₹{pivot:.2f} buy — the base failed{sector_txt}.",
+                "strategy": (
+                    f"The plan risked −{risk_pct}% from pivot to stop" if risk_pct is not None else "The stop defined the risk"
+                ) + ". Since it never triggered, nothing was lost — that discipline IS the edge. Remove it and recycle the attention.",
+            }
+        if ret >= 3:
+            return {
+                "status": "climbing_in_base",
+                "why": f"Up +{ret:.1f}% inside the base without clearing ₹{pivot:.2f} — accumulation, not yet a trade{sector_txt}.",
+                "strategy": f"Still no entry: buy only the ₹{pivot:.2f} breakout on volume; invalidation below ₹{plan_ema:.2f}{risk_txt}.",
+            }
+        return {
+            "status": "still_basing",
+            "why": f"Went nowhere ({ret:+.1f}%) — never triggered the ₹{pivot:.2f} buy, still holding the 21 EMA{sector_txt}.",
+            "strategy": f"Keep it on watch. The trade only exists above ₹{pivot:.2f}; below ₹{plan_ema:.2f} the setup is void{risk_txt}.",
+        }
 
     def _build_week_review(self, snapshots: list[StockSnapshot]) -> dict:
         """What actually paid over the last ~5 sessions: per-scanner forward

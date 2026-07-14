@@ -111,6 +111,10 @@ jobs:
           if [ -f backend/data/earnings_metrics.json ]; then
             git add backend/data/earnings_metrics.json || true
           fi
+          # Upcoming BSE results calendar (feeds the Positive Earnings tracker).
+          if [ -f backend/data/earnings_calendar.json ]; then
+            git add backend/data/earnings_calendar.json || true
+          fi
           if [ -f backend/data/volume_history.json ]; then
             git add backend/data/volume_history.json || true
           fi
