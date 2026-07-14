@@ -674,6 +674,7 @@ export type CustomScanRequest = {
   above_ema20: boolean;
   above_ema50: boolean;
   above_ema200: boolean;
+  hide_low_band: boolean;
   pattern: CustomScanPattern;
   sort_by: CustomSortBy;
   sort_order: "asc" | "desc";

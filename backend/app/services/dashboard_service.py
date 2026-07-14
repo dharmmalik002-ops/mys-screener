@@ -3613,6 +3613,28 @@ class DashboardService:
     ) -> ScanResultsResponse:
         snapshots = self._scan_eligible_snapshots(await self._snapshots())
         items = await asyncio.to_thread(run_custom_scan, request, snapshots)
+
+        # Optional: hide 2% / 5% circuit-band names (they gap straight to the
+        # daily limit and can't be traded as breakouts). Applied as a post-filter
+        # so the band store stays a service concern, not a scanner input.
+        def _drop_low_band(matches):
+            return matches
+
+        if request.hide_low_band:
+            try:
+                bands = (self._load_price_bands() or {}).get("bands") or {}
+                low_band = {
+                    str(sym).upper()
+                    for sym, val in bands.items()
+                    if isinstance(val, (int, float)) and float(val) <= 5
+                }
+            except Exception:
+                low_band = set()
+            if low_band:
+                def _drop_low_band(matches):  # noqa: F811 — rebind when a set exists
+                    return [m for m in matches if m.symbol.upper() not in low_band]
+                items = _drop_low_band(items)
+
         return await self._scan_results_response(
             scan={
                 "id": "custom-scan",
@@ -3625,7 +3647,7 @@ class DashboardService:
             request_signature=json.dumps(request.model_dump(mode="python"), sort_keys=True, default=str),
             snapshots=snapshots,
             items=items,
-            historical_runner=lambda historical_snapshots: run_custom_scan(request, historical_snapshots),
+            historical_runner=lambda historical_snapshots: _drop_low_band(run_custom_scan(request, historical_snapshots)),
             include_sector_summaries=include_sector_summaries,
         )
 

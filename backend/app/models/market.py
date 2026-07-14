@@ -1033,6 +1033,9 @@ class CustomScanRequest(BaseModel):
     above_ema20: bool = False
     above_ema50: bool = False
     above_ema200: bool = False
+    # Drop low circuit-band names (2% / 5% daily price band) from the results —
+    # they gap straight to the limit and can't be traded as breakouts.
+    hide_low_band: bool = False
     pattern: CustomScanPattern = "any"
     sort_by: CustomSortBy = "pattern"
     sort_order: SortOrder = "desc"

@@ -495,6 +495,9 @@ const DEFAULT_CUSTOM_FILTERS: CustomScanRequest = {
   above_ema20: false,
   above_ema50: false,
   above_ema200: false,
+  // Default to hiding 2%/5% circuit-band names — they clutter results and
+  // can't be traded as breakouts. Toggle off in the panel to see them.
+  hide_low_band: true,
   pattern: "any",
   sort_by: "rs_rating",
   sort_order: "desc",

@@ -148,7 +148,7 @@ export function CustomScannerPanel({
     };
 
   const updateBoolean =
-    (field: keyof Pick<CustomScanRequest, "above_ema20" | "above_ema50" | "above_ema200" | "require_bullish_ma_order" | "require_bearish_ma_order">) =>
+    (field: keyof Pick<CustomScanRequest, "above_ema20" | "above_ema50" | "above_ema200" | "require_bullish_ma_order" | "require_bearish_ma_order" | "hide_low_band">) =>
     (event: ChangeEvent<HTMLInputElement>) => {
       onFiltersChange({
         ...filters,
@@ -445,6 +445,15 @@ export function CustomScannerPanel({
               <label className="scanner-toggle">
                 <input type="checkbox" checked={filters.above_ema200} onChange={updateBoolean("above_ema200")} />
                 <span>Above 200 Day SMA</span>
+              </label>
+            </div>
+          </FilterField>
+
+          <FilterField label="Circuit Band">
+            <div className="scanner-toggle-grid compact">
+              <label className="scanner-toggle" title="Hide 2% / 5% daily price-band names — they gap straight to the circuit and can't be traded as breakouts. Uncheck to see them.">
+                <input type="checkbox" checked={filters.hide_low_band} onChange={updateBoolean("hide_low_band")} />
+                <span>Hide 2% / 5% circuit-band stocks</span>
               </label>
             </div>
           </FilterField>
