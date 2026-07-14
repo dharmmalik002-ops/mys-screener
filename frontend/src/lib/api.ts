@@ -41,6 +41,7 @@ export type ScanMatch = {
   pattern?: string | null;
   volume_push_date?: string | null;
   session_date?: string | null;
+  earnings_date?: string | null;
   new_since_prev?: boolean | null;
   also_in?: string[];
   rs_rating?: number | null;
@@ -1126,6 +1127,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     pattern: readNullableString(raw.pattern),
     volume_push_date: readNullableString(raw.volume_push_date),
     session_date: readNullableString(raw.session_date),
+    earnings_date: readNullableString(raw.earnings_date),
     new_since_prev: typeof raw.new_since_prev === "boolean" ? raw.new_since_prev : null,
     also_in: Array.isArray(raw.also_in) ? raw.also_in.filter((v): v is string => typeof v === "string") : [],
     rs_rating: readNullableNumber(raw.rs_rating),

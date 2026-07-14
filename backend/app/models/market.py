@@ -661,6 +661,9 @@ class ScanMatch(BaseModel):
     # with a rolling history (Expansion keeps 30 sessions) so the UI can show
     # which day each stock fired.
     session_date: str | None = None
+    # Result-announcement date (YYYY-MM-DD) for the Positive Earnings scanner,
+    # so the UI can show a dedicated column and sort latest-first.
+    earnings_date: str | None = None
     # True when the symbol was NOT in this scanner's previous session results
     # (i.e. it entered the list today). None = no history available yet.
     new_since_prev: bool | None = None

@@ -883,6 +883,21 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 # pattern's 5-session follow-through doesn't exist yet on day one.
 POSITIVE_EARNINGS_LOOKBACK_DAYS = 60
 POSITIVE_EARNINGS_MIN_CLOSE_IN_RANGE = 0.75
+
+
+def current_earnings_season_start(today: date) -> date:
+    """Start date of the CURRENT Indian quarterly-results season.
+
+    Indian results seasons open in the month after each fiscal quarter ends —
+    Apr (Q4), Jul (Q1), Oct (Q2), Jan (Q3). The bulk of a quarter's results
+    print over the ~6-week window from the 1st of that month. Returning the 1st
+    of the most recent such month bounds the scanner to the LATEST quarter's
+    reactions and excludes the prior quarter's tail that a flat 60-day lookback
+    would otherwise sweep in.
+    """
+    reporting_months = (1, 4, 7, 10)
+    month = max(m for m in reporting_months if m <= today.month)
+    return date(today.year, month, 1)
 POSITIVE_EARNINGS_MIN_NEXT_DAY_GAP_PCT = 1.0
 POSITIVE_EARNINGS_MIN_DAY_RVOL = 2.0
 POSITIVE_EARNINGS_MIN_RETURN_5D_PCT = 10.0
@@ -913,6 +928,10 @@ def make_positive_earnings_evaluator(
         today = date.today()
         age_days = (today - earnings_date).days
         if age_days < 0 or age_days > lookback_days:
+            return None
+        # Latest quarter only — exclude the previous reporting season's tail
+        # that the 60-day outer bound would otherwise include.
+        if earnings_date < current_earnings_season_start(today):
             return None
 
         close_in_range = snapshot.earnings_close_in_range_pct
@@ -1212,6 +1231,7 @@ def build_scan_match(
         score=score,
         pattern=pattern,
         volume_push_date=volume_push_date,
+        earnings_date=snapshot.latest_earnings_date.isoformat() if snapshot.latest_earnings_date else None,
         rs_rating=snapshot.rs_rating if snapshot.rs_eligible else None,
         rs_rating_1d_ago=snapshot.rs_rating_1d_ago if snapshot.rs_eligible else None,
         rs_rating_1w_ago=snapshot.rs_rating_1w_ago if snapshot.rs_eligible else None,
@@ -1256,6 +1276,13 @@ def run_scan(scan: ScanDefinition, snapshots: list[StockSnapshot]) -> list[ScanM
         score, reasons = outcome
         matches.append(build_scan_match(scan.id, snapshot, score, reasons, pattern=scan.name))
 
+    if scan.id == "positive-earnings":
+        # Latest result at the top; grade/score breaks ties within a day.
+        return sorted(
+            matches,
+            key=lambda item: (item.earnings_date or "", item.score),
+            reverse=True,
+        )
     return _default_sort(matches)
 
 

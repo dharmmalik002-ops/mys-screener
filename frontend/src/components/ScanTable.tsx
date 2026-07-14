@@ -82,9 +82,10 @@ type SortBy =
   | "listing_desc"
   | "listing_asc"
   | "volume_date_desc"
-  | "expansion_date_desc";
+  | "expansion_date_desc"
+  | "earnings_date_desc";
 
-type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "sdate" | "gap";
+type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "sdate" | "edate" | "gap";
 
 const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
   { value: "change_desc", label: "Change % (high → low)" },
@@ -296,6 +297,13 @@ function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
         if (rt !== lt) return rt - lt;
         return right.score - left.score;
       }
+      case "earnings_date_desc": {
+        // Latest result at the top; tie-break by grade/score within a day.
+        const lt = listingTimestamp(left.earnings_date);
+        const rt = listingTimestamp(right.earnings_date);
+        if (rt !== lt) return rt - lt;
+        return right.score - left.score;
+      }
     }
   });
   return sorted;
@@ -466,15 +474,18 @@ export function ScanTable({
       ? "volume_date_desc"
       : scan?.id === "ema-expansion"
         ? "expansion_date_desc"
-        : sortMode === "rs"
-          ? "rs_desc"
-          : "change_desc",
+        : scan?.id === "positive-earnings"
+          ? "earnings_date_desc"
+          : sortMode === "rs"
+            ? "rs_desc"
+            : "change_desc",
   );
   // Date-tracked scanners are meant to read newest signal first, so force
   // their date sort whenever that scanner is (re)opened.
   useEffect(() => {
     if (scan?.id === "volume") setSortBy("volume_date_desc");
     if (scan?.id === "ema-expansion") setSortBy("expansion_date_desc");
+    if (scan?.id === "positive-earnings") setSortBy("earnings_date_desc");
   }, [scan?.id]);
   const [sortMenuOpen, setSortMenuOpen] = useState(false);
   const [colsMenuOpen, setColsMenuOpen] = useState(false);
@@ -496,7 +507,9 @@ export function ScanTable({
           ? ["spark", "rs", "rvol", "vdate"]
           : scan?.id === "ema-expansion"
             ? ["spark", "rs", "rvol", "sdate"]
-            : ["spark", "rs", "rvol"],
+            : scan?.id === "positive-earnings"
+              ? ["spark", "rs", "rvol", "edate"]
+              : ["spark", "rs", "rvol"],
       ),
   );
   // Mode-specific date columns: high-volume date on the volume screener,
@@ -508,6 +521,8 @@ export function ScanTable({
       else next.delete("vdate");
       if (scan?.id === "ema-expansion") next.add("sdate");
       else next.delete("sdate");
+      if (scan?.id === "positive-earnings") next.add("edate");
+      else next.delete("edate");
       return next;
     });
   }, [scan?.id]);
@@ -872,6 +887,7 @@ export function ScanTable({
     if (visibleCols.has("rvol")) cols.push("48px");
     if (visibleCols.has("vdate")) cols.push("82px");
     if (visibleCols.has("sdate")) cols.push("82px");
+    if (visibleCols.has("edate")) cols.push("82px");
     if (visibleCols.has("gap")) cols.push("52px");
     cols.push("32px"); // Watch
     return cols.join(" ");
@@ -1060,6 +1076,12 @@ export function ScanTable({
           </span>
         ) : null}
 
+        {visibleCols.has("edate") ? (
+          <span className="st-cell-center st-vdate" title={item.earnings_date ? `Result announced on ${item.earnings_date}` : undefined}>
+            {item.earnings_date ? formatVolumeDate(item.earnings_date) : "—"}
+          </span>
+        ) : null}
+
         {visibleCols.has("gap") ? (
           <span className="st-cell-center">
             {item.gap_pct !== null && item.gap_pct !== undefined
@@ -1198,6 +1220,8 @@ export function ScanTable({
                   ? [{ value: "volume_date_desc" as SortBy, label: "High-volume date (newest first)" }, ...SORT_OPTIONS]
                   : scan?.id === "ema-expansion"
                     ? [{ value: "expansion_date_desc" as SortBy, label: "Expansion date (newest first)" }, ...SORT_OPTIONS]
+                  : scan?.id === "positive-earnings"
+                    ? [{ value: "earnings_date_desc" as SortBy, label: "Earnings date (newest first)" }, ...SORT_OPTIONS]
                   : SORT_OPTIONS
                 ).map((opt) => (
                   <button
@@ -1237,7 +1261,9 @@ export function ScanTable({
                   ? [...COLUMN_DEFS, { key: "vdate" as ColumnKey, label: "High-Vol Date" }]
                   : scan?.id === "ema-expansion"
                     ? [...COLUMN_DEFS, { key: "sdate" as ColumnKey, label: "Expansion Day" }]
-                    : COLUMN_DEFS
+                    : scan?.id === "positive-earnings"
+                      ? [...COLUMN_DEFS, { key: "edate" as ColumnKey, label: "Earnings Date" }]
+                      : COLUMN_DEFS
                 ).map((c) => {
                   const on = visibleCols.has(c.key);
                   return (
@@ -1334,6 +1360,7 @@ export function ScanTable({
           {visibleCols.has("rvol") ? <span className="st-num">RVOL</span> : null}
           {visibleCols.has("vdate") ? <span className="st-num">Vol Date</span> : null}
           {visibleCols.has("sdate") ? <span className="st-num">Day</span> : null}
+          {visibleCols.has("edate") ? <span className="st-num">Earnings</span> : null}
           {visibleCols.has("gap") ? <span className="st-num">Gap</span> : null}
           <span></span>
         </div>

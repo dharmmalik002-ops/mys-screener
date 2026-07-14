@@ -11,7 +11,7 @@ from tempfile import TemporaryDirectory
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from app.models.market import StockSnapshot
-from app.scanners.definitions import make_positive_earnings_evaluator
+from app.scanners.definitions import current_earnings_season_start, make_positive_earnings_evaluator
 from app.services.earnings_metrics import (
     _compute_one,
     load_calendar_file,
@@ -108,6 +108,30 @@ class PositiveEarningsEvaluatorTests(unittest.TestCase):
             earnings_best_pop_rvol=30.0,
         )
         self.assertIsNone(self.evaluate(snapshot))
+
+    def test_previous_season_excluded_even_within_lookback(self) -> None:
+        # A result from just before the current season start must be rejected
+        # even though it's inside the 60-day outer bound.
+        season_start = current_earnings_season_start(date.today())
+        prev_season = season_start - timedelta(days=2)
+        if (date.today() - prev_season).days > 60:
+            self.skipTest("early in a season — no prior-season date inside 60d window")
+        snapshot = _earnings_snapshot(
+            latest_earnings_date=prev_season,
+            earnings_best_pop_pct=20.0,
+            earnings_best_pop_rvol=30.0,
+        )
+        self.assertIsNone(self.evaluate(snapshot))
+
+
+class EarningsSeasonStartTests(unittest.TestCase):
+    def test_season_starts_map_to_reporting_months(self) -> None:
+        self.assertEqual(current_earnings_season_start(date(2026, 7, 14)), date(2026, 7, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 8, 30)), date(2026, 7, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 9, 30)), date(2026, 7, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 10, 3)), date(2026, 10, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 2, 5)), date(2026, 1, 1))
+        self.assertEqual(current_earnings_season_start(date(2026, 5, 20)), date(2026, 4, 1))
 
 
 class ComputeOneReactionTests(unittest.TestCase):
