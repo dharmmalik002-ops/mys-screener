@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-15T14:21:52.174001+00:00",
+  "generated_at": "2026-07-15T14:45:26.868418+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -3909,14 +3909,14 @@
     },
     "SANGHVIMOV": {
       "symbol": "SANGHVIMOV",
-      "earnings_date": "2026-05-20",
-      "close_in_range_pct": 0.4816,
-      "next_day_gap_pct": 9.205,
-      "day_rvol_50d": 0.663,
-      "return_5d_pct": 16.361,
+      "earnings_date": "2026-07-15",
+      "close_in_range_pct": 0.7706,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": null,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 9.345,
-      "best_pop_rvol": 29.491
+      "best_pop_pct": null,
+      "best_pop_rvol": null
     },
     "KDDL": {
       "symbol": "KDDL",
@@ -5152,14 +5152,14 @@
     },
     "MSPL": {
       "symbol": "MSPL",
-      "earnings_date": "2026-07-15",
-      "close_in_range_pct": 0.0964,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": null,
-      "return_5d_pct": null,
+      "earnings_date": "2026-06-01",
+      "close_in_range_pct": 0.4247,
+      "next_day_gap_pct": 0.812,
+      "day_rvol_50d": 1.886,
+      "return_5d_pct": -0.246,
       "source": "bse",
-      "best_pop_pct": null,
-      "best_pop_rvol": null
+      "best_pop_pct": 0.762,
+      "best_pop_rvol": 6.055
     },
     "RISHABH": {
       "symbol": "RISHABH",
