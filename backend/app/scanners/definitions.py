@@ -1362,6 +1362,107 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
+# ---------------------------------------------------------------------------
+# Power Base — a BIG fast move, then a multi-week hold.
+# ---------------------------------------------------------------------------
+# The user's core ask: "stocks which moved 25-30%+ in a couple of weeks and
+# then consolidated for a couple of weeks to a month". Looser than VCP (no
+# progressive-contraction sequence required), longer horizon than momentum
+# burst / bread & butter, smaller pole than a high tight flag — the leaders
+# digesting a completed markup leg without giving it back.
+POWER_BASE_MIN_MOVE_PCT = 25.0
+POWER_BASE_MAX_MOVE_SESSIONS = 15   # "a couple of weeks"
+POWER_BASE_MIN_HOLD_SESSIONS = 8    # ~2 weeks
+POWER_BASE_MAX_HOLD_SESSIONS = 30   # ~6 weeks
+POWER_BASE_MAX_GIVEBACK = 0.50      # must hold at least half the move
+POWER_BASE_MAX_BASE_DEPTH_PCT = 18.0
+POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT = 3.0
+
+
+def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+
+    closes = _mb_closes(snapshot)
+    n = len(closes)
+    if n < POWER_BASE_MAX_HOLD_SESSIONS + POWER_BASE_MAX_MOVE_SESSIONS + 5:
+        return None
+    last_close = closes[-1]
+    if last_close <= 0:
+        return None
+
+    # Trend floor (lighter than VCP's full template — a fresh leader may not
+    # have a mature stage-2 MA stack yet, but it must not be under its 50 SMA).
+    sma50 = snapshot.sma50
+    if sma50 is not None and snapshot.last_price <= sma50:
+        return None
+
+    # --- Move peak: highest close 8-30 sessions back. ---
+    search_start = n - 1 - POWER_BASE_MAX_HOLD_SESSIONS
+    search_end = n - POWER_BASE_MIN_HOLD_SESSIONS  # exclusive
+    if search_start < POWER_BASE_MAX_MOVE_SESSIONS or search_end <= search_start:
+        return None
+    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
+    peak = closes[peak_idx]
+    if peak <= 0 or max(closes[peak_idx:]) > peak * (1 + POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT / 100):
+        return None  # already broke out well past the base high — the hold is over
+
+    # --- The move into that peak: 25%+ within <=15 sessions. ---
+    launch_window = closes[peak_idx - POWER_BASE_MAX_MOVE_SESSIONS: peak_idx + 1]
+    launch = min(launch_window)
+    if launch <= 0:
+        return None
+    move_pct = (peak / launch - 1) * 100
+    if move_pct < POWER_BASE_MIN_MOVE_PCT:
+        return None
+    launch_idx = peak_idx - (len(launch_window) - 1 - launch_window.index(launch))
+    move_days = peak_idx - launch_idx
+
+    # --- The hold: keeps most of the move, doesn't get wild. ---
+    base = closes[peak_idx:]
+    base_len = len(base) - 1
+    base_low = min(base)
+    move_size = peak - launch
+    giveback = (peak - base_low) / move_size if move_size > 0 else 1.0
+    if giveback > POWER_BASE_MAX_GIVEBACK:
+        return None
+    base_depth = (peak - base_low) / peak * 100
+    if base_depth > POWER_BASE_MAX_BASE_DEPTH_PCT:
+        return None
+    dist_below_pivot = (peak - last_close) / peak * 100
+
+    # --- Volume dry-up is a score bonus here, not a gate. ---
+    avg50 = float(snapshot.avg_volume_50d or 0)
+    recent_vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    dryup = (sum(recent_vols[-5:]) / 5) / avg50 if avg50 > 0 and len(recent_vols) >= 5 else None
+
+    # --- Trade plan. ---
+    highs10 = [float(v) for v in (snapshot.recent_highs or [])[-10:] if v]
+    lows10 = [float(v) for v in (snapshot.recent_lows or [])[-10:] if v]
+    entry = max(highs10) if highs10 else peak
+    stop = min(lows10) if lows10 else None
+    risk_pct = (entry - stop) / entry * 100 if stop is not None and entry > 0 and stop < entry else None
+
+    score = (
+        78
+        + min(move_pct, 80.0) * 0.3
+        + max(0.0, POWER_BASE_MAX_BASE_DEPTH_PCT - base_depth) * 0.6
+        + max(0.0, 1.0 - giveback * 2) * 8
+        + (max(0.0, 1.0 - dryup) * 8 if dryup is not None else 0.0)
+        + (snapshot.rs_rating * 0.06 if snapshot.rs_eligible else 0.0)
+    )
+    reasons = [
+        f"+{move_pct:.0f}% in {move_days} sessions, holding {100 - giveback * 100:.0f}% of the move",
+        f"Base {base_len}d, depth {base_depth:.1f}%, {dist_below_pivot:.1f}% below pivot",
+    ]
+    if dryup is not None:
+        reasons.append(f"5D volume {dryup:.2f}x of 50D avg")
+    if risk_pct is not None:
+        reasons.append(f"Entry {entry:.2f} | Stop {stop:.2f} | Risk {risk_pct:.1f}%")
+    return round(score, 2), reasons
+
+
 def _tight_closes(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     """Minervini's "tight closes" cue: 3 closes within ~1.5% (or 5 within
     2.5%) on quiet, drying volume while holding Stage-2 MAs near the highs —
@@ -1494,6 +1595,13 @@ SCANS: list[ScanDefinition] = [
         "Setups",
         "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume while holding Stage-2 MAs within 15% of the 52W high — the pre-breakout coil.",
         _tight_closes,
+    ),
+    ScanDefinition(
+        "power-base",
+        "Power Base",
+        "Setups",
+        "25%+ move within ~3 weeks, then a 2-6 week hold that keeps at least half the move with the base no deeper than 18% — leaders digesting a completed leg, with entry/stop/risk.",
+        _power_base,
     ),
 ]
 

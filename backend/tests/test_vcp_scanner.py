@@ -204,3 +204,42 @@ class CustomFilterFixTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PowerBaseTests(unittest.TestCase):
+    @staticmethod
+    def _power_base_closes(hold_days: int = 15, hold_level: float = 145.0) -> list[float]:
+        """Flat 100, +50% burst over 10 sessions to 150, then a hold near 145."""
+        closes = [100.0] * 40
+        for i in range(10):
+            closes.append(round(100 + 50 * (i + 1) / 10, 2))
+        closes.extend([hold_level] * hold_days)
+        return closes
+
+    def test_big_move_then_hold_matches(self) -> None:
+        from app.scanners.definitions import _power_base
+        snapshot = _make_snapshot(closes=self._power_base_closes())
+        result = _power_base(snapshot)
+        self.assertIsNotNone(result)
+        _, reasons = result
+        self.assertIn("holding", reasons[0])
+
+    def test_gave_back_the_move_rejected(self) -> None:
+        from app.scanners.definitions import _power_base
+        # falls back to 118 — gave back ~64% of the 100->150 move
+        snapshot = _make_snapshot(closes=self._power_base_closes(hold_level=118.0), last_price=118.0)
+        self.assertIsNone(_power_base(snapshot))
+
+    def test_hold_too_short_rejected(self) -> None:
+        from app.scanners.definitions import _power_base
+        snapshot = _make_snapshot(closes=self._power_base_closes(hold_days=4))
+        self.assertIsNone(_power_base(snapshot))
+
+    def test_small_move_rejected(self) -> None:
+        from app.scanners.definitions import _power_base
+        closes = [100.0] * 40
+        for i in range(10):  # only +12%
+            closes.append(round(100 + 12 * (i + 1) / 10, 2))
+        closes.extend([110.0] * 15)
+        snapshot = _make_snapshot(closes=closes, last_price=110.0)
+        self.assertIsNone(_power_base(snapshot))

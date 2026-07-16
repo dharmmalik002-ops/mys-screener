@@ -75,7 +75,7 @@
 
 /* ----- Section labels ----- */
 .ss-section-label {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 6px;
   font-size: 0.7rem;
@@ -572,4 +572,63 @@
   color: var(--ss-muted);
   font-size: 0.66rem;
   line-height: 1.35;
+}
+
+/* ===== Show / hide scanner management ===== */
+.ss-manage-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 7px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--ss-text-soft);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.ss-manage-btn:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.ss-manage-btn.is-active {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.ss-manage-hint {
+  font-size: 0.72rem;
+  color: var(--ss-text-soft);
+  padding: 2px 4px 8px;
+}
+
+.ss-eye-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  color: var(--ss-text-soft);
+  flex-shrink: 0;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.ss-eye-toggle:hover {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.ss-eye-toggle.is-on {
+  color: var(--accent);
+}
+
+.ss-nav-group.is-hidden-scanner .ss-nav-item {
+  opacity: 0.45;
 }

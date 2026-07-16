@@ -3255,6 +3255,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "tight-closes") {
       return getScanResults("tight-closes", activeMarket, options);
     }
+    if (activeScanner === "power-base") {
+      return getScanResults("power-base", activeMarket, options);
+    }
     if (activeScanner === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
@@ -5101,6 +5104,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         groups={(groupsData?.groups ?? []).map((group) => ({ id: group.group_id, name: group.group_name, rank: group.rank }))}
         scanners={[
           { mode: "vcp", label: "VCP" },
+          { mode: "power-base", label: "Power Base" },
           { mode: "tight-closes", label: "3 Tight Closes" },
           { mode: "bread-butter", label: "Bread & Butter" },
           { mode: "custom-scan", label: "Custom Scanner" },
@@ -5277,6 +5281,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "high-tight-flag": activeScanner === "high-tight-flag" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "high-tight-flag" ? scanResults.total_hits : 0,
                       "vcp": activeScanner === "vcp" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "vcp" ? scanResults.total_hits : 0,
                       "tight-closes": activeScanner === "tight-closes" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "tight-closes" ? scanResults.total_hits : 0,
+                      "power-base": activeScanner === "power-base" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "power-base" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -5333,7 +5338,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                               ? "VCP"
                                                               : activeScanner === "tight-closes"
                                                                 ? "3 Tight Closes"
-                                                                : "Pull Backs";
+                                                                : activeScanner === "power-base"
+                                                                  ? "Power Base"
+                                                                  : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -5373,7 +5380,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                               ? "Minervini VCP: 30%+ run-up, 2–18 week base under 30% deep, progressively shallower pullbacks (T1 > T2 > T3), volume dry-up, within 6% of the pivot — with entry, stop, and risk %."
                                                               : activeScanner === "tight-closes"
                                                                 ? "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume near the highs — the pre-breakout coil before the expansion day."
-                                                                : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                                : activeScanner === "power-base"
+                                                                  ? "25%+ move within ~3 weeks, then a 2–6 week hold keeping at least half the move, base no deeper than 18% — leaders digesting a completed leg, with entry, stop, and risk %."
+                                                                  : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(

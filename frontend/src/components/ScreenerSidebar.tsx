@@ -10,9 +10,12 @@ import {
   Activity,
   Award,
   BarChart3,
+  Eye,
+  EyeOff,
   Flame,
   Layers,
   LineChart,
+  SlidersHorizontal,
   Sparkles,
   Trash2,
   Trophy,
@@ -49,7 +52,8 @@ export type ScreenerMode =
   | "fresh-stage2"
   | "high-tight-flag"
   | "vcp"
-  | "tight-closes";
+  | "tight-closes"
+  | "power-base";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -78,8 +82,12 @@ type SidebarItem = {
   Icon: typeof Plus;
 };
 
-const ITEMS: SidebarItem[] = [
+// Full catalog. Which of these actually SHOW in the sidebar is a user
+// preference (persisted in localStorage) — the default is the curated
+// low-volatility set below; everything else is one toggle away.
+const ALL_ITEMS: SidebarItem[] = [
   { mode: "vcp", title: "VCP", hint: "Volatility contraction pattern", Icon: Layers },
+  { mode: "power-base", title: "Power Base", hint: "25%+ move, then a 2-6 week hold", Icon: Flame },
   { mode: "tight-closes", title: "3 Tight Closes", hint: "Pre-breakout coil", Icon: Crosshair },
   { mode: "bread-butter", title: "Bread & Butter", hint: "Stage 2 impulse + 10/21 EMA rest", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
@@ -91,7 +99,44 @@ const ITEMS: SidebarItem[] = [
   { mode: "momentum-burst", title: "Momentum Burst", hint: "Bursts + EMA rest setups", Icon: Zap },
   { mode: "positive-earnings", title: "Positive Earnings", hint: "Strong post-result reaction", Icon: Award },
   { mode: "improving-rs", title: "52 Week High RS", hint: "RS 52W high", Icon: Activity },
+  { mode: "minervini-1m", title: "Minervini 1 Month", hint: "Trend template", Icon: LineChart },
+  { mode: "minervini-5m", title: "Minervini 5 Months", hint: "Mature trend template", Icon: LineChart },
+  { mode: "episodic-pivot", title: "Episodic Pivot", hint: "Day-one gap from a flat base", Icon: Sparkles },
+  { mode: "rs-line-leads", title: "RS Line Leads", hint: "RS high before the pivot", Icon: Activity },
+  { mode: "fresh-stage2", title: "Fresh Stage 2", hint: "New trend-template entrants", Icon: Flag },
+  { mode: "high-tight-flag", title: "High Tight Flag", hint: "Steep pole, shallow flag", Icon: Flag },
+  { mode: "consolidating", title: "Consolidating", hint: "Long base / multi-year high", Icon: Layers },
+  { mode: "near-pivot", title: "Near Pivot", hint: "High-RS names tightening", Icon: Crosshair },
+  { mode: "pull-backs", title: "Pull Backs", hint: "Leaders at the 10/20 EMA", Icon: LineChart },
+  { mode: "returns", title: "Returns", hint: "Scan by return range", Icon: BarChart3 },
+  { mode: "demand-zone", title: "Demand Zone", hint: "Stage 2 at strong demand lows", Icon: Layers },
 ];
+
+// The curated "what I actually trade" set — low-volatility continuation
+// setups plus the freeform builder.
+const DEFAULT_VISIBLE_MODES: ScreenerMode[] = [
+  "vcp",
+  "power-base",
+  "tight-closes",
+  "bread-butter",
+  "custom-scan",
+];
+
+const VISIBLE_SCANNERS_KEY = "sidebar-visible-scanners-v1";
+
+function loadVisibleModes(): ScreenerMode[] {
+  try {
+    const raw = window.localStorage.getItem(VISIBLE_SCANNERS_KEY);
+    if (!raw) return DEFAULT_VISIBLE_MODES;
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return DEFAULT_VISIBLE_MODES;
+    const known = new Set(ALL_ITEMS.map((item) => item.mode as string));
+    const modes = parsed.filter((m): m is ScreenerMode => typeof m === "string" && known.has(m));
+    return modes.length > 0 ? modes : DEFAULT_VISIBLE_MODES;
+  } catch {
+    return DEFAULT_VISIBLE_MODES;
+  }
+}
 
 function ScannerScorecard({ market }: { market: MarketKey }) {
   const [rows, setRows] = useState<ScannerScorecardRow[] | null>(null);
@@ -160,7 +205,28 @@ export function ScreenerSidebar({
   onLoadSavedScanner,
   onDeleteSavedScanner,
 }: ScreenerSidebarProps) {
-  const filteredItems = ITEMS;
+  const [visibleModes, setVisibleModes] = useState<ScreenerMode[]>(() => loadVisibleModes());
+  const [managing, setManaging] = useState(false);
+
+  const toggleModeVisibility = (mode: ScreenerMode) => {
+    setVisibleModes((current) => {
+      const next = current.includes(mode)
+        ? current.filter((m) => m !== mode)
+        : [...current, mode];
+      try {
+        window.localStorage.setItem(VISIBLE_SCANNERS_KEY, JSON.stringify(next));
+      } catch {
+        // storage full/blocked — the toggle still works for this session
+      }
+      return next;
+    });
+  };
+
+  // Manage mode lists everything; normal mode lists the visible set, plus the
+  // active scanner even when hidden (never strand the user's current view).
+  const filteredItems = managing
+    ? ALL_ITEMS
+    : ALL_ITEMS.filter((item) => visibleModes.includes(item.mode) || item.mode === activeMode);
 
   const handleNewScreener = () => {
     // "New Screener" defaults to opening the Custom Scanner (the only freeform builder)
@@ -170,7 +236,7 @@ export function ScreenerSidebar({
   return (
     <Panel
       title="Screener"
-      subtitle={`${ITEMS.length} scanners · ${savedScanners.length} saved`}
+      subtitle={`${visibleModes.length} of ${ALL_ITEMS.length} scanners · ${savedScanners.length} saved`}
       className="screener-sidebar-panel ss-shell"
     >
       <div className="ss-root">
@@ -185,7 +251,19 @@ export function ScreenerSidebar({
           <div className="ss-section-label ss-section-label-spaced">
             <Layers size={13} />
             <span>Scanners</span>
+            <button
+              type="button"
+              className={`ss-manage-btn${managing ? " is-active" : ""}`}
+              onClick={() => setManaging((v) => !v)}
+              title={managing ? "Done managing scanners" : "Show / hide scanners"}
+              aria-label={managing ? "Done managing scanners" : "Show or hide scanners"}
+            >
+              {managing ? <span>Done</span> : <SlidersHorizontal size={13} strokeWidth={2.2} />}
+            </button>
           </div>
+          {managing ? (
+            <div className="ss-manage-hint">Click the eye to show or hide a scanner.</div>
+          ) : null}
           {filteredItems.length === 0 ? (
             <div className="ss-empty">No scanners match.</div>
           ) : (
@@ -193,9 +271,10 @@ export function ScreenerSidebar({
               const Icon = item.Icon;
               const matchingSaved = savedScanners.filter((saved) => saved.mode === item.mode);
               const isActive = activeMode === item.mode;
+              const isVisible = visibleModes.includes(item.mode);
               const count = counts[item.mode] ?? 0;
               return (
-                <div key={item.mode} className="ss-nav-group">
+                <div key={item.mode} className={`ss-nav-group${managing && !isVisible ? " is-hidden-scanner" : ""}`}>
                   <button
                     type="button"
                     className={`ss-nav-item${isActive ? " is-active" : ""}`}
@@ -208,7 +287,30 @@ export function ScreenerSidebar({
                       <strong>{item.title}</strong>
                       <small>{item.hint}</small>
                     </span>
-                    <span className="ss-nav-count">{count}</span>
+                    {managing ? (
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className={`ss-eye-toggle${isVisible ? " is-on" : ""}`}
+                        title={isVisible ? "Hide from sidebar" : "Show in sidebar"}
+                        aria-label={isVisible ? `Hide ${item.title}` : `Show ${item.title}`}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          toggleModeVisibility(item.mode);
+                        }}
+                        onKeyDown={(event) => {
+                          if (event.key === "Enter" || event.key === " ") {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            toggleModeVisibility(item.mode);
+                          }
+                        }}
+                      >
+                        {isVisible ? <Eye size={14} strokeWidth={2.2} /> : <EyeOff size={14} strokeWidth={2.2} />}
+                      </span>
+                    ) : (
+                      <span className="ss-nav-count">{count}</span>
+                    )}
                   </button>
 
                   {matchingSaved.length > 0 ? (

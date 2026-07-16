@@ -36,6 +36,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "high-tight-flag", name: "High Tight Flag", category: "Setups", description: "Steep pole, shallow 2-15 session flag, at or under the pivot.", hit_count: 0 },
   { id: "vcp", name: "VCP", category: "Setups", description: "Progressively shallower pullbacks on drying volume, near the pivot.", hit_count: 0 },
   { id: "tight-closes", name: "3 Tight Closes", category: "Setups", description: "3 closes within 1.5% on quiet volume near the highs.", hit_count: 0 },
+  { id: "power-base", name: "Power Base", category: "Setups", description: "25%+ move in ~3 weeks, then a 2-6 week hold keeping half the move.", hit_count: 0 },
 ];
 
 export const SCANNER_BADGES: Record<string, string> = {
@@ -74,6 +75,7 @@ export const SCANNER_BADGES: Record<string, string> = {
   "high-tight-flag": "HTF",
   "vcp": "VCP",
   "tight-closes": "3TC",
+  "power-base": "PWB",
 };
 
 const order = new Map(DEFAULT_SCANNERS.map((scanner, index) => [scanner.id, index]));
