@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { BarChart3, CalendarDays, Newspaper } from "lucide-react";
 import { getEarningsSummary } from "../lib/api";
 import type { MarketKey, QuarterlyResultItem } from "../lib/api";
 
@@ -318,7 +319,7 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
       <div className="news-modal" style={{ ["--news-accent" as never]: accentColor }}>
         <div className="news-modal-header">
           <div className="news-modal-title-row">
-            <span className="news-modal-emoji">📰</span>
+            <span className="news-modal-emoji"><Newspaper size={18} strokeWidth={2.2} aria-hidden="true" /></span>
             <div>
               <div className="news-modal-title">{title}</div>
               <div className="news-modal-sub">
@@ -357,9 +358,9 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                   <header className="news-card-head">
                     <div className="news-sym">{row.symbol}</div>
                     {announceLabel ? (
-                      <div className="news-result-pill" title="Latest result announcement coverage">📅 {announceLabel}</div>
+                      <div className="news-result-pill" title="Latest result announcement coverage"><CalendarDays size={12} strokeWidth={2.2} aria-hidden="true" /> {announceLabel}</div>
                     ) : !row.loading ? (
-                      <div className="news-result-pill news-result-pill--muted">📅 No result data</div>
+                      <div className="news-result-pill news-result-pill--muted"><CalendarDays size={12} strokeWidth={2.2} aria-hidden="true" /> No result data</div>
                     ) : null}
                   </header>
 
@@ -405,7 +406,7 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                       )}
 
                       <section className="news-section">
-                        <div className="news-section-title news-section-results">📊 Latest Results Coverage</div>
+                        <div className="news-section-title news-section-results"><BarChart3 size={13} strokeWidth={2.2} aria-hidden="true" /> Latest Results Coverage</div>
                         {row.results.length === 0 ? (
                           <div className="news-card-empty">No result-related coverage in last 120 days.</div>
                         ) : (
@@ -425,7 +426,7 @@ export function NewsModal({ isOpen, onClose, title, symbols, market, accentColor
                       </section>
 
                       <section className="news-section">
-                        <div className="news-section-title news-section-general">📰 Recent News (14d)</div>
+                        <div className="news-section-title news-section-general"><Newspaper size={13} strokeWidth={2.2} aria-hidden="true" /> Recent News (14d)</div>
                         {row.general.length === 0 ? (
                           <div className="news-card-empty">No news-house coverage in last 14 days.</div>
                         ) : (

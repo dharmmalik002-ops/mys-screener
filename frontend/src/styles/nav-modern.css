@@ -90,18 +90,11 @@ body.dark .top-nav,
   background: var(--accent-strong);
 }
 
-/* Refresh close snapshot — premium purple chip */
-.top-nav .nav-controls > button[type="button"]:last-child {
-  background: var(--accent) !important;
-  color: #fff !important;
-  border: 0 !important;
-  padding: 10px 18px !important;
-  border-radius: 11px !important;
-  font-weight: 600 !important;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
+/* (removed) A stale ":last-child premium chip" rule used to live here. It was
+   written for a text "Refresh close snapshot" button; once icon buttons became
+   last-child it painted the theme toggle solid accent and its 18px !important
+   side padding crushed the 34px icon button's SVG to width 0. Style buttons by
+   class, never by position. */
 
 /* Search field — rounded pill */
 .top-nav .nav-search-row {

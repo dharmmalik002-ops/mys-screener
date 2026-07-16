@@ -203,10 +203,10 @@ export function DCFCalculator({ fundamentals, market }: Props) {
           {dcf?.mos != null && (
             <div style={{ marginTop: 4, fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "8px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.06)" }}>
               {dcf.mos >= 20
-                ? "✅ Stock appears undervalued — large margin of safety."
+                ? "Undervalued — large margin of safety."
                 : dcf.mos >= 0
-                ? "⚠️ Slight undervaluation — limited margin of safety."
-                : "❌ Stock appears overvalued based on these assumptions."}
+                ? "Slight undervaluation — limited margin of safety."
+                : "Overvalued based on these assumptions."}
             </div>
           )}
         </div>

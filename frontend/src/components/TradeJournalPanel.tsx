@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Newspaper, NotebookPen } from "lucide-react";
 import {
   getChart,
   getJournalData,
@@ -2823,7 +2824,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       {/* ── Header ── */}
       <div className="tj-header">
         <div className="tj-header-brand">
-          <span className="tj-brand-icon">📒</span>
+          <span className="tj-brand-icon"><NotebookPen size={18} strokeWidth={2.2} aria-hidden="true" /></span>
           <div>
             <div className="tj-brand-name">Trade Journal</div>
             <div className="tj-brand-sub">TradeOS VCP Journal · {trades.length} trades · {openPositions.length} open</div>
@@ -2877,7 +2878,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           disabled={openPositions.length === 0}
           title={openPositions.length === 0 ? "Add a position first" : "Open news for all open positions (full-screen)"}
         >
-          <span className="news-trigger-emoji">📰</span> News Radar
+          <Newspaper size={14} strokeWidth={2.2} aria-hidden="true" /> News Radar
         </button>
       </div>
 
@@ -3301,7 +3302,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 disabled={openPositions.length === 0}
                 title={openPositions.length === 0 ? "No open positions" : "Open full-screen news widget"}
               >
-                <span className="news-trigger-emoji">📰</span> News
+                <Newspaper size={14} strokeWidth={2.2} aria-hidden="true" /> News
               </button>
               <button className={`tj-btn primary ${syncing ? "loading" : ""}`} onClick={syncPrices} disabled={syncing}>
                 {syncing ? "Syncing…" : "⟳ Sync Prices"}

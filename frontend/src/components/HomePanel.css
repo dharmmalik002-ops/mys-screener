@@ -27,8 +27,11 @@
    Row 1 — KPI cards (left) + Market Snapshot (right)
    ========================================================= */
 .homepro-row-top {
+  /* Single column: the row's only child is the KPI grid. The old 2fr/3fr split
+     reserved a phantom right column (a removed widget) that crammed all four
+     KPI cards into 40% of the page and clipped their content. */
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
 }
 

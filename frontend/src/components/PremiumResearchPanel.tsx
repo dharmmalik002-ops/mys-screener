@@ -47,8 +47,8 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
     { key: 'guidance', label: 'Active Guidance' },
     { key: 'results', label: 'Latest Results' },
     { key: 'fundamentals', label: 'Fundamentals' },
-    { key: 'charts', label: '📊 Charts' },
-    { key: 'valuation', label: '🧮 Valuation' },
+    { key: 'charts', label: 'Charts' },
+    { key: 'valuation', label: 'Valuation' },
     { key: 'risks', label: 'Growth Risks' },
   ];
 
@@ -348,7 +348,7 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
         <div className="news-feed-split">
           <div className="news-column">
             <div className="news-section-title">
-              <span aria-hidden>📰</span> Latest Editorial News
+              Latest Editorial News
               <span className="news-section-badge">Journalism Only</span>
             </div>
             {editorial.length > 0 ? (

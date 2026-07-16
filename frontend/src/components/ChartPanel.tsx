@@ -2054,6 +2054,9 @@ export function ChartPanel({
   }, [availableTimeframes, onTimeframeChange, timeframe]);
   const formatAmountValue = (value: number | null | undefined, digits?: number) => formatCrore(value, market, digits);
   const formatPriceValue = (value: number | null | undefined, digits = 2) => formatPrice(value, market, digits);
+  // RS ratings live on a 1-99 scale; 0/null means "not rated yet" (e.g. thin
+  // history). Show an em dash instead of a fake zero.
+  const formatRsValue = (value: number | null | undefined) => (value != null && value >= 1 ? String(value) : "—");
   const formatCountValue = (value: number | null | undefined) => formatCount(value, market);
   const ownershipLabels = market === "india"
     ? {
@@ -4490,7 +4493,7 @@ export function ChartPanel({
           </div>
           <div className={`chart-summary-chip strong ${rsTrendClass}`}>
             <span>RS Rating</span>
-            <strong>{summary.rs_rating}</strong>
+            <strong>{formatRsValue(summary.rs_rating)}</strong>
           </div>
           {groupSummary ? (
             onOpenGroup ? (
@@ -4524,11 +4527,11 @@ export function ChartPanel({
           ) : null}
           <div className="chart-summary-chip">
             <span>RS 1W Ago</span>
-            <strong>{summary.rs_rating_1w_ago}</strong>
+            <strong>{formatRsValue(summary.rs_rating_1w_ago)}</strong>
           </div>
           <div className="chart-summary-chip">
             <span>RS Rating 1M Ago</span>
-            <strong>{summary.rs_rating_1m_ago}</strong>
+            <strong>{formatRsValue(summary.rs_rating_1m_ago)}</strong>
           </div>
           <div className="chart-summary-chip">
             <span>12M Return</span>

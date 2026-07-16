@@ -205,12 +205,12 @@ export function AiScreenerPanel({ market, onPickSymbol, onRequestAddToWatchlist,
                    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                      {result.parsed_request.scan_date ? (
                        <span style={{ background: 'var(--teal-soft)', border: '1px solid color-mix(in srgb, var(--teal) 40%, transparent)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--teal)', fontWeight: 700 }}>
-                         📅 Date: {String(result.parsed_request.scan_date)}
+                         Date: {String(result.parsed_request.scan_date)}
                        </span>
                      ) : null}
                      {result.parsed_request.highest_vol_lookback_days ? (
                        <span style={{ background: 'var(--orange-soft)', border: '1px solid color-mix(in srgb, var(--orange) 40%, transparent)', padding: '4px 10px', borderRadius: '6px', fontSize: '0.85rem', color: 'var(--orange)', fontWeight: 700 }}>
-                         📊 Quarterly-High Vol: last {result.parsed_request.highest_vol_lookback_days} days
+                         Quarterly-High Vol: last {result.parsed_request.highest_vol_lookback_days} days
                        </span>
                      ) : null}
                      {result.parsed_request.min_relative_volume != null ? (

@@ -2,6 +2,7 @@
  * FundamentalScores — Piotroski F-Score, Altman Z-Score, DuPont decomposition, Radar overview
  */
 import { useState } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar,
   ResponsiveContainer, Tooltip,
@@ -255,7 +256,9 @@ export function FundamentalScores({ balanceSheet, cashFlow, profitLoss, ratios, 
                 border: `1px solid ${c.pass ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.15)"}`,
                 borderRadius: 7,
               }}>
-                <span style={{ fontSize: "1rem", flexShrink: 0 }}>{c.pass ? "✅" : "❌"}</span>
+                <span style={{ flexShrink: 0, display: "inline-flex", color: c.pass ? "#22c55e" : "#ef4444" }}>
+                  {c.pass ? <CheckCircle2 size={15} strokeWidth={2.4} aria-label="Pass" /> : <XCircle size={15} strokeWidth={2.4} aria-label="Fail" />}
+                </span>
                 <div>
                   <div style={{ fontSize: "0.72rem", fontWeight: 600, color: "#fff" }}>{c.name}</div>
                   <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.45)" }}>{c.detail}</div>

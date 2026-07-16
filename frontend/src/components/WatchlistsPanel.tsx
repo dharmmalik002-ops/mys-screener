@@ -10,7 +10,7 @@ import {
   type CSSProperties,
 } from "react";
 import { createPortal } from "react-dom";
-import { LayoutGrid, Plus, Trash2 } from "lucide-react";
+import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 
 import {
   getChartGridSeries,
@@ -695,8 +695,11 @@ export function WatchlistsPanel({
     }, {});
   }
 
+  // Flexible tracks: fixed-px columns overflow (and get clipped at) the card
+  // edge when the middle panel is squeezed by the chart panel — "Rank in
+  // Group" was rendering as "RANK IN G…" with its values cut off.
   const gridTemplate =
-    "minmax(180px, 1.8fr) 86px 88px 76px 56px 88px 96px 36px";
+    "minmax(150px, 1.8fr) minmax(62px, 86px) minmax(70px, 88px) minmax(58px, 76px) minmax(42px, 56px) minmax(62px, 88px) minmax(70px, 96px) 32px";
 
   const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
     const logoUrl = getLogoUrl(item.symbol);
@@ -996,7 +999,7 @@ export function WatchlistsPanel({
                 disabled={activeWatchlist.symbols.length === 0}
                 title={activeWatchlist.symbols.length === 0 ? "Add stocks to see news" : `Open news for ${activeWatchlist.name}`}
               >
-                <span className="news-trigger-emoji">📰</span> News
+                <Newspaper size={14} strokeWidth={2.2} aria-hidden="true" /> News
               </button>
               <button type="button" className="st-btn" onClick={() => onDeleteWatchlist(activeWatchlist.id)}>
                 Delete

@@ -141,6 +141,9 @@ body {
   font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
   font-size: 14px;
   line-height: 1.6;
+  /* Tabular numerals app-wide: price/percent columns align and don't jitter
+     when values tick. Harmless for prose. */
+  font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background:
@@ -8850,6 +8853,13 @@ button {
     overflow-x: auto;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+  }
+
+  /* Pills must keep their intrinsic width and let the ROW scroll — without
+     this they flex-shrink into clipped single letters ("H…", "Sc…"). */
+  .nav-controls .nav-button,
+  .nav-controls .icon-btn {
+    flex: 0 0 auto;
   }
 
   .nav-controls::-webkit-scrollbar {

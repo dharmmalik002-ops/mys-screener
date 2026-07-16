@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, Medal } from "lucide-react";
 
 import {
   getChartGridSeries,
@@ -136,9 +136,16 @@ function getLogoUrl(symbol: string) {
 }
 
 function RankBadge({ rank }: { rank: number }) {
-  if (rank === 1) return <span className="gp-rank-badge gp-rank-gold">🥇</span>;
-  if (rank === 2) return <span className="gp-rank-badge gp-rank-silver">🥈</span>;
-  if (rank === 3) return <span className="gp-rank-badge gp-rank-bronze">🥉</span>;
+  // Top-3 get a tinted medal icon (emoji rendered differently per OS and
+  // never matched the palette); everyone else keeps the number badge.
+  if (rank <= 3) {
+    const tier = rank === 1 ? "gp-rank-gold" : rank === 2 ? "gp-rank-silver" : "gp-rank-bronze";
+    return (
+      <span className={`gp-rank-badge ${tier}`} aria-label={`Rank ${rank}`}>
+        <Medal size={16} strokeWidth={2.4} aria-hidden="true" />
+      </span>
+    );
+  }
   return <span className="gp-rank-badge gp-rank-num">{rank}</span>;
 }
 

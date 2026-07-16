@@ -378,9 +378,12 @@ export function MarketsPanel({
                   <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} />
                   <Tooltip contentStyle={{ fontSize: 12 }} />
                   <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line type="monotone" dataKey="> 21 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls />
-                  <Line type="monotone" dataKey="> 200 SMA" stroke="#089981" strokeWidth={2} dot={false} connectNulls />
+                  {/* isAnimationActive=false: the draw-in animation freezes mid-way
+                      when rAF is throttled (background tab, battery saver), leaving
+                      a stuck stroke-dasharray and an apparently empty chart. */}
+                  <Line type="monotone" dataKey="> 21 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="> 200 SMA" stroke="#089981" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

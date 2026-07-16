@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { CalendarDays } from "lucide-react";
 
 import {
   getChart,
@@ -471,22 +472,36 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
           </filter>
         </defs>
 
-        {/* regime band shading + right-edge labels */}
-        {visBands.map((b) => {
-          const yTop = y(b.top);
-          const h = Math.max(0, y(b.bot) - y(b.top));
-          const mid = yTop + h / 2;
-          const fillOpacity = XP_BAND_OPACITY[b.label] ?? 0.1;
-          return (
-            <g key={b.label}>
-              <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={fillOpacity} />
-              <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.4} />
-              <text x={padL + innerW + 8} y={mid + 3} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
-                {b.label}
-              </text>
-            </g>
-          );
-        })}
+        {/* regime band shading + right-edge labels. Label Y positions get a
+            collision pass — thin bands (e.g. Progressive Exposure over Choppy)
+            otherwise print their labels on top of each other. */}
+        {(() => {
+          const LABEL_GAP = 12;
+          const geom = visBands
+            .map((b) => {
+              const yTop = y(b.top);
+              const h = Math.max(0, y(b.bot) - y(b.top));
+              return { band: b, yTop, h, labelY: yTop + h / 2 + 3 };
+            })
+            .sort((a, b2) => a.labelY - b2.labelY);
+          for (let i = 1; i < geom.length; i += 1) {
+            if (geom[i].labelY - geom[i - 1].labelY < LABEL_GAP) {
+              geom[i].labelY = geom[i - 1].labelY + LABEL_GAP;
+            }
+          }
+          return geom.map(({ band: b, yTop, h, labelY }) => {
+            const fillOpacity = XP_BAND_OPACITY[b.label] ?? 0.1;
+            return (
+              <g key={b.label}>
+                <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={fillOpacity} />
+                <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.4} />
+                <text x={padL + innerW + 8} y={labelY} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
+                  {b.label}
+                </text>
+              </g>
+            );
+          });
+        })()}
 
         {/* area + line */}
         <path d={areaPath} fill={`url(#area-${uid})`} />
@@ -816,7 +831,7 @@ export function HomePanel({
             <div className="homepro-kpi-value" style={{ fontSize: 22 }}>{snapshotDateLabel || "—"}</div>
             <div className="homepro-kpi-sub">Last Updated</div>
             <div className="homepro-kpi-bottom">
-              <div className="homepro-kpi-icon" aria-hidden="true">📅</div>
+              <div className="homepro-kpi-icon" aria-hidden="true"><CalendarDays size={16} strokeWidth={2.2} /></div>
               <div style={{ fontSize: 13, fontWeight: 600 }}>{snapshotTimeLabel || "—"}</div>
             </div>
           </div>
