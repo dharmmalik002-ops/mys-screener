@@ -112,7 +112,10 @@ body.dark .top-nav,
   border-radius: 12px !important;
   padding: 10px 14px 10px 38px !important;
   font-size: 13px !important;
-  min-width: 260px;
+  /* Flexible width: a hard 260px floor forced the header to wrap the icon
+     buttons onto a second row on mid-size screens. */
+  width: 100%;
+  min-width: 140px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
 }
 

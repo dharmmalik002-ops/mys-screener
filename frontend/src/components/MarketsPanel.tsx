@@ -261,9 +261,21 @@ export function MarketsPanel({
   const focusRemovedRows = focusRaw.filter((f) => removed.has(f.symbol));
 
   if (state === "loading" && !data) {
+    // Skeleton mirrors the loaded layout: score badge, posture strip, chart.
     return (
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        <div className="mk-loading">Reading the tape…</div>
+        <div className="mk-skeleton" aria-label="Loading market environment" role="status">
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <div className="skeleton" style={{ width: 104, height: 76, borderRadius: 12 }} />
+            <div className="skeleton" style={{ width: 220, height: 16 }} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10, marginTop: 16 }}>
+            {Array.from({ length: 5 }, (_, i) => (
+              <div key={i} className="skeleton" style={{ height: 56 }} />
+            ))}
+          </div>
+          <div className="skeleton" style={{ height: 220, marginTop: 16 }} />
+        </div>
       </Panel>
     );
   }
@@ -404,7 +416,11 @@ export function MarketsPanel({
           ))}
         </div>
       ) : (
-        <div className="mk-ai mk-muted">AI read unavailable right now — the counted metrics below stand on their own.</div>
+        // Quiet footnote, not a boxed error: the absence of the AI read is
+        // routine (rate limits, cold start) and shouldn't look like a fault.
+        <div className="mk-footnote" style={{ marginBottom: 14 }}>
+          AI read unavailable right now — the counted metrics below stand on their own.
+        </div>
       )}
 
       {/* Today vs yesterday vs week */}

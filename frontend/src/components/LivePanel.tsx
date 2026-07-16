@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Radio } from "lucide-react";
 
 import { getLiveBaselines, type LiveBaseline } from "../lib/api";
 import { LiveFeed, type LiveFeedStatus, type LiveTick } from "../lib/liveFeed";
@@ -456,7 +457,9 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
 
       {symbols.length === 0 ? (
         <div className="live-empty">
-          Pick a watchlist above or add symbols to start tracking. Up to {MAX_SYMBOLS} symbols stream at once.
+          <div className="live-empty-icon" aria-hidden="true"><Radio size={26} strokeWidth={1.8} /></div>
+          <div className="live-empty-title">No symbols streaming</div>
+          <div>Pick a watchlist above or add symbols to start tracking. Up to {MAX_SYMBOLS} symbols stream at once.</div>
         </div>
       ) : (
         <div className="live-table-wrap">

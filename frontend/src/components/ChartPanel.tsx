@@ -4682,10 +4682,10 @@ export function ChartPanel({
         !symbol ? (
           <div className="empty-state">Pick a stock to view the chart.</div>
         ) : chartLoading && activeBars.length === 0 ? (
-          <div className="empty-state">
-            Loading {timeframe} chart…
+          <div className="chart-loading-skeleton" role="status" aria-label={`Loading ${timeframe} chart`}>
+            <div className="skeleton" style={{ height: "100%", minHeight: 320, width: "100%" }} />
             {timeframe !== "1D" && timeframe !== "1W" ? (
-              <div className="empty-state-subtitle">Intraday data can take longer on the first request.</div>
+              <div className="empty-state-subtitle" style={{ marginTop: 8 }}>Intraday data can take longer on the first request.</div>
             ) : null}
           </div>
         ) : chartError && activeBars.length === 0 ? (

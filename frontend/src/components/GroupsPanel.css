@@ -529,7 +529,7 @@ body.dark .gp-treemap-pct {
 }
 
 .gp-table tbody td {
-  padding: 14px 12px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--gp-border);
   vertical-align: middle;
 }
@@ -556,11 +556,11 @@ body.dark .gp-treemap-pct {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
   font-weight: 800;
-  font-size: 14px;
+  font-size: 12.5px;
 }
 
 .gp-rank-gold {
@@ -702,25 +702,27 @@ body.dark .gp-score-chip {
   width: 110px;
 }
 
-/* top 3 stocks */
+/* top 3 stocks — laid out HORIZONTALLY. Stacking them vertically made every
+   group row ~200px tall (4 groups per screen on a 91-group rankings list). */
 .gp-cell-stocks {
   min-width: 260px;
 }
 
 .gp-top3 {
   display: flex;
-  flex-direction: column;
-  gap: 5px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .gp-stock-chip {
   all: unset;
   display: grid;
-  grid-template-columns: 22px 1fr auto;
+  grid-template-columns: 18px auto auto;
   align-items: center;
-  gap: 8px;
-  padding: 5px 8px;
-  border-radius: 10px;
+  gap: 6px;
+  padding: 3px 8px;
+  border-radius: var(--radius-md);
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
   cursor: pointer;
@@ -738,8 +740,8 @@ body.dark .gp-score-chip {
 }
 
 .gp-stock-logo {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   object-fit: contain;
   background: #fff;
@@ -747,20 +749,22 @@ body.dark .gp-score-chip {
 }
 
 .gp-stock-avatar {
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #fff;
-  font-size: 9.5px;
+  font-size: 8.5px;
   font-weight: 700;
 }
 
 .gp-stock-text {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 5px;
   min-width: 0;
 }
 
@@ -777,15 +781,15 @@ body.dark .gp-score-chip {
 }
 
 .gp-rs-circle {
-  /* Bumped from 26×26 / 10.5px text → 32×32 / 13px text + outline so the
-     RS rating is legible at a glance inside each group's stock list. */
-  min-width: 32px;
-  height: 32px;
-  padding: 0 6px;
-  border-radius: var(--radius-xl);
+  /* Compact pill sized for the horizontal chip row; still color-coded and
+     bold enough to read at a glance. */
+  min-width: 24px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   letter-spacing: 0.02em;
   color: #fff;
@@ -804,8 +808,8 @@ body.dark .gp-score-chip {
 }
 
 .gp-lead-price {
-  margin-top: 8px;
-  font-size: 11px;
+  margin-top: 4px;
+  font-size: 10.5px;
   color: var(--gp-muted);
 }
 

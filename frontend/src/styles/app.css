@@ -84,7 +84,9 @@
   --line-strong: rgba(71, 85, 105, 0.22);
   --text: #0f172a;
   --text-soft: #475569;
-  --text-muted: #94a3b8;
+  /* #94a3b8 on #f1f5f9 was ~2.1:1 — labels washed out. Slate-500 keeps the
+     muted feel at readable contrast. */
+  --text-muted: #64748b;
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
   --accent-2: #10b981;
@@ -188,6 +190,158 @@ button {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* ===== Native form controls, tokenized =====
+   Default OS sliders/checkboxes inside glass cards were the loudest
+   "unstyled" tell (e.g. the XP chart zoom slider). Components with their own
+   dedicated slider styles override these by specificity. */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 75%, transparent);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid color-mix(in srgb, var(--bg) 85%, transparent);
+  box-shadow: 0 1px 4px rgba(2, 5, 15, 0.35);
+  transition: transform var(--transition-fast);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type="range"]::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line-strong) 75%, transparent);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid color-mix(in srgb, var(--bg) 85%, transparent);
+  box-shadow: 0 1px 4px rgba(2, 5, 15, 0.35);
+}
+
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface-soft);
+  display: inline-grid;
+  place-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+input[type="checkbox"]::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  transform: scale(0);
+  transition: transform var(--transition-fast);
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  background: #fff;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+input[type="checkbox"]:checked::before {
+  transform: scale(1);
+}
+
+input[type="checkbox"]:focus-visible,
+input[type="range"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  outline-offset: 2px;
+}
+
+select,
+input[type="radio"],
+progress {
+  accent-color: var(--accent);
+}
+
+/* ===== Skeleton shimmer =====
+   Loading placeholders shaped like the incoming layout — content should
+   never pop in from a bare sentence in gray. */
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
+  border: 1px solid var(--line);
+  min-height: 14px;
+}
+
+.skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--text) 7%, transparent), transparent);
+  animation: skeleton-sweep 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(100%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton::after {
+    animation: none;
+  }
+}
+
+/* ===== Micro-interactions =====
+   One light touch, applied consistently: cards lift a hair on hover, buttons
+   give a press response. Nothing bounces, nothing jumps. */
+.homepro-kpi,
+.mk-card {
+  transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.homepro-kpi:hover,
+.mk-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--line-strong);
+  box-shadow: var(--elevation);
+}
+
+button:not(:disabled):active {
+  transform: translateY(0.5px) scale(0.99);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* Animations */
@@ -413,9 +567,26 @@ button {
 
 .nav-controls {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   gap: 14px;
-  flex-wrap: wrap;
+  /* One-row header: the search field flexes instead of the row wrapping the
+     refresh/theme buttons onto an orphaned second line. Small screens get
+     horizontal scroll from the responsive block below. */
+  flex-wrap: nowrap;
+  min-width: 0;
+  flex: 1;
+}
+
+.nav-controls form {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+
+/* Pills and icon buttons keep their intrinsic size; only the search flexes. */
+.nav-controls > button,
+.nav-controls .status-pill {
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .nav-mode-toggle {
