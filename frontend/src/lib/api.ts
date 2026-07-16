@@ -658,6 +658,8 @@ export type CustomScanRequest = {
   max_gap_pct: number | null;
   min_day_range_pct: number | null;
   max_day_range_pct: number | null;
+  min_adr_pct_20: number | null;
+  max_adr_pct_20: number | null;
   min_three_month_rs: number | null;
   near_high_period: NearHighPeriod | null;
   near_high_max_distance_pct: number | null;
@@ -1012,6 +1014,11 @@ const REQUEST_TIMEOUT_MS = (() => {
 const RETRY_BACKOFF_MS = 400;
 const SAME_BASE_RETRY_ATTEMPTS = 2;
 const SAME_BASE_RETRY_BACKOFF_MS = 1500;
+// A timeout on the first hit is almost always an HF Space cold-start that
+// finishes waking during the attempt. Retry once on the same base before
+// surfacing stale cached data — but cap it so a genuinely dead backend
+// can't stack multiple full-length timeouts.
+const MAX_TIMEOUT_RETRIES = 1;
 function defaultApiBases() {
   const isBrowser = typeof window !== "undefined";
   const hostname = isBrowser ? window.location.hostname.toLowerCase() : "";
@@ -2036,6 +2043,7 @@ async function request<T>(
 
   for (let i = 0; i < bases.length; i += 1) {
     const base = bases[i];
+    let timeoutRetries = 0;
     // Retry on the same base for transient browser-level fetch failures
     // (TypeError "Failed to fetch") — usually a Vercel/HF cold-start blip
     // that clears within a couple of seconds. Hopping bases too eagerly
@@ -2075,6 +2083,15 @@ async function request<T>(
       } catch (error) {
         if (error instanceof DOMException && error.name === "AbortError") {
           lastError = new Error(`Request timed out after ${Math.round(timeoutMs / 1000)}s`);
+          // The first timeout is almost always an HF Space cold-start that
+          // just finished waking. Retry once on the same base — it now
+          // typically returns in 1-3s — instead of immediately falling back
+          // to a stale cached snapshot.
+          if (attempt < SAME_BASE_RETRY_ATTEMPTS && timeoutRetries < MAX_TIMEOUT_RETRIES) {
+            timeoutRetries += 1;
+            await new Promise((resolve) => setTimeout(resolve, SAME_BASE_RETRY_BACKOFF_MS));
+            continue;
+          }
           break;
         } else if (error instanceof TypeError) {
           lastError = new Error("Backend is waking up, please wait...");

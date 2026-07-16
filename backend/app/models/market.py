@@ -1017,6 +1017,12 @@ class CustomScanRequest(BaseModel):
     max_gap_pct: float | None = None
     min_day_range_pct: float | None = None
     max_day_range_pct: float | None = None
+    # 20-day Average Daily Range % — the stock's own volatility signature.
+    # max_ filters OUT violent names (low-volatility / VCP style); min_ keeps
+    # only movers (Qullamaggie style). Stocks with no computed ADR are excluded
+    # whenever either bound is set.
+    min_adr_pct_20: float | None = None
+    max_adr_pct_20: float | None = None
     min_three_month_rs: float | None = None
     near_high_period: NearHighPeriod | None = None
     near_high_max_distance_pct: float | None = None
@@ -1036,6 +1042,14 @@ class CustomScanRequest(BaseModel):
     # Drop low circuit-band names (2% / 5% daily price band) from the results —
     # they gap straight to the limit and can't be traded as breakouts.
     hide_low_band: bool = False
+    # Guru / setup toggles. These were always read by _passes_custom_filters
+    # via the serialized payload, but were never DECLARED here — pydantic v2
+    # silently drops unknown keys, so the whole block was unreachable until now.
+    minervini_trend_template: bool = False
+    kullamagi_setup: bool = False
+    shakeout_21ema: bool = False
+    shakeout_50ema: bool = False
+    max_consolidation_range_pct: float | None = Field(default=None, ge=0.1, le=50.0)
     pattern: CustomScanPattern = "any"
     sort_by: CustomSortBy = "pattern"
     sort_order: SortOrder = "desc"

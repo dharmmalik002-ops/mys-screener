@@ -23,7 +23,10 @@ CONSOLIDATING_BREAKOUT_LABEL = "Near Multi-Year Breakout"
 CONSOLIDATING_TIGHTNESS_WINDOW_DAYS = 15
 CONSOLIDATING_MAX_TIGHTNESS_RANGE_PCT = 9.0
 CONSOLIDATING_BASELINE_CLOSE_TO_52W_HIGH_RATIO = 0.60
-CONSOLIDATING_BASE_LOW_TO_52W_HIGH_RATIO = 0.60
+# 0.70 = base no deeper than 30% below the 52W high. The old 0.60 admitted
+# 40%-deep bases — structurally damaged and failure-prone per VCP guidance.
+# (Deeper bases can still qualify via the 0.90 recovery path below.)
+CONSOLIDATING_BASE_LOW_TO_52W_HIGH_RATIO = 0.70
 CONSOLIDATING_DEEP_BASE_RECOVERY_RATIO = 0.90
 CONSOLIDATING_BREAKOUT_PROXIMITY_RATIO = 0.92
 CONSOLIDATING_MIN_BREAKOUT_VOLUME = 100_000
@@ -828,6 +831,19 @@ def _contraction(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if snapshot.last_price > (1.25 * sma50):
         return None
 
+    # Tightness must hold for the RANGE too, not just close-to-close change —
+    # a stock that whips 6% intraday and closes flat is not contracting.
+    if snapshot.atr14 > 0 and snapshot.day_high > snapshot.day_low > 0:
+        if (snapshot.day_high - snapshot.day_low) > 1.6 * snapshot.atr14:
+            return None
+
+    # Volume dry-up: supply must be going quiet in the tight zone (the most
+    # diagnostic contraction tell). Only enforced when recent volumes exist.
+    contraction_vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    if len(contraction_vols) >= 3 and avg_volume_50d > 0:
+        if (sum(contraction_vols[-3:]) / 3) > 0.9 * avg_volume_50d:
+            return None
+
     trigger_returns = {
         "5D +10%": _return_since_n_days_ago(snapshot, 5),
         "10D +20%": _return_since_n_days_ago(snapshot, 10),
@@ -1112,6 +1128,289 @@ def _high_tight_flag(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     return round(score, 2), reasons
 
 
+# ---------------------------------------------------------------------------
+# VCP — Volatility Contraction Pattern (Minervini)
+# ---------------------------------------------------------------------------
+# Detects the full pattern, not just one tight window: a prior 30%+ run-up, a
+# 2-18 week base no deeper than 30%, a sequence of PROGRESSIVELY SHALLOWER
+# pullbacks (T1 > T2 > T3), volume drying up into the final contraction, and
+# price resolving within a few percent of the pivot. Built from the snapshot's
+# ~240-bar close series (chart_grid_points) + volume_history, with the last 20
+# sessions of true highs/lows used for the entry/stop plan.
+
+VCP_MIN_BASE_SESSIONS = 12
+VCP_MAX_BASE_SESSIONS = 90
+VCP_MAX_BASE_DEPTH_PCT = 30.0
+VCP_MIN_BASE_DEPTH_PCT = 3.0
+VCP_MIN_PRIOR_RUN_UP_PCT = 30.0
+VCP_MIN_CONTRACTIONS = 2
+VCP_MAX_FINAL_CONTRACTION_PCT = 10.0
+# Progression is judged against the DEEPEST contraction rather than pairwise —
+# real zigzag sequences carry noise blips (a small pre-shakeout leg before T1)
+# that strict monotonic decay would reject even on textbook bases.
+VCP_MAX_FINAL_VS_DEEPEST = 0.50       # final leg at most half the widest swing
+VCP_MAX_PRE_FINAL_VS_DEEPEST = 0.75   # the leg before it also well contracted
+VCP_MAX_TERMINAL_REEXPANSION = 1.15   # final leg must not flare vs the prior leg
+VCP_MAX_DIST_BELOW_PIVOT_PCT = 6.0
+VCP_MAX_PIVOT_OVERSHOOT_PCT = 1.5
+# 5D avg volume vs 50D avg. Quiet-but-real bases sit around 0.85-0.95x; the
+# score still rewards deeper dry-up, this is just the disqualification line.
+VCP_MAX_DRYUP_RATIO = 0.95
+VCP_MAX_RISK_PCT = 8.0
+
+
+def _vcp_swings(closes: list[float], threshold_pct: float) -> list[tuple[int, float, str]]:
+    """Alternating swing points (index, price, 'H'|'L') via a simple zigzag.
+
+    A swing confirms once price reverses >= threshold_pct from the tracked
+    extreme. Close-only by design — the base structure lives in closes.
+    """
+    if len(closes) < 3:
+        return []
+    swings: list[tuple[int, float, str]] = []
+    direction = 0  # >= 0: tracking a high, -1: tracking a low
+    ext_idx, ext = 0, closes[0]
+    for i in range(1, len(closes)):
+        c = closes[i]
+        if direction >= 0:
+            if c > ext:
+                ext_idx, ext = i, c
+            elif ext > 0 and (ext - c) / ext * 100 >= threshold_pct:
+                swings.append((ext_idx, ext, "H"))
+                direction = -1
+                ext_idx, ext = i, c
+        else:
+            if c < ext:
+                ext_idx, ext = i, c
+            elif ext > 0 and (c - ext) / ext * 100 >= threshold_pct:
+                swings.append((ext_idx, ext, "L"))
+                direction = 1
+                ext_idx, ext = i, c
+    return swings
+
+
+def _vcp_contractions(base_closes: list[float], threshold_pct: float) -> list[float]:
+    """Depths (%) of successive H->L pullbacks across the base, in order.
+
+    The final contraction is usually TIGHTER than the zigzag threshold (that
+    is the whole point of a VCP), so the live trailing leg is measured
+    explicitly from the highest close after the last confirmed swing.
+    """
+    swings = _vcp_swings(base_closes, threshold_pct)
+    depths: list[float] = []
+    pending_high: tuple[int, float] | None = (0, base_closes[0])  # base starts at its peak
+    for idx, price, kind in swings:
+        if kind == "H":
+            pending_high = (idx, price)
+        elif kind == "L" and pending_high is not None:
+            high_price = pending_high[1]
+            if high_price > 0:
+                depths.append((high_price - price) / high_price * 100)
+            pending_high = None
+
+    if pending_high is not None:
+        # Ended mid-decline from a confirmed (or initial) high.
+        idx, price = pending_high
+        tail_low = min(base_closes[idx:])
+        if price > 0 and tail_low < price:
+            depths.append((price - tail_low) / price * 100)
+    elif swings and swings[-1][2] == "L":
+        # Rose off the last confirmed low into a sub-threshold dip — the
+        # tight final contraction the zigzag can't see.
+        li = swings[-1][0]
+        tail = base_closes[li:]
+        hi_rel = max(range(len(tail)), key=lambda j: tail[j])
+        tail_high = tail[hi_rel]
+        low_after = min(tail[hi_rel:])
+        if tail_high > 0 and (tail_high - low_after) / tail_high * 100 >= 0.5:
+            depths.append((tail_high - low_after) / tail_high * 100)
+    return [d for d in depths if d >= 0.5]
+
+
+def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    # --- Liquidity / price floors + Stage-2 trend template. ---
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+    sma50 = snapshot.sma50
+    sma150 = snapshot.sma150
+    sma200 = snapshot.sma200
+    if sma50 is None or sma200 is None:
+        return None
+    if snapshot.last_price <= sma50 or snapshot.last_price <= sma200 or sma50 <= sma200:
+        return None
+    if sma150 is not None and (snapshot.last_price <= sma150 or sma150 <= sma200):
+        return None
+    if snapshot.sma200_1m_ago is not None and snapshot.sma200_1m_ago > 0 and sma200 < snapshot.sma200_1m_ago:
+        return None
+    if snapshot.pct_from_52w_high > 25 or snapshot.pct_from_52w_low < 30:
+        return None
+
+    closes = _mb_closes(snapshot)
+    if len(closes) < 60:
+        return None
+    last_close = closes[-1]
+    if last_close <= 0:
+        return None
+
+    # --- Base: highest close of the recent window down to today. The search
+    # EXCLUDES the last VCP_MIN_BASE_SESSIONS bars so a marginal new high poked
+    # during the final tight zone (a routine pivot retest) doesn't reset the
+    # base to a few days; genuinely extended names are rejected by the
+    # pivot-overshoot bound below instead. ---
+    search_end = len(closes) - VCP_MIN_BASE_SESSIONS
+    search_start = max(0, len(closes) - (VCP_MAX_BASE_SESSIONS + 1))
+    if search_end <= search_start:
+        return None
+    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
+    peak = closes[peak_idx]
+    if peak <= 0:
+        return None
+    base = closes[peak_idx:]
+    base_len = len(base) - 1
+    if base_len < VCP_MIN_BASE_SESSIONS:
+        return None
+    base_depth = (peak - min(base)) / peak * 100
+    if base_depth > VCP_MAX_BASE_DEPTH_PCT or base_depth < VCP_MIN_BASE_DEPTH_PCT:
+        return None
+    dist_below_pivot = (peak - last_close) / peak * 100
+    if dist_below_pivot > VCP_MAX_DIST_BELOW_PIVOT_PCT or dist_below_pivot < -VCP_MAX_PIVOT_OVERSHOOT_PCT:
+        return None
+
+    # --- Prior run-up into the base (the pattern needs something to digest). ---
+    pre_base = closes[max(0, peak_idx - 63): peak_idx + 1]
+    launch = min(pre_base)
+    if launch <= 0 or (peak / launch - 1) * 100 < VCP_MIN_PRIOR_RUN_UP_PCT:
+        return None
+
+    # --- Progressive contraction sequence. ---
+    adr = snapshot.adr_pct_20 or 0.0
+    threshold = max(3.0, min(6.0, adr * 1.5)) if adr > 0 else 4.0
+    depths = _vcp_contractions(base, threshold)
+    if len(depths) < VCP_MIN_CONTRACTIONS:
+        return None
+    final = depths[-1]
+    deepest = max(depths)
+    deepest_idx = depths.index(deepest)
+    # Supply must be absorbed EARLY: the widest swing sits in the first half
+    # of the sequence, everything after it contracts toward the pivot.
+    if deepest_idx > (len(depths) - 1) / 2:
+        return None
+    if final > VCP_MAX_FINAL_CONTRACTION_PCT or final > deepest * VCP_MAX_FINAL_VS_DEEPEST:
+        return None
+    if len(depths) >= 2:
+        pre_final = depths[-2]
+        if deepest_idx != len(depths) - 2 and pre_final > deepest * VCP_MAX_PRE_FINAL_VS_DEEPEST:
+            return None
+        if final > pre_final * VCP_MAX_TERMINAL_REEXPANSION:
+            return None
+
+    # --- Volume: dry-up now, declining across the base. ---
+    avg50 = float(snapshot.avg_volume_50d or 0)
+    recent_vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    if avg50 <= 0 or len(recent_vols) < 5:
+        return None
+    dryup = (sum(recent_vols[-5:]) / 5) / avg50
+    if dryup > VCP_MAX_DRYUP_RATIO:
+        return None
+    vol_hist = [int(v) for v in (snapshot.volume_history or []) if v is not None]
+    if len(vol_hist) >= base_len + 1 and base_len + 1 >= 8:
+        base_vols = vol_hist[-(base_len + 1):]
+        half = len(base_vols) // 2
+        first_half_avg = sum(base_vols[:half]) / half
+        second_half_avg = sum(base_vols[half:]) / (len(base_vols) - half)
+        if first_half_avg > 0 and second_half_avg > first_half_avg:
+            return None
+
+    # --- The last week itself must be tight (true ranges, not just closes). ---
+    highs5 = [float(v) for v in (snapshot.recent_highs or [])[-5:] if v]
+    lows5 = [float(v) for v in (snapshot.recent_lows or [])[-5:] if v]
+    if len(highs5) >= 5 and len(lows5) >= 5 and min(lows5) > 0:
+        range5 = (max(highs5) - min(lows5)) / last_close * 100
+        if range5 > max(6.0, final * 1.6):
+            return None
+
+    # --- Trade plan: pivot = practical 10D supply line, stop = final
+    # contraction low (the last ~5 sessions; the 10D window can reach back
+    # into the previous, deeper leg and overstate the risk). ---
+    highs10 = [float(v) for v in (snapshot.recent_highs or [])[-10:] if v]
+    stop_lows = lows5 if len(lows5) >= 5 else [float(v) for v in (snapshot.recent_lows or [])[-10:] if v]
+    entry = max(highs10) if highs10 else peak
+    stop = min(stop_lows) if stop_lows else None
+    risk_pct: float | None = None
+    if stop is not None and entry > 0 and stop < entry:
+        risk_pct = (entry - stop) / entry * 100
+        if risk_pct > VCP_MAX_RISK_PCT:
+            return None
+
+    score = (
+        84
+        + (len(depths) - VCP_MIN_CONTRACTIONS) * 3
+        + max(0.0, VCP_MAX_FINAL_CONTRACTION_PCT - final) * 0.8
+        + max(0.0, VCP_MAX_DRYUP_RATIO - dryup) * 12
+        + max(0.0, VCP_MAX_BASE_DEPTH_PCT - base_depth) * 0.15
+        + (snapshot.rs_rating * 0.08 if snapshot.rs_eligible else 0.0)
+    )
+    sequence = " → ".join(f"{d:.1f}%" for d in depths[-4:])
+    reasons = [
+        f"{len(depths)} contractions: {sequence}",
+        f"Base {base_len}d, depth {base_depth:.1f}%, {dist_below_pivot:.1f}% below pivot",
+        f"5D volume {dryup:.2f}x of 50D avg" + (" — drying up" if dryup < 0.8 else " — quiet"),
+    ]
+    if risk_pct is not None:
+        reasons.append(f"Entry {entry:.2f} | Stop {stop:.2f} | Risk {risk_pct:.1f}%")
+    return round(score, 2), reasons
+
+
+def _tight_closes(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    """Minervini's "tight closes" cue: 3 closes within ~1.5% (or 5 within
+    2.5%) on quiet, drying volume while holding Stage-2 MAs near the highs —
+    the pre-breakout coil, surfaced before the expansion day."""
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+    sma50 = snapshot.sma50
+    if sma50 is None or snapshot.last_price <= sma50:
+        return None
+    if snapshot.sma200 is not None and (sma50 <= snapshot.sma200 or snapshot.last_price <= snapshot.sma200):
+        return None
+    if snapshot.pct_from_52w_high > 15:
+        return None
+    closes = [float(v) for v in (snapshot.recent_closes or []) if v is not None]
+    if len(closes) < 5 or closes[-1] <= 0:
+        return None
+    last = closes[-1]
+    band3 = (max(closes[-3:]) - min(closes[-3:])) / last * 100
+    band5 = (max(closes[-5:]) - min(closes[-5:])) / last * 100
+    if band3 > 1.5 and band5 > 2.5:
+        return None
+    if snapshot.relative_volume > 1.3:
+        return None
+    dryup: float | None = None
+    avg50 = float(snapshot.avg_volume_50d or 0)
+    vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    if avg50 > 0 and len(vols) >= 3:
+        dryup = (sum(vols[-3:]) / 3) / avg50
+        if dryup > 1.0:
+            return None
+    tight_label = (
+        f"3 closes within {band3:.2f}%" if band3 <= 1.5 else f"5 closes within {band5:.2f}%"
+    )
+    score = (
+        78
+        + max(0.0, 1.5 - band3) * 8
+        + max(0.0, 15 - snapshot.pct_from_52w_high) * 0.4
+        + (max(0.0, 1.0 - dryup) * 8 if dryup is not None else 0.0)
+    )
+    reasons = [
+        tight_label,
+        f"{snapshot.pct_from_52w_high:.1f}% below 52W high, above 50 SMA",
+    ]
+    if dryup is not None:
+        reasons.append(f"3D volume {dryup:.2f}x of 50D avg")
+    return round(score, 2), reasons
+
+
 SCANS: list[ScanDefinition] = [
     ScanDefinition("day-high", "Day High", "Core", "Stocks trading at session highs.", _day_high),
     ScanDefinition("day-low", "Day Low", "Core", "Stocks trading at session lows.", _day_low),
@@ -1181,6 +1480,20 @@ SCANS: list[ScanDefinition] = [
         "Setups",
         "60%+ pole in ~8 weeks, then a 2-15 session flag no deeper than 25%, listed while still at or under the pivot — volume dry-up flagged.",
         _high_tight_flag,
+    ),
+    ScanDefinition(
+        "vcp",
+        "VCP",
+        "Setups",
+        "Minervini Volatility Contraction Pattern: 30%+ prior run-up, 2-18 week base under 30% deep, progressively shallower pullbacks (T1 > T2 > T3), volume dry-up into a tight final leg, within 6% of the pivot — entry/stop/risk included.",
+        _vcp,
+    ),
+    ScanDefinition(
+        "tight-closes",
+        "3 Tight Closes",
+        "Setups",
+        "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume while holding Stage-2 MAs within 15% of the 52W high — the pre-breakout coil.",
+        _tight_closes,
     ),
 ]
 
@@ -1376,6 +1689,16 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
         return False
     if request.max_day_range_pct is not None and snapshot.day_range_pct > request.max_day_range_pct:
         return False
+    min_adr_pct_20 = _request_filter_value(request, "min_adr_pct_20")
+    max_adr_pct_20 = _request_filter_value(request, "max_adr_pct_20")
+    if min_adr_pct_20 is not None or max_adr_pct_20 is not None:
+        adr = snapshot.adr_pct_20
+        if adr is None or adr <= 0:
+            return False
+        if min_adr_pct_20 is not None and adr < min_adr_pct_20:
+            return False
+        if max_adr_pct_20 is not None and adr > max_adr_pct_20:
+            return False
     if request.min_three_month_rs is not None and snapshot.three_month_rs < request.min_three_month_rs:
         return False
     if request.near_high_period is not None:
@@ -1466,7 +1789,9 @@ def _passes_custom_filters(snapshot: StockSnapshot, request: CustomScanRequest) 
     if _request_filter_value(request, "kullamagi_setup", False):
         if snapshot.ema20 is None or snapshot.last_price < snapshot.ema20: return False
         if snapshot.stock_return_60d < 20: return False
-        if snapshot.trend_strength < 4: return False
+        # trend_strength is 0-1 scaled (see FreeProvider._trend_strength); the
+        # old `< 4` comparison was always true, so this filter matched nothing.
+        if snapshot.trend_strength < 0.65: return False
             
     if _request_filter_value(request, "shakeout_21ema", False):
         if snapshot.ema20 is None: return False

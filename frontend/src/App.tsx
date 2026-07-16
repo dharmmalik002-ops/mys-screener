@@ -479,6 +479,8 @@ const DEFAULT_CUSTOM_FILTERS: CustomScanRequest = {
   max_gap_pct: null,
   min_day_range_pct: null,
   max_day_range_pct: null,
+  min_adr_pct_20: null,
+  max_adr_pct_20: null,
   min_three_month_rs: null,
   near_high_period: null,
   near_high_max_distance_pct: null,
@@ -3247,6 +3249,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     if (activeScanner === "high-tight-flag") {
       return getScanResults("high-tight-flag", activeMarket, options);
     }
+    if (activeScanner === "vcp") {
+      return getScanResults("vcp", activeMarket, options);
+    }
+    if (activeScanner === "tight-closes") {
+      return getScanResults("tight-closes", activeMarket, options);
+    }
     if (activeScanner === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
@@ -5092,6 +5100,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         symbols={universeCatalog.map((item) => ({ symbol: item.symbol, name: item.name }))}
         groups={(groupsData?.groups ?? []).map((group) => ({ id: group.group_id, name: group.group_name, rank: group.rank }))}
         scanners={[
+          { mode: "vcp", label: "VCP" },
+          { mode: "tight-closes", label: "3 Tight Closes" },
           { mode: "bread-butter", label: "Bread & Butter" },
           { mode: "custom-scan", label: "Custom Scanner" },
           { mode: "volume", label: "Volume" },
@@ -5265,6 +5275,8 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       "rs-line-leads": activeScanner === "rs-line-leads" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "rs-line-leads" ? scanResults.total_hits : 0,
                       "fresh-stage2": activeScanner === "fresh-stage2" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "fresh-stage2" ? scanResults.total_hits : 0,
                       "high-tight-flag": activeScanner === "high-tight-flag" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "high-tight-flag" ? scanResults.total_hits : 0,
+                      "vcp": activeScanner === "vcp" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "vcp" ? scanResults.total_hits : 0,
+                      "tight-closes": activeScanner === "tight-closes" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "tight-closes" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -5317,7 +5329,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                           ? "Fresh Stage 2"
                                                           : activeScanner === "high-tight-flag"
                                                             ? "High Tight Flag"
-                                                            : "Pull Backs";
+                                                            : activeScanner === "vcp"
+                                                              ? "VCP"
+                                                              : activeScanner === "tight-closes"
+                                                                ? "3 Tight Closes"
+                                                                : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
@@ -5353,7 +5369,11 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                           ? "New entrants to the Minervini 5M trend template vs recent sessions — the delta list, not the standing leaders."
                                                           : activeScanner === "high-tight-flag"
                                                             ? "60%+ pole in ~8 weeks, then a 2–15 session flag no deeper than 25%, listed while still at or under the pivot."
-                                                            : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                            : activeScanner === "vcp"
+                                                              ? "Minervini VCP: 30%+ run-up, 2–18 week base under 30% deep, progressively shallower pullbacks (T1 > T2 > T3), volume dry-up, within 6% of the pivot — with entry, stop, and risk %."
+                                                              : activeScanner === "tight-closes"
+                                                                ? "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume near the highs — the pre-breakout coil before the expansion day."
+                                                                : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(

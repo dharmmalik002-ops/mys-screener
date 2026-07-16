@@ -47,7 +47,9 @@ export type ScreenerMode =
   | "episodic-pivot"
   | "rs-line-leads"
   | "fresh-stage2"
-  | "high-tight-flag";
+  | "high-tight-flag"
+  | "vcp"
+  | "tight-closes";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -77,6 +79,8 @@ type SidebarItem = {
 };
 
 const ITEMS: SidebarItem[] = [
+  { mode: "vcp", title: "VCP", hint: "Volatility contraction pattern", Icon: Layers },
+  { mode: "tight-closes", title: "3 Tight Closes", hint: "Pre-breakout coil", Icon: Crosshair },
   { mode: "bread-butter", title: "Bread & Butter", hint: "Stage 2 impulse + 10/21 EMA rest", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
   { mode: "volume", title: "Volume", hint: "Recent volume-high pushes", Icon: BarChart3 },

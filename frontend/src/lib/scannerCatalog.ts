@@ -34,6 +34,8 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "rs-line-leads", name: "RS Line Leads", category: "Setups", description: "RS at a fresh high while price is still below the pivot zone.", hit_count: 0 },
   { id: "fresh-stage2", name: "Fresh Stage 2", category: "Setups", description: "New entrants to the Minervini 5M trend template vs recent sessions.", hit_count: 0 },
   { id: "high-tight-flag", name: "High Tight Flag", category: "Setups", description: "Steep pole, shallow 2-15 session flag, at or under the pivot.", hit_count: 0 },
+  { id: "vcp", name: "VCP", category: "Setups", description: "Progressively shallower pullbacks on drying volume, near the pivot.", hit_count: 0 },
+  { id: "tight-closes", name: "3 Tight Closes", category: "Setups", description: "3 closes within 1.5% on quiet volume near the highs.", hit_count: 0 },
 ];
 
 export const SCANNER_BADGES: Record<string, string> = {
@@ -70,6 +72,8 @@ export const SCANNER_BADGES: Record<string, string> = {
   "rs-line-leads": "RSL",
   "fresh-stage2": "S2+",
   "high-tight-flag": "HTF",
+  "vcp": "VCP",
+  "tight-closes": "3TC",
 };
 
 const order = new Map(DEFAULT_SCANNERS.map((scanner, index) => [scanner.id, index]));

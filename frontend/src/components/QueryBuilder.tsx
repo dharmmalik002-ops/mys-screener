@@ -51,6 +51,8 @@ const FIELD_LABELS: Partial<Record<keyof CustomScanRequest, FieldDef>> = {
   max_gap_pct: { label: "Gap ≤", format: (v) => `${v}%` },
   min_day_range_pct: { label: "Day Range ≥", format: (v) => `${v}%` },
   max_day_range_pct: { label: "Day Range ≤", format: (v) => `${v}%` },
+  min_adr_pct_20: { label: "ADR ≥", format: (v) => `${v}%` },
+  max_adr_pct_20: { label: "ADR ≤", format: (v) => `${v}%` },
   min_return_pct: { label: "Return ≥", format: (v) => `${v}%` },
   max_return_pct: { label: "Return ≤", format: (v) => `${v}%` },
   min_trend_strength: { label: "Trend ≥" },

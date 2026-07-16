@@ -382,6 +382,15 @@ export function CustomScannerPanel({
             />
           </FilterField>
 
+          <FilterField label="ADR % (20D avg daily range)">
+            <RangeInputs
+              minValue={filters.min_adr_pct_20}
+              maxValue={filters.max_adr_pct_20}
+              onMinChange={updateNumeric("min_adr_pct_20")}
+              onMaxChange={updateNumeric("max_adr_pct_20")}
+            />
+          </FilterField>
+
           <FilterField label="Price vs Moving Average">
             <div className="split-row">
               <select value={filters.price_vs_ma_mode} onChange={updateSelect("price_vs_ma_mode")}>
