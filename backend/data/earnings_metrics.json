@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-16T13:05:27.267242+00:00",
+  "generated_at": "2026-07-16T13:11:31.301529+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -6791,14 +6791,14 @@
     },
     "RIR": {
       "symbol": "RIR",
-      "earnings_date": "2026-07-16",
-      "close_in_range_pct": 0.2545,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": null,
-      "return_5d_pct": null,
+      "earnings_date": "2026-05-28",
+      "close_in_range_pct": 0.5,
+      "next_day_gap_pct": -1.459,
+      "day_rvol_50d": 0.0,
+      "return_5d_pct": -6.689,
       "source": "bse",
-      "best_pop_pct": null,
-      "best_pop_rvol": null
+      "best_pop_pct": 0.0,
+      "best_pop_rvol": 0.0
     },
     "EKC": {
       "symbol": "EKC",
