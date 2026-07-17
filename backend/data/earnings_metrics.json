@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-17T12:47:59.371727+00:00",
+  "generated_at": "2026-07-17T13:05:25.420743+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -8353,13 +8353,13 @@
     },
     "GUJGASLTD": {
       "symbol": "GUJGASLTD",
-      "earnings_date": "2026-07-15",
-      "close_in_range_pct": 0.4915,
-      "next_day_gap_pct": 2.293,
+      "earnings_date": "2026-07-16",
+      "close_in_range_pct": 0.2833,
+      "next_day_gap_pct": null,
       "day_rvol_50d": null,
-      "return_5d_pct": 1.085,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 1.085,
+      "best_pop_pct": null,
       "best_pop_rvol": null
     },
     "BPAGRI": {
@@ -8375,13 +8375,13 @@
     },
     "MIRCELECTR": {
       "symbol": "MIRCELECTR",
-      "earnings_date": "2026-07-15",
+      "earnings_date": "2026-07-16",
       "close_in_range_pct": 0.6174,
-      "next_day_gap_pct": 0.026,
+      "next_day_gap_pct": null,
       "day_rvol_50d": null,
-      "return_5d_pct": -0.154,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": -0.154,
+      "best_pop_pct": null,
       "best_pop_rvol": null
     },
     "CITURGIA": {
