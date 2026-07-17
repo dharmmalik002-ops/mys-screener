@@ -87,7 +87,7 @@ type SidebarItem = {
 // low-volatility set below; everything else is one toggle away.
 const ALL_ITEMS: SidebarItem[] = [
   { mode: "vcp", title: "VCP", hint: "Volatility contraction pattern", Icon: Layers },
-  { mode: "power-base", title: "Power Base", hint: "25%+ move, then a 2-6 week hold", Icon: Flame },
+  { mode: "power-base", title: "Power Base", hint: "30%+ first leg, now consolidating", Icon: Flame },
   { mode: "tight-closes", title: "3 Tight Closes", hint: "Pre-breakout coil", Icon: Crosshair },
   { mode: "bread-butter", title: "Bread & Butter", hint: "Stage 2 impulse + 10/21 EMA rest", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },

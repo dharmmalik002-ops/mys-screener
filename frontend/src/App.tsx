@@ -5381,7 +5381,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                               : activeScanner === "tight-closes"
                                                                 ? "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume near the highs — the pre-breakout coil before the expansion day."
                                                                 : activeScanner === "power-base"
-                                                                  ? "25%+ move within ~3 weeks, then a 2–6 week hold keeping at least half the move, base no deeper than 18% — leaders digesting a completed leg, with entry, stop, and risk %."
+                                                                  ? "A 30%+ first leg (up to ~3 months in the making), now consolidating for 1–8 weeks while keeping most of the move — leaders digesting a completed leg, with entry, stop, and risk %."
                                                                   : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId

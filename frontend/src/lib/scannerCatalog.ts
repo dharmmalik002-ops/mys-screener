@@ -36,7 +36,7 @@ export const DEFAULT_SCANNERS: ScanDescriptor[] = [
   { id: "high-tight-flag", name: "High Tight Flag", category: "Setups", description: "Steep pole, shallow 2-15 session flag, at or under the pivot.", hit_count: 0 },
   { id: "vcp", name: "VCP", category: "Setups", description: "Progressively shallower pullbacks on drying volume, near the pivot.", hit_count: 0 },
   { id: "tight-closes", name: "3 Tight Closes", category: "Setups", description: "3 closes within 1.5% on quiet volume near the highs.", hit_count: 0 },
-  { id: "power-base", name: "Power Base", category: "Setups", description: "25%+ move in ~3 weeks, then a 2-6 week hold keeping half the move.", hit_count: 0 },
+  { id: "power-base", name: "Power Base", category: "Setups", description: "30%+ first leg, now consolidating 1-8 weeks keeping most of the move.", hit_count: 0 },
 ];
 
 export const SCANNER_BADGES: Record<string, string> = {

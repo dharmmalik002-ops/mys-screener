@@ -226,13 +226,13 @@ class PowerBaseTests(unittest.TestCase):
 
     def test_gave_back_the_move_rejected(self) -> None:
         from app.scanners.definitions import _power_base
-        # falls back to 118 — gave back ~64% of the 100->150 move
-        snapshot = _make_snapshot(closes=self._power_base_closes(hold_level=118.0), last_price=118.0)
+        # falls back to 112 — gave back ~76% of the 100->150 move (cap is 65%)
+        snapshot = _make_snapshot(closes=self._power_base_closes(hold_level=112.0), last_price=112.0)
         self.assertIsNone(_power_base(snapshot))
 
     def test_hold_too_short_rejected(self) -> None:
         from app.scanners.definitions import _power_base
-        snapshot = _make_snapshot(closes=self._power_base_closes(hold_days=4))
+        snapshot = _make_snapshot(closes=self._power_base_closes(hold_days=3))
         self.assertIsNone(_power_base(snapshot))
 
     def test_small_move_rejected(self) -> None:

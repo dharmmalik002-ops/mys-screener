@@ -1370,13 +1370,19 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 # progressive-contraction sequence required), longer horizon than momentum
 # burst / bread & butter, smaller pole than a high tight flag — the leaders
 # digesting a completed markup leg without giving it back.
-POWER_BASE_MIN_MOVE_PCT = 25.0
-POWER_BASE_MAX_MOVE_SESSIONS = 15   # "a couple of weeks"
-POWER_BASE_MIN_HOLD_SESSIONS = 8    # ~2 weeks
-POWER_BASE_MAX_HOLD_SESSIONS = 30   # ~6 weeks
-POWER_BASE_MAX_GIVEBACK = 0.50      # must hold at least half the move
-POWER_BASE_MAX_BASE_DEPTH_PCT = 18.0
-POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT = 3.0
+# Tuned loose per the user: "a good first leg of 30-60%, then starts
+# consolidating — don't be too strict". A first leg can take up to ~3 months;
+# the hold qualifies from its first week. Calibrated on real data: the strict
+# original (25% in 15d, hold 8-30d, giveback<=50%) produced 2 matches; this
+# configuration produces ~20 without admitting slow grinds.
+POWER_BASE_MIN_MOVE_PCT = 30.0
+POWER_BASE_MAX_MOVE_SESSIONS = 60   # first leg can build over ~3 months
+POWER_BASE_MIN_HOLD_SESSIONS = 5    # "starts consolidating" — catch it early
+POWER_BASE_MAX_HOLD_SESSIONS = 40   # ~2 months of digestion
+POWER_BASE_MAX_GIVEBACK = 0.65      # still holding a meaningful chunk of the leg
+POWER_BASE_MAX_BASE_DEPTH_PCT = 28.0
+POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT = 6.0
+POWER_BASE_MIN_PRE_PEAK_SESSIONS = 15  # enough data to measure a real leg
 
 
 def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
@@ -1386,7 +1392,7 @@ def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
     closes = _mb_closes(snapshot)
     n = len(closes)
-    if n < POWER_BASE_MAX_HOLD_SESSIONS + POWER_BASE_MAX_MOVE_SESSIONS + 5:
+    if n < 60:
         return None
     last_close = closes[-1]
     if last_close <= 0:
@@ -1398,18 +1404,18 @@ def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if sma50 is not None and snapshot.last_price <= sma50:
         return None
 
-    # --- Move peak: highest close 8-30 sessions back. ---
-    search_start = n - 1 - POWER_BASE_MAX_HOLD_SESSIONS
+    # --- Move peak: highest close in the hold window. ---
+    search_start = max(POWER_BASE_MIN_PRE_PEAK_SESSIONS, n - 1 - POWER_BASE_MAX_HOLD_SESSIONS)
     search_end = n - POWER_BASE_MIN_HOLD_SESSIONS  # exclusive
-    if search_start < POWER_BASE_MAX_MOVE_SESSIONS or search_end <= search_start:
+    if search_end <= search_start:
         return None
     peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
     peak = closes[peak_idx]
     if peak <= 0 or max(closes[peak_idx:]) > peak * (1 + POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT / 100):
         return None  # already broke out well past the base high — the hold is over
 
-    # --- The move into that peak: 25%+ within <=15 sessions. ---
-    launch_window = closes[peak_idx - POWER_BASE_MAX_MOVE_SESSIONS: peak_idx + 1]
+    # --- The first leg into that peak (window clamped to available history). ---
+    launch_window = closes[max(0, peak_idx - POWER_BASE_MAX_MOVE_SESSIONS): peak_idx + 1]
     launch = min(launch_window)
     if launch <= 0:
         return None
@@ -1600,7 +1606,7 @@ SCANS: list[ScanDefinition] = [
         "power-base",
         "Power Base",
         "Setups",
-        "25%+ move within ~3 weeks, then a 2-6 week hold that keeps at least half the move with the base no deeper than 18% — leaders digesting a completed leg, with entry/stop/risk.",
+        "A 30%+ first leg (up to ~3 months in the making), now consolidating for 1-8 weeks while keeping most of the move — leaders digesting a completed leg, with entry/stop/risk.",
         _power_base,
     ),
 ]
