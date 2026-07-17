@@ -1,10 +1,277 @@
 import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
+import { ArrowDownRight, ArrowUpRight, Compass, Minus } from "lucide-react";
 
-import { getMarketEnvironment, type MarketEnvironmentResponse, type MarketEnvDay } from "../lib/api";
+import {
+  getChart,
+  getMarketEnvironment,
+  type ChartBar,
+  type MarketEnvironmentResponse,
+  type MarketEnvDay,
+  type XpBreadthScore,
+} from "../lib/api";
 import { Panel } from "./Panel";
 
 import "./MarketsPanel.css";
+
+// ---------------------------------------------------------------------------
+// Market Outlook engine — the page's backbone.
+// A transparent weight-of-evidence model: every input is a measurable signal
+// with a stated weight and one-line logic. No black box, no prophecy — the
+// verdict is exactly the sum of what's on the table.
+// ---------------------------------------------------------------------------
+
+const OUTLOOK_INDICES = [
+  { symbol: "NIFTYSMLCAP250.NS", label: "Smallcap 250", featured: true },
+  { symbol: "^NSEI", label: "Nifty 50", featured: false },
+  { symbol: "NIFTYMIDCAP150.NS", label: "Midcap 150", featured: false },
+  { symbol: "^NSEBANK", label: "Bank Nifty", featured: false },
+] as const;
+
+type IndexHealth = {
+  symbol: string;
+  label: string;
+  last: number;
+  ret20Pct: number | null;
+  ret60Pct: number | null;
+  distFrom52wHighPct: number | null;
+  sma20: number | null;
+  sma50: number | null;
+  sma200: number | null;
+  above50: boolean;
+  above200: boolean;
+  sma50Rising: boolean;
+  state: string;
+  stateScore: number; // -2 .. +2
+  spark: number[]; // trailing closes for the sparkline
+};
+
+function simpleAvg(values: number[]): number | null {
+  return values.length ? values.reduce((a, b) => a + b, 0) / values.length : null;
+}
+
+function computeIndexHealth(symbol: string, label: string, bars: ChartBar[]): IndexHealth | null {
+  const closes = bars.map((b) => b.close).filter((c) => Number.isFinite(c) && c > 0);
+  if (closes.length < 60) return null;
+  const last = closes[closes.length - 1];
+  const sma20 = simpleAvg(closes.slice(-20));
+  const sma50 = simpleAvg(closes.slice(-50));
+  const sma200 = closes.length >= 200 ? simpleAvg(closes.slice(-200)) : null;
+  const sma50Prev = closes.length >= 60 ? simpleAvg(closes.slice(-60, -10)) : null;
+  const ret = (n: number) => (closes.length > n ? ((last / closes[closes.length - 1 - n]) - 1) * 100 : null);
+  const high52 = Math.max(...closes.slice(-252));
+  const above50 = sma50 !== null && last > sma50;
+  const above200 = sma200 === null ? above50 : last > sma200;
+  const sma50Rising = sma50 !== null && sma50Prev !== null && sma50 > sma50Prev;
+
+  let state = "Downtrend";
+  let stateScore = -2;
+  if (above50 && (sma200 === null || (sma50 !== null && sma50 > sma200))) {
+    state = "Confirmed Uptrend";
+    stateScore = 2;
+  } else if (above50) {
+    state = "Attempting Recovery";
+    stateScore = 1;
+  } else if (above200) {
+    state = "Pullback / Basing";
+    stateScore = -0.5;
+  }
+
+  return {
+    symbol,
+    label,
+    last,
+    ret20Pct: ret(20),
+    ret60Pct: ret(60),
+    distFrom52wHighPct: high52 > 0 ? ((high52 - last) / high52) * 100 : null,
+    sma20,
+    sma50,
+    sma200,
+    above50,
+    above200,
+    sma50Rising,
+    state,
+    stateScore,
+    spark: closes.slice(-120),
+  };
+}
+
+type OutlookSignal = {
+  label: string;
+  valueLabel: string;
+  score: number; // -2 .. +2
+  weight: number;
+  logic: string;
+};
+
+type Outlook = {
+  score: number; // -100 .. +100
+  verdict: string;
+  guidance: string;
+  tone: "pos" | "neu" | "neg";
+  signals: OutlookSignal[];
+  reasons: string[];
+  flips: string[];
+};
+
+const clamp2 = (v: number) => Math.max(-2, Math.min(2, v));
+
+function buildOutlook(
+  xp: XpBreadthScore | null,
+  env: MarketEnvironmentResponse | null,
+  indexHealth: Record<string, IndexHealth | null>,
+): Outlook | null {
+  const signals: OutlookSignal[] = [];
+
+  if (xp) {
+    const s = xp.xp_score;
+    let score = s > 25 ? 2 : s >= 15 ? 1.2 : s >= 12 ? 0.4 : s >= 9.5 ? -0.6 : -2;
+    const live = xp.history.filter((p) => !p.warmup);
+    const back = live.length >= 6 ? live[live.length - 6].xp_score : null;
+    const slope = back !== null ? s - back : 0;
+    if (slope >= 1) score = clamp2(score + 0.4);
+    else if (slope <= -1) score = clamp2(score - 0.4);
+    signals.push({
+      label: "XP breadth regime",
+      valueLabel: `${s.toFixed(1)} · ${xp.regime}${back !== null ? ` · ${slope >= 0 ? "+" : ""}${slope.toFixed(1)} vs last wk` : ""}`,
+      score,
+      weight: 3,
+      logic: "Breadth is the market's engine room — sustained smallcap runs only happen with the XP score in the swing-friendly bands and rising.",
+    });
+  }
+
+  const small = indexHealth["NIFTYSMLCAP250.NS"];
+  if (small) {
+    let score = small.stateScore;
+    if (small.sma50Rising) score = clamp2(score + 0.3);
+    signals.push({
+      label: "Smallcap 250 trend",
+      valueLabel: `${small.state}${small.ret20Pct !== null ? ` · ${small.ret20Pct >= 0 ? "+" : ""}${small.ret20Pct.toFixed(1)}% / 20d` : ""}`,
+      score,
+      weight: 3,
+      logic: "Your hunting ground. Small caps lead in both directions — their index above a rising 50-DMA is the single best backdrop for VCP/Power Base entries.",
+    });
+  }
+
+  const nifty = indexHealth["^NSEI"];
+  if (nifty) {
+    signals.push({
+      label: "Nifty 50 trend",
+      valueLabel: nifty.state,
+      score: nifty.stateScore * 0.75,
+      weight: 1.5,
+      logic: "The tide. Smallcap rallies against a falling Nifty have short lifespans; alignment lengthens every hold.",
+    });
+  }
+
+  const posture = env?.posture;
+  const hist = env?.history ?? [];
+  if (posture?.above_sma200_pct != null) {
+    const v = posture.above_sma200_pct;
+    let score = v >= 60 ? 1.5 : v >= 45 ? 0.5 : v >= 35 ? -0.5 : -1.5;
+    const first = hist.find((h) => h.above_sma200_pct != null)?.above_sma200_pct;
+    if (first != null && hist.length >= 3) {
+      if (v - first >= 3) score = clamp2(score + 0.5);
+      else if (v - first <= -3) score = clamp2(score - 0.5);
+    }
+    signals.push({
+      label: "% of stocks above 200-SMA",
+      valueLabel: `${Math.round(v)}%`,
+      score,
+      weight: 2,
+      logic: "The structural tide — how much of the market is in a long-term uptrend. Durable multi-week advances need a majority above.",
+    });
+  }
+  if (posture?.above_ema21_pct != null) {
+    const v = posture.above_ema21_pct;
+    signals.push({
+      label: "% of stocks above 21-EMA",
+      valueLabel: `${Math.round(v)}%`,
+      score: v >= 65 ? 1.5 : v >= 50 ? 0.5 : v >= 35 ? -0.5 : -1.5,
+      weight: 1.5,
+      logic: "The short-term thrust gauge. Swing entries work when the majority holds the fast average; below 35% the tape is in liquidation mode.",
+    });
+  }
+  const held = env?.today?.structural?.held_pct;
+  if (held != null) {
+    signals.push({
+      label: "Breakout follow-through",
+      valueLabel: `${Math.round(held)}% still above pivot`,
+      score: held >= 60 ? 1.5 : held >= 45 ? 0.5 : held >= 30 ? -0.5 : -1.5,
+      weight: 2,
+      logic: "The truth serum. If recent breakouts are holding their pivots, new entries get paid; if they fail, even perfect setups bleed.",
+    });
+  }
+  if (posture) {
+    const h = posture.new_52w_highs;
+    const l = posture.new_52w_lows;
+    signals.push({
+      label: "New 52w highs vs lows",
+      valueLabel: `${h} / ${l}`,
+      score: h >= 3 * Math.max(1, l) && h >= 10 ? 1.5 : h > l ? 0.5 : l >= 3 * Math.max(1, h) && l >= 10 ? -2 : -1,
+      weight: 1,
+      logic: "Leadership check — bull phases mint new highs daily. An expansion of new lows is the earliest structural crack.",
+    });
+  }
+
+  if (signals.length < 3) return null;
+
+  const totalWeight = signals.reduce((a, s) => a + s.weight * 2, 0);
+  const raw = signals.reduce((a, s) => a + s.score * s.weight, 0);
+  const score = Math.round((raw / totalWeight) * 100);
+
+  let verdict = "NEUTRAL / CHOPPY";
+  let guidance = "Trade small, take profits fast, and let the tape prove itself before adding.";
+  let tone: Outlook["tone"] = "neu";
+  if (score >= 45) {
+    verdict = "RISK-ON";
+    guidance = "Breadth, trend and follow-through agree. Full position sizes on A setups are justified.";
+    tone = "pos";
+  } else if (score >= 15) {
+    verdict = "CONSTRUCTIVE";
+    guidance = "The tape is improving. Add selectively on your best setups with tight stops.";
+    tone = "pos";
+  } else if (score <= -45) {
+    verdict = "RISK-OFF";
+    guidance = "Stand aside. Cash is a position; protect capital until the evidence turns.";
+    tone = "neg";
+  } else if (score <= -15) {
+    verdict = "DEFENSIVE";
+    guidance = "Raise cash, cut laggards, and only touch A+ setups at reduced size.";
+    tone = "neg";
+  }
+
+  const byImpact = [...signals].sort((a, b) => Math.abs(b.score * b.weight) - Math.abs(a.score * a.weight));
+  const reasons = byImpact.slice(0, 3).map((s) => {
+    const dir = s.score > 0.2 ? "supports" : s.score < -0.2 ? "works against" : "is neutral for";
+    return `${s.label} (${s.valueLabel}) ${dir} the market right now.`;
+  });
+
+  const nearFlip = [...signals].sort((a, b) => Math.abs(a.score) - Math.abs(b.score)).slice(0, 2);
+  const flips = nearFlip.map((s) =>
+    s.score <= 0
+      ? `${s.label} turning decisively up would upgrade this outlook.`
+      : `${s.label} rolling over would downgrade this outlook.`,
+  );
+
+  return { score, verdict, guidance, tone, signals, reasons, flips };
+}
+
+function Sparkline({ values, tone, height = 44 }: { values: number[]; tone: "pos" | "neu" | "neg"; height?: number }) {
+  if (values.length < 2) return null;
+  const w = 160;
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const span = max - min || 1;
+  const pts = values.map((v, i) => `${((i / (values.length - 1)) * w).toFixed(1)},${(height - 4 - ((v - min) / span) * (height - 8)).toFixed(1)}`);
+  const color = tone === "pos" ? "var(--positive)" : tone === "neg" ? "var(--negative)" : "var(--amber)";
+  return (
+    <svg viewBox={`0 0 ${w} ${height}`} className="mko-spark" preserveAspectRatio="none" aria-hidden="true">
+      <polyline points={pts.join(" ")} fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round" />
+      <polygon points={`0,${height} ${pts.join(" ")} ${w},${height}`} fill={color} opacity="0.08" />
+    </svg>
+  );
+}
 
 // Focus-list learning: which sectors the user keeps vs removes, persisted so
 // suggestions gradually bias toward the kinds of stocks the user actually wants.
@@ -104,12 +371,37 @@ import { SymbolGridModal, type SymbolGridItem } from "./SymbolGridModal";
 export function MarketsPanel({
   onOpenSymbolChart,
   onOpenChartWithList,
+  xpBreadth = null,
 }: {
   onOpenSymbolChart?: (symbol: string) => void;
   onOpenChartWithList?: (symbol: string, symbols: string[]) => void;
+  xpBreadth?: XpBreadthScore | null;
 }) {
   const [state, setState] = useState<FetchState>("loading");
   const [data, setData] = useState<MarketEnvironmentResponse | null>(null);
+  const [indexHealth, setIndexHealth] = useState<Record<string, IndexHealth | null>>({});
+
+  useEffect(() => {
+    let active = true;
+    void Promise.allSettled(
+      OUTLOOK_INDICES.map((ix) =>
+        getChart(ix.symbol, "1Y", "india").then((resp) => ({
+          symbol: ix.symbol,
+          health: computeIndexHealth(ix.symbol, ix.label, resp.bars ?? []),
+        })),
+      ),
+    ).then((settled) => {
+      if (!active) return;
+      const next: Record<string, IndexHealth | null> = {};
+      for (const item of settled) {
+        if (item.status === "fulfilled") next[item.value.symbol] = item.value.health;
+      }
+      setIndexHealth(next);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
   const [removed, setRemoved] = useState<Set<string>>(() => readRemoved());
   const [sectorStats, setSectorStats] = useState<Record<string, { kept: number; removed: number }>>(() => readSectorStats());
 
@@ -302,6 +594,34 @@ export function MarketsPanel({
   const scoreDelta = delta(today.score, yesterday?.score ?? null);
   const ai = data?.ai ?? null;
   const week = data?.week_review;
+  const outlook = buildOutlook(xpBreadth, data, indexHealth);
+  const smallcap = indexHealth["NIFTYSMLCAP250.NS"] ?? null;
+  const smallcapNote = smallcap
+    ? (() => {
+        const trendBit =
+          smallcap.stateScore >= 2
+            ? "is in a confirmed uptrend"
+            : smallcap.stateScore >= 1
+              ? "is attempting a recovery above its 50-DMA"
+              : smallcap.stateScore >= -0.5
+                ? "is pulling back inside a larger uptrend"
+                : "is in a downtrend";
+        const tapeBit = xpBreadth
+          ? xpBreadth.xp_score >= 15
+            ? "and breadth supports an index-wide advance"
+            : xpBreadth.xp_score >= 12
+              ? "while breadth is only slowly improving — expect a grind, not a melt-up"
+              : "but the broad tape is choppy — expect stock-specific moves rather than an index-wide run"
+          : "";
+        const levelBit =
+          smallcap.sma50 !== null
+            ? smallcap.above50
+              ? `Holding above the 50-DMA (${Math.round(smallcap.sma50).toLocaleString("en-IN")}) keeps that view intact; losing it turns the coming weeks corrective.`
+              : `Reclaiming the 50-DMA (${Math.round(smallcap.sma50).toLocaleString("en-IN")}) is the trigger that would turn the coming weeks constructive.`
+            : "";
+        return `Smallcap 250 ${trendBit} ${tapeBit}. ${levelBit}`;
+      })()
+    : null;
 
   return (
     <Panel
@@ -309,6 +629,115 @@ export function MarketsPanel({
       subtitle={`Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`}
       className="markets-panel"
     >
+      {/* ===== Market Outlook — the backbone ===== */}
+      {outlook ? (
+        <section className="mko-hero" aria-label="Market outlook">
+          <div className={`mko-verdict mko-${outlook.tone}`}>
+            <div className="mko-verdict-kicker"><Compass size={13} strokeWidth={2.2} /> Outlook · next 2–6 weeks</div>
+            <div className="mko-verdict-word">{outlook.verdict}</div>
+            <div className="mko-verdict-score">
+              <div className="mko-meter" role="img" aria-label={`Outlook score ${outlook.score} of 100`}>
+                <div className="mko-meter-fill" style={{ width: `${Math.round((outlook.score + 100) / 2)}%` }} />
+                <div className="mko-meter-mid" />
+              </div>
+              <span>{outlook.score > 0 ? `+${outlook.score}` : outlook.score} / ±100</span>
+            </div>
+            <p className="mko-guidance">{outlook.guidance}</p>
+          </div>
+          <div className="mko-why">
+            <div className="mko-why-title">Why — the three heaviest pieces of evidence</div>
+            <ul>
+              {outlook.reasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+            <div className="mko-why-title mko-flip-title">What would change this view</div>
+            <ul className="mko-flips">
+              {outlook.flips.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      ) : null}
+
+      {/* ===== Index health — Smallcap 250 featured ===== */}
+      {Object.keys(indexHealth).length > 0 ? (
+        <section className="mko-indexes" aria-label="Index health">
+          {OUTLOOK_INDICES.map((ix) => {
+            const h = indexHealth[ix.symbol];
+            if (!h) return null;
+            const tone: "pos" | "neu" | "neg" = h.stateScore >= 1 ? "pos" : h.stateScore <= -1 ? "neg" : "neu";
+            const StateIcon = h.stateScore >= 1 ? ArrowUpRight : h.stateScore <= -1 ? ArrowDownRight : Minus;
+            return (
+              <div key={ix.symbol} className={`mko-index-card${ix.featured ? " is-featured" : ""}`}>
+                <div className="mko-index-head">
+                  <div>
+                    <strong>{h.label}</strong>
+                    <span className="mko-index-price">{h.last.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                  </div>
+                  <span className={`mko-state mko-${tone}`}>
+                    <StateIcon size={12} strokeWidth={2.4} /> {h.state}
+                  </span>
+                </div>
+                <Sparkline values={ix.featured ? h.spark : h.spark.slice(-60)} tone={tone} height={ix.featured ? 64 : 40} />
+                <div className="mko-index-stats">
+                  <span title="Return over the last 20 sessions">
+                    20d <strong className={h.ret20Pct !== null && h.ret20Pct >= 0 ? "pos" : "neg"}>{num(h.ret20Pct, 1, "%")}</strong>
+                  </span>
+                  <span title="Distance below the 52-week high">
+                    52wH <strong>{num(h.distFrom52wHighPct, 1, "%")}</strong>
+                  </span>
+                  <span title="Position vs the 50-day moving average">
+                    50DMA <strong className={h.above50 ? "pos" : "neg"}>{h.above50 ? "above" : "below"}</strong>
+                  </span>
+                  <span title="Position vs the 200-day moving average">
+                    200DMA <strong className={h.above200 ? "pos" : "neg"}>{h.above200 ? "above" : "below"}</strong>
+                  </span>
+                </div>
+                {ix.featured && smallcapNote ? <p className="mko-featured-note">{smallcapNote}</p> : null}
+                {ix.featured && smallcap ? (
+                  <div className="mko-levels">
+                    <span>Levels that matter:</span>
+                    {smallcap.sma20 !== null ? <em>20DMA {Math.round(smallcap.sma20).toLocaleString("en-IN")}</em> : null}
+                    {smallcap.sma50 !== null ? <em>50DMA {Math.round(smallcap.sma50).toLocaleString("en-IN")}</em> : null}
+                    {smallcap.sma200 !== null ? <em>200DMA {Math.round(smallcap.sma200).toLocaleString("en-IN")}</em> : null}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+
+      {/* ===== The evidence table ===== */}
+      {outlook ? (
+        <section className="mko-signals" aria-label="Outlook evidence">
+          <div className="mko-signals-head">The evidence — every signal, its weight, and the logic</div>
+          {outlook.signals.map((s) => {
+            const tone = s.score > 0.2 ? "pos" : s.score < -0.2 ? "neg" : "neu";
+            return (
+              <div key={s.label} className="mko-signal-row">
+                <span className={`mko-dot mko-${tone}`} aria-label={tone === "pos" ? "bullish" : tone === "neg" ? "bearish" : "neutral"} />
+                <div className="mko-signal-main">
+                  <div className="mko-signal-top">
+                    <strong>{s.label}</strong>
+                    <span className="mko-signal-value">{s.valueLabel}</span>
+                    <span className="mko-signal-weight" title={`Weight ${s.weight} of the model`}>w{s.weight}</span>
+                  </div>
+                  <div className="mko-signal-logic">{s.logic}</div>
+                </div>
+              </div>
+            );
+          })}
+          <div className="mk-footnote mko-footnote">
+            Weight-of-evidence model computed live from breadth, trend and follow-through data. Probabilities, not prophecy — when the evidence changes, the outlook changes with it.
+          </div>
+        </section>
+      ) : null}
+
+      <div className="mko-section-hdr">Under the hood — today's counted metrics</div>
+
       {/* Verdict header */}
       <div className="mk-header">
         <div className={`mk-score ${verdictClass(today.verdict)}`}>
