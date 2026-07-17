@@ -3531,6 +3531,17 @@ export function ChartPanel({
       }
       return { ...current, [normalizedSymbol]: value };
     });
+    // Timestamp the edit so the Journal "Learnings" page can tell OLD notes
+    // from RECENT ones when checking whether mistakes are still repeating.
+    try {
+      const metaKey = "stockScanner.pocketPivotNotesMeta.v1";
+      const meta = JSON.parse(window.localStorage.getItem(metaKey) ?? "{}") as Record<string, string>;
+      if (value.trim()) meta[normalizedSymbol] = new Date().toISOString();
+      else delete meta[normalizedSymbol];
+      window.localStorage.setItem(metaKey, JSON.stringify(meta));
+    } catch {
+      // storage quota/private mode — timestamps are best-effort
+    }
   };
 
   const stageWidth = containerRef.current?.clientWidth ?? 0;

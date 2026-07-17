@@ -1134,6 +1134,43 @@ IMPORTANT:
         )
         return await self._generate_json(prompt)
 
+    async def learnings_review(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Longitudinal mistake/improvement analysis across the user's own
+        chart notes and trade outcomes: what keeps going wrong, whether the
+        same mistakes recur between the OLDER and RECENT eras, and what to fix."""
+        prompt = (
+            "You are a world-class swing-trading coach reviewing a student's OWN written chart notes "
+            "(their pre/post-trade analysis, in their own words) together with their actual trade outcomes "
+            "(Indian markets, multi-day to multi-week holds, VCP/breakout style). Your job is LONGITUDINAL: "
+            "find the recurring mistakes, check whether each mistake appears in the OLDER era, the RECENT era, "
+            "or BOTH (both = still repeating it), find genuine improvements, and give blunt, specific coaching. "
+            "Quote short fragments of THEIR OWN notes as evidence (with the symbol), reference real numbers, "
+            "and never invent trades or notes that are not in the data.\n\n"
+            f"MARKET CONTEXT: {payload.get('regime_line', 'unknown')}\n\n"
+            f"CHART NOTES WITH TRADE OUTCOMES (the student wrote these on each stock's chart):\n"
+            f"{payload.get('notes_block', 'none')}\n\n"
+            f"OLDER-ERA CLOSED TRADES (first half of the journal):\n{payload.get('older_trades_table', 'none')}\n\n"
+            f"RECENT-ERA CLOSED TRADES (second half of the journal):\n{payload.get('recent_trades_table', 'none')}\n\n"
+            f"ERA STATS (computed locally; trust these):\n{json.dumps(payload.get('era_stats') or {}, ensure_ascii=False)}\n\n"
+            "Respond with ONLY a JSON object:\n"
+            "{\n"
+            '  "summary": "4-6 sentence honest portrait of this trader\'s journey from the older era to now",\n'
+            '  "recurring_mistakes": [{"mistake": "named pattern", "era": "old" | "recent" | "both", '
+            '"still_repeating": true, "evidence": ["SYMBOL: short quote or numeric fact", "..."], '
+            '"estimated_cost": "what it costs them", "fix": "one concrete behaviour rule"}],\n'
+            '  "improvements": [{"what": "something genuinely better in the recent era", "evidence": "proof from the data"}],\n'
+            '  "regressions": [{"what": "something that got WORSE recently", "evidence": "proof"}],\n'
+            '  "improvement_verdict": {"trajectory": "improving" | "flat" | "worsening", "grade_old_era": "A|B|C|D", '
+            '"grade_recent_era": "A|B|C|D", "summary": "2-3 sentences comparing the eras with numbers"},\n'
+            '  "note_quality": {"assessment": "how useful their note-writing actually is", '
+            '"missing": ["what their notes never record but should", "..."]},\n'
+            '  "suggestions": ["highest-impact concrete suggestion", "...", "..."],\n'
+            '  "one_habit": {"habit": "the single habit to fix first", "rule": "a checkable rule for the next 10 trades", '
+            '"tripwire": "the early-warning sign they are slipping back"}\n'
+            "}"
+        )
+        return await self._generate_json(prompt)
+
 
 def parse_ai_management_guidance(raw: list[dict[str, Any]]) -> list[ManagementGuidance]:
     result = []

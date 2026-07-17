@@ -3009,3 +3009,231 @@
 
 .tj-mistake-bill-pnl.neg { color: var(--loss, #f23645); }
 .tj-mistake-bill-pnl.pos { color: var(--gain, #089981); }
+
+/* ===== Learnings tab ===== */
+.tj-learnings-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tj-learnings-page .tj-card-hdr {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tj-learnings-page .tj-card-hdr.pos { color: var(--positive); }
+.tj-learnings-page .tj-card-hdr.neg { color: var(--negative); }
+
+.tj-learn-actions {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tj-learn-cached {
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.72rem;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.tj-learn-inputs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  padding: 4px 2px;
+}
+
+.tj-learn-inputs strong { color: var(--text); }
+
+.tj-learn-empty,
+.tj-learn-error {
+  padding: 14px 4px 6px;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.tj-learn-error { color: var(--negative); }
+
+.tj-learn-summary p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+.tj-learn-verdict {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 4px 0 6px;
+}
+
+.tj-learn-traj {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.tj-learn-traj.pos { color: var(--positive); }
+.tj-learn-traj.neg { color: var(--negative); }
+
+.tj-learn-grades {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.tj-learn-grades strong {
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.tj-learn-grades em { font-style: normal; color: var(--text-muted); }
+
+.tj-learn-verdict-text {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  color: var(--text-soft);
+}
+
+.tj-learn-mistakes {
+  display: grid;
+  gap: 10px;
+}
+
+.tj-learn-mistake {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--surface-soft);
+  padding: 10px 14px;
+}
+
+.tj-learn-mistake-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tj-learn-mistake-top strong { font-size: 0.9rem; }
+
+.tj-learn-era {
+  margin-left: auto;
+  font-size: 0.64rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.tj-learn-era-both { color: var(--negative); background: var(--negative-soft); }
+.tj-learn-era-recent { color: var(--amber); background: var(--amber-soft); }
+.tj-learn-era-old { color: var(--positive); background: var(--positive-soft); }
+
+.tj-learn-mistake ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 3px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.tj-learn-cost {
+  margin-top: 8px;
+  font-size: 0.78rem;
+  color: var(--negative);
+}
+
+.tj-learn-fix {
+  margin-top: 3px;
+  font-size: 0.8rem;
+  color: var(--positive);
+}
+
+.tj-learn-two-col {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.tj-learn-list {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+}
+
+.tj-learn-list span { color: var(--text-soft); }
+
+.tj-learn-habit {
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+.tj-learn-habit-name {
+  margin: 0 0 6px;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.tj-learn-habit p {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.tj-learn-notes {
+  display: grid;
+  gap: 10px;
+  max-height: 480px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.tj-learn-note {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  background: var(--surface-soft);
+}
+
+.tj-learn-note-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tj-learn-note-head strong { font-size: 0.84rem; }
+.tj-learn-note-head small { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.tj-learn-note-head small.pos { color: var(--positive); }
+.tj-learn-note-head small.neg { color: var(--negative); }
+.tj-learn-note-untr { opacity: 0.7; }
+
+.tj-learn-note p {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.55;
+  color: var(--text-soft);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 860px) {
+  .tj-learn-two-col { grid-template-columns: 1fr; }
+}

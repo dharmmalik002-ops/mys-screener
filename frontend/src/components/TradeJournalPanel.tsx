@@ -8,7 +8,9 @@ import {
   saveJournalData,
   type MarketKey,
   runAiJournalReview,
+  runAiLearningsReview,
   type AiJournalReview,
+  type AiLearningsReview,
   type IndustryGroupsResponse,
   type IndustryGroupRankItem,
   type IndustryGroupStockItem,
@@ -1257,6 +1259,294 @@ function DayOfWeekStats({ closed }: { closed: ClosedTrade[] }) {
 }
 
 // ─── Main Component ────────────────────────────────────────────────────────────
+// ---------------------------------------------------------------------------
+// Learnings tab — the user's own chart notes (written in the chart Notes
+// widget) joined with their trade outcomes, sent to the AI coach for a
+// LONGITUDINAL read: which mistakes recur, whether the older-era mistakes
+// still show up in the recent era, and what to fix first.
+// ---------------------------------------------------------------------------
+
+const CHART_NOTES_KEY = "stockScanner.pocketPivotNotes.v1";
+const CHART_NOTES_META_KEY = "stockScanner.pocketPivotNotesMeta.v1";
+const LEARNINGS_CACHE_KEY = "stockScanner.learningsReview.v1";
+
+function readChartNotes(): Array<{ symbol: string; text: string; updatedAt: string | null }> {
+  try {
+    const notes = JSON.parse(window.localStorage.getItem(CHART_NOTES_KEY) ?? "{}") as Record<string, string>;
+    const meta = JSON.parse(window.localStorage.getItem(CHART_NOTES_META_KEY) ?? "{}") as Record<string, string>;
+    return Object.entries(notes)
+      .filter(([, text]) => typeof text === "string" && text.trim().length > 0)
+      .map(([symbol, text]) => ({ symbol, text: text.trim(), updatedAt: meta[symbol] ?? null }))
+      .sort((a, b) => (b.updatedAt ?? "").localeCompare(a.updatedAt ?? ""));
+  } catch {
+    return [];
+  }
+}
+
+function eraStats(trades: ClosedTrade[]) {
+  const wins = trades.filter((t) => t.pnl > 0);
+  const pct = trades.map((t) => t.perc).filter((v) => Number.isFinite(v));
+  return {
+    trades: trades.length,
+    win_rate_pct: trades.length ? Math.round((wins.length / trades.length) * 100) : null,
+    avg_return_pct: pct.length ? Number((pct.reduce((a, b) => a + b, 0) / pct.length).toFixed(2)) : null,
+    total_pnl: Math.round(trades.reduce((a, t) => a + t.pnl, 0)),
+    from: trades[0] ? String(trades[0].exitDate).slice(0, 10) : null,
+    to: trades.length ? String(trades[trades.length - 1].exitDate).slice(0, 10) : null,
+  };
+}
+
+function LearningsTab({ closedTrades, market }: { closedTrades: ClosedTrade[]; market: MarketKey }) {
+  const notes = useMemo(() => readChartNotes(), []);
+  const [report, setReport] = useState<AiLearningsReview | null>(() => {
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(LEARNINGS_CACHE_KEY) ?? "null") as
+        | { report: AiLearningsReview; at: string }
+        | null;
+      return cached?.report ?? null;
+    } catch {
+      return null;
+    }
+  });
+  const [cachedAt, setCachedAt] = useState<string | null>(() => {
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(LEARNINGS_CACHE_KEY) ?? "null") as { at: string } | null;
+      return cached?.at ?? null;
+    } catch {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const sortedClosed = useMemo(
+    () => [...closedTrades].sort((a, b) => String(a.exitDate).localeCompare(String(b.exitDate))),
+    [closedTrades],
+  );
+  const half = Math.floor(sortedClosed.length / 2);
+  const olderTrades = sortedClosed.slice(0, half);
+  const recentTrades = sortedClosed.slice(half);
+
+  const outcomesBySymbol = useMemo(() => {
+    const map: Record<string, { count: number; wins: number; losses: number; net_pnl: number; first_date: string; last_date: string }> = {};
+    for (const t of sortedClosed) {
+      const entry = (map[t.symbol] ||= { count: 0, wins: 0, losses: 0, net_pnl: 0, first_date: String(t.exitDate), last_date: String(t.exitDate) });
+      entry.count += 1;
+      if (t.pnl > 0) entry.wins += 1;
+      else entry.losses += 1;
+      entry.net_pnl += t.pnl;
+      if (String(t.exitDate) < entry.first_date) entry.first_date = String(t.exitDate);
+      if (String(t.exitDate) > entry.last_date) entry.last_date = String(t.exitDate);
+    }
+    return map;
+  }, [sortedClosed]);
+
+  const analyse = () => {
+    setLoading(true);
+    setError(null);
+    const payload = {
+      notes: notes.slice(0, 80).map((n) => ({
+        symbol: n.symbol,
+        text: n.text,
+        updated_at: n.updatedAt,
+        outcomes: outcomesBySymbol[n.symbol] ?? null,
+      })),
+      older_trades: olderTrades.slice(-60),
+      recent_trades: recentTrades.slice(-60),
+      era_stats: { older_era: eraStats(olderTrades), recent_era: eraStats(recentTrades) },
+    };
+    runAiLearningsReview(payload, market)
+      .then((resp) => {
+        if (resp.error) {
+          setError(String(resp.error));
+          return;
+        }
+        setReport(resp);
+        const at = new Date().toISOString();
+        setCachedAt(at);
+        try {
+          window.localStorage.setItem(LEARNINGS_CACHE_KEY, JSON.stringify({ report: resp, at }));
+        } catch {
+          // cache is best-effort
+        }
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Analysis failed"))
+      .finally(() => setLoading(false));
+  };
+
+  const trajectory = report?.improvement_verdict?.trajectory ?? null;
+  const trajectoryClass = trajectory === "improving" ? "pos" : trajectory === "worsening" ? "neg" : "";
+
+  return (
+    <div className="tj-page tj-learnings-page">
+      <div className="tj-card">
+        <div className="tj-card-hdr">
+          Learnings — your notes, your trades, one honest mirror
+          <div className="tj-learn-actions">
+            {cachedAt ? <small className="tj-learn-cached">analysed {String(cachedAt).slice(0, 10)}</small> : null}
+            <button type="button" className={`tj-btn primary ${loading ? "loading" : ""}`} onClick={analyse} disabled={loading || (notes.length === 0 && sortedClosed.length === 0)}>
+              {loading ? "Analysing…" : report ? "Re-analyse" : "Analyse my learnings"}
+            </button>
+          </div>
+        </div>
+        <div className="tj-learn-inputs">
+          <span><strong>{notes.length}</strong> chart notes</span>
+          <span><strong>{olderTrades.length}</strong> older-era trades{olderTrades.length ? ` (${eraStats(olderTrades).from} → ${eraStats(olderTrades).to})` : ""}</span>
+          <span><strong>{recentTrades.length}</strong> recent-era trades{recentTrades.length ? ` (${eraStats(recentTrades).from} → ${eraStats(recentTrades).to})` : ""}</span>
+        </div>
+        {notes.length === 0 && sortedClosed.length === 0 ? (
+          <div className="tj-learn-empty">
+            Write your analysis in the chart's <strong>Notes</strong> widget (open any stock chart → Notes) and log trades —
+            this page reads both and tells you what keeps repeating.
+          </div>
+        ) : null}
+        {error ? <div className="tj-learn-error">{error}</div> : null}
+      </div>
+
+      {report ? (
+        <>
+          {report.summary ? (
+            <div className="tj-card tj-learn-summary">
+              <div className="tj-card-hdr">The honest portrait</div>
+              <p>{report.summary}</p>
+            </div>
+          ) : null}
+
+          {report.improvement_verdict ? (
+            <div className="tj-card">
+              <div className="tj-card-hdr">Have you improved?</div>
+              <div className="tj-learn-verdict">
+                <span className={`tj-learn-traj ${trajectoryClass}`}>
+                  {trajectory === "improving" ? "▲ Improving" : trajectory === "worsening" ? "▼ Worsening" : "→ Flat"}
+                </span>
+                <span className="tj-learn-grades">
+                  Older era <strong>{report.improvement_verdict.grade_old_era ?? "—"}</strong>
+                  <em aria-hidden>→</em>
+                  Recent era <strong>{report.improvement_verdict.grade_recent_era ?? "—"}</strong>
+                </span>
+              </div>
+              {report.improvement_verdict.summary ? <p className="tj-learn-verdict-text">{report.improvement_verdict.summary}</p> : null}
+            </div>
+          ) : null}
+
+          {(report.recurring_mistakes ?? []).length > 0 ? (
+            <div className="tj-card">
+              <div className="tj-card-hdr">Recurring mistakes — and whether you're still making them</div>
+              <div className="tj-learn-mistakes">
+                {(report.recurring_mistakes ?? []).map((m, i) => (
+                  <div key={i} className="tj-learn-mistake">
+                    <div className="tj-learn-mistake-top">
+                      <strong>{m.mistake}</strong>
+                      <span className={`tj-learn-era tj-learn-era-${m.era ?? "old"}`}>
+                        {m.era === "both" ? "STILL REPEATING" : m.era === "recent" ? "NEW HABIT" : "OLD ERA"}
+                      </span>
+                    </div>
+                    {(m.evidence ?? []).length ? (
+                      <ul>
+                        {(m.evidence ?? []).map((e, j) => (
+                          <li key={j}>{e}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {m.estimated_cost ? <div className="tj-learn-cost">Cost: {m.estimated_cost}</div> : null}
+                    {m.fix ? <div className="tj-learn-fix">Fix: {m.fix}</div> : null}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
+          {((report.improvements ?? []).length > 0 || (report.regressions ?? []).length > 0) ? (
+            <div className="tj-learn-two-col">
+              {(report.improvements ?? []).length > 0 ? (
+                <div className="tj-card">
+                  <div className="tj-card-hdr pos">What genuinely improved</div>
+                  <ul className="tj-learn-list">
+                    {(report.improvements ?? []).map((x, i) => (
+                      <li key={i}><strong>{x.what}</strong>{x.evidence ? <span> — {x.evidence}</span> : null}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {(report.regressions ?? []).length > 0 ? (
+                <div className="tj-card">
+                  <div className="tj-card-hdr neg">What got worse</div>
+                  <ul className="tj-learn-list">
+                    {(report.regressions ?? []).map((x, i) => (
+                      <li key={i}><strong>{x.what}</strong>{x.evidence ? <span> — {x.evidence}</span> : null}</li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {report.one_habit?.habit ? (
+            <div className="tj-card tj-learn-habit">
+              <div className="tj-card-hdr">The one habit to fix first</div>
+              <p className="tj-learn-habit-name">{report.one_habit.habit}</p>
+              {report.one_habit.rule ? <p><strong>Rule for the next 10 trades:</strong> {report.one_habit.rule}</p> : null}
+              {report.one_habit.tripwire ? <p><strong>Tripwire:</strong> {report.one_habit.tripwire}</p> : null}
+            </div>
+          ) : null}
+
+          {(report.suggestions ?? []).length > 0 ? (
+            <div className="tj-card">
+              <div className="tj-card-hdr">Highest-impact suggestions</div>
+              <ol className="tj-learn-list">
+                {(report.suggestions ?? []).map((s, i) => (
+                  <li key={i}>{s}</li>
+                ))}
+              </ol>
+            </div>
+          ) : null}
+
+          {report.note_quality?.assessment ? (
+            <div className="tj-card">
+              <div className="tj-card-hdr">Your note-writing itself</div>
+              <p>{report.note_quality.assessment}</p>
+              {(report.note_quality.missing ?? []).length ? (
+                <ul className="tj-learn-list">
+                  {(report.note_quality.missing ?? []).map((m, i) => (
+                    <li key={i}>Missing: {m}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </div>
+          ) : null}
+        </>
+      ) : null}
+
+      {notes.length > 0 ? (
+        <div className="tj-card">
+          <div className="tj-card-hdr">Raw material — your chart notes ({notes.length})</div>
+          <div className="tj-learn-notes">
+            {notes.map((n) => {
+              const outcome = outcomesBySymbol[n.symbol];
+              return (
+                <div key={n.symbol} className="tj-learn-note">
+                  <div className="tj-learn-note-head">
+                    <strong>{n.symbol}</strong>
+                    {n.updatedAt ? <small>{String(n.updatedAt).slice(0, 10)}</small> : null}
+                    {outcome ? (
+                      <small className={outcome.net_pnl >= 0 ? "pos" : "neg"}>
+                        {outcome.count} trade{outcome.count === 1 ? "" : "s"} · {outcome.net_pnl >= 0 ? "+" : ""}₹{Math.round(outcome.net_pnl).toLocaleString("en-IN")}
+                      </small>
+                    ) : (
+                      <small className="tj-learn-note-untr">no closed trades</small>
+                    )}
+                  </div>
+                  <p>{n.text}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onOpenSymbolChart, groupsData, xpBreadth }: TradeJournalPanelProps) {
   const [activeTab, setActiveTab] = useState(0);
   const [selectedEdge, setSelectedEdge] = useState<string | null>(null);
@@ -2861,7 +3151,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
 
       {/* ── Tabs ── */}
       <div className="tj-tabbar">
-        {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer"].map((t, i) => (
+        {["Dashboard", "Trade Log", "Open Positions", "Smart Entry", "Insights", "Position Sizer", "Learnings"].map((t, i) => (
           <button
             key={t}
             className={`tj-tabbtn ${activeTab === i ? "active" : ""}`}
@@ -3982,6 +4272,9 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           </div>
         </div>
       )}
+
+      {/* ── Tab 6: Learnings ── */}
+      {activeTab === 6 && <LearningsTab closedTrades={closedTrades} market={market ?? "india"} />}
 
       {/* News Radar is now a full-screen modal triggered from the tab/button (see NewsModal mount below) */}
 

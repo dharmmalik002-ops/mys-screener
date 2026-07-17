@@ -67,6 +67,10 @@ def build_router(service):
     async def ai_journal_review(payload: dict, market: str = Query(default="india")):
         return await resolve_service(market).get_ai_journal_review(payload)
 
+    @router.post("/ai/learnings-review")
+    async def ai_learnings_review(payload: dict, market: str = Query(default="india")):
+        return await resolve_service(market).get_ai_learnings_review(payload)
+
     @router.get("/scanner-scorecard")
     async def scanner_scorecard(market: str = Query(default="india")):
         return await resolve_service(market).get_scanner_scorecard()

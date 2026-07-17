@@ -2289,6 +2289,45 @@ export type AiJournalReview = {
   one_lesson?: unknown;
 };
 
+export type AiLearningsMistake = {
+  mistake?: string;
+  era?: "old" | "recent" | "both" | string;
+  still_repeating?: boolean;
+  evidence?: string[];
+  estimated_cost?: string;
+  fix?: string;
+};
+
+export type AiLearningsReview = {
+  error?: string;
+  raw?: string;
+  summary?: string;
+  recurring_mistakes?: AiLearningsMistake[];
+  improvements?: Array<{ what?: string; evidence?: string }>;
+  regressions?: Array<{ what?: string; evidence?: string }>;
+  improvement_verdict?: {
+    trajectory?: "improving" | "flat" | "worsening" | string;
+    grade_old_era?: string;
+    grade_recent_era?: string;
+    summary?: string;
+  };
+  note_quality?: { assessment?: string; missing?: string[] };
+  suggestions?: string[];
+  one_habit?: { habit?: string; rule?: string; tripwire?: string };
+};
+
+export function runAiLearningsReview(payload: unknown, market: MarketKey): Promise<AiLearningsReview> {
+  return request<AiLearningsReview>(
+    withMarket("/api/ai/learnings-review", market),
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    },
+    { timeoutMs: 120000 },
+  );
+}
+
 export function runAiJournalReview(payload: unknown, market: MarketKey): Promise<AiJournalReview> {
   return request<AiJournalReview>(
     withMarket("/api/ai/journal-review", market),

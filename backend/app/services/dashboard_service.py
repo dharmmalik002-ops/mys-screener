@@ -2755,6 +2755,67 @@ class DashboardService:
         except Exception as exc:
             return {"error": str(exc)}
 
+    async def get_ai_learnings_review(self, payload: dict) -> dict:
+        """Longitudinal learnings review: the user's own chart notes joined
+        with their trade outcomes, split into an older and a recent era so the
+        AI can say whether mistakes are still being repeated."""
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is None or not ai.available:
+            return {"error": "AI is not configured (GEMINI_API_KEY missing)."}
+
+        def _trade_rows(trades: list) -> str:
+            rows = ["Symbol | Setup | Entry | Exit | EntryDate | ExitDate | P&L | % | Tags"]
+            for t in trades[:60]:
+                try:
+                    rows.append(
+                        f"{t.get('symbol')} | {t.get('setupType') or '-'} | {t.get('entryPx')} | {t.get('exitPx')} | "
+                        f"{str(t.get('entryDate'))[:10]} | {str(t.get('exitDate'))[:10]} | {float(t.get('pnl') or 0):.0f} | "
+                        f"{float(t.get('perc') or 0):+.1f}% | {','.join(t.get('tags') or [])}"
+                    )
+                except Exception:
+                    continue
+            return "\n".join(rows) if len(rows) > 1 else "none"
+
+        notes = payload.get("notes") or []
+        note_blocks = []
+        for n in notes[:80]:
+            symbol = str(n.get("symbol") or "?").upper()
+            text = str(n.get("text") or "").strip()
+            if not text:
+                continue
+            outcomes = n.get("outcomes") or {}
+            outcome_line = ""
+            if outcomes:
+                outcome_line = (
+                    f" [trades: {outcomes.get('count', 0)}, wins {outcomes.get('wins', 0)}, "
+                    f"losses {outcomes.get('losses', 0)}, net {outcomes.get('net_pnl', 0):.0f}, "
+                    f"first {str(outcomes.get('first_date'))[:10]}, last {str(outcomes.get('last_date'))[:10]}]"
+                )
+            updated = str(n.get("updated_at") or "")[:10]
+            note_blocks.append(f"{symbol}{f' (note updated {updated})' if updated else ''}{outcome_line}:\n{text[:900]}")
+
+        regime_line = "unknown"
+        try:
+            dashboard = self._dashboard_cache
+            xp = getattr(dashboard, "xp_breadth", None) if dashboard else None
+            if xp is not None:
+                regime_line = f"{xp.regime} (XP {xp.xp_score:.1f})"
+        except Exception:
+            pass
+
+        try:
+            return await ai.learnings_review(
+                {
+                    "regime_line": regime_line,
+                    "notes_block": "\n\n".join(note_blocks) or "none",
+                    "older_trades_table": _trade_rows(payload.get("older_trades") or []),
+                    "recent_trades_table": _trade_rows(payload.get("recent_trades") or []),
+                    "era_stats": payload.get("era_stats") or {},
+                }
+            )
+        except Exception as exc:
+            return {"error": str(exc)}
+
     _base_age_memo: dict = {}
 
     async def _base_age_label(self, session_iso: str | None, event: dict) -> str | None:
