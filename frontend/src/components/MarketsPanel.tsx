@@ -5,11 +5,13 @@ import { ArrowDownRight, ArrowUpRight, Compass, Minus } from "lucide-react";
 import {
   getChart,
   getMarketEnvironment,
+  getScanCounts,
   type ChartBar,
   type MarketEnvironmentResponse,
   type MarketEnvDay,
   type XpBreadthScore,
 } from "../lib/api";
+import { IndexCandleChart } from "./IndexCandleChart";
 import { Panel } from "./Panel";
 
 import "./MarketsPanel.css";
@@ -21,11 +23,12 @@ import "./MarketsPanel.css";
 // verdict is exactly the sum of what's on the table.
 // ---------------------------------------------------------------------------
 
+// Smallcap 250 and Midcap 150 get full candlestick charts (the user's hunting
+// ground); Nifty 50 is fetched ONLY as an outlook signal — no chart rendered.
 const OUTLOOK_INDICES = [
-  { symbol: "NIFTYSMLCAP250.NS", label: "Smallcap 250", featured: true },
-  { symbol: "^NSEI", label: "Nifty 50", featured: false },
-  { symbol: "NIFTYMIDCAP150.NS", label: "Midcap 150", featured: false },
-  { symbol: "^NSEBANK", label: "Bank Nifty", featured: false },
+  { symbol: "NIFTYSMLCAP250.NS", label: "Smallcap 250", chart: true },
+  { symbol: "NIFTYMIDCAP150.NS", label: "Midcap 150", chart: true },
+  { symbol: "^NSEI", label: "Nifty 50", chart: false },
 ] as const;
 
 type IndexHealth = {
@@ -257,6 +260,154 @@ function buildOutlook(
   return { score, verdict, guidance, tone, signals, reasons, flips };
 }
 
+// ---------------------------------------------------------------------------
+// "Underneath the surface" — the full internals read. Not "the index is up":
+// who is leading, whether breakouts are being paid, whether dips are bought,
+// where money is rotating, and how many bases are loading for NEXT month.
+// Every sentence is generated from live counted data.
+// ---------------------------------------------------------------------------
+
+type UnderneathRead = {
+  paras: Array<{ title: string; text: string }>;
+};
+
+function buildUnderneath(
+  env: MarketEnvironmentResponse | null,
+  setupCounts: Record<string, number> | null,
+  small: IndexHealth | null,
+  xp: XpBreadthScore | null,
+): UnderneathRead | null {
+  if (!env) return null;
+  const posture = env.posture;
+  const ev = env.evidence;
+  const paras: Array<{ title: string; text: string }> = [];
+
+  // --- Participation: is the crowd moving with the index? ---
+  if (posture) {
+    const adv = posture.advances;
+    const dec = posture.declines;
+    const advPct = adv + dec > 0 ? Math.round((adv / (adv + dec)) * 100) : null;
+    const a21 = posture.above_ema21_pct;
+    const a200 = posture.above_sma200_pct;
+    let divergence = "";
+    if (a21 != null && a200 != null) {
+      if (a200 >= 55 && a21 < 45) {
+        divergence = " That gap — structure healthy but the short-term average lost — is a correction inside an uptrend: historically where the best bases finish forming.";
+      } else if (a21 >= 65 && a200 < 45) {
+        divergence = " A short-term thrust inside a damaged structure — rallies like this need weeks of repair before they carry; treat strength as tradable, not trustable.";
+      } else if (a21 >= 60 && a200 >= 55) {
+        divergence = " Short-term and structural participation agree — the healthiest configuration for holding winners longer.";
+      } else if (a21 < 40 && a200 < 45) {
+        divergence = " Both time frames are weak — the majority of stocks are in downtrends regardless of what the index prints.";
+      }
+    }
+    paras.push({
+      title: "Participation",
+      text: `${adv} advancers vs ${dec} decliners${advPct != null ? ` (${advPct}% up)` : ""} · ${a21 != null ? `${Math.round(a21)}% of stocks above the 21-EMA` : ""}${a200 != null ? `, ${Math.round(a200)}% above the 200-SMA` : ""} · ${posture.new_52w_highs} new 52-week highs against ${posture.new_52w_lows} new lows.${divergence}`,
+    });
+  }
+
+  // --- Leadership stress test: are breakouts being PAID? ---
+  const working = ev?.breakouts_working ?? [];
+  const failed = ev?.breakouts_failed ?? [];
+  if (working.length || failed.length) {
+    const total = working.length + failed.length;
+    const holdRate = total > 0 ? Math.round((working.length / total) * 100) : null;
+    const best = [...working].sort((a, b) => b.pct_vs_pivot - a.pct_vs_pivot).slice(0, 3);
+    const worst = [...failed].sort((a, b) => a.pct_vs_pivot - b.pct_vs_pivot)[0];
+    const bounced = ev?.ema_tests?.bounced ?? [];
+    const sliced = ev?.ema_tests?.sliced ?? [];
+    const dipRead =
+      bounced.length + sliced.length >= 5
+        ? bounced.length >= sliced.length * 1.5
+          ? ` Dip-buyers are present: ${bounced.length} leaders bounced off the 21-EMA vs ${sliced.length} that sliced through.`
+          : sliced.length >= bounced.length * 1.5
+            ? ` Dips are NOT being bought: ${sliced.length} leaders sliced through the 21-EMA vs only ${bounced.length} that bounced — distribution behaviour.`
+            : ` The 21-EMA test is split (${bounced.length} bounced / ${sliced.length} sliced) — no clear hand in control.`
+        : "";
+    const verdict =
+      holdRate == null
+        ? ""
+        : holdRate >= 60
+          ? "Breakouts are being paid — the single most bullish thing a tape can do."
+          : holdRate >= 40
+            ? "Breakouts are a coin-flip — buy only the cleanest pivots and take partials fast."
+            : "Breakouts are failing — the market is punishing entries; patience beats aggression here.";
+    paras.push({
+      title: "Leadership stress test",
+      text: `${verdict} ${working.length} of ${total} recent base breakouts still hold above their pivots${best.length ? ` — strongest: ${best.map((b) => `${b.symbol} (+${b.pct_vs_pivot.toFixed(1)}% vs pivot)`).join(", ")}` : ""}${worst ? `; worst failure ${worst.symbol} (${worst.pct_vs_pivot.toFixed(1)}%)` : ""}.${dipRead}`,
+    });
+  }
+
+  // --- Rotation: where is the money going? ---
+  const top = env.week_review?.top_sectors ?? [];
+  const bottom = env.week_review?.bottom_sectors ?? [];
+  if (top.length) {
+    paras.push({
+      title: "Rotation",
+      text: `Money moved into ${top
+        .slice(0, 3)
+        .map((s) => `${s.sector} (+${s.median_return_5d_pct.toFixed(1)}% median, ${s.stocks} stocks)`)
+        .join(", ")}${bottom.length ? ` while ${bottom
+        .slice(0, 2)
+        .map((s) => `${s.sector} (${s.median_return_5d_pct.toFixed(1)}%)`)
+        .join(" and ")} lagged` : ""}. Trade WITH this rotation — your best setups inside the leading sectors carry the group tailwind.`,
+    });
+  }
+
+  // --- Setup pipeline: next month's breakouts are forming NOW. ---
+  if (setupCounts) {
+    const pipeline: Array<[string, string]> = [
+      ["power-base", "Power Base"],
+      ["vcp", "VCP"],
+      ["tight-closes", "3 Tight Closes"],
+      ["high-tight-flag", "High Tight Flag"],
+    ];
+    const parts = pipeline
+      .filter(([id]) => setupCounts[id] != null)
+      .map(([id, label]) => `${setupCounts[id]} ${label}`);
+    const totalBases = pipeline.reduce((a, [id]) => a + (setupCounts[id] ?? 0), 0);
+    if (parts.length) {
+      const read =
+        totalBases >= 40
+          ? "a RICH pipeline — when breadth confirms, there will be plenty to buy"
+          : totalBases >= 15
+            ? "a moderate pipeline — selection matters more than aggression"
+            : "a thin pipeline — few quality bases means few low-risk entries; forcing trades here is how drawdowns start";
+      paras.push({
+        title: "Setup pipeline (forward-looking)",
+        text: `${totalBases} quality bases are forming right now (${parts.join(", ")}). This is the supply of NEXT month's breakouts — ${read}.`,
+      });
+    }
+  }
+
+  // --- Bottom line: what to actually do. ---
+  if (small) {
+    const trendBit =
+      small.stateScore >= 2
+        ? "Smallcap 250 is in a confirmed uptrend"
+        : small.stateScore >= 1
+          ? "Smallcap 250 is repairing above its 50-DMA"
+          : small.stateScore >= -0.5
+            ? "Smallcap 250 is pulling back inside a larger uptrend"
+            : "Smallcap 250 is in a downtrend";
+    const xpBit = xp
+      ? xp.xp_score >= 15
+        ? "breadth is swing-friendly, so winners can be held for the full move"
+        : xp.xp_score >= 12
+          ? "breadth is improving but not confirmed — scale in rather than jumping in"
+          : "breadth is still choppy, so expect stock-specific moves, quick rotations, and keep position counts low"
+      : "";
+    const level = small.sma50 !== null ? ` The line in the sand stays the 50-DMA at ${Math.round(small.sma50).toLocaleString("en-IN")}: above it, buy your setups; below it, protect capital first.` : "";
+    paras.push({
+      title: "Bottom line for the coming weeks",
+      text: `${trendBit}${xpBit ? `, and ${xpBit}` : ""}.${level}`,
+    });
+  }
+
+  return paras.length ? { paras } : null;
+}
+
 function Sparkline({ values, tone, height = 44 }: { values: number[]; tone: "pos" | "neu" | "neg"; height?: number }) {
   if (values.length < 2) return null;
   const w = 160;
@@ -380,6 +531,8 @@ export function MarketsPanel({
   const [state, setState] = useState<FetchState>("loading");
   const [data, setData] = useState<MarketEnvironmentResponse | null>(null);
   const [indexHealth, setIndexHealth] = useState<Record<string, IndexHealth | null>>({});
+  const [indexBars, setIndexBars] = useState<Record<string, ChartBar[]>>({});
+  const [setupCounts, setSetupCounts] = useState<Record<string, number> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -387,17 +540,35 @@ export function MarketsPanel({
       OUTLOOK_INDICES.map((ix) =>
         getChart(ix.symbol, "1Y", "india").then((resp) => ({
           symbol: ix.symbol,
+          bars: resp.bars ?? [],
           health: computeIndexHealth(ix.symbol, ix.label, resp.bars ?? []),
         })),
       ),
     ).then((settled) => {
       if (!active) return;
-      const next: Record<string, IndexHealth | null> = {};
+      const nextHealth: Record<string, IndexHealth | null> = {};
+      const nextBars: Record<string, ChartBar[]> = {};
       for (const item of settled) {
-        if (item.status === "fulfilled") next[item.value.symbol] = item.value.health;
+        if (item.status === "fulfilled") {
+          nextHealth[item.value.symbol] = item.value.health;
+          nextBars[item.value.symbol] = item.value.bars;
+        }
       }
-      setIndexHealth(next);
+      setIndexHealth(nextHealth);
+      setIndexBars(nextBars);
     });
+    // Setup pipeline: how many quality bases are forming right now — the
+    // forward supply of next month's breakouts.
+    void getScanCounts("india")
+      .then((descriptors) => {
+        if (!active) return;
+        const counts: Record<string, number> = {};
+        for (const d of descriptors) counts[d.id] = d.hit_count;
+        setSetupCounts(counts);
+      })
+      .catch(() => {
+        if (active) setSetupCounts(null);
+      });
     return () => {
       active = false;
     };
@@ -595,6 +766,7 @@ export function MarketsPanel({
   const ai = data?.ai ?? null;
   const week = data?.week_review;
   const outlook = buildOutlook(xpBreadth, data, indexHealth);
+  const underneath = buildUnderneath(data, setupCounts, indexHealth["NIFTYSMLCAP250.NS"] ?? null, xpBreadth);
   const smallcap = indexHealth["NIFTYSMLCAP250.NS"] ?? null;
   const smallcapNote = smallcap
     ? (() => {
@@ -661,52 +833,86 @@ export function MarketsPanel({
         </section>
       ) : null}
 
-      {/* ===== Index health — Smallcap 250 featured ===== */}
-      {Object.keys(indexHealth).length > 0 ? (
-        <section className="mko-indexes" aria-label="Index health">
-          {OUTLOOK_INDICES.map((ix) => {
-            const h = indexHealth[ix.symbol];
-            if (!h) return null;
-            const tone: "pos" | "neu" | "neg" = h.stateScore >= 1 ? "pos" : h.stateScore <= -1 ? "neg" : "neu";
-            const StateIcon = h.stateScore >= 1 ? ArrowUpRight : h.stateScore <= -1 ? ArrowDownRight : Minus;
-            return (
-              <div key={ix.symbol} className={`mko-index-card${ix.featured ? " is-featured" : ""}`}>
-                <div className="mko-index-head">
-                  <div>
-                    <strong>{h.label}</strong>
-                    <span className="mko-index-price">{h.last.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
-                  </div>
-                  <span className={`mko-state mko-${tone}`}>
-                    <StateIcon size={12} strokeWidth={2.4} /> {h.state}
-                  </span>
-                </div>
-                <Sparkline values={ix.featured ? h.spark : h.spark.slice(-60)} tone={tone} height={ix.featured ? 64 : 40} />
-                <div className="mko-index-stats">
-                  <span title="Return over the last 20 sessions">
-                    20d <strong className={h.ret20Pct !== null && h.ret20Pct >= 0 ? "pos" : "neg"}>{num(h.ret20Pct, 1, "%")}</strong>
-                  </span>
-                  <span title="Distance below the 52-week high">
-                    52wH <strong>{num(h.distFrom52wHighPct, 1, "%")}</strong>
-                  </span>
-                  <span title="Position vs the 50-day moving average">
-                    50DMA <strong className={h.above50 ? "pos" : "neg"}>{h.above50 ? "above" : "below"}</strong>
-                  </span>
-                  <span title="Position vs the 200-day moving average">
-                    200DMA <strong className={h.above200 ? "pos" : "neg"}>{h.above200 ? "above" : "below"}</strong>
-                  </span>
-                </div>
-                {ix.featured && smallcapNote ? <p className="mko-featured-note">{smallcapNote}</p> : null}
-                {ix.featured && smallcap ? (
-                  <div className="mko-levels">
-                    <span>Levels that matter:</span>
-                    {smallcap.sma20 !== null ? <em>20DMA {Math.round(smallcap.sma20).toLocaleString("en-IN")}</em> : null}
-                    {smallcap.sma50 !== null ? <em>50DMA {Math.round(smallcap.sma50).toLocaleString("en-IN")}</em> : null}
-                    {smallcap.sma200 !== null ? <em>200DMA {Math.round(smallcap.sma200).toLocaleString("en-IN")}</em> : null}
-                  </div>
-                ) : null}
+      {/* ===== Index charts — Smallcap 250 & Midcap 150, full candles ===== */}
+      {OUTLOOK_INDICES.filter((ix) => ix.chart).map((ix) => {
+        const h = indexHealth[ix.symbol];
+        const bars = indexBars[ix.symbol] ?? [];
+        if (!h || bars.length < 2) return null;
+        const tone: "pos" | "neu" | "neg" = h.stateScore >= 1 ? "pos" : h.stateScore <= -1 ? "neg" : "neu";
+        const StateIcon = h.stateScore >= 1 ? ArrowUpRight : h.stateScore <= -1 ? ArrowDownRight : Minus;
+        const featured = ix.symbol === "NIFTYSMLCAP250.NS";
+        return (
+          <section key={ix.symbol} className="mko-chart-card" aria-label={`${h.label} chart`}>
+            <div className="mko-index-head">
+              <div>
+                <strong>{h.label}</strong>
+                <span className="mko-index-price">{h.last.toLocaleString("en-IN", { maximumFractionDigits: 2 })}</span>
               </div>
-            );
-          })}
+              <div className="mko-index-stats">
+                <span title="Return over the last 20 sessions">
+                  20d <strong className={h.ret20Pct !== null && h.ret20Pct >= 0 ? "pos" : "neg"}>{num(h.ret20Pct, 1, "%")}</strong>
+                </span>
+                <span title="Return over the last 60 sessions">
+                  60d <strong className={h.ret60Pct !== null && h.ret60Pct >= 0 ? "pos" : "neg"}>{num(h.ret60Pct, 1, "%")}</strong>
+                </span>
+                <span title="Distance below the 52-week high">
+                  off 52wH <strong>{num(h.distFrom52wHighPct, 1, "%")}</strong>
+                </span>
+                <span className={`mko-state mko-${tone}`}>
+                  <StateIcon size={12} strokeWidth={2.4} /> {h.state}
+                </span>
+              </div>
+            </div>
+            <IndexCandleChart bars={bars} height={featured ? 360 : 280} />
+            {featured && smallcapNote ? <p className="mko-featured-note">{smallcapNote}</p> : null}
+            {featured && smallcap ? (
+              <div className="mko-levels">
+                <span>Levels that matter:</span>
+                {smallcap.sma20 !== null ? <em>20DMA {Math.round(smallcap.sma20).toLocaleString("en-IN")}</em> : null}
+                {smallcap.sma50 !== null ? <em>50DMA {Math.round(smallcap.sma50).toLocaleString("en-IN")}</em> : null}
+                {smallcap.sma200 !== null ? <em>200DMA {Math.round(smallcap.sma200).toLocaleString("en-IN")}</em> : null}
+              </div>
+            ) : null}
+          </section>
+        );
+      })}
+
+      {/* ===== Underneath the surface — the full internals read ===== */}
+      {underneath ? (
+        <section className="mko-under" aria-label="Underneath the surface">
+          <div className="mko-signals-head">Underneath the surface — what the leaders and internals are actually doing</div>
+          {underneath.paras.map((p) => (
+            <div key={p.title} className="mko-under-para">
+              <strong>{p.title}</strong>
+              <p>{p.text}</p>
+            </div>
+          ))}
+          {(data?.evidence?.breakouts_working?.length || data?.evidence?.breakouts_failed?.length) ? (
+            <div className="mko-under-chips">
+              {(data?.evidence?.breakouts_working ?? []).slice(0, 8).map((b) => (
+                <button
+                  key={`w-${b.symbol}`}
+                  type="button"
+                  className="mko-chip mko-chip-pos"
+                  onClick={() => onOpenSymbolChart?.(b.symbol)}
+                  title={`Broke out ${b.sessions_ago}d ago from a ${b.base_len_label} base · pivot ${b.pivot} · click to open chart`}
+                >
+                  {b.symbol} +{b.pct_vs_pivot.toFixed(1)}%
+                </button>
+              ))}
+              {(data?.evidence?.breakouts_failed ?? []).slice(0, 6).map((b) => (
+                <button
+                  key={`f-${b.symbol}`}
+                  type="button"
+                  className="mko-chip mko-chip-neg"
+                  onClick={() => onOpenSymbolChart?.(b.symbol)}
+                  title={`Failed breakout from ${b.sessions_ago}d ago · pivot ${b.pivot} · click to open chart`}
+                >
+                  {b.symbol} {b.pct_vs_pivot.toFixed(1)}%
+                </button>
+              ))}
+            </div>
+          ) : null}
         </section>
       ) : null}
 

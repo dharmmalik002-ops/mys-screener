@@ -745,3 +745,86 @@
   .mko-indexes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mko-index-card.is-featured { grid-row: auto; grid-column: 1 / -1; }
 }
+
+/* ===== Markets v2: candle chart cards + underneath-the-surface ===== */
+.mko-chart-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  min-width: 0;
+}
+
+.mko-chart-card .mko-index-head {
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.mko-chart-card .mko-index-head > div:first-child strong {
+  font-size: 1.02rem;
+}
+
+.mko-under {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface);
+  padding: 14px 16px;
+  margin-bottom: 14px;
+}
+
+.mko-under-para {
+  padding: 8px 2px;
+  border-top: 1px solid var(--line);
+}
+
+.mko-under-para:first-of-type {
+  border-top: 0;
+}
+
+.mko-under-para strong {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  margin-bottom: 3px;
+}
+
+.mko-under-para p {
+  margin: 0;
+  font-size: 0.87rem;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.mko-under-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line-strong);
+}
+
+.mko-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  background: var(--surface-soft);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+}
+
+.mko-chip-pos { color: var(--positive); border-color: color-mix(in srgb, var(--positive) 30%, transparent); }
+.mko-chip-neg { color: var(--negative); border-color: color-mix(in srgb, var(--negative) 30%, transparent); }
+
+.mko-chip:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}

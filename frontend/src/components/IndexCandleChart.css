@@ -1,0 +1,48 @@
+.icc-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.icc-chart {
+  width: 100%;
+  min-width: 0;
+}
+
+.icc-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  align-items: baseline;
+  padding: 2px 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.icc-legend em {
+  font-style: normal;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.icc-legend em.pos { color: var(--positive); }
+.icc-legend em.neg { color: var(--negative); }
+
+.icc-ohlc {
+  display: inline-flex;
+  gap: 5px;
+  align-items: baseline;
+  white-space: nowrap;
+}
+
+.icc-mas {
+  display: inline-flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.icc-mas em {
+  color: inherit;
+  opacity: 0.95;
+}
