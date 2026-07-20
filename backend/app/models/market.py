@@ -1073,6 +1073,10 @@ class ChartResponse(BaseModel):
     # Markers for earnings announcement days — rendered as "E" pips by
     # the chart panel. Sourced from data/earnings_metrics.json.
     earnings_markers: list[ChartLineMarker] = Field(default_factory=list)
+    # The company's ANNOUNCED upcoming result date (BSE calendar), if it is
+    # today or in the future — the chart draws a future "E" there plus a
+    # "N days to EPS" countdown. None when no announcement is on file.
+    upcoming_earnings_date: str | None = None
     # Markers for the day a stock pushed a Quarterly/Half-yearly/Yearly volume
     # high — rendered as HQV/HHV/HYV pips. Sourced from data/volume_history.json.
     volume_markers: list[ChartLineMarker] = Field(default_factory=list)

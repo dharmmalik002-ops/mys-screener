@@ -1124,6 +1124,7 @@ function buildIndexFallbackChart(
     rs_line: [],
     rs_line_markers: [],
     earnings_markers: [],
+    upcoming_earnings_date: null,
     volume_markers: [],
     band_change_markers: [],
     band_history: [],
@@ -5683,6 +5684,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                     rsLine={displayedChart?.rs_line ?? []}
                     rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                     earningsMarkers={displayedChart?.earnings_markers ?? []}
+                    upcomingEarningsDate={displayedChart?.upcoming_earnings_date ?? null}
                     volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                     bandHistory={displayedChart?.band_history ?? []}
@@ -5769,6 +5771,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   rsLine={displayedChart?.rs_line ?? []}
                   rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                   earningsMarkers={displayedChart?.earnings_markers ?? []}
+                    upcomingEarningsDate={displayedChart?.upcoming_earnings_date ?? null}
                   volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                     bandHistory={displayedChart?.band_history ?? []}
@@ -5882,6 +5885,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={displayedChart?.rs_line ?? []}
                         rsLineMarkers={displayedChart?.rs_line_markers ?? []}
                         earningsMarkers={displayedChart?.earnings_markers ?? []}
+                    upcomingEarningsDate={displayedChart?.upcoming_earnings_date ?? null}
                         volumeMarkers={displayedChart?.volume_markers ?? []}
                     bandChangeMarkers={displayedChart?.band_change_markers ?? []}
                     bandHistory={displayedChart?.band_history ?? []}
@@ -5937,6 +5941,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                         rsLine={paneBDisplayedChart?.rs_line ?? []}
                         rsLineMarkers={paneBDisplayedChart?.rs_line_markers ?? []}
                         earningsMarkers={paneBDisplayedChart?.earnings_markers ?? []}
+                    upcomingEarningsDate={paneBDisplayedChart?.upcoming_earnings_date ?? null}
                         volumeMarkers={paneBDisplayedChart?.volume_markers ?? []}
                         bandChangeMarkers={paneBDisplayedChart?.band_change_markers ?? []}
                         bandHistory={paneBDisplayedChart?.band_history ?? []}

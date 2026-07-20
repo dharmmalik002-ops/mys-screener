@@ -408,6 +408,34 @@ class DashboardService:
         snapshots = await self.provider.get_snapshots(self.settings.market_cap_min_crore)
         return self._with_earnings_metrics(snapshots)
 
+    _upcoming_calendar_cache: tuple[float, dict[str, str]] | None = None
+
+    def _upcoming_earnings_date(self, symbol: str) -> str | None:
+        """The announced upcoming result date for ``symbol`` from the BSE
+        calendar store, only when it's today or later (past dates are covered
+        by the historical "E" markers). Cached ~5 min per process."""
+        try:
+            from datetime import date as _date_cls
+            import time as _time
+
+            from app.services.earnings_metrics import load_calendar_file
+
+            backend_root = getattr(self.provider, "backend_root", None)
+            if backend_root is None:
+                return None
+            now = _time.monotonic()
+            cached = self._upcoming_calendar_cache
+            if cached is None or now - cached[0] > 300:
+                self._upcoming_calendar_cache = (now, load_calendar_file(backend_root))
+            calendar = self._upcoming_calendar_cache[1]
+            raw = calendar.get(symbol.upper())
+            if not raw:
+                return None
+            event = _date_cls.fromisoformat(raw[:10])
+            return raw[:10] if event >= _date_cls.today() else None
+        except Exception:
+            return None
+
     def _build_earnings_markers(self, symbol: str, bars: list) -> list:
         """Return ChartLineMarker entries stamping each result-announcement
         day in the cache. Used by the chart panel to draw "E" pips.
@@ -3759,6 +3787,7 @@ class DashboardService:
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
             earnings_markers=earnings_markers,
+            upcoming_earnings_date=self._upcoming_earnings_date(symbol),
             volume_markers=self._build_volume_markers(symbol, bars),
             band_change_markers=self._build_band_change_markers(symbol, bars),
             band_history=self._build_band_history(symbol),
@@ -3793,6 +3822,7 @@ class DashboardService:
             rs_line=rs_line,
             rs_line_markers=rs_line_markers,
             earnings_markers=self._build_earnings_markers(symbol, bars),
+            upcoming_earnings_date=self._upcoming_earnings_date(symbol),
             volume_markers=self._build_volume_markers(symbol, bars),
             band_change_markers=self._build_band_change_markers(symbol, bars),
             band_history=self._build_band_history(symbol),

@@ -250,6 +250,9 @@ export type ChartResponse = {
   rs_line: ChartLinePoint[];
   rs_line_markers: ChartLineMarker[];
   earnings_markers: ChartLineMarker[];
+  // Announced upcoming result date (BSE calendar), today or later; null when
+  // no announcement is on file for the symbol.
+  upcoming_earnings_date: string | null;
   volume_markers: ChartLineMarker[];
   band_change_markers: ChartLineMarker[];
   band_history: BandHistorySegment[];
@@ -1353,6 +1356,7 @@ export function normalizeChartResponse(value: unknown): ChartResponse {
     rs_line: mapArray(raw.rs_line, normalizeChartLinePoint),
     rs_line_markers: mapArray(raw.rs_line_markers, normalizeChartLineMarker),
     earnings_markers: mapArray(raw.earnings_markers, normalizeChartLineMarker),
+    upcoming_earnings_date: typeof raw.upcoming_earnings_date === "string" && raw.upcoming_earnings_date ? raw.upcoming_earnings_date : null,
     volume_markers: mapArray(raw.volume_markers, normalizeChartLineMarker),
     band_change_markers: mapArray(raw.band_change_markers, normalizeChartLineMarker),
     band_history: mapArray(raw.band_history, normalizeBandHistorySegment),

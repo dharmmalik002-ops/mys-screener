@@ -214,6 +214,7 @@ type ChartPanelProps = {
   rsLine: ChartLinePoint[];
   rsLineMarkers: ChartLineMarker[];
   earningsMarkers?: ChartLineMarker[];
+  upcomingEarningsDate?: string | null;
   volumeMarkers?: ChartLineMarker[];
   bandChangeMarkers?: ChartLineMarker[];
   bandHistory?: BandHistorySegment[];
@@ -1658,6 +1659,7 @@ export function ChartPanel({
   rsLine,
   rsLineMarkers,
   earningsMarkers,
+  upcomingEarningsDate = null,
   volumeMarkers,
   bandChangeMarkers,
   bandHistory,
@@ -1814,6 +1816,24 @@ export function ChartPanel({
   }, [tightnessMarks]);
 
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
+  // "Next E": future result-date marker + days-to-EPS countdown, persisted.
+  const [showNextEarnings, setShowNextEarnings] = useState<boolean>(() => {
+    try {
+      return window.localStorage.getItem("stockScanner.showNextEarnings.v1") !== "off";
+    } catch {
+      return true;
+    }
+  });
+  const toggleNextEarnings = () => {
+    setShowNextEarnings((current) => {
+      try {
+        window.localStorage.setItem("stockScanner.showNextEarnings.v1", current ? "off" : "on");
+      } catch {
+        // best-effort persistence
+      }
+      return !current;
+    });
+  };
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
   const [hoveredRsPoint, setHoveredRsPoint] = useState<ChartLinePoint | null>(null);
@@ -3994,6 +4014,54 @@ export function ChartPanel({
         </g>
       );
     });
+  // "Next E": the company's ANNOUNCED upcoming result date (BSE calendar).
+  // Renders a countdown chip ("4 days to EPS · 24 Jul") plus, on daily
+  // charts, a dashed marker extrapolated to that future date so the event
+  // sits visibly to the right of the last candle.
+  const nextEarnings = (() => {
+    if (!showNextEarnings || !upcomingEarningsDate || !activeBars.length) return null;
+    const eventMs = Date.parse(`${upcomingEarningsDate.slice(0, 10)}T00:00:00Z`);
+    if (!Number.isFinite(eventMs)) return null;
+    const now = new Date();
+    const todayMs = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+    const daysToEps = Math.round((eventMs - todayMs) / 86400000);
+    if (daysToEps < 0) return null;
+    const label = daysToEps === 0 ? "EPS today" : daysToEps === 1 ? "1 day to EPS" : `${daysToEps} days to EPS`;
+    const dateLabel = new Date(eventMs).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
+    return { daysToEps, label, dateLabel, eventMs };
+  })();
+  const nextEarningsOverlay = (() => {
+    if (!nextEarnings || timeframe !== "1D") return null;
+    const chart = chartRef.current;
+    if (!chart) return null;
+    const lastBar = activeBars[activeBars.length - 1];
+    let lastX: number | null = null;
+    try {
+      lastX = chart.timeScale().timeToCoordinate(lastBar.time as never) as number | null;
+    } catch {
+      return null;
+    }
+    if (lastX == null) return null;
+    const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
+    // Trading-session gap (weekdays) between the last candle and the event.
+    let sessions = 0;
+    const cursor = new Date(lastBar.time * 1000);
+    while (cursor.getTime() < nextEarnings.eventMs && sessions < 80) {
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+      const weekday = cursor.getUTCDay();
+      if (weekday !== 0 && weekday !== 6) sessions += 1;
+    }
+    const x = lastX + sessions * spacing;
+    if (x < 0 || x > stageWidth - 6) return null;
+    const color = "#f5b731";
+    return (
+      <g pointerEvents="none">
+        <line x1={x} y1={30} x2={x} y2={Math.max(stageHeight - 8, 30)} stroke={color} strokeWidth={1.4} strokeDasharray="4 5" opacity={0.75} />
+        <rect x={x - 10} y={6} width={20} height={20} rx={6} fill={color} />
+        <text x={x} y={20} textAnchor="middle" fontSize="12" fontWeight={800} fill="#1a1305">E</text>
+      </g>
+    );
+  })();
   // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
   // computed in levels.ts and drawn in the same SVG overlay so they follow
   // pan/zoom. Non-interactive; sit beneath the user's own drawings.
@@ -4599,6 +4667,16 @@ export function ChartPanel({
               Earnings
             </button>
           </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={showNextEarnings ? "tool-pill active" : "tool-pill"}
+              onClick={toggleNextEarnings}
+              title="Show the announced upcoming result date: an E on that future date plus a days-to-EPS countdown"
+            >
+              Next E
+            </button>
+          </div>
           <div className="chart-widget-menu chart-range-menu">
             <select
               className="tool-pill chart-range-select"
@@ -5077,6 +5155,15 @@ export function ChartPanel({
               {hoveredRsPoint ? `RS Rating ${Math.round(hoveredRsPoint.value)} on ${formatChartDateFromTimestamp(hoveredRsPoint.time)}` : "RS Rating line is plotted below price."}
             </span>
             {draftTrendStart ? <span className="chart-stage-label emphasis" style={{ background: palette.background, borderColor: palette.borderColor }}>{chartSubtitle(drawingTool, draftTrendStart, chartStyle)}</span> : null}
+            {nextEarnings ? (
+              <span
+                className="chart-stage-label chart-next-e-chip"
+                style={{ background: palette.background, borderColor: "rgba(245, 183, 49, 0.55)", color: "#f5b731" }}
+                title={`Result announced for ${upcomingEarningsDate} (BSE calendar)`}
+              >
+                {nextEarnings.label} · {nextEarnings.dateLabel}
+              </span>
+            ) : null}
           </div>
           {pocketPivotWidget.enabled ? (
             <div
@@ -5450,6 +5537,7 @@ export function ChartPanel({
               {rectangleOverlays}
               {arrowLineOverlays}
               {arrowMarkerOverlays}
+              {nextEarningsOverlay}
               {measureOverlays}
               {draftPoint ? <circle cx={draftPoint.x} cy={draftPoint.y} r="5" fill="#ffd36f" /> : null}
               {draftPoint && hoverPoint && drawingTool === "trendline" ? (
