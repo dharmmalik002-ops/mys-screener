@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-20T13:04:03.597488+00:00",
+  "generated_at": "2026-07-20T13:19:01.667863+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -3953,14 +3953,14 @@
     },
     "VENUSREM": {
       "symbol": "VENUSREM",
-      "earnings_date": "2026-05-26",
-      "close_in_range_pct": 0.6496,
-      "next_day_gap_pct": 5.0,
-      "day_rvol_50d": 3.946,
-      "return_5d_pct": 21.554,
+      "earnings_date": "2026-07-20",
+      "close_in_range_pct": 0.1401,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.72,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 5.0,
-      "best_pop_rvol": 0.727
+      "best_pop_pct": -4.299,
+      "best_pop_rvol": 0.72
     },
     "DCXINDIA": {
       "symbol": "DCXINDIA",
@@ -7544,7 +7544,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.421,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -2.438,
       "best_pop_rvol": 1.421
     },
