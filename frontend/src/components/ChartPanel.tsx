@@ -40,7 +40,7 @@ export type ChartGroupSummary = {
   stockCount: number;
 };
 
-type DrawingTool = "none" | "hline" | "vline" | "trendline" | "ray" | "rectangle" | "measure" | "text";
+type DrawingTool = "none" | "hline" | "vline" | "trendline" | "ray" | "rectangle" | "measure" | "text" | "arrow-up" | "arrow-down" | "arrow-line";
 type FavoriteItemId = `tool:${DrawingTool}` | `indicator:${IndicatorKey}` | "action:load-full-history" | "overlay:rvol" | "overlay:pocket-pivot" | "overlay:earnings";
 
 type FavoritesSettings = {
@@ -183,6 +183,26 @@ export type ChartAnnotation =
       point: ChartAnchor;
       text: string;
       color?: string;
+    }
+  | {
+      id: string;
+      type: "arrow-up";
+      point: ChartAnchor;
+      color?: string;
+    }
+  | {
+      id: string;
+      type: "arrow-down";
+      point: ChartAnchor;
+      color?: string;
+    }
+  | {
+      id: string;
+      type: "arrow-line";
+      start: ChartAnchor;
+      end: ChartAnchor;
+      color?: string;
+      lineWidth?: number;
     };
 
 export { DEFAULT_CHART_COLORS };
@@ -271,6 +291,9 @@ const TOOL_RAIL_ITEMS: Array<{ key: DrawingTool; label: string; hint: string }> 
   { key: "trendline", label: "Trendline", hint: "Trendline — click start then end" },
   { key: "ray", label: "Ray", hint: "Ray — click start then direction" },
   { key: "rectangle", label: "Rectangle", hint: "Rectangle / zone — click two corners" },
+  { key: "arrow-up", label: "Bull arrow", hint: "Bullish arrow (up) — one click below a candle" },
+  { key: "arrow-down", label: "Bear arrow", hint: "Bearish arrow (down) — one click above a candle" },
+  { key: "arrow-line", label: "Arrow line", hint: "Arrow line — click start then the direction it points" },
   { key: "measure", label: "Measure", hint: "Measure move — click start then end" },
   { key: "text", label: "Text", hint: "Text note — click to place" },
 ];
@@ -339,6 +362,27 @@ function ToolGlyph({ tool }: { tool: DrawingTool }) {
       return (
         <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
           <path {...stroke} d="M5 5.5h10M10 5.5V16" />
+        </svg>
+      );
+    case "arrow-up":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M10 16V6" />
+          <path {...stroke} d="M5.5 9.5L10 5l4.5 4.5" />
+        </svg>
+      );
+    case "arrow-down":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M10 4v10" />
+          <path {...stroke} d="M5.5 10.5L10 15l4.5-4.5" />
+        </svg>
+      );
+    case "arrow-line":
+      return (
+        <svg viewBox="0 0 20 20" width="17" height="17" aria-hidden="true">
+          <path {...stroke} d="M4 16L15 5" />
+          <path {...stroke} d="M9 5h6v6" />
         </svg>
       );
     default:
@@ -778,6 +822,9 @@ const ANNOTATION_DEFAULT_COLORS: Record<string, string> = {
   rectangle: "#59c4ff",
   measure: "#4bf0b3",
   text: "#ffd36f",
+  "arrow-up": "#22c55e",
+  "arrow-down": "#ef4444",
+  "arrow-line": "#ffd36f",
 };
 
 function defaultVisibleBars(timeframe: ChartTimeframe) {
@@ -1047,7 +1094,7 @@ function getAnnotationHandleAnchors(annotation: ChartAnnotation): Array<{ key: A
 }
 
 function isTwoPointTool(tool: DrawingTool) {
-  return tool === "trendline" || tool === "ray" || tool === "rectangle" || tool === "measure";
+  return tool === "trendline" || tool === "ray" || tool === "rectangle" || tool === "measure" || tool === "arrow-line";
 }
 
 function chartSubtitle(tool: DrawingTool, draftStart: ChartAnchor | null, chartStyle: ChartStyle) {
@@ -1071,6 +1118,15 @@ function chartSubtitle(tool: DrawingTool, draftStart: ChartAnchor | null, chartS
   }
   if (tool === "text") {
     return "Text mode: click a candle or bar to place a saved note";
+  }
+  if (tool === "arrow-up") {
+    return "Bull arrow: click below a candle to mark a bullish point";
+  }
+  if (tool === "arrow-down") {
+    return "Bear arrow: click above a candle to mark a bearish point";
+  }
+  if (tool === "arrow-line") {
+    return draftStart ? "Arrow line: pick the point it should aim at" : "Arrow line: click the start point";
   }
   return chartStyle === "bars" ? "Bar chart, volume, indicators, and saved drawings" : "Candles, volume, indicators, and saved drawings";
 }
@@ -2441,6 +2497,23 @@ export function ChartPanel({
       return;
     }
 
+    if (tool === "arrow-up" || tool === "arrow-down") {
+      // Bull/bear markers keep their semantic colour (green up / red down) by
+      // leaving `color` unset so ANNOTATION_DEFAULT_COLORS applies; the colour
+      // picker can still override a selected arrow later.
+      onAnnotationsChangeRef.current([
+        ...annotationsRef.current,
+        {
+          id: buildId(),
+          type: tool,
+          point: anchor,
+        },
+      ]);
+      setHoverAnchor(null);
+      setDrawingTool("none");
+      return;
+    }
+
     if (isTwoPointTool(tool)) {
       const draft = draftTrendStartRef.current;
       if (!draft) {
@@ -2456,7 +2529,7 @@ export function ChartPanel({
           start: draft,
           end: anchor,
           color: drawingColor,
-        } as Extract<ChartAnnotation, { type: "trendline" | "ray" | "rectangle" | "measure" }>,
+        } as Extract<ChartAnnotation, { type: "trendline" | "ray" | "rectangle" | "measure" | "arrow-line" }>,
       ]);
       setDraftTrendStart(null);
       setHoverAnchor(null);
@@ -3866,6 +3939,58 @@ export function ChartPanel({
             fill={isSel ? `${color}22` : "rgba(89, 196, 255, 0.12)"}
             stroke={color} strokeWidth={lw} strokeDasharray="6 4"
             style={{ pointerEvents: "auto" }} />
+        </g>
+      );
+    });
+  const arrowLineOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-line" }> => annotation.type === "arrow-line")
+    .map((annotation) => {
+      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+      if (!start || !end) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS["arrow-line"];
+      const lw = annotation.lineWidth ?? 2;
+      const angle = Math.atan2(end.y - start.y, end.x - start.x);
+      const headLen = 12 + lw * 1.5;
+      const wing = Math.PI / 7;
+      const h1x = end.x - headLen * Math.cos(angle - wing);
+      const h1y = end.y - headLen * Math.sin(angle - wing);
+      const h2x = end.x - headLen * Math.cos(angle + wing);
+      const h2y = end.y - headLen * Math.sin(angle + wing);
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
+          <polygon points={`${end.x},${end.y} ${h1x},${h1y} ${h2x},${h2y}`} fill={color} />
+        </g>
+      );
+    });
+  const arrowMarkerOverlays = annotations
+    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-up" | "arrow-down" }> =>
+      annotation.type === "arrow-up" || annotation.type === "arrow-down")
+    .map((annotation) => {
+      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+      if (!point) return null;
+      const isSel = selectedAnnotationId === annotation.id;
+      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS[annotation.type];
+      const up = annotation.type === "arrow-up";
+      const { x, y } = point;
+      // Up arrow points up (head at top, stem below); down arrow is the mirror.
+      const head = up
+        ? `${x},${y - 11} ${x - 6},${y - 2} ${x + 6},${y - 2}`
+        : `${x},${y + 11} ${x - 6},${y + 2} ${x + 6},${y + 2}`;
+      const stemY1 = up ? y - 2 : y + 2;
+      const stemY2 = up ? y + 11 : y - 11;
+      return (
+        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+          onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
+          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+          {isSel && <circle cx={x} cy={y} r="15" fill={color} opacity={0.16} />}
+          <polygon points={head} fill={color} stroke={color} strokeWidth={1} strokeLinejoin="round" />
+          <line x1={x} y1={stemY1} x2={x} y2={stemY2} stroke={color} strokeWidth={3} strokeLinecap="round" />
         </g>
       );
     });
@@ -5323,6 +5448,8 @@ export function ChartPanel({
               {trendlineOverlays}
               {rayOverlays}
               {rectangleOverlays}
+              {arrowLineOverlays}
+              {arrowMarkerOverlays}
               {measureOverlays}
               {draftPoint ? <circle cx={draftPoint.x} cy={draftPoint.y} r="5" fill="#ffd36f" /> : null}
               {draftPoint && hoverPoint && drawingTool === "trendline" ? (
@@ -5347,6 +5474,19 @@ export function ChartPanel({
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeDasharray="4 4"
+                />
+              ) : null}
+              {draftPoint && hoverPoint && drawingTool === "arrow-line" ? (
+                <line
+                  x1={draftPoint.x}
+                  y1={draftPoint.y}
+                  x2={hoverPoint.x}
+                  y2={hoverPoint.y}
+                  stroke="#ffd36f"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeDasharray="4 4"
+                  markerEnd=""
                 />
               ) : null}
               {draftPoint && hoverPoint && drawingTool === "rectangle" ? (
@@ -5414,13 +5554,13 @@ export function ChartPanel({
                     onChange={(e) => updateAnnotation(selectedAnnotation.id, { color: e.target.value } as any)}
                   />
                 </label>
-                {selectedAnnotation.type !== "text" ? (
+                {"lineWidth" in selectedAnnotation || (selectedAnnotation.type !== "text" && selectedAnnotation.type !== "arrow-up" && selectedAnnotation.type !== "arrow-down") ? (
                   <div className="annotation-edit-widths">
                     {([1, 2, 3] as const).map((w) => (
                       <button
                         key={w}
                         type="button"
-                        className={(selectedAnnotation.lineWidth ?? 2) === w ? "width-btn active" : "width-btn"}
+                        className={(("lineWidth" in selectedAnnotation ? selectedAnnotation.lineWidth : undefined) ?? 2) === w ? "width-btn active" : "width-btn"}
                         onClick={() => updateAnnotation(selectedAnnotation.id, { lineWidth: w } as any)}
                         title={`Line width ${w}`}
                       >
@@ -5428,7 +5568,7 @@ export function ChartPanel({
                       </button>
                     ))}
                   </div>
-                ) : (
+                ) : selectedAnnotation.type === "text" ? (
                   <button
                     type="button"
                     className="annotation-edit-edit"
@@ -5437,7 +5577,7 @@ export function ChartPanel({
                   >
                     Edit
                   </button>
-                )}
+                ) : null}
                 <button
                   type="button"
                   className="annotation-edit-delete"
