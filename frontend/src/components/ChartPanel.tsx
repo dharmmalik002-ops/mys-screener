@@ -1842,6 +1842,16 @@ export function ChartPanel({
   const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
   const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
   const [, setOverlayVersion] = useState(0);
+
+  // One delayed overlay bump after bars land: timeToCoordinate() returns null
+  // until the chart engine finishes its first layout, so overlays computed
+  // during the initial render (future-E marker, saved drawings) would
+  // otherwise stay invisible until the first pointer interaction.
+  useEffect(() => {
+    if (!bars.length) return;
+    const id = window.setTimeout(() => setOverlayVersion((version) => version + 1), 150);
+    return () => window.clearTimeout(id);
+  }, [bars]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [draggingAnnotationHandle, setDraggingAnnotationHandle] = useState<string | null>(null);
   const [extendedHistory, setExtendedHistory] = useState<ChartResponse | null>(null);
