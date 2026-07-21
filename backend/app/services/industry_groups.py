@@ -9,9 +9,17 @@ Pipeline:
   4. Compute 126d / 63d / 21d / 5d total returns (using stock_return_126d / 60d / 20d / 5d as the
      pragmatic mapping over the existing snapshot fields).
   5. Winsorize each return series within the group at 5th/95th percentile.
-  6. group_score = fast swing score: 5d thrust + 20d momentum + acceleration + breadth + leaders/volume.
-  7. Dense rank descending by group_score so fresh moving groups surface first.
-  8. rank_change_1w / 1m / 3m read from on-disk daily rank snapshots (5d / 20d / 60d ago).
+  6. group_score = swing score anchored on 1-3 month relative strength (63d + 21d + 126d),
+     with a small 5d ignition tilt plus breadth + leaders/volume; the raw blend is then
+     EMA-smoothed (span 4) over prior sessions' rawScore history so ranks are stable
+     day to day. Raw scores are what get persisted; smoothing happens at read time,
+     which keeps same-day cache rebuilds idempotent.
+  7. momentum_score preserves the old fast blend (5d thrust + acceleration + fast breadth
+     + leaders/volume) as a secondary signal; emerging_flag marks groups whose short-term
+     percentile is running far ahead of their 3m percentile (fresh rotation).
+  8. Dense rank descending by smoothed group_score.
+  9. rank_change_1w / 1m / 3m read from daily rank snapshots at calendar-date lookbacks
+     (nearest session within tolerance; None when history is too sparse).
 """
 
 from __future__ import annotations
@@ -19,7 +27,7 @@ from __future__ import annotations
 import json
 import logging
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from statistics import median
 from typing import Iterable
@@ -50,14 +58,32 @@ GROUP_MIN_STOCKS = 5
 WINSORIZE_LOWER = 0.05
 WINSORIZE_UPPER = 0.95
 
-SCORE_WEIGHT_5D = 0.35
+# Rank-score weights: anchored on 1-3 month relative strength so rankings are
+# stable at a days-to-weeks swing horizon; 5d is only an ignition tilt.
+SCORE_WEIGHT_63D = 0.30
 SCORE_WEIGHT_21D = 0.25
-SCORE_WEIGHT_ACCELERATION = 0.20
+SCORE_WEIGHT_126D = 0.15
+SCORE_WEIGHT_5D = 0.10
 SCORE_WEIGHT_BREADTH = 0.10
 SCORE_WEIGHT_LEADERS_VOLUME = 0.10
 
+# Momentum score (secondary, display/sort only): the old fast swing blend.
+MOMENTUM_WEIGHT_5D = 0.45
+MOMENTUM_WEIGHT_ACCELERATION = 0.25
+MOMENTUM_WEIGHT_BREADTH = 0.15
+MOMENTUM_WEIGHT_LEADERS_VOLUME = 0.15
+
+# Emerging = short-term percentile running well ahead of the 3m percentile.
+EMERGING_PCTL_GAP = 25.0
+EMERGING_MIN_MOMENTUM = 70.0
+
+# Day-over-day EMA smoothing of the rank score (raw stored, smoothed at read time).
+SCORE_EMA_SPAN = 4
+SCORE_EMA_MAX_SESSIONS = 15
+
 RANK_HISTORY_DIR = Path(__file__).resolve().parent.parent / "data" / "rank_history"
-RANK_HISTORY_LOOKBACKS = {"1w": 5, "1m": 20, "3m": 60}
+# label -> (calendar_days_back, tolerance_days)
+RANK_HISTORY_LOOKBACKS = {"1w": (7, 4), "1m": (30, 8), "3m": (91, 12)}
 
 
 def _avg_traded_value_50d_cr(snapshot: StockSnapshot) -> float:
@@ -189,7 +215,7 @@ def _get_rank_store():
             _rank_store = ScanHistoryStore(
                 get_settings().database_url,
                 RANK_HISTORY_DIR.parent / "scan_history.json",
-                keep_dates=70,
+                keep_dates=80,
             )
         except Exception as exc:
             logger.info("rank store unavailable: %s", exc)
@@ -197,39 +223,97 @@ def _get_rank_store():
     return _rank_store or None
 
 
-def _load_rank_history(lookback_days: int, generated_at: datetime) -> dict[str, int]:
-    """Read the rank snapshot from `lookback_days` trading-days ago.
-    Prefers the persistent store; falls back to on-disk snapshots."""
+def _parse_history_date(value: str) -> date | None:
+    try:
+        return date.fromisoformat(value)
+    except ValueError:
+        return None
+
+
+def _load_group_history() -> dict[str, list[dict]]:
+    """Load all rank/score history snapshots keyed by ISO date.
+    Prefers the persistent store; falls back to on-disk snapshots
+    (dates derived from the ranks_YYYYMMDD.json filename)."""
     store = _get_rank_store()
     if store is not None:
         try:
             history = store.load("group-ranks")
-            dates = sorted(history.keys())
-            if dates:
-                target_idx = max(0, len(dates) - 1 - lookback_days)
-                payload = history[dates[target_idx]]
-                ranks = {
-                    str(row.get("groupId")): int(row.get("rank", 0))
-                    for row in payload
-                    if isinstance(row, dict) and row.get("groupId")
-                }
-                if ranks:
-                    return ranks
+            cleaned = {
+                str(day): [row for row in payload if isinstance(row, dict) and row.get("groupId")]
+                for day, payload in history.items()
+                if _parse_history_date(str(day)) is not None
+            }
+            if any(cleaned.values()):
+                return cleaned
         except Exception as exc:
             logger.info("rank store read failed: %s", exc)
     if not RANK_HISTORY_DIR.exists():
         return {}
-    files = sorted(RANK_HISTORY_DIR.glob("ranks_*.json"))
-    if not files:
+    result: dict[str, list[dict]] = {}
+    for target_file in sorted(RANK_HISTORY_DIR.glob("ranks_*.json")):
+        stamp = target_file.stem.removeprefix("ranks_")
+        try:
+            day = datetime.strptime(stamp, "%Y%m%d").date().isoformat()
+        except ValueError:
+            continue
+        try:
+            payload = json.loads(target_file.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            logger.warning("Failed to read rank history %s: %s", target_file, exc)
+            continue
+        if isinstance(payload, list):
+            result[day] = [row for row in payload if isinstance(row, dict) and row.get("groupId")]
+    return result
+
+
+def _history_ranks_asof(
+    history: dict[str, list[dict]],
+    asof: date,
+    days_back: int,
+    tolerance: int,
+) -> dict[str, int]:
+    """Rank snapshot nearest to `asof - days_back` (strictly before `asof`).
+    Returns {} when no session falls within `tolerance` days of the target,
+    so rank changes become None instead of comparing against a wrong date."""
+    target = asof - timedelta(days=days_back)
+    best_day: date | None = None
+    for day_str in history:
+        day = _parse_history_date(day_str)
+        if day is None or day >= asof:
+            continue
+        if best_day is None or abs((day - target).days) < abs((best_day - target).days):
+            best_day = day
+    if best_day is None or abs((best_day - target).days) > tolerance:
         return {}
-    target_idx = max(0, len(files) - 1 - lookback_days)
-    target_file = files[target_idx]
-    try:
-        payload = json.loads(target_file.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        logger.warning("Failed to read rank history %s: %s", target_file, exc)
-        return {}
+    payload = history.get(best_day.isoformat(), [])
     return {str(row.get("groupId")): int(row.get("rank", 0)) for row in payload if row.get("groupId")}
+
+
+def _prior_raw_scores(history: dict[str, list[dict]], asof: date) -> dict[str, list[float]]:
+    """Per-group raw-score series from sessions strictly before `asof`,
+    oldest first, capped at the newest SCORE_EMA_MAX_SESSIONS sessions.
+    Falls back to `score` for pre-rawScore history entries."""
+    days = sorted(d for d in history if (parsed := _parse_history_date(d)) is not None and parsed < asof)
+    days = days[-SCORE_EMA_MAX_SESSIONS:]
+    series: dict[str, list[float]] = defaultdict(list)
+    for day in days:
+        for row in history.get(day, []):
+            gid = str(row.get("groupId"))
+            value = row.get("rawScore", row.get("score"))
+            if gid and isinstance(value, (int, float)):
+                series[gid].append(float(value))
+    return series
+
+
+def _ema_last(values: list[float], span: int) -> float:
+    """Last value of a standard EMA (alpha = 2/(span+1)) seeded with the first value."""
+    if not values:
+        return 0.0
+    alpha = 2.0 / (span + 1)
+    ema = values[0]
+    for value in values[1:]:
+        ema = (value * alpha) + (ema * (1 - alpha))
+    return ema
 
 
 def _save_rank_history(rank_payload: list[dict], generated_at: datetime) -> None:
@@ -469,10 +553,15 @@ def _build_group_payload(
                 "top_constituents": top_constituents,
                 "symbols": [s.symbol for s in sorted_members],
                 "score": 0.0,
+                "momentum_score": 0.0,
+                "emerging_flag": False,
                 "_fast_return_5d": relative_1w,
                 "_fast_return_20d": relative_1m,
+                "_fast_return_63d": relative_3m,
+                "_fast_return_126d": relative_6m,
                 "_fast_acceleration": fast_acceleration,
                 "_fast_breadth": fast_breadth_score,
+                "_score_breadth": round((fast_breadth_score * 0.5) + (breadth_score * 0.5), 2),
                 "_fast_leaders_volume": leaders_volume_score,
             }
         )
@@ -492,18 +581,35 @@ def _build_group_payload(
         score_inputs = {
             "_fast_return_5d": _percentile_scores([float(row["_fast_return_5d"]) for row in group_rows]),
             "_fast_return_20d": _percentile_scores([float(row["_fast_return_20d"]) for row in group_rows]),
+            "_fast_return_63d": _percentile_scores([float(row["_fast_return_63d"]) for row in group_rows]),
+            "_fast_return_126d": _percentile_scores([float(row["_fast_return_126d"]) for row in group_rows]),
             "_fast_acceleration": _percentile_scores([float(row["_fast_acceleration"]) for row in group_rows]),
             "_fast_breadth": _percentile_scores([float(row["_fast_breadth"]) for row in group_rows]),
+            "_score_breadth": _percentile_scores([float(row["_score_breadth"]) for row in group_rows]),
             "_fast_leaders_volume": _percentile_scores([float(row["_fast_leaders_volume"]) for row in group_rows]),
         }
         for idx, row in enumerate(group_rows):
+            pct_5d = score_inputs["_fast_return_5d"][idx]
+            pct_63d = score_inputs["_fast_return_63d"][idx]
             row["score"] = round(
-                (SCORE_WEIGHT_5D * score_inputs["_fast_return_5d"][idx])
+                (SCORE_WEIGHT_63D * pct_63d)
                 + (SCORE_WEIGHT_21D * score_inputs["_fast_return_20d"][idx])
-                + (SCORE_WEIGHT_ACCELERATION * score_inputs["_fast_acceleration"][idx])
-                + (SCORE_WEIGHT_BREADTH * score_inputs["_fast_breadth"][idx])
+                + (SCORE_WEIGHT_126D * score_inputs["_fast_return_126d"][idx])
+                + (SCORE_WEIGHT_5D * pct_5d)
+                + (SCORE_WEIGHT_BREADTH * score_inputs["_score_breadth"][idx])
                 + (SCORE_WEIGHT_LEADERS_VOLUME * score_inputs["_fast_leaders_volume"][idx]),
                 2,
+            )
+            row["momentum_score"] = round(
+                (MOMENTUM_WEIGHT_5D * pct_5d)
+                + (MOMENTUM_WEIGHT_ACCELERATION * score_inputs["_fast_acceleration"][idx])
+                + (MOMENTUM_WEIGHT_BREADTH * score_inputs["_fast_breadth"][idx])
+                + (MOMENTUM_WEIGHT_LEADERS_VOLUME * score_inputs["_fast_leaders_volume"][idx]),
+                2,
+            )
+            row["emerging_flag"] = bool(
+                (pct_5d - pct_63d) >= EMERGING_PCTL_GAP
+                and float(row["momentum_score"]) >= EMERGING_MIN_MOMENTUM
             )
             for transient_key in score_inputs:
                 row.pop(transient_key, None)
@@ -544,9 +650,31 @@ def build_industry_groups_response(
             for idx, r in enumerate(prev_rows)
         }
 
-    history_1w = _load_rank_history(RANK_HISTORY_LOOKBACKS["1w"], generated_at)
-    history_1m = _load_rank_history(RANK_HISTORY_LOOKBACKS["1m"], generated_at)
-    history_3m = _load_rank_history(RANK_HISTORY_LOOKBACKS["3m"], generated_at)
+    history = _load_group_history()
+    asof = generated_at.astimezone(timezone.utc).date()
+    history_1w = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["1w"])
+    history_1m = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["1m"])
+    history_3m = _history_ranks_asof(history, asof, *RANK_HISTORY_LOOKBACKS["3m"])
+
+    # Smooth today's raw score against prior sessions' persisted raw scores
+    # (EMA at read time — same-day rebuilds recompute identically, never
+    # double-smooth). Cold start / new group id -> smoothed == raw.
+    # Note: today's history entry is pinned first-write-wins, so tomorrow's EMA
+    # may inherit a pre-bhavcopy-patch raw score — one term of a span-4 EMA.
+    prior_scores = _prior_raw_scores(history, asof)
+    for row in group_rows:
+        raw = float(row["score"])
+        series = prior_scores.get(str(row["group_id"]), []) + [raw]
+        row["raw_score"] = raw
+        row["score"] = round(_ema_last(series, SCORE_EMA_SPAN), 2)
+    group_rows.sort(
+        key=lambda row: (
+            -float(row["score"]),
+            -float(row["relative_return_1w"]),
+            -float(row["relative_return_1m"]),
+            str(row["group_name"]),
+        )
+    )
 
     ranked_groups: list[IndustryGroupRankItem] = []
     rank_payload_for_history: list[dict] = []
@@ -583,6 +711,9 @@ def build_industry_groups_response(
                 stock_count=int(row["stock_count"]),
                 unstable_flag=bool(row.get("unstable_flag", False)),
                 score=float(row["score"]),
+                raw_score=float(row["raw_score"]),
+                momentum_score=float(row["momentum_score"]),
+                emerging_flag=bool(row.get("emerging_flag", False)),
                 return_1w=float(row["return_1w"]),
                 return_1m=float(row["return_1m"]),
                 return_3m=float(row["return_3m"]),
@@ -608,7 +739,12 @@ def build_industry_groups_response(
             )
         )
         rank_payload_for_history.append(
-            {"groupId": gid, "rank": index, "score": float(row["score"])}
+            {
+                "groupId": gid,
+                "rank": index,
+                "score": float(row["score"]),
+                "rawScore": float(row["raw_score"]),
+            }
         )
 
     _save_rank_history(rank_payload_for_history, generated_at)
@@ -671,6 +807,9 @@ def write_industry_group_files(
                 "parentSector": item.parent_sector,
                 "description": item.description,
                 "score": item.score,
+                "rawScore": item.raw_score,
+                "momentumScore": item.momentum_score,
+                "emergingFlag": item.emerging_flag,
                 "stockCount": item.stock_count,
                 "unstableFlag": item.unstable_flag,
                 "returns": {"1w": item.return_1w, "1m": item.return_1m, "3m": item.return_3m, "6m": item.return_6m},
@@ -705,6 +844,9 @@ def write_industry_group_files(
             "groupId": item.group_id,
             "groupName": item.group_name,
             "score": item.score,
+            "rawScore": item.raw_score,
+            "momentumScore": item.momentum_score,
+            "emergingFlag": item.emerging_flag,
             "unstableFlag": item.unstable_flag,
             "return1w": item.return_1w,
             "return1m": item.return_1m,

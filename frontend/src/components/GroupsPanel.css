@@ -672,6 +672,26 @@ body.dark .gp-score-chip {
   color: #c7d2fe;
 }
 
+/* emerging rotation chip */
+.gp-emerging {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.16));
+  color: #047857;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: default;
+}
+
+:root[data-theme="dark"] .gp-emerging,
+:root.dark .gp-emerging,
+body.dark .gp-emerging {
+  color: #6ee7b7;
+}
+
 /* breadth donut */
 .gp-donut-label {
   position: absolute;

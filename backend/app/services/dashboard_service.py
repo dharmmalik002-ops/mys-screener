@@ -6480,7 +6480,7 @@ class DashboardService:
 
         try:
             payload = json.loads(cache_path.read_text(encoding="utf-8"))
-            if int(payload.get("cache_version") or 0) < 2:
+            if int(payload.get("cache_version") or 0) < 3:
                 return self._load_legacy_cached_industry_groups(snapshot_updated_at)
             response = IndustryGroupsResponse.model_validate(payload)
         except Exception:
@@ -6617,7 +6617,7 @@ class DashboardService:
         cache_path = self._industry_groups_cache_path()
         cache_path.parent.mkdir(parents=True, exist_ok=True)
         payload = response.model_dump(mode="json")
-        payload["cache_version"] = 2
+        payload["cache_version"] = 3
         cache_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
     @staticmethod

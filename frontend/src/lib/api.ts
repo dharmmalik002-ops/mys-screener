@@ -795,6 +795,9 @@ export type IndustryGroupRankItem = {
   description: string;
   stock_count: number;
   score: number;
+  raw_score: number | null;
+  momentum_score: number | null;
+  emerging_flag: boolean;
   return_1w: number;
   return_1m: number;
   return_3m: number;
@@ -1503,6 +1506,9 @@ function normalizeIndustryGroupRankItem(value: unknown): IndustryGroupRankItem {
     description: readString(raw.description),
     stock_count: readNumber(raw.stock_count),
     score: readNumber(raw.score),
+    raw_score: readNullableNumber(raw.raw_score),
+    momentum_score: readNullableNumber(raw.momentum_score),
+    emerging_flag: Boolean(raw.emerging_flag),
     return_1w: readNumber(raw.return_1w),
     return_1m: readNumber(raw.return_1m),
     return_3m: readNumber(raw.return_3m),

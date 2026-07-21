@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import json
 import sys
 import unittest
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -15,6 +16,7 @@ if str(BACKEND_ROOT) not in sys.path:
 
 from app.models.market import StockSnapshot
 from app.providers.free import FreeMarketDataProvider
+from app.services import industry_groups
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 
 
@@ -22,6 +24,22 @@ class IndustryGroupsTests(unittest.TestCase):
     def setUp(self) -> None:
         self.provider = FreeMarketDataProvider()
         self.snapshot_updated_at = datetime(2026, 4, 2, 10, 30, tzinfo=timezone.utc)
+        # Isolate rank history: temp dir instead of the real data dir, no store.
+        self._history_dir_ctx = TemporaryDirectory()
+        self._orig_history_dir = industry_groups.RANK_HISTORY_DIR
+        self._orig_rank_store = industry_groups._rank_store
+        industry_groups.RANK_HISTORY_DIR = Path(self._history_dir_ctx.name)
+        industry_groups._rank_store = False
+
+    def tearDown(self) -> None:
+        industry_groups.RANK_HISTORY_DIR = self._orig_history_dir
+        industry_groups._rank_store = self._orig_rank_store
+        self._history_dir_ctx.cleanup()
+
+    def _seed_history(self, days_ago: int, payload: list[dict]) -> None:
+        day = (self.snapshot_updated_at - timedelta(days=days_ago)).astimezone(timezone.utc)
+        out = Path(self._history_dir_ctx.name) / f"ranks_{day.strftime('%Y%m%d')}.json"
+        out.write_text(json.dumps(payload), encoding="utf-8")
 
     def _build_snapshot(
         self,
@@ -309,31 +327,34 @@ class IndustryGroupsTests(unittest.TestCase):
         self.assertEqual(response.groups[0].stock_count, 4)
         self.assertEqual({item.final_group_name for item in response.stocks}, {"Healthcare (Parent bucket)"})
 
-    def test_fast_recent_group_momentum_outranks_slow_long_term_strength(self) -> None:
-        def tune(
-            snapshot: StockSnapshot,
-            *,
-            return_1w: float,
-            return_1m: float,
-            return_3m: float,
-            return_6m: float,
-            rs: int,
-            rvol: float,
-        ) -> StockSnapshot:
-            snapshot.stock_return_5d = return_1w
-            snapshot.stock_return_20d = return_1m
-            snapshot.stock_return_60d = return_3m
-            snapshot.stock_return_126d = return_6m
-            snapshot.rs_rating = rs
-            snapshot.rs_eligible = True
-            snapshot.volume = int(snapshot.avg_volume_20d * rvol)
-            snapshot.change_pct = max(return_1w / 2, 0.5)
-            snapshot.sma50 = snapshot.last_price * 0.9
-            snapshot.sma200 = snapshot.last_price * 0.75
-            return snapshot
+    def _tune(
+        self,
+        snapshot: StockSnapshot,
+        *,
+        return_1w: float,
+        return_1m: float,
+        return_3m: float,
+        return_6m: float,
+        rs: int,
+        rvol: float,
+    ) -> StockSnapshot:
+        snapshot.stock_return_5d = return_1w
+        snapshot.stock_return_20d = return_1m
+        snapshot.stock_return_60d = return_3m
+        snapshot.stock_return_126d = return_6m
+        snapshot.rs_rating = rs
+        snapshot.rs_eligible = True
+        snapshot.volume = int(snapshot.avg_volume_20d * rvol)
+        snapshot.change_pct = max(return_1w / 2, 0.5)
+        snapshot.sma50 = snapshot.last_price * 0.9
+        snapshot.sma200 = snapshot.last_price * 0.75
+        return snapshot
 
-        fast_pharma = [
-            tune(
+    def _spiker_vs_steady_snapshots(self) -> list[StockSnapshot]:
+        """Pharma = one-week spiker with no medium-term trend; auto = steady
+        1m/3m/6m leader without this week's pop."""
+        spiker_pharma = [
+            self._tune(
                 self._build_snapshot(
                     symbol=f"FASTPHARMA{index}",
                     sector="Healthcare",
@@ -343,36 +364,38 @@ class IndustryGroupsTests(unittest.TestCase):
                     step=0.25,
                 ),
                 return_1w=7.0 + index * 0.2,
-                return_1m=15.0 + index,
-                return_3m=18.0,
-                return_6m=20.0,
+                return_1m=3.0,
+                return_3m=2.0,
+                return_6m=5.0,
                 rs=88,
                 rvol=1.8,
             )
             for index in range(5)
         ]
-        stale_auto = [
-            tune(
+        steady_auto = [
+            self._tune(
                 self._build_snapshot(
-                    symbol=f"STALEAUTO{index}",
+                    symbol=f"STEADYAUTO{index}",
                     sector="Automobile and Auto Components",
                     sub_sector="Auto Components & Equipments",
                     market_cap_crore=9_000.0 + index,
                     start_close=90.0 + index,
                     step=0.55,
                 ),
-                return_1w=-1.0,
-                return_1m=2.0,
+                return_1w=1.0,
+                return_1m=6.0,
                 return_3m=25.0,
-                return_6m=80.0,
+                return_6m=60.0,
                 rs=82,
-                rvol=0.9,
+                rvol=1.0,
             )
             for index in range(5)
         ]
+        return [*spiker_pharma, *steady_auto]
 
+    def test_steady_medium_term_strength_outranks_one_week_spike(self) -> None:
         response = build_industry_groups_response(
-            [*fast_pharma, *stale_auto],
+            self._spiker_vs_steady_snapshots(),
             [],
             [],
             [],
@@ -381,9 +404,111 @@ class IndustryGroupsTests(unittest.TestCase):
             market_key="india",
         )
 
-        self.assertEqual(response.groups[0].group_name, "Pharma Formulations")
-        self.assertGreater(response.groups[0].return_1w, response.groups[1].return_1w)
-        self.assertGreater(response.groups[0].score, response.groups[1].score)
+        by_name = {group.group_name: group for group in response.groups}
+        steady = by_name["Auto Ancillaries - Powertrain"]
+        spiker = by_name["Pharma Formulations"]
+
+        # The 1-3 month leader holds the top rank...
+        self.assertEqual(response.groups[0].group_name, "Auto Ancillaries - Powertrain")
+        self.assertGreater(steady.score, spiker.score)
+        # ...while the fresh spike is still visible via momentum + emerging flag.
+        assert spiker.momentum_score is not None and steady.momentum_score is not None
+        self.assertGreater(spiker.momentum_score, steady.momentum_score)
+        self.assertTrue(spiker.emerging_flag)
+        self.assertFalse(steady.emerging_flag)
+
+    def test_cold_start_smoothed_equals_raw(self) -> None:
+        response = build_industry_groups_response(
+            self._spiker_vs_steady_snapshots(),
+            [],
+            [],
+            [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        for group in response.groups:
+            self.assertEqual(group.score, group.raw_score)
+
+    def test_score_smoothing_is_idempotent_and_seeds_from_history(self) -> None:
+        snapshots = self._spiker_vs_steady_snapshots()
+        cold = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        raw_by_gid = {g.group_id: g.raw_score for g in cold.groups}
+
+        # Wipe today's saved snapshot, then seed three prior sessions with known raw scores.
+        for stale in Path(self._history_dir_ctx.name).glob("ranks_*.json"):
+            stale.unlink()
+        prior_raws = {gid: [50.0, 60.0, 70.0] for gid in raw_by_gid}
+        for offset, day_idx in ((3, 0), (2, 1), (1, 2)):
+            self._seed_history(
+                offset,
+                [
+                    {"groupId": gid, "rank": 1, "score": 0.0, "rawScore": series[day_idx]}
+                    for gid, series in prior_raws.items()
+                ],
+            )
+
+        first = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        alpha = 2.0 / (industry_groups.SCORE_EMA_SPAN + 1)
+        for group in first.groups:
+            series = prior_raws[group.group_id] + [raw_by_gid[group.group_id]]
+            expected = series[0]
+            for value in series[1:]:
+                expected = value * alpha + expected * (1 - alpha)
+            self.assertAlmostEqual(group.score, round(expected, 2), places=2)
+            self.assertEqual(group.raw_score, raw_by_gid[group.group_id])
+
+        # Same-day rebuild (today's snapshot now saved on disk) must not double-smooth.
+        second = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        self.assertEqual(
+            [(g.group_id, g.rank, g.score) for g in first.groups],
+            [(g.group_id, g.rank, g.score) for g in second.groups],
+        )
+
+    def test_rank_change_lookback_is_date_based(self) -> None:
+        snapshots = self._spiker_vs_steady_snapshots()
+        cold = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        gids = [g.group_id for g in cold.groups]
+        for stale in Path(self._history_dir_ctx.name).glob("ranks_*.json"):
+            stale.unlink()
+
+        # Sessions 7d ago (exact 1w hit) and 28d ago (within 1m tolerance of 30d);
+        # nothing near the 91d target for 3m.
+        seeded_7d = {gid: idx + 5 for idx, gid in enumerate(gids)}
+        seeded_28d = {gid: idx + 9 for idx, gid in enumerate(gids)}
+        self._seed_history(7, [{"groupId": gid, "rank": rank, "score": 50.0} for gid, rank in seeded_7d.items()])
+        self._seed_history(28, [{"groupId": gid, "rank": rank, "score": 50.0} for gid, rank in seeded_28d.items()])
+
+        response = build_industry_groups_response(
+            snapshots, [], [], [],
+            generated_at=self.snapshot_updated_at,
+            benchmark_label="NIFTY 500",
+            market_key="india",
+        )
+        for group in response.groups:
+            self.assertEqual(group.rank_change_1w, seeded_7d[group.group_id] - group.rank)
+            self.assertEqual(group.rank_change_1m, seeded_28d[group.group_id] - group.rank)
+            self.assertIsNone(group.rank_change_3m)
 
 
 if __name__ == "__main__":

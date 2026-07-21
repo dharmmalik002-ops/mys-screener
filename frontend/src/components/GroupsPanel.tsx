@@ -37,12 +37,13 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score" | "return_1w" | "return_1m" | "return_3m" | "return_6m";
+type GroupSortBy = "rank" | "score" | "momentum" | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
-  { value: "rank", label: "Fast Rank" },
-  { value: "score", label: "Fast Score" },
+  { value: "rank", label: "Rank" },
+  { value: "score", label: "Score" },
+  { value: "momentum", label: "Momentum" },
   { value: "return_1w", label: "1W Return" },
   { value: "return_1m", label: "1M Return" },
   { value: "return_3m", label: "3M Return" },
@@ -269,6 +270,7 @@ export function GroupsPanel({
     });
     groups.sort((a, b) => {
       if (sortBy === "rank") return a.rank - b.rank;
+      if (sortBy === "momentum") return (b.momentum_score ?? -1) - (a.momentum_score ?? -1);
       if (sortBy === "return_1w") return b.return_1w - a.return_1w;
       if (sortBy === "return_1m") return b.return_1m - a.return_1m;
       if (sortBy === "return_3m") return b.return_3m - a.return_3m;
@@ -402,7 +404,7 @@ export function GroupsPanel({
   const totalGroups = data?.total_groups ?? allGroups.length;
 
   const pageSubtitle = data
-    ? `${data.total_groups} fast swing groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
+    ? `${data.total_groups} swing groups · ${data.benchmark} · EOD ${data.as_of_date ?? ""}`
     : "Loading ranked industry groups";
 
   function handleGroupClick(group: IndustryGroupRankItem) {
@@ -519,7 +521,7 @@ export function GroupsPanel({
         <section className="gp-card gp-card-table">
           <div className="gp-card-head">
             <div>
-              <h3>Fast Group Rankings</h3>
+              <h3>Group Rankings</h3>
               <p className="gp-card-sub">
                 {filteredGroups.length} of {totalGroups} groups
                 {searchQuery.trim() ? ` · matching "${searchQuery.trim()}"` : ""}
@@ -582,6 +584,14 @@ export function GroupsPanel({
                               <strong>{group.group_name}</strong>
                               <small>{group.parent_sector} · {group.stock_count} stocks</small>
                             </button>
+                            {group.emerging_flag ? (
+                              <span
+                                className="gp-emerging"
+                                title="Short-term strength running ahead of the 3-month trend — possible fresh rotation"
+                              >
+                                Emerging
+                              </span>
+                            ) : null}
                             <button
                               type="button"
                               className={`gp-group-grid-toggle${isGridActive ? " active" : ""}`}
@@ -595,7 +605,16 @@ export function GroupsPanel({
                           </div>
                         </td>
                         <td className="gp-num">
-                          <span className="gp-score-chip">{formatScore(group.score)}</span>
+                          <span
+                            className="gp-score-chip"
+                            title={
+                              group.raw_score != null
+                                ? `Smoothed ${formatScore(group.score)} · today raw ${formatScore(group.raw_score)}${group.momentum_score != null ? ` · momentum ${formatScore(group.momentum_score)}` : ""}`
+                                : undefined
+                            }
+                          >
+                            {formatScore(group.score)}
+                          </span>
                         </td>
                         <td
                           className="gp-num"

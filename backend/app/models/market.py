@@ -1254,6 +1254,9 @@ class IndustryGroupRankItem(BaseModel):
     stock_count: int
     unstable_flag: bool = False
     score: float
+    raw_score: float | None = None
+    momentum_score: float | None = None
+    emerging_flag: bool = False
     return_1w: float = 0.0
     return_1m: float
     return_3m: float
