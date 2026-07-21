@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-21T13:06:21.393263+00:00",
+  "generated_at": "2026-07-21T14:33:58.785889+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -862,14 +862,14 @@
     },
     "GABRIEL": {
       "symbol": "GABRIEL",
-      "earnings_date": "2026-05-27",
-      "close_in_range_pct": 0.6042,
-      "next_day_gap_pct": 0.0,
-      "day_rvol_50d": 0.725,
-      "return_5d_pct": -6.455,
+      "earnings_date": "2026-07-21",
+      "close_in_range_pct": 0.7325,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 5.542,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 2.86,
-      "best_pop_rvol": 0.725
+      "best_pop_pct": 6.474,
+      "best_pop_rvol": 5.542
     },
     "JYOTICNC": {
       "symbol": "JYOTICNC",
@@ -7170,7 +7170,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.563,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.83,
       "best_pop_rvol": 0.563
     },
@@ -7203,7 +7203,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.082,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.967,
       "best_pop_rvol": 1.082
     },
@@ -7258,7 +7258,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 3.182,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.138,
       "best_pop_rvol": 3.182
     },
