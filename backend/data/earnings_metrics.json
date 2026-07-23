@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-23T14:43:43.274393+00:00",
+  "generated_at": "2026-07-23T15:04:41.423213+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -3205,14 +3205,14 @@
     },
     "KLBRENG-B": {
       "symbol": "KLBRENG-B",
-      "earnings_date": "2026-07-23",
-      "close_in_range_pct": 0.2162,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": null,
-      "return_5d_pct": null,
+      "earnings_date": "2026-05-26",
+      "close_in_range_pct": 0.3292,
+      "next_day_gap_pct": -1.247,
+      "day_rvol_50d": 1.604,
+      "return_5d_pct": 0.961,
       "source": "bse",
-      "best_pop_pct": null,
-      "best_pop_rvol": null
+      "best_pop_pct": 2.715,
+      "best_pop_rvol": 1.842
     },
     "TIRUMALCHM": {
       "symbol": "TIRUMALCHM",
