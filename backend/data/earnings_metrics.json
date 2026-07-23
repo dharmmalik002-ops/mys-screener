@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-23T13:08:34.680941+00:00",
+  "generated_at": "2026-07-23T13:18:01.521647+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -5108,14 +5108,14 @@
     },
     "KELLTONTEC": {
       "symbol": "KELLTONTEC",
-      "earnings_date": "2026-06-01",
-      "close_in_range_pct": 0.504,
-      "next_day_gap_pct": 0.064,
-      "day_rvol_50d": 1.051,
-      "return_5d_pct": -2.994,
+      "earnings_date": "2026-07-23",
+      "close_in_range_pct": 0.2326,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.614,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 7.134,
-      "best_pop_rvol": 8.65
+      "best_pop_pct": -0.897,
+      "best_pop_rvol": 0.614
     },
     "BAJAJINDEF": {
       "symbol": "BAJAJINDEF",
