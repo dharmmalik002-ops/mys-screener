@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-24T13:05:32.167077+00:00",
+  "generated_at": "2026-07-24T14:21:54.036688+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -7610,7 +7610,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.529,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.201,
       "best_pop_rvol": 0.529
     },
@@ -7786,7 +7786,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.69,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.209,
       "best_pop_rvol": 0.69
     },
@@ -7896,7 +7896,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.425,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.16,
       "best_pop_rvol": 0.425
     },
@@ -8053,6 +8053,17 @@
       "source": "bse",
       "best_pop_pct": 0.642,
       "best_pop_rvol": 0.444
+    },
+    "TTKPRESTIG": {
+      "symbol": "TTKPRESTIG",
+      "earnings_date": "2026-07-24",
+      "close_in_range_pct": 0.65,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.224,
+      "return_5d_pct": null,
+      "source": "bse",
+      "best_pop_pct": -0.372,
+      "best_pop_rvol": 0.224
     }
   }
 }
