@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-24T12:45:42.583927+00:00",
+  "generated_at": "2026-07-24T12:52:50.115573+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -488,14 +488,14 @@
     },
     "CONCOR": {
       "symbol": "CONCOR",
-      "earnings_date": "2026-05-25",
-      "close_in_range_pct": 0.7803,
-      "next_day_gap_pct": -4.15,
-      "day_rvol_50d": 0.467,
-      "return_5d_pct": -9.364,
+      "earnings_date": "2026-07-24",
+      "close_in_range_pct": 0.3214,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.302,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 1.216,
-      "best_pop_rvol": 0.467
+      "best_pop_pct": -0.614,
+      "best_pop_rvol": 0.302
     },
     "IREDA": {
       "symbol": "IREDA",
@@ -7577,7 +7577,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.309,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.585,
       "best_pop_rvol": 0.309
     },
@@ -7742,7 +7742,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.191,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.938,
       "best_pop_rvol": 1.191
     },
