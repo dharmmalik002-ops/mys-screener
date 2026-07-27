@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-27T13:48:11.605859+00:00",
+  "generated_at": "2026-07-27T14:02:21.733238+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -5795,7 +5795,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.614,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.825,
       "best_pop_rvol": 0.614
     },
