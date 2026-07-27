@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-27T12:05:18.975042+00:00",
+  "generated_at": "2026-07-27T13:04:24.009124+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -2765,14 +2765,14 @@
     },
     "IFBAGRO": {
       "symbol": "IFBAGRO",
-      "earnings_date": "2026-05-28",
-      "close_in_range_pct": 0.5,
-      "next_day_gap_pct": 4.136,
-      "day_rvol_50d": 0.0,
-      "return_5d_pct": -10.571,
+      "earnings_date": "2026-07-27",
+      "close_in_range_pct": 1.0,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 2.978,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 0.0,
-      "best_pop_rvol": 0.0
+      "best_pop_pct": 4.996,
+      "best_pop_rvol": 2.978
     },
     "SRHHYPOLTD": {
       "symbol": "SRHHYPOLTD",
@@ -5850,7 +5850,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 3.8,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 3.799,
       "best_pop_rvol": 3.8
     },
@@ -5861,7 +5861,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.049,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 4.998,
       "best_pop_rvol": 1.049
     },
@@ -5872,7 +5872,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.361,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 1.977,
       "best_pop_rvol": 0.361
     },
@@ -5949,7 +5949,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.672,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.724,
       "best_pop_rvol": 0.672
     },
@@ -6048,7 +6048,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.318,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 3.563,
       "best_pop_rvol": 0.318
     },
@@ -6081,7 +6081,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 3.649,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 3.263,
       "best_pop_rvol": 3.649
     },
@@ -6147,7 +6147,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.722,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 5.072,
       "best_pop_rvol": 0.722
     },
