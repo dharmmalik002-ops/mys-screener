@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-27T14:02:21.733238+00:00",
+  "generated_at": "2026-07-27T15:21:05.233681+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -1115,14 +1115,14 @@
     },
     "HAPPSTMNDS": {
       "symbol": "HAPPSTMNDS",
-      "earnings_date": "2026-05-28",
-      "close_in_range_pct": 0.5,
-      "next_day_gap_pct": 2.483,
-      "day_rvol_50d": 0.0,
-      "return_5d_pct": -3.526,
+      "earnings_date": "2026-07-27",
+      "close_in_range_pct": 0.8941,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 1.334,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 1.924,
-      "best_pop_rvol": 0.847
+      "best_pop_pct": 4.067,
+      "best_pop_rvol": 1.334
     },
     "MIDWEST": {
       "symbol": "MIDWEST",
@@ -6158,7 +6158,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.118,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -2.119,
       "best_pop_rvol": 1.118
     },
