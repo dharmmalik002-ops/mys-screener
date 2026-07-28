@@ -1051,7 +1051,7 @@ function readChartPreferences(market: MarketKey): {
     return {
       chartPanelTab: normalizeChartPanelTab(parsed.chartPanelTab),
       timeframe: normalizeTimeframe(parsed.timeframe, market),
-      chartStyle: parsed.chartStyle === "bars" ? "bars" : "candles",
+      chartStyle: parsed.chartStyle === "bars" ? "bars" : parsed.chartStyle === "hlc" ? "hlc" : "candles",
       showBenchmarkOverlay: parsed.showBenchmarkOverlay === true,
       indicatorKeys: normalizeIndicatorKeys(parsed.indicatorKeys),
       chartColors: normalizeChartColors(parsed.chartColors),
@@ -3797,6 +3797,29 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [activePage, chartOpen]);
+
+  // "L" swaps the main chart series between candles and IBD-style HLC bars.
+  // Registered here rather than in ChartPanel because compare mode mounts two
+  // panels — two listeners would toggle twice and cancel each other out.
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.metaKey || event.ctrlKey || event.altKey) {
+        return; // leave Cmd+L (address bar) and friends alone
+      }
+      if (event.key !== "l" && event.key !== "L") {
+        return;
+      }
+      const target = event.target as HTMLElement | null;
+      const tagName = target?.tagName ?? "";
+      if (tagName === "INPUT" || tagName === "TEXTAREA" || tagName === "SELECT" || target?.isContentEditable) {
+        return;
+      }
+      event.preventDefault();
+      setChartStyle((prev) => (prev === "hlc" ? "candles" : "hlc"));
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (!chartOpen) {

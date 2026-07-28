@@ -11,7 +11,10 @@ import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
-export type ChartStyle = "candles" | "bars";
+export type ChartStyle = "candles" | "bars" | "hlc";
+// Volume colouring: "auto" follows the theme (Mono theme -> mono volume, which
+// is the historical behaviour), "mono"/"classic" force it on any theme.
+export type VolumeMode = "auto" | "classic" | "mono";
 export type ChartTimeframe = "15m" | "30m" | "1h" | "1D" | "1W";
 export type ChartPanelTab = "technical" | "fundamentals";
 export type ChartPaletteKey = "current" | "editorial" | "mono";
@@ -258,9 +261,19 @@ type ChartPanelProps = {
 };
 
 const TIMEFRAMES: ChartTimeframe[] = ["15m", "30m", "1h", "1D", "1W"];
-const CHART_STYLES: Array<{ key: ChartStyle; label: string }> = [
+const CHART_STYLES: Array<{ key: ChartStyle; label: string; title?: string }> = [
   { key: "candles", label: "Candles" },
-  { key: "bars", label: "Bars" },
+  { key: "bars", label: "Bars", title: "OHLC bars: open tick left, close tick right" },
+  { key: "hlc", label: "HLC", title: "IBD-style high-low bars with a close tick only  (L)" },
+];
+const VOLUME_MODES: Array<{ key: VolumeMode; label: string; title: string }> = [
+  { key: "auto", label: "Auto", title: "Follow the chart theme (Mono theme gets meaning-based volume)" },
+  { key: "classic", label: "Classic", title: "Plain up/down volume in your chosen volume colours" },
+  {
+    key: "mono",
+    label: "Mono",
+    title: "Colour volume by meaning: heavy accumulation blue, heavy distribution red, quiet days grey",
+  },
 ];
 type IndicatorColorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 
@@ -1129,7 +1142,13 @@ function chartSubtitle(tool: DrawingTool, draftStart: ChartAnchor | null, chartS
   if (tool === "arrow-line") {
     return draftStart ? "Arrow line: pick the point it should aim at" : "Arrow line: click the start point";
   }
-  return chartStyle === "bars" ? "Bar chart, volume, indicators, and saved drawings" : "Candles, volume, indicators, and saved drawings";
+  if (chartStyle === "bars") {
+    return "Bar chart, volume, indicators, and saved drawings";
+  }
+  if (chartStyle === "hlc") {
+    return "HLC bars, volume, indicators, and saved drawings";
+  }
+  return "Candles, volume, indicators, and saved drawings";
 }
 
 function numberLocaleForMarket(market: MarketKey) {
@@ -1798,6 +1817,15 @@ export function ChartPanel({
       return false;
     }
   });
+  const [volumeMode, setVolumeMode] = useState<VolumeMode>(() => {
+    if (typeof window === "undefined") return "auto";
+    try {
+      const saved = window.localStorage.getItem("stockScanner.volumeMode.v1");
+      return saved === "classic" || saved === "mono" ? saved : "auto";
+    } catch {
+      return "auto";
+    }
+  });
 
   useEffect(() => {
     try {
@@ -1814,6 +1842,14 @@ export function ChartPanel({
       // best-effort persistence
     }
   }, [tightnessMarks]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.volumeMode.v1", volumeMode);
+    } catch {
+      // best-effort persistence
+    }
+  }, [volumeMode]);
 
   const [drawingTool, setDrawingTool] = useState<DrawingTool>("none");
   // "Next E": future result-date marker + days-to-EPS countdown, persisted.
@@ -1976,6 +2012,12 @@ export function ChartPanel({
   const [earningsError, setEarningsError] = useState<string | null>(null);
   const [chartRange, setChartRange] = useState<ChartRangeKey>(() => readChartRange());
   const palette = CHART_PALETTES[chartPalette];
+  // Both "bars" and "hlc" render as a lightweight-charts BarSeries, which takes
+  // none of the candlestick-only body/border options below.
+  const isBarStyle = chartStyle === "bars" || chartStyle === "hlc";
+  // Volume colouring is independent of the theme so Editorial can use the
+  // meaning-based (mono) volume; "auto" preserves the old theme-coupled default.
+  const monoVolume = volumeMode === "mono" || (volumeMode === "auto" && chartPalette === "mono");
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
   // Shared per-bar stats, computed ONCE per dataset: change vs previous close,
@@ -2689,11 +2731,22 @@ export function ChartPanel({
     });
 
     const mainSeries =
-      chartStyle === "bars"
+      isBarStyle
         ? chart.addBarSeries({
-            // TradingView-classic OHLC bars: thin sticks, blue up / red down.
-            upColor: "#2962ff",
-            downColor: "#f23645",
+            ...(chartStyle === "hlc"
+              ? {
+                  // IBD / MarketSmith style: high-low stick with a close tick
+                  // only (no open tick), in the user's own candle colours so it
+                  // reads correctly on the light Editorial canvas.
+                  upColor: chartPalette === "mono" ? "#111827" : chartColors.candleUp,
+                  downColor: chartPalette === "mono" ? "#111827" : chartColors.candleDown,
+                  openVisible: false,
+                }
+              : {
+                  // TradingView-classic OHLC bars: thin sticks, blue up / red down.
+                  upColor: "#2962ff",
+                  downColor: "#f23645",
+                }),
             thinBars: true,
           })
         : chart.addCandlestickSeries({
@@ -2958,7 +3011,13 @@ export function ChartPanel({
         rightOffset: RIGHT_EDGE_PADDING_BARS,
       },
     });
-    if (chartStyle !== "bars") {
+    if (chartStyle === "hlc") {
+      // Keep HLC ticks on the live colour/theme without recreating the series.
+      mainSeriesRef.current?.applyOptions({
+        upColor: chartPalette === "mono" ? "#111827" : chartColors.candleUp,
+        downColor: chartPalette === "mono" ? "#111827" : chartColors.candleDown,
+      });
+    } else if (!isBarStyle) {
       mainSeriesRef.current?.applyOptions(
         chartPalette === "mono"
           ? {
@@ -2978,9 +3037,9 @@ export function ChartPanel({
       );
     }
     volumeSmaSeriesRef.current?.applyOptions({
-      color: chartPalette === "mono" ? "rgba(60, 66, 87, 0.75)" : withOpacity(chartColors.volumeUp, 0.92),
+      color: monoVolume ? "rgba(60, 66, 87, 0.75)" : withOpacity(chartColors.volumeUp, 0.92),
     });
-  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle, chartPalette]);
+  }, [chartEpoch, palette.background, palette.borderColor, palette.crosshairColor, palette.textColor, scaleMode, timeframe, chartColors, chartStyle, chartPalette, isBarStyle, monoVolume]);
 
   // ── E3: candle + volume data (incremental, zoom-preserving) ──────────────
   useEffect(() => {
@@ -3000,7 +3059,7 @@ export function ChartPanel({
     // Hollow up-candles (and the Mono theme, which is hollow by design)
     // need borders; expansion overrides stay solid.
     const isMono = chartPalette === "mono";
-    if (chartStyle !== "bars") {
+    if (!isBarStyle) {
       mainSeries.applyOptions(
         isMono
           ? { borderVisible: true, borderUpColor: "#111827", borderDownColor: "#111827" }
@@ -3025,13 +3084,13 @@ export function ChartPanel({
           point.color = expansionColor;
           point.wickColor = expansionColor;
           point.borderColor = expansionColor;
-        } else if (isMono && chartStyle !== "bars") {
+        } else if (isMono && !isBarStyle) {
           // Monochrome: hollow white up-candles, solid black down-candles.
           const up = bar.close >= bar.open;
           point.color = up ? "#ffffff" : "#111827";
           point.wickColor = "#111827";
           point.borderColor = "#111827";
-        } else if (hollowCandles && chartStyle !== "bars" && bar.close >= bar.open) {
+        } else if (hollowCandles && !isBarStyle && bar.close >= bar.open) {
           // Hollow body: paint the body as background, keep border + wick
           // in the up colour (border enabled above).
           point.color = palette.background;
@@ -3050,11 +3109,11 @@ export function ChartPanel({
         value: bar.volume,
         // Dry-up days (volume < 50% of the trailing 20-bar average) render
         // dimmed grey — the quiet contraction that precedes good entries.
-        // Mono theme colours volume by MEANING: heavy (>=2x avg) up days are
+        // Mono volume colours by MEANING: heavy (>=2x avg) up days are
         // accumulation blue, heavy down days distribution red, the rest grey.
         color: perBarStats[i]?.isVolumeDryUp
-          ? (isMono ? "rgba(148, 163, 184, 0.25)" : "rgba(139, 148, 158, 0.22)")
-          : isMono
+          ? (monoVolume ? "rgba(148, 163, 184, 0.25)" : "rgba(139, 148, 158, 0.22)")
+          : monoVolume
             ? (perBarStats[i] && perBarStats[i].avgVol > 0 && (bar.volume || 0) >= perBarStats[i].avgVol * 2
                 ? ((perBarStats[i].changePct ?? 0) >= 0 ? "rgba(41, 98, 255, 0.6)" : "rgba(239, 68, 68, 0.55)")
                 : "rgba(148, 163, 184, 0.45)")
@@ -3070,7 +3129,7 @@ export function ChartPanel({
     }
     updatePctRulerRef.current?.();
     scheduleOverlayUpdate();
-  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, chartPalette, palette.background, symbol, timeframe]);
+  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, chartPalette, palette.background, symbol, timeframe, isBarStyle, monoVolume]);
 
   // ── E4: indicator line series (diffed add/remove/update) ─────────────────
   useEffect(() => {
@@ -4421,6 +4480,7 @@ export function ChartPanel({
                     type="button"
                     className={style.key === chartStyle ? "timeframe-pill active" : "timeframe-pill"}
                     onClick={() => onChartStyleChange(style.key)}
+                    title={style.title}
                   >
                     {style.label}
                   </button>
@@ -4484,6 +4544,20 @@ export function ChartPanel({
                     >
                       {hollowCandles ? "On" : "Off"}
                     </button>
+                  </div>
+                  <span className="chart-display-settings-label">Volume</span>
+                  <div className="chart-style-switcher">
+                    {VOLUME_MODES.map((mode) => (
+                      <button
+                        key={mode.key}
+                        type="button"
+                        className={volumeMode === mode.key ? "timeframe-pill active" : "timeframe-pill"}
+                        onClick={() => setVolumeMode(mode.key)}
+                        title={mode.title}
+                      >
+                        {mode.label}
+                      </button>
+                    ))}
                   </div>
                   <span className="chart-display-settings-label">Tightness marks</span>
                   <div className="chart-style-switcher">
