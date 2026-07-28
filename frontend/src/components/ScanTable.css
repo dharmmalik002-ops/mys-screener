@@ -439,7 +439,7 @@
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   color: var(--accent);
   font-size: 9.5px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 14px;
   vertical-align: middle;

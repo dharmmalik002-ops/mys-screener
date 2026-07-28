@@ -1621,7 +1621,7 @@ button {
 .mf-title {
   margin: 0;
   font-size: 1.4rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 
@@ -1966,7 +1966,7 @@ button {
   display: block;
   margin: 0;
   font-size: 1rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .mf-stock-card-top small {
@@ -2216,7 +2216,7 @@ button {
 .mf-rotation-main-value {
   margin: 6px 0 2px;
   font-size: 1.25rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--accent);
 }
 
@@ -2295,7 +2295,7 @@ button {
 }
 
 .mf-rotation-pct {
-  font-weight: 800;
+  font-weight: 700;
   color: var(--accent);
   font-size: 0.82rem;
 }
@@ -2408,7 +2408,7 @@ button {
 .mf-rotation-stock-return {
   color: var(--accent);
   font-size: 0.84rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 @media (max-width: 768px) {
@@ -2547,7 +2547,7 @@ button {
   background: transparent;
   color: var(--text-soft);
   font-size: 0.8rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
@@ -2878,7 +2878,7 @@ button {
 
 .sector-treemap-ticker {
   font-size: clamp(0.95rem, 1.45vw, 1.4rem);
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.03em;
 }
 
@@ -3024,7 +3024,7 @@ button {
   background: rgba(15, 23, 42, 0.58);
   color: var(--text);
   font-size: 1.45rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1;
   cursor: pointer;
   transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
@@ -5703,7 +5703,7 @@ button {
   border-color: color-mix(in srgb, var(--warning) 58%, transparent);
   color: var(--warning);
   font-size: 0.85rem;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 /* Previous / next chart navigation, bottom-right of the big chart. */
@@ -6434,7 +6434,7 @@ button {
 
 .chart-favourite-option span {
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .chart-favourite-option small {
@@ -6514,7 +6514,7 @@ button {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.78rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .favorites-widget-action small {
@@ -6546,7 +6546,7 @@ button {
   gap: 8px;
   color: var(--text-soft);
   font-size: 0.72rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -6598,7 +6598,7 @@ button {
 }
 
 .chart-rvol-label {
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .pocket-pivot-widget {
@@ -6660,7 +6660,7 @@ button {
 .pocket-pivot-control span {
   color: var(--text-soft);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -6723,7 +6723,7 @@ button {
 .pocket-pivot-notes-head span {
   color: var(--text-soft);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
 }
 
@@ -8230,7 +8230,7 @@ button {
 .management-member-card {
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 95%, var(--accent) 1%);
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
@@ -8271,7 +8271,7 @@ button {
 .guidance-item {
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 97%, var(--primary) 1%);
 }
 
@@ -8475,7 +8475,7 @@ button {
 .risk-opportunity-item {
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   border-left: 4px solid var(--accent);
 }
 
@@ -8573,7 +8573,7 @@ button {
 .detailed-news-article {
   padding: 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 98%, var(--accent) 1%);
   transition: border-color var(--transition-fast);
 }
@@ -8722,7 +8722,7 @@ button {
   gap: 16px;
   padding: 14px 16px;
   border: 1px solid var(--line);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   padding-left: 14px;
   border-left: 4px solid var(--accent);
 }
@@ -9088,7 +9088,7 @@ button {
 .chart-ai-verdict {
   padding: 2px 10px;
   border-radius: 999px;
-  font-weight: 800;
+  font-weight: 700;
   font-size: 0.74rem;
   letter-spacing: 0.06em;
 }

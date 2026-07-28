@@ -232,7 +232,7 @@ export function FundamentalScores({ balanceSheet, cashFlow, profitLoss, ratios, 
           {/* Score display */}
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "2.5rem", fontWeight: 900, color: piotroskiColor, lineHeight: 1, fontFamily: "monospace" }}>{score}</div>
+              <div style={{ fontSize: "2.5rem", fontWeight: 700, color: piotroskiColor, lineHeight: 1, fontFamily: "monospace" }}>{score}</div>
               <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)" }}>/ 9</div>
             </div>
             <div>
@@ -275,7 +275,7 @@ export function FundamentalScores({ balanceSheet, cashFlow, profitLoss, ratios, 
           {/* Z display */}
           <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 14 }}>
             <div style={{ textAlign: "center" }}>
-              <div style={{ fontSize: "2.5rem", fontWeight: 900, color: zColor, lineHeight: 1, fontFamily: "monospace" }}>
+              <div style={{ fontSize: "2.5rem", fontWeight: 700, color: zColor, lineHeight: 1, fontFamily: "monospace" }}>
                 {altman?.z ?? "—"}
               </div>
               <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)" }}>Z-Score</div>

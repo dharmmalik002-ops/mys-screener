@@ -296,7 +296,7 @@
   padding: 2px 6px;
   border-radius: 4px;
   background: rgba(255, 255, 255, 0.05);
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .new-tag {
@@ -317,7 +317,7 @@
 
 .validity-banner {
   font-size: 10px;
-  font-weight: 800;
+  font-weight: 700;
   padding: 2px 8px;
   border-radius: 4px;
   letter-spacing: 0.05em;

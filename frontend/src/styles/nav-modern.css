@@ -62,7 +62,10 @@ body.dark .top-nav,
   border-radius: 11px;
   border: 1px solid transparent;
   background: transparent;
-  color: #475569;
+  /* Token, not a hex: #475569 is the LIGHT value of --text-soft, so it was
+     unreadable (~2.1:1) on the dark glass header — and there was no dark
+     override anywhere for .nav-button. */
+  color: var(--text-soft);
   transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
   display: inline-flex;
   align-items: center;
@@ -75,7 +78,7 @@ body.dark .top-nav,
 }
 
 .top-nav .nav-button.ghost {
-  color: #475569;
+  color: var(--text-soft); /* see .nav-button above */
   background: transparent;
   border-color: transparent;
 }
@@ -107,11 +110,15 @@ body.dark .top-nav,
 }
 
 .top-nav .nav-search-field input {
-  background: #f8fafc !important;
-  border: 1px solid #e2e8f0 !important;
-  border-radius: 12px !important;
-  padding: 10px 14px 10px 38px !important;
-  font-size: 13px !important;
+  /* No background/border here: top-bar-modern.css owns the glass treatment for
+     every chip in this row. These two used to carry !important, which beat the
+     later (non-important) glass rule and left the search box as the one flat
+     chip in an otherwise glassy header. */
+  border-radius: 12px;
+  /* 34px clears the Lucide <SearchIcon> at left:10px. It was 38px to clear an
+     emoji ::before that used to sit at left:14px — see the note below. */
+  padding: 10px 14px 10px 34px;
+  font-size: 13px;
   /* Flexible width: a hard 260px floor forced the header to wrap the icon
      buttons onto a second row on mid-size screens. */
   width: 100%;
@@ -120,30 +127,25 @@ body.dark .top-nav,
 }
 
 .top-nav .nav-search-field input:focus {
-  background: #fff !important;
+  /* No background override: a hardcoded #fff turned the field white in dark
+     mode, where the text colour below is #e2e8f0 — i.e. invisible while typing.
+     The glass background simply persists through focus now. */
   border-color: color-mix(in srgb, var(--accent) 60%, transparent) !important;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent) !important;
-  outline: none !important;
+  outline: none;
 }
 
-.top-nav .nav-search-field::before {
-  content: "🔍";
-  position: absolute;
-  left: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 13px;
-  opacity: 0.55;
-  pointer-events: none;
-  z-index: 1;
-}
+/* (removed) A `content: "🔍"` ::before used to sit at left:14px, 4px from the
+   real Lucide <SearchIcon> that App.tsx renders in .search-icon — two search
+   glyphs stacked in one field, one of them an OS emoji. Style the icon in the
+   markup, never inject a second one from CSS. */
 
 body.dark .top-nav .nav-search-field input,
 :root.dark .top-nav .nav-search-field input,
 :root[data-theme="dark"] .top-nav .nav-search-field input {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.08) !important;
-  color: #e2e8f0 !important;
+  /* Background/border dropped for the same reason as above — they carried
+     !important and blocked the glass treatment in dark mode too. */
+  color: var(--text);
 }
 
 /* Mode toggle pills */

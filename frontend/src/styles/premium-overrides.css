@@ -5,13 +5,19 @@
    and P&L; neutral surfaces with 1px borders; one shadow level.
    ══════════════════════════════════════════════════════════════════════════ */
 
-/* ===== 1. TYPOGRAPHY - mono + tabular numerals for every financial number ===== */
-.positive-text,.negative-text,.scan-row strong,.home-stock-row strong,
+/* ===== 1. TYPOGRAPHY - mono + tabular numerals for every financial number =====
+   `.scan-row strong` used to be in this list, but in the results table <strong>
+   holds the TICKER (ScanTable.tsx:978) — so symbols rendered in JetBrains Mono
+   while the prices beside them stayed in DM Sans, the opposite of every pro
+   terminal. Mono now lands on the numeric cells (.st-price, .st-cell-center),
+   and symbols keep the UI font so the two read as different kinds of data. */
+.positive-text,.negative-text,.home-stock-row strong,
 .metric-card strong,.home-macro-price,.home-macro-price strong,
 .mf-rotation-pct,.mf-rotation-main-value,.mf-rotation-stock-return,
 .chart-grid-card-foot strong,.pe-stat strong,.home-group-metrics strong,
 .sector-heatmap-card-return,.market-health-score-value,
 .adv-dec-stat strong,.ticker-ribbon-item strong,
+.st-price,.st-cell-center,
 .chart-panel .panel-header h2 {
   font-family: var(--font-mono) !important;
   font-variant-numeric: tabular-nums;
@@ -60,12 +66,20 @@
   border-color: var(--accent) !important; font-weight: 600 !important;
   box-shadow: none !important;
 }
+/* --accent-strong, not --accent: white on the lighter dark-theme --accent
+   (#4c9aff) measures only 2.85:1, under the 4.5:1 WCAG AA floor. The strong
+   shade is the same hue and lands at 4.59:1 dark / 6.70:1 light. */
 .nav-button.primary {
-  background: var(--accent) !important; color: #fff !important;
-  border-color: var(--accent) !important; font-weight: 600 !important;
+  background: var(--accent-strong) !important; color: #fff !important;
+  border-color: var(--accent-strong) !important; font-weight: 600 !important;
   box-shadow: none !important;
 }
-.nav-button.primary:hover { background: var(--accent-strong) !important; }
+/* Hover has to go darker still — it used to land on --accent-strong, which is
+   now the resting state, making hover a no-op. */
+.nav-button.primary:hover {
+  background: color-mix(in srgb, var(--accent-strong) 86%, #000) !important;
+  border-color: color-mix(in srgb, var(--accent-strong) 86%, #000) !important;
+}
 .mf-week-btn.active {
   background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong)) !important;
   color: var(--accent) !important;

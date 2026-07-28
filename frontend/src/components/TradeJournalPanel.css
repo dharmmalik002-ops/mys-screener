@@ -293,7 +293,7 @@
 
 .tj-board-sym {
   font-size: 0.86rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.2px;
   color: var(--text);
 }
@@ -943,7 +943,7 @@
 }
 .tj-kbox-value {
   font-size: 1.15rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--text);
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
@@ -1030,7 +1030,7 @@
 .tj-open-ai-title,
 .tj-open-ai-label {
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1086,7 +1086,7 @@
 }
 
 .tj-open-group-table tbody tr:last-child td { border-bottom: none; }
-.tj-open-group-table td strong { display: block; color: var(--text); font-weight: 800; }
+.tj-open-group-table td strong { display: block; color: var(--text); font-weight: 700; }
 .tj-open-group-table td span { display: block; color: var(--text-muted); line-height: 1.4; }
 
 .tj-open-return-cell {
@@ -1111,7 +1111,7 @@
   border-radius: 999px;
   border: 1px solid var(--line);
   font-size: 0.68rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -1206,7 +1206,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   font-size: 0.7rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 .tj-kcard-group-main {
@@ -1292,7 +1292,7 @@
 
 .tj-command-value {
   font-size: 1.35rem;
-  font-weight: 800;
+  font-weight: 700;
   line-height: 1.1;
   color: var(--text);
 }
@@ -1989,7 +1989,7 @@
 
 .tj-root .tj-kpi-value {
   font-size: 1.55rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.02em;
   font-variant-numeric: tabular-nums;
   margin-top: 4px;
@@ -2075,7 +2075,7 @@
 
 .tj-donut-value {
   font-size: 1.6rem;
-  font-weight: 800;
+  font-weight: 700;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   color: var(--text);
@@ -2357,7 +2357,7 @@
   background: color-mix(in srgb, var(--tj-accent) 14%, transparent);
   color: var(--tj-accent);
   font-size: 0.66rem;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* ── Symbol scoreboard cards ────────────────────────────────────────────── */
@@ -2374,7 +2374,7 @@
 }
 
 .tj-root .tj-board-sym {
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
 }
 
@@ -3079,7 +3079,7 @@
 
 .tj-learn-traj {
   font-size: 1.05rem;
-  font-weight: 800;
+  font-weight: 700;
   color: var(--amber);
 }
 
@@ -3132,7 +3132,7 @@
 .tj-learn-era {
   margin-left: auto;
   font-size: 0.64rem;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.08em;
   padding: 3px 8px;
   border-radius: 999px;

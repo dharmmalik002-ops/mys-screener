@@ -268,7 +268,7 @@ body.dark .gp-pill.active {
 
 .gp-kpi-value {
   font-size: 22px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--gp-text);
   line-height: 1.1;
@@ -559,7 +559,7 @@ body.dark .gp-treemap-pct {
   width: 28px;
   height: 28px;
   border-radius: var(--radius-sm);
-  font-weight: 800;
+  font-weight: 700;
   font-size: 12.5px;
 }
 
@@ -699,7 +699,7 @@ body.dark .gp-emerging {
   display: grid;
   place-items: center;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 /* volume bars */
@@ -810,7 +810,7 @@ body.dark .gp-emerging {
   display: grid;
   place-items: center;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   letter-spacing: 0.02em;
   color: #fff;
   flex: none;

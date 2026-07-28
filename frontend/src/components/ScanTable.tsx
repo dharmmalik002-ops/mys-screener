@@ -984,7 +984,7 @@ export function ScanTable({
                     display: "inline-block",
                     marginLeft: 6,
                     fontSize: 9.5,
-                    fontWeight: 800,
+                    fontWeight: 700,
                     letterSpacing: "0.04em",
                     lineHeight: "14px",
                     color: "#fff",
@@ -1048,7 +1048,7 @@ export function ScanTable({
                 title={volBadge.title}
                 style={{
                   fontSize: 8.5,
-                  fontWeight: 800,
+                  fontWeight: 700,
                   letterSpacing: "0.03em",
                   color: "#fff",
                   background: volBadge.color,
