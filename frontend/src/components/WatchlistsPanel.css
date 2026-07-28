@@ -17,13 +17,14 @@
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
 }
 
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .wl-card,
 .theme-dark .wl-card {
-  --st-bg: #0f1320;
-  --st-surface: rgba(255, 255, 255, 0.04);
-  --st-border: rgba(148, 163, 184, 0.18);
-  --st-text: #e5e7eb;
-  --st-text-soft: #94a3b8;
+  --st-bg: var(--surface-soft);
+  --st-surface: var(--surface-strong);
+  --st-border: var(--line);
+  --st-text: var(--text);
+  --st-text-soft: var(--text-soft);
 }
 
 /* ----- Sidebar ----- */
@@ -226,8 +227,11 @@
 
 :root[data-theme="dark"] .wl-move-pop.wl-move-pop--portal,
 .theme-dark .wl-move-pop.wl-move-pop--portal {
-  background: #111827;
-  color: #e5e7eb;
+  /* --bg-alt, not #111827: a portal popover needs an OPAQUE background (the
+     translucent --surface tokens would show the page through it), and --bg-alt
+     is the palette's opaque raised surface. */
+  background: var(--bg-alt);
+  color: var(--text);
   border-color: rgba(148, 163, 184, 0.25);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
 }

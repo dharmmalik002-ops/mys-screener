@@ -20,15 +20,16 @@
   --gp-shadow-md: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
 }
 
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .groups-panel-pro,
 :root.dark .groups-panel-pro,
 body.dark .groups-panel-pro {
-  --gp-card-bg: #111827;
-  --gp-card-bg-soft: #0f172a;
-  --gp-border: rgba(255, 255, 255, 0.08);
-  --gp-border-strong: rgba(255, 255, 255, 0.14);
-  --gp-muted: #94a3b8;
-  --gp-text: #e2e8f0;
+  --gp-card-bg: var(--surface-strong);
+  --gp-card-bg-soft: var(--surface-soft);
+  --gp-border: var(--line);
+  --gp-border-strong: var(--line-strong);
+  --gp-muted: var(--text-soft);
+  --gp-text: var(--text);
 }
 
 /* ----- toolbar ----- */

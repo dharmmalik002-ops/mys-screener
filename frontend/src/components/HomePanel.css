@@ -476,8 +476,11 @@
   align-items: center;
   gap: 3px;
   padding: 8px 10px;
+  /* --hp-surface-strong was never defined, so this always fell back to a
+     hardcoded #0f172a — a dark navy chip even in light mode. --bg-alt is the
+     palette's opaque raised surface and flips with the theme. */
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--hp-surface-strong, #0f172a) 70%, transparent),
+    color-mix(in srgb, var(--bg-alt) 70%, transparent),
     transparent);
   border: 1px solid var(--hp-border);
   border-radius: 8px;
@@ -541,7 +544,9 @@
 
 .homepro-breadth-history-day:hover,
 .homepro-breadth-history-day.active {
-  background: color-mix(in srgb, var(--hp-surface-strong, #1e293b) 70%, transparent);
+  /* Same undefined-token fallback as above (#1e293b here); solid --bg-alt so
+     hover reads stronger than the resting 70% mix. */
+  background: var(--bg-alt);
   border-color: var(--hp-border);
   transform: translateY(-1px);
 }
@@ -912,14 +917,15 @@
 /* =========================================================
    Dark mode
    ========================================================= */
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .homepro,
 :root.dark .homepro,
 body.dark .homepro {
-  --hp-bg: #0b1220;
-  --hp-card-bg: #111827;
-  --hp-border: rgba(255, 255, 255, 0.06);
-  --hp-muted: #94a3b8;
-  --hp-text: #e2e8f0;
+  --hp-bg: var(--surface-soft);
+  --hp-card-bg: var(--surface-strong);
+  --hp-border: var(--line);
+  --hp-muted: var(--text-soft);
+  --hp-text: var(--text);
   --hp-shadow: 0 1px 3px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.28);
 }
 

@@ -16,13 +16,17 @@
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
 }
 
+/* Dark surfaces alias the global tokens rather than hardcoding their own grey.
+   This file used #0f1320 while the shell is #0c1021, HomePanel #111827 and
+   GroupsPanel #0f172a — four different dark greys with three hue casts on one
+   screen, all opaque, punching flat holes through the app's glass language. */
 :root[data-theme="dark"] .st-card,
 .theme-dark .st-card {
-  --st-bg: #0f1320;
-  --st-surface: rgba(255, 255, 255, 0.04);
-  --st-border: rgba(148, 163, 184, 0.18);
-  --st-text: #e5e7eb;
-  --st-text-soft: #94a3b8;
+  --st-bg: var(--surface-soft);
+  --st-surface: var(--surface-strong);
+  --st-border: var(--line);
+  --st-text: var(--text);
+  --st-text-soft: var(--text-soft);
 }
 
 /* ----- Controls bar (rendered as Panel actions) ----- */

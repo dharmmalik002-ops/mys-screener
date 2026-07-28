@@ -21,13 +21,14 @@
 }
 
 /* Dark mode */
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .sd-root,
 .theme-dark .sd-root {
-  --sd-bg: #0f1320;
-  --sd-surface: rgba(255, 255, 255, 0.04);
-  --sd-border: rgba(148, 163, 184, 0.16);
-  --sd-text: #e5e7eb;
-  --sd-text-soft: #94a3b8;
+  --sd-bg: var(--surface-soft);
+  --sd-surface: var(--surface-strong);
+  --sd-border: var(--line);
+  --sd-text: var(--text);
+  --sd-text-soft: var(--text-soft);
 }
 
 /* ----- Rows & cards ----- */

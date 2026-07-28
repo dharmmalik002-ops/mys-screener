@@ -22,13 +22,14 @@
   color: var(--qb-text);
 }
 
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .qb-root,
 .theme-dark .qb-root {
-  --qb-bg: #0f1320;
-  --qb-surface: rgba(255, 255, 255, 0.04);
-  --qb-border: rgba(148, 163, 184, 0.16);
-  --qb-text: #e5e7eb;
-  --qb-text-soft: #94a3b8;
+  --qb-bg: var(--surface-soft);
+  --qb-surface: var(--surface-strong);
+  --qb-border: var(--line);
+  --qb-text: var(--text);
+  --qb-text-soft: var(--text-soft);
 }
 
 /* ----- Head ----- */

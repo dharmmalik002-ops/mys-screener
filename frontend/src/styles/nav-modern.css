@@ -206,7 +206,7 @@ body.dark .top-nav .mode-switch .tool-pill.active,
 body.dark .ticker-ribbon,
 :root.dark .ticker-ribbon,
 :root[data-theme="dark"] .ticker-ribbon {
-  background: linear-gradient(90deg, #0f172a 0%, #111827 50%, #0f172a 100%);
+  background: linear-gradient(90deg, var(--bg) 0%, var(--bg-alt) 50%, var(--bg) 100%);
   border-bottom-color: rgba(255, 255, 255, 0.05);
 }
 

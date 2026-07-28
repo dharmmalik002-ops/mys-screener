@@ -24,14 +24,15 @@
   color: var(--sh-text);
 }
 
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .sh-root,
 .theme-dark .sh-root {
-  --sh-bg: #0f1320;
-  --sh-surface: rgba(255, 255, 255, 0.04);
-  --sh-border: rgba(148, 163, 184, 0.16);
-  --sh-text: #e5e7eb;
-  --sh-text-soft: #94a3b8;
-  --sh-muted: #6b7280;
+  --sh-bg: var(--surface-soft);
+  --sh-surface: var(--surface-strong);
+  --sh-border: var(--line);
+  --sh-text: var(--text);
+  --sh-text-soft: var(--text-soft);
+  --sh-muted: var(--text-muted);
 }
 
 .sh-headline {

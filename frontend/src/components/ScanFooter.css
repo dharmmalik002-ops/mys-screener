@@ -38,13 +38,14 @@
   }
 }
 
+/* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .sf-root,
 .theme-dark .sf-root {
-  --sf-bg: #0f1320;
-  --sf-surface: rgba(255, 255, 255, 0.04);
-  --sf-border: rgba(148, 163, 184, 0.18);
-  --sf-text: #e5e7eb;
-  --sf-text-soft: #94a3b8;
+  --sf-bg: var(--surface-soft);
+  --sf-surface: var(--surface-strong);
+  --sf-border: var(--line);
+  --sf-text: var(--text);
+  --sf-text-soft: var(--text-soft);
 }
 
 /* ----- Card shell ----- */
