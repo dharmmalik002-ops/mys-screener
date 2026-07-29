@@ -1,0 +1,971 @@
+/* ==========================================================================
+   overrides.css — the single override layer above app.css
+   --------------------------------------------------------------------------
+   Merged from premium-overrides.css + nav-modern.css + top-bar-modern.css,
+   CONCATENATED IN THEIR ORIGINAL LOAD ORDER so the cascade — and therefore
+   the rendered result — is unchanged by the merge itself.
+
+   Why they were merged: three stacked files named "override" meant a rule's
+   winner depended on which file it happened to live in. Every cascade bug
+   found in this pass came from that: an !important in an earlier file beating
+   the later file that actually owned the design (the search input's glass
+   treatment, the active nav pill's colour).
+
+   Rules still in load order below. When two sections style the same selector,
+   the LATER section wins — keep it that way, and prefer deleting the losing
+   rule over adding !important.
+   ========================================================================== */
+
+
+/* ==========================================================================
+   SECTION: premium-overrides.css
+   loaded 1st of the three — most !important, least authority
+   ========================================================================== */
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PREMIUM OVERRIDES — disciplined single-accent system, works in both themes
+   Rules: one accent for interaction; green/red reserved for market direction
+   and P&L; neutral surfaces with 1px borders; one shadow level.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ===== 1. TYPOGRAPHY - mono + tabular numerals for every financial number =====
+   `.scan-row strong` used to be in this list, but in the results table <strong>
+   holds the TICKER (ScanTable.tsx:978) — so symbols rendered in JetBrains Mono
+   while the prices beside them stayed in DM Sans, the opposite of every pro
+   terminal. Mono now lands on the numeric cells (.st-price, .st-cell-center),
+   and symbols keep the UI font so the two read as different kinds of data. */
+.positive-text,.negative-text,.home-stock-row strong,
+.metric-card strong,.home-macro-price,.home-macro-price strong,
+.mf-rotation-pct,.mf-rotation-main-value,.mf-rotation-stock-return,
+.chart-grid-card-foot strong,.pe-stat strong,.home-group-metrics strong,
+.sector-heatmap-card-return,.market-health-score-value,
+.adv-dec-stat strong,.ticker-ribbon-item strong,
+.st-price,.st-cell-center,
+.chart-panel .panel-header h2 {
+  font-family: var(--font-mono) !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.positive-text { color: var(--positive) !important; font-weight: 600; }
+.negative-text { color: var(--negative) !important; font-weight: 600; }
+/* ===== 2. METRIC STRIP - one slim status line; values in mono, quiet labels ===== */
+.metric-card strong { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; }
+
+/* ===== 3. MARKET TOGGLE - accent for the active market ===== */
+.home-market-toggle {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+}
+.home-market-toggle-btn.active {
+  background: var(--accent) !important;
+  color: #fff !important; font-weight: 700 !important;
+  box-shadow: none !important;
+}
+
+/* ===== 4. SCREENER SIDEBAR - quiet rows, accent only when active ===== */
+.screener-nav-button {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
+  color: var(--text); transition: background 160ms ease, border-color 160ms ease;
+}
+.screener-nav-button:nth-child(n) { border-left: 1px solid var(--line); }
+.screener-nav-button:hover {
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+  border-color: var(--line-strong);
+}
+.screener-nav-button.active {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent) !important;
+  border-left: 3px solid var(--accent) !important;
+  background: color-mix(in srgb, var(--accent) 10%, var(--surface-strong)) !important;
+  color: var(--text) !important;
+  box-shadow: none !important;
+}
+.screener-nav-button.active .screener-nav-main strong { color: var(--accent); font-weight: 700; }
+
+/* ===== 5. ACTIVE / SELECTED STATES - one accent everywhere ===== */
+.timeframe-pill.active,.scanner-tab.active,.indicator-pill.active,.tool-pill.active,
+.pe-modal-tab.active,.mf-mode-tab.active,.saved-scanner-chip.active {
+  background: var(--accent) !important; color: #fff !important;
+  border-color: var(--accent) !important; font-weight: 600 !important;
+  box-shadow: none !important;
+}
+/* --accent-strong, not --accent: white on the lighter dark-theme --accent
+   (#4c9aff) measures only 2.85:1, under the 4.5:1 WCAG AA floor. The strong
+   shade is the same hue and lands at 4.59:1 dark / 6.70:1 light. */
+.nav-button.primary {
+  background: var(--accent-strong) !important; color: #fff !important;
+  border-color: var(--accent-strong) !important; font-weight: 600 !important;
+  box-shadow: none !important;
+}
+/* Hover has to go darker still — it used to land on --accent-strong, which is
+   now the resting state, making hover a no-op. */
+.nav-button.primary:hover {
+  background: color-mix(in srgb, var(--accent-strong) 86%, #000) !important;
+  border-color: color-mix(in srgb, var(--accent-strong) 86%, #000) !important;
+}
+.mf-week-btn.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong)) !important;
+  color: var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent) !important; font-weight: 600 !important;
+}
+.width-btn.active,.rvol-size-btn.active { background: var(--accent) !important; color: #fff !important; }
+
+.scan-row.active {
+  border-left: 3px solid var(--accent) !important;
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-strong)) !important;
+  box-shadow: none !important;
+}
+.sector-company-row.active,.group-stock-row.active,.chart-group-row.active,
+.mf-rotation-row.active {
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-strong)) !important;
+  border-color: color-mix(in srgb, var(--accent) 38%, transparent) !important;
+}
+.watchlist-link.active {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface-strong)) !important;
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent) !important;
+  color: var(--accent) !important; font-weight: 600 !important;
+}
+.mf-stock-card.active { border-color: var(--accent) !important; box-shadow: none !important; }
+.screener-saved-item.active {
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface-soft)) !important;
+}
+.chart-note.selected { border-color: var(--accent) !important; box-shadow: none !important; }
+.wl-color-swatch.active { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent) !important; }
+
+/* ===== 6. PANEL - flat surface, 1px border, single shadow level ===== */
+.panel {
+  border: 1px solid var(--line);
+  background: var(--surface-strong);
+  backdrop-filter: blur(16px);
+  box-shadow: var(--shadow);
+  transition: border-color 200ms ease;
+}
+.panel:hover { border-color: var(--line-strong); }
+.panel-kicker { color: var(--text-muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* ===== 7. GROUP CARDS - neutral, hover reveals accent ===== */
+.home-group-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  transition: border-color 180ms ease, background 180ms ease;
+}
+.home-group-card:hover,.home-group-card:focus-visible {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
+  background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
+}
+
+/* ===== 8. HOME STOCK ROWS ===== */
+.home-stock-row {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.home-stock-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+}
+
+/* ===== 9. HOME MACRO CARDS ===== */
+.home-macro-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.home-macro-card:hover {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+}
+.home-macro-price { font-family: var(--font-mono); font-size: 1.0rem; font-weight: 600; letter-spacing: -0.01em; }
+
+/* ===== 10. SCAN ROWS ===== */
+.scan-row {
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface-soft) 65%, transparent);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+.scan-row:hover {
+  border-color: var(--line-strong);
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
+}
+
+/* ===== 11. MF BADGES - direction colours only ===== */
+.mf-badge--bull { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 30%, transparent); font-weight: 600; }
+.mf-badge--bear { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 28%, transparent); font-weight: 600; }
+.mf-badge--neutral { background: color-mix(in srgb, var(--text-muted) 12%, transparent); color: var(--text-soft); border: 1px solid var(--line-strong); font-weight: 600; }
+.mf-sector-card--bullish { border-color: color-mix(in srgb, var(--positive) 32%, transparent); background: color-mix(in srgb, var(--positive) 7%, var(--surface-soft)); }
+.mf-sector-card--bearish { border-color: color-mix(in srgb, var(--negative) 32%, transparent); background: color-mix(in srgb, var(--negative) 7%, var(--surface-soft)); }
+
+/* ===== 12. CHART GRID ===== */
+.chart-grid-badge.positive { background: var(--positive-soft); color: var(--positive); border: 1px solid color-mix(in srgb, var(--positive) 26%, transparent); font-weight: 600; }
+.chart-grid-badge.negative { background: var(--negative-soft); color: var(--negative); border: 1px solid color-mix(in srgb, var(--negative) 24%, transparent); font-weight: 600; }
+.chart-grid-sparkline.positive .chart-grid-sparkline-area { fill: color-mix(in srgb, var(--positive) 18%, transparent); }
+.chart-grid-sparkline.positive .chart-grid-sparkline-line { stroke: var(--positive); }
+.chart-grid-sparkline.negative .chart-grid-sparkline-area { fill: color-mix(in srgb, var(--negative) 16%, transparent); }
+.chart-grid-sparkline.negative .chart-grid-sparkline-line { stroke: var(--negative); }
+.chart-grid-candle.positive rect,.chart-grid-candle.positive line,.chart-grid-bar.positive line { fill: var(--positive); stroke: var(--positive); }
+.chart-grid-candle.negative rect,.chart-grid-candle.negative line,.chart-grid-bar.negative line { fill: var(--negative); stroke: var(--negative); }
+.chart-grid-card {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  transition: border-color 160ms ease;
+  color: var(--text);
+}
+.chart-grid-card.clickable:hover { border-color: color-mix(in srgb, var(--accent) 32%, var(--line)); }
+
+/* ===== 13. SECTOR HEATMAP ===== */
+.sector-heatmap-card {
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  transition: filter 160ms ease;
+}
+.sector-heatmap-card:hover { filter: brightness(1.08); }
+.sector-heatmap-card-return { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em; }
+
+/* ===== 14. NAV ===== */
+.top-nav {
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  border-bottom: 1px solid var(--line);
+  box-shadow: none;
+  backdrop-filter: blur(20px);
+}
+
+.brand-mark {
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: none;
+}
+
+.nav-search input {
+  border: 1px solid var(--line);
+  background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
+  color: var(--text);
+}
+.nav-search input:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  outline: none;
+}
+
+.ticker-ribbon {
+  background: color-mix(in srgb, var(--bg-alt) 92%, var(--bg));
+}
+
+/* ===== 15. STATUS DOT ===== */
+.status-dot { width: 9px; height: 9px; background: var(--positive); }
+
+/* (16/17 removed: .home-hero-card and .landing-hero are not rendered anywhere.) */
+
+/* ===== 18. SCREENER SIDEBAR PANEL ===== */
+.screener-sidebar-panel {
+  background: var(--surface-strong);
+  border: 1px solid var(--line);
+  backdrop-filter: blur(16px);
+}
+
+/* ===== 19. MODALS - neutral elevated surfaces ===== */
+.pe-modal,
+.chart-grid-modal {
+  border: 1px solid var(--line-strong);
+  background: color-mix(in srgb, var(--surface-strong) 97%, transparent);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(24px); color: var(--text);
+}
+
+/* ===== 20. MF STOCK METRICS ===== */
+.mf-stock-metric-card strong,.mf-key-metric-item strong,.mf-rotation-pct,.mf-rotation-main-value { font-family: var(--font-mono); font-weight: 600; letter-spacing: -0.015em; }
+
+/* ===== 21. MISC ===== */
+.mode-switch { border: 1px solid var(--line); background: color-mix(in srgb, var(--surface-soft) 70%, transparent); }
+
+.skeleton-block,.skeleton-row {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--text-muted) 14%, transparent) 0%, color-mix(in srgb, var(--text-soft) 18%, transparent) 40%, color-mix(in srgb, var(--text-muted) 14%, transparent) 80%);
+  background-size: 400% 100%; animation: skeletonPulse 1.8s ease-in-out infinite; border-radius: var(--radius-sm);
+}
+@keyframes skeletonPulse { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+::-webkit-scrollbar-thumb { background: var(--line-strong); }
+::-webkit-scrollbar-thumb:hover { background: color-mix(in srgb, var(--text-muted) 55%, transparent); }
+
+/* ===== 22. ENTRANCE ANIMATIONS - subtle, fade only ===== */
+.home-group-card { animation: homeCardIn 0.3s ease-out both; }
+.home-group-card:nth-child(2) { animation-delay: 40ms; }
+.home-group-card:nth-child(3) { animation-delay: 80ms; }
+.home-group-card:nth-child(4) { animation-delay: 120ms; }
+@keyframes homeCardIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* ===== 23. TABLE DISCIPLINE - numbers right-aligned, headers sticky ===== */
+.scan-table-head {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+/* ==========================================================================
+   SECTION: nav-modern.css
+   loaded 2nd
+   ========================================================================== */
+
+/* ---------------------------------------------------------
+   Modernized top nav, brand, and status strip
+   (Overrides a subset of app.css via higher specificity/order)
+   --------------------------------------------------------- */
+
+.top-nav {
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86));
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+/* NOTE: this background is currently overridden — `:root[data-theme] .top-nav`
+   in top-bar-modern.css has the same specificity and loads later, so its
+   token-based glass gradient wins. Kept token-based here anyway so the two
+   agree if load order ever changes; it used to hardcode rgba(17, 24, 39, …),
+   a neutral slate that disagreed with the blue-violet shell. */
+:root[data-theme="dark"] .top-nav {
+  background: linear-gradient(180deg, var(--surface), var(--surface-strong));
+  border-bottom: 1px solid var(--line);
+}
+
+/* Brand mark — gradient avatar */
+.top-nav .brand-mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  display: grid;
+  place-items: center;
+}
+
+.top-nav .brand-cluster h1 {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.top-nav .brand-cluster .eyebrow {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #94a3b8;
+  margin: 0 0 2px;
+}
+
+/* Nav buttons — pill row */
+.top-nav .nav-controls {
+  gap: 10px;
+}
+
+.top-nav .nav-button {
+  position: relative;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  padding: 9px 16px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  background: transparent;
+  /* Token, not a hex: #475569 is the LIGHT value of --text-soft, so it was
+     unreadable (~2.1:1) on the dark glass header — and there was no dark
+     override anywhere for .nav-button. */
+  color: var(--text-soft);
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.top-nav .nav-button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.top-nav .nav-button.ghost {
+  color: var(--text-soft); /* see .nav-button above */
+  background: transparent;
+  border-color: transparent;
+}
+
+.top-nav .nav-button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: transparent;
+}
+
+.top-nav .nav-button.primary:hover {
+  background: var(--accent-strong);
+}
+
+/* (removed) A stale ":last-child premium chip" rule used to live here. It was
+   written for a text "Refresh close snapshot" button; once icon buttons became
+   last-child it painted the theme toggle solid accent and its 18px !important
+   side padding crushed the 34px icon button's SVG to width 0. Style buttons by
+   class, never by position. */
+
+/* Search field — rounded pill */
+.top-nav .nav-search-row {
+  gap: 8px;
+}
+
+.top-nav .nav-search-field {
+  position: relative;
+  flex: 1;
+}
+
+.top-nav .nav-search-field input {
+  /* No background/border here: top-bar-modern.css owns the glass treatment for
+     every chip in this row. These two used to carry !important, which beat the
+     later (non-important) glass rule and left the search box as the one flat
+     chip in an otherwise glassy header. */
+  border-radius: 12px;
+  /* 34px clears the Lucide <SearchIcon> at left:10px. It was 38px to clear an
+     emoji ::before that used to sit at left:14px — see the note below. */
+  padding: 10px 14px 10px 34px;
+  font-size: 13px;
+  /* Flexible width: a hard 260px floor forced the header to wrap the icon
+     buttons onto a second row on mid-size screens. */
+  width: 100%;
+  min-width: 140px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.top-nav .nav-search-field input:focus {
+  /* No background override: a hardcoded #fff turned the field white in dark
+     mode, where the text colour below is #e2e8f0 — i.e. invisible while typing.
+     The glass background simply persists through focus now. */
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent) !important;
+  outline: none;
+}
+
+/* (removed) A `content: "🔍"` ::before used to sit at left:14px, 4px from the
+   real Lucide <SearchIcon> that App.tsx renders in .search-icon — two search
+   glyphs stacked in one field, one of them an OS emoji. Style the icon in the
+   markup, never inject a second one from CSS. */
+
+:root[data-theme="dark"] .top-nav .nav-search-field input {
+  /* Background/border dropped for the same reason as above — they carried
+     !important and blocked the glass treatment in dark mode too. */
+  color: var(--text);
+}
+
+/* Mode toggle pills */
+.top-nav .nav-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.top-nav .nav-mode-toggle > span {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.top-nav .mode-switch {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: color-mix(in srgb, var(--text-muted) 12%, transparent);
+  border-radius: 10px;
+}
+
+.top-nav .mode-switch .tool-pill {
+  border: 0;
+  background: transparent;
+  padding: 5px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.top-nav .mode-switch .tool-pill.active {
+  background: #fff;
+  color: var(--accent-strong);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+}
+
+:root[data-theme="dark"] .top-nav .mode-switch .tool-pill.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Ticker ribbon refinement */
+.ticker-ribbon {
+  background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+  font-size: 12.5px;
+}
+
+:root[data-theme="dark"] .ticker-ribbon {
+  background: linear-gradient(90deg, var(--bg) 0%, var(--bg-alt) 50%, var(--bg) 100%);
+  border-bottom-color: rgba(255, 255, 255, 0.05);
+}
+
+.ticker-ribbon-item {
+  gap: 8px;
+  padding: 0 18px;
+}
+
+.ticker-ribbon-item span {
+  font-weight: 700;
+  color: #64748b;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 10.5px;
+}
+
+:root[data-theme="dark"] .ticker-ribbon-item span {
+  color: #94a3b8;
+}
+
+.ticker-ribbon-item strong {
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.ticker-ribbon-item small {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Responsive tightening */
+@media (max-width: 1100px) {
+  .top-nav .nav-search-field input {
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 860px) {
+  .top-nav .nav-button {
+    padding: 7px 12px;
+    font-size: 12px;
+  }
+  .top-nav .nav-search-field input {
+    min-width: 140px;
+  }
+}
+
+/* ==========================================================================
+   SECTION: top-bar-modern.css
+   loaded 3rd — wins ties; the current design intent
+   ========================================================================== */
+
+/* ==========================================================================
+   Top-bar modernisation overrides — lighter, tighter, less GPU-heavy.
+   Loaded after app.css + premium-overrides.css so these win.
+   ========================================================================== */
+
+/* ---- Top nav: shrink padding, drop heavy blur/shadow ---- */
+.top-nav {
+  padding: 8px 22px;
+  gap: 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 1px 0 var(--line);
+}
+
+/* ---- Brand: smaller mark, denser title ---- */
+.brand-mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.brand-cluster {
+  gap: 10px;
+}
+
+.brand-cluster h1 {
+  font-size: 0.98rem;
+}
+
+.eyebrow {
+  font-size: 0.6rem;
+  letter-spacing: 0.14em;
+  opacity: 0.65;
+}
+
+/* ---- Nav controls ---- */
+.nav-controls {
+  align-items: center;
+  gap: 6px;
+}
+
+/* Tighter nav buttons, no heavy shadow/blur, no underline animation tail */
+.top-nav .nav-button {
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: 9px;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border-color: transparent;
+  background: transparent;
+  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.top-nav .nav-button::after {
+  display: none;
+}
+
+.top-nav .nav-button:hover {
+  transform: none;
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.top-nav .nav-button.primary {
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: var(--accent-contrast);
+  border-color: transparent;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
+  animation: none;
+}
+
+.top-nav .nav-button.ghost {
+  background: transparent;
+}
+
+.top-nav .nav-button:disabled {
+  opacity: 0.45;
+  background: transparent;
+}
+
+/* ---- Search: compact pill with icon inside, no separate Search button ---- */
+.top-nav .nav-search {
+  min-width: min(100%, 280px);
+  margin-left: auto;
+}
+
+.top-nav .nav-search-row {
+  gap: 6px;
+}
+
+.top-nav .nav-search-field {
+  position: relative;
+  gap: 0;
+}
+
+.top-nav .nav-search input {
+  min-width: 220px;
+  padding: 7px 12px 7px 32px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  border-color: var(--line);
+  backdrop-filter: none;
+  box-shadow: none;
+  transition: border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.top-nav .nav-search input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.top-nav .nav-search-field .search-icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-soft);
+  pointer-events: none;
+  display: inline-flex;
+}
+
+.top-nav .nav-search-hint {
+  display: none;
+}
+
+.top-nav .nav-search-row .nav-button.search-submit {
+  padding: 6px 10px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+}
+
+/* ---- Icon buttons (theme toggle, refresh) ---- */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: all 140ms ease;
+  font-family: inherit;
+}
+
+.icon-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.icon-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.icon-btn.is-spinning svg {
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ---- Status pill (replaces the separate India EOD strip) ---- */
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.status-pill .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #10b981 22%, transparent);
+}
+
+.status-pill .status-dot.is-stale {
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #f59e0b 22%, transparent);
+}
+
+.status-pill strong {
+  font-family: var(--font-display);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.status-pill .status-pill-sep {
+  width: 1px;
+  height: 14px;
+  background: var(--line);
+}
+
+/* Hide the legacy plain-text Mode / Data Mode / strip blocks ----- */
+.top-nav .nav-mode-toggle.legacy-hidden {
+  display: none;
+}
+
+/* ---- General lightening: drop the infinite glow pulse ---- */
+.nav-button.primary,
+.timeframe-pill.active,
+.scanner-tab.active,
+.indicator-pill.active,
+.tool-pill.active {
+  animation: none;
+}
+
+/* ---- Ticker ribbon: tighten ---- */
+.ticker-ribbon-track {
+  padding: 6px 22px;
+  gap: 28px;
+}
+
+.ticker-ribbon-item {
+  font-size: 0.7rem;
+}
+
+.ticker-ribbon-item strong {
+  font-size: 0.78rem;
+}
+
+/* Gentle hover: kill the lift across the app for a calmer feel.
+   Only suppresses the translateY; colour/border hover still reads. */
+.nav-button:hover,
+.scanner-tab:hover,
+.timeframe-pill:hover,
+.indicator-pill:hover,
+.tool-pill:hover {
+  transform: none;
+}
+
+/* ---- Site-wide lightening: tame heavy blurs and big glow shadows ---- */
+.panel,
+.panel-shell,
+.scan-table,
+.workspace-panel,
+.panel-frame,
+.modal-shell {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.scan-row {
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.scan-row:hover {
+  transform: none;
+  border-left: none;
+  box-shadow: none;
+  background: color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* Drop the heaviest box-shadow halos on cards — keep a soft edge */
+.panel,
+.panel-shell {
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+/* Reduce the ambient glow under the workspace */
+.workspace {
+  padding-top: 14px;
+}
+
+/* Watchlists page: give the table more room, shrink the chart pane so
+   the stock rows fit without squashing. Override workspace-grid-sector. */
+.workspace-grid.workspace-grid-watchlists {
+  grid-template-columns: minmax(680px, 1.4fr) minmax(420px, 0.7fr);
+  gap: 16px;
+}
+
+@media (max-width: 1280px) {
+  .workspace-grid.workspace-grid-watchlists {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* ─── Liquid Glass chrome ───────────────────────────────────────────────────
+   Translucent glass over the fixed background image (.app-shell::before).
+   Edge-refraction via the #liquidGlass SVG filter where supported (Chromium/
+   Safari); Firefox keeps the frosted base (progressive enhancement). Theme
+   tints come from --surface / --glass-border / --glass-sheen (both themes). */
+
+.liquid-glass {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 55%, transparent), color-mix(in srgb, var(--surface-strong) 42%, transparent));
+  -webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
+  backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 10px 30px rgba(2, 6, 18, 0.26);
+}
+
+/* Gradient-stroke "liquid glass" rim — bright top & bottom edges, fading mid —
+   drawn as a masked ::before so it hugs any border-radius. */
+.liquid-glass::before,
+:root[data-theme] .top-nav .nav-button:not(.primary)::before,
+:root[data-theme] .top-nav .status-pill::before,
+:root[data-theme] .top-nav .icon-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.4px;
+  background: var(--glass-rim);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+  z-index: 2;
+}
+
+@supports (backdrop-filter: url(#liquidGlass)) or (-webkit-backdrop-filter: url(#liquidGlass)) {
+  .liquid-glass {
+    -webkit-backdrop-filter: url(#liquidGlass) blur(10px) saturate(165%) brightness(1.05);
+    backdrop-filter: url(#liquidGlass) blur(10px) saturate(165%) brightness(1.05);
+  }
+}
+
+/* Top nav: a glass slab floating over the background image. */
+:root[data-theme] .top-nav {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 52%, transparent), color-mix(in srgb, var(--surface-strong) 38%, transparent));
+  -webkit-backdrop-filter: blur(18px) saturate(165%) brightness(1.04);
+  backdrop-filter: blur(18px) saturate(165%) brightness(1.04);
+  border-bottom: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 14px 44px rgba(2, 5, 15, 0.30);
+}
+
+@supports (backdrop-filter: url(#liquidGlass)) or (-webkit-backdrop-filter: url(#liquidGlass)) {
+  :root[data-theme] .top-nav {
+    -webkit-backdrop-filter: url(#liquidGlass) blur(12px) saturate(165%) brightness(1.04);
+    backdrop-filter: url(#liquidGlass) blur(12px) saturate(165%) brightness(1.04);
+  }
+}
+
+/* Glass chips with the gradient-stroke rim (rim comes from ::before above; the
+   accent .primary button stays bold). */
+:root[data-theme] .top-nav .nav-button:not(.primary),
+:root[data-theme] .top-nav .status-pill,
+:root[data-theme] .top-nav .icon-btn {
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
+}
+
+/* Search input can't render ::before / keep its rounding, so use a clean border. */
+:root[data-theme] .top-nav .nav-search input,
+:root[data-theme] .top-nav .nav-search-field input {
+  background: color-mix(in srgb, var(--surface) 40%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+  backdrop-filter: blur(10px) saturate(150%);
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
+}
+
+:root[data-theme] .top-nav .nav-button:not(.primary):hover {
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+.liquid-glass-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+}

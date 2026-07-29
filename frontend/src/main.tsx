@@ -2,9 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./styles/app.css";
-import "./styles/premium-overrides.css";
-import "./styles/nav-modern.css";
-import "./styles/top-bar-modern.css";
+// Single override layer. Was three stacked files (premium-overrides,
+// nav-modern, top-bar-modern) where a rule's winner depended on which file it
+// lived in; they are now merged in that same order inside overrides.css.
+import "./styles/overrides.css";
 
 class RootErrorBoundary extends React.Component<
   { children: React.ReactNode },
