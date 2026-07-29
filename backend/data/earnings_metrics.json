@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-29T13:28:12.203416+00:00",
+  "generated_at": "2026-07-29T14:36:33.463623+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -785,14 +785,14 @@
     },
     "EFCIL": {
       "symbol": "EFCIL",
-      "earnings_date": "2026-06-04",
-      "close_in_range_pct": 0.6359,
-      "next_day_gap_pct": 1.053,
-      "day_rvol_50d": 0.481,
-      "return_5d_pct": 7.554,
+      "earnings_date": "2026-07-29",
+      "close_in_range_pct": 0.6,
+      "next_day_gap_pct": null,
+      "day_rvol_50d": 0.287,
+      "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 7.519,
-      "best_pop_rvol": 1.695
+      "best_pop_pct": 1.572,
+      "best_pop_rvol": 0.287
     },
     "TATVA": {
       "symbol": "TATVA",
@@ -5157,7 +5157,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.137,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.553,
       "best_pop_rvol": 1.137
     },
@@ -5311,7 +5311,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.725,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.883,
       "best_pop_rvol": 0.725
     },
@@ -5674,7 +5674,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.981,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.422,
       "best_pop_rvol": 0.981
     },
