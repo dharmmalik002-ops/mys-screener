@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-30T13:20:45.807334+00:00",
+  "generated_at": "2026-07-30T14:45:58.580806+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -5817,7 +5817,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.523,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.187,
       "best_pop_rvol": 0.523
     },
@@ -5993,7 +5993,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.225,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.85,
       "best_pop_rvol": 0.225
     },
@@ -6004,7 +6004,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.453,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.573,
       "best_pop_rvol": 0.453
     },
@@ -6026,7 +6026,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.422,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.092,
       "best_pop_rvol": 0.422
     },
@@ -6070,7 +6070,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.626,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.411,
       "best_pop_rvol": 0.626
     },
@@ -6092,7 +6092,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.561,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -2.135,
       "best_pop_rvol": 0.561
     },
@@ -6125,7 +6125,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 3.017,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.7,
       "best_pop_rvol": 3.017
     },
@@ -6389,7 +6389,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.572,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -1.978,
       "best_pop_rvol": 0.572
     },
