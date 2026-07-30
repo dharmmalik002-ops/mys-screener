@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-07-30T10:57:03.039437+00:00",
+  "generated_at": "2026-07-30T11:03:56.561651+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -6114,7 +6114,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.442,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 1.597,
       "best_pop_rvol": 1.442
     },
@@ -6224,7 +6224,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.925,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.83,
       "best_pop_rvol": 0.925
     },
@@ -6323,7 +6323,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.842,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.402,
       "best_pop_rvol": 0.842
     },
@@ -6477,7 +6477,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 5.773,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 3.872,
       "best_pop_rvol": 5.773
     }
