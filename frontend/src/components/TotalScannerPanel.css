@@ -1,0 +1,243 @@
+/* ==========================================================================
+   TotalScannerPanel — AND/OR scanner combiner
+   Surfaces alias the global tokens (see the note in ScanTable.css) so this
+   panel sits in the same family as the rest of the screener.
+   ========================================================================== */
+
+.ts-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xl);
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.ts-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.ts-title-wrap h3 {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.ts-sub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--text-soft);
+  max-width: 62ch;
+}
+
+.ts-run {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease, opacity 140ms ease;
+}
+
+.ts-run:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-strong) 86%, #000);
+}
+
+.ts-run:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ----- formula strip ----- */
+.ts-formula {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  overflow-x: auto;
+}
+
+.ts-formula-label {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ts-formula code {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+/* ----- groups ----- */
+.ts-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
+}
+
+/* Nested groups step in and tint slightly so the nesting reads at a glance. */
+.ts-group-depth-1 { border-left: 2px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.ts-group-depth-2 { border-left: 2px solid color-mix(in srgb, var(--teal, var(--accent)) 45%, transparent); }
+.ts-group-depth-3 { border-left: 2px solid color-mix(in srgb, var(--amber) 45%, transparent); }
+
+.ts-group-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ts-op-switch {
+  display: inline-flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.ts-op-pill {
+  border: 0;
+  background: transparent;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: background 140ms ease, color 140ms ease;
+}
+
+.ts-op-pill:hover { color: var(--text); }
+
+.ts-op-pill.active {
+  background: var(--accent-strong);
+  color: #fff;
+}
+
+.ts-group-caption {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.ts-group-head .ts-icon-btn { margin-left: auto; }
+
+/* ----- leaves ----- */
+.ts-children {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ts-leaf {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ts-leaf-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ts-icon-btn {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.ts-icon-btn:hover {
+  color: var(--negative);
+  border-color: color-mix(in srgb, var(--negative) 45%, transparent);
+}
+
+/* ----- actions & messages ----- */
+.ts-group-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ts-add-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 11px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.ts-add-btn:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.ts-add-btn.ghost { opacity: 0.85; }
+
+.ts-empty,
+.ts-hint,
+.ts-result-note,
+.ts-error {
+  margin: 0;
+  font-size: 12px;
+}
+
+.ts-empty { color: var(--text-muted); }
+.ts-hint { color: var(--text-muted); }
+.ts-result-note { color: var(--text-soft); }
+.ts-error { color: var(--negative); font-weight: 600; }
+
+@media (max-width: 640px) {
+  .ts-head { flex-direction: column; align-items: stretch; }
+  .ts-run { justify-content: center; }
+}

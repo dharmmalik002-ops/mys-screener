@@ -32,6 +32,7 @@ import "./ScreenerSidebar.css";
 export type ScreenerMode =
   | "bread-butter"
   | "custom-scan"
+  | "total-scanner"
   | "volume"
   | "ipo"
   | "gap-up-openers"
@@ -91,6 +92,7 @@ const ALL_ITEMS: SidebarItem[] = [
   { mode: "tight-closes", title: "3 Tight Closes", hint: "Pre-breakout coil", Icon: Crosshair },
   { mode: "bread-butter", title: "Bread & Butter", hint: "Stage 2 impulse + 10/21 EMA rest", Icon: Trophy },
   { mode: "custom-scan", title: "Custom Scanner", hint: "Build your own", Icon: Settings2 },
+  { mode: "total-scanner", title: "Total Scanner", hint: "Combine scanners with AND / OR", Icon: SlidersHorizontal },
   { mode: "volume", title: "Volume", hint: "Recent volume-high pushes", Icon: BarChart3 },
   { mode: "ipo", title: "IPO", hint: "Recent listings", Icon: Rocket },
   { mode: "gap-up-openers", title: "Gap Up Openers", hint: "Opening gaps", Icon: TrendingUp },
@@ -120,6 +122,7 @@ const DEFAULT_VISIBLE_MODES: ScreenerMode[] = [
   "tight-closes",
   "bread-butter",
   "custom-scan",
+  "total-scanner",
 ];
 
 const VISIBLE_SCANNERS_KEY = "sidebar-visible-scanners-v1";

@@ -12,6 +12,16 @@ import type {
   IndicatorKey,
 } from "./components/ChartPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
+import {
+  collectLeafModes,
+  defaultTotalScannerTree,
+  describeTotalScanner,
+  evaluateTotalScanner,
+  normalizeTotalScannerTree,
+  totalScannerLeafLabel,
+  type TotalScannerLeafMode,
+  type TotalScannerNode,
+} from "./lib/totalScanner";
 import { DEFAULT_POSITIVE_EARNINGS_FILTERS, type PositiveEarningsFilters } from "./components/PositiveEarningsScannerPanel";
 import type { LocalWatchlist } from "./components/WatchlistsPanel";
 import { Panel } from "./components/Panel";
@@ -79,6 +89,7 @@ const ChartCompareLayout = lazy(() => import("./components/ChartCompareLayout").
 const GroupStocksWidget = lazy(() => import("./components/GroupStocksWidget").then((module) => ({ default: module.GroupStocksWidget })));
 const ConsolidatingScannerPanel = lazy(() => import("./components/ConsolidatingScannerPanel").then((module) => ({ default: module.ConsolidatingScannerPanel })));
 const CustomScannerPanel = lazy(() => import("./components/CustomScannerPanel").then((module) => ({ default: module.CustomScannerPanel })));
+const TotalScannerPanel = lazy(() => import("./components/TotalScannerPanel").then((module) => ({ default: module.TotalScannerPanel })));
 const DemandZoneScannerPanel = lazy(() => import("./components/DemandZoneScannerPanel").then((module) => ({ default: module.DemandZoneScannerPanel })));
 const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").then((module) => ({ default: module.GapUpScannerPanel })));
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
@@ -145,6 +156,7 @@ function readGroupWidgetOpen(): boolean {
   }
 }
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
+const TOTAL_SCANNER_KEY = "mr-malik-total-scanner:v1";
 const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
 const LEGACY_WATCHLISTS_KEYS = ["mr-malik-watchlists", "stock-scanner-watchlists:v1", "stock-scanner-watchlists"];
@@ -1624,6 +1636,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   const [customFilters, setCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.customFilters);
   const [appliedCustomFilters, setAppliedCustomFilters] = useState<CustomScanRequest>(initialScannerSettings.appliedCustomFilters);
   const [hasAppliedFiltersOnce, setHasAppliedFiltersOnce] = useState(initialScannerSettings.hasAppliedFiltersOnce);
+  const [totalScannerTree, setTotalScannerTree] = useState<TotalScannerNode>(() => {
+    if (typeof window === "undefined") return defaultTotalScannerTree();
+    try {
+      const raw = window.localStorage.getItem(TOTAL_SCANNER_KEY);
+      return (raw ? normalizeTotalScannerTree(JSON.parse(raw)) : null) ?? defaultTotalScannerTree();
+    } catch {
+      return defaultTotalScannerTree();
+    }
+  });
+  const [totalScannerError, setTotalScannerError] = useState<string | null>(null);
   const [gapUpThreshold, setGapUpThreshold] = useState(initialScannerSettings.gapUpThreshold);
   const [gapUpMinLiquidityCrore, setGapUpMinLiquidityCrore] = useState<number | null>(initialScannerSettings.gapUpMinLiquidityCrore);
   const [minervini1mMinLiquidityCrore, setMinervini1mMinLiquidityCrore] = useState<number | null>(
@@ -3190,76 +3212,84 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     };
   };
 
-  const requestActiveScannerResults = (includeSectorSummaries = false) => {
+  // Dispatch is parameterised by mode (not `activeScanner`) so Total Scanner
+  // can run any leaf scanner through the exact same code path — including
+  // Custom Scanner's applied filters and every per-scanner threshold.
+  const requestScannerResults = (mode: ScreenerMode, includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
-    if (activeScanner === "bread-butter") {
+    // Must be first: without it "total-scanner" would fall through to the
+    // Custom Scanner default at the bottom of this chain.
+    if (mode === "total-scanner") {
+      return runTotalScannerCombination();
+    }
+    if (mode === "bread-butter") {
       return getScanResults("bread-butter", activeMarket, options);
     }
-    if (activeScanner === "volume") {
+    if (mode === "volume") {
       return getScanResults("volume", activeMarket, options);
     }
-    if (activeScanner === "ipo") {
+    if (mode === "ipo") {
       return getScanResults("ipo", activeMarket, options);
     }
-    if (activeScanner === "ema-expansion") {
+    if (mode === "ema-expansion") {
       return getScanResults("ema-expansion", activeMarket, {
         ...options,
         expansionMinChangePct: appliedExpansionMinChangePct,
         expansionMinRelativeVolume: appliedExpansionMinRelativeVolume,
       });
     }
-    if (activeScanner === "contraction") {
+    if (mode === "contraction") {
       return getScanResults("contraction", activeMarket, options);
     }
-    if (activeScanner === "gap-up-openers") {
+    if (mode === "gap-up-openers") {
       return getGapUpOpeners(gapUpThreshold, activeMarket, gapUpMinLiquidityCrore, options);
     }
-    if (activeScanner === "near-pivot") {
+    if (mode === "near-pivot") {
       return getNearPivotScan(appliedNearPivotFilters, activeMarket, options);
     }
-    if (activeScanner === "pull-backs") {
+    if (mode === "pull-backs") {
       return getPullBackScan(appliedPullBackFilters, activeMarket, options);
     }
-    if (activeScanner === "returns") {
+    if (mode === "returns") {
       return getReturnsScan(appliedReturnsFilters, activeMarket, options);
     }
-    if (activeScanner === "consolidating") {
+    if (mode === "consolidating") {
       return getConsolidatingScan(appliedConsolidatingFilters, activeMarket, options);
     }
-    if (activeScanner === "demand-zone") {
+    if (mode === "demand-zone") {
       return getDemandZoneScan(appliedDemandZoneFilters, activeMarket, options);
     }
-    if (activeScanner === "momentum-burst") {
+    if (mode === "momentum-burst") {
       return getMomentumBurstScan(appliedMomentumBurstFilters, activeMarket, options);
     }
-    if (activeScanner === "minervini-1m") {
+    if (mode === "minervini-1m") {
       return getScanResults("minervini-1m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini1mMinLiquidityCrore });
     }
-    if (activeScanner === "minervini-5m") {
+    if (mode === "minervini-5m") {
       return getScanResults("minervini-5m", activeMarket, { ...options, minLiquidityCrore: appliedMinervini5mMinLiquidityCrore });
     }
-    if (activeScanner === "episodic-pivot") {
+    if (mode === "episodic-pivot") {
       return getScanResults("episodic-pivot", activeMarket, options);
     }
-    if (activeScanner === "rs-line-leads") {
+    if (mode === "rs-line-leads") {
       return getScanResults("rs-line-leads", activeMarket, options);
     }
-    if (activeScanner === "fresh-stage2") {
+    if (mode === "fresh-stage2") {
       return getScanResults("fresh-stage2", activeMarket, options);
     }
-    if (activeScanner === "high-tight-flag") {
+    if (mode === "high-tight-flag") {
       return getScanResults("high-tight-flag", activeMarket, options);
     }
-    if (activeScanner === "vcp") {
+    if (mode === "vcp") {
       return getScanResults("vcp", activeMarket, options);
     }
-    if (activeScanner === "tight-closes") {
+    if (mode === "tight-closes") {
       return getScanResults("tight-closes", activeMarket, options);
     }
-    if (activeScanner === "power-base") {
+    if (mode === "power-base") {
       return getScanResults("power-base", activeMarket, options);
     }
-    if (activeScanner === "positive-earnings") {
+    if (mode === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
         positiveEarningsMinCloseInRangePct: appliedPositiveEarningsFilters.minCloseInRangePct,
@@ -3269,11 +3299,89 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         positiveEarningsLookbackDays: appliedPositiveEarningsFilters.lookbackDays,
       });
     }
-    if (activeScanner === "custom-scan" && !hasAppliedFiltersOnce) {
+    if (mode === "custom-scan" && !hasAppliedFiltersOnce) {
       return Promise.resolve(null);
     }
     return runCustomScan(appliedCustomFilters, activeMarket, options);
   };
+
+  /**
+   * Total Scanner: run every distinct leaf once, reduce each to a symbol set,
+   * then let the AND/OR tree decide the survivors. Rows are reused from
+   * whichever scanner surfaced the symbol first, with `also_in` carrying the
+   * full list of scanners it matched (the table already renders that).
+   */
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(TOTAL_SCANNER_KEY, JSON.stringify(totalScannerTree));
+    } catch {
+      // best-effort persistence only
+    }
+  }, [totalScannerTree]);
+
+  const runTotalScannerCombination = async (): Promise<ScanResultsResponse | null> => {
+    const modes = collectLeafModes(totalScannerTree);
+    if (modes.length === 0) {
+      return null;
+    }
+    // One fetch per DISTINCT scanner, in parallel; a scanner that fails or is
+    // unconfigured (e.g. Custom Scanner with no filters applied) contributes an
+    // empty set rather than failing the whole run.
+    const settled = await Promise.all(
+      modes.map(async (mode) => {
+        try {
+          return [mode, await requestScannerResults(mode, false)] as const;
+        } catch {
+          return [mode, null] as const;
+        }
+      }),
+    );
+
+    const sets = new Map<TotalScannerLeafMode, Set<string>>();
+    const rowBySymbol = new Map<string, ScanMatch>();
+    const matchedBySymbol = new Map<string, string[]>();
+    for (const [mode, payload] of settled) {
+      const items = payload?.items ?? [];
+      sets.set(mode, new Set(items.map((item) => item.symbol)));
+      for (const item of items) {
+        if (!rowBySymbol.has(item.symbol)) rowBySymbol.set(item.symbol, item);
+        const label = totalScannerLeafLabel(mode);
+        const list = matchedBySymbol.get(item.symbol);
+        if (list) list.push(label);
+        else matchedBySymbol.set(item.symbol, [label]);
+      }
+    }
+
+    const symbols = evaluateTotalScanner(totalScannerTree, sets);
+    const items: ScanMatch[] = [];
+    for (const symbol of symbols) {
+      const row = rowBySymbol.get(symbol);
+      if (row) items.push({ ...row, also_in: matchedBySymbol.get(symbol) ?? [] });
+    }
+    // Confluence first: names hit by more of the selected scanners lead, then
+    // by RS. In an AND run every row ties on count, so RS does the sorting.
+    items.sort(
+      (a, b) => (b.also_in?.length ?? 0) - (a.also_in?.length ?? 0) || (b.rs_rating ?? 0) - (a.rs_rating ?? 0),
+    );
+
+    return {
+      scan: {
+        id: "total-scanner",
+        name: "Total Scanner",
+        category: "Custom",
+        description: describeTotalScanner(totalScannerTree),
+        hit_count: items.length,
+      },
+      generated_at: new Date().toISOString(),
+      market_cap_min_crore: settled.find(([, payload]) => payload)?.[1]?.market_cap_min_crore ?? 0,
+      total_hits: items.length,
+      items,
+      sector_summaries: [],
+    };
+  };
+
+  const requestActiveScannerResults = (includeSectorSummaries = false) =>
+    requestScannerResults(activeScanner, includeSectorSummaries);
 
   const syncSelectedSymbolFromScan = (payload: ScanResultsResponse, preferredSymbol?: string | null) => {
     const nextSelectedSymbol =
@@ -3853,6 +3961,29 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setScanSectorSummariesLoading(false);
     setCustomFilters(nextFilters);
     setAppliedCustomFilters(nextFilters);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  /** Run the Total Scanner combination through the normal scan pipeline. */
+  const handleRunTotalScan = () => {
+    const modes = collectLeafModes(totalScannerTree);
+    if (modes.length === 0) {
+      setTotalScannerError("Add at least one scanner to the combination.");
+      return;
+    }
+    if (modes.includes("custom-scan") && !hasAppliedFiltersOnce) {
+      setTotalScannerError(
+        "Custom Scanner is in this combination but has no filters applied yet — open Custom Scanner, apply your filters, then run this again.",
+      );
+      return;
+    }
+    setTotalScannerError(null);
+    setActivePage("screener");
+    setActiveScanner("total-scanner");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -5324,7 +5455,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                       <section className="scanner-settings-shell">
                         {(() => {
                           const scannerTitle =
-                            activeScanner === "custom-scan"
+                            activeScanner === "total-scanner"
+                              ? "Total Scanner"
+                              : activeScanner === "custom-scan"
                               ? "Custom Screener"
                               : activeScanner === "volume"
                                 ? "Volume"
@@ -5366,7 +5499,9 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                                                   ? "Power Base"
                                                                   : "Pull Backs";
                           const scannerDesc =
-                            activeScanner === "custom-scan"
+                            activeScanner === "total-scanner"
+                              ? `Scanners combined with AND / OR — ${describeTotalScanner(totalScannerTree)}.`
+                              : activeScanner === "custom-scan"
                               ? "Define your own universe filters and RS thresholds."
                               : activeScanner === "volume"
                                 ? "Stocks that pushed a new volume high in the last ~1 month, newest on top — each badged Monthly / Quarterly / Half-yearly / Yearly by the longest window it cleared."
@@ -5605,6 +5740,17 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                                     onMinLiquidityCroreChange={setMinervini5mMinLiquidityCrore}
                                     onApply={handleApplyMinervini5mScan}
                                     onReset={handleResetMinervini5mScan}
+                                  />
+                                )
+                              : activeScanner === "total-scanner"
+                                ? (
+                                  <TotalScannerPanel
+                                    tree={totalScannerTree}
+                                    onTreeChange={setTotalScannerTree}
+                                    onRun={handleRunTotalScan}
+                                    loading={scanLoading}
+                                    matchCount={scanResults?.scan?.id === "total-scanner" ? scanResults.total_hits : null}
+                                    error={totalScannerError}
                                   />
                                 )
                               : activeScanner === "positive-earnings"
