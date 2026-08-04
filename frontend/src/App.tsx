@@ -240,6 +240,8 @@ type SavedScannerPreset = {
   returnsFilters?: ReturnsScanRequest;
   consolidatingFilters?: ConsolidatingScanRequest;
   demandZoneFilters?: DemandZoneScanRequest;
+  /** Total Scanner only: the saved AND/OR combination. */
+  totalScannerTree?: TotalScannerNode;
   lastMatchCount?: number;
   lastUpdatedAt?: string | null;
   symbols?: string[];
@@ -1477,6 +1479,7 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
       "minervini-1m",
       "minervini-5m",
       "positive-earnings",
+      "total-scanner",
     ]);
     return Array.isArray(parsed)
       ? parsed
@@ -1493,6 +1496,16 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
             ) {
               return null;
             }
+            if (normalizedMode === "total-scanner") {
+              // Re-validate the saved combination: a leaf whose scanner no
+              // longer exists is dropped, and a preset left with no runnable
+              // combination is discarded rather than silently matching nothing.
+              const tree = normalizeTotalScannerTree(item.totalScannerTree);
+              if (!tree || collectLeafModes(tree).length === 0) {
+                return null;
+              }
+              return { ...item, mode: normalizedMode, totalScannerTree: tree } satisfies SavedScannerPreset;
+            }
             return { ...item, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
           })
           .filter((item): item is SavedScannerPreset => Boolean(item))
@@ -1503,6 +1516,9 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
 }
 
 function scannerModeLabel(mode: SavableScannerMode): string {
+  if (mode === "total-scanner") {
+    return "Total Scanner";
+  }
   if (mode === "custom-scan") {
     return "Custom Scanner";
   }
@@ -3319,11 +3335,12 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     }
   }, [totalScannerTree]);
 
-  const runTotalScannerCombination = async (): Promise<ScanResultsResponse | null> => {
-    const modes = collectLeafModes(totalScannerTree);
-    if (modes.length === 0) {
-      return null;
-    }
+  const runTotalScannerCombination = async (
+    tree: TotalScannerNode = totalScannerTree,
+  ): Promise<ScanResultsResponse> => {
+    // Always resolves a response: an empty combination legitimately means
+    // "0 matched" rather than "don't update the results".
+    const modes = collectLeafModes(tree);
     // One fetch per DISTINCT scanner, in parallel; a scanner that fails or is
     // unconfigured (e.g. Custom Scanner with no filters applied) contributes an
     // empty set rather than failing the whole run.
@@ -3352,7 +3369,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       }
     }
 
-    const symbols = evaluateTotalScanner(totalScannerTree, sets);
+    const symbols = evaluateTotalScanner(tree, sets);
     const items: ScanMatch[] = [];
     for (const symbol of symbols) {
       const row = rowBySymbol.get(symbol);
@@ -3369,7 +3386,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
         id: "total-scanner",
         name: "Total Scanner",
         category: "Custom",
-        description: describeTotalScanner(totalScannerTree),
+        description: describeTotalScanner(tree),
         hit_count: items.length,
       },
       generated_at: new Date().toISOString(),
@@ -3407,7 +3424,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       symbols: base?.symbols ?? [],
     };
 
-    if (mode === "custom-scan") {
+    if (mode === "total-scanner") {
+      preset.totalScannerTree = totalScannerTree;
+      if (!base?.name) {
+        // Name it after the combination — "VCP AND Power Base" is far more
+        // useful in the sidebar than "Total Scanner 2" once you have a few.
+        const formula = describeTotalScanner(totalScannerTree);
+        preset.name = formula.length <= 42 ? formula : `${formula.slice(0, 39)}…`;
+      }
+    } else if (mode === "custom-scan") {
       preset.customFilters = normalizeCustomFilters(source === "draft" ? customFilters : appliedCustomFilters);
     } else if (mode === "gap-up-openers") {
       preset.gapUpThreshold = gapUpThreshold;
@@ -3435,6 +3460,15 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
 
   const runSavedScannerRequest = (preset: SavedScannerPreset, includeSectorSummaries = false) => {
     const options = { includeSectorSummaries };
+    if (preset.mode === "total-scanner") {
+      // Run the preset's OWN saved combination, not whatever is currently in
+      // the builder — otherwise refreshing a preset's count would silently
+      // report the working tree's results against the preset's name.
+      // Load-time validation discards presets without a runnable tree, so the
+      // fallback here should be unreachable; it just keeps the type honest.
+      const tree = normalizeTotalScannerTree(preset.totalScannerTree);
+      return runTotalScannerCombination(tree ?? { kind: "group", id: preset.id, op: "AND", children: [] });
+    }
     if (preset.mode === "custom-scan") {
       return runCustomScan(sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters)), activeMarket, options);
     }
@@ -3608,7 +3642,13 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     setError(null);
     setScannerRunNonce((current) => current + 1);
 
-    if (preset.mode === "custom-scan") {
+    if (preset.mode === "total-scanner") {
+      const tree = normalizeTotalScannerTree(preset.totalScannerTree);
+      if (tree) {
+        setTotalScannerTree(tree);
+      }
+      setTotalScannerError(null);
+    } else if (preset.mode === "custom-scan") {
       const nextFilters = sanitizeCustomFiltersPattern(mergeWithDefaults(DEFAULT_CUSTOM_FILTERS, preset.customFilters));
       setCustomFilters(nextFilters);
       setAppliedCustomFilters(nextFilters);
