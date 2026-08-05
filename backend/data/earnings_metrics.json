@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-05T14:46:28.766398+00:00",
+  "generated_at": "2026-08-05T15:13:21.575371+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -521,14 +521,14 @@
     },
     "KIRLFER": {
       "symbol": "KIRLFER",
-      "earnings_date": "2026-08-05",
-      "close_in_range_pct": 0.6008,
-      "next_day_gap_pct": null,
-      "day_rvol_50d": 3.552,
-      "return_5d_pct": null,
+      "earnings_date": "2026-06-12",
+      "close_in_range_pct": 0.7068,
+      "next_day_gap_pct": 2.339,
+      "day_rvol_50d": 2.337,
+      "return_5d_pct": 11.519,
       "source": "bse",
-      "best_pop_pct": -0.625,
-      "best_pop_rvol": 3.552
+      "best_pop_pct": 3.31,
+      "best_pop_rvol": 2.337
     },
     "GUJALKALI": {
       "symbol": "GUJALKALI",
