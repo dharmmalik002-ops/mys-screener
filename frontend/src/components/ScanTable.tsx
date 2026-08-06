@@ -41,6 +41,7 @@ import type {
   ChartGridStat,
 } from "./ChartGridModal";
 import { Panel } from "./Panel";
+import { SortableHeader } from "./SortableTh";
 
 import "./ScanTable.css";
 
@@ -86,6 +87,33 @@ type SortBy =
   | "earnings_date_desc";
 
 type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "sdate" | "edate" | "gap";
+
+/**
+ * Which SortBy modes each header column maps to. Direction is encoded in the
+ * key here (change_desc / change_asc), so a column with no `asc` variant simply
+ * stays descending when re-clicked rather than inventing a mode.
+ */
+const COLUMN_SORTS = {
+  price: { desc: "price_desc", asc: "price_asc" },
+  change: { desc: "change_desc", asc: "change_asc" },
+  rs: { desc: "rs_desc", asc: "rs_asc" },
+  rvol: { desc: "rvol_desc" },
+  vdate: { desc: "volume_date_desc" },
+  edate: { desc: "earnings_date_desc" },
+} as const satisfies Record<string, { desc: SortBy; asc?: SortBy }>;
+
+type SortColumn = keyof typeof COLUMN_SORTS;
+
+function isColumnActive(column: SortColumn, sortBy: SortBy): boolean {
+  const pair = COLUMN_SORTS[column] as { desc: SortBy; asc?: SortBy };
+  return sortBy === pair.desc || sortBy === pair.asc;
+}
+
+function nextColumnSort(column: SortColumn, sortBy: SortBy): SortBy {
+  const pair = COLUMN_SORTS[column] as { desc: SortBy; asc?: SortBy };
+  if (sortBy === pair.desc && pair.asc) return pair.asc;
+  return pair.desc;
+}
 
 const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
   { value: "change_desc", label: "Change % (high → low)" },
@@ -1352,16 +1380,35 @@ export function ScanTable({
       <div className="scan-table st-card">
         <div className="scan-table-head st-head" style={headTemplate}>
           <span>Stock</span>
-          <span className="st-num">Price</span>
-          <span className="st-num">Change</span>
-          {visibleCols.has("spark") ? <span className="st-num">Trend</span> : null}
-          {visibleCols.has("rs") ? <span className="st-num">RS</span> : null}
-          {visibleCols.has("rs1m") ? <span className="st-num">RS 1M</span> : null}
-          {visibleCols.has("rvol") ? <span className="st-num">RVOL</span> : null}
-          {visibleCols.has("vdate") ? <span className="st-num">Vol Date</span> : null}
-          {visibleCols.has("sdate") ? <span className="st-num">Day</span> : null}
-          {visibleCols.has("edate") ? <span className="st-num">Earnings</span> : null}
-          {visibleCols.has("gap") ? <span className="st-num">Gap</span> : null}
+          {/* Columns backed by a SortBy mode are click-to-sort; the rest stay
+              plain labels rather than pretending to be interactive. */}
+          {(() => {
+            const header = (column: SortColumn, label: string, title?: string) => (
+              <SortableHeader
+                numeric
+                active={isColumnActive(column, sortBy)}
+                direction={sortBy.endsWith("_asc") ? "asc" : "desc"}
+                onSort={() => setSortBy(nextColumnSort(column, sortBy))}
+                title={title ?? `Sort by ${label}`}
+              >
+                {label}
+              </SortableHeader>
+            );
+            return (
+              <>
+                {header("price", "Price")}
+                {header("change", "Change")}
+                {visibleCols.has("spark") ? <span className="st-num">Trend</span> : null}
+                {visibleCols.has("rs") ? header("rs", "RS") : null}
+                {visibleCols.has("rs1m") ? <span className="st-num">RS 1M</span> : null}
+                {visibleCols.has("rvol") ? header("rvol", "RVOL") : null}
+                {visibleCols.has("vdate") ? header("vdate", "Vol Date") : null}
+                {visibleCols.has("sdate") ? <span className="st-num">Day</span> : null}
+                {visibleCols.has("edate") ? header("edate", "Earnings") : null}
+                {visibleCols.has("gap") ? <span className="st-num">Gap</span> : null}
+              </>
+            );
+          })()}
           <span></span>
         </div>
         <div
