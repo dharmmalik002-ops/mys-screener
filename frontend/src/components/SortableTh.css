@@ -1,0 +1,63 @@
+/* ==========================================================================
+   SortableTh — click-to-sort table header
+   Surfaces alias the global tokens (see the note in ScanTable.css).
+   ========================================================================== */
+
+.sortable-th {
+  padding: 0;
+  white-space: nowrap;
+}
+
+.sortable-th-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  padding: inherit;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+  /* Header cells inherit their own padding; keep the hit area full-width. */
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
+  transition: color 140ms ease, background 140ms ease;
+}
+
+.sortable-th-num .sortable-th-btn {
+  justify-content: flex-end;
+}
+
+.sortable-th-btn:hover {
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.sortable-th-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The indicator is always rendered so the column never shifts width when it
+   becomes active — it just fades in. */
+.sortable-th-icon {
+  flex: none;
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease;
+}
+
+.sortable-th-btn:hover .sortable-th-icon {
+  opacity: 0.55;
+}
+
+.sortable-th.is-active .sortable-th-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.sortable-th.is-active .sortable-th-label {
+  color: var(--accent);
+}

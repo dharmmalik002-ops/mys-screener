@@ -1,6 +1,8 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { LayoutGrid, Medal } from "lucide-react";
 
+import { SortableTh, nextSort, type SortDirection } from "./SortableTh";
+
 import {
   getChartGridSeries,
   type ChartBar,
@@ -37,7 +39,9 @@ type GroupsPanelProps = {
   onVisibleSymbolsChange: (symbols: string[]) => void;
 };
 
-type GroupSortBy = "rank" | "score" | "momentum" | "return_1w" | "return_1m" | "return_3m" | "return_6m";
+type GroupSortBy =
+  | "rank" | "score" | "momentum" | "breadth"
+  | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
@@ -48,7 +52,11 @@ const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
   { value: "return_1m", label: "1M Return" },
   { value: "return_3m", label: "3M Return" },
   { value: "return_6m", label: "6M Return" },
+  { value: "breadth", label: "% Above 50D" },
 ];
+
+/** Keys where a LOWER value is better, so ascending is the natural default. */
+const ASCENDING_SORTS: readonly GroupSortBy[] = ["rank"];
 
 /* ---------- formatters ---------- */
 
@@ -205,6 +213,15 @@ export function GroupsPanel({
 }: GroupsPanelProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<GroupSortBy>("rank");
+  // Rank is the only key where "best first" means ascending.
+  const [sortDir, setSortDir] = useState<SortDirection>("asc");
+
+  /** Clicking a header toggles direction; a new column adopts its natural default. */
+  const handleHeaderSort = (key: GroupSortBy) => {
+    const next = nextSort({ key: sortBy, direction: sortDir }, key, ASCENDING_SORTS);
+    setSortBy(next.key);
+    setSortDir(next.direction);
+  };
   const [strengthFilter, setStrengthFilter] = useState<GroupStrengthFilter>("all");
   const [focusedGroupId, setFocusedGroupId] = useState<string | null>(null);
   const [gridGroupId, setGridGroupId] = useState<string | null>(null);
@@ -269,16 +286,25 @@ export function GroupsPanel({
       return searchMatches.has(group.group_id);
     });
     groups.sort((a, b) => {
-      if (sortBy === "rank") return a.rank - b.rank;
-      if (sortBy === "momentum") return (b.momentum_score ?? -1) - (a.momentum_score ?? -1);
-      if (sortBy === "return_1w") return b.return_1w - a.return_1w;
-      if (sortBy === "return_1m") return b.return_1m - a.return_1m;
-      if (sortBy === "return_3m") return b.return_3m - a.return_3m;
-      if (sortBy === "return_6m") return b.return_6m - a.return_6m;
-      return b.score - a.score;
+      // One metric accessor per sort key, then a single direction flip — so the
+      // dropdown and the click-to-sort headers can never disagree.
+      const metric = (item: IndustryGroupRankItem) => {
+        switch (sortBy) {
+          case "rank": return item.rank;
+          case "momentum": return item.momentum_score ?? -1;
+          case "return_1w": return item.return_1w;
+          case "return_1m": return item.return_1m;
+          case "return_3m": return item.return_3m;
+          case "return_6m": return item.return_6m;
+          case "breadth": return item.pct_above_50dma;
+          default: return item.score;
+        }
+      };
+      const delta = metric(a) - metric(b);
+      return sortDir === "asc" ? delta : -delta;
     });
     return groups;
-  }, [data, searchMatches, searchQuery, sortBy, strengthFilter]);
+  }, [data, searchMatches, searchQuery, sortBy, sortDir, strengthFilter]);
 
   useEffect(() => {
     onVisibleSymbolsChange(filteredGroups.flatMap((g) => g.symbols));
@@ -507,7 +533,11 @@ export function GroupsPanel({
             <select
               className="gp-select"
               value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as GroupSortBy)}
+              onChange={(e) => {
+                const key = e.target.value as GroupSortBy;
+                setSortBy(key);
+                setSortDir(ASCENDING_SORTS.includes(key) ? "asc" : "desc");
+              }}
               aria-label="Sort"
             >
               {SORT_OPTIONS.map((o) => (
@@ -538,10 +568,23 @@ export function GroupsPanel({
               <table className="gp-table">
                 <thead>
                   <tr>
-                    <th style={{ width: 56 }}>#</th>
+                    <SortableTh sortKey="rank" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} style={{ width: 56 }} title="Sort by group rank">
+                      #
+                    </SortableTh>
                     <th>Industry Group</th>
-                    <th className="gp-num">Score</th>
-                    <th className="gp-num" title="Leadership breadth: % of group members above their 50DMA. Broad participation beats two stocks dragging an index.">&gt;50D</th>
+                    <SortableTh sortKey="score" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric title="Smoothed group score (3-month anchored)">
+                      Score
+                    </SortableTh>
+                    <SortableTh sortKey="momentum" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric title="Short-term momentum — the fast blend, useful for spotting fresh rotation">
+                      Mom
+                    </SortableTh>
+                    <SortableTh sortKey="return_1w" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric>1W</SortableTh>
+                    <SortableTh sortKey="return_1m" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric>1M</SortableTh>
+                    <SortableTh sortKey="return_3m" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric>3M</SortableTh>
+                    <SortableTh sortKey="return_6m" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric>6M</SortableTh>
+                    <SortableTh sortKey="breadth" activeKey={sortBy} direction={sortDir} onSort={handleHeaderSort} numeric title="Leadership breadth: % of group members above their 50DMA. Broad participation beats two stocks dragging an index.">
+                      &gt;50D
+                    </SortableTh>
                     <th>Top Stocks</th>
                   </tr>
                 </thead>
@@ -616,6 +659,13 @@ export function GroupsPanel({
                             {formatScore(group.score)}
                           </span>
                         </td>
+                        <td className="gp-num gp-mom" title="Short-term momentum score">
+                          {group.momentum_score != null ? formatScore(group.momentum_score) : "—"}
+                        </td>
+                        <td className={`gp-num ${metricClass(group.return_1w)}`}>{formatReturn(group.return_1w)}</td>
+                        <td className={`gp-num ${metricClass(group.return_1m)}`}>{formatReturn(group.return_1m)}</td>
+                        <td className={`gp-num ${metricClass(group.return_3m)}`}>{formatReturn(group.return_3m)}</td>
+                        <td className={`gp-num ${metricClass(group.return_6m)}`}>{formatReturn(group.return_6m)}</td>
                         <td
                           className="gp-num"
                           title={`Leadership breadth — ${Math.round(group.pct_above_50dma)}% of members above the 50DMA, ${Math.round(group.pct_above_200dma)}% above the 200DMA. Breadth score ${Math.round(group.breadth_score)}.`}
