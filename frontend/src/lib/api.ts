@@ -2404,6 +2404,48 @@ export function getChartGrid(name: string, groupKind: "sector" | "index", timefr
   );
 }
 
+export type GroupRankHistoryPoint = { date: string; rank: number; score: number | null };
+
+export type GroupRankHistoryResponse = {
+  as_of_date: string | null;
+  sessions: string[];
+  groups: Record<string, GroupRankHistoryPoint[]>;
+};
+
+/**
+ * Real per-group rank/score series from the stored daily snapshots. Used to
+ * draw an actual rank trend — the home page previously showed a sine wave here.
+ */
+export function getGroupRankHistory(market: MarketKey, limit = 30) {
+  return request<GroupRankHistoryResponse>(
+    `/api/groups/rank-history?limit=${limit}&market=${market}`,
+    undefined,
+    undefined,
+    (raw): GroupRankHistoryResponse => {
+      const value = isRecord(raw) ? raw : {};
+      const groupsRaw = isRecord(value.groups) ? value.groups : {};
+      const groups: Record<string, GroupRankHistoryPoint[]> = {};
+      for (const [groupId, series] of Object.entries(groupsRaw)) {
+        if (!Array.isArray(series)) continue;
+        const points = series
+          .filter(isRecord)
+          .map((point) => ({
+            date: readString(point.date),
+            rank: readNumber(point.rank),
+            score: readNullableNumber(point.score),
+          }))
+          .filter((point) => point.date && point.rank > 0);
+        if (points.length) groups[groupId] = points;
+      }
+      return {
+        as_of_date: typeof value.as_of_date === "string" ? value.as_of_date : null,
+        sessions: readStringArray(value.sessions),
+        groups,
+      };
+    },
+  );
+}
+
 export function getChartGridSeries(symbols: string[], timeframe: ChartGridTimeframe, market: MarketKey) {
   return request<ChartGridSeriesResponse>(
     `/api/chart-grid-series?symbols=${encodeURIComponent(symbols.join(","))}&timeframe=${timeframe}&market=${market}`,

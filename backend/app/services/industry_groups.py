@@ -266,6 +266,44 @@ def _load_group_history() -> dict[str, list[dict]]:
     return result
 
 
+def build_rank_history_series(limit: int = 30) -> dict[str, object]:
+    """Per-group rank/score series from the stored daily snapshots.
+
+    The snapshots have always been written (ScanHistoryStore + the on-disk
+    ranks_YYYYMMDD.json files) but were only ever read to derive the
+    rank_change_1w/1m/3m deltas. Exposing the series lets the UI draw a real
+    rank trend instead of a decorative curve.
+    """
+    history = _load_group_history()
+    sessions = sorted(day for day in history if _parse_history_date(day) is not None)
+    if limit > 0:
+        sessions = sessions[-limit:]
+
+    series: dict[str, list[dict[str, object]]] = defaultdict(list)
+    for day in sessions:
+        for row in history.get(day, []):
+            gid = str(row.get("groupId") or "")
+            if not gid:
+                continue
+            try:
+                rank = int(row.get("rank", 0))
+            except (TypeError, ValueError):
+                continue
+            if rank <= 0:
+                continue
+            point: dict[str, object] = {"date": day, "rank": rank}
+            score = row.get("score")
+            if isinstance(score, (int, float)):
+                point["score"] = round(float(score), 2)
+            series[gid].append(point)
+
+    return {
+        "as_of_date": sessions[-1] if sessions else None,
+        "sessions": sessions,
+        "groups": dict(series),
+    }
+
+
 def _history_ranks_asof(
     history: dict[str, list[dict]],
     asof: date,

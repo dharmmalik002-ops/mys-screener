@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, HTTPException, Query
 
 from app.models.market import (
@@ -234,6 +236,14 @@ def build_router(service):
     @router.get("/groups", response_model=IndustryGroupsResponse)
     async def groups(market: str = Query(default="india")):
         return await resolve_service(market).get_industry_groups()
+
+    @router.get("/groups/rank-history")
+    async def groups_rank_history(limit: int = Query(default=30, ge=2, le=90)):
+        # Reads the daily rank snapshots that were already being written; the
+        # UI uses them to draw a real rank trend per group.
+        from app.services.industry_groups import build_rank_history_series
+
+        return await asyncio.to_thread(build_rank_history_series, limit)
 
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
@@ -567,6 +577,12 @@ def build_router(service):
     @router.get("/{market_name}/groups", response_model=IndustryGroupsResponse)
     async def namespaced_groups(market_name: str):
         return await resolve_service(market_name).get_industry_groups()
+
+    @router.get("/{market_name}/groups/rank-history")
+    async def namespaced_groups_rank_history(market_name: str, limit: int = Query(default=30, ge=2, le=90)):
+        from app.services.industry_groups import build_rank_history_series
+
+        return await asyncio.to_thread(build_rank_history_series, limit)
 
     @router.get("/{market_name}/watchlists", response_model=WatchlistsStateResponse)
     async def namespaced_watchlists(market_name: str):

@@ -4,10 +4,12 @@ import { CalendarDays } from "lucide-react";
 
 import {
   getChart,
+  getGroupRankHistory,
   getMarketOverview,
   type BreadthDayCounts,
   type ChartBar,
   type DashboardResponse,
+  type GroupRankHistoryPoint,
   type IndustryGroupsResponse,
   type IndustryGroupRankItem,
   type MarketKey,
@@ -15,6 +17,8 @@ import {
   type ScanMatch,
   type XpBreadthScore,
 } from "../lib/api";
+
+import { Sparkline } from "./Sparkline";
 
 import "./HomePanel.css";
 
@@ -121,56 +125,9 @@ function getLogoUrl(symbol: string) {
 
 /* ---------- SVG helpers ---------- */
 
-function Sparkline({ values, color, fill, height = 36 }: { values: number[]; color: string; fill?: string; height?: number }) {
-  const width = 100;
-  if (!values || values.length < 2) {
-    return (
-      <svg className="homepro-kpi-sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true">
-        <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke={color} strokeOpacity="0.3" strokeWidth="1.5" />
-      </svg>
-    );
-  }
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const range = max - min || 1;
-  const step = width / (values.length - 1);
-  const points = values.map((v, i) => `${(i * step).toFixed(2)},${(height - ((v - min) / range) * (height - 4) - 2).toFixed(2)}`);
-  const pathD = `M ${points.join(" L ")}`;
-  const areaD = `${pathD} L ${width},${height} L 0,${height} Z`;
-  return (
-    <svg className="homepro-kpi-sparkline" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" aria-hidden="true" style={{ height }}>
-      {fill ? <path d={areaD} fill={fill} /> : null}
-      <path d={pathD} stroke={color} strokeWidth="1.8" fill="none" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function MiniSparkline({ values, color, fill }: { values: number[]; color: string; fill: string }) {
-  return (
-    <svg
-      className="homepro-mini-spark"
-      viewBox="0 0 100 46"
-      preserveAspectRatio="none"
-      aria-hidden="true"
-    >
-      {(() => {
-        if (!values || values.length < 2) return null;
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        const range = max - min || 1;
-        const step = 100 / (values.length - 1);
-        const pts = values.map((v, i) => `${(i * step).toFixed(2)},${(46 - ((v - min) / range) * 40 - 4).toFixed(2)}`);
-        const d = `M ${pts.join(" L ")}`;
-        return (
-          <>
-            <path d={`${d} L 100,46 L 0,46 Z`} fill={fill} />
-            <path d={d} stroke={color} strokeWidth="1.6" fill="none" strokeLinejoin="round" strokeLinecap="round" />
-          </>
-        );
-      })()}
-    </svg>
-  );
-}
+/* (removed) Local `Sparkline` and `MiniSparkline` lived here. Both are now the
+   shared ./Sparkline component, which refuses to draw a curve from fewer than
+   two real points instead of inventing one. */
 
 function Donut({ segments, size = 180 }: { segments: { value: number; color: string }[]; size?: number }) {
   const total = segments.reduce((sum, s) => sum + Math.max(0, s.value), 0);
@@ -643,6 +600,41 @@ export function HomePanel({
   const [macroItems, setMacroItems] = useState<MarketMacroItem[]>([]);
   const [niftyBars, setNiftyBars] = useState<ChartBar[]>([]);
   const [niftyTF, setNiftyTF] = useState<NiftyTimeframe>("1Y");
+  // Real per-group rank history for the trend column. Previously a sine wave.
+  const [rankHistory, setRankHistory] = useState<Record<string, GroupRankHistoryPoint[]>>({});
+  // Ticks every second so the close countdown actually counts down.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  /** Real time-to-close for the NSE session (15:30 IST), as HH:MM:SS. */
+  const sessionCountdown = useMemo(() => {
+    // Convert "now" into IST wall-clock regardless of the viewer's timezone.
+    const ist = new Date(nowTick + (new Date(nowTick).getTimezoneOffset() + 330) * 60_000);
+    const secondsToClose =
+      (15 * 3600 + 30 * 60) - (ist.getHours() * 3600 + ist.getMinutes() * 60 + ist.getSeconds());
+    if (secondsToClose <= 0) return "00:00:00";
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(Math.floor(secondsToClose / 3600))}:${pad(Math.floor((secondsToClose % 3600) / 60))}:${pad(secondsToClose % 60)}`;
+  }, [nowTick]);
+
+  useEffect(() => {
+    let active = true;
+    getGroupRankHistory(activeMarket, 30)
+      .then((payload) => {
+        if (active) setRankHistory(payload.groups);
+      })
+      .catch(() => {
+        // Non-fatal: the column falls back to a "no trend yet" hairline.
+        if (active) setRankHistory({});
+      });
+    return () => {
+      active = false;
+    };
+  }, [activeMarket]);
 
   // Fetch macro strip
   useEffect(() => {
@@ -708,19 +700,10 @@ export function HomePanel({
     return list.slice(0, 20);
   }, [dashboard?.top_volume_spikes]);
 
-  function genMockSparkline(seed: number, changePct: number): number[] {
-    // Deterministic wavy curve biased by sign of change_pct
-    const out: number[] = [];
-    const len = 24;
-    const drift = changePct / len;
-    let v = 100;
-    for (let i = 0; i < len; i++) {
-      const noise = Math.sin((seed + i) * 0.7) * 1.2 + Math.cos((seed + i) * 0.3) * 0.8;
-      v += drift + noise * 0.3;
-      out.push(v);
-    }
-    return out;
-  }
+  /* (removed) `genMockSparkline` lived here — a deterministic sine wave that
+     fed the two KPI cards and every row of the groups table under a column
+     headed "Day Performance". Seeded by row index, so the same row always drew
+     the same curve no matter which group occupied it. Real series only now. */
 
   const niftyPoint = macroItems.find((c) => c.symbol === "^NSEI");
   const niftyPrice = niftyPoint?.price ?? null;
@@ -801,12 +784,9 @@ export function HomePanel({
             <div className="homepro-kpi-label">Universe</div>
             <div className="homepro-kpi-value">{universeCount.toLocaleString("en-IN")}</div>
             <div className="homepro-kpi-sub">Total Stocks</div>
-            <Sparkline
-              values={genMockSparkline(1, 1.5)}
-              color="#8b5cf6"
-              fill="rgba(139, 92, 246, 0.18)"
-            />
-            <div className="homepro-kpi-sub" style={{ color: "var(--hp-green)" }}>+12 vs yesterday</div>
+            {/* No sparkline and no "+12 vs yesterday": there is no universe-count
+                time series to draw, and the old ones were fabricated. */}
+            <div className="homepro-kpi-sub">Passing the liquidity &amp; market-cap floor</div>
           </div>
 
           {/* Market Status */}
@@ -817,12 +797,11 @@ export function HomePanel({
               <span className={marketOpen ? "homepro-status-dot" : "homepro-status-dot closed"} />
             </div>
             <div className="homepro-kpi-sub">Market is {marketOpen ? "live" : "closed"}</div>
-            <Sparkline
-              values={genMockSparkline(7, niftyChange ?? 0.5)}
-              color="#3b82f6"
-              fill="rgba(59, 130, 246, 0.16)"
-            />
-            <div className="homepro-kpi-sub">{marketOpen ? "Closes in 01:24:15" : `Next session ${snapshotDateLabel}`}</div>
+            {/* The old sparkline here was a sine wave; the countdown was the
+                hardcoded string "Closes in 01:24:15" and never counted down. */}
+            <div className="homepro-kpi-sub">
+              {marketOpen ? `Closes in ${sessionCountdown}` : `Next session ${snapshotDateLabel}`}
+            </div>
           </div>
 
           {/* EOD Date */}
@@ -917,7 +896,9 @@ export function HomePanel({
                 <th>Industry Group</th>
                 <th className="homepro-num">Stocks</th>
                 <th className="homepro-num">Change %</th>
-                <th className="homepro-num">Day Performance</th>
+                <th className="homepro-num" title="Daily rank across the last 30 stored sessions — rising means the group is climbing the rankings.">
+                  Rank Trend
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -943,11 +924,25 @@ export function HomePanel({
                       {formatReturn(group.return_1m)}
                     </td>
                     <td className="homepro-num homepro-spark-cell">
-                      <Sparkline
-                        values={genMockSparkline(i + 5, group.return_1m)}
-                        color={up ? "#10b981" : "#ef4444"}
-                        height={24}
-                      />
+                      {(() => {
+                        const series = rankHistory[group.group_id] ?? [];
+                        const ranks = series.map((point) => point.rank);
+                        // Lower rank is better, so invert: a climbing group rises.
+                        const improving = ranks.length >= 2 && ranks[ranks.length - 1] <= ranks[0];
+                        return (
+                          <Sparkline
+                            values={ranks}
+                            invert
+                            color={improving ? "#10b981" : "#ef4444"}
+                            height={24}
+                            label={
+                              ranks.length >= 2
+                                ? `${group.group_name} rank ${ranks[0]} to ${ranks[ranks.length - 1]} over ${ranks.length} sessions`
+                                : `${group.group_name}: not enough rank history yet`
+                            }
+                          />
+                        );
+                      })()}
                     </td>
                   </tr>
                 );

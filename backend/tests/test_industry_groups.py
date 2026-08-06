@@ -510,6 +510,43 @@ class IndustryGroupsTests(unittest.TestCase):
             self.assertEqual(group.rank_change_1m, seeded_28d[group.group_id] - group.rank)
             self.assertIsNone(group.rank_change_3m)
 
+    def test_rank_history_series_exposes_real_per_group_trend(self) -> None:
+        """The daily snapshots were always written but never served; this is
+        what lets the UI draw a real rank trend instead of a mock curve."""
+        self._seed_history(3, [{"groupId": "alpha", "rank": 9, "score": 40.0},
+                               {"groupId": "beta", "rank": 2, "score": 88.0}])
+        self._seed_history(2, [{"groupId": "alpha", "rank": 6, "score": 55.5},
+                               {"groupId": "beta", "rank": 3, "score": 80.0}])
+        self._seed_history(1, [{"groupId": "alpha", "rank": 4, "score": 61.0}])
+
+        payload = industry_groups.build_rank_history_series(limit=30)
+
+        self.assertEqual(len(payload["sessions"]), 3)
+        self.assertEqual(payload["as_of_date"], payload["sessions"][-1])
+
+        alpha = payload["groups"]["alpha"]
+        self.assertEqual([p["rank"] for p in alpha], [9, 6, 4], "series must be oldest-first")
+        self.assertEqual([p["score"] for p in alpha], [40.0, 55.5, 61.0])
+        # A group absent from the latest session keeps only the days it appeared in.
+        self.assertEqual([p["rank"] for p in payload["groups"]["beta"]], [2, 3])
+
+    def test_rank_history_series_limit_keeps_most_recent_and_skips_bad_rows(self) -> None:
+        for days_ago in (5, 4, 3, 2, 1):
+            self._seed_history(days_ago, [{"groupId": "alpha", "rank": days_ago, "score": 10.0}])
+        # Malformed rows must not break or pollute the series.
+        self._seed_history(6, [{"groupId": "alpha", "rank": 0},
+                               {"groupId": "", "rank": 3},
+                               {"rank": 4}])
+
+        payload = industry_groups.build_rank_history_series(limit=2)
+        self.assertEqual(len(payload["sessions"]), 2, "limit keeps only the newest sessions")
+        self.assertEqual([p["rank"] for p in payload["groups"]["alpha"]], [2, 1])
+
+        full = industry_groups.build_rank_history_series(limit=90)
+        self.assertNotIn("", full["groups"])
+        self.assertEqual([p["rank"] for p in full["groups"]["alpha"]], [5, 4, 3, 2, 1],
+                         "rank<=0 and id-less rows are dropped")
+
 
 if __name__ == "__main__":
     unittest.main()
