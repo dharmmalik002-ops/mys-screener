@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-07T13:46:57.153528+00:00",
+  "generated_at": "2026-08-07T14:08:34.129635+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -543,14 +543,14 @@
     },
     "ELITECON": {
       "symbol": "ELITECON",
-      "earnings_date": "2026-06-11",
-      "close_in_range_pct": 0.2638,
-      "next_day_gap_pct": 1.76,
-      "day_rvol_50d": 9.924,
-      "return_5d_pct": -3.952,
+      "earnings_date": "2026-06-16",
+      "close_in_range_pct": 0.4429,
+      "next_day_gap_pct": 0.0,
+      "day_rvol_50d": 1.052,
+      "return_5d_pct": -6.181,
       "source": "bse",
-      "best_pop_pct": 0.067,
-      "best_pop_rvol": 1.183
+      "best_pop_pct": -0.267,
+      "best_pop_rvol": 1.052
     },
     "VISHNU": {
       "symbol": "VISHNU",
@@ -9808,11 +9808,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 1.0,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.587,
+      "day_rvol_50d": 1.618,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 3.174,
-      "best_pop_rvol": 1.587
+      "best_pop_rvol": 1.618
     },
     "PFC": {
       "symbol": "PFC",
@@ -9830,11 +9830,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8912,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.574,
+      "day_rvol_50d": 0.587,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 2.194,
-      "best_pop_rvol": 0.574
+      "best_pop_rvol": 0.587
     },
     "OIL": {
       "symbol": "OIL",
@@ -9863,11 +9863,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5075,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.325,
+      "day_rvol_50d": 0.327,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.132,
-      "best_pop_rvol": 0.325
+      "best_pop_rvol": 0.327
     },
     "KAYNES": {
       "symbol": "KAYNES",
@@ -9885,33 +9885,33 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.6501,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.231,
+      "day_rvol_50d": 1.237,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.352,
-      "best_pop_rvol": 1.231
+      "best_pop_rvol": 1.237
     },
     "GPIL": {
       "symbol": "GPIL",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5417,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.268,
+      "day_rvol_50d": 1.294,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.696,
-      "best_pop_rvol": 1.268
+      "best_pop_rvol": 1.294
     },
     "RATNAMANI": {
       "symbol": "RATNAMANI",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.1792,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 10.419,
+      "day_rvol_50d": 10.527,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -7.298,
-      "best_pop_rvol": 10.419
+      "best_pop_rvol": 10.527
     },
     "CARBORUNIV": {
       "symbol": "CARBORUNIV",
@@ -9940,11 +9940,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3386,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 4.537,
+      "day_rvol_50d": 4.583,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -9.335,
-      "best_pop_rvol": 4.537
+      "best_pop_rvol": 4.583
     },
     "OLAELEC": {
       "symbol": "OLAELEC",
@@ -9962,11 +9962,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8243,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.381,
+      "day_rvol_50d": 1.391,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.183,
-      "best_pop_rvol": 1.381
+      "best_pop_rvol": 1.391
     },
     "BEML": {
       "symbol": "BEML",
@@ -9984,44 +9984,44 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8281,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 4.34,
+      "day_rvol_50d": 4.412,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 3.47,
-      "best_pop_rvol": 4.34
+      "best_pop_rvol": 4.412
     },
     "POLYMED": {
       "symbol": "POLYMED",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.4542,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.616,
+      "day_rvol_50d": 1.643,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.907,
-      "best_pop_rvol": 1.616
+      "best_pop_rvol": 1.643
     },
     "AZAD": {
       "symbol": "AZAD",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5667,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.955,
+      "day_rvol_50d": 0.965,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.352,
-      "best_pop_rvol": 0.955
+      "best_pop_rvol": 0.965
     },
     "AFCONS": {
       "symbol": "AFCONS",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3226,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.723,
+      "day_rvol_50d": 0.732,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.614,
-      "best_pop_rvol": 0.723
+      "best_pop_rvol": 0.732
     },
     "JKTYRE": {
       "symbol": "JKTYRE",
@@ -10039,110 +10039,110 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5094,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.866,
+      "day_rvol_50d": 0.88,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.138,
-      "best_pop_rvol": 0.866
+      "best_pop_rvol": 0.88
     },
     "CELLO": {
       "symbol": "CELLO",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2466,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.793,
+      "day_rvol_50d": 0.795,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.608,
-      "best_pop_rvol": 0.793
+      "best_pop_rvol": 0.795
     },
     "STARCEMENT": {
       "symbol": "STARCEMENT",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.6834,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.27,
+      "day_rvol_50d": 2.293,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.679,
-      "best_pop_rvol": 2.27
+      "best_pop_rvol": 2.293
     },
     "LEMONTREE": {
       "symbol": "LEMONTREE",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2486,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.796,
+      "day_rvol_50d": 0.809,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.578,
-      "best_pop_rvol": 0.796
+      "best_pop_rvol": 0.809
     },
     "MAHSEAMLES": {
       "symbol": "MAHSEAMLES",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.6263,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.051,
+      "day_rvol_50d": 1.086,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.011,
-      "best_pop_rvol": 1.051
+      "best_pop_rvol": 1.086
     },
     "DYNAMATECH": {
       "symbol": "DYNAMATECH",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.4739,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.991,
+      "day_rvol_50d": 2.012,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.018,
-      "best_pop_rvol": 1.991
+      "best_pop_rvol": 2.012
     },
     "JSLL": {
       "symbol": "JSLL",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.323,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.239,
+      "day_rvol_50d": 0.241,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.018,
-      "best_pop_rvol": 0.239
+      "best_pop_rvol": 0.241
     },
     "INOXGREEN": {
       "symbol": "INOXGREEN",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8741,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.277,
+      "day_rvol_50d": 0.28,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.972,
-      "best_pop_rvol": 0.277
+      "best_pop_rvol": 0.28
     },
     "CERA": {
       "symbol": "CERA",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2591,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.968,
+      "day_rvol_50d": 2.979,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -4.151,
-      "best_pop_rvol": 2.968
+      "best_pop_rvol": 2.979
     },
     "PRSMJOHNSN": {
       "symbol": "PRSMJOHNSN",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.1632,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 189.098,
+      "day_rvol_50d": 190.605,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.553,
-      "best_pop_rvol": 189.098
+      "best_pop_rvol": 190.605
     },
     "PARAS": {
       "symbol": "PARAS",
@@ -10160,22 +10160,22 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.1239,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.84,
+      "day_rvol_50d": 0.852,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.925,
-      "best_pop_rvol": 0.84
+      "best_pop_rvol": 0.852
     },
     "KOVAI": {
       "symbol": "KOVAI",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.1754,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.28,
+      "day_rvol_50d": 0.284,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.848,
-      "best_pop_rvol": 0.28
+      "best_pop_rvol": 0.284
     },
     "BECTORFOOD": {
       "symbol": "BECTORFOOD",
@@ -10193,44 +10193,44 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.7965,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.389,
+      "day_rvol_50d": 1.412,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.269,
-      "best_pop_rvol": 1.389
+      "best_pop_rvol": 1.412
     },
     "POWERICA": {
       "symbol": "POWERICA",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.6734,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.472,
+      "day_rvol_50d": 0.474,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.999,
-      "best_pop_rvol": 0.472
+      "best_pop_rvol": 0.474
     },
     "GREENLAM": {
       "symbol": "GREENLAM",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.692,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.864,
+      "day_rvol_50d": 0.865,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.201,
-      "best_pop_rvol": 0.864
+      "best_pop_rvol": 0.865
     },
     "ENTERO": {
       "symbol": "ENTERO",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3528,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.459,
+      "day_rvol_50d": 0.463,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.016,
-      "best_pop_rvol": 0.459
+      "best_pop_rvol": 0.463
     },
     "JAMNAAUTO": {
       "symbol": "JAMNAAUTO",
@@ -10248,11 +10248,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5593,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.165,
+      "day_rvol_50d": 0.169,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.242,
-      "best_pop_rvol": 0.165
+      "best_pop_rvol": 0.169
     },
     "CARERATING": {
       "symbol": "CARERATING",
@@ -10292,22 +10292,22 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.4475,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.522,
+      "day_rvol_50d": 0.531,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.061,
-      "best_pop_rvol": 0.522
+      "best_pop_rvol": 0.531
     },
     "GUJTHEM": {
       "symbol": "GUJTHEM",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3527,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 6.244,
+      "day_rvol_50d": 6.285,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.644,
-      "best_pop_rvol": 6.244
+      "best_pop_rvol": 6.285
     },
     "ELECTCAST": {
       "symbol": "ELECTCAST",
@@ -10325,44 +10325,44 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.4888,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 8.279,
+      "day_rvol_50d": 8.455,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 3.928,
-      "best_pop_rvol": 8.279
+      "best_pop_rvol": 8.455
     },
     "KESAR": {
       "symbol": "KESAR",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2405,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.646,
+      "day_rvol_50d": 0.655,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.186,
-      "best_pop_rvol": 0.646
+      "best_pop_rvol": 0.655
     },
     "KSL": {
       "symbol": "KSL",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2877,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.462,
+      "day_rvol_50d": 2.479,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -3.837,
-      "best_pop_rvol": 2.462
+      "best_pop_rvol": 2.479
     },
     "DALMIASUG": {
       "symbol": "DALMIASUG",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.522,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.567,
+      "day_rvol_50d": 0.569,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 2.173,
-      "best_pop_rvol": 0.567
+      "best_pop_rvol": 0.569
     },
     "RAYMONDREL": {
       "symbol": "RAYMONDREL",
@@ -10380,33 +10380,33 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5263,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 3.992,
+      "day_rvol_50d": 4.079,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.46,
-      "best_pop_rvol": 3.992
+      "best_pop_rvol": 4.079
     },
     "MARATHON": {
       "symbol": "MARATHON",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3789,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.365,
+      "day_rvol_50d": 1.396,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.078,
-      "best_pop_rvol": 1.365
+      "best_pop_rvol": 1.396
     },
     "NSIL": {
       "symbol": "NSIL",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.283,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.94,
+      "day_rvol_50d": 0.956,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.989,
-      "best_pop_rvol": 0.94
+      "best_pop_rvol": 0.956
     },
     "RAYMOND": {
       "symbol": "RAYMOND",
@@ -10424,66 +10424,66 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8554,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.724,
+      "day_rvol_50d": 0.733,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.36,
-      "best_pop_rvol": 0.724
+      "best_pop_rvol": 0.733
     },
     "POKARNA": {
       "symbol": "POKARNA",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3698,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.649,
+      "day_rvol_50d": 1.658,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 2.011,
-      "best_pop_rvol": 1.649
+      "best_pop_rvol": 1.658
     },
     "NRBBEARING": {
       "symbol": "NRBBEARING",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8447,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.68,
+      "day_rvol_50d": 0.682,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 3.568,
-      "best_pop_rvol": 0.68
+      "best_pop_rvol": 0.682
     },
     "ARVSMART": {
       "symbol": "ARVSMART",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5616,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 63.111,
+      "day_rvol_50d": 63.212,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 7.865,
-      "best_pop_rvol": 63.111
+      "best_pop_rvol": 63.212
     },
     "GKENERGY": {
       "symbol": "GKENERGY",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5468,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 4.181,
+      "day_rvol_50d": 4.222,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 5.156,
-      "best_pop_rvol": 4.181
+      "best_pop_rvol": 4.222
     },
     "IMAGICAA": {
       "symbol": "IMAGICAA",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.747,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.881,
+      "day_rvol_50d": 1.911,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 2.035,
-      "best_pop_rvol": 1.881
+      "best_pop_rvol": 1.911
     },
     "DECNGOLD": {
       "symbol": "DECNGOLD",
@@ -10501,11 +10501,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2003,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 5.558,
+      "day_rvol_50d": 5.642,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -5.179,
-      "best_pop_rvol": 5.558
+      "best_pop_rvol": 5.642
     },
     "CAPACITE": {
       "symbol": "CAPACITE",
@@ -10556,11 +10556,11 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.5636,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.398,
+      "day_rvol_50d": 0.4,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.171,
-      "best_pop_rvol": 0.398
+      "best_pop_rvol": 0.4
     },
     "SAKSOFT": {
       "symbol": "SAKSOFT",
@@ -10589,33 +10589,33 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.317,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.954,
+      "day_rvol_50d": 0.961,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -2.24,
-      "best_pop_rvol": 0.954
+      "best_pop_rvol": 0.961
     },
     "VINDHYATEL": {
       "symbol": "VINDHYATEL",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3101,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.583,
+      "day_rvol_50d": 0.588,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.976,
-      "best_pop_rvol": 0.583
+      "best_pop_rvol": 0.588
     },
     "RACLGEAR": {
       "symbol": "RACLGEAR",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.62,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.564,
+      "day_rvol_50d": 2.595,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.522,
-      "best_pop_rvol": 2.564
+      "best_pop_rvol": 2.595
     },
     "AQYLON": {
       "symbol": "AQYLON",
@@ -10633,22 +10633,22 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3964,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 83.224,
+      "day_rvol_50d": 87.191,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 5.483,
-      "best_pop_rvol": 83.224
+      "best_pop_rvol": 87.191
     },
     "ARIHANTSUP": {
       "symbol": "ARIHANTSUP",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.3754,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.64,
+      "day_rvol_50d": 2.659,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.673,
-      "best_pop_rvol": 2.64
+      "best_pop_rvol": 2.659
     },
     "RGL": {
       "symbol": "RGL",
@@ -10677,22 +10677,22 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.8333,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.385,
+      "day_rvol_50d": 0.387,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 1.595,
-      "best_pop_rvol": 0.385
+      "best_pop_rvol": 0.387
     },
     "MAFATIND": {
       "symbol": "MAFATIND",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.143,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.665,
+      "day_rvol_50d": 2.68,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -0.691,
-      "best_pop_rvol": 2.665
+      "best_pop_rvol": 2.68
     },
     "DHARMAJ": {
       "symbol": "DHARMAJ",
@@ -10710,22 +10710,22 @@
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.1086,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.103,
+      "day_rvol_50d": 0.104,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": -1.977,
-      "best_pop_rvol": 0.103
+      "best_pop_rvol": 0.104
     },
     "ANUHPHR": {
       "symbol": "ANUHPHR",
       "earnings_date": "2026-08-07",
       "close_in_range_pct": 0.2819,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.962,
+      "day_rvol_50d": 1.977,
       "return_5d_pct": null,
       "source": "bse-calendar",
       "best_pop_pct": 0.013,
-      "best_pop_rvol": 1.962
+      "best_pop_rvol": 1.977
     }
   }
 }
