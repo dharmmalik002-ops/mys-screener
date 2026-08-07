@@ -12,6 +12,7 @@ import type {
   IndicatorKey,
 } from "./components/ChartPanel";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
+import { ToastProvider, useToast } from "./components/Toast";
 import {
   collectLeafModes,
   defaultTotalScannerTree,
@@ -1601,7 +1602,21 @@ function downloadTextFile(filename: string, contents: string) {
   window.URL.revokeObjectURL(url);
 }
 
-export default function App({ initialMarket, useMarketRoutes = false }: AppProps) {
+/**
+ * Toasts must be provided ABOVE the component that consumes them — a component
+ * cannot read a context it renders itself. AppShell holds all the existing app
+ * logic; App is a thin wrapper that mounts the provider around it.
+ */
+export default function App(props: AppProps) {
+  return (
+    <ToastProvider>
+      <AppShell {...props} />
+    </ToastProvider>
+  );
+}
+
+function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
+  const { showToast } = useToast();
   const bootstrapMarket = initialMarket ?? readActiveMarket();
   const initialPreferences = readChartPreferences(bootstrapMarket);
   const initialWatchlists = readWatchlists(bootstrapMarket);
@@ -4536,6 +4551,16 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
   };
 
   const handleDeleteWatchlist = (watchlistId: string) => {
+    // Deleting a watchlist was silent and irreversible — the one place the app
+    // could actually lose your data. Capture the list AND its position so Undo
+    // restores it where it was, not appended to the end.
+    //
+    // Read from state BEFORE the setter: a setWatchlists updater runs later, so
+    // capturing inside it leaves this scope with null and no toast is shown.
+    const removedIndex = watchlists.findIndex((watchlist) => watchlist.id === watchlistId);
+    const restored = watchlists[removedIndex] ?? null;
+    const previousActiveId = activeWatchlistId;
+
     setWatchlists((current) => {
       const remaining = current.filter((watchlist) => watchlist.id !== watchlistId);
       if (activeWatchlistId === watchlistId) {
@@ -4543,6 +4568,24 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
       }
       return remaining;
     });
+
+    if (!restored) return;
+    const count = restored.symbols.length;
+    showToast(
+      `Deleted "${restored.name}"${count ? ` and its ${count} symbol${count === 1 ? "" : "s"}` : ""}.`,
+      {
+        tone: "danger",
+        onUndo: () => {
+          setWatchlists((current) => {
+            if (current.some((watchlist) => watchlist.id === restored.id)) return current;
+            const next = [...current];
+            next.splice(removedIndex < 0 ? next.length : removedIndex, 0, restored);
+            return next;
+          });
+          setActiveWatchlistId(previousActiveId);
+        },
+      },
+    );
   };
 
   const handleSetWatchlistColor = (watchlistId: string, color: string) => {
@@ -4626,6 +4669,26 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
     const normalizedSymbol = symbol.trim().toUpperCase();
     if (!normalizedSymbol) {
       return;
+    }
+
+    // Remember where it sat so Undo puts it back in place, not at the end.
+    const source = watchlists.find((watchlist) => watchlist.id === watchlistId);
+    const previousIndex = source?.symbols.indexOf(normalizedSymbol) ?? -1;
+    if (previousIndex >= 0) {
+      showToast(`Removed ${normalizedSymbol} from "${source?.name ?? "watchlist"}".`, {
+        tone: "danger",
+        onUndo: () => {
+          setWatchlists((current) =>
+            current.map((watchlist) => {
+              if (watchlist.id !== watchlistId) return watchlist;
+              if (watchlist.symbols.includes(normalizedSymbol)) return watchlist;
+              const symbols = [...watchlist.symbols];
+              symbols.splice(Math.min(previousIndex, symbols.length), 0, normalizedSymbol);
+              return { ...watchlist, symbols };
+            }),
+          );
+        },
+      });
     }
 
     setWatchlists((current) =>
