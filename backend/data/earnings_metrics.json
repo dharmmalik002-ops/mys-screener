@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-07T13:07:53.605696+00:00",
+  "generated_at": "2026-08-07T13:46:57.153528+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -543,14 +543,14 @@
     },
     "ELITECON": {
       "symbol": "ELITECON",
-      "earnings_date": "2026-06-16",
-      "close_in_range_pct": 0.4429,
-      "next_day_gap_pct": 0.0,
-      "day_rvol_50d": 1.052,
-      "return_5d_pct": -6.181,
+      "earnings_date": "2026-06-11",
+      "close_in_range_pct": 0.2638,
+      "next_day_gap_pct": 1.76,
+      "day_rvol_50d": 9.924,
+      "return_5d_pct": -3.952,
       "source": "bse",
-      "best_pop_pct": -0.267,
-      "best_pop_rvol": 1.052
+      "best_pop_pct": 0.067,
+      "best_pop_rvol": 1.183
     },
     "VISHNU": {
       "symbol": "VISHNU",
