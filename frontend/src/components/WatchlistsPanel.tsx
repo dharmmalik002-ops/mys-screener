@@ -12,6 +12,13 @@ import {
 import { createPortal } from "react-dom";
 import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 
+import { SortableHeader, nextSort, type SortDirection } from "./SortableTh";
+
+type WatchlistSortKey = "symbol" | "price" | "change" | "rs" | "groupRank" | "rankInGroup";
+
+/** Symbol reads A→Z; ranks are "best first" at #1, so both ascend by default. */
+const WATCHLIST_ASCENDING_SORTS: readonly WatchlistSortKey[] = ["symbol", "groupRank", "rankInGroup"];
+
 import {
   getChartGridSeries,
   type ChartBar,
@@ -361,6 +368,15 @@ export function WatchlistsPanel({
   const [gridChartStyle, setGridChartStyle] = useState<ChartGridChartStyle>("candles");
   const [gridDisplayMode, setGridDisplayMode] = useState<ChartGridDisplayMode>("normal");
   const [arrangementMode, setArrangementMode] = useState<"flat" | "group">("flat");
+  // Rows used to be hard-sorted by RS with no user control at all.
+  const [sortKey, setSortKey] = useState<WatchlistSortKey>("rs");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+
+  const handleHeaderSort = (key: WatchlistSortKey) => {
+    const next = nextSort({ key: sortKey, direction: sortDir }, key, WATCHLIST_ASCENDING_SORTS);
+    setSortKey(next.key);
+    setSortDir(next.direction);
+  };
 
   const activeWatchlist = useMemo(
     () => watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null,
@@ -431,10 +447,22 @@ export function WatchlistsPanel({
           } satisfies WatchlistDisplayItem;
         })
         .sort((left, right) => {
+          // Unresolved symbols always sink to the bottom whatever the sort —
+          // they have no values to compare, so interleaving them is just noise.
           if (left.isKnown !== right.isKnown) return left.isKnown ? -1 : 1;
-          return (right.rs_rating ?? 0) - (left.rs_rating ?? 0);
+
+          let delta: number;
+          switch (sortKey) {
+            case "symbol": delta = left.symbol.localeCompare(right.symbol); break;
+            case "price": delta = (left.last_price ?? 0) - (right.last_price ?? 0); break;
+            case "change": delta = (left.change_pct ?? 0) - (right.change_pct ?? 0); break;
+            case "groupRank": delta = (left.groupRank ?? Infinity) - (right.groupRank ?? Infinity); break;
+            case "rankInGroup": delta = (left.rankInGroup ?? Infinity) - (right.rankInGroup ?? Infinity); break;
+            default: delta = (left.rs_rating ?? 0) - (right.rs_rating ?? 0);
+          }
+          return sortDir === "asc" ? delta : -delta;
         }),
-    [activeWatchlist?.symbols, groupRankIndex, lookup],
+    [activeWatchlist?.symbols, groupRankIndex, lookup, sortKey, sortDir],
   );
 
   // Bucket the watchlist by industry group for the "By Group" arrangement.
@@ -1106,13 +1134,31 @@ export function WatchlistsPanel({
 
             <div className="scan-table">
               <div className="scan-table-head wl-head" style={headTemplate}>
-                <span>Symbol</span>
-                <span className="wl-center">Stage</span>
-                <span className="wl-right">Price</span>
-                <span className="wl-right">Change</span>
-                <span className="wl-center">RS</span>
-                <span className="wl-center">Group Rank</span>
-                <span className="wl-center">Rank in Group</span>
+                {(() => {
+                  const header = (key: WatchlistSortKey, label: string, align: string, title?: string) => (
+                    <SortableHeader
+                      active={sortKey === key}
+                      direction={sortDir}
+                      onSort={() => handleHeaderSort(key)}
+                      className={align}
+                      title={title ?? `Sort by ${label}`}
+                    >
+                      {label}
+                    </SortableHeader>
+                  );
+                  return (
+                    <>
+                      {header("symbol", "Symbol", "")}
+                      {/* Stage is a manual workflow chip, not an orderable metric. */}
+                      <span className="wl-center">Stage</span>
+                      {header("price", "Price", "wl-right")}
+                      {header("change", "Change", "wl-right")}
+                      {header("rs", "RS", "wl-center")}
+                      {header("groupRank", "Group Rank", "wl-center", "Sort by the industry group's rank — #1 first")}
+                      {header("rankInGroup", "Rank in Group", "wl-center", "Sort by the stock's rank within its group")}
+                    </>
+                  );
+                })()}
                 <span></span>
               </div>
               <div
