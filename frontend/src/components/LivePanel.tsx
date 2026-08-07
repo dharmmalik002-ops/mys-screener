@@ -4,9 +4,15 @@ import { Radio } from "lucide-react";
 import { getLiveBaselines, type LiveBaseline } from "../lib/api";
 import { LiveFeed, type LiveFeedStatus, type LiveTick } from "../lib/liveFeed";
 import { Panel } from "./Panel";
+import { SortableTh, nextSort, type SortDirection } from "./SortableTh";
 import type { LocalWatchlist } from "./WatchlistsPanel";
 
 import "./LivePanel.css";
+
+type LiveSortKey = "symbol" | "ltp" | "chg" | "rvol" | "volume" | "prev";
+
+/** Only the symbol column reads naturally A→Z first. */
+const LIVE_ASCENDING_SORTS: readonly LiveSortKey[] = ["symbol"];
 
 type LivePanelProps = {
   watchlists: LocalWatchlist[];
@@ -124,7 +130,15 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
   const [, setRenderTick] = useState(0);
   const [marketOpen, setMarketOpen] = useState<boolean>(() => marketOpenNow());
   const [lastTickAt, setLastTickAt] = useState<number | null>(null);
-  const [sortKey, setSortKey] = useState<"chg" | "rvol">("chg");
+  const [sortKey, setSortKey] = useState<LiveSortKey>("chg");
+  const [sortDir, setSortDir] = useState<SortDirection>("desc");
+
+  /** Header click: flip direction on the active column, else adopt its default. */
+  const handleHeaderSort = (key: LiveSortKey) => {
+    const next = nextSort({ key: sortKey, direction: sortDir }, key, LIVE_ASCENDING_SORTS);
+    setSortKey(next.key);
+    setSortDir(next.direction);
+  };
 
   const ticksRef = useRef<Map<string, LiveTick>>(new Map());
   const feedRef = useRef<LiveFeed | null>(null);
@@ -296,15 +310,28 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
         triggered,
       });
     }
-    if (sortKey === "rvol") {
-      out.sort((a, b) => (b.projRvol ?? -999) - (a.projRvol ?? -999));
-    } else {
-      out.sort((a, b) => (b.chgPct ?? -999) - (a.chgPct ?? -999));
-    }
+    // One accessor per key, then a single direction flip, so the header clicks
+    // and the Sort buttons above the table can never disagree.
+    const metric = (row: (typeof out)[number]) => {
+      switch (sortKey) {
+        case "rvol": return row.projRvol ?? -999;
+        case "ltp": return row.ltp ?? -999;
+        case "volume": return row.vol ?? -999;
+        case "prev": return row.prevClose ?? -999;
+        default: return row.chgPct ?? -999;
+      }
+    };
+    out.sort((a, b) => {
+      if (sortKey === "symbol") {
+        return sortDir === "asc" ? a.symbol.localeCompare(b.symbol) : b.symbol.localeCompare(a.symbol);
+      }
+      const delta = metric(a) - metric(b);
+      return sortDir === "asc" ? delta : -delta;
+    });
     return out;
     // renderTick drives recomputes; deps intentionally coarse.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbolsKey, baselines, marketOpen, criteria, lastTickAt, sortKey]);
+  }, [symbolsKey, baselines, marketOpen, criteria, lastTickAt, sortKey, sortDir]);
 
   // New-trigger alerts (flash handled by CSS class; optional beep).
   useEffect(() => {
@@ -423,8 +450,10 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
         </label>
         <span className="live-sort">
           Sort:
-          <button type="button" className={sortKey === "chg" ? "active" : ""} onClick={() => setSortKey("chg")}>% Chg</button>
-          <button type="button" className={sortKey === "rvol" ? "active" : ""} onClick={() => setSortKey("rvol")}>RVOL</button>
+          {/* Shortcuts for the two most-used columns; they route through the
+              same handler as the headers so the two controls stay in sync. */}
+          <button type="button" className={sortKey === "chg" ? "active" : ""} onClick={() => handleHeaderSort("chg")}>% Chg</button>
+          <button type="button" className={sortKey === "rvol" ? "active" : ""} onClick={() => handleHeaderSort("rvol")}>RVOL</button>
         </span>
         <span className={`live-status ${feedStatus}`}>
           {symbols.length} symbols · {statusLabel}
@@ -466,13 +495,14 @@ export function LivePanel({ watchlists, onOpenSymbolChart }: LivePanelProps) {
           <table className="live-table">
             <thead>
               <tr>
-                <th>Symbol</th>
-                <th className="num">LTP</th>
-                <th className="num">%Chg</th>
-                <th className="num" title="Day volume vs 20-day average, adjusted for time elapsed in the session">RVOL</th>
-                <th className="num">Volume</th>
+                <SortableTh sortKey="symbol" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort}>Symbol</SortableTh>
+                <SortableTh sortKey="ltp" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort} numeric className="num">LTP</SortableTh>
+                <SortableTh sortKey="chg" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort} numeric className="num">%Chg</SortableTh>
+                <SortableTh sortKey="rvol" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort} numeric className="num" title="Day volume vs 20-day average, adjusted for time elapsed in the session">RVOL</SortableTh>
+                <SortableTh sortKey="volume" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort} numeric className="num">Volume</SortableTh>
+                {/* Day Range is a positional bar, not an orderable scalar. */}
                 <th className="num">Day Range</th>
-                <th className="num">Prev Close</th>
+                <SortableTh sortKey="prev" activeKey={sortKey} direction={sortDir} onSort={handleHeaderSort} numeric className="num">Prev Close</SortableTh>
               </tr>
             </thead>
             <tbody>

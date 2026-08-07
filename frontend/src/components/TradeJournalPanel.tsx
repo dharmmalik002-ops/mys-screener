@@ -1,6 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Newspaper, NotebookPen } from "lucide-react";
+
+import { SortableTh, nextSort, type SortDirection } from "./SortableTh";
+
+type LogSortKey =
+  | "symbol" | "setup" | "entryPx" | "exitPx"
+  | "entryDate" | "exitDate" | "pnl" | "pnlPct" | "sizePct";
+
+/** Text and date columns read naturally ascending; money and % do not. */
+const LOG_ASCENDING_SORTS: readonly LogSortKey[] = ["symbol", "setup"];
 import {
   getChart,
   getJournalData,
@@ -1626,6 +1635,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [filterMonth, setFilterMonth] = useState("all");
   const [filterOutcome, setFilterOutcome] = useState("all");
   const [filterSymbol, setFilterSymbol] = useState("");
+  // Trade log ordering. Default: most recent exit first, which is what you want
+  // when you open the log to review what just happened.
+  const [logSort, setLogSort] = useState<{ key: LogSortKey; direction: SortDirection }>({
+    key: "exitDate",
+    direction: "desc",
+  });
   const [dashboardMetric, setDashboardMetric] = useState<"combined" | "realized">("combined");
   const [dashboardFocus, setDashboardFocus] = useState<"all" | "winners" | "losers">("all");
 
@@ -1793,7 +1808,31 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       if (ex.getFullYear() !== fy || ex.getMonth() + 1 !== fm) return false;
     }
     return true;
-  });
+  })
+    // Sorted copy: the log had 11 columns and no ordering control at all, so
+    // reviewing "my worst trades" or "biggest size" meant reading every row.
+    .slice()
+    .sort((a, b) => {
+      const metric = (t: typeof a) => {
+        switch (logSort.key) {
+          case "entryPx": return t.entryPx;
+          case "exitPx": return t.exitPx;
+          case "pnl": return t.pnl;
+          case "pnlPct": return t.perc;
+          case "sizePct": return t.posSizePct;
+          default: return 0;
+        }
+      };
+      let delta: number;
+      switch (logSort.key) {
+        case "symbol": delta = a.symbol.localeCompare(b.symbol); break;
+        case "setup": delta = (a.setupType || "").localeCompare(b.setupType || ""); break;
+        case "entryDate": delta = a.entryDate.localeCompare(b.entryDate); break;
+        case "exitDate": delta = a.exitDate.localeCompare(b.exitDate); break;
+        default: delta = metric(a) - metric(b);
+      }
+      return logSort.direction === "asc" ? delta : -delta;
+    });
 
   // ── AI Coach ─────────────────────────────────────────────────────────────
   const [aiReview, setAiReview] = useState<AiJournalReview | null>(null);
@@ -3515,7 +3554,32 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             <div className="tj-table-wrap">
               <table className="tj-table">
                 <thead>
-                  <tr><th>Symbol</th><th>Setup</th><th>Entry ₹</th><th>Exit ₹</th><th>Entry</th><th>Exit</th><th title="Net of brokerage + all statutory charges. Click a value for the breakdown.">Net P&L ₹</th><th>%</th><th>Size %</th><th>Tags</th><th></th></tr>
+                  <tr>
+                    {([
+                      ["symbol", "Symbol", undefined],
+                      ["setup", "Setup", undefined],
+                      ["entryPx", "Entry ₹", undefined],
+                      ["exitPx", "Exit ₹", undefined],
+                      ["entryDate", "Entry", undefined],
+                      ["exitDate", "Exit", undefined],
+                      ["pnl", "Net P&L ₹", "Net of brokerage + all statutory charges. Click a value for the breakdown."],
+                      ["pnlPct", "%", undefined],
+                      ["sizePct", "Size %", undefined],
+                    ] as const).map(([key, label, title]) => (
+                      <SortableTh
+                        key={key}
+                        sortKey={key}
+                        activeKey={logSort.key}
+                        direction={logSort.direction}
+                        onSort={(k) => setLogSort((current) => nextSort(current, k, LOG_ASCENDING_SORTS))}
+                        title={title}
+                      >
+                        {label}
+                      </SortableTh>
+                    ))}
+                    <th>Tags</th>
+                    <th></th>
+                  </tr>
                 </thead>
                 <tbody>
                   {filteredClosed.map((t, i) => (
