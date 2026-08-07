@@ -19,6 +19,9 @@ type ScanFooterProps = {
   items: ScanMatch[];
   /** ISO string from ScanResultsResponse.generated_at. */
   generatedAt: string | null;
+  /** Open a symbol's chart. These rows looked identical to the clickable
+      rows in the results table above but did nothing. */
+  onPickSymbol?: (symbol: string) => void;
 };
 
 /* ---------- Logo helpers (mirrors GroupsPanel / ScanTable) ---------- */
@@ -112,14 +115,24 @@ function MoverRow({
   item,
   maxAbs,
   positive,
+  onPick,
 }: {
   item: ScanMatch;
   maxAbs: number;
   positive: boolean;
+  onPick?: (symbol: string) => void;
 }) {
   const logo = getLogoUrl(item.symbol);
   return (
-    <li className="sf-mover">
+    <li className={onPick ? "sf-mover is-clickable" : "sf-mover"}>
+      {onPick ? (
+        <button
+          type="button"
+          className="sf-mover-hit"
+          onClick={() => onPick(item.symbol)}
+          title={`Open ${item.symbol} chart`}
+        />
+      ) : null}
       <span className="sf-mover-logo">
         {logo ? (
           <img
@@ -149,7 +162,7 @@ function MoverRow({
 }
 
 /* ---------- Main component ---------- */
-export function ScanFooter({ loading, items, generatedAt }: ScanFooterProps) {
+export function ScanFooter({ loading, items, generatedAt, onPickSymbol }: ScanFooterProps) {
   /* Execution time measurement — flips on transition true → false */
   const startRef = useRef<number | null>(null);
   const [executionMs, setExecutionMs] = useState<number | null>(null);
@@ -276,6 +289,7 @@ export function ScanFooter({ loading, items, generatedAt }: ScanFooterProps) {
                 item={item}
                 maxAbs={gainersMax}
                 positive
+                onPick={onPickSymbol}
               />
             ))}
           </ul>
@@ -301,6 +315,7 @@ export function ScanFooter({ loading, items, generatedAt }: ScanFooterProps) {
                 item={item}
                 maxAbs={losersMax}
                 positive={false}
+                onPick={onPickSymbol}
               />
             ))}
           </ul>

@@ -166,6 +166,10 @@ function Donut({ segments, size = 180 }: { segments: { value: number; color: str
 
 function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
   const [activeIdx, setActiveIdx] = useState<number | null>(null);
+  // These bars were <button>s with no onClick — they invited a click and did
+  // nothing. Clicking now PINS a day so the readout survives mouse-leave;
+  // clicking the pinned day again releases it.
+  const [pinnedIdx, setPinnedIdx] = useState<number | null>(null);
 
   if (!history || history.length === 0) {
     return (
@@ -175,7 +179,8 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
     );
   }
   const days = history.slice(-10);
-  const focused = activeIdx !== null ? days[activeIdx] : days[days.length - 1];
+  const focusedIdx = activeIdx ?? pinnedIdx ?? days.length - 1;
+  const focused = days[focusedIdx] ?? days[days.length - 1];
   const focusedTotal = Math.max(1, focused.total);
   const focusedAdvPct = (focused.advances / focusedTotal) * 100;
   const focusedDecPct = (focused.declines / focusedTotal) * 100;
@@ -207,20 +212,25 @@ function BreadthHistoryChart({ history }: { history: BreadthDayCounts[] }) {
         </div>
       </div>
       <div className="homepro-breadth-history-bars" onMouseLeave={() => setActiveIdx(null)}>
+        {/* hover is transient; a pinned day persists after the pointer leaves */}
         {days.map((d, idx) => {
           const total = Math.max(1, d.total);
           const advPct = (d.advances / total) * 100;
           const decPct = (d.declines / total) * 100;
           const uncPct = Math.max(0, 100 - advPct - decPct);
           const advLeads = d.advances >= d.declines;
-          const isActive = idx === (activeIdx ?? days.length - 1);
+          const isActive = idx === focusedIdx;
+          const isPinned = idx === pinnedIdx;
           return (
             <button
               type="button"
-              className={`homepro-breadth-history-day${isActive ? " active" : ""}`}
+              className={`homepro-breadth-history-day${isActive ? " active" : ""}${isPinned ? " pinned" : ""}`}
               key={d.date}
               onMouseEnter={() => setActiveIdx(idx)}
               onFocus={() => setActiveIdx(idx)}
+              onClick={() => setPinnedIdx((current) => (current === idx ? null : idx))}
+              aria-pressed={isPinned}
+              title={isPinned ? "Click to unpin this day" : "Click to pin this day"}
               aria-label={`${labelFor(d, { long: true })}: ${d.advances} advancing, ${d.declines} declining, ${d.unchanged} flat`}
             >
               <div className="homepro-breadth-history-stack" aria-hidden="true">

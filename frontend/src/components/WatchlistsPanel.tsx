@@ -69,6 +69,8 @@ type WatchlistsPanelProps = {
   onMoveSymbols: (fromWatchlistId: string, toWatchlistId: string, symbols: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onPickSymbol: (symbol: string) => void;
+  /** Jump to a group on the Groups page (used by the rank pills). */
+  onOpenGroup: (groupId: string) => void;
   onPrefetchSymbol?: (symbol: string) => void;
   onImportSymbols?: (watchlistId: string, raw: string) => { added: number; duplicates: number };
   universeItems: ScanMatch[];
@@ -291,6 +293,7 @@ export function WatchlistsPanel({
   onMoveSymbols,
   onRequestAddToWatchlist,
   onPickSymbol,
+  onOpenGroup,
   onPrefetchSymbol,
   onImportSymbols,
   universeItems,
@@ -818,9 +821,22 @@ export function WatchlistsPanel({
           <RsBadge rs={item.rs_rating} />
         </span>
 
+        {/* Both rank pills open the group on the Groups page. They were inert
+            <span>s — the two most obviously clickable things on the row. */}
         <span className="wl-rank">
           {item.groupRank !== null ? (
-            <span className="wl-rank-pill">#{item.groupRank}</span>
+            <button
+              type="button"
+              className="wl-rank-pill is-link"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (item.groupId) onOpenGroup(item.groupId);
+              }}
+              disabled={!item.groupId}
+              title={item.groupName ? `Open ${item.groupName} (rank #${item.groupRank})` : undefined}
+            >
+              #{item.groupRank}
+            </button>
           ) : (
             <span className="wl-rank-muted">—</span>
           )}
@@ -828,9 +844,18 @@ export function WatchlistsPanel({
 
         <span className="wl-rank">
           {item.rankInGroup !== null && item.groupSize !== null ? (
-            <span className="wl-rank-pill">
+            <button
+              type="button"
+              className="wl-rank-pill is-link"
+              onClick={(event) => {
+                event.stopPropagation();
+                if (item.groupId) onOpenGroup(item.groupId);
+              }}
+              disabled={!item.groupId}
+              title={item.groupName ? `${item.symbol} is #${item.rankInGroup} of ${item.groupSize} in ${item.groupName}` : undefined}
+            >
               {item.rankInGroup}/{item.groupSize}
-            </span>
+            </button>
           ) : (
             <span className="wl-rank-muted">—</span>
           )}

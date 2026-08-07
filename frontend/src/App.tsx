@@ -5879,6 +5879,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                           loading={scanLoading}
                           items={visibleScanItems}
                           generatedAt={scanResults?.generated_at ?? null}
+                          onPickSymbol={handlePickSymbol}
                         />
                       ) : null}
                       </>
@@ -5961,6 +5962,7 @@ export default function App({ initialMarket, useMarketRoutes = false }: AppProps
                   onMoveSymbols={handleMoveWatchlistSymbols}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
+                  onOpenGroup={(groupId) => void openGroupsView({ groupId })}
                   onPrefetchSymbol={handlePrefetchSymbol}
                   onImportSymbols={handleImportToWatchlist}
                   universeItems={universeCatalog}
