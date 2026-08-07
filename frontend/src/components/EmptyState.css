@@ -1,0 +1,92 @@
+/* ==========================================================================
+   EmptyState — a zero-result screen that offers a way out
+   Surfaces alias the global tokens (see the note in ScanTable.css).
+   ========================================================================== */
+
+.empty-state-v2 {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 34px 20px;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-xl);
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+  text-align: center;
+}
+
+.empty-state-v2.is-compact {
+  padding: 18px 14px;
+  gap: 6px;
+  border-radius: var(--radius-lg);
+}
+
+.empty-state-icon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.is-compact .empty-state-icon {
+  width: 30px;
+  height: 30px;
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.empty-state-body {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-soft);
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 4px;
+}
+
+.empty-state-btn {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  background: var(--accent-strong);
+  color: #fff;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.empty-state-btn:hover {
+  background: color-mix(in srgb, var(--accent-strong) 86%, #000);
+}
+
+.empty-state-btn.ghost {
+  background: transparent;
+  border-color: var(--line-strong);
+  color: var(--text-soft);
+}
+
+.empty-state-btn.ghost:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  background: transparent;
+}
+
+.empty-state-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

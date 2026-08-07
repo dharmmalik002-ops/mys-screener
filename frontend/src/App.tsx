@@ -6026,6 +6026,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onPickSymbol={handlePickSymbol}
                   onOpenGroup={(groupId) => void openGroupsView({ groupId })}
+                  onOpenScreener={() => setActivePage("screener")}
                   onPrefetchSymbol={handlePrefetchSymbol}
                   onImportSymbols={handleImportToWatchlist}
                   universeItems={universeCatalog}

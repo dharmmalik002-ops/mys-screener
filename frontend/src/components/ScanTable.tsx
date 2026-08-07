@@ -19,6 +19,7 @@ import {
   Plus,
   ChevronDown,
   Search as SearchIcon,
+  SearchX,
 } from "lucide-react";
 
 import {
@@ -40,6 +41,7 @@ import type {
   ChartGridSortBy,
   ChartGridStat,
 } from "./ChartGridModal";
+import { EmptyState } from "./EmptyState";
 import { Panel } from "./Panel";
 import { SortableHeader } from "./SortableTh";
 
@@ -1417,12 +1419,29 @@ export function ScanTable({
             shouldVirtualize ? "scan-table-body scan-table-body-virtual" : "scan-table-body"
           }
         >
-          {items.length === 0 ? (
-            <div className="empty-state">
-              {loading
-                ? "Fetching results for this screener..."
-                : "No symbols match this scan at the current filter."}
-            </div>
+          {/* Test the FILTERED list: the old condition used `items` (pre-filter),
+              so filtering every row away rendered a blank area with no message. */}
+          {sortedItems.length === 0 ? (
+            loading ? (
+              <div className="empty-state">Fetching results for this screener…</div>
+            ) : symbolFilter.trim() ? (
+              // A row filter is hiding everything — say so and offer the undo,
+              // rather than implying the scan itself found nothing.
+              <EmptyState
+                icon={<SearchX size={20} strokeWidth={2.1} />}
+                title={`No rows match “${symbolFilter.trim()}”`}
+                // `items` is the PRE-filter list; sortedItems derives from the
+                // filtered one and would always read 0 here.
+                body={`The scan returned ${items.length} stock${items.length === 1 ? "" : "s"}; your row filter is hiding ${items.length === 1 ? "it" : "them"}.`}
+                action={{ label: "Clear filter", onClick: () => setSymbolFilter("") }}
+              />
+            ) : (
+              <EmptyState
+                icon={<SearchX size={20} strokeWidth={2.1} />}
+                title="No stocks passed this scan today"
+                body="That is a result, not an error — these setups do not print every session. Try another scanner, or loosen its thresholds in the settings panel."
+              />
+            )
           ) : shouldVirtualize ? (
             <div
               className="scan-table-virtual-spacer"

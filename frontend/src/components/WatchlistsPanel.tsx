@@ -12,6 +12,7 @@ import {
 import { createPortal } from "react-dom";
 import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 
+import { EmptyState } from "./EmptyState";
 import { SortableHeader, nextSort, type SortDirection } from "./SortableTh";
 
 type WatchlistSortKey = "symbol" | "price" | "change" | "rs" | "groupRank" | "rankInGroup";
@@ -71,6 +72,8 @@ type WatchlistsPanelProps = {
   onPickSymbol: (symbol: string) => void;
   /** Jump to a group on the Groups page (used by the rank pills). */
   onOpenGroup: (groupId: string) => void;
+  /** Jump to the Screener (empty-watchlist call to action). */
+  onOpenScreener?: () => void;
   onPrefetchSymbol?: (symbol: string) => void;
   onImportSymbols?: (watchlistId: string, raw: string) => { added: number; duplicates: number };
   universeItems: ScanMatch[];
@@ -294,6 +297,7 @@ export function WatchlistsPanel({
   onRequestAddToWatchlist,
   onPickSymbol,
   onOpenGroup,
+  onOpenScreener,
   onPrefetchSymbol,
   onImportSymbols,
   universeItems,
@@ -1195,7 +1199,15 @@ export function WatchlistsPanel({
                 }
               >
                 {activeItems.length === 0 ? (
-                  <div className="empty-state">This watchlist is empty. Add stocks from scanners, groups, or the chart.</div>
+                  // Previously this NAMED three places to add stocks and linked
+                  // to none of them.
+                  <EmptyState
+                    icon={<Plus size={20} strokeWidth={2.2} />}
+                    title={`“${activeWatchlist.name}” is empty`}
+                    body="Add stocks from a scanner or an industry group — or paste a list of tickers straight in."
+                    action={{ label: "Open Screener", onClick: () => onOpenScreener?.() }}
+                    secondaryAction={{ label: "Paste tickers", onClick: () => setImportOpen(true) }}
+                  />
                 ) : arrangementMode === "group" ? (
                   <>
                     {groupedView.ordered.map((bucket, idx) => (

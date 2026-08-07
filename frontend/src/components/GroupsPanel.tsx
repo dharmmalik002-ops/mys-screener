@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
-import { LayoutGrid, Medal } from "lucide-react";
+import { Layers, LayoutGrid, Medal, SearchX } from "lucide-react";
 
+import { EmptyState } from "./EmptyState";
 import { SortableTh, nextSort, type SortDirection } from "./SortableTh";
 
 import {
@@ -560,9 +561,29 @@ export function GroupsPanel({
           </div>
 
           {!filteredGroups.length ? (
-            <div className="gp-empty">
-              {loading ? "Loading group ranks…" : searchQuery.trim() ? "No groups match that search." : "No group data available yet."}
-            </div>
+            loading ? (
+              <div className="gp-empty">Loading group ranks…</div>
+            ) : searchQuery.trim() ? (
+              // The zero-search case had no way out even though clearing the
+              // query is a single call.
+              <EmptyState
+                icon={<SearchX size={20} strokeWidth={2.1} />}
+                title={`No groups match “${searchQuery.trim()}”`}
+                body="The search covers group names, sectors, and the symbols inside each group."
+                action={{ label: "Clear search", onClick: () => setSearchQuery("") }}
+                secondaryAction={
+                  strengthFilter !== "all"
+                    ? { label: "Show all groups", onClick: () => setStrengthFilter("all") }
+                    : undefined
+                }
+              />
+            ) : (
+              <EmptyState
+                icon={<Layers size={20} strokeWidth={2.1} />}
+                title="No group data yet"
+                body="Industry group rankings are built from the daily EOD snapshot. They appear once the first snapshot lands."
+              />
+            )
           ) : (
             <div className="gp-table-scroll">
               <table className="gp-table">
