@@ -24,7 +24,7 @@
   /* Header cells inherit their own padding; keep the hit area full-width. */
   padding: 6px 4px;
   border-radius: var(--radius-sm);
-  transition: color 140ms ease, background 140ms ease;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
 .sortable-th-num .sortable-th-btn {
@@ -46,7 +46,7 @@
 .sortable-th-icon {
   flex: none;
   opacity: 0;
-  transition: opacity 140ms ease, color 140ms ease;
+  transition: opacity var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .sortable-th-btn:hover .sortable-th-icon {

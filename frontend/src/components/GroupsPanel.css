@@ -63,7 +63,7 @@ body.dark .groups-panel-pro {
   padding: 9px 14px;
   font-size: 13px;
   color: var(--gp-text);
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
 }
 
 .gp-search[type="search"]:focus {
@@ -91,7 +91,7 @@ body.dark .groups-panel-pro {
   padding: 9px 14px 9px 36px;
   font-size: 13px;
   color: var(--gp-text);
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
 }
 
 .gp-search input:focus {
@@ -118,7 +118,7 @@ body.dark .groups-panel-pro {
   font-weight: 600;
   color: var(--gp-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast), color var(--dur-fast);
 }
 
 .gp-pill:hover {
@@ -213,7 +213,7 @@ body.dark .gp-pill.active {
   gap: 14px;
   align-items: flex-start;
   box-shadow: var(--gp-shadow-sm);
-  transition: box-shadow 0.2s, transform 0.15s;
+  transition: box-shadow var(--dur-base), transform var(--dur-fast);
   position: relative;
   overflow: hidden;
 }
@@ -373,7 +373,7 @@ body.dark .gp-pill.active {
 
 .gp-treemap-cell {
   cursor: pointer;
-  transition: opacity 0.15s;
+  transition: opacity var(--dur-fast);
 }
 
 .gp-treemap-cell:hover rect {
@@ -536,7 +536,7 @@ body.dark .gp-treemap-pct {
 }
 
 .gp-row {
-  transition: background 0.15s;
+  transition: background var(--dur-fast);
 }
 
 .gp-row:hover {
@@ -642,7 +642,7 @@ body.dark .gp-treemap-pct {
   justify-content: center;
   gap: 1px;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  transition: background var(--dur-fast), border-color var(--dur-fast), color var(--dur-fast);
 }
 
 .gp-group-grid-toggle:hover,
@@ -747,7 +747,7 @@ body.dark .gp-emerging {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 
 .gp-stock-chip:hover {

@@ -80,7 +80,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  transition: border-color 150ms ease-out;
+  transition: border-color var(--dur-fast) ease-out;
 }
 .sgm-cell:hover { border-color: rgba(8, 153, 129, 0.5); }
 

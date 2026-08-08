@@ -59,7 +59,7 @@
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--dur-fast) ease;
 }
 
 .st-view-tab:hover:not(:disabled) {
@@ -91,7 +91,7 @@
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--dur-fast) ease;
 }
 
 .st-btn:hover:not(:disabled) {
@@ -140,7 +140,7 @@
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: all 100ms ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
   white-space: nowrap;
 }
 
@@ -179,7 +179,7 @@
   font-size: 0.74rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: color var(--dur-fast) ease;
 }
 
 .st-seg-btn:hover {
@@ -402,7 +402,7 @@
   background: var(--st-surface, #ffffff);
   color: var(--st-text-soft);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--dur-fast) ease;
   margin-left: auto;
 }
 
@@ -484,7 +484,7 @@
   background: var(--st-surface, #ffffff);
   color: var(--st-text-soft);
   cursor: pointer;
-  transition: color 140ms ease, border-color 140ms ease, transform 160ms ease;
+  transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-base) ease;
 }
 
 .st-expand-btn:hover {

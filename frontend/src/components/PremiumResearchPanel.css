@@ -29,7 +29,7 @@
   cursor: pointer;
   white-space: nowrap;
   position: relative;
-  transition: color 0.2s;
+  transition: color var(--dur-base);
 }
 
 .nav-item:hover {
@@ -149,7 +149,7 @@
   background: var(--bg);
   border: 1px solid var(--line);
   margin-bottom: 12px;
-  transition: border-color 0.2s;
+  transition: border-color var(--dur-base);
 }
 
 .news-article-card:hover {
@@ -238,7 +238,7 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  transition: transform 0.2s, border-color 0.2s;
+  transition: transform var(--dur-base), border-color var(--dur-base);
   position: relative;
   overflow: hidden;
 }
@@ -342,7 +342,7 @@
   border-radius: 12px;
   padding: 20px;
   margin-bottom: 20px;
-  transition: opacity 0.3s;
+  transition: opacity var(--dur-slow);
 }
 
 .guidance-stale {

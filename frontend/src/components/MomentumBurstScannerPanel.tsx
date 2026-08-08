@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { activatable } from "../lib/activate";
 import type { ChangeEvent } from "react";
 
 import type { MomentumBurstScanRequest, ScanMatch } from "../lib/api";
@@ -354,7 +355,8 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
             return (
               <tr
                 key={m.symbol}
-                onClick={() => onPickSymbol(m.symbol)}
+                aria-label={`Open ${m.symbol}`}
+                {...activatable(() => onPickSymbol(m.symbol))}
                 onMouseEnter={onPrefetchSymbol ? () => onPrefetchSymbol(m.symbol) : undefined}
                 style={{ cursor: "pointer", background: isSel ? "rgba(255,255,255,0.06)" : undefined }}
               >

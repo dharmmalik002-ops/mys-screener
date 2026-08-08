@@ -53,8 +53,19 @@
   /* Hairline + one soft elevation: the only two "depth" treatments chrome should use. */
   --hairline: 1px solid var(--line);
   --elevation: 0 1px 2px rgba(2, 5, 15, 0.25), 0 8px 24px rgba(2, 5, 15, 0.22);
-  --transition-fast: 150ms ease;
-  --transition-smooth: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-fast: var(--dur-fast) var(--ease-out);
+  --transition-smooth: var(--dur-slow) var(--ease-emphasis);
+  /* Motion scale. Durations were previously ad-hoc: 19 distinct values, with
+     `0.15s` and `150ms` — the same number — written both ways 72 times between
+     them. Three steps cover everything chrome needs:
+       fast  — hover/press feedback on a control the pointer is already on
+       base  — a state change the eye has to follow (panel, popover, toast)
+       slow  — a larger surface entering or leaving (modal, drawer) */
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 320ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-emphasis: cubic-bezier(0.4, 0, 0.2, 1);
   --hero-glow:
     radial-gradient(ellipse at 20% 0%, rgba(76, 154, 255, 0.14), transparent 50%),
     radial-gradient(ellipse at 80% 10%, rgba(59, 108, 239, 0.10), transparent 40%),
@@ -606,7 +617,7 @@ button {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 74%, transparent);
   backdrop-filter: blur(12px);
-  transition: all var(--transition-smooth);
+  transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth);
 }
 
 .mode-switch:hover {
@@ -684,7 +695,7 @@ button {
   color: var(--text);
   font-weight: 500;
   font-size: 0.88rem;
-  transition: all var(--transition-smooth), box-shadow 0.3s ease, transform 0.2s ease;
+  transition: background var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--dur-slow) ease, transform var(--dur-base) ease;
   backdrop-filter: blur(12px);
   position: relative;
   overflow: hidden;
@@ -698,7 +709,7 @@ button {
   width: 0;
   height: 2px;
   background: linear-gradient(90deg, var(--accent), var(--accent-strong));
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--dur-slow) cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-50%);
   border-radius: 2px;
 }
@@ -1043,7 +1054,7 @@ button {
     var(--glass-sheen);
   color: var(--text);
   text-align: left;
-  transition: transform 150ms ease, background 150ms ease, border-color 150ms ease;
+  transition: transform var(--dur-fast) ease, background var(--dur-fast) ease, border-color var(--dur-fast) ease;
   backdrop-filter: blur(18px);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
@@ -1186,7 +1197,7 @@ button {
   backdrop-filter: blur(12px);
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--dur-fast), background var(--dur-fast);
 }
 
 .home-macro-card-skeleton {
@@ -1349,7 +1360,7 @@ button {
   cursor: pointer;
   padding: 4px 10px;
   font-size: 0.85rem;
-  transition: color 0.15s, border-color 0.15s;
+  transition: color var(--dur-fast), border-color var(--dur-fast);
 }
 
 .pe-modal-close:hover {
@@ -1520,7 +1531,7 @@ button {
     var(--glass-sheen);
   color: var(--text);
   text-align: left;
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 .home-group-card:hover,
 .home-group-card:focus-visible {
@@ -1678,7 +1689,7 @@ button {
   cursor: pointer;
   font-size: 0.78rem;
   margin-bottom: 2px;
-  transition: background 0.12s;
+  transition: background var(--dur-fast);
 }
 
 .mf-week-btn:hover {
@@ -2522,7 +2533,7 @@ button {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+  transition: background var(--dur-base) ease, color var(--dur-base) ease, box-shadow var(--dur-base) ease, transform var(--dur-base) ease;
 }
 
 .home-market-toggle-btn:hover {
@@ -2709,7 +2720,7 @@ button {
   border-radius: var(--radius-md);
   color: #fff;
   text-align: left;
-  transition: all var(--transition-smooth);
+  transition: border-color var(--transition-smooth), box-shadow var(--transition-smooth), transform var(--transition-smooth);
   cursor: pointer;
 }
 
@@ -2801,7 +2812,7 @@ button {
 }
 
 .sector-treemap-sector {
-  transition: transform 150ms ease, box-shadow 150ms ease, border-color 150ms ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
 .sector-treemap-sector:hover {
@@ -2931,7 +2942,7 @@ button {
   border: 1px solid rgba(0, 0, 0, 0.28);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
   cursor: grab;
-  transition: filter 0.15s ease;
+  transition: filter var(--dur-fast) ease;
   touch-action: none;
 }
 .chart-grid-scrollbar-thumb:hover {
@@ -2998,7 +3009,7 @@ button {
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
 .chart-grid-sequence-btn:hover:not(:disabled) {
@@ -3182,7 +3193,7 @@ button {
     radial-gradient(circle at top left, rgba(76, 154, 255, 0.08), transparent 40%);
   color: var(--text);
   text-align: left;
-  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .chart-grid-card.normal {
@@ -3284,7 +3295,7 @@ button {
   accent-color: var(--accent, #58a6ff);
   cursor: ew-resize;
   opacity: 0.55;
-  transition: opacity 120ms ease;
+  transition: opacity var(--dur-fast) ease;
 }
 
 .chart-grid-card-slider:hover {
@@ -3334,7 +3345,7 @@ button {
   color: inherit;
   font: inherit;
   cursor: pointer;
-  transition: opacity 120ms ease, border-color 120ms ease;
+  transition: opacity var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
 .chart-grid-ma-toggle:hover {
@@ -3514,7 +3525,7 @@ button {
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .chart-grid-wl-btn span { font-size: 0.95rem; line-height: 1; }
 .chart-grid-wl-btn:hover {
@@ -3734,7 +3745,7 @@ button {
   padding: 8px 12px;
   background: transparent;
   color: var(--text-soft);
-  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
 /* Gear toggle for rarely-touched chart display options (scale, theme). */
@@ -3998,7 +4009,7 @@ button {
   border-left: 3px solid transparent;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-soft) 52%, transparent);
-  transition: all var(--transition-smooth);
+  transition: background var(--transition-smooth), border-color var(--transition-smooth);
 }
 
 .scan-row:hover {
@@ -4353,7 +4364,7 @@ button {
     linear-gradient(160deg, color-mix(in srgb, var(--surface-strong) 78%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
   overflow: hidden;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: transform var(--dur-base) ease, border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
   backdrop-filter: blur(22px);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
@@ -4505,7 +4516,7 @@ button {
   padding: 14px 18px;
   border-top: 1px solid color-mix(in srgb, var(--glass-border) 68%, transparent);
   background: transparent;
-  transition: background 150ms ease, transform 150ms ease;
+  transition: background var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 
 .sector-company-row:hover {
@@ -4580,7 +4591,7 @@ button {
     linear-gradient(160deg, color-mix(in srgb, var(--surface-strong) 78%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
   overflow: hidden;
-  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  transition: transform var(--dur-base) ease, border-color var(--dur-base) ease, box-shadow var(--dur-base) ease;
   backdrop-filter: blur(22px);
 }
 
@@ -4906,7 +4917,7 @@ button {
   color: var(--text-muted);
   font-size: 0.72rem;
   cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease;
+  transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
 .chart-circuit-locks-toggle.is-on {
@@ -5243,7 +5254,7 @@ button {
   border-radius: 14px;
   padding: 14px 16px;
   background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
-  transition: all var(--transition-smooth);
+  transition: background var(--transition-smooth), border-color var(--transition-smooth);
 }
 
 .business-trigger-item:hover {
@@ -5703,7 +5714,7 @@ button {
   line-height: 1;
   cursor: pointer;
   box-shadow: 0 10px 22px rgba(2, 8, 22, 0.28);
-  transition: background 0.12s ease, border-color 0.12s ease, transform 0.06s ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 0.06s ease;
 }
 .chart-stage-nav-button:hover {
   border-color: color-mix(in srgb, var(--accent) 75%, transparent);
@@ -5856,7 +5867,7 @@ button {
   background: transparent;
   color: color-mix(in srgb, var(--text) 62%, transparent);
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.06s ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease, transform 0.06s ease;
 }
 
 .chart-tool-rail-button:hover:not(:disabled) {
@@ -7249,7 +7260,7 @@ button {
   padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 
 .chart-modal-widget-toggle:hover {
@@ -7775,7 +7786,7 @@ button {
   overflow: hidden;
   backdrop-filter: blur(16px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition: transform var(--dur-base) ease, border-color var(--dur-base) ease;
 }
 
 .health-card:hover {
@@ -8878,7 +8889,7 @@ button {
   color: var(--text-soft);
   cursor: pointer;
   line-height: 1.4;
-  transition: color 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .rvol-size-btn:hover { color: var(--text); }
 .rvol-size-btn.active {
@@ -8910,7 +8921,7 @@ button {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 .rvol-close-btn:hover {
   color: var(--negative, #ef4444);
@@ -8948,7 +8959,7 @@ button {
   display: block;
   height: 100%;
   border-radius: 3px;
-  transition: width 0.15s ease;
+  transition: width var(--dur-fast) ease;
 }
 
 .rvol-widget-detail {
@@ -9337,4 +9348,10 @@ button {
 .chart-expansion-color {
   width: 26px; height: 26px; padding: 0; border: 1px solid var(--line, rgba(255,255,255,0.15));
   border-radius: 6px; background: transparent; cursor: pointer;
+}
+
+/* Firefox has no ::-webkit-scrollbar; without this its scrollbars ignore the
+   theme entirely. Kept subtle so dense tables don't gain a heavy gutter. */
+* {
+  scrollbar-color: var(--line-strong) transparent;
 }

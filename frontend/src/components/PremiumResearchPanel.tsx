@@ -1,4 +1,5 @@
 import React, { Suspense, lazy, useEffect, useState, useMemo } from 'react';
+import { activatable } from "../lib/activate";
 import { getCompanyLiveNews, type CompanyFundamentals, type LiveNewsItem, type MarketKey, type DetailedNews } from '../lib/api';
 import './PremiumResearchPanel.css';
 
@@ -780,7 +781,8 @@ export const PremiumResearchPanel: React.FC<PremiumResearchPanelProps> = ({
           <div
             key={tab.key}
             className={`nav-item ${activeTab === tab.key ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.key as TabKey)}
+            aria-current={activeTab === tab.key ? "page" : undefined}
+            {...activatable(() => setActiveTab(tab.key as TabKey))}
           >
             {tab.label}
           </div>

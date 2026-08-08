@@ -9,6 +9,7 @@ import {
   useState,
   type CSSProperties,
 } from "react";
+import { useModalShell } from "../lib/useModalShell";
 import { createPortal } from "react-dom";
 import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 
@@ -305,6 +306,8 @@ export function WatchlistsPanel({
   selectedSymbol,
 }: WatchlistsPanelProps) {
   const [importOpen, setImportOpen] = useState(false);
+  // Escape + scroll lock for the import dialog, which had neither.
+  const importShellRef = useModalShell(importOpen, () => setImportOpen(false));
   const [importText, setImportText] = useState("");
   const [importMessage, setImportMessage] = useState<string | null>(null);
   const marketLabel = market === "india" ? "India" : "US";
@@ -1290,7 +1293,14 @@ export function WatchlistsPanel({
             }
           }}
         >
-          <div className="watchlist-import-modal" onClick={(event) => event.stopPropagation()}>
+          <div
+            ref={importShellRef as React.RefObject<HTMLDivElement>}
+            className="watchlist-import-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Import to ${activeWatchlist.name}`}
+            onClick={(event) => event.stopPropagation()}
+          >
             <header>
               <strong>Import to "{activeWatchlist.name}"</strong>
               <button

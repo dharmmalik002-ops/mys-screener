@@ -62,7 +62,7 @@
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .toast-undo:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
@@ -84,7 +84,7 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 140ms ease, background 140ms ease;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
 .toast-close:hover {

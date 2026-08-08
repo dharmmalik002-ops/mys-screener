@@ -44,7 +44,7 @@
   border-radius: 10px;
   background: var(--st-surface, #ffffff);
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 
 .wl-nav-row:hover {
@@ -103,7 +103,7 @@
   border: 2px solid rgba(255, 255, 255, 0.85);
   box-shadow: 0 0 0 1px var(--st-border, #e5e7eb), 0 1px 3px rgba(15, 23, 42, 0.16);
   cursor: pointer;
-  transition: transform 140ms ease, box-shadow 140ms ease;
+  transition: transform var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .wl-swatch:hover {
@@ -178,7 +178,7 @@
   background: var(--st-surface, #ffffff);
   color: var(--st-text-soft);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: all var(--dur-fast) ease;
 }
 
 .wl-move-btn:hover:not(:disabled) {
@@ -261,7 +261,7 @@
   font-weight: 500;
   text-align: left;
   cursor: pointer;
-  transition: background 100ms ease, color 100ms ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .wl-move-item-label {
@@ -440,7 +440,7 @@
   font-size: 0.74rem;
   font-weight: 700;
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, transform 80ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 80ms ease;
 }
 
 .wl-rank-pill.is-link:hover:not(:disabled) {
@@ -672,7 +672,7 @@
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
-  transition: border-color 120ms ease, color 120ms ease;
+  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .wl-stage-chip.stage-near-pivot {

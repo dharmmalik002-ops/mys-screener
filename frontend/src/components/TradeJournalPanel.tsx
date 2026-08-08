@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { activatable } from "../lib/activate";
 import { createPortal } from "react-dom";
 import { Newspaper, NotebookPen } from "lucide-react";
 
@@ -3788,7 +3789,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
               <div className="tj-chip-row">
                 {PREDEFINED_TAGS.map(tag => (
                   <div key={tag} className={`tj-chip clickable ${entryTags.has(tag) ? "selected" : ""}`}
-                    onClick={() => setEntryTags(prev => { const n = new Set(prev); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
+                    aria-checked={entryTags.has(tag)}
+                    {...activatable(() => setEntryTags(prev => { const n = new Set(prev); n.has(tag) ? n.delete(tag) : n.add(tag); return n; }), "checkbox")}>
                     {tag}
                   </div>
                 ))}
@@ -4401,7 +4403,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <div className="tj-chip-row">
                   {PREDEFINED_TAGS.map(tag => (
                     <div key={tag} className={`tj-chip clickable ${modalEditTags.has(tag) ? "selected" : ""}`}
-                      onClick={() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
+                      aria-checked={modalEditTags.has(tag)}
+                      {...activatable(() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; }), "checkbox")}>
                       {tag}
                     </div>
                   ))}
@@ -4435,7 +4438,8 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 <div className="tj-chip-row">
                   {PREDEFINED_TAGS.map(tag => (
                     <div key={tag} className={`tj-chip clickable ${modalEditTags.has(tag) ? "selected" : ""}`}
-                      onClick={() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; })}>
+                      aria-checked={modalEditTags.has(tag)}
+                      {...activatable(() => setModalEditTags(p => { const n = new Set(p); n.has(tag) ? n.delete(tag) : n.add(tag); return n; }), "checkbox")}>
                       {tag}
                     </div>
                   ))}

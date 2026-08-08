@@ -87,7 +87,7 @@
   line-height: 1;
   color: #8b949e;
   cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
 
 .gsw-close:hover {
@@ -115,7 +115,7 @@
   border-radius: 6px;
   cursor: pointer;
   letter-spacing: 0.02em;
-  transition: filter 0.15s, transform 0.05s;
+  transition: filter var(--dur-fast), transform 0.05s;
 }
 
 .gsw-compare-btn:hover {
@@ -147,7 +147,7 @@
   height: 30px;
   cursor: pointer;
   font-size: 14px;
-  transition: background 0.15s, color 0.15s;
+  transition: background var(--dur-fast), color var(--dur-fast);
 }
 
 .gsw-layout-toggle button:hover {
@@ -173,7 +173,7 @@
   padding: 6px 10px;
   font-size: 12px;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color var(--dur-fast);
 }
 
 .gsw-search::placeholder {
@@ -237,7 +237,7 @@
   font-size: 12px;
   cursor: pointer;
   border-left: 2px solid transparent;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 
 .gsw-row:hover {
@@ -363,7 +363,7 @@
   cursor: nwse-resize;
   background: transparent;
   border-bottom-right-radius: 10px;
-  transition: color 0.15s, background 0.15s;
+  transition: color var(--dur-fast), background var(--dur-fast);
 }
 
 .gsw-resize-handle:hover,

@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { activatable } from "../lib/activate";
 import { createPortal } from "react-dom";
 import { CalendarDays } from "lucide-react";
 
@@ -925,7 +926,8 @@ export function HomePanel({
                 return (
                   <tr
                     key={`home-group-${group.group_id}`}
-                    onClick={() => onOpenGroups({ groupId: group.group_id })}
+                    aria-label={`Open group ${group.group_name ?? group.group_id}`}
+                    {...activatable(() => onOpenGroups({ groupId: group.group_id }))}
                   >
                     <td className="homepro-rank">{i + 1}.</td>
                     <td className="homepro-group-name">{group.group_name}</td>
@@ -1205,7 +1207,7 @@ function ViewAllModal({
               </thead>
               <tbody>
                 {items.map((item, i) => (
-                  <tr key={`vall-${item.symbol}`} onClick={() => onPickSymbol(item.symbol)}>
+                  <tr key={`vall-${item.symbol}`} aria-label={`Open ${item.symbol}`} {...activatable(() => onPickSymbol(item.symbol))}>
                     <td className="homepro-rank">{i + 1}</td>
                     <td>
                       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>

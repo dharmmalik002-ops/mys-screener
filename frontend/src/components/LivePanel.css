@@ -39,7 +39,7 @@
   color: inherit;
   font-size: 0.78rem;
   cursor: pointer;
-  transition: border-color 150ms ease-out, background 150ms ease-out;
+  transition: border-color var(--dur-fast) ease-out, background var(--dur-fast) ease-out;
 }
 
 .live-chip.active {

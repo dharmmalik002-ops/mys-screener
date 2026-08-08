@@ -66,7 +66,7 @@
 .screener-nav-button {
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
-  color: var(--text); transition: background 160ms ease, border-color 160ms ease;
+  color: var(--text); transition: background var(--dur-base) ease, border-color var(--dur-base) ease;
 }
 .screener-nav-button:nth-child(n) { border-left: 1px solid var(--line); }
 .screener-nav-button:hover {
@@ -140,7 +140,7 @@
   background: var(--surface-strong);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow);
-  transition: border-color 200ms ease;
+  transition: border-color var(--dur-base) ease;
 }
 .panel:hover { border-color: var(--line-strong); }
 .panel-kicker { color: var(--text-muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -150,7 +150,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface) 80%, transparent);
-  transition: border-color 180ms ease, background 180ms ease;
+  transition: border-color var(--dur-base) ease, background var(--dur-base) ease;
 }
 .home-group-card:hover,.home-group-card:focus-visible {
   border-color: color-mix(in srgb, var(--accent) 35%, var(--line));
@@ -162,7 +162,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color var(--dur-base) ease, background var(--dur-base) ease;
 }
 .home-stock-row:hover {
   border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
@@ -174,7 +174,7 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color var(--dur-base) ease, background var(--dur-base) ease;
 }
 .home-macro-card:hover {
   border-color: var(--line-strong);
@@ -189,7 +189,7 @@
   border-left: 3px solid transparent;
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-soft) 65%, transparent);
-  transition: border-color 160ms ease, background 160ms ease;
+  transition: border-color var(--dur-base) ease, background var(--dur-base) ease;
 }
 .scan-row:hover {
   border-color: var(--line-strong);
@@ -216,7 +216,7 @@
 .chart-grid-card {
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface) 90%, transparent);
-  transition: border-color 160ms ease;
+  transition: border-color var(--dur-base) ease;
   color: var(--text);
 }
 .chart-grid-card.clickable:hover { border-color: color-mix(in srgb, var(--accent) 32%, var(--line)); }
@@ -225,7 +225,7 @@
 .sector-heatmap-card {
   border-radius: var(--radius-md);
   box-shadow: none;
-  transition: filter 160ms ease;
+  transition: filter var(--dur-base) ease;
 }
 .sector-heatmap-card:hover { filter: brightness(1.08); }
 .sector-heatmap-card-return { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em; }
@@ -386,7 +386,7 @@
      unreadable (~2.1:1) on the dark glass header — and there was no dark
      override anywhere for .nav-button. */
   color: var(--text-soft);
-  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 0.08s ease;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -443,7 +443,7 @@
      buttons onto a second row on mid-size screens. */
   width: 100%;
   min-width: 140px;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 
 .top-nav .nav-search-field input:focus {
@@ -498,7 +498,7 @@
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .top-nav .mode-switch .tool-pill.active {
@@ -626,7 +626,7 @@
   -webkit-backdrop-filter: none;
   border-color: transparent;
   background: transparent;
-  transition: color 140ms ease, background 140ms ease, border-color 140ms ease;
+  transition: color var(--dur-fast) ease, background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
 .top-nav .nav-button::after {
@@ -682,7 +682,7 @@
   border-color: var(--line);
   backdrop-filter: none;
   box-shadow: none;
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .top-nav .nav-search input:focus {
@@ -724,7 +724,7 @@
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
   color: var(--text-soft);
   cursor: pointer;
-  transition: all 140ms ease;
+  transition: all var(--dur-fast) ease;
   font-family: inherit;
 }
 
@@ -842,7 +842,7 @@
 }
 
 .scan-row {
-  transition: background 120ms ease, border-color 120ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 
 .scan-row:hover {

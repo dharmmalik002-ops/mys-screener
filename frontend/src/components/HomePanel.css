@@ -317,7 +317,7 @@
 
 .homepro-groups-table tbody tr {
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .homepro-groups-table tbody tr:hover {
@@ -536,7 +536,7 @@
   border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, transform 0.12s;
+  transition: background var(--dur-fast), border-color var(--dur-fast), transform var(--dur-fast);
   font: inherit;
   color: inherit;
   text-align: inherit;
@@ -589,7 +589,7 @@
 
 .homepro-breadth-history-seg {
   width: 100%;
-  transition: filter 0.12s;
+  transition: filter var(--dur-fast);
 }
 .homepro-breadth-history-seg.adv {
   background: linear-gradient(180deg, #10b981 0%, #059669 100%);
@@ -721,7 +721,7 @@
   background: transparent;
   text-align: left;
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .homepro-row:hover {
@@ -886,7 +886,7 @@
   cursor: pointer;
   font-size: 15px;
   color: var(--hp-muted);
-  transition: background 0.15s ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .homepro-modal-close:hover {
@@ -928,7 +928,7 @@
 
 .homepro-modal-table tbody tr {
   cursor: pointer;
-  transition: background 0.12s ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .homepro-modal-table tbody tr:hover {
@@ -1107,7 +1107,7 @@ body.dark .homepro-modal-close:hover {
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.12s ease;
+  transition: opacity var(--dur-fast) ease;
 }
 .homepro-xp-tip.show {
   opacity: 1;
@@ -1145,7 +1145,7 @@ body.dark .homepro-modal-close:hover {
   cursor: pointer;
   display: grid;
   place-items: center;
-  transition: background 0.12s ease, border-color 0.12s ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .homepro-xp-zoom-btn:hover {
   background: var(--hp-bg);

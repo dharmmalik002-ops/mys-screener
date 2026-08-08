@@ -440,7 +440,7 @@
   width: 78%;
   min-height: 3px;
   border-radius: 6px 6px 2px 2px;
-  transition: transform 200ms ease, filter 200ms ease, opacity 200ms ease, height 400ms ease;
+  transition: transform var(--dur-base) ease, filter var(--dur-base) ease, opacity var(--dur-base) ease, height 400ms ease;
   position: relative;
 }
 .tj-dist-bar.pos {
@@ -666,7 +666,7 @@
   padding: 6px 12px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background var(--dur-fast), border-color var(--dur-fast);
 }
 .tj-cal-nav {
   font-size: 1.1rem;
@@ -715,7 +715,7 @@
   justify-content: flex-start;
   align-items: stretch;
   cursor: default;
-  transition: background 0.12s, transform 0.12s;
+  transition: background var(--dur-fast), transform var(--dur-fast);
   text-align: inherit;
   font: inherit;
   color: inherit;
@@ -930,7 +930,7 @@
   border-left-width: 4px;
   position: relative;
   overflow: hidden;
-  transition: transform 140ms ease, border-color 140ms ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
 .tj-kbox:hover { transform: translateY(-1px); }
 
@@ -1585,7 +1585,7 @@
 }
 .tj-chip.sm { padding: 2px 7px; font-size: 0.66rem; }
 .tj-chip.xs { padding: 1px 6px; font-size: 0.62rem; }
-.tj-chip.clickable { cursor: pointer; transition: all var(--transition-fast); }
+.tj-chip.clickable { cursor: pointer; transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast); }
 .tj-chip.clickable:hover { border-color: var(--accent); color: var(--accent); }
 .tj-chip.clickable.selected { background: color-mix(in srgb, var(--accent) 20%, transparent); border-color: var(--accent); color: var(--accent); }
 
@@ -1836,7 +1836,7 @@
   font-size: 0.84rem;
   background: var(--surface);
   border-color: var(--line);
-  transition: border-color 140ms ease, box-shadow 140ms ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .tj-root .tj-equity-input:focus {
@@ -1943,7 +1943,7 @@
   border: 1px solid var(--line);
   box-shadow: var(--tj-card-shadow);
   overflow: hidden;
-  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: transform var(--dur-base) ease, box-shadow var(--dur-base) ease, border-color var(--dur-base) ease;
 }
 
 .tj-root .tj-kpi::before {
@@ -2155,7 +2155,7 @@
   border-radius: 6px 6px 2px 2px;
   background: color-mix(in srgb, var(--tj-neg) 60%, transparent);
   overflow: hidden;
-  transition: filter 140ms ease;
+  transition: filter var(--dur-fast) ease;
   min-height: 2px;
 }
 
@@ -2364,7 +2364,7 @@
 .tj-root .tj-board-row {
   border-radius: 11px;
   padding: 10px 12px;
-  transition: transform 140ms ease, border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  transition: transform var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .tj-root .tj-board-row:hover {
@@ -2661,7 +2661,7 @@
   text-align: left;
   font: inherit;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color var(--dur-fast) ease, background var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 .tj-edge-clickable:hover {
   border-color: color-mix(in srgb, var(--accent, #58a6ff) 55%, transparent);

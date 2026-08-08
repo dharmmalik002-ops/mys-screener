@@ -1,4 +1,5 @@
 import type { IndustryGroupStockItem, MarketKey } from "../lib/api";
+import { useModalShell } from "../lib/useModalShell";
 
 type ChartGroupMember = IndustryGroupStockItem & {
   group_member_rank: number;
@@ -51,9 +52,18 @@ export function ChartGroupModal({
   onAddToWatchlist,
   onOpenGroupsPage,
 }: ChartGroupModalProps) {
+  // Had no Escape handling and no scroll lock — the page behind kept scrolling.
+  const shellRef = useModalShell(true, onClose);
   return (
     <div className="chart-group-modal-backdrop" onClick={onClose}>
-      <div className="chart-group-modal" onClick={(event) => event.stopPropagation()}>
+      <div
+        ref={shellRef as React.RefObject<HTMLDivElement>}
+        className="chart-group-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Group detail"
+        onClick={(event) => event.stopPropagation()}
+      >
         <button type="button" className="chart-group-modal-close" onClick={onClose}>
           Close
         </button>

@@ -61,7 +61,7 @@
   font-size: 0.84rem;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .ss-new-btn:hover {
@@ -124,7 +124,7 @@
   color: var(--ss-text);
   font-size: 0.85rem;
   font-family: inherit;
-  transition: border-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
 }
 
 .ss-search-input::placeholder {
@@ -154,7 +154,7 @@
   font-size: 0.74rem;
   font-weight: 500;
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: border-color var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .ss-chip:hover {
@@ -209,7 +209,7 @@
   color: var(--ss-text);
   text-align: left;
   cursor: pointer;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform var(--dur-fast) ease;
 }
 
 .ss-nav-item:hover {
@@ -240,7 +240,7 @@
   border: 1px solid var(--ss-border);
   background: var(--ss-bg);
   color: var(--ss-primary);
-  transition: all 120ms ease;
+  transition: all var(--dur-fast) ease;
 }
 
 .ss-nav-text {
@@ -306,7 +306,7 @@
   border: 1px solid transparent;
   border-radius: 8px;
   background: transparent;
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .ss-saved-item:hover {
@@ -389,7 +389,7 @@
   background: transparent;
   color: var(--ss-muted);
   cursor: pointer;
-  transition: all 120ms ease;
+  transition: background var(--dur-fast) ease, color var(--dur-fast) ease;
 }
 
 .ss-saved-delete:hover {
@@ -497,7 +497,7 @@
   font-weight: 600;
   font-size: 0.82rem;
   cursor: pointer;
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) ease;
 }
 
 .ss-pro-cta:hover {
