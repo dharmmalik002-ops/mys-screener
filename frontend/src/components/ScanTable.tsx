@@ -52,6 +52,10 @@ const ChartGridModal = lazy(() =>
 );
 const SCAN_SLOT_GAP = 6;
 const SCAN_ROW_SLOT_HEIGHT = 76;
+/* Extra height a row occupies while its "why did this match" panel is open.
+   useVirtualRows already takes a per-item getHeight, so expansion works WITH
+   virtualization instead of forcing us to disable it. */
+const SCAN_ROW_DETAIL_HEIGHT = 132;
 const SCAN_HEADER_SLOT_HEIGHT = 64;
 
 type ScanTableEntry =
@@ -427,8 +431,9 @@ function scanRowSubtitle(item: ScanMatch) {
   return listingDate ? `${baseLabel} · Listed ${listingDate}` : baseLabel;
 }
 
-function scanEntryHeight(entry: ScanTableEntry) {
-  return entry.type === "header" ? SCAN_HEADER_SLOT_HEIGHT : SCAN_ROW_SLOT_HEIGHT;
+function scanEntryHeight(entry: ScanTableEntry, expandedKey: string | null) {
+  if (entry.type === "header") return SCAN_HEADER_SLOT_HEIGHT;
+  return entry.key === expandedKey ? SCAN_ROW_SLOT_HEIGHT + SCAN_ROW_DETAIL_HEIGHT : SCAN_ROW_SLOT_HEIGHT;
 }
 
 type ArrangementMode = "flat" | "sector" | "group";
@@ -523,6 +528,9 @@ export function ScanTable({
   // 200 hits contain ABCD?"). Empty = show everything. Matches against symbol
   // OR company name, case-insensitive.
   const [symbolFilter, setSymbolFilter] = useState("");
+  // One row open at a time — this is a "why did this match" detail, not a
+  // comparison view, and it keeps the virtual height bookkeeping trivial.
+  const [expandedRowKey, setExpandedRowKey] = useState<string | null>(null);
 
   // Reset the symbol filter whenever the underlying result set changes (a
   // different scanner ran), so the input doesn't silently hide rows from the
@@ -753,7 +761,7 @@ export function ScanTable({
   const { containerRef, scrollToKey, totalHeight, visibleRows } = useVirtualRows({
     items: tableEntries,
     getKey: (entry) => entry.key,
-    getHeight: scanEntryHeight,
+    getHeight: (entry) => scanEntryHeight(entry, expandedRowKey),
   });
   const lastAutoScrolledEntryKeyRef = useRef<string | null>(null);
 
@@ -966,10 +974,25 @@ export function ScanTable({
     const isActive = selectedSymbol === item.symbol;
     const volBadge = scan?.id === "volume" ? volumeTierBadge(item) : null;
 
+    const isExpanded = expandedRowKey === entry.key;
+    const detailChips: Array<{ label: string; value: string }> = [];
+    if (item.gap_pct !== null && item.gap_pct !== undefined && Number.isFinite(item.gap_pct)) {
+      detailChips.push({ label: "Gap", value: `${item.gap_pct >= 0 ? "+" : ""}${item.gap_pct.toFixed(2)}%` });
+    }
+    if (item.rs_rating !== null && item.rs_rating !== undefined) {
+      detailChips.push({ label: "RS", value: String(Math.round(item.rs_rating)) });
+    }
+    if (item.relative_volume) {
+      detailChips.push({ label: "RVOL", value: `${item.relative_volume.toFixed(2)}x` });
+    }
+    if (item.volume_push_date) detailChips.push({ label: "Volume push", value: item.volume_push_date });
+    if (item.earnings_date) detailChips.push({ label: "Earnings", value: item.earnings_date });
+    if (item.session_date) detailChips.push({ label: "Session", value: item.session_date });
+
     return (
       <div
         key={entry.key}
-        className={`scan-row st-row${isActive ? " active" : ""}`}
+        className={`scan-row st-row${isActive ? " active" : ""}${isExpanded ? " is-expanded" : ""}`}
         ref={
           shouldVirtualize
             ? undefined
@@ -1120,17 +1143,72 @@ export function ScanTable({
           </span>
         ) : null}
 
-        <button
-          type="button"
-          className="st-watch-btn"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRequestAddToWatchlist(item.symbol);
-          }}
-          title={`Add ${item.symbol} to watchlist`}
-        >
-          <Plus size={14} strokeWidth={2.4} />
-        </button>
+        <span className="st-row-tools">
+          <button
+            type="button"
+            className={`st-expand-btn${isExpanded ? " open" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setExpandedRowKey((current) => (current === entry.key ? null : entry.key));
+            }}
+            aria-expanded={isExpanded}
+            title={isExpanded ? "Hide why this matched" : "Why did this match?"}
+          >
+            <ChevronDown size={14} strokeWidth={2.4} />
+          </button>
+          <button
+            type="button"
+            className="st-watch-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRequestAddToWatchlist(item.symbol);
+            }}
+            title={`Add ${item.symbol} to watchlist`}
+          >
+            <Plus size={14} strokeWidth={2.4} />
+          </button>
+        </span>
+
+        {isExpanded ? (
+          // These fields were already loaded and surfaced only as a native
+          // browser tooltip, which is invisible on touch and uncopyable.
+          <div className="st-row-detail" onClick={(e) => e.stopPropagation()}>
+            {item.reasons && item.reasons.length > 0 ? (
+              <div className="st-detail-block">
+                <span className="st-detail-label">Why it matched</span>
+                <ul className="st-detail-reasons">
+                  {item.reasons.map((reason) => (
+                    <li key={reason}>{reason}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="st-detail-block">
+                <span className="st-detail-label">Why it matched</span>
+                <p className="st-detail-muted">This scanner did not record per-stock reasons.</p>
+              </div>
+            )}
+
+            <div className="st-detail-block">
+              {detailChips.length > 0 ? (
+                <div className="st-detail-chips">
+                  {detailChips.map((chip) => (
+                    <span key={chip.label} className="st-detail-chip">
+                      <span className="st-detail-chip-label">{chip.label}</span>
+                      {chip.value}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              {item.also_in && item.also_in.length > 0 ? (
+                <div className="st-detail-alsoin">
+                  <span className="st-detail-label">Also flagged by</span>
+                  <span className="st-detail-scanners">{item.also_in.join(" · ")}</span>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   };

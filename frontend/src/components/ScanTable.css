@@ -453,3 +453,142 @@
   color: var(--st-primary, var(--accent));
   font-weight: 600;
 }
+
+/* ==========================================================================
+   Row expansion — "why did this match?"
+   The reasons/also_in/gap/earnings fields were already loaded and surfaced
+   only as a native title= tooltip: invisible on touch, uncopyable, and gone
+   the moment the pointer moves.
+   ========================================================================== */
+
+.scan-row.is-expanded {
+  /* The row grows via the virtualizer's per-item height, so the detail panel
+     just flows into the extra space rather than overlapping the next row. */
+  align-content: start;
+}
+
+.st-row-tools {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.st-expand-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--st-border, #e5e7eb);
+  border-radius: 8px;
+  background: var(--st-surface, #ffffff);
+  color: var(--st-text-soft);
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, transform 160ms ease;
+}
+
+.st-expand-btn:hover {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.st-expand-btn.open {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  transform: rotate(180deg);
+}
+
+.st-expand-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.st-row-detail {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 16px;
+  margin-top: 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--st-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+  cursor: default;
+}
+
+@media (max-width: 900px) {
+  .st-row-detail { grid-template-columns: minmax(0, 1fr); }
+}
+
+.st-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.st-detail-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--st-text-soft);
+}
+
+.st-detail-reasons {
+  margin: 0;
+  padding-left: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--st-text);
+}
+
+.st-detail-muted {
+  margin: 0;
+  font-size: 12px;
+  color: var(--st-text-soft);
+}
+
+.st-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.st-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid var(--st-border);
+  border-radius: 999px;
+  background: var(--st-surface);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--st-text);
+}
+
+.st-detail-chip-label {
+  font-family: var(--font-display, inherit);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--st-text-soft);
+}
+
+.st-detail-alsoin {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.st-detail-scanners {
+  font-size: 12px;
+  color: var(--st-text);
+}
