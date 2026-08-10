@@ -7,15 +7,14 @@ name: Breakout follow-through stats
 # session is included. ~25 minutes of CPU for a 12-week window over ~1,350
 # symbols, which is why this is a nightly job rather than an API endpoint.
 #
-# Reaching the HF Space: this job only commits to git. The Space is updated by
-# daily-bhavcopy.yml, which rsyncs the repo and force-pushes — so stats written
-# at 8:00 PM IST land on the Space at the *next* bhavcopy run (~4:23 PM IST the
-# following trading day). The Markets page therefore trails by one session.
-# Deliberate: adding a second force-push to the Space from here would give two
-# workflows write access to production for no gain, since the figures are daily
-# anyway. If same-evening freshness is ever wanted, the fix is to move this job
-# into daily-bhavcopy.yml ahead of its deploy step and accept ~25 extra minutes
-# before prices go live — a worse trade for a page that reads weekly statistics.
+# Reaching the HF Space: the commit below deliberately does NOT carry [skip ci].
+# deploy.yml already triggers on pushes touching backend/**, and this job writes
+# backend/data/breakout_stats.json — which deploy.yml does not exclude from its
+# rsync. So the existing, proven deploy path carries the stats to the Space the
+# same evening, with no second force-push and no extra credentials here. (The
+# bhavcopy job uses [skip ci] because it force-pushes to the Space itself; this
+# one has no such step, so skipping CI would strand the file in git until the
+# next bhavcopy run — roughly a day of staleness for no reason.)
 
 on:
   schedule:
@@ -95,7 +94,8 @@ jobs:
           fi
           AS_OF=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['as_of_session'])")
           SIGS=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['signals'])")
-          git commit -m "data: breakout follow-through stats through ${AS_OF} (${SIGS} signals) [skip ci]"
+          # No [skip ci]: deploy.yml must fire so the Space picks this up tonight.
+          git commit -m "data: breakout follow-through stats through ${AS_OF} (${SIGS} signals)"
           # Same race-proofing as the bhavcopy job: feature commits land on main
           # while this long job runs, so a plain push is rejected with
           # "fetch first". Rebase onto the moved main and retry once.
