@@ -188,6 +188,23 @@ export function RegimeBrief({ market }: Props) {
         </div>
       </div>
 
+      {facts.expectancy ? (
+        <div className={`rb-edge ${facts.expectancy.clears_breakeven ? "rb-edge-ok" : "rb-edge-short"}`}>
+          <span className="rb-edge-label">The arithmetic</span>
+          <span>
+            {facts.expectancy.wins_per_100_trades} wins and{" "}
+            {facts.expectancy.losses_per_100_trades} losses per 100 trades. Break-even needs{" "}
+            <strong>{pct(facts.expectancy.breakeven_win_rate)}</strong>; you are at{" "}
+            <strong>{pct(facts.expectancy.observed_win_rate)}</strong>
+            {facts.expectancy.clears_breakeven
+              ? " — clearing it."
+              : ` — ${facts.expectancy.shortfall_pts.toFixed(1)} points short.`}{" "}
+            Expected <strong>{facts.expectancy.expected_pct_per_trade.toFixed(2)}%</strong> per trade.
+          </span>
+          <span className="rb-edge-caveat">{facts.expectancy.assumption}</span>
+        </div>
+      ) : null}
+
       <div className="rb-narrative">
         {brief.narrative.split("\n\n").map((para, i) => (
           <p key={i}>{para}</p>

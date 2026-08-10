@@ -137,10 +137,32 @@ def build_facts(stats: dict[str, Any]) -> dict[str, Any] | None:
             "pct_reached_big_move": overall.get("pct_reached_big_move"),
             "pct_of_big_movers_that_closed_near_high": overall.get("pct_big_move_held"),
         },
+        # Deltas, plus BOTH levels they were computed from. Without the prior
+        # level present, the model reconstructs it by adding the delta to
+        # `this_week` — which mixes the two bases and produced a fabricated
+        # "prior week's 39.9%" in one production brief, in the same sentence as
+        # the correct "+6.7 points". Give it the pair so there is nothing to
+        # infer.
         "vs_prior_week": {
             "win_rate": delta("win_rate"),
             "median_max_move_pct": delta("median_max_move_pct"),
             "pct_closed_near_high": delta("pct_closed_near_high"),
+        },
+        "like_for_like_levels": {
+            "note": (
+                "Both weeks scored at the same short horizon. These are the ONLY "
+                "two numbers the week-over-week change may be quoted against — "
+                "they are not comparable with `this_week`, which uses the full horizon."
+            ),
+            "horizon_sessions": comparable.get("horizon_sessions"),
+            "this_week": {
+                key: delta_overall.get(key)
+                for key in ("win_rate", "median_max_move_pct", "pct_closed_near_high")
+            },
+            "prior_week": {
+                key: prior_overall.get(key)
+                for key in ("win_rate", "median_max_move_pct", "pct_closed_near_high")
+            },
         },
         "setups": [
             {
@@ -164,8 +186,67 @@ def build_facts(stats: dict[str, Any]) -> dict[str, Any] | None:
             for name in ("ipo", "leading_groups", "lagging_groups")
         },
         "best_runners": (detail_week.get("overall") or {}).get("examples") or [],
-        "rules": stats.get("rules") or {},
+        "rules": _rules_with_derived(stats.get("rules") or {}),
+        "expectancy": _expectancy(stats.get("rules") or {}, overall.get("win_rate")),
     }
+
+
+def _expectancy(rules: dict[str, Any], win_rate: Any) -> dict[str, Any] | None:
+    """The break-even arithmetic, computed rather than left to the model.
+
+    This is the heart of the brief — whether the observed win rate clears the
+    bar the stop and target imply. Left to the model it produced worked
+    examples like "33 wins and 67 losses per 100 trades, 165% profit versus
+    201% loss": correct arithmetic, but numbers that appear nowhere in the data
+    and cannot be checked against the table beside them. Computing it here makes
+    those figures facts.
+    """
+    try:
+        stop = float(rules.get("stop_pct") or 0)
+        win = float(rules.get("win_pct") or 0)
+        rate = float(win_rate)
+    except (TypeError, ValueError):
+        return None
+    if stop <= 0 or win <= 0:
+        return None
+
+    breakeven = 100.0 * stop / (stop + win)
+    # Deliberately simple: assumes every win exits at +win_pct and every loss at
+    # -stop_pct, and ignores timeouts, which exit wherever price happens to be.
+    # Stated in `assumption` so the brief can carry the caveat.
+    per_trade = (rate / 100.0) * win - (1.0 - rate / 100.0) * stop
+    return {
+        "breakeven_win_rate": round(breakeven, 1),
+        "observed_win_rate": round(rate, 1),
+        "clears_breakeven": rate >= breakeven,
+        "shortfall_pts": round(breakeven - rate, 1) if rate < breakeven else 0.0,
+        "expected_pct_per_trade": round(per_trade, 2),
+        "wins_per_100_trades": round(rate),
+        "losses_per_100_trades": round(100 - rate),
+        "assumption": (
+            "Every win taken at the target and every loss at the stop; timeouts "
+            "ignored. A rough guide to the edge, not a backtest of your execution."
+        ),
+    }
+
+
+def _rules_with_derived(rules: dict[str, Any]) -> dict[str, Any]:
+    """Pre-compute the ratios the brief keeps reaching for.
+
+    The prompt forbids deriving numbers, but reward-to-risk is so central to the
+    argument that the model computed 5.0/3.0 itself in one run out of three.
+    Supplying it removes the temptation rather than relying on the instruction —
+    the same fix that stopped it inventing a prior-week level.
+    """
+    enriched = dict(rules)
+    try:
+        stop = float(rules.get("stop_pct") or 0)
+        win = float(rules.get("win_pct") or 0)
+        if stop > 0 and win > 0:
+            enriched["reward_to_risk_at_target"] = round(win / stop, 2)
+    except (TypeError, ValueError):
+        pass
+    return enriched
 
 
 PROMPT = """You are writing the "Market Breakout Conditions & Situational Awareness" brief \
@@ -176,8 +257,16 @@ the app's own scanners over historical daily bars, then simulating the trade und
 in `rules`.
 
 ABSOLUTE CONSTRAINT: you may not state any number that is not present in this JSON. Do not \
-estimate, round differently, extrapolate, or infer a figure. If something is not measured, \
-say it is not measured. Inventing a statistic makes this brief worse than useless.
+estimate, round differently, extrapolate, or infer a figure. Never derive one number from \
+others — do not add a change to a level, subtract, average, or compute a percentage. If a \
+figure you want is not in the JSON, say it is not measured. Inventing a statistic makes this \
+brief worse than useless.
+
+TWO MEASUREMENT BASES, NEVER MIX THEM: `this_week` is measured over the full horizon. \
+`vs_prior_week` and `like_for_like_levels` are measured over a shorter horizon shared by both \
+weeks. Quote a week-over-week change ONLY against the pair in `like_for_like_levels`. Adding \
+`vs_prior_week.win_rate.change` to `this_week.win_rate` is meaningless and produces a number \
+that does not exist.
 
 FACTS:
 {facts}
@@ -195,8 +284,9 @@ same {horizon} sessions so the change is real rather than an artefact of recency
 threshold, and crucially `pct_of_big_movers_that_closed_near_high` — the share of those big \
 movers that finished near their highs. It is a share of *stocks*, not a share of the move \
 retained, so do not phrase it as "77% of the move was held".
-4. What this means arithmetically for a trader risking the stop in `rules` — whether the \
-available reward supports the observed win rate.
+4. What this means arithmetically: use the pre-computed `expectancy` block — break-even win \
+rate, whether the observed rate clears it, and the expected percent per trade. Quote those \
+figures directly; do NOT work the arithmetic yourself. Carry its `assumption` caveat.
 5. How the two cohorts differ: recent IPOs versus everything else, and stocks in \
 top-decile industry groups versus the rest.
 6. Concrete operational guidance, separately for a fast trader who rotates capital quickly \

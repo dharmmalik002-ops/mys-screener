@@ -2504,6 +2504,21 @@ export type RegimeAnalysis = {
       pct_of_big_movers_that_closed_near_high: number | null;
     };
     vs_prior_week: Record<string, RegimeDelta | null>;
+    expectancy: {
+      breakeven_win_rate: number;
+      observed_win_rate: number;
+      clears_breakeven: boolean;
+      shortfall_pts: number;
+      expected_pct_per_trade: number;
+      wins_per_100_trades: number;
+      losses_per_100_trades: number;
+      assumption: string;
+    } | null;
+    like_for_like_levels: {
+      horizon_sessions: number | null;
+      this_week: Record<string, number | null>;
+      prior_week: Record<string, number | null>;
+    } | null;
     setups: RegimeSetupRow[];
     setups_below_sample_threshold: number;
     min_sample_for_setup: number;
@@ -2518,6 +2533,13 @@ export type RegimeAnalysis = {
  * Breakout follow-through brief for the Markets page. The backend caches this
  * per stats file, so `refresh` is only for an explicit user-triggered rerun.
  */
+function readLevelMap(input: unknown): Record<string, number | null> {
+  const source = isRecord(input) ? input : {};
+  const out: Record<string, number | null> = {};
+  for (const [key, value] of Object.entries(source)) out[key] = readNullableNumber(value);
+  return out;
+}
+
 function readDeltas(input: unknown): Record<string, RegimeDelta | null> {
   const source = isRecord(input) ? input : {};
   const out: Record<string, RegimeDelta | null> = {};
@@ -2603,6 +2625,25 @@ export function getMarketRegimeAnalysis(market: MarketKey, refresh = false) {
             ),
           },
           vs_prior_week: readDeltas(vsPrior),
+          expectancy: isRecord(factsRaw.expectancy)
+            ? {
+                breakeven_win_rate: readNumber(factsRaw.expectancy.breakeven_win_rate),
+                observed_win_rate: readNumber(factsRaw.expectancy.observed_win_rate),
+                clears_breakeven: Boolean(factsRaw.expectancy.clears_breakeven),
+                shortfall_pts: readNumber(factsRaw.expectancy.shortfall_pts),
+                expected_pct_per_trade: readNumber(factsRaw.expectancy.expected_pct_per_trade),
+                wins_per_100_trades: readNumber(factsRaw.expectancy.wins_per_100_trades),
+                losses_per_100_trades: readNumber(factsRaw.expectancy.losses_per_100_trades),
+                assumption: readString(factsRaw.expectancy.assumption),
+              }
+            : null,
+          like_for_like_levels: isRecord(factsRaw.like_for_like_levels)
+            ? {
+                horizon_sessions: readNullableNumber(factsRaw.like_for_like_levels.horizon_sessions),
+                this_week: readLevelMap(factsRaw.like_for_like_levels.this_week),
+                prior_week: readLevelMap(factsRaw.like_for_like_levels.prior_week),
+              }
+            : null,
           setups: Array.isArray(factsRaw.setups)
             ? factsRaw.setups.filter(isRecord).map((row) => ({
                 label: readString(row.label),

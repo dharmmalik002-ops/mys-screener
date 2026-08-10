@@ -2614,7 +2614,12 @@ class DashboardService:
 
         result = market_regime.envelope(facts, brief, stats)
         result["available"] = True
-        self._regime_cache = {cache_key: result}
+        # Only cache the AI narrative. Caching the computed fallback would pin a
+        # single transient Gemini failure (quota, timeout) in place until the
+        # next nightly stats file — the page would sit on the plain brief all
+        # day even after the API recovered. Recomputing the fallback is cheap.
+        if brief.get("source") == "ai":
+            self._regime_cache = {cache_key: result}
         return result
 
     async def get_ai_swing_analysis(self, symbol: str, as_of: str | None = None) -> dict:
