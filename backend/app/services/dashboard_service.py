@@ -328,6 +328,8 @@ class DashboardService:
         _backend_root = Path(__file__).resolve().parents[2]
         self._money_flow_cache_path = _backend_root / "data" / "money_flow_reports.json"
         self._money_flow_stock_cache_path = _backend_root / "data" / "money_flow_stock_ideas.json"
+        # Regime brief, keyed by the stats file it was written from.
+        self._regime_cache: dict[str, dict] = {}
         self._scan_history_store = ScanHistoryStore(
             settings.database_url,
             Path(getattr(provider, "backend_root", _backend_root)) / "data" / "scan_history.json",
@@ -2565,6 +2567,55 @@ class DashboardService:
         except Exception as exc:
             logger.warning("scan decoration failed for %s: %s", scan_key, exc)
             return items
+
+    async def get_market_regime_analysis(self, *, refresh: bool = False) -> dict:
+        """Situational-awareness brief for the Markets page.
+
+        Statistics come from `breakout_stats.json`, written nightly by
+        scripts/generate_breakout_stats.py. The AI only writes prose over those
+        numbers — see app/services/market_regime.py for why that split is strict.
+        Cached per stats file so re-opening the page does not burn AI quota; the
+        underlying stats only change once a day anyway.
+        """
+        from app.services import market_regime
+
+        stats = await asyncio.to_thread(market_regime.load_stats, self._legacy_data_dir())
+        if not stats:
+            return {
+                "available": False,
+                "reason": (
+                    "Breakout statistics have not been generated yet. "
+                    "Run scripts/generate_breakout_stats.py to build them."
+                ),
+            }
+
+        facts = market_regime.build_facts(stats)
+        if not facts:
+            return {"available": False, "reason": "Breakout statistics contain no completed weeks yet."}
+
+        cache_key = f"{stats.get('generated_at')}|{facts.get('current_week')}"
+        if not refresh:
+            cached = self._regime_cache.get(cache_key)
+            if cached:
+                return cached
+
+        brief = market_regime.deterministic_brief(facts)
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is not None and getattr(ai, "available", False):
+            try:
+                raw = await ai._generate_json(market_regime.build_prompt(facts))
+                validated = market_regime.validate_narrative(raw)
+                if validated:
+                    brief = validated
+                else:
+                    logger.warning("market-regime: AI narrative failed validation; using computed brief")
+            except Exception as exc:
+                logger.warning("market-regime: AI narrative unavailable (%s); using computed brief", exc)
+
+        result = market_regime.envelope(facts, brief, stats)
+        result["available"] = True
+        self._regime_cache = {cache_key: result}
+        return result
 
     async def get_ai_swing_analysis(self, symbol: str, as_of: str | None = None) -> dict:
         """Gather full context (bars, snapshot, group, regime, band, headlines)

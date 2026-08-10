@@ -245,6 +245,15 @@ def build_router(service):
 
         return await asyncio.to_thread(build_rank_history_series, limit)
 
+    @router.get("/markets/regime-analysis")
+    async def markets_regime_analysis(
+        market: str = Query(default="india"),
+        refresh: bool = Query(default=False),
+    ):
+        # Breakout follow-through brief. Heavy lifting happens nightly in
+        # scripts/generate_breakout_stats.py; this only reads and narrates.
+        return await resolve_service(market).get_market_regime_analysis(refresh=refresh)
+
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
         return resolve_service(market).get_watchlists_state()
@@ -577,6 +586,10 @@ def build_router(service):
     @router.get("/{market_name}/groups", response_model=IndustryGroupsResponse)
     async def namespaced_groups(market_name: str):
         return await resolve_service(market_name).get_industry_groups()
+
+    @router.get("/{market_name}/markets/regime-analysis")
+    async def namespaced_markets_regime_analysis(market_name: str, refresh: bool = Query(default=False)):
+        return await resolve_service(market_name).get_market_regime_analysis(refresh=refresh)
 
     @router.get("/{market_name}/groups/rank-history")
     async def namespaced_groups_rank_history(market_name: str, limit: int = Query(default=30, ge=2, le=90)):

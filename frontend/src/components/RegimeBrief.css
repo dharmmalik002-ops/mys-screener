@@ -1,0 +1,290 @@
+/* ==========================================================================
+   Market regime brief
+   Narrative and evidence side by side — the prose is model-written, so the
+   numbers it may cite are always rendered next to it.
+   ========================================================================== */
+
+.rb {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: var(--bg-alt);
+  padding: 18px 20px 16px;
+  margin-bottom: 18px;
+}
+
+.rb-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.rb-headline {
+  flex: 1 1 320px;
+  min-width: 0;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.rb-stance {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  flex: none;
+}
+
+.rb-constructive { color: var(--positive); background: color-mix(in srgb, var(--positive) 12%, transparent); }
+.rb-mixed        { color: var(--text-muted); background: color-mix(in srgb, var(--text) 8%, transparent); }
+.rb-defensive    { color: var(--negative); background: color-mix(in srgb, var(--negative) 12%, transparent); }
+
+.rb-refresh {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+
+.rb-refresh:hover:not(:disabled) { color: var(--text); border-color: var(--line-strong); }
+.rb-refresh:disabled { opacity: 0.5; cursor: progress; }
+
+.rb-spin { animation: rb-spin 900ms linear infinite; }
+
+@keyframes rb-spin { to { transform: rotate(360deg); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-spin { animation: none; }
+}
+
+.rb-provisional {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid var(--warning, #f59e0b);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--warning, #f59e0b) 10%, transparent);
+  font-size: 12.5px;
+  color: var(--text);
+}
+
+/* --- KPI strip --- */
+
+.rb-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.rb-kpi {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.rb-kpi-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rb-kpi strong {
+  font-size: 20px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.rb-kpi em {
+  font-style: normal;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rb-kpi em.pos { color: var(--positive); }
+.rb-kpi em.neg { color: var(--negative); }
+.rb-kpi em.rb-flat { color: var(--text-muted); }
+
+/* --- Narrative --- */
+
+.rb-narrative {
+  max-width: 78ch;   /* long prose needs a measure, not the full page width */
+  margin-bottom: 18px;
+}
+
+.rb-narrative p {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.68;
+  color: var(--text);
+}
+
+.rb-narrative p:last-child { margin-bottom: 0; }
+
+/* --- Evidence tables --- */
+
+.rb-tables {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 16px;
+}
+
+@media (max-width: 860px) {
+  .rb-tables { grid-template-columns: minmax(0, 1fr); }
+}
+
+.rb-table-wrap { min-width: 0; }
+
+.rb-table-wrap h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rb-note {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-muted);
+  opacity: 0.85;
+}
+
+/* Wide tables scroll inside their own box so the page never scrolls sideways. */
+.rb-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+}
+
+.rb-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.rb-table th,
+.rb-table td {
+  padding: 7px 10px;
+  text-align: left;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--line);
+}
+
+.rb-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.rb-table tbody tr:last-child th,
+.rb-table tbody tr:last-child td { border-bottom: 0; }
+
+.rb-table .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.rb-table td.pos { color: var(--positive); font-weight: 600; }
+.rb-table td.neg { color: var(--negative); font-weight: 600; }
+
+.rb-none {
+  padding: 14px 10px;
+  text-align: center;
+  color: var(--text-muted);
+}
+
+/* --- Footer --- */
+
+.rb-foot {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.rb-foot p {
+  margin: 0 0 6px;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.rb-foot p:last-child { margin-bottom: 0; }
+.rb-source { opacity: 0.9; }
+
+/* --- States --- */
+
+.rb-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-muted);
+}
+
+.rb-empty p { margin: 0; font-size: 13px; }
+
+.rb-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rb-skeleton span {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--text) 6%, transparent),
+    color-mix(in srgb, var(--text) 12%, transparent),
+    color-mix(in srgb, var(--text) 6%, transparent)
+  );
+  background-size: 200% 100%;
+  animation: rb-shimmer 1.4s ease-in-out infinite;
+}
+
+.rb-skeleton span:nth-child(1) { width: 42%; }
+.rb-skeleton span:nth-child(2) { width: 88%; }
+.rb-skeleton span:nth-child(3) { width: 66%; }
+
+@keyframes rb-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rb-skeleton span { animation: none; }
+}

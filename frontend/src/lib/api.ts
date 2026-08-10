@@ -2446,6 +2446,193 @@ export function getGroupRankHistory(market: MarketKey, limit = 30) {
   );
 }
 
+
+// --- Market regime brief ---------------------------------------------------
+// Follow-through statistics from replaying the scanners over historical bars,
+// plus a narrative written strictly over those numbers. See
+// backend/app/services/market_regime.py.
+
+export type RegimeSetupRow = {
+  label: string;
+  signals: number;
+  win_rate: number;
+  median_max_move_pct: number;
+  median_sessions_held: number;
+  pct_closed_near_high: number;
+};
+
+/** A week-over-week change with its direction stated, not left to a sign. */
+export type RegimeDelta = {
+  change: number;
+  direction: "improved" | "deteriorated" | "unchanged";
+  magnitude: number;
+};
+
+export type RegimeCohort = {
+  signals: number | null;
+  win_rate: number | null;
+  median_max_move_pct: number | null;
+};
+
+export type RegimeAnalysis = {
+  available: boolean;
+  reason?: string;
+  generated_at?: string | null;
+  stats_generated_at?: string | null;
+  as_of_session?: string | null;
+  brief?: {
+    headline: string;
+    narrative: string;
+    stance: "constructive" | "mixed" | "defensive";
+    source: "ai" | "computed";
+  } | null;
+  facts?: {
+    current_week: string;
+    prior_week: string | null;
+    comparison_horizon_sessions: number | null;
+    comparison_is_like_for_like: boolean;
+    universe: { symbols_replayed: number | null; sessions_replayed: number | null; signals: number | null };
+    this_week: {
+      signals: number | null;
+      resolved: number | null;
+      still_open: number | null;
+      win_rate: number | null;
+      median_max_move_pct: number | null;
+      median_sessions_held: number | null;
+      pct_closed_near_high: number | null;
+      pct_reached_big_move: number | null;
+      pct_of_big_movers_that_closed_near_high: number | null;
+    };
+    vs_prior_week: Record<string, RegimeDelta | null>;
+    setups: RegimeSetupRow[];
+    setups_below_sample_threshold: number;
+    min_sample_for_setup: number;
+    cohorts: Record<string, RegimeCohort>;
+    best_runners: Array<{ symbol: string; trigger_date: string; max_move_pct: number; final_pct: number; sessions_held: number; result: string }>;
+  } | null;
+  rules?: Record<string, unknown> | null;
+};
+
+
+/**
+ * Breakout follow-through brief for the Markets page. The backend caches this
+ * per stats file, so `refresh` is only for an explicit user-triggered rerun.
+ */
+function readDeltas(input: unknown): Record<string, RegimeDelta | null> {
+  const source = isRecord(input) ? input : {};
+  const out: Record<string, RegimeDelta | null> = {};
+  for (const [key, value] of Object.entries(source)) {
+    if (!isRecord(value)) {
+      out[key] = null;
+      continue;
+    }
+    const dir = readString(value.direction, "unchanged");
+    out[key] = {
+      change: readNumber(value.change),
+      direction: dir === "improved" || dir === "deteriorated" ? dir : "unchanged",
+      magnitude: readNumber(value.magnitude, Math.abs(readNumber(value.change))),
+    };
+  }
+  return out;
+}
+
+export function getMarketRegimeAnalysis(market: MarketKey, refresh = false) {
+  return request<RegimeAnalysis>(
+    `/api/markets/regime-analysis?market=${market}${refresh ? "&refresh=true" : ""}`,
+    undefined,
+    undefined,
+    (raw): RegimeAnalysis => {
+      const value = isRecord(raw) ? raw : {};
+      if (!value.available) {
+        return { available: false, reason: readString(value.reason, "Not available yet.") };
+      }
+      const factsRaw = isRecord(value.facts) ? value.facts : {};
+      const briefRaw = isRecord(value.brief) ? value.brief : {};
+      const readCohort = (input: unknown): RegimeCohort => {
+        const c = isRecord(input) ? input : {};
+        return {
+          signals: readNullableNumber(c.signals),
+          win_rate: readNullableNumber(c.win_rate),
+          median_max_move_pct: readNullableNumber(c.median_max_move_pct),
+        };
+      };
+      const cohortsRaw = isRecord(factsRaw.cohorts) ? factsRaw.cohorts : {};
+      const cohorts: Record<string, RegimeCohort> = {};
+      for (const [key, val] of Object.entries(cohortsRaw)) cohorts[key] = readCohort(val);
+
+      const thisWeek = isRecord(factsRaw.this_week) ? factsRaw.this_week : {};
+      const vsPrior = isRecord(factsRaw.vs_prior_week) ? factsRaw.vs_prior_week : {};
+      const universe = isRecord(factsRaw.universe) ? factsRaw.universe : {};
+
+      const stanceRaw = readString(briefRaw.stance, "mixed");
+      const stance = stanceRaw === "constructive" || stanceRaw === "defensive" ? stanceRaw : "mixed";
+      const sourceRaw = readString(briefRaw.source, "computed");
+
+      return {
+        available: true,
+        generated_at: readString(value.generated_at) || null,
+        stats_generated_at: readString(value.stats_generated_at) || null,
+        as_of_session: readString(value.as_of_session) || null,
+        brief: {
+          headline: readString(briefRaw.headline),
+          narrative: readString(briefRaw.narrative),
+          stance,
+          source: sourceRaw === "ai" ? "ai" : "computed",
+        },
+        facts: {
+          current_week: readString(factsRaw.current_week),
+          prior_week: readString(factsRaw.prior_week) || null,
+          comparison_horizon_sessions: readNullableNumber(factsRaw.comparison_horizon_sessions),
+          comparison_is_like_for_like: Boolean(factsRaw.comparison_is_like_for_like),
+          universe: {
+            symbols_replayed: readNullableNumber(universe.symbols_replayed),
+            sessions_replayed: readNullableNumber(universe.sessions_replayed),
+            signals: readNullableNumber(universe.signals),
+          },
+          this_week: {
+            signals: readNullableNumber(thisWeek.signals),
+            resolved: readNullableNumber(thisWeek.resolved),
+            still_open: readNullableNumber(thisWeek.still_open),
+            win_rate: readNullableNumber(thisWeek.win_rate),
+            median_max_move_pct: readNullableNumber(thisWeek.median_max_move_pct),
+            median_sessions_held: readNullableNumber(thisWeek.median_sessions_held),
+            pct_closed_near_high: readNullableNumber(thisWeek.pct_closed_near_high),
+            pct_reached_big_move: readNullableNumber(thisWeek.pct_reached_big_move),
+            pct_of_big_movers_that_closed_near_high: readNullableNumber(
+              thisWeek.pct_of_big_movers_that_closed_near_high,
+            ),
+          },
+          vs_prior_week: readDeltas(vsPrior),
+          setups: Array.isArray(factsRaw.setups)
+            ? factsRaw.setups.filter(isRecord).map((row) => ({
+                label: readString(row.label),
+                signals: readNumber(row.signals),
+                win_rate: readNumber(row.win_rate),
+                median_max_move_pct: readNumber(row.median_max_move_pct),
+                median_sessions_held: readNumber(row.median_sessions_held),
+                pct_closed_near_high: readNumber(row.pct_closed_near_high),
+              }))
+            : [],
+          setups_below_sample_threshold: readNumber(factsRaw.setups_below_sample_threshold),
+          min_sample_for_setup: readNumber(factsRaw.min_sample_for_setup, 8),
+          cohorts,
+          best_runners: Array.isArray(factsRaw.best_runners)
+            ? factsRaw.best_runners.filter(isRecord).map((row) => ({
+                symbol: readString(row.symbol),
+                trigger_date: readString(row.trigger_date),
+                max_move_pct: readNumber(row.max_move_pct),
+                final_pct: readNumber(row.final_pct),
+                sessions_held: readNumber(row.sessions_held),
+                result: readString(row.result),
+              }))
+            : [],
+        },
+        rules: isRecord(value.rules) ? value.rules : null,
+      };
+    },
+  );
+}
+
 export function getChartGridSeries(symbols: string[], timeframe: ChartGridTimeframe, market: MarketKey) {
   return request<ChartGridSeriesResponse>(
     `/api/chart-grid-series?symbols=${encodeURIComponent(symbols.join(","))}&timeframe=${timeframe}&market=${market}`,

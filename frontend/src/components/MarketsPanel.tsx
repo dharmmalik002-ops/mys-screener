@@ -12,6 +12,7 @@ import {
   type XpBreadthScore,
 } from "../lib/api";
 import { IndexCandleChart } from "./IndexCandleChart";
+import { RegimeBrief } from "./RegimeBrief";
 import { Panel } from "./Panel";
 
 import "./MarketsPanel.css";
@@ -801,6 +802,10 @@ export function MarketsPanel({
       subtitle={`Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`}
       className="markets-panel"
     >
+      {/* Breakout conditions — what the tape actually paid, ahead of the
+          metrics the rest of the page breaks down. */}
+      <RegimeBrief market="india" />
+
       {/* ===== Market Outlook — the backbone ===== */}
       {outlook ? (
         <section className="mko-hero" aria-label="Market outlook">

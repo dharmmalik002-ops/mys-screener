@@ -1,0 +1,106 @@
+name: Breakout follow-through stats
+
+# Replays every scanner over the cached daily bars and measures what happened
+# after each signal. Feeds the Markets page regime brief.
+#
+# Runs after the daily bhavcopy job has landed the day's bars, so the newest
+# session is included. ~25 minutes of CPU for a 12-week window over ~1,350
+# symbols, which is why this is a nightly job rather than an API endpoint.
+#
+# Reaching the HF Space: this job only commits to git. The Space is updated by
+# daily-bhavcopy.yml, which rsyncs the repo and force-pushes — so stats written
+# at 8:00 PM IST land on the Space at the *next* bhavcopy run (~4:23 PM IST the
+# following trading day). The Markets page therefore trails by one session.
+# Deliberate: adding a second force-push to the Space from here would give two
+# workflows write access to production for no gain, since the figures are daily
+# anyway. If same-evening freshness is ever wanted, the fix is to move this job
+# into daily-bhavcopy.yml ahead of its deploy step and accept ~25 extra minutes
+# before prices go live — a worse trade for a page that reads weekly statistics.
+
+on:
+  schedule:
+    - cron: "30 14 * * 1-5" # 8:00 PM IST, well after the bhavcopy retries finish
+  workflow_dispatch:
+    inputs:
+      weeks:
+        description: "How many ISO weeks back to replay"
+        required: false
+        default: "12"
+
+concurrency:
+  # Never let two replays race to write the same file.
+  group: breakout-stats
+  cancel-in-progress: false
+
+jobs:
+  replay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+
+      - name: Replay scanners and build stats
+        run: |
+          set -euo pipefail
+          cd backend
+          python3 scripts/generate_breakout_stats.py --weeks "${{ github.event.inputs.weeks || '12' }}"
+
+      - name: Sanity-check the output
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, sys
+          from pathlib import Path
+
+          path = Path("backend/data/breakout_stats.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          weeks = data.get("weeks") or []
+
+          # A run that produced no weeks, or no signals, means the replay silently
+          # failed (missing chart cache, universe drift). Committing that would
+          # blank the Markets page, so fail loudly instead.
+          if not weeks:
+              sys.exit("no weeks produced — refusing to commit an empty stats file")
+          if not data.get("signals"):
+              sys.exit("no signals produced — refusing to commit an empty stats file")
+
+          resolved = sum(int((w.get("overall") or {}).get("resolved") or 0) for w in weeks)
+          if resolved == 0:
+              sys.exit("no signal resolved in any week — simulation produced nothing usable")
+
+          print(f"{len(weeks)} weeks, {data['signals']} signals, {resolved} resolved")
+          print(f"as_of={data.get('as_of_session')} symbols={data.get('symbols_replayed')}")
+          PY
+
+      - name: Commit stats
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add backend/data/breakout_stats.json
+          if git diff --cached --quiet; then
+            echo "Stats unchanged — nothing to commit."
+            exit 0
+          fi
+          AS_OF=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['as_of_session'])")
+          SIGS=$(python3 -c "import json; print(json.load(open('backend/data/breakout_stats.json'))['signals'])")
+          git commit -m "data: breakout follow-through stats through ${AS_OF} (${SIGS} signals) [skip ci]"
+          # Same race-proofing as the bhavcopy job: feature commits land on main
+          # while this long job runs, so a plain push is rejected with
+          # "fetch first". Rebase onto the moved main and retry once.
+          if ! git push origin HEAD:main; then
+            git fetch origin main
+            git rebase origin/main
+            git push origin HEAD:main
+          fi
