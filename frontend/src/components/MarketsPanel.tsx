@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend } from "recharts";
-import { ArrowDownRight, ArrowUpRight, Compass, Minus } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 
 import {
   getChart,
   getMarketEnvironment,
+  getMarketsBreadthHistory,
+  getMarketsExposure,
   getScanCounts,
   type ChartBar,
+  type HistoricalBreadthDataPoint,
   type MarketEnvironmentResponse,
   type MarketEnvDay,
+  type MarketsExposure,
   type XpBreadthScore,
 } from "../lib/api";
 import { IndexCandleChart } from "./IndexCandleChart";
 import { RegimeBrief } from "./RegimeBrief";
 import { Panel } from "./Panel";
+import { BreadthTimeline } from "./markets/BreadthTimeline";
+import { ContextStrip } from "./markets/ContextStrip";
+import { Disclosure } from "./markets/Disclosure";
+import { ExposureVerdict } from "./markets/ExposureVerdict";
 
 import "./MarketsPanel.css";
 
@@ -382,29 +390,12 @@ function buildUnderneath(
     }
   }
 
-  // --- Bottom line: what to actually do. ---
-  if (small) {
-    const trendBit =
-      small.stateScore >= 2
-        ? "Smallcap 250 is in a confirmed uptrend"
-        : small.stateScore >= 1
-          ? "Smallcap 250 is repairing above its 50-DMA"
-          : small.stateScore >= -0.5
-            ? "Smallcap 250 is pulling back inside a larger uptrend"
-            : "Smallcap 250 is in a downtrend";
-    const xpBit = xp
-      ? xp.xp_score >= 15
-        ? "breadth is swing-friendly, so winners can be held for the full move"
-        : xp.xp_score >= 12
-          ? "breadth is improving but not confirmed — scale in rather than jumping in"
-          : "breadth is still choppy, so expect stock-specific moves, quick rotations, and keep position counts low"
-      : "";
-    const level = small.sma50 !== null ? ` The line in the sand stays the 50-DMA at ${Math.round(small.sma50).toLocaleString("en-IN")}: above it, buy your setups; below it, protect capital first.` : "";
-    paras.push({
-      title: "Bottom line for the coming weeks",
-      text: `${trendBit}${xpBit ? `, and ${xpBit}` : ""}.${level}`,
-    });
-  }
+  // The "Bottom line for the coming weeks" paragraph was removed here. It
+  // restated Smallcap trend + XP breadth + the 50-DMA level as advice, which
+  // is now the exposure verdict at the top of the page — computed from
+  // measured performance rather than narrated from three indicators none of
+  // which tested predictive. `smallcapNote` was a near-verbatim second copy of
+  // the same sentence and went with it.
 
   return paras.length ? { paras } : null;
 }
@@ -534,6 +525,21 @@ export function MarketsPanel({
   const [indexHealth, setIndexHealth] = useState<Record<string, IndexHealth | null>>({});
   const [indexBars, setIndexBars] = useState<Record<string, ChartBar[]>>({});
   const [setupCounts, setSetupCounts] = useState<Record<string, number> | null>(null);
+  // The verdict and the breadth history are independent of /market-environment
+  // on purpose: the headline must still render when that slow endpoint fails.
+  const [exposure, setExposure] = useState<MarketsExposure | null>(null);
+  const [breadth, setBreadth] = useState<HistoricalBreadthDataPoint[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void getMarketsExposure("india")
+      .then((resp) => { if (active) setExposure(resp); })
+      .catch(() => { if (active) setExposure(null); });
+    void getMarketsBreadthHistory("india", 750)
+      .then((resp) => { if (active) setBreadth(resp); })
+      .catch(() => { if (active) setBreadth([]); });
+    return () => { active = false; };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -743,16 +749,31 @@ export function MarketsPanel({
       </Panel>
     );
   }
-  if (state === "error" && !data) {
+  // /market-environment is the slowest, least reliable dependency on this page.
+  // The verdict, the context strip and the breadth history all come from
+  // elsewhere, so they still render when it fails — previously a failure here
+  // silently removed the whole page including sections it does not feed.
+  // Last ~60 sessions of 50-DMA participation, for the context sparkline.
+  const breadthSeries = breadth
+    .slice(-60)
+    .map((p) => p.above_ma50_pct)
+    .filter((v): v is number => typeof v === "number");
+
+  if ((state === "error" && !data) || !today) {
     return (
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
+        <ExposureVerdict data={exposure} />
+        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+        <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth.length} sessions`}>
+          <BreadthTimeline points={breadth} />
+        </Disclosure>
         <div className="mk-loading">
-          Could not load market environment. <button type="button" onClick={load}>Retry</button>
+          Could not load the counted metrics.{" "}
+          <button type="button" onClick={load}>Retry</button>
         </div>
       </Panel>
     );
   }
-  if (!today) return null;
 
   const structural = (today.structural ?? {}) as Record<string, number | null>;
   const ft3 = (today.followthrough?.d3 ?? {}) as Record<string, number | null>;
@@ -769,32 +790,6 @@ export function MarketsPanel({
   const outlook = buildOutlook(xpBreadth, data, indexHealth);
   const underneath = buildUnderneath(data, setupCounts, indexHealth["NIFTYSMLCAP250.NS"] ?? null, xpBreadth);
   const smallcap = indexHealth["NIFTYSMLCAP250.NS"] ?? null;
-  const smallcapNote = smallcap
-    ? (() => {
-        const trendBit =
-          smallcap.stateScore >= 2
-            ? "is in a confirmed uptrend"
-            : smallcap.stateScore >= 1
-              ? "is attempting a recovery above its 50-DMA"
-              : smallcap.stateScore >= -0.5
-                ? "is pulling back inside a larger uptrend"
-                : "is in a downtrend";
-        const tapeBit = xpBreadth
-          ? xpBreadth.xp_score >= 15
-            ? "and breadth supports an index-wide advance"
-            : xpBreadth.xp_score >= 12
-              ? "while breadth is only slowly improving — expect a grind, not a melt-up"
-              : "but the broad tape is choppy — expect stock-specific moves rather than an index-wide run"
-          : "";
-        const levelBit =
-          smallcap.sma50 !== null
-            ? smallcap.above50
-              ? `Holding above the 50-DMA (${Math.round(smallcap.sma50).toLocaleString("en-IN")}) keeps that view intact; losing it turns the coming weeks corrective.`
-              : `Reclaiming the 50-DMA (${Math.round(smallcap.sma50).toLocaleString("en-IN")}) is the trigger that would turn the coming weeks constructive.`
-            : "";
-        return `Smallcap 250 ${trendBit} ${tapeBit}. ${levelBit}`;
-      })()
-    : null;
 
   return (
     <Panel
@@ -802,25 +797,34 @@ export function MarketsPanel({
       subtitle={`Follow-through health · ${data?.date ?? ""} · ${today.universe} liquid stocks measured`}
       className="markets-panel"
     >
-      {/* Breakout conditions — what the tape actually paid, ahead of the
-          metrics the rest of the page breaks down. */}
-      <RegimeBrief market="india" />
+      {/* One verdict. This replaced three competing top-level verdicts that
+          used different vocabularies and could disagree on screen. */}
+      <ExposureVerdict data={exposure} />
+      <ContextStrip data={exposure} breadthSeries={breadthSeries} />
 
+      <Disclosure
+        id="breadth"
+        summary="Breadth, 3 years"
+        hint={breadth.length ? `${breadth.length} sessions` : undefined}
+      >
+        <BreadthTimeline points={breadth} />
+      </Disclosure>
+
+      <Disclosure id="edge" summary="Full breakout evidence" hint="setups, cohorts, arithmetic">
+        <RegimeBrief market="india" />
+      </Disclosure>
+
+      <Disclosure id="internals" summary="Index trend, internals and counted metrics">
       {/* ===== Market Outlook — the backbone ===== */}
       {outlook ? (
-        <section className="mko-hero" aria-label="Market outlook">
-          <div className={`mko-verdict mko-${outlook.tone}`}>
-            <div className="mko-verdict-kicker"><Compass size={13} strokeWidth={2.2} /> Outlook · next 2–6 weeks</div>
-            <div className="mko-verdict-word">{outlook.verdict}</div>
-            <div className="mko-verdict-score">
-              <div className="mko-meter" role="img" aria-label={`Outlook score ${outlook.score} of 100`}>
-                <div className="mko-meter-fill" style={{ width: `${Math.round((outlook.score + 100) / 2)}%` }} />
-                <div className="mko-meter-mid" />
-              </div>
-              <span>{outlook.score > 0 ? `+${outlook.score}` : outlook.score} / ±100</span>
-            </div>
-            <p className="mko-guidance">{outlook.guidance}</p>
-          </div>
+        <section className="mko-hero mko-hero--evidence" aria-label="Weight of evidence">
+          {/* The RISK-ON…RISK-OFF verdict word, its ±100 meter and its guidance
+              sentence were deleted here. They were the second of three
+              competing top-level verdicts and, measured on the live page, they
+              disagreed — this block read CONSTRUCTIVE while the tape score read
+              PROTECT and the exposure rule read Defensive. The evidence and the
+              what-would-change-my-mind list are kept: those informed rather
+              than concluded. */}
           <div className="mko-why">
             <div className="mko-why-title">Why — the three heaviest pieces of evidence</div>
             <ul>
@@ -869,7 +873,6 @@ export function MarketsPanel({
               </div>
             </div>
             <IndexCandleChart bars={bars} height={featured ? 360 : 280} />
-            {featured && smallcapNote ? <p className="mko-featured-note">{smallcapNote}</p> : null}
             {featured && smallcap ? (
               <div className="mko-levels">
                 <span>Levels that matter:</span>
@@ -949,11 +952,13 @@ export function MarketsPanel({
 
       <div className="mko-section-hdr">Under the hood — today's counted metrics</div>
 
-      {/* Verdict header */}
+      {/* The tape score, demoted from a top-level verdict to one metric among
+          many. It used to headline the page in a third vocabulary
+          (Press / Selective / Protect / Stand Aside) alongside two others. */}
       <div className="mk-header">
         <div className={`mk-score ${verdictClass(today.verdict)}`}>
           <strong>{num(today.score, 1)}</strong>
-          <span className="mk-verdict">{today.verdict}</span>
+          <span className="mk-verdict">Tape score · {today.verdict}</span>
         </div>
         <div className="mk-header-context">
           <div>
@@ -1462,6 +1467,7 @@ export function MarketsPanel({
           onClose={() => setGridModal(null)}
         />
       ) : null}
+      </Disclosure>
     </Panel>
   );
 }

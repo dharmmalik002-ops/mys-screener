@@ -168,13 +168,21 @@ export type MarketHealthResponse = {
   universes: UniverseBreadth[];
 };
 
+/**
+ * One session of universe breadth.
+ *
+ * Metrics are nullable because a moving average does not exist until it has
+ * enough history — the first ~190 sessions have a 20-DMA but no 200-SMA. The
+ * backend sends null rather than 0 so a chart draws a gap instead of a line
+ * crashing to zero.
+ */
 export type HistoricalBreadthDataPoint = {
   date: string;
-  above_ma20_pct: number;
-  above_ma50_pct: number;
-  above_sma200_pct: number;
-  new_high_52w_pct: number;
-  new_low_52w_pct: number;
+  above_ma20_pct: number | null;
+  above_ma50_pct: number | null;
+  above_sma200_pct: number | null;
+  new_high_52w_pct: number | null;
+  new_low_52w_pct: number | null;
 };
 
 export type HistoricalUniverseBreadth = {
@@ -2556,6 +2564,177 @@ function readDeltas(input: unknown): Record<string, RegimeDelta | null> {
     };
   }
   return out;
+}
+
+export type ExposureVerdict = {
+  available: boolean;
+  reason?: string | null;
+  exposure_pct: number | null;
+  band: string;
+  direction: "improving" | "deteriorating" | "stable" | "unknown";
+  direction_change_pts: number | null;
+  win_rate: number | null;
+  breakeven_win_rate: number | null;
+  clears_breakeven: boolean;
+  shortfall_pts: number | null;
+  expected_pct_per_trade: number | null;
+  weeks_used: string[];
+  weeks_excluded_unresolved: string[];
+  why: string;
+  caveat: string;
+  rules: Record<string, number | null>;
+};
+
+export type EdgeTrendPoint = {
+  week: string;
+  win_rate: number | null;
+  smoothed_win_rate: number | null;
+  exposure_pct: number | null;
+  eligible: boolean;
+  resolution_pct: number | null;
+};
+
+export type MarketsExposure = {
+  available: boolean;
+  reason: string | null;
+  as_of_session: string | null;
+  verdict: ExposureVerdict | null;
+  edge_trend: EdgeTrendPoint[];
+  context: {
+    participation: { value: number | null; above_ma50_pct: number | null; above_sma200_pct: number | null; as_of: string | null; note: string } | null;
+    xp_regime: { value: number | null; regime: string | null; as_of: string | null; note: string } | null;
+    distribution_days: {
+      as_of: string; count: number; window_sessions: number; pressure_label: string;
+      cluster_last_5: number; trails_price_by_sessions: number; note: string;
+      days: { date: string; close: number; change_pct: number; volume: number; prior_volume: number }[];
+    } | null;
+  };
+  sources: Record<string, unknown>;
+  methodology: string;
+};
+
+function readExposureVerdict(input: unknown): ExposureVerdict | null {
+  if (!isRecord(input)) return null;
+  const dir = readString(input.direction, "unknown");
+  return {
+    available: Boolean(input.available),
+    reason: typeof input.reason === "string" ? input.reason : null,
+    exposure_pct: readNullableNumber(input.exposure_pct),
+    band: readString(input.band),
+    direction:
+      dir === "improving" || dir === "deteriorating" || dir === "stable" ? dir : "unknown",
+    direction_change_pts: readNullableNumber(input.direction_change_pts),
+    win_rate: readNullableNumber(input.win_rate),
+    breakeven_win_rate: readNullableNumber(input.breakeven_win_rate),
+    clears_breakeven: Boolean(input.clears_breakeven),
+    shortfall_pts: readNullableNumber(input.shortfall_pts),
+    expected_pct_per_trade: readNullableNumber(input.expected_pct_per_trade),
+    weeks_used: readStringArray(input.weeks_used),
+    weeks_excluded_unresolved: readStringArray(input.weeks_excluded_unresolved),
+    why: readString(input.why),
+    caveat: readString(input.caveat),
+    rules: isRecord(input.rules)
+      ? Object.fromEntries(
+          Object.entries(input.rules).map(([k, v]) => [k, readNullableNumber(v)]),
+        )
+      : {},
+  };
+}
+
+export function getMarketsExposure(market: MarketKey = "india") {
+  return request<MarketsExposure>(
+    `/api/markets/exposure?market=${market}`,
+    undefined,
+    undefined,
+    (raw): MarketsExposure => {
+  const root = isRecord(raw) ? raw : {};
+  const context = isRecord(root.context) ? root.context : {};
+  const readNote = (value: unknown) => (isRecord(value) ? readString(value.note) : "");
+  return {
+    available: Boolean(root.available),
+    reason: typeof root.reason === "string" ? root.reason : null,
+    as_of_session: typeof root.as_of_session === "string" ? root.as_of_session : null,
+    verdict: readExposureVerdict(root.verdict),
+    edge_trend: mapArray(root.edge_trend, (item) => {
+      const r = isRecord(item) ? item : {};
+      return {
+        week: readString(r.week),
+        win_rate: readNullableNumber(r.win_rate),
+        smoothed_win_rate: readNullableNumber(r.smoothed_win_rate),
+        exposure_pct: readNullableNumber(r.exposure_pct),
+        eligible: Boolean(r.eligible),
+        resolution_pct: readNullableNumber(r.resolution_pct),
+      };
+    }),
+    context: {
+      participation: isRecord(context.participation)
+        ? {
+            value: readNullableNumber(context.participation.value),
+            above_ma50_pct: readNullableNumber(context.participation.above_ma50_pct),
+            above_sma200_pct: readNullableNumber(context.participation.above_sma200_pct),
+            as_of: typeof context.participation.as_of === "string" ? context.participation.as_of : null,
+            note: readNote(context.participation),
+          }
+        : null,
+      xp_regime: isRecord(context.xp_regime)
+        ? {
+            value: readNullableNumber(context.xp_regime.value),
+            regime: typeof context.xp_regime.regime === "string" ? context.xp_regime.regime : null,
+            as_of: typeof context.xp_regime.as_of === "string" ? context.xp_regime.as_of : null,
+            note: readNote(context.xp_regime),
+          }
+        : null,
+      distribution_days: isRecord(context.distribution_days)
+        ? {
+            as_of: readString(context.distribution_days.as_of),
+            count: readNumber(context.distribution_days.count),
+            window_sessions: readNumber(context.distribution_days.window_sessions, 25),
+            pressure_label: readString(context.distribution_days.pressure_label),
+            cluster_last_5: readNumber(context.distribution_days.cluster_last_5),
+            trails_price_by_sessions: readNumber(context.distribution_days.trails_price_by_sessions),
+            note: readNote(context.distribution_days),
+            days: mapArray(context.distribution_days.days, (item) => {
+              const r = isRecord(item) ? item : {};
+              return {
+                date: readString(r.date),
+                close: readNumber(r.close),
+                change_pct: readNumber(r.change_pct),
+                volume: readNumber(r.volume),
+                prior_volume: readNumber(r.prior_volume),
+              };
+            }),
+          }
+        : null,
+    },
+    sources: isRecord(root.sources) ? root.sources : {},
+    methodology: readString(root.methodology),
+  };
+    },
+  );
+}
+
+export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750) {
+  return request<HistoricalBreadthDataPoint[]>(
+    `/api/markets/breadth-history?market=${market}&days=${days}`,
+    undefined,
+    undefined,
+    (raw): HistoricalBreadthDataPoint[] => {
+  const root = isRecord(raw) ? raw : {};
+  const universes = Array.isArray(root.universes) ? root.universes : [];
+  const first = isRecord(universes[0]) ? universes[0] : {};
+  return mapArray(first.history, (item) => {
+    const r = isRecord(item) ? item : {};
+    return {
+      date: readString(r.date),
+      above_ma20_pct: readNullableNumber(r.above_ma20_pct),
+      above_ma50_pct: readNullableNumber(r.above_ma50_pct),
+      above_sma200_pct: readNullableNumber(r.above_sma200_pct),
+      new_high_52w_pct: readNullableNumber(r.new_high_52w_pct),
+      new_low_52w_pct: readNullableNumber(r.new_low_52w_pct),
+    };
+  });
+    },
+  );
 }
 
 export function getMarketRegimeAnalysis(market: MarketKey, refresh = false) {

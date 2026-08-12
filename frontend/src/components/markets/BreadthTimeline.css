@@ -1,0 +1,79 @@
+/* ==========================================================================
+   Breadth timeline — the only place a regime turn is visible
+   ========================================================================== */
+
+.mkb-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.mkb-now {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+
+.mkb-now strong {
+  font-size: 17px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.mkb-span {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.mkb-ranges {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.mkb-range {
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out);
+}
+
+.mkb-range:hover { color: var(--text); border-color: var(--line-strong); }
+
+.mkb-range.active {
+  color: var(--accent);
+  border-color: currentColor;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.mkb-chart {
+  /* Wide charts scroll inside their own box; the page never scrolls sideways. */
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.mkb-note {
+  margin: 8px 0 0;
+  max-width: 88ch;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mkb-range { transition: none; }
+}

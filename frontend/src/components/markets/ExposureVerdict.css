@@ -1,0 +1,168 @@
+/* ==========================================================================
+   Exposure verdict — the one thing the Markets page says
+   ========================================================================== */
+
+.mkx {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--text-muted);
+  border-radius: var(--radius-lg);
+  background: var(--bg-alt);
+  padding: 18px 20px 16px;
+  margin-bottom: 14px;
+}
+
+.mkx-ok     { border-left-color: var(--positive); }
+.mkx-warn   { border-left-color: var(--amber); }
+.mkx-danger { border-left-color: var(--negative); }
+
+.mkx-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.mkx-number {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mkx-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mkx-number strong {
+  font-size: 44px;
+  line-height: 1;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.mkx-band {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mkx-band em {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-style: normal;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+/* --- Ladder: makes the rule itself visible --- */
+
+.mkx-ladder {
+  display: flex;
+  gap: 4px;
+  flex: none;
+}
+
+.mkx-step {
+  min-width: 46px;
+  padding: 5px 8px;
+  text-align: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+  background: transparent;
+}
+
+.mkx-step.on {
+  color: var(--text);
+  border-color: currentColor;
+  background: color-mix(in srgb, var(--text) 8%, transparent);
+  font-weight: 650;
+}
+
+.mkx-ok .mkx-step.on     { color: var(--positive); background: color-mix(in srgb, var(--positive) 14%, transparent); }
+.mkx-warn .mkx-step.on   { color: var(--amber); background: color-mix(in srgb, var(--amber) 14%, transparent); }
+.mkx-danger .mkx-step.on { color: var(--negative); background: color-mix(in srgb, var(--negative) 14%, transparent); }
+
+/* --- Rationale + arithmetic --- */
+
+.mkx-why {
+  margin: 0 0 12px;
+  max-width: 78ch;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text);
+}
+
+.mkx-arith {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin: 0 0 12px;
+}
+
+.mkx-arith > div {
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg);
+}
+
+.mkx-arith dt {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.mkx-arith dd {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.mkx-arith dd.pos { color: var(--positive); }
+.mkx-arith dd.neg { color: var(--negative); }
+
+.mkx-basis {
+  margin: 0;
+  max-width: 88ch;
+  font-size: 11.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* --- Empty state --- */
+
+.mkx-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-left-color: var(--text-muted);
+  color: var(--text-muted);
+}
+
+.mkx-empty p { margin: 0; font-size: 13px; }
+
+@media (max-width: 620px) {
+  .mkx-number strong { font-size: 34px; }
+  .mkx-ladder { width: 100%; }
+  .mkx-step { flex: 1 1 0; min-width: 0; }
+}

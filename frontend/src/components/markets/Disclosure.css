@@ -1,0 +1,79 @@
+/* ==========================================================================
+   Markets disclosures
+   Collapsed rows are a fixed height so the closed rail and the loading
+   skeleton are the same size — the page must not reflow as data arrives.
+   ========================================================================== */
+
+.mk-disclosure {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--bg-alt);
+  margin-bottom: 8px;
+}
+
+.mk-disclosure > summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+/* The default marker is replaced by .mk-disclosure-chevron. */
+.mk-disclosure > summary::-webkit-details-marker { display: none; }
+.mk-disclosure > summary::marker { content: ""; }
+
+.mk-disclosure > summary:hover {
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.mk-disclosure > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.mk-disclosure-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mk-disclosure-hint {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.mk-disclosure-chevron {
+  flex: none;
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+
+.mk-disclosure[open] > summary > .mk-disclosure-chevron {
+  transform: rotate(180deg);
+}
+
+.mk-disclosure-body {
+  padding: 0 14px 14px;
+}
+
+.mk-disclosure[open] > summary {
+  border-bottom: 1px solid var(--line);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-disclosure > summary,
+  .mk-disclosure-chevron {
+    transition: none;
+  }
+}
