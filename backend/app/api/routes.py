@@ -8,6 +8,7 @@ from app.models.market import (
     ChartGridSeriesResponse,
     ChartGridTimeframe,
     ChartResponse,
+    HistoricalBreadthResponse,
     IndustryGroupsResponse,
     CompanyFundamentals,
     ConsolidatingScanRequest,
@@ -253,6 +254,22 @@ def build_router(service):
         # Breakout follow-through brief. Heavy lifting happens nightly in
         # scripts/generate_breakout_stats.py; this only reads and narrates.
         return await resolve_service(market).get_market_regime_analysis(refresh=refresh)
+
+    @router.get("/markets/exposure")
+    async def markets_exposure(market: str = Query(default="india")):
+        # The page's headline verdict. Deliberately not part of
+        # /markets/regime-analysis: that route is AI-gated and cached on the
+        # stats file alone, while this also depends on breadth and XP, which
+        # are rewritten on different schedules.
+        return await resolve_service(market).get_markets_exposure()
+
+    @router.get("/markets/breadth-history", response_model=HistoricalBreadthResponse)
+    async def markets_breadth_history(
+        market: str = Query(default="india"),
+        universe: str = Query(default="Nifty 500"),
+        days: int = Query(default=250, ge=20, le=900),
+    ):
+        return await resolve_service(market).get_historical_breadth(universe=universe, days=days)
 
     @router.get("/watchlists", response_model=WatchlistsStateResponse)
     async def watchlists(market: str = Query(default="india")):
@@ -590,6 +607,18 @@ def build_router(service):
     @router.get("/{market_name}/markets/regime-analysis")
     async def namespaced_markets_regime_analysis(market_name: str, refresh: bool = Query(default=False)):
         return await resolve_service(market_name).get_market_regime_analysis(refresh=refresh)
+
+    @router.get("/{market_name}/markets/exposure")
+    async def namespaced_markets_exposure(market_name: str):
+        return await resolve_service(market_name).get_markets_exposure()
+
+    @router.get("/{market_name}/markets/breadth-history", response_model=HistoricalBreadthResponse)
+    async def namespaced_markets_breadth_history(
+        market_name: str,
+        universe: str = Query(default="Nifty 500"),
+        days: int = Query(default=250, ge=20, le=900),
+    ):
+        return await resolve_service(market_name).get_historical_breadth(universe=universe, days=days)
 
     @router.get("/{market_name}/groups/rank-history")
     async def namespaced_groups_rank_history(market_name: str, limit: int = Query(default=30, ge=2, le=90)):

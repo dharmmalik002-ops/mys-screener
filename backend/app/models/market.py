@@ -1335,12 +1335,22 @@ class UniverseBreadth(BaseModel):
 
 
 class HistoricalBreadthDataPoint(BaseModel):
+    """One session of universe breadth.
+
+    Metrics are optional because a moving average does not exist until it has
+    enough history: the shipped file has 187 early sessions (2023-10-25 to
+    2024-06-07) with real 20/50-DMA readings and no 200-SMA yet. The writer
+    fills those with 0, which is indistinguishable from "no stock is above its
+    200-SMA" — a maximally bearish reading invented out of missing data. They
+    are served as null so a chart draws a gap rather than a crash to zero.
+    """
+
     date: str
-    above_ma20_pct: float
-    above_ma50_pct: float
-    above_sma200_pct: float
-    new_high_52w_pct: float
-    new_low_52w_pct: float
+    above_ma20_pct: float | None = None
+    above_ma50_pct: float | None = None
+    above_sma200_pct: float | None = None
+    new_high_52w_pct: float | None = None
+    new_low_52w_pct: float | None = None
 
 
 class HistoricalUniverseBreadth(BaseModel):

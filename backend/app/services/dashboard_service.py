@@ -330,6 +330,7 @@ class DashboardService:
         self._money_flow_stock_cache_path = _backend_root / "data" / "money_flow_stock_ideas.json"
         # Regime brief, keyed by the stats file it was written from.
         self._regime_cache: dict[str, dict] = {}
+        self._exposure_cache: dict[str, dict] = {}
         self._scan_history_store = ScanHistoryStore(
             settings.database_url,
             Path(getattr(provider, "backend_root", _backend_root)) / "data" / "scan_history.json",
@@ -2567,6 +2568,211 @@ class DashboardService:
         except Exception as exc:
             logger.warning("scan decoration failed for %s: %s", scan_key, exc)
             return items
+
+    async def get_historical_breadth(
+        self, *, universe: str = "Nifty 500", days: int = 250
+    ):
+        """Multi-year breadth series for one universe.
+
+        The file and the response models have both existed for a long time with
+        no route between them. The one thing this must do beyond reading the
+        file is filter to real sessions: the writer unions every stock's bar
+        index, which manufactures weekend rows (110 Sundays and a Saturday on
+        the shipped file) whose percentages come from a handful of symbols.
+        Served raw, those draw spikes on the chart that never happened.
+        """
+        from app.models.market import (
+            HistoricalBreadthDataPoint,
+            HistoricalBreadthResponse,
+            HistoricalUniverseBreadth,
+        )
+        from app.services import market_frame
+
+        data_dir = self._legacy_data_dir()
+        breadth_doc = self._read_json_dict(data_dir / "free_historical_breadth.json")
+
+        symbol_getter = getattr(self.provider, "_benchmark_symbol", None)
+        benchmark_symbol = symbol_getter() if callable(symbol_getter) else "^NSEI"
+        try:
+            index_bars = await self.provider.get_chart(benchmark_symbol, "1D", bars=900)
+        except Exception as exc:
+            logger.warning("breadth-history: index bars unavailable: %s", exc)
+            index_bars = []
+
+        def _build() -> HistoricalBreadthResponse:
+            sessions = market_frame.index_sessions(index_bars)
+            # Deliberately NOT market_frame.breadth_by_date: that helper requires
+            # a live 200-SMA because participation blends it, which would discard
+            # the 187 early sessions that have perfectly good 20/50-DMA readings.
+            # For a chart each series stands on its own.
+            rows = {
+                str(r.get("date")): r
+                for entry in (breadth_doc or {}).get("universes") or []
+                if str(entry.get("universe")) == universe
+                for r in entry.get("history") or []
+                if r.get("date")
+                and any(
+                    float(r.get(key) or 0) > 0
+                    for key in ("above_ma20_pct", "above_ma50_pct", "above_sma200_pct")
+                )
+            }
+            # The breadth file reaches back ~3 years but the index bar cache
+            # only covers ~2. Inside the calendar's span the calendar is
+            # authoritative (it also removes holidays); beyond it, fall back to
+            # a weekday filter so the extra year of history is not thrown away
+            # just because there is nothing to check it against. Weekend rows —
+            # the phantoms this filter exists for — are removed either way.
+            oldest_session = min(sessions) if sessions else None
+
+            def keep(iso: str) -> bool:
+                if oldest_session and iso >= oldest_session:
+                    return iso in sessions
+                try:
+                    return datetime.fromisoformat(iso).weekday() < 5
+                except ValueError:
+                    return False
+
+            keys = [iso for iso in sorted(rows) if keep(iso)]
+            def metric(iso: str, key: str) -> float | None:
+                """0 means "not computable yet" for a moving average, not zero percent."""
+                value = rows[iso].get(key)
+                try:
+                    out = float(value)
+                except (TypeError, ValueError):
+                    return None
+                if out <= 0 and key in ("above_ma20_pct", "above_ma50_pct", "above_sma200_pct"):
+                    return None
+                return out
+
+            points = [
+                HistoricalBreadthDataPoint(
+                    date=iso,
+                    above_ma20_pct=metric(iso, "above_ma20_pct"),
+                    above_ma50_pct=metric(iso, "above_ma50_pct"),
+                    above_sma200_pct=metric(iso, "above_sma200_pct"),
+                    new_high_52w_pct=metric(iso, "new_high_52w_pct"),
+                    new_low_52w_pct=metric(iso, "new_low_52w_pct"),
+                )
+                for iso in keys[-days:]
+            ]
+            return HistoricalBreadthResponse(
+                universes=[HistoricalUniverseBreadth(universe=universe, history=points)]
+            )
+
+        return await asyncio.to_thread(_build)
+
+    async def get_markets_exposure(self) -> dict:
+        """The Markets page verdict: how much capital should be at risk now.
+
+        Entirely computed — no AI anywhere on this path. That is deliberate:
+        this is the page's headline, so it must render when Gemini is quota'd
+        or down, which is exactly why it does not ride on
+        `get_market_regime_analysis`.
+
+        Cached on the modification times of every input, because they move on
+        different clocks: breadth is rewritten on each `refresh_snapshots`, XP
+        by the bhavcopy job, and the breakout stats nightly by
+        breakout-stats.yml. A single-source cache key would serve a stale
+        verdict whenever one of the others moved.
+        """
+        from app.services import distribution_days, exposure_model, market_frame, market_regime
+
+        data_dir = self._legacy_data_dir()
+        breadth_path = data_dir / "free_historical_breadth.json"
+        xp_path = data_dir / "xp_breadth_history.json"
+
+        stats = await asyncio.to_thread(market_regime.load_stats, data_dir)
+        if not stats:
+            return {
+                "available": False,
+                "reason": (
+                    "Breakout statistics have not been generated yet. "
+                    "Run scripts/generate_breakout_stats.py to build them."
+                ),
+            }
+
+        def _mtime(path: Path) -> float:
+            try:
+                return path.stat().st_mtime
+            except OSError:
+                return 0.0
+
+        # Same defensive resolution as _benchmark_close_series: the symbol lives
+        # on the provider, and demo/upstox providers may not expose it.
+        symbol_getter = getattr(self.provider, "_benchmark_symbol", None)
+        benchmark_symbol = symbol_getter() if callable(symbol_getter) else "^NSEI"
+        try:
+            index_bars = await self.provider.get_chart(benchmark_symbol, "1D", bars=520)
+        except Exception as exc:  # the verdict itself does not need the index
+            logger.warning("markets-exposure: index bars unavailable: %s", exc)
+            index_bars = []
+
+        last_session = ""
+        if index_bars:
+            tail = index_bars[-1]
+            last_session = str(getattr(tail, "time", None) or (tail or {}).get("time", ""))
+        cache_key = (
+            f"{_mtime(breadth_path)}|{_mtime(xp_path)}|{stats.get('generated_at')}|{last_session}"
+        )
+        cached = self._exposure_cache.get(cache_key)
+        if cached:
+            return cached
+
+        breadth_doc = self._read_json_dict(breadth_path)
+        xp_doc = self._read_json_dict(xp_path)
+
+        def _build() -> dict:
+            rows = market_frame.build_frame(index_bars, breadth_doc, xp_doc)
+            sources = market_frame.frame_sources(index_bars, breadth_doc, xp_doc)
+            rules = stats.get("rules") or {}
+            stop_pct = float(rules.get("stop_pct") or 0)
+            win_pct = float(rules.get("win_pct") or 0)
+
+            verdict = exposure_model.compute_exposure(stats, stop_pct=stop_pct, win_pct=win_pct)
+            latest = rows[-1] if rows else None
+            return {
+                "available": bool(verdict.get("available")),
+                "reason": verdict.get("reason"),
+                "as_of_session": sources.get("index_last_session"),
+                "verdict": verdict,
+                "edge_trend": exposure_model.exposure_series(
+                    stats, stop_pct=stop_pct, win_pct=win_pct
+                ),
+                "context": {
+                    "participation": {
+                        "value": latest.participation if latest else None,
+                        "above_ma50_pct": latest.above_ma50_pct if latest else None,
+                        "above_sma200_pct": latest.above_sma200_pct if latest else None,
+                        "as_of": latest.date if latest else None,
+                        "note": (
+                            "Shown as context only. Bucketed against forward 20-session index "
+                            "returns and drawdowns over ~500 sessions it was not monotone, so "
+                            "it deliberately does not feed the exposure number."
+                        ),
+                    },
+                    "xp_regime": {
+                        "value": latest.xp_score if latest else None,
+                        "regime": latest.xp_regime if latest else None,
+                        "as_of": latest.date if latest else None,
+                        "note": (
+                            "Coincident breadth measure. Joined to forward index returns its "
+                            "bands did not rank monotonically, so it is context, not an input."
+                        ),
+                    },
+                    "distribution_days": distribution_days.count_distribution_days(rows),
+                },
+                "sources": sources,
+                "methodology": (
+                    "A risk rule about present conditions, not a forecast. The exposure number "
+                    "comes only from whether breakouts are currently paying against the "
+                    "break-even implied by your own stop and target. Everything under "
+                    "`context` is displayed beside it, never folded into it."
+                ),
+            }
+
+        result = await asyncio.to_thread(_build)
+        self._exposure_cache = {cache_key: result}
+        return result
 
     async def get_market_regime_analysis(self, *, refresh: bool = False) -> dict:
         """Situational-awareness brief for the Markets page.

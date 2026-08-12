@@ -185,6 +185,12 @@ def build_facts(stats: dict[str, Any]) -> dict[str, Any] | None:
             }
             for name in ("ipo", "leading_groups", "lagging_groups")
         },
+        # The newest week is usually only part-resolved, and fast winners
+        # resolve first, so its win rate reads high (2026-W32: 33.2% at 38%
+        # resolved against 24.8% across the last four finished weeks). Ship the
+        # settled figure alongside it so the brief can lead with a number that
+        # will not move.
+        "settled": _settled_view(stats),
         "best_runners": (detail_week.get("overall") or {}).get("examples") or [],
         "rules": _rules_with_derived(stats.get("rules") or {}),
         "expectancy": _expectancy(stats.get("rules") or {}, overall.get("win_rate")),
@@ -249,12 +255,50 @@ def _rules_with_derived(rules: dict[str, Any]) -> dict[str, Any]:
     return enriched
 
 
+def _settled_view(stats: dict[str, Any]) -> dict[str, Any] | None:
+    """Win rate over recent fully-resolved weeks only.
+
+    Uses the same gate as the exposure verdict so the two can never disagree —
+    a page showing 33.2% beside a "Defensive, 24.8%" verdict would be its own
+    kind of contradiction.
+    """
+    from app.services import exposure_model
+
+    points = exposure_model.weekly_points(stats)
+    eligible = [p for p in points if p.eligible]
+    if len(eligible) < exposure_model.MIN_WEEKS_REQUIRED:
+        return None
+    window = eligible[-exposure_model.SMOOTHING_WEEKS:]
+    total = sum(p.resolved for p in window)
+    win_rate = (
+        round(sum(p.win_rate * p.resolved for p in window) / total, 2)
+        if total
+        else round(sum(p.win_rate for p in window) / len(window), 2)
+    )
+    return {
+        "win_rate": win_rate,
+        "weeks": [p.week for p in window],
+        "weeks_excluded_unresolved": [p.week for p in points if not p.eligible],
+        "min_resolution_pct": exposure_model.MIN_RESOLUTION_PCT,
+        "note": (
+            "Win rate across the most recent fully-resolved weeks. This is the figure to "
+            "lead with; the newest week is still open and reads high because fast winners "
+            "resolve first."
+        ),
+    }
+
+
 PROMPT = """You are writing the "Market Breakout Conditions & Situational Awareness" brief \
 for an Indian equities swing trader who holds positions from a few days to a few weeks.
 
 Below is a JSON block of measured statistics. Every signal was reconstructed by replaying \
 the app's own scanners over historical daily bars, then simulating the trade under the rules \
 in `rules`.
+
+RESOLUTION: `this_week` is usually only part-resolved and its win rate is biased upward, \
+because trades that win do so faster than trades that lose. Lead with `settled.win_rate` \
+when it is present, and never describe a week listed in `settled.weeks_excluded_unresolved` \
+as a finished result — say it is still open.
 
 ABSOLUTE CONSTRAINT: you may not state any number that is not present in this JSON. Do not \
 estimate, round differently, extrapolate, or infer a figure. Never derive one number from \
