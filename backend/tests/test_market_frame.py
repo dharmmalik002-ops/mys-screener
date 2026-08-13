@@ -145,6 +145,66 @@ class BuildFrameTests(unittest.TestCase):
         self.assertEqual(mf.build_frame(None or [], {"universes": []}, {"days": []}), [])
 
 
+class DegradedSourceTests(unittest.TestCase):
+    """The production failure: breadth absent must not empty the frame.
+
+    `free_historical_breadth.json` is gitignored and only written during a full
+    snapshot refresh, which the deployed Space never runs — so it is simply not
+    there. An inner join on it zeroed participation, the XP regime AND the
+    distribution days, even though the index bars and the XP file were both
+    present and current.
+    """
+
+    def test_frame_survives_missing_breadth(self):
+        bars = [bar("2026-08-11", 100.0), bar("2026-08-12", 101.0)]
+        xp = xp_doc([
+            {"date": "2026-08-11", "xp_score": 12.8, "regime": "Progressive Exposure", "ma20_pct": 47.5},
+            {"date": "2026-08-12", "xp_score": 13.1, "regime": "Progressive Exposure", "ma20_pct": 49.3},
+        ])
+        frame = mf.build_frame(bars, {"universes": []}, xp)
+        self.assertEqual(len(frame), 2)
+        self.assertEqual(frame[-1].xp_regime, "Progressive Exposure")
+        self.assertEqual(frame[-1].participation, 49.3)
+        self.assertEqual(frame[-1].participation_source, "xp-universe")
+        self.assertIsNone(frame[-1].above_ma50_pct)  # unknown, not zero
+
+    def test_breadth_is_preferred_over_xp_when_both_present(self):
+        bars = [bar("2026-08-12", 101.0)]
+        rows = [breadth_row("2026-08-12", 60.0, 50.0)]
+        xp = xp_doc([{"date": "2026-08-12", "xp_score": 13.1, "regime": "X", "ma20_pct": 49.3}])
+        frame = mf.build_frame(bars, breadth_doc(rows), xp)
+        self.assertEqual(frame[0].participation, 57.0)  # 0.7*60 + 0.3*50
+        self.assertEqual(frame[0].participation_source, "nifty500-breadth")
+
+    def test_frame_survives_missing_xp(self):
+        bars = [bar("2026-08-12", 101.0)]
+        rows = [breadth_row("2026-08-12", 60.0, 50.0)]
+        frame = mf.build_frame(bars, breadth_doc(rows), {"days": []})
+        self.assertEqual(len(frame), 1)
+        self.assertIsNone(frame[0].xp_score)
+        self.assertEqual(frame[0].participation_source, "nifty500-breadth")
+
+    def test_bare_price_bar_with_no_joined_data_is_skipped(self):
+        frame = mf.build_frame([bar("2026-08-12", 101.0)], {"universes": []}, {"days": []})
+        self.assertEqual(frame, [])
+
+    def test_participation_is_none_when_neither_source_has_it(self):
+        bars = [bar("2026-08-12", 101.0)]
+        xp = xp_doc([{"date": "2026-08-12", "xp_score": 13.1, "regime": "X"}])  # no ma20_pct
+        frame = mf.build_frame(bars, {"universes": []}, xp)
+        self.assertEqual(len(frame), 1)
+        self.assertIsNone(frame[0].participation)
+        self.assertIsNone(frame[0].participation_source)
+
+    def test_sources_reports_which_participation_source_is_live(self):
+        bars = [bar("2026-08-12", 101.0)]
+        xp = xp_doc([{"date": "2026-08-12", "xp_score": 13.1, "regime": "X", "ma20_pct": 49.3}])
+        src = mf.frame_sources(bars, {"universes": []}, xp)
+        self.assertEqual(src["participation_source"], "xp-universe")
+        self.assertEqual(src["breadth_sessions"], 0)
+        self.assertEqual(src["aligned_sessions"], 1)
+
+
 class FrameSourcesTests(unittest.TestCase):
     def test_counts_only_in_span_non_session_rows(self):
         """Breadth reaches further back than the index cache.

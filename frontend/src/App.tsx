@@ -318,9 +318,34 @@ function shouldPersistChartResponse(timeframe: ChartTimeframe) {
   return timeframe === "1D" || timeframe === "1W";
 }
 
-function isChartResponseCacheCompatible(payload: ChartResponse | null | undefined, savedAt?: string) {
+/** ISO date of the newest bar in a cached chart payload, or null. */
+function lastBarDate(payload: ChartResponse | null | undefined): string | null {
+  const bars = payload?.bars;
+  if (!bars?.length) return null;
+  const time = bars[bars.length - 1]?.time;
+  if (!Number.isFinite(time)) return null;
+  return new Date(time * 1000).toISOString().slice(0, 10);
+}
+
+function isChartResponseCacheCompatible(
+  payload: ChartResponse | null | undefined,
+  savedAt?: string,
+  latestSession?: string | null,
+) {
   if (!payload) {
     return false;
+  }
+  // A cached chart whose newest bar predates the session the rest of the app is
+  // showing is stale, however recently it was written. Age alone did not catch
+  // this: the in-memory cache was never given a `savedAt` at all, so it never
+  // expired within a session, and a chart fetched while the backend was still
+  // warming kept its short history until the tab was closed — which is what
+  // "no candles after 10 August" looked like.
+  if (latestSession) {
+    const newest = lastBarDate(payload);
+    if (newest && newest < latestSession) {
+      return false;
+    }
   }
   // Expire persisted chart cache entries older than 2 hours
   if (savedAt) {
@@ -1844,12 +1869,18 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
   const readCachedChart = (market: MarketKey, symbol: string, chartTimeframe: ChartTimeframe) => {
     const cacheKey = buildChartCacheKey(market, symbol, chartTimeframe);
+    // The session the rest of the app is displaying. Intraday timeframes are
+    // exempt — their bars are not daily and the comparison is meaningless.
+    const latestSession =
+      chartTimeframe === "1D" || chartTimeframe === "1W"
+        ? latestSessionDateRef.current
+        : null;
     const inMemory = chartResponseCacheRef.current[cacheKey];
-    if (isChartResponseCacheCompatible(inMemory)) {
+    if (isChartResponseCacheCompatible(inMemory, undefined, latestSession)) {
       return inMemory;
     }
     const persisted = persistedChartCacheRef.current[market][cacheKey];
-    return isChartResponseCacheCompatible(persisted?.payload, persisted?.saved_at)
+    return isChartResponseCacheCompatible(persisted?.payload, persisted?.saved_at, latestSession)
       ? persisted?.payload ?? null
       : null;
   };
@@ -2119,6 +2150,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   }, [activeMarket, useMarketRoutes]);
   const chartResponseCacheRef = useRef<Record<string, ChartResponse>>({});
+  // Newest completed session the app knows about, used to expire chart caches
+  // whose newest bar is older than it. A ref rather than state because
+  // readCachedChart is called from callbacks that must not re-bind on it.
+  const latestSessionDateRef = useRef<string | null>(null);
   const tickerRequestIdRef = useRef(0);
 
   const refreshTickerRibbon = () => {
@@ -2989,6 +3024,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       && scanner.id !== "demand-zone",
   );
   const displayScan = scanResults ? applyScannerDisplayAlias(scanResults.scan) : null;
+  // Track the newest session the app has seen so stale chart caches expire.
+  // Uses breadth_today.date (the EOD session the dashboard is built from)
+  // rather than generated_at, which moves whenever the payload is rebuilt.
+  useEffect(() => {
+    const session = dashboard?.breadth_today?.date ?? null;
+    if (session) latestSessionDateRef.current = session;
+  }, [dashboard]);
+
   const snapshotDateLabel = formatSnapshotDate(activeMarket, dashboard?.generated_at);
   const snapshotTimeLabel = formatSnapshotTime(activeMarket, dashboard?.generated_at);
   const activeWatchlist = watchlists.find((watchlist) => watchlist.id === activeWatchlistId) ?? watchlists[0] ?? null;

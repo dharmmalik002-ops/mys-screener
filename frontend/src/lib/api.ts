@@ -2601,7 +2601,17 @@ export type MarketsExposure = {
   verdict: ExposureVerdict | null;
   edge_trend: EdgeTrendPoint[];
   context: {
-    participation: { value: number | null; above_ma50_pct: number | null; above_sma200_pct: number | null; as_of: string | null; note: string } | null;
+    participation: {
+      value: number | null;
+      /** "nifty500-breadth" when the Nifty 500 file is present, else "xp-universe". */
+      source: string | null;
+      label: string;
+      universe: string;
+      above_ma50_pct: number | null;
+      above_sma200_pct: number | null;
+      as_of: string | null;
+      note: string;
+    } | null;
     xp_regime: { value: number | null; regime: string | null; as_of: string | null; note: string } | null;
     distribution_days: {
       as_of: string; count: number; window_sessions: number; pressure_label: string;
@@ -2670,6 +2680,9 @@ export function getMarketsExposure(market: MarketKey = "india") {
       participation: isRecord(context.participation)
         ? {
             value: readNullableNumber(context.participation.value),
+            source: typeof context.participation.source === "string" ? context.participation.source : null,
+            label: readString(context.participation.label, "participation"),
+            universe: readString(context.participation.universe),
             above_ma50_pct: readNullableNumber(context.participation.above_ma50_pct),
             above_sma200_pct: readNullableNumber(context.participation.above_sma200_pct),
             as_of: typeof context.participation.as_of === "string" ? context.participation.as_of : null,

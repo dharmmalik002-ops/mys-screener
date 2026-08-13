@@ -47,19 +47,29 @@ PARTICIPATION_SMA200_WEIGHT = 0.3
 
 @dataclass(frozen=True)
 class FrameRow:
-    """One real trading session with everything known about it."""
+    """One real trading session with everything known about it.
+
+    Breadth-derived fields are optional. `free_historical_breadth.json` is only
+    written during a full snapshot refresh, which the deployed Space never runs
+    (it serves committed snapshots plus the daily bhavcopy patch), and the file
+    is gitignored — so in production it is simply absent. An inner join on it
+    used to empty the whole frame, which took the XP regime and the distribution
+    days down with it even though both of their sources were present and
+    current. Everything here degrades independently now.
+    """
 
     date: str  # ISO, guaranteed to be a session present in the index calendar
     close: float
     high: float
     low: float
     volume: float  # 0.0 on the newest bar — see distribution_days for why
-    participation: float
-    above_ma20_pct: float
-    above_ma50_pct: float
-    above_sma200_pct: float
-    new_high_52w_pct: float
-    new_low_52w_pct: float
+    participation: float | None
+    participation_source: str | None  # "nifty500-breadth" | "xp-universe"
+    above_ma20_pct: float | None
+    above_ma50_pct: float | None
+    above_sma200_pct: float | None
+    new_high_52w_pct: float | None
+    new_low_52w_pct: float | None
     xp_score: float | None
     xp_regime: str | None
     ma10_pct: float | None
@@ -173,12 +183,32 @@ def build_frame(
     xp = xp_by_date(xp_doc)
 
     rows: list[FrameRow] = []
-    for iso in sorted(sessions.keys() & breadth.keys()):
+    # The index calendar defines the frame. Breadth and XP are joined onto it
+    # when present rather than gating it.
+    for iso in sorted(sessions.keys()):
         bar = sessions[iso]
-        b = breadth[iso]
-        above50 = _to_float(b.get("above_ma50_pct")) or 0.0
-        above200 = _to_float(b.get("above_sma200_pct")) or 0.0
+        b = breadth.get(iso) or {}
         x = xp.get(iso) or {}
+        if not b and not x:
+            continue  # a bare price bar carries nothing this module is for
+
+        above50 = _to_float(b.get("above_ma50_pct"))
+        above200 = _to_float(b.get("above_sma200_pct"))
+        ma20 = _to_float(x.get("ma20_pct"))
+
+        # Prefer the Nifty 500 blend; fall back to the XP universe's %-above-
+        # 20-EMA, which is a wider universe and a different average, so the
+        # source is recorded and surfaced rather than quietly substituted.
+        if above50 is not None and above200 is not None:
+            participation = participation_of(above50, above200)
+            source = "nifty500-breadth"
+        elif ma20 is not None:
+            participation = round(ma20, 2)
+            source = "xp-universe"
+        else:
+            participation = None
+            source = None
+
         rows.append(
             FrameRow(
                 date=iso,
@@ -186,16 +216,17 @@ def build_frame(
                 high=bar["high"],
                 low=bar["low"],
                 volume=bar["volume"],
-                participation=participation_of(above50, above200),
-                above_ma20_pct=_to_float(b.get("above_ma20_pct")) or 0.0,
+                participation=participation,
+                participation_source=source,
+                above_ma20_pct=_to_float(b.get("above_ma20_pct")),
                 above_ma50_pct=above50,
                 above_sma200_pct=above200,
-                new_high_52w_pct=_to_float(b.get("new_high_52w_pct")) or 0.0,
-                new_low_52w_pct=_to_float(b.get("new_low_52w_pct")) or 0.0,
+                new_high_52w_pct=_to_float(b.get("new_high_52w_pct")),
+                new_low_52w_pct=_to_float(b.get("new_low_52w_pct")),
                 xp_score=_to_float(x.get("xp_score")),
                 xp_regime=str(x["regime"]) if x.get("regime") else None,
                 ma10_pct=_to_float(x.get("ma10_pct")),
-                ma20_pct=_to_float(x.get("ma20_pct")),
+                ma20_pct=ma20,
             )
         )
     return rows
@@ -212,7 +243,9 @@ def frame_sources(
     sessions = index_sessions(index_bars)
     breadth = breadth_by_date(breadth_doc, universe)
     xp = xp_by_date(xp_doc)
-    aligned = sessions.keys() & breadth.keys()
+    # "Aligned" now means sessions carrying *any* joined data, since breadth is
+    # optional; the breadth-specific count is reported separately.
+    aligned = sessions.keys() & (breadth.keys() | xp.keys())
 
     # Only count non-session breadth rows inside the index calendar's own span;
     # breadth history reaches further back than the index cache, and counting
@@ -236,6 +269,10 @@ def frame_sources(
         "xp_generated_at": (xp_doc or {}).get("generated_at"),
         "xp_last_session": xp_last,
         "aligned_sessions": len(aligned),
+        "breadth_sessions": len(sessions.keys() & breadth.keys()),
+        "participation_source": (
+            "nifty500-breadth" if sessions.keys() & breadth.keys() else ("xp-universe" if xp else None)
+        ),
         "rows_dropped_non_session": dropped_non_session,
         "staleness_warning": warning,
     }

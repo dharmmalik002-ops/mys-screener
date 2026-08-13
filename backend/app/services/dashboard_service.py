@@ -2590,6 +2590,7 @@ class DashboardService:
 
         data_dir = self._legacy_data_dir()
         breadth_doc = self._read_json_dict(data_dir / "free_historical_breadth.json")
+        xp_doc = self._read_json_dict(data_dir / "xp_breadth_history.json")
 
         symbol_getter = getattr(self.provider, "_benchmark_symbol", None)
         benchmark_symbol = symbol_getter() if callable(symbol_getter) else "^NSEI"
@@ -2633,6 +2634,32 @@ class DashboardService:
                     return False
 
             keys = [iso for iso in sorted(rows) if keep(iso)]
+
+            # The Nifty 500 file is gitignored and only written by a full
+            # snapshot refresh, which the deployed Space never runs — so in
+            # production it is absent and this chart was rendering "no data".
+            # The XP history *is* deployed and updated daily and carries
+            # %-above-10/20-EMA over the full bhavcopy universe. Different
+            # universe and different averages, so the response says which one
+            # it served rather than passing it off as the same series.
+            served_universe = universe
+            if not keys:
+                xp_rows = market_frame.xp_by_date(xp_doc)
+                if xp_rows:
+                    served_universe = "NSE equities (XP universe)"
+                    rows = {
+                        iso: {
+                            "above_ma20_pct": r.get("ma20_pct"),
+                            "above_ma50_pct": None,
+                            "above_sma200_pct": None,
+                            "new_high_52w_pct": None,
+                            "new_low_52w_pct": None,
+                            "_ma10": r.get("ma10_pct"),
+                        }
+                        for iso, r in xp_rows.items()
+                        if (r.get("ma20_pct") or 0) > 0
+                    }
+                    keys = [iso for iso in sorted(rows) if keep(iso)]
             def metric(iso: str, key: str) -> float | None:
                 """0 means "not computable yet" for a moving average, not zero percent."""
                 value = rows[iso].get(key)
@@ -2656,7 +2683,7 @@ class DashboardService:
                 for iso in keys[-days:]
             ]
             return HistoricalBreadthResponse(
-                universes=[HistoricalUniverseBreadth(universe=universe, history=points)]
+                universes=[HistoricalUniverseBreadth(universe=served_universe, history=points)]
             )
 
         return await asyncio.to_thread(_build)
@@ -2741,6 +2768,17 @@ class DashboardService:
                 "context": {
                     "participation": {
                         "value": latest.participation if latest else None,
+                        "source": latest.participation_source if latest else None,
+                        "label": (
+                            "above the 50-DMA"
+                            if latest and latest.participation_source == "nifty500-breadth"
+                            else "above the 20-EMA"
+                        ),
+                        "universe": (
+                            "Nifty 500"
+                            if latest and latest.participation_source == "nifty500-breadth"
+                            else "NSE equities"
+                        ),
                         "above_ma50_pct": latest.above_ma50_pct if latest else None,
                         "above_sma200_pct": latest.above_sma200_pct if latest else None,
                         "as_of": latest.date if latest else None,
