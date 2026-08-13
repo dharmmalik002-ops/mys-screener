@@ -9,7 +9,7 @@ import {
   getMarketsExposure,
   getScanCounts,
   type ChartBar,
-  type HistoricalBreadthDataPoint,
+  type BreadthHistory,
   type MarketEnvironmentResponse,
   type MarketEnvDay,
   type MarketsExposure,
@@ -528,7 +528,7 @@ export function MarketsPanel({
   // The verdict and the breadth history are independent of /market-environment
   // on purpose: the headline must still render when that slow endpoint fails.
   const [exposure, setExposure] = useState<MarketsExposure | null>(null);
-  const [breadth, setBreadth] = useState<HistoricalBreadthDataPoint[]>([]);
+  const [breadth, setBreadth] = useState<BreadthHistory | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -537,7 +537,7 @@ export function MarketsPanel({
       .catch(() => { if (active) setExposure(null); });
     void getMarketsBreadthHistory("india", 750)
       .then((resp) => { if (active) setBreadth(resp); })
-      .catch(() => { if (active) setBreadth([]); });
+      .catch(() => { if (active) setBreadth(null); });
     return () => { active = false; };
   }, []);
 
@@ -754,9 +754,11 @@ export function MarketsPanel({
   // elsewhere, so they still render when it fails — previously a failure here
   // silently removed the whole page including sections it does not feed.
   // Last ~60 sessions of 50-DMA participation, for the context sparkline.
-  const breadthSeries = breadth
+  // Whichever participation series the backend served — the 50-DMA on the
+  // Nifty 500 file, or the 20-EMA when it falls back to the XP universe.
+  const breadthSeries = (breadth?.points ?? [])
     .slice(-60)
-    .map((p) => p.above_ma50_pct)
+    .map((p) => p.above_ma50_pct ?? p.above_ma20_pct)
     .filter((v): v is number => typeof v === "number");
 
   if ((state === "error" && !data) || !today) {
@@ -764,8 +766,8 @@ export function MarketsPanel({
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
         <ExposureVerdict data={exposure} />
         <ContextStrip data={exposure} breadthSeries={breadthSeries} />
-        <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth.length} sessions`}>
-          <BreadthTimeline points={breadth} />
+        <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth?.points.length ?? 0} sessions`}>
+          <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
         </Disclosure>
         <div className="mk-loading">
           Could not load the counted metrics.{" "}
@@ -805,9 +807,9 @@ export function MarketsPanel({
       <Disclosure
         id="breadth"
         summary="Breadth, 3 years"
-        hint={breadth.length ? `${breadth.length} sessions` : undefined}
+        hint={breadth?.points.length ? `${breadth.points.length} sessions` : undefined}
       >
-        <BreadthTimeline points={breadth} />
+        <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
       </Disclosure>
 
       <Disclosure id="edge" summary="Full breakout evidence" hint="setups, cohorts, arithmetic">

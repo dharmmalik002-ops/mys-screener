@@ -2726,16 +2726,22 @@ export function getMarketsExposure(market: MarketKey = "india") {
   );
 }
 
+export type BreadthHistory = {
+  /** The universe actually served; the backend falls back when the Nifty 500 file is absent. */
+  universe: string;
+  points: HistoricalBreadthDataPoint[];
+};
+
 export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750) {
-  return request<HistoricalBreadthDataPoint[]>(
+  return request<BreadthHistory>(
     `/api/markets/breadth-history?market=${market}&days=${days}`,
     undefined,
     undefined,
-    (raw): HistoricalBreadthDataPoint[] => {
+    (raw): BreadthHistory => {
   const root = isRecord(raw) ? raw : {};
   const universes = Array.isArray(root.universes) ? root.universes : [];
   const first = isRecord(universes[0]) ? universes[0] : {};
-  return mapArray(first.history, (item) => {
+  const points = mapArray(first.history, (item) => {
     const r = isRecord(item) ? item : {};
     return {
       date: readString(r.date),
@@ -2746,6 +2752,7 @@ export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750
       new_low_52w_pct: readNullableNumber(r.new_low_52w_pct),
     };
   });
+  return { universe: readString(first.universe, "Nifty 500"), points };
     },
   );
 }
