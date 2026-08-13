@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-13T11:43:33.518413+00:00",
+  "generated_at": "2026-08-13T12:02:09.272032+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -14364,7 +14364,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.425,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": -0.907,
       "best_pop_rvol": 0.425
     },
@@ -14496,7 +14496,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.772,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.032,
       "best_pop_rvol": 0.772
     },
@@ -14584,7 +14584,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.708,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": -1.301,
       "best_pop_rvol": 0.708
     },
@@ -14815,7 +14815,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.386,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.174,
       "best_pop_rvol": 0.386
     },
@@ -15035,7 +15035,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.854,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": 0.305,
       "best_pop_rvol": 0.854
     },
@@ -15332,7 +15332,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.397,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": -0.748,
       "best_pop_rvol": 1.397
     },
@@ -15343,7 +15343,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 0.07,
       "return_5d_pct": null,
-      "source": "bse-calendar",
+      "source": "bse",
       "best_pop_pct": 0.161,
       "best_pop_rvol": 0.07
     },
@@ -15387,7 +15387,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.638,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": 2.578,
       "best_pop_rvol": 1.638
     },
@@ -15607,7 +15607,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 5.865,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": 3.583,
       "best_pop_rvol": 5.865
     },
@@ -15794,7 +15794,7 @@
       "next_day_gap_pct": null,
       "day_rvol_50d": 1.062,
       "return_5d_pct": null,
-      "source": "bse",
+      "source": "bse-calendar",
       "best_pop_pct": -4.476,
       "best_pop_rvol": 1.062
     },
