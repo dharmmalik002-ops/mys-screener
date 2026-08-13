@@ -730,30 +730,6 @@ export function MarketsPanel({
   }, [focusRaw, removed, sectorAffinity]);
   const focusRemovedRows = focusRaw.filter((f) => removed.has(f.symbol));
 
-  if (state === "loading" && !data) {
-    // Skeleton mirrors the loaded layout: score badge, posture strip, chart.
-    return (
-      <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
-        <div className="mk-skeleton" aria-label="Loading market environment" role="status">
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <div className="skeleton" style={{ width: 104, height: 76, borderRadius: 12 }} />
-            <div className="skeleton" style={{ width: 220, height: 16 }} />
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 10, marginTop: 16 }}>
-            {Array.from({ length: 5 }, (_, i) => (
-              <div key={i} className="skeleton" style={{ height: 56 }} />
-            ))}
-          </div>
-          <div className="skeleton" style={{ height: 220, marginTop: 16 }} />
-        </div>
-      </Panel>
-    );
-  }
-  // /market-environment is the slowest, least reliable dependency on this page.
-  // The verdict, the context strip and the breadth history all come from
-  // elsewhere, so they still render when it fails — previously a failure here
-  // silently removed the whole page including sections it does not feed.
-  // Last ~60 sessions of 50-DMA participation, for the context sparkline.
   // Whichever participation series the backend served — the 50-DMA on the
   // Nifty 500 file, or the 20-EMA when it falls back to the XP universe.
   const breadthSeries = (breadth?.points ?? [])
@@ -761,6 +737,32 @@ export function MarketsPanel({
     .map((p) => p.above_ma50_pct ?? p.above_ma20_pct)
     .filter((v): v is number => typeof v === "number");
 
+  // The verdict, the context strip and the breadth history come from their own
+  // endpoints and resolve in well under a second. /market-environment takes far
+  // longer to rebuild, and gating the whole page on it meant the headline sat
+  // behind a skeleton for a minute waiting on data it does not use. Only the
+  // section that actually needs it waits.
+  if (state === "loading" && !data) {
+    return (
+      <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
+        <ExposureVerdict data={exposure} />
+        <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+        <Disclosure
+          id="breadth"
+          summary="Breadth, 3 years"
+          hint={breadth?.points.length ? `${breadth.points.length} sessions` : undefined}
+        >
+          <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
+        </Disclosure>
+        <Disclosure id="edge" summary="Full breakout evidence" hint="setups, cohorts, arithmetic">
+          <RegimeBrief market="india" />
+        </Disclosure>
+        <div className="mk-skeleton" aria-label="Loading counted metrics" role="status">
+          <div className="skeleton" style={{ height: 46 }} />
+        </div>
+      </Panel>
+    );
+  }
   if ((state === "error" && !data) || !today) {
     return (
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
