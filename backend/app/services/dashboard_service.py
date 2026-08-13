@@ -109,6 +109,10 @@ from app.services.watchlists_store import PostgresWatchlistsStore, merge_watchli
 
 logger = logging.getLogger(__name__)
 
+# Bound on fetching index bars for the Markets context tiles. The verdict
+# itself never waits on them.
+INDEX_BARS_TIMEOUT_SECONDS = 8.0
+
 EXPANSION_HISTORY_SESSIONS = 30
 # Calendar-day floor: a stock stays in the Expansion tracker for at least this
 # many days from the session it was added, even if fewer than
@@ -2594,8 +2598,18 @@ class DashboardService:
 
         symbol_getter = getattr(self.provider, "_benchmark_symbol", None)
         benchmark_symbol = symbol_getter() if callable(symbol_getter) else "^NSEI"
+        # Bounded for the same reason as the exposure endpoint: the session
+        # calendar only refines the weekday filter, so waiting minutes on a cold
+        # provider to get it would be a poor trade. Without bars the fallback
+        # still removes the weekend rows this filter exists for.
         try:
-            index_bars = await self.provider.get_chart(benchmark_symbol, "1D", bars=900)
+            index_bars = await asyncio.wait_for(
+                self.provider.get_chart(benchmark_symbol, "1D", bars=900),
+                timeout=INDEX_BARS_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.warning("breadth-history: index bars timed out — using the weekday filter")
+            index_bars = []
         except Exception as exc:
             logger.warning("breadth-history: index bars unavailable: %s", exc)
             index_bars = []
@@ -2728,9 +2742,25 @@ class DashboardService:
         # on the provider, and demo/upstox providers may not expose it.
         symbol_getter = getattr(self.provider, "_benchmark_symbol", None)
         benchmark_symbol = symbol_getter() if callable(symbol_getter) else "^NSEI"
+        # The verdict needs only breakout_stats.json; index bars are for the
+        # context tiles alone. On a cold provider get_chart queues behind a full
+        # snapshot rebuild — measured at 900+ seconds locally — and without this
+        # bound the page's headline would hang behind data it does not use, which
+        # is the exact coupling the frontend loading fix removed. Degrade to
+        # verdict-only instead.
         try:
-            index_bars = await self.provider.get_chart(benchmark_symbol, "1D", bars=520)
-        except Exception as exc:  # the verdict itself does not need the index
+            index_bars = await asyncio.wait_for(
+                self.provider.get_chart(benchmark_symbol, "1D", bars=520),
+                timeout=INDEX_BARS_TIMEOUT_SECONDS,
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                "markets-exposure: index bars timed out after %ss — serving the verdict "
+                "without context tiles",
+                INDEX_BARS_TIMEOUT_SECONDS,
+            )
+            index_bars = []
+        except Exception as exc:
             logger.warning("markets-exposure: index bars unavailable: %s", exc)
             index_bars = []
 
