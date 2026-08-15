@@ -5771,6 +5771,13 @@ button {
   font-size: 0.72rem;
   line-height: 1.45;
   border-radius: 14px;
+  /* Fixed-width digits: the OHLC values change on every candle the cursor
+     crosses, and proportional numerals would make the whole strip shuffle
+     sideways as they do. Also spares the browser a reflow per hover. */
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  min-height: 46px;
+  justify-content: center;
 }
 
 .chart-stage-label--trade {
@@ -5782,6 +5789,8 @@ button {
   border-radius: 14px;
   font-weight: 600;
   letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 .chart-stage-label.emphasis {
@@ -5831,6 +5840,11 @@ button {
   height: 100%;
   min-height: 300px;
   isolation: isolate;
+  /* Fence the chart's own layout and paint off from the rest of the page, so a
+     canvas repaint during a pan can never invalidate the panel around it.
+     Deliberately NOT `contain: size` — lightweight-charts' autoSize measures
+     this box and would collapse to zero. */
+  contain: layout paint;
 }
 
 /* Vertical drawing-tool rail, left edge of the chart (TradingView-style).
