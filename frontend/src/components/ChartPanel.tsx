@@ -1,5 +1,5 @@
-import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
-import { ColorType, createChart, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
+import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
+import { ColorType, createChart, CrosshairMode, LineStyle, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
 import { Settings2 } from "lucide-react";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
@@ -1020,6 +1020,54 @@ function withOpacity(color: string, opacity: number) {
   return `rgba(${red}, ${green}, ${blue}, ${opacity})`;
 }
 
+// Shared chart chrome. E1 (create) and E2 (re-apply options) both read these,
+// so axis typography and crosshair styling can never drift apart.
+const CHART_FONT_FAMILY =
+  'Inter, "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif';
+// One solid neutral for the crosshair axis pills in every palette —
+// lightweight-charts picks the label text colour from its luminance, so this
+// reads correctly on both the dark and the light (Editorial) canvas.
+const CROSSHAIR_LABEL_BG = "#2a2e39";
+
+// How much deeper the wick sits than the candle body (negative = darker).
+const WICK_SHADE = -0.18;
+
+function buildCrosshairOptions(crosshairColor: string) {
+  const line = {
+    color: crosshairColor,
+    width: 1 as const,
+    style: LineStyle.Dashed,
+    labelBackgroundColor: CROSSHAIR_LABEL_BG,
+  };
+  return { mode: CrosshairMode.Magnet, vertLine: line, horzLine: line };
+}
+
+// Wicks a shade deeper than the body (the Koyfin/TradingView trick): at tight
+// bar spacing the 1px wick reads as a distinct line instead of bleeding into
+// the body, so clusters of candles stay legible. Non-hex input is passed
+// through untouched — user-picked colours always arrive as hex.
+function shadeColor(color: string, amount: number) {
+  const normalized = color.trim().replace(/^#/, "");
+  if (![3, 6].includes(normalized.length)) {
+    return color;
+  }
+  const expanded =
+    normalized.length === 3 ? normalized.split("").map((value) => `${value}${value}`).join("") : normalized;
+  const channels = [
+    Number.parseInt(expanded.slice(0, 2), 16),
+    Number.parseInt(expanded.slice(2, 4), 16),
+    Number.parseInt(expanded.slice(4, 6), 16),
+  ];
+  if (channels.some((value) => Number.isNaN(value))) {
+    return color;
+  }
+  const shaded = channels.map((value) => {
+    const next = amount < 0 ? value * (1 + amount) : value + (255 - value) * amount;
+    return Math.max(0, Math.min(255, Math.round(next)));
+  });
+  return `#${shaded.map((value) => value.toString(16).padStart(2, "0")).join("")}`;
+}
+
 function normalizeChartTime(value: unknown): number | null {
   if (typeof value === "number") {
     return value;
@@ -1506,6 +1554,100 @@ type SnappedTradeMarker = {
   entries: Array<{ price: number; qty: number; date: string }>;
 };
 
+// ── Chart repaint plumbing ──────────────────────────────────────────────────
+// The two things the chart does constantly — moving the crosshair and panning
+// — used to run through ChartPanel's own useState, so every animation frame
+// re-rendered the entire panel: summary strip, every floating widget, the
+// drawing rail, the fundamentals tabs. Both now push into a tiny external
+// store instead, and only the subtrees that actually display the changing
+// value subscribe. ChartPanel itself no longer re-renders on hover or pan.
+
+type HoverSnapshot = {
+  bar: HoveredPriceBar | null;
+  rsPoint: ChartLinePoint | null;
+  tradeMarkers: SnappedTradeMarker[];
+};
+
+const EMPTY_HOVER_SNAPSHOT: HoverSnapshot = { bar: null, rsPoint: null, tradeMarkers: [] };
+
+function createHoverStore() {
+  let snapshot: HoverSnapshot = EMPTY_HOVER_SNAPSHOT;
+  let key = "";
+  const listeners = new Set<() => void>();
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    getSnapshot: () => snapshot,
+    /**
+     * `key` identifies the hovered candle (plus enough dataset identity to
+     * catch a live refresh). Repeat frames inside the same candle — the large
+     * majority of crosshair events — collapse to nothing at all.
+     */
+    publish(nextKey: string, build: () => HoverSnapshot) {
+      if (nextKey === key) return;
+      key = nextKey;
+      snapshot = nextKey ? build() : EMPTY_HOVER_SNAPSHOT;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
+type HoverStore = ReturnType<typeof createHoverStore>;
+
+function createRepaintStore() {
+  let version = 0;
+  const listeners = new Set<() => void>();
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    getSnapshot: () => version,
+    bump() {
+      version += 1;
+      listeners.forEach((listener) => listener());
+    },
+  };
+}
+
+type RepaintStore = ReturnType<typeof createRepaintStore>;
+
+/**
+ * Re-renders only itself when the chart asks for a repaint. `compute` runs on
+ * every render and re-reads the chart's pixel coordinates; `children` receives
+ * the result, so the JSX below stays exactly where it was.
+ */
+function ChartRepaintSubscriber<T>({
+  store,
+  compute,
+  children,
+}: {
+  store: RepaintStore;
+  compute: () => T;
+  children: (value: T) => ReactNode;
+}) {
+  useSyncExternalStore(store.subscribe, store.getSnapshot);
+  return <>{children(compute())}</>;
+}
+
+/** Same idea for crosshair hover: only the chips that read it re-render. */
+function ChartHoverSubscriber({
+  store,
+  children,
+}: {
+  store: HoverStore;
+  children: (hover: HoverSnapshot) => ReactNode;
+}) {
+  const hover = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  return <>{children(hover)}</>;
+}
+
 function findBarIndexAtOrBefore(bars: ChartBar[], targetTime: number) {
   if (!bars.length) {
     return -1;
@@ -1872,12 +2014,16 @@ export function ChartPanel({
   };
   const [draftTrendStart, setDraftTrendStart] = useState<ChartAnchor | null>(null);
   const [hoverAnchor, setHoverAnchor] = useState<ChartAnchor | null>(null);
-  const [hoveredRsPoint, setHoveredRsPoint] = useState<ChartLinePoint | null>(null);
-  const [hoveredBar, setHoveredBar] = useState<HoveredPriceBar | null>(null);
-  const [hoveredTradeMarkers, setHoveredTradeMarkers] = useState<SnappedTradeMarker[]>([]);
   const [chartSearchQuery, setChartSearchQuery] = useState(symbol ?? "");
   const deferredChartSearchQuery = useDeferredValue(chartSearchQuery);
-  const [, setOverlayVersion] = useState(0);
+  // Crosshair hover and overlay repaints bypass ChartPanel's own render — see
+  // createHoverStore / createRepaintStore above.
+  const hoverStore = useMemo(() => createHoverStore(), []);
+  const overlayStore = useMemo(() => createRepaintStore(), []);
+  // Resize is the one repaint the panel itself still has to see: floating
+  // widgets clamp their position against the stage box. It is rare, unlike
+  // panning, so a real re-render costs nothing here.
+  const [, setStageResizeTick] = useState(0);
 
   // One delayed overlay bump after bars land: timeToCoordinate() returns null
   // until the chart engine finishes its first layout, so overlays computed
@@ -1885,9 +2031,9 @@ export function ChartPanel({
   // otherwise stay invisible until the first pointer interaction.
   useEffect(() => {
     if (!bars.length) return;
-    const id = window.setTimeout(() => setOverlayVersion((version) => version + 1), 150);
+    const id = window.setTimeout(() => overlayStore.bump(), 150);
     return () => window.clearTimeout(id);
-  }, [bars]);
+  }, [bars, overlayStore]);
   const [selectedAnnotationId, setSelectedAnnotationId] = useState<string | null>(null);
   const [draggingAnnotationHandle, setDraggingAnnotationHandle] = useState<string | null>(null);
   const [extendedHistory, setExtendedHistory] = useState<ChartResponse | null>(null);
@@ -2149,19 +2295,20 @@ export function ChartPanel({
     [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
   );
   const rvolData = useMemo(() => (showRvol ? computeRvolBars(activeBars, 50) : []), [activeBars, showRvol]);
-  const currentRvol = useMemo<RvolEntry | null>(() => {
+  // Resolved per hover inside the RVOL widget's own subscriber, so moving the
+  // crosshair never re-renders the panel around it.
+  const pickRvolEntry = (hoveredTime: number | null): RvolEntry | null => {
     if (!rvolData.length) return null;
-    if (hoveredBar) {
+    if (hoveredTime !== null) {
       for (let index = rvolData.length - 1; index >= 0; index -= 1) {
         const entry = rvolData[index];
-        if (entry.time <= hoveredBar.time) {
+        if (entry.time <= hoveredTime) {
           return entry;
         }
       }
-      return rvolData[rvolData.length - 1];
     }
     return rvolData[rvolData.length - 1];
-  }, [rvolData, hoveredBar]);
+  };
   const formatValue = (value: number | null | undefined, digits = 2) => formatNumber(value, digits, market);
   const formatSignedPercentValue = (value: number | null | undefined) => formatPercent(value, market);
   const formatPercentValue = (value: number | null | undefined) => formatPlainPercent(value, market);
@@ -2171,7 +2318,7 @@ export function ChartPanel({
     }
     overlayFrameRef.current = window.requestAnimationFrame(() => {
       overlayFrameRef.current = null;
-      setOverlayVersion((version) => version + 1);
+      overlayStore.bump();
     });
   };
 
@@ -2431,9 +2578,7 @@ export function ChartPanel({
     setDrawingTool("none");
     setDraftTrendStart(null);
     setHoverAnchor(null);
-    setHoveredRsPoint(null);
-    setHoveredBar(null);
-    setHoveredTradeMarkers([]);
+    hoverStore.publish("", () => EMPTY_HOVER_SNAPSHOT);
     setSelectedAnnotationId(null);
     annotationDragRef.current = null;
     setDraggingAnnotationHandle(null);
@@ -2705,16 +2850,15 @@ export function ChartPanel({
       layout: {
         background: { type: ColorType.Solid, color: palette.background },
         textColor: palette.textColor,
+        fontFamily: CHART_FONT_FAMILY,
+        fontSize: 11,
       },
       grid: {
         // Editorial style: plain background, no grid lines in either theme.
         vertLines: { visible: false },
         horzLines: { visible: false },
       },
-      crosshair: {
-        vertLine: { color: palette.crosshairColor },
-        horzLine: { color: palette.crosshairColor },
-      },
+      crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: {
         visible: false,
         borderColor: palette.borderColor,
@@ -2722,12 +2866,25 @@ export function ChartPanel({
       rightPriceScale: {
         borderColor: palette.borderColor,
         mode: scaleMode === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+        // Whole labels only, no tick nubs: a cleaner axis at any height.
+        entireTextOnly: true,
+        ticksVisible: false,
       },
       timeScale: {
         borderColor: palette.borderColor,
         timeVisible: timeframe === "15m" || timeframe === "30m" || timeframe === "1h",
         rightOffset: RIGHT_EDGE_PADDING_BARS,
+        ticksVisible: false,
+        // Keep the zoom the user set when the pane resizes, and keep the last
+        // bar pinned while scrolling — both are what makes panning feel settled
+        // instead of jumpy.
+        lockVisibleTimeRangeOnResize: true,
+        rightBarStaysOnScroll: true,
+        minBarSpacing: 0.4,
       },
+      // Kinetic touch scroll only: mouse drags stay 1:1 with the cursor (a
+      // glide-on-release feels wrong with a mouse, right on a trackpad/touch).
+      kineticScroll: { touch: true, mouse: false },
     });
 
     const mainSeries =
@@ -2752,9 +2909,11 @@ export function ChartPanel({
         : chart.addCandlestickSeries({
             upColor: chartColors.candleUp,
             downColor: chartColors.candleDown,
-            wickUpColor: chartColors.candleUp,
-            wickDownColor: chartColors.candleDown,
-            borderVisible: false,
+            wickUpColor: shadeColor(chartColors.candleUp, WICK_SHADE),
+            wickDownColor: shadeColor(chartColors.candleDown, WICK_SHADE),
+            borderVisible: true,
+            borderUpColor: chartColors.candleUp,
+            borderDownColor: chartColors.candleDown,
             // Always-visible current price: axis label + subtle native line.
             lastValueVisible: true,
             priceLineVisible: true,
@@ -2826,24 +2985,26 @@ export function ChartPanel({
     rulerRetryId = window.requestAnimationFrame(retryPctRuler);
 
     const processCrosshairMove = (param: any) => {
-      if (!param?.time) {
-        setHoveredRsPoint(null);
-        setHoveredBar(null);
-        setHoveredTradeMarkers([]);
-        return;
-      }
-
-      const hoveredTime = normalizeChartTime(param.time);
+      const hoveredTime = param?.time ? normalizeChartTime(param.time) : null;
       if (hoveredTime === null) {
-        setHoveredRsPoint(null);
-        setHoveredBar(null);
-        setHoveredTradeMarkers([]);
+        hoverStore.publish("", () => EMPTY_HOVER_SNAPSHOT);
         return;
       }
 
       const barsNow = activeBarsRef.current;
-      const matchedTradeMarkers = snappedTradeMarkersRef.current.filter((m) => m.time === hoveredTime);
-      setHoveredTradeMarkers(matchedTradeMarkers);
+      // Everything below is a pure function of the hovered candle, so the key
+      // is the candle time plus enough dataset identity (length + last close)
+      // to notice a live refresh landing under a stationary cursor.
+      const hoverKey = `${hoveredTime}:${barsNow.length}:${barsNow[barsNow.length - 1]?.close ?? 0}:${
+        snappedTradeMarkersRef.current.length
+      }:${safeRsLineRef.current.length}`;
+      hoverStore.publish(hoverKey, () => buildHoverSnapshot(hoveredTime, barsNow, param));
+    };
+
+    const buildHoverSnapshot = (hoveredTime: number, barsNow: ChartBar[], param: any): HoverSnapshot => {
+      let bar: HoveredPriceBar | null = null;
+      let rsPoint: ChartLinePoint | null = null;
+      const tradeMarkers = snappedTradeMarkersRef.current.filter((m) => m.time === hoveredTime);
 
       const priceData = param.seriesData?.get?.(mainSeries) as
         | {
@@ -2864,7 +3025,7 @@ export function ChartPanel({
         const previousClose = barIndex > 0 ? barsNow[barIndex - 1]?.close ?? null : null;
         const changeValue = previousClose === null ? null : Number(priceData.close) - previousClose;
         const changePct = previousClose && previousClose !== 0 && changeValue !== null ? (changeValue / previousClose) * 100 : null;
-        setHoveredBar({
+        bar = {
           time: hoveredTime,
           open: Number(priceData.open),
           high: Number(priceData.high),
@@ -2872,45 +3033,36 @@ export function ChartPanel({
           close: Number(priceData.close),
           changeValue,
           changePct,
-        });
+        };
       } else {
         const fallbackIndex = findBarIndexAtOrBefore(barsNow, hoveredTime);
         const fallbackBar = fallbackIndex >= 0 ? barsNow[fallbackIndex] : null;
         const previousClose = fallbackIndex > 0 ? barsNow[fallbackIndex - 1]?.close ?? null : null;
         const changeValue = fallbackBar && previousClose !== null ? fallbackBar.close - previousClose : null;
         const changePct = changeValue !== null && previousClose && previousClose !== 0 ? (changeValue / previousClose) * 100 : null;
-        setHoveredBar(
-          fallbackBar
-            ? {
-                time: fallbackBar.time,
-                open: fallbackBar.open,
-                high: fallbackBar.high,
-                low: fallbackBar.low,
-                close: fallbackBar.close,
-                changeValue,
-                changePct,
-              }
-            : null,
-        );
+        bar = fallbackBar
+          ? {
+              time: fallbackBar.time,
+              open: fallbackBar.open,
+              high: fallbackBar.high,
+              low: fallbackBar.low,
+              close: fallbackBar.close,
+              changeValue,
+              changePct,
+            }
+          : null;
       }
 
       const rsSeries = rsSeriesRef.current;
-      if (!rsSeries) {
-        setHoveredRsPoint(null);
-        return;
+      if (rsSeries) {
+        const seriesData = param.seriesData?.get?.(rsSeries) as { value?: number } | undefined;
+        rsPoint =
+          seriesData?.value !== undefined
+            ? { time: hoveredTime, value: Number(seriesData.value) }
+            : [...safeRsLineRef.current].reverse().find((point) => point.time <= hoveredTime) ?? null;
       }
 
-      const seriesData = param.seriesData?.get?.(rsSeries) as { value?: number } | undefined;
-      if (seriesData?.value !== undefined) {
-        setHoveredRsPoint({
-          time: hoveredTime,
-          value: Number(seriesData.value),
-        });
-        return;
-      }
-
-      const fallbackPoint = [...safeRsLineRef.current].reverse().find((point) => point.time <= hoveredTime) ?? null;
-      setHoveredRsPoint(fallbackPoint);
+      return { bar, rsPoint, tradeMarkers };
     };
     const handleCrosshairMove = (param: any) => {
       pendingCrosshairParamRef.current = param;
@@ -2995,20 +3147,22 @@ export function ChartPanel({
       layout: {
         background: { type: ColorType.Solid, color: palette.background },
         textColor: palette.textColor,
+        fontFamily: CHART_FONT_FAMILY,
+        fontSize: 11,
       },
-      crosshair: {
-        vertLine: { color: palette.crosshairColor },
-        horzLine: { color: palette.crosshairColor },
-      },
+      crosshair: buildCrosshairOptions(palette.crosshairColor),
       leftPriceScale: { visible: false, borderColor: palette.borderColor },
       rightPriceScale: {
         borderColor: palette.borderColor,
         mode: scaleMode === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+        entireTextOnly: true,
+        ticksVisible: false,
       },
       timeScale: {
         borderColor: palette.borderColor,
         timeVisible: timeframe === "15m" || timeframe === "30m" || timeframe === "1h",
         rightOffset: RIGHT_EDGE_PADDING_BARS,
+        ticksVisible: false,
       },
     });
     if (chartStyle === "hlc") {
@@ -3031,8 +3185,8 @@ export function ChartPanel({
           : {
               upColor: chartColors.candleUp,
               downColor: chartColors.candleDown,
-              wickUpColor: chartColors.candleUp,
-              wickDownColor: chartColors.candleDown,
+              wickUpColor: shadeColor(chartColors.candleUp, WICK_SHADE),
+              wickDownColor: shadeColor(chartColors.candleDown, WICK_SHADE),
             },
       );
     }
@@ -3056,16 +3210,16 @@ export function ChartPanel({
     const sameDataset = rangeStateRef.current.key === dataKey && rangeStateRef.current.epoch === chartEpoch;
     const savedRange = sameDataset ? chart.timeScale().getVisibleLogicalRange() : null;
 
-    // Hollow up-candles (and the Mono theme, which is hollow by design)
-    // need borders; expansion overrides stay solid.
+    // Borders are always on and always match the body colour. Hollow and Mono
+    // need them to exist at all; solid candles get them for crispness — a
+    // 1px border keeps the body a clean rectangle at tight bar spacing instead
+    // of letting it smear across a half-pixel. Expansion overrides stay solid.
     const isMono = chartPalette === "mono";
     if (!isBarStyle) {
       mainSeries.applyOptions(
         isMono
           ? { borderVisible: true, borderUpColor: "#111827", borderDownColor: "#111827" }
-          : hollowCandles
-            ? { borderVisible: true, borderUpColor: chartColors.candleUp, borderDownColor: chartColors.candleDown }
-            : { borderVisible: false },
+          : { borderVisible: true, borderUpColor: chartColors.candleUp, borderDownColor: chartColors.candleDown },
       );
     }
 
@@ -3481,11 +3635,27 @@ export function ChartPanel({
   useEffect(() => {
     const handleResize = () => {
       scheduleOverlayUpdate();
+      // Floating widgets clamp against the stage box, which only the panel's
+      // own render reads — so resize (unlike panning) still needs one.
+      setStageResizeTick((tick) => tick + 1);
     };
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  // The stage also resizes without the window doing so — expanding the chart,
+  // collapsing the screener sidebar, opening the group panel. Watch the box
+  // itself so widget clamping tracks all of them, not just window resizes.
+  useEffect(() => {
+    if (!containerNode || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      scheduleOverlayUpdate();
+      setStageResizeTick((tick) => tick + 1);
+    });
+    observer.observe(containerNode);
+    return () => observer.disconnect();
+  }, [containerNode]);
 
   useEffect(() => {
     if (!chartRef.current) return;
@@ -3927,166 +4097,8 @@ export function ChartPanel({
     };
   }, [stageHeight, stageWidth]);
 
-  const horizontalLineOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "hline" }> => annotation.type === "hline")
-    .map((annotation) => {
-      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
-      if (!point) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.hline;
-      const lw = annotation.lineWidth ?? 1.6;
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke="transparent" strokeWidth={14} />
-          {isSel && <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
-          <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw} strokeDasharray="8 5" />
-          <rect x={Math.max(stageWidth - 84, 4)} y={Math.max(point.y - 11, 4)} width="80" height="22" rx="8" fill="rgba(13, 17, 23, 0.92)" />
-          <text x={Math.max(stageWidth - 44, 10)} y={point.y + 4} fill={color} fontSize="11" textAnchor="middle">
-            {annotation.point.price.toFixed(2)}
-          </text>
-        </g>
-      );
-    });
-  const verticalLineOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "vline" }> => annotation.type === "vline")
-    .map((annotation) => {
-      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
-      if (!point) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.vline;
-      const lw = annotation.lineWidth ?? 1.5;
-      const labelX = clamp(point.x + 8, 6, Math.max(stageWidth - 96, 6));
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke="transparent" strokeWidth={14} />
-          {isSel && <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
-          <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw} strokeDasharray="7 5" />
-          <rect x={labelX} y={8} width="88" height="22" rx="8" fill="rgba(13, 17, 23, 0.9)" />
-          <text x={labelX + 44} y={22} fill={color} fontSize="11" textAnchor="middle">
-            {formatChartDateFromTimestamp(annotation.point.time)}
-          </text>
-        </g>
-      );
-    });
-  const trendlineOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "trendline" }> => annotation.type === "trendline")
-    .map((annotation) => {
-      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
-      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
-      if (!start || !end) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.trendline;
-      const lw = annotation.lineWidth ?? 2;
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
-          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="6 4" />
-        </g>
-      );
-    });
-  const rayOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "ray" }> => annotation.type === "ray")
-    .map((annotation) => {
-      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
-      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
-      if (!start || !end) return null;
-      const rayEnd = projectRayEnd(start, end, stageWidth);
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.ray;
-      const lw = annotation.lineWidth ?? 2;
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
-          {isSel && <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
-          <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
-        </g>
-      );
-    });
-  const rectangleOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "rectangle" }> => annotation.type === "rectangle")
-    .map((annotation) => {
-      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
-      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
-      if (!start || !end) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.rectangle;
-      const lw = annotation.lineWidth ?? 1.6;
-      const x = Math.min(start.x, end.x);
-      const y = Math.min(start.y, end.y);
-      const w = Math.max(Math.abs(end.x - start.x), 2);
-      const h = Math.max(Math.abs(end.y - start.y), 2);
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          {isSel && <rect x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx="8" fill={color} opacity={0.1} />}
-          <rect x={x} y={y} width={w} height={h} rx="6"
-            fill={isSel ? `${color}22` : "rgba(89, 196, 255, 0.12)"}
-            stroke={color} strokeWidth={lw} strokeDasharray="6 4"
-            style={{ pointerEvents: "auto" }} />
-        </g>
-      );
-    });
-  const arrowLineOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-line" }> => annotation.type === "arrow-line")
-    .map((annotation) => {
-      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
-      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
-      if (!start || !end) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS["arrow-line"];
-      const lw = annotation.lineWidth ?? 2;
-      const angle = Math.atan2(end.y - start.y, end.x - start.x);
-      const headLen = 12 + lw * 1.5;
-      const wing = Math.PI / 7;
-      const h1x = end.x - headLen * Math.cos(angle - wing);
-      const h1y = end.y - headLen * Math.sin(angle - wing);
-      const h2x = end.x - headLen * Math.cos(angle + wing);
-      const h2y = end.y - headLen * Math.sin(angle + wing);
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
-          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
-          <polygon points={`${end.x},${end.y} ${h1x},${h1y} ${h2x},${h2y}`} fill={color} />
-        </g>
-      );
-    });
-  const arrowMarkerOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-up" | "arrow-down" }> =>
-      annotation.type === "arrow-up" || annotation.type === "arrow-down")
-    .map((annotation) => {
-      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
-      if (!point) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS[annotation.type];
-      const up = annotation.type === "arrow-up";
-      const { x, y } = point;
-      // Up arrow points up (head at top, stem below); down arrow is the mirror.
-      const head = up
-        ? `${x},${y - 11} ${x - 6},${y - 2} ${x + 6},${y - 2}`
-        : `${x},${y + 11} ${x - 6},${y + 2} ${x + 6},${y + 2}`;
-      const stemY1 = up ? y - 2 : y + 2;
-      const stemY2 = up ? y + 11 : y - 11;
-      return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          {isSel && <circle cx={x} cy={y} r="15" fill={color} opacity={0.16} />}
-          <polygon points={head} fill={color} stroke={color} strokeWidth={1} strokeLinejoin="round" />
-          <line x1={x} y1={stemY1} x2={x} y2={stemY2} stroke={color} strokeWidth={3} strokeLinecap="round" />
-        </g>
-      );
-    });
-  // "Next E": the company's ANNOUNCED upcoming result date (BSE calendar).
-  // Renders a countdown chip ("4 days to EPS · 24 Jul") plus, on daily
-  // charts, a dashed marker extrapolated to that future date so the event
-  // sits visibly to the right of the last candle.
+  // Coordinate-independent, and read by the header chips as well as the
+  // overlay, so both stay out of the repaint closure below.
   const nextEarnings = (() => {
     if (!showNextEarnings || !upcomingEarningsDate || !activeBars.length) return null;
     const eventMs = Date.parse(`${upcomingEarningsDate.slice(0, 10)}T00:00:00Z`);
@@ -4099,233 +4111,427 @@ export function ChartPanel({
     const dateLabel = new Date(eventMs).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "UTC" });
     return { daysToEps, label, dateLabel, eventMs };
   })();
-  const nextEarningsOverlay = (() => {
-    if (!nextEarnings || timeframe !== "1D") return null;
-    const chart = chartRef.current;
-    if (!chart) return null;
-    const lastBar = activeBars[activeBars.length - 1];
-    let lastX: number | null = null;
-    try {
-      lastX = chart.timeScale().timeToCoordinate(lastBar.time as never) as number | null;
-    } catch {
-      return null;
-    }
-    if (lastX == null) return null;
-    const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
-    // Trading-session gap (weekdays) between the last candle and the event.
-    let sessions = 0;
-    const cursor = new Date(lastBar.time * 1000);
-    while (cursor.getTime() < nextEarnings.eventMs && sessions < 80) {
-      cursor.setUTCDate(cursor.getUTCDate() + 1);
-      const weekday = cursor.getUTCDay();
-      if (weekday !== 0 && weekday !== 6) sessions += 1;
-    }
-    const x = lastX + sessions * spacing;
-    if (x < 0 || x > stageWidth - 6) return null;
-    const color = "#f5b731";
-    return (
-      <g pointerEvents="none">
-        <line x1={x} y1={30} x2={x} y2={Math.max(stageHeight - 8, 30)} stroke={color} strokeWidth={1.4} strokeDasharray="4 5" opacity={0.75} />
-        <rect x={x - 10} y={6} width={20} height={20} rx={6} fill={color} />
-        <text x={x} y={20} textAnchor="middle" fontSize="12" fontWeight={800} fill="#1a1305">E</text>
-      </g>
-    );
-  })();
-  // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
-  // computed in levels.ts and drawn in the same SVG overlay so they follow
-  // pan/zoom. Non-interactive; sit beneath the user's own drawings.
-  // Expansion candles can't be drawn physically wider (the chart engine uses
-  // one width for all candles), so each one gets a soft blurred GLOW capsule
-  // behind it in the SVG overlay — a warm halo that makes the candle read
-  // heavier without boxes or borders. Hidden when zoomed far out (halos would
-  // smear together at tiny bar spacings).
-  const expansionHighlightOverlays = highlightExpansion
-    ? activeBars.map((bar, i) => {
-        if (!perBarStats[i]?.isExpansionCandidate) return null;
-        const ms = mainSeriesRef.current;
-        const chart = chartRef.current;
-        if (!ms || !chart) return null;
-        const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
-        if (spacing < 4) return null;
-        const x = chart.timeScale().timeToCoordinate(bar.time as UTCTimestamp);
-        if (x === null || x === undefined) return null;
-        const yHigh = ms.priceToCoordinate(bar.high);
-        const yLow = ms.priceToCoordinate(bar.low);
-        if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
-        const width = Math.max(spacing * 1.35, 7);
-        const color = chartColors.candleExpansion || "#ffb01f";
-        const top = Math.min(yHigh, yLow) - 2;
-        const height = Math.abs(yLow - yHigh) + 4;
-        return (
-          <rect
-            key={`exp-hl-${bar.time}`}
-            x={x - width / 2}
-            y={top}
-            width={width}
-            height={height}
-            rx={width / 2}
-            fill={`${color}59`}
-            filter={`url(#${overlayFilterBaseId}-exp-glow)`}
-            style={{ pointerEvents: "none" }}
-          />
-        );
-      })
-    : null;
+  const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) ?? null;
 
-  const autoZoneOverlays = autoLevelsEnabled
-    ? autoLevels.zones.map((zone, index) => {
-        const ms = mainSeriesRef.current;
-        const chart = chartRef.current;
-        if (!ms || !chart) return null;
-        const yHigh = ms.priceToCoordinate(zone.high);
-        const yLow = ms.priceToCoordinate(zone.low);
-        if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
-        const top = Math.min(yHigh, yLow);
-        const height = Math.max(Math.abs(yLow - yHigh), 2);
-        // Draw from the origin candle to where the band stops (first test / latest bar).
-        const ts = chart.timeScale();
-        const xStartRaw = ts.timeToCoordinate(zone.startTime as UTCTimestamp);
-        const xEndRaw = ts.timeToCoordinate(zone.endTime as UTCTimestamp);
-        if ((xStartRaw === null || xStartRaw === undefined) && (xEndRaw === null || xEndRaw === undefined)) return null;
-        const xStart = Math.max(0, xStartRaw == null ? 0 : xStartRaw);
-        const xEnd = Math.min(stageWidth, xEndRaw == null ? stageWidth : xEndRaw);
-        if (xEnd <= xStart) return null;
-        const width = Math.max(xEnd - xStart, 2);
-        const demand = zone.kind === "demand";
-        // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
-        const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
-        const tfLabel = zone.timeframe === "M" ? "Mthly" : zone.timeframe === "W" ? "Wkly" : "Daily";
-        const label = `${tfLabel} ${demand ? "Demand" : "Supply"}`;
+  // ── Overlay layer (drawings, auto-levels, halos, handles) ────────────────
+  // Every value below is derived from the chart's *pixel* coordinates, so it
+  // has to be rebuilt on each pan/zoom frame. It lives in a closure that only
+  // <ChartRepaintSubscriber> calls: panning re-renders that subscriber alone,
+  // never ChartPanel. Values that depend purely on React state stay outside
+  // and are read from the enclosing scope, fresh as of the last real render.
+  const computeOverlayLayer = () => {
+    const stageWidth = containerRef.current?.clientWidth ?? 0;
+    const stageHeight = containerRef.current?.clientHeight ?? 0;
+    const horizontalLineOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "hline" }> => annotation.type === "hline")
+      .map((annotation) => {
+        const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+        if (!point) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.hline;
+        const lw = annotation.lineWidth ?? 1.6;
         return (
-          <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
-            <rect x={xStart} y={top} width={width} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
-            <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke="transparent" strokeWidth={14} />
+            {isSel && <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
+            <line x1={0} y1={point.y} x2={stageWidth} y2={point.y} stroke={color} strokeWidth={lw} strokeDasharray="8 5" />
+            <rect x={Math.max(stageWidth - 84, 4)} y={Math.max(point.y - 11, 4)} width="80" height="22" rx="8" fill="rgba(13, 17, 23, 0.92)" />
+            <text x={Math.max(stageWidth - 44, 10)} y={point.y + 4} fill={color} fontSize="11" textAnchor="middle">
+              {annotation.point.price.toFixed(2)}
+            </text>
           </g>
         );
-      })
-    : null;
-  const autoTrendlineOverlays = autoLevelsEnabled
-    ? autoLevels.trendlines.map((line, index) => {
-        const p1 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t1, price: line.p1 });
-        const p2 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t2, price: line.p2 });
-        if (!p1 || !p2) return null;
-        const color = line.kind === "up" ? "#22c55e" : "#ef4444";
+      });
+    const verticalLineOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "vline" }> => annotation.type === "vline")
+      .map((annotation) => {
+        const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+        if (!point) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.vline;
+        const lw = annotation.lineWidth ?? 1.5;
+        const labelX = clamp(point.x + 8, 6, Math.max(stageWidth - 96, 6));
         return (
-          <g key={`auto-trend-${index}`} style={{ pointerEvents: "none" }}>
-            <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={color} strokeWidth={1.6} />
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke="transparent" strokeWidth={14} />
+            {isSel && <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw + 6} opacity={0.22} />}
+            <line x1={point.x} y1={0} x2={point.x} y2={stageHeight} stroke={color} strokeWidth={lw} strokeDasharray="7 5" />
+            <rect x={labelX} y={8} width="88" height="22" rx="8" fill="rgba(13, 17, 23, 0.9)" />
+            <text x={labelX + 44} y={22} fill={color} fontSize="11" textAnchor="middle">
+              {formatChartDateFromTimestamp(annotation.point.time)}
+            </text>
           </g>
         );
-      })
-    : null;
-  const measureOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "measure" }> => annotation.type === "measure")
-    .map((annotation) => {
-      const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
-      const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
-      if (!start || !end) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.measure;
-      const lw = annotation.lineWidth ?? 2;
-      const change = annotation.end.price - annotation.start.price;
-      const changePct = annotation.start.price === 0 ? 0 : (change / annotation.start.price) * 100;
-      const spanBars = barsBetweenTimes(activeBars, annotation.start.time, annotation.end.time);
-      const midX = (start.x + end.x) / 2;
-      const midY = (start.y + end.y) / 2;
-      const label = `${change >= 0 ? "+" : ""}${formatValue(change, 2)} | ${changePct >= 0 ? "+" : ""}${formatValue(changePct, 2)}% | ${spanBars} bars`;
-      const labelWidth = Math.max(170, Math.min(240, label.length * 6.4));
-      const labelX = clamp(midX - labelWidth / 2, 6, Math.max(stageWidth - labelWidth - 6, 6));
-      const labelY = clamp(midY - 26, 8, Math.max(stageHeight - 28, 8));
+      });
+    const trendlineOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "trendline" }> => annotation.type === "trendline")
+      .map((annotation) => {
+        const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+        const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+        if (!start || !end) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.trendline;
+        const lw = annotation.lineWidth ?? 2;
+        return (
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+            {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="6 4" />
+          </g>
+        );
+      });
+    const rayOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "ray" }> => annotation.type === "ray")
+      .map((annotation) => {
+        const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+        const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+        if (!start || !end) return null;
+        const rayEnd = projectRayEnd(start, end, stageWidth);
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.ray;
+        const lw = annotation.lineWidth ?? 2;
+        return (
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+            {isSel && <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+            <line x1={start.x} y1={start.y} x2={rayEnd.x} y2={rayEnd.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
+          </g>
+        );
+      });
+    const rectangleOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "rectangle" }> => annotation.type === "rectangle")
+      .map((annotation) => {
+        const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+        const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+        if (!start || !end) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.rectangle;
+        const lw = annotation.lineWidth ?? 1.6;
+        const x = Math.min(start.x, end.x);
+        const y = Math.min(start.y, end.y);
+        const w = Math.max(Math.abs(end.x - start.x), 2);
+        const h = Math.max(Math.abs(end.y - start.y), 2);
+        return (
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            {isSel && <rect x={x - 4} y={y - 4} width={w + 8} height={h + 8} rx="8" fill={color} opacity={0.1} />}
+            <rect x={x} y={y} width={w} height={h} rx="6"
+              fill={isSel ? `${color}22` : "rgba(89, 196, 255, 0.12)"}
+              stroke={color} strokeWidth={lw} strokeDasharray="6 4"
+              style={{ pointerEvents: "auto" }} />
+          </g>
+        );
+      });
+    const arrowLineOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-line" }> => annotation.type === "arrow-line")
+      .map((annotation) => {
+        const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+        const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+        if (!start || !end) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS["arrow-line"];
+        const lw = annotation.lineWidth ?? 2;
+        const angle = Math.atan2(end.y - start.y, end.x - start.x);
+        const headLen = 12 + lw * 1.5;
+        const wing = Math.PI / 7;
+        const h1x = end.x - headLen * Math.cos(angle - wing);
+        const h1y = end.y - headLen * Math.sin(angle - wing);
+        const h2x = end.x - headLen * Math.cos(angle + wing);
+        const h2y = end.y - headLen * Math.sin(angle + wing);
+        return (
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+            {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" />
+            <polygon points={`${end.x},${end.y} ${h1x},${h1y} ${h2x},${h2y}`} fill={color} />
+          </g>
+        );
+      });
+    const arrowMarkerOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "arrow-up" | "arrow-down" }> =>
+        annotation.type === "arrow-up" || annotation.type === "arrow-down")
+      .map((annotation) => {
+        const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+        if (!point) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS[annotation.type];
+        const up = annotation.type === "arrow-up";
+        const { x, y } = point;
+        // Up arrow points up (head at top, stem below); down arrow is the mirror.
+        const head = up
+          ? `${x},${y - 11} ${x - 6},${y - 2} ${x + 6},${y - 2}`
+          : `${x},${y + 11} ${x - 6},${y + 2} ${x + 6},${y + 2}`;
+        const stemY1 = up ? y - 2 : y + 2;
+        const stemY2 = up ? y + 11 : y - 11;
+        return (
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            {isSel && <circle cx={x} cy={y} r="15" fill={color} opacity={0.16} />}
+            <polygon points={head} fill={color} stroke={color} strokeWidth={1} strokeLinejoin="round" />
+            <line x1={x} y1={stemY1} x2={x} y2={stemY2} stroke={color} strokeWidth={3} strokeLinecap="round" />
+          </g>
+        );
+      });
+    // "Next E": the company's ANNOUNCED upcoming result date (BSE calendar).
+    // On daily charts, a dashed marker extrapolated to that future date so the
+    // event sits visibly to the right of the last candle. The matching countdown
+    // chip ("4 days to EPS · 24 Jul") is rendered from `nextEarnings` above.
+    const nextEarningsOverlay = (() => {
+      if (!nextEarnings || timeframe !== "1D") return null;
+      const chart = chartRef.current;
+      if (!chart) return null;
+      const lastBar = activeBars[activeBars.length - 1];
+      let lastX: number | null = null;
+      try {
+        lastX = chart.timeScale().timeToCoordinate(lastBar.time as never) as number | null;
+      } catch {
+        return null;
+      }
+      if (lastX == null) return null;
+      const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
+      // Trading-session gap (weekdays) between the last candle and the event.
+      let sessions = 0;
+      const cursor = new Date(lastBar.time * 1000);
+      while (cursor.getTime() < nextEarnings.eventMs && sessions < 80) {
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+        const weekday = cursor.getUTCDay();
+        if (weekday !== 0 && weekday !== 6) sessions += 1;
+      }
+      const x = lastX + sessions * spacing;
+      if (x < 0 || x > stageWidth - 6) return null;
+      const color = "#f5b731";
       return (
-        <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
-          onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
-          {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
-          <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="5 4" />
-          <circle cx={start.x} cy={start.y} r="4" fill={color} />
-          <circle cx={end.x} cy={end.y} r="4" fill={color} />
-          <rect x={labelX} y={labelY} width={labelWidth} height="24" rx="8" fill="rgba(4, 8, 17, 0.92)" />
-          <text x={labelX + labelWidth / 2} y={labelY + 15} fill={color} fontSize="11" textAnchor="middle">
-            {label}
-          </text>
+        <g pointerEvents="none">
+          <line x1={x} y1={30} x2={x} y2={Math.max(stageHeight - 8, 30)} stroke={color} strokeWidth={1.4} strokeDasharray="4 5" opacity={0.75} />
+          <rect x={x - 10} y={6} width={20} height={20} rx={6} fill={color} />
+          <text x={x} y={20} textAnchor="middle" fontSize="12" fontWeight={800} fill="#1a1305">E</text>
         </g>
       );
-    });
-
-  const textOverlays = annotations
-    .filter((annotation): annotation is Extract<ChartAnnotation, { type: "text" }> => annotation.type === "text")
-    .map((annotation) => {
-      const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
-      if (!point) return null;
-      const isSel = selectedAnnotationId === annotation.id;
-      const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.text;
-      return (
-        <div
-          key={annotation.id}
-          className={isSel ? "chart-note selected" : "chart-note"}
-          style={{
-            left: `${Math.min(point.x + 10, Math.max(stageWidth - 180, 12))}px`,
-            top: `${Math.max(point.y - 12, 10)}px`,
-            borderColor: isSel ? color : undefined,
-            color: isSel ? color : undefined,
-          }}
-          onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
-          onClick={(event) => { event.stopPropagation(); selectAnnotation(annotation.id); }}
-          onDoubleClick={(event) => { event.stopPropagation(); editTextAnnotation(annotation.id); }}
-          title="Drag to move • Double-click to edit"
-        >
-          {annotation.text}
-        </div>
-      );
-    });
-
-  const draftPoint = draftTrendStart ? projectAnchor(chartRef.current, mainSeriesRef.current, draftTrendStart) : null;
-  const hoverPoint = hoverAnchor ? projectAnchor(chartRef.current, mainSeriesRef.current, hoverAnchor) : null;
-  const draftMeasureLabel =
-    draftTrendStart && hoverAnchor
-      ? `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(hoverAnchor.price - draftTrendStart.price, 2)} | ${
-          draftTrendStart.price === 0
-            ? "0.00"
-            : `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(((hoverAnchor.price - draftTrendStart.price) / draftTrendStart.price) * 100, 2)}`
-        }% | ${barsBetweenTimes(activeBars, draftTrendStart.time, hoverAnchor.time)} bars`
+    })();
+    // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
+    // computed in levels.ts and drawn in the same SVG overlay so they follow
+    // pan/zoom. Non-interactive; sit beneath the user's own drawings.
+    // Expansion candles can't be drawn physically wider (the chart engine uses
+    // one width for all candles), so each one gets a soft blurred GLOW capsule
+    // behind it in the SVG overlay — a warm halo that makes the candle read
+    // heavier without boxes or borders. Hidden when zoomed far out (halos would
+    // smear together at tiny bar spacings).
+    const expansionHighlightOverlays = highlightExpansion
+      ? activeBars.map((bar, i) => {
+          if (!perBarStats[i]?.isExpansionCandidate) return null;
+          const ms = mainSeriesRef.current;
+          const chart = chartRef.current;
+          if (!ms || !chart) return null;
+          const spacing = Number(chart.timeScale().options()?.barSpacing) || 6;
+          if (spacing < 4) return null;
+          const x = chart.timeScale().timeToCoordinate(bar.time as UTCTimestamp);
+          if (x === null || x === undefined) return null;
+          const yHigh = ms.priceToCoordinate(bar.high);
+          const yLow = ms.priceToCoordinate(bar.low);
+          if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
+          const width = Math.max(spacing * 1.35, 7);
+          const color = chartColors.candleExpansion || "#ffb01f";
+          const top = Math.min(yHigh, yLow) - 2;
+          const height = Math.abs(yLow - yHigh) + 4;
+          return (
+            <rect
+              key={`exp-hl-${bar.time}`}
+              x={x - width / 2}
+              y={top}
+              width={width}
+              height={height}
+              rx={width / 2}
+              fill={`${color}59`}
+              filter={`url(#${overlayFilterBaseId}-exp-glow)`}
+              style={{ pointerEvents: "none" }}
+            />
+          );
+        })
       : null;
 
-  const selectedAnnotation = annotations.find((a) => a.id === selectedAnnotationId) ?? null;
-  const selectedAnnotationHandles = selectedAnnotation
-    ? getAnnotationHandleAnchors(selectedAnnotation).map(({ key, anchor }) => {
-        const point = projectAnchor(chartRef.current, mainSeriesRef.current, anchor);
-        if (!point) {
-          return null;
-        }
-
-        const color = selectedAnnotation.color ?? ANNOTATION_DEFAULT_COLORS[selectedAnnotation.type] ?? "#ffd36f";
-        const handleId = `${selectedAnnotation.id}:${key}`;
-        const isDragging = draggingAnnotationHandle === handleId;
+    const autoZoneOverlays = autoLevelsEnabled
+      ? autoLevels.zones.map((zone, index) => {
+          const ms = mainSeriesRef.current;
+          const chart = chartRef.current;
+          if (!ms || !chart) return null;
+          const yHigh = ms.priceToCoordinate(zone.high);
+          const yLow = ms.priceToCoordinate(zone.low);
+          if (yHigh === null || yHigh === undefined || yLow === null || yLow === undefined) return null;
+          const top = Math.min(yHigh, yLow);
+          const height = Math.max(Math.abs(yLow - yHigh), 2);
+          // Draw from the origin candle to where the band stops (first test / latest bar).
+          const ts = chart.timeScale();
+          const xStartRaw = ts.timeToCoordinate(zone.startTime as UTCTimestamp);
+          const xEndRaw = ts.timeToCoordinate(zone.endTime as UTCTimestamp);
+          if ((xStartRaw === null || xStartRaw === undefined) && (xEndRaw === null || xEndRaw === undefined)) return null;
+          const xStart = Math.max(0, xStartRaw == null ? 0 : xStartRaw);
+          const xEnd = Math.min(stageWidth, xEndRaw == null ? stageWidth : xEndRaw);
+          if (xEnd <= xStart) return null;
+          const width = Math.max(xEnd - xStart, 2);
+          const demand = zone.kind === "demand";
+          // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
+          const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
+          const tfLabel = zone.timeframe === "M" ? "Mthly" : zone.timeframe === "W" ? "Wkly" : "Daily";
+          const label = `${tfLabel} ${demand ? "Demand" : "Supply"}`;
+          return (
+            <g key={`auto-zone-${index}`} style={{ pointerEvents: "none" }}>
+              <rect x={xStart} y={top} width={width} height={height} fill={`${color}1f`} stroke={`${color}66`} strokeWidth={1} strokeDasharray="2 3" />
+              <text x={xStart + 4} y={top + 12} fontSize="10" fontWeight={600} fill={color}>{label}</text>
+            </g>
+          );
+        })
+      : null;
+    const autoTrendlineOverlays = autoLevelsEnabled
+      ? autoLevels.trendlines.map((line, index) => {
+          const p1 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t1, price: line.p1 });
+          const p2 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t2, price: line.p2 });
+          if (!p1 || !p2) return null;
+          const color = line.kind === "up" ? "#22c55e" : "#ef4444";
+          return (
+            <g key={`auto-trend-${index}`} style={{ pointerEvents: "none" }}>
+              <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={color} strokeWidth={1.6} />
+            </g>
+          );
+        })
+      : null;
+    const measureOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "measure" }> => annotation.type === "measure")
+      .map((annotation) => {
+        const start = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.start);
+        const end = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.end);
+        if (!start || !end) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.measure;
+        const lw = annotation.lineWidth ?? 2;
+        const change = annotation.end.price - annotation.start.price;
+        const changePct = annotation.start.price === 0 ? 0 : (change / annotation.start.price) * 100;
+        const spanBars = barsBetweenTimes(activeBars, annotation.start.time, annotation.end.time);
+        const midX = (start.x + end.x) / 2;
+        const midY = (start.y + end.y) / 2;
+        const label = `${change >= 0 ? "+" : ""}${formatValue(change, 2)} | ${changePct >= 0 ? "+" : ""}${formatValue(changePct, 2)}% | ${spanBars} bars`;
+        const labelWidth = Math.max(170, Math.min(240, label.length * 6.4));
+        const labelX = clamp(midX - labelWidth / 2, 6, Math.max(stageWidth - labelWidth - 6, 6));
+        const labelY = clamp(midY - 26, 8, Math.max(stageHeight - 28, 8));
         return (
-          <g
-            key={handleId}
-            style={{ pointerEvents: "auto", cursor: isDragging ? "grabbing" : "grab" }}
-            onPointerDown={(event) => startAnnotationHandleDrag(event, selectedAnnotation.id, key)}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <circle cx={point.x} cy={point.y} r="11" fill="transparent" />
-            <circle cx={point.x} cy={point.y} r={isDragging ? 6 : 5} fill={color} stroke="rgba(4, 8, 17, 0.92)" strokeWidth="2" />
+          <g key={annotation.id} style={{ pointerEvents: "auto", cursor: "pointer" }}
+            onClick={(e) => { e.stopPropagation(); selectAnnotation(annotation.id); }}>
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke="transparent" strokeWidth={14} strokeLinecap="round" />
+            {isSel && <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw + 6} opacity={0.22} strokeLinecap="round" />}
+            <line x1={start.x} y1={start.y} x2={end.x} y2={end.y} stroke={color} strokeWidth={lw} strokeLinecap="round" strokeDasharray="5 4" />
+            <circle cx={start.x} cy={start.y} r="4" fill={color} />
+            <circle cx={end.x} cy={end.y} r="4" fill={color} />
+            <rect x={labelX} y={labelY} width={labelWidth} height="24" rx="8" fill="rgba(4, 8, 17, 0.92)" />
+            <text x={labelX + labelWidth / 2} y={labelY + 15} fill={color} fontSize="11" textAnchor="middle">
+              {label}
+            </text>
           </g>
         );
-      })
-    : [];
-  const annotationEditPos = (() => {
-    if (!selectedAnnotation) return null;
-    let ex = 20, ey = 20;
-    if ("point" in selectedAnnotation) {
-      const pt = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.point);
-      if (pt) { ex = clamp(pt.x - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(pt.y - 54, 4, Math.max(stageHeight - 66, 4)); }
-    } else if ("start" in selectedAnnotation) {
-      const st = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.start);
-      const en = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.end);
-      if (st && en) { ex = clamp((st.x + en.x) / 2 - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(Math.min(st.y, en.y) - 54, 4, Math.max(stageHeight - 66, 4)); }
-    }
-    return { x: ex, y: ey };
-  })();
+      });
+
+    const textOverlays = annotations
+      .filter((annotation): annotation is Extract<ChartAnnotation, { type: "text" }> => annotation.type === "text")
+      .map((annotation) => {
+        const point = projectAnchor(chartRef.current, mainSeriesRef.current, annotation.point);
+        if (!point) return null;
+        const isSel = selectedAnnotationId === annotation.id;
+        const color = annotation.color ?? ANNOTATION_DEFAULT_COLORS.text;
+        return (
+          <div
+            key={annotation.id}
+            className={isSel ? "chart-note selected" : "chart-note"}
+            style={{
+              left: `${Math.min(point.x + 10, Math.max(stageWidth - 180, 12))}px`,
+              top: `${Math.max(point.y - 12, 10)}px`,
+              borderColor: isSel ? color : undefined,
+              color: isSel ? color : undefined,
+            }}
+            onPointerDown={(event) => startAnnotationHandleDrag(event, annotation.id, "point")}
+            onClick={(event) => { event.stopPropagation(); selectAnnotation(annotation.id); }}
+            onDoubleClick={(event) => { event.stopPropagation(); editTextAnnotation(annotation.id); }}
+            title="Drag to move • Double-click to edit"
+          >
+            {annotation.text}
+          </div>
+        );
+      });
+
+    const draftPoint = draftTrendStart ? projectAnchor(chartRef.current, mainSeriesRef.current, draftTrendStart) : null;
+    const hoverPoint = hoverAnchor ? projectAnchor(chartRef.current, mainSeriesRef.current, hoverAnchor) : null;
+    const draftMeasureLabel =
+      draftTrendStart && hoverAnchor
+        ? `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(hoverAnchor.price - draftTrendStart.price, 2)} | ${
+            draftTrendStart.price === 0
+              ? "0.00"
+              : `${hoverAnchor.price - draftTrendStart.price >= 0 ? "+" : ""}${formatValue(((hoverAnchor.price - draftTrendStart.price) / draftTrendStart.price) * 100, 2)}`
+          }% | ${barsBetweenTimes(activeBars, draftTrendStart.time, hoverAnchor.time)} bars`
+        : null;
+
+    const selectedAnnotationHandles = selectedAnnotation
+      ? getAnnotationHandleAnchors(selectedAnnotation).map(({ key, anchor }) => {
+          const point = projectAnchor(chartRef.current, mainSeriesRef.current, anchor);
+          if (!point) {
+            return null;
+          }
+
+          const color = selectedAnnotation.color ?? ANNOTATION_DEFAULT_COLORS[selectedAnnotation.type] ?? "#ffd36f";
+          const handleId = `${selectedAnnotation.id}:${key}`;
+          const isDragging = draggingAnnotationHandle === handleId;
+          return (
+            <g
+              key={handleId}
+              style={{ pointerEvents: "auto", cursor: isDragging ? "grabbing" : "grab" }}
+              onPointerDown={(event) => startAnnotationHandleDrag(event, selectedAnnotation.id, key)}
+              onClick={(event) => event.stopPropagation()}
+            >
+              <circle cx={point.x} cy={point.y} r="11" fill="transparent" />
+              <circle cx={point.x} cy={point.y} r={isDragging ? 6 : 5} fill={color} stroke="rgba(4, 8, 17, 0.92)" strokeWidth="2" />
+            </g>
+          );
+        })
+      : [];
+    const annotationEditPos = (() => {
+      if (!selectedAnnotation) return null;
+      let ex = 20, ey = 20;
+      if ("point" in selectedAnnotation) {
+        const pt = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.point);
+        if (pt) { ex = clamp(pt.x - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(pt.y - 54, 4, Math.max(stageHeight - 66, 4)); }
+      } else if ("start" in selectedAnnotation) {
+        const st = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.start);
+        const en = projectAnchor(chartRef.current, mainSeriesRef.current, selectedAnnotation.end);
+        if (st && en) { ex = clamp((st.x + en.x) / 2 - 90, 4, Math.max(stageWidth - 210, 4)); ey = clamp(Math.min(st.y, en.y) - 54, 4, Math.max(stageHeight - 66, 4)); }
+      }
+      return { x: ex, y: ey };
+    })();
+    return {
+      stageWidth,
+      stageHeight,
+      horizontalLineOverlays,
+      verticalLineOverlays,
+      trendlineOverlays,
+      rayOverlays,
+      rectangleOverlays,
+      arrowLineOverlays,
+      arrowMarkerOverlays,
+      nextEarningsOverlay,
+      expansionHighlightOverlays,
+      autoZoneOverlays,
+      autoTrendlineOverlays,
+      measureOverlays,
+      textOverlays,
+      draftPoint,
+      hoverPoint,
+      draftMeasureLabel,
+      selectedAnnotationHandles,
+      annotationEditPos,
+    };
+  };
+
   const valuation = fundamentals?.valuation ?? null;
   const growth = fundamentals?.growth ?? null;
   const ratioCards = [
@@ -4366,33 +4572,37 @@ export function ChartPanel({
       ? "positive"
       : "negative"
     : "neutral";
-  const hoveredPriceTrendClass =
-    hoveredBar?.changePct !== null && hoveredBar?.changePct !== undefined
-      ? hoveredBar.changePct >= 0
-        ? "positive"
-        : "negative"
-      : priceTrendClass;
-  const priceLine1 = hoveredBar
-    ? `${formatChartDateFromTimestamp(hoveredBar.time, market)} · O ${formatPriceValue(hoveredBar.open, 2)} · H ${formatPriceValue(hoveredBar.high, 2)} · L ${formatPriceValue(hoveredBar.low, 2)} · C ${formatPriceValue(hoveredBar.close, 2)}`
-    : summary
-      ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(dayChangePct ?? summary.change_pct)}`
-      : "Hover the chart to inspect OHLC detail.";
-  const priceLine2 = hoveredBar
-    ? (hoveredBar.changePct !== null && hoveredBar.changeValue !== null
-        ? `Chg ${hoveredBar.changeValue >= 0 ? "+" : ""}${formatValue(hoveredBar.changeValue, 2)} (${formatSignedPercentValue(hoveredBar.changePct)})`
-        : null)
-    : summary
-      ? "Hover the chart to inspect OHLC detail."
-      : null;
-  const tradeHoverLines = hoveredTradeMarkers.length
-    ? hoveredTradeMarkers.flatMap((marker) =>
-        marker.entries.map((entry) => {
-          const label = marker.type === "buy" ? "B" : "S";
-          const qtyText = entry.qty ? ` × ${formatValue(entry.qty, 0)}` : "";
-          return `${label} ${formatPriceValue(entry.price, 2)}${qtyText}`;
-        }),
-      )
-    : [];
+  // Built per hover inside the crosshair chips' own subscriber (below), so the
+  // OHLC readout updates without re-rendering the panel around it.
+  const buildHoverReadout = (hoveredBar: HoveredPriceBar | null, hoveredTradeMarkers: SnappedTradeMarker[]) => ({
+    hoveredPriceTrendClass:
+      hoveredBar?.changePct !== null && hoveredBar?.changePct !== undefined
+        ? hoveredBar.changePct >= 0
+          ? "positive"
+          : "negative"
+        : priceTrendClass,
+    priceLine1: hoveredBar
+      ? `${formatChartDateFromTimestamp(hoveredBar.time, market)} · O ${formatPriceValue(hoveredBar.open, 2)} · H ${formatPriceValue(hoveredBar.high, 2)} · L ${formatPriceValue(hoveredBar.low, 2)} · C ${formatPriceValue(hoveredBar.close, 2)}`
+      : summary
+        ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(dayChangePct ?? summary.change_pct)}`
+        : "Hover the chart to inspect OHLC detail.",
+    priceLine2: hoveredBar
+      ? (hoveredBar.changePct !== null && hoveredBar.changeValue !== null
+          ? `Chg ${hoveredBar.changeValue >= 0 ? "+" : ""}${formatValue(hoveredBar.changeValue, 2)} (${formatSignedPercentValue(hoveredBar.changePct)})`
+          : null)
+      : summary
+        ? "Hover the chart to inspect OHLC detail."
+        : null,
+    tradeHoverLines: hoveredTradeMarkers.length
+      ? hoveredTradeMarkers.flatMap((marker) =>
+          marker.entries.map((entry) => {
+            const label = marker.type === "buy" ? "B" : "S";
+            const qtyText = entry.qty ? ` × ${formatValue(entry.qty, 0)}` : "";
+            return `${label} ${formatPriceValue(entry.price, 2)}${qtyText}`;
+          }),
+        )
+      : [],
+  });
   const chartSearchSuggestions = useMemo(
     () => buildSymbolSuggestions(searchOptions, deferredChartSearchQuery, 100),
     [deferredChartSearchQuery, searchOptions],
@@ -5133,7 +5343,7 @@ export function ChartPanel({
               <div className="favorites-widget-resize" onPointerDown={(event) => beginFavoritesWidgetDrag(event, "resize")} />
             </div>
           ) : null}
-          {showRvol && currentRvol ? (
+          {showRvol && rvolData.length ? (
             <div
               ref={rvolWidgetRef}
               className={`rvol-widget rvol-widget--${rvolScale}`}
@@ -5177,67 +5387,89 @@ export function ChartPanel({
                   </button>
                 </div>
               </div>
-              <div className="rvol-widget-row">
-                <span className="rvol-label">Vol</span>
-                <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.rvol50) }}>
-                  {currentRvol.rvol50.toFixed(2)}×
-                </span>
-                <span className="rvol-bar-track">
-                  <span
-                    className="rvol-bar-fill"
-                    style={{
-                      width: `${Math.min(currentRvol.rvol50 / 4, 1) * 100}%`,
-                      background: rvolToneColor(currentRvol.rvol50),
-                    }}
-                  />
-                </span>
-              </div>
-              <div className="rvol-widget-row">
-                <span className="rvol-label">Turn</span>
-                <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.turnoverRvol50) }}>
-                  {currentRvol.turnoverRvol50.toFixed(2)}×
-                </span>
-                <span className="rvol-bar-track">
-                  <span
-                    className="rvol-bar-fill"
-                    style={{
-                      width: `${Math.min(currentRvol.turnoverRvol50 / 4, 1) * 100}%`,
-                      background: rvolToneColor(currentRvol.turnoverRvol50),
-                    }}
-                  />
-                </span>
-              </div>
-              <div className="rvol-widget-detail">
-                {formatVolumeShort(currentRvol.volume, market)} / avg {formatVolumeShort(currentRvol.avgVolume, market)}
-              </div>
-              <div className="rvol-widget-detail">
-                {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
-              </div>
+              <ChartHoverSubscriber store={hoverStore}>
+                {(hover) => {
+                  const currentRvol = pickRvolEntry(hover.bar?.time ?? null);
+                  if (!currentRvol) return null;
+                  return (
+                    <>
+                      <div className="rvol-widget-row">
+                        <span className="rvol-label">Vol</span>
+                        <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.rvol50) }}>
+                          {currentRvol.rvol50.toFixed(2)}×
+                        </span>
+                        <span className="rvol-bar-track">
+                          <span
+                            className="rvol-bar-fill"
+                            style={{
+                              width: `${Math.min(currentRvol.rvol50 / 4, 1) * 100}%`,
+                              background: rvolToneColor(currentRvol.rvol50),
+                            }}
+                          />
+                        </span>
+                      </div>
+                      <div className="rvol-widget-row">
+                        <span className="rvol-label">Turn</span>
+                        <span className="rvol-value" style={{ color: rvolToneColor(currentRvol.turnoverRvol50) }}>
+                          {currentRvol.turnoverRvol50.toFixed(2)}×
+                        </span>
+                        <span className="rvol-bar-track">
+                          <span
+                            className="rvol-bar-fill"
+                            style={{
+                              width: `${Math.min(currentRvol.turnoverRvol50 / 4, 1) * 100}%`,
+                              background: rvolToneColor(currentRvol.turnoverRvol50),
+                            }}
+                          />
+                        </span>
+                      </div>
+                      <div className="rvol-widget-detail">
+                        {formatVolumeShort(currentRvol.volume, market)} / avg {formatVolumeShort(currentRvol.avgVolume, market)}
+                      </div>
+                      <div className="rvol-widget-detail">
+                        {formatTurnoverShort(currentRvol.turnover, market)} / avg {formatTurnoverShort(currentRvol.avgTurnover, market)}
+                      </div>
+                    </>
+                  );
+                }}
+              </ChartHoverSubscriber>
             </div>
           ) : null}
         <div className="chart-stage-meta">
-            <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
-              <span>{priceLine1}</span>
-              {priceLine2 ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
-            </span>
-            {tradeHoverLines.length ? (
-              <span
-                className="chart-stage-label chart-stage-label--trade"
-                style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}
-              >
-                {tradeHoverLines.map((line, idx) => (
-                  <span
-                    key={`trade-hover-${idx}`}
-                    style={{ color: line.startsWith("B") ? "#10b981" : "#ef4444" }}
-                  >
-                    {line}
-                  </span>
-                ))}
-              </span>
-            ) : null}
-            <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
-              {hoveredRsPoint ? `RS Rating ${Math.round(hoveredRsPoint.value)} on ${formatChartDateFromTimestamp(hoveredRsPoint.time)}` : "RS Rating line is plotted below price."}
-            </span>
+            <ChartHoverSubscriber store={hoverStore}>
+              {(hover) => {
+                const { hoveredPriceTrendClass, priceLine1, priceLine2, tradeHoverLines } = buildHoverReadout(
+                  hover.bar,
+                  hover.tradeMarkers,
+                );
+                return (
+                  <>
+                    <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                      <span>{priceLine1}</span>
+                      {priceLine2 ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
+                    </span>
+                    {tradeHoverLines.length ? (
+                      <span
+                        className="chart-stage-label chart-stage-label--trade"
+                        style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}
+                      >
+                        {tradeHoverLines.map((line, idx) => (
+                          <span
+                            key={`trade-hover-${idx}`}
+                            style={{ color: line.startsWith("B") ? "#10b981" : "#ef4444" }}
+                          >
+                            {line}
+                          </span>
+                        ))}
+                      </span>
+                    ) : null}
+                    <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                      {hover.rsPoint ? `RS Rating ${Math.round(hover.rsPoint.value)} on ${formatChartDateFromTimestamp(hover.rsPoint.time)}` : "RS Rating line is plotted below price."}
+                    </span>
+                  </>
+                );
+              }}
+            </ChartHoverSubscriber>
             {draftTrendStart ? <span className="chart-stage-label emphasis" style={{ background: palette.background, borderColor: palette.borderColor }}>{chartSubtitle(drawingTool, draftTrendStart, chartStyle)}</span> : null}
             {nextEarnings ? (
               <span
@@ -5598,6 +5830,30 @@ export function ChartPanel({
                 onPointerUp={handleStagePointerUp}
               />
             ) : null}
+            <ChartRepaintSubscriber store={overlayStore} compute={computeOverlayLayer}>
+              {({
+                stageWidth,
+                stageHeight,
+                horizontalLineOverlays,
+                verticalLineOverlays,
+                trendlineOverlays,
+                rayOverlays,
+                rectangleOverlays,
+                arrowLineOverlays,
+                arrowMarkerOverlays,
+                nextEarningsOverlay,
+                expansionHighlightOverlays,
+                autoZoneOverlays,
+                autoTrendlineOverlays,
+                measureOverlays,
+                textOverlays,
+                draftPoint,
+                hoverPoint,
+                draftMeasureLabel,
+                selectedAnnotationHandles,
+                annotationEditPos,
+              }) => (
+                <>
             <svg
               className="chart-overlay"
               width={Math.max(stageWidth, 1)}
@@ -5768,6 +6024,9 @@ export function ChartPanel({
                 </button>
               </div>
             ) : null}
+                </>
+              )}
+            </ChartRepaintSubscriber>
           </div>
         </div>
         )
