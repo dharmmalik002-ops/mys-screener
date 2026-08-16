@@ -30,26 +30,27 @@ type SeriesKey =
   | "above_sma200_pct"
   | "above_ma20_pct";
 
-/**
- * Every series the chart knows how to draw, in plot order. Only the ones the
- * served universe actually carries are rendered — the ₹1,000 cr+ file has the
- * first four, the XP fallback only has its own 20-EMA.
- *
- * The 20-EMA ships hidden by default. It tracks the 21-EMA within a couple of
- * points, so drawn together they read as one thick line rather than two
- * signals; it is here because it is the average the posture strip counts off,
- * and being able to overlay the two is the only way to check them against each
- * other.
- */
+/** Every series the chart knows how to draw, in plot order. */
 const SERIES: Array<{ key: SeriesKey; name: string; short: string; stroke: string; width: number }> = [
   { key: "above_ema21_pct", name: "% above 21-EMA", short: "21 EMA", stroke: "var(--accent)", width: 1.6 },
-  { key: "above_ema20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent-3)", width: 1.3 },
+  { key: "above_ema20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent)", width: 1.6 },
+  { key: "above_ma20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent)", width: 1.6 },
   { key: "above_ma50_pct", name: "% above 50-DMA", short: "50 DMA", stroke: "var(--amber)", width: 1.5 },
   { key: "above_sma200_pct", name: "% above 200-DMA", short: "200 DMA", stroke: "var(--text-muted)", width: 1.3 },
-  { key: "above_ma20_pct", name: "% above 20-EMA", short: "20 EMA", stroke: "var(--accent)", width: 1.6 },
 ];
 
-const DEFAULT_HIDDEN: SeriesKey[] = ["above_ema20_pct"];
+/**
+ * The fast average, in order of preference — the chart draws whichever one the
+ * served data actually has, and only that one.
+ *
+ * All three measure the same thing and land within a point or two of each
+ * other, so plotting more than one reads as a divergence that isn't there: two
+ * lines fattening into one stroke. The 21-EMA is the swing convention and comes
+ * from the ₹1,000 cr+ file; the 20-EMA is the same file's companion and the
+ * average the posture strip counts off; `above_ma20_pct` is all the XP-universe
+ * fallback carries.
+ */
+const FAST_EMA_KEYS: SeriesKey[] = ["above_ema21_pct", "above_ema20_pct", "above_ma20_pct"];
 
 const HIDDEN_KEY = "stockScanner.breadthHiddenSeries";
 
@@ -57,9 +58,9 @@ function loadHidden(): Set<SeriesKey> {
   try {
     const raw = window.localStorage.getItem(HIDDEN_KEY);
     const parsed = raw ? JSON.parse(raw) : null;
-    return new Set(Array.isArray(parsed) ? (parsed as SeriesKey[]) : DEFAULT_HIDDEN);
+    return new Set(Array.isArray(parsed) ? (parsed as SeriesKey[]) : []);
   } catch {
-    return new Set(DEFAULT_HIDDEN);
+    return new Set();
   }
 }
 
@@ -77,6 +78,9 @@ function loadHidden(): Set<SeriesKey> {
  * The header entries double as the legend and the show/hide control — three
  * lines on one 0-100 axis is a lot to read at once, and being able to drop the
  * 200-DMA to compare the two faster averages is most of the point.
+ *
+ * Which fast EMA appears depends on what the served universe carries; see
+ * FAST_EMA_KEYS. The label always names the average actually plotted.
  */
 export function BreadthTimeline({ points, universeLabel }: Props) {
   const [range, setRange] = useState<(typeof RANGES)[number]["key"]>("3y");
@@ -87,15 +91,12 @@ export function BreadthTimeline({ points, universeLabel }: Props) {
     return points.slice(-chosen.sessions);
   }, [points, range]);
 
-  // Which series actually carry data in the window on screen.
+  // Which series actually carry data in the window on screen, with the fast
+  // averages collapsed to the single best one that does.
   const live = useMemo(() => {
     const has = (key: SeriesKey) => data.some((p) => typeof p[key] === "number");
-    const carried = SERIES.filter((s) => has(s.key));
-    // The 20-EMA is the XP fallback's only series; never show it beside the
-    // 21-EMA, where two near-identical lines would read as a real divergence.
-    return carried.some((s) => s.key === "above_ema21_pct")
-      ? carried.filter((s) => s.key !== "above_ma20_pct")
-      : carried;
+    const fast = FAST_EMA_KEYS.find(has);
+    return SERIES.filter((s) => has(s.key) && (!FAST_EMA_KEYS.includes(s.key) || s.key === fast));
   }, [data]);
 
   const toggle = useCallback((key: SeriesKey) => {
