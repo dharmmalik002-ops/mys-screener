@@ -5,6 +5,14 @@
   --font-mono: "JetBrains Mono", "SFMono-Regular", "SF Mono", "IBM Plex Mono", "Menlo", "Consolas", monospace;
   --bg: #0c1021;
   --bg-alt: #111830;
+  /* The page canvas. Flat, on purpose: this used to be a blue gradient mesh
+     that only the Markets page fully covered, so that page read as a calm grey
+     and every other page read blue. The grey won. --card-flat is one step off
+     the canvas so the opaque cards that used to sit on --bg (Markets verdict,
+     context tiles, disclosures) still read as cards now that the canvas is
+     their old colour. */
+  --app-canvas: var(--bg-alt);
+  --card-flat: #171f3a;
   --surface: rgba(14, 20, 38, 0.72);
   --surface-strong: rgba(18, 26, 48, 0.84);
   --surface-soft: rgba(22, 34, 58, 0.62);
@@ -88,6 +96,10 @@
   color-scheme: light;
   --bg: #f1f5f9;
   --bg-alt: #e2e8f0;
+  --app-canvas: var(--bg-alt);
+  /* Lighter than the canvas here, darker than it in dark theme — either way a
+     card should be the thing that catches the light. */
+  --card-flat: #f4f7fb;
   --surface: rgba(255, 255, 255, 0.68);
   --surface-strong: rgba(255, 255, 255, 0.82);
   --surface-soft: rgba(241, 245, 249, 0.66);
@@ -159,9 +171,7 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background:
-    radial-gradient(ellipse 90% 55% at 50% 0%, rgba(76, 154, 255, 0.06), transparent 60%),
-    var(--bg);
+  background: var(--app-canvas);
   color: var(--text);
   background-attachment: fixed;
   font-variant-numeric: tabular-nums;
@@ -404,27 +414,20 @@ button {
   animation: fadeIn 400ms ease-out;
 }
 
-/* Fixed, full-viewport background image behind everything — the scene the
-   liquid-glass chrome refracts. Dimmed by a theme veil so data stays readable.
-   If --app-bg-image 404s, the --hero-glow mesh shows through (graceful fallback). */
+/* Fixed, full-viewport canvas behind everything. This was a blue gradient mesh
+   (--app-bg-image over --hero-glow, dimmed by --app-veil); it is now the flat
+   grey the Markets cards use, site-wide. The layer itself stays because the
+   glass chrome above it is stacked against it — only what it paints changed.
+   The mesh tokens are still defined in :root should the depth ever be wanted
+   back: restore `background-image: var(--app-veil), var(--app-bg-image),
+   var(--hero-glow)` here. */
 .app-shell::before {
   content: "";
   position: fixed;
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background-image: var(--app-veil), var(--app-bg-image), var(--hero-glow);
-  background-size: cover, cover, cover;
-  background-position: center top, center top, center top;
-  background-repeat: no-repeat, no-repeat, no-repeat;
-  background-attachment: fixed, fixed, fixed;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .app-shell::before {
-    background-image: var(--app-veil), var(--hero-glow);
-    background-size: cover, cover;
-  }
+  background: var(--app-canvas);
 }
 
 .app-shell-simple {

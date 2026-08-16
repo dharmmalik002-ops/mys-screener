@@ -245,5 +245,90 @@ class FrameSourcesTests(unittest.TestCase):
         self.assertIsNone(src["index_last_session"])
 
 
+def mcap_doc(rows, *, universe="NSE stocks over Rs 1,000 cr", floor=1000.0) -> dict:
+    return {
+        "generated_at": "2026-08-14T19:00:00+05:30",
+        "universe": universe,
+        "market_cap_floor_crore": floor,
+        "days": rows,
+    }
+
+
+def mcap_row(iso: str, ema21=None, sma50=None, sma200=None, ema20=None, total=1500) -> dict:
+    return {
+        "date": iso,
+        "total": total,
+        "above_ema20_pct": ema20,
+        "above_ema21_pct": ema21,
+        "above_sma50_pct": sma50,
+        "above_sma200_pct": sma200,
+    }
+
+
+class McapBreadthSourceTests(unittest.TestCase):
+    """The ₹1,000 cr+ file is the primary breadth source; the other two are
+    fallbacks. These pin the precedence and the degradation order."""
+
+    def test_mcap_wins_over_both_nifty500_and_xp(self):
+        bars = [bar("2026-08-14", 101.0)]
+        rows = [breadth_row("2026-08-14", 90.0, 90.0)]  # Nifty 500 says 90/90
+        xp = xp_doc([{"date": "2026-08-14", "xp_score": 11.4, "regime": "Choppy", "ma20_pct": 43.8}])
+        frame = mf.build_frame(
+            bars, breadth_doc(rows), xp,
+            mcap_doc=mcap_doc([mcap_row("2026-08-14", 47.7, 53.54, 57.05, ema20=48.9)]),
+        )
+        self.assertEqual(frame[0].participation_source, "mcap-breadth")
+        self.assertEqual(frame[0].above_ema20_pct, 48.9)
+        self.assertEqual(frame[0].above_ema21_pct, 47.7)
+        self.assertEqual(frame[0].above_ma50_pct, 53.54)
+        self.assertEqual(frame[0].above_sma200_pct, 57.05)
+        # 0.7*53.54 + 0.3*57.05 — the same blend, on the wider universe.
+        self.assertEqual(frame[0].participation, 54.59)
+
+    def test_falls_back_to_nifty500_when_mcap_is_absent(self):
+        bars = [bar("2026-08-14", 101.0)]
+        rows = [breadth_row("2026-08-14", 60.0, 50.0)]
+        frame = mf.build_frame(bars, breadth_doc(rows), {"days": []}, mcap_doc={})
+        self.assertEqual(frame[0].participation_source, "nifty500-breadth")
+        self.assertEqual(frame[0].participation, 57.0)
+        self.assertIsNone(frame[0].above_ema20_pct)
+        self.assertIsNone(frame[0].above_ema21_pct)
+
+    def test_missing_200_dma_leaves_the_50_dma_unpadded(self):
+        """A warmup session must not be blended against a missing leg.
+
+        0.7*60 + 0.3*0 would report 42% participation on a session where 60% of
+        the market is above its 50-DMA — a 30-point understatement invented out
+        of an average that does not exist yet.
+        """
+        bars = [bar("2026-08-14", 101.0)]
+        frame = mf.build_frame(
+            bars, {"universes": []}, {"days": []},
+            mcap_doc=mcap_doc([mcap_row("2026-08-14", 55.0, 60.0, None)]),
+        )
+        self.assertEqual(frame[0].participation, 60.0)
+        self.assertEqual(frame[0].participation_source, "mcap-breadth")
+        self.assertIsNone(frame[0].above_sma200_pct)
+
+    def test_all_null_mcap_row_falls_through_to_xp(self):
+        bars = [bar("2026-08-14", 101.0)]
+        xp = xp_doc([{"date": "2026-08-14", "xp_score": 11.4, "regime": "Choppy", "ma20_pct": 43.8}])
+        frame = mf.build_frame(
+            bars, {"universes": []}, xp,
+            mcap_doc=mcap_doc([mcap_row("2026-08-14")]),
+        )
+        self.assertEqual(frame[0].participation_source, "xp-universe")
+        self.assertEqual(frame[0].participation, 43.8)
+
+    def test_sources_report_the_mcap_universe(self):
+        bars = [bar("2026-08-14", 101.0)]
+        doc = mcap_doc([mcap_row("2026-08-14", 47.7, 53.54, 57.05)])
+        src = mf.frame_sources(bars, {"universes": []}, {"days": []}, mcap_doc=doc)
+        self.assertEqual(src["participation_source"], "mcap-breadth")
+        self.assertEqual(src["universe"], "NSE stocks over Rs 1,000 cr")
+        self.assertEqual(src["mcap_sessions"], 1)
+        self.assertEqual(src["mcap_floor_crore"], 1000.0)
+
+
 if __name__ == "__main__":
     unittest.main()

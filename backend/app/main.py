@@ -295,6 +295,71 @@ def pull_latest_xp_breadth() -> bool:
         return False
 
 
+def pull_latest_mcap_breadth() -> bool:
+    """Pull the committed ₹1,000 cr+ breadth history from the public repo.
+
+    Same reason as `pull_latest_xp_breadth`: the daily bhavcopy job commits this
+    file with ``[skip ci]``, so it never triggers a redeploy and only reaches
+    this Space through the workflow's HF push — which can silently fail. Without
+    this pull the Markets breadth chart and the participation tile freeze at
+    whatever session was baked into the last full deploy.
+
+    Returns True when a newer file was written.
+    """
+    import json as _json
+
+    import requests as _requests
+
+    from app.services import mcap_breadth as _mcap
+
+    def _latest_date(doc: object) -> str:
+        if not isinstance(doc, dict):
+            return ""
+        days = doc.get("days")
+        if isinstance(days, list) and days and isinstance(days[-1], dict):
+            return str(days[-1].get("date") or "")
+        return ""
+
+    raw_base = (
+        os.environ.get("COMMITTED_DATA_RAW_BASE")
+        or "https://raw.githubusercontent.com/dharmmalik002-ops/mys-screener/main/backend/data"
+    ).strip().rstrip("/")
+    path = Path(__file__).resolve().parents[1] / "data" / _mcap.HISTORY_FILENAME
+    try:
+        local_date = ""
+        try:
+            local_date = _latest_date(_json.loads(path.read_text(encoding="utf-8")))
+        except Exception:
+            local_date = ""
+        resp = _requests.get(f"{raw_base}/{_mcap.HISTORY_FILENAME}", timeout=25)
+        if resp.status_code != 200:
+            logger.info(
+                "Mcap breadth self-update: remote HTTP %s — keeping local %s",
+                resp.status_code, local_date or "<none>",
+            )
+            return False
+        remote = resp.json()
+        remote_date = _latest_date(remote)
+        days = remote.get("days") if isinstance(remote, dict) else None
+        if not remote_date or not isinstance(days, list) or not days:
+            logger.warning("Mcap breadth self-update: remote payload invalid — keeping local")
+            return False
+        if local_date and remote_date <= local_date:
+            return False  # already current (or older) — nothing to do
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_name(path.name + ".tmp")
+        tmp.write_text(resp.text, encoding="utf-8")
+        tmp.replace(path)
+        logger.info(
+            "Mcap breadth self-update: pulled %s (was %s) from remote",
+            remote_date, local_date or "<none>",
+        )
+        return True
+    except Exception as exc:
+        logger.warning("Mcap breadth self-update failed: %s", exc)
+        return False
+
+
 def pull_latest_price_bands() -> bool:
     """Pull the committed circuit-limit files from the public repo.
 
@@ -493,6 +558,7 @@ def apply_bhavcopy_patch_on_startup() -> None:
     """
     pulled = pull_latest_bhavcopy_patch()
     xp_pulled = pull_latest_xp_breadth()
+    mcap_pulled = pull_latest_mcap_breadth()
     bands_pulled = pull_latest_price_bands()
     eod_bars_pulled = pull_latest_eod_bars()
     earnings_pulled = pull_latest_earnings_data()
@@ -502,10 +568,13 @@ def apply_bhavcopy_patch_on_startup() -> None:
         logger.warning("Bhavcopy patch apply on startup failed: %s", exc)
         result = {}
     snapshot_updated = result.get("status") == "ok" and int(result.get("snapshots_updated", 0) or 0) > 0
-    # Clear runtime caches when the snapshot, the XP history, the circuit bands,
-    # the recent EOD bars, or the earnings artifacts advanced, so charts /
-    # dashboard / scanners re-read fresh files.
-    if snapshot_updated or xp_pulled or bands_pulled or eod_bars_pulled or earnings_pulled:
+    # Clear runtime caches when the snapshot, either breadth history, the
+    # circuit bands, the recent EOD bars, or the earnings artifacts advanced, so
+    # charts / dashboard / scanners re-read fresh files.
+    if (
+        snapshot_updated or xp_pulled or mcap_pulled
+        or bands_pulled or eod_bars_pulled or earnings_pulled
+    ):
         try:
             service._clear_runtime_caches()
         except Exception:

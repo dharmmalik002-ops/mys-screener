@@ -266,7 +266,10 @@ def build_router(service):
     @router.get("/markets/breadth-history", response_model=HistoricalBreadthResponse)
     async def markets_breadth_history(
         market: str = Query(default="india"),
-        universe: str = Query(default="Nifty 500"),
+        # "auto" walks the breadth sources best-first (Rs 1,000 cr+ universe,
+        # then Nifty 500, then the XP universe). An explicit name pins the
+        # legacy free_historical_breadth.json universes.
+        universe: str = Query(default="auto"),
         days: int = Query(default=250, ge=20, le=900),
     ):
         return await resolve_service(market).get_historical_breadth(universe=universe, days=days)
@@ -615,7 +618,7 @@ def build_router(service):
     @router.get("/{market_name}/markets/breadth-history", response_model=HistoricalBreadthResponse)
     async def namespaced_markets_breadth_history(
         market_name: str,
-        universe: str = Query(default="Nifty 500"),
+        universe: str = Query(default="auto"),
         days: int = Query(default=250, ge=20, le=900),
     ):
         return await resolve_service(market_name).get_historical_breadth(universe=universe, days=days)

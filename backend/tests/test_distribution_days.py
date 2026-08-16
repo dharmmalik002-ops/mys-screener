@@ -11,8 +11,8 @@ from app.services.market_frame import FrameRow
 def row(date: str, close: float, volume: float) -> FrameRow:
     return FrameRow(
         date=date, close=close, high=close, low=close, volume=volume,
-        participation=60.0, participation_source="nifty500-breadth",
-        above_ma20_pct=60.0, above_ma50_pct=60.0,
+        participation=60.0, participation_source="mcap-breadth",
+        above_ema20_pct=60.0, above_ema21_pct=60.0, above_ma20_pct=60.0, above_ma50_pct=60.0,
         above_sma200_pct=60.0, new_high_52w_pct=0.0, new_low_52w_pct=0.0,
         xp_score=None, xp_regime=None, ma10_pct=None, ma20_pct=None,
     )

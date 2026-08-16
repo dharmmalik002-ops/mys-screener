@@ -6,7 +6,7 @@
   border: 1px solid var(--line);
   border-left: 4px solid var(--text-muted);
   border-radius: var(--radius-lg);
-  background: var(--bg-alt);
+  background: var(--card-flat);
   padding: 18px 20px 16px;
   margin-bottom: 14px;
 }

@@ -480,7 +480,7 @@
      hardcoded #0f172a — a dark navy chip even in light mode. --bg-alt is the
      palette's opaque raised surface and flips with the theme. */
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--bg-alt) 70%, transparent),
+    color-mix(in srgb, var(--card-flat) 70%, transparent),
     transparent);
   border: 1px solid var(--hp-border);
   border-radius: 8px;
@@ -546,7 +546,7 @@
 .homepro-breadth-history-day.active {
   /* Same undefined-token fallback as above (#1e293b here); solid --bg-alt so
      hover reads stronger than the resting 70% mix. */
-  background: var(--bg-alt);
+  background: var(--card-flat);
   border-color: var(--hp-border);
   transform: translateY(-1px);
 }

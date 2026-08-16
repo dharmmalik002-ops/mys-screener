@@ -255,7 +255,7 @@
 }
 
 .ticker-ribbon {
-  background: color-mix(in srgb, var(--bg-alt) 92%, var(--bg));
+  background: color-mix(in srgb, var(--card-flat) 92%, var(--bg));
 }
 
 /* ===== 15. STATUS DOT ===== */

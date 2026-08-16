@@ -27,6 +27,60 @@
   color: var(--text);
 }
 
+/* Each reading is also the show/hide control for its line. */
+.mkb-series {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 6px;
+  margin: 0 -6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+    background var(--dur-fast) var(--ease-out),
+    opacity var(--dur-fast) var(--ease-out);
+}
+
+.mkb-series:hover {
+  border-color: var(--line-strong);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+.mkb-series:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.mkb-series.off {
+  opacity: 0.45;
+}
+
+.mkb-series.off strong {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.mkb-swatch {
+  align-self: center;
+  width: 12px;
+  height: 2.5px;
+  border-radius: 2px;
+  flex: none;
+}
+
+.mkb-series.off .mkb-swatch {
+  background: var(--text-muted) !important;
+}
+
+.mkb-series-name {
+  white-space: nowrap;
+}
+
 .mkb-span {
   font-size: 11px;
   font-variant-numeric: tabular-nums;
@@ -75,5 +129,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mkb-range { transition: none; }
+  .mkb-range,
+  .mkb-series { transition: none; }
 }
