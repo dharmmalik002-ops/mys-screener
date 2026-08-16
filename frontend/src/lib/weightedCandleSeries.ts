@@ -60,10 +60,11 @@ export const weightedCandleDefaultOptions: WeightedCandleSeriesOptions = {
   borderUpColor: "#089981",
   borderDownColor: "#f23645",
   borderVisible: true,
-  // A quiet bar keeps ~28% of the slot so it still reads as a candle; a loud one
-  // takes ~92%, near enough to touching its neighbours to look deliberate.
-  minWidthFraction: 0.28,
-  maxWidthFraction: 0.92,
+  // The spread has to be wide enough to read at a glance, otherwise the whole
+  // feature is a 1px curiosity. A dead bar keeps ~15% of its slot (a hairline
+  // that still shows direction); a loud one takes the entire slot.
+  minWidthFraction: 0.15,
+  maxWidthFraction: 1.0,
 } as WeightedCandleSeriesOptions;
 
 /** Snap to whole device pixels so edges stay hard instead of half-lit. */
@@ -216,7 +217,12 @@ export function computeCandleWeights(
     // Volume leads: a big move on no volume is noise, volume without a move is
     // still accumulation worth seeing.
     const score = vol * 0.6 + move * 0.4;
-    return Math.max(0, Math.min(1, score));
+    // Most bars are unremarkable, so a linear score bunches everything into the
+    // middle and the chart looks uniform again. The curve pushes ordinary bars
+    // down toward the hairline and reserves real width for the ones that earned
+    // it — which is the whole point of looking at the chart this way.
+    const shaped = Math.pow(Math.max(0, Math.min(1, score)), 1.6);
+    return shaped;
   });
 }
 

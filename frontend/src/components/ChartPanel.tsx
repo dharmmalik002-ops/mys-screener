@@ -12,7 +12,7 @@ import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
-export type ChartStyle = "candles" | "weighted" | "bars" | "hlc";
+export type ChartStyle = "candles" | "bars" | "hlc";
 // Volume colouring: "auto" follows the theme (Mono theme -> mono volume, which
 // is the historical behaviour), "mono"/"classic" force it on any theme.
 export type VolumeMode = "auto" | "classic" | "mono";
@@ -264,11 +264,6 @@ type ChartPanelProps = {
 const TIMEFRAMES: ChartTimeframe[] = ["15m", "30m", "1h", "1D", "1W"];
 const CHART_STYLES: Array<{ key: ChartStyle; label: string; title?: string }> = [
   { key: "candles", label: "Candles" },
-  {
-    key: "weighted",
-    label: "Weighted",
-    title: "Candle width scales with volume and range — heavy, wide-range bars render thick, quiet bars render thin",
-  },
   { key: "bars", label: "Bars", title: "OHLC bars: open tick left, close tick right" },
   { key: "hlc", label: "HLC", title: "IBD-style high-low bars with a close tick only  (L)" },
 ];
@@ -1957,6 +1952,17 @@ export function ChartPanel({
       return false;
     }
   });
+  // Weighted candle widths are the default look, not a mode to go find: the
+  // whole point is seeing at a glance which bars carried volume. Opt OUT via
+  // the Display settings if you want every candle the same width.
+  const [weightedWidth, setWeightedWidth] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem("stockScanner.weightedWidth.v1") !== "off";
+    } catch {
+      return true;
+    }
+  });
   const [tightnessMarks, setTightnessMarks] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     try {
@@ -1982,6 +1988,14 @@ export function ChartPanel({
       // best-effort persistence
     }
   }, [hollowCandles]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("stockScanner.weightedWidth.v1", weightedWidth ? "on" : "off");
+    } catch {
+      // best-effort persistence
+    }
+  }, [weightedWidth]);
 
   useEffect(() => {
     try {
@@ -2167,10 +2181,12 @@ export function ChartPanel({
   // Both "bars" and "hlc" render as a lightweight-charts BarSeries, which takes
   // none of the candlestick-only body/border options below.
   const isBarStyle = chartStyle === "bars" || chartStyle === "hlc";
-  // Weighted candles are drawn by our own renderer (see weightedCandleSeries),
-  // the only way to vary width per bar — the built-in series draws every candle
-  // at one width.
-  const isWeightedStyle = chartStyle === "weighted";
+  // Candles are drawn by our own renderer (see weightedCandleSeries) whenever
+  // weighted widths are on — the only way to vary width per bar, since the
+  // built-in series draws every candle at one width. Mono is excluded: its
+  // hollow-white/solid-black language is about direction, and varying the width
+  // on top of that muddies it.
+  const isWeightedStyle = !isBarStyle && weightedWidth && chartPalette !== "mono";
   // Volume colouring is independent of the theme so Editorial can use the
   // meaning-based (mono) volume; "auto" preserves the old theme-coupled default.
   const monoVolume = volumeMode === "mono" || (volumeMode === "auto" && chartPalette === "mono");
@@ -4774,6 +4790,17 @@ export function ChartPanel({
                       title="Expansion candle colour"
                       aria-label="Expansion candle colour"
                     />
+                  </div>
+                  <span className="chart-display-settings-label">Weighted width</span>
+                  <div className="chart-style-switcher">
+                    <button
+                      type="button"
+                      className={weightedWidth ? "timeframe-pill active" : "timeframe-pill"}
+                      onClick={() => setWeightedWidth((v) => !v)}
+                      title="Candle width scales with volume and range: heavy, wide-range bars render thick, quiet bars render thin"
+                    >
+                      {weightedWidth ? "On" : "Off"}
+                    </button>
                   </div>
                   <span className="chart-display-settings-label">Hollow up candles</span>
                   <div className="chart-style-switcher">
