@@ -64,7 +64,10 @@ class FrameRow:
     low: float
     volume: float  # 0.0 on the newest bar — see distribution_days for why
     participation: float | None
-    participation_source: str | None  # "nifty500-breadth" | "xp-universe"
+    # "mcap-breadth" | "nifty500-breadth" | "xp-universe", best available first
+    participation_source: str | None
+    above_ema20_pct: float | None
+    above_ema21_pct: float | None
     above_ma20_pct: float | None
     above_ma50_pct: float | None
     above_sma200_pct: float | None
@@ -165,20 +168,33 @@ def participation_of(above_ma50_pct: float, above_sma200_pct: float) -> float:
     )
 
 
+def mcap_by_date(mcap_doc: Mapping[str, Any] | None) -> dict[str, dict]:
+    """₹1,000 cr+ universe breadth rows keyed by ISO date.
+
+    Thin wrapper over `mcap_breadth.rows_by_date` so every consumer of the
+    frame reaches all three breadth sources through this one module.
+    """
+    from app.services import mcap_breadth
+
+    return mcap_breadth.rows_by_date(mcap_doc)
+
+
 def build_frame(
     index_bars: Sequence[Any],
     breadth_doc: Mapping[str, Any],
     xp_doc: Mapping[str, Any],
     *,
     universe: str = DEFAULT_UNIVERSE,
+    mcap_doc: Mapping[str, Any] | None = None,
 ) -> list[FrameRow]:
-    """Join the three sources onto real trading sessions, oldest first.
+    """Join the breadth sources onto real trading sessions, oldest first.
 
     Inner join on index ∩ breadth (this is what drops the phantom weekend
     rows), left join on XP (it lags by a session, so the newest row legitimately
     has no XP reading).
     """
     sessions = index_sessions(index_bars)
+    mcap = mcap_by_date(mcap_doc)
     breadth = breadth_by_date(breadth_doc, universe)
     xp = xp_by_date(xp_doc)
 
@@ -187,21 +203,37 @@ def build_frame(
     # when present rather than gating it.
     for iso in sorted(sessions.keys()):
         bar = sessions[iso]
+        m = mcap.get(iso) or {}
         b = breadth.get(iso) or {}
         x = xp.get(iso) or {}
-        if not b and not x:
+        if not m and not b and not x:
             continue  # a bare price bar carries nothing this module is for
 
-        above50 = _to_float(b.get("above_ma50_pct"))
-        above200 = _to_float(b.get("above_sma200_pct"))
-        ma20 = _to_float(x.get("ma20_pct"))
+        # The ₹1,000 cr+ file is the primary source: it is the widest universe
+        # that still excludes untradeable micro-caps, it carries all three
+        # averages, and — unlike the Nifty 500 file — it actually ships. The
+        # other two remain as fallbacks so a missing daily run degrades to a
+        # narrower reading instead of an empty page.
+        above20 = _to_float(m.get("above_ema20_pct"))
+        above21 = _to_float(m.get("above_ema21_pct"))
+        above50 = _to_float(m.get("above_sma50_pct"))
+        above200 = _to_float(m.get("above_sma200_pct"))
+        source = "mcap-breadth" if above50 is not None or above200 is not None else None
 
-        # Prefer the Nifty 500 blend; fall back to the XP universe's %-above-
-        # 20-EMA, which is a wider universe and a different average, so the
-        # source is recorded and surfaced rather than quietly substituted.
-        if above50 is not None and above200 is not None:
+        if source is None:
+            above50 = _to_float(b.get("above_ma50_pct"))
+            above200 = _to_float(b.get("above_sma200_pct"))
+            source = "nifty500-breadth" if above50 is not None and above200 is not None else None
+
+        ma20 = _to_float(x.get("ma20_pct"))
+        if source is not None and above50 is not None and above200 is not None:
             participation = participation_of(above50, above200)
-            source = "nifty500-breadth"
+        elif source is not None and (above50 is not None or above200 is not None):
+            # Early sessions have a 50-DMA but no 200-DMA yet. Blending against
+            # a missing leg would understate participation by that leg's whole
+            # weight, so the available one stands alone rather than being
+            # padded with a zero.
+            participation = round(above50 if above50 is not None else above200, 2)
         elif ma20 is not None:
             participation = round(ma20, 2)
             source = "xp-universe"
@@ -218,6 +250,8 @@ def build_frame(
                 volume=bar["volume"],
                 participation=participation,
                 participation_source=source,
+                above_ema20_pct=above20,
+                above_ema21_pct=above21,
                 above_ma20_pct=_to_float(b.get("above_ma20_pct")),
                 above_ma50_pct=above50,
                 above_sma200_pct=above200,
@@ -238,14 +272,16 @@ def frame_sources(
     xp_doc: Mapping[str, Any],
     *,
     universe: str = DEFAULT_UNIVERSE,
+    mcap_doc: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Provenance + staleness block, shipped with every response built on the frame."""
     sessions = index_sessions(index_bars)
+    mcap = mcap_by_date(mcap_doc)
     breadth = breadth_by_date(breadth_doc, universe)
     xp = xp_by_date(xp_doc)
     # "Aligned" now means sessions carrying *any* joined data, since breadth is
     # optional; the breadth-specific count is reported separately.
-    aligned = sessions.keys() & (breadth.keys() | xp.keys())
+    aligned = sessions.keys() & (mcap.keys() | breadth.keys() | xp.keys())
 
     # Only count non-session breadth rows inside the index calendar's own span;
     # breadth history reaches further back than the index cache, and counting
@@ -261,9 +297,14 @@ def frame_sources(
     if index_last and xp_last and xp_last < index_last:
         warning = "XP breadth is behind the price data by at least one session."
 
+    mcap_aligned = sessions.keys() & mcap.keys()
     return {
-        "universe": universe,
+        "universe": (mcap_doc or {}).get("universe") or universe if mcap_aligned else universe,
         "index_last_session": index_last,
+        "mcap_generated_at": (mcap_doc or {}).get("generated_at"),
+        "mcap_last_session": max(mcap) if mcap else None,
+        "mcap_sessions": len(mcap_aligned),
+        "mcap_floor_crore": (mcap_doc or {}).get("market_cap_floor_crore"),
         "breadth_generated_at": (breadth_doc or {}).get("generated_at"),
         "breadth_last_session": max(breadth) if breadth else None,
         "xp_generated_at": (xp_doc or {}).get("generated_at"),
@@ -271,7 +312,9 @@ def frame_sources(
         "aligned_sessions": len(aligned),
         "breadth_sessions": len(sessions.keys() & breadth.keys()),
         "participation_source": (
-            "nifty500-breadth" if sessions.keys() & breadth.keys() else ("xp-universe" if xp else None)
+            "mcap-breadth" if mcap_aligned
+            else "nifty500-breadth" if sessions.keys() & breadth.keys()
+            else ("xp-universe" if xp else None)
         ),
         "rows_dropped_non_session": dropped_non_session,
         "staleness_warning": warning,

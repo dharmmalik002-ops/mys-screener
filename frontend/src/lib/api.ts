@@ -178,6 +178,9 @@ export type MarketHealthResponse = {
  */
 export type HistoricalBreadthDataPoint = {
   date: string;
+  /** These two come only from the ₹1,000 cr+ series; the legacy Nifty 500 file has a 20-DMA instead. */
+  above_ema20_pct: number | null;
+  above_ema21_pct: number | null;
   above_ma20_pct: number | null;
   above_ma50_pct: number | null;
   above_sma200_pct: number | null;
@@ -2603,10 +2606,12 @@ export type MarketsExposure = {
   context: {
     participation: {
       value: number | null;
-      /** "nifty500-breadth" when the Nifty 500 file is present, else "xp-universe". */
+      /** "mcap-breadth" | "nifty500-breadth" | "xp-universe" — best available first. */
       source: string | null;
       label: string;
       universe: string;
+      above_ema20_pct: number | null;
+      above_ema21_pct: number | null;
       above_ma50_pct: number | null;
       above_sma200_pct: number | null;
       as_of: string | null;
@@ -2683,6 +2688,8 @@ export function getMarketsExposure(market: MarketKey = "india") {
             source: typeof context.participation.source === "string" ? context.participation.source : null,
             label: readString(context.participation.label, "participation"),
             universe: readString(context.participation.universe),
+            above_ema20_pct: readNullableNumber(context.participation.above_ema20_pct),
+            above_ema21_pct: readNullableNumber(context.participation.above_ema21_pct),
             above_ma50_pct: readNullableNumber(context.participation.above_ma50_pct),
             above_sma200_pct: readNullableNumber(context.participation.above_sma200_pct),
             as_of: typeof context.participation.as_of === "string" ? context.participation.as_of : null,
@@ -2727,7 +2734,11 @@ export function getMarketsExposure(market: MarketKey = "india") {
 }
 
 export type BreadthHistory = {
-  /** The universe actually served; the backend falls back when the Nifty 500 file is absent. */
+  /**
+   * The universe actually served. The backend walks its sources best-first —
+   * the ₹1,000 cr+ file, then Nifty 500, then the XP universe — so this is the
+   * only reliable label for what the chart is plotting.
+   */
   universe: string;
   points: HistoricalBreadthDataPoint[];
 };
@@ -2745,6 +2756,8 @@ export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750
     const r = isRecord(item) ? item : {};
     return {
       date: readString(r.date),
+      above_ema20_pct: readNullableNumber(r.above_ema20_pct),
+      above_ema21_pct: readNullableNumber(r.above_ema21_pct),
       above_ma20_pct: readNullableNumber(r.above_ma20_pct),
       above_ma50_pct: readNullableNumber(r.above_ma50_pct),
       above_sma200_pct: readNullableNumber(r.above_sma200_pct),
@@ -2752,7 +2765,7 @@ export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750
       new_low_52w_pct: readNullableNumber(r.new_low_52w_pct),
     };
   });
-  return { universe: readString(first.universe, "Nifty 500"), points };
+  return { universe: readString(first.universe, "NSE stocks over Rs 1,000 cr"), points };
     },
   );
 }

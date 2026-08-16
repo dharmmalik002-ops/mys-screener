@@ -110,8 +110,8 @@ def breakout_close_quality(snapshots: list[StockSnapshot]) -> dict:
 
 
 def leader_ema_health(snapshots: list[StockSnapshot], is_leader: Callable[[StockSnapshot], bool]) -> dict:
-    """Stage-2 leaders vs their 10/21 EMAs: holding %, and of those that
-    TOUCHED the 21 EMA in the last 3 sessions — bounced or sliced through?"""
+    """Stage-2 leaders vs their 10/20 EMAs: holding %, and of those that
+    TOUCHED the 20 EMA in the last 3 sessions — bounced or sliced through?"""
     leaders = [s for s in snapshots if is_leader(s)]
     above10 = above20 = 0
     touched = bounced = 0
@@ -336,7 +336,7 @@ def summarize_structural_breakouts(events: list[dict]) -> dict:
 
 
 def leader_ema_examples(snapshots: list[StockSnapshot], is_leader) -> dict:
-    """Named leaders that tested the 21 EMA in the last 3 sessions — bounced
+    """Named leaders that tested the 20 EMA in the last 3 sessions — bounced
     (still above) vs sliced (closed below)."""
     bounced: list[dict] = []
     sliced: list[dict] = []
@@ -355,11 +355,29 @@ def leader_ema_examples(snapshots: list[StockSnapshot], is_leader) -> dict:
     sliced.sort(key=lambda e: e["pct_vs_ema21"])
     return {"bounced": bounced[:12], "sliced": sliced[:12]}
 
+# Participation is measured over every NSE name above this market cap, not over
+# an index membership list. An index is a committee's opinion about which 500
+# companies matter; a market-cap floor is the whole tradeable market minus the
+# part that is too small to take a position in. Kept in step with
+# `mcap_breadth.DEFAULT_MCAP_FLOOR_CRORE`, which the breadth history uses.
+POSTURE_MCAP_FLOOR_CRORE = 1000.0
+
+
 def market_posture(snapshots: list[StockSnapshot]) -> dict:
     """The context numbers a swing trader checks before anything else:
-    advance/decline, fresh 52-week highs vs lows, and % of liquid stocks
-    above the 21 EMA / 50 SMA / 200 SMA."""
-    universe = [s for s in snapshots if (s.avg_volume_20d or 0) >= 50000 and s.last_price > 30]
+    advance/decline, fresh 52-week highs vs lows, and % of stocks above ₹1,000
+    cr market cap trading over their 20 EMA / 50 SMA / 200 SMA.
+
+    The old filter was liquidity-based (20d volume ≥ 50k, price > ₹30), which
+    measured a different population than the breadth history charted right
+    beside it. One market cap floor for both, so the tile and the chart are
+    finally reading the same universe.
+    """
+    universe = [
+        s
+        for s in snapshots
+        if (s.market_cap_crore or 0) >= POSTURE_MCAP_FLOOR_CRORE and s.last_price > 0
+    ]
     advances = sum(1 for s in universe if s.change_pct > 0)
     declines = sum(1 for s in universe if s.change_pct < 0)
     # Levels (52w extremes, MAs) only from stocks whose indicator data passes
@@ -407,12 +425,12 @@ def classify_position(s: StockSnapshot, event: dict | None) -> tuple[str, str]:
     if sma50 > 0 and price < sma50:
         return ("Damaged", "Below the 50 SMA — trend damaged; reduce, and demand a fast reclaim.")
     if ema21 > 0 and price < ema21:
-        return ("Testing 21 EMA", "Closed below the 21 EMA — normal once, a leak if it lingers; watch for a reclaim within 2-3 sessions.")
+        return ("Testing 20 EMA", "Closed below the 20 EMA — normal once, a leak if it lingers; watch for a reclaim within 2-3 sessions.")
     if event is not None and event.get("held"):
-        return ("Breakout working", f"{event['pct_vs_pivot']:+.1f}% above its pivot ({event['pivot']}) — hold, stop under the pivot / 21 EMA.")
+        return ("Breakout working", f"{event['pct_vs_pivot']:+.1f}% above its pivot ({event['pivot']}) — hold, stop under the pivot / 20 EMA.")
     if ema21 > 0 and price > ema21 * 1.25:
-        return ("Extended", "More than 25% above the 21 EMA — hold the core, consider partials into strength; do not add here.")
-    return ("Healthy trend", "Riding above the 21 EMA with the moving averages stacked — hold, trail under the 21 EMA.")
+        return ("Extended", "More than 25% above the 20 EMA — hold the core, consider partials into strength; do not add here.")
+    return ("Healthy trend", "Riding above the 20 EMA with the moving averages stacked — hold, trail under the 20 EMA.")
 
 
 def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict | None:
@@ -438,7 +456,7 @@ def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict 
     # --- NOT extended: reject anything that has already run ---
     ext_vs_ema = (s.last_price / ema21 - 1) * 100 if ema21 else 99
     if ext_vs_ema > 8:
-        return None  # too far above the 21 EMA — extended, no low-risk entry left
+        return None  # too far above the 20 EMA — extended, no low-risk entry left
     if s.pct_from_52w_high < 1:
         return None  # already at a fresh 52w high — the breakout already happened
     if event is not None and event.get("held") and event.get("sessions_ago", 99) <= 8:
@@ -467,14 +485,14 @@ def _focus_candidate(s: StockSnapshot, event: dict | None, min_rs: int) -> dict 
         score += 30 - below_pivot * 2 + max(0.0, 8 - (adr or 8))
         reasons.append(f"{below_pivot:.1f}% under pivot {pivot:.2f}")
         entry = f"buy the breakout above {pivot:.2f} on volume"
-        stop = f"below the base low ({window_low:.2f}) or the 21 EMA ({ema21:.2f})"
+        stop = f"below the base low ({window_low:.2f}) or the 20 EMA ({ema21:.2f})"
         note = "Proper base, not extended — the buy-the-breakout candidate."
     elif near_ema and s.last_price < pivot * 0.99 and depth <= 40:
-        setup = "21 EMA reset in base"
+        setup = "20 EMA reset in base"
         score += 20 + max(0.0, 8 - (adr or 8))
-        reasons.append(f"resetting at 21 EMA, {below_pivot:.1f}% under pivot")
+        reasons.append(f"resetting at 20 EMA, {below_pivot:.1f}% under pivot")
         entry = f"buy the reclaim of the recent swing high; pivot ~{pivot:.2f}"
-        stop = f"below the 21 EMA ({ema21:.2f})"
+        stop = f"below the 20 EMA ({ema21:.2f})"
         note = "Still building — put it on watch, let it tighten toward the pivot."
     else:
         return None  # extended, mid-range, or no base — not what we want

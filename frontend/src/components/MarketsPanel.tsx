@@ -197,7 +197,7 @@ function buildOutlook(
   if (posture?.above_ema21_pct != null) {
     const v = posture.above_ema21_pct;
     signals.push({
-      label: "% of stocks above 21-EMA",
+      label: "% of stocks above 20-EMA",
       valueLabel: `${Math.round(v)}%`,
       score: v >= 65 ? 1.5 : v >= 50 ? 0.5 : v >= 35 ? -0.5 : -1.5,
       weight: 1.5,
@@ -312,7 +312,7 @@ function buildUnderneath(
     }
     paras.push({
       title: "Participation",
-      text: `${adv} advancers vs ${dec} decliners${advPct != null ? ` (${advPct}% up)` : ""} · ${a21 != null ? `${Math.round(a21)}% of stocks above the 21-EMA` : ""}${a200 != null ? `, ${Math.round(a200)}% above the 200-SMA` : ""} · ${posture.new_52w_highs} new 52-week highs against ${posture.new_52w_lows} new lows.${divergence}`,
+      text: `Across every NSE stock over Rs 1,000 cr: ${adv} advancers vs ${dec} decliners${advPct != null ? ` (${advPct}% up)` : ""} · ${a21 != null ? `${Math.round(a21)}% above the 20-EMA` : ""}${a200 != null ? `, ${Math.round(a200)}% above the 200-SMA` : ""} · ${posture.new_52w_highs} new 52-week highs against ${posture.new_52w_lows} new lows.${divergence}`,
     });
   }
 
@@ -329,10 +329,10 @@ function buildUnderneath(
     const dipRead =
       bounced.length + sliced.length >= 5
         ? bounced.length >= sliced.length * 1.5
-          ? ` Dip-buyers are present: ${bounced.length} leaders bounced off the 21-EMA vs ${sliced.length} that sliced through.`
+          ? ` Dip-buyers are present: ${bounced.length} leaders bounced off the 20-EMA vs ${sliced.length} that sliced through.`
           : sliced.length >= bounced.length * 1.5
-            ? ` Dips are NOT being bought: ${sliced.length} leaders sliced through the 21-EMA vs only ${bounced.length} that bounced — distribution behaviour.`
-            : ` The 21-EMA test is split (${bounced.length} bounced / ${sliced.length} sliced) — no clear hand in control.`
+            ? ` Dips are NOT being bought: ${sliced.length} leaders sliced through the 20-EMA vs only ${bounced.length} that bounced — distribution behaviour.`
+            : ` The 20-EMA test is split (${bounced.length} bounced / ${sliced.length} sliced) — no clear hand in control.`
         : "";
     const verdict =
       holdRate == null
@@ -497,7 +497,7 @@ function emaMeaning(above21: number | null, bouncePct: number | null): string {
   if (above21 === null) return "Leader list too small to judge.";
   const holding = above21 >= 75 ? "Leaders are respecting their EMAs" : above21 >= 55 ? "Leaders are slipping toward their EMAs" : "Leaders are losing their EMAs";
   if (bouncePct !== null) {
-    return `${holding}; ${bouncePct >= 60 ? "21 EMA tests are being bought" : "21 EMA tests are failing"}.`;
+    return `${holding}; ${bouncePct >= 60 ? "20 EMA tests are being bought" : "20 EMA tests are failing"}.`;
   }
   return holding + ".";
 }
@@ -678,7 +678,7 @@ export function MarketsPanel({
         week: weekAvg((r) => r.structural_held_pct ?? null),
       },
       {
-        label: "Leaders above 21 EMA %",
+        label: "Leaders above 20 EMA %",
         today: today.ema_health?.above_ema21_pct ?? null,
         yesterday: yesterday?.ema_health?.above_ema21_pct ?? null,
         week: weekAvg((r) => r.above_ema21_pct),
@@ -731,10 +731,11 @@ export function MarketsPanel({
   const focusRemovedRows = focusRaw.filter((f) => removed.has(f.symbol));
 
   // Whichever participation series the backend served — the 50-DMA on the
-  // Nifty 500 file, or the 20-EMA when it falls back to the XP universe.
+  // ₹1,000 cr+ and Nifty 500 files, the 21-EMA if a session predates the
+  // 50-DMA's warmup, or the 20-EMA when it falls back to the XP universe.
   const breadthSeries = (breadth?.points ?? [])
     .slice(-60)
-    .map((p) => p.above_ma50_pct ?? p.above_ma20_pct)
+    .map((p) => p.above_ma50_pct ?? p.above_ema21_pct ?? p.above_ma20_pct)
     .filter((v): v is number => typeof v === "number");
 
   // The verdict, the context strip and the breadth history come from their own
@@ -992,7 +993,11 @@ export function MarketsPanel({
             <strong><em className="pos">{data.posture.new_52w_highs}</em> / <em className="neg">{data.posture.new_52w_lows}</em></strong>
           </div>
           <div className="mk-posture-item">
-            <span>&gt; 21 EMA</span>
+            {/* 20, not 21: `above_ema21_pct` is counted off the snapshot's
+                `ema20` field (StockSnapshot has no ema21). The wire key keeps
+                its name — it is persisted in the stored history files — but the
+                label has to say what was actually measured. */}
+            <span>&gt; 20 EMA</span>
             <strong>{num(data.posture.above_ema21_pct, 0, "%")}</strong>
           </div>
           <div className="mk-posture-item">
@@ -1004,8 +1009,9 @@ export function MarketsPanel({
             <strong>{num(data.posture.above_sma200_pct, 0, "%")}</strong>
           </div>
           <div className="mk-posture-note">
-            52w/MA stats measured on {data.posture.leveled_universe ?? data.posture.universe} stocks with
-            verified-fresh levels; stale-history names are excluded, not guessed.
+            Every NSE stock over Rs 1,000 cr ({data.posture.universe} names). 52w/MA stats measured on
+            the {data.posture.leveled_universe ?? data.posture.universe} of those with verified-fresh
+            levels; stale-history names are excluded, not guessed.
           </div>
         </div>
       ) : null}
@@ -1016,7 +1022,7 @@ export function MarketsPanel({
           .filter((h) => h.date)
           .map((h) => ({
             date: (h.date ?? "").slice(5),
-            "> 21 EMA": h.above_ema21_pct ?? null,
+            "> 20 EMA": h.above_ema21_pct ?? null,
             "> 50 SMA": h.above_sma50_pct ?? null,
             "> 200 SMA": h.above_sma200_pct ?? null,
           }));
@@ -1042,7 +1048,7 @@ export function MarketsPanel({
                   {/* isAnimationActive=false: the draw-in animation freezes mid-way
                       when rAF is throttled (background tab, battery saver), leaving
                       a stuck stroke-dasharray and an apparently empty chart. */}
-                  <Line type="monotone" dataKey="> 21 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="> 20 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                   <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                   <Line type="monotone" dataKey="> 200 SMA" stroke="#089981" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                 </LineChart>
@@ -1050,7 +1056,7 @@ export function MarketsPanel({
             </div>
             <div className="mk-footnote">
               Rising lines = broadening participation (healthy); falling while the index holds = a narrowing,
-              distribution-prone tape. The 200 SMA line is the slow, structural one; the 21 EMA line is the fast swing gauge.
+              distribution-prone tape. The 200 SMA line is the slow, structural one; the 20 EMA line is the fast swing gauge.
             </div>
           </div>
         );
@@ -1106,9 +1112,9 @@ export function MarketsPanel({
         </div>
         <div className="mk-card">
           <div className="mk-card-hdr">Leader EMA Health</div>
-          <div className="mk-big">{num(ema.above_ema21_pct, 0, "%")}<small> of {ema.leaders ?? 0} leaders above 21 EMA</small></div>
+          <div className="mk-big">{num(ema.above_ema21_pct, 0, "%")}<small> of {ema.leaders ?? 0} leaders above 20 EMA</small></div>
           <div className="mk-sub">
-            above 10 EMA: {num(ema.above_ema10_pct, 0, "%")} · 21 EMA tests bought: {num(ema.ema21_bounce_pct, 0, "%")} of {ema.ema21_touches ?? 0}
+            above 10 EMA: {num(ema.above_ema10_pct, 0, "%")} · 20 EMA tests bought: {num(ema.ema21_bounce_pct, 0, "%")} of {ema.ema21_touches ?? 0}
           </div>
           <div className="mk-meaning">{emaMeaning(ema.above_ema21_pct ?? null, ema.ema21_bounce_pct ?? null)}</div>
           <Spark values={(data?.history ?? []).map((h) => h.above_ema21_pct)} />
@@ -1187,7 +1193,7 @@ export function MarketsPanel({
             <div className="mk-bigcard-num">{data?.leaders?.length ?? 0}</div>
             <div className="mk-bigcard-label">Market Leaders</div>
             <div className="mk-bigcard-sub">
-              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 21 EMA · 2%/5% circuit-band names excluded
+              {(data?.leaders ?? []).filter((l) => l.above_ema21).length} above their 20 EMA · 2%/5% circuit-band names excluded
             </div>
             <div className="mk-bigcard-actions">
               <button
@@ -1210,7 +1216,7 @@ export function MarketsPanel({
                       name: l.name,
                       badge: l.rs_rating ? `RS ${l.rs_rating}` : undefined,
                       badgeTone: "pos",
-                      note: `${l.above_ema21 ? "above" : "below"} 21 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
+                      note: `${l.above_ema21 ? "above" : "below"} 20 EMA · ${l.pct_from_52w_high.toFixed(1)}% off high`,
                     })),
                   })
                 }
@@ -1395,7 +1401,7 @@ export function MarketsPanel({
         </div>
         <div className="mk-week-grid mk-ema-tests">
           <div>
-            <div className="mk-week-sub pos-hdr">21 EMA tests bought</div>
+            <div className="mk-week-sub pos-hdr">20 EMA tests bought</div>
             <div className="mk-chip-row">
               {(data?.evidence?.ema_tests?.bounced ?? []).map((e) => (
                 <button key={e.symbol} type="button" className="mk-chip pos-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>
@@ -1405,7 +1411,7 @@ export function MarketsPanel({
             </div>
           </div>
           <div>
-            <div className="mk-week-sub neg-hdr">21 EMA tests failed</div>
+            <div className="mk-week-sub neg-hdr">20 EMA tests failed</div>
             <div className="mk-chip-row">
               {(data?.evidence?.ema_tests?.sliced ?? []).map((e) => (
                 <button key={e.symbol} type="button" className="mk-chip neg-chip" onClick={() => onOpenSymbolChart?.(e.symbol)}>

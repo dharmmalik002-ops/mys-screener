@@ -40,9 +40,10 @@ export function ContextStrip({ data, breadthSeries }: Props) {
 
       <article className="mkc-item">
         <span className="mkc-label">Participation</span>
-        {/* `value`, not `above_ma50_pct`: the Nifty 500 breadth file is absent in
-            production, where this falls back to the XP universe's %-above-20-EMA.
-            Reading the 50-DMA field directly rendered an empty tile. */}
+        {/* `value`, not `above_ma50_pct`: which field is populated depends on
+            which source the backend served, and reading one directly rendered
+            an empty tile whenever it fell through. `value` is always the blend
+            (or the single average) that `label` and `universe` describe. */}
         <strong>{num(participation?.value ?? null, 0, "%")}</strong>
         <Sparkline values={breadthSeries} color="var(--text-muted)" width={92} height={22} />
         <em>

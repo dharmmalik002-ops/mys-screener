@@ -896,7 +896,11 @@ def _indicator_block_from_history(sub, trade_date: date) -> dict | None:
         "rv": [max(0, int(v)) for v in volume.tolist()[-RECENT_BARS:]],
     }
 
-    for key, span in (("e10", 10), ("e20", 20), ("e50", 50), ("e200", 200)):
+    # e21 is not a near-duplicate of e20 kept for tidiness: the Markets page's
+    # breadth series is defined on the 21-EMA (the swing-trading convention,
+    # one trading month), and counting it off e20 would silently plot a
+    # different average than the label claims.
+    for key, span in (("e10", 10), ("e20", 20), ("e21", 21), ("e50", 50), ("e200", 200)):
         value = ema(span)
         if value is not None:
             block[key] = value
@@ -1341,6 +1345,140 @@ def _load_xp_anchors() -> tuple[dict[str, float], str | None]:
     return anchors, fingerprint
 
 
+def _update_mcap_breadth(trade_date: date, symbols: dict[str, dict]) -> None:
+    """Append the day's ₹1,000 cr+ breadth row to `breadth_mcap_history.json`.
+
+    Costs nothing extra: `_attach_indicator_blocks` has already downloaded the
+    adjusted history for exactly this universe and left the 21-EMA / 50-DMA /
+    200-DMA on each patch record, so this only counts. That is also why it must
+    be called AFTER the indicator blocks are attached.
+
+    The close compared against each average is the block's own last adjusted
+    close (`rc[-1]`), not the bhavcopy print: mixing an unadjusted close with a
+    split-adjusted average puts every recently-split stock on the wrong side of
+    its own MA.
+
+    Failures are logged and swallowed — breadth must never block a price patch.
+    """
+    try:
+        from app.services import mcap_breadth
+    except Exception as exc:  # pragma: no cover - defensive
+        logger.warning("mcap breadth module unavailable (%s); skipping", exc)
+        return
+
+    try:
+        universe_raw = json.loads((DATA_DIR / "free_universe.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        logger.warning("mcap breadth: cannot read free_universe.json (%s); skipping", exc)
+        return
+    if not isinstance(universe_raw, list):
+        return
+
+    path = DATA_DIR / mcap_breadth.HISTORY_FILENAME
+    existing: dict = {}
+    if path.exists():
+        try:
+            loaded = json.loads(path.read_text(encoding="utf-8"))
+            if isinstance(loaded, dict):
+                existing = loaded
+        except ValueError:
+            existing = {}
+
+    # Honour the floor the file was built with. Appending a ₹1,000 cr row to a
+    # history backfilled at ₹500 cr would put a step change in every series on
+    # the day this job first ran, and nothing downstream could detect it.
+    try:
+        floor = float(existing.get("market_cap_floor_crore"))
+    except (TypeError, ValueError):
+        floor = mcap_breadth.DEFAULT_MCAP_FLOOR_CRORE
+
+    members = mcap_breadth.universe_symbols(universe_raw, floor)
+    if not members:
+        logger.warning("mcap breadth: no symbols at or above Rs %.0f cr; skipping", floor)
+        return
+
+    # Indicator-block key -> history metric key. Every one of these is already
+    # on the block, so the day's breadth costs four comparisons per symbol.
+    block_keys = {
+        "e20": "above_ema20_pct",
+        "e21": "above_ema21_pct",
+        "s50": "above_sma50_pct",
+        "s200": "above_sma200_pct",
+    }
+    counts = {key: [0, 0] for key in block_keys}  # block key -> [above, eligible]
+    total = 0
+    for symbol in members:
+        record = symbols.get(symbol)
+        if not isinstance(record, dict):
+            continue
+        block = record.get("i")
+        if not isinstance(block, dict):
+            continue
+        recent = block.get("rc")
+        if not isinstance(recent, list) or not recent:
+            continue
+        try:
+            close = float(recent[-1])
+        except (TypeError, ValueError):
+            continue
+        if close <= 0:
+            continue
+        total += 1
+        for key in counts:
+            try:
+                level = float(block.get(key))
+            except (TypeError, ValueError):
+                continue
+            if level <= 0:
+                continue
+            counts[key][1] += 1
+            if close > level:
+                counts[key][0] += 1
+
+    if not total:
+        logger.warning("mcap breadth: no indicator blocks for the %s-symbol universe; skipping", len(members))
+        return
+
+    # Same guard the backfill script applies: a session counted off a slice of
+    # the universe is a reading of that slice, not of the market.
+    coverage = total / len(members)
+    if coverage < mcap_breadth.MIN_COVERAGE_FRACTION:
+        logger.warning(
+            "mcap breadth %s: only %s/%s symbols covered (%.0f%%) — below the %.0f%% floor, not stored",
+            trade_date.isoformat(), total, len(members), coverage * 100,
+            mcap_breadth.MIN_COVERAGE_FRACTION * 100,
+        )
+        return
+
+    row = mcap_breadth.build_day_row(
+        trade_date.isoformat(),
+        {metric: tuple(counts[block]) for block, metric in block_keys.items()},
+        total=total,
+    )
+
+    days = mcap_breadth.merge_days(existing.get("days") or [], [row])
+    out_doc = {
+        "generated_at": datetime.now(IST).isoformat(),
+        "universe": mcap_breadth.universe_label(floor),
+        "market_cap_floor_crore": floor,
+        "symbols": len(members),
+        "source": "bhavcopy-indicator-blocks",
+        "days": days,
+    }
+    try:
+        path.write_text(json.dumps(out_doc, separators=(",", ":")), encoding="utf-8")
+    except OSError as exc:
+        logger.warning("mcap breadth: write failed (%s)", exc)
+        return
+    logger.info(
+        "mcap breadth %s: %s%% > 20-EMA, %s%% > 21-EMA, %s%% > 50-DMA, %s%% > 200-DMA "
+        "(%s/%s symbols, %s sessions stored)",
+        row["date"], row["above_ema20_pct"], row["above_ema21_pct"],
+        row["above_sma50_pct"], row["above_sma200_pct"],
+        total, len(members), len(days),
+    )
+
+
 def _update_xp_breadth(trade_date: date, full_bhav: dict[str, dict], source: str) -> None:
     """Compute the day's XP market-breadth score from the FULL bhavcopy and
     persist it. Must be passed the all-market dict (BSE/NSE bhavcopy), NOT the
@@ -1738,6 +1876,7 @@ def main() -> int:
             logger.warning("Merged patch for %s is empty after sanity filter; aborting.", target)
             return 1
         _attach_indicator_blocks(merged, target, extra_tickers=extra_yf_tickers)
+        _update_mcap_breadth(target, merged)
         _write_patch(target, merged, "YF+BSE", new_listings=new_listings)
         return 0
 
@@ -1773,6 +1912,7 @@ def main() -> int:
                 logger.info("Price patch already current for %s. Breadth refreshed; no price update needed.", target.isoformat())
                 return 0
             _attach_indicator_blocks(yf_symbols, target, extra_tickers=extra_yf_tickers)
+            _update_mcap_breadth(target, yf_symbols)
             _write_patch(target, yf_symbols, "YFINANCE", new_listings=new_listings)
             return 0
 
@@ -1791,6 +1931,7 @@ def main() -> int:
                 logger.info("Price patch already current for %s (%s symbols). Breadth refreshed; no price update needed.", prev.isoformat(), len(merged_prev))
                 return 0
             _attach_indicator_blocks(merged_prev, prev)
+            _update_mcap_breadth(prev, merged_prev)
             _write_patch(prev, merged_prev, "YF+BSE")
             return 0
     csv_text = _fetch_bhavcopy_csv(prev)

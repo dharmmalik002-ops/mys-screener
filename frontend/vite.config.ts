@@ -26,7 +26,9 @@ export default defineConfig({
     host: "0.0.0.0",
     proxy: {
       "/api": {
-        target: "http://127.0.0.1:8000",
+        // Override with VITE_PROXY_TARGET to run the UI against a backend on a
+        // different port (a second local instance, a tunnel, or staging).
+        target: process.env.VITE_PROXY_TARGET ?? "http://127.0.0.1:8000",
         changeOrigin: true,
       },
     },

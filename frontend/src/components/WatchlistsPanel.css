@@ -230,7 +230,7 @@
   /* --bg-alt, not #111827: a portal popover needs an OPAQUE background (the
      translucent --surface tokens would show the page through it), and --bg-alt
      is the palette's opaque raised surface. */
-  background: var(--bg-alt);
+  background: var(--card-flat);
   color: var(--text);
   border-color: rgba(148, 163, 184, 0.25);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);

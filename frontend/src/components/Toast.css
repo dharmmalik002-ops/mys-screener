@@ -23,7 +23,7 @@
   padding: 10px 12px 10px 14px;
   border: 1px solid var(--line-strong);
   border-radius: var(--radius-lg);
-  background: var(--bg-alt);
+  background: var(--card-flat);
   color: var(--text);
   box-shadow: 0 10px 30px rgba(2, 6, 18, 0.35);
   font-size: 13px;

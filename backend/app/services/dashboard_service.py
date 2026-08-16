@@ -113,6 +113,16 @@ logger = logging.getLogger(__name__)
 # itself never waits on them.
 INDEX_BARS_TIMEOUT_SECONDS = 8.0
 
+# What the participation tile is actually measuring, per source. The first two
+# are the 0.7/0.3 blend `market_frame.participation_of` computes; the XP
+# fallback is a single average over a different universe. Naming the wrong one
+# would be the tile quietly lying about its own arithmetic.
+_PARTICIPATION_LABELS = {
+    "mcap-breadth": "50-DMA / 200-DMA blend",
+    "nifty500-breadth": "50-DMA / 200-DMA blend",
+    "xp-universe": "above the 20-EMA",
+}
+
 EXPANSION_HISTORY_SESSIONS = 30
 # Calendar-day floor: a stock stays in the Expansion tracker for at least this
 # many days from the session it was added, even if fewer than
@@ -2574,25 +2584,39 @@ class DashboardService:
             return items
 
     async def get_historical_breadth(
-        self, *, universe: str = "Nifty 500", days: int = 250
+        self, *, universe: str = "auto", days: int = 250
     ):
         """Multi-year breadth series for one universe.
 
-        The file and the response models have both existed for a long time with
-        no route between them. The one thing this must do beyond reading the
-        file is filter to real sessions: the writer unions every stock's bar
-        index, which manufactures weekend rows (110 Sundays and a Saturday on
-        the shipped file) whose percentages come from a handful of symbols.
-        Served raw, those draw spikes on the chart that never happened.
+        Three sources, best first (see `market_frame.build_frame` for why the
+        order is what it is):
+
+        1. `breadth_mcap_history.json` — every NSE name over ₹1,000 cr, with the
+           21-EMA, 50-DMA and 200-DMA. Committed and refreshed daily.
+        2. `free_historical_breadth.json` — Nifty 500, gitignored and absent in
+           production, kept as a local-development fallback.
+        3. `xp_breadth_history.json` — the full XP universe, 20-EMA only.
+
+        `universe="auto"` (the default, and what the Markets page sends) walks
+        that list. Passing an explicit name — "Nifty 500", "Nifty 50" — pins the
+        legacy file instead, which is the only way to still read those.
+
+        Whichever is served, the response says so rather than passing one off as
+        another. The one thing this must do beyond reading the file is filter to
+        real sessions: the Nifty 500 writer unions every stock's bar index,
+        which manufactures weekend rows (110 Sundays and a Saturday on the
+        shipped file) whose percentages come from a handful of symbols. Served
+        raw, those draw spikes on the chart that never happened.
         """
         from app.models.market import (
             HistoricalBreadthDataPoint,
             HistoricalBreadthResponse,
             HistoricalUniverseBreadth,
         )
-        from app.services import market_frame
+        from app.services import mcap_breadth, market_frame
 
         data_dir = self._legacy_data_dir()
+        mcap_doc = self._read_json_dict(data_dir / mcap_breadth.HISTORY_FILENAME)
         breadth_doc = self._read_json_dict(data_dir / "free_historical_breadth.json")
         xp_doc = self._read_json_dict(data_dir / "xp_breadth_history.json")
 
@@ -2614,6 +2638,9 @@ class DashboardService:
             logger.warning("breadth-history: index bars unavailable: %s", exc)
             index_bars = []
 
+        auto = str(universe or "").strip().lower() in ("", "auto")
+        legacy_universe = market_frame.DEFAULT_UNIVERSE if auto else universe
+
         def _build() -> HistoricalBreadthResponse:
             sessions = market_frame.index_sessions(index_bars)
             # Deliberately NOT market_frame.breadth_by_date: that helper requires
@@ -2623,7 +2650,7 @@ class DashboardService:
             rows = {
                 str(r.get("date")): r
                 for entry in (breadth_doc or {}).get("universes") or []
-                if str(entry.get("universe")) == universe
+                if str(entry.get("universe")) == legacy_universe
                 for r in entry.get("history") or []
                 if r.get("date")
                 and any(
@@ -2631,16 +2658,45 @@ class DashboardService:
                     for key in ("above_ma20_pct", "above_ma50_pct", "above_sma200_pct")
                 )
             }
-            # The breadth file reaches back ~3 years but the index bar cache
-            # only covers ~2. Inside the calendar's span the calendar is
-            # authoritative (it also removes holidays); beyond it, fall back to
-            # a weekday filter so the extra year of history is not thrown away
-            # just because there is nothing to check it against. Weekend rows —
-            # the phantoms this filter exists for — are removed either way.
+
+            # The ₹1,000 cr+ file wins whenever it is present: wider universe,
+            # all three averages, and it ships. Its keys are remapped onto the
+            # response's long-standing field names so the chart, the exposure
+            # tile and the tests keep reading one vocabulary.
+            mcap_rows = market_frame.mcap_by_date(mcap_doc) if auto else {}
+            served_override = None
+            if mcap_rows:
+                served_override = str(
+                    (mcap_doc or {}).get("universe")
+                    or mcap_breadth.universe_label()
+                )
+                rows = {
+                    iso: {
+                        "above_ema20_pct": r.get("above_ema20_pct"),
+                        "above_ema21_pct": r.get("above_ema21_pct"),
+                        "above_ma50_pct": r.get("above_sma50_pct"),
+                        "above_sma200_pct": r.get("above_sma200_pct"),
+                        "above_ma20_pct": None,
+                        "new_high_52w_pct": None,
+                        "new_low_52w_pct": None,
+                    }
+                    for iso, r in mcap_rows.items()
+                }
+            # The breadth files reach back ~3 years but the index bar cache only
+            # covers ~2, and on a cold provider it can also trail the newest
+            # sessions by a few days. Inside the calendar's own span the
+            # calendar is authoritative (it removes holidays too); outside it —
+            # older history, or sessions fresher than the cached index bars —
+            # fall back to a weekday filter rather than discarding rows the
+            # calendar simply cannot speak to. Dropping the four newest breadth
+            # sessions because ^NSEI was stale is the "chart frozen at an old
+            # session" failure, and it is not worth paying to re-check weekends
+            # the weekday filter already removes.
             oldest_session = min(sessions) if sessions else None
+            newest_session = max(sessions) if sessions else None
 
             def keep(iso: str) -> bool:
-                if oldest_session and iso >= oldest_session:
+                if oldest_session and newest_session and oldest_session <= iso <= newest_session:
                     return iso in sessions
                 try:
                     return datetime.fromisoformat(iso).weekday() < 5
@@ -2656,7 +2712,7 @@ class DashboardService:
             # %-above-10/20-EMA over the full bhavcopy universe. Different
             # universe and different averages, so the response says which one
             # it served rather than passing it off as the same series.
-            served_universe = universe
+            served_universe = served_override or legacy_universe
             if not keys:
                 xp_rows = market_frame.xp_by_date(xp_doc)
                 if xp_rows:
@@ -2681,13 +2737,18 @@ class DashboardService:
                     out = float(value)
                 except (TypeError, ValueError):
                     return None
-                if out <= 0 and key in ("above_ma20_pct", "above_ma50_pct", "above_sma200_pct"):
+                if out <= 0 and key in (
+                    "above_ema20_pct", "above_ema21_pct", "above_ma20_pct",
+                    "above_ma50_pct", "above_sma200_pct",
+                ):
                     return None
                 return out
 
             points = [
                 HistoricalBreadthDataPoint(
                     date=iso,
+                    above_ema20_pct=metric(iso, "above_ema20_pct"),
+                    above_ema21_pct=metric(iso, "above_ema21_pct"),
                     above_ma20_pct=metric(iso, "above_ma20_pct"),
                     above_ma50_pct=metric(iso, "above_ma50_pct"),
                     above_sma200_pct=metric(iso, "above_sma200_pct"),
@@ -2716,11 +2777,18 @@ class DashboardService:
         breakout-stats.yml. A single-source cache key would serve a stale
         verdict whenever one of the others moved.
         """
-        from app.services import distribution_days, exposure_model, market_frame, market_regime
+        from app.services import (
+            distribution_days,
+            exposure_model,
+            mcap_breadth,
+            market_frame,
+            market_regime,
+        )
 
         data_dir = self._legacy_data_dir()
         breadth_path = data_dir / "free_historical_breadth.json"
         xp_path = data_dir / "xp_breadth_history.json"
+        mcap_path = data_dir / mcap_breadth.HISTORY_FILENAME
 
         stats = await asyncio.to_thread(market_regime.load_stats, data_dir)
         if not stats:
@@ -2769,7 +2837,8 @@ class DashboardService:
             tail = index_bars[-1]
             last_session = str(getattr(tail, "time", None) or (tail or {}).get("time", ""))
         cache_key = (
-            f"{_mtime(breadth_path)}|{_mtime(xp_path)}|{stats.get('generated_at')}|{last_session}"
+            f"{_mtime(breadth_path)}|{_mtime(xp_path)}|{_mtime(mcap_path)}|"
+            f"{stats.get('generated_at')}|{last_session}"
         )
         cached = self._exposure_cache.get(cache_key)
         if cached:
@@ -2777,10 +2846,11 @@ class DashboardService:
 
         breadth_doc = self._read_json_dict(breadth_path)
         xp_doc = self._read_json_dict(xp_path)
+        mcap_doc = self._read_json_dict(mcap_path)
 
         def _build() -> dict:
-            rows = market_frame.build_frame(index_bars, breadth_doc, xp_doc)
-            sources = market_frame.frame_sources(index_bars, breadth_doc, xp_doc)
+            rows = market_frame.build_frame(index_bars, breadth_doc, xp_doc, mcap_doc=mcap_doc)
+            sources = market_frame.frame_sources(index_bars, breadth_doc, xp_doc, mcap_doc=mcap_doc)
             rules = stats.get("rules") or {}
             stop_pct = float(rules.get("stop_pct") or 0)
             win_pct = float(rules.get("win_pct") or 0)
@@ -2799,16 +2869,22 @@ class DashboardService:
                     "participation": {
                         "value": latest.participation if latest else None,
                         "source": latest.participation_source if latest else None,
-                        "label": (
-                            "above the 50-DMA"
-                            if latest and latest.participation_source == "nifty500-breadth"
-                            else "above the 20-EMA"
+                        "label": _PARTICIPATION_LABELS.get(
+                            latest.participation_source if latest else None,
+                            "above the 20-EMA",
                         ),
                         "universe": (
-                            "Nifty 500"
+                            str(
+                                (mcap_doc or {}).get("universe")
+                                or mcap_breadth.universe_label()
+                            )
+                            if latest and latest.participation_source == "mcap-breadth"
+                            else "Nifty 500"
                             if latest and latest.participation_source == "nifty500-breadth"
                             else "NSE equities"
                         ),
+                        "above_ema20_pct": latest.above_ema20_pct if latest else None,
+                        "above_ema21_pct": latest.above_ema21_pct if latest else None,
                         "above_ma50_pct": latest.above_ma50_pct if latest else None,
                         "above_sma200_pct": latest.above_sma200_pct if latest else None,
                         "as_of": latest.date if latest else None,

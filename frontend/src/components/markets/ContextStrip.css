@@ -16,7 +16,7 @@
   padding: 11px 13px;
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
-  background: var(--bg-alt);
+  background: var(--card-flat);
   min-width: 0;
 }
 

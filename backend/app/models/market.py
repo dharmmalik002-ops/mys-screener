@@ -1346,6 +1346,11 @@ class HistoricalBreadthDataPoint(BaseModel):
     """
 
     date: str
+    # The ₹1,000 cr+ series carries the 21-EMA; the older Nifty 500 file has a
+    # 20-DMA instead and leaves this null. They are different averages, so they
+    # get different fields rather than being folded into one.
+    above_ema20_pct: float | None = None
+    above_ema21_pct: float | None = None
     above_ma20_pct: float | None = None
     above_ma50_pct: float | None = None
     above_sma200_pct: float | None = None

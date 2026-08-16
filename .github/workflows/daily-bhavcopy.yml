@@ -134,6 +134,13 @@ jobs:
           if [ -f backend/data/xp_ma_state.json ]; then
             git add backend/data/xp_ma_state.json || true
           fi
+          # Breadth over the Rs 1,000 cr+ universe (% above 21-EMA / 50-DMA /
+          # 200-DMA) — the series the Markets page plots. One small row per
+          # session; unlike free_historical_breadth.json this one ships, which
+          # is the whole point of it existing.
+          if [ -f backend/data/breadth_mcap_history.json ]; then
+            git add backend/data/breadth_mcap_history.json || true
+          fi
           # Rolling authoritative EOD bars (one small dated file per session +
           # manifest) the backend uses to fill any recent candle Yahoo drops.
           # -A picks up newly added AND pruned (removed) session files.
