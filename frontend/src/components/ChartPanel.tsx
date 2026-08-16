@@ -7,11 +7,12 @@ import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../l
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
 import type { ChartTradeMarker } from "../lib/journal";
 import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
+import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandleSeries";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
-export type ChartStyle = "candles" | "bars" | "hlc";
+export type ChartStyle = "candles" | "weighted" | "bars" | "hlc";
 // Volume colouring: "auto" follows the theme (Mono theme -> mono volume, which
 // is the historical behaviour), "mono"/"classic" force it on any theme.
 export type VolumeMode = "auto" | "classic" | "mono";
@@ -263,6 +264,11 @@ type ChartPanelProps = {
 const TIMEFRAMES: ChartTimeframe[] = ["15m", "30m", "1h", "1D", "1W"];
 const CHART_STYLES: Array<{ key: ChartStyle; label: string; title?: string }> = [
   { key: "candles", label: "Candles" },
+  {
+    key: "weighted",
+    label: "Weighted",
+    title: "Candle width scales with volume and range — heavy, wide-range bars render thick, quiet bars render thin",
+  },
   { key: "bars", label: "Bars", title: "OHLC bars: open tick left, close tick right" },
   { key: "hlc", label: "HLC", title: "IBD-style high-low bars with a close tick only  (L)" },
 ];
@@ -2161,6 +2167,10 @@ export function ChartPanel({
   // Both "bars" and "hlc" render as a lightweight-charts BarSeries, which takes
   // none of the candlestick-only body/border options below.
   const isBarStyle = chartStyle === "bars" || chartStyle === "hlc";
+  // Weighted candles are drawn by our own renderer (see weightedCandleSeries),
+  // the only way to vary width per bar — the built-in series draws every candle
+  // at one width.
+  const isWeightedStyle = chartStyle === "weighted";
   // Volume colouring is independent of the theme so Editorial can use the
   // meaning-based (mono) volume; "auto" preserves the old theme-coupled default.
   const monoVolume = volumeMode === "mono" || (volumeMode === "auto" && chartPalette === "mono");
@@ -2906,6 +2916,20 @@ export function ChartPanel({
                 }),
             thinBars: true,
           })
+        : isWeightedStyle
+        ? chart.addCustomSeries(new WeightedCandleSeries(), {
+            upColor: chartColors.candleUp,
+            downColor: chartColors.candleDown,
+            wickUpColor: shadeColor(chartColors.candleUp, WICK_SHADE),
+            wickDownColor: shadeColor(chartColors.candleDown, WICK_SHADE),
+            borderVisible: true,
+            borderUpColor: chartColors.candleUp,
+            borderDownColor: chartColors.candleDown,
+            lastValueVisible: true,
+            priceLineVisible: true,
+            priceLineWidth: 1,
+            priceLineStyle: 3,
+          })
         : chart.addCandlestickSeries({
             upColor: chartColors.candleUp,
             downColor: chartColors.candleDown,
@@ -3224,6 +3248,8 @@ export function ChartPanel({
     }
 
     const expansionColor = chartColors.candleExpansion || "#ffb01f";
+    // Only the weighted renderer reads these, so don't pay for them otherwise.
+    const candleWeights = isWeightedStyle ? computeCandleWeights(activeBars, perBarStats) : null;
     const ohlcvData = [
       ...activeBars.map((bar, i) => {
         const stat = perBarStats[i];
@@ -3234,6 +3260,9 @@ export function ChartPanel({
           low: bar.low,
           close: bar.close,
         };
+        if (candleWeights) {
+          point.weight = candleWeights[i];
+        }
         if (highlightExpansion && stat?.isExpansionCandidate) {
           point.color = expansionColor;
           point.wickColor = expansionColor;
@@ -3283,7 +3312,7 @@ export function ChartPanel({
     }
     updatePctRulerRef.current?.();
     scheduleOverlayUpdate();
-  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, chartPalette, palette.background, symbol, timeframe, isBarStyle, monoVolume]);
+  }, [chartEpoch, activeBars, perBarStats, futureWhitespaceTimes, highlightExpansion, hollowCandles, chartColors, chartStyle, chartPalette, palette.background, symbol, timeframe, isBarStyle, isWeightedStyle, monoVolume]);
 
   // ── E4: indicator line series (diffed add/remove/update) ─────────────────
   useEffect(() => {
@@ -4317,12 +4346,14 @@ export function ChartPanel({
     // Auto demand/supply zones (shaded full-width bands) + trendlines (diagonal),
     // computed in levels.ts and drawn in the same SVG overlay so they follow
     // pan/zoom. Non-interactive; sit beneath the user's own drawings.
-    // Expansion candles can't be drawn physically wider (the chart engine uses
-    // one width for all candles), so each one gets a soft blurred GLOW capsule
-    // behind it in the SVG overlay — a warm halo that makes the candle read
-    // heavier without boxes or borders. Hidden when zoomed far out (halos would
-    // smear together at tiny bar spacings).
-    const expansionHighlightOverlays = highlightExpansion
+    // Expansion candles can't be drawn physically wider by the BUILT-IN series
+    // (it uses one width for all candles), so each one gets a soft blurred GLOW
+    // capsule behind it in the SVG overlay. Hidden when zoomed far out (halos
+    // would smear together at tiny bar spacings), and skipped entirely on the
+    // Weighted style, where the candle is genuinely drawn fatter — the halo
+    // would be redundant, and a per-bar Gaussian blur rebuilt on every pan
+    // frame is by far the most expensive thing in this overlay.
+    const expansionHighlightOverlays = highlightExpansion && !isWeightedStyle
       ? activeBars.map((bar, i) => {
           if (!perBarStats[i]?.isExpansionCandidate) return null;
           const ms = mainSeriesRef.current;
