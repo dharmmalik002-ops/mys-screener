@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-18T12:09:07.571927+00:00",
+  "generated_at": "2026-08-18T13:12:31.761048+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -1204,13 +1204,13 @@
     "JSWSTEEL": {
       "symbol": "JSWSTEEL",
       "earnings_date": "2026-07-17",
-      "close_in_range_pct": 0.7938,
-      "next_day_gap_pct": 1.754,
+      "close_in_range_pct": 0.7452,
+      "next_day_gap_pct": 1.245,
       "day_rvol_50d": 1.79,
-      "return_5d_pct": 0.59,
+      "return_5d_pct": 0.283,
       "source": "bse",
-      "best_pop_pct": 2.433,
-      "best_pop_rvol": 1.241
+      "best_pop_pct": 1.592,
+      "best_pop_rvol": 1.717
     },
     "RELIANCE": {
       "symbol": "RELIANCE",
