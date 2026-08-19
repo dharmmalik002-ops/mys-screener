@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-19T11:21:54.419585+00:00",
+  "generated_at": "2026-08-19T11:41:50.890138+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -2127,11 +2127,11 @@
     },
     "ADANIPOWER": {
       "symbol": "ADANIPOWER",
-      "earnings_date": "2026-07-23",
-      "close_in_range_pct": 0.712,
-      "next_day_gap_pct": -0.005,
-      "day_rvol_50d": 1.006,
-      "return_5d_pct": -1.536,
+      "earnings_date": "2026-07-22",
+      "close_in_range_pct": 0.5153,
+      "next_day_gap_pct": 0.106,
+      "day_rvol_50d": 1.313,
+      "return_5d_pct": -3.425,
       "source": "bse",
       "best_pop_pct": 0.674,
       "best_pop_rvol": 0.842
