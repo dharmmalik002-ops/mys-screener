@@ -1,5 +1,17 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { Moon, RefreshCw, Search as SearchIcon, Sun } from "lucide-react";
+import {
+  Globe,
+  House,
+  Layers,
+  Moon,
+  NotebookPen,
+  Radar,
+  RefreshCw,
+  Search as SearchIcon,
+  Star,
+  Sun,
+  Zap,
+} from "lucide-react";
 
 import type {
   ChartAnnotation,
@@ -172,6 +184,27 @@ const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
 type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets";
+/* Primary navigation, declared once. The desktop header renders these as text
+   pills; phones render the same list as a fixed bottom tab bar (see
+   .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
+   form — "Watchlists" does not fit a 53px-wide tab. */
+type NavPage = {
+  page: AppPage;
+  label: string;
+  short: string;
+  Icon: typeof House;
+};
+
+const NAV_PAGES: NavPage[] = [
+  { page: "home", label: "Home", short: "Home", Icon: House },
+  { page: "screener", label: "Screener", short: "Screen", Icon: Radar },
+  { page: "groups", label: "Groups", short: "Groups", Icon: Layers },
+  { page: "watchlists", label: "Watchlists", short: "Lists", Icon: Star },
+  { page: "markets", label: "Markets", short: "Markets", Icon: Globe },
+  { page: "live", label: "Live", short: "Live", Icon: Zap },
+  { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
+];
+
 type ResultSortMode = "change" | "rs";
 type AutoRefreshMode = "market-open" | "after-hours";
 type RefreshSource = "manual" | "auto";
@@ -247,6 +280,13 @@ type SavedScannerPreset = {
   lastUpdatedAt?: string | null;
   symbols?: string[];
 };
+
+/**
+ * A preset as it comes back off localStorage — every field still unverified,
+ * and `mode` still a bare string so retired names can be migrated before the
+ * record is accepted as a SavedScannerPreset.
+ */
+type StoredScannerPreset = Omit<Partial<SavedScannerPreset>, "mode"> & { mode?: unknown };
 
 type AppProps = {
   initialMarket?: MarketKey;
@@ -1490,7 +1530,11 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
     if (!raw) {
       return [];
     }
-    const parsed = JSON.parse(raw) as SavedScannerPreset[];
+    // localStorage is untrusted input: a tab that last wrote this key on an
+    // older build can hold a partial record or a retired mode name such as
+    // "e-and-c". Parse into the stored shape and let the checks below decide
+    // what is usable, rather than asserting the validated type up front.
+    const parsed = JSON.parse(raw) as StoredScannerPreset[];
     const validModes = new Set<SavableScannerMode>([
       "custom-scan",
       "ipo",
@@ -1513,10 +1557,11 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
             if (!item || typeof item !== "object") {
               return null;
             }
+            const { id, name } = item;
             const normalizedMode = item.mode === "e-and-c" ? "ema-expansion" : item.mode;
             if (
-              typeof item.id !== "string"
-              || typeof item.name !== "string"
+              typeof id !== "string"
+              || typeof name !== "string"
               || typeof normalizedMode !== "string"
               || !validModes.has(normalizedMode as SavableScannerMode)
             ) {
@@ -1530,9 +1575,9 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
               if (!tree || collectLeafModes(tree).length === 0) {
                 return null;
               }
-              return { ...item, mode: normalizedMode, totalScannerTree: tree } satisfies SavedScannerPreset;
+              return { ...item, id, name, mode: normalizedMode, totalScannerTree: tree } satisfies SavedScannerPreset;
             }
-            return { ...item, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
+            return { ...item, id, name, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
           })
           .filter((item): item is SavedScannerPreset => Boolean(item))
       : [];
@@ -1824,6 +1869,15 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       ...updates,
     };
     persistMarketViewCache(market, marketViewCacheRef.current[market]);
+  };
+
+  // Every primary-nav entry point (header pills, bottom tab bar) goes through
+  // here so the Groups reset stays in one place.
+  const handleNavigate = (page: AppPage) => {
+    if (page === "groups") {
+      chartNavigationSymbolsRef.current = null;
+    }
+    setActivePage(page);
   };
 
   const prefetchPageModules = (page: AppPage) => {
@@ -5254,75 +5308,18 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         </div>
 
         <div className="nav-controls">
-          <button
-            type="button"
-            className={activePage === "home" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("home")}
-            onMouseEnter={() => prefetchPageModules("home")}
-            onFocus={() => prefetchPageModules("home")}
-          >
-            Home
-          </button>
-
-
-          <button
-            type="button"
-            className={activePage === "screener" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("screener")}
-            onMouseEnter={() => prefetchPageModules("screener")}
-            onFocus={() => prefetchPageModules("screener")}
-          >
-            Screener
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "groups" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => {
-              chartNavigationSymbolsRef.current = null;
-              setActivePage("groups");
-            }}
-            onMouseEnter={() => prefetchPageModules("groups")}
-            onFocus={() => prefetchPageModules("groups")}
-          >
-            Groups
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "watchlists" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("watchlists")}
-            onMouseEnter={() => prefetchPageModules("watchlists")}
-            onFocus={() => prefetchPageModules("watchlists")}
-          >
-            Watchlists
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "markets" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("markets")}
-          >
-            Markets
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "live" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("live")}
-          >
-            Live
-          </button>
-
-          <button
-            type="button"
-            className={activePage === "journal" ? "nav-button primary" : "nav-button ghost"}
-            onClick={() => setActivePage("journal")}
-            onMouseEnter={() => prefetchPageModules("journal")}
-            onFocus={() => prefetchPageModules("journal")}
-          >
-            Journal
-          </button>
+          {NAV_PAGES.map(({ page, label }) => (
+            <button
+              key={page}
+              type="button"
+              className={activePage === page ? "nav-button primary" : "nav-button ghost"}
+              onClick={() => handleNavigate(page)}
+              onMouseEnter={() => prefetchPageModules(page)}
+              onFocus={() => prefetchPageModules(page)}
+            >
+              {label}
+            </button>
+          ))}
 
           <form
             className="nav-search"
@@ -5397,6 +5394,25 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           </button>
         </div>
       </header>
+
+      {/* Phone navigation. The header pill row is hidden below 768px (it needed
+          a hidden horizontal scroll to fit seven tabs); this is the same list
+          as a thumb-reachable fixed bar. Hidden from desktop via CSS only, so
+          there is one source of truth for which page is active. */}
+      <nav className="mobile-tabbar" aria-label="Primary">
+        {NAV_PAGES.map(({ page, short, Icon }) => (
+          <button
+            key={`tabbar-${page}`}
+            type="button"
+            className={activePage === page ? "mobile-tab is-active" : "mobile-tab"}
+            onClick={() => handleNavigate(page)}
+            aria-current={activePage === page ? "page" : undefined}
+          >
+            <Icon size={18} strokeWidth={2.1} aria-hidden="true" />
+            <span>{short}</span>
+          </button>
+        ))}
+      </nav>
 
       <CommandPalette
         open={commandPaletteOpen}

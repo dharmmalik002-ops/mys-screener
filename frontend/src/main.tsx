@@ -6,6 +6,10 @@ import "./styles/app.css";
 // nav-modern, top-bar-modern) where a rule's winner depended on which file it
 // lived in; they are now merged in that same order inside overrides.css.
 import "./styles/overrides.css";
+// Phone layer. Lazily-loaded panel CSS is injected AFTER this file, so it
+// cannot rely on load order — every rule inside is `html `-prefixed to win on
+// specificity instead. See the header comment there.
+import "./styles/mobile.css";
 
 class RootErrorBoundary extends React.Component<
   { children: React.ReactNode },

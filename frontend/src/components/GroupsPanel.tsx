@@ -11,6 +11,7 @@ import {
   IndustryGroupRankItem,
   IndustryGroupsResponse,
   IndustryGroupStockItem,
+  type IndustryGroupTopStock,
   MarketKey,
 } from "../lib/api";
 import type {
@@ -446,7 +447,9 @@ export function GroupsPanel({
     const topGroups = [...(data?.groups ?? [])].sort((a, b) => a.rank - b.rank).slice(0, 20);
     if (!topGroups.length) return;
 
-    const rows = [
+    // Cells are whatever csvValue can stringify: the header is text, the data
+    // rows mix ranks and percentages with symbols and names.
+    const rows: (string | number | null | undefined)[][] = [
       [
         "Group Rank",
         "Group Name",
@@ -614,13 +617,19 @@ export function GroupsPanel({
                     const members = stocksByGroup.get(group.group_id) ?? [];
                     const stockSource = group.top_constituents.slice(0, 3);
                     const displayedStocks = stockSource.map((src) => {
-                      const isMember = "change_pct" in src;
-                      const match = isMember ? (src as IndustryGroupStockItem) : members.find((m) => m.symbol === src.symbol);
+                      // top_constituents are typed as ranking rows, but some
+                      // payloads inline the full member row. When change_pct is
+                      // already on the constituent, use it directly instead of
+                      // looking the symbol up in members.
+                      const inlined = "change_pct" in src
+                        ? (src as IndustryGroupTopStock & Pick<IndustryGroupStockItem, "change_pct">)
+                        : undefined;
+                      const match = inlined ?? members.find((m) => m.symbol === src.symbol);
                       return {
                         symbol: src.symbol,
-                        company: (src as { company_name?: string }).company_name ?? match?.company_name ?? "",
-                        rs: isMember ? (src as IndustryGroupStockItem).rs_rating : (src as { rs_rating: number | null }).rs_rating,
-                        change_pct: match?.change_pct ?? (src as { return_1m?: number }).return_1m ?? 0,
+                        company: src.company_name ?? match?.company_name ?? "",
+                        rs: src.rs_rating,
+                        change_pct: match?.change_pct ?? src.return_1m ?? 0,
                       };
                     });
                     const groupSymbols = group.symbols.length ? group.symbols : members.map((m) => m.symbol);

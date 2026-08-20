@@ -678,7 +678,7 @@ export function WatchlistsPanel({
     }
 
     const sections = groupsData.groups
-      .map((group) => {
+      .map((group): ChartGridGroupSection | null => {
         const sectionCards = cardsByGroup.get(group.group_id) ?? [];
         if (!sectionCards.length) return null;
         return {
@@ -694,7 +694,7 @@ export function WatchlistsPanel({
             "6M": group.return_6m,
           },
           cards: sectionCards,
-        } satisfies ChartGridGroupSection;
+        };
       })
       .filter((section): section is ChartGridGroupSection => Boolean(section));
 
