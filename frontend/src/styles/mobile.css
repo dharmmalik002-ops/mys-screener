@@ -1,0 +1,1263 @@
+/* ==========================================================================
+   mobile.css — the phone layer.
+   --------------------------------------------------------------------------
+   WHY EVERY SELECTOR STARTS WITH `html `
+
+   This file is imported last in main.tsx, but that is NOT enough to win the
+   cascade: each panel is lazy-loaded, so its own stylesheet (ScanTable.css,
+   WatchlistsPanel.css, HomePanel.css …) is injected into <head> AFTER this
+   one and beats it on any tie. The leading `html ` adds one element to the
+   specificity of every rule here, which wins regardless of injection order —
+   and costs nothing, since `html` matches the root of every page.
+
+   Do not "clean up" the prefixes. Add one to any rule you add.
+   --------------------------------------------------------------------------
+   What was wrong before this file existed:
+
+   1. Seven nav pills lived in one hidden-scroll row, so Markets / Live /
+      Journal were off-screen with no affordance that they existed.
+   2. Wide fixed-column grids (group tables, the sector table, ScanTable's
+      ~900px row template) sat inside flex/grid children whose default
+      `min-width: auto` let them push the PAGE sideways — Groups measured
+      1155px of horizontal scroll on a 375px viewport.
+   3. `.chart-stage { min-height: 700px }` meant a chart was taller than the
+      phone viewport before its toolbar was even counted.
+   4. Modals were centred dialogs with page padding rather than sheets.
+   5. Text inputs were below 16px, which makes iOS Safari zoom the page on
+      focus and never zoom back.
+
+   Breakpoints used here, and only these two:
+     <= 768px   phone + small tablet portrait — the "mobile shell"
+     <= 430px   one-handed phone widths — density tightening only
+   ========================================================================== */
+
+:root {
+  --tabbar-h: 58px;
+}
+
+/* The bottom tab bar is markup that only phones use; hide it everywhere else
+   rather than conditionally rendering it, so `activePage` has one owner. */
+html .mobile-tabbar {
+  display: none;
+}
+
+
+/* ==========================================================================
+   1. Document — stop the page itself from scrolling sideways
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* `clip` rather than `hidden`: hidden would turn .app-shell into a scroll
+     container and break the sticky header. */
+  html .app-shell {
+    overflow-x: clip;
+  }
+
+  /* The actual cause of horizontal page scroll: a flex/grid item defaults to
+     min-width:auto, so a 1080px table inside it sets the page width instead
+     of scrolling inside its own wrapper. */
+  html .workspace,
+  html .workspace > *,
+  html .panel,
+  html .panel-header,
+  html .panel-body,
+  html .gp-root,
+  html .tj-root,
+  html .st-card,
+  html .wl-card {
+    min-width: 0;
+  }
+
+  /* Wrappers that are meant to scroll should do it with momentum, and should
+     not hand the overscroll to the page behind them. */
+  html .gp-table-scroll,
+  html .scan-table-body,
+  html .tj-cal-modal-table-wrap,
+  html .chart-group-table-body {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}
+
+
+/* ==========================================================================
+   2. Header — brand + search + status only; the tabs move to the bottom bar
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  html .ticker-ribbon-track {
+    gap: 20px;
+    padding: 6px 14px;
+  }
+
+  html .ticker-ribbon-item {
+    font-size: 0.68rem;
+  }
+
+  html .top-nav {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px max(10px, env(safe-area-inset-right)) 8px max(10px, env(safe-area-inset-left));
+  }
+
+  html .brand-stack {
+    gap: 0;
+  }
+
+  html .brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: 0.82rem;
+  }
+
+  /* "NSE / BSE Stock Scanner" is the page title's own subtitle — pure
+     duplication once the viewport is this narrow. */
+  html .top-nav .eyebrow {
+    display: none;
+  }
+
+  html .brand-cluster h1 {
+    font-size: 0.98rem;
+  }
+
+  html .nav-controls {
+    gap: 8px;
+    overflow: visible;
+  }
+
+  /* Tabs are rendered again by .mobile-tabbar; this row keeps search + status. */
+  html .nav-controls .nav-button {
+    display: none;
+  }
+
+  html .nav-controls form.nav-search {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  html .top-nav .nav-search-field input,
+  html .top-nav .nav-search input {
+    width: 100%;
+    min-width: 0;
+    /* 16px exactly: anything smaller and iOS Safari zooms the viewport on
+       focus and offers no way back. */
+    font-size: 16px;
+  }
+
+  html .nav-search-hint {
+    display: none;
+  }
+
+  /* The status pill's schedule label ("Auto-refresh 4:20 pm") is long; the
+     snapshot date is the part that matters at a glance. */
+  html .top-nav .status-pill > span:not(.status-dot):not(.status-pill-sep),
+  html .top-nav .status-pill-sep {
+    display: none;
+  }
+
+  html .top-nav .status-pill {
+    padding: 5px 8px;
+    gap: 6px;
+    font-size: 0.72rem;
+  }
+
+  html .top-nav .icon-btn {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+  }
+}
+
+@media (max-width: 430px)  {
+  /* Below ~430px the wordmark and the search field cannot share a line
+     without the search collapsing to an unusable stub. */
+  html .brand-cluster h1 {
+    display: none;
+  }
+
+  html .top-nav .status-pill {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   3. Bottom tab bar
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  html .mobile-tabbar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    /* Above page chrome, below every modal (those start at 9999). */
+    z-index: 60;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 2px;
+    padding: 5px 4px calc(5px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line);
+    background: color-mix(in srgb, var(--surface-strong) 94%, var(--bg));
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    box-shadow: 0 -6px 24px rgba(2, 5, 15, 0.28);
+  }
+
+  html .mobile-tab {
+    display: grid;
+    justify-items: center;
+    align-content: center;
+    gap: 3px;
+    min-height: 46px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: inherit;
+    font-size: 0.6rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    transition: color var(--dur-fast) ease, background var(--dur-fast) ease;
+  }
+
+  html .mobile-tab span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html .mobile-tab.is-active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+  }
+
+  html .mobile-tab:active {
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+  }
+
+  /* Everything must clear the fixed bar — including .app-footer, which sits
+     after .workspace, so padding on the workspace alone left the footer
+     permanently hidden behind the tabs. */
+  html .app-shell {
+    padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom));
+  }
+
+  html .workspace {
+    padding: 12px max(10px, env(safe-area-inset-left)) 16px max(10px, env(safe-area-inset-right));
+  }
+}
+
+
+/* ==========================================================================
+   4. Workspace density — the page-metrics strip and generic panels
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* app.css sets grid-template-columns on this, but the element is a flex
+     container, so the rule did nothing and five metrics stacked into five
+     full-height rows. Make it the two-column grid it was meant to be. */
+  html .page-metrics-strip {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 2px 0;
+    padding: 8px 6px;
+  }
+
+  html .page-metrics-strip .metric-card {
+    padding: 4px 10px;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  html .page-metrics-strip .metric-card:nth-child(2n) {
+    border-right: 0;
+  }
+
+  html .page-metrics-strip .metric-card strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  html .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 14px 14px 0;
+  }
+
+  html .panel-body {
+    padding: 14px;
+  }
+
+  html .panel h2 {
+    font-size: 1.05rem;
+  }
+
+  /* Anything that lays out as "auto-fit, minmax(>=280px, 1fr)" is a single
+     column here anyway — say so, so a 320px minimum can't overflow a 351px
+     content box. */
+  html .mk-grid,
+  html .mk-focus-grid,
+  html .mk-review-grid,
+  html .mk-review-grid:has(.mk-review-row.detailed),
+  html .sector-heatmap-board,
+  html .news-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 430px)  {
+  html .workspace {
+    gap: 14px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+
+  html .panel-body {
+    padding: 12px 10px;
+  }
+}
+
+
+/* ==========================================================================
+   5. Controls — touch targets, no iOS zoom, scrollable pill rows
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* iOS zooms on focus for anything under 16px. Applies to every text-ish
+     control, not just the nav search. */
+  html input[type="text"],
+  html input[type="search"],
+  html input[type="number"],
+  html input[type="date"],
+  html input[type="email"],
+  html input[type="password"],
+  html input:not([type]),
+  html textarea,
+  html select {
+    font-size: 16px;
+  }
+
+  /* Apple's minimum comfortable target is 44px; 38px plus the surrounding
+     gap is the practical floor for a dense terminal UI. */
+  html .nav-button,
+  html .icon-btn,
+  html .st-btn,
+  html .gp-tab,
+  html .scanner-tab,
+  html .timeframe-pill,
+  html .indicator-pill,
+  html .tool-pill,
+  html .st-view-tab {
+    min-height: 38px;
+  }
+
+  html .st-expand-btn,
+  html .st-watch-btn {
+    min-width: 32px;
+    min-height: 32px;
+  }
+
+  /* Pill rows: scroll the row, never shrink the pills into clipped letters. */
+  html .timeframe-switcher,
+  html .chart-style-switcher,
+  html .indicator-switcher,
+  html .drawing-switcher,
+  html .fundamentals-toolbar,
+  html .scanner-tab-row,
+  html .gp-tabs,
+  html .st-view-tabs,
+  html .tj-tabbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  html .timeframe-switcher::-webkit-scrollbar,
+  html .chart-style-switcher::-webkit-scrollbar,
+  html .indicator-switcher::-webkit-scrollbar,
+  html .drawing-switcher::-webkit-scrollbar,
+  html .fundamentals-toolbar::-webkit-scrollbar,
+  html .scanner-tab-row::-webkit-scrollbar,
+  html .gp-tabs::-webkit-scrollbar,
+  html .st-view-tabs::-webkit-scrollbar,
+  html .tj-tabbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  html .timeframe-switcher > *,
+  html .chart-style-switcher > *,
+  html .indicator-switcher > *,
+  html .drawing-switcher > *,
+  html .scanner-tab-row > *,
+  html .gp-tabs > *,
+  html .st-view-tabs > *,
+  html .tj-tabbar > * {
+    flex: 0 0 auto;
+  }
+
+  /* Popovers anchored to a right-aligned button ran off-screen. */
+  html .st-pop,
+  html .wl-move-pop {
+    max-width: calc(100vw - 24px);
+  }
+}
+
+
+/* ==========================================================================
+   6. Data tables — reflow instead of a 900px sideways scroll
+   --------------------------------------------------------------------------
+   ScanTable and the watchlist table are CSS-grid rows driven by an inline
+   --st-grid / --wl-grid template of ~10 fixed columns. app.css previously
+   gave each row `min-width: 620px` and scrolled the head and the body in two
+   independent scrollers, so the column labels desynced from the data as soon
+   as you moved.
+
+   Here the row becomes a wrapping flex line instead: the stock identity gets
+   the full width, and price / change / sparkline / RS / RVOL / dates flow
+   underneath as a second line, with the row tools pinned right. Nothing is
+   dropped, nothing needs sideways scrolling, and each value is still legible
+   on its own (a badge, a "1.8x", a date, a percent).
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* Column headers describe a column layout that no longer exists here. */
+  html .st-card .scan-table-head.st-head,
+  html .wl-card .scan-table-head.wl-head {
+    display: none;
+  }
+
+  html .st-card .scan-table-body,
+  html .wl-card .scan-table-body {
+    overflow-x: visible;
+  }
+
+  html .st-card .scan-row.st-row,
+  html .wl-card .scan-row.wl-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    min-width: 0;
+    /* `.scan-table-body` is a column flex box with `max-height: 980px`, so
+       without shrink:0 every row collapsed to 22px once the list was longer
+       than the box. The desktop layout was held up by `min-height: 56px`,
+       which a wrapped two-line row cannot use. */
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 44px;
+    padding: 10px 12px;
+    row-gap: 4px;
+    column-gap: 8px;
+  }
+
+  /* A 980px inner scroller on a 812px screen is a scroll trap: you cannot
+     tell where the page ends and the list begins. */
+  html .st-card .scan-table-body,
+  html .wl-card .scan-table-body {
+    max-height: 68dvh;
+  }
+
+    /* Line 1 is the stock identity plus the row's action buttons; line 2 is the
+     numbers. Giving the identity `1 1 100%` instead pushed the buttons onto a
+     third line of their own on every row. */
+  html .st-card .st-row > .st-row-main,
+  html .wl-card .wl-row > .st-row-main {
+    flex: 1 1 180px;
+    order: 0;
+  }
+
+  html .st-card .st-row > .st-price,
+  html .wl-card .wl-row > .st-price {
+    order: 1;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  html .st-card .st-row > .st-change,
+  html .wl-card .wl-row > .st-change {
+    order: 2;
+    text-align: left;
+    font-size: 0.9rem;
+  }
+
+  html .st-card .st-row > .st-spark {
+    order: 3;
+    /* Narrow enough that price + change + spark + RS + RVOL + the row tools
+       stay on ONE wrapped line; 54px pushed the tools to a line of their own
+       and cost ~30px of height on every row. */
+    flex: 0 0 40px;
+  }
+
+  html .st-card .st-row > .st-spark .st-spark-svg {
+    max-width: 40px;
+  }
+
+  html .st-card .st-row > .st-cell-center,
+  html .st-card .st-row > .st-vdate,
+  html .wl-card .wl-row > .st-cell-center,
+  html .wl-card .wl-row > .wl-mcap,
+  html .wl-card .wl-row > .wl-rank {
+    order: 4;
+    justify-content: flex-start;
+    font-size: 0.76rem;
+  }
+
+  html .wl-card .wl-row > .wl-row-checkbox {
+    order: -1;
+    flex: 0 0 auto;
+  }
+
+    html .st-card .st-row > .st-row-tools,
+  html .wl-card .wl-row > .wl-move-wrap {
+    order: 0;
+    flex: 0 0 auto;
+    margin-left: auto;
+  }
+
+  html .st-card .st-row > .st-row-detail {
+    order: 10;
+    flex: 1 1 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The stock identity line can now use the whole width, so let the company
+     name wrap to two lines instead of truncating at 12 characters. */
+  html .st-card .st-row .st-name small,
+  html .wl-card .wl-row .st-name small {
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  /* Leave the sideways scrollbar visible: it is the only cue that the table
+     has columns off-screen. */
+  html .gp-table-scroll {
+    scrollbar-width: thin;
+  }
+}
+
+
+/* --------------------------------------------------------------------------
+   6b. Real <table> elements
+   Ten numeric columns cannot reflow into anything readable, so these keep
+   their columns and scroll sideways inside their own wrapper. What they get
+   here is the two things that make that usable on a phone: a wrapper that
+   actually scrolls, and a frozen identity column so you always know which
+   row you are reading.
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 768px)  {
+  html .tj-recent-wrap,
+  html .rb-table-wrap,
+  html .live-table-wrap,
+  html .tj-table-wrap,
+  html .fundamentals-layout {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  /* .tj-table has no wrapper of its own (Insights renders it straight into a
+     card), so the table becomes its own scroll box. `display: block` keeps the
+     internal table layout via anonymous table boxes and lets overflow apply. */
+  html .tj-table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  html .gp-table,
+  html .live-table,
+  html .rb-table,
+  html .tj-recent-table {
+    font-size: 12px;
+  }
+
+  html .gp-table thead th,
+  html .gp-table tbody td {
+    padding: 8px;
+    white-space: nowrap;
+  }
+
+  /* Freeze rank + group name. --card-flat is the one opaque surface token in
+     both themes; the translucent --gp-card-bg would let the scrolling columns
+     show straight through the frozen ones. */
+  html .gp-table thead th:nth-child(1),
+  html .gp-table tbody td:nth-child(1),
+  html .gp-table thead th:nth-child(2),
+  html .gp-table tbody td:nth-child(2) {
+    position: sticky;
+    z-index: 2;
+    background: var(--card-flat);
+  }
+
+  html .gp-table thead th:nth-child(1),
+  html .gp-table tbody td:nth-child(1) {
+    left: 0;
+    width: 38px;
+    min-width: 38px;
+    padding: 8px 2px 8px 6px;
+    text-align: center;
+  }
+
+  /* Rank badge over its 1W delta rather than beside it — 38px of frozen
+     gutter instead of 65px. */
+  html .gp-table tbody td:nth-child(1) > * {
+    display: block;
+    margin: 0 auto;
+  }
+
+  html .gp-table thead th:nth-child(2),
+  html .gp-table tbody td:nth-child(2) {
+    left: 38px;
+    border-right: 1px solid var(--gp-border, var(--line));
+  }
+
+  /* .gp-cell-name carries `min-width: 280px` for the desktop layout, which
+     left 30px of a 309px viewport for the nine data columns. Cap the cell and
+     its content together — a max-width alone loses to the min-width. */
+  html .gp-table tbody td.gp-cell-name {
+    min-width: 0;
+    max-width: 152px;
+    width: 152px;
+  }
+
+  html .gp-table tbody td:nth-child(2) .gp-group-title-row {
+    max-width: 142px;
+    flex-wrap: nowrap;
+    gap: 6px;
+  }
+
+  html .gp-table tbody td:nth-child(2) .gp-group-name-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  html .gp-table tbody td:nth-child(2) .gp-group-name-btn strong,
+  html .gp-table tbody td:nth-child(2) .gp-group-name-btn small {
+    display: block;
+    min-width: 0;
+  }
+
+  html .gp-table .gp-group-grid-toggle {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  /* An "Emerging" chip beside a 110px name would leave nothing for the name;
+     the chip already shows in the group's own card and detail view. */
+  html .gp-table .gp-emerging {
+    display: none;
+  }
+
+  /* The rank cell holds a badge plus a delta; stack them so the frozen
+     gutter stays 40px instead of 65px. */
+  html .gp-table tbody td:nth-child(1) {
+    line-height: 1.1;
+  }
+
+  html .gp-table thead th:nth-child(1),
+  html .gp-table thead th:nth-child(2) {
+    z-index: 3;
+  }
+
+  /* The name cell is the one column allowed to wrap — nowrap would make the
+     frozen column as wide as "Auto Ancillaries - Forgings / Castings". */
+  html .gp-table tbody td:nth-child(2),
+  html .gp-cell-name {
+    white-space: normal;
+  }
+
+  /* "Top Stocks" is a chip list; it is the widest column and the least useful
+     one on a phone, and every group's members are one tap away. */
+  html .gp-table thead th:last-child,
+  html .gp-table tbody td:last-child {
+    display: none;
+  }
+}
+
+
+/* ==========================================================================
+   7. Charts
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* 700px of minimum height is taller than the whole viewport. */
+  html .chart-stage {
+    min-height: 0;
+  }
+
+  html .chart-canvas {
+    min-height: 240px;
+  }
+
+  html .chart-panel.expanded .chart-canvas,
+  html .chart-panel.expanded .chart-stage,
+  html .screener-page-grid > .chart-panel.expanded .chart-canvas,
+  html .workspace-grid-sector > .chart-panel.expanded .chart-canvas {
+    height: min(52dvh, 420px);
+    min-height: 240px;
+  }
+
+  html .chart-panel .panel-body {
+    padding: 8px 8px 10px !important;
+  }
+
+  /* The full-screen chart modal owns the viewport, so it can be generous —
+     but it must clear the notch and the home indicator. */
+  html .chart-modal {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  html .chart-modal .chart-panel.expanded .chart-canvas,
+  html .chart-modal .chart-panel.expanded .chart-stage {
+    height: auto;
+    min-height: min(62dvh, 620px);
+  }
+
+  html .chart-modal-header {
+    flex-direction: column;
+    gap: 8px;
+    padding: 14px 14px 0;
+  }
+
+  html .chart-modal-close {
+    top: max(8px, env(safe-area-inset-top));
+    right: 8px;
+    padding: 8px 12px;
+  }
+
+  /* One chart per screen: a 2x2 wall of 170px-wide charts shows nothing. */
+  html .chart-grid-wall {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .chart-grid-modal {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 100dvh;
+    padding: 12px;
+    border-radius: 0;
+  }
+
+  html .chart-grid-toolbar-toggle {
+    justify-self: start;
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
+    color: var(--text);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+  }
+
+  html .chart-grid-toolbar.is-collapsed {
+    display: none;
+  }
+
+  /* Seven label-over-select controls stacked one per line put 993px of
+     toolbar above the first chart. Two columns, and the wide controls span. */
+  html .chart-grid-toolbar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 8px;
+    width: 100%;
+  }
+
+  html .chart-grid-toolbar > * {
+    width: auto;
+    min-width: 0;
+  }
+
+  html .chart-grid-toolbar .nav-select select,
+  html .chart-grid-toolbar select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  html .chart-grid-ma-legend,
+  html .chart-grid-timeframes,
+  html .chart-grid-zoom {
+    grid-column: 1 / -1;
+  }
+
+
+  html .chart-group-row,
+  html .chart-group-table-head {
+    min-width: 0;
+  }
+
+  /* The vertical drawing-tool rail overlays ~46px of a 359px chart and every
+     tool on it wants a precise pointer. Hidden here; the same tools stay
+     reachable from the drawing toolbar above the chart. */
+  html .chart-tool-rail {
+    display: none;
+  }
+
+  /* The close and "Show group" buttons are absolutely positioned over the
+     header, so the title ran underneath them. Reserve their width. */
+  html .chart-modal .chart-panel .panel-header {
+    align-items: stretch;
+    padding: 12px 12px 0;
+  }
+
+  html .chart-modal .chart-panel .panel-header > div:first-child {
+    padding-right: 176px;
+    min-width: 0;
+  }
+
+  /* One line, ellipsised: the full name wrapped to three lines and pushed the
+     chart down. The ticker is right above it in the kicker. */
+  html .chart-modal .chart-panel .panel-header h2 {
+    font-size: 1.02rem;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html .chart-modal .chart-panel .panel-kicker {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html .chart-modal .chart-modal-widget-toggle {
+    top: max(8px, env(safe-area-inset-top));
+    right: 78px;
+  }
+
+  /* Right-aligned column of toolbars becomes a full-width scrolling stack. */
+  html .chart-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  html .chart-search-form {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+  }
+
+  html .chart-search-form input {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  /* Three wrapped rows of pills ate 150px above the chart. One scrolling row. */
+  html .chart-drawing-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding: 6px 8px;
+  }
+
+  html .chart-drawing-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  html .chart-drawing-toolbar > * {
+    flex: 0 0 auto;
+  }
+
+  /* Summary chips: 88px tall each, and there are eleven of them. */
+  html .chart-summary-strip.compact {
+    display: flex;
+    gap: 8px;
+  }
+
+  html .chart-summary-chip {
+    flex: 0 0 auto;
+    padding: 8px 10px;
+  }
+
+  html .chart-summary-chip span {
+    margin-bottom: 4px;
+  }
+
+  html .chart-modal .chart-panel.expanded .chart-stage-meta,
+  html .chart-panel.expanded .chart-stage-meta {
+    padding-left: 0;
+  }
+
+  html .chart-stage-label {
+    font-size: 0.68rem;
+  }
+
+  html .chart-summary-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+/* ==========================================================================
+   8. Modals become sheets
+   --------------------------------------------------------------------------
+   A centred dialog with 20px of page padding wastes the only screen space a
+   phone has. Everything below fills the viewport, scrolls internally, and
+   respects the safe areas.
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  html .pe-modal-overlay,
+  html .sgm-overlay,
+  html .tj-overlay,
+  html .trade-review-overlay,
+  html .watchlist-import-overlay,
+  html .homepro-modal-overlay,
+  html .tj-edge-modal-backdrop,
+  html .watchlist-picker-backdrop,
+  html .chart-group-modal-backdrop,
+  html .cmdk-overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  html .pe-modal,
+  html .sgm-modal,
+  html .tj-modal,
+  html .tj-cal-modal,
+  html .tj-charges-modal,
+  html .tj-edge-modal,
+  html .trade-review-modal,
+  html .watchlist-import-modal,
+  html .watchlist-picker-modal,
+  html .homepro-modal,
+  html .chart-group-modal,
+  html .modal-shell {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 92dvh;
+    margin: 0;
+    padding: 16px 14px calc(16px + env(safe-area-inset-bottom));
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* The command palette is a "jump to" list — it belongs under the thumb,
+     not pinned to the top of the screen. */
+  html .cmdk {
+    width: 100vw;
+    max-width: 100vw;
+    max-height: 76dvh;
+    margin: 0;
+    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  }
+
+  html .cmdk-input-row input {
+    font-size: 16px;
+  }
+
+  html .cmdk-list {
+    max-height: 56dvh;
+  }
+
+  /* News already renders edge-to-edge; it only needs the notch and the
+     home-indicator kept clear. */
+  html .news-modal-header {
+    padding: max(12px, env(safe-area-inset-top)) 14px 12px;
+  }
+
+  html .news-modal-body {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  html .homepro-modal-table,
+  html .tj-cal-modal-table-wrap {
+    overflow-x: auto;
+  }
+}
+
+
+/* ==========================================================================
+   9. Panels with their own desktop-first layouts
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  /* Markets — MarketsPanel.css already collapses .mko-hero / .mko-indexes /
+     .mk-week-grid / .mk-pos-row at 980/760/700px. Only the compare table,
+     which has no phone rule of its own, is handled here. */
+  html .mk-compare-head,
+  html .mk-compare-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    row-gap: 4px;
+  }
+
+  /* Groups */
+  html .gp-toolbar {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  html .gp-toolbar-right {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  /* Home — HomePanel.css deliberately keeps .homepro-kpis and
+     .homepro-snapshot-grid two-up on phones (its <=760px block), and already
+     collapses every .homepro-row-*. Forcing one column here only made the
+     page longer for no gain. */
+  html .homepro-card {
+    min-width: 0;
+    padding: 14px;
+  }
+
+  html .homepro-groups-table,
+  html .homepro-modal-table table {
+    min-width: 0;
+  }
+
+  /* The zoom row is [-] [slider] [+] "401 sessions - from 2 Jan 2025" on one
+     nowrap line, which needs ~354px inside a 321px card. Let the caption drop
+     to its own line instead of being clipped. */
+  html .homepro-xp-zoom {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+
+  html .homepro-xp-zoom-info {
+    flex: 1 1 100%;
+    white-space: normal;
+    text-align: right;
+  }
+
+  html .homepro-xp-head {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+
+  html .homepro-xp-legend {
+    gap: 4px 12px;
+  }
+
+  /* Screener */
+  html .screener-page-grid,
+  html .workspace-grid,
+  html .watchlists-layout,
+  html .scanner-hero-grid,
+  html .scanner-section-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .screener-sidebar-panel,
+  html .watchlists-sidebar {
+    position: static;
+    max-height: none;
+  }
+
+  /* Journal — its own file already collapses most grids at 800/720px, but the
+     cards inside them keep min-width:auto, so a card sized itself to its
+     widest child (491px in a 311px column) and the whole page clipped. */
+  html .tj-form-grid,
+  html .tj-insight-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  html .tj-card,
+  html .tj-chart-row > *,
+  html .tj-page > * {
+    min-width: 0;
+  }
+
+  /* Five weekday tiles do not fit; scroll the strip. */
+  html .tj-dow-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(88px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding-bottom: 4px;
+  }
+
+  html .tj-dist-chart-wrap,
+  html .tj-dist-summary {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Six hold-time buckets with their rupee labels need ~400px; scroll the
+     strip rather than clipping the last two buckets. */
+  html .tj-hold-grid {
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(62px, 1fr);
+    grid-template-columns: none;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+
+  html .tj-cal-grid {
+    gap: 2px;
+  }
+
+  /* The regime chip was squeezed to 10px of a 139px label. */
+  html .tj-regime-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 430px)  {
+  html .chart-summary-strip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+
+/* ==========================================================================
+   10. Toasts and floating chrome must clear the tab bar
+   ========================================================================== */
+
+@media (max-width: 768px)  {
+  html .toast-stack {
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 10px);
+  }
+
+  html .startup-toast {
+    left: 10px;
+    right: 10px;
+    bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 10px);
+    width: auto;
+  }
+}
+
+
+/* ==========================================================================
+   11. Landscape phones (short viewports)
+   --------------------------------------------------------------------------
+   A phone turned sideways is 375px TALL. The ticker ribbon, the brand block
+   and generous header padding cost ~150px of that before any content — and
+   turning the phone sideways is exactly what someone does to read a chart.
+   Keyed on height + orientation + `pointer: coarse`, so a desktop window
+   dragged short never picks this up — only an actual touch device.
+   ========================================================================== */
+
+@media (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+  /* Same min-width:auto trap as the portrait block — without this the
+     nowrap drawing toolbar reported a 1518px client width and dragged the
+     whole modal out with it. */
+  html .chart-modal,
+  html .chart-modal .chart-panel,
+  html .chart-modal .panel-header,
+  html .chart-modal .panel-body,
+  html .chart-compare-single {
+    min-width: 0;
+  }
+
+  html .ticker-ribbon {
+    display: none;
+  }
+
+  html .top-nav {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  html .brand-stack {
+    display: none;
+  }
+
+  html .workspace {
+    padding-top: 8px;
+    gap: 10px;
+  }
+
+  /* Keep the header clear of the absolutely-positioned Close / Show Group
+     buttons, which otherwise sit on top of the toolbar row. */
+  html .chart-modal .chart-panel .panel-header {
+    padding: 6px 184px 0 12px;
+  }
+
+  html .chart-modal .chart-panel .panel-header h2 {
+    font-size: 0.92rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html .chart-modal .chart-panel .panel-kicker {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  html .chart-drawing-toolbar {
+    padding: 3px 8px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  html .chart-drawing-toolbar > * {
+    flex: 0 0 auto;
+  }
+
+  /* Same reasoning as the portrait rule: a 46px vertical rail over a 375px
+     tall chart, driven by touch, is not worth the space. */
+  html .chart-modal .chart-tool-rail {
+    display: none;
+  }
+
+  html .chart-modal .chart-panel.expanded .chart-stage-meta {
+    padding-left: 0;
+  }
+
+  /* The whole point of landscape: give the chart the height it just gained. */
+  html .chart-modal .chart-panel.expanded .chart-canvas,
+  html .chart-modal .chart-panel.expanded .chart-stage {
+    height: auto;
+    min-height: 74dvh;
+  }
+
+  html .chart-panel.expanded .chart-canvas,
+  html .chart-panel.expanded .chart-stage {
+    height: min(72dvh, 420px);
+    min-height: 200px;
+  }
+
+  /* Only inside the full-screen chart modal: there the chart IS the page, and
+     price/change/RS are already in the header. The inline panel keeps them. */
+  html .chart-modal .chart-panel.expanded .chart-summary-strip {
+    display: none;
+  }
+}
+
+/* The bottom tab bar also applies in landscape below 768px wide (small
+   phones), where 58px of a 375px-tall viewport is too much. */
+@media (max-width: 768px) and (max-height: 520px) and (orientation: landscape) and (pointer: coarse) {
+  :root {
+    --tabbar-h: 46px;
+  }
+
+  html .mobile-tab {
+    min-height: 36px;
+    font-size: 0.55rem;
+  }
+}

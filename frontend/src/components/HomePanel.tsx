@@ -324,10 +324,10 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
     if (!el || typeof ResizeObserver === "undefined") return;
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect?.width;
-      if (w) setWidth(Math.max(320, Math.round(w)));
+      if (w) setWidth(Math.max(260, Math.round(w)));
     });
     ro.observe(el);
-    setWidth(Math.max(320, Math.round(el.clientWidth || 960)));
+    setWidth(Math.max(260, Math.round(el.clientWidth || 960)));
     return () => ro.disconnect();
   }, []);
 
@@ -347,7 +347,12 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
   }
 
   const padL = 12;
-  const padR = 78; // gutter for regime labels
+  // Phone widths: the in-chart regime labels ("Progressive Exposure") are
+  // wider than the 78px gutter reserved for them, so they used to spill past
+  // the card edge and get clipped. Drop both the gutter and the labels below
+  // 520px — the legend directly under the chart names every band anyway.
+  const compact = width < 520;
+  const padR = compact ? 12 : 78; // gutter for regime labels
   const padT = 18;
   const padB = 26;
   const innerW = Math.max(10, width - padL - padR);
@@ -463,9 +468,11 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
               <g key={b.label}>
                 <rect x={padL} y={yTop} width={innerW} height={h} fill={b.color} opacity={fillOpacity} />
                 <line x1={padL} x2={padL + innerW} y1={yTop} y2={yTop} stroke={b.color} strokeWidth={1} strokeDasharray="2 4" opacity={0.4} />
-                <text x={padL + innerW + 8} y={labelY} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
-                  {b.label}
-                </text>
+                {compact ? null : (
+                  <text x={padL + innerW + 8} y={labelY} fontSize={10} fontWeight={700} fill={b.color} opacity={0.95}>
+                    {b.label}
+                  </text>
+                )}
               </g>
             );
           });

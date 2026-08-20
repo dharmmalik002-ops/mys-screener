@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
+import { useMinWidth } from "../lib/virtualRows";
 
 const AUTO_LEVELS_STORAGE_KEY = "stockScanner.chartLevels.v1";
 function readAutoLevelsEnabled(): boolean {
@@ -835,6 +836,12 @@ export function ChartGridModal({
   onClose,
 }: ChartGridModalProps) {
   const modalRef = useRef<HTMLDivElement | null>(null);
+  // Phones: the seven-control toolbar is 530px tall even in two columns, which
+  // buries the charts this modal exists to show. Start collapsed there, and
+  // leave the desktop layout exactly as it was.
+  const isCompactGrid = !useMinWidth(768);
+  const [toolbarOpen, setToolbarOpen] = useState(false);
+
   const wallRef = useRef<HTMLDivElement | null>(null);
   // Custom draggable scrollbar pinned to the right of the grid.
   const dragRef = useRef<{ startY: number; startScroll: number; trackH: number; thumbH: number } | null>(null);
@@ -1212,7 +1219,18 @@ export function ChartGridModal({
               </div>
             ) : null}
 
-            <div className="chart-grid-toolbar">
+            {isCompactGrid ? (
+              <button
+                type="button"
+                className="chart-grid-toolbar-toggle"
+                onClick={() => setToolbarOpen((open) => !open)}
+                aria-expanded={toolbarOpen}
+              >
+                {toolbarOpen ? "Hide chart settings" : "Chart settings"}
+              </button>
+            ) : null}
+
+            <div className={`chart-grid-toolbar${isCompactGrid && !toolbarOpen ? " is-collapsed" : ""}`}>
               {canGroupGrid ? (
                 <>
                   <label className="nav-select chart-grid-select">
