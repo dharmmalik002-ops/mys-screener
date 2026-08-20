@@ -1,4 +1,4 @@
-import type { ChartBar, ChartLineMarker, ChartLinePoint, HistoricalBreadthDataPoint, IndexPeHistoryResponse } from "./api";
+import type { ChartBar, ChartLineMarker, ChartLinePoint, IndexPeHistoryResponse } from "./api";
 
 export function sanitizeChartBars(bars: ChartBar[]) {
   const deduped = new Map<number, ChartBar>();
@@ -54,30 +54,5 @@ export function sanitizeIndexPePoints(points: IndexPeHistoryResponse["points"]) 
     }
     deduped.set(date, { date, pe });
   }
-  return Array.from(deduped.values()).sort((left, right) => left.date.localeCompare(right.date));
-}
-
-export function sanitizeHistoricalBreadth(history?: HistoricalBreadthDataPoint[]) {
-  if (!history?.length) {
-    return [];
-  }
-
-  const deduped = new Map<string, HistoricalBreadthDataPoint>();
-  for (const point of history) {
-    const date = typeof point.date === "string" ? point.date.split("T")[0] : "";
-    if (!date) {
-      continue;
-    }
-
-    deduped.set(date, {
-      date,
-      above_ma20_pct: Number.isFinite(Number(point.above_ma20_pct)) ? Number(point.above_ma20_pct) : 0,
-      above_ma50_pct: Number.isFinite(Number(point.above_ma50_pct)) ? Number(point.above_ma50_pct) : 0,
-      above_sma200_pct: Number.isFinite(Number(point.above_sma200_pct)) ? Number(point.above_sma200_pct) : 0,
-      new_high_52w_pct: Number.isFinite(Number(point.new_high_52w_pct)) ? Number(point.new_high_52w_pct) : 0,
-      new_low_52w_pct: Number.isFinite(Number(point.new_low_52w_pct)) ? Number(point.new_low_52w_pct) : 0,
-    });
-  }
-
   return Array.from(deduped.values()).sort((left, right) => left.date.localeCompare(right.date));
 }

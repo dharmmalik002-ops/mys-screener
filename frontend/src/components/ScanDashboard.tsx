@@ -286,9 +286,9 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                       ))}
                     </Pie>
                     <Tooltip
-                      formatter={(value: number, _name, props) => [
+                      formatter={(value, _name, props) => [
                         `${value} stocks`,
-                        props.payload.label,
+                        (props.payload as { label?: string } | undefined)?.label ?? "",
                       ]}
                       contentStyle={{
                         background: "#fff",
@@ -360,7 +360,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(99, 102, 241, 0.08)" }}
-                    formatter={(value: number) => [`${value} stocks`, "Count"]}
+                    formatter={(value) => [`${value} stocks`, "Count"]}
                     labelFormatter={(_l, payload) =>
                       (payload?.[0]?.payload as { fullName?: string })?.fullName ?? _l
                     }

@@ -2943,7 +2943,15 @@ export type MarketOverviewResponse = {
 };
 
 export function getMarketOverview(market: MarketKey) {
-  return request<MarketOverviewResponse>(withMarket("/api/market-overview", market));
+  // 60s timeout, same reasoning as getDashboard: this endpoint fans out to the
+  // upstream quote provider for every macro symbol, so the first cold hit after
+  // an idle Space measured ~54s while warm calls return in 1-3s. The default
+  // 20s timed out every cold load, leaving the macro row permanently blank.
+  return request<MarketOverviewResponse>(
+    withMarket("/api/market-overview", market),
+    undefined,
+    { timeoutMs: 60_000 },
+  );
 }
 
 export type IndexPePoint = { date: string; pe: number };

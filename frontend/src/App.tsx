@@ -248,6 +248,13 @@ type SavedScannerPreset = {
   symbols?: string[];
 };
 
+/**
+ * A preset as it comes back off localStorage — every field still unverified,
+ * and `mode` still a bare string so retired names can be migrated before the
+ * record is accepted as a SavedScannerPreset.
+ */
+type StoredScannerPreset = Omit<Partial<SavedScannerPreset>, "mode"> & { mode?: unknown };
+
 type AppProps = {
   initialMarket?: MarketKey;
   useMarketRoutes?: boolean;
@@ -1490,7 +1497,11 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
     if (!raw) {
       return [];
     }
-    const parsed = JSON.parse(raw) as SavedScannerPreset[];
+    // localStorage is untrusted input: a tab that last wrote this key on an
+    // older build can hold a partial record or a retired mode name such as
+    // "e-and-c". Parse into the stored shape and let the checks below decide
+    // what is usable, rather than asserting the validated type up front.
+    const parsed = JSON.parse(raw) as StoredScannerPreset[];
     const validModes = new Set<SavableScannerMode>([
       "custom-scan",
       "ipo",
@@ -1513,10 +1524,11 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
             if (!item || typeof item !== "object") {
               return null;
             }
+            const { id, name } = item;
             const normalizedMode = item.mode === "e-and-c" ? "ema-expansion" : item.mode;
             if (
-              typeof item.id !== "string"
-              || typeof item.name !== "string"
+              typeof id !== "string"
+              || typeof name !== "string"
               || typeof normalizedMode !== "string"
               || !validModes.has(normalizedMode as SavableScannerMode)
             ) {
@@ -1530,9 +1542,9 @@ function readSavedScanners(market: MarketKey): SavedScannerPreset[] {
               if (!tree || collectLeafModes(tree).length === 0) {
                 return null;
               }
-              return { ...item, mode: normalizedMode, totalScannerTree: tree } satisfies SavedScannerPreset;
+              return { ...item, id, name, mode: normalizedMode, totalScannerTree: tree } satisfies SavedScannerPreset;
             }
-            return { ...item, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
+            return { ...item, id, name, mode: normalizedMode as SavableScannerMode } satisfies SavedScannerPreset;
           })
           .filter((item): item is SavedScannerPreset => Boolean(item))
       : [];
