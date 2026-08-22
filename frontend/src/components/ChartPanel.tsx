@@ -1818,6 +1818,28 @@ function buildBenchmarkOverlaySeries(primaryBars: ChartBar[], benchmarkBars: Cha
   }));
 }
 
+/** Reactive media query. Used for the short-viewport chart tuning below —
+ *  a landscape phone is ~390px tall, where the RS and volume sub-panes take a
+ *  share of the canvas that only makes sense on a tall screen. */
+function useMediaQuery(query: string) {
+  const subscribe = useCallback(
+    (onChange: () => void) => {
+      if (typeof window === "undefined" || !window.matchMedia) {
+        return () => {};
+      }
+      const list = window.matchMedia(query);
+      list.addEventListener("change", onChange);
+      return () => list.removeEventListener("change", onChange);
+    },
+    [query],
+  );
+  return useSyncExternalStore(
+    subscribe,
+    () => (typeof window !== "undefined" && window.matchMedia ? window.matchMedia(query).matches : false),
+    () => false,
+  );
+}
+
 export function ChartPanel({
   market,
   symbol,
@@ -2137,6 +2159,7 @@ export function ChartPanel({
   // the mode has to hold. A module-level flag also survived the remount, but
   // it leaked between instances and put the page's chart panel into full
   // screen behind the modal at the same time.
+  const shortViewport = useMediaQuery("(max-height: 520px)");
   const [localFullscreen, setLocalFullscreen] = useState(false);
   const chartFullscreen = fullscreen ?? localFullscreen;
   const setChartFullscreen = useCallback(
@@ -3439,11 +3462,26 @@ export function ChartPanel({
     const volumeSeries = volumeSeriesRef.current;
     if (!chart || !mainSeries || !volumeSeries) return;
 
+    // The sub-panes take a fixed share of the canvas, which reads fine on a
+    // 650px-tall chart and crushes a landscape phone: price got 64% of the
+    // height, so ~230px of a 390px screen before the time axis and any
+    // overlay. Full screen on a short viewport hands price 76% instead.
+    const tightPanes = chartFullscreen && shortViewport;
+
     mainSeries.priceScale().applyOptions({
-      scaleMargins: safeRsLine.length ? { top: 0.04, bottom: 0.32 } : { top: 0.04, bottom: 0.18 },
+      scaleMargins: safeRsLine.length
+        ? tightPanes
+          ? { top: 0.02, bottom: 0.22 }
+          : { top: 0.04, bottom: 0.32 }
+        : tightPanes
+          ? { top: 0.02, bottom: 0.1 }
+          : { top: 0.04, bottom: 0.18 },
     });
     volumeSeries.priceScale().applyOptions({
-      scaleMargins: { top: safeRsLine.length ? 0.88 : 0.82, bottom: 0 },
+      scaleMargins: {
+        top: safeRsLine.length ? (tightPanes ? 0.92 : 0.88) : tightPanes ? 0.9 : 0.82,
+        bottom: 0,
+      },
     });
 
     if (safeRsLine.length) {
@@ -3457,12 +3495,14 @@ export function ChartPanel({
           lastValueVisible: false,
           crosshairMarkerVisible: true,
         });
-        rsSeries.priceScale().applyOptions({
-          visible: false,
-          scaleMargins: { top: 0.72, bottom: 0.14 },
-        });
         rsSeriesRef.current = rsSeries;
       }
+      // Applied every run, not just on create, so the margins follow
+      // tightPanes when the phone is rotated.
+      rsSeries.priceScale().applyOptions({
+        visible: false,
+        scaleMargins: tightPanes ? { top: 0.8, bottom: 0.1 } : { top: 0.72, bottom: 0.14 },
+      });
       rsSeries.applyOptions({ color: chartColors.rsLine });
       rsSeries.setData(
         safeRsLine.map((point) => ({
@@ -3510,7 +3550,7 @@ export function ChartPanel({
       }
       benchmarkSeriesRef.current = null;
     }
-  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize]);
+  }, [chartEpoch, safeRsLine, safeRsLineMarkers, benchmarkOverlayData, chartColors.rsLine, chartColors.rsMarker, chartColors.rsMarkerSize, chartFullscreen, shortViewport]);
 
   // ── E6: main-series markers (pips, trades, circuit locks, tightness) ─────
   useEffect(() => {
@@ -5039,7 +5079,7 @@ export function ChartPanel({
               Pocket Pivot
             </button>
           </div>
-          <div className="chart-widget-menu">
+          <div className="chart-widget-menu chart-fs-menu">
             <button
               type="button"
               className={chartFullscreen ? "tool-pill active chart-fs-pill" : "tool-pill chart-fs-pill"}
@@ -5050,7 +5090,7 @@ export function ChartPanel({
               Full screen
             </button>
           </div>
-          <div className="chart-widget-menu">
+          <div className="chart-widget-menu chart-zen-menu">
             <button
               type="button"
               className={zenMode ? "tool-pill active" : "tool-pill"}
@@ -5616,7 +5656,7 @@ export function ChartPanel({
                   <>
                     <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
                       <span>{priceLine1}</span>
-                      {priceLine2 ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
+                      {priceLine2 && !chartFullscreen ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
                     </span>
                     {tradeHoverLines.length ? (
                       <span
@@ -5633,9 +5673,11 @@ export function ChartPanel({
                         ))}
                       </span>
                     ) : null}
-                    <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
-                      {hover.rsPoint ? `RS Rating ${Math.round(hover.rsPoint.value)} on ${formatChartDateFromTimestamp(hover.rsPoint.time)}` : "RS Rating line is plotted below price."}
-                    </span>
+                    {hover.rsPoint || !chartFullscreen ? (
+                      <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                        {hover.rsPoint ? `RS Rating ${Math.round(hover.rsPoint.value)} on ${formatChartDateFromTimestamp(hover.rsPoint.time)}` : "RS Rating line is plotted below price."}
+                      </span>
+                    ) : null}
                   </>
                 );
               }}

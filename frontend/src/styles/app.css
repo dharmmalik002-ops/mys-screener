@@ -584,11 +584,33 @@ button {
   align-items: center;
   gap: 14px;
   /* One-row header: the search field flexes instead of the row wrapping the
-     refresh/theme buttons onto an orphaned second line. Small screens get
-     horizontal scroll from the responsive block below. */
+     refresh/theme buttons onto an orphaned second line. */
   flex-wrap: nowrap;
   min-width: 0;
   flex: 1;
+  /* Scroll the ROW, never the page. Seven nav pills plus the search field,
+     the status pill and two icon buttons need 1219px; the row itself only
+     ever gets what the header can spare, and with `visible` the remainder
+     spilled out and dragged the document with it — 1467px of horizontal
+     scroll on a 1440px desktop, and on an 844px landscape phone the same
+     1467px against half the width. `auto` is inert when the content fits,
+     so this costs nothing on a wide screen. */
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.nav-controls::-webkit-scrollbar {
+  display: none;
+}
+
+/* Pills must keep their intrinsic width and let the row scroll instead of
+   flex-shrinking into clipped single letters. */
+.nav-controls > .nav-button,
+.nav-controls > .icon-btn,
+.nav-controls > .status-pill {
+  flex: 0 0 auto;
 }
 
 .nav-controls form {
@@ -9413,7 +9435,11 @@ button {
 /* The +/− /J stack sat on top of the right-hand price scale, three circles
    over the numbers. They are secondary actions and the windowed view still
    has them; the corner belongs to exit and to previous/next. */
-.chart-panel.chart-fullscreen .chart-stage-quick-actions {
+.chart-panel.chart-fullscreen .chart-stage-quick-actions,
+/* The drawing rail is a precise-pointer tool and it overlays the plot. It was
+   only hidden below 768px, so a landscape phone — 844px wide — still had 46px
+   of it sitting on top of the chart. Full screen means chart only. */
+.chart-panel.chart-fullscreen .chart-tool-rail {
   display: none !important;
 }
 
