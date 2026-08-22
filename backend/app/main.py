@@ -15,12 +15,14 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.mutual_funds_routes import build_mutual_funds_router
 from app.api.routes import build_router
 from app.core.config import get_settings
 from app.providers.factory import build_provider
 from app.scanners.definitions import scan_catalog_with_counts
 from app.services.dashboard_service import DashboardService
 from app.services.maintenance import run_market_close_maintenance
+from app.services.mutual_funds.service import MutualFundService
 
 
 class NoCacheMiddleware(BaseHTTPMiddleware):
@@ -837,3 +839,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.include_router(build_router(services))
+# Mutual funds are India-only and share none of the equity router's
+# market-scoping, so they mount as their own router under /api/mf.
+app.include_router(
+    build_mutual_funds_router(
+        MutualFundService(
+            database_url=settings.database_url,
+            state_dir=settings.app_state_dir,
+        )
+    )
+)

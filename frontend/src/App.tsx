@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useR
 import {
   Globe,
   House,
+  Landmark,
   Layers,
   Moon,
   NotebookPen,
@@ -123,6 +124,7 @@ const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
 const LivePanel = lazy(() => import("./components/LivePanel").then((module) => ({ default: module.LivePanel })));
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
+const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -187,7 +189,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets";
+type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -205,6 +207,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "groups", label: "Groups", short: "Groups", Icon: Layers },
   { page: "watchlists", label: "Watchlists", short: "Lists", Icon: Star },
   { page: "markets", label: "Markets", short: "Markets", Icon: Globe },
+  { page: "funds", label: "Funds", short: "Funds", Icon: Landmark },
   { page: "live", label: "Live", short: "Live", Icon: Zap },
   { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
 ];
@@ -5466,6 +5469,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           { page: "screener", label: "Screener" },
           { page: "groups", label: "Groups" },
           { page: "watchlists", label: "Watchlists" },
+          { page: "funds", label: "Mutual Funds" },
           { page: "journal", label: "Journal" },
         ]}
         onPickSymbol={handlePickSymbol}
@@ -5479,19 +5483,24 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         onPickPage={(page) => setActivePage(page as AppPage)}
       />
 
-      <AppStatusBanners
-        error={error}
-        hasBootstrappedData={hasBootstrappedData}
-        loading={loading}
-        market={activeMarket}
-        onRetry={handleRetryConnection}
-      />
+      {/* The Funds page reads /api/mf/* only, so the equity dashboard's
+          loading and error banners are noise there — and on a cold Space they
+          would sit over a page that has already finished loading. */}
+      {activePage !== "funds" ? (
+        <AppStatusBanners
+          error={error}
+          hasBootstrappedData={hasBootstrappedData}
+          loading={loading}
+          market={activeMarket}
+          onRetry={handleRetryConnection}
+        />
+      ) : null}
 
       {/* India EOD status now lives inside the top-nav status-pill */}
 
       <main className="workspace">
 
-        {loading ? (
+        {loading && activePage !== "funds" ? (
           <div className="loading-skeleton">
             <div className="skeleton-strip">
               <div className="skeleton-block skeleton-block-sm" />
@@ -5531,6 +5540,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <MarketsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} onOpenChartWithList={handleOpenChartWithList} xpBreadth={dashboard?.xp_breadth ?? null} />
           </Suspense>
         ) : null}
+        {activePage === "funds" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Holdings link straight into the equity chart, which is the
+                point of building this inside the scanner rather than reading
+                a fund website. */}
+            <MutualFundsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
+          </Suspense>
+        ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
@@ -5543,7 +5560,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" ? (
+        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">

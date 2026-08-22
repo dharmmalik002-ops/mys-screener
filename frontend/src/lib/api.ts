@@ -3371,3 +3371,434 @@ export function saveJournalData(payload: Record<string, unknown>) {
     body: JSON.stringify(payload),
   });
 }
+
+/* ------------------------------------------------------------------------- */
+/* Mutual funds                                                              */
+/*                                                                           */
+/* India-only, so these paths are not market-scoped like the equity ones.     */
+/* Every performance number is computed server-side from AMFI NAV history;    */
+/* the `source_*` fields are third-party cross-checks and should not be        */
+/* rendered as the primary figure.                                            */
+/* ------------------------------------------------------------------------- */
+
+export type MfFund = {
+  scheme_code: string;
+  isin?: string | null;
+  slug?: string | null;
+  name?: string | null;
+  scheme_name?: string | null;
+  amc?: string | null;
+  logo_url?: string | null;
+  category?: string | null;
+  sub_category?: string | null;
+  plan?: string | null;
+  option?: string | null;
+  official_benchmark?: string | null;
+  benchmark_key?: string | null;
+  benchmark_label?: string | null;
+  benchmark_is_reference_only?: boolean | null;
+  nav?: number | null;
+  nav_date?: string | null;
+  nav_latest?: number | null;
+  nav_last_date?: string | null;
+  aum_crore?: number | null;
+  expense_ratio?: number | null;
+  portfolio_turnover?: number | null;
+  launch_date?: string | null;
+  age_years?: number | null;
+  fund_manager?: string | null;
+  exit_load?: string | null;
+  min_lumpsum?: number | null;
+  min_sip?: number | null;
+  lock_in_years?: number | null;
+  risk_label?: string | null;
+  source_rating?: number | null;
+
+  return_1d?: number | null;
+  return_1w?: number | null;
+  return_1m?: number | null;
+  return_3m?: number | null;
+  return_6m?: number | null;
+  return_1y?: number | null;
+  return_2y?: number | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  return_7y?: number | null;
+  return_10y?: number | null;
+  cagr_inception?: number | null;
+
+  volatility?: number | null;
+  max_drawdown?: number | null;
+  current_drawdown?: number | null;
+  sharpe?: number | null;
+  sortino?: number | null;
+  alpha?: number | null;
+  beta?: number | null;
+  tracking_error?: number | null;
+  information_ratio?: number | null;
+  up_capture?: number | null;
+  down_capture?: number | null;
+  alpha_vs_price_index?: boolean | null;
+  benchmark_source_kind?: string | null;
+
+  rolling3y_median?: number | null;
+  rolling3y_min?: number | null;
+  rolling3y_max?: number | null;
+  rolling3y_pct_negative?: number | null;
+  rolling5y_median?: number | null;
+  rolling5y_min?: number | null;
+  rolling5y_max?: number | null;
+  rolling5y_pct_negative?: number | null;
+
+  in_portfolio?: boolean;
+} & Record<string, unknown>;
+
+export type MfFacets = {
+  categories: Record<string, number>;
+  sub_categories: Record<string, { count: number; category: string }>;
+  amcs: Record<string, number>;
+};
+
+export type MfScreenerResponse = {
+  as_of?: string | null;
+  generated_at?: string | null;
+  total: number;
+  returned: number;
+  offset: number;
+  sort_by: string;
+  sort_dir: string;
+  funds: MfFund[];
+  facets: MfFacets;
+  categories: Record<string, Record<string, number | null>>;
+};
+
+export type MfStatus = {
+  ready: boolean;
+  fund_count: number;
+  as_of?: string | null;
+  generated_at?: string | null;
+  category_count: number;
+  ranked_windows: string[];
+};
+
+export type MfHolding = {
+  name: string;
+  weight_pct?: number | null;
+  market_value_crore?: number | null;
+  sector?: string | null;
+  instrument?: string | null;
+  rating?: string | null;
+  asset_class: string;
+  is_derivative?: boolean;
+  is_foreign?: boolean;
+  symbol?: string | null;
+  cap_class?: string | null;
+  cap_rank?: number | null;
+  market_cap_crore?: number | null;
+};
+
+export type MfDetail = {
+  objective?: string | null;
+  category_definition?: string | null;
+  amc?: { name?: string | null; total_aum_crore?: number | null; website?: string | null };
+  managers?: { name?: string | null; since?: string | null; education?: string | null; experience?: string | null }[];
+  expense_history?: { date?: string | null; expense_ratio?: number | null; turnover?: number | null }[];
+  pros?: string[];
+  cons?: string[];
+  scheme_document?: string | null;
+  portfolio_date?: string | null;
+  holdings?: MfHolding[];
+  holdings_count?: number | null;
+  equity_holdings_count?: number | null;
+  top5_weight_pct?: number | null;
+  top10_weight_pct?: number | null;
+  asset_allocation?: Record<string, number>;
+  sector_allocation?: Record<string, number>;
+  cap_allocation?: Record<string, number>;
+  cap_coverage_pct?: number | null;
+  sector_count?: number | null;
+};
+
+export type MfRollingStats = {
+  count: number;
+  min?: number | null;
+  p25?: number | null;
+  median?: number | null;
+  avg?: number | null;
+  max?: number | null;
+  pct_negative?: number | null;
+};
+
+export type MfDrawdownEpisode = {
+  depth_pct: number;
+  peak_date: string;
+  trough_date: string;
+  recovery_date?: string | null;
+  fall_days?: number | null;
+  recovery_days?: number | null;
+  recovered: boolean;
+};
+
+export type MfPeer = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  return_1y?: number | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  expense_ratio?: number | null;
+  aum_crore?: number | null;
+  sharpe?: number | null;
+  max_drawdown?: number | null;
+  is_self?: boolean;
+};
+
+export type MfFundResponse = {
+  fund: MfFund;
+  detail: MfDetail;
+  detail_stale: boolean;
+  detail_available: boolean;
+  rolling_returns: Record<string, MfRollingStats>;
+  calendar_year_returns: { year: number; return_pct: number; partial?: boolean }[];
+  drawdown_profile: { worst: MfDrawdownEpisode[]; episode_count: number; avg_recovery_days?: number | null };
+  benchmark: {
+    key: string;
+    label: string;
+    source: string;
+    total_return: boolean;
+    is_reference_only: boolean;
+    notes?: string | null;
+    official?: string | null;
+  };
+  category_peers: MfPeer[];
+  category_summary?: Record<string, number | null> | null;
+};
+
+export type MfSeriesLine = {
+  key: string;
+  label?: string | null;
+  kind: "fund" | "benchmark" | "compare";
+  dates: string[];
+  values: number[];
+  rebased: number[];
+};
+
+export type MfBenchmarkLine = MfSeriesLine & {
+  source_kind: string;
+  total_return: boolean;
+  is_reference_only: boolean;
+  notes?: string | null;
+  official_benchmark?: string | null;
+  fund_rebased: number[];
+  window_fund_return_pct: number;
+  window_benchmark_return_pct: number;
+  window_excess_pct: number;
+  window_days: number;
+  beta?: number | null;
+  alpha?: number | null;
+  up_capture?: number | null;
+  down_capture?: number | null;
+  correlation?: number | null;
+  tracking_error?: number | null;
+  information_ratio?: number | null;
+};
+
+export type MfSeriesResponse = {
+  scheme_code: string;
+  name?: string | null;
+  range: string;
+  available_ranges: string[];
+  as_of: string;
+  inception: string;
+  series: MfSeriesLine[];
+  benchmark?: MfBenchmarkLine | null;
+  drawdown?: number[] | null;
+  benchmark_options: { key: string; label: string; source: string }[];
+};
+
+export type MfTransaction = {
+  id?: string;
+  date: string;
+  type: "buy" | "sell";
+  amount?: number | null;
+  units?: number | null;
+  nav?: number | null;
+};
+
+export type MfPosition = {
+  id?: string;
+  scheme_code: string;
+  notes?: string | null;
+  transactions: MfTransaction[];
+};
+
+export type MfValuedPosition = {
+  id?: string;
+  scheme_code: string;
+  notes?: string | null;
+  transaction_count: number;
+  units?: number | null;
+  invested?: number | null;
+  realised?: number | null;
+  current_value?: number | null;
+  gain?: number | null;
+  gain_pct?: number | null;
+  xirr?: number | null;
+  avg_cost_nav?: number | null;
+  latest_nav?: number | null;
+  latest_nav_date?: string | null;
+  first_transaction_date?: string | null;
+  unpriced_transactions?: number;
+  weight_pct?: number | null;
+  fund?: MfFund | null;
+  transactions: MfTransaction[];
+};
+
+export type MfLookThrough = {
+  name: string;
+  symbol?: string | null;
+  sector?: string | null;
+  cap_class?: string | null;
+  value: number;
+  weight_pct?: number | null;
+  fund_count: number;
+  funds: { name?: string | null; weight_pct?: number | null }[];
+};
+
+export type MfPortfolioResponse = {
+  updated_at?: string | null;
+  as_of?: string | null;
+  positions: MfValuedPosition[];
+  totals: {
+    position_count: number;
+    invested?: number | null;
+    current_value?: number | null;
+    realised?: number | null;
+    gain?: number | null;
+    gain_pct?: number | null;
+    xirr?: number | null;
+  };
+  allocation: {
+    by_sub_category: Record<string, number>;
+    by_amc: Record<string, number>;
+    look_through_top: MfLookThrough[];
+    look_through_count: number;
+  };
+};
+
+export type MfCategoryRow = {
+  sub_category: string;
+  category?: string | null;
+  count: number;
+  benchmark_label?: string | null;
+  benchmark_is_reference_only?: boolean | null;
+  avg_return_1y?: number | null;
+  avg_return_3y?: number | null;
+  avg_return_5y?: number | null;
+  avg_expense_ratio?: number | null;
+  avg_volatility?: number | null;
+  avg_max_drawdown?: number | null;
+  leaders: {
+    scheme_code: string;
+    name?: string | null;
+    amc?: string | null;
+    return_3y?: number | null;
+    return_1y?: number | null;
+    expense_ratio?: number | null;
+  }[];
+};
+
+export type MfScreenerQuery = {
+  category?: string | null;
+  subCategories?: string[];
+  amcs?: string[];
+  search?: string | null;
+  minAum?: number | null;
+  maxExpense?: number | null;
+  minAgeYears?: number | null;
+  maxQuartile?: number | null;
+  codes?: string[];
+  sortBy?: string;
+  sortDir?: "asc" | "desc";
+  limit?: number;
+  offset?: number;
+};
+
+function mfQueryString(query: MfScreenerQuery): string {
+  const params = new URLSearchParams();
+  if (query.category) params.set("category", query.category);
+  if (query.subCategories?.length) params.set("sub_categories", query.subCategories.join(","));
+  if (query.amcs?.length) params.set("amcs", query.amcs.join(","));
+  if (query.search) params.set("search", query.search);
+  if (query.minAum != null) params.set("min_aum", String(query.minAum));
+  if (query.maxExpense != null) params.set("max_expense", String(query.maxExpense));
+  if (query.minAgeYears != null) params.set("min_age_years", String(query.minAgeYears));
+  if (query.maxQuartile != null) params.set("max_quartile", String(query.maxQuartile));
+  if (query.codes?.length) params.set("codes", query.codes.join(","));
+  if (query.sortBy) params.set("sort_by", query.sortBy);
+  if (query.sortDir) params.set("sort_dir", query.sortDir);
+  params.set("limit", String(query.limit ?? 300));
+  params.set("offset", String(query.offset ?? 0));
+  return params.toString();
+}
+
+export function getMfStatus() {
+  return request<MfStatus>("/api/mf/status");
+}
+
+export function getMfScreener(query: MfScreenerQuery = {}) {
+  // The universe is ~1,000 rows and served from memory, but a cold HF Space
+  // still has to read the 2.5 MB universe file, so allow the longer timeout.
+  return request<MfScreenerResponse>(`/api/mf/screener?${mfQueryString(query)}`, undefined, { timeoutMs: 45000 });
+}
+
+export function getMfCategories() {
+  return request<{ as_of?: string | null; categories: MfCategoryRow[] }>("/api/mf/categories");
+}
+
+export function getMfFund(schemeCode: string) {
+  // First open of a fund may fetch its holdings from the source, which is a
+  // live HTTP round trip on the server side.
+  return request<MfFundResponse>(`/api/mf/fund/${encodeURIComponent(schemeCode)}`, undefined, { timeoutMs: 45000 });
+}
+
+export function getMfFundSeries(
+  schemeCode: string,
+  options: { range?: string; benchmark?: string | null; compare?: string[]; drawdown?: boolean } = {},
+) {
+  const params = new URLSearchParams();
+  params.set("range", options.range ?? "3y");
+  if (options.benchmark) params.set("benchmark", options.benchmark);
+  if (options.compare?.length) params.set("compare", options.compare.join(","));
+  if (options.drawdown) params.set("drawdown", "true");
+  return request<MfSeriesResponse>(
+    `/api/mf/fund/${encodeURIComponent(schemeCode)}/series?${params.toString()}`,
+    undefined,
+    { timeoutMs: 45000 },
+  );
+}
+
+export function getMfPortfolio() {
+  return request<MfPortfolioResponse>("/api/mf/portfolio", undefined, { timeoutMs: 45000 });
+}
+
+export function saveMfPortfolio(positions: MfPosition[]) {
+  return request<MfPortfolioResponse>("/api/mf/portfolio", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ positions }),
+  }, { timeoutMs: 45000 });
+}
+
+export function previewMfSip(payload: {
+  start_date: string;
+  end_date: string;
+  amount: number;
+  day_of_month?: number | null;
+}) {
+  return request<{ count: number; transactions: MfTransaction[] }>("/api/mf/portfolio/sip-preview", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}

@@ -60,3 +60,13 @@ backend/data/live_universe.json
 frontend/public/api/
 backend/data/free_snapshots_us*.json
 backend/data/free_universe_us.json
+
+# Mutual funds. Only mf_universe.json (the screener table) is tracked — it has
+# to ship so a cold Space serves the Funds page immediately. The per-fund NAV
+# and holdings blobs are rebuilt by scripts/build_mf_universe.py and cached
+# lazily at runtime, and the portfolio lives in APP_STATE_DIR (like the trade
+# journal), not in the repo.
+backend/data/mf_details/
+backend/data/mf_nav/
+backend/data/mf_reference.json
+backend/data/mf_portfolio.json
