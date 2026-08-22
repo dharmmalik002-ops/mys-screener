@@ -239,7 +239,7 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
       sortDir,
       limit: 400,
     })
-      .then(setScreener)
+      .then((payload) => { setScreener(payload); setError(null); })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not load funds."))
       .finally(() => setLoading(false));
   }, [category, subCategories, amc, search, minAum, minAge, maxExpense, topQuartileOnly, heldOnly, heldCodes, sortBy, sortDir]);
@@ -333,7 +333,14 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
         </nav>
       </header>
 
-      {error ? <div className="mfp-error">{error}</div> : null}
+      {error ? (
+        <div className="mfp-error">
+          <span>{error}</span>
+          <button type="button" onClick={() => { void loadScreener(); }} disabled={loading}>
+            <RefreshCw size={12} /> {loading ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+      ) : null}
 
       {/* ==================================================== screener tab */}
       {tab === "screener" ? (

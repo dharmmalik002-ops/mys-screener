@@ -20,6 +20,20 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from app.services.mutual_funds.service import MutualFundService
 
 
+def _require_ready(service: MutualFundService) -> None:
+    """503, not 404, when the universe has not loaded.
+
+    Without this, a missing or unreadable `mf_universe.json` makes every fund
+    lookup a 404 — indistinguishable from "no such scheme code", so the client
+    reports a bad fund rather than a backend that is not up yet.
+    """
+    if not service.get_status().get("ready"):
+        raise HTTPException(
+            status_code=503,
+            detail="The mutual fund universe is not loaded yet. Retry shortly.",
+        )
+
+
 def _split(value: str | None) -> list[str]:
     return [item.strip() for item in str(value or "").split(",") if item.strip()]
 
@@ -71,6 +85,7 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
 
     @router.get("/fund/{scheme_code}")
     def fund(scheme_code: str):
+        _require_ready(service)
         payload = service.get_fund(scheme_code)
         if payload is None:
             raise HTTPException(status_code=404, detail=f"Unknown scheme code: {scheme_code}")
@@ -84,6 +99,7 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         compare: str | None = Query(default=None, description="comma-separated scheme codes to overlay"),
         drawdown: bool = Query(default=False),
     ):
+        _require_ready(service)
         payload = service.get_fund_series(
             scheme_code,
             range_key=range,
