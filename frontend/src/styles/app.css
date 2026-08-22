@@ -9186,7 +9186,10 @@ button {
 
 .chart-panel.chart-zen .chart-stage,
 .chart-panel.chart-zen .chart-canvas {
-  height: calc(100vh - 110px) !important;
+  /* dvh, not vh: on a phone `100vh` measures the viewport with the URL bar
+     retracted, so a 100vh chart is taller than what is actually on screen and
+     its bottom sits below the fold until you scroll. */
+  height: calc(100dvh - 110px) !important;
   max-height: none;
 }
 
@@ -9371,4 +9374,179 @@ button {
    theme entirely. Kept subtle so dense tables don't gain a heavy gutter. */
 * {
   scrollbar-color: var(--line-strong) transparent;
+}
+
+
+/* ── Full-screen chart ──────────────────────────────────────────────────────
+   Zen keeps the search field and any armed tool — a focus mode. This is the
+   other thing: every row of chrome gone, the canvas owning the whole viewport,
+   and previous/next parked in the bottom-right corner where a thumb already
+   rests. It is a plain overlay rather than the Fullscreen API because that API
+   is unavailable in an iOS Safari tab.
+
+   Heights are dvh throughout, for the reason in the Zen note above. */
+
+.chart-panel.chart-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  margin: 0;
+  /* Explicit, and clipped. `.chart-panel` carries `height: 100%`, which on a
+     fixed element resolves against whatever containing block happens to be in
+     play — inside the chart modal that is a backdrop-filtered ancestor, and
+     the percentage chain below it fed lightweight-charts' auto-sizer back into
+     its own parent's height. The chart grew to 1955px on a 667px screen. */
+  height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: var(--bg);
+  box-shadow: none;
+}
+
+.chart-panel.chart-fullscreen > .panel-header,
+.chart-panel.chart-fullscreen .chart-drawing-toolbar,
+.chart-panel.chart-fullscreen .chart-summary-strip,
+.chart-panel.chart-fullscreen .chart-ai-card,
+.chart-panel.chart-fullscreen .chart-stage-nav,
+/* The +/− /J stack sat on top of the right-hand price scale, three circles
+   over the numbers. They are secondary actions and the windowed view still
+   has them; the corner belongs to exit and to previous/next. */
+.chart-panel.chart-fullscreen .chart-stage-quick-actions {
+  display: none !important;
+}
+
+/* Percentages all the way down, anchored to the panel's definite 100dvh above.
+   `height: auto` + flex looked safer but is the thing that loops: with an auto
+   flex-basis the canvas takes its base size from its CONTENT, lightweight-charts
+   sizes that content from the canvas, and the pair ratchets upwards (1954px on
+   a 667px screen). A definite ancestor height breaks the cycle.
+
+   `!important` for the same reason `.chart-panel.chart-zen` uses it: half a
+   dozen windowed rules across app.css and mobile.css set this height at
+   0-4-0/0-4-1 for the modal, the screener grid and the sector grid, and a mode
+   that means "ignore all of that" should not have to out-specify each one.
+   A landscape phone is 812px wide, so it matched the 840px block and came up
+   at 68dvh — 255px of a 375px screen — with the specificity approach. */
+.chart-panel.chart-fullscreen > .panel-body {
+  height: 100% !important;
+  min-height: 0;
+  gap: 0;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+.chart-panel.chart-fullscreen .chart-stage,
+.chart-panel.chart-fullscreen .chart-canvas {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+/* Which stock this is — with the header hidden there is nothing else saying so,
+   and stepping through a list makes that the first thing you look for. */
+.chart-fs-title {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: max(12px, env(safe-area-inset-left));
+  z-index: 12;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  pointer-events: none;
+}
+
+.chart-fs-title strong {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.chart-fs-title span {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+/* The OHLC readout normally sits top-left too, so it landed on top of the
+   title pill. Drop it below. Both `.chart-modal .chart-panel.expanded …` and
+   `.chart-panel.expanded …` set that position at 0-4-0/0-3-0, so match them. */
+.chart-modal .chart-panel.expanded.chart-fullscreen .chart-stage-meta,
+.chart-panel.expanded.chart-fullscreen .chart-stage-meta,
+.chart-panel.chart-fullscreen .chart-stage-meta {
+  top: calc(max(10px, env(safe-area-inset-top)) + 42px);
+  left: max(12px, env(safe-area-inset-left));
+  /* No tool rail in full screen, so no gutter to clear. */
+  padding-left: 0;
+}
+
+.chart-fs-exit {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 12;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.chart-fs-nav {
+  position: absolute;
+  right: max(12px, env(safe-area-inset-right));
+  /* Clear of the time axis along the bottom edge — the buttons float over the
+     plot, not over the dates. */
+  bottom: calc(max(12px, env(safe-area-inset-bottom)) + 30px);
+  z-index: 12;
+  display: flex;
+  gap: 8px;
+}
+
+.chart-fs-nav-button {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  color: var(--text);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--elevation);
+  transition: background var(--dur-fast) ease, transform 0.06s ease;
+}
+
+.chart-fs-nav-button:hover {
+  background: color-mix(in srgb, var(--accent) 20%, var(--surface-strong));
+  border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+}
+
+.chart-fs-nav-button:active {
+  transform: scale(0.94);
+}
+
+.chart-fs-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }

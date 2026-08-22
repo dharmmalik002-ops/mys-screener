@@ -4536,6 +4536,26 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // Mouse-clickable equivalent of the ArrowUp/ArrowDown chart navigation:
   // step to the previous (-1) / next (+1) symbol in the current chart's context
   // list, wrapping around. Mirrors the keydown handler's list resolution.
+  // Which chart panel is full screen, if any. Owned here rather than inside
+  // ChartPanel for two reasons: every panel is keyed on its symbol+timeframe
+  // and so remounts on each step through a list (local state would drop out of
+  // full screen on the first tap of the next-chart button), and only ONE panel
+  // may be full screen at a time — the page keeps its own chart mounted behind
+  // the modal, and a flag shared between instances put both into full screen.
+  const [fullscreenPaneId, setFullscreenPaneId] = useState<string | null>(null);
+  const fullscreenPane = (id: string) => ({
+    fullscreen: fullscreenPaneId === id,
+    onFullscreenChange: (next: boolean) => setFullscreenPaneId(next ? id : null),
+  });
+
+  // Closing the chart ends full screen — otherwise the next chart opened from
+  // anywhere in the app would come up edge-to-edge without being asked for.
+  useEffect(() => {
+    if (!chartOpen) {
+      setFullscreenPaneId((current) => (current?.startsWith("modal") ? null : current));
+    }
+  }, [chartOpen]);
+
   const stepChartSymbol = (direction: 1 | -1, pane: "A" | "B" = "A") => {
     // Same priority as the keydown handler: armed list → page-visible list →
     // group-sidebar members (last resort). The group override must not beat the
@@ -6055,6 +6075,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                     onOpenGroup={handleOpenChartGroupModal}
                     onRefreshChart={handleChartRefresh}
                     onStepChart={stepChartSymbol}
+                    {...fullscreenPane("screener")}
                     expanded
                   />
                 </>
@@ -6149,6 +6170,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   onOpenGroup={handleOpenChartGroupModal}
                   onRefreshChart={handleChartRefresh}
                   onStepChart={stepChartSymbol}
+                  {...fullscreenPane("page")}
                   expanded={activePage === "groups"}
                 />
               ) : null}
@@ -6263,6 +6285,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                         onOpenGroup={handleOpenChartGroupModal}
                         onRefreshChart={handleChartRefresh}
                         onStepChart={(direction) => stepChartSymbol(direction, "A")}
+                        {...fullscreenPane("modal-A")}
                         expanded
                       />
                     }
@@ -6318,6 +6341,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                           }
                         }}
                         onStepChart={(direction) => stepChartSymbol(direction, "B")}
+                        {...fullscreenPane("modal-B")}
                         expanded
                       />
                     }

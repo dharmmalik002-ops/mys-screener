@@ -725,10 +725,25 @@ html .mobile-tabbar {
     padding-bottom: env(safe-area-inset-bottom);
   }
 
-  html .chart-modal .chart-panel.expanded .chart-canvas,
+  /* `min-height: 62dvh` forced the stage TALLER than the flex row it sits in
+     (528px of body, minus a 46px toolbar and a 90px summary strip, leaves
+     ~372px — not 414px), and `.panel-body { overflow: hidden }` then clipped
+     the bottom of the chart with no scrollbar to say so. Let flex decide, and
+     keep only a floor small enough to always fit. Full screen is the answer
+     when the chart wants the whole screen. */
   html .chart-modal .chart-panel.expanded .chart-stage {
+    flex: 1 1 auto;
     height: auto;
-    min-height: min(62dvh, 620px);
+    min-height: 200px;
+    max-height: 100%;
+  }
+
+  /* The STAGE flexes to the space left over; the CANVAS fills the stage.
+     Giving both `height: auto` let the canvas shrink to its content instead —
+     254px inside a 493px stage. */
+  html .chart-modal .chart-panel.expanded .chart-canvas {
+    height: 100%;
+    min-height: 0;
   }
 
   html .chart-modal-header {
@@ -1229,11 +1244,18 @@ html .mobile-tabbar {
     padding-left: 0;
   }
 
-  /* The whole point of landscape: give the chart the height it just gained. */
-  html .chart-modal .chart-panel.expanded .chart-canvas,
+  /* The whole point of landscape: give the chart the height it just gained.
+     A floor only — the same clipping trap as the portrait rule above. */
   html .chart-modal .chart-panel.expanded .chart-stage {
+    flex: 1 1 auto;
     height: auto;
-    min-height: 74dvh;
+    min-height: 160px;
+    max-height: 100%;
+  }
+
+  html .chart-modal .chart-panel.expanded .chart-canvas {
+    height: 100%;
+    min-height: 0;
   }
 
   html .chart-panel.expanded .chart-canvas,
@@ -1259,5 +1281,74 @@ html .mobile-tabbar {
   html .mobile-tab {
     min-height: 36px;
     font-size: 0.55rem;
+  }
+}
+
+
+/* ==========================================================================
+   12. Full-screen chart on phones
+   --------------------------------------------------------------------------
+   The base styles live in app.css (the mode is not phone-only). These are the
+   phone adjustments: bigger touch targets, clearance for the tab bar, and a
+   Full screen pill that is easy to find in a horizontally scrolling toolbar.
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  /* The overlay must cover the fixed bottom tab bar (z 60) and, when the chart
+     was opened from a result row, the chart modal itself (z 9999). */
+  html .chart-panel.chart-fullscreen {
+    z-index: 10050;
+  }
+
+
+  /* Nothing else is competing for the corner here, so the nav can be larger
+     than the 44px minimum — this is the control that gets used most. */
+  html .chart-fs-nav-button {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+  }
+
+  html .chart-fs-exit {
+    width: 44px;
+    height: 44px;
+  }
+
+  /* Sits at the head of the drawing toolbar so it is the first pill you reach
+     rather than something you have to scroll the row to find. */
+  html .chart-drawing-toolbar .chart-fs-pill {
+    order: -1;
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+    background: color-mix(in srgb, var(--accent) 16%, var(--surface-strong));
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* The hint boxes are overlays; in full screen they cover the top of the
+     chart the mode exists to show. */
+  html .chart-panel.chart-fullscreen .chart-stage-label {
+    font-size: 0.66rem;
+    padding: 4px 8px;
+  }
+}
+
+/* Landscape is where a full-screen chart earns the most, and where vertical
+   room is scarcest — pull the corner controls in tight. */
+@media (max-height: 520px) and (orientation: landscape) {
+  html .chart-fs-nav-button {
+    width: 44px;
+    height: 44px;
+  }
+
+  html .chart-fs-nav {
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  html .chart-fs-exit {
+    width: 36px;
+    height: 36px;
   }
 }
