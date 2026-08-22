@@ -1,0 +1,363 @@
+"""The user's own mutual-fund holdings: storage and valuation.
+
+Positions are stored as **transactions**, not as a units-and-average-cost
+snapshot. That costs a little more typing but it is the only way to get an
+honest return on a position built through a SIP: a "cost vs value" percentage
+on twenty instalments spread over three years is not a return, it just
+flatters or punishes depending on when the money went in. With dated
+cashflows we can report XIRR, which is the real answer.
+
+Every valuation number here is computed from the same AMFI NAV series the
+charts use, so a position's gain always agrees with the fund's chart.
+"""
+
+from __future__ import annotations
+
+import json
+import threading
+import uuid
+from bisect import bisect_right
+from datetime import date, datetime, timedelta
+from typing import Any
+
+try:
+    import psycopg
+except Exception:  # pragma: no cover - optional dependency in some deployments
+    psycopg = None
+
+from . import metrics
+
+MAX_POSITIONS = 200
+MAX_TRANSACTIONS_PER_POSITION = 600
+
+
+class MutualFundPortfolioStore:
+    """Durable storage for the fund portfolio blob, mirroring the journal store.
+
+    The payload is a single opaque JSON document owned by this module, so it is
+    persisted as-is rather than modelled as SQL columns.
+    """
+
+    _ROW_ID = "default"
+
+    def __init__(self, database_url: str | None, *, connect_timeout_seconds: int = 10) -> None:
+        self._database_url = str(database_url or "").strip() or None
+        self._connect_timeout_seconds = max(1, int(connect_timeout_seconds or 10))
+        self._schema_ready = False
+        self._schema_lock = threading.Lock()
+
+    def is_enabled(self) -> bool:
+        return bool(self._database_url) and psycopg is not None
+
+    def _connect(self):
+        if not self._database_url:
+            raise RuntimeError("DATABASE_URL is not configured")
+        if psycopg is None:
+            raise RuntimeError("psycopg is not installed")
+        return psycopg.connect(
+            self._database_url,
+            autocommit=True,
+            connect_timeout=self._connect_timeout_seconds,
+        )
+
+    def _ensure_schema(self, cursor) -> None:
+        if not self.is_enabled() or self._schema_ready:
+            return
+        with self._schema_lock:
+            if self._schema_ready:
+                return
+            cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS mf_portfolio_state (
+                    id TEXT PRIMARY KEY,
+                    payload JSONB NOT NULL,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    server_updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+                """
+            )
+            self._schema_ready = True
+
+    def load_data(self) -> dict | None:
+        if not self.is_enabled():
+            return None
+        with self._connect() as connection, connection.cursor() as cursor:
+            self._ensure_schema(cursor)
+            cursor.execute("SELECT payload FROM mf_portfolio_state WHERE id = %s", (self._ROW_ID,))
+            row = cursor.fetchone()
+        if row is None:
+            return None
+        payload = row[0]
+        return payload if isinstance(payload, dict) else json.loads(str(payload))
+
+    def save_data(self, payload: dict) -> dict:
+        if not self.is_enabled():
+            return payload
+        with self._connect() as connection, connection.cursor() as cursor:
+            self._ensure_schema(cursor)
+            cursor.execute(
+                """
+                INSERT INTO mf_portfolio_state (id, payload, server_updated_at)
+                VALUES (%s, %s::jsonb, NOW())
+                ON CONFLICT (id)
+                DO UPDATE SET payload = EXCLUDED.payload, server_updated_at = NOW()
+                """,
+                (self._ROW_ID, json.dumps(payload)),
+            )
+        return payload
+
+
+# ------------------------------------------------------------------ validation
+
+def _clean_date(value: Any) -> str | None:
+    text = str(value or "").strip()[:10]
+    try:
+        return date.fromisoformat(text).isoformat()
+    except ValueError:
+        return None
+
+
+def _clean_float(value: Any, *, minimum: float = 0.0) -> float | None:
+    try:
+        parsed = float(value)
+    except (TypeError, ValueError):
+        return None
+    if parsed != parsed or parsed in (float("inf"), float("-inf")):
+        return None
+    return parsed if parsed >= minimum else None
+
+
+def normalise_payload(payload: dict | None) -> dict:
+    """Coerce whatever the client sent into the canonical shape.
+
+    PUT semantics: the incoming document is authoritative and a removed
+    position is a deletion, not an absence to be merged back in — the same
+    rule the watchlists store learned the hard way.
+    """
+    source = payload if isinstance(payload, dict) else {}
+    raw_positions = source.get("positions")
+    positions: list[dict[str, Any]] = []
+
+    for entry in (raw_positions if isinstance(raw_positions, list) else [])[:MAX_POSITIONS]:
+        if not isinstance(entry, dict):
+            continue
+        scheme_code = str(entry.get("scheme_code") or "").strip()
+        if not scheme_code:
+            continue
+
+        transactions: list[dict[str, Any]] = []
+        raw_transactions = entry.get("transactions")
+        for item in (raw_transactions if isinstance(raw_transactions, list) else [])[:MAX_TRANSACTIONS_PER_POSITION]:
+            if not isinstance(item, dict):
+                continue
+            when = _clean_date(item.get("date"))
+            if when is None:
+                continue
+            kind = str(item.get("type") or "buy").strip().lower()
+            if kind not in ("buy", "sell"):
+                kind = "buy"
+            amount = _clean_float(item.get("amount"), minimum=0.0)
+            units = _clean_float(item.get("units"), minimum=0.0)
+            nav = _clean_float(item.get("nav"), minimum=0.0)
+            # A transaction needs either a rupee amount or a unit count; the
+            # other side is filled from NAV history at valuation time.
+            if not amount and not units:
+                continue
+            transactions.append({
+                "id": str(item.get("id") or uuid.uuid4()),
+                "date": when,
+                "type": kind,
+                "amount": amount,
+                "units": units,
+                "nav": nav,
+            })
+
+        transactions.sort(key=lambda item: item["date"])
+        positions.append({
+            "id": str(entry.get("id") or uuid.uuid4()),
+            "scheme_code": scheme_code,
+            "notes": str(entry.get("notes") or "").strip()[:500] or None,
+            "transactions": transactions,
+        })
+
+    return {
+        "updated_at": str(source.get("updated_at") or datetime.now().astimezone().isoformat()),
+        "positions": positions,
+    }
+
+
+def expand_sip(
+    *,
+    start_date: str,
+    end_date: str,
+    amount: float,
+    day_of_month: int | None = None,
+) -> list[dict[str, Any]]:
+    """Turn a monthly SIP description into individual transactions.
+
+    Saves entering 36 rows by hand. Instalments land on `day_of_month` (or the
+    start date's day), clamped to the last day of short months so a 31st SIP
+    does not silently skip February.
+    """
+    first = _clean_date(start_date)
+    last = _clean_date(end_date)
+    installment = _clean_float(amount, minimum=0.01)
+    if first is None or last is None or installment is None:
+        return []
+    begin = date.fromisoformat(first)
+    finish = date.fromisoformat(last)
+    if finish < begin:
+        return []
+
+    target_day = int(day_of_month or begin.day)
+    target_day = min(max(target_day, 1), 31)
+
+    out: list[dict[str, Any]] = []
+    year, month = begin.year, begin.month
+    while len(out) < MAX_TRANSACTIONS_PER_POSITION:
+        # Clamp to the month's real length.
+        if month == 12:
+            next_month_start = date(year + 1, 1, 1)
+        else:
+            next_month_start = date(year, month + 1, 1)
+        days_in_month = (next_month_start - date(year, month, 1)).days
+        when = date(year, month, min(target_day, days_in_month))
+        if when > finish:
+            break
+        if when >= begin:
+            out.append({
+                "id": str(uuid.uuid4()),
+                "date": when.isoformat(),
+                "type": "buy",
+                "amount": installment,
+                "units": None,
+                "nav": None,
+            })
+        year, month = next_month_start.year, next_month_start.month
+    return out
+
+
+# ------------------------------------------------------------------- valuation
+
+def nav_on_or_before(dates: list[str], navs: list[float], target: str) -> tuple[str, float] | None:
+    """The applicable NAV for a transaction date.
+
+    A purchase dated on a market holiday is allotted at the next available
+    NAV in reality, but the difference is a day and using the prior close
+    keeps the function total. A tolerance stops a typo'd 2019 date on a
+    2023-launched fund from silently valuing at the launch NAV.
+    """
+    position = bisect_right(dates, target) - 1
+    if position < 0:
+        # Transaction predates the series — use the earliest NAV we have, but
+        # only if it is close enough to be plausibly the same event.
+        if dates and (date.fromisoformat(dates[0]) - date.fromisoformat(target)).days <= 10:
+            return dates[0], navs[0]
+        return None
+    if (date.fromisoformat(target) - date.fromisoformat(dates[position])).days > 30:
+        return None
+    return dates[position], navs[position]
+
+
+def value_position(
+    position: dict[str, Any],
+    *,
+    nav_series: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """Units, cost, value, gain and XIRR for one held fund."""
+    transactions = position.get("transactions") or []
+    result: dict[str, Any] = {
+        "id": position.get("id"),
+        "scheme_code": position.get("scheme_code"),
+        "notes": position.get("notes"),
+        "transaction_count": len(transactions),
+        "units": None,
+        "invested": None,
+        "realised": None,
+        "current_value": None,
+        "gain": None,
+        "gain_pct": None,
+        "xirr": None,
+        "avg_cost_nav": None,
+        "latest_nav": None,
+        "latest_nav_date": None,
+        "first_transaction_date": transactions[0]["date"] if transactions else None,
+        "unpriced_transactions": 0,
+    }
+    if not transactions:
+        return result
+
+    if not nav_series or not nav_series.get("dates"):
+        # No NAV series: report what the user typed and nothing derived.
+        invested = sum(t["amount"] or 0 for t in transactions if t["type"] == "buy")
+        result["invested"] = round(invested, 2) if invested else None
+        return result
+
+    dates: list[str] = nav_series["dates"]
+    navs: list[float] = nav_series["navs"]
+    latest_nav = navs[-1]
+
+    units = 0.0
+    invested = 0.0
+    realised = 0.0
+    cashflows: list[tuple[date, float]] = []
+    unpriced = 0
+
+    for transaction in transactions:
+        priced = nav_on_or_before(dates, navs, transaction["date"])
+        nav = transaction["nav"] or (priced[1] if priced else None)
+        if nav is None or nav <= 0:
+            unpriced += 1
+            continue
+
+        amount = transaction["amount"]
+        unit_count = transaction["units"]
+        if unit_count is None and amount is not None:
+            unit_count = amount / nav
+        elif amount is None and unit_count is not None:
+            amount = unit_count * nav
+        if unit_count is None or amount is None:
+            unpriced += 1
+            continue
+
+        when = date.fromisoformat(transaction["date"])
+        if transaction["type"] == "buy":
+            units += unit_count
+            invested += amount
+            cashflows.append((when, -amount))
+        else:
+            # Never let a mistyped redemption drive units negative.
+            sold = min(unit_count, units)
+            proceeds = sold * nav
+            units -= sold
+            realised += proceeds
+            invested -= min(invested, sold * (invested / units if units else nav))
+            cashflows.append((when, proceeds))
+
+    current_value = units * latest_nav
+    if units > 0:
+        cashflows.append((date.fromisoformat(dates[-1]), current_value))
+
+    total_gain = current_value + realised - invested if invested else None
+
+    result.update({
+        "units": round(units, 4) if units else 0.0,
+        "invested": round(invested, 2) if invested else None,
+        "realised": round(realised, 2) if realised else None,
+        "current_value": round(current_value, 2),
+        "gain": round(total_gain, 2) if total_gain is not None else None,
+        "gain_pct": round(total_gain / invested * 100.0, 2) if total_gain is not None and invested > 0 else None,
+        "avg_cost_nav": round(invested / units, 4) if units > 0 and invested > 0 else None,
+        "latest_nav": latest_nav,
+        "latest_nav_date": dates[-1],
+        "unpriced_transactions": unpriced,
+    })
+
+    computed_xirr = metrics.xirr(cashflows)
+    # An XIRR outside a sane band means the cashflow set is degenerate (a
+    # same-week buy and valuation, say) — report nothing rather than "830%".
+    if computed_xirr is not None and -95.0 < computed_xirr < 300.0:
+        first = min(when for when, _ in cashflows)
+        if (date.fromisoformat(dates[-1]) - first).days >= 90:
+            result["xirr"] = round(computed_xirr, 2)
+    return result
