@@ -160,12 +160,16 @@ function readGroupWidgetRect(): GroupWidgetRect {
 
 function readGroupWidgetOpen(): boolean {
   if (typeof window === "undefined") return true;
+  // On a phone the group panel is docked over the lower half of the chart, so
+  // defaulting it open means the chart you just tapped opens half-covered.
+  // Only the DEFAULT differs — an explicit choice is still honoured.
+  const narrow = typeof window.matchMedia === "function" && window.matchMedia("(max-width: 768px)").matches;
   try {
     const raw = window.localStorage.getItem(GROUP_WIDGET_OPEN_KEY);
-    if (raw === null) return true;
+    if (raw === null) return !narrow;
     return raw === "1";
   } catch {
-    return true;
+    return !narrow;
   }
 }
 const CHART_PALETTE_KEY = "mr-malik-chart-palette:v1";
