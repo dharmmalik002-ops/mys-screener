@@ -1,6 +1,6 @@
 import { useCallback, useDeferredValue, useEffect, useId, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent, type ReactNode } from "react";
 import { ColorType, createChart, CrosshairMode, LineStyle, PriceScaleMode, type UTCTimestamp } from "lightweight-charts";
-import { Settings2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Minimize2, Settings2, X } from "lucide-react";
 
 import { getAiSwingAnalysis, getChartHistory, getEarningsSummary, type AiSwingAnalysis, type BandHistorySegment, type ChartBar, type ChartLineMarker, type ChartLinePoint, type ChartResponse, type CompanyEarningsSummary, type CompanyFundamentals, type MarketKey, type QuarterlyResultItem, type StockOverview } from "../lib/api";
 import { sanitizeChartBars, sanitizeLineMarkers, sanitizeLinePoints } from "../lib/chartData";
@@ -258,6 +258,10 @@ type ChartPanelProps = {
   onOpenGroup?: (groupId: string) => void;
   onRefreshChart?: () => void;
   onStepChart?: (direction: 1 | -1) => void;
+  /** Controlled full-screen state. Required wherever the panel is remounted on
+   *  symbol change (the chart modal); omit to let the panel own it. */
+  fullscreen?: boolean;
+  onFullscreenChange?: (next: boolean) => void;
   expanded?: boolean;
 };
 
@@ -1861,6 +1865,8 @@ export function ChartPanel({
   onOpenGroup,
   onRefreshChart,
   onStepChart,
+  fullscreen,
+  onFullscreenChange,
   expanded = false,
 }: ChartPanelProps) {
   const searchListId = `chart-search-${useId()}`;
@@ -2118,6 +2124,58 @@ export function ChartPanel({
       // Ignore storage failures.
     }
   }, [zenMode]);
+
+  // Full screen: the chart edge to edge with no chrome at all, plus prev/next
+  // under the thumb. Distinct from Zen, which keeps the search field and any
+  // armed tool — this drops everything, because on a phone the 242px of
+  // header + toolbar + summary chips pushed the canvas 77px below the fold.
+  //
+  // Controlled when the parent passes `fullscreen`, local otherwise. The chart
+  // modal MUST control it: App keys this component on `${symbol}:${timeframe}`,
+  // so stepping to the next chart remounts it, and local state would drop out
+  // of full screen on the first tap of the next-chart button — the one place
+  // the mode has to hold. A module-level flag also survived the remount, but
+  // it leaked between instances and put the page's chart panel into full
+  // screen behind the modal at the same time.
+  const [localFullscreen, setLocalFullscreen] = useState(false);
+  const chartFullscreen = fullscreen ?? localFullscreen;
+  const setChartFullscreen = useCallback(
+    (next: boolean) => {
+      if (onFullscreenChange) {
+        onFullscreenChange(next);
+      } else {
+        setLocalFullscreen(next);
+      }
+    },
+    [onFullscreenChange],
+  );
+
+  useEffect(() => {
+    if (!chartFullscreen) {
+      return;
+    }
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setChartFullscreen(false);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    // The page behind must not scroll under the overlay on touch.
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [chartFullscreen]);
+
+  // Leaving the technical tab (or losing the symbol) with the overlay still up
+  // would strand the user on a blank full-screen surface.
+  useEffect(() => {
+    if (panelTab !== "technical" || !symbol) {
+      setChartFullscreen(false);
+    }
+  }, [panelTab, symbol]);
 
   useEffect(() => {
     if (!zenMode) return;
@@ -4632,13 +4690,13 @@ export function ChartPanel({
       ? `${formatChartDateFromTimestamp(hoveredBar.time, market)} · O ${formatPriceValue(hoveredBar.open, 2)} · H ${formatPriceValue(hoveredBar.high, 2)} · L ${formatPriceValue(hoveredBar.low, 2)} · C ${formatPriceValue(hoveredBar.close, 2)}`
       : summary
         ? `Current ${formatPriceValue(summary.last_price, 2)} · ${formatSignedPercentValue(dayChangePct ?? summary.change_pct)}`
-        : "Hover the chart to inspect OHLC detail.",
+        : "Tap or hover the chart to inspect OHLC detail.",
     priceLine2: hoveredBar
       ? (hoveredBar.changePct !== null && hoveredBar.changeValue !== null
           ? `Chg ${hoveredBar.changeValue >= 0 ? "+" : ""}${formatValue(hoveredBar.changeValue, 2)} (${formatSignedPercentValue(hoveredBar.changePct)})`
           : null)
       : summary
-        ? "Hover the chart to inspect OHLC detail."
+        ? "Tap or hover the chart to inspect OHLC detail."
         : null,
     tradeHoverLines: hoveredTradeMarkers.length
       ? hoveredTradeMarkers.flatMap((marker) =>
@@ -4910,7 +4968,7 @@ export function ChartPanel({
           )}
         </div>
       }
-      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${zenMode ? " chart-zen" : ""}`}
+      className={`${expanded ? "chart-panel expanded" : "chart-panel"}${zenMode ? " chart-zen" : ""}${chartFullscreen ? " chart-fullscreen" : ""}`}
     >
       {panelTab === "technical" ? (
         <div className="chart-drawing-toolbar">
@@ -4979,6 +5037,17 @@ export function ChartPanel({
               onClick={() => setPocketPivotWidget((current) => ({ ...current, enabled: !current.enabled }))}
             >
               Pocket Pivot
+            </button>
+          </div>
+          <div className="chart-widget-menu">
+            <button
+              type="button"
+              className={chartFullscreen ? "tool-pill active chart-fs-pill" : "tool-pill chart-fs-pill"}
+              onClick={() => setChartFullscreen(!chartFullscreen)}
+              title="Full screen — chart only, with previous / next in the corner (Esc to exit)"
+            >
+              {chartFullscreen ? <Minimize2 size={13} strokeWidth={2.2} /> : <Maximize2 size={13} strokeWidth={2.2} />}
+              Full screen
             </button>
           </div>
           <div className="chart-widget-menu">
@@ -5268,6 +5337,49 @@ export function ChartPanel({
           </div>
         ) : (
         <div className="chart-stage">
+          {chartFullscreen ? (
+            <>
+              {/* Identity: with every chrome row hidden there is otherwise
+                  nothing on screen saying which stock this is. */}
+              <div className="chart-fs-title">
+                <strong>{symbol}</strong>
+                {summary?.last_price != null ? <span>{formatPriceValue(summary.last_price, 2)}</span> : null}
+              </div>
+
+              <button
+                type="button"
+                className="chart-fs-exit"
+                onClick={() => setChartFullscreen(false)}
+                aria-label="Exit full screen"
+                title="Exit full screen (Esc)"
+              >
+                <X size={17} strokeWidth={2.4} />
+              </button>
+
+              {onStepChart ? (
+                <div className="chart-fs-nav" role="group" aria-label="Previous / next chart">
+                  <button
+                    type="button"
+                    className="chart-fs-nav-button"
+                    onClick={() => onStepChart(-1)}
+                    aria-label="Previous chart"
+                    title="Previous chart"
+                  >
+                    <ChevronLeft size={20} strokeWidth={2.4} />
+                  </button>
+                  <button
+                    type="button"
+                    className="chart-fs-nav-button"
+                    onClick={() => onStepChart(1)}
+                    aria-label="Next chart"
+                    title="Next chart"
+                  >
+                    <ChevronRight size={20} strokeWidth={2.4} />
+                  </button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
           {symbol ? (
             <div className="chart-stage-quick-actions">
               <button
