@@ -670,3 +670,146 @@ class PeerComparisonTests(unittest.TestCase):
         risky = {"scheme_code": "r", "sub_category": "X", "return_3y": 40.0,
                  "expense_ratio": 0.7, "max_drawdown": -60.0}
         self.assertEqual(fund_review.peers_ahead(mine, [mine, risky], limit=10), [])
+
+
+class RealisedAccountingTests(unittest.TestCase):
+    """Buying then fully selling must not corrupt the cost basis.
+
+    An earlier implementation subtracted sale *proceeds* from `invested`
+    instead of the cost of the units sold, which drove a fully-exited
+    position's invested figure negative and made its P&L meaningless.
+    """
+
+    def series(self):
+        # Flat NAV of 100 for the first stretch, then 110 — so a round trip
+        # has an exactly known answer.
+        dates = [f"2024-01-{day:02d}" for day in range(1, 29)]
+        navs = [100.0] * 14 + [110.0] * 14
+        return dates, navs
+
+    def test_full_exit_leaves_zero_units_and_zero_invested(self):
+        dates, navs = self.series()
+        position = {"id": "p", "scheme_code": "1", "transactions": [
+            {"id": "1", "date": dates[0], "type": "buy", "amount": 100000.0, "units": None, "nav": None},
+            {"id": "2", "date": dates[-1], "type": "sell", "amount": None, "units": 1000.0, "nav": None},
+        ]}
+        valued = portfolio.value_position(position, nav_series={"dates": dates, "navs": navs})
+        self.assertAlmostEqual(valued["units"], 0.0, places=6)
+        self.assertAlmostEqual(valued["invested"], 0.0, places=2)
+        # Bought 1,000 units at 100, sold all at 110 -> banked 10,000.
+        self.assertAlmostEqual(valued["realised_pnl"], 10000.0, places=2)
+        self.assertAlmostEqual(valued["gain"], 10000.0, places=2)
+        self.assertAlmostEqual(valued["gain_pct"], 10.0, places=2)
+        self.assertTrue(valued["is_closed"])
+
+    def test_invested_never_goes_negative_on_a_full_exit(self):
+        dates, navs = self.series()
+        position = {"id": "p", "scheme_code": "1", "transactions": [
+            {"id": "1", "date": dates[0], "type": "buy", "amount": 100000.0, "units": None, "nav": None},
+            {"id": "2", "date": dates[-1], "type": "sell", "amount": None, "units": 1000.0, "nav": None},
+        ]}
+        valued = portfolio.value_position(position, nav_series={"dates": dates, "navs": navs})
+        self.assertGreaterEqual(valued["invested"], 0.0)
+
+    def test_partial_exit_splits_realised_and_unrealised(self):
+        dates, navs = self.series()
+        position = {"id": "p", "scheme_code": "1", "transactions": [
+            {"id": "1", "date": dates[0], "type": "buy", "amount": 100000.0, "units": None, "nav": None},
+            {"id": "2", "date": dates[-1], "type": "sell", "amount": None, "units": 400.0, "nav": None},
+        ]}
+        valued = portfolio.value_position(position, nav_series={"dates": dates, "navs": navs})
+        self.assertAlmostEqual(valued["units"], 600.0, places=4)
+        # 600 units of cost basis 100 remain.
+        self.assertAlmostEqual(valued["invested"], 60000.0, places=2)
+        self.assertAlmostEqual(valued["realised_pnl"], 4000.0, places=2)   # 400 x (110-100)
+        self.assertAlmostEqual(valued["unrealised_pnl"], 6000.0, places=2)  # 600 x (110-100)
+        self.assertAlmostEqual(valued["gain"], 10000.0, places=2)
+        self.assertFalse(valued["is_closed"])
+
+    def test_cost_basis_import_reports_pnl_but_withholds_xirr(self):
+        """A statement import has exact units and cost but no dated cashflows,
+        so a date-based return would be fabricated."""
+        dates, navs = self.series()
+        position = {"id": "p", "scheme_code": "1", "cost_basis_only": True, "transactions": [
+            {"id": "1", "date": dates[0], "type": "buy", "amount": None, "units": 1000.0, "nav": 90.0},
+        ]}
+        valued = portfolio.value_position(position, nav_series={"dates": dates, "navs": navs})
+        self.assertAlmostEqual(valued["invested"], 90000.0, places=2)
+        self.assertAlmostEqual(valued["current_value"], 110000.0, places=2)
+        self.assertAlmostEqual(valued["unrealised_pnl"], 20000.0, places=2)
+        self.assertIsNone(valued["xirr"])
+
+    def test_cost_basis_only_survives_normalisation(self):
+        normalised = portfolio.normalise_payload({"positions": [
+            {"scheme_code": "1", "cost_basis_only": True,
+             "transactions": [{"date": "2024-01-01", "units": 10, "nav": 50}]},
+        ]})
+        self.assertTrue(normalised["positions"][0]["cost_basis_only"])
+
+
+class StatementImportTests(unittest.TestCase):
+    """Resolving a broker statement row to the right scheme.
+
+    The failure this guards against: a statement identifies a holding by an
+    ISIN that is often an IDCW or Payout plan. The screener universe is
+    Direct/Growth only, so matching such a row by *name* lands on the Growth
+    sibling — a different NAV, and therefore a valuation wrong by tens of
+    percent presented as fact.
+    """
+
+    def setUp(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "import_mf_statement", BACKEND_ROOT / "scripts" / "import_mf_statement.py"
+        )
+        self.module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(self.module)
+
+    def test_normalise_folds_plan_and_option_words(self):
+        normalise = self.module.normalise
+        self.assertEqual(
+            normalise("QUANT SMALL CAP FUND - DIRECT PLAN"),
+            normalise("Quant Small Cap Fund"),
+        )
+        self.assertEqual(
+            normalise("SBI Technology Opportunities Fund - Direct Plan - IDCW"),
+            normalise("SBI TECHNOLOGY OPPORTUNITIES FUND"),
+        )
+
+    def test_amfi_isin_wins_over_a_name_match(self):
+        resolve = self.module.resolve
+        row = {"isin": "INF200K01RT0", "symbol": "SBI TECHNOLOGY OPPORTUNITIES FUND - DIRECT PLAN",
+               "last_nav": 168.295}
+        universe_growth = {"scheme_code": "120578", "name": "SBI Technology Opportunities Fund",
+                           "nav_latest": 236.946, "isin": "INF200K01RV6"}
+        by_name = {self.module.normalise(universe_growth["name"]): universe_growth}
+        amfi = {"INF200K01RT0": {"schemeCode": 119731,
+                                 "schemeName": "SBI TECHNOLOGY OPPORTUNITIES FUND - Direct Plan - IDCW"}}
+        code, fund, how = resolve(row, {}, by_name, amfi)
+        self.assertEqual(how, "isin")
+        # The IDCW scheme, not the Growth sibling it shares a name with.
+        self.assertEqual(code, "119731")
+
+    def test_name_match_is_used_when_no_isin_is_known(self):
+        resolve = self.module.resolve
+        universe = {"scheme_code": "120828", "name": "Quant Small Cap Fund", "nav_latest": 317.1}
+        by_name = {self.module.normalise(universe["name"]): universe}
+        row = {"isin": "UNKNOWN", "symbol": "QUANT SMALL CAP FUND - DIRECT PLAN", "last_nav": 317.1}
+        code, fund, how = resolve(row, {}, by_name, {})
+        self.assertEqual((code, how), ("120828", "name"))
+
+    def test_unmatched_row_is_reported_not_guessed(self):
+        code, fund, how = self.module.resolve(
+            {"isin": "NOPE", "symbol": "Some Fund That Does Not Exist", "last_nav": 10.0},
+            {}, {}, {},
+        )
+        self.assertIsNone(code)
+        self.assertEqual(how, "unmatched")
+
+    def test_nav_drift_tolerance_is_tight_enough_to_catch_a_plan_mismatch(self):
+        """168.295 vs 236.946 is 40% apart — it must not pass as the same fund."""
+        drift = abs(236.946 - 168.295) / 168.295 * 100
+        self.assertGreater(drift, self.module.NAV_DRIFT_TOLERANCE_PCT)
+        # A few days of ordinary NAV movement must still pass.
+        ordinary = abs(58.686 - 56.914) / 56.914 * 100
+        self.assertLess(ordinary, self.module.NAV_DRIFT_TOLERANCE_PCT)

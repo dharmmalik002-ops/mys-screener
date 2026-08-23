@@ -20,6 +20,7 @@ import {
   type MfTransaction,
 } from "../lib/api";
 import { FundDetailModal } from "./FundDetailModal";
+import { PortfolioDashboard } from "./PortfolioDashboard";
 import { SipCalculator } from "./SipCalculator";
 
 import "./MutualFundsPanel.css";
@@ -731,92 +732,16 @@ function PortfolioView({
 
   return (
     <div className="mfp-portfolio">
-      <div className="mfp-pf-totals">
-        <div><span>Invested</span><strong>{rupees(totals?.invested)}</strong></div>
-        <div><span>Current value</span><strong>{rupees(totals?.current_value)}</strong></div>
-        <div>
-          <span>P&amp;L</span>
-          <strong className={tone(totals?.gain)}>
-            {rupees(totals?.gain)} <em>{signedPct(totals?.gain_pct)}</em>
-          </strong>
-          <small>current value less what you put in</small>
-        </div>
-        <div>
-          <span>XIRR</span>
-          <strong className={tone(totals?.xirr)}>{pct(totals?.xirr, 2)}</strong>
-          <small>money-weighted, annualised</small>
-        </div>
-        <div><span>Funds</span><strong>{totals?.position_count ?? 0}</strong><small>valued {portfolio?.as_of ?? "—"}</small></div>
-      </div>
-
-      <div className="mfp-table-wrap">
-        <table className="mfp-table">
-          <thead>
-            <tr>
-              <th className="left">Fund</th>
-              <th>Units</th><th>Avg cost</th><th>NAV</th>
-              <th>Invested</th><th>Current</th><th>P&amp;L</th><th>XIRR</th><th>Weight</th><th>Txns</th><th />
-            </tr>
-          </thead>
-          <tbody>
-            {positions.map((position) => (
-              <tr key={position.scheme_code}>
-                <td className="left">
-                  <button type="button" className="mfp-leader-name" onClick={() => onOpenFund(position.scheme_code)}>
-                    {position.fund?.name ?? position.scheme_code}
-                  </button>
-                  <small className="mfp-dim"> {position.fund?.sub_category ?? ""}</small>
-                  {position.unpriced_transactions ? (
-                    <small className="neg"> · {position.unpriced_transactions} txn(s) outside NAV history</small>
-                  ) : null}
-                </td>
-                <td>{num(position.units, 3)}</td>
-                <td>{num(position.avg_cost_nav)}</td>
-                <td>{num(position.latest_nav)}</td>
-                <td>{rupees(position.invested)}</td>
-                <td>{rupees(position.current_value)}</td>
-                <td className={tone(position.gain)}>{rupees(position.gain)} <em>{signedPct(position.gain_pct)}</em></td>
-                <td className={tone(position.xirr)}>{pct(position.xirr, 2)}</td>
-                <td className="mfp-dim">{pct(position.weight_pct)}</td>
-                <td className="mfp-dim">{position.transaction_count}</td>
-                <td className="mfp-pf-actions">
-                  <button
-                    type="button"
-                    className="mfp-add"
-                    onClick={() => setEditing(editing === position.scheme_code ? null : position.scheme_code)}
-                  >
-                    {editing === position.scheme_code ? "Done" : "Edit"}
-                  </button>
-                  {confirmDelete === position.scheme_code ? (
-                    <>
-                      <button
-                        type="button"
-                        className="mfp-add mfp-add-danger"
-                        disabled={busy}
-                        onClick={() => void removePosition(position.scheme_code)}
-                      >
-                        Delete {position.transaction_count > 0 ? `${position.transaction_count} txns` : ""}?
-                      </button>
-                      <button type="button" className="mfp-add" onClick={() => setConfirmDelete(null)}>
-                        Keep
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      className="mfp-add"
-                      title="Remove this fund from your portfolio"
-                      onClick={() => setConfirmDelete(position.scheme_code)}
-                    >
-                      <Trash2 size={11} /> Remove
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <PortfolioDashboard
+        portfolio={portfolio!}
+        onOpenFund={onOpenFund}
+        onEdit={setEditing}
+        onRemove={(code) => void removePosition(code)}
+        editing={editing}
+        confirmDelete={confirmDelete}
+        onConfirmDelete={setConfirmDelete}
+        busy={busy}
+      />
 
       {editing ? (
         <TransactionEditor
@@ -828,30 +753,6 @@ function PortfolioView({
           onClose={() => setEditing(null)}
         />
       ) : null}
-
-      <div className="mfp-pf-grid">
-        <section className="mfp-pf-card">
-          <h3>By category</h3>
-          {Object.entries(allocation?.by_sub_category ?? {}).map(([name, value]) => (
-            <div className="mfp-bar-row" key={name}>
-              <span>{name}</span>
-              <i className="mfp-bar"><i style={{ width: `${Math.min(100, (value / (totals?.current_value || 1)) * 100)}%` }} /></i>
-              <em>{pct((value / (totals?.current_value || 1)) * 100)}</em>
-            </div>
-          ))}
-        </section>
-
-        <section className="mfp-pf-card">
-          <h3>By fund house</h3>
-          {Object.entries(allocation?.by_amc ?? {}).map(([name, value]) => (
-            <div className="mfp-bar-row" key={name}>
-              <span>{name}</span>
-              <i className="mfp-bar"><i style={{ width: `${Math.min(100, (value / (totals?.current_value || 1)) * 100)}%` }} /></i>
-              <em>{pct((value / (totals?.current_value || 1)) * 100)}</em>
-            </div>
-          ))}
-        </section>
-      </div>
 
       <section className="mfp-pf-card">
         <div className="mfp-pf-card-head">

@@ -15,6 +15,7 @@ and the UI says so.
 from __future__ import annotations
 
 import json
+import re
 import threading
 import time
 from collections import OrderedDict
@@ -734,6 +735,72 @@ class MutualFundService:
         except (OSError, ValueError):
             return {"updated_at": None, "positions": []}
 
+    @staticmethod
+    def _tidy_scheme_name(raw: str | None) -> str | None:
+        """Drop the plan/option tail AMFI appends, and de-shout the name.
+
+        "SBI TECHNOLOGY OPPORTUNITIES FUND - Direct Plan - IDCW" becomes "SBI
+        Technology Opportunities Fund". The plan variant is surfaced as a badge
+        instead, because the untrimmed name is long enough to wreck a table row
+        — one of them runs to "Payout of Income Distribution cum capital
+        withdrawal option".
+        """
+        text = str(raw or "").strip()
+        if not text:
+            return None
+        head = re.split(r"\s+-\s+(?:direct|regular)\s+plan", text, flags=re.IGNORECASE)[0]
+        head = head.strip(" -–—")
+        # AMFI mixes ALL CAPS and title case; normalise the shouting only.
+        if head.isupper():
+            head = " ".join(
+                word if len(word) <= 3 and word.isalpha() and word.upper() == word and len(word) <= 4
+                else word.capitalize()
+                for word in head.split()
+            )
+        return head or text
+
+    def _off_universe_identity(self, code: str, nav: dict[str, Any]) -> dict[str, Any]:
+        """Identity for a holding outside the Direct-Growth universe.
+
+        An IDCW or Payout plan is the same portfolio as its Growth sibling —
+        same manager, same holdings, same category — so the sibling's
+        classification is inherited. That keeps allocation grouped under one
+        consistent set of category names instead of AMFI's parallel vocabulary
+        ("Equity Scheme - Sectoral/ Thematic" alongside our "Sectoral").
+        """
+        name = self._tidy_scheme_name(nav.get("scheme_name"))
+        sibling = None
+        if name:
+            wanted = _match_key(name)
+            for candidate in (self._universe or {}).get("funds") or []:
+                if _match_key(candidate.get("name")) == wanted:
+                    sibling = candidate
+                    break
+
+        category = str(nav.get("scheme_category") or "")
+        return {
+            "scheme_code": code,
+            "name": name or nav.get("scheme_name"),
+            "amc": (sibling or {}).get("amc") or nav.get("fund_house"),
+            "sub_category": (sibling or {}).get("sub_category")
+                            or (category.split(" - ")[-1] if " - " in category else category or None),
+            "benchmark_label": (sibling or {}).get("benchmark_label"),
+            "expense_ratio": (sibling or {}).get("expense_ratio"),
+            "off_universe": True,
+            "plan_variant": self._plan_variant(nav.get("scheme_name")),
+            # The Growth sibling is where category comparisons can be made.
+            "growth_sibling_code": (sibling or {}).get("scheme_code"),
+        }
+
+    @staticmethod
+    def _plan_variant(raw: str | None) -> str | None:
+        text = str(raw or "").lower()
+        if "payout" in text:
+            return "Payout"
+        if "idcw" in text or "dividend" in text:
+            return "IDCW"
+        return None
+
     def get_portfolio(self) -> dict[str, Any]:
         """Valued portfolio: per-position units, cost, value, gain and XIRR."""
         state = self._raw_portfolio()
@@ -744,19 +811,27 @@ class MutualFundService:
         total_invested = 0.0
         total_value = 0.0
         total_realised = 0.0
+        total_cost_of_sold = 0.0
 
         for position in state.get("positions", []):
             code = str(position["scheme_code"])
             row = self._by_code.get(code)
             nav = self._nav_series(code)
             valued = portfolio.value_position(position, nav_series=nav)
+            # A holding can legitimately sit outside the screener universe —
+            # an IDCW or Payout plan, which this universe deliberately excludes.
+            # It still values correctly off its own NAV series, so fall back to
+            # the identity that series carries rather than rendering a blank row.
+            if row is None and nav:
+                row = self._off_universe_identity(code, nav)
             valued["fund"] = row
             valued["transactions"] = position.get("transactions") or []
             positions.append(valued)
 
             total_invested += valued.get("invested") or 0.0
             total_value += valued.get("current_value") or 0.0
-            total_realised += valued.get("realised") or 0.0
+            total_realised += valued.get("realised_pnl") or 0.0
+            total_cost_of_sold += valued.get("cost_of_units_sold") or 0.0
             for transaction in position.get("transactions") or []:
                 nav_on_date = None
                 if nav:
@@ -790,18 +865,27 @@ class MutualFundService:
                 if total_value > 0 else None
             )
 
-        gain = total_value + total_realised - total_invested if total_invested else None
+        # Unrealised on what is still held, plus realised on what was sold —
+        # reported separately because that is how a broker statement reads and
+        # how the two are taxed.
+        unrealised = total_value - total_invested
+        total_pnl = unrealised + total_realised
+        deployed = total_invested + total_cost_of_sold
         return {
             "updated_at": state.get("updated_at"),
             "as_of": max(valuation_dates) if valuation_dates else None,
             "positions": positions,
             "totals": {
                 "position_count": len(positions),
+                "open_position_count": sum(1 for p in positions if (p.get("units") or 0) > 0),
                 "invested": round(total_invested, 2) if total_invested else None,
                 "current_value": round(total_value, 2) if total_value else None,
-                "realised": round(total_realised, 2) if total_realised else None,
-                "gain": round(gain, 2) if gain is not None else None,
-                "gain_pct": round(gain / total_invested * 100.0, 2) if gain is not None and total_invested > 0 else None,
+                "unrealised_pnl": round(unrealised, 2),
+                "unrealised_pct": round(unrealised / total_invested * 100.0, 2) if total_invested > 0 else None,
+                "realised_pnl": round(total_realised, 2) if total_realised else None,
+                "cost_of_units_sold": round(total_cost_of_sold, 2) if total_cost_of_sold else None,
+                "gain": round(total_pnl, 2),
+                "gain_pct": round(total_pnl / deployed * 100.0, 2) if deployed > 0 else None,
                 "xirr": portfolio_xirr,
             },
             "allocation": self._portfolio_allocation(positions, total_value),
@@ -899,6 +983,91 @@ class MutualFundService:
             peers,
             category_summary=(universe.get("categories") or {}).get(sub_category),
         )
+
+    def get_portfolio_timeline(self, *, range_key: str = "1y") -> dict[str, Any]:
+        """What today's holdings would have been worth through history.
+
+        Units are held constant at what is held now, so this is **not** a
+        record of the portfolio's actual past value — the units were not all
+        owned for the whole window, and an imported statement carries no
+        purchase dates at all. What it does show honestly is how the current
+        basket of funds has behaved together, which is the question a
+        composition chart cannot answer. The UI labels it as such.
+
+        Only dates where every held fund has a NAV are used, so the line never
+        steps down because one scheme was late reporting.
+        """
+        state = self._raw_portfolio()
+        self._load_universe()
+
+        legs: list[tuple[float, dict[str, Any], dict[str, Any] | None]] = []
+        for position in state.get("positions", []):
+            code = str(position["scheme_code"])
+            valued = portfolio.value_position(position, nav_series=self._nav_series(code))
+            units = valued.get("units") or 0.0
+            if units <= 0:
+                continue
+            nav = self._nav_series(code)
+            if not nav or not nav.get("dates"):
+                continue
+            legs.append((units, nav, self._by_code.get(code)))
+
+        if not legs:
+            return {"range": range_key, "dates": [], "values": [], "invested": None,
+                    "series": [], "constant_units": True}
+
+        key = str(range_key or "1y").lower()
+        latest = min(nav["dates"][-1] for _, nav, _ in legs)
+        if key == "max" or key not in RANGE_DAYS:
+            cutoff = max(nav["dates"][0] for _, nav, _ in legs)
+        else:
+            cutoff = max(
+                (date.fromisoformat(latest) - timedelta(days=RANGE_DAYS[key])).isoformat(),
+                max(nav["dates"][0] for _, nav, _ in legs),
+            )
+
+        lookups = [(units, dict(zip(nav["dates"], nav["navs"])), row) for units, nav, row in legs]
+        # Intersect the calendars: a date is usable only if every leg reports.
+        common: set[str] | None = None
+        for _, lookup, _row in lookups:
+            days = {day for day in lookup if cutoff <= day <= latest}
+            common = days if common is None else (common & days)
+        ordered = sorted(common or [])
+        if len(ordered) < 2:
+            return {"range": key, "dates": [], "values": [], "invested": None,
+                    "series": [], "constant_units": True}
+
+        values = [
+            round(sum(units * lookup[day] for units, lookup, _ in lookups), 2)
+            for day in ordered
+        ]
+
+        # Per-fund contribution, for a stacked view.
+        series = []
+        for units, lookup, row in lookups:
+            series.append({
+                "scheme_code": str((row or {}).get("scheme_code") or ""),
+                "label": (row or {}).get("name"),
+                "values": [round(units * lookup[day], 2) for day in ordered],
+            })
+        series.sort(key=lambda item: -(item["values"][-1] if item["values"] else 0))
+
+        invested = sum(
+            portfolio.value_position(position, nav_series=self._nav_series(str(position["scheme_code"]))).get("invested") or 0.0
+            for position in state.get("positions", [])
+        )
+        return {
+            "range": key,
+            "available_ranges": _available_ranges(ordered),
+            "dates": ordered,
+            "values": values,
+            "invested": round(invested, 2) or None,
+            "series": series,
+            "constant_units": True,
+            "start_value": values[0],
+            "end_value": values[-1],
+            "change_pct": round((values[-1] / values[0] - 1) * 100.0, 2) if values[0] else None,
+        }
 
     def get_portfolio_peer_comparison(self) -> dict[str, Any]:
         """For every fund held: which funds in its category measured better.
@@ -1104,6 +1273,17 @@ class MutualFundService:
 
     def opening_position(self, **kwargs) -> list[dict[str, Any]]:
         return portfolio.opening_position(**kwargs)
+
+
+def _match_key(name: str | None) -> str:
+    """Loose key for pairing a plan variant with its Growth sibling.
+
+    "&" and "and" are used interchangeably in scheme names ("Tata Banking &
+    Financial Services" vs "...and Financial Services"), so they have to fold
+    together or the sibling is missed.
+    """
+    text = str(name or "").lower().replace("&", " and ")
+    return " ".join(re.sub(r"[^a-z0-9]+", " ", text).split())
 
 
 def _rebase(values: list[float]) -> list[float]:

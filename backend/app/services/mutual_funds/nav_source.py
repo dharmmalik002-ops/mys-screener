@@ -104,6 +104,26 @@ def fetch_nav_history(scheme_code: str | int, *, timeout: int = 30) -> dict[str,
     }
 
 
+def build_isin_index(*, timeout: int = 90) -> dict[str, dict[str, Any]]:
+    """ISIN -> AMFI scheme, across every plan and option.
+
+    A broker statement identifies a holding by ISIN, and that ISIN is often an
+    IDCW or Payout variant. The screener universe is Direct/Growth only, so
+    matching a statement row by *name* quietly lands on the Growth sibling —
+    which has a different NAV and therefore a wrong valuation. This index is
+    the authoritative way to get from a statement row to the exact scheme.
+    """
+    index: dict[str, dict[str, Any]] = {}
+    for scheme in fetch_scheme_index(timeout=timeout):
+        if not isinstance(scheme, dict):
+            continue
+        for key in ("isinGrowth", "isinDivReinvestment"):
+            isin = str(scheme.get(key) or "").strip()
+            if isin and isin.lower() not in ("none", "null", "-"):
+                index.setdefault(isin, scheme)
+    return index
+
+
 def fetch_scheme_index(*, timeout: int = 60) -> list[dict[str, Any]]:
     """Every AMFI scheme code + name. Used to resolve benchmark index funds
     and to sanity-check the crawled universe against the official list."""

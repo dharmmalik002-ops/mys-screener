@@ -144,6 +144,12 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
     def save_portfolio(payload: dict = Body(default_factory=dict)):
         return service.save_portfolio(payload)
 
+    @router.get("/portfolio/timeline")
+    def portfolio_timeline(range: str = Query(default="1y", alias="range")):
+        """Value of the current holdings through time, at constant units."""
+        _require_ready(service)
+        return service.get_portfolio_timeline(range_key=range)
+
     @router.get("/portfolio/peer-comparison")
     def portfolio_peer_comparison():
         """For each fund held, which funds in its category measured better.

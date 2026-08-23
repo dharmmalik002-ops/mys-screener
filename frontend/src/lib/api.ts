@@ -3639,18 +3639,24 @@ export type MfValuedPosition = {
   transaction_count: number;
   units?: number | null;
   invested?: number | null;
-  realised?: number | null;
   current_value?: number | null;
+  unrealised_pnl?: number | null;
+  unrealised_pct?: number | null;
+  realised_pnl?: number | null;
+  realised_proceeds?: number | null;
+  cost_of_units_sold?: number | null;
   gain?: number | null;
   gain_pct?: number | null;
   xirr?: number | null;
+  is_closed?: boolean;
+  cost_basis_only?: boolean;
   avg_cost_nav?: number | null;
   latest_nav?: number | null;
   latest_nav_date?: string | null;
   first_transaction_date?: string | null;
   unpriced_transactions?: number;
   weight_pct?: number | null;
-  fund?: MfFund | null;
+  fund?: (MfFund & { off_universe?: boolean; plan_variant?: string | null; growth_sibling_code?: string | null }) | null;
   transactions: MfTransaction[];
 };
 
@@ -3671,9 +3677,13 @@ export type MfPortfolioResponse = {
   positions: MfValuedPosition[];
   totals: {
     position_count: number;
+    open_position_count?: number;
     invested?: number | null;
     current_value?: number | null;
-    realised?: number | null;
+    unrealised_pnl?: number | null;
+    unrealised_pct?: number | null;
+    realised_pnl?: number | null;
+    cost_of_units_sold?: number | null;
     gain?: number | null;
     gain_pct?: number | null;
     xirr?: number | null;
@@ -3920,6 +3930,24 @@ export type MfReview = {
   strength_count: number;
   concern_count: number;
 };
+
+export type MfPortfolioTimeline = {
+  range: string;
+  available_ranges?: string[];
+  dates: string[];
+  values: number[];
+  invested?: number | null;
+  series: { scheme_code: string; label?: string | null; values: number[] }[];
+  constant_units: boolean;
+  start_value?: number;
+  end_value?: number;
+  change_pct?: number | null;
+};
+
+export function getMfPortfolioTimeline(range = "1y") {
+  return whileWaking(() => request<MfPortfolioTimeline>(
+    `/api/mf/portfolio/timeline?range=${encodeURIComponent(range)}`, undefined, { timeoutMs: 60000 }));
+}
 
 export type MfPeerAhead = {
   scheme_code: string;
