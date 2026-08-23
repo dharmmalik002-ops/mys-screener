@@ -20,6 +20,20 @@ from fastapi import APIRouter, Body, HTTPException, Query
 from app.services.mutual_funds.service import MutualFundService
 
 
+def _require_ready(service: MutualFundService) -> None:
+    """503, not 404, when the universe has not loaded.
+
+    Without this, a missing or unreadable `mf_universe.json` makes every fund
+    lookup a 404 — indistinguishable from "no such scheme code", so the client
+    reports a bad fund rather than a backend that is not up yet.
+    """
+    if not service.get_status().get("ready"):
+        raise HTTPException(
+            status_code=503,
+            detail="The mutual fund universe is not loaded yet. Retry shortly.",
+        )
+
+
 def _split(value: str | None) -> list[str]:
     return [item.strip() for item in str(value or "").split(",") if item.strip()]
 
@@ -71,6 +85,7 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
 
     @router.get("/fund/{scheme_code}")
     def fund(scheme_code: str):
+        _require_ready(service)
         payload = service.get_fund(scheme_code)
         if payload is None:
             raise HTTPException(status_code=404, detail=f"Unknown scheme code: {scheme_code}")
@@ -84,6 +99,7 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         compare: str | None = Query(default=None, description="comma-separated scheme codes to overlay"),
         drawdown: bool = Query(default=False),
     ):
+        _require_ready(service)
         payload = service.get_fund_series(
             scheme_code,
             range_key=range,
@@ -95,6 +111,31 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
             raise HTTPException(status_code=404, detail=f"No NAV history for scheme code: {scheme_code}")
         return payload
 
+    @router.get("/fund/{scheme_code}/review")
+    def fund_review_endpoint(scheme_code: str):
+        """How this fund measures against its own category.
+
+        Deterministic arithmetic only. Every figure is reproducible from the
+        universe, and nothing here recommends an action — see
+        `mutual_funds/fund_review.py` for why that line is drawn.
+        """
+        _require_ready(service)
+        payload = service.get_fund_review(scheme_code)
+        if payload is None:
+            raise HTTPException(status_code=404, detail=f"Unknown scheme code: {scheme_code}")
+        return payload
+
+    @router.get("/fund/{scheme_code}/ai-review")
+    def fund_ai_review(scheme_code: str):
+        """Plain-English summary of the measured review.
+
+        Describes the evidence and nothing more. It does not recommend buying,
+        selling or switching anything — that is personalised investment advice
+        and out of scope for this app.
+        """
+        _require_ready(service)
+        return service.get_fund_ai_review(scheme_code)
+
     @router.get("/portfolio")
     def get_portfolio():
         return service.get_portfolio()
@@ -102,6 +143,22 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
     @router.put("/portfolio")
     def save_portfolio(payload: dict = Body(default_factory=dict)):
         return service.save_portfolio(payload)
+
+    @router.get("/portfolio/peer-comparison")
+    def portfolio_peer_comparison():
+        """For each fund held, which funds in its category measured better.
+
+        Factual and deterministic. Naming funds that outperformed is a matter
+        of record; what to do about it is not something this endpoint answers.
+        """
+        _require_ready(service)
+        return service.get_portfolio_peer_comparison()
+
+    @router.get("/portfolio/ai-comparison")
+    def portfolio_ai_comparison():
+        """The same comparison in prose, with a candid read on each record."""
+        _require_ready(service)
+        return service.get_portfolio_ai_comparison()
 
     @router.post("/portfolio/sip-preview")
     def sip_preview(payload: dict = Body(default_factory=dict)):
@@ -114,7 +171,29 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
             start_date=str(payload.get("start_date") or ""),
             end_date=str(payload.get("end_date") or ""),
             amount=payload.get("amount") or 0,
+            frequency=str(payload.get("frequency") or "monthly"),
             day_of_month=payload.get("day_of_month"),
+            weekday=payload.get("weekday"),
+        )
+        total = sum(t["amount"] or 0 for t in transactions)
+        return {
+            "count": len(transactions),
+            "total_amount": round(total, 2),
+            "first_date": transactions[0]["date"] if transactions else None,
+            "last_date": transactions[-1]["date"] if transactions else None,
+            "transactions": transactions,
+        }
+
+    @router.post("/portfolio/opening-position")
+    def opening_position(payload: dict = Body(default_factory=dict)):
+        """Seed a holding from units already owned, priced at that date's NAV.
+
+        For an investor who has been running a SIP for years and does not want
+        to key in every past instalment.
+        """
+        transactions = service.opening_position(
+            units=payload.get("units") or 0,
+            as_of=str(payload.get("as_of") or ""),
         )
         return {"count": len(transactions), "transactions": transactions}
 

@@ -22,7 +22,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, groww_source, index_source, metrics, nav_source, paths, portfolio
+from . import benchmarks, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -54,10 +54,21 @@ _DETAIL_CACHE_LIMIT = 80
 
 
 class MutualFundService:
-    def __init__(self, *, database_url: str | None = None, state_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        database_url: str | None = None,
+        state_dir: Path | None = None,
+        ai_service: Any | None = None,
+    ) -> None:
         paths.ensure_dirs()
         self._state_dir = Path(state_dir) if state_dir else None
         self._store = portfolio.MutualFundPortfolioStore(database_url)
+        # Optional. The measured review works without it; only the prose layer
+        # needs Gemini, and it is cached so a fund is summarised once a day.
+        self._ai_service = ai_service
+        self._ai_lock = threading.Lock()
+        self._ai_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
         self._universe_lock = threading.Lock()
         self._universe: dict[str, Any] | None = None
@@ -868,8 +879,231 @@ class MutualFundService:
                 pass
         return self.get_portfolio()
 
+    def get_fund_review(self, scheme_code: str) -> dict[str, Any] | None:
+        """Measured standing of one fund against its own category.
+
+        Deterministic — no AI in this path. The prose layer is a separate call
+        so the numbers still render when Gemini is unavailable or rate-limited.
+        """
+        universe = self._load_universe()
+        row = self._by_code.get(str(scheme_code).strip())
+        if row is None:
+            return None
+        sub_category = str(row.get("sub_category") or "")
+        peers = [
+            other for other in (universe.get("funds") or [])
+            if str(other.get("sub_category") or "") == sub_category
+        ]
+        return fund_review.build_review(
+            row,
+            peers,
+            category_summary=(universe.get("categories") or {}).get(sub_category),
+        )
+
+    def get_portfolio_peer_comparison(self) -> dict[str, Any]:
+        """For every fund held: which funds in its category measured better.
+
+        Purely factual — "these funds returned more over three years while
+        charging less and falling less" is an observation, not a suggestion to
+        move money. Deterministic, so it renders with or without AI.
+        """
+        state = self._raw_portfolio()
+        universe = self._load_universe()
+        all_funds = universe.get("funds") or []
+
+        holdings: list[dict[str, Any]] = []
+        for position in state.get("positions", []):
+            code = str(position["scheme_code"])
+            row = self._by_code.get(code)
+            if row is None:
+                holdings.append({
+                    "scheme_code": code,
+                    "name": None,
+                    "in_universe": False,
+                    "peers_ahead": [],
+                })
+                continue
+
+            sub_category = str(row.get("sub_category") or "")
+            peers = [
+                other for other in all_funds
+                if str(other.get("sub_category") or "") == sub_category
+            ]
+            review = fund_review.build_review(
+                row,
+                peers,
+                category_summary=(universe.get("categories") or {}).get(sub_category),
+            )
+            # Widen the peer list here relative to the single-fund review: on a
+            # portfolio screen the useful question is "how many in this category
+            # did better", so a truncated five would understate it.
+            ahead = fund_review.peers_ahead(row, peers, limit=10)
+            better_on_return = [
+                other for other in peers
+                if isinstance(other.get("return_3y"), (int, float))
+                and isinstance(row.get("return_3y"), (int, float))
+                and other["return_3y"] > row["return_3y"]
+            ]
+            holdings.append({
+                "scheme_code": code,
+                "name": row.get("name"),
+                "amc": row.get("amc"),
+                "sub_category": sub_category,
+                "in_universe": True,
+                "return_1y": row.get("return_1y"),
+                "return_3y": row.get("return_3y"),
+                "return_5y": row.get("return_5y"),
+                "expense_ratio": row.get("expense_ratio"),
+                "max_drawdown": row.get("max_drawdown"),
+                "rank_3y": row.get("rank_3y"),
+                "rank_count_3y": row.get("rank_count_3y"),
+                "quartile_3y": row.get("quartile_3y"),
+                "measured_standing": review["measured_standing"],
+                "trajectory": review["rank_trajectory"]["direction"],
+                "category_avg_3y": (review.get("category_summary") or {}).get("return_3y"),
+                "peer_count": len(peers),
+                "better_on_3y_count": len(better_on_return),
+                "peers_ahead": ahead,
+            })
+
+        holdings.sort(key=lambda item: (item.get("measured_standing") is None,
+                                        item.get("measured_standing") or 0))
+        return {
+            "as_of": universe.get("as_of"),
+            "holdings": holdings,
+            "holding_count": len(holdings),
+        }
+
+    def get_portfolio_ai_comparison(self) -> dict[str, Any]:
+        """Prose over the peer comparison. Reports, does not advise."""
+        comparison = self.get_portfolio_peer_comparison()
+        if not comparison["holdings"]:
+            return {"available": False, "reason": "No funds in the portfolio yet."}
+
+        service = self._ai_service
+        if service is None or not getattr(service, "available", False):
+            return {
+                "available": False,
+                "reason": "AI is not configured on this deployment — the comparison table above "
+                          "is unaffected.",
+            }
+
+        cache_key = "portfolio:" + ",".join(
+            sorted(str(h["scheme_code"]) for h in comparison["holdings"])
+        )
+        with self._ai_lock:
+            cached = self._ai_cache.get(cache_key)
+            if cached and (time.time() - cached[0]) < 12 * 60 * 60:
+                return cached[1]
+
+        evidence = {
+            "as_of": comparison["as_of"],
+            "holdings": [
+                {
+                    "fund": h["name"],
+                    "category": h["sub_category"],
+                    "return_3y": h["return_3y"],
+                    "category_average_3y": h["category_avg_3y"],
+                    "rank_in_category_3y": (
+                        f"{h['rank_3y']} of {h['rank_count_3y']}"
+                        if h.get("rank_3y") and h.get("rank_count_3y") else None
+                    ),
+                    "measured_standing_percentile": h["measured_standing"],
+                    "category_standing_trajectory": h["trajectory"],
+                    "expense_ratio": h["expense_ratio"],
+                    "worst_fall": h["max_drawdown"],
+                    "funds_in_category_with_higher_3y_return": h["better_on_3y_count"],
+                    "funds_better_on_return_cost_and_drawdown_together": [
+                        {
+                            "fund": p["name"],
+                            "return_3y": p["return_3y"],
+                            "return_ahead_by": p["return_gap"],
+                            "expense_ratio": p["expense_ratio"],
+                            "worst_fall": p["max_drawdown"],
+                        }
+                        for p in h["peers_ahead"]
+                    ],
+                }
+                for h in comparison["holdings"] if h["in_universe"]
+            ],
+        }
+        try:
+            note = service.generate_portfolio_comparison_note(
+                json.dumps(evidence, separators=(",", ":"))
+            )
+        except Exception as exc:
+            return {"available": False, "reason": f"AI note unavailable ({type(exc).__name__})."}
+
+        payload = {"available": True, "note": note}
+        with self._ai_lock:
+            self._ai_cache[cache_key] = (time.time(), payload)
+        return payload
+
+    def get_fund_ai_review(self, scheme_code: str) -> dict[str, Any]:
+        """Prose over the measured review. Never raises — the numbers stand alone.
+
+        Cached for a day per fund: the underlying evidence only moves when the
+        nightly rebuild lands, so re-generating on every open would burn quota
+        to restate the same paragraphs.
+        """
+        review = self.get_fund_review(scheme_code)
+        if review is None:
+            return {"available": False, "reason": "unknown scheme code"}
+
+        service = self._ai_service
+        if service is None or not getattr(service, "available", False):
+            return {
+                "available": False,
+                "reason": "AI is not configured on this deployment — the measured scorecard above "
+                          "is unaffected.",
+            }
+
+        key = str(scheme_code)
+        with self._ai_lock:
+            cached = self._ai_cache.get(key)
+            if cached and (time.time() - cached[0]) < 24 * 60 * 60:
+                return cached[1]
+
+        # Hand over the evidence only — the prompt forbids deriving figures, so
+        # anything not in here cannot legitimately appear in the prose.
+        evidence = {
+            "fund": review["name"],
+            "category": review["sub_category"],
+            "benchmark": review["benchmark_label"],
+            "peers_in_category": review["peer_count"],
+            "measured_standing_percentile": review["measured_standing"],
+            "scorecard": [
+                {
+                    "dimension": item["label"],
+                    "value": item["value"],
+                    "unit": item["unit"],
+                    "category_median": item["category_median"],
+                    "percentile_in_category": item["percentile"],
+                    "standing": item["standing"],
+                }
+                for item in review["scorecard"]
+            ],
+            "rank_trajectory": review["rank_trajectory"],
+            "observations": review["signals"],
+            "same_category_funds_better_on_return_cost_and_downside": review["peers_ahead"],
+        }
+        try:
+            note = service.generate_fund_review_note(
+                json.dumps(evidence, separators=(",", ":")), str(review["name"])
+            )
+        except Exception as exc:
+            return {"available": False, "reason": f"AI note unavailable ({type(exc).__name__})."}
+
+        payload = {"available": True, "note": note, "generated_for": review["name"]}
+        with self._ai_lock:
+            self._ai_cache[key] = (time.time(), payload)
+        return payload
+
     def expand_sip(self, **kwargs) -> list[dict[str, Any]]:
         return portfolio.expand_sip(**kwargs)
+
+    def opening_position(self, **kwargs) -> list[dict[str, Any]]:
+        return portfolio.opening_position(**kwargs)
 
 
 def _rebase(values: list[float]) -> list[float]:

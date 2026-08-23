@@ -1,0 +1,173 @@
+.sipc {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px 16px;
+  background: var(--surface, rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 10px);
+}
+
+.sipc-head h3 {
+  margin: 0 0 4px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+}
+
+.sipc-head p {
+  margin: 0;
+  max-width: 70ch;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+.sipc-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+  gap: 12px 18px;
+}
+
+.sipc-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.sipc-field > span {
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sipc-input-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 9px;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 5px);
+}
+
+.sipc-input-row em { font-style: normal; color: var(--text-muted); }
+
+.sipc-input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  color: var(--text);
+  background: none;
+  border: 0;
+  outline: none;
+}
+
+.sipc-field input[type="range"] { width: 100%; accent-color: var(--accent); }
+
+.sipc-seg {
+  display: inline-flex;
+  gap: 1px;
+  padding: 1px;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.03));
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm, 5px);
+}
+
+.sipc-seg button {
+  flex: 1 1 0;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.sipc-seg button.active { color: var(--text); background: var(--surface-strong, var(--surface)); }
+
+.sipc-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+}
+
+.sipc-result {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  background: var(--surface);
+}
+
+.sipc-result-key { background: rgba(56, 189, 248, 0.07); }
+
+.sipc-result > span {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.sipc-result > strong {
+  font-size: 15px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  color: var(--text);
+}
+
+.sipc-result > strong.pos { color: var(--positive); }
+.sipc-result > strong.neg { color: var(--negative); }
+.sipc-result > small { font-size: 9.5px; line-height: 1.4; color: var(--text-muted); }
+
+.sipc-scenarios { display: flex; flex-direction: column; gap: 4px; }
+
+.sipc-scenarios h4 {
+  margin: 0 0 2px;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+
+.sipc-scenario {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) 90px 90px;
+  align-items: center;
+  gap: 9px;
+  font-size: 11px;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+  color: var(--text-muted);
+}
+
+.sipc-bar {
+  display: block;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-soft, rgba(255, 255, 255, 0.05));
+  overflow: hidden;
+}
+
+.sipc-bar > i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+
+.sipc-scenario > em { font-style: normal; text-align: right; color: var(--text-soft); }
+.sipc-scenario > b { text-align: right; color: var(--text); }
+
+.sipc-foot {
+  margin: 4px 0 0;
+  font-size: 10px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+
+@media (max-width: 640px) {
+  .sipc-controls { grid-template-columns: 1fr; }
+  .sipc-results { grid-template-columns: repeat(2, 1fr); }
+  .sipc-scenario { grid-template-columns: 32px minmax(0, 1fr) 74px 74px; gap: 6px; font-size: 10px; }
+}

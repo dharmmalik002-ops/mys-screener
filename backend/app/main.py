@@ -846,6 +846,9 @@ app.include_router(
         MutualFundService(
             database_url=settings.database_url,
             state_dir=settings.app_state_dir,
+            # Same Gemini client the equity surfaces use; optional, and only
+            # the prose layer of the fund review touches it.
+            ai_service=getattr(india_provider, "ai_service", None),
         )
     )
 )

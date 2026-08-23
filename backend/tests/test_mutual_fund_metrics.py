@@ -398,3 +398,275 @@ class HoldingsEnrichmentTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SipFrequencyTests(unittest.TestCase):
+    def test_weekly_lands_on_the_same_weekday(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-03", end_date="2024-03-06", amount=2000, frequency="weekly"
+        )
+        weekdays = {date.fromisoformat(item["date"]).weekday() for item in out}
+        self.assertEqual(len(weekdays), 1)
+        self.assertEqual(len(out), 10)
+
+    def test_weekly_can_be_pinned_to_a_chosen_weekday(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-01", end_date="2024-02-01", amount=500,
+            frequency="weekly", weekday=4,  # Friday
+        )
+        self.assertTrue(all(date.fromisoformat(i["date"]).weekday() == 4 for i in out))
+        self.assertEqual(out[0]["date"], "2024-01-05")
+
+    def test_fortnightly_steps_fourteen_days(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-03", end_date="2024-03-01", amount=1000, frequency="fortnightly"
+        )
+        gaps = {
+            (date.fromisoformat(b["date"]) - date.fromisoformat(a["date"])).days
+            for a, b in zip(out, out[1:])
+        }
+        self.assertEqual(gaps, {14})
+
+    def test_quarterly_steps_three_months(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-15", end_date="2025-01-15", amount=5000, frequency="quarterly"
+        )
+        self.assertEqual([i["date"] for i in out],
+                         ["2024-01-15", "2024-04-15", "2024-07-15", "2024-10-15", "2025-01-15"])
+
+    def test_unknown_frequency_falls_back_to_monthly(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-10", end_date="2024-06-10", amount=100, frequency="hourly"
+        )
+        self.assertEqual(len(out), 6)
+
+    def test_a_multi_year_weekly_sip_stays_inside_the_cap(self):
+        out = portfolio.expand_sip(
+            start_date="2010-01-01", end_date="2026-01-01", amount=100, frequency="weekly"
+        )
+        self.assertLessEqual(len(out), portfolio.MAX_TRANSACTIONS_PER_POSITION)
+
+
+class OpeningPositionTests(unittest.TestCase):
+    def test_units_are_recorded_without_an_amount(self):
+        out = portfolio.opening_position(units=1234.567, as_of="2024-06-03")
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["units"], 1234.567)
+        # Amount is left for the NAV lookup to fill; hardcoding one here would
+        # invent a cost basis the user never gave.
+        self.assertIsNone(out[0]["amount"])
+
+    def test_rejects_nonsense(self):
+        self.assertEqual(portfolio.opening_position(units=0, as_of="2024-06-03"), [])
+        self.assertEqual(portfolio.opening_position(units=-5, as_of="2024-06-03"), [])
+        self.assertEqual(portfolio.opening_position(units=10, as_of="not-a-date"), [])
+
+    def test_an_opening_holding_plus_a_sip_values_together(self):
+        dates, navs = nav_series(700, base=40.0, daily_growth=0.0004)
+        opening = portfolio.opening_position(units=1000.0, as_of=dates[0])
+        sip = portfolio.expand_sip(
+            start_date=dates[50], end_date=dates[-1], amount=2000, frequency="weekly"
+        )
+        position = {"id": "p", "scheme_code": "1", "transactions": opening + sip}
+        valued = portfolio.value_position(position, nav_series={"dates": dates, "navs": navs})
+        self.assertGreater(valued["units"], 1000.0)
+        self.assertGreater(valued["invested"], 1000.0 * navs[0])
+        self.assertIsNotNone(valued["xirr"])
+        self.assertEqual(valued["unpriced_transactions"], 0)
+
+
+class ThemeBenchmarkTests(unittest.TestCase):
+    def test_named_themes_route_to_their_own_sector(self):
+        cases = {
+            "Technology Fund": "niftyit",
+            "Pharma Fund": "niftypharma",
+            "Banking and Financial Services Fund": "niftybank",
+            "Infrastructure Fund": "niftyinfra",
+            "FMCG Fund": "niftyfmcg",
+            "PSU Fund": "niftypse",
+            "Realty Fund": "niftyrealty",
+        }
+        for name, expected in cases.items():
+            self.assertEqual(benchmarks.resolve("Thematic", name=name).key, expected, name)
+
+    def test_a_strategy_theme_keeps_the_broad_benchmark(self):
+        """A momentum or quant fund is not a sector bet — guessing one would put
+        a wrong benchmark on screen."""
+        for name in ("Momentum Fund", "Quantamental Fund", "Business Cycle Fund", "ESG Fund"):
+            self.assertEqual(benchmarks.resolve("Thematic", name=name).key, "nifty500", name)
+
+    def test_holdings_break_the_tie_when_the_name_says_nothing(self):
+        bench = benchmarks.resolve("Thematic", name="Special Opportunities Fund",
+                                   dominant_sector="Technology")
+        self.assertEqual(bench.key, "niftyit")
+
+    def test_non_themed_categories_ignore_the_name(self):
+        """A small-cap fund with 'Technology' in its name is still a small-cap fund."""
+        self.assertEqual(
+            benchmarks.resolve("Small Cap", name="Technology Small Cap Fund").key,
+            "niftysmallcap250",
+        )
+
+    def test_sector_benchmarks_are_flagged_as_price_indices(self):
+        bench = benchmarks.resolve("Sectoral", name="Pharma Fund")
+        self.assertFalse(bench.total_return)
+        self.assertFalse(bench.is_reference_only)
+
+
+class StripAmcTests(unittest.TestCase):
+    def test_amc_name_is_removed_before_theme_matching(self):
+        """The bug this exists for: 'Bank of India Manufacturing & Infrastructure
+        Fund' is an infrastructure fund, not a banking one."""
+        from app.services.mutual_funds.harvest import _strip_amc
+        stripped = _strip_amc(
+            "Bank of India Manufacturing & Infrastructure Fund", "Bank of India Mutual Fund"
+        )
+        self.assertEqual(stripped, "Manufacturing & Infrastructure Fund")
+        self.assertEqual(benchmarks.resolve("Thematic", name=stripped).key, "niftyinfra")
+
+    def test_a_genuine_banking_fund_still_resolves_to_bank(self):
+        from app.services.mutual_funds.harvest import _strip_amc
+        stripped = _strip_amc("SBI Banking & Financial Services Fund", "SBI Mutual Fund")
+        self.assertEqual(benchmarks.resolve("Sectoral", name=stripped).key, "niftybank")
+
+    def test_never_strips_the_whole_name(self):
+        from app.services.mutual_funds.harvest import _strip_amc
+        self.assertEqual(_strip_amc("Quant", "Quant Mutual Fund"), "Quant")
+
+    def test_missing_inputs_are_survivable(self):
+        from app.services.mutual_funds.harvest import _strip_amc
+        self.assertIsNone(_strip_amc(None, "SBI Mutual Fund"))
+        self.assertEqual(_strip_amc("Some Fund", None), "Some Fund")
+
+
+class FundReviewTests(unittest.TestCase):
+    def peers(self):
+        return [
+            {"scheme_code": "a", "sub_category": "Small Cap", "return_1y": 20.0, "return_3y": 25.0,
+             "expense_ratio": 0.5, "max_drawdown": -20.0, "sharpe": 1.2, "percentile_1y": 95.0,
+             "percentile_3y": 95.0, "percentile_5y": 90.0},
+            {"scheme_code": "b", "sub_category": "Small Cap", "return_1y": 10.0, "return_3y": 15.0,
+             "expense_ratio": 1.0, "max_drawdown": -35.0, "sharpe": 0.6, "percentile_1y": 50.0,
+             "percentile_3y": 50.0, "percentile_5y": 50.0},
+            {"scheme_code": "c", "sub_category": "Small Cap", "return_1y": 2.0, "return_3y": 8.0,
+             "expense_ratio": 1.8, "max_drawdown": -48.0, "sharpe": 0.2, "percentile_1y": 5.0,
+             "percentile_3y": 5.0, "percentile_5y": 60.0},
+        ]
+
+    def test_leader_and_laggard_get_different_standings(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        best = fund_review.build_review(rows[0], rows)
+        worst = fund_review.build_review(rows[2], rows)
+        self.assertGreater(best["measured_standing"], worst["measured_standing"])
+        self.assertGreater(best["strength_count"], 0)
+        self.assertGreater(worst["concern_count"], 0)
+
+    def test_slipping_trajectory_is_detected(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        # c went from the 60th percentile over 5y to the 5th over 1y.
+        trajectory = fund_review.build_review(rows[2], rows)["rank_trajectory"]
+        self.assertEqual(trajectory["direction"], "slipping")
+        self.assertLess(trajectory["change"], 0)
+
+    def test_small_percentile_drift_is_not_called_a_decline(self):
+        from app.services.mutual_funds import fund_review
+        steady = {"scheme_code": "s", "sub_category": "X", "percentile_5y": 55.0,
+                  "percentile_3y": 52.0, "percentile_1y": 48.0}
+        self.assertEqual(fund_review.rank_trajectory(steady)["direction"], "steady")
+
+    def test_peers_ahead_requires_better_on_all_three_axes(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        ahead = fund_review.peers_ahead(rows[2], rows)
+        # Both a and b beat c on return, cost and drawdown together.
+        self.assertEqual({p["scheme_code"] for p in ahead}, {"a", "b"})
+        # The leader has nobody ahead of it.
+        self.assertEqual(fund_review.peers_ahead(rows[0], rows), [])
+
+    def test_a_higher_return_alone_does_not_qualify_a_peer(self):
+        from app.services.mutual_funds import fund_review
+        mine = {"scheme_code": "m", "sub_category": "X", "return_3y": 10.0,
+                "expense_ratio": 0.4, "max_drawdown": -15.0}
+        # Better return, but pricier and a deeper fall — must not be listed.
+        pricey = {"scheme_code": "p", "sub_category": "X", "return_3y": 30.0,
+                  "expense_ratio": 2.0, "max_drawdown": -50.0}
+        self.assertEqual(fund_review.peers_ahead(mine, [mine, pricey]), [])
+
+    def test_signals_never_instruct_the_reader(self):
+        """The review reports measured facts. Recommending an action is out of
+        scope — it would be personalised investment advice."""
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        banned = ("switch", "buy ", "sell", "exit", "you should", "we recommend",
+                  "invest in", "redeem", "avoid")
+        for row in rows:
+            for signal in fund_review.build_review(row, rows)["signals"]:
+                lowered = signal["text"].lower()
+                for word in banned:
+                    self.assertNotIn(word, lowered, f"{word!r} in {signal['text']!r}")
+
+    def test_percentile_puts_best_at_the_top_for_lower_is_better_columns(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        card = {item["key"]: item for item in fund_review.build_scorecard(rows[0], rows)}
+        # Cheapest fund should score highest on expense ratio.
+        self.assertEqual(card["expense_ratio"]["standing"], "strong")
+
+    def test_a_fund_with_no_peers_still_returns_a_review(self):
+        from app.services.mutual_funds import fund_review
+        solo = {"scheme_code": "z", "sub_category": "International", "return_3y": 9.0}
+        review = fund_review.build_review(solo, [solo])
+        self.assertEqual(review["peer_count"], 1)
+        self.assertIsNotNone(review["signals"])
+
+
+class PeerComparisonTests(unittest.TestCase):
+    """The portfolio-level 'which funds did better than mine' comparison."""
+
+    def peers(self):
+        return [
+            {"scheme_code": "lead", "sub_category": "Small Cap", "name": "Leader Fund",
+             "return_3y": 26.0, "expense_ratio": 0.6, "max_drawdown": -24.0, "sharpe": 1.1},
+            {"scheme_code": "mid", "sub_category": "Small Cap", "name": "Middle Fund",
+             "return_3y": 18.0, "expense_ratio": 0.9, "max_drawdown": -33.0, "sharpe": 0.7},
+            {"scheme_code": "lag", "sub_category": "Small Cap", "name": "Laggard Fund",
+             "return_3y": 12.0, "expense_ratio": 1.6, "max_drawdown": -48.0, "sharpe": 0.3},
+        ]
+
+    def test_limit_is_honoured(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        self.assertEqual(len(fund_review.peers_ahead(rows[2], rows, limit=1)), 1)
+        self.assertEqual(len(fund_review.peers_ahead(rows[2], rows, limit=10)), 2)
+
+    def test_results_are_ordered_by_how_far_ahead(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        ahead = fund_review.peers_ahead(rows[2], rows, limit=10)
+        gaps = [item["return_gap"] for item in ahead]
+        self.assertEqual(gaps, sorted(gaps, reverse=True))
+        self.assertEqual(ahead[0]["scheme_code"], "lead")
+
+    def test_the_fund_never_appears_in_its_own_comparison(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        for row in rows:
+            codes = {item["scheme_code"] for item in fund_review.peers_ahead(row, rows, limit=10)}
+            self.assertNotIn(row["scheme_code"], codes)
+
+    def test_a_fund_with_no_three_year_record_yields_no_comparison(self):
+        """Better to show nothing than to compare against a number we lack."""
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        young = {"scheme_code": "new", "sub_category": "Small Cap", "return_3y": None}
+        self.assertEqual(fund_review.peers_ahead(young, rows + [young], limit=10), [])
+
+    def test_deeper_drawdown_disqualifies_a_higher_returning_peer(self):
+        from app.services.mutual_funds import fund_review
+        mine = {"scheme_code": "m", "sub_category": "X", "return_3y": 15.0,
+                "expense_ratio": 0.8, "max_drawdown": -25.0}
+        risky = {"scheme_code": "r", "sub_category": "X", "return_3y": 40.0,
+                 "expense_ratio": 0.7, "max_drawdown": -60.0}
+        self.assertEqual(fund_review.peers_ahead(mine, [mine, risky], limit=10), [])

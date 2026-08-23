@@ -1,19 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import {
+  getMfAiComparison,
   getMfCategories,
+  getMfPeerComparison,
   getMfPortfolio,
   getMfScreener,
+  previewMfOpeningPosition,
   previewMfSip,
   saveMfPortfolio,
+  type MfAiComparison,
   type MfCategoryRow,
   type MfFund,
+  type MfPeerComparison,
   type MfPortfolioResponse,
   type MfPosition,
   type MfScreenerResponse,
+  type MfSipFrequency,
   type MfTransaction,
 } from "../lib/api";
 import { FundDetailModal } from "./FundDetailModal";
+import { SipCalculator } from "./SipCalculator";
 
 import "./MutualFundsPanel.css";
 
@@ -239,7 +246,7 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
       sortDir,
       limit: 400,
     })
-      .then(setScreener)
+      .then((payload) => { setScreener(payload); setError(null); })
       .catch((err: unknown) => setError(err instanceof Error ? err.message : "Could not load funds."))
       .finally(() => setLoading(false));
   }, [category, subCategories, amc, search, minAum, minAge, maxExpense, topQuartileOnly, heldOnly, heldCodes, sortBy, sortDir]);
@@ -271,6 +278,15 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
       setSortDir("desc");
     }
   };
+
+  /** Category card -> the whole category in the screener, not just its top 5. */
+  const openCategory = useCallback((subCategory: string) => {
+    setSubCategories([subCategory]);
+    setCategory(null);
+    setSortBy("return_3y");
+    setSortDir("desc");
+    setTab("screener");
+  }, []);
 
   const toggleSubCategory = (value: string) => {
     setSubCategories((current) =>
@@ -333,7 +349,14 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
         </nav>
       </header>
 
-      {error ? <div className="mfp-error">{error}</div> : null}
+      {error ? (
+        <div className="mfp-error">
+          <span>{error}</span>
+          <button type="button" onClick={() => { void loadScreener(); }} disabled={loading}>
+            <RefreshCw size={12} /> {loading ? "Retrying…" : "Retry"}
+          </button>
+        </div>
+      ) : null}
 
       {/* ==================================================== screener tab */}
       {tab === "screener" ? (
@@ -547,7 +570,9 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
             <section className="mfp-cat" key={row.sub_category}>
               <header>
                 <div>
-                  <h3>{row.sub_category}</h3>
+                  <button type="button" className="mfp-cat-open" onClick={() => openCategory(row.sub_category)}>
+                    <h3>{row.sub_category}</h3>
+                  </button>
                   <small>
                     {row.category} · {row.count} funds · vs {row.benchmark_label}
                     {/* Hybrid benchmark labels already carry "(reference)" for
@@ -566,6 +591,7 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
                 </div>
               </header>
               <ol className="mfp-leaders">
+                {/* The card shows the top 5; the whole field is one click away. */}
                 {row.leaders.map((leader, index) => (
                   <li key={leader.scheme_code}>
                     <span className="mfp-leader-rank">{index + 1}</span>
@@ -578,6 +604,9 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
                   </li>
                 ))}
               </ol>
+              <button type="button" className="mfp-cat-all" onClick={() => openCategory(row.sub_category)}>
+                View all {row.count} funds in {row.sub_category} →
+              </button>
             </section>
           ))}
         </div>
@@ -626,6 +655,12 @@ function PortfolioView({
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Two-step delete. A position can hold 180 weekly instalments, and losing
+  // that to a stray click on an 11px icon is not a recoverable mistake.
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [comparison, setComparison] = useState<MfPeerComparison | null>(null);
+  const [aiComparison, setAiComparison] = useState<MfAiComparison | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const positions = portfolio?.positions ?? [];
   const totals = portfolio?.totals;
@@ -652,18 +687,45 @@ function PortfolioView({
 
   const removePosition = useCallback(async (schemeCode: string) => {
     await commit(asPositions().filter((position) => position.scheme_code !== schemeCode));
-  }, [asPositions, commit]);
+    setConfirmDelete(null);
+    if (editing === schemeCode) setEditing(null);
+  }, [asPositions, commit, editing]);
+
+  const positionKey = positions.map((p) => p.scheme_code).join(",");
+  useEffect(() => {
+    if (!positions.length) { setComparison(null); return; }
+    let cancelled = false;
+    getMfPeerComparison()
+      .then((payload) => { if (!cancelled) setComparison(payload); })
+      .catch(() => { if (!cancelled) setComparison(null); });
+    return () => { cancelled = true; };
+  }, [positionKey, positions.length]);
+
+  const loadAiComparison = useCallback(() => {
+    setAiBusy(true);
+    getMfAiComparison()
+      .then(setAiComparison)
+      .catch((error: unknown) => setAiComparison({
+        available: false,
+        reason: error instanceof Error ? error.message : "Could not generate the comparison.",
+      }))
+      .finally(() => setAiBusy(false));
+  }, []);
 
   if (!positions.length) {
     return (
-      <div className="mfp-placeholder mfp-placeholder-tall">
-        <p><b>No funds in your portfolio yet.</b></p>
-        <p>
-          Add one from the Screener with the <Plus size={11} /> button, then record what you actually
-          bought — a lumpsum or a monthly SIP. Units, current value and XIRR are computed from the
-          same AMFI NAV series the charts use.
-        </p>
-      </div>
+      <>
+        <div className="mfp-placeholder mfp-placeholder-tall">
+          <p><b>No funds in your portfolio yet.</b></p>
+          <p>
+            Add one from the Screener with the <Plus size={11} /> button, then record what you hold —
+            units you already own as of a date, a lumpsum, or a recurring SIP (weekly, fortnightly,
+            monthly or quarterly). Units, current value, P&amp;L and XIRR are all computed from the
+            same AMFI NAV series the charts use.
+          </p>
+        </div>
+        <SipCalculator />
+      </>
     );
   }
 
@@ -673,10 +735,11 @@ function PortfolioView({
         <div><span>Invested</span><strong>{rupees(totals?.invested)}</strong></div>
         <div><span>Current value</span><strong>{rupees(totals?.current_value)}</strong></div>
         <div>
-          <span>Gain</span>
+          <span>P&amp;L</span>
           <strong className={tone(totals?.gain)}>
             {rupees(totals?.gain)} <em>{signedPct(totals?.gain_pct)}</em>
           </strong>
+          <small>current value less what you put in</small>
         </div>
         <div>
           <span>XIRR</span>
@@ -692,7 +755,7 @@ function PortfolioView({
             <tr>
               <th className="left">Fund</th>
               <th>Units</th><th>Avg cost</th><th>NAV</th>
-              <th>Invested</th><th>Value</th><th>Gain</th><th>XIRR</th><th>Weight</th><th>Txns</th><th />
+              <th>Invested</th><th>Current</th><th>P&amp;L</th><th>XIRR</th><th>Weight</th><th>Txns</th><th />
             </tr>
           </thead>
           <tbody>
@@ -717,12 +780,37 @@ function PortfolioView({
                 <td className="mfp-dim">{pct(position.weight_pct)}</td>
                 <td className="mfp-dim">{position.transaction_count}</td>
                 <td className="mfp-pf-actions">
-                  <button type="button" className="mfp-add" onClick={() => setEditing(editing === position.scheme_code ? null : position.scheme_code)}>
+                  <button
+                    type="button"
+                    className="mfp-add"
+                    onClick={() => setEditing(editing === position.scheme_code ? null : position.scheme_code)}
+                  >
                     {editing === position.scheme_code ? "Done" : "Edit"}
                   </button>
-                  <button type="button" className="mfp-add" title="Remove" onClick={() => void removePosition(position.scheme_code)}>
-                    <Trash2 size={11} />
-                  </button>
+                  {confirmDelete === position.scheme_code ? (
+                    <>
+                      <button
+                        type="button"
+                        className="mfp-add mfp-add-danger"
+                        disabled={busy}
+                        onClick={() => void removePosition(position.scheme_code)}
+                      >
+                        Delete {position.transaction_count > 0 ? `${position.transaction_count} txns` : ""}?
+                      </button>
+                      <button type="button" className="mfp-add" onClick={() => setConfirmDelete(null)}>
+                        Keep
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mfp-add"
+                      title="Remove this fund from your portfolio"
+                      onClick={() => setConfirmDelete(position.scheme_code)}
+                    >
+                      <Trash2 size={11} /> Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -764,6 +852,138 @@ function PortfolioView({
           ))}
         </section>
       </div>
+
+      <section className="mfp-pf-card">
+        <div className="mfp-pf-card-head">
+          <h3>How your funds compare in their category</h3>
+          {!aiComparison ? (
+            <button type="button" className="mfp-toggle active" disabled={aiBusy} onClick={loadAiComparison}>
+              {aiBusy ? "Writing…" : "Get the read"}
+            </button>
+          ) : null}
+        </div>
+
+        {comparison?.holdings?.length ? (
+          <div className="mfp-table-wrap">
+            <table className="mfp-table">
+              <thead>
+                <tr>
+                  <th className="left">Your fund</th><th>Category</th><th>3Y</th>
+                  <th>Category avg</th><th>Rank</th><th>Standing</th><th>Trend</th>
+                  <th title="Funds in the same category with a higher 3-year return">Beaten by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.holdings.map((row) => (
+                  <tr key={row.scheme_code} onClick={() => onOpenFund(row.scheme_code)}>
+                    <td className="left"><b>{row.name ?? row.scheme_code}</b></td>
+                    <td className="mfp-dim">{row.sub_category}</td>
+                    <td className={tone(row.return_3y)}><b>{pct(row.return_3y)}</b></td>
+                    <td className="mfp-dim">{pct(row.category_avg_3y)}</td>
+                    <td>
+                      {row.rank_3y && row.rank_count_3y ? `${row.rank_3y} / ${row.rank_count_3y}` : "—"}
+                    </td>
+                    <td className={
+                      (row.measured_standing ?? 50) >= 60 ? "pos"
+                        : (row.measured_standing ?? 50) <= 40 ? "neg" : ""
+                    }>
+                      {row.measured_standing != null ? row.measured_standing.toFixed(0) : "—"}
+                    </td>
+                    <td className={
+                      row.trajectory === "slipping" ? "neg" : row.trajectory === "improving" ? "pos" : "mfp-dim"
+                    }>
+                      {row.trajectory ?? "—"}
+                    </td>
+                    <td className={(row.better_on_3y_count ?? 0) > 0 ? "neg" : "pos"}>
+                      {row.better_on_3y_count ?? 0} of {row.peer_count ?? 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mfp-note">Measuring your funds against their categories…</p>
+        )}
+
+        {comparison?.holdings?.some((h) => h.peers_ahead.length) ? (
+          <div className="mfp-ahead">
+            {comparison.holdings.filter((h) => h.peers_ahead.length).map((holding) => (
+              <div className="mfp-ahead-group" key={holding.scheme_code}>
+                <h4>
+                  Better than your <b>{holding.name}</b> on return, cost <i>and</i> worst fall
+                </h4>
+                <div className="mfp-table-wrap">
+                  <table className="mfp-table">
+                    <thead>
+                      <tr>
+                        <th className="left">Fund</th><th>3Y</th><th>Ahead by</th>
+                        <th>TER</th><th>Worst fall</th><th>Sharpe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {holding.peers_ahead.map((peer) => (
+                        <tr key={peer.scheme_code} onClick={() => onOpenFund(peer.scheme_code)}>
+                          <td className="left">{peer.name}<br /><small className="mfp-dim">{peer.amc}</small></td>
+                          <td className={tone(peer.return_3y)}><b>{pct(peer.return_3y)}</b></td>
+                          <td className="pos">+{num(peer.return_gap)}%</td>
+                          <td>{pct(peer.expense_ratio, 2)}</td>
+                          <td className="neg">{pct(peer.max_drawdown)}</td>
+                          <td>{num(peer.sharpe)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {aiComparison ? (
+          aiComparison.available && aiComparison.note ? (
+            <div className="mfp-ai">
+              {aiComparison.note.headline ? (
+                <p className="mfp-ai-headline">{aiComparison.note.headline}</p>
+              ) : null}
+              {(aiComparison.note.overview ?? []).map((paragraph) => (
+                <p className="mfp-ai-prose" key={paragraph}>{paragraph}</p>
+              ))}
+              {(aiComparison.note.per_fund ?? []).map((entry) => (
+                <div className="mfp-ai-fund" key={entry.fund}>
+                  <h4>
+                    {entry.fund}
+                    {entry.standing ? <span className={
+                      /behind/i.test(entry.standing) ? "mfp-tag-neg"
+                        : /ahead/i.test(entry.standing) ? "mfp-tag-pos" : "mfp-tag"
+                    }>{entry.standing}</span> : null}
+                  </h4>
+                  {entry.opinion ? <p className="mfp-ai-prose">{entry.opinion}</p> : null}
+                  {entry.better_performers?.length ? (
+                    <ul className="mfp-ai-list">
+                      {entry.better_performers.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  ) : null}
+                </div>
+              ))}
+              {aiComparison.note.caveat ? <p className="mfp-note">{aiComparison.note.caveat}</p> : null}
+              <p className="mfp-note">
+                Written from the measured figures above. It names what did better and gives a candid
+                read on each record — it will not tell you whether to switch, or how much to invest.
+              </p>
+            </div>
+          ) : (
+            <p className="mfp-note">{aiComparison.reason ?? "Comparison unavailable."}</p>
+          )
+        ) : (
+          <p className="mfp-note">
+            Names the funds in each category that beat yours, and gives a straight read on whether a
+            weak record looks persistent or like a rough patch.
+          </p>
+        )}
+      </section>
+
+      <SipCalculator />
 
       <section className="mfp-pf-card">
         <div className="mfp-pf-card-head">
@@ -834,28 +1054,56 @@ function TransactionEditor({
   onClose: () => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [mode, setMode] = useState<"lumpsum" | "sip">("lumpsum");
+  const [mode, setMode] = useState<"holding" | "lumpsum" | "sip">("holding");
   const [date, setDate] = useState(today);
-  const [amount, setAmount] = useState("");
   const [endDate, setEndDate] = useState(today);
-  const [sipPreview, setSipPreview] = useState<number | null>(null);
+  const [amount, setAmount] = useState("");
+  const [units, setUnits] = useState("");
+  const [frequency, setFrequency] = useState<MfSipFrequency>("weekly");
+  const [note, setNote] = useState<string | null>(null);
+  const [working, setWorking] = useState(false);
 
-  const addLumpsum = () => {
+  const run = async (task: () => Promise<void>) => {
+    setWorking(true);
+    setNote(null);
+    try { await task(); } catch (error) {
+      setNote(error instanceof Error ? error.message : "Could not add that.");
+    } finally { setWorking(false); }
+  };
+
+  /** Units already held as of a date — priced at that date's NAV server-side. */
+  const addHolding = () => run(async () => {
+    const held = Number(units);
+    if (!Number.isFinite(held) || held <= 0) { setNote("Enter the number of units you hold."); return; }
+    const preview = await previewMfOpeningPosition({ units: held, as_of: date });
+    if (!preview.count) { setNote("That date is outside this fund's NAV history."); return; }
+    onChange([...transactions, ...preview.transactions]);
+    setUnits("");
+    setNote(`Opening holding of ${held.toLocaleString("en-IN")} units recorded at the ${date} NAV.`);
+  });
+
+  const addLumpsum = () => run(async () => {
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) return;
+    if (!Number.isFinite(value) || value <= 0) { setNote("Enter an amount."); return; }
     onChange([...transactions, { date, type: "buy", amount: value }]);
     setAmount("");
-  };
+    setNote(`Added ₹${value.toLocaleString("en-IN")} on ${date}.`);
+  });
 
-  const addSip = async () => {
+  const addSip = () => run(async () => {
     const value = Number(amount);
-    if (!Number.isFinite(value) || value <= 0) return;
-    const preview = await previewMfSip({ start_date: date, end_date: endDate, amount: value });
-    if (!preview.count) return;
+    if (!Number.isFinite(value) || value <= 0) { setNote("Enter the instalment amount."); return; }
+    const preview = await previewMfSip({
+      start_date: date, end_date: endDate, amount: value, frequency,
+    });
+    if (!preview.count) { setNote("That date range produces no instalments."); return; }
     onChange([...transactions, ...preview.transactions]);
-    setSipPreview(preview.count);
     setAmount("");
-  };
+    setNote(
+      `Added ${preview.count} ${frequency} instalments, ${preview.first_date} to ${preview.last_date}` +
+      ` — ₹${preview.total_amount.toLocaleString("en-IN")} in total.`,
+    );
+  });
 
   return (
     <section className="mfp-editor">
@@ -864,51 +1112,107 @@ function TransactionEditor({
         <button type="button" className="mfp-add" onClick={onClose}><X size={12} /></button>
       </header>
 
-      <div className="mfp-editor-form">
-        <div className="mfp-seg">
-          <button type="button" className={mode === "lumpsum" ? "active" : ""} onClick={() => setMode("lumpsum")}>Lumpsum</button>
-          <button type="button" className={mode === "sip" ? "active" : ""} onClick={() => setMode("sip")}>Monthly SIP</button>
-        </div>
-
-        <label className="mfp-inline">
-          {mode === "sip" ? "From" : "Date"}
-          <input type="date" value={date} max={today} onChange={(event) => setDate(event.target.value)} />
-        </label>
-
-        {mode === "sip" ? (
-          <label className="mfp-inline">
-            To
-            <input type="date" value={endDate} max={today} onChange={(event) => setEndDate(event.target.value)} />
-          </label>
-        ) : null}
-
-        <label className="mfp-inline">
-          ₹
-          <input
-            type="number"
-            min="1"
-            placeholder={mode === "sip" ? "per month" : "amount"}
-            value={amount}
-            onChange={(event) => setAmount(event.target.value)}
-          />
-        </label>
-
-        <button
-          type="button"
-          className="mfp-toggle active"
-          disabled={busy}
-          onClick={() => { if (mode === "sip") void addSip(); else addLumpsum(); }}
-        >
-          Add
+      <div className="mfp-seg">
+        <button type="button" className={mode === "holding" ? "active" : ""} onClick={() => setMode("holding")}>
+          Units I already hold
         </button>
-
-        {sipPreview ? <span className="mfp-dim">Added {sipPreview} instalments.</span> : null}
+        <button type="button" className={mode === "lumpsum" ? "active" : ""} onClick={() => setMode("lumpsum")}>
+          One-off purchase
+        </button>
+        <button type="button" className={mode === "sip" ? "active" : ""} onClick={() => setMode("sip")}>
+          Recurring SIP
+        </button>
       </div>
 
-      <p className="mfp-note">
-        Units are computed from the NAV on each date, so you only need the amount and the date. Leave
-        transactions empty to track the fund without amounts.
-      </p>
+      {mode === "holding" ? (
+        <>
+          <div className="mfp-editor-form">
+            <label className="mfp-inline">
+              Units held
+              <input
+                type="number" step="0.001" min="0" placeholder="e.g. 1234.567"
+                value={units} onChange={(event) => setUnits(event.target.value)}
+              />
+            </label>
+            <label className="mfp-inline">
+              As of
+              <input type="date" value={date} max={today} onChange={(event) => setDate(event.target.value)} />
+            </label>
+            <button type="button" className="mfp-toggle active" disabled={busy || working} onClick={addHolding}>
+              Add holding
+            </button>
+          </div>
+          <p className="mfp-note">
+            Use this when you have been investing for a while and do not want to key in every past
+            instalment. The units are valued at that date's NAV, so P&amp;L and XIRR measure
+            performance <b>since that date</b> — not since your original purchases. Add your ongoing
+            SIP on top and it carries on from there.
+          </p>
+        </>
+      ) : null}
+
+      {mode === "lumpsum" ? (
+        <div className="mfp-editor-form">
+          <label className="mfp-inline">
+            Date
+            <input type="date" value={date} max={today} onChange={(event) => setDate(event.target.value)} />
+          </label>
+          <label className="mfp-inline">
+            ₹
+            <input
+              type="number" min="1" placeholder="amount"
+              value={amount} onChange={(event) => setAmount(event.target.value)}
+            />
+          </label>
+          <button type="button" className="mfp-toggle active" disabled={busy || working} onClick={addLumpsum}>
+            Add
+          </button>
+        </div>
+      ) : null}
+
+      {mode === "sip" ? (
+        <>
+          <div className="mfp-editor-form">
+            <div className="mfp-seg">
+              {(["weekly", "fortnightly", "monthly", "quarterly"] as MfSipFrequency[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={frequency === option ? "active" : ""}
+                  onClick={() => setFrequency(option)}
+                >
+                  {option[0].toUpperCase() + option.slice(1)}
+                </button>
+              ))}
+            </div>
+            <label className="mfp-inline">
+              From
+              <input type="date" value={date} max={today} onChange={(event) => setDate(event.target.value)} />
+            </label>
+            <label className="mfp-inline">
+              To
+              <input type="date" value={endDate} max={today} onChange={(event) => setEndDate(event.target.value)} />
+            </label>
+            <label className="mfp-inline">
+              ₹
+              <input
+                type="number" min="1" placeholder="per instalment"
+                value={amount} onChange={(event) => setAmount(event.target.value)}
+              />
+            </label>
+            <button type="button" className="mfp-toggle active" disabled={busy || working} onClick={addSip}>
+              Add instalments
+            </button>
+          </div>
+          <p className="mfp-note">
+            A weekly SIP lands on the same weekday as the start date. Each instalment is priced at
+            that day's NAV, which is what makes the XIRR real rather than an average-cost
+            approximation.
+          </p>
+        </>
+      ) : null}
+
+      {note ? <p className="mfp-editor-note">{note}</p> : null}
 
       {transactions.length ? (
         <div className="mfp-table-wrap mfp-editor-list">
@@ -920,8 +1224,8 @@ function TransactionEditor({
               {transactions.map((transaction, index) => (
                 <tr key={transaction.id ?? `${transaction.date}-${index}`}>
                   <td className="left">{transaction.date}</td>
-                  <td>{transaction.type}</td>
-                  <td>{rupees(transaction.amount)}</td>
+                  <td>{transaction.units && !transaction.amount ? "holding" : transaction.type}</td>
+                  <td>{transaction.amount ? rupees(transaction.amount) : "at NAV"}</td>
                   <td>{transaction.units ? num(transaction.units, 3) : "—"}</td>
                   <td>
                     <button
@@ -938,6 +1242,11 @@ function TransactionEditor({
             </tbody>
           </table>
         </div>
+      ) : null}
+      {transactions.length > 1 ? (
+        <p className="mfp-note">
+          {transactions.length} transactions recorded. Clear them all and re-add if you want to start over.
+        </p>
       ) : null}
     </section>
   );

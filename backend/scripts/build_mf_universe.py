@@ -36,7 +36,7 @@ if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.mutual_funds import benchmarks, groww_source, index_source, metrics, nav_source, paths
-from app.services.mutual_funds.harvest import detail_blob, universe_row
+from app.services.mutual_funds.harvest import _strip_amc, detail_blob, universe_row
 
 REFERENCE_PATH = paths.DATA_DIR / "mf_reference.json"
 
@@ -77,6 +77,7 @@ def phase_details(slugs: list[str], *, workers: int, refresh: bool, delay: float
     """Fetch and cache each fund's reference + detail data."""
     rows: list[dict] = []
     failures: list[str] = []
+    skipped_plans: list[str] = []
     done = 0
     total = len(slugs)
 
@@ -93,6 +94,10 @@ def phase_details(slugs: list[str], *, workers: int, refresh: bool, delay: float
         row = universe_row(data)
         if not row.get("scheme_code"):
             return slug, {"error": "no scheme_code"}
+        # Authoritative Direct/Growth gate — see groww_source.list_scheme_slugs
+        # for why this is not done on the slug.
+        if not groww_source.is_direct_growth(row):
+            return slug, {"skip": f"{row.get('plan')}/{row.get('option')}"}
         _write_json(paths.detail_path(row["scheme_code"]), detail_blob(data))
         return slug, row
 
@@ -103,11 +108,15 @@ def phase_details(slugs: list[str], *, workers: int, refresh: bool, delay: float
             done += 1
             if result is None or "error" in result:
                 failures.append(slug)
+            elif "skip" in result:
+                skipped_plans.append(slug)
             else:
                 rows.append(result)
-            if done % 50 == 0 or done == total:
-                log(f"  details {done}/{total}  ok={len(rows)} failed={len(failures)}")
+            if done % 100 == 0 or done == total:
+                log(f"  details {done}/{total}  ok={len(rows)} other-plan={len(skipped_plans)} failed={len(failures)}")
 
+    if skipped_plans:
+        log(f"  {len(skipped_plans)} pages were not Direct/Growth (Regular or IDCW) — excluded")
     if failures:
         log(f"  {len(failures)} pages unreadable (skipped): {failures[:5]}")
     _write_json(REFERENCE_PATH, {"generated_at": datetime.now(timezone.utc).isoformat(), "rows": rows})
@@ -197,6 +206,22 @@ def phase_benchmarks(series: dict[str, dict]) -> dict[str, dict]:
 
 # ------------------------------------------------------------------ phase 4
 
+def _cached_dominant_sector(scheme_code: str) -> str | None:
+    """Largest equity sector from the cached holdings blob, if it dominates.
+
+    Only consulted for a themed fund whose name does not state its theme.
+    """
+    payload = _read_json(paths.detail_path(str(scheme_code)))
+    if not isinstance(payload, dict):
+        return None
+    allocation = payload.get("sector_allocation")
+    if not isinstance(allocation, dict) or not allocation:
+        return None
+    sector, share = max(allocation.items(), key=lambda kv: kv[1] or 0)
+    return sector if (share or 0) >= 33.0 else None
+
+
+
 # Windows the screener ranks on. Ranking every window would triple the file
 # for columns nobody sorts by.
 RANKED_WINDOWS = ("1m", "3m", "6m", "1y", "3y", "5y", "10y")
@@ -220,6 +245,24 @@ def phase_compute(rows: list[dict], series: dict[str, dict], bench_map: dict[str
         if str(row.get("category") or "").strip() not in INCLUDED_CATEGORIES:
             out_of_scope += 1
             continue
+
+        # Re-resolve the benchmark here rather than trusting what the crawl
+        # froze into the reference row. The sub-category -> index mapping is
+        # derived data that changes when the mapping code changes, and having
+        # to re-crawl 1,650 pages to pick up a mapping fix (as happened when
+        # sector benchmarks were added) is the wrong dependency.
+        resolved = benchmarks.resolve(
+            row.get("sub_category"),
+            category=row.get("category"),
+            name=_strip_amc(row.get("name"), row.get("amc")),
+            dominant_sector=_cached_dominant_sector(row["scheme_code"]),
+        )
+        row = {
+            **row,
+            "benchmark_key": resolved.key,
+            "benchmark_label": resolved.label,
+            "benchmark_is_reference_only": resolved.is_reference_only,
+        }
         code = row["scheme_code"]
         nav = series.get(code)
         if not nav or not nav.get("dates"):

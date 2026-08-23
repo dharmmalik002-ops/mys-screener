@@ -15,6 +15,7 @@ NAV in `metrics.py`; the third-party return fields are carried through only as
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 from typing import Any
 
@@ -59,6 +60,55 @@ def _nav_date(raw: Any) -> str | None:
     return _parse_launch_date(raw)
 
 
+def _strip_amc(name: str | None, fund_house: str | None) -> str | None:
+    """Drop the fund house's name from the front of a scheme name.
+
+    Derived from `fund_house` rather than a hardcoded AMC list, so a new AMC
+    needs no code change.
+    """
+    scheme = (name or "").strip()
+    house = (fund_house or "").strip()
+    if not scheme or not house:
+        return scheme or None
+    # "Bank of India Mutual Fund" -> "bank of india"
+    house_words = re.sub(r"\b(mutual\s+fund|mutual|fund|amc|asset\s+management)\b", " ", house, flags=re.I)
+    house_words = " ".join(house_words.split()).lower()
+    if not house_words:
+        return scheme
+    lowered = scheme.lower()
+    if lowered.startswith(house_words):
+        trimmed = scheme[len(house_words):].strip(" -–—")
+        # Never strip away the whole name.
+        return trimmed or scheme
+    return scheme
+
+
+def _dominant_sector(raw_holdings: Any) -> str | None:
+    """Largest equity sector in the disclosed portfolio, by weight.
+
+    Only used to benchmark a themed fund whose name does not name its theme
+    (a "Special Opportunities" or "Business Cycle" fund, say). Debt, cash and
+    derivative lines are excluded so a heavily hedged fund is not classified
+    as an "Unspecified" sector play.
+    """
+    weights: dict[str, float] = {}
+    for holding in (raw_holdings or []):
+        if not isinstance(holding, dict):
+            continue
+        if str(holding.get("nature_name") or "").strip().upper() != "EQUITY":
+            continue
+        sector = _clean_str(holding.get("sector_name"))
+        if not sector or sector.lower() == "unspecified":
+            continue
+        weight = _to_float(holding.get("corpus_per")) or 0.0
+        weights[sector] = weights.get(sector, 0.0) + weight
+    if not weights:
+        return None
+    best, share = max(weights.items(), key=lambda kv: kv[1])
+    # Below a third of the book it is a tilt, not a theme.
+    return best if share >= 33.0 else None
+
+
 def universe_row(data: dict[str, Any]) -> dict[str, Any]:
     """Screener-table fields for one fund."""
     return_stats = (data.get("return_stats") or [{}])
@@ -68,13 +118,26 @@ def universe_row(data: dict[str, Any]) -> dict[str, Any]:
 
     sub_category = _clean_str(data.get("sub_category"))
     category = _clean_str(data.get("category"))
-    benchmark = benchmarks.resolve(sub_category, category=category)
+    fund_name = _clean_str(data.get("fund_name")) or _clean_str(data.get("scheme_name"))
+
+    # A themed fund is benchmarked to its own sector, which needs the name and
+    # — when the name is uninformative — the largest sector in the portfolio.
+    #
+    # The AMC name has to come off first. "Bank of India Manufacturing &
+    # Infrastructure Fund" is an infrastructure fund, but a naive keyword match
+    # sees "bank" in the fund house's own name and benchmarks it to Nifty Bank.
+    benchmark = benchmarks.resolve(
+        sub_category,
+        category=category,
+        name=_strip_amc(fund_name, _clean_str(data.get("fund_house"))),
+        dominant_sector=_dominant_sector(data.get("holdings")),
+    )
 
     return {
         "scheme_code": str(data.get("scheme_code") or "").strip(),
         "isin": _clean_str(data.get("isin")),
         "slug": _clean_str(data.get("search_id")),
-        "name": _clean_str(data.get("fund_name")) or _clean_str(data.get("scheme_name")),
+        "name": fund_name,
         "scheme_name": _clean_str(data.get("scheme_name")),
         "amc": _clean_str(data.get("fund_house")),
         "amc_code": _clean_str(data.get("amc")),

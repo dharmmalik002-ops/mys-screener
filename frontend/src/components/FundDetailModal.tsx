@@ -2,8 +2,12 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import {
   getMfFund,
+  getMfFundAiReview,
+  getMfFundReview,
   getMfFundSeries,
+  type MfAiReview,
   type MfFundResponse,
+  type MfReview,
   type MfSeriesResponse,
 } from "../lib/api";
 import { FundNavChart, type FundNavChartMode } from "./FundNavChart";
@@ -108,7 +112,10 @@ export function FundDetailModal({
   const [range, setRange] = useState("3y");
   const [chartMode, setChartMode] = useState<FundNavChartMode>("growth");
   const [showDrawdown, setShowDrawdown] = useState(false);
-  const [tab, setTab] = useState<"performance" | "portfolio" | "peers" | "about">("performance");
+  const [tab, setTab] = useState<"performance" | "review" | "portfolio" | "peers" | "about">("performance");
+  const [review, setReview] = useState<MfReview | null>(null);
+  const [aiReview, setAiReview] = useState<MfAiReview | null>(null);
+  const [aiLoading, setAiLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingSeries, setLoadingSeries] = useState(false);
   const [holdingFilter, setHoldingFilter] = useState("");
@@ -134,6 +141,30 @@ export function FundDetailModal({
       .finally(() => { if (!cancelled) setLoadingSeries(false); });
     return () => { cancelled = true; };
   }, [schemeCode, range, showDrawdown]);
+
+  // The measured review is cheap and deterministic — fetch it with the fund.
+  // The AI prose is a separate, explicit action so a page open never waits on
+  // Gemini and the numbers are never gated behind it.
+  useEffect(() => {
+    let cancelled = false;
+    setReview(null);
+    setAiReview(null);
+    getMfFundReview(schemeCode)
+      .then((payload) => { if (!cancelled) setReview(payload); })
+      .catch(() => { if (!cancelled) setReview(null); });
+    return () => { cancelled = true; };
+  }, [schemeCode]);
+
+  const loadAiReview = useCallback(() => {
+    setAiLoading(true);
+    getMfFundAiReview(schemeCode)
+      .then(setAiReview)
+      .catch((err: unknown) => setAiReview({
+        available: false,
+        reason: err instanceof Error ? err.message : "Could not generate the summary.",
+      }))
+      .finally(() => setAiLoading(false));
+  }, [schemeCode]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => { if (event.key === "Escape") onClose(); };
@@ -234,6 +265,7 @@ export function FundDetailModal({
         <nav className="fdm-tabs">
           {([
             ["performance", "Performance"],
+            ["review", "Vs peers"],
             ["portfolio", "Holdings"],
             ["peers", `Category (${peers.length})`],
             ["about", "About"],
@@ -508,6 +540,176 @@ export function FundDetailModal({
                 </section>
               ) : null}
             </>
+          ) : null}
+
+          {/* ---------------------------------------------------- review */}
+          {tab === "review" ? (
+            !review ? (
+              <div className="fdm-placeholder">Measuring this fund against its category…</div>
+            ) : (
+              <>
+                <section className="fdm-section">
+                  <div className="fdm-alloc-head">
+                    <h3>Where it stands in {review.sub_category}</h3>
+                    <span className="fdm-dim">{review.peer_count} funds in the category</span>
+                  </div>
+                  <div className="fdm-standing">
+                    <div className="fdm-standing-score">
+                      <span>Measured standing</span>
+                      <strong className={
+                        (review.measured_standing ?? 0) >= 60 ? "pos"
+                          : (review.measured_standing ?? 0) <= 40 ? "neg" : ""
+                      }>
+                        {review.measured_standing != null ? `${review.measured_standing.toFixed(0)}` : "—"}
+                        <i>/100</i>
+                      </strong>
+                      <small>
+                        average percentile across every dimension below — a summary of the evidence,
+                        not a rating
+                      </small>
+                    </div>
+                    <div className="fdm-standing-traj">
+                      <span>Category standing over time</span>
+                      <strong className={
+                        review.rank_trajectory.direction === "slipping" ? "neg"
+                          : review.rank_trajectory.direction === "improving" ? "pos" : ""
+                      }>
+                        {review.rank_trajectory.direction}
+                      </strong>
+                      <small>
+                        {review.rank_trajectory.points.map(([window, value]) =>
+                          `${window.toUpperCase()} ${value.toFixed(0)}th`).join(" → ") || "not enough history"}
+                      </small>
+                    </div>
+                  </div>
+                </section>
+
+                <section className="fdm-section">
+                  <h3>Scorecard</h3>
+                  <p className="fdm-sub">
+                    Percentile is against the same category, 100 = best. Every figure is computed from
+                    NAV history — nothing here is an opinion.
+                  </p>
+                  <div className="fdm-scorecard">
+                    {review.scorecard.map((item) => (
+                      <div className={`fdm-score fdm-score-${item.standing}`} key={item.key}>
+                        <span className="fdm-score-label">{item.label}</span>
+                        <span className="fdm-score-value">{num(item.value)}{item.unit}</span>
+                        <i className="fdm-score-bar">
+                          <i style={{ width: `${Math.max(2, Math.min(100, item.percentile ?? 0))}%` }} />
+                        </i>
+                        <span className="fdm-score-pct">
+                          {item.percentile != null ? `${item.percentile.toFixed(0)}th` : "—"}
+                        </span>
+                        <span className="fdm-score-median">
+                          median {item.category_median != null ? `${num(item.category_median)}${item.unit}` : "—"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                <section className="fdm-section">
+                  <h3>What the record shows</h3>
+                  <ul className="fdm-signals">
+                    {review.signals.map((signal) => (
+                      <li className={`fdm-signal fdm-signal-${signal.kind}`} key={signal.text}>
+                        {signal.text}
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+
+                {review.peers_ahead.length ? (
+                  <section className="fdm-section">
+                    <h3>Funds in this category that measured better</h3>
+                    <p className="fdm-sub">
+                      Better on 3-year return <em>and</em> expense ratio <em>and</em> worst fall — all
+                      three, not just a higher headline number. This is a filtered peer table for
+                      comparison, not a shortlist to buy.
+                    </p>
+                    <div className="fdm-scroll">
+                      <table className="fdm-table">
+                        <thead>
+                          <tr>
+                            <th>Fund</th><th>3Y</th><th>vs this fund</th><th>5Y</th>
+                            <th>TER</th><th>Worst fall</th><th>Sharpe</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {review.peers_ahead.map((peer) => (
+                            <tr key={peer.scheme_code}>
+                              <td>{peer.name}<br /><small className="fdm-dim">{peer.amc}</small></td>
+                              <td className={toneClass(peer.return_3y)}><b>{pct(peer.return_3y)}</b></td>
+                              <td className="pos">+{num(peer.return_gap)}%</td>
+                              <td className={toneClass(peer.return_5y)}>{pct(peer.return_5y)}</td>
+                              <td>{pct(peer.expense_ratio)}</td>
+                              <td className="neg">{pct(peer.max_drawdown, 1)}</td>
+                              <td>{num(peer.sharpe)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
+                ) : null}
+
+                <section className="fdm-section">
+                  <div className="fdm-alloc-head">
+                    <h3>Plain-English summary</h3>
+                    {!aiReview ? (
+                      <button type="button" className="fdm-btn" disabled={aiLoading} onClick={loadAiReview}>
+                        {aiLoading ? "Writing…" : "Generate"}
+                      </button>
+                    ) : null}
+                  </div>
+                  {!aiReview ? (
+                    <p className="fdm-note">
+                      Turns the scorecard above into a few paragraphs. It describes what the record
+                      shows and what it leaves open — it will not tell you whether to buy, sell or
+                      switch, which is a decision only you (or a licensed adviser) should make.
+                    </p>
+                  ) : aiReview.available && aiReview.note ? (
+                    <div className="fdm-ai">
+                      {aiReview.note.headline ? <p className="fdm-ai-headline">{aiReview.note.headline}</p> : null}
+                      {(aiReview.note.assessment ?? []).map((paragraph) => (
+                        <p className="fdm-prose" key={paragraph}>{paragraph}</p>
+                      ))}
+                      <div className="fdm-split">
+                        {aiReview.note.working?.length ? (
+                          <div>
+                            <h4 className="fdm-h4">Measuring well</h4>
+                            <ul className="fdm-list pos">
+                              {aiReview.note.working.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                        ) : null}
+                        {aiReview.note.not_working?.length ? (
+                          <div>
+                            <h4 className="fdm-h4">Measuring poorly</h4>
+                            <ul className="fdm-list neg">
+                              {aiReview.note.not_working.map((item) => <li key={item}>{item}</li>)}
+                            </ul>
+                          </div>
+                        ) : null}
+                      </div>
+                      {aiReview.note.what_to_watch ? (
+                        <p className="fdm-note">
+                          <b>Worth watching:</b> {aiReview.note.what_to_watch}
+                          {aiReview.note.record_quality ? ` · Record length: ${aiReview.note.record_quality}.` : ""}
+                        </p>
+                      ) : null}
+                      <p className="fdm-note">
+                        Written from the measured figures above, which are the only inputs it was
+                        given. Not advice, and not a recommendation to act.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="fdm-note">{aiReview.reason ?? "Summary unavailable."}</p>
+                  )}
+                </section>
+              </>
+            )
           ) : null}
 
           {/* -------------------------------------------------- holdings */}

@@ -3742,6 +3742,41 @@ function mfQueryString(query: MfScreenerQuery): string {
   return params.toString();
 }
 
+/* The Funds endpoints live on the same HF Space as everything else, and a
+ * sleeping Space answers 404 for a second or two after the request that wakes
+ * it — the FastAPI route table is not mounted yet. That is why 404 is in
+ * RETRYABLE_STATUS_CODES. But `request` only retries a 404 by moving to the
+ * *next base*, and during a cold start every base 404s, so the walk finishes
+ * in well under a second and surfaces a bare "Request failed: 404".
+ *
+ * The equity pages never show this because they fall back to a cached
+ * snapshot. The Funds page has no such cache, so it has to actually wait for
+ * the boot to finish. */
+const MF_WAKE_ATTEMPTS = 4;
+const MF_WAKE_BACKOFF_MS = 2000;
+const MF_WAKING_PATTERN = /Request failed: (404|429|5\d\d)|waking up|timed out|Failed to reach/i;
+
+function isWakingError(error: unknown): boolean {
+  return MF_WAKING_PATTERN.test(error instanceof Error ? error.message : String(error ?? ""));
+}
+
+/** Retry through a cold start, then fail with something a human can act on. */
+async function whileWaking<T>(run: () => Promise<T>): Promise<T> {
+  let lastError: unknown = null;
+  for (let attempt = 0; attempt < MF_WAKE_ATTEMPTS; attempt += 1) {
+    try {
+      return await run();
+    } catch (error) {
+      lastError = error;
+      if (!isWakingError(error) || attempt === MF_WAKE_ATTEMPTS - 1) break;
+      await new Promise((resolve) => setTimeout(resolve, MF_WAKE_BACKOFF_MS * (attempt + 1)));
+    }
+  }
+  throw isWakingError(lastError)
+    ? new Error("The funds service is still starting up — this usually clears within a few seconds.")
+    : (lastError instanceof Error ? lastError : new Error("Could not reach the funds service."));
+}
+
 export function getMfStatus() {
   return request<MfStatus>("/api/mf/status");
 }
@@ -3749,17 +3784,36 @@ export function getMfStatus() {
 export function getMfScreener(query: MfScreenerQuery = {}) {
   // The universe is ~1,000 rows and served from memory, but a cold HF Space
   // still has to read the 2.5 MB universe file, so allow the longer timeout.
-  return request<MfScreenerResponse>(`/api/mf/screener?${mfQueryString(query)}`, undefined, { timeoutMs: 45000 });
+  return whileWaking(() =>
+    request<MfScreenerResponse>(`/api/mf/screener?${mfQueryString(query)}`, undefined, { timeoutMs: 45000 }));
 }
 
 export function getMfCategories() {
-  return request<{ as_of?: string | null; categories: MfCategoryRow[] }>("/api/mf/categories");
+  return whileWaking(() =>
+    request<{ as_of?: string | null; categories: MfCategoryRow[] }>("/api/mf/categories", undefined, { timeoutMs: 45000 }));
 }
 
-export function getMfFund(schemeCode: string) {
+export async function getMfFund(schemeCode: string) {
   // First open of a fund may fetch its holdings from the source, which is a
   // live HTTP round trip on the server side.
-  return request<MfFundResponse>(`/api/mf/fund/${encodeURIComponent(schemeCode)}`, undefined, { timeoutMs: 45000 });
+  try {
+    return await whileWaking(() =>
+      request<MfFundResponse>(`/api/mf/fund/${encodeURIComponent(schemeCode)}`, undefined, { timeoutMs: 45000 }));
+  } catch (error) {
+    // A 404 here is ambiguous: either the Space is still booting, or this
+    // scheme code genuinely left the universe (it was dropped from a rebuild
+    // and the open came from a stale table). Ask the status endpoint which it
+    // is rather than guessing, so the message is never misleading.
+    if (isWakingError(error)) {
+      const ready = await getMfStatus().then((status) => status.ready).catch(() => false);
+      if (ready) {
+        throw new Error(
+          `This fund is no longer in the universe (scheme code ${schemeCode}). Reload the page to refresh the list.`,
+        );
+      }
+    }
+    throw error;
+  }
 }
 
 export function getMfFundSeries(
@@ -3771,15 +3825,16 @@ export function getMfFundSeries(
   if (options.benchmark) params.set("benchmark", options.benchmark);
   if (options.compare?.length) params.set("compare", options.compare.join(","));
   if (options.drawdown) params.set("drawdown", "true");
-  return request<MfSeriesResponse>(
+  return whileWaking(() => request<MfSeriesResponse>(
     `/api/mf/fund/${encodeURIComponent(schemeCode)}/series?${params.toString()}`,
     undefined,
     { timeoutMs: 45000 },
-  );
+  ));
 }
 
 export function getMfPortfolio() {
-  return request<MfPortfolioResponse>("/api/mf/portfolio", undefined, { timeoutMs: 45000 });
+  return whileWaking(() =>
+    request<MfPortfolioResponse>("/api/mf/portfolio", undefined, { timeoutMs: 45000 }));
 }
 
 export function saveMfPortfolio(positions: MfPosition[]) {
@@ -3790,15 +3845,170 @@ export function saveMfPortfolio(positions: MfPosition[]) {
   }, { timeoutMs: 45000 });
 }
 
+export type MfSipFrequency = "weekly" | "fortnightly" | "monthly" | "quarterly";
+
+export type MfSipPreview = {
+  count: number;
+  total_amount: number;
+  first_date?: string | null;
+  last_date?: string | null;
+  transactions: MfTransaction[];
+};
+
 export function previewMfSip(payload: {
   start_date: string;
   end_date: string;
   amount: number;
+  frequency?: MfSipFrequency;
   day_of_month?: number | null;
+  weekday?: number | null;
 }) {
-  return request<{ count: number; transactions: MfTransaction[] }>("/api/mf/portfolio/sip-preview", {
+  return request<MfSipPreview>("/api/mf/portfolio/sip-preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+/** Seed a holding from units already owned, priced at that date's NAV. */
+export function previewMfOpeningPosition(payload: { units: number; as_of: string }) {
+  return request<{ count: number; transactions: MfTransaction[] }>("/api/mf/portfolio/opening-position", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export type MfScorecardRow = {
+  key: string;
+  label: string;
+  unit: string;
+  value: number;
+  category_median?: number | null;
+  percentile?: number | null;
+  higher_is_better: boolean;
+  sample: number;
+  standing: "strong" | "middling" | "weak";
+};
+
+export type MfReview = {
+  scheme_code: string;
+  name?: string | null;
+  sub_category?: string | null;
+  benchmark_label?: string | null;
+  peer_count: number;
+  measured_standing?: number | null;
+  scorecard: MfScorecardRow[];
+  rank_trajectory: {
+    points: [string, number][];
+    change?: number | null;
+    direction: "improving" | "steady" | "slipping" | "unknown";
+  };
+  signals: { kind: "strength" | "concern" | "neutral"; text: string }[];
+  peers_ahead: {
+    scheme_code: string;
+    name?: string | null;
+    amc?: string | null;
+    return_3y?: number | null;
+    return_5y?: number | null;
+    expense_ratio?: number | null;
+    max_drawdown?: number | null;
+    sharpe?: number | null;
+    return_gap?: number | null;
+  }[];
+  category_summary?: Record<string, number | null> | null;
+  strength_count: number;
+  concern_count: number;
+};
+
+export type MfPeerAhead = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  expense_ratio?: number | null;
+  max_drawdown?: number | null;
+  sharpe?: number | null;
+  return_gap?: number | null;
+};
+
+export type MfHoldingComparison = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  sub_category?: string | null;
+  in_universe: boolean;
+  return_1y?: number | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  expense_ratio?: number | null;
+  max_drawdown?: number | null;
+  rank_3y?: number | null;
+  rank_count_3y?: number | null;
+  quartile_3y?: number | null;
+  measured_standing?: number | null;
+  trajectory?: string | null;
+  category_avg_3y?: number | null;
+  peer_count?: number | null;
+  better_on_3y_count?: number | null;
+  peers_ahead: MfPeerAhead[];
+};
+
+export type MfPeerComparison = {
+  as_of?: string | null;
+  holdings: MfHoldingComparison[];
+  holding_count: number;
+};
+
+export type MfAiComparison = {
+  available: boolean;
+  reason?: string | null;
+  note?: {
+    headline?: string;
+    overview?: string[];
+    per_fund?: {
+      fund?: string;
+      standing?: string;
+      opinion?: string;
+      better_performers?: string[];
+    }[];
+    caveat?: string;
+  } | null;
+};
+
+export function getMfPeerComparison() {
+  return whileWaking(() =>
+    request<MfPeerComparison>("/api/mf/portfolio/peer-comparison", undefined, { timeoutMs: 60000 }));
+}
+
+/** Prose over the peer comparison: candid on each record, silent on what to do. */
+export function getMfAiComparison() {
+  return request<MfAiComparison>("/api/mf/portfolio/ai-comparison", undefined, { timeoutMs: 120000 });
+}
+
+export type MfAiReview = {
+  available: boolean;
+  reason?: string | null;
+  generated_for?: string | null;
+  note?: {
+    headline?: string;
+    assessment?: string[];
+    working?: string[];
+    not_working?: string[];
+    record_quality?: string;
+    what_to_watch?: string;
+  } | null;
+};
+
+/** Prose over the measured review. Describes the evidence; recommends nothing. */
+export function getMfFundAiReview(schemeCode: string) {
+  return request<MfAiReview>(`/api/mf/fund/${encodeURIComponent(schemeCode)}/ai-review`, undefined, {
+    timeoutMs: 60000,
+  });
+}
+
+export function getMfFundReview(schemeCode: string) {
+  return whileWaking(() =>
+    request<MfReview>(`/api/mf/fund/${encodeURIComponent(schemeCode)}/review`, undefined, { timeoutMs: 45000 }));
 }

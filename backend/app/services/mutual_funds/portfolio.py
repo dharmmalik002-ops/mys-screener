@@ -186,18 +186,29 @@ def normalise_payload(payload: dict | None) -> dict:
     }
 
 
+SIP_FREQUENCIES = ("weekly", "fortnightly", "monthly", "quarterly")
+
+
 def expand_sip(
     *,
     start_date: str,
     end_date: str,
     amount: float,
+    frequency: str = "monthly",
     day_of_month: int | None = None,
+    weekday: int | None = None,
 ) -> list[dict[str, Any]]:
-    """Turn a monthly SIP description into individual transactions.
+    """Turn a recurring SIP description into individual transactions.
 
-    Saves entering 36 rows by hand. Instalments land on `day_of_month` (or the
-    start date's day), clamped to the last day of short months so a 31st SIP
-    does not silently skip February.
+    Saves entering 150-odd rows by hand for a multi-year weekly SIP, and gives
+    XIRR the dated cashflows it needs — a weekly SIP valued as one lump sum at
+    average cost is not a return.
+
+    * ``weekly`` / ``fortnightly`` step in fixed 7- or 14-day intervals from the
+      first occurrence of ``weekday`` (defaulting to the start date's own
+      weekday), which is how a real weekly SIP mandate behaves.
+    * ``monthly`` / ``quarterly`` land on ``day_of_month``, clamped to the last
+      day of short months so a 31st SIP does not silently skip February.
     """
     first = _clean_date(start_date)
     last = _clean_date(end_date)
@@ -209,32 +220,72 @@ def expand_sip(
     if finish < begin:
         return []
 
-    target_day = int(day_of_month or begin.day)
-    target_day = min(max(target_day, 1), 31)
+    normalised = str(frequency or "monthly").strip().lower()
+    if normalised not in SIP_FREQUENCIES:
+        normalised = "monthly"
+
+    def transaction(when: date) -> dict[str, Any]:
+        return {
+            "id": str(uuid.uuid4()),
+            "date": when.isoformat(),
+            "type": "buy",
+            "amount": installment,
+            "units": None,
+            "nav": None,
+        }
 
     out: list[dict[str, Any]] = []
+
+    if normalised in ("weekly", "fortnightly"):
+        step = 7 if normalised == "weekly" else 14
+        cursor = begin
+        if weekday is not None:
+            target = min(max(int(weekday), 0), 6)
+            # Advance to the first occurrence of the requested weekday.
+            cursor += timedelta(days=(target - begin.weekday()) % 7)
+        while cursor <= finish and len(out) < MAX_TRANSACTIONS_PER_POSITION:
+            out.append(transaction(cursor))
+            cursor += timedelta(days=step)
+        return out
+
+    step_months = 1 if normalised == "monthly" else 3
+    target_day = min(max(int(day_of_month or begin.day), 1), 31)
     year, month = begin.year, begin.month
     while len(out) < MAX_TRANSACTIONS_PER_POSITION:
-        # Clamp to the month's real length.
-        if month == 12:
-            next_month_start = date(year + 1, 1, 1)
-        else:
-            next_month_start = date(year, month + 1, 1)
-        days_in_month = (next_month_start - date(year, month, 1)).days
+        month_start = date(year, month, 1)
+        next_month = date(year + (month // 12), (month % 12) + 1, 1)
+        days_in_month = (next_month - month_start).days
         when = date(year, month, min(target_day, days_in_month))
         if when > finish:
             break
         if when >= begin:
-            out.append({
-                "id": str(uuid.uuid4()),
-                "date": when.isoformat(),
-                "type": "buy",
-                "amount": installment,
-                "units": None,
-                "nav": None,
-            })
-        year, month = next_month_start.year, next_month_start.month
+            out.append(transaction(when))
+        advanced = month - 1 + step_months
+        year, month = year + advanced // 12, advanced % 12 + 1
     return out
+
+
+def opening_position(*, units: float, as_of: str) -> list[dict[str, Any]]:
+    """A starting holding: units already owned as of a date.
+
+    For someone who has been investing for years and does not want to type
+    every past instalment. The units are priced at that date's NAV, so the
+    position enters at its then market value — which makes returns and XIRR
+    measure performance *since that date*, not since the original purchases.
+    The UI says so, because the distinction changes what the XIRR means.
+    """
+    held = _clean_float(units, minimum=1e-6)
+    when = _clean_date(as_of)
+    if held is None or when is None:
+        return []
+    return [{
+        "id": str(uuid.uuid4()),
+        "date": when,
+        "type": "buy",
+        "amount": None,
+        "units": held,
+        "nav": None,
+    }]
 
 
 # ------------------------------------------------------------------- valuation
