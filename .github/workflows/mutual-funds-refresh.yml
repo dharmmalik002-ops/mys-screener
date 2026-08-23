@@ -60,9 +60,15 @@ jobs:
           path: |
             backend/data/mf_reference.json
             backend/data/mf_details
-          key: mf-reference-${{ github.run_id }}
+          # Keyed on the crawler's own source. Without this, a fix to the
+          # crawl reuses a reference set produced by the *old* code and the fix
+          # never reaches production until the weekly re-crawl — which is
+          # exactly what happened when the Direct/Growth slug filter was
+          # corrected: the nightly run picked up the new benchmark mapping but
+          # kept the stale 1,588-slug crawl, leaving 49 funds still missing.
+          key: mf-reference-${{ hashFiles('backend/app/services/mutual_funds/groww_source.py', 'backend/app/services/mutual_funds/harvest.py', 'backend/scripts/build_mf_universe.py') }}-${{ github.run_id }}
           restore-keys: |
-            mf-reference-
+            mf-reference-${{ hashFiles('backend/app/services/mutual_funds/groww_source.py', 'backend/app/services/mutual_funds/harvest.py', 'backend/scripts/build_mf_universe.py') }}-
 
       - name: Decide crawl mode
         id: mode
