@@ -1,14 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Plus, RefreshCw, Search, Trash2, X } from "lucide-react";
 import {
+  getMfAiComparison,
   getMfCategories,
+  getMfPeerComparison,
   getMfPortfolio,
   getMfScreener,
   previewMfOpeningPosition,
   previewMfSip,
   saveMfPortfolio,
+  type MfAiComparison,
   type MfCategoryRow,
   type MfFund,
+  type MfPeerComparison,
   type MfPortfolioResponse,
   type MfPosition,
   type MfScreenerResponse,
@@ -651,6 +655,12 @@ function PortfolioView({
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Two-step delete. A position can hold 180 weekly instalments, and losing
+  // that to a stray click on an 11px icon is not a recoverable mistake.
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [comparison, setComparison] = useState<MfPeerComparison | null>(null);
+  const [aiComparison, setAiComparison] = useState<MfAiComparison | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const positions = portfolio?.positions ?? [];
   const totals = portfolio?.totals;
@@ -677,7 +687,30 @@ function PortfolioView({
 
   const removePosition = useCallback(async (schemeCode: string) => {
     await commit(asPositions().filter((position) => position.scheme_code !== schemeCode));
-  }, [asPositions, commit]);
+    setConfirmDelete(null);
+    if (editing === schemeCode) setEditing(null);
+  }, [asPositions, commit, editing]);
+
+  const positionKey = positions.map((p) => p.scheme_code).join(",");
+  useEffect(() => {
+    if (!positions.length) { setComparison(null); return; }
+    let cancelled = false;
+    getMfPeerComparison()
+      .then((payload) => { if (!cancelled) setComparison(payload); })
+      .catch(() => { if (!cancelled) setComparison(null); });
+    return () => { cancelled = true; };
+  }, [positionKey, positions.length]);
+
+  const loadAiComparison = useCallback(() => {
+    setAiBusy(true);
+    getMfAiComparison()
+      .then(setAiComparison)
+      .catch((error: unknown) => setAiComparison({
+        available: false,
+        reason: error instanceof Error ? error.message : "Could not generate the comparison.",
+      }))
+      .finally(() => setAiBusy(false));
+  }, []);
 
   if (!positions.length) {
     return (
@@ -702,10 +735,11 @@ function PortfolioView({
         <div><span>Invested</span><strong>{rupees(totals?.invested)}</strong></div>
         <div><span>Current value</span><strong>{rupees(totals?.current_value)}</strong></div>
         <div>
-          <span>Gain</span>
+          <span>P&amp;L</span>
           <strong className={tone(totals?.gain)}>
             {rupees(totals?.gain)} <em>{signedPct(totals?.gain_pct)}</em>
           </strong>
+          <small>current value less what you put in</small>
         </div>
         <div>
           <span>XIRR</span>
@@ -746,12 +780,37 @@ function PortfolioView({
                 <td className="mfp-dim">{pct(position.weight_pct)}</td>
                 <td className="mfp-dim">{position.transaction_count}</td>
                 <td className="mfp-pf-actions">
-                  <button type="button" className="mfp-add" onClick={() => setEditing(editing === position.scheme_code ? null : position.scheme_code)}>
+                  <button
+                    type="button"
+                    className="mfp-add"
+                    onClick={() => setEditing(editing === position.scheme_code ? null : position.scheme_code)}
+                  >
                     {editing === position.scheme_code ? "Done" : "Edit"}
                   </button>
-                  <button type="button" className="mfp-add" title="Remove" onClick={() => void removePosition(position.scheme_code)}>
-                    <Trash2 size={11} />
-                  </button>
+                  {confirmDelete === position.scheme_code ? (
+                    <>
+                      <button
+                        type="button"
+                        className="mfp-add mfp-add-danger"
+                        disabled={busy}
+                        onClick={() => void removePosition(position.scheme_code)}
+                      >
+                        Delete {position.transaction_count > 0 ? `${position.transaction_count} txns` : ""}?
+                      </button>
+                      <button type="button" className="mfp-add" onClick={() => setConfirmDelete(null)}>
+                        Keep
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="mfp-add"
+                      title="Remove this fund from your portfolio"
+                      onClick={() => setConfirmDelete(position.scheme_code)}
+                    >
+                      <Trash2 size={11} /> Remove
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -793,6 +852,136 @@ function PortfolioView({
           ))}
         </section>
       </div>
+
+      <section className="mfp-pf-card">
+        <div className="mfp-pf-card-head">
+          <h3>How your funds compare in their category</h3>
+          {!aiComparison ? (
+            <button type="button" className="mfp-toggle active" disabled={aiBusy} onClick={loadAiComparison}>
+              {aiBusy ? "Writing…" : "Get the read"}
+            </button>
+          ) : null}
+        </div>
+
+        {comparison?.holdings?.length ? (
+          <div className="mfp-table-wrap">
+            <table className="mfp-table">
+              <thead>
+                <tr>
+                  <th className="left">Your fund</th><th>Category</th><th>3Y</th>
+                  <th>Category avg</th><th>Rank</th><th>Standing</th><th>Trend</th>
+                  <th title="Funds in the same category with a higher 3-year return">Beaten by</th>
+                </tr>
+              </thead>
+              <tbody>
+                {comparison.holdings.map((row) => (
+                  <tr key={row.scheme_code} onClick={() => onOpenFund(row.scheme_code)}>
+                    <td className="left"><b>{row.name ?? row.scheme_code}</b></td>
+                    <td className="mfp-dim">{row.sub_category}</td>
+                    <td className={tone(row.return_3y)}><b>{pct(row.return_3y)}</b></td>
+                    <td className="mfp-dim">{pct(row.category_avg_3y)}</td>
+                    <td>
+                      {row.rank_3y && row.rank_count_3y ? `${row.rank_3y} / ${row.rank_count_3y}` : "—"}
+                    </td>
+                    <td className={
+                      (row.measured_standing ?? 50) >= 60 ? "pos"
+                        : (row.measured_standing ?? 50) <= 40 ? "neg" : ""
+                    }>
+                      {row.measured_standing != null ? row.measured_standing.toFixed(0) : "—"}
+                    </td>
+                    <td className={
+                      row.trajectory === "slipping" ? "neg" : row.trajectory === "improving" ? "pos" : "mfp-dim"
+                    }>
+                      {row.trajectory ?? "—"}
+                    </td>
+                    <td className={(row.better_on_3y_count ?? 0) > 0 ? "neg" : "pos"}>
+                      {row.better_on_3y_count ?? 0} of {row.peer_count ?? 0}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="mfp-note">Measuring your funds against their categories…</p>
+        )}
+
+        {comparison?.holdings?.some((h) => h.peers_ahead.length) ? (
+          <div className="mfp-ahead">
+            {comparison.holdings.filter((h) => h.peers_ahead.length).map((holding) => (
+              <div className="mfp-ahead-group" key={holding.scheme_code}>
+                <h4>
+                  Better than your <b>{holding.name}</b> on return, cost <i>and</i> worst fall
+                </h4>
+                <div className="mfp-table-wrap">
+                  <table className="mfp-table">
+                    <thead>
+                      <tr>
+                        <th className="left">Fund</th><th>3Y</th><th>Ahead by</th>
+                        <th>TER</th><th>Worst fall</th><th>Sharpe</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {holding.peers_ahead.map((peer) => (
+                        <tr key={peer.scheme_code} onClick={() => onOpenFund(peer.scheme_code)}>
+                          <td className="left">{peer.name}<br /><small className="mfp-dim">{peer.amc}</small></td>
+                          <td className={tone(peer.return_3y)}><b>{pct(peer.return_3y)}</b></td>
+                          <td className="pos">+{num(peer.return_gap)}%</td>
+                          <td>{pct(peer.expense_ratio, 2)}</td>
+                          <td className="neg">{pct(peer.max_drawdown)}</td>
+                          <td>{num(peer.sharpe)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {aiComparison ? (
+          aiComparison.available && aiComparison.note ? (
+            <div className="mfp-ai">
+              {aiComparison.note.headline ? (
+                <p className="mfp-ai-headline">{aiComparison.note.headline}</p>
+              ) : null}
+              {(aiComparison.note.overview ?? []).map((paragraph) => (
+                <p className="mfp-ai-prose" key={paragraph}>{paragraph}</p>
+              ))}
+              {(aiComparison.note.per_fund ?? []).map((entry) => (
+                <div className="mfp-ai-fund" key={entry.fund}>
+                  <h4>
+                    {entry.fund}
+                    {entry.standing ? <span className={
+                      /behind/i.test(entry.standing) ? "mfp-tag-neg"
+                        : /ahead/i.test(entry.standing) ? "mfp-tag-pos" : "mfp-tag"
+                    }>{entry.standing}</span> : null}
+                  </h4>
+                  {entry.opinion ? <p className="mfp-ai-prose">{entry.opinion}</p> : null}
+                  {entry.better_performers?.length ? (
+                    <ul className="mfp-ai-list">
+                      {entry.better_performers.map((item) => <li key={item}>{item}</li>)}
+                    </ul>
+                  ) : null}
+                </div>
+              ))}
+              {aiComparison.note.caveat ? <p className="mfp-note">{aiComparison.note.caveat}</p> : null}
+              <p className="mfp-note">
+                Written from the measured figures above. It names what did better and gives a candid
+                read on each record — it will not tell you whether to switch, or how much to invest.
+              </p>
+            </div>
+          ) : (
+            <p className="mfp-note">{aiComparison.reason ?? "Comparison unavailable."}</p>
+          )
+        ) : (
+          <p className="mfp-note">
+            Names the funds in each category that beat yours, and gives a straight read on whether a
+            weak record looks persistent or like a rough patch.
+          </p>
+        )}
+      </section>
 
       <SipCalculator />
 

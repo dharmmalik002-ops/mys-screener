@@ -3921,6 +3921,72 @@ export type MfReview = {
   concern_count: number;
 };
 
+export type MfPeerAhead = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  expense_ratio?: number | null;
+  max_drawdown?: number | null;
+  sharpe?: number | null;
+  return_gap?: number | null;
+};
+
+export type MfHoldingComparison = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  sub_category?: string | null;
+  in_universe: boolean;
+  return_1y?: number | null;
+  return_3y?: number | null;
+  return_5y?: number | null;
+  expense_ratio?: number | null;
+  max_drawdown?: number | null;
+  rank_3y?: number | null;
+  rank_count_3y?: number | null;
+  quartile_3y?: number | null;
+  measured_standing?: number | null;
+  trajectory?: string | null;
+  category_avg_3y?: number | null;
+  peer_count?: number | null;
+  better_on_3y_count?: number | null;
+  peers_ahead: MfPeerAhead[];
+};
+
+export type MfPeerComparison = {
+  as_of?: string | null;
+  holdings: MfHoldingComparison[];
+  holding_count: number;
+};
+
+export type MfAiComparison = {
+  available: boolean;
+  reason?: string | null;
+  note?: {
+    headline?: string;
+    overview?: string[];
+    per_fund?: {
+      fund?: string;
+      standing?: string;
+      opinion?: string;
+      better_performers?: string[];
+    }[];
+    caveat?: string;
+  } | null;
+};
+
+export function getMfPeerComparison() {
+  return whileWaking(() =>
+    request<MfPeerComparison>("/api/mf/portfolio/peer-comparison", undefined, { timeoutMs: 60000 }));
+}
+
+/** Prose over the peer comparison: candid on each record, silent on what to do. */
+export function getMfAiComparison() {
+  return request<MfAiComparison>("/api/mf/portfolio/ai-comparison", undefined, { timeoutMs: 120000 });
+}
+
 export type MfAiReview = {
   available: boolean;
   reason?: string | null;

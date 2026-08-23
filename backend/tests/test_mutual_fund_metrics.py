@@ -620,3 +620,53 @@ class FundReviewTests(unittest.TestCase):
         review = fund_review.build_review(solo, [solo])
         self.assertEqual(review["peer_count"], 1)
         self.assertIsNotNone(review["signals"])
+
+
+class PeerComparisonTests(unittest.TestCase):
+    """The portfolio-level 'which funds did better than mine' comparison."""
+
+    def peers(self):
+        return [
+            {"scheme_code": "lead", "sub_category": "Small Cap", "name": "Leader Fund",
+             "return_3y": 26.0, "expense_ratio": 0.6, "max_drawdown": -24.0, "sharpe": 1.1},
+            {"scheme_code": "mid", "sub_category": "Small Cap", "name": "Middle Fund",
+             "return_3y": 18.0, "expense_ratio": 0.9, "max_drawdown": -33.0, "sharpe": 0.7},
+            {"scheme_code": "lag", "sub_category": "Small Cap", "name": "Laggard Fund",
+             "return_3y": 12.0, "expense_ratio": 1.6, "max_drawdown": -48.0, "sharpe": 0.3},
+        ]
+
+    def test_limit_is_honoured(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        self.assertEqual(len(fund_review.peers_ahead(rows[2], rows, limit=1)), 1)
+        self.assertEqual(len(fund_review.peers_ahead(rows[2], rows, limit=10)), 2)
+
+    def test_results_are_ordered_by_how_far_ahead(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        ahead = fund_review.peers_ahead(rows[2], rows, limit=10)
+        gaps = [item["return_gap"] for item in ahead]
+        self.assertEqual(gaps, sorted(gaps, reverse=True))
+        self.assertEqual(ahead[0]["scheme_code"], "lead")
+
+    def test_the_fund_never_appears_in_its_own_comparison(self):
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        for row in rows:
+            codes = {item["scheme_code"] for item in fund_review.peers_ahead(row, rows, limit=10)}
+            self.assertNotIn(row["scheme_code"], codes)
+
+    def test_a_fund_with_no_three_year_record_yields_no_comparison(self):
+        """Better to show nothing than to compare against a number we lack."""
+        from app.services.mutual_funds import fund_review
+        rows = self.peers()
+        young = {"scheme_code": "new", "sub_category": "Small Cap", "return_3y": None}
+        self.assertEqual(fund_review.peers_ahead(young, rows + [young], limit=10), [])
+
+    def test_deeper_drawdown_disqualifies_a_higher_returning_peer(self):
+        from app.services.mutual_funds import fund_review
+        mine = {"scheme_code": "m", "sub_category": "X", "return_3y": 15.0,
+                "expense_ratio": 0.8, "max_drawdown": -25.0}
+        risky = {"scheme_code": "r", "sub_category": "X", "return_3y": 40.0,
+                 "expense_ratio": 0.7, "max_drawdown": -60.0}
+        self.assertEqual(fund_review.peers_ahead(mine, [mine, risky], limit=10), [])

@@ -144,6 +144,22 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
     def save_portfolio(payload: dict = Body(default_factory=dict)):
         return service.save_portfolio(payload)
 
+    @router.get("/portfolio/peer-comparison")
+    def portfolio_peer_comparison():
+        """For each fund held, which funds in its category measured better.
+
+        Factual and deterministic. Naming funds that outperformed is a matter
+        of record; what to do about it is not something this endpoint answers.
+        """
+        _require_ready(service)
+        return service.get_portfolio_peer_comparison()
+
+    @router.get("/portfolio/ai-comparison")
+    def portfolio_ai_comparison():
+        """The same comparison in prose, with a candid read on each record."""
+        _require_ready(service)
+        return service.get_portfolio_ai_comparison()
+
     @router.post("/portfolio/sip-preview")
     def sip_preview(payload: dict = Body(default_factory=dict)):
         """Expand a monthly SIP description into transactions, without saving.
