@@ -3845,15 +3845,104 @@ export function saveMfPortfolio(positions: MfPosition[]) {
   }, { timeoutMs: 45000 });
 }
 
+export type MfSipFrequency = "weekly" | "fortnightly" | "monthly" | "quarterly";
+
+export type MfSipPreview = {
+  count: number;
+  total_amount: number;
+  first_date?: string | null;
+  last_date?: string | null;
+  transactions: MfTransaction[];
+};
+
 export function previewMfSip(payload: {
   start_date: string;
   end_date: string;
   amount: number;
+  frequency?: MfSipFrequency;
   day_of_month?: number | null;
+  weekday?: number | null;
 }) {
-  return request<{ count: number; transactions: MfTransaction[] }>("/api/mf/portfolio/sip-preview", {
+  return request<MfSipPreview>("/api/mf/portfolio/sip-preview", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
+}
+
+/** Seed a holding from units already owned, priced at that date's NAV. */
+export function previewMfOpeningPosition(payload: { units: number; as_of: string }) {
+  return request<{ count: number; transactions: MfTransaction[] }>("/api/mf/portfolio/opening-position", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+}
+
+export type MfScorecardRow = {
+  key: string;
+  label: string;
+  unit: string;
+  value: number;
+  category_median?: number | null;
+  percentile?: number | null;
+  higher_is_better: boolean;
+  sample: number;
+  standing: "strong" | "middling" | "weak";
+};
+
+export type MfReview = {
+  scheme_code: string;
+  name?: string | null;
+  sub_category?: string | null;
+  benchmark_label?: string | null;
+  peer_count: number;
+  measured_standing?: number | null;
+  scorecard: MfScorecardRow[];
+  rank_trajectory: {
+    points: [string, number][];
+    change?: number | null;
+    direction: "improving" | "steady" | "slipping" | "unknown";
+  };
+  signals: { kind: "strength" | "concern" | "neutral"; text: string }[];
+  peers_ahead: {
+    scheme_code: string;
+    name?: string | null;
+    amc?: string | null;
+    return_3y?: number | null;
+    return_5y?: number | null;
+    expense_ratio?: number | null;
+    max_drawdown?: number | null;
+    sharpe?: number | null;
+    return_gap?: number | null;
+  }[];
+  category_summary?: Record<string, number | null> | null;
+  strength_count: number;
+  concern_count: number;
+};
+
+export type MfAiReview = {
+  available: boolean;
+  reason?: string | null;
+  generated_for?: string | null;
+  note?: {
+    headline?: string;
+    assessment?: string[];
+    working?: string[];
+    not_working?: string[];
+    record_quality?: string;
+    what_to_watch?: string;
+  } | null;
+};
+
+/** Prose over the measured review. Describes the evidence; recommends nothing. */
+export function getMfFundAiReview(schemeCode: string) {
+  return request<MfAiReview>(`/api/mf/fund/${encodeURIComponent(schemeCode)}/ai-review`, undefined, {
+    timeoutMs: 60000,
+  });
+}
+
+export function getMfFundReview(schemeCode: string) {
+  return whileWaking(() =>
+    request<MfReview>(`/api/mf/fund/${encodeURIComponent(schemeCode)}/review`, undefined, { timeoutMs: 45000 }));
 }

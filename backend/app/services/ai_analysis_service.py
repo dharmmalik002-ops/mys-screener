@@ -759,6 +759,78 @@ Return ONLY valid JSON (no markdown fences):
         self._mark_quota_exhausted()
         raise RuntimeError(f"All models exhausted for market environment review: {last_exc}")
 
+    def generate_fund_review_note(self, evidence_json: str, fund_name: str) -> dict[str, Any]:
+        """Prose over a fund's measured standing in its category.
+
+        Same contract as the market-environment brief: every number is computed
+        upstream in `mutual_funds/fund_review.py` and handed in. The model
+        describes and weighs that evidence — it derives nothing.
+
+        The prompt forbids recommendations on purpose. Telling someone to
+        switch funds, resize a SIP or time a lump sum is personalised
+        investment advice, and this app is not a licensed adviser. Describing
+        what a fund's record measurably shows is not, and it is the part that
+        is actually useful: the reader makes the call.
+        """
+        if not self.available:
+            return {}
+
+        prompt = f"""You are an experienced Indian mutual fund analyst writing a factual review of one fund for the investor who holds it.
+
+Below is measured evidence for {fund_name}, computed from AMFI NAV history: its percentile standing against every other fund in its own SEBI sub-category on return, consistency, drawdown, risk-adjusted return, cost and alpha; how its category standing has moved across the 5-year, 3-year and 1-year windows; and same-category funds that measured better on return, cost and downside together.
+
+EVIDENCE:
+{evidence_json}
+
+Rules you must follow:
+- Use ONLY the numbers given. Never compute, estimate or invent a figure. If something is absent, say the record does not cover it.
+- Do NOT tell the reader to buy, sell, switch, hold, exit, add to, or stop anything. Do NOT recommend a specific fund to move to. Do NOT suggest how much to invest or when.
+- Describe what the record shows and what it does not. Where the evidence is mixed, say it is mixed rather than resolving it.
+- Distinguish a fund having a weak recent run from a fund with a persistently weak record — the rank trajectory is what separates them.
+- Note when a short record (a young fund) limits what can be concluded.
+- Plain English, no jargon without explanation, no markdown.
+
+Return ONLY valid JSON (no markdown fences):
+{{
+  "headline": "one factual sentence on where this fund stands in its category",
+  "assessment": ["paragraph 1: what its record measurably shows", "paragraph 2: the trajectory — improving, steady or slipping, and over what horizon", "paragraph 3: what the evidence does not settle, and what a holder would want to watch"],
+  "working": ["2-4 short bullets: dimensions where it measures well, each with its figure"],
+  "not_working": ["2-4 short bullets: dimensions where it measures poorly, each with its figure"],
+  "record_quality": "Long|Adequate|Short — how much history the conclusions rest on",
+  "what_to_watch": "the single measurable thing that would most change this picture"
+}}"""
+
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(temperature=0.3, max_output_tokens=4096),
+                    )
+                    text = (response.text or "").strip()
+                    # Take the outermost JSON object rather than trusting the
+                    # model to omit fences or prose — cheaper than a retry, and
+                    # 2048 tokens was truncating the object mid-string.
+                    start, end = text.find("{"), text.rfind("}")
+                    if start == -1 or end <= start:
+                        raise ValueError("no JSON object in fund review response")
+                    result = json.loads(text[start:end + 1])
+                    logger.info("Fund review note generated with model %s for %s", model_name, fund_name)
+                    return result
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            time.sleep(self._RETRY_BASE_DELAY * (attempt + 1))
+                            continue
+                        break
+                    raise
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All models exhausted for fund review: {last_exc}")
+
     def answer_company_question(self, fundamentals: CompanyFundamentals, question: str) -> str:
         """Answer a freeform company question using Gemini and existing fundamentals context."""
         cleaned_question = question.strip()

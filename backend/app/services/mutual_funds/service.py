@@ -22,7 +22,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, groww_source, index_source, metrics, nav_source, paths, portfolio
+from . import benchmarks, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -54,10 +54,21 @@ _DETAIL_CACHE_LIMIT = 80
 
 
 class MutualFundService:
-    def __init__(self, *, database_url: str | None = None, state_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        *,
+        database_url: str | None = None,
+        state_dir: Path | None = None,
+        ai_service: Any | None = None,
+    ) -> None:
         paths.ensure_dirs()
         self._state_dir = Path(state_dir) if state_dir else None
         self._store = portfolio.MutualFundPortfolioStore(database_url)
+        # Optional. The measured review works without it; only the prose layer
+        # needs Gemini, and it is cached so a fund is summarised once a day.
+        self._ai_service = ai_service
+        self._ai_lock = threading.Lock()
+        self._ai_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
         self._universe_lock = threading.Lock()
         self._universe: dict[str, Any] | None = None
@@ -868,8 +879,92 @@ class MutualFundService:
                 pass
         return self.get_portfolio()
 
+    def get_fund_review(self, scheme_code: str) -> dict[str, Any] | None:
+        """Measured standing of one fund against its own category.
+
+        Deterministic — no AI in this path. The prose layer is a separate call
+        so the numbers still render when Gemini is unavailable or rate-limited.
+        """
+        universe = self._load_universe()
+        row = self._by_code.get(str(scheme_code).strip())
+        if row is None:
+            return None
+        sub_category = str(row.get("sub_category") or "")
+        peers = [
+            other for other in (universe.get("funds") or [])
+            if str(other.get("sub_category") or "") == sub_category
+        ]
+        return fund_review.build_review(
+            row,
+            peers,
+            category_summary=(universe.get("categories") or {}).get(sub_category),
+        )
+
+    def get_fund_ai_review(self, scheme_code: str) -> dict[str, Any]:
+        """Prose over the measured review. Never raises — the numbers stand alone.
+
+        Cached for a day per fund: the underlying evidence only moves when the
+        nightly rebuild lands, so re-generating on every open would burn quota
+        to restate the same paragraphs.
+        """
+        review = self.get_fund_review(scheme_code)
+        if review is None:
+            return {"available": False, "reason": "unknown scheme code"}
+
+        service = self._ai_service
+        if service is None or not getattr(service, "available", False):
+            return {
+                "available": False,
+                "reason": "AI is not configured on this deployment — the measured scorecard above "
+                          "is unaffected.",
+            }
+
+        key = str(scheme_code)
+        with self._ai_lock:
+            cached = self._ai_cache.get(key)
+            if cached and (time.time() - cached[0]) < 24 * 60 * 60:
+                return cached[1]
+
+        # Hand over the evidence only — the prompt forbids deriving figures, so
+        # anything not in here cannot legitimately appear in the prose.
+        evidence = {
+            "fund": review["name"],
+            "category": review["sub_category"],
+            "benchmark": review["benchmark_label"],
+            "peers_in_category": review["peer_count"],
+            "measured_standing_percentile": review["measured_standing"],
+            "scorecard": [
+                {
+                    "dimension": item["label"],
+                    "value": item["value"],
+                    "unit": item["unit"],
+                    "category_median": item["category_median"],
+                    "percentile_in_category": item["percentile"],
+                    "standing": item["standing"],
+                }
+                for item in review["scorecard"]
+            ],
+            "rank_trajectory": review["rank_trajectory"],
+            "observations": review["signals"],
+            "same_category_funds_better_on_return_cost_and_downside": review["peers_ahead"],
+        }
+        try:
+            note = service.generate_fund_review_note(
+                json.dumps(evidence, separators=(",", ":")), str(review["name"])
+            )
+        except Exception as exc:
+            return {"available": False, "reason": f"AI note unavailable ({type(exc).__name__})."}
+
+        payload = {"available": True, "note": note, "generated_for": review["name"]}
+        with self._ai_lock:
+            self._ai_cache[key] = (time.time(), payload)
+        return payload
+
     def expand_sip(self, **kwargs) -> list[dict[str, Any]]:
         return portfolio.expand_sip(**kwargs)
+
+    def opening_position(self, **kwargs) -> list[dict[str, Any]]:
+        return portfolio.opening_position(**kwargs)
 
 
 def _rebase(values: list[float]) -> list[float]:

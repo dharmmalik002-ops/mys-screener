@@ -111,6 +111,31 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
             raise HTTPException(status_code=404, detail=f"No NAV history for scheme code: {scheme_code}")
         return payload
 
+    @router.get("/fund/{scheme_code}/review")
+    def fund_review_endpoint(scheme_code: str):
+        """How this fund measures against its own category.
+
+        Deterministic arithmetic only. Every figure is reproducible from the
+        universe, and nothing here recommends an action — see
+        `mutual_funds/fund_review.py` for why that line is drawn.
+        """
+        _require_ready(service)
+        payload = service.get_fund_review(scheme_code)
+        if payload is None:
+            raise HTTPException(status_code=404, detail=f"Unknown scheme code: {scheme_code}")
+        return payload
+
+    @router.get("/fund/{scheme_code}/ai-review")
+    def fund_ai_review(scheme_code: str):
+        """Plain-English summary of the measured review.
+
+        Describes the evidence and nothing more. It does not recommend buying,
+        selling or switching anything — that is personalised investment advice
+        and out of scope for this app.
+        """
+        _require_ready(service)
+        return service.get_fund_ai_review(scheme_code)
+
     @router.get("/portfolio")
     def get_portfolio():
         return service.get_portfolio()
@@ -130,7 +155,29 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
             start_date=str(payload.get("start_date") or ""),
             end_date=str(payload.get("end_date") or ""),
             amount=payload.get("amount") or 0,
+            frequency=str(payload.get("frequency") or "monthly"),
             day_of_month=payload.get("day_of_month"),
+            weekday=payload.get("weekday"),
+        )
+        total = sum(t["amount"] or 0 for t in transactions)
+        return {
+            "count": len(transactions),
+            "total_amount": round(total, 2),
+            "first_date": transactions[0]["date"] if transactions else None,
+            "last_date": transactions[-1]["date"] if transactions else None,
+            "transactions": transactions,
+        }
+
+    @router.post("/portfolio/opening-position")
+    def opening_position(payload: dict = Body(default_factory=dict)):
+        """Seed a holding from units already owned, priced at that date's NAV.
+
+        For an investor who has been running a SIP for years and does not want
+        to key in every past instalment.
+        """
+        transactions = service.opening_position(
+            units=payload.get("units") or 0,
+            as_of=str(payload.get("as_of") or ""),
         )
         return {"count": len(transactions), "transactions": transactions}
 

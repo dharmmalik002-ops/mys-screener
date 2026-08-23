@@ -41,9 +41,20 @@ _NEXT_DATA_RE = re.compile(
 )
 _SLUG_RE = re.compile(r"<loc>https://groww\.in/mutual-funds/([a-z0-9\-]+)</loc>")
 
-# Groww's sitemap also lists AMC landing pages and collections under
-# /mutual-funds/; a real scheme slug always ends in a plan + option pair.
-_SCHEME_SLUG_RE = re.compile(r"-(direct|regular)-(growth|idcw)$")
+# The sitemap mixes scheme pages with AMC and category landing pages. These are
+# the landing pages, and they are the only thing worth excluding by slug shape.
+#
+# An earlier version instead *included* by slug shape, keeping only
+# `*-direct-growth`. That silently dropped 49 real funds whose slug reads
+# `-direct-plan-growth` (Quant Small Cap Fund among them) — a whole AMC's
+# range missing from the screener with nothing in the logs to show it. Slug
+# conventions are the source's business and change without notice, so the
+# authoritative Direct/Growth test is now the payload's own `plan_type` and
+# `scheme_type`, applied after the fetch. Be permissive here; a landing page
+# has no `mfServerSideData` and is skipped for free.
+_LANDING_PAGE_RE = re.compile(
+    r"(?:-mutual-funds|-amc|-category|-invalid)$|^mutual-funds$|invalid"
+)
 
 
 class GrowwUnavailable(RuntimeError):
@@ -82,26 +93,30 @@ def _fetch(url: str, *, timeout: int = 30) -> str:
 
 
 def list_scheme_slugs() -> list[str]:
-    """Every Direct/Growth scheme slug Groww publishes, from the sitemap.
+    """Every candidate scheme slug in the sitemap, minus the landing pages.
 
-    Regular plans and IDCW variants are dropped here rather than downstream:
-    the screener compares funds, and the same fund appearing six times as
-    Regular/IDCW permutations is noise, not coverage.
+    Deliberately permissive — Regular plans and IDCW variants come through
+    here and are filtered after the fetch on the payload's declared plan and
+    option, which is the only field that actually means what it says.
     """
     xml = _fetch(SITEMAP_URL, timeout=45)
-    slugs = _SLUG_RE.findall(xml)
     keep: list[str] = []
     seen: set[str] = set()
-    for slug in slugs:
-        if not slug.endswith("-direct-growth"):
-            continue
-        if slug in seen:
+    for slug in _SLUG_RE.findall(xml):
+        if slug in seen or _LANDING_PAGE_RE.search(slug):
             continue
         seen.add(slug)
         keep.append(slug)
     if not keep:
-        raise GrowwUnavailable("sitemap returned no direct-growth scheme slugs")
+        raise GrowwUnavailable("sitemap returned no scheme slugs")
     return keep
+
+
+def is_direct_growth(row: dict[str, Any]) -> bool:
+    """The authoritative Direct/Growth test, from the payload rather than the slug."""
+    plan = str(row.get("plan") or "").strip().lower()
+    option = str(row.get("option") or "").strip().lower()
+    return plan == "direct" and option == "growth"
 
 
 def fetch_scheme(slug: str, *, timeout: int = 30) -> dict[str, Any]:
