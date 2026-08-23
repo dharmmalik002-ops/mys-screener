@@ -171,3 +171,18 @@
   .sipc-results { grid-template-columns: repeat(2, 1fr); }
   .sipc-scenario { grid-template-columns: 32px minmax(0, 1fr) 74px 74px; gap: 6px; font-size: 10px; }
 }
+
+.sipc-reset {
+  padding: 1px 7px;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-family: inherit;
+  color: var(--text-muted);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.sipc-reset:hover { color: var(--accent); border-color: var(--accent); }

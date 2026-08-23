@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import "./SipCalculator.css";
 
@@ -49,19 +49,24 @@ function project({
   years,
   annualReturnPct,
   stepUpPct,
+  lumpSum = 0,
 }: {
   contribution: number;
   perYear: number;
   years: number;
   annualReturnPct: number;
   stepUpPct: number;
+  /** A starting balance that compounds alongside the instalments — normally
+   *  what the portfolio is already worth, so the projection continues from
+   *  where things actually stand rather than from zero. */
+  lumpSum?: number;
 }): { invested: number; value: number } {
   const periods = Math.round(perYear * years);
   // Per-period rate from the annual rate, compounded — not annual/12, which
   // quietly understates the result.
   const ratePerPeriod = (1 + annualReturnPct / 100) ** (1 / perYear) - 1;
-  let value = 0;
-  let invested = 0;
+  let value = lumpSum;
+  let invested = lumpSum;
   let amount = contribution;
   for (let period = 0; period < periods; period += 1) {
     if (period > 0 && period % perYear === 0 && stepUpPct) {
@@ -75,9 +80,34 @@ function project({
   return { invested, value };
 }
 
-export function SipCalculator() {
+export function SipCalculator({
+  currentValue,
+  monthlySip,
+}: {
+  /** Today's portfolio value, used as the default starting balance. */
+  currentValue?: number | null;
+  /** Monthly SIP already recorded, used as the default instalment. */
+  monthlySip?: number | null;
+} = {}) {
   const [amount, setAmount] = useState(5000);
+  const [lumpSum, setLumpSum] = useState<number>(Math.round(currentValue ?? 0));
+  const [lumpTouched, setLumpTouched] = useState(false);
+
+  // Track the live portfolio until the user overrides it, so the projection
+  // starts from what they actually hold today rather than a stale number.
+  useEffect(() => {
+    if (!lumpTouched && typeof currentValue === "number") setLumpSum(Math.round(currentValue));
+  }, [currentValue, lumpTouched]);
   const [frequency, setFrequency] = useState(FREQUENCIES[0]);
+  const [amountTouched, setAmountTouched] = useState(false);
+
+  useEffect(() => {
+    // Seed the instalment from a recorded SIP so the default projection
+    // reflects what is actually being invested.
+    if (!amountTouched && typeof monthlySip === "number" && monthlySip > 0) {
+      setAmount(Math.round(monthlySip / (FREQUENCIES[0].perYear / 12)));
+    }
+  }, [monthlySip, amountTouched]);
   const [years, setYears] = useState(15);
   const [returnPct, setReturnPct] = useState(12);
   const [inflationPct, setInflationPct] = useState(6);
@@ -90,6 +120,7 @@ export function SipCalculator() {
       years,
       annualReturnPct: returnPct,
       stepUpPct,
+      lumpSum,
     });
     const realDivisor = (1 + inflationPct / 100) ** years;
     return {
@@ -112,6 +143,7 @@ export function SipCalculator() {
           years,
           annualReturnPct: rate,
           stepUpPct,
+          lumpSum,
         });
         return {
           rate,
@@ -119,7 +151,7 @@ export function SipCalculator() {
           real: projected.value / (1 + inflationPct / 100) ** years,
         };
       }),
-    [amount, frequency, years, inflationPct, stepUpPct],
+    [amount, frequency, years, inflationPct, stepUpPct, lumpSum],
   );
 
   const maxScenario = Math.max(...scenarios.map((s) => s.value), 1);
@@ -136,6 +168,36 @@ export function SipCalculator() {
 
       <div className="sipc-controls">
         <label className="sipc-field">
+          <span>
+            Starting balance
+            {typeof currentValue === "number" && !lumpTouched ? " · your portfolio today" : ""}
+          </span>
+          <div className="sipc-input-row">
+            <em>₹</em>
+            <input
+              type="number"
+              min={0}
+              step={10000}
+              value={lumpSum}
+              onChange={(event) => {
+                setLumpTouched(true);
+                setLumpSum(Math.max(0, Number(event.target.value) || 0));
+              }}
+            />
+            {lumpTouched && typeof currentValue === "number" ? (
+              <button
+                type="button"
+                className="sipc-reset"
+                title="Reset to your current portfolio value"
+                onClick={() => { setLumpTouched(false); setLumpSum(Math.round(currentValue)); }}
+              >
+                reset
+              </button>
+            ) : null}
+          </div>
+        </label>
+
+        <label className="sipc-field">
           <span>Instalment</span>
           <div className="sipc-input-row">
             <em>₹</em>
@@ -144,7 +206,10 @@ export function SipCalculator() {
               min={100}
               step={500}
               value={amount}
-              onChange={(event) => setAmount(Math.max(0, Number(event.target.value) || 0))}
+              onChange={(event) => {
+                setAmountTouched(true);
+                setAmount(Math.max(0, Number(event.target.value) || 0));
+              }}
             />
           </div>
         </label>
@@ -217,6 +282,7 @@ export function SipCalculator() {
           <span>You put in</span>
           <strong>{rupees(result.invested)}</strong>
           <small>
+            {lumpSum ? `${rupees(lumpSum)} to start plus ` : ""}
             {Math.round(frequency.perYear * years).toLocaleString("en-IN")} instalments
             {stepUpPct ? `, stepped up ${stepUpPct}% a year` : ""}
           </small>

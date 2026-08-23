@@ -4004,6 +4004,38 @@ export function getMfPortfolioTimeline(range = "1y") {
     `/api/mf/portfolio/timeline?range=${encodeURIComponent(range)}`, undefined, { timeoutMs: 60000 }));
 }
 
+export type MfConcentrationFund = {
+  scheme_code: string;
+  name?: string | null;
+  sub_category?: string | null;
+  portfolio_date?: string | null;
+  holdings_count?: number | null;
+  top5_pct?: number | null;
+  top10_pct?: number | null;
+  largest_name?: string | null;
+  largest_pct?: number | null;
+  sector_count?: number | null;
+  top_sector?: string | null;
+  top_sector_pct?: number | null;
+  flags: string[];
+  concentrated: boolean;
+  portfolio_weight_pct?: number | null;
+  top_holdings: { name?: string | null; weight_pct?: number | null; symbol?: string | null; sector?: string | null }[];
+};
+
+export type MfConcentration = {
+  as_of?: string | null;
+  funds: MfConcentrationFund[];
+  concentrated_count: number;
+  thresholds: Record<string, number>;
+  summary: string[];
+};
+
+export function getMfConcentration() {
+  return whileWaking(() =>
+    request<MfConcentration>("/api/mf/portfolio/concentration", undefined, { timeoutMs: 90000 }));
+}
+
 export type MfPeerAhead = {
   scheme_code: string;
   name?: string | null;

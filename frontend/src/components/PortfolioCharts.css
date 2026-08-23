@@ -1,0 +1,171 @@
+/* Chart primitives. Colour comes entirely from the --pfd-ramp-* tokens the
+   dashboard defines for both themes, so a theme switch recolours these with
+   no JS involved. */
+
+.pfc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 12px;
+  min-width: 0;
+}
+
+.pfc-card h4 {
+  margin: 0;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.pfc-sub, .pfc-note, .pfc-empty {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.pfc-empty { padding: 18px 0; text-align: center; }
+
+/* Ramp classes drive both stroke (donut) and background (bars). */
+.pfc-ramp-1 { stroke: var(--pfd-ramp-1); background: var(--pfd-ramp-1); }
+.pfc-ramp-2 { stroke: var(--pfd-ramp-2); background: var(--pfd-ramp-2); }
+.pfc-ramp-3 { stroke: var(--pfd-ramp-3); background: var(--pfd-ramp-3); }
+.pfc-ramp-4 { stroke: var(--pfd-ramp-4); background: var(--pfd-ramp-4); }
+.pfc-ramp-5 { stroke: var(--pfd-ramp-5); background: var(--pfd-ramp-5); }
+.pfc-ramp-6 { stroke: var(--pfd-ramp-6); background: var(--pfd-ramp-6); }
+.pfc-ramp-7 { stroke: var(--pfd-ramp-7); background: var(--pfd-ramp-7); }
+.pfc-ramp-8 { stroke: var(--pfd-ramp-8); background: var(--pfd-ramp-8); }
+
+/* A donut arc must not paint a background, and a swatch must not paint a stroke. */
+.pfc-slice { background: none !important; transition: stroke-width 160ms ease, opacity 160ms ease; cursor: pointer; }
+.pfc-swatch { stroke: none !important; width: 9px; height: 9px; border-radius: 3px; flex: 0 0 auto; }
+
+.pfc-donut-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.pfc-donut-wrap { position: relative; flex: 0 0 auto; }
+
+.pfc-donut-centre {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  pointer-events: none;
+  text-align: center;
+}
+
+.pfc-donut-centre strong { font-size: 19px; font-weight: 600; color: var(--text); letter-spacing: -0.02em; }
+.pfc-donut-centre small { max-width: 96px; font-size: 9px; line-height: 1.25; color: var(--text-muted); }
+
+.pfc-legend { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
+
+.pfc-legend li {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) 46px 62px;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 6px;
+  font-size: 10.5px;
+  color: var(--text-soft);
+  border-radius: 6px;
+  transition: background 140ms ease;
+}
+
+.pfc-legend li.is-active { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
+.pfc-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfc-legend b { text-align: right; color: var(--text); font-weight: 600; }
+.pfc-legend em { font-style: normal; text-align: right; font-size: 9.5px; color: var(--text-muted); }
+
+/* ------------------------------------------------------------- diverging */
+
+.pfc-diverge, .pfc-weights { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+
+.pfc-diverge li, .pfc-weights li {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(70px, 1.4fr) 76px 54px;
+  align-items: center;
+  gap: 9px;
+  padding: 3px 6px;
+  font-size: 10.5px;
+  color: var(--text-soft);
+  border-radius: 6px;
+  transition: background 140ms ease;
+}
+
+.pfc-diverge li.is-clickable, .pfc-weights li.is-clickable { cursor: pointer; }
+.pfc-diverge li:hover, .pfc-weights li:hover { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
+
+.pfc-diverge-label, .pfc-weights-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.pfc-diverge-track, .pfc-weights-track {
+  position: relative;
+  display: block;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  overflow: hidden;
+}
+
+.pfc-axis {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+}
+
+.pfc-fill { position: absolute; top: 0; bottom: 0; border-radius: 99px; }
+.pfc-fill.is-up { background: var(--pfd-up); }
+.pfc-fill.is-down { background: var(--pfd-down); }
+
+.pfc-weights-track > i { display: block; height: 100%; border-radius: 99px; }
+
+.pfc-diverge b, .pfc-weights b { text-align: right; font-weight: 600; color: var(--text); }
+.pfc-diverge b.is-up, .pfc-diverge em.is-up { color: var(--pfd-up); }
+.pfc-diverge b.is-down, .pfc-diverge em.is-down { color: var(--pfd-down); }
+.pfc-diverge em, .pfc-weights em { font-style: normal; text-align: right; font-size: 9.5px; color: var(--text-muted); }
+
+/* ---------------------------------------------------------------- stacked */
+
+.pfc-stack {
+  display: flex;
+  height: 12px;
+  border-radius: 99px;
+  overflow: hidden;
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+}
+
+.pfc-stack > i { display: block; height: 100%; transition: width 220ms ease; }
+
+.pfc-stack-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+}
+
+.pfc-stack-legend li { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-muted); }
+.pfc-stack-legend b { color: var(--text); font-weight: 600; }
+
+@media (max-width: 720px) {
+  .pfc-donut-row { grid-template-columns: 1fr; justify-items: center; }
+  .pfc-legend { width: 100%; }
+  .pfc-diverge li, .pfc-weights li { grid-template-columns: minmax(0, 1fr) 62px 48px; gap: 7px; }
+  .pfc-diverge-track, .pfc-weights-track { display: none; }
+}

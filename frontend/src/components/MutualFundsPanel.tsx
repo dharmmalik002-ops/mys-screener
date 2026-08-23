@@ -912,7 +912,10 @@ function PortfolioView({
         )}
       </section>
 
-      <SipCalculator />
+      <SipCalculator
+        currentValue={totals?.current_value ?? null}
+        monthlySip={totals?.monthly_sip ?? null}
+      />
 
       <section className="mfp-pf-card">
         <div className="mfp-pf-card-head">

@@ -194,6 +194,16 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         _require_ready(service)
         return service.get_portfolio_timeline(range_key=range)
 
+    @router.get("/portfolio/concentration")
+    def portfolio_concentration():
+        """Which held funds are concentrated, and where they overlap.
+
+        Reports measured weights in plain sentences. It does not recommend
+        changing anything — that is a personalised investment decision.
+        """
+        _require_ready(service)
+        return service.get_portfolio_concentration()
+
     @router.get("/portfolio/peer-comparison")
     def portfolio_peer_comparison():
         """For each fund held, which funds in its category measured better.

@@ -1,16 +1,76 @@
 /* Portfolio dashboard.
-   Type scale and spacing do the work here; colour is reserved for meaning. */
+   Type scale and spacing do the work here; colour is reserved for meaning.
+
+   Every colour is a token with a light-theme counterpart. The first version
+   hardcoded dark-optimised hex values — including a ramp that ended in near
+   black — so on the light theme the charts were not merely ugly, the darker
+   wedges were invisible against white. Anything the canvas needs is read out
+   of these variables at runtime rather than duplicated in JS. */
 
 .pfd {
+  /* Semantic. These are DEFINITIONS — literal values only. A previous pass
+     rewrote them into var() references to themselves, which resolves to
+     nothing and silently blanked every chart colour on the dark theme. */
   --pfd-up: #34d399;
   --pfd-down: #fb7185;
-  --pfd-hairline: rgba(148, 163, 184, 0.14);
-  --pfd-panel: rgba(148, 163, 184, 0.035);
+  --pfd-line: #38bdf8;
+  --pfd-line-soft: rgba(56, 189, 248, 0.28);
+  --pfd-line-faint: rgba(56, 189, 248, 0.01);
+  --pfd-cost-line: rgba(148, 163, 184, 0.55);
+  --pfd-grid: rgba(148, 163, 184, 0.10);
+  --pfd-crosshair: rgba(56, 189, 248, 0.50);
+  --pfd-hairline: rgba(148, 163, 184, 0.15);
+  --pfd-panel: rgba(148, 163, 184, 0.04);
+  --pfd-panel-hover: rgba(148, 163, 184, 0.09);
+  --pfd-chart-bg: #0b1120;
+  --pfd-on-accent: #0b1120;
+  --pfd-up-soft: rgba(52, 211, 153, 0.14);
+  --pfd-down-soft: rgba(251, 113, 133, 0.13);
+
+  /* Categorical ramp: cool hues stepping to violet, mid-tone at both ends so
+     it survives either background. */
+  --pfd-ramp-1: #7dd3fc;
+  --pfd-ramp-2: #38bdf8;
+  --pfd-ramp-3: #22d3ee;
+  --pfd-ramp-4: #2dd4bf;
+  --pfd-ramp-5: #818cf8;
+  --pfd-ramp-6: #a78bfa;
+  --pfd-ramp-7: #c084fc;
+  --pfd-ramp-8: #e879f9;
+
   display: flex;
   flex-direction: column;
   gap: 14px;
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum" 1;
+}
+
+:root[data-theme="light"] .pfd {
+  --pfd-up: #15803d;
+  --pfd-down: #dc2626;
+  --pfd-line: #2563eb;
+  --pfd-line-soft: rgba(37, 99, 235, 0.20);
+  --pfd-line-faint: rgba(37, 99, 235, 0.02);
+  --pfd-cost-line: rgba(71, 85, 105, 0.55);
+  --pfd-grid: rgba(71, 85, 105, 0.14);
+  --pfd-crosshair: rgba(37, 99, 235, 0.55);
+  --pfd-hairline: rgba(71, 85, 105, 0.18);
+  --pfd-panel: rgba(255, 255, 255, 0.62);
+  --pfd-panel-hover: rgba(71, 85, 105, 0.08);
+  --pfd-chart-bg: #ffffff;
+  --pfd-on-accent: #f8fafc;
+  --pfd-up-soft: rgba(21, 128, 61, 0.12);
+  --pfd-down-soft: rgba(220, 38, 38, 0.10);
+
+  /* Deeper, because these sit on a light grey page. */
+  --pfd-ramp-1: #0284c7;
+  --pfd-ramp-2: #0369a1;
+  --pfd-ramp-3: #0e7490;
+  --pfd-ramp-4: #0f766e;
+  --pfd-ramp-5: #4338ca;
+  --pfd-ramp-6: #6d28d9;
+  --pfd-ramp-7: #a21caf;
+  --pfd-ramp-8: #be185d;
 }
 
 .pfd .is-up { color: var(--pfd-up); }
@@ -34,7 +94,7 @@
   align-items: end;
   padding: 22px 24px;
   background:
-    radial-gradient(120% 180% at 0% 0%, rgba(56, 189, 248, 0.10), transparent 58%),
+    radial-gradient(120% 180% at 0% 0%, var(--pfd-line-soft), transparent 58%),
     var(--pfd-panel);
   border: 1px solid var(--pfd-hairline);
   border-radius: 14px;
@@ -67,14 +127,14 @@
   font-size: 13px;
   font-weight: 600;
   border-radius: 999px;
-  background: rgba(148, 163, 184, 0.1);
+  background: var(--pfd-panel-hover);
   color: var(--text-soft);
   white-space: nowrap;
 }
 
 .pfd-chip em { font-style: normal; font-size: 11px; opacity: 0.85; }
-.pfd-chip.is-up { background: rgba(52, 211, 153, 0.13); color: var(--pfd-up); }
-.pfd-chip.is-down { background: rgba(251, 113, 133, 0.13); color: var(--pfd-down); }
+.pfd-chip.is-up { background: var(--pfd-up-soft); color: var(--pfd-up); }
+.pfd-chip.is-down { background: var(--pfd-down-soft); color: var(--pfd-down); }
 
 .pfd-hero-sub { font-size: 11.5px; color: var(--text-muted); }
 
@@ -149,8 +209,8 @@
   transition: background 140ms ease, color 140ms ease;
 }
 
-.pfd-range:hover { color: var(--text-soft); background: rgba(148, 163, 184, 0.08); }
-.pfd-range.is-active { color: #0b1120; background: #38bdf8; }
+.pfd-range:hover { color: var(--text-soft); background: var(--pfd-panel-hover); }
+.pfd-range.is-active { color: var(--pfd-on-accent); background: var(--pfd-line); }
 
 .pfd-chart { display: flex; flex-direction: column; gap: 2px; }
 
@@ -220,7 +280,7 @@
   transition: background 140ms ease;
 }
 
-.pfd-legend li.is-active { background: rgba(148, 163, 184, 0.09); }
+.pfd-legend li.is-active { background: var(--pfd-panel-hover); }
 .pfd-legend i { width: 9px; height: 9px; border-radius: 3px; }
 .pfd-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfd-legend b { text-align: right; color: var(--text); font-weight: 600; }
@@ -243,7 +303,7 @@
   transition: background 140ms ease;
 }
 
-.pfd-bars li:hover { background: rgba(148, 163, 184, 0.08); }
+.pfd-bars li:hover { background: var(--pfd-panel-hover); }
 .pfd-bars-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfd-bars b { text-align: right; color: var(--text); font-weight: 600; }
 .pfd-bars em { font-style: normal; text-align: right; font-size: 10.5px; }
@@ -252,7 +312,7 @@
   display: block;
   height: 5px;
   border-radius: 99px;
-  background: rgba(148, 163, 184, 0.14);
+  background: var(--pfd-hairline);
   overflow: hidden;
 }
 
@@ -260,7 +320,7 @@
   display: block;
   height: 100%;
   border-radius: 99px;
-  background: linear-gradient(90deg, #38bdf8, #7dd3fc);
+  background: linear-gradient(90deg, var(--pfd-line), var(--pfd-ramp-1));
 }
 
 /* ------------------------------------------------------------- tables */
@@ -287,13 +347,13 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--text-muted);
-  border-bottom-color: rgba(148, 163, 184, 0.2);
+  border-bottom-color: var(--pfd-hairline);
 }
 
 .pfd-table .is-left { text-align: left; }
 .pfd-table tbody tr:last-child td { border-bottom: 0; }
 .pfd-table tbody tr { transition: background 140ms ease; }
-.pfd-table tbody tr:hover { background: rgba(148, 163, 184, 0.055); }
+.pfd-table tbody tr:hover { background: var(--pfd-panel-hover); }
 .pfd-strong { color: var(--text); font-weight: 600; }
 
 .pfd-table td em {
@@ -316,7 +376,7 @@
   transition: color 140ms ease;
 }
 
-.pfd-fund:hover { color: #38bdf8; }
+.pfd-fund:hover { color: var(--pfd-line); }
 
 .pfd-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 3px; }
 
@@ -354,17 +414,17 @@
   transition: all 140ms ease;
 }
 
-.pfd-actions button:hover { color: var(--text); border-color: rgba(148, 163, 184, 0.4); }
+.pfd-actions button:hover { color: var(--text); border-color: var(--pfd-hairline); }
 
 .pfd-actions button.is-danger {
   color: var(--pfd-down);
-  border-color: rgba(251, 113, 133, 0.45);
+  border-color: var(--pfd-down);
 }
 
-.pfd-actions button.is-danger:hover { color: #fff; background: rgba(251, 113, 133, 0.22); }
+.pfd-actions button.is-danger:hover { color: #fff; background: var(--pfd-down-soft); }
 .pfd-actions button:disabled { opacity: 0.5; cursor: not-allowed; }
 
-.pfd-panel-closed { background: rgba(148, 163, 184, 0.022); }
+.pfd-panel-closed { background: var(--pfd-panel); }
 
 .pfd-footnote {
   margin: 0;
@@ -403,7 +463,7 @@
 
 /* --------------------------------------------------------- upcoming SIPs */
 
-.pfd-panel-sips { background: rgba(56, 189, 248, 0.035); }
+.pfd-panel-sips { background: var(--pfd-line-faint); }
 
 .pfd-sips { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
 
@@ -420,7 +480,7 @@
   transition: background 140ms ease;
 }
 
-.pfd-sips li:hover { background: rgba(148, 163, 184, 0.08); }
+.pfd-sips li:hover { background: var(--pfd-panel-hover); }
 .pfd-sip-date { color: var(--text-muted); }
 .pfd-sip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .pfd-sips i { font-style: normal; font-size: 10px; text-transform: capitalize; color: var(--text-muted); }
@@ -432,8 +492,8 @@
   font-size: 9px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #7dd3fc;
-  background: rgba(56, 189, 248, 0.12);
+  color: var(--pfd-ramp-1);
+  background: var(--pfd-line-soft);
   border-radius: 99px;
   cursor: help;
 }
@@ -441,4 +501,43 @@
 @media (max-width: 720px) {
   .pfd-sips li { grid-template-columns: 74px minmax(0, 1fr) 74px; gap: 7px; font-size: 10.5px; }
   .pfd-sips i { display: none; }
+}
+
+/* ----------------------------------------------------------- chart grid */
+
+.pfd-charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(310px, 1fr));
+  gap: 14px;
+}
+
+/* The two list-shaped cards carry more rows than the donuts, so they get the
+   extra width when the grid has it — otherwise one is left stranded alone on
+   a row with dead space beside it. */
+@media (min-width: 1180px) {
+  .pfd-charts > :nth-child(4),
+  .pfd-charts > :nth-child(5) { grid-column: span 2; }
+}
+
+/* --------------------------------------------------------- sortable head */
+
+.pfd-table th.is-sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+.pfd-table th.is-sortable:hover { color: var(--text-soft); }
+.pfd-table th.is-sorted { color: var(--pfd-line); }
+.pfd-table th.is-sortable i { font-style: normal; margin-left: 3px; font-size: 8px; }
+
+.pfd-table tbody tr.is-flagged { background: var(--pfd-down-soft); }
+
+/* -------------------------------------------------------- findings list */
+
+.pfd-findings { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 5px; }
+
+.pfd-findings li {
+  padding: 8px 11px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-soft);
+  background: var(--pfd-panel-hover);
+  border-left: 2px solid var(--pfd-line);
+  border-radius: 0 8px 8px 0;
 }

@@ -18,12 +18,13 @@ import json
 import re
 import threading
 import time
+import uuid
 from collections import OrderedDict
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio, statement_import
+from . import benchmarks, concentration, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio, statement_import
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -793,6 +794,7 @@ class MutualFundService:
             "plan_variant": self._plan_variant(nav.get("scheme_name")),
             # The Growth sibling is where category comparisons can be made.
             "growth_sibling_code": (sibling or {}).get("scheme_code"),
+            "growth_sibling_slug": (sibling or {}).get("slug"),
         }
 
     @staticmethod
@@ -804,8 +806,83 @@ class MutualFundService:
             return "IDCW"
         return None
 
+    def materialise_due_sips(self) -> int:
+        """Turn SIP instalments whose date has arrived into real transactions.
+
+        This is what lets XIRR become available over time. An imported
+        statement has no dated cashflows, so it can only ever report P&L; every
+        instalment that lands from here on is recorded with its actual date and
+        the NAV that applied, and those are exactly the inputs XIRR needs.
+
+        Runs on read and persists only when something changed, so the portfolio
+        keeps itself current without a scheduled job.
+        """
+        state = self._raw_portfolio()
+        positions = state.get("positions") or []
+        today = date.today().isoformat()
+        changed = 0
+
+        for position in positions:
+            plan = position.get("sip_plan")
+            if not plan or not plan.get("active"):
+                continue
+            nav = self._nav_series(str(position["scheme_code"]))
+            if not nav or not nav.get("dates"):
+                continue
+
+            due = [
+                item for item in portfolio.upcoming_instalments(plan, count=24)
+                if item["date"] <= today
+            ]
+            if not due:
+                continue
+
+            existing = {
+                (t["date"], round(t.get("amount") or 0, 2))
+                for t in position.get("transactions") or []
+            }
+            added = 0
+            for item in due:
+                priced = portfolio.nav_on_or_before(nav["dates"], nav["navs"], item["date"])
+                if priced is None:
+                    continue
+                key = (item["date"], round(item["amount"], 2))
+                if key in existing:
+                    continue
+                position.setdefault("transactions", []).append({
+                    "id": str(uuid.uuid4()),
+                    "date": item["date"],
+                    "type": "buy",
+                    "amount": item["amount"],
+                    "units": None,
+                    "nav": None,
+                })
+                existing.add(key)
+                added += 1
+
+            if added:
+                # Advance the plan past everything just recorded.
+                remaining = [
+                    item for item in portfolio.upcoming_instalments(plan, count=24)
+                    if item["date"] > today
+                ]
+                if remaining:
+                    plan["next_date"] = remaining[0]["date"]
+                position["transactions"].sort(key=lambda item: item["date"])
+                changed += added
+
+        if changed:
+            self.save_portfolio({"positions": positions})
+        return changed
+
     def get_portfolio(self) -> dict[str, Any]:
         """Valued portfolio: per-position units, cost, value, gain and XIRR."""
+        # Record any SIP instalment that has come due, so the numbers move on
+        # their own rather than being frozen at whatever was last entered.
+        try:
+            self.materialise_due_sips()
+        except Exception:
+            pass
         state = self._raw_portfolio()
         self._load_universe()
 
@@ -1183,6 +1260,18 @@ class MutualFundService:
             "change_pct": round((values[-1] / values[0] - 1) * 100.0, 2) if values[0] else None,
         }
 
+    def get_portfolio_concentration(self) -> dict[str, Any]:
+        """Where the portfolio is concentrated, per fund and in aggregate."""
+        valued = self.get_portfolio()
+        allocation = valued.get("allocation") or {}
+        payload = concentration.build(
+            valued.get("positions") or [],
+            detail_for=self._detail,
+            look_through=allocation.get("look_through_top") or [],
+        )
+        payload["as_of"] = valued.get("as_of")
+        return payload
+
     def get_portfolio_peer_comparison(self) -> dict[str, Any]:
         """For every fund held: which funds in its category measured better.
 
@@ -1195,8 +1284,17 @@ class MutualFundService:
         all_funds = universe.get("funds") or []
 
         holdings: list[dict[str, Any]] = []
+        # Only what is still held. A fund that was sold carries no ongoing
+        # decision, and including it pads the comparison with rows that cannot
+        # be acted on.
+        valued_by_code = {
+            str(item["scheme_code"]): item
+            for item in (self.get_portfolio().get("positions") or [])
+        }
         for position in state.get("positions", []):
             code = str(position["scheme_code"])
+            if (valued_by_code.get(code, {}).get("units") or 0) <= 0:
+                continue
             row = self._by_code.get(code)
             if row is None:
                 holdings.append({

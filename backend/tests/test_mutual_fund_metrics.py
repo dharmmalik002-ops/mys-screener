@@ -925,3 +925,104 @@ class StatementParseTests(unittest.TestCase):
         transaction = built["positions"][0]["transactions"][0]
         self.assertAlmostEqual(transaction["units"] * transaction["nav"], 296985.1581, places=0)
         self.assertTrue(built["positions"][0]["cost_basis_only"])
+
+
+class ConcentrationTests(unittest.TestCase):
+    """Fund-level and portfolio-level concentration, from disclosed holdings."""
+
+    def holdings(self, weights, asset_class="equity"):
+        return [
+            {"name": f"Stock {index}", "weight_pct": weight, "asset_class": asset_class,
+             "sector": "Financial", "symbol": f"S{index}"}
+            for index, weight in enumerate(weights, start=1)
+        ]
+
+    def test_top5_and_top10_are_measured_off_equity_only(self):
+        from app.services.mutual_funds import concentration
+        detail = {
+            "holdings": self.holdings([10, 9, 8, 7, 6, 5, 4, 3, 2, 1])
+                        + [{"name": "TREPS", "weight_pct": 30.0, "asset_class": "cash"}],
+            "equity_holdings_count": 10,
+        }
+        analysed = concentration.analyse_fund({"scheme_code": "1", "name": "F"}, detail)
+        self.assertEqual(analysed["top5_pct"], 40.0)
+        self.assertEqual(analysed["top10_pct"], 55.0)
+        # The cash line must not be counted as a holding.
+        self.assertEqual(analysed["largest_name"], "Stock 1")
+
+    def test_a_concentrated_fund_is_flagged_and_a_diversified_one_is_not(self):
+        from app.services.mutual_funds import concentration
+        heavy = concentration.analyse_fund(
+            {"scheme_code": "1", "name": "Heavy"},
+            {"holdings": self.holdings([15, 12, 10, 8, 7] + [1] * 20)},
+        )
+        light = concentration.analyse_fund(
+            {"scheme_code": "2", "name": "Light"},
+            {"holdings": self.holdings([4, 4, 3, 3, 3] + [2] * 30)},
+        )
+        self.assertIn("top5", heavy["flags"])
+        self.assertTrue(heavy["concentrated"])
+        self.assertEqual(light["flags"], [])
+        self.assertFalse(light["concentrated"])
+
+    def test_missing_holdings_degrade_to_nulls(self):
+        from app.services.mutual_funds import concentration
+        analysed = concentration.analyse_fund({"scheme_code": "1", "name": "F"}, None)
+        self.assertIsNone(analysed["top5_pct"])
+        self.assertFalse(analysed["concentrated"])
+
+    def test_summary_names_the_concentrated_fund_with_its_figure(self):
+        from app.services.mutual_funds import concentration
+        funds = [concentration.analyse_fund(
+            {"scheme_code": "1", "name": "Heavy Fund"},
+            {"holdings": self.holdings([15, 12, 10, 8, 7] + [1] * 20)},
+        )]
+        lines = concentration.describe(funds, [])
+        self.assertTrue(any("Heavy Fund" in line and "52%" in line for line in lines), lines)
+
+    def test_summary_says_so_when_nothing_is_concentrated(self):
+        from app.services.mutual_funds import concentration
+        funds = [concentration.analyse_fund(
+            {"scheme_code": "1", "name": "Light Fund"},
+            {"holdings": self.holdings([4, 4, 3, 3, 3] + [2] * 30)},
+        )]
+        lines = concentration.describe(funds, [])
+        self.assertTrue(any("No fund you hold" in line for line in lines), lines)
+
+    def test_overlap_across_funds_is_called_out(self):
+        from app.services.mutual_funds import concentration
+        look_through = [{
+            "name": "HDFC Bank Ltd", "weight_pct": 7.5, "fund_count": 3,
+            "funds": [{"name": "A"}, {"name": "B"}, {"name": "C"}],
+        }]
+        lines = concentration.describe([], look_through)
+        joined = " ".join(lines)
+        self.assertIn("HDFC Bank Ltd", joined)
+        self.assertIn("3 different funds", joined)
+
+    def test_sold_positions_are_excluded_from_the_analysis(self):
+        """A fund no longer held carries no concentration risk."""
+        from app.services.mutual_funds import concentration
+        positions = [
+            {"scheme_code": "open", "units": 100.0, "fund": {"name": "Open Fund"}},
+            {"scheme_code": "sold", "units": 0.0, "fund": {"name": "Sold Fund"}},
+        ]
+        detail = {"holdings": self.holdings([15, 12, 10, 8, 7]), "equity_holdings_count": 5}
+        built = concentration.build(
+            positions, detail_for=lambda code, slug: (detail, False), look_through=[],
+        )
+        self.assertEqual([fund["name"] for fund in built["funds"]], ["Open Fund"])
+
+    def test_the_reported_numbers_never_instruct_the_reader(self):
+        """Concentration is reported as measured fact. Telling someone to move
+        money is personalised advice and out of scope."""
+        from app.services.mutual_funds import concentration
+        funds = [concentration.analyse_fund(
+            {"scheme_code": "1", "name": "Heavy Fund"},
+            {"holdings": self.holdings([15, 12, 10, 8, 7] + [1] * 20)},
+        )]
+        text = " ".join(concentration.describe(funds, [
+            {"name": "X Ltd", "weight_pct": 9.0, "fund_count": 2, "funds": [{"name": "A"}, {"name": "B"}]},
+        ])).lower()
+        for banned in ("you should", "we recommend", "switch out", "sell ", "exit ", "reduce your"):
+            self.assertNotIn(banned, text)
