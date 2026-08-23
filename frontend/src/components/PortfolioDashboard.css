@@ -400,3 +400,45 @@
   .pfd-bars li .pfd-bar { display: none; }
   .pfd-chart-date { margin-left: 0; }
 }
+
+/* --------------------------------------------------------- upcoming SIPs */
+
+.pfd-panel-sips { background: rgba(56, 189, 248, 0.035); }
+
+.pfd-sips { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 1px; }
+
+.pfd-sips li {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr) 78px 92px;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.pfd-sips li:hover { background: rgba(148, 163, 184, 0.08); }
+.pfd-sip-date { color: var(--text-muted); }
+.pfd-sip-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfd-sips i { font-style: normal; font-size: 10px; text-transform: capitalize; color: var(--text-muted); }
+.pfd-sips b { text-align: right; color: var(--text); font-weight: 600; }
+
+.pfd-tag-sip {
+  padding: 0 6px;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #7dd3fc;
+  background: rgba(56, 189, 248, 0.12);
+  border-radius: 99px;
+  cursor: help;
+}
+
+@media (max-width: 720px) {
+  .pfd-sips li { grid-template-columns: 74px minmax(0, 1fr) 74px; gap: 7px; font-size: 10.5px; }
+  .pfd-sips i { display: none; }
+}

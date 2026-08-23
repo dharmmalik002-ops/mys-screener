@@ -9,7 +9,10 @@ yfinance==1.2.0
 beautifulsoup4==4.14.3
 lxml==6.0.2
 python-calamine>=0.4,<0.6
+# FastAPI needs this for the statement-upload endpoint's multipart form.
+python-multipart>=0.0.9,<0.1
 google-genai>=1.0,<2.0
 apscheduler>=3.10,<4.0
 pypdf>=5.0,<6.0
 psycopg[binary]>=3.2,<4.0
+matplotlib==3.11.1

@@ -15,8 +15,11 @@ blocking is confined to one worker.
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Body, HTTPException, Query
+from fastapi import APIRouter, Body, File, HTTPException, Query, UploadFile
 
+from starlette.concurrency import run_in_threadpool
+
+from app.services.mutual_funds import statement_import
 from app.services.mutual_funds.service import MutualFundService
 
 
@@ -143,6 +146,47 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
     @router.put("/portfolio")
     def save_portfolio(payload: dict = Body(default_factory=dict)):
         return service.save_portfolio(payload)
+
+    @router.get("/schemes/search")
+    def search_schemes(
+        q: str = Query(default="", description="fund name fragment"),
+        limit: int = Query(default=25, ge=1, le=100),
+        direct_only: bool = Query(default=True),
+    ):
+        """Find any AMFI scheme to add to the portfolio.
+
+        Deliberately wider than `/screener`: the screener universe is
+        Direct/Growth only, but a portfolio must be able to name whatever is
+        actually held, including IDCW and Payout plans.
+        """
+        _require_ready(service)
+        return service.search_schemes(q, limit=limit, direct_only=direct_only)
+
+    @router.post("/portfolio/import")
+    async def import_statement(
+        file: UploadFile = File(...),
+        replace: bool = Query(default=False),
+    ):
+        """Import a broker mutual-fund P&L statement (.xlsx).
+
+        Async only because reading the upload stream is async; the parsing
+        itself is handed to the sync service in a thread.
+        """
+        _require_ready(service)
+        data = await file.read()
+        if not data:
+            raise HTTPException(status_code=400, detail="The uploaded file was empty.")
+        if len(data) > 8 * 1024 * 1024:
+            raise HTTPException(status_code=413, detail="Statement files are expected under 8 MB.")
+        try:
+            return await run_in_threadpool(
+                service.import_statement,
+                data,
+                filename=file.filename or "statement.xlsx",
+                replace=replace,
+            )
+        except statement_import.StatementError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     @router.get("/portfolio/timeline")
     def portfolio_timeline(range: str = Query(default="1y", alias="range")):

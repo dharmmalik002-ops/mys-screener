@@ -23,7 +23,7 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio
+from . import benchmarks, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio, statement_import
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -70,6 +70,9 @@ class MutualFundService:
         self._ai_service = ai_service
         self._ai_lock = threading.Lock()
         self._ai_cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self._amfi_lock = threading.Lock()
+        self._amfi_cache: list[dict[str, Any]] | None = None
+        self._amfi_loaded_at = 0.0
 
         self._universe_lock = threading.Lock()
         self._universe: dict[str, Any] | None = None
@@ -812,6 +815,9 @@ class MutualFundService:
         total_value = 0.0
         total_realised = 0.0
         total_cost_of_sold = 0.0
+        monthly_sip_total = 0.0
+        active_sips = 0
+        next_sips: list[dict[str, Any]] = []
 
         for position in state.get("positions", []):
             code = str(position["scheme_code"])
@@ -827,6 +833,20 @@ class MutualFundService:
             valued["fund"] = row
             valued["transactions"] = position.get("transactions") or []
             positions.append(valued)
+
+            plan = position.get("sip_plan")
+            if plan and plan.get("active"):
+                monthly_sip_total += plan.get("monthly_equivalent") or 0.0
+                active_sips += 1
+                upcoming = portfolio.upcoming_instalments(plan, count=1)
+                if upcoming:
+                    next_sips.append({
+                        "scheme_code": position["scheme_code"],
+                        "name": (row or {}).get("name"),
+                        "date": upcoming[0]["date"],
+                        "amount": upcoming[0]["amount"],
+                        "frequency": plan.get("frequency"),
+                    })
 
             total_invested += valued.get("invested") or 0.0
             total_value += valued.get("current_value") or 0.0
@@ -887,7 +907,10 @@ class MutualFundService:
                 "gain": round(total_pnl, 2),
                 "gain_pct": round(total_pnl / deployed * 100.0, 2) if deployed > 0 else None,
                 "xirr": portfolio_xirr,
+                "monthly_sip": round(monthly_sip_total, 2) if monthly_sip_total else None,
+                "active_sip_count": active_sips,
             },
+            "upcoming_sips": sorted(next_sips, key=lambda item: item["date"])[:8],
             "allocation": self._portfolio_allocation(positions, total_value),
         }
 
@@ -983,6 +1006,97 @@ class MutualFundService:
             peers,
             category_summary=(universe.get("categories") or {}).get(sub_category),
         )
+
+    # ------------------------------------------------------------ scheme search
+
+    def _amfi_index(self) -> list[dict[str, Any]]:
+        """Every AMFI scheme, cached for the process.
+
+        The screener universe is Direct/Growth only, on purpose. A *portfolio*
+        has to be able to name whatever is actually held — including the IDCW
+        and Payout plans this user holds — so entry searches the full AMFI list
+        rather than the screener's subset.
+        """
+        with self._amfi_lock:
+            if self._amfi_cache is None or (time.time() - self._amfi_loaded_at) > 24 * 60 * 60:
+                try:
+                    self._amfi_cache = nav_source.fetch_scheme_index()
+                    self._amfi_loaded_at = time.time()
+                except nav_source.NavUnavailable:
+                    self._amfi_cache = self._amfi_cache or []
+            return self._amfi_cache or []
+
+    def search_schemes(self, query: str, *, limit: int = 25, direct_only: bool = True) -> dict[str, Any]:
+        """Find a scheme to add to the portfolio, by name."""
+        needle = " ".join(str(query or "").lower().split())
+        if len(needle) < 3:
+            return {"query": query, "results": [], "hint": "Type at least three characters."}
+
+        universe = self._load_universe()
+        in_universe = {str(row["scheme_code"]) for row in (universe.get("funds") or [])}
+        words = needle.split()
+
+        scored: list[tuple[int, dict[str, Any]]] = []
+        for scheme in self._amfi_index():
+            name = str(scheme.get("schemeName") or "")
+            lowered = name.lower()
+            if direct_only and "direct" not in lowered:
+                continue
+            if not all(word in lowered for word in words):
+                continue
+            code = str(scheme.get("schemeCode"))
+            # Rank: screener funds first (they carry full metadata), then
+            # Growth over IDCW, then the shortest name — which is almost always
+            # the plain plan rather than a variant with a long tail.
+            rank = (0 if code in in_universe else 1, 0 if "growth" in lowered else 1, len(name))
+            scored.append((rank, {
+                "scheme_code": code,
+                "name": name,
+                "in_universe": code in in_universe,
+                "isin": scheme.get("isinGrowth") or scheme.get("isinDivReinvestment"),
+            }))
+        scored.sort(key=lambda item: item[0])
+        return {"query": query, "results": [item[1] for item in scored[:limit]],
+                "total": len(scored)}
+
+    # ------------------------------------------------------------------ import
+
+    def import_statement(self, data: bytes, *, filename: str, replace: bool = False) -> dict[str, Any]:
+        """Parse a broker statement and merge it into the portfolio."""
+        rows, summary = statement_import.parse_statement(data)
+        universe = self._load_universe()
+        as_of = universe.get("as_of")
+        if not as_of:
+            raise statement_import.StatementError("the fund universe is not loaded yet")
+
+        try:
+            amfi_by_isin = nav_source.build_isin_index()
+        except nav_source.NavUnavailable:
+            amfi_by_isin = {}
+
+        built = statement_import.build_positions(
+            rows, universe=universe, amfi_by_isin=amfi_by_isin,
+            as_of=as_of, source_label=filename,
+        )
+        if not built["positions"]:
+            raise statement_import.StatementError(
+                "no holdings in this statement could be matched to a scheme"
+            )
+
+        existing = [] if replace else self._raw_portfolio().get("positions", [])
+        incoming_codes = {p["scheme_code"] for p in built["positions"]}
+        kept = [p for p in existing if str(p.get("scheme_code")) not in incoming_codes]
+
+        saved = self.save_portfolio({"positions": kept + built["positions"]})
+        return {
+            "imported": len(built["positions"]),
+            "kept": len(kept),
+            "replaced": len(existing) - len(kept),
+            "matched": built["matched"],
+            "skipped": built["skipped"],
+            "reconciliation": statement_import.reconcile(built["totals"], summary),
+            "portfolio": saved,
+        }
 
     def get_portfolio_timeline(self, *, range_key: str = "1y") -> dict[str, Any]:
         """What today's holdings would have been worth through history.

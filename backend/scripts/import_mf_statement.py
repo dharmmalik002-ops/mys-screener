@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Load a broker mutual-fund P&L statement into the portfolio.
+"""Load a broker mutual-fund P&L statement into the portfolio, from the CLI.
+
+The parsing itself lives in `app/services/mutual_funds/statement_import.py` so
+that the running app can do the same import over HTTP — a statement parsed only
+here writes to *this machine's* APP_STATE_DIR and never reaches a deployed
+server, which is how a full portfolio import once went missing. Prefer the
+in-app importer; this stays for scripted or offline use.
 
 Built for the Zerodha/Console-style "P&L Statement for Mutual Funds" export,
 which carries, per scheme: units sold with their buy and sell value, and units

@@ -17,10 +17,12 @@ import {
   type MfPosition,
   type MfScreenerResponse,
   type MfSipFrequency,
+  type MfSipPlan,
   type MfTransaction,
 } from "../lib/api";
 import { FundDetailModal } from "./FundDetailModal";
 import { PortfolioDashboard } from "./PortfolioDashboard";
+import { PortfolioSetup } from "./PortfolioSetup";
 import { SipCalculator } from "./SipCalculator";
 
 import "./MutualFundsPanel.css";
@@ -621,6 +623,7 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
           onSave={savePositions}
           onOpenFund={setOpenFund}
           onOpenSymbolChart={onOpenSymbolChart}
+          onImportedPortfolio={setPortfolio}
         />
       ) : null}
 
@@ -647,12 +650,14 @@ function PortfolioView({
   onSave,
   onOpenFund,
   onOpenSymbolChart,
+  onImportedPortfolio,
 }: {
   portfolio: MfPortfolioResponse | null;
   universe: MfFund[];
   onSave: (positions: MfPosition[]) => Promise<MfPortfolioResponse>;
   onOpenFund: (schemeCode: string) => void;
   onOpenSymbolChart?: (symbol: string) => void;
+  onImportedPortfolio: (portfolio: MfPortfolioResponse) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -673,12 +678,20 @@ function PortfolioView({
       scheme_code: position.scheme_code,
       notes: position.notes,
       transactions: position.transactions,
+      sip_plan: position.sip_plan ?? null,
+      cost_basis_only: position.cost_basis_only,
     })), [positions]);
+
 
   const commit = useCallback(async (next: MfPosition[]) => {
     setBusy(true);
     try { await onSave(next); } finally { setBusy(false); }
   }, [onSave]);
+
+  const replacePlan = useCallback(async (schemeCode: string, plan: MfSipPlan | null) => {
+    await commit(asPositions().map((position) =>
+      position.scheme_code === schemeCode ? { ...position, sip_plan: plan } : position));
+  }, [asPositions, commit]);
 
   const replaceTransactions = useCallback(async (schemeCode: string, transactions: MfTransaction[]) => {
     const next = asPositions().map((position) =>
@@ -713,18 +726,29 @@ function PortfolioView({
       .finally(() => setAiBusy(false));
   }, []);
 
+  const setup = (
+    <PortfolioSetup
+      heldCodes={new Set(positions.map((position) => position.scheme_code))}
+      onImported={(result) => onImportedPortfolio(result.portfolio)}
+      onAddFund={async (schemeCode) => {
+        await commit([...asPositions(), { scheme_code: schemeCode, transactions: [] }]);
+        setEditing(schemeCode);
+      }}
+    />
+  );
+
   if (!positions.length) {
     return (
       <>
         <div className="mfp-placeholder mfp-placeholder-tall">
-          <p><b>No funds in your portfolio yet.</b></p>
+          <p><b>Nothing in your portfolio yet.</b></p>
           <p>
-            Add one from the Screener with the <Plus size={11} /> button, then record what you hold —
-            units you already own as of a date, a lumpsum, or a recurring SIP (weekly, fortnightly,
-            monthly or quarterly). Units, current value, P&amp;L and XIRR are all computed from the
-            same AMFI NAV series the charts use.
+            Import your broker's mutual fund P&amp;L statement to bring everything across at once, or
+            search for a fund and add it by hand. Either way you can then record units held, a
+            one-off purchase, past SIP instalments, and the SIP still running.
           </p>
         </div>
+        {setup}
         <SipCalculator />
       </>
     );
@@ -732,6 +756,8 @@ function PortfolioView({
 
   return (
     <div className="mfp-portfolio">
+      {setup}
+
       <PortfolioDashboard
         portfolio={portfolio!}
         onOpenFund={onOpenFund}
@@ -749,7 +775,9 @@ function PortfolioView({
           name={positions.find((position) => position.scheme_code === editing)?.fund?.name ?? editing}
           transactions={positions.find((position) => position.scheme_code === editing)?.transactions ?? []}
           busy={busy}
+          sipPlan={positions.find((position) => position.scheme_code === editing)?.sip_plan ?? null}
           onChange={(transactions) => void replaceTransactions(editing, transactions)}
+          onPlanChange={(plan) => void replacePlan(editing, plan)}
           onClose={() => setEditing(null)}
         />
       ) : null}
@@ -943,19 +971,23 @@ function TransactionEditor({
   schemeCode,
   name,
   transactions,
+  sipPlan,
   busy,
   onChange,
+  onPlanChange,
   onClose,
 }: {
   schemeCode: string;
   name: string;
   transactions: MfTransaction[];
+  sipPlan?: MfSipPlan | null;
   busy: boolean;
   onChange: (transactions: MfTransaction[]) => void;
+  onPlanChange: (plan: MfSipPlan | null) => void;
   onClose: () => void;
 }) {
   const today = new Date().toISOString().slice(0, 10);
-  const [mode, setMode] = useState<"holding" | "lumpsum" | "sip">("holding");
+  const [mode, setMode] = useState<"holding" | "lumpsum" | "sip" | "plan">("holding");
   const [date, setDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [amount, setAmount] = useState("");
@@ -963,6 +995,23 @@ function TransactionEditor({
   const [frequency, setFrequency] = useState<MfSipFrequency>("weekly");
   const [note, setNote] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
+  const [planAmount, setPlanAmount] = useState(sipPlan ? String(sipPlan.amount) : "");
+  const [planFrequency, setPlanFrequency] = useState<MfSipFrequency>(sipPlan?.frequency ?? "weekly");
+  const [planNext, setPlanNext] = useState(sipPlan?.next_date ?? today);
+
+  const savePlan = () => run(async () => {
+    const value = Number(planAmount);
+    if (!Number.isFinite(value) || value <= 0) { setNote("Enter the instalment amount."); return; }
+    if (!planNext) { setNote("Pick the date of the next instalment."); return; }
+    onPlanChange({ amount: value, frequency: planFrequency, next_date: planNext, active: true });
+    setNote(`SIP saved: ₹${value.toLocaleString("en-IN")} ${planFrequency} from ${planNext}.`);
+  });
+
+  const clearPlan = () => run(async () => {
+    onPlanChange(null);
+    setPlanAmount("");
+    setNote("SIP stopped. Past instalments are untouched.");
+  });
 
   const run = async (task: () => Promise<void>) => {
     setWorking(true);
@@ -1021,7 +1070,10 @@ function TransactionEditor({
           One-off purchase
         </button>
         <button type="button" className={mode === "sip" ? "active" : ""} onClick={() => setMode("sip")}>
-          Recurring SIP
+          Past SIP instalments
+        </button>
+        <button type="button" className={mode === "plan" ? "active" : ""} onClick={() => setMode("plan")}>
+          Ongoing SIP
         </button>
       </div>
 
@@ -1110,6 +1162,56 @@ function TransactionEditor({
             that day's NAV, which is what makes the XIRR real rather than an average-cost
             approximation.
           </p>
+        </>
+      ) : null}
+
+      {mode === "plan" ? (
+        <>
+          <div className="mfp-editor-form">
+            <div className="mfp-seg">
+              {(["weekly", "fortnightly", "monthly", "quarterly"] as MfSipFrequency[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  className={planFrequency === option ? "active" : ""}
+                  onClick={() => setPlanFrequency(option)}
+                >
+                  {option[0].toUpperCase() + option.slice(1)}
+                </button>
+              ))}
+            </div>
+            <label className="mfp-inline">
+              ₹ per instalment
+              <input
+                type="number" min="1" placeholder="amount"
+                value={planAmount} onChange={(event) => setPlanAmount(event.target.value)}
+              />
+            </label>
+            <label className="mfp-inline">
+              Next instalment on
+              <input type="date" value={planNext} onChange={(event) => setPlanNext(event.target.value)} />
+            </label>
+            <button type="button" className="mfp-toggle active" disabled={busy || working} onClick={savePlan}>
+              {sipPlan ? "Update SIP" : "Save SIP"}
+            </button>
+            {sipPlan ? (
+              <button type="button" className="mfp-toggle" disabled={busy || working} onClick={clearPlan}>
+                Stop SIP
+              </button>
+            ) : null}
+          </div>
+          <p className="mfp-note">
+            The instruction that is still running, as opposed to instalments already paid. Recording
+            it shows what you are committed to each month and when the next debit lands — neither is
+            derivable from past instalments. It does not create transactions; add those under{" "}
+            <b>Past SIP instalments</b> once they are paid.
+          </p>
+          {sipPlan ? (
+            <p className="mfp-editor-note">
+              Active: ₹{sipPlan.amount.toLocaleString("en-IN")} {sipPlan.frequency}, next on{" "}
+              {sipPlan.next_date} — about ₹{Math.round(sipPlan.monthly_equivalent ?? 0).toLocaleString("en-IN")} a month.
+            </p>
+          ) : null}
         </>
       ) : null}
 

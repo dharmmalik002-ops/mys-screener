@@ -3630,6 +3630,9 @@ export type MfPosition = {
   scheme_code: string;
   notes?: string | null;
   transactions: MfTransaction[];
+  sip_plan?: MfSipPlan | null;
+  cost_basis_only?: boolean;
+  realised_override?: Record<string, number> | null;
 };
 
 export type MfValuedPosition = {
@@ -3650,6 +3653,8 @@ export type MfValuedPosition = {
   xirr?: number | null;
   is_closed?: boolean;
   cost_basis_only?: boolean;
+  sip_plan?: MfSipPlan | null;
+  upcoming_instalments?: { date: string; amount: number }[];
   avg_cost_nav?: number | null;
   latest_nav?: number | null;
   latest_nav_date?: string | null;
@@ -3687,7 +3692,10 @@ export type MfPortfolioResponse = {
     gain?: number | null;
     gain_pct?: number | null;
     xirr?: number | null;
+    monthly_sip?: number | null;
+    active_sip_count?: number;
   };
+  upcoming_sips?: { scheme_code: string; name?: string | null; date: string; amount: number; frequency?: string }[];
   allocation: {
     by_sub_category: Record<string, number>;
     by_amc: Record<string, number>;
@@ -3930,6 +3938,53 @@ export type MfReview = {
   strength_count: number;
   concern_count: number;
 };
+
+export type MfSipPlan = {
+  amount: number;
+  frequency: MfSipFrequency;
+  next_date: string;
+  active: boolean;
+  annual_commitment?: number;
+  monthly_equivalent?: number;
+};
+
+export type MfSchemeSearchResult = {
+  scheme_code: string;
+  name: string;
+  in_universe: boolean;
+  isin?: string | null;
+};
+
+/** Searches every AMFI scheme, not just the Direct-Growth screener universe,
+ *  so an IDCW or Payout plan that is actually held can be added. */
+export function searchMfSchemes(query: string, limit = 20) {
+  return request<{ query: string; results: MfSchemeSearchResult[]; total?: number; hint?: string }>(
+    `/api/mf/schemes/search?q=${encodeURIComponent(query)}&limit=${limit}`,
+    undefined,
+    { timeoutMs: 45000 },
+  );
+}
+
+export type MfImportResult = {
+  imported: number;
+  kept: number;
+  replaced: number;
+  matched: { scheme_code: string; name: string; matched_by: string; units?: number | null; cost?: number | null; realised?: number | null }[];
+  skipped: { symbol: string; reason: string }[];
+  reconciliation: { label: string; statement: number; imported: number; agrees: boolean }[];
+  portfolio: MfPortfolioResponse;
+};
+
+export function importMfStatement(file: File, replace = false) {
+  const body = new FormData();
+  body.append("file", file);
+  // No Content-Type header: the browser must set the multipart boundary.
+  return request<MfImportResult>(
+    `/api/mf/portfolio/import?replace=${replace ? "true" : "false"}`,
+    { method: "POST", body },
+    { timeoutMs: 120000 },
+  );
+}
 
 export type MfPortfolioTimeline = {
   range: string;

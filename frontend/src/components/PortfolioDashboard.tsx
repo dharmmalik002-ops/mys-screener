@@ -317,6 +317,15 @@ export function PortfolioDashboard({
             </small>
           </div>
           <div className="pfd-split">
+            <span className="pfd-label">Monthly SIP</span>
+            <strong>{totals?.monthly_sip ? inr(totals.monthly_sip, { compact: true }) : "—"}</strong>
+            <small>
+              {totals?.active_sip_count
+                ? `${totals.active_sip_count} active plan${totals.active_sip_count > 1 ? "s" : ""}`
+                : "no SIP recorded"}
+            </small>
+          </div>
+          <div className="pfd-split">
             <span className="pfd-label">XIRR</span>
             <strong className={toneOf(totals?.xirr)}>{pct(totals?.xirr)}</strong>
             <small>
@@ -327,6 +336,27 @@ export function PortfolioDashboard({
           </div>
         </div>
       </section>
+
+      {portfolio.upcoming_sips?.length ? (
+        <section className="pfd-panel pfd-panel-sips">
+          <header className="pfd-panel-head">
+            <h3>Next instalments</h3>
+            <span className="pfd-muted">
+              {inr(totals?.monthly_sip, { compact: true })} a month committed
+            </span>
+          </header>
+          <ul className="pfd-sips">
+            {portfolio.upcoming_sips.map((sip) => (
+              <li key={`${sip.scheme_code}-${sip.date}`} onClick={() => onOpenFund(sip.scheme_code)}>
+                <span className="pfd-sip-date">{sip.date}</span>
+                <span className="pfd-sip-name">{sip.name ?? sip.scheme_code}</span>
+                <i>{sip.frequency}</i>
+                <b>{inr(sip.amount)}</b>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {/* ----------------------------------------------------------- chart */}
       <section className="pfd-panel">
@@ -438,6 +468,14 @@ export function PortfolioDashboard({
                     </button>
                     <span className="pfd-tags">
                       {position.fund?.sub_category ? <i>{position.fund.sub_category}</i> : null}
+                      {position.sip_plan?.active ? (
+                        <i
+                          className="pfd-tag-sip"
+                          title={`₹${position.sip_plan.amount.toLocaleString("en-IN")} ${position.sip_plan.frequency}, next on ${position.sip_plan.next_date}`}
+                        >
+                          SIP {inr(position.sip_plan.amount, { compact: true })} {position.sip_plan.frequency}
+                        </i>
+                      ) : null}
                       {position.fund?.off_universe ? (
                         <i
                           className="pfd-tag-note"

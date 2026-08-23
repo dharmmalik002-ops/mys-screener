@@ -813,3 +813,115 @@ class StatementImportTests(unittest.TestCase):
         # A few days of ordinary NAV movement must still pass.
         ordinary = abs(58.686 - 56.914) / 56.914 * 100
         self.assertLess(ordinary, self.module.NAV_DRIFT_TOLERANCE_PCT)
+
+
+class SipPlanTests(unittest.TestCase):
+    """The standing SIP instruction, separate from instalments already paid."""
+
+    def test_plan_derives_monthly_and_annual_commitment(self):
+        normalised = portfolio.normalise_payload({"positions": [{
+            "scheme_code": "1", "transactions": [],
+            "sip_plan": {"amount": 5000, "frequency": "weekly", "next_date": "2026-08-26"},
+        }]})
+        plan = normalised["positions"][0]["sip_plan"]
+        self.assertEqual(plan["annual_commitment"], 260000.0)
+        self.assertEqual(plan["monthly_equivalent"], 21666.67)
+
+    def test_a_plan_without_amount_or_date_is_dropped(self):
+        for bad in ({"frequency": "weekly"}, {"amount": 500}, {"amount": 0, "next_date": "2026-01-01"}):
+            normalised = portfolio.normalise_payload({"positions": [
+                {"scheme_code": "1", "transactions": [], "sip_plan": bad},
+            ]})
+            self.assertIsNone(normalised["positions"][0]["sip_plan"], bad)
+
+    def test_upcoming_weekly_instalments_step_seven_days(self):
+        plan = {"amount": 2000, "frequency": "weekly", "next_date": "2026-08-26", "active": True}
+        dates = [item["date"] for item in portfolio.upcoming_instalments(plan, count=4)]
+        self.assertEqual(dates, ["2026-08-26", "2026-09-02", "2026-09-09", "2026-09-16"])
+
+    def test_month_end_mandate_does_not_drift_earlier(self):
+        """A 31st SIP must return to the 31st after a short month, not settle
+        permanently on the 28th."""
+        plan = {"amount": 1000, "frequency": "monthly", "next_date": "2026-01-31", "active": True}
+        dates = [item["date"] for item in portfolio.upcoming_instalments(plan, count=5)]
+        self.assertEqual(dates, ["2026-01-31", "2026-02-28", "2026-03-31", "2026-04-30", "2026-05-31"])
+
+    def test_an_inactive_plan_projects_nothing(self):
+        plan = {"amount": 1000, "frequency": "monthly", "next_date": "2026-01-31", "active": False}
+        self.assertEqual(portfolio.upcoming_instalments(plan), [])
+
+    def test_a_position_can_hold_a_plan_with_no_transactions_yet(self):
+        """Tracking a fund for its standing SIP before the first recorded
+        instalment is a valid state, not an empty position."""
+        normalised = portfolio.normalise_payload({"positions": [{
+            "scheme_code": "1", "transactions": [],
+            "sip_plan": {"amount": 1000, "frequency": "monthly", "next_date": "2026-09-01"},
+        }]})
+        self.assertEqual(len(normalised["positions"]), 1)
+        valued = portfolio.value_position(normalised["positions"][0], nav_series=None)
+        self.assertIsNotNone(valued["sip_plan"])
+        self.assertEqual(valued["units"], None)
+
+
+class StatementParseTests(unittest.TestCase):
+    """Parsing is in the service layer so the running app can do it.
+
+    An import parsed only by a local script writes to that machine's
+    APP_STATE_DIR and never reaches the deployed server — which is how a
+    complete portfolio import went missing.
+    """
+
+    def test_a_non_statement_file_is_rejected_clearly(self):
+        from app.services.mutual_funds import statement_import
+        with self.assertRaises(statement_import.StatementError):
+            statement_import.parse_statement(b"this is not a spreadsheet")
+
+    def test_normalise_folds_ampersand_and_plan_words(self):
+        from app.services.mutual_funds import statement_import as si
+        self.assertEqual(
+            si.normalise("TATA BANKING AND FINANCIAL SERVICES FUND - DIRECT PLAN"),
+            si.normalise("Tata Banking & Financial Services Fund"),
+        )
+
+    def test_isin_resolution_beats_a_name_match(self):
+        from app.services.mutual_funds import statement_import as si
+        growth = {"scheme_code": "120578", "name": "SBI Technology Opportunities Fund",
+                  "nav_latest": 236.946}
+        code, _fund, how = si.resolve_row(
+            {"isin": "INF200K01RT0", "symbol": "SBI TECHNOLOGY OPPORTUNITIES FUND", "last_nav": 168.3},
+            universe_by_isin={},
+            universe_by_name={si.normalise(growth["name"]): growth},
+            amfi_by_isin={"INF200K01RT0": {"schemeCode": 119731}},
+        )
+        self.assertEqual((code, how), ("119731", "isin"))
+
+    def test_build_positions_rejects_a_wrong_plan_on_nav_drift(self):
+        from app.services.mutual_funds import statement_import as si
+        universe = {"funds": [{"scheme_code": "120578",
+                               "name": "SBI Technology Opportunities Fund",
+                               "nav_latest": 236.946}]}
+        rows = [{
+            "symbol": "SBI TECHNOLOGY OPPORTUNITIES FUND - DIRECT PLAN", "isin": "UNKNOWN",
+            "sold_units": 0.0, "buy_value": 0.0, "sell_value": 0.0, "realised": 0.0,
+            "last_nav": 168.295, "open_units": 1190.907, "open_cost": 194990.75,
+            "unrealised": 5432.47,
+        }]
+        built = si.build_positions(rows, universe=universe, amfi_by_isin={}, as_of="2026-08-21")
+        self.assertEqual(built["positions"], [])
+        self.assertEqual(len(built["skipped"]), 1)
+        self.assertIn("different plan", built["skipped"][0]["reason"])
+
+    def test_build_positions_keeps_open_cost_exact(self):
+        from app.services.mutual_funds import statement_import as si
+        universe = {"funds": [{"scheme_code": "147946", "name": "Bandhan Small Cap Fund",
+                               "isin": "INF194KB1AL4", "nav_latest": 56.952}]}
+        rows = [{
+            "symbol": "BANDHAN SMALL CAP FUND - DIRECT PLAN", "isin": "INF194KB1AL4",
+            "sold_units": 0.0, "buy_value": 0.0, "sell_value": 0.0, "realised": 0.0,
+            "last_nav": 56.952, "open_units": 6078.751, "open_cost": 296985.1581,
+            "unrealised": 49211.8689,
+        }]
+        built = si.build_positions(rows, universe=universe, amfi_by_isin={}, as_of="2026-08-21")
+        transaction = built["positions"][0]["transactions"][0]
+        self.assertAlmostEqual(transaction["units"] * transaction["nav"], 296985.1581, places=0)
+        self.assertTrue(built["positions"][0]["cost_basis_only"])

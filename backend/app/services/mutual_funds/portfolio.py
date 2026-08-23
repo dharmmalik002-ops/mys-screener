@@ -128,6 +128,67 @@ def _clean_float(value: Any, *, minimum: float = 0.0) -> float | None:
     return parsed if parsed >= minimum else None
 
 
+def _clean_sip_plan(value: Any) -> dict[str, Any] | None:
+    """The SIP still running on a fund: amount, frequency, next instalment.
+
+    Forward-looking, and kept separate from the transaction history on purpose.
+    Transactions are what happened; this is the standing instruction. Recording
+    it means the portfolio can show what is committed each month and when the
+    next debit lands, neither of which is derivable from past instalments alone.
+    """
+    if not isinstance(value, dict):
+        return None
+    amount = _clean_float(value.get("amount"), minimum=1.0)
+    next_date = _clean_date(value.get("next_date"))
+    if amount is None or next_date is None:
+        return None
+    frequency = str(value.get("frequency") or "monthly").strip().lower()
+    if frequency not in SIP_FREQUENCIES:
+        frequency = "monthly"
+    per_year = {"weekly": 52, "fortnightly": 26, "monthly": 12, "quarterly": 4}[frequency]
+    return {
+        "amount": amount,
+        "frequency": frequency,
+        "next_date": next_date,
+        "active": bool(value.get("active", True)),
+        # Convenience for the UI, computed once here so every surface agrees.
+        "annual_commitment": round(amount * per_year, 2),
+        "monthly_equivalent": round(amount * per_year / 12, 2),
+    }
+
+
+def upcoming_instalments(plan: dict[str, Any] | None, *, count: int = 6) -> list[dict[str, Any]]:
+    """The next few dates a SIP will debit, from its next_date onward."""
+    if not plan or not plan.get("active"):
+        return []
+    start = _clean_date(plan.get("next_date"))
+    amount = _clean_float(plan.get("amount"), minimum=0.01)
+    if start is None or amount is None:
+        return []
+    frequency = plan.get("frequency", "monthly")
+    cursor = date.fromisoformat(start)
+    # Anchor on the *original* day, not the last emitted one. Stepping from the
+    # emitted date makes a 31st mandate drift permanently to the 30th after it
+    # passes through a 30-day month, and then to the 28th after February.
+    anchor_day = cursor.day
+    out: list[dict[str, Any]] = []
+    for index in range(max(1, min(count, 24))):
+        out.append({"date": cursor.isoformat(), "amount": amount})
+        if frequency == "weekly":
+            cursor += timedelta(days=7)
+        elif frequency == "fortnightly":
+            cursor += timedelta(days=14)
+        else:
+            step = 1 if frequency == "monthly" else 3
+            month_index = cursor.month - 1 + step
+            year = cursor.year + month_index // 12
+            month = month_index % 12 + 1
+            next_month_start = date(year + (month // 12), (month % 12) + 1, 1)
+            days_in_month = (next_month_start - date(year, month, 1)).days
+            cursor = date(year, month, min(anchor_day, days_in_month))
+    return out
+
+
 def _clean_realised_override(value: Any) -> dict[str, float] | None:
     if not isinstance(value, dict):
         return None
@@ -206,6 +267,8 @@ def normalise_payload(payload: dict | None) -> dict:
             # and weighted-average would blend a closed lot's cost into the
             # open lot and make both disagree with the statement.
             "realised_override": _clean_realised_override(entry.get("realised_override")),
+            # The standing SIP instruction, if there is one.
+            "sip_plan": _clean_sip_plan(entry.get("sip_plan")),
             "transactions": transactions,
         })
 
@@ -378,6 +441,8 @@ def value_position(
         "latest_nav": None,
         "latest_nav_date": None,
         "first_transaction_date": transactions[0]["date"] if transactions else None,
+        "sip_plan": position.get("sip_plan"),
+        "upcoming_instalments": upcoming_instalments(position.get("sip_plan")),
         "unpriced_transactions": 0,
         "is_closed": False,
         # True when the position came from a statement import: units and cost
@@ -385,6 +450,8 @@ def value_position(
         "cost_basis_only": bool(position.get("cost_basis_only")),
     }
     if not transactions:
+        # A fund can be tracked for its standing SIP before any instalment has
+        # been recorded; that is a valid position, not an empty one.
         return result
 
     if not nav_series or not nav_series.get("dates"):
