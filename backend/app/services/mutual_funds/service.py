@@ -24,7 +24,10 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, concentration, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio, statement_import
+from . import (
+    benchmarks, concentration, fund_review, groww_source, index_source, metrics,
+    nav_source, overlap, paths, portfolio, portfolio_health, statement_import,
+)
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -1272,6 +1275,40 @@ class MutualFundService:
         payload["as_of"] = valued.get("as_of")
         return payload
 
+    def get_portfolio_overlap(self) -> dict[str, Any]:
+        """How much each pair of held funds duplicates the other.
+
+        The multi-fund question `get_portfolio_concentration` does not answer:
+        a fund can be perfectly diversified on its own and still be a near-copy
+        of the fund beside it.
+        """
+        valued = self.get_portfolio()
+        payload = overlap.build(
+            valued.get("positions") or [],
+            detail_for=self._detail,
+            total_value=(valued.get("totals") or {}).get("current_value"),
+        )
+        payload["as_of"] = valued.get("as_of")
+        return payload
+
+    def get_portfolio_health(self) -> dict[str, Any]:
+        """Measured findings about the portfolio as a whole, plus the plot.
+
+        Reports; does not advise. See `portfolio_health.py` for why that line
+        is drawn and what it costs to cross it.
+        """
+        valued = self.get_portfolio()
+        universe = self._load_universe()
+        payload = portfolio_health.build(
+            positions=valued.get("positions") or [],
+            allocation=valued.get("allocation") or {},
+            totals=valued.get("totals") or {},
+            all_funds=universe.get("funds") or [],
+            overlap_payload=self.get_portfolio_overlap(),
+        )
+        payload["as_of"] = valued.get("as_of")
+        return payload
+
     def get_portfolio_peer_comparison(self) -> dict[str, Any]:
         """For every fund held: which funds in its category measured better.
 
@@ -1478,6 +1515,69 @@ class MutualFundService:
         payload = {"available": True, "note": note, "generated_for": review["name"]}
         with self._ai_lock:
             self._ai_cache[key] = (time.time(), payload)
+        return payload
+
+    def get_portfolio_ai_health(self) -> dict[str, Any]:
+        """Prose over the measured portfolio findings. Never raises.
+
+        Cached for an hour against a fingerprint of the findings themselves, so
+        editing a holding regenerates it but re-opening the page does not.
+        """
+        health = self.get_portfolio_health()
+        if not health.get("available"):
+            return {"available": False, "reason": health.get("reason") or "nothing to measure yet"}
+
+        service = self._ai_service
+        if service is None or not getattr(service, "available", False):
+            return {
+                "available": False,
+                "reason": "AI is not configured on this deployment — the measured findings above "
+                          "are unaffected.",
+            }
+
+        fingerprint = "health:" + str(hash(json.dumps(
+            [[f["key"], f["tone"], f["metric"]] for f in health["findings"]], sort_keys=True
+        )))
+        with self._ai_lock:
+            cached = self._ai_cache.get(fingerprint)
+            if cached and (time.time() - cached[0]) < 60 * 60:
+                return cached[1]
+
+        # Hand over the findings only. The prompt forbids deriving figures, so
+        # anything not in here cannot legitimately appear in the prose.
+        evidence = {
+            "fund_count": health["fund_count"],
+            "findings": [
+                {
+                    "topic": item["key"],
+                    "tone": item["tone"],
+                    "measured": item["headline"],
+                    "detail": item["detail"],
+                    "metric": item["metric"],
+                }
+                for item in health["findings"]
+            ],
+            "positioning": [
+                {
+                    "fund": point["name"],
+                    "category": point["category"],
+                    "cost_vs_category_median_pct": point["cost_gap"],
+                    "return_3y_vs_category_median_pct": point["return_gap"],
+                    "weight_pct": point["weight_pct"],
+                }
+                for point in (health.get("chart") or {}).get("points") or []
+            ],
+        }
+        try:
+            note = service.generate_portfolio_health_note(
+                json.dumps(evidence, separators=(",", ":"))
+            )
+        except Exception as exc:
+            return {"available": False, "reason": f"AI note unavailable ({type(exc).__name__})."}
+
+        payload = {"available": True, "note": note}
+        with self._ai_lock:
+            self._ai_cache[fingerprint] = (time.time(), payload)
         return payload
 
     def expand_sip(self, **kwargs) -> list[dict[str, Any]]:

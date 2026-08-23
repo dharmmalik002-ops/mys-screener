@@ -996,6 +996,10 @@ function TransactionEditor({
   const [amount, setAmount] = useState("");
   const [units, setUnits] = useState("");
   const [frequency, setFrequency] = useState<MfSipFrequency>("weekly");
+  const [stepUp, setStepUp] = useState("");
+  // On by default: an AMC cannot allot units on a day it did not price the
+  // fund, so a weekend mandate really is debited on the Monday.
+  const [shiftWeekends, setShiftWeekends] = useState(true);
   const [note, setNote] = useState<string | null>(null);
   const [working, setWorking] = useState(false);
   const [planAmount, setPlanAmount] = useState(sipPlan ? String(sipPlan.amount) : "");
@@ -1046,15 +1050,32 @@ function TransactionEditor({
   const addSip = () => run(async () => {
     const value = Number(amount);
     if (!Number.isFinite(value) || value <= 0) { setNote("Enter the instalment amount."); return; }
+    const growth = Number(stepUp);
     const preview = await previewMfSip({
-      start_date: date, end_date: endDate, amount: value, frequency,
+      start_date: date,
+      end_date: endDate,
+      amount: value,
+      frequency,
+      step_up_pct: Number.isFinite(growth) && growth > 0 ? growth : null,
+      shift_weekends: shiftWeekends,
     });
     if (!preview.count) { setNote("That date range produces no instalments."); return; }
     onChange([...transactions, ...preview.transactions]);
     setAmount("");
+    // Spell out the two things the user cannot check by eye: that a step-up
+    // actually grew the instalment, and how many dates moved off a weekend.
+    const grew =
+      preview.first_amount != null &&
+      preview.last_amount != null &&
+      preview.last_amount > preview.first_amount
+        ? ` The instalment stepped up from ₹${preview.first_amount.toLocaleString("en-IN")} to ₹${preview.last_amount.toLocaleString("en-IN")}.`
+        : "";
+    const moved = preview.weekend_shifted
+      ? ` ${preview.weekend_shifted} fell on a weekend and are dated the following Monday.`
+      : "";
     setNote(
       `Added ${preview.count} ${frequency} instalments, ${preview.first_date} to ${preview.last_date}` +
-      ` — ₹${preview.total_amount.toLocaleString("en-IN")} in total.`,
+      ` — ₹${preview.total_amount.toLocaleString("en-IN")} in total.${grew}${moved}`,
     );
   });
 
@@ -1156,6 +1177,21 @@ function TransactionEditor({
                 value={amount} onChange={(event) => setAmount(event.target.value)}
               />
             </label>
+            <label className="mfp-inline" title="Raises the instalment on each anniversary of the start date">
+              Step up %/yr
+              <input
+                type="number" min="0" max="100" step="1" placeholder="0"
+                value={stepUp} onChange={(event) => setStepUp(event.target.value)}
+              />
+            </label>
+            <label className="mfp-check" title="An instalment dated on a weekend is processed on the next working day">
+              <input
+                type="checkbox"
+                checked={shiftWeekends}
+                onChange={(event) => setShiftWeekends(event.target.checked)}
+              />
+              Weekend → Monday
+            </label>
             <button type="button" className="mfp-toggle active" disabled={busy || working} onClick={addSip}>
               Add instalments
             </button>
@@ -1163,7 +1199,11 @@ function TransactionEditor({
           <p className="mfp-note">
             A weekly SIP lands on the same weekday as the start date. Each instalment is priced at
             that day's NAV, which is what makes the XIRR real rather than an average-cost
-            approximation.
+            approximation. With <b>Weekend → Monday</b> on, an instalment falling on a Saturday or
+            Sunday is dated the Monday it would actually have been processed and priced on — the
+            schedule itself stays weekly rather than drifting later each time. Set a{" "}
+            <b>step up</b> to raise the instalment on every anniversary of the start date, which is
+            how a step-up SIP mandate behaves.
           </p>
         </>
       ) : null}

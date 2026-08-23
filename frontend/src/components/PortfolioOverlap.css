@@ -1,0 +1,172 @@
+/* Fund-overlap table. Inherits the dashboard's panel and table styling; only
+   the pair-specific bits live here. */
+
+.pov-table td { vertical-align: top; }
+
+.pov-pair {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+
+.pov-x {
+  font-size: 10px;
+  color: var(--text-muted);
+  flex: 0 0 auto;
+}
+
+.pov-tag-amc { color: var(--pfd-down); }
+
+/* ------------------------------------------------------------- overlap bar */
+
+.pov-bar-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pov-bar {
+  position: relative;
+  display: block;
+  flex: 1 1 70px;
+  min-width: 46px;
+  max-width: 120px;
+  height: 8px;
+  border-radius: 99px;
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+  overflow: hidden;
+}
+
+.pov-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  transition: width 220ms ease;
+}
+
+/* Tinted by how much is duplicated — the colour is the finding. */
+.pov-bar-fill.is-modest { background: var(--pfd-ramp-1, #38bdf8); }
+.pov-bar-fill.is-substantial { background: var(--pfd-ramp-4, #fbbf24); }
+.pov-bar-fill.is-high { background: #fb923c; }
+.pov-bar-fill.is-very_high { background: var(--pfd-down, #fb7185); }
+
+.pov-bar-cell b {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+
+.pov-bar-cell b.is-down { color: var(--pfd-down); }
+
+.pov-bar-cell em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+/* ----------------------------------------------------------- shared stocks */
+
+.pov-detail-row > td { padding: 0 !important; background: var(--pfd-panel, rgba(148, 163, 184, 0.04)); }
+
+.pov-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px 14px;
+}
+
+.pov-detail-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.pov-detail-counts { white-space: nowrap; }
+
+.pov-shared {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.pov-shared th {
+  padding: 4px 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  text-align: right;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  /* Fund names are long; let the header wrap rather than stretch the table. */
+  max-width: 160px;
+  overflow-wrap: anywhere;
+}
+
+.pov-shared th.is-left, .pov-shared td.is-left { text-align: left; }
+
+.pov-shared td {
+  padding: 3px 8px;
+  text-align: right;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.pov-shared tbody tr:hover { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.06)); }
+.pov-shared .pov-strong { color: var(--text); font-weight: 600; }
+
+.pov-more, .pov-detail-foot {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.pov-empty {
+  margin: 0;
+  padding: 16px 0 4px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------------------------- foot */
+
+.pov-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-top: 10px;
+}
+
+.pov-more-btn {
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 10.5px;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.2));
+  border-radius: 99px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.pov-more-btn:hover { color: var(--text); border-color: var(--pfd-line); }
+
+.pov-foot .pfd-footnote { margin: 0; flex: 1 1 260px; }
+
+@media (max-width: 700px) {
+  .pov-bar-cell { flex-wrap: wrap; }
+  .pov-bar { max-width: none; }
+  .pov-detail-counts { white-space: normal; }
+}

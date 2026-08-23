@@ -281,6 +281,23 @@ def normalise_payload(payload: dict | None) -> dict:
 SIP_FREQUENCIES = ("weekly", "fortnightly", "monthly", "quarterly")
 
 
+def _next_business_day(when: date) -> date:
+    """Roll a Saturday or Sunday forward to the following Monday.
+
+    An AMC cannot allot units on a day the market did not price the fund, so a
+    mandate dated on a weekend debits on the next working day. Recording the
+    scheduled date instead of the processed one prices the instalment at a NAV
+    that never applied to it, and quietly biases XIRR.
+
+    Exchange holidays are deliberately *not* handled: this module has no
+    trading calendar, and `value_position` already prices every transaction at
+    the next available NAV on or after its date, which absorbs them. Weekends
+    are handled here because they are the predictable, every-week case.
+    """
+    shift = (7 - when.weekday()) % 7  # Sat -> +2, Sun -> +1, weekday -> 0
+    return when + timedelta(days=shift) if when.weekday() >= 5 else when
+
+
 def expand_sip(
     *,
     start_date: str,
@@ -289,6 +306,8 @@ def expand_sip(
     frequency: str = "monthly",
     day_of_month: int | None = None,
     weekday: int | None = None,
+    step_up_pct: float | None = None,
+    shift_weekends: bool = True,
 ) -> list[dict[str, Any]]:
     """Turn a recurring SIP description into individual transactions.
 
@@ -301,6 +320,13 @@ def expand_sip(
       weekday), which is how a real weekly SIP mandate behaves.
     * ``monthly`` / ``quarterly`` land on ``day_of_month``, clamped to the last
       day of short months so a 31st SIP does not silently skip February.
+    * ``shift_weekends`` (on by default) moves an instalment that falls on a
+      Saturday or Sunday to the following Monday, which is when it is actually
+      processed. The *schedule* still advances on the original cadence, so a
+      weekly mandate stays weekly rather than drifting later each time.
+    * ``step_up_pct`` raises the instalment on each anniversary of the start
+      date — a step-up SIP, where the contribution grows with income rather
+      than staying flat for a decade.
     """
     first = _clean_date(start_date)
     last = _clean_date(end_date)
@@ -316,15 +342,39 @@ def expand_sip(
     if normalised not in SIP_FREQUENCIES:
         normalised = "monthly"
 
-    def transaction(when: date) -> dict[str, Any]:
-        return {
+    growth = _clean_float(step_up_pct, minimum=0.0) or 0.0
+    growth = min(growth, 100.0)
+
+    def instalment_for(scheduled: date) -> float:
+        """The amount due on a scheduled date, after any annual step-ups.
+
+        Anniversaries are counted off the *scheduled* date, not the processed
+        one, so a step-up does not arrive a day early because the anniversary
+        happened to be a Sunday.
+        """
+        if not growth:
+            return installment
+        years = scheduled.year - begin.year
+        if (scheduled.month, scheduled.day) < (begin.month, begin.day):
+            years -= 1
+        years = max(0, years)
+        return round(installment * (1 + growth / 100.0) ** years, 2)
+
+    def transaction(scheduled: date) -> dict[str, Any]:
+        processed = _next_business_day(scheduled) if shift_weekends else scheduled
+        row: dict[str, Any] = {
             "id": str(uuid.uuid4()),
-            "date": when.isoformat(),
+            "date": processed.isoformat(),
             "type": "buy",
-            "amount": installment,
+            "amount": instalment_for(scheduled),
             "units": None,
             "nav": None,
         }
+        if processed != scheduled:
+            # Kept so the UI can explain why a "every Sunday" mandate shows
+            # Monday dates, rather than looking like it mis-parsed the input.
+            row["scheduled_date"] = scheduled.isoformat()
+        return row
 
     out: list[dict[str, Any]] = []
 

@@ -1,0 +1,359 @@
+/* Portfolio-wide findings panel. Reuses the dashboard's panel chrome; only the
+   finding cards, the positioning plot and the AI note live here. */
+
+.pfh-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.pfh-finding {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 26px;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  /* The tone is carried by one edge rather than a full tint — a wall of red
+     cards reads as alarm, which these findings are not. */
+  border-left-width: 2px;
+  border-radius: 10px;
+}
+
+.pfh-finding.is-watch { border-left-color: var(--pfd-down, #fb7185); }
+.pfh-finding.is-neutral { border-left-color: var(--pfd-ramp-1, #38bdf8); }
+.pfh-finding.is-good { border-left-color: var(--pfd-up, #34d399); }
+
+.pfh-finding-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pfh-finding h4 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  min-width: 0;
+}
+
+.pfh-metric {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.pfh-finding > p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.pfh-tone {
+  position: absolute;
+  left: 14px;
+  bottom: 9px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------- evidence */
+
+.pfh-evidence {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pfh-evidence li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 10.5px;
+  color: var(--text-soft);
+}
+
+.pfh-evidence li > *:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.pfh-evidence b {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pfh-evidence em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pfh-evidence .pfd-fund { font-size: 10.5px; }
+
+/* ------------------------------------------------------- positioning plot */
+
+.pfh-plot-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pfh-plot-head h4 {
+  margin: 0 0 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.pfh-plot-head p {
+  margin: 0;
+  max-width: 76ch;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.pfh-plot {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
+  gap: 16px;
+  align-items: stretch;
+  padding-left: 16px;
+  padding-bottom: 16px;
+}
+
+.pfh-plot-svg {
+  width: 100%;
+  height: 220px;
+  overflow: visible;
+  background: var(--pfd-chart-bg, transparent);
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 8px;
+}
+
+.pfh-quad-good { fill: var(--pfd-up, #34d399); opacity: 0.05; }
+.pfh-quad-poor { fill: var(--pfd-down, #fb7185); opacity: 0.05; }
+
+.pfh-axis {
+  stroke: var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+
+.pfh-dot {
+  fill: var(--pfd-line, #38bdf8);
+  fill-opacity: 0.55;
+  stroke: var(--pfd-line, #38bdf8);
+  stroke-width: 1;
+  cursor: pointer;
+  transition: fill-opacity 140ms ease;
+}
+
+.pfh-dot.is-active { fill-opacity: 1; stroke-width: 2; }
+
+.pfh-axis-label {
+  position: absolute;
+  font-size: 9px;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.pfh-axis-y {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%) rotate(180deg);
+  writing-mode: vertical-rl;
+}
+
+.pfh-axis-x { left: 50%; bottom: 0; transform: translateX(-50%); }
+
+.pfh-quad-note {
+  position: absolute;
+  font-size: 8.5px;
+  color: var(--text-muted);
+  opacity: 0.75;
+  pointer-events: none;
+}
+
+.pfh-quad-note-tl { left: 22px; top: 5px; }
+.pfh-quad-note-br { left: 50%; bottom: 22px; transform: translateX(6px); }
+
+.pfh-plot-empty, .pfh-empty {
+  margin: 0;
+  padding: 14px 0 2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+.pfh-plot-legend {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-self: start;
+  min-width: 0;
+}
+
+.pfh-plot-legend li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0 8px;
+  padding: 4px 6px;
+  font-size: 10.5px;
+  color: var(--text-soft);
+  border-radius: 6px;
+  cursor: default;
+  transition: background 140ms ease;
+}
+
+.pfh-plot-legend li.is-active { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
+
+.pfh-plot-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.pfh-plot-legend em {
+  font-style: normal;
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+.pfh-plot-legend b {
+  display: inline;
+  margin-right: 8px;
+  font-size: 9.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.pfh-plot-legend b.is-up { color: var(--pfd-up); }
+.pfh-plot-legend b.is-down { color: var(--pfd-down); }
+
+/* ---------------------------------------------------------------- AI note */
+
+.pfh-ai { margin-top: 14px; }
+
+.pfh-ai-btn {
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px dashed var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.pfh-ai-btn:hover:not(:disabled) { color: var(--text); border-color: var(--pfd-line); }
+.pfh-ai-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.pfh-ai-unavailable {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.pfh-ai-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 12px;
+}
+
+.pfh-ai-note h4 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.pfh-ai-note p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.pfh-ai-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 20px;
+  margin-top: 2px;
+}
+
+.pfh-ai-cols h5 {
+  margin: 0 0 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.pfh-ai-cols ul { margin: 0; padding-left: 15px; display: flex; flex-direction: column; gap: 3px; }
+.pfh-ai-cols li { font-size: 10.5px; line-height: 1.6; color: var(--text-muted); }
+
+.pfh-ai-watch { border-top: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14)); padding-top: 8px; }
+.pfh-ai-watch b { color: var(--text-soft); }
+
+.pfh-disclaimer { margin-top: 12px; }
+
+@media (max-width: 780px) {
+  .pfh-plot { grid-template-columns: minmax(0, 1fr); }
+  .pfh-plot-svg { height: 200px; }
+}

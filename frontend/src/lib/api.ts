@@ -3618,11 +3618,15 @@ export type MfSeriesResponse = {
 
 export type MfTransaction = {
   id?: string;
+  /** The date the instalment was actually processed and priced. */
   date: string;
   type: "buy" | "sell";
   amount?: number | null;
   units?: number | null;
   nav?: number | null;
+  /** Present only when `date` was moved off a weekend — the date the mandate
+   *  was scheduled for, kept so the UI can explain the difference. */
+  scheduled_date?: string | null;
 };
 
 export type MfPosition = {
@@ -3870,6 +3874,10 @@ export type MfSipPreview = {
   total_amount: number;
   first_date?: string | null;
   last_date?: string | null;
+  first_amount?: number | null;
+  last_amount?: number | null;
+  /** How many instalments fell on a weekend and were dated to the Monday. */
+  weekend_shifted?: number;
   transactions: MfTransaction[];
 };
 
@@ -3880,6 +3888,10 @@ export function previewMfSip(payload: {
   frequency?: MfSipFrequency;
   day_of_month?: number | null;
   weekday?: number | null;
+  /** Annual step-up, applied on each anniversary of the start date. */
+  step_up_pct?: number | null;
+  /** Move a Saturday or Sunday instalment to the Monday it is processed on. */
+  shift_weekends?: boolean;
 }) {
   return request<MfSipPreview>("/api/mf/portfolio/sip-preview", {
     method: "POST",
@@ -4034,6 +4046,114 @@ export type MfConcentration = {
 export function getMfConcentration() {
   return whileWaking(() =>
     request<MfConcentration>("/api/mf/portfolio/concentration", undefined, { timeoutMs: 90000 }));
+}
+
+/* ------------------------------------------------------------ fund overlap */
+
+export type MfOverlapPair = {
+  left_code: string;
+  right_code: string;
+  left_name: string;
+  right_name: string;
+  left_category?: string | null;
+  right_category?: string | null;
+  same_amc: boolean;
+  /** Sum of min(weight in A, weight in B) across shared stocks — the share of
+   *  a rupee that would sit in identical positions either way. */
+  overlap_pct: number;
+  shared_count: number;
+  left_holdings: number;
+  right_holdings: number;
+  share_of_left: number;
+  share_of_right: number;
+  combined_weight_pct: number;
+  duplicated_value: number;
+  band: "modest" | "substantial" | "high" | "very_high" | "unknown";
+  shared_top: { name: string; left_pct: number; right_pct: number; common_pct: number }[];
+  portfolio_dates: (string | null)[];
+};
+
+export type MfOverlap = {
+  as_of?: string | null;
+  pairs: MfOverlapPair[];
+  pair_count: number;
+  funds_compared: number;
+  funds_without_holdings: number;
+  notable_count: number;
+  highest_pct?: number | null;
+  thresholds: Record<string, number>;
+  summary: string[];
+};
+
+export function getMfOverlap() {
+  return whileWaking(() =>
+    request<MfOverlap>("/api/mf/portfolio/overlap", undefined, { timeoutMs: 90000 }));
+}
+
+/* --------------------------------------------------------- portfolio health */
+
+export type MfHealthFinding = {
+  key: string;
+  tone: "watch" | "neutral" | "good";
+  headline: string;
+  detail: string;
+  metric?: string | null;
+  evidence: {
+    name?: string | null;
+    scheme_code?: string | null;
+    value?: number | null;
+    reference?: number | null;
+    label?: string | null;
+    weight_pct?: number | null;
+  }[];
+};
+
+export type MfHealthPoint = {
+  scheme_code: string;
+  name?: string | null;
+  category?: string | null;
+  cost_gap: number;
+  return_gap: number;
+  expense_ratio: number;
+  return_3y: number;
+  category_expense_median: number;
+  category_return_median: number;
+  weight_pct?: number | null;
+  percentile_3y?: number | null;
+};
+
+export type MfPortfolioHealth = {
+  available: boolean;
+  reason?: string | null;
+  as_of?: string | null;
+  fund_count?: number;
+  total_value?: number;
+  watch_count?: number;
+  findings: MfHealthFinding[];
+  chart: { points: MfHealthPoint[]; x_label?: string; y_label?: string; note?: string };
+  disclaimer?: string | null;
+};
+
+export function getMfPortfolioHealth() {
+  return whileWaking(() =>
+    request<MfPortfolioHealth>("/api/mf/portfolio/health", undefined, { timeoutMs: 90000 }));
+}
+
+export type MfAiHealthNote = {
+  available: boolean;
+  reason?: string | null;
+  note?: {
+    headline?: string;
+    assessment?: string[];
+    strengths?: string[];
+    frictions?: string[];
+    watch?: string;
+  };
+};
+
+export function getMfAiPortfolioHealth() {
+  return whileWaking(() =>
+    request<MfAiHealthNote>("/api/mf/portfolio/ai-health", undefined, { timeoutMs: 120000 }));
 }
 
 export type MfPeerAhead = {

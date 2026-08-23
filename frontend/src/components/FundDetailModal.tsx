@@ -10,7 +10,7 @@ import {
   type MfReview,
   type MfSeriesResponse,
 } from "../lib/api";
-import { FundNavChart, type FundNavChartMode } from "./FundNavChart";
+import { FundNavChart, type CandlePeriod, type FundNavChartMode } from "./FundNavChart";
 
 import "./FundDetailModal.css";
 
@@ -111,6 +111,7 @@ export function FundDetailModal({
   const [series, setSeries] = useState<MfSeriesResponse | null>(null);
   const [range, setRange] = useState("3y");
   const [chartMode, setChartMode] = useState<FundNavChartMode>("growth");
+  const [candlePeriod, setCandlePeriod] = useState<CandlePeriod>("weekly");
   const [showDrawdown, setShowDrawdown] = useState(false);
   const [tab, setTab] = useState<"performance" | "review" | "portfolio" | "peers" | "about">("performance");
   const [review, setReview] = useState<MfReview | null>(null);
@@ -316,11 +317,41 @@ export function FundDetailModal({
                     </button>
                     <button
                       type="button"
-                      className={showDrawdown ? "fdm-pill active" : "fdm-pill"}
-                      onClick={() => setShowDrawdown((value) => !value)}
+                      className={chartMode === "candles" ? "fdm-pill active" : "fdm-pill"}
+                      onClick={() => setChartMode("candles")}
+                      title="Weekly or monthly OHLC candles built from daily NAV"
                     >
-                      Drawdown
+                      Candles
                     </button>
+                    {chartMode === "candles" ? (
+                      <>
+                        <button
+                          type="button"
+                          className={candlePeriod === "weekly" ? "fdm-pill active" : "fdm-pill"}
+                          onClick={() => setCandlePeriod("weekly")}
+                        >
+                          W
+                        </button>
+                        <button
+                          type="button"
+                          className={candlePeriod === "monthly" ? "fdm-pill active" : "fdm-pill"}
+                          onClick={() => setCandlePeriod("monthly")}
+                        >
+                          M
+                        </button>
+                      </>
+                    ) : null}
+                    {/* A drawdown ribbon rides the fund's daily line; there is no
+                        daily line under candles to hang it from. */}
+                    {chartMode === "candles" ? null : (
+                      <button
+                        type="button"
+                        className={showDrawdown ? "fdm-pill active" : "fdm-pill"}
+                        onClick={() => setShowDrawdown((value) => !value)}
+                      >
+                        Drawdown
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -328,8 +359,9 @@ export function FundDetailModal({
                   <FundNavChart
                     series={series.series}
                     benchmark={chartMode === "growth" ? benchmarkLine : null}
-                    drawdown={showDrawdown ? series.drawdown : null}
+                    drawdown={showDrawdown && chartMode !== "candles" ? series.drawdown : null}
                     mode={chartMode}
+                    candlePeriod={candlePeriod}
                     height={330}
                   />
                 ) : (

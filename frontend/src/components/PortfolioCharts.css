@@ -11,6 +11,13 @@
   border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
   border-radius: 12px;
   min-width: 0;
+  /* The box the content must stay inside. Without this a fixed-width legend
+     column paints over the border on a narrow card. */
+  overflow: hidden;
+  /* These cards sit in an auto-fit grid, so a card can be narrow while the
+     viewport is wide — a media query is the wrong instrument. Sizing off the
+     card itself is what actually keeps the amounts inside the border. */
+  container-type: inline-size;
 }
 
 .pfc-card h4 {
@@ -48,12 +55,15 @@
 
 .pfc-donut-row {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
   gap: 14px;
   align-items: center;
 }
 
-.pfc-donut-wrap { position: relative; flex: 0 0 auto; }
+.pfc-donut-wrap { position: relative; flex: 0 1 auto; min-width: 0; max-width: 100%; }
+/* The svg carries width/height attributes for its intrinsic size; these let it
+   scale down when the card is narrow rather than pushing the legend out. */
+.pfc-donut-wrap svg { display: block; width: 100%; height: auto; }
 
 .pfc-donut-centre {
   position: absolute;
@@ -74,7 +84,10 @@
 
 .pfc-legend li {
   display: grid;
-  grid-template-columns: 9px minmax(0, 1fr) 46px 62px;
+  /* Percentage and amount size to their content and may shrink; the label
+     absorbs what is left. Fixed widths here were what pushed the amount
+     outside the card at narrow widths. */
+  grid-template-columns: 9px minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
   align-items: center;
   gap: 8px;
   padding: 3px 6px;
@@ -85,9 +98,20 @@
 }
 
 .pfc-legend li.is-active { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
-.pfc-legend span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pfc-legend b { text-align: right; color: var(--text); font-weight: 600; }
-.pfc-legend em { font-style: normal; text-align: right; font-size: 9.5px; color: var(--text-muted); }
+.pfc-legend span, .pfc-legend b, .pfc-legend em {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pfc-legend b { text-align: right; color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pfc-legend em {
+  font-style: normal;
+  text-align: right;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
 /* ------------------------------------------------------------- diverging */
 
@@ -95,7 +119,7 @@
 
 .pfc-diverge li, .pfc-weights li {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(70px, 1.4fr) 76px 54px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(50px, 1.4fr) minmax(0, auto) minmax(0, auto);
   align-items: center;
   gap: 9px;
   padding: 3px 6px;
@@ -134,10 +158,29 @@
 
 .pfc-weights-track > i { display: block; height: 100%; border-radius: 99px; }
 
-.pfc-diverge b, .pfc-weights b { text-align: right; font-weight: 600; color: var(--text); }
+.pfc-diverge b, .pfc-weights b {
+  text-align: right;
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pfc-diverge b.is-up, .pfc-diverge em.is-up { color: var(--pfd-up); }
 .pfc-diverge b.is-down, .pfc-diverge em.is-down { color: var(--pfd-down); }
-.pfc-diverge em, .pfc-weights em { font-style: normal; text-align: right; font-size: 9.5px; color: var(--text-muted); }
+.pfc-diverge em, .pfc-weights em {
+  font-style: normal;
+  text-align: right;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* ---------------------------------------------------------------- stacked */
 
@@ -163,9 +206,21 @@
 .pfc-stack-legend li { display: inline-flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-muted); }
 .pfc-stack-legend b { color: var(--text); font-weight: 600; }
 
-@media (max-width: 720px) {
+@media (max-width: 860px) {
   .pfc-donut-row { grid-template-columns: 1fr; justify-items: center; }
   .pfc-legend { width: 100%; }
   .pfc-diverge li, .pfc-weights li { grid-template-columns: minmax(0, 1fr) 62px 48px; gap: 7px; }
+  .pfc-diverge-track, .pfc-weights-track { display: none; }
+}
+
+/* Below roughly the width where the donut and a four-column legend stop
+   fitting side by side, stack them. Keyed to the card, not the window. */
+@container (max-width: 330px) {
+  .pfc-donut-row { grid-template-columns: 1fr; justify-items: center; }
+  .pfc-legend { width: 100%; }
+  .pfc-diverge li, .pfc-weights li {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
+    gap: 7px;
+  }
   .pfc-diverge-track, .pfc-weights-track { display: none; }
 }

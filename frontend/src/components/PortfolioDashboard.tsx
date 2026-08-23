@@ -2,13 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, LineStyle, createChart } from "lightweight-charts";
 import {
   getMfConcentration,
+  getMfOverlap,
+  getMfPortfolioHealth,
   getMfPortfolioTimeline,
   type MfPortfolioResponse,
   type MfPortfolioTimeline,
   type MfConcentration,
+  type MfOverlap,
+  type MfPortfolioHealth,
   type MfValuedPosition,
 } from "../lib/api";
 import { Donut, DivergingBars, StackedBar, WeightBars } from "./PortfolioCharts";
+import { PortfolioOverlap } from "./PortfolioOverlap";
+import { PortfolioHealth } from "./PortfolioHealth";
 
 import "./PortfolioDashboard.css";
 
@@ -332,6 +338,8 @@ export function PortfolioDashboard({
   const [loadingChart, setLoadingChart] = useState(true);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const [concentration, setConcentration] = useState<MfConcentration | null>(null);
+  const [overlap, setOverlap] = useState<MfOverlap | null>(null);
+  const [health, setHealth] = useState<MfPortfolioHealth | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("current_value");
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -380,6 +388,12 @@ export function PortfolioDashboard({
     getMfConcentration()
       .then((payload) => { if (!cancelled) setConcentration(payload); })
       .catch(() => { if (!cancelled) setConcentration(null); });
+    getMfOverlap()
+      .then((payload) => { if (!cancelled) setOverlap(payload); })
+      .catch(() => { if (!cancelled) setOverlap(null); });
+    getMfPortfolioHealth()
+      .then((payload) => { if (!cancelled) setHealth(payload); })
+      .catch(() => { if (!cancelled) setHealth(null); });
     return () => { cancelled = true; };
   }, [portfolio.as_of, portfolio.positions.length]);
 
@@ -655,16 +669,23 @@ export function PortfolioDashboard({
         />
       </section>
 
+      {/* -------------------------------------------------------- overlap */}
+      {/* Leads the concentration block on purpose: "do two of my funds hold the
+          same book" is the question a multi-fund investor actually has, and no
+          factsheet can answer it. Single-fund concentration follows below. */}
+      <PortfolioOverlap overlap={overlap} onOpenFund={onOpenFund} />
+
       {/* -------------------------------------------------- concentration */}
       {concentration?.summary?.length ? (
         <section className="pfd-panel">
           <header className="pfd-panel-head">
             <div>
-              <h3>Concentration check</h3>
+              <h3>Concentration within each fund</h3>
               <p>
-                How much of each fund sits in its largest holdings, and where the same stock reaches
-                you through more than one fund. Measured from the latest disclosed portfolios —
-                these are facts about weights, not a suggestion to change anything.
+                A separate question from the overlap above: how much of any one fund sits in its
+                own largest holdings. A fund can be a near-duplicate of the one beside it and still
+                be perfectly diversified internally, or the reverse. Measured from the latest
+                disclosed portfolios — facts about weights, not a suggestion to change anything.
               </p>
             </div>
             <span className={concentration.concentrated_count ? "pfd-chip is-down" : "pfd-chip is-up"}>
@@ -869,6 +890,10 @@ export function PortfolioDashboard({
           <b>Edit</b> and it will start reporting one.
         </p>
       ) : null}
+
+      {/* ------------------------------------------------ portfolio findings */}
+      {/* Last on the page because it reads across everything above it. */}
+      <PortfolioHealth health={health} onOpenFund={onOpenFund} />
     </div>
   );
 }

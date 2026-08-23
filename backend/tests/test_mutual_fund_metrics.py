@@ -220,8 +220,18 @@ class SipExpansionTests(unittest.TestCase):
         out = portfolio.expand_sip(start_date="2024-01-15", end_date="2024-12-15", amount=5000)
         self.assertEqual(len(out), 12)
         self.assertEqual(out[0]["date"], "2024-01-15")
-        self.assertEqual(out[-1]["date"], "2024-12-15")
+        # The 15th of December 2024 was a Sunday, so the instalment is dated
+        # the Monday it would actually have been processed on.
+        self.assertEqual(out[-1]["date"], "2024-12-16")
+        self.assertEqual(out[-1]["scheduled_date"], "2024-12-15")
         self.assertTrue(all(item["amount"] == 5000 for item in out))
+
+    def test_the_schedule_can_be_taken_literally_when_asked(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-15", end_date="2024-12-15", amount=5000, shift_weekends=False
+        )
+        self.assertEqual(out[-1]["date"], "2024-12-15")
+        self.assertTrue(all("scheduled_date" not in item for item in out))
 
     def test_day_31_clamps_to_the_end_of_short_months(self):
         out = portfolio.expand_sip(
@@ -229,7 +239,8 @@ class SipExpansionTests(unittest.TestCase):
         )
         self.assertEqual(
             [item["date"] for item in out],
-            ["2024-01-31", "2024-02-29", "2024-03-31", "2024-04-30"],
+            # 31 March 2024 was a Sunday; it is processed on the Monday.
+            ["2024-01-31", "2024-02-29", "2024-04-01", "2024-04-30"],
         )
 
     def test_reversed_range_yields_nothing(self):
@@ -1026,3 +1037,206 @@ class ConcentrationTests(unittest.TestCase):
         ])).lower()
         for banned in ("you should", "we recommend", "switch out", "sell ", "exit ", "reduce your"):
             self.assertNotIn(banned, text)
+
+
+class WeekendSipTests(unittest.TestCase):
+    """A mandate dated on a weekend is processed on the next working day."""
+
+    def test_a_saturday_weekly_sip_lands_every_monday(self):
+        out = portfolio.expand_sip(
+            start_date="2024-01-01", end_date="2024-02-01", amount=1000,
+            frequency="weekly", weekday=5,  # Saturday
+        )
+        self.assertTrue(all(date.fromisoformat(i["date"]).weekday() == 0 for i in out))
+        # The cadence is still weekly — shifting must not make the schedule drift.
+        gaps = {
+            (date.fromisoformat(b["date"]) - date.fromisoformat(a["date"])).days
+            for a, b in zip(out, out[1:])
+        }
+        self.assertEqual(gaps, {7})
+
+    def test_a_sunday_lands_on_the_monday_after(self):
+        out = portfolio.expand_sip(
+            start_date="2024-06-02", end_date="2024-06-02", amount=500, frequency="weekly"
+        )
+        self.assertEqual(out[0]["date"], "2024-06-03")
+        self.assertEqual(out[0]["scheduled_date"], "2024-06-02")
+
+    def test_a_weekday_instalment_is_left_alone(self):
+        out = portfolio.expand_sip(
+            start_date="2024-06-04", end_date="2024-06-04", amount=500, frequency="weekly"
+        )
+        self.assertEqual(out[0]["date"], "2024-06-04")
+        self.assertNotIn("scheduled_date", out[0])
+
+
+class StepUpSipTests(unittest.TestCase):
+    """A step-up SIP raises the instalment on each anniversary of the start."""
+
+    def test_the_instalment_grows_each_year(self):
+        out = portfolio.expand_sip(
+            start_date="2022-01-10", end_date="2025-01-10", amount=1000,
+            frequency="quarterly", step_up_pct=10,
+        )
+        by_year = {item["date"][:4]: item["amount"] for item in out}
+        self.assertEqual(by_year["2022"], 1000.0)
+        self.assertEqual(by_year["2023"], 1100.0)
+        self.assertEqual(by_year["2024"], 1210.0)
+        self.assertEqual(by_year["2025"], 1331.0)
+
+    def test_no_step_up_keeps_every_instalment_equal(self):
+        out = portfolio.expand_sip(
+            start_date="2022-01-10", end_date="2024-01-10", amount=1000, frequency="quarterly"
+        )
+        self.assertEqual({item["amount"] for item in out}, {1000.0})
+
+    def test_a_step_up_does_not_fire_early_when_the_anniversary_is_a_weekend(self):
+        # 10 Jan 2027 is a Sunday: the instalment is processed on the 11th, but
+        # the step-up is counted off the scheduled date, so it is the new year's
+        # amount either way.
+        out = portfolio.expand_sip(
+            start_date="2026-01-10", end_date="2027-01-11", amount=1000,
+            frequency="quarterly", step_up_pct=20,
+        )
+        last = out[-1]
+        self.assertEqual(last["date"], "2027-01-11")
+        self.assertEqual(last["amount"], 1200.0)
+
+
+class FundOverlapTests(unittest.TestCase):
+    """Pairwise duplication between two funds' disclosed books."""
+
+    @staticmethod
+    def _detail(rows):
+        return {"holdings": [
+            {"asset_class": "equity", "symbol": sym, "name": name, "weight_pct": weight}
+            for sym, name, weight in rows
+        ]}
+
+    def test_overlap_is_the_sum_of_the_smaller_weight_in_each_shared_stock(self):
+        from app.services.mutual_funds import overlap
+        left = overlap._weights(self._detail([("A", "Alpha", 9.0), ("B", "Beta", 7.0), ("C", "Gamma", 5.0)]))
+        right = overlap._weights(self._detail([("A", "Alpha", 8.0), ("B", "Beta", 6.0), ("D", "Delta", 4.0)]))
+        measured = overlap.pair_overlap(left, right, {"A": "Alpha", "B": "Beta"})
+        self.assertEqual(measured["overlap_pct"], 14.0)  # min(9,8) + min(7,6)
+        self.assertEqual(measured["shared_count"], 2)
+
+    def test_identical_books_overlap_completely(self):
+        from app.services.mutual_funds import overlap
+        rows = [("A", "Alpha", 40.0), ("B", "Beta", 60.0)]
+        weights = overlap._weights(self._detail(rows))
+        measured = overlap.pair_overlap(weights, dict(weights), {})
+        self.assertEqual(measured["overlap_pct"], 100.0)
+        self.assertEqual(measured["band"], "very_high")
+
+    def test_disjoint_books_do_not_overlap(self):
+        from app.services.mutual_funds import overlap
+        left = overlap._weights(self._detail([("A", "Alpha", 50.0)]))
+        right = overlap._weights(self._detail([("Z", "Zeta", 50.0)]))
+        measured = overlap.pair_overlap(left, right, {})
+        self.assertEqual(measured["overlap_pct"], 0.0)
+        self.assertEqual(measured["band"], "modest")
+
+    def test_the_same_company_written_two_ways_still_matches(self):
+        """Symbol wins over name, so "Ltd" vs "Limited" is not a miss."""
+        from app.services.mutual_funds import overlap
+        left = overlap._weights(self._detail([("HDFCBANK", "HDFC Bank Ltd", 10.0)]))
+        right = overlap._weights(self._detail([("HDFCBANK", "HDFC Bank Limited", 10.0)]))
+        self.assertEqual(overlap.pair_overlap(left, right, {})["overlap_pct"], 10.0)
+
+    def test_only_held_funds_are_compared(self):
+        from app.services.mutual_funds import overlap
+        detail = self._detail([("A", "Alpha", 50.0)])
+        positions = [
+            {"scheme_code": "1", "units": 10, "current_value": 100, "fund": {"name": "Held"}},
+            {"scheme_code": "2", "units": 0, "current_value": 0, "fund": {"name": "Sold"}},
+        ]
+        built = overlap.build(positions, detail_for=lambda code, slug: (detail, False))
+        self.assertEqual(built["funds_compared"], 1)
+        self.assertEqual(built["pairs"], [])
+
+    def test_the_overlap_report_never_instructs_the_reader(self):
+        """Naming duplication is reporting; telling someone to sell is advice."""
+        from app.services.mutual_funds import overlap
+        pairs = [{
+            "left_name": "Fund A", "right_name": "Fund B", "overlap_pct": 72.0,
+            "shared_count": 30, "left_category": "Large Cap", "right_category": "Large Cap",
+            "combined_weight_pct": 40.0, "duplicated_value": 100000.0,
+            "shared_top": [{"name": "Alpha"}],
+        }]
+        text = " ".join(overlap.describe(pairs)).lower()
+        for word in ("should", "recommend", "sell", "switch", "redeem", "exit", "consider"):
+            self.assertNotIn(word, text, f"overlap summary must not say '{word}'")
+
+
+class PortfolioHealthTests(unittest.TestCase):
+    """Measured findings over the whole book."""
+
+    def _holdings(self, expense, percentile_3y=60.0, percentile_5y=60.0):
+        return [{
+            "scheme_code": "1",
+            "fund": {
+                "name": "Fund A", "sub_category": "Large Cap", "expense_ratio": expense,
+                "percentile_3y": percentile_3y, "percentile_5y": percentile_5y,
+            },
+            "value": 100000.0,
+            "weight_pct": 100.0,
+        }]
+
+    def test_a_dear_portfolio_reports_the_gap_and_its_rupee_cost(self):
+        from app.services.mutual_funds import portfolio_health
+        finding = portfolio_health.cost_finding(
+            self._holdings(1.40), {"Large Cap": 0.80}, 100000.0
+        )
+        self.assertEqual(finding["tone"], "watch")
+        self.assertIn("0.60", finding["metric"])
+
+    def test_a_cheap_portfolio_is_reported_as_fine(self):
+        from app.services.mutual_funds import portfolio_health
+        finding = portfolio_health.cost_finding(
+            self._holdings(0.75), {"Large Cap": 0.80}, 100000.0
+        )
+        self.assertEqual(finding["tone"], "good")
+
+    def test_a_fund_weak_on_both_long_windows_is_flagged(self):
+        from app.services.mutual_funds import portfolio_health
+        finding = portfolio_health.lagging_finding(self._holdings(1.0, 20.0, 25.0))
+        self.assertEqual(finding["tone"], "watch")
+        self.assertEqual(len(finding["evidence"]), 1)
+
+    def test_one_weak_window_is_not_enough_to_flag(self):
+        from app.services.mutual_funds import portfolio_health
+        finding = portfolio_health.lagging_finding(self._holdings(1.0, 20.0, 70.0))
+        self.assertEqual(finding["tone"], "good")
+
+    def test_health_findings_never_instruct_the_reader(self):
+        """The whole panel is descriptive. This is the guard that keeps it so.
+
+        A model or a future edit will reach for "consolidate these" the moment
+        it sees two overlapping funds; that is personalised advice and this app
+        does not give it. See portfolio_health.py and CLAUDE.md gotcha 12.
+        """
+        from app.services.mutual_funds import portfolio_health
+        findings = [
+            portfolio_health.cost_finding(self._holdings(1.9), {"Large Cap": 0.6}, 500000.0),
+            portfolio_health.lagging_finding(self._holdings(1.0, 12.0, 18.0)),
+            portfolio_health.amc_finding({"One AMC": 90.0, "Other": 10.0}, 100.0),
+            portfolio_health.cap_coverage_finding({"large": 100.0}),
+            portfolio_health.small_positions_finding([
+                {"scheme_code": str(i), "fund": {"name": f"F{i}"}, "value": 10.0, "weight_pct": 0.5}
+                for i in range(4)
+            ]),
+        ]
+        text = " ".join(
+            f"{item['headline']} {item['detail']}" for item in findings if item
+        ).lower()
+        for word in ("you should", "we recommend", "sell ", "switch to", "redeem", "buy ", "invest in"):
+            self.assertNotIn(word, text, f"health findings must not say '{word}'")
+
+    def test_an_empty_portfolio_measures_nothing_rather_than_guessing(self):
+        from app.services.mutual_funds import portfolio_health
+        built = portfolio_health.build(
+            positions=[], allocation={}, totals={}, all_funds=[],
+        )
+        self.assertFalse(built["available"])
+        self.assertEqual(built["findings"], [])
