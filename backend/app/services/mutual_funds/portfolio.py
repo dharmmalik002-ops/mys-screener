@@ -118,6 +118,7 @@ def _clean_date(value: Any) -> str | None:
 
 
 def _clean_float(value: Any, *, minimum: float = 0.0) -> float | None:
+    """`minimum=-inf` allows negatives, which realised P&L needs."""
     try:
         parsed = float(value)
     except (TypeError, ValueError):
@@ -125,6 +126,21 @@ def _clean_float(value: Any, *, minimum: float = 0.0) -> float | None:
     if parsed != parsed or parsed in (float("inf"), float("-inf")):
         return None
     return parsed if parsed >= minimum else None
+
+
+def _clean_realised_override(value: Any) -> dict[str, float] | None:
+    if not isinstance(value, dict):
+        return None
+    pnl = _clean_float(value.get("realised_pnl"), minimum=float("-inf"))
+    cost = _clean_float(value.get("cost_of_units_sold"), minimum=0.0)
+    proceeds = _clean_float(value.get("realised_proceeds"), minimum=0.0)
+    if pnl is None and cost is None and proceeds is None:
+        return None
+    return {
+        "realised_pnl": pnl or 0.0,
+        "cost_of_units_sold": cost or 0.0,
+        "realised_proceeds": proceeds or 0.0,
+    }
 
 
 def normalise_payload(payload: dict | None) -> dict:
@@ -163,20 +179,33 @@ def normalise_payload(payload: dict | None) -> dict:
             # other side is filled from NAV history at valuation time.
             if not amount and not units:
                 continue
-            transactions.append({
+            transaction = {
                 "id": str(item.get("id") or uuid.uuid4()),
                 "date": when,
                 "type": kind,
                 "amount": amount,
                 "units": units,
                 "nav": nav,
-            })
+            }
+            lot_cost_nav = _clean_float(item.get("lot_cost_nav"), minimum=0.0)
+            if lot_cost_nav:
+                transaction["lot_cost_nav"] = lot_cost_nav
+            transactions.append(transaction)
 
         transactions.sort(key=lambda item: item["date"])
         positions.append({
             "id": str(entry.get("id") or uuid.uuid4()),
             "scheme_code": scheme_code,
             "notes": str(entry.get("notes") or "").strip()[:500] or None,
+            # Set by a statement import: exact units and cost, no dated
+            # cashflows, so XIRR is withheld rather than invented.
+            "cost_basis_only": bool(entry.get("cost_basis_only")),
+            # Realised figures straight from a broker statement. When present
+            # these are authoritative and are not re-derived: the broker's own
+            # lot matching (and any load or STT it netted) is the real answer,
+            # and weighted-average would blend a closed lot's cost into the
+            # open lot and make both disagree with the statement.
+            "realised_override": _clean_realised_override(entry.get("realised_override")),
             "transactions": transactions,
         })
 
@@ -315,7 +344,19 @@ def value_position(
     *,
     nav_series: dict[str, Any] | None,
 ) -> dict[str, Any]:
-    """Units, cost, value, gain and XIRR for one held fund."""
+    """Units, cost, value and P&L for one held fund.
+
+    Realised and unrealised P&L are tracked separately, the way a broker
+    statement reports them, because they answer different questions: what the
+    open position has done, versus what selling actually banked.
+
+    Cost accounting is weighted-average, which is what Indian AMCs and CAS
+    statements use. On a sale the *cost* of the sold units leaves `invested`
+    and the difference between proceeds and that cost becomes realised P&L —
+    an earlier version subtracted the sale *proceeds* from invested, which
+    drove `invested` negative on a fully-exited position and made its P&L
+    nonsense.
+    """
     transactions = position.get("transactions") or []
     result: dict[str, Any] = {
         "id": position.get("id"),
@@ -324,8 +365,12 @@ def value_position(
         "transaction_count": len(transactions),
         "units": None,
         "invested": None,
-        "realised": None,
         "current_value": None,
+        "unrealised_pnl": None,
+        "unrealised_pct": None,
+        "realised_pnl": None,
+        "realised_proceeds": None,
+        "cost_of_units_sold": None,
         "gain": None,
         "gain_pct": None,
         "xirr": None,
@@ -334,12 +379,15 @@ def value_position(
         "latest_nav_date": None,
         "first_transaction_date": transactions[0]["date"] if transactions else None,
         "unpriced_transactions": 0,
+        "is_closed": False,
+        # True when the position came from a statement import: units and cost
+        # are exact but there are no dated cashflows, so XIRR cannot be had.
+        "cost_basis_only": bool(position.get("cost_basis_only")),
     }
     if not transactions:
         return result
 
     if not nav_series or not nav_series.get("dates"):
-        # No NAV series: report what the user typed and nothing derived.
         invested = sum(t["amount"] or 0 for t in transactions if t["type"] == "buy")
         result["invested"] = round(invested, 2) if invested else None
         return result
@@ -350,9 +398,15 @@ def value_position(
 
     units = 0.0
     invested = 0.0
-    realised = 0.0
+    realised_pnl = 0.0
+    realised_proceeds = 0.0
+    cost_of_sold = 0.0
     cashflows: list[tuple[date, float]] = []
     unpriced = 0
+
+    # With an override in play the sell legs exist only to remove units; their
+    # cost and proceeds come from the statement, not from our averaging.
+    override = position.get("realised_override") or None
 
     for transaction in transactions:
         priced = nav_on_or_before(dates, navs, transaction["date"])
@@ -379,36 +433,63 @@ def value_position(
         else:
             # Never let a mistyped redemption drive units negative.
             sold = min(unit_count, units)
+            if sold <= 0:
+                continue
             proceeds = sold * nav
+            lot_cost_nav = transaction.get("lot_cost_nav")
+            if lot_cost_nav:
+                # A statement-imported closed lot. Remove exactly what its own
+                # buy leg put in, so a same-scheme open lot keeps the cost basis
+                # the statement reports for it instead of being averaged into.
+                cost = sold * lot_cost_nav
+            else:
+                average_cost = invested / units if units > 0 else nav
+                cost = sold * average_cost
             units -= sold
-            realised += proceeds
-            invested -= min(invested, sold * (invested / units if units else nav))
+            invested -= cost
+            cost_of_sold += cost
+            realised_proceeds += proceeds
+            realised_pnl += proceeds - cost
             cashflows.append((when, proceeds))
 
     current_value = units * latest_nav
     if units > 0:
         cashflows.append((date.fromisoformat(dates[-1]), current_value))
 
-    total_gain = current_value + realised - invested if invested else None
+    if override is not None:
+        realised_pnl = override["realised_pnl"]
+        cost_of_sold = override["cost_of_units_sold"]
+        realised_proceeds = override["realised_proceeds"]
+
+    unrealised = current_value - invested if units > 0 else 0.0
+    total_pnl = unrealised + realised_pnl
+    # Return on all the capital that was ever put to work in this fund.
+    deployed = invested + cost_of_sold
 
     result.update({
-        "units": round(units, 4) if units else 0.0,
-        "invested": round(invested, 2) if invested else None,
-        "realised": round(realised, 2) if realised else None,
+        "units": round(units, 4),
+        "invested": round(invested, 2) if invested else (0.0 if units == 0 else None),
         "current_value": round(current_value, 2),
-        "gain": round(total_gain, 2) if total_gain is not None else None,
-        "gain_pct": round(total_gain / invested * 100.0, 2) if total_gain is not None and invested > 0 else None,
+        "unrealised_pnl": round(unrealised, 2) if units > 0 else 0.0,
+        "unrealised_pct": round(unrealised / invested * 100.0, 2) if invested > 0 else None,
+        "realised_pnl": round(realised_pnl, 2) if cost_of_sold else None,
+        "realised_proceeds": round(realised_proceeds, 2) if realised_proceeds else None,
+        "cost_of_units_sold": round(cost_of_sold, 2) if cost_of_sold else None,
+        "gain": round(total_pnl, 2),
+        "gain_pct": round(total_pnl / deployed * 100.0, 2) if deployed > 0 else None,
         "avg_cost_nav": round(invested / units, 4) if units > 0 and invested > 0 else None,
         "latest_nav": latest_nav,
         "latest_nav_date": dates[-1],
         "unpriced_transactions": unpriced,
+        "is_closed": units <= 1e-6 and cost_of_sold > 0,
     })
 
-    computed_xirr = metrics.xirr(cashflows)
-    # An XIRR outside a sane band means the cashflow set is degenerate (a
-    # same-week buy and valuation, say) — report nothing rather than "830%".
-    if computed_xirr is not None and -95.0 < computed_xirr < 300.0:
-        first = min(when for when, _ in cashflows)
-        if (date.fromisoformat(dates[-1]) - first).days >= 90:
-            result["xirr"] = round(computed_xirr, 2)
+    if not result["cost_basis_only"]:
+        computed_xirr = metrics.xirr(cashflows)
+        # An XIRR outside a sane band means the cashflow set is degenerate (a
+        # same-week buy and valuation, say) — report nothing rather than "830%".
+        if computed_xirr is not None and -95.0 < computed_xirr < 300.0:
+            first = min(when for when, _ in cashflows)
+            if (date.fromisoformat(dates[-1]) - first).days >= 90:
+                result["xirr"] = round(computed_xirr, 2)
     return result
