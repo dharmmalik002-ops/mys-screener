@@ -1285,8 +1285,68 @@ class MutualFundService:
             if item.yahoo_symbol
         ]
 
+    def _sector_artifact(self) -> dict[str, Any]:
+        """The committed sector-index history, loaded once.
+
+        Yahoo refuses most of these symbols from datacenter IPs, so a live
+        fetch on the Space returns three sectors out of sixteen. The artifact
+        is what makes the page whole in production; see
+        `scripts/build_sector_indices.py`.
+        """
+        cached = getattr(self, "_sector_blob", None)
+        if cached is not None:
+            return cached
+        path = paths.DATA_DIR / "sector_indices.json"
+        try:
+            blob = json.loads(path.read_text())
+        except (OSError, ValueError):
+            blob = {}
+        self._sector_blob = blob
+        return blob
+
     def _sector_index_series(self, symbol: str) -> dict[str, Any]:
-        return index_source.fetch_index_series(symbol, want_ohlc=True)
+        """Daily OHLC for one index — live if the feed answers, else shipped.
+
+        Live is preferred so a machine that can reach Yahoo shows today's bar,
+        but a refusal falls through to the committed history rather than
+        dropping the sector off the page.
+        """
+        try:
+            live = index_source.fetch_index_series(symbol, want_ohlc=True)
+            if live.get("dates"):
+                return live
+        except Exception:
+            pass
+
+        for entry in (self._sector_artifact().get("sectors") or {}).values():
+            if entry.get("symbol") == symbol:
+                daily = entry["daily"]
+                return {
+                    "symbol": symbol,
+                    "dates": daily["dates"],
+                    "navs": daily["closes"],
+                    "opens": daily["opens"],
+                    "highs": daily["highs"],
+                    "lows": daily["lows"],
+                    "weekly": entry.get("weekly"),
+                    "ma30w": daily.get("ma30w"),
+                    "from_artifact": True,
+                    "is_price_index": True,
+                }
+        market = self._sector_artifact().get("market") or {}
+        if market.get("symbol") == symbol:
+            daily = market["daily"]
+            return {
+                "symbol": symbol,
+                "dates": daily["dates"],
+                "navs": daily["closes"],
+                "opens": daily["opens"],
+                "highs": daily["highs"],
+                "lows": daily["lows"],
+                "from_artifact": True,
+                "is_price_index": True,
+            }
+        raise index_source.IndexUnavailable(f"no live feed or shipped history for {symbol}")
 
     def _funds_by_sector(self) -> dict[str, list[dict[str, Any]]]:
         """Which funds in the universe track each sector index.
@@ -1333,7 +1393,7 @@ class MutualFundService:
                 return cached[1]
 
         try:
-            market = index_source.fetch_index_series("^NSEI", want_ohlc=True)
+            market = self._sector_index_series("^NSEI")
         except Exception:
             market = None
 
@@ -1373,8 +1433,10 @@ class MutualFundService:
         dates = daily["dates"]
         closes = daily["navs"]
         # 30 weeks of trading days, so the daily line carries the same average
-        # the weekly classification used.
-        ma = sector_stages._sma(closes, sector_stages.MA_WEEKS * 5)
+        # the weekly classification used. The artifact ships this precomputed
+        # over the full history — recomputing it on the stored five-year window
+        # would leave the first 150 days of the chart without an average.
+        ma = daily.get("ma30w") or sector_stages._sma(closes, sector_stages.MA_WEEKS * 5)
 
         days = RANGE_DAYS.get(range_key)
         start = 0

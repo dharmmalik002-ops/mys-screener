@@ -12,6 +12,7 @@ on:
     paths:
       - ".github/workflows/mutual-funds-refresh.yml"
       - "backend/scripts/build_mf_universe.py"
+      - "backend/scripts/build_sector_indices.py"
       - "backend/app/services/mutual_funds/**"
   workflow_dispatch:
     inputs:
@@ -98,7 +99,16 @@ jobs:
             python backend/scripts/build_mf_universe.py --compute-only --refresh-navs
           fi
 
-          if git diff --quiet backend/data/mf_universe.json; then
+          # Sector index history ships with the app because Yahoo refuses most
+          # of these symbols from datacenter IPs — see
+          # scripts/build_sector_indices.py. The builder keeps whatever it
+          # already has when a fetch fails and refuses to shrink the file, so a
+          # throttled runner cannot take the Sectors page down; a non-zero exit
+          # here must not fail the universe refresh either.
+          python backend/scripts/build_sector_indices.py || \
+            echo "sector index refresh failed; keeping the committed history" >&2
+
+          if git diff --quiet backend/data/mf_universe.json backend/data/sector_indices.json; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             echo "changed=true" >> "$GITHUB_OUTPUT"
@@ -143,7 +153,7 @@ jobs:
           set -euo pipefail
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add backend/data/mf_universe.json
+          git add backend/data/mf_universe.json backend/data/sector_indices.json
           git commit -m "chore(funds): refresh mutual fund universe [skip ci]" || exit 0
           for attempt in 1 2 3; do
             git pull --rebase --autostash origin main && git push origin HEAD:main && exit 0

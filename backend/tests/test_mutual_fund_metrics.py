@@ -1408,3 +1408,70 @@ class SectorStageTests(unittest.TestCase):
             "position_in_range_pct": 60.0, "rs_13w_vs_market_pct": 1.0,
         })
         self.assertIn("gone flat", flat)
+
+
+class SectorArtifactTests(unittest.TestCase):
+    """The shipped sector history, which is what production actually reads.
+
+    Yahoo serves these indices to residential IPs and refuses most of them
+    from datacenter ranges, so the Space saw three sectors out of sixteen
+    until the history was committed. These guard the artifact that fixed it.
+    """
+
+    @staticmethod
+    def _artifact():
+        from app.services.mutual_funds import paths
+        path = paths.DATA_DIR / "sector_indices.json"
+        if not path.exists():
+            raise unittest.SkipTest("sector_indices.json not built in this checkout")
+        import json as _json
+        return _json.loads(path.read_text())
+
+    def test_every_sector_benchmark_ships_with_history(self):
+        from app.services.mutual_funds import benchmarks
+        blob = self._artifact()
+        shipped = set(blob.get("sectors") or {})
+        expected = {b.key for b in benchmarks.SECTOR_BENCHMARKS if b.yahoo_symbol}
+        missing = expected - shipped
+        self.assertFalse(
+            missing,
+            f"these sectors would vanish on a datacenter IP: {sorted(missing)}",
+        )
+
+    def test_the_shipped_series_are_long_enough_to_classify(self):
+        """A stage needs 56 weeks of history; anything shorter is dead weight."""
+        from app.services.mutual_funds import sector_stages
+        for key, entry in (self._artifact().get("sectors") or {}).items():
+            with self.subTest(sector=key):
+                self.assertGreaterEqual(
+                    len(entry["weekly"]["dates"]), sector_stages.MIN_WEEKS,
+                    f"{key} ships too little history to place in a stage",
+                )
+
+    def test_shipped_bars_keep_the_wick_around_the_body(self):
+        for key, entry in (self._artifact().get("sectors") or {}).items():
+            for scale in ("weekly", "daily"):
+                bars = entry[scale]
+                with self.subTest(sector=key, scale=scale):
+                    for i in range(0, len(bars["dates"]), 37):  # sampled; full sweep is slow
+                        body = (bars["opens"][i], bars["closes"][i])
+                        self.assertGreaterEqual(bars["highs"][i], max(body))
+                        self.assertLessEqual(bars["lows"][i], min(body))
+
+    def test_the_daily_average_is_populated_from_the_first_stored_bar(self):
+        """Computed on full history then windowed — not on the window.
+
+        Computed on the window, every chart would open with 150 blank days.
+        """
+        for key, entry in (self._artifact().get("sectors") or {}).items():
+            with self.subTest(sector=key):
+                self.assertIsNotNone(entry["daily"]["ma30w"][0], f"{key} opens with no average")
+
+    def test_all_arrays_in_a_series_are_the_same_length(self):
+        for key, entry in (self._artifact().get("sectors") or {}).items():
+            for scale in ("weekly", "daily"):
+                bars = entry[scale]
+                n = len(bars["dates"])
+                with self.subTest(sector=key, scale=scale):
+                    for field in ("opens", "highs", "lows", "closes"):
+                        self.assertEqual(len(bars[field]), n, f"{key}.{scale}.{field} misaligned")
