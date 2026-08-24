@@ -139,6 +139,26 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         _require_ready(service)
         return service.get_fund_ai_review(scheme_code)
 
+    @router.get("/sectors/stages")
+    def sector_stages_endpoint():
+        """Every Nifty sector index, classified by where it sits in its cycle.
+
+        Weinstein stage analysis on weekly closes — a measurement of what price
+        has done, in the same register as the equity scanners. It groups
+        sectors; it does not tell anyone to buy one.
+        """
+        _require_ready(service)
+        return service.get_sector_stages()
+
+    @router.get("/sectors/{key}/series")
+    def sector_series(key: str, range: str = Query(default="3y", alias="range")):
+        """Daily OHLC and the 30-week average for one sector index."""
+        _require_ready(service)
+        payload = service.get_sector_series(key, range_key=range)
+        if payload is None:
+            raise HTTPException(status_code=404, detail=f"Unknown or unavailable sector: {key}")
+        return payload
+
     @router.get("/portfolio")
     def get_portfolio():
         return service.get_portfolio()

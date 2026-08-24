@@ -24,6 +24,7 @@ import { FundDetailModal } from "./FundDetailModal";
 import { PortfolioDashboard } from "./PortfolioDashboard";
 import { PortfolioSetup } from "./PortfolioSetup";
 import { SipCalculator } from "./SipCalculator";
+import { SectorStagesPanel } from "./SectorStagesPanel";
 
 import "./MutualFundsPanel.css";
 
@@ -45,7 +46,7 @@ import "./MutualFundsPanel.css";
  * recommendations anywhere on this page.
  */
 
-type PanelTab = "screener" | "categories" | "portfolio";
+type PanelTab = "screener" | "categories" | "sectors" | "portfolio";
 type ColumnSet = "returns" | "ranks" | "risk" | "rolling" | "cost";
 
 type Column = {
@@ -338,6 +339,7 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
           {([
             ["screener", "Screener"],
             ["categories", "Categories"],
+            ["sectors", "Sectors"],
             ["portfolio", `My portfolio${portfolio?.positions?.length ? ` (${portfolio.positions.length})` : ""}`],
           ] as const).map(([key, label]) => (
             <button
@@ -616,6 +618,10 @@ export function MutualFundsPanel({ onOpenSymbolChart }: { onOpenSymbolChart?: (s
       ) : null}
 
       {/* =================================================== portfolio tab */}
+      {/* Mounted only when selected: the sector page reads sixteen index files
+          on its first request, which is not work to do behind another tab. */}
+      {tab === "sectors" ? <SectorStagesPanel /> : null}
+
       {tab === "portfolio" ? (
         <PortfolioView
           portfolio={portfolio}

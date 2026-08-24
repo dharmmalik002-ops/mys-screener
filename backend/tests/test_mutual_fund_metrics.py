@@ -1240,3 +1240,171 @@ class PortfolioHealthTests(unittest.TestCase):
         )
         self.assertFalse(built["available"])
         self.assertEqual(built["findings"], [])
+
+
+class SectorStageTests(unittest.TestCase):
+    """Weinstein stage classification over synthetic price paths.
+
+    Synthetic rather than recorded, so each test states the shape it means:
+    a real index would leave the reader guessing which feature drove the call.
+    """
+
+    @staticmethod
+    def _daily(values: list[float], start: str = "2020-01-06") -> tuple[list[str], list[float]]:
+        from datetime import date as d, timedelta as td
+        begin = d.fromisoformat(start)
+        # Weekdays only, so the ISO-week buckets hold five bars like a real feed.
+        dates, out, cursor, i = [], [], begin, 0
+        while i < len(values):
+            if cursor.weekday() < 5:
+                dates.append(cursor.isoformat())
+                out.append(values[i])
+                i += 1
+            cursor += td(days=1)
+        return dates, out
+
+    def _weekly_from(self, values: list[float]):
+        from app.services.mutual_funds import sector_stages
+        dates, closes = self._daily(values)
+        return sector_stages._to_weekly(dates, closes)
+
+    def test_a_steady_advance_reads_as_stage_two(self):
+        from app.services.mutual_funds import sector_stages
+        weekly = self._weekly_from([100 * (1.0035 ** i) for i in range(700)])
+        result = sector_stages.classify(weekly)
+        self.assertEqual(result["stage"], 2)
+        self.assertGreater(result["ma_slope_pct_per_week"], 0)
+        self.assertGreater(result["distance_from_ma_pct"], 0)
+
+    def test_a_steady_decline_reads_as_stage_four(self):
+        from app.services.mutual_funds import sector_stages
+        weekly = self._weekly_from([100 * (0.9965 ** i) for i in range(700)])
+        result = sector_stages.classify(weekly)
+        self.assertEqual(result["stage"], 4)
+        self.assertLess(result["ma_slope_pct_per_week"], 0)
+
+    def test_flat_after_a_decline_is_a_base_not_a_top(self):
+        """Stage 1 and Stage 3 look identical on slope alone.
+
+        What separates them is what came before, which is the whole reason
+        `classify` carries a prior-slope term.
+        """
+        from app.services.mutual_funds import sector_stages
+        decline = [100 * (0.996 ** i) for i in range(400)]
+        flat = [decline[-1] + (i % 7 - 3) * 0.05 for i in range(320)]
+        result = sector_stages.classify(self._weekly_from(decline + flat))
+        self.assertEqual(result["stage"], 1)
+
+    def test_flat_after_a_rise_is_a_top_not_a_base(self):
+        from app.services.mutual_funds import sector_stages
+        rise = [100 * (1.004 ** i) for i in range(400)]
+        flat = [rise[-1] + (i % 7 - 3) * 0.05 for i in range(320)]
+        result = sector_stages.classify(self._weekly_from(rise + flat))
+        self.assertEqual(result["stage"], 3)
+
+    def test_a_short_history_is_refused_rather_than_guessed(self):
+        from app.services.mutual_funds import sector_stages
+        result = sector_stages.classify(self._weekly_from([100.0] * 60))
+        self.assertIsNone(result["stage"])
+        self.assertIn("weeks", result["reason"])
+
+    def test_readiness_is_zero_for_anything_that_is_not_a_base(self):
+        from app.services.mutual_funds import sector_stages
+        for stage_no in (2, 3, 4):
+            self.assertEqual(
+                sector_stages.breakout_readiness({"stage": stage_no}, {}), 0,
+                f"stage {stage_no} must not carry a base-readiness score",
+            )
+
+    def test_a_tight_base_with_rising_strength_scores_above_a_loose_one(self):
+        from app.services.mutual_funds import sector_stages
+        stage = {"stage": 1, "ma_slope_pct_per_week": 0.02, "distance_from_ma_pct": 2.0}
+        tight = sector_stages.breakout_readiness(
+            stage, {"range_pct": 6.0, "position_in_range_pct": 85.0, "rs_13w_vs_market_pct": 6.0},
+        )
+        loose = sector_stages.breakout_readiness(
+            stage, {"range_pct": 30.0, "position_in_range_pct": 20.0, "rs_13w_vs_market_pct": -4.0},
+        )
+        self.assertGreater(tight, loose)
+        self.assertGreaterEqual(tight, 55)
+        self.assertLess(loose, 55)
+
+    def test_only_a_well_formed_base_reaches_the_turning_section(self):
+        from app.services.mutual_funds import sector_stages
+        self.assertEqual(sector_stages.bucket_of(1, 80), "turning")
+        # A base that has merely stopped falling is not "about to turn".
+        self.assertEqual(sector_stages.bucket_of(1, 20), "sideways")
+        self.assertEqual(sector_stages.bucket_of(2, 0), "advancing")
+        self.assertEqual(sector_stages.bucket_of(3, 0), "sideways")
+        self.assertEqual(sector_stages.bucket_of(4, 0), "declining")
+
+    def test_weekly_bars_keep_the_wick_around_the_body(self):
+        from app.services.mutual_funds import sector_stages
+        dates, closes = self._daily([100 + (i % 11) for i in range(200)])
+        weekly = sector_stages._to_weekly(dates, closes, closes, closes)
+        for index in range(len(weekly["dates"])):
+            high, low = weekly["highs"][index], weekly["lows"][index]
+            body = (weekly["opens"][index], weekly["closes"][index])
+            self.assertGreaterEqual(high, max(body))
+            self.assertLessEqual(low, min(body))
+
+    def test_a_week_spanning_the_new_year_stays_one_candle(self):
+        from app.services.mutual_funds import sector_stages
+        # 30 Dec 2024 (Mon) to 3 Jan 2025 (Fri) is a single ISO week.
+        dates = ["2024-12-30", "2024-12-31", "2025-01-01", "2025-01-02", "2025-01-03"]
+        weekly = sector_stages._to_weekly(dates, [10.0, 11.0, 12.0, 11.5, 13.0])
+        self.assertEqual(len(weekly["dates"]), 1)
+        self.assertEqual(weekly["opens"][0], 10.0)
+        self.assertEqual(weekly["closes"][0], 13.0)
+        self.assertEqual(weekly["highs"][0], 13.0)
+
+    def test_a_dead_feed_does_not_take_the_whole_page_down(self):
+        from app.services.mutual_funds import sector_stages
+
+        def series_for(symbol):
+            if symbol == "^BROKEN":
+                raise RuntimeError("feed down")
+            values = [100 * (1.003 ** i) for i in range(700)]
+            dates, closes = self._daily(values)
+            return {"dates": dates, "navs": closes}
+
+        built = sector_stages.build(
+            [{"key": "ok", "name": "Working", "symbol": "^OK"},
+             {"key": "bad", "name": "Broken", "symbol": "^BROKEN"}],
+            series_for=series_for,
+        )
+        self.assertEqual(built["sector_count"], 1)
+        self.assertEqual(len(built["unavailable"]), 1)
+        self.assertEqual(built["unavailable"][0]["name"], "Broken")
+
+    def test_the_sector_summaries_never_instruct_the_reader(self):
+        """Same rule as the fund review: describe the chart, prescribe nothing."""
+        from app.services.mutual_funds import sector_stages
+        rows = [
+            {"name": "Nifty X", "stage": stage, "ma_slope_pct_per_week": -0.4,
+             "distance_from_ma_pct": -3.0, "off_52w_high_pct": -20.0,
+             "range_pct": 9.0, "position_in_range_pct": 80.0,
+             "rs_13w_vs_market_pct": 5.0, "early_advance": True}
+            for stage in (1, 2, 3, 4)
+        ]
+        text = " ".join(sector_stages.describe(row) for row in rows).lower()
+        for word in ("should", "recommend", "buy", "sell", "enter", "exit", "invest"):
+            self.assertNotIn(word, text, f"sector summary must not say '{word}'")
+
+    def test_a_slope_is_never_described_with_the_wrong_verb(self):
+        """A -0.31%/week average must not be called 'flat' next to its own number."""
+        from app.services.mutual_funds import sector_stages
+        falling = sector_stages.describe({
+            "name": "Nifty X", "stage": 1, "ma_slope_pct_per_week": -0.31,
+            "distance_from_ma_pct": 15.0, "range_pct": 33.0,
+            "position_in_range_pct": 93.0, "rs_13w_vs_market_pct": 14.5,
+        })
+        self.assertIn("still edging down", falling)
+        self.assertNotIn("gone flat", falling)
+
+        flat = sector_stages.describe({
+            "name": "Nifty Y", "stage": 1, "ma_slope_pct_per_week": 0.02,
+            "distance_from_ma_pct": 1.0, "range_pct": 8.0,
+            "position_in_range_pct": 60.0, "rs_13w_vs_market_pct": 1.0,
+        })
+        self.assertIn("gone flat", flat)

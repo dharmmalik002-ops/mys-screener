@@ -28,87 +28,85 @@ const TONE_LABEL: Record<string, string> = {
 };
 
 /**
- * Each fund you hold, placed against the median of its own SEBI sub-category:
- * cost gap across, three-year return gap up. Expressing both as a gap from the
- * fund's own category is what lets a small cap and a large cap share one plot —
- * comparing their raw returns would just rank the categories.
+ * Where each fund you hold ranks inside its own category.
  *
- * Up and to the left is "returned more than its peers while charging less".
- * That is a description of where a holding sits, not a shortlist to buy.
+ * This replaced a two-axis scatter (cost gap across, return gap up). The
+ * scatter was accurate and unreadable: it asked the reader to hold two signed
+ * gaps and a quadrant convention in their head before it said anything. One
+ * bar per fund says the same thing in the order people actually ask it —
+ * *how is this fund doing against funds like it?* — and the two gaps stay on
+ * the row as plain badges for anyone who wants them.
+ *
+ * The rank is the fund's percentile within its own SEBI sub-category over
+ * three years, which is why a large cap and a small cap can sit on one scale:
+ * each is measured only against its own peers, never against the other.
  */
-function PositioningPlot({ points }: { points: MfHealthPoint[] }) {
-  const [active, setActive] = useState<string | null>(null);
+function CategoryStanding({ points }: { points: MfHealthPoint[] }) {
+  const rows = useMemo(
+    () =>
+      points
+        .filter((point) => typeof point.percentile_3y === "number")
+        .sort((a, b) => (b.percentile_3y ?? 0) - (a.percentile_3y ?? 0)),
+    [points],
+  );
 
-  const geometry = useMemo(() => {
-    if (!points.length) return null;
-    const costs = points.map((p) => p.cost_gap);
-    const returns = points.map((p) => p.return_gap);
-    // Pad the extent so a point never sits on the frame, and keep the axes
-    // symmetric about zero so the quadrants read honestly.
-    const costExtent = Math.max(Math.abs(Math.min(...costs)), Math.abs(Math.max(...costs)), 0.25) * 1.25;
-    const returnExtent = Math.max(Math.abs(Math.min(...returns)), Math.abs(Math.max(...returns)), 1) * 1.25;
-    const weights = points.map((p) => p.weight_pct ?? 0);
-    const maxWeight = Math.max(...weights, 1);
-    return { costExtent, returnExtent, maxWeight };
-  }, [points]);
-
-  if (!geometry || !points.length) {
-    return <p className="pfh-plot-empty">Not enough category data to place these funds yet.</p>;
+  if (!rows.length) {
+    return (
+      <p className="pfh-plot-empty">
+        Not enough three-year category data to rank these funds yet.
+      </p>
+    );
   }
 
-  const W = 100;
-  const H = 100;
-  const x = (gap: number) => ((gap + geometry.costExtent) / (2 * geometry.costExtent)) * W;
-  const y = (gap: number) => H - ((gap + geometry.returnExtent) / (2 * geometry.returnExtent)) * H;
-
   return (
-    <div className="pfh-plot">
-      <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="pfh-plot-svg" role="img"
-           aria-label="Each fund held, plotted against its category median on cost and three-year return">
-        {/* Quadrant tint: cheaper-and-ahead of peers, top left. */}
-        <rect x="0" y="0" width={W / 2} height={H / 2} className="pfh-quad-good" />
-        <rect x={W / 2} y={H / 2} width={W / 2} height={H / 2} className="pfh-quad-poor" />
-        <line x1="0" y1={H / 2} x2={W} y2={H / 2} className="pfh-axis" vectorEffect="non-scaling-stroke" />
-        <line x1={W / 2} y1="0" x2={W / 2} y2={H} className="pfh-axis" vectorEffect="non-scaling-stroke" />
-        {points.map((point) => (
-          <circle
-            key={point.scheme_code}
-            cx={x(point.cost_gap)}
-            cy={y(point.return_gap)}
-            // Area, not radius, tracks portfolio weight — a radius scale
-            // exaggerates the big holdings by the square.
-            r={Math.sqrt(((point.weight_pct ?? 0) / geometry.maxWeight) || 0.04) * 5 + 1.6}
-            className={active === point.scheme_code ? "pfh-dot is-active" : "pfh-dot"}
-            vectorEffect="non-scaling-stroke"
-            onMouseEnter={() => setActive(point.scheme_code)}
-            onMouseLeave={() => setActive(null)}
-          />
-        ))}
-      </svg>
+    <div className="pfh-standing">
+      <div className="pfh-standing-scale" aria-hidden="true">
+        <span>worst in category</span>
+        <span className="pfh-standing-mid">average</span>
+        <span>best</span>
+      </div>
 
-      <span className="pfh-axis-label pfh-axis-y">3y return vs category median</span>
-      <span className="pfh-axis-label pfh-axis-x">Cost vs category median</span>
-      <span className="pfh-quad-note pfh-quad-note-tl">cheaper, ahead of peers</span>
-      <span className="pfh-quad-note pfh-quad-note-br">dearer, behind peers</span>
-
-      <ul className="pfh-plot-legend">
-        {points.map((point) => (
-          <li
-            key={point.scheme_code}
-            className={active === point.scheme_code ? "is-active" : undefined}
-            onMouseEnter={() => setActive(point.scheme_code)}
-            onMouseLeave={() => setActive(null)}
-          >
-            <span className="pfh-plot-name">{point.name}</span>
-            <em>{point.category}</em>
-            <b className={point.return_gap < 0 ? "is-down" : "is-up"}>
-              {point.return_gap > 0 ? "+" : ""}{point.return_gap.toFixed(1)}% return
-            </b>
-            <b className={point.cost_gap > 0 ? "is-down" : "is-up"}>
-              {point.cost_gap > 0 ? "+" : ""}{point.cost_gap.toFixed(2)}% cost
-            </b>
-          </li>
-        ))}
+      <ul className="pfh-standing-list">
+        {rows.map((row) => {
+          const pct = row.percentile_3y ?? 0;
+          const ahead = pct >= 50;
+          // "Top 28%" reads better than "72nd percentile" and means the same.
+          const label = ahead ? `top ${Math.max(1, Math.round(100 - pct))}%` : `bottom ${Math.max(1, Math.round(pct))}%`;
+          return (
+            <li key={row.scheme_code}>
+              <div className="pfh-standing-head">
+                <span className="pfh-standing-name">{row.name}</span>
+                <em>{row.category}</em>
+              </div>
+              <div className="pfh-standing-row">
+                <span className="pfh-standing-track">
+                  <i className="pfh-standing-median" />
+                  <i
+                    className={ahead ? "pfh-standing-fill is-up" : "pfh-standing-fill is-down"}
+                    style={
+                      ahead
+                        ? { left: "50%", width: `${(pct - 50)}%` }
+                        : { right: "50%", width: `${(50 - pct)}%` }
+                    }
+                  />
+                  <i
+                    className={ahead ? "pfh-standing-dot is-up" : "pfh-standing-dot is-down"}
+                    style={{ left: `${pct}%` }}
+                  />
+                </span>
+                <b className={ahead ? "is-up" : "is-down"}>{label}</b>
+              </div>
+              <div className="pfh-standing-badges">
+                <span className={row.return_gap >= 0 ? "is-up" : "is-down"}>
+                  {row.return_gap >= 0 ? "+" : "−"}{Math.abs(row.return_gap).toFixed(1)}% return vs peers
+                </span>
+                <span className={row.cost_gap <= 0 ? "is-up" : "is-down"}>
+                  {row.cost_gap > 0 ? "+" : row.cost_gap < 0 ? "−" : ""}{Math.abs(row.cost_gap).toFixed(2)}% cost vs peers
+                </span>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
@@ -212,10 +210,15 @@ export function PortfolioHealth({
       {/* ------------------------------------------------- positioning plot */}
       <div className="pfh-plot-block">
         <div className="pfh-plot-head">
-          <h4>Where your funds sit against their own categories</h4>
-          <p>{health.chart?.note}</p>
+          <h4>How each fund ranks in its own category</h4>
+          <p>
+            Every fund is measured only against funds of its own SEBI sub-category over three
+            years — so a small cap is judged against small caps, never against a large cap. The
+            dot is where it sits from worst to best; the notch in the middle is the category
+            average.
+          </p>
         </div>
-        <PositioningPlot points={health.chart?.points ?? []} />
+        <CategoryStanding points={health.chart?.points ?? []} />
       </div>
 
       {/* ------------------------------------------------------- AI reading */}

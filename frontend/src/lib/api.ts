@@ -4048,6 +4048,97 @@ export function getMfConcentration() {
     request<MfConcentration>("/api/mf/portfolio/concentration", undefined, { timeoutMs: 90000 }));
 }
 
+/* ---------------------------------------------------------- sector stages */
+
+export type MfSectorBucket = "turning" | "advancing" | "sideways" | "declining";
+
+export type MfSectorFund = {
+  scheme_code: string;
+  name?: string | null;
+  amc?: string | null;
+  return_1y?: number | null;
+  return_3y?: number | null;
+  expense_ratio?: number | null;
+  aum_crore?: number | null;
+  percentile_3y?: number | null;
+};
+
+export type MfSectorRow = {
+  key: string;
+  name: string;
+  symbol: string;
+  /** Weinstein stage: 1 basing, 2 advancing, 3 topping, 4 declining. */
+  stage: 1 | 2 | 3 | 4;
+  stage_label: string;
+  stage_blurb: string;
+  /** Price well clear of a still-falling average — a recovery, not a settled base. */
+  early_advance?: boolean;
+  price: number;
+  ma30: number;
+  distance_from_ma_pct: number;
+  ma_slope_pct_per_week: number;
+  base_high?: number | null;
+  base_low?: number | null;
+  range_pct?: number | null;
+  position_in_range_pct?: number | null;
+  off_52w_high_pct?: number | null;
+  rs_13w_vs_market_pct?: number | null;
+  tight?: boolean;
+  /** 0-100: how fully a Stage-1 setup has formed. Not a probability. */
+  readiness: number;
+  bucket: MfSectorBucket;
+  return_13w_pct?: number | null;
+  return_52w_pct?: number | null;
+  summary: string;
+  as_of: string;
+  days_behind?: number;
+  is_stale?: boolean;
+  fund_count?: number;
+  funds?: MfSectorFund[];
+};
+
+export type MfSectorStages = {
+  buckets: Record<MfSectorBucket, MfSectorRow[]>;
+  counts: Record<MfSectorBucket, number>;
+  sector_count: number;
+  stale_count?: number;
+  unavailable: { key: string; name: string; reason: string }[];
+  as_of?: string | null;
+  method: Record<string, number>;
+};
+
+export function getMfSectorStages() {
+  return whileWaking(() =>
+    request<MfSectorStages>("/api/mf/sectors/stages", undefined, { timeoutMs: 120000 }));
+}
+
+export type MfSectorSeries = {
+  key: string;
+  name: string;
+  symbol: string;
+  range: string;
+  available_ranges: string[];
+  dates: string[];
+  closes: number[];
+  opens?: number[] | null;
+  highs?: number[] | null;
+  lows?: number[] | null;
+  /** 30-week average, computed on full history then windowed. */
+  ma30w: (number | null)[];
+  weekly: { dates: string[]; opens: number[]; closes: number[]; highs: number[]; lows: number[] };
+  stage: { stage?: number | null; stage_label?: string | null };
+  is_price_index: boolean;
+};
+
+export function getMfSectorSeries(key: string, range = "3y") {
+  return whileWaking(() =>
+    request<MfSectorSeries>(
+      `/api/mf/sectors/${encodeURIComponent(key)}/series?range=${encodeURIComponent(range)}`,
+      undefined,
+      { timeoutMs: 90000 },
+    ));
+}
+
 /* ------------------------------------------------------------ fund overlap */
 
 export type MfOverlapPair = {

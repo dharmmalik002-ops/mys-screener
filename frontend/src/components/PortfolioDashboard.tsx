@@ -101,6 +101,32 @@ function useThemePalette(ref: React.RefObject<HTMLElement | null>): Palette {
   return palette;
 }
 
+/**
+ * A boolean that survives a reload.
+ *
+ * Used for panels the user has collapsed. A collapse that forgets itself on
+ * every page load is worse than no collapse at all — they have to close it
+ * again every single time, which is precisely the annoyance it was meant to
+ * remove.
+ */
+function useStickyFlag(key: string, initial = false): [boolean, (next: boolean) => void] {
+  const [value, setValue] = useState<boolean>(() => {
+    try {
+      const stored = window.localStorage.getItem(key);
+      return stored === null ? initial : stored === "1";
+    } catch {
+      // Private browsing and blocked storage both throw; the panel still works,
+      // it just forgets.
+      return initial;
+    }
+  });
+  const update = (next: boolean) => {
+    setValue(next);
+    try { window.localStorage.setItem(key, next ? "1" : "0"); } catch { /* not fatal */ }
+  };
+  return [value, update];
+}
+
 const inr = (value: number | null | undefined, options: { compact?: boolean; sign?: boolean } = {}): string => {
   if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   const sign = options.sign && value > 0 ? "+" : value < 0 ? "−" : "";
@@ -339,6 +365,7 @@ export function PortfolioDashboard({
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const [concentration, setConcentration] = useState<MfConcentration | null>(null);
   const [overlap, setOverlap] = useState<MfOverlap | null>(null);
+  const [sipsCollapsed, setSipsCollapsed] = useStickyFlag("mf.sips.collapsed");
   const [health, setHealth] = useState<MfPortfolioHealth | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("current_value");
   const [sortAsc, setSortAsc] = useState(false);
@@ -529,23 +556,41 @@ export function PortfolioDashboard({
       </section>
 
       {portfolio.upcoming_sips?.length ? (
-        <section className="pfd-panel pfd-panel-sips">
+        <section className={`pfd-panel pfd-panel-sips${sipsCollapsed ? " is-collapsed" : ""}`}>
           <header className="pfd-panel-head">
-            <h3>Next instalments</h3>
+            <button
+              type="button"
+              className="pfd-collapse"
+              aria-expanded={!sipsCollapsed}
+              onClick={() => setSipsCollapsed(!sipsCollapsed)}
+              title={sipsCollapsed ? "Show the next instalments" : "Minimise this panel"}
+            >
+              <i className="pfd-caret">{sipsCollapsed ? "▸" : "▾"}</i>
+              <h3>Next instalments</h3>
+              {/* Collapsed, the count is the whole point of the row — otherwise
+                  minimising hides the one fact worth glancing at. */}
+              {sipsCollapsed ? (
+                <em className="pfd-collapse-note">
+                  {portfolio.upcoming_sips.length} upcoming · next {portfolio.upcoming_sips[0]?.date}
+                </em>
+              ) : null}
+            </button>
             <span className="pfd-muted">
               {inr(totals?.monthly_sip, { compact: true })} a month committed
             </span>
           </header>
-          <ul className="pfd-sips">
-            {portfolio.upcoming_sips.map((sip) => (
-              <li key={`${sip.scheme_code}-${sip.date}`} onClick={() => onOpenFund(sip.scheme_code)}>
-                <span className="pfd-sip-date">{sip.date}</span>
-                <span className="pfd-sip-name">{sip.name ?? sip.scheme_code}</span>
-                <i>{sip.frequency}</i>
-                <b>{inr(sip.amount)}</b>
-              </li>
-            ))}
-          </ul>
+          {sipsCollapsed ? null : (
+            <ul className="pfd-sips">
+              {portfolio.upcoming_sips.map((sip) => (
+                <li key={`${sip.scheme_code}-${sip.date}`} onClick={() => onOpenFund(sip.scheme_code)}>
+                  <span className="pfd-sip-date">{sip.date}</span>
+                  <span className="pfd-sip-name">{sip.name ?? sip.scheme_code}</span>
+                  <i>{sip.frequency}</i>
+                  <b>{inr(sip.amount)}</b>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
 

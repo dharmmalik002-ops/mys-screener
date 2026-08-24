@@ -541,3 +541,46 @@
   border-left: 2px solid var(--pfd-line);
   border-radius: 0 8px 8px 0;
 }
+
+/* ------------------------------------------------- collapsible panel head */
+
+.pfd-collapse {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.pfd-collapse h3 { margin: 0; }
+.pfd-collapse:hover h3 { color: var(--text); }
+
+.pfd-caret {
+  font-style: normal;
+  font-size: 9px;
+  line-height: 1;
+  color: var(--text-muted);
+  transition: color 140ms ease;
+}
+
+.pfd-collapse:hover .pfd-caret { color: var(--pfd-line); }
+
+.pfd-collapse-note {
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Collapsed, the panel is just its header — drop the body padding so it does
+   not leave an empty band behind. */
+.pfd-panel.is-collapsed { padding-bottom: 12px; }
+.pfd-panel.is-collapsed .pfd-panel-head { margin-bottom: 0; }

@@ -153,73 +153,137 @@
   color: var(--text-muted);
 }
 
-.pfh-plot {
-  position: relative;
+/* ------------------------------------------------- category standing bars */
+
+.pfh-standing { display: flex; flex-direction: column; gap: 4px; }
+
+.pfh-standing-scale {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 260px);
-  gap: 16px;
-  align-items: stretch;
-  padding-left: 16px;
-  padding-bottom: 16px;
-}
-
-.pfh-plot-svg {
-  width: 100%;
-  height: 220px;
-  overflow: visible;
-  background: var(--pfd-chart-bg, transparent);
-  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
-  border-radius: 8px;
-}
-
-.pfh-quad-good { fill: var(--pfd-up, #34d399); opacity: 0.05; }
-.pfh-quad-poor { fill: var(--pfd-down, #fb7185); opacity: 0.05; }
-
-.pfh-axis {
-  stroke: var(--pfd-hairline, rgba(148, 163, 184, 0.3));
-  stroke-width: 1;
-  stroke-dasharray: 3 3;
-}
-
-.pfh-dot {
-  fill: var(--pfd-line, #38bdf8);
-  fill-opacity: 0.55;
-  stroke: var(--pfd-line, #38bdf8);
-  stroke-width: 1;
-  cursor: pointer;
-  transition: fill-opacity 140ms ease;
-}
-
-.pfh-dot.is-active { fill-opacity: 1; stroke-width: 2; }
-
-.pfh-axis-label {
-  position: absolute;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
   font-size: 9px;
-  letter-spacing: 0.07em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-muted);
-  pointer-events: none;
+  opacity: 0.8;
+  padding: 0 0 2px;
 }
 
-.pfh-axis-y {
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%) rotate(180deg);
-  writing-mode: vertical-rl;
+.pfh-standing-scale > :last-child { text-align: right; }
+.pfh-standing-mid { text-align: center; }
+
+.pfh-standing-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
 }
 
-.pfh-axis-x { left: 50%; bottom: 0; transform: translateX(-50%); }
+.pfh-standing-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
 
-.pfh-quad-note {
-  position: absolute;
-  font-size: 8.5px;
+.pfh-standing-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pfh-standing-name {
+  font-size: 11.5px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfh-standing-head em {
+  font-style: normal;
+  font-size: 9.5px;
   color: var(--text-muted);
-  opacity: 0.75;
-  pointer-events: none;
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
-.pfh-quad-note-tl { left: 22px; top: 5px; }
-.pfh-quad-note-br { left: 50%; bottom: 22px; transform: translateX(6px); }
+.pfh-standing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 10px;
+}
+
+.pfh-standing-track {
+  position: relative;
+  display: block;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+}
+
+/* The category average. Everything on this chart is read relative to it, so
+   it is drawn rather than left to the axis labels. */
+.pfh-standing-median {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--pfd-hairline, rgba(148, 163, 184, 0.45));
+}
+
+.pfh-standing-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 99px;
+  opacity: 0.35;
+}
+
+.pfh-standing-fill.is-up { background: var(--pfd-up, #34d399); }
+.pfh-standing-fill.is-down { background: var(--pfd-down, #fb7185); }
+
+.pfh-standing-dot {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  border: 1.5px solid var(--pfd-chart-bg, #0b1120);
+}
+
+.pfh-standing-dot.is-up { background: var(--pfd-up, #34d399); }
+.pfh-standing-dot.is-down { background: var(--pfd-down, #fb7185); }
+
+.pfh-standing-row b {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pfh-standing-row b.is-up { color: var(--pfd-up); }
+.pfh-standing-row b.is-down { color: var(--pfd-down); }
+
+.pfh-standing-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pfh-standing-badges .is-up { color: var(--pfd-up); opacity: 0.9; }
+.pfh-standing-badges .is-down { color: var(--pfd-down); opacity: 0.9; }
 
 .pfh-plot-empty, .pfh-empty {
   margin: 0;
@@ -227,56 +291,6 @@
   font-size: 11.5px;
   color: var(--text-muted);
 }
-
-.pfh-plot-legend {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  align-self: start;
-  min-width: 0;
-}
-
-.pfh-plot-legend li {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0 8px;
-  padding: 4px 6px;
-  font-size: 10.5px;
-  color: var(--text-soft);
-  border-radius: 6px;
-  cursor: default;
-  transition: background 140ms ease;
-}
-
-.pfh-plot-legend li.is-active { background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.08)); }
-
-.pfh-plot-name {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--text);
-}
-
-.pfh-plot-legend em {
-  font-style: normal;
-  font-size: 9px;
-  color: var(--text-muted);
-}
-
-.pfh-plot-legend b {
-  display: inline;
-  margin-right: 8px;
-  font-size: 9.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.pfh-plot-legend b.is-up { color: var(--pfd-up); }
-.pfh-plot-legend b.is-down { color: var(--pfd-down); }
 
 /* ---------------------------------------------------------------- AI note */
 
@@ -353,7 +367,6 @@
 
 .pfh-disclaimer { margin-top: 12px; }
 
-@media (max-width: 780px) {
-  .pfh-plot { grid-template-columns: minmax(0, 1fr); }
-  .pfh-plot-svg { height: 200px; }
+@media (max-width: 620px) {
+  .pfh-standing-badges { flex-direction: column; gap: 2px; }
 }

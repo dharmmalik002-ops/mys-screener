@@ -26,7 +26,8 @@ from typing import Any
 
 from . import (
     benchmarks, concentration, fund_review, groww_source, index_source, metrics,
-    nav_source, overlap, paths, portfolio, portfolio_health, statement_import,
+    nav_source, overlap, paths, portfolio, portfolio_health, sector_stages,
+    statement_import,
 )
 from .harvest import detail_blob, universe_row
 
@@ -1274,6 +1275,139 @@ class MutualFundService:
         )
         payload["as_of"] = valued.get("as_of")
         return payload
+
+    # ------------------------------------------------------------ sectors
+
+    def _sector_definitions(self) -> list[dict[str, Any]]:
+        return [
+            {"key": item.key, "name": item.label, "symbol": item.yahoo_symbol}
+            for item in benchmarks.SECTOR_BENCHMARKS
+            if item.yahoo_symbol
+        ]
+
+    def _sector_index_series(self, symbol: str) -> dict[str, Any]:
+        return index_source.fetch_index_series(symbol, want_ohlc=True)
+
+    def _funds_by_sector(self) -> dict[str, list[dict[str, Any]]]:
+        """Which funds in the universe track each sector index.
+
+        Reuses `benchmarks.resolve_theme`, the same mapping the fund pages
+        already benchmark against — so the funds listed under a sector are
+        exactly the ones measured against that sector everywhere else, rather
+        than a second, subtly different classification.
+        """
+        out: dict[str, list[dict[str, Any]]] = {}
+        for fund in (self._load_universe().get("funds") or []):
+            sub_category = str(fund.get("sub_category") or "")
+            if sub_category not in ("Sectoral", "Thematic", "Sectoral / Thematic"):
+                continue
+            resolved = benchmarks.resolve_theme(fund.get("name"))
+            if resolved is None:
+                continue
+            out.setdefault(resolved.key, []).append({
+                "scheme_code": fund.get("scheme_code"),
+                "name": fund.get("name"),
+                "amc": fund.get("amc"),
+                "return_1y": fund.get("return_1y"),
+                "return_3y": fund.get("return_3y"),
+                "expense_ratio": fund.get("expense_ratio"),
+                "aum_crore": fund.get("aum_crore"),
+                "percentile_3y": fund.get("percentile_3y"),
+            })
+        for funds in out.values():
+            # Largest first: AUM is the least opinionated ordering available,
+            # and ranking them by return here would read as a shortlist.
+            funds.sort(key=lambda row: -(row.get("aum_crore") or 0))
+        return out
+
+    def get_sector_stages(self) -> dict[str, Any]:
+        """Every Nifty sector index, classified by where it sits in its cycle.
+
+        Cached for six hours: the classification moves on weekly closes, so
+        recomputing it per request would re-read sixteen index files to produce
+        the same answer.
+        """
+        with self._ai_lock:
+            cached = self._ai_cache.get("sector_stages")
+            if cached and (time.time() - cached[0]) < 6 * 60 * 60:
+                return cached[1]
+
+        try:
+            market = index_source.fetch_index_series("^NSEI", want_ohlc=True)
+        except Exception:
+            market = None
+
+        payload = sector_stages.build(
+            self._sector_definitions(),
+            series_for=self._sector_index_series,
+            market_series=market,
+        )
+        funds_by_sector = self._funds_by_sector()
+        for rows in payload["buckets"].values():
+            for row in rows:
+                tracking = funds_by_sector.get(row["key"], [])
+                row["fund_count"] = len(tracking)
+                row["funds"] = tracking[:8]
+
+        with self._ai_lock:
+            self._ai_cache["sector_stages"] = (time.time(), payload)
+        return payload
+
+    def get_sector_series(self, key: str, *, range_key: str = "3y") -> dict[str, Any] | None:
+        """Daily OHLC for one sector index, plus its 30-week average.
+
+        The average is computed on the full history and then windowed, not
+        computed on the window — otherwise the first 30 weeks of any range
+        would have no average at all.
+        """
+        definition = next((item for item in self._sector_definitions() if item["key"] == key), None)
+        if definition is None:
+            return None
+        try:
+            daily = self._sector_index_series(definition["symbol"])
+        except Exception:
+            return None
+        if not daily.get("dates"):
+            return None
+
+        dates = daily["dates"]
+        closes = daily["navs"]
+        # 30 weeks of trading days, so the daily line carries the same average
+        # the weekly classification used.
+        ma = sector_stages._sma(closes, sector_stages.MA_WEEKS * 5)
+
+        days = RANGE_DAYS.get(range_key)
+        start = 0
+        if days:
+            cutoff = (date.fromisoformat(dates[-1]) - timedelta(days=days)).isoformat()
+            start = next((i for i, value in enumerate(dates) if value >= cutoff), 0)
+
+        window = slice(start, len(dates))
+        weekly = sector_stages._to_weekly(dates, closes, daily.get("highs"), daily.get("lows"))
+        stage = sector_stages.classify(weekly)
+
+        return {
+            "key": key,
+            "name": definition["name"],
+            "symbol": definition["symbol"],
+            "range": range_key,
+            "available_ranges": _available_ranges(dates),
+            "dates": dates[window],
+            "closes": closes[window],
+            "opens": (daily.get("opens") or [])[window] if daily.get("opens") else None,
+            "highs": (daily.get("highs") or [])[window] if daily.get("highs") else None,
+            "lows": (daily.get("lows") or [])[window] if daily.get("lows") else None,
+            "ma30w": ma[window],
+            "weekly": {
+                "dates": weekly["dates"][-260:],
+                "opens": [round(v, 2) for v in weekly["opens"][-260:]],
+                "closes": [round(v, 2) for v in weekly["closes"][-260:]],
+                "highs": [round(v, 2) for v in weekly["highs"][-260:]],
+                "lows": [round(v, 2) for v in weekly["lows"][-260:]],
+            },
+            "stage": stage,
+            "is_price_index": True,
+        }
 
     def get_portfolio_overlap(self) -> dict[str, Any]:
         """How much each pair of held funds duplicates the other.
