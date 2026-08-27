@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-08-27T20:57:28.754576+00:00",
+  "generated_at": "2026-08-27T21:08:50.574228+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -7080,11 +7080,11 @@
       "earnings_date": "2026-07-31",
       "close_in_range_pct": 0.7544,
       "next_day_gap_pct": 2.277,
-      "day_rvol_50d": 0.986,
+      "day_rvol_50d": 0.925,
       "return_5d_pct": -8.856,
       "source": "bse",
       "best_pop_pct": 3.434,
-      "best_pop_rvol": 0.986
+      "best_pop_rvol": 0.925
     },
     "SAPL": {
       "symbol": "SAPL",
