@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-01T17:12:12.558155+00:00",
+  "generated_at": "2026-09-02T11:08:54.202186+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -574,17 +574,6 @@
       "best_pop_pct": 7.362,
       "best_pop_rvol": 26.855
     },
-    "AMIC": {
-      "symbol": "AMIC",
-      "earnings_date": "2026-07-03",
-      "close_in_range_pct": 0.8786,
-      "next_day_gap_pct": -1.209,
-      "day_rvol_50d": 0.461,
-      "return_5d_pct": -0.603,
-      "source": "bse",
-      "best_pop_pct": 4.203,
-      "best_pop_rvol": 1.641
-    },
     "GANDHAR": {
       "symbol": "GANDHAR",
       "earnings_date": "2026-07-22",
@@ -697,14 +686,14 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-09-01",
-      "close_in_range_pct": 0.4662,
+      "earnings_date": "2026-09-02",
+      "close_in_range_pct": 0.0109,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 657.133,
+      "day_rvol_50d": 43.267,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 4.677,
-      "best_pop_rvol": 657.133
+      "best_pop_pct": 2.67,
+      "best_pop_rvol": 43.267
     },
     "IFBAGRO": {
       "symbol": "IFBAGRO",
@@ -3843,14 +3832,14 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-09-01",
-      "close_in_range_pct": 1.0,
+      "earnings_date": "2026-09-02",
+      "close_in_range_pct": 0.9969,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 7.835,
+      "day_rvol_50d": 6.695,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 4.465,
-      "best_pop_rvol": 7.835
+      "best_pop_pct": 9.659,
+      "best_pop_rvol": 6.695
     },
     "SAGCEM": {
       "symbol": "SAGCEM",
@@ -16816,7 +16805,7 @@
       "close_in_range_pct": 0.4369,
       "next_day_gap_pct": 0.337,
       "day_rvol_50d": 0.907,
-      "return_5d_pct": -1.202,
+      "return_5d_pct": -3.582,
       "source": "bse",
       "best_pop_pct": -0.574,
       "best_pop_rvol": 0.907
