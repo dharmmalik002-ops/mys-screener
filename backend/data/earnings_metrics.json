@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-03T17:00:27.272163+00:00",
+  "generated_at": "2026-09-04T11:16:27.645780+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -642,14 +642,14 @@
     },
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-09-03",
+      "earnings_date": "2026-09-04",
       "close_in_range_pct": 0.0,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 28.417,
+      "day_rvol_50d": null,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": -10.968,
-      "best_pop_rvol": 28.417
+      "best_pop_pct": null,
+      "best_pop_rvol": null
     },
     "RUBYMILLS": {
       "symbol": "RUBYMILLS",
@@ -686,14 +686,14 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-09-03",
-      "close_in_range_pct": 0.3742,
+      "earnings_date": "2026-09-04",
+      "close_in_range_pct": 0.3182,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 58.867,
+      "day_rvol_50d": null,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 2.478,
-      "best_pop_rvol": 58.867
+      "best_pop_pct": null,
+      "best_pop_rvol": null
     },
     "IFBAGRO": {
       "symbol": "IFBAGRO",
@@ -3832,14 +3832,14 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-09-03",
-      "close_in_range_pct": 0.625,
+      "earnings_date": "2026-09-04",
+      "close_in_range_pct": 0.2305,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.715,
+      "day_rvol_50d": null,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 12.441,
-      "best_pop_rvol": 2.715
+      "best_pop_pct": null,
+      "best_pop_rvol": null
     },
     "SAGCEM": {
       "symbol": "SAGCEM",
@@ -7058,11 +7058,11 @@
       "earnings_date": "2026-07-31",
       "close_in_range_pct": 0.7544,
       "next_day_gap_pct": 2.277,
-      "day_rvol_50d": 0.986,
+      "day_rvol_50d": 0.925,
       "return_5d_pct": -8.856,
       "source": "bse",
       "best_pop_pct": 3.434,
-      "best_pop_rvol": 0.986
+      "best_pop_rvol": 0.925
     },
     "SAPL": {
       "symbol": "SAPL",
@@ -16805,7 +16805,7 @@
       "close_in_range_pct": 0.4369,
       "next_day_gap_pct": 0.337,
       "day_rvol_50d": 0.907,
-      "return_5d_pct": -5.112,
+      "return_5d_pct": -6.106,
       "source": "bse",
       "best_pop_pct": -0.574,
       "best_pop_rvol": 0.907
