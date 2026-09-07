@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-04T16:38:55.893846+00:00",
+  "generated_at": "2026-09-07T11:15:19.674309+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -642,14 +642,14 @@
     },
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-09-04",
+      "earnings_date": "2026-09-07",
       "close_in_range_pct": 0.0,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 2.167,
+      "day_rvol_50d": 1.333,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": -10.121,
-      "best_pop_rvol": 2.167
+      "best_pop_pct": -8.685,
+      "best_pop_rvol": 1.333
     },
     "RUBYMILLS": {
       "symbol": "RUBYMILLS",
@@ -686,14 +686,14 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-09-04",
-      "close_in_range_pct": 0.3182,
+      "earnings_date": "2026-09-07",
+      "close_in_range_pct": 0.4098,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 291.533,
+      "day_rvol_50d": 313.533,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 1.204,
-      "best_pop_rvol": 291.533
+      "best_pop_pct": 0.524,
+      "best_pop_rvol": 313.533
     },
     "IFBAGRO": {
       "symbol": "IFBAGRO",
@@ -3832,14 +3832,14 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-09-04",
-      "close_in_range_pct": 0.2305,
+      "earnings_date": "2026-09-07",
+      "close_in_range_pct": 0.4719,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.371,
+      "day_rvol_50d": 1.326,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 8.122,
-      "best_pop_rvol": 1.371
+      "best_pop_pct": 10.435,
+      "best_pop_rvol": 1.326
     },
     "SAGCEM": {
       "symbol": "SAGCEM",
@@ -16805,7 +16805,7 @@
       "close_in_range_pct": 0.4369,
       "next_day_gap_pct": 0.337,
       "day_rvol_50d": 0.907,
-      "return_5d_pct": -6.106,
+      "return_5d_pct": -6.971,
       "source": "bse",
       "best_pop_pct": -0.574,
       "best_pop_rvol": 0.907
