@@ -18,6 +18,24 @@ type SparklineProps = {
    * mapping so an improving rank visually rises.
    */
   invert?: boolean;
+  /**
+   * Minimum displayed range, as a percentage of the series midpoint.
+   *
+   * Without this, every series is normalised to its own min/max, so a stock
+   * that drifted 1.5% across 20 sessions fills the full height and reads as
+   * violent chop — the opposite of the truth, and actively misleading in a
+   * screener whose job includes finding tight bases.
+   *
+   * Set it and the value becomes "the move that fills the height": at 10, a
+   * 10%+ swing uses the full box, 3% uses about a third, 1% is nearly flat.
+   * That also makes rows COMPARABLE to one another — with per-series
+   * normalisation, two adjacent sparklines at the same visual amplitude can be
+   * a 40% trend and a 1% drift, which is worse than showing nothing.
+   *
+   * Left undefined for non-price series (ranks, breadth) where the reader
+   * wants maximum detail and there is no meaningful "percent move".
+   */
+  minRangePct?: number;
   /** Accessible description, e.g. "Rank trend: 12 to 3 over 10 sessions". */
   label?: string;
   className?: string;
@@ -30,6 +48,7 @@ export function Sparkline({
   height = 36,
   width = 100,
   invert = false,
+  minRangePct,
   label,
   className,
 }: SparklineProps) {
@@ -61,8 +80,20 @@ export function Sparkline({
     );
   }
 
-  const min = Math.min(...clean);
-  const max = Math.max(...clean);
+  let min = Math.min(...clean);
+  let max = Math.max(...clean);
+
+  if (minRangePct && minRangePct > 0) {
+    const mid = (max + min) / 2;
+    const floor = Math.abs(mid) * (minRangePct / 100);
+    if (max - min < floor) {
+      // Widen symmetrically about the midpoint so the line keeps its shape and
+      // simply occupies less of the height.
+      min = mid - floor / 2;
+      max = mid + floor / 2;
+    }
+  }
+
   const range = max - min || 1;
   const step = width / (clean.length - 1);
   const pad = 2;
