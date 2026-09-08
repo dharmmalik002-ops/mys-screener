@@ -317,6 +317,9 @@ const CHART_PAD_LEFT = 4;
 // allowed to leave empty space.
 const MAX_BAR_SLOT_PX = 14;
 const MIN_FILLED_SLOTS = 60;
+// How many times one symbol's daily series is requested before the grid accepts
+// that the backend has nothing for it.
+const SERIES_MAX_ATTEMPTS = 2;
 const CHART_PAD_RIGHT = 56;
 
 type OverlayLine = { key: string; color: string; values: Array<number | null> };
@@ -591,7 +594,10 @@ function OhlcChart({
 }) {
   const { ref, size } = useMeasuredSize();
   const { w, h } = size;
-  const ready = w > 10 && h > 10 && bars.length > 1;
+  // A stock listed yesterday has exactly one session. One real candle — its
+  // range and where it closed — beats the synthetic flat line the card used to
+  // fall back to, so the bar floor here is 1, not 2.
+  const ready = w > 10 && h > 10 && bars.length > 0;
   let body: ReactNode[] = [];
   let volumeBars: ReactNode[] = [];
   let zoneRects: ReactNode[] = [];
@@ -771,7 +777,7 @@ function GridCard({
     [showLevels, fullBars],
   );
 
-  const hasBars = fullBars.length > 1;
+  const hasBars = fullBars.length > 0;
   const baseWindow = Math.max(12, Math.round(chartWindowBars(timeframe) * zoomFactor));
   const stretch = (100 - Math.max(0, Math.min(position, 100))) / 100; // 0 = base window, 1 = everything
   const windowSize = Math.round(baseWindow + stretch * Math.max(fullBars.length - baseWindow, 0));
@@ -939,6 +945,9 @@ export function ChartGridModal({
   const [levelsOn, setLevelsOn] = useState<boolean>(() => readAutoLevelsEnabled());
   const [hiddenMas, setHiddenMas] = useState<ReadonlySet<string>>(new Set());
   const [seriesStore, setSeriesStore] = useState<Record<string, ChartBar[]>>({});
+  const seriesInFlightRef = useRef<Set<string>>(new Set());
+  const seriesMountedRef = useRef(true);
+  const seriesAttemptsRef = useRef<Map<string, number>>(new Map());
   const [gridArrangement, setGridArrangement] = useState<"flat" | "group">("group");
   const [groupRankPeriod, setGroupRankPeriod] = useState<ChartGridGroupRankPeriod>("1M");
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
@@ -1100,35 +1109,74 @@ export function ChartGridModal({
     const visibleSymbols = visibleCards
       .map((card) => card.symbol)
       .filter((symbol): symbol is string => Boolean(symbol));
-    const missingSymbols = visibleSymbols.filter((symbol) => !seriesStore[`2Y:${symbol}`]);
+    // A symbol is only worth asking for if it has no series yet, is not already
+    // in flight, and has not used up its attempts. Without those last two the
+    // effect refires on every seriesStore change and re-requests the symbols the
+    // response did not cover — observed as the same batch going out ~19 times
+    // for a handful of days-old listings the backend had nothing to say about.
+    const missingSymbols = visibleSymbols.filter(
+      (symbol) =>
+        !seriesStore[`2Y:${symbol}`]
+        && !seriesInFlightRef.current.has(symbol)
+        && (seriesAttemptsRef.current.get(symbol) ?? 0) < SERIES_MAX_ATTEMPTS,
+    );
     if (!missingSymbols.length) {
       return;
     }
 
-    let active = true;
+    missingSymbols.forEach((symbol) => seriesInFlightRef.current.add(symbol));
+
+    // Keep whatever comes back even if this effect run has already been torn
+    // down — its deps include seriesStore, so a second batch landing re-runs it
+    // and would otherwise throw away a perfectly good response that was still in
+    // flight. Only an unmounted grid ignores its results.
+    const settle = (loaded: Record<string, ChartBar[]>) => {
+      missingSymbols.forEach((symbol) => seriesInFlightRef.current.delete(symbol));
+      const exhausted: string[] = [];
+      missingSymbols.forEach((symbol) => {
+        if (loaded[symbol]) {
+          seriesAttemptsRef.current.delete(symbol);
+          return;
+        }
+        // A symbol the response skipped (or a request that failed outright) is
+        // retried a couple of times and then recorded as empty, which parks the
+        // card on its "no daily bars" state instead of asking forever.
+        const attempts = (seriesAttemptsRef.current.get(symbol) ?? 0) + 1;
+        seriesAttemptsRef.current.set(symbol, attempts);
+        if (attempts >= SERIES_MAX_ATTEMPTS) {
+          exhausted.push(symbol);
+        }
+      });
+      if (!seriesMountedRef.current) {
+        return;
+      }
+      setSeriesStore((current) => {
+        const next = { ...current };
+        Object.entries(loaded).forEach(([symbol, bars]) => {
+          next[`2Y:${symbol}`] = bars;
+        });
+        exhausted.forEach((symbol) => {
+          if (!next[`2Y:${symbol}`]) {
+            next[`2Y:${symbol}`] = [];
+          }
+        });
+        return next;
+      });
+    };
+
     // Always fetch the full ~2y daily series; the timeframe pills and the
     // per-card sliders slice it client-side (also powers the 200 SMA).
     void onLoadSeries(missingSymbols, "2Y")
-      .then((loaded) => {
-        if (!active) {
-          return;
-        }
-        setSeriesStore((current) => {
-          const next = { ...current };
-          Object.entries(loaded).forEach(([symbol, bars]) => {
-            next[`2Y:${symbol}`] = bars;
-          });
-          return next;
-        });
-      })
-      .catch(() => {
-        // Keep the sparkline fallback visible when daily bars are unavailable.
-      });
-
-    return () => {
-      active = false;
-    };
+      .then((loaded) => settle(loaded))
+      .catch(() => settle({}));
   }, [onLoadSeries, seriesStore, timeframe, visibleCards]);
+
+  useEffect(() => {
+    seriesMountedRef.current = true;
+    return () => {
+      seriesMountedRef.current = false;
+    };
+  }, []);
 
   // Recompute the custom scrollbar's rail + thumb geometry from the live scroll
   // metrics. The modal is centered and stationary, so the rail tracks its right edge.
