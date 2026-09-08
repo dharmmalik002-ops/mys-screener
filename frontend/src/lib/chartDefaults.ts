@@ -1,4 +1,5 @@
 import type { ChartColorSettings } from "../components/ChartPanel";
+import { CANDLE_DOWN, CANDLE_UP } from "./marketColors";
 
 export const DEFAULT_CHART_COLORS: ChartColorSettings = {
   ema10: "#ff7a59",
@@ -8,11 +9,11 @@ export const DEFAULT_CHART_COLORS: ChartColorSettings = {
   vwap: "#39ff14",
   // Pro teal/red (TradingView-style): calmer than the old neon cyan/red,
   // higher up-vs-down contrast at a glance, and easy on the eyes for long use.
-  candleUp: "#089981",
-  candleDown: "#f23645",
+  candleUp: CANDLE_UP,
+  candleDown: CANDLE_DOWN,
   candleExpansion: "#ffb01f",
-  volumeUp: "#089981",
-  volumeDown: "#f23645",
+  volumeUp: CANDLE_UP,
+  volumeDown: CANDLE_DOWN,
   rsLine: "#39ff14",
   rsMarker: "#39ff14",
   rsMarkerSize: 4,

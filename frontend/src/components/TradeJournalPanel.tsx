@@ -2419,7 +2419,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         th, td { padding: 6px 8px; border-bottom: 1px solid #e5e5e5; text-align: left; }
         th { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: #666; }
         .num { text-align: right; font-variant-numeric: tabular-nums; }
-        .pos { color: #047857; } .neg { color: #b91c1c; }
+        .pos { color: #047857; } .neg { color: var(--negative-shade); }
         @media print { body { margin: 12mm; } }
       </style></head><body>
       <h1>Weekly Trading Review</h1>

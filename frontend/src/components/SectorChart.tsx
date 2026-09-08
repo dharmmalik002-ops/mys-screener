@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { ColorType, LineStyle, createChart } from "lightweight-charts";
 import type { MfSectorSeries } from "../lib/api";
+import { NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 /**
  * A sector index, as a line or as candles.
@@ -37,8 +38,8 @@ export function SectorChart({
       styles.getPropertyValue(token).trim() || fallback;
     const textColor = read("--text-muted", "#64748b");
     const gridColor = read("--line", "rgba(100,140,200,0.15)");
-    const up = read("--pfd-up", "#22c55e");
-    const down = read("--pfd-down", "#ef4444");
+    const up = read("--pfd-up", POSITIVE);
+    const down = read("--pfd-down", NEGATIVE);
 
     const chart = createChart(node, {
       height,

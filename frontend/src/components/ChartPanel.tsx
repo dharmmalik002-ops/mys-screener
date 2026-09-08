@@ -10,6 +10,7 @@ import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandleSeries";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
+import { CANDLE_DOWN, CANDLE_UP, NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
 export type ChartStyle = "candles" | "bars" | "hlc";
@@ -462,8 +463,8 @@ const CHART_PALETTES: Record<
     gridColor: "rgba(0, 210, 255, 0.07)",
     crosshairColor: "rgba(0, 210, 255, 0.22)",
     borderColor: "rgba(48, 54, 61, 0.95)",
-    upColor: "#089981",
-    downColor: "#f23645",
+    upColor: CANDLE_UP,
+    downColor: CANDLE_DOWN,
     volumeUpColor: "rgba(8, 153, 129, 0.38)",
     volumeDownColor: "rgba(242, 54, 69, 0.35)",
     rsLineColor: "#39ff14",
@@ -841,8 +842,8 @@ const ANNOTATION_DEFAULT_COLORS: Record<string, string> = {
   rectangle: "#59c4ff",
   measure: "#4bf0b3",
   text: "#ffd36f",
-  "arrow-up": "#22c55e",
-  "arrow-down": "#ef4444",
+  "arrow-up": POSITIVE,
+  "arrow-down": NEGATIVE,
   "arrow-line": "#ffd36f",
 };
 
@@ -3009,7 +3010,7 @@ export function ChartPanel({
               : {
                   // TradingView-classic OHLC bars: thin sticks, blue up / red down.
                   upColor: "#2962ff",
-                  downColor: "#f23645",
+                  downColor: CANDLE_DOWN,
                 }),
             thinBars: true,
           })
@@ -3602,7 +3603,7 @@ export function ChartPanel({
         time: marker.time as UTCTimestamp,
         position: marker.type === "buy" ? "belowBar" : "aboveBar",
         shape: marker.type === "buy" ? "arrowUp" : "arrowDown",
-        color: marker.type === "buy" ? "#10b981" : "#ef4444",
+        color: marker.type === "buy" ? POSITIVE : NEGATIVE,
         text: marker.type === "buy" ? "B" : "S",
         size: 1.5,
       });
@@ -3626,7 +3627,7 @@ export function ChartPanel({
           time: lockTime,
           position: "aboveBar",
           shape: "arrowUp",
-          color: "#22c55e",
+          color: POSITIVE,
           text: "UC",
           size: 1,
         });
@@ -3636,7 +3637,7 @@ export function ChartPanel({
           time: lockTime,
           position: "belowBar",
           shape: "arrowDown",
-          color: "#ef4444",
+          color: NEGATIVE,
           text: "LC",
           size: 1,
         });
@@ -3674,7 +3675,7 @@ export function ChartPanel({
             time: marker.time as UTCTimestamp,
             position: "aboveBar" as const,
             shape: "circle" as const,
-            color: marker.color || "#16a34a",
+            color: marker.color || POSITIVE,
             text: marker.label || "HQV",
             size: 1.4,
           }))
@@ -3704,7 +3705,7 @@ export function ChartPanel({
       const isSupport = level.kind === "support";
       return mainSeries.createPriceLine({
         price: level.price,
-        color: isSupport ? "#22c55e" : "#ef4444",
+        color: isSupport ? POSITIVE : NEGATIVE,
         lineWidth: 1,
         lineStyle: 2, // dashed
         axisLabelVisible: true,
@@ -4521,7 +4522,7 @@ export function ChartPanel({
           const width = Math.max(xEnd - xStart, 2);
           const demand = zone.kind === "demand";
           // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
-          const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
+          const color = demand ? (zone.timeframe === "W" ? "#3b82f6" : POSITIVE) : NEGATIVE;
           const tfLabel = zone.timeframe === "M" ? "Mthly" : zone.timeframe === "W" ? "Wkly" : "Daily";
           const label = `${tfLabel} ${demand ? "Demand" : "Supply"}`;
           return (
@@ -4537,7 +4538,7 @@ export function ChartPanel({
           const p1 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t1, price: line.p1 });
           const p2 = projectAnchor(chartRef.current, mainSeriesRef.current, { time: line.t2, price: line.p2 });
           if (!p1 || !p2) return null;
-          const color = line.kind === "up" ? "#22c55e" : "#ef4444";
+          const color = line.kind === "up" ? POSITIVE : NEGATIVE;
           return (
             <g key={`auto-trend-${index}`} style={{ pointerEvents: "none" }}>
               <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke={color} strokeWidth={1.6} />
@@ -5666,7 +5667,7 @@ export function ChartPanel({
                         {tradeHoverLines.map((line, idx) => (
                           <span
                             key={`trade-hover-${idx}`}
-                            style={{ color: line.startsWith("B") ? "#10b981" : "#ef4444" }}
+                            style={{ color: line.startsWith("B") ? POSITIVE : NEGATIVE }}
                           >
                             {line}
                           </span>

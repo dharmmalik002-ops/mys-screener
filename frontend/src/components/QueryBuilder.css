@@ -77,8 +77,8 @@
 }
 
 .qb-clear:hover {
-  border-color: #ef4444;
-  color: #dc2626;
+  border-color: var(--negative);
+  color: var(--negative);
   background: rgba(239, 68, 68, 0.06);
 }
 
@@ -170,7 +170,7 @@
 
 .qb-group-remove:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--negative);
 }
 
 /* ----- Chips ----- */
@@ -233,7 +233,7 @@
 }
 
 .qb-chip-remove:hover {
-  background: #ef4444;
+  background: var(--negative);
   color: #fff;
 }
 

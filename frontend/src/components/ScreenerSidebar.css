@@ -394,7 +394,7 @@
 
 .ss-saved-delete:hover {
   background: rgba(239, 68, 68, 0.12);
-  color: #dc2626;
+  color: var(--negative);
 }
 
 /* ----- Empty state ----- */
@@ -559,8 +559,8 @@
   font-weight: 700;
 }
 
-.ss-scorecard-ret.pos { color: #10b981; }
-.ss-scorecard-ret.neg { color: #ef4444; }
+.ss-scorecard-ret.pos { color: var(--positive); }
+.ss-scorecard-ret.neg { color: var(--negative); }
 
 .ss-scorecard-win {
   font-variant-numeric: tabular-nums;

@@ -135,7 +135,7 @@ export function ShareholdingChart({ data }: Props) {
               const val = latest[k] ?? 0;
               const d = delta ? (delta as any)[k] : null;
               const arrow = d != null ? (d > 0.1 ? "▲" : d < -0.1 ? "▼" : "—") : "";
-              const dColor = d != null ? (k === "promoter_pct" ? (d > 0 ? "#22c55e" : d < 0 ? "#ef4444" : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)";
+              const dColor = d != null ? (k === "promoter_pct" ? (d > 0 ? "var(--positive)" : d < 0 ? "var(--negative)" : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)") : "rgba(255,255,255,0.4)";
               return (
                 <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>

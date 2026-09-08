@@ -10,8 +10,8 @@
   --sf-border: #e5e7eb;
   --sf-text: #111827;
   --sf-text-soft: #6b7280;
-  --sf-pos: #10b981;
-  --sf-neg: #ef4444;
+  --sf-pos: var(--positive);
+  --sf-neg: var(--negative);
 
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr);
@@ -96,11 +96,11 @@
 }
 .sf-icon-emerald {
   background: rgba(16, 185, 129, 0.14);
-  color: #10b981;
+  color: var(--positive);
 }
 .sf-icon-red {
   background: rgba(239, 68, 68, 0.14);
-  color: #ef4444;
+  color: var(--negative);
 }
 
 .sf-card-sub {
@@ -293,11 +293,11 @@
 }
 
 .sf-bar-pos {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(90deg, var(--positive), var(--positive));
 }
 
 .sf-bar-neg {
-  background: linear-gradient(90deg, #f87171, #ef4444);
+  background: linear-gradient(90deg, var(--negative), var(--negative));
 }
 
 .sf-mover-pct {

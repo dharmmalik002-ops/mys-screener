@@ -26,9 +26,9 @@
   border-radius: 10px;
 }
 
-.pfh-finding.is-watch { border-left-color: var(--pfd-down, #fb7185); }
+.pfh-finding.is-watch { border-left-color: var(--pfd-down, var(--negative)); }
 .pfh-finding.is-neutral { border-left-color: var(--pfd-ramp-1, #38bdf8); }
-.pfh-finding.is-good { border-left-color: var(--pfd-up, #34d399); }
+.pfh-finding.is-good { border-left-color: var(--pfd-up, var(--positive)); }
 
 .pfh-finding-head {
   display: flex;
@@ -246,8 +246,8 @@
   opacity: 0.35;
 }
 
-.pfh-standing-fill.is-up { background: var(--pfd-up, #34d399); }
-.pfh-standing-fill.is-down { background: var(--pfd-down, #fb7185); }
+.pfh-standing-fill.is-up { background: var(--pfd-up, var(--positive)); }
+.pfh-standing-fill.is-down { background: var(--pfd-down, var(--negative)); }
 
 .pfh-standing-dot {
   position: absolute;
@@ -260,8 +260,8 @@
   border: 1.5px solid var(--pfd-chart-bg, #0b1120);
 }
 
-.pfh-standing-dot.is-up { background: var(--pfd-up, #34d399); }
-.pfh-standing-dot.is-down { background: var(--pfd-down, #fb7185); }
+.pfh-standing-dot.is-up { background: var(--pfd-up, var(--positive)); }
+.pfh-standing-dot.is-down { background: var(--pfd-down, var(--negative)); }
 
 .pfh-standing-row b {
   font-size: 10.5px;

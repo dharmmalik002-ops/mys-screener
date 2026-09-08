@@ -3,6 +3,7 @@ import { ColorType, createChart, type IChartApi, type ISeriesApi, type UTCTimest
 import type { ChartBar } from "../lib/api";
 
 import "./IndexCandleChart.css";
+import { NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 /** Exponential moving average over closes, same length as input. */
 function emaSeries(closes: number[], span: number): number[] {
@@ -91,10 +92,10 @@ export function IndexCandleChart({ bars, height = 320 }: { bars: ChartBar[]; hei
     chartRef.current = chart;
 
     const candles = chart.addCandlestickSeries({
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
+      upColor: POSITIVE,
+      downColor: NEGATIVE,
+      wickUpColor: POSITIVE,
+      wickDownColor: NEGATIVE,
       borderVisible: false,
       priceFormat: { type: "price", precision: 2, minMove: 0.05 },
     });

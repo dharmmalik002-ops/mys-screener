@@ -31,7 +31,7 @@ const CAP_BUCKETS: CapBucket[] = [
   { key: "large", label: "Large", min: 50000, max: 200000, color: "#8b5cf6" },
   { key: "mid", label: "Mid", min: 10000, max: 50000, color: "#ec4899" },
   { key: "small", label: "Small", min: 1000, max: 10000, color: "#f59e0b" },
-  { key: "micro", label: "Micro", min: 0, max: 1000, color: "#10b981" },
+  { key: "micro", label: "Micro", min: 0, max: 1000, color: "var(--positive)" },
 ];
 
 const CAP_RANGE_LABEL: Record<string, string> = {
@@ -162,7 +162,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
 
   /* Mini donut for "Groups" summary card — top 5 groups + "Other" */
   const groupsDonutData = useMemo(() => {
-    const palette = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "#10b981"];
+    const palette = ["#6366f1", "#8b5cf6", "#ec4899", "#f59e0b", "var(--positive)"];
     const top = groupCounts.slice(0, 5).map((g, i) => ({
       name: g.name,
       value: g.count,
@@ -203,7 +203,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
   const sparkAvg = sparkData.length
     ? sparkData.reduce((s, v) => s + v, 0) / sparkData.length
     : 0;
-  const sparkColor = sparkAvg >= 0 ? "#10b981" : "#ef4444";
+  const sparkColor = sparkAvg >= 0 ? "var(--positive)" : "var(--negative)";
 
   return (
     <div className="sd-root">

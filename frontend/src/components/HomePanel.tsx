@@ -579,7 +579,7 @@ function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: n
       {bars.map((bar, i) => {
         const cx = slot * (i + 0.5);
         const up = bar.close >= bar.open;
-        const color = up ? "#10b981" : "#ef4444";
+        const color = up ? "var(--positive)" : "var(--negative)";
         const yHigh = y(bar.high);
         const yLow = y(bar.low);
         const yOpen = y(bar.open);
@@ -895,8 +895,8 @@ export function HomePanel({
                 <Donut
                   size={56}
                   segments={[
-                    { value: advances, color: "#10b981" },
-                    { value: declines, color: "#ef4444" },
+                    { value: advances, color: "var(--positive)" },
+                    { value: declines, color: "var(--negative)" },
                   ]}
                 />
               </div>
@@ -1004,7 +1004,7 @@ export function HomePanel({
                           <Sparkline
                             values={ranks}
                             invert
-                            color={improving ? "#10b981" : "#ef4444"}
+                            color={improving ? "var(--positive)" : "var(--negative)"}
                             height={24}
                             label={
                               ranks.length >= 2
@@ -1031,8 +1031,8 @@ export function HomePanel({
             <div className="homepro-donut-wrap">
               <Donut
                 segments={[
-                  { value: advances, color: "#10b981" },
-                  { value: declines, color: "#ef4444" },
+                  { value: advances, color: "var(--positive)" },
+                  { value: declines, color: "var(--negative)" },
                   { value: unchanged, color: "#cbd5e1" },
                 ]}
               />
@@ -1045,11 +1045,11 @@ export function HomePanel({
             </div>
             <div className="homepro-legend">
               <div className="homepro-legend-row">
-                <span><span className="homepro-legend-swatch" style={{ background: "#10b981" }} />Advancing</span>
+                <span><span className="homepro-legend-swatch" style={{ background: "var(--positive)" }} />Advancing</span>
                 <span><strong>{advances}</strong> ({((advances / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
               </div>
               <div className="homepro-legend-row">
-                <span><span className="homepro-legend-swatch" style={{ background: "#ef4444" }} />Declining</span>
+                <span><span className="homepro-legend-swatch" style={{ background: "var(--negative)" }} />Declining</span>
                 <span><strong>{declines}</strong> ({((declines / Math.max(1, breadthTotal)) * 100).toFixed(1)}%)</span>
               </div>
               <div className="homepro-legend-row">
@@ -1075,7 +1075,7 @@ export function HomePanel({
               <div className="homepro-nifty-price">
                 <strong>{niftyPrice !== null ? niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}</strong>
                 {niftyChange !== null && (
-                  <span style={{ color: niftyChange >= 0 ? "#10b981" : "#ef4444", fontWeight: 700, fontSize: 13 }}>
+                  <span style={{ color: niftyChange >= 0 ? "var(--positive)" : "var(--negative)", fontWeight: 700, fontSize: 13 }}>
                     {formatReturn(niftyChange)}
                   </span>
                 )}

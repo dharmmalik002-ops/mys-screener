@@ -957,13 +957,13 @@
 
 .tj-kbox-deployed { border-left-color: var(--accent); }
 .tj-kbox-unreal   { border-left-color: #8b949e; }
-.tj-kbox-risk     { border-left-color: #ff6b6b; }
-.tj-kbox-today    { border-left-color: #22c55e; }
+.tj-kbox-risk     { border-left-color: var(--negative); }
+.tj-kbox-today    { border-left-color: var(--positive); }
 
-.tj-kbox.pos .tj-kbox-value { color: var(--positive, #22c55e); }
-.tj-kbox.pos { border-left-color: #22c55e; }
-.tj-kbox.neg .tj-kbox-value { color: var(--negative, #ff6b6b); }
-.tj-kbox.neg { border-left-color: #ff6b6b; }
+.tj-kbox.pos .tj-kbox-value { color: var(--positive, var(--positive)); }
+.tj-kbox.pos { border-left-color: var(--positive); }
+.tj-kbox.neg .tj-kbox-value { color: var(--negative, var(--negative)); }
+.tj-kbox.neg { border-left-color: var(--negative); }
 
 .tj-kcard-metric .muted { color: var(--text-muted); opacity: 0.7; }
 
@@ -1218,8 +1218,8 @@
 
 .tj-kcard-metrics { display: flex; flex-direction: column; gap: 4px; margin-bottom: 8px; }
 .tj-kcard-metric { display: flex; align-items: center; justify-content: space-between; font-size: 0.78rem; }
-.tj-kcard-metric.pos > span:last-child { color: var(--positive, #22c55e); font-weight: 700; }
-.tj-kcard-metric.neg > span:last-child { color: var(--negative, #ff6b6b); font-weight: 700; }
+.tj-kcard-metric.pos > span:last-child { color: var(--positive, var(--positive)); font-weight: 700; }
+.tj-kcard-metric.neg > span:last-child { color: var(--negative, var(--negative)); font-weight: 700; }
 .tj-kcard-ml { color: var(--text-muted); font-size: 0.7rem; }
 .tj-kcard-cmp { color: var(--accent); font-weight: 600; }
 .tj-kcard-pnl { font-weight: 700; }
@@ -1704,7 +1704,7 @@
 .trade-review-saved {
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--accent-2, #10b981);
+  color: var(--accent-2, var(--positive));
   margin-right: auto;
 }
 
@@ -1783,8 +1783,8 @@
 .tj-root {
   --tj-accent: var(--accent, #6366f1);
   --tj-accent-strong: #4f46e5;
-  --tj-pos: var(--positive, #10b981);
-  --tj-neg: var(--negative, #ef4444);
+  --tj-pos: var(--positive);
+  --tj-neg: var(--negative);
   --tj-card-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 6px 18px rgba(15, 23, 42, 0.05);
   background:
     radial-gradient(900px 360px at -10% -20%, color-mix(in srgb, var(--tj-accent) 7%, transparent), transparent),
@@ -3007,8 +3007,8 @@
   min-width: 84px;
 }
 
-.tj-mistake-bill-pnl.neg { color: var(--loss, #f23645); }
-.tj-mistake-bill-pnl.pos { color: var(--gain, #089981); }
+.tj-mistake-bill-pnl.neg { color: var(--loss, var(--candle-down)); }
+.tj-mistake-bill-pnl.pos { color: var(--gain, var(--candle-up)); }
 
 /* ===== Learnings tab ===== */
 .tj-learnings-page {

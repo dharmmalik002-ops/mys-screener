@@ -10,8 +10,8 @@
   --gp-border-strong: rgba(15, 23, 42, 0.14);
   --gp-muted: #64748b;
   --gp-text: #0f172a;
-  --gp-green: #10b981;
-  --gp-red: #ef4444;
+  --gp-green: var(--positive);
+  --gp-red: var(--negative);
   --gp-amber: #f59e0b;
   --gp-violet: var(--accent);
   --gp-blue: #3b82f6;
@@ -690,7 +690,7 @@ body.dark .gp-score-chip {
 :root[data-theme="dark"] .gp-emerging,
 :root.dark .gp-emerging,
 body.dark .gp-emerging {
-  color: #6ee7b7;
+  color: var(--positive-tint);
 }
 
 /* breadth donut */
@@ -819,9 +819,9 @@ body.dark .gp-emerging {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }
 
-.gp-rs-hi { background: linear-gradient(135deg, #16a34a, #047857); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.55); }
+.gp-rs-hi { background: linear-gradient(135deg, var(--positive), #047857); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.55); }
 .gp-rs-mid { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45); }
-.gp-rs-lo { background: linear-gradient(135deg, #dc2626, #991b1b); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45); }
+.gp-rs-lo { background: linear-gradient(135deg, var(--negative), var(--negative-shade)); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45); }
 .gp-rs-muted {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
@@ -886,8 +886,8 @@ body.dark .gp-emerging {
   vertical-align: middle;
 }
 
-.gp-rank-delta.up { color: var(--gp-green, #10b981); }
-.gp-rank-delta.down { color: var(--gp-red, #ef4444); }
+.gp-rank-delta.up { color: var(--gp-green, var(--positive)); }
+.gp-rank-delta.down { color: var(--gp-red, var(--negative)); }
 
 
 /* ----- Leadership breadth ----- */
@@ -897,6 +897,6 @@ body.dark .gp-emerging {
   font-size: 0.78rem;
 }
 
-.gp-breadth.hi { color: var(--gp-green, #10b981); }
+.gp-breadth.hi { color: var(--gp-green, var(--positive)); }
 .gp-breadth.mid { color: var(--gp-amber, #f59e0b); }
-.gp-breadth.lo { color: var(--gp-red, #ef4444); }
+.gp-breadth.lo { color: var(--gp-red, var(--negative)); }

@@ -17,6 +17,7 @@ import { PortfolioOverlap } from "./PortfolioOverlap";
 import { PortfolioHealth } from "./PortfolioHealth";
 
 import "./PortfolioDashboard.css";
+import { NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 /**
  * The portfolio, presented.
@@ -70,8 +71,8 @@ function readPalette(node: Element | null): Palette {
     grid: read(PALETTE_TOKENS.grid, "rgba(148,163,184,0.09)"),
     crosshair: read(PALETTE_TOKENS.crosshair, "rgba(56,189,248,0.5)"),
     chartBg: read(PALETTE_TOKENS.chartBg, "#0b1120"),
-    up: read(PALETTE_TOKENS.up, "#34d399"),
-    down: read(PALETTE_TOKENS.down, "#fb7185"),
+    up: read(PALETTE_TOKENS.up, POSITIVE),
+    down: read(PALETTE_TOKENS.down, NEGATIVE),
     text: read(PALETTE_TOKENS.text, "#64748b"),
     ramp: RAMP_TOKENS.map((token, index) => read(token, `hsl(${200 + index * 12} 80% 55%)`)),
   };

@@ -35,13 +35,13 @@
 }
 
 .mk-score.press { border-color: rgba(8, 153, 129, 0.6); }
-.mk-score.press .mk-verdict { color: #089981; }
+.mk-score.press .mk-verdict { color: var(--candle-up); }
 .mk-score.selective { border-color: rgba(148, 216, 45, 0.5); }
 .mk-score.selective .mk-verdict { color: #94d82d; }
 .mk-score.protect { border-color: rgba(247, 185, 85, 0.55); }
 .mk-score.protect .mk-verdict { color: #f7b955; }
 .mk-score.aside { border-color: rgba(242, 54, 69, 0.55); }
-.mk-score.aside .mk-verdict { color: #f23645; }
+.mk-score.aside .mk-verdict { color: var(--candle-down); }
 
 .mk-header-context {
   display: flex;
@@ -61,8 +61,8 @@
 }
 
 .mk-muted { color: var(--text-muted); }
-.markets-panel .pos { color: #089981; }
-.markets-panel .neg { color: #f23645; }
+.markets-panel .pos { color: var(--candle-up); }
+.markets-panel .neg { color: var(--candle-down); }
 
 .mk-spark {
   width: 120px;
@@ -195,8 +195,8 @@
   margin-bottom: 6px;
 }
 
-.mk-week-sub.pos-hdr { color: #089981; }
-.mk-week-sub.neg-hdr { color: #f23645; }
+.mk-week-sub.pos-hdr { color: var(--candle-up); }
+.mk-week-sub.neg-hdr { color: var(--candle-down); }
 
 .mk-week ul {
   margin: 0 0 8px;
@@ -254,9 +254,9 @@
 }
 .mk-chip small { font-weight: 500; }
 .mk-chip.pos-chip { border-color: rgba(8, 153, 129, 0.5); }
-.mk-chip.pos-chip small { color: #089981; }
+.mk-chip.pos-chip small { color: var(--candle-up); }
 .mk-chip.neg-chip { border-color: rgba(242, 54, 69, 0.5); }
-.mk-chip.neg-chip small { color: #f23645; }
+.mk-chip.neg-chip small { color: var(--candle-down); }
 
 .mk-posture {
   display: flex;
@@ -312,11 +312,11 @@
 
 .mk-pos-cat { font-weight: 700; font-size: 0.74rem; letter-spacing: 0.03em; text-transform: uppercase; }
 .mk-pos-row.cat-failed-breakout, .mk-pos-row.cat-broken-trend { border-color: rgba(242, 54, 69, 0.5); }
-.mk-pos-row.cat-failed-breakout .mk-pos-cat, .mk-pos-row.cat-broken-trend .mk-pos-cat { color: #f23645; }
+.mk-pos-row.cat-failed-breakout .mk-pos-cat, .mk-pos-row.cat-broken-trend .mk-pos-cat { color: var(--candle-down); }
 .mk-pos-row.cat-damaged, .mk-pos-row.cat-testing-21-ema { border-color: rgba(247, 185, 85, 0.5); }
 .mk-pos-row.cat-damaged .mk-pos-cat, .mk-pos-row.cat-testing-21-ema .mk-pos-cat { color: #f7b955; }
 .mk-pos-row.cat-breakout-working, .mk-pos-row.cat-healthy-trend { border-color: rgba(8, 153, 129, 0.45); }
-.mk-pos-row.cat-breakout-working .mk-pos-cat, .mk-pos-row.cat-healthy-trend .mk-pos-cat { color: #089981; }
+.mk-pos-row.cat-breakout-working .mk-pos-cat, .mk-pos-row.cat-healthy-trend .mk-pos-cat { color: var(--candle-up); }
 
 @media (max-width: 700px) {
   .mk-pos-row { grid-template-columns: 1fr 1fr; }
@@ -384,8 +384,8 @@
 .mk-bigcard-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 3px; }
 
 .mk-affinity { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 10px; }
-.mk-tag.pos-tag { border-color: rgba(8,153,129,0.5); color: #089981; }
-.mk-tag.neg-tag { border-color: rgba(242,54,69,0.5); color: #f23645; }
+.mk-tag.pos-tag { border-color: rgba(8,153,129,0.5); color: var(--candle-up); }
+.mk-tag.neg-tag { border-color: rgba(242,54,69,0.5); color: var(--candle-down); }
 
 .mk-focus-card { position: relative; }
 .mk-focus-top { display: flex; align-items: center; gap: 8px; }
@@ -394,7 +394,7 @@
   border: none; background: none; color: var(--text-muted);
   font-size: 1.1rem; line-height: 1; cursor: pointer; padding: 0 2px;
 }
-.mk-focus-remove:hover { color: #f23645; }
+.mk-focus-remove:hover { color: var(--candle-down); }
 .mk-focus-setup { font-size: 0.78rem; font-weight: 600; margin: 2px 0; }
 .mk-focus-plan { font-size: 0.74rem; line-height: 1.5; margin: 4px 0; }
 .mk-focus-plan em { font-style: normal; font-weight: 700; color: var(--text-muted); }

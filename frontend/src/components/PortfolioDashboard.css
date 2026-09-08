@@ -11,8 +11,8 @@
   /* Semantic. These are DEFINITIONS — literal values only. A previous pass
      rewrote them into var() references to themselves, which resolves to
      nothing and silently blanked every chart colour on the dark theme. */
-  --pfd-up: #34d399;
-  --pfd-down: #fb7185;
+  --pfd-up: var(--positive);
+  --pfd-down: var(--negative);
   --pfd-line: #38bdf8;
   --pfd-line-soft: rgba(56, 189, 248, 0.28);
   --pfd-line-faint: rgba(56, 189, 248, 0.01);
@@ -46,8 +46,8 @@
 }
 
 :root[data-theme="light"] .pfd {
-  --pfd-up: #15803d;
-  --pfd-down: #dc2626;
+  --pfd-up: var(--positive);
+  --pfd-down: var(--negative);
   --pfd-line: #2563eb;
   --pfd-line-soft: rgba(37, 99, 235, 0.20);
   --pfd-line-faint: rgba(37, 99, 235, 0.02);

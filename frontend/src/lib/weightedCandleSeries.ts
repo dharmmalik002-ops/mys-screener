@@ -10,6 +10,7 @@ import {
   type Time,
 } from "lightweight-charts";
 import type { CanvasRenderingTarget2D } from "fancy-canvas";
+import { CANDLE_DOWN, CANDLE_UP } from "./marketColors";
 
 /**
  * Volume/range-weighted candles.
@@ -53,12 +54,12 @@ export interface WeightedCandleSeriesOptions extends CustomSeriesOptions {
 
 export const weightedCandleDefaultOptions: WeightedCandleSeriesOptions = {
   ...customSeriesDefaultOptions,
-  upColor: "#089981",
-  downColor: "#f23645",
-  wickUpColor: "#089981",
-  wickDownColor: "#f23645",
-  borderUpColor: "#089981",
-  borderDownColor: "#f23645",
+  upColor: CANDLE_UP,
+  downColor: CANDLE_DOWN,
+  wickUpColor: CANDLE_UP,
+  wickDownColor: CANDLE_DOWN,
+  borderUpColor: CANDLE_UP,
+  borderDownColor: CANDLE_DOWN,
   borderVisible: true,
   // The spread has to be wide enough to read at a glance, otherwise the whole
   // feature is a 1px curiosity. A dead bar keeps ~15% of its slot (a hairline

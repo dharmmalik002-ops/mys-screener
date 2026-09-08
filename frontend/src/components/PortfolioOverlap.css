@@ -50,7 +50,7 @@
 .pov-bar-fill.is-modest { background: var(--pfd-ramp-1, #38bdf8); }
 .pov-bar-fill.is-substantial { background: var(--pfd-ramp-4, #fbbf24); }
 .pov-bar-fill.is-high { background: #fb923c; }
-.pov-bar-fill.is-very_high { background: var(--pfd-down, #fb7185); }
+.pov-bar-fill.is-very_high { background: var(--pfd-down, var(--negative)); }
 
 .pov-bar-cell b {
   font-weight: 600;

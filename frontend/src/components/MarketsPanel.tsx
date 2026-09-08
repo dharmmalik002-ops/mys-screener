@@ -1050,7 +1050,7 @@ export function MarketsPanel({
                       a stuck stroke-dasharray and an apparently empty chart. */}
                   <Line type="monotone" dataKey="> 20 EMA" stroke="#00d2ff" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                   <Line type="monotone" dataKey="> 50 SMA" stroke="#f7b955" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
-                  <Line type="monotone" dataKey="> 200 SMA" stroke="#089981" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
+                  <Line type="monotone" dataKey="> 200 SMA" stroke="var(--candle-up)" strokeWidth={2} dot={false} connectNulls isAnimationActive={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

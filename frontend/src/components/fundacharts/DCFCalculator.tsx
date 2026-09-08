@@ -161,7 +161,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
     ...(dcf?.projections.slice(0, 10).map(p => ({ period: p.period, proj: p.fcf, pv: p.pv })) ?? []),
   ];
 
-  const mosColor = dcf?.mos != null ? (dcf.mos >= 20 ? "#22c55e" : dcf.mos >= 0 ? "#f59e0b" : "#ef4444") : "rgba(255,255,255,0.4)";
+  const mosColor = dcf?.mos != null ? (dcf.mos >= 20 ? "var(--positive)" : dcf.mos >= 0 ? "#f59e0b" : "var(--negative)") : "rgba(255,255,255,0.4)";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -174,13 +174,13 @@ export function DCFCalculator({ fundamentals, market }: Props) {
         {/* Left: sliders */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
           <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Inputs</div>
-          <Slider label={`Base FCF (${ccy} Cr)`} min={-10000} max={50000} step={100} value={baseFcf} onChange={setBaseFcf} unit="" color="#22c55e" />
+          <Slider label={`Base FCF (${ccy} Cr)`} min={-10000} max={50000} step={100} value={baseFcf} onChange={setBaseFcf} unit="" color="var(--positive)" />
           <Slider label="Stage 1 Growth (%)" min={0} max={50} step={0.5} value={g1} onChange={setG1} unit="%" color="#7c6aff" />
           <Slider label="Stage 1 Years" min={3} max={15} step={1} value={stage1Years} onChange={setStage1Years} unit="Y" />
           <Slider label="Stage 2 Growth (%)" min={0} max={30} step={0.5} value={g2} onChange={setG2} unit="%" color="#00d2ff" />
           <Slider label="Stage 2 Years" min={1} max={10} step={1} value={stage2Years} onChange={setStage2Years} unit="Y" />
           <Slider label="Terminal Growth (%)" min={0} max={8} step={0.25} value={tg} onChange={setTg} unit="%" color="#f59e0b" />
-          <Slider label="WACC (%)" min={6} max={25} step={0.25} value={wacc} onChange={setWacc} unit="%" color="#ef4444" />
+          <Slider label="WACC (%)" min={6} max={25} step={0.25} value={wacc} onChange={setWacc} unit="%" color="var(--negative)" />
           <Slider label={`Net Debt (${ccy} Cr)`} min={-50000} max={200000} step={100} value={netDebt} onChange={setNetDebt} unit="" color="#6b7280" />
           <Slider label={`Market Cap (${ccy} Cr)`} min={100} max={2000000} step={100} value={marketCap} onChange={setMarketCap} unit="" color="#a855f7" />
         </div>
@@ -188,7 +188,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
         {/* Right: output cards */}
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {[
-            { label: "Intrinsic Value", val: dcf?.intrinsic != null ? fmtCr(dcf.intrinsic, ccy) : "—", color: "#22c55e" },
+            { label: "Intrinsic Value", val: dcf?.intrinsic != null ? fmtCr(dcf.intrinsic, ccy) : "—", color: "var(--positive)" },
             { label: "Market Cap", val: marketCap > 0 ? fmtCr(marketCap, ccy) : "—", color: "rgba(255,255,255,0.7)" },
             { label: "Margin of Safety", val: dcf?.mos != null ? `${dcf.mos.toFixed(1)}%` : "—", color: mosColor },
             { label: "Terminal Value (PV)", val: dcf?.tvPv != null ? fmtCr(dcf.tvPv, ccy) : "—", color: "#f59e0b" },
@@ -268,7 +268,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
                     {row.values.map((v, j) => {
                       if (v == null) return <td key={j} style={{ padding: "5px 8px", textAlign: "right", color: "rgba(255,255,255,0.25)" }}>—</td>;
                       const mos = marketCap > 0 ? ((v - marketCap) / marketCap * 100) : 0;
-                      const cellColor = mos >= 20 ? "#22c55e" : mos >= 0 ? "#f59e0b" : "#ef4444";
+                      const cellColor = mos >= 20 ? "var(--positive)" : mos >= 0 ? "#f59e0b" : "var(--negative)";
                       return (
                         <td key={j} style={{ padding: "5px 8px", textAlign: "right", fontFamily: "monospace", fontWeight: 600,
                           color: row.g === g1 && row.waccRange[j] === wacc ? "#fff" : cellColor,
