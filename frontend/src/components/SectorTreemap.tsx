@@ -34,13 +34,30 @@ const BANDS: Record<ReturnWindow, [number, number, number]> = {
   "6m": [5, 18, 35],
 };
 
-/** Below these pixel sizes a label is illegible, so it is dropped entirely. */
-const LABEL_MIN_W = 44;
-const LABEL_MIN_H = 22;
+/** Below these pixel sizes a label is illegible, so it is dropped entirely.
+ *  Kept deliberately low because truncate() already clips to the tile width —
+ *  a clipped "Telecom…" is more use than a blank tile, and at 17px an 11px
+ *  label still sits inside its box. */
+const LABEL_MIN_W = 38;
+const LABEL_MIN_H = 17;
 const SUB_LABEL_MIN_H = 34;
 const SECTOR_HEADER_H = 19;
 /** Below this canvas width the map drops to a single level (see the tiles memo). */
 const NARROW_WIDTH = 520;
+/** Children projected below this many square pixels get folded into "+N more". */
+const MIN_LABELLED_AREA = 620;
+/**
+ * Average pixels per parent needed before nesting a second level inside it.
+ *
+ * Measured against the live universe (29 sectors): at 1138x592 the root map
+ * labels 60% of its tiles, which reads fine; at 636x369 -- the width the Groups
+ * page actually gives when the chart pane is alongside -- two levels drop to
+ * 41% labelled with 11 sub-pixel slivers, while ONE level puts 29 tiles at
+ * ~90x90px each and labels all of them. So the level count is a measurement,
+ * not a breakpoint: phone-vs-desktop was never the real variable, available
+ * area per sector was.
+ */
+const MIN_PARENT_AREA_FOR_NESTING = 12000;
 
 function bandOf(value: number, window: ReturnWindow): string {
   if (!Number.isFinite(value)) return "flat";
@@ -97,7 +114,7 @@ type Leaf = {
 };
 
 type Branch = {
-  kind: "sector" | "group";
+  kind: "sector" | "group" | "other";
   id: string;
   label: string;
   title: string;
@@ -126,6 +143,50 @@ function rollUp(children: Node[]): { weight: number; ret: number; cap: number; c
     if (Number.isFinite(child.ret)) weighted += child.ret * child.weight;
   }
   return { weight, ret: weight > 0 ? weighted / weight : Number.NaN, cap, count };
+}
+
+/**
+ * Folds children too small to carry a label into one aggregate tile.
+ *
+ * Measured on the live universe: 29 sectors and 94 groups over ~1,600 stocks
+ * put 210 tiles on the root map, of which 144 were too small to label and 108
+ * were under 18x14px. Half the map was unlabelled slivers. Synthetic mock data
+ * hid this completely, because real market cap is far more concentrated than a
+ * tidy power law.
+ *
+ * Area stays honest: the aggregate's weight is exactly the sum of what it
+ * replaces, so the sector's total footprint is unchanged. It is deliberately
+ * NOT clickable — "+7 more" is not a thing you can drill into — and the parent
+ * header is still the way into the full sector.
+ */
+function foldSmallChildren(children: Node[], availableArea: number, minArea: number): Node[] {
+  const total = children.reduce((sum, child) => sum + (child.weight > 0 ? child.weight : 0), 0);
+  if (total <= 0 || availableArea <= 0) return children;
+
+  const sorted = [...children].sort((a, b) => b.weight - a.weight);
+  const keep: Node[] = [];
+  const fold: Node[] = [];
+  for (const child of sorted) {
+    const projected = availableArea * (child.weight / total);
+    // Always keep the two largest, however cramped the parent is, so a sector
+    // never collapses to a single "+N more".
+    if (projected >= minArea || keep.length < 2) keep.push(child);
+    else fold.push(child);
+  }
+
+  // Folding one child gains nothing and loses its name.
+  if (fold.length < 2) return sorted;
+
+  const rolled = rollUp(fold);
+  keep.push({
+    kind: "other",
+    id: "__other__",
+    label: `+${fold.length} more`,
+    title: `${fold.length} smaller holdings, aggregated`,
+    children: fold,
+    ...rolled,
+  });
+  return keep;
 }
 
 function buildTree(
@@ -219,7 +280,9 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
       if (width <= 0) return;
       // Portrait box on a phone (one level of large tiles), landscape on a
       // desktop (two nested levels).
-      const ratio = width < NARROW_WIDTH ? 1.15 : 0.52;
+      // 0.58 rather than 0.52 on desktop: the live universe puts ~210 tiles on
+      // the root map and the extra height is the cheapest legibility win.
+      const ratio = width < NARROW_WIDTH ? 1.15 : 0.58;
       setSize({ w: width, h: Math.round(Math.min(760, Math.max(360, width * ratio))) });
     };
 
@@ -282,10 +345,11 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
       0, 0, size.w, size.h,
     );
 
-    // On a phone there is no room for two nested levels — 60 tiles across
-    // 375px leaves every label truncated to three characters. One level, fully
-    // coloured and labelled, with a tap to go deeper.
-    if (size.w < NARROW_WIDTH) {
+    // One level, fully coloured and labelled, with a click to go deeper —
+    // either because the canvas is phone-narrow, or because there is not
+    // enough room per sector to nest anything legible inside it.
+    const areaPerParent = parents.length ? (size.w * size.h) / parents.length : 0;
+    if (size.w < NARROW_WIDTH || areaPerParent < MIN_PARENT_AREA_FOR_NESTING) {
       for (const rect of outer) out.push({ ...rect, depth: 2, parentId: null });
       return out;
     }
@@ -298,8 +362,13 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
       const innerY = rect.y + SECTOR_HEADER_H;
       const innerH = rect.h - SECTOR_HEADER_H - 2;
       if (rect.w < 56 || innerH < 26) continue;
+      const inner = foldSmallChildren(
+        parent.children,
+        Math.max(0, rect.w - 2) * innerH,
+        MIN_LABELLED_AREA,
+      );
       const nested = squarify(
-        parent.children.map((child) => ({ value: child.weight, datum: child })),
+        inner.map((child) => ({ value: child.weight, datum: child })),
         rect.x + 1, innerY, rect.w - 2, innerH,
       );
       for (const inner of nested) out.push({ ...inner, depth: 2, parentId: parent.id });
@@ -414,6 +483,7 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
         onPickSymbolWithContext(node.symbol, contextSymbols);
         return;
       }
+      if (node.kind === "other") return;
       if (node.kind === "sector") {
         setPath([node.id]);
         return;
@@ -551,7 +621,9 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
               const showLabel = tile.w >= LABEL_MIN_W && tile.h >= LABEL_MIN_H;
               const showValue = tile.w >= LABEL_MIN_W && tile.h >= SUB_LABEL_MIN_H;
               const big = tile.w >= 150 && tile.h >= 64;
-              const interactive = tile.depth === 2 || node.kind === "sector";
+              // "other" is a bucket, not a place — nothing to drill into.
+              const interactive =
+                node.kind !== "other" && (tile.depth === 2 || node.kind === "sector");
 
               if (tile.depth === 1) {
                 // Parent frame + header strip only; children are drawn on top,

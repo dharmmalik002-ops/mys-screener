@@ -266,6 +266,14 @@
 .tm-tile-value.lg { font-size: 12px; opacity: 0.9; }
 
 .tm-clickable { cursor: pointer; }
+
+/* The aggregate tile reads as a remainder, not a holding: no hover affordance
+   and a muted label, so it never looks like something you failed to click. */
+.tm-tile:not(.tm-clickable) .tm-tile-label,
+.tm-tile:not(.tm-clickable) .tm-tile-value {
+  opacity: 0.6;
+  font-weight: 600;
+}
 .tm-clickable:hover .tm-tile-rect {
   stroke: var(--text);
   stroke-width: 1.5;
