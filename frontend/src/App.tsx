@@ -110,6 +110,7 @@ const GapUpScannerPanel = lazy(() => import("./components/GapUpScannerPanel").th
 const HomePanel = lazy(() => import("./components/HomePanel").then((module) => ({ default: module.HomePanel })));
 const ImprovingRsPanel = lazy(() => import("./components/ImprovingRsPanel").then((module) => ({ default: module.ImprovingRsPanel })));
 const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPanel").then((module) => ({ default: module.MinerviniScannerPanel })));
+const IpoScannerPanel = lazy(() => import("./components/IpoScannerPanel").then((module) => ({ default: module.IpoScannerPanel })));
 const PositiveEarningsScannerPanel = lazy(() => import("./components/PositiveEarningsScannerPanel").then((module) => ({ default: module.PositiveEarningsScannerPanel })));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
@@ -311,6 +312,8 @@ type PersistedScannerSettings = {
   appliedMinervini1mMinLiquidityCrore: number | null;
   minervini5mMinLiquidityCrore: number | null;
   appliedMinervini5mMinLiquidityCrore: number | null;
+  ipoMinLiquidityCrore: number | null;
+  appliedIpoMinLiquidityCrore: number | null;
   nearPivotFilters: NearPivotScanRequest;
   appliedNearPivotFilters: NearPivotScanRequest;
   pullBackFilters: PullBackScanRequest;
@@ -1462,6 +1465,8 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
     appliedMinervini1mMinLiquidityCrore: null,
     minervini5mMinLiquidityCrore: null,
     appliedMinervini5mMinLiquidityCrore: null,
+    ipoMinLiquidityCrore: null,
+    appliedIpoMinLiquidityCrore: null,
     nearPivotFilters: DEFAULT_NEAR_PIVOT_FILTERS,
     appliedNearPivotFilters: DEFAULT_NEAR_PIVOT_FILTERS,
     pullBackFilters: DEFAULT_PULL_BACK_FILTERS,
@@ -1511,6 +1516,14 @@ function readScannerSettings(market: MarketKey): PersistedScannerSettings {
         typeof parsed.appliedMinervini5mMinLiquidityCrore === "number"
         && Number.isFinite(parsed.appliedMinervini5mMinLiquidityCrore)
           ? parsed.appliedMinervini5mMinLiquidityCrore
+          : null,
+      ipoMinLiquidityCrore:
+        typeof parsed.ipoMinLiquidityCrore === "number" && Number.isFinite(parsed.ipoMinLiquidityCrore)
+          ? parsed.ipoMinLiquidityCrore
+          : null,
+      appliedIpoMinLiquidityCrore:
+        typeof parsed.appliedIpoMinLiquidityCrore === "number" && Number.isFinite(parsed.appliedIpoMinLiquidityCrore)
+          ? parsed.appliedIpoMinLiquidityCrore
           : null,
       nearPivotFilters: mergeWithDefaults(DEFAULT_NEAR_PIVOT_FILTERS, parsed.nearPivotFilters),
       appliedNearPivotFilters: mergeWithDefaults(DEFAULT_NEAR_PIVOT_FILTERS, parsed.appliedNearPivotFilters),
@@ -1784,6 +1797,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [appliedMinervini5mMinLiquidityCrore, setAppliedMinervini5mMinLiquidityCrore] = useState<number | null>(
     initialScannerSettings.appliedMinervini5mMinLiquidityCrore,
   );
+  const [ipoMinLiquidityCrore, setIpoMinLiquidityCrore] = useState<number | null>(
+    initialScannerSettings.ipoMinLiquidityCrore,
+  );
+  const [appliedIpoMinLiquidityCrore, setAppliedIpoMinLiquidityCrore] = useState<number | null>(
+    initialScannerSettings.appliedIpoMinLiquidityCrore,
+  );
   const [nearPivotFilters, setNearPivotFilters] = useState<NearPivotScanRequest>(initialScannerSettings.nearPivotFilters);
   const [appliedNearPivotFilters, setAppliedNearPivotFilters] = useState<NearPivotScanRequest>(initialScannerSettings.appliedNearPivotFilters);
   // Momentum Burst keeps its own draft/applied state (not part of saved scanners).
@@ -1916,6 +1935,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       void import("./components/ConsolidatingScannerPanel");
       void import("./components/DemandZoneScannerPanel");
       void import("./components/MinerviniScannerPanel");
+      void import("./components/IpoScannerPanel");
       return;
     }
 
@@ -2152,6 +2172,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     setGapUpMinLiquidityCrore(settings.gapUpMinLiquidityCrore);
     setMinervini1mMinLiquidityCrore(settings.minervini1mMinLiquidityCrore);
     setAppliedMinervini1mMinLiquidityCrore(settings.appliedMinervini1mMinLiquidityCrore);
+    setIpoMinLiquidityCrore(settings.ipoMinLiquidityCrore);
+    setAppliedIpoMinLiquidityCrore(settings.appliedIpoMinLiquidityCrore);
     setMinervini5mMinLiquidityCrore(settings.minervini5mMinLiquidityCrore);
     setAppliedMinervini5mMinLiquidityCrore(settings.appliedMinervini5mMinLiquidityCrore);
     setNearPivotFilters(settings.nearPivotFilters);
@@ -2590,6 +2612,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     appliedExpansionMinRelativeVolume,
     appliedMinervini1mMinLiquidityCrore,
     appliedMinervini5mMinLiquidityCrore,
+    appliedIpoMinLiquidityCrore,
     appliedMomentumBurstFilters,
     appliedNearPivotFilters,
     appliedPositiveEarningsFilters,
@@ -3037,6 +3060,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         appliedMinervini1mMinLiquidityCrore,
         minervini5mMinLiquidityCrore,
         appliedMinervini5mMinLiquidityCrore,
+        ipoMinLiquidityCrore,
+        appliedIpoMinLiquidityCrore,
         nearPivotFilters,
         appliedNearPivotFilters,
         pullBackFilters,
@@ -3055,6 +3080,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     appliedDemandZoneFilters,
     appliedMinervini1mMinLiquidityCrore,
     appliedMinervini5mMinLiquidityCrore,
+    appliedIpoMinLiquidityCrore,
     appliedNearPivotFilters,
     appliedPullBackFilters,
     appliedReturnsFilters,
@@ -3064,6 +3090,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     gapUpMinLiquidityCrore,
     gapUpThreshold,
     hasAppliedFiltersOnce,
+    ipoMinLiquidityCrore,
     minervini1mMinLiquidityCrore,
     minervini5mMinLiquidityCrore,
     nearPivotFilters,
@@ -3380,7 +3407,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       return getScanResults("volume", activeMarket, options);
     }
     if (mode === "ipo") {
-      return getScanResults("ipo", activeMarket, options);
+      return getScanResults("ipo", activeMarket, { ...options, minLiquidityCrore: appliedIpoMinLiquidityCrore });
     }
     if (mode === "ema-expansion") {
       return getScanResults("ema-expansion", activeMarket, {
@@ -4183,6 +4210,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       case "demand-zone":
         handleApplyDemandZoneScan();
         return;
+      case "ipo":
+        handleApplyIpoScan();
+        return;
       case "minervini-1m":
         handleApplyMinervini1mScan();
         return;
@@ -4394,6 +4424,29 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     setScanSectorSummariesLoading(false);
     setMinervini1mMinLiquidityCrore(null);
     setAppliedMinervini1mMinLiquidityCrore(null);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleApplyIpoScan = () => {
+    setActivePage("screener");
+    setActiveScanner("ipo");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setAppliedIpoMinLiquidityCrore(ipoMinLiquidityCrore);
+    setScannerRunNonce((current) => current + 1);
+  };
+
+  const handleResetIpoScan = () => {
+    setActivePage("screener");
+    setActiveScanner("ipo");
+    setScanLoading(true);
+    setScanResults(null);
+    setScanSectorSummaries([]);
+    setScanSectorSummariesLoading(false);
+    setIpoMinLiquidityCrore(null);
+    setAppliedIpoMinLiquidityCrore(null);
     setScannerRunNonce((current) => current + 1);
   };
 
@@ -5802,10 +5855,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                             )
                           : activeScanner === "ipo"
                             ? (
-                              <div className="scanner-settings-note">
-                                <strong>Built-in scan</strong>
-                                <span>The IPO screener uses the backend listing-date rule and does not have extra filters yet.</span>
-                              </div>
+                              <IpoScannerPanel
+                                minLiquidityCrore={ipoMinLiquidityCrore}
+                                onMinLiquidityCroreChange={setIpoMinLiquidityCrore}
+                                onApply={handleApplyIpoScan}
+                                onReset={handleResetIpoScan}
+                              />
                             )
                             : activeScanner === "ema-expansion"
                               ? (
