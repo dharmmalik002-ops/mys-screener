@@ -555,7 +555,7 @@ function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: n
   const width = 640;
   if (!bars || bars.length < 2) {
     return (
-      <div className="homepro-nifty-chart" style={{ display: "grid", placeItems: "center", color: "var(--hp-muted)", fontSize: 12 }}>
+      <div className="homepro-nifty-chart" style={{ display: "grid", placeItems: "center", color: "var(--hp-muted)", fontSize: "var(--fs-small)" }}>
         Loading chart…
       </div>
     );
@@ -877,18 +877,18 @@ export function HomePanel({
           {/* EOD Date */}
           <div className="homepro-kpi homepro-kpi-date">
             <div className="homepro-kpi-label">EOD Date</div>
-            <div className="homepro-kpi-value" style={{ fontSize: 22 }}>{snapshotDateLabel || "—"}</div>
+            <div className="homepro-kpi-value" style={{ fontSize: "var(--fs-heading)" }}>{snapshotDateLabel || "—"}</div>
             <div className="homepro-kpi-sub">Last Updated</div>
             <div className="homepro-kpi-bottom">
               <div className="homepro-kpi-icon" aria-hidden="true"><CalendarDays size={16} strokeWidth={2.2} /></div>
-              <div style={{ fontSize: 13, fontWeight: 600 }}>{snapshotTimeLabel || "—"}</div>
+              <div style={{ fontSize: "var(--fs-base)", fontWeight: 600 }}>{snapshotTimeLabel || "—"}</div>
             </div>
           </div>
 
           {/* Advances / Declines */}
           <div className="homepro-kpi homepro-kpi-breadth">
             <div className="homepro-kpi-label">Advances / Declines</div>
-            <div className="homepro-kpi-value" style={{ fontSize: 22 }}>{advances} / {declines}</div>
+            <div className="homepro-kpi-value" style={{ fontSize: "var(--fs-heading)" }}>{advances} / {declines}</div>
             <div className="homepro-kpi-sub">Stocks</div>
             <div className="homepro-kpi-bottom">
               <div style={{ position: "relative", width: 56, height: 56 }}>
@@ -900,7 +900,7 @@ export function HomePanel({
                   ]}
                 />
               </div>
-              <div style={{ display: "flex", gap: 12, fontSize: 12, fontWeight: 700 }}>
+              <div style={{ display: "flex", gap: 12, fontSize: "var(--fs-small)", fontWeight: 700 }}>
                 <span style={{ color: "#059669" }}>{Math.round(advPct)}%</span>
                 <span style={{ color: "#b45309" }}>{100 - Math.round(advPct)}%</span>
               </div>
@@ -1075,7 +1075,7 @@ export function HomePanel({
               <div className="homepro-nifty-price">
                 <strong>{niftyPrice !== null ? niftyPrice.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "—"}</strong>
                 {niftyChange !== null && (
-                  <span style={{ color: niftyChange >= 0 ? "var(--positive)" : "var(--negative)", fontWeight: 700, fontSize: 13 }}>
+                  <span style={{ color: niftyChange >= 0 ? "var(--positive)" : "var(--negative)", fontWeight: 700, fontSize: "var(--fs-base)" }}>
                     {formatReturn(niftyChange)}
                   </span>
                 )}
@@ -1094,7 +1094,7 @@ export function HomePanel({
                   </button>
                 ))}
               </div>
-              <div style={{ fontSize: 11, color: "var(--hp-muted)", marginTop: 6 }}>At Close</div>
+              <div style={{ fontSize: "var(--fs-tiny)", color: "var(--hp-muted)", marginTop: 6 }}>At Close</div>
             </div>
           </div>
           <CandlestickChart bars={sliceBars(niftyBars, niftyTF)} />
@@ -1248,7 +1248,7 @@ function ViewAllModal({
                         </span>
                       </div>
                     </td>
-                    <td style={{ color: "var(--hp-muted)", fontSize: 12 }}>{item.sector || "—"}</td>
+                    <td style={{ color: "var(--hp-muted)", fontSize: "var(--fs-small)" }}>{item.sector || "—"}</td>
                     <td className="homepro-modal-spark">
                       {(() => {
                         const series = item.spark_closes ?? [];
@@ -1282,7 +1282,7 @@ function ViewAllModal({
                     <td className="homepro-num">
                       {mode === "active"
                         ? <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-                        : <span style={{ fontSize: 12, color: "var(--hp-muted)" }}>{item.score?.toFixed(1) ?? "—"}</span>}
+                        : <span style={{ fontSize: "var(--fs-small)", color: "var(--hp-muted)" }}>{item.score?.toFixed(1) ?? "—"}</span>}
                     </td>
                   </tr>
                 ))}

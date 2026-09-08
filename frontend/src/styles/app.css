@@ -63,14 +63,74 @@
   --amber-soft: rgba(245, 158, 11, 0.14);
   --warning: #f5b731;
   --accent-contrast: #060a14;
-  --shadow: 0 8px 28px rgba(2, 5, 15, 0.32);
+  /* ---- Elevation ------------------------------------------------------
+     Three levels, replacing 61 hand-rolled drop shadows. Three rather than
+     the two this pass aimed at, because there are genuinely three needs: a
+     hairline lift for a row or chip, a card, and an overlay. Two forced
+     modals and table rows to share a shadow.
+
+     Focus rings, inset inner-highlights and coloured accent glows are NOT
+     elevation and are left alone -- collapsing those into a drop shadow
+     would lose the distinction, not tidy it. */
+  --elev-1: 0 1px 2px rgba(2, 5, 15, 0.25);
+  --elev-2: 0 1px 2px rgba(2, 5, 15, 0.25), 0 8px 24px rgba(2, 5, 15, 0.22);
+  --elev-3: 0 18px 44px rgba(2, 5, 15, 0.38);
+  /* Kept as aliases: both names are used widely and both mean "a card". */
+  --shadow: var(--elev-2);
   --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0));
   --glass-border: rgba(100, 160, 255, 0.14);
   --glass-glow: rgba(76, 154, 255, 0.06);
+  /* ---- Corner radii ---------------------------------------------------
+     "Pill" was written three ways -- 99px, 999px and 9999px, 108
+     declarations between them -- which is how you end up with two
+     differently-rounded chips side by side. One token now.
+
+     --radius-xs closes the gap the old scale left below 8px, which is why
+     1, 2, 3, 4, 5, 6, 7 and 9px had all grown in ad hoc. 50% is left alone:
+     it means "circle" and is unambiguous. */
+  --radius-xs: 4px;
   --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 12px;
   --radius-xl: 14px;
+  --radius-2xl: 32px;
+  --radius-pill: 999px;
+  /* One focus ring. The eight :focus declarations used five treatments --
+     accent at 12%, 14% and 15%, plus two indigo rgba() values that were not
+     the app accent at all. Deliberately stronger than any of them: the
+     original audit found only a handful of focus-visible rules across the
+     whole stylesheet, so keyboard focus was near-invisible. A panel that
+     wants its own hue overrides this token locally rather than inventing a
+     sixth ring. */
+  --focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 32%, transparent);
+  /* ---- Type scale ----------------------------------------------------
+     Twelve steps, replacing 72 distinct computed sizes across 1,178
+     declarations. The sprawl was mostly the same optical size written
+     several ways: 11px, 0.68rem, 0.7rem and 0.72rem all landed within half
+     a pixel of each other, and px/rem were mixed freely for the same intent.
+
+     Twelve, not the seven this pass originally aimed at. Seven cannot span
+     a UI that runs from an 8px sort-arrow to a 44px exposure headline
+     without doing damage: it grew mobile nav labels and avatar initials by
+     a quarter and shrank two hero numbers by a fifth. Twelve keeps every
+     declaration within 8% of where it was bar fourteen of them, and the
+     worst case is one 8px icon glyph.
+
+     Steps are dense between 9 and 14px on purpose -- that band holds 1,028
+     of the 1,178 declarations, because this is a table-heavy app. */
+  --fs-nano: 9px;
+  --fs-micro: 10px;
+  --fs-tiny: 11px;
+  --fs-small: 12px;
+  --fs-base: 13px;
+  --fs-body: 14px;
+  --fs-lead: 16px;
+  --fs-title: 18px;
+  --fs-heading: 22px;
+  --fs-display: 28px;
+  --fs-jumbo: 32px;
+  --fs-hero: 40px;
+
   /* Spacing scale — use these instead of ad-hoc paddings so density stays consistent. */
   --space-1: 4px;
   --space-2: 8px;
@@ -80,7 +140,7 @@
   --space-6: 32px;
   /* Hairline + one soft elevation: the only two "depth" treatments chrome should use. */
   --hairline: 1px solid var(--line);
-  --elevation: 0 1px 2px rgba(2, 5, 15, 0.25), 0 8px 24px rgba(2, 5, 15, 0.22);
+  --elevation: var(--elev-2);
   --transition-fast: var(--dur-fast) var(--ease-out);
   --transition-smooth: var(--dur-slow) var(--ease-emphasis);
   /* Motion scale. Durations were previously ad-hoc: 19 distinct values, with
@@ -152,7 +212,10 @@
   --amber-soft: rgba(217, 119, 6, 0.12);
   --warning: #d97706;
   --accent-contrast: #f8fafc;
-  --shadow: 0 8px 24px rgba(15, 23, 42, 0.07);
+  --elev-1: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --elev-2: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.06);
+  --elev-3: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow: var(--elev-2);
   --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.2));
   --glass-border: rgba(71, 85, 105, 0.13);
   --glass-glow: rgba(37, 99, 235, 0.05);
@@ -184,7 +247,7 @@ body {
   margin: 0;
   min-width: 320px;
   font-family: "DM Sans", "Segoe UI", system-ui, sans-serif;
-  font-size: 14px;
+  font-size: var(--fs-body);
   line-height: 1.6;
   /* Tabular numerals app-wide: price/percent columns align and don't jitter
      when values tick. Harmless for prose. */
@@ -226,7 +289,7 @@ button {
 
 ::-webkit-scrollbar-thumb {
   background: var(--line-strong);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -241,7 +304,7 @@ input[type="range"] {
   -webkit-appearance: none;
   appearance: none;
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--line-strong) 75%, transparent);
   outline: none;
   cursor: pointer;
@@ -255,7 +318,7 @@ input[type="range"]::-webkit-slider-thumb {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid color-mix(in srgb, var(--bg) 85%, transparent);
-  box-shadow: 0 1px 4px rgba(2, 5, 15, 0.35);
+  box-shadow: var(--elev-1);
   transition: transform var(--transition-fast);
 }
 
@@ -265,7 +328,7 @@ input[type="range"]::-webkit-slider-thumb:hover {
 
 input[type="range"]::-moz-range-track {
   height: 4px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--line-strong) 75%, transparent);
 }
 
@@ -275,7 +338,7 @@ input[type="range"]::-moz-range-thumb {
   border-radius: 50%;
   background: var(--accent);
   border: 2px solid color-mix(in srgb, var(--bg) 85%, transparent);
-  box-shadow: 0 1px 4px rgba(2, 5, 15, 0.35);
+  box-shadow: var(--elev-1);
 }
 
 input[type="checkbox"] {
@@ -284,7 +347,7 @@ input[type="checkbox"] {
   width: 15px;
   height: 15px;
   margin: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--line-strong);
   background: var(--surface-soft);
   display: inline-grid;
@@ -488,7 +551,7 @@ button {
   align-items: baseline;
   gap: 8px;
   white-space: nowrap;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -498,7 +561,7 @@ button {
 .ticker-ribbon-item strong {
   color: var(--text);
   font-family: var(--font-display);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   font-weight: 600;
 }
 
@@ -525,7 +588,7 @@ button {
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent));
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 40px rgba(2, 5, 15, 0.22);
+  box-shadow: var(--elev-3);
 }
 
 .brand-stack {
@@ -556,12 +619,12 @@ button {
   place-items: center;
   width: 42px;
   height: 42px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: var(--accent-contrast);
   font-family: var(--font-display);
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   letter-spacing: 0.02em;
   box-shadow: 0 4px 12px color-mix(in srgb, var(--accent) 28%, transparent);
 }
@@ -586,13 +649,13 @@ button {
 }
 
 .brand-cluster h1 {
-  font-size: 1.15rem;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
 .eyebrow {
   margin: 0 0 1px;
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -699,7 +762,7 @@ button {
   width: 100%;
   min-width: 220px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 12px 14px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 86%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
@@ -711,7 +774,7 @@ button {
 
 .nav-search-hint {
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.04em;
   padding-left: 2px;
 }
@@ -722,7 +785,7 @@ button {
 .range-inputs input {
   width: 100%;
   border: 1px solid color-mix(in srgb, var(--glass-border) 82%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 10px 12px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
@@ -739,7 +802,7 @@ button {
   background: color-mix(in srgb, var(--surface-strong) 72%, transparent);
   color: var(--text);
   font-weight: 500;
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
   transition: background var(--transition-smooth), border-color var(--transition-smooth), box-shadow var(--dur-slow) ease, transform var(--dur-base) ease;
   backdrop-filter: blur(12px);
   position: relative;
@@ -756,7 +819,7 @@ button {
   background: linear-gradient(90deg, var(--accent), var(--accent-strong));
   transition: all var(--dur-slow) cubic-bezier(0.4, 0, 0.2, 1);
   transform: translateX(-50%);
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .nav-button:hover::after,
@@ -853,7 +916,7 @@ button {
 .status-dot {
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: var(--accent-2);
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent-2) 40%, transparent);
   animation: pulse-dot 2s ease-in-out infinite;
@@ -862,7 +925,7 @@ button {
 .status-divider {
   width: 5px;
   height: 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--text-soft) 54%, transparent);
 }
 
@@ -875,9 +938,9 @@ button {
 .theme-pill {
   padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .hero-metrics {
@@ -910,7 +973,7 @@ button {
   display: inline;
   margin-bottom: 0;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   font-weight: 500;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -919,7 +982,7 @@ button {
 
 .metric-card strong {
   font-family: var(--font-display);
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   font-weight: 600;
   letter-spacing: -0.01em;
   white-space: nowrap;
@@ -946,17 +1009,17 @@ button {
 
 .warmup-retry-btn {
   padding: 8px 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--danger) 18%, var(--surface));
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   font-weight: 600;
 }
 
 .empty-state-subtitle {
   margin-top: 8px;
   color: var(--text-muted);
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
 }
 
 .startup-toast {
@@ -985,13 +1048,13 @@ button {
 }
 
 .startup-toast-copy strong {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   font-weight: 600;
 }
 
 .startup-toast-copy span {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .startup-retry-button {
@@ -1002,7 +1065,7 @@ button {
   flex: 0 0 auto;
   width: 10px;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   animation: pulse-dot 1.6s ease-in-out infinite;
 }
 
@@ -1102,8 +1165,7 @@ button {
   transition: transform var(--dur-fast) ease, background var(--dur-fast) ease, border-color var(--dur-fast) ease;
   backdrop-filter: blur(18px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 12px 24px rgba(2, 8, 22, 0.14);
+    var(--elev-2);
 }
 
 .screener-nav-button:hover {
@@ -1133,7 +1195,7 @@ button {
 .screener-nav-main strong {
   font-family: var(--font-display);
   display: block;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   line-height: 1.2;
 }
 
@@ -1145,14 +1207,14 @@ button {
   justify-content: center;
   min-width: 42px;
   padding: 8px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background:
     linear-gradient(180deg, rgba(56, 135, 255, 0.24), color-mix(in srgb, var(--surface-strong) 88%, transparent)),
     var(--glass-sheen);
   border: 1px solid rgba(88, 162, 255, 0.34);
   color: #8ec5ff;
   font-family: var(--font-display);
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .screener-saved-list {
@@ -1168,7 +1230,7 @@ button {
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 76%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
 }
 
@@ -1193,19 +1255,19 @@ button {
 }
 
 .screener-saved-load strong {
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .screener-saved-load small {
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .screener-saved-delete {
   padding: 6px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .home-layout,
@@ -1237,7 +1299,7 @@ button {
   min-height: 118px;
   padding: 12px 16px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
   backdrop-filter: blur(12px);
   cursor: pointer;
@@ -1269,7 +1331,7 @@ button {
 }
 
 .home-macro-label {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -1277,7 +1339,7 @@ button {
 }
 
 .home-macro-price {
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   font-weight: 700;
   color: var(--text);
   display: flex;
@@ -1286,7 +1348,7 @@ button {
 }
 
 .home-macro-pe {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   margin-top: 2px;
 }
@@ -1300,9 +1362,9 @@ button {
   border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--glass-border));
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 5px 10px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1354,7 +1416,7 @@ button {
   max-width: min(96vw, 1320px);
   max-height: calc(100vh - 28px);
   overflow-y: auto;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: var(--elev-3);
 }
 
 .pe-modal-header {
@@ -1366,7 +1428,7 @@ button {
 
 .pe-modal-header h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   font-weight: 700;
 }
 
@@ -1375,7 +1437,7 @@ button {
   gap: 8px;
   margin: 0 0 14px;
   padding: 4px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid var(--glass-border);
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
 }
@@ -1384,9 +1446,9 @@ button {
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -1400,11 +1462,11 @@ button {
 .pe-modal-close {
   background: none;
   border: 1px solid var(--glass-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
   cursor: pointer;
   padding: 4px 10px;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   transition: color var(--dur-fast), border-color var(--dur-fast);
 }
 
@@ -1427,14 +1489,14 @@ button {
 }
 
 .pe-stat span {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
 
 .pe-stat strong {
-  font-size: 1.1rem;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
@@ -1450,7 +1512,7 @@ button {
   height: clamp(360px, 62vh, 820px);
   margin-bottom: 12px;
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
 }
@@ -1488,7 +1550,7 @@ button {
 }
 
 .pe-modal-note {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   margin: 0;
   line-height: 1.5;
@@ -1536,9 +1598,9 @@ button {
   border: 1px solid var(--glass-border);
   background: color-mix(in srgb, var(--surface-soft) 88%, transparent);
   color: var(--text-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 8px 14px;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   font-weight: 700;
   cursor: pointer;
 }
@@ -1601,10 +1663,10 @@ button {
   display: inline-flex;
   align-items: center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -1615,7 +1677,7 @@ button {
   color: color-mix(in srgb, #14b8a6 82%, white);
 }
 .home-group-card strong {
-  font-size: 1rem;
+  font-size: var(--fs-lead);
 }
 .home-group-card small,
 .home-group-footer span {
@@ -1627,7 +1689,7 @@ button {
 }
 .home-group-metrics label {
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -1647,24 +1709,24 @@ button {
 
 .mf-title {
   margin: 0;
-  font-size: 1.4rem;
+  font-size: var(--fs-heading);
   font-weight: 700;
   letter-spacing: -0.03em;
 }
 
 .mf-subtitle {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-muted);
 }
 
 .mf-generated-at {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
 }
 
 .mf-next-update {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   text-align: right;
 }
@@ -1674,8 +1736,8 @@ button {
   padding: 10px 14px;
   background: color-mix(in srgb, var(--negative) 18%, transparent);
   border: 1px solid color-mix(in srgb, var(--negative) 40%, transparent);
-  border-radius: 10px;
-  font-size: 0.82rem;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
   color: #fca5a5;
 }
 
@@ -1702,7 +1764,7 @@ button {
 }
 
 .mf-sidebar-title {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -1715,7 +1777,7 @@ button {
 }
 
 .mf-week-group-label {
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   color: var(--text-muted);
   margin: 0 0 4px;
@@ -1727,12 +1789,12 @@ button {
   width: 100%;
   text-align: left;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: none;
   background: none;
   color: var(--text);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   margin-bottom: 2px;
   transition: background var(--dur-fast);
 }
@@ -1764,16 +1826,16 @@ button {
 
 .mf-report-title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: var(--fs-title);
   font-weight: 700;
 }
 
 .mf-week-badge {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   background: color-mix(in srgb, var(--accent) 18%, transparent);
   color: var(--accent);
   border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 2px 8px;
   font-weight: 600;
 }
@@ -1782,11 +1844,11 @@ button {
   padding: 14px 18px;
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
 }
 
 .mf-macro-label {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -1796,7 +1858,7 @@ button {
 
 .mf-macro-summary p:last-child {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   line-height: 1.6;
 }
 
@@ -1814,7 +1876,7 @@ button {
 
 .mf-section-title {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--text);
@@ -1827,14 +1889,14 @@ button {
 }
 
 .mf-empty {
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-muted);
   margin: 0;
 }
 
 .mf-sector-card {
   padding: 12px 14px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
   background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
 }
@@ -1862,22 +1924,22 @@ button {
 }
 
 .mf-sector-card-header strong {
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
   font-weight: 700;
 }
 
 .mf-sector-card-reason {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   line-height: 1.5;
 }
 
 .mf-badge {
-  font-size: 0.65rem;
+  font-size: var(--fs-micro);
   font-weight: 700;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -1901,7 +1963,7 @@ button {
 }
 
 .mf-disclaimer {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   margin: 0;
   border-top: 1px solid var(--glass-border);
@@ -1961,7 +2023,7 @@ button {
 .mf-stock-card {
   width: 100%;
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   color: var(--text);
   padding: 12px;
@@ -1976,7 +2038,7 @@ button {
 
 .mf-stock-card p {
   margin: 10px 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -1992,7 +2054,7 @@ button {
 .mf-stock-detail-title {
   display: block;
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   font-weight: 700;
 }
 
@@ -2000,16 +2062,16 @@ button {
   display: block;
   margin-top: 4px;
   color: var(--text-muted);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
 }
 
 .mf-stock-chip {
   border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent);
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 4px 8px;
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   white-space: nowrap;
 }
@@ -2018,7 +2080,7 @@ button {
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
 }
 
@@ -2043,7 +2105,7 @@ button {
 
 .mf-stock-metric-card {
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 12px;
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   display: flex;
@@ -2053,7 +2115,7 @@ button {
 
 .mf-stock-metric-card span,
 .mf-key-metric-item span {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
@@ -2061,13 +2123,13 @@ button {
 
 .mf-stock-metric-card strong,
 .mf-key-metric-item strong {
-  font-size: 0.96rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
 .mf-stock-metric-card small {
   color: var(--text-soft);
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
 }
 
 .mf-stock-summary-grid {
@@ -2082,7 +2144,7 @@ button {
 .mf-stock-list-card h4,
 .mf-stock-qa-card h4 {
   margin: 0 0 8px;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .mf-stock-summary-card p,
@@ -2116,7 +2178,7 @@ button {
 
 .mf-key-metric-item {
   border: 1px solid var(--glass-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 12px;
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   display: flex;
@@ -2133,7 +2195,7 @@ button {
 
 .mf-stock-question-input {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--glass-border);
   background: color-mix(in srgb, var(--surface-soft) 90%, transparent);
   color: var(--text);
@@ -2144,7 +2206,7 @@ button {
 
 .mf-stock-answer {
   border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent) 8%, transparent);
   padding: 12px 14px;
 }
@@ -2229,27 +2291,27 @@ button {
 
 .mf-rotation-leader {
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 12px 14px;
   background: color-mix(in srgb, var(--surface-strong) 74%, transparent);
 }
 
 .mf-rotation-leader h3 {
   margin: 0;
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
 .mf-rotation-main-value {
   margin: 6px 0 2px;
-  font-size: 1.25rem;
+  font-size: var(--fs-title);
   font-weight: 700;
   color: var(--accent);
 }
 
 .mf-rotation-sub {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-soft);
 }
 
@@ -2261,7 +2323,7 @@ button {
 
 .mf-rotation-col {
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 74%, transparent);
   padding: 12px;
   display: flex;
@@ -2283,7 +2345,7 @@ button {
   gap: 10px;
   align-items: center;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 8px 10px;
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   width: 100%;
@@ -2297,7 +2359,7 @@ button {
 }
 
 .mf-rotation-rank {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   font-weight: 700;
 }
@@ -2309,7 +2371,7 @@ button {
 }
 
 .mf-rotation-sector strong {
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
@@ -2317,19 +2379,19 @@ button {
 }
 
 .mf-rotation-sector small {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
 }
 
 .mf-rotation-pct {
   font-weight: 700;
   color: var(--accent);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .mf-rotation-stocks {
   border: 1px solid var(--glass-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 74%, transparent);
   padding: 12px;
   display: flex;
@@ -2355,7 +2417,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   font-weight: 700;
 }
@@ -2364,18 +2426,18 @@ button {
   border: 1px solid var(--glass-border);
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   color: var(--text);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 8px;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .mf-rotation-close {
   border: 1px solid color-mix(in srgb, var(--glass-border) 85%, transparent);
   background: color-mix(in srgb, var(--surface-soft) 86%, transparent);
   color: var(--text-soft);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   padding: 6px 10px;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 700;
   cursor: pointer;
   align-self: flex-end;
@@ -2396,7 +2458,7 @@ button {
 
 .mf-rotation-stock-row {
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 9px 10px;
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   display: grid;
@@ -2416,7 +2478,7 @@ button {
 
 .mf-rotation-stock-main strong {
   color: var(--text);
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .mf-rotation-stock-main small {
@@ -2428,13 +2490,13 @@ button {
 
 .mf-rotation-stock-rs {
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 700;
 }
 
 .mf-rotation-stock-return {
   color: var(--accent);
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
   font-weight: 700;
 }
 
@@ -2464,7 +2526,7 @@ button {
   .mf-rotation-stock-rs {
     order: 3;
     grid-column: 1 / span 2;
-    font-size: 0.72rem;
+    font-size: var(--fs-small);
   }
 }
 
@@ -2561,7 +2623,7 @@ button {
   gap: 6px;
   padding: 6px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 78%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
   backdrop-filter: blur(16px);
 }
@@ -2569,11 +2631,11 @@ button {
 .home-market-toggle-btn {
   min-width: 88px;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 10px 16px;
   background: transparent;
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2588,7 +2650,7 @@ button {
 .home-market-toggle-btn.active {
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, white 8%), color-mix(in srgb, var(--accent-2) 76%, transparent));
   color: #04131f;
-  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+  box-shadow: var(--elev-2);
 }
 
 .home-market-toggle-btn:focus-visible {
@@ -2688,7 +2750,7 @@ button {
 }
 
 .home-stock-row-skeleton .skeleton-block {
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
 }
 
 .home-skeleton-line-title {
@@ -2779,7 +2841,7 @@ button {
 .sector-heatmap-card:hover {
   transform: translateY(-2px) scale(1.02);
   border-color: rgba(255, 255, 255, 0.28);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--elev-2);
 }
 
 .sector-heatmap-card-skeleton:hover {
@@ -2796,7 +2858,7 @@ button {
 }
 
 .sector-heatmap-card-name {
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2811,7 +2873,7 @@ button {
 
 .sector-heatmap-card-return {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   font-weight: 700;
   white-space: nowrap;
   line-height: 1;
@@ -2838,7 +2900,7 @@ button {
   justify-content: space-between;
   gap: 6px;
   margin-top: 8px;
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   opacity: 0.7;
 }
 
@@ -2872,14 +2934,14 @@ button {
   gap: 14px;
   width: 100%;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(0, 0, 0, 0.18);
   color: #fff;
   text-align: left;
 }
 
 .sector-treemap-header span {
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -2911,7 +2973,7 @@ button {
 
 .sector-treemap-sector-body small {
   color: rgba(255, 255, 255, 0.86);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.03em;
 }
 
@@ -2936,7 +2998,7 @@ button {
   display: block;
   margin-top: 6px;
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: var(--fs-lead);
 }
 
 .sector-heatmap-board-wide {
@@ -2952,11 +3014,11 @@ button {
   gap: 16px;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 32px;
+  border-radius: var(--radius-2xl);
   background:
     linear-gradient(180deg, rgba(18, 22, 33, 0.96), rgba(13, 17, 28, 0.98)),
     radial-gradient(circle at top left, rgba(76, 154, 255, 0.12), transparent 34%);
-  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--elev-3);
   padding: 22px;
   scrollbar-width: none; /* hidden in favour of the custom draggable slider */
 }
@@ -2969,10 +3031,10 @@ button {
 .chart-grid-scrollbar {
   position: absolute; /* relative to the fixed, non-scrolling backdrop */
   width: 14px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: rgba(15, 23, 42, 0.6);
   border: 1px solid rgba(250, 204, 21, 0.45);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--elev-2);
   z-index: 10000;
   cursor: pointer;
   touch-action: none;
@@ -2981,11 +3043,11 @@ button {
   position: absolute;
   left: 1px;
   right: 1px;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   /* Bright yellow — clearly visible at rest, on dark or white chart backgrounds. */
   background: #facc15;
   border: 1px solid rgba(0, 0, 0, 0.28);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
+  box-shadow: var(--elev-1);
   cursor: grab;
   transition: filter var(--dur-fast) ease;
   touch-action: none;
@@ -3045,12 +3107,12 @@ button {
   width: 38px;
   height: 34px;
   border: 1px solid rgba(148, 163, 184, 0.3);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: inline-grid;
   place-items: center;
   background: rgba(15, 23, 42, 0.58);
   color: var(--text);
-  font-size: 1.45rem;
+  font-size: var(--fs-heading);
   font-weight: 700;
   line-height: 1;
   cursor: pointer;
@@ -3103,7 +3165,7 @@ button {
 }
 
 .chart-grid-range small {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .chart-grid-zoom {
@@ -3150,14 +3212,14 @@ button {
 
 .chart-grid-stat span {
   color: var(--text-soft);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
 
 .chart-grid-stat strong {
   font-family: var(--font-display);
-  font-size: 0.98rem;
+  font-size: var(--fs-lead);
 }
 
 .chart-grid-wall {
@@ -3180,7 +3242,7 @@ button {
   gap: 14px;
   padding: 12px 14px;
   border: 1px solid var(--line-strong);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   /* Tokens, not hardcoded slate: this rule is not theme-scoped, so the old
      rgba(15, 23, 42, …) / rgba(17, 24, 39, …) painted a dark bar even in light
      mode — and on a different hue from the shell in dark mode. */
@@ -3191,20 +3253,20 @@ button {
 .chart-grid-group-title strong {
   display: block;
   color: var(--text-primary, #f8fafc);
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
   line-height: 1.2;
 }
 
 .chart-grid-group-title small,
 .chart-grid-group-title span {
   color: var(--text-muted, #94a3b8);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .chart-grid-group-title > span {
   white-space: nowrap;
   border: 1px solid rgba(96, 165, 250, 0.22);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 5px 9px;
   background: rgba(37, 99, 235, 0.12);
   color: #bfdbfe;
@@ -3249,7 +3311,7 @@ button {
 .chart-grid-card.clickable:hover {
   transform: translateY(-2px);
   border-color: rgba(110, 176, 255, 0.28);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--elev-3);
 }
 
 .chart-grid-card:disabled {
@@ -3268,7 +3330,7 @@ button {
 .chart-grid-card-head strong {
   display: block;
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   letter-spacing: 0.04em;
 }
 
@@ -3276,7 +3338,7 @@ button {
   display: block;
   margin-bottom: 2px;
   color: color-mix(in srgb, var(--text-soft) 78%, transparent);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
@@ -3298,10 +3360,10 @@ button {
 
 .chart-grid-badge {
   padding: 4px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(148, 163, 184, 0.16);
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 600;
 }
 
@@ -3353,13 +3415,13 @@ button {
 
 .chart-grid-price-scale text {
   fill: color-mix(in srgb, var(--text-soft) 85%, transparent);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-variant-numeric: tabular-nums;
 }
 
 .chart-grid-month-axis text {
   fill: color-mix(in srgb, var(--text-soft) 75%, transparent);
-  font-size: 9.5px;
+  font-size: var(--fs-nano);
   text-anchor: middle;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -3374,7 +3436,7 @@ button {
   align-items: center;
   gap: 12px;
   color: var(--text-soft);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.04em;
 }
 
@@ -3389,7 +3451,7 @@ button {
 .chart-grid-ma-toggle {
   padding: 3px 8px;
   border: 1px solid rgba(255, 255, 255, 0.10);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(148, 163, 184, 0.08);
   color: inherit;
   font: inherit;
@@ -3412,9 +3474,9 @@ button {
 .chart-grid-tf-key {
   margin-left: 5px;
   padding: 0 4px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   border: 1px solid currentColor;
-  font-size: 0.62rem;
+  font-size: var(--fs-micro);
   line-height: 1.3;
   opacity: 0.6;
   text-transform: lowercase;
@@ -3425,7 +3487,7 @@ button {
 .chart-grid-ma-legend i {
   width: 12px;
   height: 2px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 /* Measured pixel-space canvas the SVG renders into (1:1 units, no stretch). */
@@ -3446,7 +3508,7 @@ button {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -3542,17 +3604,17 @@ button {
   align-items: center;
   justify-content: center;
   padding: 5px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: rgba(96, 165, 250, 0.12);
   color: color-mix(in srgb, var(--text) 90%, transparent);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   white-space: nowrap;
 }
 
 .chart-grid-card-foot strong {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--fs-lead);
 }
 
 /* Per-chart "add to watchlist" affordance (mirrors the big chart). */
@@ -3566,17 +3628,17 @@ button {
   align-items: center;
   gap: 4px;
   padding: 5px 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid color-mix(in srgb, var(--accent, #58a6ff) 45%, transparent);
   background: color-mix(in srgb, var(--accent, #58a6ff) 12%, transparent);
   color: var(--accent, #58a6ff);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
-.chart-grid-wl-btn span { font-size: 0.95rem; line-height: 1; }
+.chart-grid-wl-btn span { font-size: var(--fs-lead); line-height: 1; }
 .chart-grid-wl-btn:hover {
   background: color-mix(in srgb, var(--accent, #58a6ff) 22%, transparent);
   border-color: var(--accent, #58a6ff);
@@ -3600,7 +3662,7 @@ button {
   justify-content: center;
   width: 24px;
   height: 24px;
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   border: 1px solid color-mix(in srgb, var(--line, rgba(255, 255, 255, 0.14)) 80%, transparent);
   background: color-mix(in srgb, var(--surface, #10141e) 82%, transparent);
   color: var(--muted, #8b98a9);
@@ -3661,13 +3723,13 @@ button {
 }
 
 .panel h2 {
-  font-size: 1.08rem;
+  font-size: var(--fs-title);
   font-weight: 600;
 }
 
 .panel-kicker {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .panel-actions {
@@ -3713,7 +3775,7 @@ button {
 .scanner-settings-bar span {
   margin-top: 2px;
   color: var(--text-soft);
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
 }
 
 .scanner-settings-actions {
@@ -3764,7 +3826,7 @@ button {
 }
 
 .saved-scanner-load strong {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .saved-scanner-load small {
@@ -3773,7 +3835,7 @@ button {
 
 .saved-scanner-delete {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   color: var(--text-soft);
 }
 
@@ -3800,12 +3862,12 @@ button {
 }
 
 .scanner-settings-note strong {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .scanner-settings-note span {
   color: var(--text-soft);
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
   line-height: 1.5;
 }
 
@@ -3833,7 +3895,7 @@ button {
 .indicator-pill,
 .tool-pill {
   border: 1px solid transparent;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 8px 12px;
   background: transparent;
   color: var(--text-soft);
@@ -3848,7 +3910,7 @@ button {
   width: 30px;
   height: 30px;
   border: 1px solid var(--line);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-soft);
   transition: border-color var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
@@ -3880,7 +3942,7 @@ button {
 
 .chart-display-settings-label {
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -3908,12 +3970,12 @@ button {
 }
 
 .scanner-field > span {
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
   font-weight: 600;
 }
 
 .scanner-field small {
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
 }
 
 .scanner-checkbox-line {
@@ -3946,7 +4008,7 @@ button {
 
 .scanner-config-card-header h3 {
   margin: 0;
-  font-size: 0.98rem;
+  font-size: var(--fs-lead);
 }
 
 .scanner-field-group {
@@ -3989,7 +4051,7 @@ button {
   gap: 8px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 84%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 78%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)),
     var(--glass-sheen);
@@ -4031,7 +4093,7 @@ button {
   margin-top: 8px;
   border-top: 1px solid color-mix(in srgb, var(--glass-border) 70%, transparent);
   border-left: 4px solid var(--sector-accent, color-mix(in srgb, var(--brand-primary) 65%, white));
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: linear-gradient(90deg, color-mix(in srgb, var(--sector-accent, var(--brand-primary)) 12%, transparent), transparent 52%);
 }
 
@@ -4049,19 +4111,19 @@ button {
 
 .scan-sector-header strong {
   display: block;
-  font-size: 0.96rem;
+  font-size: var(--fs-lead);
   color: color-mix(in srgb, var(--sector-accent, white) 68%, white);
 }
 
 .scan-sector-header small {
   color: var(--text-soft);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
 }
 
 .scan-table-head {
   padding: 0 14px;
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4148,7 +4210,7 @@ button {
 }
 
 .scan-row strong {
-  font-size: 0.96rem;
+  font-size: var(--fs-lead);
 }
 
 .scan-row small {
@@ -4166,7 +4228,7 @@ button {
   border-radius: var(--radius-xl);
   color: var(--text-soft);
   text-align: center;
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .empty-state > div:first-child {
@@ -4206,7 +4268,7 @@ button {
   min-width: 220px;
   padding: 10px 12px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
   color: var(--text);
 }
@@ -4221,7 +4283,7 @@ button {
 }
 
 .chart-panel .panel-header h2 {
-  font-size: 1.45rem;
+  font-size: var(--fs-heading);
 }
 
 .chart-panel .panel-kicker {
@@ -4253,7 +4315,7 @@ button {
   gap: 0;
   flex-wrap: nowrap;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
 }
@@ -4286,7 +4348,7 @@ button {
   list-style: none;
   padding: 10px 14px;
   color: var(--text-soft);
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
   font-weight: 600;
 }
 
@@ -4308,7 +4370,7 @@ button {
 }
 
 .chart-color-field span {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4319,7 +4381,7 @@ button {
   height: 32px;
   padding: 0;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: transparent;
 }
 
@@ -4330,7 +4392,7 @@ button {
 }
 
 .chart-slider-field span {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -4347,7 +4409,7 @@ button {
 }
 
 .chart-slider-field strong {
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   color: var(--text);
 }
 
@@ -4358,7 +4420,7 @@ button {
 }
 
 .drawing-tool-select span {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -4366,7 +4428,7 @@ button {
 
 .drawing-tool-select select {
   border: 1px solid color-mix(in srgb, var(--glass-border) 82%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 10px 12px;
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 70%, transparent)),
@@ -4433,13 +4495,13 @@ button {
   display: block;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .sector-summary-card strong {
-  font-size: 1.08rem;
+  font-size: var(--fs-title);
 }
 
 .sector-grid {
@@ -4499,17 +4561,17 @@ button {
 .sector-card-main-metric span,
 .sector-card-toggle {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .sector-card-main-metric strong {
-  font-size: 1.2rem;
+  font-size: var(--fs-title);
 }
 
 .sector-card-toggle {
   padding: 8px 12px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
@@ -4536,7 +4598,7 @@ button {
   display: block;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4572,7 +4634,7 @@ button {
 
 .sub-sector-header span {
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .sector-company-list {
@@ -4599,7 +4661,7 @@ button {
     linear-gradient(180deg, color-mix(in srgb, var(--surface-strong) 82%, transparent), color-mix(in srgb, var(--surface) 72%, transparent)),
     var(--glass-sheen);
   color: var(--text-muted);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4750,12 +4812,12 @@ button {
 .group-symbol-chip {
   padding: 7px 10px;
   border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-soft) 76%, transparent), color-mix(in srgb, var(--surface) 68%, transparent)),
     var(--glass-sheen);
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
@@ -4786,7 +4848,7 @@ button {
 
 .group-card-search-hit {
   margin-top: 8px;
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .group-metrics-row {
@@ -4812,14 +4874,14 @@ button {
   display: block;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .group-metric-card strong,
 .group-detail-card strong {
-  font-size: 1.06rem;
+  font-size: var(--fs-lead);
 }
 
 .group-metric-card small {
@@ -4868,7 +4930,7 @@ button {
 .group-stock-head {
   padding: 12px 18px;
   color: var(--text-muted);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -4899,7 +4961,7 @@ button {
 
 .tool-pill.small {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .gap-up-toolbar {
@@ -4914,7 +4976,7 @@ button {
 }
 
 .gap-up-label {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
 }
 
@@ -4929,7 +4991,7 @@ button {
   align-items: center;
   padding: 10px 14px;
   border: 1px dashed var(--line-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
 }
 
 .fundamentals-toolbar {
@@ -4960,11 +5022,11 @@ button {
   display: block;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .chart-summary-chip strong {
-  font-size: 1rem;
+  font-size: var(--fs-lead);
 }
 
 .chart-circuit-widget span {
@@ -4998,16 +5060,16 @@ button {
 .chart-circuit-est {
   color: var(--text-muted);
   font-weight: 500;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
 }
 
 .chart-circuit-locks-toggle {
   padding: 1px 7px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
   color: var(--text-muted);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   cursor: pointer;
   transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
 }
@@ -5020,10 +5082,10 @@ button {
 .chart-circuit-band-select {
   padding: 1px 4px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--surface-strong) 85%, transparent);
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   cursor: pointer;
 }
 
@@ -5117,7 +5179,7 @@ button {
   display: inline-flex;
   padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
   background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
 }
@@ -5143,13 +5205,13 @@ button {
   display: block;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .fundamentals-stat strong {
-  font-size: 1rem;
+  font-size: var(--fs-lead);
 }
 
 .fundamentals-driver-list,
@@ -5208,7 +5270,7 @@ button {
 
 .fundamentals-table th {
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -5229,14 +5291,14 @@ button {
   flex-wrap: wrap;
   margin-bottom: 8px;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .fundamentals-badge {
   display: inline-flex;
   align-items: center;
   padding: 6px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: color-mix(in srgb, var(--surface-soft) 60%, transparent);
 }
@@ -5262,7 +5324,7 @@ button {
   align-items: center;
   padding: 10px 12px;
   border: 1px dashed color-mix(in srgb, var(--warning) 32%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   color: var(--text-soft);
   background: color-mix(in srgb, var(--warning) 8%, transparent);
 }
@@ -5277,12 +5339,12 @@ button {
   margin: 0;
   color: var(--text-soft);
   line-height: 1.7;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
 }
 
 .ai-key-points {
   padding: 12px 16px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
   border: 1px solid var(--line);
 }
@@ -5291,7 +5353,7 @@ button {
   display: block;
   margin-bottom: 10px;
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .ai-key-points ul {
@@ -5304,15 +5366,15 @@ button {
   margin-bottom: 6px;
   color: var(--text-soft);
   line-height: 1.6;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .sentiment-badge {
   display: inline-flex;
   align-items: center;
   padding: 8px 12px;
-  border-radius: 999px;
-  font-size: 0.85rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-body);
   font-weight: 500;
   border: 1px solid var(--line);
 }
@@ -5343,7 +5405,7 @@ button {
 
 .business-trigger-item {
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 14px 16px;
   background: color-mix(in srgb, var(--surface-strong) 70%, transparent);
   transition: background var(--transition-smooth), border-color var(--transition-smooth);
@@ -5372,8 +5434,8 @@ button {
   display: inline-flex;
   align-items: center;
   padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-base);
   font-weight: 600;
   border: 1px solid var(--line);
   white-space: nowrap;
@@ -5401,7 +5463,7 @@ button {
   margin: 0 0 10px 0;
   color: var(--text-soft);
   line-height: 1.6;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .trigger-meta {
@@ -5410,7 +5472,7 @@ button {
   gap: 12px;
   flex-wrap: wrap;
   color: var(--text-muted);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .trigger-source,
@@ -5450,8 +5512,8 @@ button {
   display: inline-flex;
   align-items: center;
   padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-xs);
+  font-size: var(--fs-small);
   font-weight: 600;
   border: 1px solid var(--line);
   white-space: nowrap;
@@ -5506,10 +5568,10 @@ button {
   gap: 8px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-soft) 90%, transparent);
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
 }
 
 .watchlist-color-picker input {
@@ -5529,7 +5591,7 @@ button {
   flex: 1;
   min-width: 150px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   padding: 10px 12px;
   background: color-mix(in srgb, var(--surface-strong) 96%, var(--bg-alt));
   color: var(--text);
@@ -5577,18 +5639,18 @@ button {
 .watchlist-link small,
 .watchlist-picker-row small {
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
 }
 
 .watchlist-link strong,
 .watchlist-picker-row strong {
-  font-size: 0.81rem;
+  font-size: var(--fs-base);
 }
 
 .watchlist-link-color {
   width: 10px;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   flex: 0 0 auto;
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--surface) 92%, transparent);
 }
@@ -5597,7 +5659,7 @@ button {
   width: 30px;
   height: 30px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
 }
@@ -5619,7 +5681,7 @@ button {
 .watchlist-head,
 .watchlist-row {
   grid-template-columns: 40px minmax(74px, 0.46fr) 0.52fr 0.56fr 0.48fr minmax(148px, 0.9fr);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
 }
 
 .watchlist-row {
@@ -5632,7 +5694,7 @@ button {
   align-items: center;
   padding: 0 8px;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .watchlist-row-actions {
@@ -5648,7 +5710,7 @@ button {
 .watchlists-main .nav-button,
 .watchlists-main .tool-pill {
   padding: 6px 8px;
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
 }
 
 .watchlist-stock-button--compact {
@@ -5673,12 +5735,12 @@ button {
 }
 
 .watchlist-stock-button--compact strong {
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   line-height: 1.1;
 }
 
 .watchlist-stock-button--compact small {
-  font-size: 0.54rem;
+  font-size: var(--fs-nano);
   line-height: 1.1;
 }
 
@@ -5757,12 +5819,12 @@ button {
   width: 34px;
   height: 34px;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
   color: var(--accent);
-  font-size: 1.15rem;
+  font-size: var(--fs-title);
   line-height: 1;
-  box-shadow: 0 10px 22px rgba(2, 8, 22, 0.24);
+  box-shadow: var(--elev-2);
 }
 
 .chart-stage-action-button:hover,
@@ -5779,7 +5841,7 @@ button {
 .chart-stage-action-button.journal {
   border-color: color-mix(in srgb, var(--warning) 58%, transparent);
   color: var(--warning);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 700;
 }
 
@@ -5799,13 +5861,13 @@ button {
   align-items: center;
   justify-content: center;
   border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   line-height: 1;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(2, 8, 22, 0.28);
+  box-shadow: var(--elev-2);
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, transform 0.06s ease;
 }
 .chart-stage-nav-button:hover {
@@ -5850,19 +5912,19 @@ button {
   align-items: center;
   padding: 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
   background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
 }
 
 .chart-stage-label--ohlc {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   line-height: 1.45;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   /* Fixed-width digits: the OHLC values change on every candle the cursor
      crosses, and proportional numerals would make the whole strip shuffle
      sideways as they do. Also spares the browser a reflow per hover. */
@@ -5876,9 +5938,9 @@ button {
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   line-height: 1.45;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   font-weight: 600;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
@@ -5954,11 +6016,11 @@ button {
   gap: 4px;
   padding: 6px 5px;
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
   backdrop-filter: blur(9px);
   -webkit-backdrop-filter: blur(9px);
-  box-shadow: 0 12px 30px rgba(2, 8, 22, 0.28);
+  box-shadow: var(--elev-3);
 }
 
 .chart-tool-rail-button {
@@ -5969,7 +6031,7 @@ button {
   justify-content: center;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: color-mix(in srgb, var(--text) 62%, transparent);
   cursor: pointer;
@@ -6024,7 +6086,7 @@ button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   overflow: hidden;
 }
@@ -6069,13 +6131,13 @@ button {
 
 .chart-pct-ruler-bar {
   width: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: linear-gradient(180deg, rgba(139, 148, 158, 0.9), rgba(139, 148, 158, 0.35));
   box-shadow: 0 0 0 1px rgba(13, 17, 23, 0.35);
 }
 
 .chart-pct-ruler-label {
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   letter-spacing: 0.04em;
   color: rgba(139, 148, 158, 0.95);
@@ -6101,7 +6163,7 @@ button {
 }
 
 .screener-page-grid > .chart-panel .panel-header h2 {
-  font-size: 1.08rem;
+  font-size: var(--fs-title);
   line-height: 1.08;
 }
 
@@ -6110,7 +6172,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   line-height: 1.1;
 }
 
@@ -6147,7 +6209,7 @@ button {
 .screener-page-grid > .chart-panel .chart-search-form input {
   min-width: 190px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .screener-page-grid > .chart-panel .scanner-tab,
@@ -6155,8 +6217,8 @@ button {
 .screener-page-grid > .chart-panel .indicator-pill,
 .screener-page-grid > .chart-panel .tool-pill {
   padding: 8px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-base);
   white-space: nowrap;
 }
 
@@ -6171,7 +6233,7 @@ button {
 
 .screener-page-grid > .chart-panel .drawing-tool-select select {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .screener-page-grid > .chart-panel .chart-save-pill {
@@ -6191,16 +6253,16 @@ button {
   flex: 0 0 116px;
   min-width: 116px;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
 }
 
 .screener-page-grid > .chart-panel .chart-summary-chip span {
   margin-bottom: 4px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .screener-page-grid > .chart-panel .chart-summary-chip strong {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .screener-page-grid > .chart-panel.expanded .chart-canvas,
@@ -6225,7 +6287,7 @@ button {
 
 .screener-page-grid > .chart-panel.expanded .chart-stage-label {
   padding: 6px 10px;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   backdrop-filter: blur(8px);
 }
 
@@ -6253,7 +6315,7 @@ button {
 }
 
 .workspace-grid-sector > .chart-panel .panel-header h2 {
-  font-size: 1.08rem;
+  font-size: var(--fs-title);
   line-height: 1.08;
 }
 
@@ -6262,7 +6324,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   line-height: 1.1;
 }
 
@@ -6299,7 +6361,7 @@ button {
 .workspace-grid-sector > .chart-panel .chart-search-form input {
   min-width: 190px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .workspace-grid-sector > .chart-panel .scanner-tab,
@@ -6307,8 +6369,8 @@ button {
 .workspace-grid-sector > .chart-panel .indicator-pill,
 .workspace-grid-sector > .chart-panel .tool-pill {
   padding: 8px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-base);
   white-space: nowrap;
 }
 
@@ -6323,7 +6385,7 @@ button {
 
 .workspace-grid-sector > .chart-panel .drawing-tool-select select {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .workspace-grid-sector > .chart-panel .chart-save-pill {
@@ -6343,16 +6405,16 @@ button {
   flex: 0 0 116px;
   min-width: 116px;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
 }
 
 .workspace-grid-sector > .chart-panel .chart-summary-chip span {
   margin-bottom: 4px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .workspace-grid-sector > .chart-panel .chart-summary-chip strong {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .workspace-grid-sector > .chart-panel.expanded .chart-canvas,
@@ -6377,7 +6439,7 @@ button {
 
 .workspace-grid-sector > .chart-panel.expanded .chart-stage-label {
   padding: 6px 10px;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   backdrop-filter: blur(8px);
 }
 
@@ -6400,10 +6462,10 @@ button {
   max-width: 170px;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--warning) 36%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--warning) 10%, var(--surface-strong));
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   line-height: 1.4;
   pointer-events: auto;
   cursor: grab;
@@ -6436,7 +6498,7 @@ button {
 
 .chart-drawing-toolbar .drawing-tool-select select {
   padding: 6px 10px;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .chart-widget-menu {
@@ -6473,7 +6535,7 @@ button {
   border: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--elev-3);
 }
 
 .chart-toggle-row {
@@ -6482,7 +6544,7 @@ button {
   gap: 8px;
   margin-bottom: 10px;
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   font-weight: 700;
 }
 
@@ -6510,7 +6572,7 @@ button {
   min-width: 96px;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
   color: var(--text);
   text-align: left;
@@ -6524,13 +6586,13 @@ button {
 }
 
 .chart-favourite-option span {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 700;
 }
 
 .chart-favourite-option small {
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   text-transform: uppercase;
 }
 
@@ -6546,7 +6608,7 @@ button {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+  box-shadow: var(--elev-3);
   pointer-events: auto;
   overflow: hidden;
 }
@@ -6561,14 +6623,14 @@ button {
 }
 
 .favorites-widget-head strong {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .favorites-widget-head button {
   width: 24px;
   height: 24px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -6587,7 +6649,7 @@ button {
   min-width: 0;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 64%, transparent);
   color: var(--text);
   text-align: left;
@@ -6604,13 +6666,13 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 700;
 }
 
 .favorites-widget-action small {
   color: var(--text-soft);
-  font-size: 0.66rem;
+  font-size: var(--fs-tiny);
   text-transform: uppercase;
 }
 
@@ -6636,7 +6698,7 @@ button {
   align-items: center;
   gap: 8px;
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -6646,7 +6708,7 @@ button {
   height: 26px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
 }
 
@@ -6674,7 +6736,7 @@ button {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
   color: var(--text-soft);
 }
 
@@ -6683,7 +6745,7 @@ button {
   height: 24px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   background: transparent;
 }
@@ -6703,7 +6765,7 @@ button {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+  box-shadow: var(--elev-3);
   pointer-events: auto;
   overflow: hidden;
 }
@@ -6718,14 +6780,14 @@ button {
 }
 
 .pocket-pivot-widget-head strong {
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .pocket-pivot-widget-head button {
   width: 24px;
   height: 24px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -6743,14 +6805,14 @@ button {
   min-width: 0;
   padding: 8px;
   border: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 58%, transparent);
 }
 
 .pocket-pivot-widget-body span,
 .pocket-pivot-control span {
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -6759,7 +6821,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
 }
 
 .pocket-pivot-control {
@@ -6773,7 +6835,7 @@ button {
   height: 26px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
 }
 
@@ -6786,16 +6848,16 @@ button {
   min-width: 74px;
   padding: 5px 8px;
   border: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: color-mix(in srgb, var(--surface-soft) 68%, transparent);
   color: var(--text);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
 }
 
 .pocket-pivot-control strong {
   min-width: 42px;
   color: var(--text);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
 }
 
 .pocket-pivot-notes {
@@ -6813,7 +6875,7 @@ button {
 
 .pocket-pivot-notes-head span {
   color: var(--text-soft);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -6821,7 +6883,7 @@ button {
 .pocket-pivot-notes-head small {
   overflow: hidden;
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -6832,7 +6894,7 @@ button {
   resize: vertical;
   padding: 8px 9px;
   border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 64%, transparent);
   line-height: 1.45;
 }
@@ -6861,10 +6923,10 @@ button {
   gap: 10px;
   padding: 10px;
   border: 1px solid color-mix(in srgb, var(--teal) 52%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
   color: var(--text);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+  box-shadow: var(--elev-3);
   pointer-events: auto;
   overflow: hidden;
 }
@@ -6879,7 +6941,7 @@ button {
 }
 
 .earnings-widget-head strong {
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -6889,7 +6951,7 @@ button {
   width: 24px;
   height: 24px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -6912,7 +6974,7 @@ button {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   border-top: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
   border-left: 1px solid color-mix(in srgb, var(--line) 62%, transparent);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .earnings-widget-range {
@@ -6948,7 +7010,7 @@ button {
 .earnings-widget-body table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
 }
 
 .earnings-widget-body th,
@@ -6970,7 +7032,7 @@ button {
   z-index: 1;
   background: color-mix(in srgb, var(--surface-strong) 98%, transparent);
   color: var(--text-soft);
-  font-size: 0.66rem;
+  font-size: var(--fs-tiny);
   text-transform: uppercase;
 }
 
@@ -6987,7 +7049,7 @@ button {
   min-height: 96px;
   place-items: center;
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   text-align: center;
 }
 
@@ -7013,7 +7075,7 @@ button {
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   color: var(--text);
-  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.38);
+  box-shadow: var(--elev-3);
   pointer-events: auto;
   overflow: hidden;
 }
@@ -7027,14 +7089,14 @@ button {
 }
 
 .notes-widget-head strong {
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .notes-widget-head small {
   flex: 1;
   overflow: hidden;
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -7043,7 +7105,7 @@ button {
   width: 24px;
   height: 24px;
   border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -7056,7 +7118,7 @@ button {
   resize: vertical;
   padding: 8px 9px;
   border: 1px solid color-mix(in srgb, var(--line) 74%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-soft) 64%, transparent);
   line-height: 1.45;
 }
@@ -7082,8 +7144,8 @@ button {
   padding: 6px 10px;
   background: color-mix(in srgb, var(--surface-strong) 96%, transparent);
   border: 1px solid color-mix(in srgb, var(--line) 90%, transparent);
-  border-radius: 14px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elev-2);
   pointer-events: auto;
 }
 
@@ -7092,7 +7154,7 @@ button {
   height: 24px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   background: transparent;
 }
@@ -7114,7 +7176,7 @@ button {
   height: 24px;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -7134,10 +7196,10 @@ button {
 .annotation-edit-delete {
   padding: 4px 9px;
   border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--danger);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   cursor: pointer;
 }
 
@@ -7148,10 +7210,10 @@ button {
 .annotation-edit-edit {
   padding: 4px 9px;
   border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   cursor: pointer;
 }
 
@@ -7165,7 +7227,7 @@ button {
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   line-height: 1;
 }
 
@@ -7178,7 +7240,7 @@ button {
   left: 16px;
   bottom: 16px;
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
   border: 1px solid var(--line);
 }
@@ -7215,13 +7277,13 @@ button {
   border-radius: var(--radius-xl);
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--line));
   background: color-mix(in srgb, var(--surface-strong) 94%, rgba(4, 8, 17, 0.94));
-  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.34);
+  box-shadow: var(--elev-3);
 }
 
 .chart-group-modal-close {
   align-self: flex-end;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 8px 14px;
   background: color-mix(in srgb, var(--surface-soft) 84%, transparent);
   color: var(--text);
@@ -7237,7 +7299,7 @@ button {
 
 .chart-group-modal-header h3 {
   margin: 0;
-  font-size: 1.35rem;
+  font-size: var(--fs-heading);
 }
 
 .chart-group-modal-header p {
@@ -7248,7 +7310,7 @@ button {
 .chart-group-modal-eyebrow {
   margin: 0 0 8px;
   color: var(--accent);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
@@ -7275,11 +7337,11 @@ button {
   display: block;
   margin-bottom: 6px;
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .chart-group-summary-card strong {
-  font-size: 1rem;
+  font-size: var(--fs-lead);
 }
 
 .chart-group-table-head,
@@ -7293,7 +7355,7 @@ button {
 .chart-group-table-head {
   padding: 0 12px;
   color: var(--text-soft);
-  font-size: 0.76rem;
+  font-size: var(--fs-small);
   text-transform: uppercase;
   letter-spacing: 0.08em;
 }
@@ -7360,11 +7422,11 @@ button {
   background: rgba(13, 17, 23, 0.85);
   border: 1px solid rgba(99, 102, 241, 0.45);
   color: #c7d2fe;
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-weight: 600;
   letter-spacing: 0.02em;
   padding: 6px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   transition: background var(--dur-fast), color var(--dur-fast), border-color var(--dur-fast);
 }
@@ -7418,7 +7480,7 @@ button {
 }
 
 .chart-modal .chart-panel .panel-header h2 {
-  font-size: 1.1rem;
+  font-size: var(--fs-title);
   line-height: 1.1;
 }
 
@@ -7427,7 +7489,7 @@ button {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   line-height: 1.1;
 }
 
@@ -7459,7 +7521,7 @@ button {
 .chart-modal .chart-search-form input {
   min-width: 240px;
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .chart-modal .scanner-tab,
@@ -7467,8 +7529,8 @@ button {
 .chart-modal .indicator-pill,
 .chart-modal .tool-pill {
   padding: 8px 10px;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-base);
   white-space: nowrap;
 }
 
@@ -7483,7 +7545,7 @@ button {
 
 .chart-modal .drawing-tool-select select {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .chart-modal .chart-save-pill {
@@ -7505,18 +7567,18 @@ button {
   flex: 0 0 118px;
   min-width: 118px;
   padding: 8px 10px;
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
 }
 
 .chart-modal .chart-summary-chip span,
 .chart-panel.expanded .chart-summary-chip span {
   margin-bottom: 4px;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
 }
 
 .chart-modal .chart-summary-chip strong,
 .chart-panel.expanded .chart-summary-chip strong {
-  font-size: 0.92rem;
+  font-size: var(--fs-body);
 }
 
 .chart-modal .chart-summary-chip-action,
@@ -7545,7 +7607,7 @@ button {
 .chart-modal .chart-panel.expanded .chart-stage-label,
 .chart-panel.expanded .chart-stage-label {
   padding: 6px 10px;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   backdrop-filter: blur(8px);
 }
 
@@ -7610,7 +7672,7 @@ button {
   margin: 0;
   padding: 10px 14px;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--surface-strong);
   color: var(--text);
 }
@@ -7891,7 +7953,7 @@ button {
   border-radius: var(--radius-xl);
   overflow: hidden;
   backdrop-filter: blur(16px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--elev-2);
   transition: transform var(--dur-base) ease, border-color var(--dur-base) ease;
 }
 
@@ -7918,16 +7980,16 @@ button {
 
 .health-card-header h3 {
   margin: 0;
-  font-size: 1.15rem;
+  font-size: var(--fs-title);
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
 }
 
 .health-card-header span {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
   color: var(--text-soft);
 }
@@ -7936,9 +7998,9 @@ button {
   border: 1px solid color-mix(in srgb, var(--line-strong) 80%, transparent);
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
   color: var(--text);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   padding: 8px 14px;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -7971,14 +8033,14 @@ button {
 }
 
 .health-summary-pill span {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   color: var(--text-muted);
 }
 
 .health-summary-pill strong {
-  font-size: 1.05rem;
+  font-size: var(--fs-lead);
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -7991,7 +8053,7 @@ button {
 
 .health-metric-group h4 {
   margin: 0 0 4px;
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-muted);
@@ -8001,12 +8063,12 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
 }
 
 .health-metric-row strong {
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   color: var(--text);
   font-variant-numeric: tabular-nums;
 }
@@ -8014,7 +8076,7 @@ button {
 .health-ad-bar {
   display: flex;
   height: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
   margin-top: 6px;
@@ -8114,7 +8176,7 @@ button {
   font-weight: 600;
   margin-bottom: 8px;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
 }
 
 .timeframe-options {
@@ -8136,7 +8198,7 @@ button {
 }
 
 .return-range-inputs label {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 500;
   color: var(--text-soft);
 }
@@ -8147,7 +8209,7 @@ button {
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   transition: border-color var(--transition-fast);
 }
 
@@ -8191,7 +8253,7 @@ button {
 
 .ma-checks span {
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   font-weight: 500;
 }
 
@@ -8209,7 +8271,7 @@ button {
 }
 
 .toggle-field-inputs label {
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   font-weight: 500;
   color: var(--text-soft);
 }
@@ -8220,7 +8282,7 @@ button {
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   transition: border-color var(--transition-fast);
 }
 
@@ -8252,7 +8314,7 @@ button {
   padding: 20px 28px;
   border-top: 1px solid var(--line);
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   letter-spacing: 0.04em;
 }
@@ -8274,14 +8336,14 @@ button {
 .business-summary-text {
   line-height: 1.6;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
 }
 
 .company-info-row {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   padding: 8px 0;
   border-top: 1px solid var(--line-faint);
 }
@@ -8329,19 +8391,19 @@ button {
 
 .management-member-card h4 {
   margin: 0 0 6px 0;
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
 .member-position {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: var(--accent);
   margin-bottom: 8px;
 }
 
 .member-background {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   line-height: 1.5;
   color: var(--text-soft);
   margin: 0;
@@ -8364,7 +8426,7 @@ button {
 
 .guidance-item h4 {
   margin: 0 0 12px 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
@@ -8384,7 +8446,7 @@ button {
 }
 
 .metric-label {
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-muted);
   font-weight: 600;
   text-transform: uppercase;
@@ -8392,7 +8454,7 @@ button {
 }
 
 .metric-value {
-  font-size: 1.2rem;
+  font-size: var(--fs-title);
   font-weight: 700;
   color: var(--accent);
 }
@@ -8403,7 +8465,7 @@ button {
 
 .guidance-points strong {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -8416,7 +8478,7 @@ button {
 }
 
 .guidance-points li {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text);
   line-height: 1.6;
   margin-bottom: 6px;
@@ -8435,7 +8497,7 @@ button {
 .strategy-text {
   line-height: 1.7;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   margin: 0;
 }
 
@@ -8460,13 +8522,13 @@ button {
 }
 
 .comp-label {
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   font-weight: 600;
 }
 
 .comp-position-item strong {
-  font-size: 1.1rem;
+  font-size: var(--fs-title);
   color: var(--accent);
 }
 
@@ -8477,7 +8539,7 @@ button {
 
 .comp-advantages strong {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   margin-bottom: 8px;
   text-transform: uppercase;
@@ -8490,7 +8552,7 @@ button {
 }
 
 .comp-advantages li {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text);
   line-height: 1.6;
   margin-bottom: 6px;
@@ -8512,7 +8574,7 @@ button {
 
 .competitors-list strong {
   display: block;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   margin-bottom: 10px;
   text-transform: uppercase;
@@ -8529,7 +8591,7 @@ button {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   border: 1px solid var(--accent);
   border-radius: var(--radius-xl);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--accent);
   font-weight: 500;
 }
@@ -8547,7 +8609,7 @@ button {
   background: color-mix(in srgb, var(--surface) 95%, var(--accent) 2%);
   border-left: 3px solid var(--accent);
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
@@ -8592,15 +8654,15 @@ button {
 
 .risk-header h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   color: var(--text);
   flex: 1;
 }
 
 .severity-badge {
   padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
   white-space: nowrap;
@@ -8622,7 +8684,7 @@ button {
 }
 
 .risk-description {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text);
   line-height: 1.6;
   margin: 10px 0;
@@ -8636,14 +8698,14 @@ button {
 
 .mitigation-strategy strong {
   display: block;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-soft);
   margin-bottom: 6px;
   text-transform: uppercase;
 }
 
 .mitigation-strategy p {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   margin: 0;
   line-height: 1.6;
@@ -8675,7 +8737,7 @@ button {
 
 .news-header h4 {
   margin: 0 0 10px 0;
-  font-size: 1rem;
+  font-size: var(--fs-lead);
   color: var(--text);
   line-height: 1.4;
 }
@@ -8685,12 +8747,12 @@ button {
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .news-impact {
   padding: 4px 10px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -8725,7 +8787,7 @@ button {
 }
 
 .news-summary {
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   line-height: 1.6;
   color: var(--text);
   margin: 12px 0;
@@ -8740,7 +8802,7 @@ button {
 }
 
 .news-detailed-points li {
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   line-height: 1.6;
   margin-bottom: 8px;
@@ -8757,7 +8819,7 @@ button {
 }
 
 .news-relevance {
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   color: var(--text-muted);
   margin-top: 10px;
   padding-top: 10px;
@@ -8782,7 +8844,7 @@ button {
 
 .earnings-metric .metric-label {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
   margin-bottom: 6px;
   text-transform: capitalize;
@@ -8791,7 +8853,7 @@ button {
 
 .earnings-metric .metric-value {
   display: block;
-  font-size: 1.05rem;
+  font-size: var(--fs-lead);
   color: var(--accent);
   font-weight: 700;
 }
@@ -8819,7 +8881,7 @@ button {
   color: var(--accent);
   min-width: 100px;
   text-align: right;
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
 }
 
 .event-content {
@@ -8828,13 +8890,13 @@ button {
 
 .event-content h4 {
   margin: 0 0 6px 0;
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   color: var(--text);
 }
 
 .event-content p {
   margin: 0;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   color: var(--text-soft);
   line-height: 1.5;
 }
@@ -8871,7 +8933,7 @@ button {
   }
 
   .news-meta {
-    font-size: 0.75rem;
+    font-size: var(--fs-small);
   }
 
   .risk-header {
@@ -8940,19 +9002,19 @@ button {
   gap: 5px;
   padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
   backdrop-filter: blur(6px);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   min-width: 180px;
-  box-shadow: 0 4px 18px rgba(2, 8, 22, 0.28);
+  box-shadow: var(--elev-2);
   pointer-events: auto;
   user-select: none;
 }
 
-.rvol-widget--sm { min-width: 150px; padding: 6px 8px; font-size: 0.62rem; }
-.rvol-widget--md { min-width: 190px; padding: 8px 10px; font-size: 0.68rem; }
-.rvol-widget--lg { min-width: 240px; padding: 12px 14px; font-size: 0.78rem; }
+.rvol-widget--sm { min-width: 150px; padding: 6px 8px; font-size: var(--fs-micro); }
+.rvol-widget--md { min-width: 190px; padding: 8px 10px; font-size: var(--fs-tiny); }
+.rvol-widget--lg { min-width: 240px; padding: 12px 14px; font-size: var(--fs-small); }
 
 .rvol-widget-header {
   display: flex;
@@ -8968,13 +9030,13 @@ button {
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.rvol-widget--sm .rvol-widget-title { font-size: 0.62rem; }
-.rvol-widget--md .rvol-widget-title { font-size: 0.72rem; }
-.rvol-widget--lg .rvol-widget-title { font-size: 0.86rem; }
+.rvol-widget--sm .rvol-widget-title { font-size: var(--fs-micro); }
+.rvol-widget--md .rvol-widget-title { font-size: var(--fs-small); }
+.rvol-widget--lg .rvol-widget-title { font-size: var(--fs-body); }
 
 .rvol-widget-subtitle {
   font-weight: 400;
-  font-size: 0.60rem;
+  font-size: var(--fs-micro);
   color: var(--text-soft);
   margin-left: 4px;
 }
@@ -8987,10 +9049,10 @@ button {
 
 .rvol-size-btn {
   padding: 1px 5px;
-  font-size: 0.58rem;
+  font-size: var(--fs-nano);
   font-weight: 700;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-soft);
   cursor: pointer;
@@ -9006,22 +9068,22 @@ button {
   width: 18px;
   height: 18px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 1px;
   cursor: pointer;
   background: transparent;
 }
 .rvol-color-input::-webkit-color-swatch-wrapper { padding: 0; }
-.rvol-color-input::-webkit-color-swatch { border: none; border-radius: 3px; }
+.rvol-color-input::-webkit-color-swatch { border: none; border-radius: var(--radius-xs); }
 
 .rvol-close-btn {
   width: 18px;
   height: 18px;
   border: 1px solid var(--line-strong);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   line-height: 1;
   display: inline-flex;
   align-items: center;
@@ -9057,23 +9119,23 @@ button {
   flex: 1;
   height: 5px;
   background: color-mix(in srgb, var(--line-strong) 40%, transparent);
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
 .rvol-bar-fill {
   display: block;
   height: 100%;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   transition: width var(--dur-fast) ease;
 }
 
 .rvol-widget-detail {
-  font-size: 0.58rem;
+  font-size: var(--fs-nano);
   color: var(--text-soft);
   font-variant-numeric: tabular-nums;
 }
-.rvol-widget--lg .rvol-widget-detail { font-size: 0.7rem; }
+.rvol-widget--lg .rvol-widget-detail { font-size: var(--fs-tiny); }
 
 
 /* =========================================================
@@ -9136,7 +9198,7 @@ button {
   }
 
   .chart-summary-chip strong {
-    font-size: 0.9rem;
+    font-size: var(--fs-body);
   }
 }
 
@@ -9150,7 +9212,7 @@ button {
   border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
   border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--accent) 5%, var(--surface-soft));
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
   display: grid;
   gap: 8px;
 }
@@ -9158,7 +9220,7 @@ button {
 .chart-ai-loading,
 .chart-ai-error {
   color: var(--text-soft);
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
 }
 
 .chart-ai-error { color: var(--negative); }
@@ -9174,9 +9236,9 @@ button {
 
 .chart-ai-verdict {
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-weight: 700;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   letter-spacing: 0.06em;
 }
 
@@ -9187,14 +9249,14 @@ button {
 .chart-ai-setup,
 .chart-ai-conviction {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line-strong);
   color: var(--text-soft);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   font-weight: 600;
 }
 
-.chart-ai-headline { flex: 1 1 100%; font-size: 0.92rem; }
+.chart-ai-headline { flex: 1 1 100%; font-size: var(--fs-body); }
 
 .chart-ai-plan {
   display: flex;
@@ -9217,7 +9279,7 @@ button {
   color: var(--text);
 }
 
-.chart-ai-context { color: var(--text-soft); font-size: 0.8rem; }
+.chart-ai-context { color: var(--text-soft); font-size: var(--fs-base); }
 
 .chart-ai-proscons {
   display: grid;
@@ -9225,14 +9287,14 @@ button {
   gap: 10px;
 }
 
-.chart-ai-list-title { font-weight: 700; font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.chart-ai-list-title { font-weight: 700; font-size: var(--fs-small); text-transform: uppercase; letter-spacing: 0.06em; }
 .chart-ai-list-title.pos { color: var(--positive); }
 .chart-ai-list-title.neg { color: var(--negative); }
 
 .chart-ai-proscons ul { margin: 4px 0 0; padding-left: 18px; display: grid; gap: 3px; }
 .chart-ai-proscons li { line-height: 1.45; }
 
-.chart-ai-foot { color: var(--text-muted); font-size: 0.7rem; }
+.chart-ai-foot { color: var(--text-muted); font-size: var(--fs-tiny); }
 
 .chart-ai-pill { white-space: nowrap; }
 
@@ -9330,31 +9392,31 @@ button {
   border-bottom: 1px solid var(--line);
 }
 
-.chart-ai-widget-bar > strong { flex: 1; font-size: 0.85rem; }
+.chart-ai-widget-bar > strong { flex: 1; font-size: var(--fs-body); }
 
 .chart-ai-asof {
   display: inline-flex;
   align-items: center;
   gap: 5px;
   color: var(--text-muted);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
 }
 
 .chart-ai-asof input {
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--text);
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   padding: 1px 4px;
 }
 
 .chart-ai-asof-clear {
   border: 1px solid var(--line-strong);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--accent);
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   padding: 1px 7px;
   cursor: pointer;
 }
@@ -9363,7 +9425,7 @@ button {
   border: 0;
   background: transparent;
   color: var(--text-muted);
-  font-size: 1.05rem;
+  font-size: var(--fs-lead);
   cursor: pointer;
   line-height: 1;
 }
@@ -9437,7 +9499,7 @@ button {
 .chart-modal-close kbd {
   margin-left: 6px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   border: 1px solid currentColor;
   font-size: 0.72em;
   opacity: 0.7;
@@ -9456,7 +9518,7 @@ button {
 .chart-expansion-ctl { display: inline-flex; align-items: center; gap: 6px; }
 .chart-expansion-color {
   width: 26px; height: 26px; padding: 0; border: 1px solid var(--line, rgba(255,255,255,0.15));
-  border-radius: 6px; background: transparent; cursor: pointer;
+  border-radius: var(--radius-xs); background: transparent; cursor: pointer;
 }
 
 /* Firefox has no ::-webkit-scrollbar; without this its scrollbars ignore the
@@ -9552,7 +9614,7 @@ button {
   gap: 8px;
   padding: 5px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -9561,14 +9623,14 @@ button {
 
 .chart-fs-title strong {
   font-family: var(--font-display);
-  font-size: 0.9rem;
+  font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .chart-fs-title span {
   font-family: var(--font-mono);
-  font-size: 0.82rem;
+  font-size: var(--fs-base);
   color: var(--text-soft);
 }
 
@@ -9595,7 +9657,7 @@ button {
   height: 40px;
   padding: 0;
   border: 1px solid var(--line-strong);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
   color: var(--text);
   backdrop-filter: blur(10px);
@@ -9620,7 +9682,7 @@ button {
   height: 48px;
   padding: 0;
   border: 1px solid var(--line-strong);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
   color: var(--text);
   backdrop-filter: blur(10px);

@@ -49,7 +49,7 @@
 .positive-text { color: var(--positive) !important; font-weight: 600; }
 .negative-text { color: var(--negative) !important; font-weight: 600; }
 /* ===== 2. METRIC STRIP - one slim status line; values in mono, quiet labels ===== */
-.metric-card strong { font-family: var(--font-mono); font-size: 0.92rem; font-weight: 600; letter-spacing: -0.01em; }
+.metric-card strong { font-family: var(--font-mono); font-size: var(--fs-body); font-weight: 600; letter-spacing: -0.01em; }
 
 /* ===== 3. MARKET TOGGLE - accent for the active market ===== */
 .home-market-toggle {
@@ -143,7 +143,7 @@
   transition: border-color var(--dur-base) ease;
 }
 .panel:hover { border-color: var(--line-strong); }
-.panel-kicker { color: var(--text-muted); font-size: 0.72rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
+.panel-kicker { color: var(--text-muted); font-size: var(--fs-small); font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; }
 
 /* ===== 7. GROUP CARDS - neutral, hover reveals accent ===== */
 .home-group-card {
@@ -180,7 +180,7 @@
   border-color: var(--line-strong);
   background: color-mix(in srgb, var(--surface-strong) 80%, transparent);
 }
-.home-macro-price { font-family: var(--font-mono); font-size: 1.0rem; font-weight: 600; letter-spacing: -0.01em; }
+.home-macro-price { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 600; letter-spacing: -0.01em; }
 
 /* ===== 10. SCAN ROWS ===== */
 .scan-row {
@@ -228,7 +228,7 @@
   transition: filter var(--dur-base) ease;
 }
 .sector-heatmap-card:hover { filter: brightness(1.08); }
-.sector-heatmap-card-return { font-family: var(--font-mono); font-size: 1.05rem; font-weight: 700; letter-spacing: -0.03em; }
+.sector-heatmap-card-return { font-family: var(--font-mono); font-size: var(--fs-lead); font-weight: 700; letter-spacing: -0.03em; }
 
 /* ===== 14. NAV ===== */
 .top-nav {
@@ -250,7 +250,7 @@
 }
 .nav-search input:focus {
   border-color: color-mix(in srgb, var(--accent) 55%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: var(--focus-ring);
   outline: none;
 }
 
@@ -325,7 +325,7 @@
   -webkit-backdrop-filter: blur(14px);
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(255, 255, 255, 0.86));
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
+  box-shadow: var(--elev-2);
 }
 
 /* NOTE: this background is currently overridden — `:root[data-theme] .top-nav`
@@ -342,25 +342,25 @@
 .top-nav .brand-mark {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
   color: #fff;
   font-weight: 700;
-  font-size: 15px;
+  font-size: var(--fs-body);
   letter-spacing: 0.02em;
   display: grid;
   place-items: center;
 }
 
 .top-nav .brand-cluster h1 {
-  font-size: 17px;
+  font-size: var(--fs-lead);
   font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0;
 }
 
 .top-nav .brand-cluster .eyebrow {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -375,11 +375,11 @@
 
 .top-nav .nav-button {
   position: relative;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   letter-spacing: 0.01em;
   padding: 9px 16px;
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
   /* Token, not a hex: #475569 is the LIGHT value of --text-soft, so it was
@@ -434,11 +434,11 @@
      every chip in this row. These two used to carry !important, which beat the
      later (non-important) glass rule and left the search box as the one flat
      chip in an otherwise glassy header. */
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   /* 34px clears the Lucide <SearchIcon> at left:10px. It was 38px to clear an
      emoji ::before that used to sit at left:14px — see the note below. */
   padding: 10px 14px 10px 34px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   /* Flexible width: a hard 260px floor forced the header to wrap the icon
      buttons onto a second row on mid-size screens. */
   width: 100%;
@@ -451,7 +451,7 @@
      mode, where the text colour below is #e2e8f0 — i.e. invisible while typing.
      The glass background simply persists through focus now. */
   border-color: color-mix(in srgb, var(--accent) 60%, transparent) !important;
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent) !important;
+  box-shadow: var(--focus-ring) !important;
   outline: none;
 }
 
@@ -474,7 +474,7 @@
 }
 
 .top-nav .nav-mode-toggle > span {
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
@@ -486,15 +486,15 @@
   gap: 2px;
   padding: 3px;
   background: color-mix(in srgb, var(--text-muted) 12%, transparent);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .top-nav .mode-switch .tool-pill {
   border: 0;
   background: transparent;
   padding: 5px 10px;
-  border-radius: 8px;
-  font-size: 11.5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-tiny);
   font-weight: 600;
   color: #64748b;
   cursor: pointer;
@@ -504,7 +504,7 @@
 .top-nav .mode-switch .tool-pill.active {
   background: #fff;
   color: var(--accent-strong);
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--elev-1);
 }
 
 :root[data-theme="dark"] .top-nav .mode-switch .tool-pill.active {
@@ -516,7 +516,7 @@
 .ticker-ribbon {
   background: linear-gradient(90deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
   border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-  font-size: 12.5px;
+  font-size: var(--fs-small);
 }
 
 :root[data-theme="dark"] .ticker-ribbon {
@@ -534,7 +534,7 @@
   color: #64748b;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
 }
 
 :root[data-theme="dark"] .ticker-ribbon-item span {
@@ -543,12 +543,12 @@
 
 .ticker-ribbon-item strong {
   font-weight: 700;
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 
 .ticker-ribbon-item small {
   font-weight: 600;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 
 /* Responsive tightening */
@@ -561,7 +561,7 @@
 @media (max-width: 860px) {
   .top-nav .nav-button {
     padding: 7px 12px;
-    font-size: 12px;
+    font-size: var(--fs-small);
   }
   .top-nav .nav-search-field input {
     min-width: 140px;
@@ -591,8 +591,8 @@
 .brand-mark {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
-  font-size: 0.82rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-base);
   box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
@@ -601,11 +601,11 @@
 }
 
 .brand-cluster h1 {
-  font-size: 0.98rem;
+  font-size: var(--fs-lead);
 }
 
 .eyebrow {
-  font-size: 0.6rem;
+  font-size: var(--fs-micro);
   letter-spacing: 0.14em;
   opacity: 0.65;
 }
@@ -619,9 +619,9 @@
 /* Tighter nav buttons, no heavy shadow/blur, no underline animation tail */
 .top-nav .nav-button {
   padding: 6px 12px;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   font-weight: 600;
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   border-color: transparent;
@@ -676,8 +676,8 @@
 .top-nav .nav-search input {
   min-width: 220px;
   padding: 7px 12px 7px 32px;
-  border-radius: 10px;
-  font-size: 0.8rem;
+  border-radius: var(--radius-md);
+  font-size: var(--fs-base);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
   border-color: var(--line);
   backdrop-filter: none;
@@ -688,7 +688,7 @@
 .top-nav .nav-search input:focus {
   outline: none;
   border-color: color-mix(in srgb, var(--accent) 50%, transparent);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 14%, transparent);
+  box-shadow: var(--focus-ring);
 }
 
 .top-nav .nav-search-field .search-icon {
@@ -707,8 +707,8 @@
 
 .top-nav .nav-search-row .nav-button.search-submit {
   padding: 6px 10px;
-  border-radius: 9px;
-  font-size: 0.78rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-small);
 }
 
 /* ---- Icon buttons (theme toggle, refresh) ---- */
@@ -720,7 +720,7 @@
   height: 34px;
   padding: 0;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
   color: var(--text-soft);
   cursor: pointer;
@@ -757,9 +757,9 @@
   height: 34px;
   padding: 0 12px;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--surface-strong) 88%, transparent);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   color: var(--text);
   white-space: nowrap;
@@ -780,7 +780,7 @@
 
 .status-pill strong {
   font-family: var(--font-display);
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   font-weight: 600;
   letter-spacing: -0.01em;
   color: var(--text);
@@ -813,11 +813,11 @@
 }
 
 .ticker-ribbon-item {
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
 }
 
 .ticker-ribbon-item strong {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 /* Gentle hover: kill the lift across the app for a calmer feel.
@@ -855,7 +855,7 @@
 /* Drop the heaviest box-shadow halos on cards — keep a soft edge */
 .panel,
 .panel-shell {
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
+  box-shadow: var(--elev-2);
 }
 
 /* Reduce the ambient glow under the workspace */
@@ -888,7 +888,7 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--surface) 55%, transparent), color-mix(in srgb, var(--surface-strong) 42%, transparent));
   -webkit-backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
   backdrop-filter: blur(16px) saturate(165%) brightness(1.05);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.14), 0 10px 30px rgba(2, 6, 18, 0.26);
+  box-shadow: var(--elev-3);
 }
 
 /* Gradient-stroke "liquid glass" rim — bright top & bottom edges, fading mid —
@@ -924,7 +924,7 @@
   -webkit-backdrop-filter: blur(18px) saturate(165%) brightness(1.04);
   backdrop-filter: blur(18px) saturate(165%) brightness(1.04);
   border-bottom: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.20), 0 14px 44px rgba(2, 5, 15, 0.30);
+  box-shadow: var(--elev-3);
 }
 
 @supports (backdrop-filter: url(#liquidGlass)) or (-webkit-backdrop-filter: url(#liquidGlass)) {
@@ -945,7 +945,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(150%);
   backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid transparent;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
+  box-shadow: var(--elev-2);
 }
 
 /* Search input can't render ::before / keep its rounding, so use a clean border. */
@@ -955,7 +955,7 @@
   -webkit-backdrop-filter: blur(10px) saturate(150%);
   backdrop-filter: blur(10px) saturate(150%);
   border: 1px solid var(--glass-border);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 4px 14px rgba(2, 6, 18, 0.20);
+  box-shadow: var(--elev-2);
 }
 
 :root[data-theme] .top-nav .nav-button:not(.primary):hover {

@@ -33,17 +33,17 @@
   border: 0;
   background: transparent;
   color: var(--text);
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   outline: none;
 }
 
 .cmdk-input-row kbd {
   padding: 1px 6px;
   border: 1px solid var(--line);
-  border-radius: 5px;
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
   color: var(--text-muted);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   font-family: var(--font-mono);
 }
 
@@ -68,7 +68,7 @@
   color: var(--text);
   text-align: left;
   cursor: pointer;
-  font-size: 0.88rem;
+  font-size: var(--fs-body);
 }
 
 .cmdk-item.is-active {
@@ -92,12 +92,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   color: var(--text-muted);
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
 }
 
 .cmdk-empty {
   padding: 22px;
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
 }

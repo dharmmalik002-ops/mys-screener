@@ -140,7 +140,7 @@ export function SymbolGridModal({ title, subtitle, items, market, onOpenSymbolCh
                         </defs>
                         <YAxis domain={["dataMin", "dataMax"]} hide />
                         <Tooltip
-                          contentStyle={{ fontSize: 11, padding: "2px 6px" }}
+                          contentStyle={{ fontSize: "var(--fs-tiny)", padding: "2px 6px" }}
                           labelFormatter={() => ""}
                           formatter={(v) => [Number(v).toFixed(2), "Close"]}
                         />

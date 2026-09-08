@@ -550,7 +550,7 @@ function EquityCurve({
         : `₹${(val / 1000).toFixed(0)}k`;
       return `
         <line x1="${pad.l}" y1="${y.toFixed(1)}" x2="${W - pad.r}" y2="${y.toFixed(1)}" stroke="var(--line)" stroke-width="1" stroke-dasharray="${isStart ? "0" : "3 3"}" opacity="${isStart ? "0.6" : "0.45"}"/>
-        <text x="${pad.l - 8}" y="${y.toFixed(1)}" fill="var(--text-muted)" font-size="10.5" text-anchor="end" dominant-baseline="middle">${label}</text>
+        <text x="${pad.l - 8}" y="${y.toFixed(1)}" fill="var(--text-muted)" style="font-size: var(--fs-micro)" text-anchor="end" dominant-baseline="middle">${label}</text>
       `;
     }).join("");
 
@@ -594,7 +594,7 @@ function EquityCurve({
       <rect x="${pad.l}" y="${pad.t}" width="${innerW}" height="${innerH}" fill="none"/>
       ${yTickLines}
       <line x1="${pad.l}" y1="${startY.toFixed(1)}" x2="${(W - pad.r).toFixed(1)}" y2="${startY.toFixed(1)}" stroke="var(--text-muted)" stroke-width="1" stroke-dasharray="2 4" opacity="0.55"/>
-      <text x="${(W - pad.r - 4).toFixed(1)}" y="${(startY - 4).toFixed(1)}" fill="var(--text-muted)" font-size="9.5" text-anchor="end">Start ₹${(startEquity / 1000).toFixed(0)}k</text>
+      <text x="${(W - pad.r - 4).toFixed(1)}" y="${(startY - 4).toFixed(1)}" fill="var(--text-muted)" style="font-size: var(--fs-nano)" text-anchor="end">Start ₹${(startEquity / 1000).toFixed(0)}k</text>
       <g clip-path="url(#eqClip)">
         <path d="${areaPath}" fill="url(#eqGrad)"/>
         <path d="${linePath}" fill="none" stroke="url(#eqLine)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round" filter="url(#eqGlow)"/>
@@ -3053,7 +3053,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 onClick={() => openEditSLModal(p.symbol)}
                 title="Edit stop loss (applies to total quantity)"
                 aria-label="Edit stop loss"
-                style={{ marginLeft: 6, padding: "0 6px", fontSize: 11, lineHeight: "16px", border: "1px solid var(--border, #4a5568)", borderRadius: 4, background: "transparent", color: "inherit", cursor: "pointer" }}
+                style={{ marginLeft: 6, padding: "0 6px", fontSize: "var(--fs-tiny)", lineHeight: "16px", border: "1px solid var(--border, #4a5568)", borderRadius: 4, background: "transparent", color: "inherit", cursor: "pointer" }}
               >
                 ✎
               </button>
@@ -3098,7 +3098,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         {canLockBreakeven && (
           <div
             style={{
-              fontSize: 11,
+              fontSize: "var(--fs-tiny)",
               marginTop: 6,
               padding: "6px 8px",
               borderRadius: 4,
@@ -3813,7 +3813,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                     </select>
                   </div>
                   <div className="tj-form-field"><label>Quantity *</label><input className="tj-input" type="number" required value={entryQty} onChange={e => setEntryQty(e.target.value)} /></div>
-                  <div className="tj-form-field"><label>Price ₹ {fetchingEntryPrice ? <span style={{fontWeight:400,fontSize:11,color:"var(--clr-accent)"}}>fetching…</span> : "*"}</label><input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} placeholder={fetchingEntryPrice ? "loading…" : ""} /></div>
+                  <div className="tj-form-field"><label>Price ₹ {fetchingEntryPrice ? <span style={{fontWeight:400,fontSize:"var(--fs-tiny)",color:"var(--clr-accent)"}}>fetching…</span> : "*"}</label><input className="tj-input" type="number" step="any" required value={entryPrice} onChange={e => setEntryPrice(e.target.value)} placeholder={fetchingEntryPrice ? "loading…" : ""} /></div>
                   <div className="tj-form-field"><label>Date *</label><input className="tj-input" type="date" required value={entryDate} onChange={e => setEntryDate(e.target.value)} /></div>
                   <div className="tj-form-field">
                     <label>Setup</label>
@@ -4419,7 +4419,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             {modal.type === "edit-open" && (
               <>
                 <div className="tj-modal-title">Review Position: {modal.symbol}</div>
-                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+                <div style={{ fontSize: "var(--fs-small)", opacity: 0.75, marginBottom: 10 }}>
                   Stop loss and setup type apply to the total open quantity
                   ({Math.round(fifo.openPositions.find(p => p.symbol === modal.symbol)?.qty || 0)} shares).
                 </div>
@@ -4452,7 +4452,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
             {modal.type === "edit-sl" && (
               <>
                 <div className="tj-modal-title">Update Stop Loss · {modal.symbol}</div>
-                <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 10 }}>
+                <div style={{ fontSize: "var(--fs-small)", opacity: 0.75, marginBottom: 10 }}>
                   Applies to total open quantity
                   ({Math.round(fifo.openPositions.find(p => p.symbol === modal.symbol)?.qty || 0)} shares).
                   Risk recalculates as (Avg entry − SL) × total quantity.

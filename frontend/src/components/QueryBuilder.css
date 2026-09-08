@@ -16,7 +16,7 @@
   gap: 10px;
   padding: 14px 16px;
   border: 1px solid var(--qb-border);
-  border-radius: 14px;
+  border-radius: var(--radius-xl);
   background: var(--qb-surface);
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
   color: var(--qb-text);
@@ -37,7 +37,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.86rem;
+  font-size: var(--fs-body);
 }
 
 .qb-head strong {
@@ -51,13 +51,13 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: rgba(99, 102, 241, 0.14);
   color: var(--qb-primary);
 }
 
 .qb-head-meta {
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   color: var(--qb-text-soft);
   font-weight: 500;
   margin-left: 2px;
@@ -67,10 +67,10 @@
   margin-left: auto;
   padding: 4px 10px;
   border: 1px solid var(--qb-border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background: var(--qb-bg);
   color: var(--qb-text-soft);
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease, color var(--dur-fast) ease;
@@ -96,7 +96,7 @@
   gap: 10px;
   padding: 12px;
   border: 1.5px dashed rgba(99, 102, 241, 0.32);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: rgba(99, 102, 241, 0.04);
 }
 
@@ -123,12 +123,12 @@
   justify-content: center;
   min-width: 44px;
   padding: 4px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border: 0;
   background: var(--qb-primary);
   color: #fff;
   font-family: inherit;
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 700;
   letter-spacing: 0.06em;
   cursor: pointer;
@@ -147,7 +147,7 @@
 }
 
 .qb-group-title {
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   color: var(--qb-text-soft);
 }
@@ -161,7 +161,7 @@
   height: 22px;
   padding: 0;
   border: 0;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   background: transparent;
   color: var(--qb-text-soft);
   cursor: pointer;
@@ -188,10 +188,10 @@
   gap: 6px;
   padding: 4px 4px 4px 10px;
   border: 1px solid rgba(99, 102, 241, 0.34);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.04));
   color: var(--qb-text);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 500;
   white-space: nowrap;
   transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease;
@@ -243,11 +243,11 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--qb-bg);
   border: 1px dashed var(--qb-border);
   color: var(--qb-text-soft);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .qb-empty-sub {
@@ -269,11 +269,11 @@
   gap: 6px;
   padding: 7px 12px;
   border: 1px dashed rgba(99, 102, 241, 0.4);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: var(--qb-bg);
   color: var(--qb-primary-strong);
   font-family: inherit;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
   transition: background var(--dur-fast) ease, border-color var(--dur-fast) ease;

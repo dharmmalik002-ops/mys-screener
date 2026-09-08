@@ -18,7 +18,7 @@
   flex-direction: column;
   background: var(--surface, #0d1117);
   border: 1px solid var(--line);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   padding: 18px 20px 20px;
 }
 
@@ -31,19 +31,19 @@
   flex: 0 0 auto;
 }
 
-.sgm-head h2 { margin: 0; font-size: 1.1rem; }
-.sgm-head p { margin: 2px 0 0; font-size: 0.8rem; color: var(--text-muted); }
+.sgm-head h2 { margin: 0; font-size: var(--fs-title); }
+.sgm-head p { margin: 2px 0 0; font-size: var(--fs-base); color: var(--text-muted); }
 
 .sgm-controls { display: flex; align-items: center; gap: 10px; }
 
 .sgm-tf { display: flex; gap: 4px; }
 .sgm-tf button {
   padding: 4px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: transparent;
   color: inherit;
-  font-size: 0.75rem;
+  font-size: var(--fs-small);
   cursor: pointer;
 }
 .sgm-tf button.active { background: rgba(8, 153, 129, 0.14); border-color: rgba(8, 153, 129, 0.5); }
@@ -52,7 +52,7 @@
   border: none;
   background: none;
   color: var(--text-muted);
-  font-size: 1.6rem;
+  font-size: var(--fs-display);
   line-height: 1;
   cursor: pointer;
 }
@@ -72,7 +72,7 @@
 .sgm-cell {
   text-align: left;
   border: 1px solid var(--line);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   background: transparent;
   color: inherit;
   padding: 8px 10px;
@@ -85,13 +85,13 @@
 .sgm-cell:hover { border-color: rgba(8, 153, 129, 0.5); }
 
 .sgm-cell-head { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
-.sgm-cell-head strong { font-size: 0.86rem; }
+.sgm-cell-head strong { font-size: var(--fs-body); }
 
 .sgm-badge {
-  font-size: 0.66rem;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   padding: 1px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line);
 }
 .sgm-badge.pos { color: var(--candle-up); border-color: rgba(8, 153, 129, 0.5); }
@@ -99,6 +99,6 @@
 .sgm-badge.muted { color: var(--text-muted); }
 
 .sgm-chart { height: 72px; }
-.sgm-nochart { height: 72px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 0.75rem; }
+.sgm-nochart { height: 72px; display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: var(--fs-small); }
 
-.sgm-note { font-size: 0.72rem; color: var(--text-muted); line-height: 1.4; }
+.sgm-note { font-size: var(--fs-small); color: var(--text-muted); line-height: 1.4; }

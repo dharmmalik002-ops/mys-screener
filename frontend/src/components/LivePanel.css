@@ -15,7 +15,7 @@
 }
 
 .live-label {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -25,7 +25,7 @@
 
 .live-muted {
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .live-chip {
@@ -33,11 +33,11 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   border: 1px solid var(--line);
   background: transparent;
   color: inherit;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   cursor: pointer;
   transition: border-color var(--dur-fast) ease-out, background var(--dur-fast) ease-out;
 }
@@ -60,7 +60,7 @@
   background: none;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   padding: 0 0 0 2px;
 }
 
@@ -72,20 +72,20 @@
 .live-manual input {
   width: 220px;
   padding: 6px 10px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: transparent;
   color: inherit;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .live-manual button {
   padding: 6px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: transparent;
   color: inherit;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
   cursor: pointer;
 }
 
@@ -105,7 +105,7 @@
   border-top: 1px solid var(--line);
   border-bottom: 1px solid var(--line);
   margin-bottom: 10px;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .live-criteria label {
@@ -117,16 +117,16 @@
 .live-criteria input[type="number"] {
   width: 58px;
   padding: 3px 6px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   border: 1px solid var(--line);
   background: transparent;
   color: inherit;
-  font-size: 0.8rem;
+  font-size: var(--fs-base);
 }
 
 .live-status {
   margin-left: auto;
-  font-size: 0.74rem;
+  font-size: var(--fs-small);
   color: var(--text-muted);
 }
 
@@ -135,11 +135,11 @@
 
 .live-banner {
   padding: 8px 12px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: rgba(139, 148, 158, 0.08);
   color: var(--text-muted);
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
   margin-bottom: 10px;
 }
 
@@ -153,7 +153,7 @@
 }
 
 .live-triggered-head {
-  font-size: 0.72rem;
+  font-size: var(--fs-small);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -173,7 +173,7 @@
   align-items: flex-start;
   gap: 2px;
   padding: 8px 12px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   border: 1px solid rgba(8, 153, 129, 0.55);
   background: rgba(8, 153, 129, 0.1);
   color: inherit;
@@ -181,8 +181,8 @@
   animation: live-flash 900ms ease-out;
 }
 
-.live-trigger-card strong { font-size: 0.88rem; }
-.live-trigger-card small { color: var(--text-muted); font-size: 0.72rem; }
+.live-trigger-card strong { font-size: var(--fs-body); }
+.live-trigger-card small { color: var(--text-muted); font-size: var(--fs-small); }
 
 @keyframes live-flash {
   0% { box-shadow: 0 0 0 0 rgba(8, 153, 129, 0.6); }
@@ -193,7 +193,7 @@
   padding: 44px 12px;
   text-align: center;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: var(--fs-body);
   display: grid;
   justify-items: center;
   gap: 6px;
@@ -212,7 +212,7 @@
 }
 
 .live-empty-title {
-  font-size: 0.95rem;
+  font-size: var(--fs-lead);
   font-weight: 700;
   color: var(--text);
 }
@@ -224,12 +224,12 @@
 .live-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
 }
 
 .live-table th {
   text-align: left;
-  font-size: 0.7rem;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -260,17 +260,17 @@
   font-weight: 700;
   cursor: pointer;
   padding: 0;
-  font-size: 0.84rem;
+  font-size: var(--fs-base);
 }
 
 .live-symbol:hover { text-decoration: underline; }
 
 .live-eod-tag {
   margin-left: 6px;
-  font-size: 0.62rem;
+  font-size: var(--fs-micro);
   color: var(--text-muted);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   padding: 1px 4px;
   vertical-align: middle;
 }
@@ -288,7 +288,7 @@
   position: relative;
   display: block;
   height: 4px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--line);
 }
 
@@ -302,9 +302,9 @@
   background: var(--candle-up);
 }
 
-.live-sort { display: inline-flex; align-items: center; gap: 4px; font-size: 0.74rem; color: var(--text-muted); }
+.live-sort { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-small); color: var(--text-muted); }
 .live-sort button {
-  padding: 2px 8px; border-radius: 6px; border: 1px solid var(--line);
-  background: transparent; color: inherit; font-size: 0.72rem; cursor: pointer;
+  padding: 2px 8px; border-radius: var(--radius-xs); border: 1px solid var(--line);
+  background: transparent; color: inherit; font-size: var(--fs-small); cursor: pointer;
 }
 .live-sort button.active { background: rgba(8,153,129,0.14); border-color: rgba(8,153,129,0.5); }

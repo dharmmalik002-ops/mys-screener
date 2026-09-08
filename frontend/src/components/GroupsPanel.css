@@ -16,8 +16,8 @@
   --gp-violet: var(--accent);
   --gp-blue: #3b82f6;
   --gp-indigo: var(--accent);
-  --gp-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
-  --gp-shadow-md: 0 2px 6px rgba(15, 23, 42, 0.05), 0 12px 32px rgba(15, 23, 42, 0.06);
+  --gp-shadow-sm: var(--elev-1);
+  --gp-shadow-md: var(--elev-2);
 }
 
 /* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
@@ -59,9 +59,9 @@ body.dark .groups-panel-pro {
 .gp-search[type="search"] {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 9px 14px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--gp-text);
   transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
 }
@@ -70,7 +70,7 @@ body.dark .groups-panel-pro {
   outline: none;
   border-color: var(--gp-indigo);
   background: var(--gp-card-bg);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16);
+  box-shadow: var(--focus-ring);
 }
 
 .gp-search-icon {
@@ -79,7 +79,7 @@ body.dark .groups-panel-pro {
   top: 50%;
   transform: translateY(-50%);
   opacity: 0.55;
-  font-size: 13px;
+  font-size: var(--fs-base);
   pointer-events: none;
 }
 
@@ -87,9 +87,9 @@ body.dark .groups-panel-pro {
   width: 100%;
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 9px 14px 9px 36px;
-  font-size: 13px;
+  font-size: var(--fs-base);
   color: var(--gp-text);
   transition: border-color var(--dur-fast), box-shadow var(--dur-fast), background var(--dur-fast);
 }
@@ -98,7 +98,7 @@ body.dark .groups-panel-pro {
   outline: none;
   border-color: var(--gp-indigo);
   background: var(--gp-card-bg);
-  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.16);
+  box-shadow: var(--focus-ring);
 }
 
 .gp-pill-row {
@@ -106,15 +106,15 @@ body.dark .groups-panel-pro {
   gap: 4px;
   padding: 3px;
   background: rgba(99, 102, 241, 0.08);
-  border-radius: 11px;
+  border-radius: var(--radius-md);
 }
 
 .gp-pill {
   border: 0;
   background: transparent;
   padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-small);
   font-weight: 600;
   color: var(--gp-muted);
   cursor: pointer;
@@ -128,7 +128,7 @@ body.dark .groups-panel-pro {
 .gp-pill.active {
   background: #fff;
   color: #4338ca;
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  box-shadow: var(--elev-1);
 }
 
 :root[data-theme="dark"] .gp-pill.active,
@@ -142,7 +142,7 @@ body.dark .gp-pill.active {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--gp-muted);
@@ -152,9 +152,9 @@ body.dark .gp-pill.active {
 .gp-sort select {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 7px 10px;
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   font-weight: 600;
   color: var(--gp-text);
   cursor: pointer;
@@ -163,9 +163,9 @@ body.dark .gp-pill.active {
 .gp-select,
 .gp-export-btn {
   border: 1px solid var(--gp-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   padding: 7px 10px;
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   font-weight: 700;
   color: var(--gp-text);
   background: var(--gp-card-bg-soft);
@@ -240,10 +240,10 @@ body.dark .gp-pill.active {
 .gp-kpi-icon {
   width: 40px;
   height: 40px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   display: grid;
   place-items: center;
-  font-size: 18px;
+  font-size: var(--fs-title);
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
   flex: none;
@@ -259,7 +259,7 @@ body.dark .gp-pill.active {
 }
 
 .gp-kpi-label {
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -268,7 +268,7 @@ body.dark .gp-pill.active {
 }
 
 .gp-kpi-value {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--gp-text);
@@ -280,12 +280,12 @@ body.dark .gp-pill.active {
 }
 
 .gp-kpi-value-sm {
-  font-size: 14.5px;
+  font-size: var(--fs-body);
   font-weight: 700;
 }
 
 .gp-kpi-sub {
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -312,7 +312,7 @@ body.dark .gp-pill.active {
 
 .gp-card-head h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: -0.01em;
   color: var(--gp-text);
@@ -320,7 +320,7 @@ body.dark .gp-pill.active {
 
 .gp-card-sub {
   margin: 3px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-small);
   color: var(--gp-muted);
 }
 
@@ -329,15 +329,15 @@ body.dark .gp-pill.active {
   gap: 2px;
   padding: 3px;
   background: var(--gp-card-bg-soft);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
 }
 
 .gp-tab {
   border: 0;
   background: transparent;
   padding: 5px 11px;
-  border-radius: 8px;
-  font-size: 11.5px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-tiny);
   font-weight: 600;
   color: var(--gp-muted);
   cursor: pointer;
@@ -356,16 +356,16 @@ body.dark .gp-pill.active {
   padding: 32px 20px;
   text-align: center;
   color: var(--gp-muted);
-  font-size: 13px;
+  font-size: var(--fs-base);
   border: 1px dashed var(--gp-border);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--gp-card-bg-soft);
 }
 
 /* ----- treemap ----- */
 .gp-treemap-wrap {
   width: 100%;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   overflow: hidden;
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
@@ -382,14 +382,14 @@ body.dark .gp-pill.active {
 }
 
 .gp-treemap-label {
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   fill: #0f172a;
   pointer-events: none;
 }
 
 .gp-treemap-pct {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   fill: rgba(15, 23, 42, 0.7);
   pointer-events: none;
@@ -412,7 +412,7 @@ body.dark .gp-treemap-pct {
   gap: 14px;
   flex-wrap: wrap;
   margin-top: 10px;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   color: var(--gp-muted);
   font-weight: 600;
 }
@@ -426,7 +426,7 @@ body.dark .gp-treemap-pct {
 .gp-swatch {
   width: 14px;
   height: 14px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   display: inline-block;
 }
 
@@ -441,13 +441,13 @@ body.dark .gp-treemap-pct {
   width: 100%;
   height: 230px;
   background: var(--gp-card-bg-soft);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   padding: 8px;
   border: 1px solid var(--gp-border);
 }
 
 .gp-trend-axis {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   fill: var(--gp-muted);
   font-weight: 600;
 }
@@ -465,15 +465,15 @@ body.dark .gp-treemap-pct {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);
   padding: 5px 10px;
-  border-radius: 999px;
-  font-size: 11.5px;
+  border-radius: var(--radius-pill);
+  font-size: var(--fs-tiny);
   font-weight: 600;
 }
 
 .gp-trend-swatch {
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   display: inline-block;
 }
 
@@ -487,13 +487,13 @@ body.dark .gp-treemap-pct {
 
 .gp-trend-legend-pct {
   font-weight: 700;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
 }
 
 /* ----- master table ----- */
 .gp-table-scroll {
   overflow-x: auto;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--gp-border);
 }
 
@@ -502,13 +502,13 @@ body.dark .gp-treemap-pct {
   border-collapse: separate;
   border-spacing: 0;
   background: var(--gp-card-bg);
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 
 .gp-table thead th {
   background: var(--gp-card-bg-soft);
   color: var(--gp-muted);
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -561,27 +561,27 @@ body.dark .gp-treemap-pct {
   height: 28px;
   border-radius: var(--radius-sm);
   font-weight: 700;
-  font-size: 12.5px;
+  font-size: var(--fs-small);
 }
 
 .gp-rank-gold {
   background: linear-gradient(135deg, #fde68a, #f59e0b);
   color: #78350f;
-  font-size: 18px;
+  font-size: var(--fs-title);
   box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
 }
 
 .gp-rank-silver {
   background: linear-gradient(135deg, #e5e7eb, #9ca3af);
   color: #1f2937;
-  font-size: 18px;
+  font-size: var(--fs-title);
   box-shadow: 0 4px 10px rgba(156, 163, 175, 0.25);
 }
 
 .gp-rank-bronze {
   background: linear-gradient(135deg, #fed7aa, #c2410c);
   color: #431407;
-  font-size: 18px;
+  font-size: var(--fs-title);
   box-shadow: 0 4px 10px rgba(194, 65, 12, 0.28);
 }
 
@@ -589,7 +589,7 @@ body.dark .gp-treemap-pct {
   background: var(--gp-card-bg-soft);
   color: var(--gp-muted);
   border: 1px solid var(--gp-border);
-  font-size: 13px;
+  font-size: var(--fs-base);
 }
 
 /* group name button */
@@ -615,14 +615,14 @@ body.dark .gp-treemap-pct {
 
 .gp-group-name-btn strong {
   color: var(--gp-text);
-  font-size: 13.5px;
+  font-size: var(--fs-base);
   font-weight: 700;
   letter-spacing: -0.005em;
 }
 
 .gp-group-name-btn small {
   color: var(--gp-muted);
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   margin-top: 2px;
 }
 
@@ -632,7 +632,7 @@ body.dark .gp-treemap-pct {
 
 .gp-group-grid-toggle {
   border: 1px solid var(--gp-border);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   width: 38px;
   height: 34px;
   color: var(--gp-muted);
@@ -660,11 +660,11 @@ body.dark .gp-treemap-pct {
 .gp-score-chip {
   display: inline-block;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(99, 102, 241, 0.15));
   color: #4338ca;
   font-weight: 700;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 
 :root[data-theme="dark"] .gp-score-chip,
@@ -677,11 +677,11 @@ body.dark .gp-score-chip {
 .gp-emerging {
   flex-shrink: 0;
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(5, 150, 105, 0.16));
   color: #047857;
   font-weight: 700;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.04em;
   cursor: default;
@@ -699,7 +699,7 @@ body.dark .gp-emerging {
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 700;
 }
 
@@ -714,7 +714,7 @@ body.dark .gp-emerging {
 
 .gp-volbars > span {
   flex: 1;
-  border-radius: 2px 2px 0 0;
+  border-radius: var(--radius-xs) var(--radius-xs) 0 0;
   min-height: 3px;
 }
 
@@ -777,7 +777,7 @@ body.dark .gp-emerging {
   place-items: center;
   background: linear-gradient(135deg, var(--accent), var(--accent-strong));
   color: #fff;
-  font-size: 8.5px;
+  font-size: var(--fs-nano);
   font-weight: 700;
 }
 
@@ -790,14 +790,14 @@ body.dark .gp-emerging {
 }
 
 .gp-stock-sym {
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   color: var(--gp-text);
   letter-spacing: 0.02em;
 }
 
 .gp-stock-chg {
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 600;
 }
 
@@ -807,10 +807,10 @@ body.dark .gp-emerging {
   min-width: 24px;
   height: 20px;
   padding: 0 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: grid;
   place-items: center;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: #fff;
@@ -830,7 +830,7 @@ body.dark .gp-emerging {
 
 .gp-lead-price {
   margin-top: 4px;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   color: var(--gp-muted);
 }
 
@@ -840,7 +840,7 @@ body.dark .gp-emerging {
 
 .gp-muted {
   color: var(--gp-muted);
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 
 /* ----- responsive ----- */
@@ -868,7 +868,7 @@ body.dark .gp-emerging {
     grid-template-columns: 1fr;
   }
   .gp-kpi-value {
-    font-size: 18px;
+    font-size: var(--fs-title);
   }
   .gp-trend-svg {
     height: 180px;
@@ -880,7 +880,7 @@ body.dark .gp-emerging {
 .gp-rank-delta {
   display: inline-block;
   margin-left: 5px;
-  font-size: 0.66rem;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   vertical-align: middle;
@@ -894,7 +894,7 @@ body.dark .gp-emerging {
 .gp-breadth {
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: var(--fs-small);
 }
 
 .gp-breadth.hi { color: var(--gp-green, var(--positive)); }

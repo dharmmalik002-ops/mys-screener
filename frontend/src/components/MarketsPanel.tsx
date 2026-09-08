@@ -1041,10 +1041,10 @@ export function MarketsPanel({
               <ResponsiveContainer width="100%" height={220}>
                 <LineChart data={series} margin={{ top: 8, right: 12, bottom: 4, left: -18 }}>
                   <CartesianGrid stroke="var(--line)" strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: "var(--text-muted)" }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: "var(--text-muted)" }} />
-                  <Tooltip contentStyle={{ fontSize: 12 }} />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <XAxis dataKey="date" tick={{ fontSize: "var(--fs-tiny)", fill: "var(--text-muted)" }} />
+                  <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-tiny)", fill: "var(--text-muted)" }} />
+                  <Tooltip contentStyle={{ fontSize: "var(--fs-small)" }} />
+                  <Legend wrapperStyle={{ fontSize: "var(--fs-small)" }} />
                   {/* isAnimationActive=false: the draw-in animation freezes mid-way
                       when rAF is throttled (background tab, battery saver), leaving
                       a stuck stroke-dasharray and an apparently empty chart. */}

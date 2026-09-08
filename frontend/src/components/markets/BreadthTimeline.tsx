@@ -175,7 +175,7 @@ export function BreadthTimeline({ points, universeLabel }: Props) {
             <CartesianGrid strokeDasharray="3 3" stroke="var(--line)" vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "var(--text-muted)" }}
+              tick={{ fontSize: "var(--fs-micro)", fill: "var(--text-muted)" }}
               minTickGap={48}
               tickLine={false}
               axisLine={{ stroke: "var(--line)" }}
@@ -183,7 +183,7 @@ export function BreadthTimeline({ points, universeLabel }: Props) {
             <YAxis
               domain={[0, 100]}
               ticks={[0, 25, 50, 75, 100]}
-              tick={{ fontSize: 10, fill: "var(--text-muted)" }}
+              tick={{ fontSize: "var(--fs-micro)", fill: "var(--text-muted)" }}
               tickLine={false}
               axisLine={false}
               unit="%"
@@ -193,7 +193,7 @@ export function BreadthTimeline({ points, universeLabel }: Props) {
                 background: "var(--card-flat)",
                 border: "1px solid var(--line-strong)",
                 borderRadius: 8,
-                fontSize: 12,
+                fontSize: "var(--fs-small)",
               }}
               labelStyle={{ color: "var(--text-muted)" }}
             />

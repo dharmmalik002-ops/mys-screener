@@ -92,7 +92,7 @@ html .mobile-tabbar {
   }
 
   html .ticker-ribbon-item {
-    font-size: 0.68rem;
+    font-size: var(--fs-tiny);
   }
 
   html .top-nav {
@@ -109,8 +109,8 @@ html .mobile-tabbar {
   html .brand-mark {
     width: 34px;
     height: 34px;
-    border-radius: 10px;
-    font-size: 0.82rem;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-base);
   }
 
   /* "NSE / BSE Stock Scanner" is the page title's own subtitle — pure
@@ -120,7 +120,7 @@ html .mobile-tabbar {
   }
 
   html .brand-cluster h1 {
-    font-size: 0.98rem;
+    font-size: var(--fs-lead);
   }
 
   html .nav-controls {
@@ -144,7 +144,7 @@ html .mobile-tabbar {
     min-width: 0;
     /* 16px exactly: anything smaller and iOS Safari zooms the viewport on
        focus and offers no way back. */
-    font-size: 16px;
+    font-size: var(--fs-lead);
   }
 
   html .nav-search-hint {
@@ -161,7 +161,7 @@ html .mobile-tabbar {
   html .top-nav .status-pill {
     padding: 5px 8px;
     gap: 6px;
-    font-size: 0.72rem;
+    font-size: var(--fs-small);
   }
 
   html .top-nav .icon-btn {
@@ -205,7 +205,7 @@ html .mobile-tabbar {
     background: color-mix(in srgb, var(--surface-strong) 94%, var(--bg));
     backdrop-filter: blur(18px) saturate(140%);
     -webkit-backdrop-filter: blur(18px) saturate(140%);
-    box-shadow: 0 -6px 24px rgba(2, 5, 15, 0.28);
+    box-shadow: var(--elev-2);
   }
 
   html .mobile-tab {
@@ -216,11 +216,11 @@ html .mobile-tabbar {
     min-height: 46px;
     padding: 4px 2px;
     border: 0;
-    border-radius: 10px;
+    border-radius: var(--radius-md);
     background: transparent;
     color: var(--text-muted);
     font-family: inherit;
-    font-size: 0.6rem;
+    font-size: var(--fs-micro);
     font-weight: 600;
     letter-spacing: 0.01em;
     line-height: 1;
@@ -299,7 +299,7 @@ html .mobile-tabbar {
   }
 
   html .panel h2 {
-    font-size: 1.05rem;
+    font-size: var(--fs-lead);
   }
 
   /* Anything that lays out as "auto-fit, minmax(>=280px, 1fr)" is a single
@@ -344,7 +344,7 @@ html .mobile-tabbar {
   html input:not([type]),
   html textarea,
   html select {
-    font-size: 16px;
+    font-size: var(--fs-lead);
   }
 
   /* Apple's minimum comfortable target is 44px; 38px plus the surrounding
@@ -482,14 +482,14 @@ html .mobile-tabbar {
   html .wl-card .wl-row > .st-price {
     order: 1;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: var(--fs-body);
   }
 
   html .st-card .st-row > .st-change,
   html .wl-card .wl-row > .st-change {
     order: 2;
     text-align: left;
-    font-size: 0.9rem;
+    font-size: var(--fs-body);
   }
 
   html .st-card .st-row > .st-spark {
@@ -511,7 +511,7 @@ html .mobile-tabbar {
   html .wl-card .wl-row > .wl-rank {
     order: 4;
     justify-content: flex-start;
-    font-size: 0.76rem;
+    font-size: var(--fs-small);
   }
 
   html .wl-card .wl-row > .wl-row-checkbox {
@@ -583,7 +583,7 @@ html .mobile-tabbar {
   html .live-table,
   html .rb-table,
   html .tj-recent-table {
-    font-size: 12px;
+    font-size: var(--fs-small);
   }
 
   html .gp-table thead th,
@@ -656,7 +656,7 @@ html .mobile-tabbar {
     flex: 0 0 auto;
     width: 28px;
     height: 28px;
-    border-radius: 8px;
+    border-radius: var(--radius-sm);
   }
 
   /* An "Emerging" chip beside a 110px name would leave nothing for the name;
@@ -776,11 +776,11 @@ html .mobile-tabbar {
     min-height: 38px;
     padding: 8px 14px;
     border: 1px solid var(--line-strong);
-    border-radius: 999px;
+    border-radius: var(--radius-pill);
     background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
     color: var(--text);
     font: inherit;
-    font-size: 0.82rem;
+    font-size: var(--fs-base);
     font-weight: 600;
   }
 
@@ -843,7 +843,7 @@ html .mobile-tabbar {
   /* One line, ellipsised: the full name wrapped to three lines and pushed the
      chart down. The ticker is right above it in the kicker. */
   html .chart-modal .chart-panel .panel-header h2 {
-    font-size: 1.02rem;
+    font-size: var(--fs-lead);
     line-height: 1.3;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -915,7 +915,7 @@ html .mobile-tabbar {
   }
 
   html .chart-stage-label {
-    font-size: 0.68rem;
+    font-size: var(--fs-tiny);
   }
 
   html .chart-summary-strip {
@@ -981,7 +981,7 @@ html .mobile-tabbar {
   }
 
   html .cmdk-input-row input {
-    font-size: 16px;
+    font-size: var(--fs-lead);
   }
 
   html .cmdk-list {
@@ -1240,7 +1240,7 @@ html .mobile-tabbar {
   }
 
   html .chart-modal .chart-panel .panel-header h2 {
-    font-size: 0.92rem;
+    font-size: var(--fs-body);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1309,7 +1309,7 @@ html .mobile-tabbar {
 
   html .mobile-tab {
     min-height: 36px;
-    font-size: 0.55rem;
+    font-size: var(--fs-nano);
   }
 }
 
@@ -1335,7 +1335,7 @@ html .mobile-tabbar {
   html .chart-fs-nav-button {
     width: 54px;
     height: 54px;
-    border-radius: 16px;
+    border-radius: var(--radius-xl);
   }
 
   html .chart-fs-exit {
@@ -1374,7 +1374,7 @@ html .mobile-tabbar {
   /* The hint boxes are overlays; in full screen they cover the top of the
      chart the mode exists to show. */
   html .chart-panel.chart-fullscreen .chart-stage-label {
-    font-size: 0.66rem;
+    font-size: var(--fs-tiny);
     padding: 4px 8px;
   }
 }
@@ -1424,11 +1424,11 @@ html .mobile-tabbar {
   }
 
   html .chart-panel.chart-fullscreen .chart-fs-title strong {
-    font-size: 0.78rem;
+    font-size: var(--fs-small);
   }
 
   html .chart-panel.chart-fullscreen .chart-fs-title span {
-    font-size: 0.72rem;
+    font-size: var(--fs-small);
   }
 
   html .chart-panel.chart-fullscreen .chart-stage-meta {
@@ -1438,7 +1438,7 @@ html .mobile-tabbar {
 
   html .chart-panel.chart-fullscreen .chart-stage-label {
     padding: 3px 7px;
-    font-size: 0.64rem;
+    font-size: var(--fs-micro);
   }
 }
 

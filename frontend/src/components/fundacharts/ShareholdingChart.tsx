@@ -33,7 +33,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (!active || !payload?.length) return null;
   const { name, value } = payload[0];
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: "0.77rem" }}>
+    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "8px 12px", fontSize: "var(--fs-small)" }}>
       <span style={{ color: "#fff", fontWeight: 700 }}>{name}: </span>
       <span style={{ color: payload[0].payload.color || "#fff", fontWeight: 700 }}>{value?.toFixed(1)}%</span>
     </div>
@@ -43,7 +43,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 const CustomBarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "0.77rem" }}>
+    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
       <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
@@ -61,7 +61,7 @@ export function ShareholdingChart({ data }: Props) {
 
   if (!data || data.length === 0) {
     return (
-      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "0.8rem" }}>
+      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
         No shareholding data available
       </div>
     );
@@ -95,13 +95,13 @@ export function ShareholdingChart({ data }: Props) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 8 }}>
-        <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+        <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
           Shareholding Pattern — {latest.period}
         </span>
         <div style={{ display: "flex", gap: 4 }}>
           {(["bar", "area"] as const).map(v => (
             <button key={v} onClick={() => setView(v)} style={{
-              fontSize: "0.7rem", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
+              fontSize: "var(--fs-tiny)", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
               background: view === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.07)",
               border: `1px solid ${view === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.12)"}`,
               color: view === v ? "#fff" : "rgba(255,255,255,0.6)",
@@ -140,12 +140,12 @@ export function ShareholdingChart({ data }: Props) {
                 <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                     <div style={{ width: 8, height: 8, borderRadius: "50%", background: COLORS[k], flexShrink: 0 }} />
-                    <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.7)" }}>{LABELS[k]}</span>
+                    <span style={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.7)" }}>{LABELS[k]}</span>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <span style={{ fontSize: "0.75rem", color: COLORS[k], fontWeight: 700, fontFamily: "monospace" }}>{val.toFixed(1)}%</span>
+                    <span style={{ fontSize: "var(--fs-small)", color: COLORS[k], fontWeight: 700, fontFamily: "monospace" }}>{val.toFixed(1)}%</span>
                     {arrow && d != null && Math.abs(d) > 0.05 && (
-                      <span style={{ fontSize: "0.65rem", color: dColor, fontWeight: 700 }}>{arrow}{Math.abs(d).toFixed(1)}</span>
+                      <span style={{ fontSize: "var(--fs-micro)", color: dColor, fontWeight: 700 }}>{arrow}{Math.abs(d).toFixed(1)}</span>
                     )}
                   </div>
                 </div>
@@ -160,10 +160,10 @@ export function ShareholdingChart({ data }: Props) {
             {view === "bar" ? (
               <BarChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                <XAxis dataKey="period" tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
                 <RTooltip content={<CustomBarTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }} />
+                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)" }} />
                 {KEYS.map(k => (
                   <Bar key={k} dataKey={k} name={LABELS[k]} stackId="a" fill={COLORS[k]} />
                 ))}
@@ -171,10 +171,10 @@ export function ShareholdingChart({ data }: Props) {
             ) : (
               <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: -15 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-                <XAxis dataKey="period" tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-                <YAxis domain={[0, 100]} tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+                <YAxis domain={[0, 100]} tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
                 <RTooltip content={<CustomBarTooltip />} />
-                <Legend wrapperStyle={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }} />
+                <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)" }} />
                 {KEYS.map(k => (
                   <Area key={k} type="monotone" dataKey={k} name={LABELS[k]}
                     stackId="a" fill={COLORS[k] + "66"} stroke={COLORS[k]} strokeWidth={1.5} />

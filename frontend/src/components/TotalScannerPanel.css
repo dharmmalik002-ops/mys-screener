@@ -28,14 +28,14 @@
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-weight: 700;
   letter-spacing: -0.01em;
 }
 
 .ts-sub {
   margin: 4px 0 0;
-  font-size: 12px;
+  font-size: var(--fs-small);
   color: var(--text-soft);
   max-width: 62ch;
 }
@@ -49,7 +49,7 @@
   border-radius: var(--radius-md);
   background: var(--accent-strong);
   color: #fff;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-weight: 600;
   cursor: pointer;
   transition: background var(--dur-fast) ease, opacity var(--dur-fast) ease;
@@ -78,7 +78,7 @@
 
 .ts-formula-label {
   flex: none;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -87,7 +87,7 @@
 
 .ts-formula code {
   font-family: var(--font-mono);
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   color: var(--text);
   white-space: nowrap;
 }
@@ -128,7 +128,7 @@
   padding: 5px 12px;
   border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   font-weight: 700;
   color: var(--text-soft);
   cursor: pointer;
@@ -143,7 +143,7 @@
 }
 
 .ts-group-caption {
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   letter-spacing: 0.02em;
 }
@@ -171,7 +171,7 @@
   border-radius: var(--radius-md);
   background: var(--surface-strong);
   color: var(--text);
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
 }
@@ -211,7 +211,7 @@
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-soft);
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-weight: 600;
   cursor: pointer;
   transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease;
@@ -229,7 +229,7 @@
 .ts-result-note,
 .ts-error {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 
 .ts-empty { color: var(--text-muted); }
