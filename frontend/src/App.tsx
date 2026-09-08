@@ -1717,6 +1717,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [chart, setChart] = useState<ChartResponse | null>(null);
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(bootstrapChartSymbol);
   const [chartOpen, setChartOpen] = useState(bootstrapChartSymbol !== null);
+  // The market bootstrap effect below re-seeds the selection from the cached
+  // market view on mount, which would blank a deep link the moment it landed.
+  // Held in a ref and consumed on that first pass so it wins exactly once — a
+  // later market switch still resets the selection normally.
+  const pendingDeepLinkSymbolRef = useRef<string | null>(bootstrapChartSymbol);
   const [chartPanelTab, setChartPanelTab] = useState<ChartPanelTab>(initialPreferences.chartPanelTab);
   const [timeframe, setTimeframe] = useState(initialPreferences.timeframe);
   const [chartStyle, setChartStyle] = useState<ChartStyle>(initialPreferences.chartStyle);
@@ -2248,10 +2253,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const cachedSectorTab = cachedView.sectorTabData;
     const cachedGroups = cachedView.groupsData;
     const cachedUniverseCatalog = cachedView.universeCatalog;
-    const fallbackSelectedSymbol = cachedView.selectedSymbol
+    const deepLinkSymbol = pendingDeepLinkSymbolRef.current;
+    pendingDeepLinkSymbolRef.current = null;
+    const fallbackSelectedSymbol = deepLinkSymbol
+      ?? cachedView.selectedSymbol
       ?? cachedDashboard?.top_gainers[0]?.symbol
       ?? firstSymbolFromIndustryGroups(cachedGroups)
-      ?? firstSymbolFromSectorTab(cachedSectorTab);
+      ?? firstSymbolFromSectorTab(cachedSectorTab)
+      ?? null;
 
     setLoading(!cachedDashboard);
     setError(null);
