@@ -775,7 +775,20 @@ def sparkline_closes(snapshot: StockSnapshot, limit: int = SPARKLINE_MAX_POINTS)
     # Offset 1 means recent_closes[-1] IS the current session (that is what
     # _close_n_days_ago's `days + offset` indexing relies on), so there is
     # nothing to append. Offset 0 means the tail is still yesterday.
-    if _recent_close_anchor_offset(snapshot) == 0 and snapshot.last_price > 0:
+    #
+    # The `!= closes[-1]` guard matters more than it looks. _recent_close_anchor_offset
+    # returns 0 early whenever there are fewer than two closes, so for a symbol
+    # with exactly ONE stored close -- a fresh listing -- we would append
+    # last_price, and last_price for those rows IS that close. Measured on the
+    # live dashboard: 13 of 75 rows came back as two identical points, drawing
+    # a flat line where the honest answer is "not enough history". A duplicated
+    # close is a fabricated data point, which is the whole thing this series
+    # exists to avoid.
+    if (
+        _recent_close_anchor_offset(snapshot) == 0
+        and snapshot.last_price > 0
+        and round(float(snapshot.last_price), 2) != round(closes[-1], 2)
+    ):
         closes = [*closes, float(snapshot.last_price)]
 
     return [round(value, 2) for value in closes[-limit:]]

@@ -31,6 +31,7 @@ IS_HF_SPACE = bool(
     or os.getenv("SYSTEM") == "spaces"
 )
 
+from app.core.sector_taxonomy import SECTOR_ALIASES, normalize_sector
 from app.models.market import (
     BalanceSheetItem,
     BusinessTrigger,
@@ -238,46 +239,11 @@ MANUAL_SECTOR_OVERRIDES: dict[str, dict[str, str]] = {
     },
 }
 
-# Yahoo hands back GICS-style sector names; NSE/BSE metadata hands back NSE
-# macro-sector names, and most of the universe is labelled from the latter.
-# This map exists to land Yahoo's vocabulary on NSE's so the app has ONE set of
-# sector labels.
-#
-# It used to do that only halfway: "Technology" and "Communication Services"
-# landed on NSE names, but "Basic Materials" -> "Materials", "Consumer
-# Cyclical" -> "Consumer Discretionary" and "Consumer Defensive" -> "Consumer
-# Staples" just swapped one GICS name for another, and "Industrials",
-# "Energy", "Utilities" and "Real Estate" had no entry at all and passed
-# straight through. Measured on the live universe that left 99 stocks (6%) on
-# GICS labels, producing seven duplicate sectors -- Energy alongside Oil Gas &
-# Consumable Fuels, Utilities alongside Power, Realty alongside Real Estate --
-# each too small to label on the market map and each splitting its real sector's
-# breadth and returns.
-#
-# Two of these are approximations, and deliberately so. Yahoo's "Basic
-# Materials" spans NSE's Metals & Mining, Chemicals, Construction Materials and
-# Forest Materials, and "Consumer Cyclical" spans Consumer Durables, Consumer
-# Services and Retail; a single coarse label cannot preserve that. The precise
-# classification already lives in the industry group (`final_group_name`), which
-# is what the Groups page and the market map group by -- this label only has to
-# stop inventing sectors that do not exist.
-YAHOO_SECTOR_ALIASES: dict[str, str] = {
-    # Unambiguous one-to-one landings.
-    "Technology": "Information Technology",
-    "Communication Services": "Telecommunication",
-    "Financial Services": "Financial Services",
-    "Energy": "Oil Gas & Consumable Fuels",
-    "Utilities": "Power",
-    "Real Estate": "Realty",
-    "Industrials": "Capital Goods",
-    "Consumer Defensive": "Fast Moving Consumer Goods",
-    "Consumer Staples": "Fast Moving Consumer Goods",
-    # Approximations -- see the note above.
-    "Basic Materials": "Metals & Mining",
-    "Materials": "Metals & Mining",
-    "Consumer Cyclical": "Consumer Durables",
-    "Consumer Discretionary": "Consumer Durables",
-}
+# The canonical sector vocabulary lives in app.core.sector_taxonomy so that
+# StockSnapshot's validator and this provider cannot drift apart. Re-exported
+# under the old name because callers and tests already import it from here.
+YAHOO_SECTOR_ALIASES = SECTOR_ALIASES
+
 
 INDEX_SYMBOL_TO_NSE_NAME = {
     "^NSEI": "NIFTY 50",
@@ -412,8 +378,7 @@ class FreeMarketDataProvider:
 
     @classmethod
     def _normalize_sector_label(cls, value: Any) -> str:
-        label = cls._normalize_classification_label(value)
-        return YAHOO_SECTOR_ALIASES.get(label, label)
+        return normalize_sector(cls._normalize_classification_label(value))
 
     @staticmethod
     def _current_ist_date() -> date:

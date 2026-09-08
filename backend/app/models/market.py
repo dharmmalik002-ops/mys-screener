@@ -1,10 +1,21 @@
 from datetime import date, datetime, timezone
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
+
+from app.core.sector_taxonomy import normalize_sector
 
 
 class StockSnapshot(BaseModel):
+    """A single stock's EOD state.
+
+    `sector` is normalised on construction (see the validator at the bottom of
+    this class): free.py assembles sector labels in seven different places from
+    two vendors that disagree, and patching those sites individually left 40
+    stocks on GICS labels in production. Normalising here means no assembly
+    path can bypass it.
+    """
+
     symbol: str
     name: str
     exchange: Literal["NSE", "BSE"]
@@ -147,6 +158,11 @@ class StockSnapshot(BaseModel):
     # pre-event 50-day average.
     earnings_best_pop_pct: float | None = None
     earnings_best_pop_rvol: float | None = None
+
+    @field_validator("sector", mode="before")
+    @classmethod
+    def _canonical_sector(cls, value: object) -> str:
+        return normalize_sector(value)
 
     @property
     def relative_volume(self) -> float:

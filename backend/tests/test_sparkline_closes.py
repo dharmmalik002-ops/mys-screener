@@ -85,6 +85,20 @@ class SparklineClosesTests(unittest.TestCase):
         self.assertNotIn(0.0, series)
         self.assertTrue(all(value > 0 for value in series))
 
+    def test_single_close_equal_to_last_price_is_not_duplicated(self):
+        # A fresh listing has one stored close and last_price equals it.
+        # _recent_close_anchor_offset returns 0 for any series shorter than two,
+        # so without a guard we appended a copy and drew a flat two-point line.
+        # 13 of 75 rows on the live dashboard looked like this.
+        snapshot = _make_snapshot(recent_closes=[1308.05], last_price=1308.05)
+        series = sparkline_closes(snapshot)
+        self.assertEqual(series, [1308.05])
+        self.assertLess(len(series), 2, "one close is not a trend; the UI must show its empty state")
+
+    def test_single_close_that_moved_today_still_appends(self):
+        snapshot = _make_snapshot(recent_closes=[1300.0], last_price=1350.0)
+        self.assertEqual(sparkline_closes(snapshot), [1300.0, 1350.0])
+
     def test_empty_history_yields_empty_series_not_a_fabricated_shape(self):
         self.assertEqual(sparkline_closes(_make_snapshot(recent_closes=[])), [])
 
