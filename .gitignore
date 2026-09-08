@@ -70,3 +70,7 @@ backend/data/mf_details/
 backend/data/mf_nav/
 backend/data/mf_reference.json
 backend/data/mf_portfolio.json
+
+# Vercel CLI link state — machine-local project/org ids, not source.
+.vercel/
+frontend/.vercel/
