@@ -91,6 +91,7 @@ import {
   normalizeSectorTabResponse,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
+import { readChartDeepLink } from "./lib/chartLink";
 import { tradeMarkersForSymbol, useJournalTrades } from "./lib/journal";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
@@ -1695,6 +1696,10 @@ export default function App(props: AppProps) {
 function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const { showToast } = useToast();
   const bootstrapMarket = initialMarket ?? readActiveMarket();
+  // ?symbol=XXX&chart=full — the link the chart grid's expand icon opens in a
+  // new tab. Read here rather than in an effect so the chart modal is already
+  // mounted on the first paint and no empty dashboard flashes behind it.
+  const bootstrapChartSymbol = readChartDeepLink();
   const initialPreferences = readChartPreferences(bootstrapMarket);
   const initialWatchlists = readWatchlists(bootstrapMarket);
   const initialScannerSettings = readScannerSettings(bootstrapMarket);
@@ -1710,8 +1715,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [groupsData, setGroupsData] = useState<IndustryGroupsResponse | null>(null);
   const [improvingRsData, setImprovingRsData] = useState<ImprovingRsResponse | null>(null);
   const [chart, setChart] = useState<ChartResponse | null>(null);
-  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-  const [chartOpen, setChartOpen] = useState(false);
+  const [selectedSymbol, setSelectedSymbol] = useState<string | null>(bootstrapChartSymbol);
+  const [chartOpen, setChartOpen] = useState(bootstrapChartSymbol !== null);
   const [chartPanelTab, setChartPanelTab] = useState<ChartPanelTab>(initialPreferences.chartPanelTab);
   const [timeframe, setTimeframe] = useState(initialPreferences.timeframe);
   const [chartStyle, setChartStyle] = useState<ChartStyle>(initialPreferences.chartStyle);
@@ -2207,7 +2212,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     const targetPath = "/india";
     if (window.location.pathname !== targetPath) {
-      window.history.replaceState(window.history.state, "", targetPath);
+      // Keep the query string: dropping it would strip a ?chart=full deep link
+      // off the address bar, so reloading the tab lost the chart it opened on.
+      window.history.replaceState(window.history.state, "", `${targetPath}${window.location.search}`);
     }
   }, [activeMarket, useMarketRoutes]);
   const chartResponseCacheRef = useRef<Record<string, ChartResponse>>({});

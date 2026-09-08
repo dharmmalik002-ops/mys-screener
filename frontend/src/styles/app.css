@@ -3204,6 +3204,7 @@ button {
 }
 
 .chart-grid-card {
+  position: relative;
   display: grid;
   grid-template-rows: 1fr auto auto;
   gap: 10px;
@@ -3270,6 +3271,9 @@ button {
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  /* Leave the top-right corner free for the open-in-new-tab icon, which is
+     absolutely positioned over the card and would otherwise sit on a badge. */
+  padding-right: 26px;
 }
 
 .chart-grid-badge {
@@ -3561,6 +3565,49 @@ button {
   color: #2563eb;
   border-color: rgba(37, 99, 235, 0.4);
   background: rgba(37, 99, 235, 0.08);
+}
+
+/* "Open in a new tab" affordance, pinned to the card's top-right corner. Always
+   present so it is discoverable, but faint until the card is hovered so a wall
+   of 30 charts stays calm. */
+.chart-grid-expand {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  border: 1px solid color-mix(in srgb, var(--line, rgba(255, 255, 255, 0.14)) 80%, transparent);
+  background: color-mix(in srgb, var(--surface, #10141e) 82%, transparent);
+  color: var(--muted, #8b98a9);
+  opacity: 0.4;
+  cursor: pointer;
+  transition: opacity var(--dur-fast) ease, color var(--dur-fast) ease, border-color var(--dur-fast) ease;
+}
+
+.chart-grid-card:hover .chart-grid-expand,
+.chart-grid-expand:focus-visible {
+  opacity: 1;
+}
+
+.chart-grid-expand:hover {
+  color: var(--accent, #58a6ff);
+  border-color: var(--accent, #58a6ff);
+}
+
+.chart-grid-modal.chart-grid-light .chart-grid-expand {
+  border-color: rgba(15, 23, 42, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  color: #475569;
+}
+
+.chart-grid-modal.chart-grid-light .chart-grid-expand:hover {
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.5);
 }
 
 .results-column,
