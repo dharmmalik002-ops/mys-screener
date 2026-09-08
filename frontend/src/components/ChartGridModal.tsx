@@ -23,7 +23,14 @@ type GridTone = "positive" | "negative" | "neutral";
 
 export type ChartGridChartStyle = "line" | "candles" | "bars";
 export type ChartGridDisplayMode = "compact" | "normal";
-export type ChartGridSortBy = "selected_return" | "day_return" | "rs_rating" | "market_cap" | "constituents";
+export type ChartGridSortBy =
+  | "selected_return"
+  | "day_return"
+  | "rs_rating"
+  | "market_cap"
+  | "constituents"
+  | "listing_new"
+  | "listing_old";
 export type ChartGridGroupRankPeriod = "1W" | "1M" | "3M" | "6M";
 
 type ChartGridBadge = {
@@ -47,6 +54,8 @@ export type ChartGridDisplayCard = {
   rsRating: number | null;
   marketCapCrore: number | null;
   constituents: number | null;
+  /** ISO listing/IPO debut date, when the source rows carry one. */
+  listingDate?: string | null;
   onClick?: () => void;
 };
 
@@ -126,6 +135,8 @@ const GRID_SORT_OPTIONS: Array<{ value: ChartGridSortBy; label: string }> = [
   { value: "rs_rating", label: "RS Rating" },
   { value: "market_cap", label: "Market Cap" },
   { value: "constituents", label: "Constituents" },
+  { value: "listing_new", label: "IPO Date (Newest)" },
+  { value: "listing_old", label: "IPO Date (Oldest)" },
 ];
 const GRID_ZOOM_LEVELS = [0.25, 0.4, 0.6, 0.8, 1] as const;
 
@@ -227,7 +238,34 @@ function formatMarketCap(value: number | null) {
   return `${value.toFixed(0)} Cr`;
 }
 
+function listingTimestamp(value: string | null | undefined): number | null {
+  if (!value) return null;
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function formatListingDate(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const [year, month, day] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}-${month}-${year}`;
+}
+
+function isListingSort(sortBy: ChartGridSortBy): boolean {
+  return sortBy === "listing_new" || sortBy === "listing_old";
+}
+
 function sortValue(card: ChartGridDisplayCard, sortBy: ChartGridSortBy) {
+  // Every comparator below sorts DESCENDING, so "oldest first" is expressed as
+  // the negated timestamp rather than a second comparator. Rows with no listing
+  // date stay at the bottom either way.
+  if (isListingSort(sortBy)) {
+    const timestamp = listingTimestamp(card.listingDate);
+    if (timestamp === null) {
+      return Number.NEGATIVE_INFINITY;
+    }
+    return sortBy === "listing_new" ? timestamp : -timestamp;
+  }
   if (sortBy === "day_return") {
     return card.dayReturn ?? Number.NEGATIVE_INFINITY;
   }
@@ -681,6 +719,7 @@ function GridCard({
   hiddenMas,
   light,
   showLevels,
+  sortBy,
   onAddToWatchlist,
 }: {
   card: ChartGridDisplayCard;
@@ -693,6 +732,7 @@ function GridCard({
   hiddenMas: ReadonlySet<string>;
   light: boolean;
   showLevels: boolean;
+  sortBy: ChartGridSortBy;
   onAddToWatchlist?: (symbol: string) => void;
 }) {
   // Per-card lookback: the slider EXPANDS the time horizon. The right edge is
@@ -731,7 +771,14 @@ function GridCard({
   const pointsWindow = Math.round(basePointsWindow + stretch * Math.max(allPoints.length - basePointsWindow, 0));
   const scopedPoints = hasBars ? [] : allPoints.slice(-pointsWindow);
   const labels = hasBars ? [] : axisLabels(scopedPoints);
-  const metaLabel = card.rsRating !== null ? `RS ${card.rsRating}` : formatMarketCap(card.marketCapCrore);
+  // Sorted by debut date? Then the debut date is the number worth showing —
+  // otherwise the cards are in an order the card itself never explains.
+  const listedLabel = isListingSort(sortBy) ? formatListingDate(card.listingDate) : null;
+  const metaLabel = listedLabel
+    ? `Listed ${listedLabel}`
+    : card.rsRating !== null
+      ? `RS ${card.rsRating}`
+      : formatMarketCap(card.marketCapCrore);
 
   return (
     <div className={`chart-grid-card ${displayMode}`}>
@@ -882,6 +929,9 @@ export function ChartGridModal({
   const hasRsData = useMemo(() => cards.some((card) => card.rsRating !== null), [cards]);
   const hasMarketCapData = useMemo(() => cards.some((card) => card.marketCapCrore !== null), [cards]);
   const hasConstituentData = useMemo(() => cards.some((card) => card.constituents !== null), [cards]);
+  // IPO sorting only makes sense for a list that actually carries debut dates
+  // (the screener's stock rows); group and watchlist cards hide the options.
+  const hasListingData = useMemo(() => cards.some((card) => listingTimestamp(card.listingDate) !== null), [cards]);
 
   useEffect(() => {
     setRangePosition(100);
@@ -938,9 +988,12 @@ export function ChartGridModal({
         if (option.value === "constituents") {
           return hasConstituentData;
         }
+        if (isListingSort(option.value)) {
+          return hasListingData;
+        }
         return true;
       }),
-    [hasConstituentData, hasMarketCapData, hasRsData],
+    [hasConstituentData, hasListingData, hasMarketCapData, hasRsData],
   );
 
   const effectiveSortBy = useMemo(() => {
@@ -953,8 +1006,11 @@ export function ChartGridModal({
     if (sortBy === "constituents" && !hasConstituentData) {
       return "selected_return";
     }
+    if (isListingSort(sortBy) && !hasListingData) {
+      return "selected_return";
+    }
     return sortBy;
-  }, [hasConstituentData, hasMarketCapData, hasRsData, sortBy]);
+  }, [hasConstituentData, hasListingData, hasMarketCapData, hasRsData, sortBy]);
 
   const sortedCards = useMemo(
     () =>
@@ -1505,6 +1561,7 @@ export function ChartGridModal({
                       hiddenMas={hiddenMas}
                       light={lightMode}
                       showLevels={levelsOn}
+                      sortBy={effectiveSortBy}
                       onAddToWatchlist={onAddToWatchlist}
                     />
                   ))}
@@ -1525,6 +1582,7 @@ export function ChartGridModal({
                   hiddenMas={hiddenMas}
                   light={lightMode}
                   showLevels={levelsOn}
+                  sortBy={effectiveSortBy}
                   onAddToWatchlist={onAddToWatchlist}
                 />
               ))
