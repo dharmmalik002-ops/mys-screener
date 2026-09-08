@@ -188,6 +188,24 @@
 
 .mfp-inline input { width: 68px; }
 
+/* Checkbox that reads as one of the inline fields beside it. */
+.mfp-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mfp-check input {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
 .mfp-toggle {
   display: inline-flex;
   align-items: center;

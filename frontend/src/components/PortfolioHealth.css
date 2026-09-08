@@ -1,0 +1,372 @@
+/* Portfolio-wide findings panel. Reuses the dashboard's panel chrome; only the
+   finding cards, the positioning plot and the AI note live here. */
+
+.pfh-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 10px;
+}
+
+.pfh-finding {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px 26px;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  /* The tone is carried by one edge rather than a full tint — a wall of red
+     cards reads as alarm, which these findings are not. */
+  border-left-width: 2px;
+  border-radius: 10px;
+}
+
+.pfh-finding.is-watch { border-left-color: var(--pfd-down, #fb7185); }
+.pfh-finding.is-neutral { border-left-color: var(--pfd-ramp-1, #38bdf8); }
+.pfh-finding.is-good { border-left-color: var(--pfd-up, #34d399); }
+
+.pfh-finding-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pfh-finding h4 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  min-width: 0;
+}
+
+.pfh-metric {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.1));
+  border-radius: 99px;
+  white-space: nowrap;
+}
+
+.pfh-finding > p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.65;
+  color: var(--text-muted);
+}
+
+.pfh-tone {
+  position: absolute;
+  left: 14px;
+  bottom: 9px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+
+/* ---------------------------------------------------------------- evidence */
+
+.pfh-evidence {
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.pfh-evidence li {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, auto);
+  align-items: baseline;
+  gap: 8px;
+  padding: 2px 0;
+  font-size: 10.5px;
+  color: var(--text-soft);
+}
+
+.pfh-evidence li > *:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.pfh-evidence b {
+  font-weight: 600;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.pfh-evidence em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.pfh-evidence .pfd-fund { font-size: 10.5px; }
+
+/* ------------------------------------------------------- positioning plot */
+
+.pfh-plot-block {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px 16px;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 12px;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.pfh-plot-head h4 {
+  margin: 0 0 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.pfh-plot-head p {
+  margin: 0;
+  max-width: 76ch;
+  font-size: 10.5px;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+/* ------------------------------------------------- category standing bars */
+
+.pfh-standing { display: flex; flex-direction: column; gap: 4px; }
+
+.pfh-standing-scale {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: baseline;
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.8;
+  padding: 0 0 2px;
+}
+
+.pfh-standing-scale > :last-child { text-align: right; }
+.pfh-standing-mid { text-align: center; }
+
+.pfh-standing-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.pfh-standing-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.pfh-standing-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pfh-standing-name {
+  font-size: 11.5px;
+  color: var(--text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pfh-standing-head em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+.pfh-standing-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  align-items: center;
+  gap: 10px;
+}
+
+.pfh-standing-track {
+  position: relative;
+  display: block;
+  height: 10px;
+  border-radius: 99px;
+  background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
+}
+
+/* The category average. Everything on this chart is read relative to it, so
+   it is drawn rather than left to the axis labels. */
+.pfh-standing-median {
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  bottom: -2px;
+  width: 1px;
+  background: var(--pfd-hairline, rgba(148, 163, 184, 0.45));
+}
+
+.pfh-standing-fill {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  border-radius: 99px;
+  opacity: 0.35;
+}
+
+.pfh-standing-fill.is-up { background: var(--pfd-up, #34d399); }
+.pfh-standing-fill.is-down { background: var(--pfd-down, #fb7185); }
+
+.pfh-standing-dot {
+  position: absolute;
+  top: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  border: 1.5px solid var(--pfd-chart-bg, #0b1120);
+}
+
+.pfh-standing-dot.is-up { background: var(--pfd-up, #34d399); }
+.pfh-standing-dot.is-down { background: var(--pfd-down, #fb7185); }
+
+.pfh-standing-row b {
+  font-size: 10.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.pfh-standing-row b.is-up { color: var(--pfd-up); }
+.pfh-standing-row b.is-down { color: var(--pfd-down); }
+
+.pfh-standing-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  font-size: 9.5px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.pfh-standing-badges .is-up { color: var(--pfd-up); opacity: 0.9; }
+.pfh-standing-badges .is-down { color: var(--pfd-down); opacity: 0.9; }
+
+.pfh-plot-empty, .pfh-empty {
+  margin: 0;
+  padding: 14px 0 2px;
+  font-size: 11.5px;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------------- AI note */
+
+.pfh-ai { margin-top: 14px; }
+
+.pfh-ai-btn {
+  padding: 7px 14px;
+  font: inherit;
+  font-size: 11.5px;
+  color: var(--text-soft);
+  background: transparent;
+  border: 1px dashed var(--pfd-hairline, rgba(148, 163, 184, 0.3));
+  border-radius: 8px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease;
+}
+
+.pfh-ai-btn:hover:not(:disabled) { color: var(--text); border-color: var(--pfd-line); }
+.pfh-ai-btn:disabled { opacity: 0.6; cursor: progress; }
+
+.pfh-ai-unavailable {
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.pfh-ai-note {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px;
+  background: var(--pfd-panel, rgba(148, 163, 184, 0.035));
+  border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14));
+  border-radius: 12px;
+}
+
+.pfh-ai-note h4 {
+  margin: 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: var(--text);
+}
+
+.pfh-ai-note p {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+.pfh-ai-cols {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 10px 20px;
+  margin-top: 2px;
+}
+
+.pfh-ai-cols h5 {
+  margin: 0 0 4px;
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+}
+
+.pfh-ai-cols ul { margin: 0; padding-left: 15px; display: flex; flex-direction: column; gap: 3px; }
+.pfh-ai-cols li { font-size: 10.5px; line-height: 1.6; color: var(--text-muted); }
+
+.pfh-ai-watch { border-top: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.14)); padding-top: 8px; }
+.pfh-ai-watch b { color: var(--text-soft); }
+
+.pfh-disclaimer { margin-top: 12px; }
+
+@media (max-width: 620px) {
+  .pfh-standing-badges { flex-direction: column; gap: 2px; }
+}

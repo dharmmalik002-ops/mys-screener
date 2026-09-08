@@ -2,13 +2,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ColorType, LineStyle, createChart } from "lightweight-charts";
 import {
   getMfConcentration,
+  getMfOverlap,
+  getMfPortfolioHealth,
   getMfPortfolioTimeline,
   type MfPortfolioResponse,
   type MfPortfolioTimeline,
   type MfConcentration,
+  type MfOverlap,
+  type MfPortfolioHealth,
   type MfValuedPosition,
 } from "../lib/api";
 import { Donut, DivergingBars, StackedBar, WeightBars } from "./PortfolioCharts";
+import { PortfolioOverlap } from "./PortfolioOverlap";
+import { PortfolioHealth } from "./PortfolioHealth";
 
 import "./PortfolioDashboard.css";
 
@@ -93,6 +99,32 @@ function useThemePalette(ref: React.RefObject<HTMLElement | null>): Palette {
   }, [ref]);
 
   return palette;
+}
+
+/**
+ * A boolean that survives a reload.
+ *
+ * Used for panels the user has collapsed. A collapse that forgets itself on
+ * every page load is worse than no collapse at all — they have to close it
+ * again every single time, which is precisely the annoyance it was meant to
+ * remove.
+ */
+function useStickyFlag(key: string, initial = false): [boolean, (next: boolean) => void] {
+  const [value, setValue] = useState<boolean>(() => {
+    try {
+      const stored = window.localStorage.getItem(key);
+      return stored === null ? initial : stored === "1";
+    } catch {
+      // Private browsing and blocked storage both throw; the panel still works,
+      // it just forgets.
+      return initial;
+    }
+  });
+  const update = (next: boolean) => {
+    setValue(next);
+    try { window.localStorage.setItem(key, next ? "1" : "0"); } catch { /* not fatal */ }
+  };
+  return [value, update];
 }
 
 const inr = (value: number | null | undefined, options: { compact?: boolean; sign?: boolean } = {}): string => {
@@ -332,6 +364,9 @@ export function PortfolioDashboard({
   const [loadingChart, setLoadingChart] = useState(true);
   const [activeSlice, setActiveSlice] = useState<number | null>(null);
   const [concentration, setConcentration] = useState<MfConcentration | null>(null);
+  const [overlap, setOverlap] = useState<MfOverlap | null>(null);
+  const [sipsCollapsed, setSipsCollapsed] = useStickyFlag("mf.sips.collapsed");
+  const [health, setHealth] = useState<MfPortfolioHealth | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("current_value");
   const [sortAsc, setSortAsc] = useState(false);
 
@@ -380,6 +415,12 @@ export function PortfolioDashboard({
     getMfConcentration()
       .then((payload) => { if (!cancelled) setConcentration(payload); })
       .catch(() => { if (!cancelled) setConcentration(null); });
+    getMfOverlap()
+      .then((payload) => { if (!cancelled) setOverlap(payload); })
+      .catch(() => { if (!cancelled) setOverlap(null); });
+    getMfPortfolioHealth()
+      .then((payload) => { if (!cancelled) setHealth(payload); })
+      .catch(() => { if (!cancelled) setHealth(null); });
     return () => { cancelled = true; };
   }, [portfolio.as_of, portfolio.positions.length]);
 
@@ -515,23 +556,41 @@ export function PortfolioDashboard({
       </section>
 
       {portfolio.upcoming_sips?.length ? (
-        <section className="pfd-panel pfd-panel-sips">
+        <section className={`pfd-panel pfd-panel-sips${sipsCollapsed ? " is-collapsed" : ""}`}>
           <header className="pfd-panel-head">
-            <h3>Next instalments</h3>
+            <button
+              type="button"
+              className="pfd-collapse"
+              aria-expanded={!sipsCollapsed}
+              onClick={() => setSipsCollapsed(!sipsCollapsed)}
+              title={sipsCollapsed ? "Show the next instalments" : "Minimise this panel"}
+            >
+              <i className="pfd-caret">{sipsCollapsed ? "▸" : "▾"}</i>
+              <h3>Next instalments</h3>
+              {/* Collapsed, the count is the whole point of the row — otherwise
+                  minimising hides the one fact worth glancing at. */}
+              {sipsCollapsed ? (
+                <em className="pfd-collapse-note">
+                  {portfolio.upcoming_sips.length} upcoming · next {portfolio.upcoming_sips[0]?.date}
+                </em>
+              ) : null}
+            </button>
             <span className="pfd-muted">
               {inr(totals?.monthly_sip, { compact: true })} a month committed
             </span>
           </header>
-          <ul className="pfd-sips">
-            {portfolio.upcoming_sips.map((sip) => (
-              <li key={`${sip.scheme_code}-${sip.date}`} onClick={() => onOpenFund(sip.scheme_code)}>
-                <span className="pfd-sip-date">{sip.date}</span>
-                <span className="pfd-sip-name">{sip.name ?? sip.scheme_code}</span>
-                <i>{sip.frequency}</i>
-                <b>{inr(sip.amount)}</b>
-              </li>
-            ))}
-          </ul>
+          {sipsCollapsed ? null : (
+            <ul className="pfd-sips">
+              {portfolio.upcoming_sips.map((sip) => (
+                <li key={`${sip.scheme_code}-${sip.date}`} onClick={() => onOpenFund(sip.scheme_code)}>
+                  <span className="pfd-sip-date">{sip.date}</span>
+                  <span className="pfd-sip-name">{sip.name ?? sip.scheme_code}</span>
+                  <i>{sip.frequency}</i>
+                  <b>{inr(sip.amount)}</b>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
       ) : null}
 
@@ -655,16 +714,23 @@ export function PortfolioDashboard({
         />
       </section>
 
+      {/* -------------------------------------------------------- overlap */}
+      {/* Leads the concentration block on purpose: "do two of my funds hold the
+          same book" is the question a multi-fund investor actually has, and no
+          factsheet can answer it. Single-fund concentration follows below. */}
+      <PortfolioOverlap overlap={overlap} onOpenFund={onOpenFund} />
+
       {/* -------------------------------------------------- concentration */}
       {concentration?.summary?.length ? (
         <section className="pfd-panel">
           <header className="pfd-panel-head">
             <div>
-              <h3>Concentration check</h3>
+              <h3>Concentration within each fund</h3>
               <p>
-                How much of each fund sits in its largest holdings, and where the same stock reaches
-                you through more than one fund. Measured from the latest disclosed portfolios —
-                these are facts about weights, not a suggestion to change anything.
+                A separate question from the overlap above: how much of any one fund sits in its
+                own largest holdings. A fund can be a near-duplicate of the one beside it and still
+                be perfectly diversified internally, or the reverse. Measured from the latest
+                disclosed portfolios — facts about weights, not a suggestion to change anything.
               </p>
             </div>
             <span className={concentration.concentrated_count ? "pfd-chip is-down" : "pfd-chip is-up"}>
@@ -869,6 +935,10 @@ export function PortfolioDashboard({
           <b>Edit</b> and it will start reporting one.
         </p>
       ) : null}
+
+      {/* ------------------------------------------------ portfolio findings */}
+      {/* Last on the page because it reads across everything above it. */}
+      <PortfolioHealth health={health} onOpenFund={onOpenFund} />
     </div>
   );
 }
