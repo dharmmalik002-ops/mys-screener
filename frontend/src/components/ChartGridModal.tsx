@@ -1,7 +1,10 @@
 import { createPortal } from "react-dom";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent, type ReactNode, type UIEvent } from "react";
 
+import { Maximize2 } from "lucide-react";
+
 import type { ChartBar, ChartGridTimeframe, ChartLinePoint } from "../lib/api";
+import { fullChartUrl } from "../lib/chartLink";
 import { computeAutoLevels, type AutoLevels } from "../lib/levels";
 import { useMinWidth } from "../lib/virtualRows";
 
@@ -732,6 +735,22 @@ function GridCard({
 
   return (
     <div className={`chart-grid-card ${displayMode}`}>
+      {card.symbol ? (
+        // A real anchor, not a button: the point is a new tab, so middle-click
+        // and cmd-click have to behave the way they do everywhere else. It sits
+        // OUTSIDE the card hit-area button because a button cannot nest one.
+        <a
+          className="chart-grid-expand"
+          href={fullChartUrl(card.symbol)}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={`Open ${card.symbol} full chart in a new tab`}
+          aria-label={`Open ${card.symbol} full chart in a new tab`}
+          onClick={(event) => event.stopPropagation()}
+        >
+          <Maximize2 size={13} strokeWidth={2.2} aria-hidden />
+        </a>
+      ) : null}
       <button
         type="button"
         className={card.onClick ? "chart-grid-card-hit clickable" : "chart-grid-card-hit"}
