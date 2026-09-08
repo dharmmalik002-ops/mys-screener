@@ -14,6 +14,9 @@ from __future__ import annotations
 
 import unittest
 
+from app.core.sector_taxonomy import NSE_MACRO_SECTORS as CANONICAL_SECTORS
+from app.core.sector_taxonomy import SECTOR_ALIASES, normalize_sector
+from app.models.market import StockSnapshot
 from app.providers.free import YAHOO_SECTOR_ALIASES, FreeMarketDataProvider
 
 # The NSE macro sectors the universe actually uses. Every alias has to land on
@@ -63,7 +66,44 @@ GICS_SECTOR_NAMES = [
 ]
 
 
+def _snapshot(sector: str) -> StockSnapshot:
+    return StockSnapshot(
+        symbol="X", name="X", exchange="NSE", sector=sector,
+        market_cap_crore=1.0, last_price=1.0, change_pct=0.0, volume=1,
+        avg_volume_20d=1, day_high=1.0, day_low=1.0, ath=1.0, high_52w=1.0,
+        range_high_20d=1.0, benchmark_return_20d=0.0, sector_return_20d=0.0,
+        pivot_high=1.0, darvas_high=1.0, darvas_low=1.0,
+        pullback_depth_pct=0.0, trend_strength=0.0,
+    )
+
+
 class SectorTaxonomyTests(unittest.TestCase):
+    def test_module_and_test_agree_on_the_canonical_set(self):
+        # If someone adds an NSE sector, both lists have to learn about it.
+        self.assertEqual(set(CANONICAL_SECTORS), NSE_MACRO_SECTORS)
+
+    def test_snapshot_normalises_regardless_of_assembly_path(self):
+        # The real fix: patching free.py's seven sector sites left 40 stocks on
+        # GICS labels in production. The model validator is the choke point.
+        for name in GICS_SECTOR_NAMES:
+            with self.subTest(sector=name):
+                self.assertIn(_snapshot(name).sector, NSE_MACRO_SECTORS)
+
+    def test_snapshot_tolerates_blank_and_odd_spacing(self):
+        self.assertEqual(_snapshot("").sector, "Unclassified")
+        self.assertEqual(_snapshot("  Capital   Goods ").sector, "Capital Goods")
+
+    def test_case_insensitive(self):
+        self.assertEqual(normalize_sector("real estate"), "Realty")
+        self.assertEqual(normalize_sector("INDUSTRIALS"), "Capital Goods")
+
+    def test_unknown_label_is_kept_not_swallowed(self):
+        # A brand-new NSE sector should surface as itself rather than vanish
+        # into Unclassified, which would hide a real classification change.
+        self.assertEqual(normalize_sector("Space Logistics"), "Space Logistics")
+
+    def test_provider_and_module_share_one_map(self):
+        self.assertIs(YAHOO_SECTOR_ALIASES, SECTOR_ALIASES)
     def test_every_gics_name_normalises_to_an_nse_macro_sector(self):
         for name in GICS_SECTOR_NAMES:
             with self.subTest(sector=name):
