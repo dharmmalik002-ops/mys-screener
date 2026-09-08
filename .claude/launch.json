@@ -57,6 +57,24 @@
         "VITE_PROXY_TARGET": "http://127.0.0.1:8010",
         "VITE_API_TIMEOUT_MS": "900000"
       }
+    },
+    {
+      "name": "frontend-space",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "dev",
+        "--prefix",
+        "frontend",
+        "--",
+        "--port",
+        "5175"
+      ],
+      "port": 5175,
+      "env": {
+        "VITE_PROXY_TARGET": "https://dharmmalik-stock-scanner-backend.hf.space",
+        "VITE_API_TIMEOUT_MS": "900000"
+      }
     }
   ]
 }
