@@ -819,6 +819,7 @@ export function ScanTable({
         rsRating: item.rs_rating ?? null,
         marketCapCrore: item.market_cap_crore,
         constituents: null,
+        listingDate: item.listing_date ?? null,
         onClick: () => onPickSymbol(item.symbol),
       };
     });
