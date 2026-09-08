@@ -5,7 +5,7 @@
   padding: 14px 16px;
   background: rgba(148, 163, 184, 0.035);
   border: 1px solid rgba(148, 163, 184, 0.14);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .pfs-modes { display: flex; gap: 2px; }
@@ -15,13 +15,13 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   font-family: inherit;
   color: var(--text-muted);
   background: none;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 140ms ease;
 }
@@ -36,14 +36,14 @@
   padding: 7px 11px;
   background: rgba(148, 163, 184, 0.06);
   border: 1px solid rgba(148, 163, 184, 0.16);
-  border-radius: 9px;
+  border-radius: var(--radius-sm);
   color: var(--text-muted);
 }
 
 .pfs-search input {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   font-family: inherit;
   color: var(--text);
   background: none;
@@ -70,8 +70,8 @@
   justify-content: space-between;
   gap: 12px;
   padding: 7px 9px;
-  font-size: 11.5px;
-  border-radius: 7px;
+  font-size: var(--fs-tiny);
+  border-radius: var(--radius-sm);
   transition: background 140ms ease;
 }
 
@@ -89,12 +89,12 @@
 .pfs-result-name i {
   font-style: normal;
   padding: 0 6px;
-  font-size: 9px;
+  font-size: var(--fs-nano);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-muted);
   border: 1px solid rgba(148, 163, 184, 0.2);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   cursor: help;
 }
 
@@ -104,13 +104,13 @@
   gap: 4px;
   flex: 0 0 auto;
   padding: 4px 10px;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   font-family: inherit;
   color: #38bdf8;
   background: none;
   border: 1px solid rgba(56, 189, 248, 0.4);
-  border-radius: 7px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all 140ms ease;
 }
@@ -121,7 +121,7 @@
 .pfs-empty, .pfs-hint, .pfs-note {
   margin: 0;
   padding: 6px 2px;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   line-height: 1.55;
   color: var(--text-muted);
 }
@@ -138,7 +138,7 @@
   text-align: center;
   color: var(--text-muted);
   border: 1px dashed rgba(148, 163, 184, 0.3);
-  border-radius: 11px;
+  border-radius: var(--radius-md);
   transition: border-color 140ms ease, background 140ms ease;
 }
 
@@ -151,35 +151,35 @@
   cursor: pointer;
 }
 
-.pfs-drop strong { font-size: 12.5px; color: var(--text); }
-.pfs-drop small { max-width: 56ch; font-size: 10.5px; line-height: 1.55; }
+.pfs-drop strong { font-size: var(--fs-small); color: var(--text); }
+.pfs-drop small { max-width: 56ch; font-size: var(--fs-micro); line-height: 1.55; }
 
 .pfs-error {
   margin: 0;
   padding: 8px 11px;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   color: var(--negative-tint);
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.28);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
 }
 
 .pfs-report { display: flex; flex-direction: column; gap: 7px; }
-.pfs-report-head { margin: 0; font-size: 12px; color: var(--text-soft); }
+.pfs-report-head { margin: 0; font-size: var(--fs-small); color: var(--text-soft); }
 .pfs-report-head b { color: var(--text); }
 
 .pfs-recon { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 3px; }
 
 .pfs-recon li {
   padding: 5px 9px;
-  font-size: 10.5px;
-  border-radius: 6px;
+  font-size: var(--fs-micro);
+  border-radius: var(--radius-xs);
   border-left: 2px solid transparent;
 }
 
 .pfs-recon li.is-ok { color: var(--positive-tint); background: rgba(52, 211, 153, 0.08); border-left-color: var(--positive); }
 .pfs-recon li.is-off { color: var(--negative-tint); background: rgba(251, 113, 133, 0.08); border-left-color: var(--negative); }
 
-.pfs-skipped strong { font-size: 11px; color: var(--text-soft); }
+.pfs-skipped strong { font-size: var(--fs-tiny); color: var(--text-soft); }
 .pfs-skipped ul { margin: 4px 0 0; padding-left: 17px; }
-.pfs-skipped li { font-size: 10.5px; line-height: 1.5; color: var(--text-muted); }
+.pfs-skipped li { font-size: var(--fs-micro); line-height: 1.5; color: var(--text-muted); }

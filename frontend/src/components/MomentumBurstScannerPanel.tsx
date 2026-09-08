@@ -313,7 +313,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
   const th: React.CSSProperties = {
     textAlign: "right",
     padding: "6px 8px",
-    fontSize: 11,
+    fontSize: "var(--fs-tiny)",
     color: "#9aa4b2",
     fontWeight: 600,
     whiteSpace: "nowrap",
@@ -324,7 +324,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
   const td: React.CSSProperties = {
     textAlign: "right",
     padding: "7px 8px",
-    fontSize: 12,
+    fontSize: "var(--fs-small)",
     whiteSpace: "nowrap",
     borderBottom: "1px solid rgba(255,255,255,0.05)",
   };
@@ -362,10 +362,10 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
               >
                 <td style={{ ...td, textAlign: "left" }}>
                   <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                    <strong style={{ fontSize: 13 }}>{m.symbol}</strong>
+                    <strong style={{ fontSize: "var(--fs-base)" }}>{m.symbol}</strong>
                     <span
                       style={{
-                        fontSize: 10,
+                        fontSize: "var(--fs-micro)",
                         fontWeight: 700,
                         color: tagColor(p.tag),
                         textTransform: "uppercase",
@@ -414,7 +414,7 @@ export function MomentumBurstResults({ items, loading, onPickSymbol, onPrefetchS
                         border: "1px solid var(--line-strong)",
                         background: "transparent",
                         color: "var(--accent)",
-                        fontSize: 11,
+                        fontSize: "var(--fs-tiny)",
                         fontWeight: 600,
                         cursor: "pointer",
                         whiteSpace: "nowrap",

@@ -294,7 +294,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                         background: "#fff",
                         border: "1px solid #e5e7eb",
                         borderRadius: 8,
-                        fontSize: 12,
+                        fontSize: "var(--fs-small)",
                       }}
                     />
                   </PieChart>
@@ -354,7 +354,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                     dataKey="name"
                     type="category"
                     width={150}
-                    tick={{ fill: "var(--sd-text-soft)", fontSize: 11 }}
+                    tick={{ fill: "var(--sd-text-soft)", fontSize: "var(--fs-tiny)" }}
                     tickLine={false}
                     axisLine={false}
                   />
@@ -368,7 +368,7 @@ export function ScanDashboard({ items, groupsData }: ScanDashboardProps) {
                       background: "#fff",
                       border: "1px solid #e5e7eb",
                       borderRadius: 8,
-                      fontSize: 12,
+                      fontSize: "var(--fs-small)",
                     }}
                   />
                   <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={14}>

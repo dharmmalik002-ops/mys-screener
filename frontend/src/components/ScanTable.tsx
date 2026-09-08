@@ -1006,7 +1006,7 @@ export function ScanTable({
                   style={{
                     display: "inline-block",
                     marginLeft: 6,
-                    fontSize: 9.5,
+                    fontSize: "var(--fs-nano)",
                     fontWeight: 700,
                     letterSpacing: "0.04em",
                     lineHeight: "14px",
@@ -1082,7 +1082,7 @@ export function ScanTable({
               <span
                 title={volBadge.title}
                 style={{
-                  fontSize: 8.5,
+                  fontSize: "var(--fs-nano)",
                   fontWeight: 700,
                   letterSpacing: "0.03em",
                   color: "#fff",
@@ -1225,7 +1225,7 @@ export function ScanTable({
               style={{
                 height: 26,
                 padding: "0 10px 0 26px",
-                fontSize: 12,
+                fontSize: "var(--fs-small)",
                 lineHeight: "24px",
                 borderRadius: 6,
                 border: "1px solid var(--border, #2d3340)",
@@ -1243,7 +1243,7 @@ export function ScanTable({
             {symbolFilter ? (
               <span
                 title={`${sortedItems.length} of ${items.length} match`}
-                style={{ marginLeft: 6, fontSize: 11, opacity: 0.7, whiteSpace: "nowrap" }}
+                style={{ marginLeft: 6, fontSize: "var(--fs-tiny)", opacity: 0.7, whiteSpace: "nowrap" }}
               >
                 {sortedItems.length}/{items.length}
               </span>

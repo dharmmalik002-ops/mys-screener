@@ -21,7 +21,7 @@
 }
 
 .mkc-label {
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -29,7 +29,7 @@
 }
 
 .mkc-item strong {
-  font-size: 22px;
+  font-size: var(--fs-heading);
   font-weight: 650;
   line-height: 1.15;
   font-variant-numeric: tabular-nums;
@@ -38,14 +38,14 @@
 
 /* A regime name is a word, not a figure — it must not sit at 22px. */
 .mkc-item strong.mkc-word {
-  font-size: 15px;
+  font-size: var(--fs-body);
   line-height: 1.3;
   overflow-wrap: anywhere;
 }
 
 .mkc-item em {
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   line-height: 1.45;
   color: var(--text-muted);
 }

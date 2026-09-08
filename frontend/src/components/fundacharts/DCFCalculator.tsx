@@ -32,7 +32,7 @@ function fmtCr(val: number, ccy: string) {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "0.77rem" }}>
+    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
       <div style={{ fontWeight: 700, color: "#fff", marginBottom: 5 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", gap: 6, marginBottom: 2 }}>
@@ -51,8 +51,8 @@ function Slider({ label, min, max, step, value, onChange, unit, color }: {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <span style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.6)" }}>{label}</span>
-        <span style={{ fontSize: "0.75rem", fontWeight: 700, color: color || "var(--accent,#7c6aff)", fontFamily: "monospace" }}>{value}{unit}</span>
+        <span style={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.6)" }}>{label}</span>
+        <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: color || "var(--accent,#7c6aff)", fontFamily: "monospace" }}>{value}{unit}</span>
       </div>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(parseFloat(e.target.value))}
@@ -165,7 +165,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+      <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
         DCF Intrinsic Value Calculator
       </span>
 
@@ -173,7 +173,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
         {/* Left: sliders */}
         <div style={{ display: "flex", flexDirection: "column", gap: 10, background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: 10, padding: "12px 14px" }}>
-          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Inputs</div>
+          <div style={{ fontSize: "var(--fs-tiny)", fontWeight: 700, color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 2 }}>Inputs</div>
           <Slider label={`Base FCF (${ccy} Cr)`} min={-10000} max={50000} step={100} value={baseFcf} onChange={setBaseFcf} unit="" color="var(--positive)" />
           <Slider label="Stage 1 Growth (%)" min={0} max={50} step={0.5} value={g1} onChange={setG1} unit="%" color="#7c6aff" />
           <Slider label="Stage 1 Years" min={3} max={15} step={1} value={stage1Years} onChange={setStage1Years} unit="Y" />
@@ -195,13 +195,13 @@ export function DCFCalculator({ fundamentals, market }: Props) {
             { label: "Implied Growth (Market)", val: dcf?.impliedG != null ? `${dcf.impliedG}%` : "—", color: "#a855f7" },
           ].map(item => (
             <div key={item.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 8, padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.55)" }}>{item.label}</span>
-              <span style={{ fontSize: "0.95rem", fontWeight: 700, color: item.color, fontFamily: "monospace" }}>{item.val}</span>
+              <span style={{ fontSize: "var(--fs-small)", color: "rgba(255,255,255,0.55)" }}>{item.label}</span>
+              <span style={{ fontSize: "var(--fs-lead)", fontWeight: 700, color: item.color, fontFamily: "monospace" }}>{item.val}</span>
             </div>
           ))}
 
           {dcf?.mos != null && (
-            <div style={{ marginTop: 4, fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "8px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.06)" }}>
+            <div style={{ marginTop: 4, fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.4)", lineHeight: 1.5, padding: "8px 10px", background: "rgba(255,255,255,0.02)", borderRadius: 7, border: "1px solid rgba(255,255,255,0.06)" }}>
               {dcf.mos >= 20
                 ? "Undervalued — large margin of safety."
                 : dcf.mos >= 0
@@ -216,7 +216,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
       <div style={{ display: "flex", gap: 4 }}>
         {(["chart", "sensitivity"] as const).map(v => (
           <button key={v} onClick={() => setActiveTab(v)} style={{
-            fontSize: "0.7rem", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
+            fontSize: "var(--fs-tiny)", padding: "3px 10px", borderRadius: 6, cursor: "pointer",
             background: activeTab === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.07)",
             border: `1px solid ${activeTab === v ? "var(--accent,#7c6aff)" : "rgba(255,255,255,0.12)"}`,
             color: activeTab === v ? "#fff" : "rgba(255,255,255,0.6)",
@@ -231,11 +231,11 @@ export function DCFCalculator({ fundamentals, market }: Props) {
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-              <XAxis dataKey="period" tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 9, fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="period" tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: "var(--fs-nano)", fill: "rgba(255,255,255,0.4)" }} axisLine={false} tickLine={false} />
               <Tooltip content={<CustomTooltip />} />
-              <Legend wrapperStyle={{ fontSize: 10, color: "rgba(255,255,255,0.5)" }} />
-              <ReferenceLine x={historicalFcf[historicalFcf.length - 1]?.period} stroke="rgba(255,255,255,0.25)" strokeDasharray="6 3" label={{ value: "Today", fill: "rgba(255,255,255,0.4)", fontSize: 9 }} />
+              <Legend wrapperStyle={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)" }} />
+              <ReferenceLine x={historicalFcf[historicalFcf.length - 1]?.period} stroke="rgba(255,255,255,0.25)" strokeDasharray="6 3" label={{ value: "Today", fill: "rgba(255,255,255,0.4)", fontSize: "var(--fs-nano)" }} />
               <Bar dataKey="hist" name="Historical FCF" fill="#22c55e66" radius={[2, 2, 0, 0]} />
               <Area type="monotone" dataKey="proj" name="Projected FCF" stroke="#7c6aff" fill="rgba(124,106,255,0.15)" strokeWidth={2} />
               <Line type="monotone" dataKey="pv" name="Present Value" stroke="#f59e0b" strokeWidth={1.5} dot={false} strokeDasharray="5 3" />
@@ -246,11 +246,11 @@ export function DCFCalculator({ fundamentals, market }: Props) {
 
       {activeTab === "sensitivity" && (
         <div style={{ overflowX: "auto" }}>
-          <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
+          <div style={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.4)", marginBottom: 8 }}>
             Intrinsic Value ({ccy} Cr) — rows = Stage 1 Growth, columns = WACC
           </div>
           {sensitivityRows.length > 0 && (
-            <table style={{ borderCollapse: "collapse", fontSize: "0.71rem", width: "100%" }}>
+            <table style={{ borderCollapse: "collapse", fontSize: "var(--fs-tiny)", width: "100%" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
                   <th style={{ padding: "5px 8px", color: "rgba(255,255,255,0.5)", textAlign: "left", fontWeight: 600 }}>G↓ / WACC→</th>
@@ -286,7 +286,7 @@ export function DCFCalculator({ fundamentals, market }: Props) {
         </div>
       )}
 
-      <div style={{ fontSize: "0.66rem", color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 8 }}>
+      <div style={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.3)", borderTop: "1px solid rgba(255,255,255,0.07)", paddingTop: 8 }}>
         Disclaimer: DCF valuations are sensitive to assumptions. This calculator is for educational purposes only, not investment advice.
       </div>
     </div>

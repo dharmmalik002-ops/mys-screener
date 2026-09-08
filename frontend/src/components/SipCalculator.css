@@ -5,12 +5,12 @@
   padding: 14px 16px;
   background: var(--surface, rgba(255, 255, 255, 0.02));
   border: 1px solid var(--line);
-  border-radius: var(--radius-lg, 10px);
+  border-radius: var(--radius-lg);
 }
 
 .sipc-head h3 {
   margin: 0 0 4px;
-  font-size: 12.5px;
+  font-size: var(--fs-small);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
@@ -20,7 +20,7 @@
 .sipc-head p {
   margin: 0;
   max-width: 70ch;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -34,7 +34,7 @@
 .sipc-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
 
 .sipc-field > span {
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
@@ -47,7 +47,7 @@
   padding: 4px 9px;
   background: var(--surface-soft, rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 5px);
+  border-radius: var(--radius-sm);
 }
 
 .sipc-input-row em { font-style: normal; color: var(--text-muted); }
@@ -55,7 +55,7 @@
 .sipc-input-row input {
   flex: 1 1 auto;
   min-width: 0;
-  font-size: 13px;
+  font-size: var(--fs-base);
   font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
   color: var(--text);
   background: none;
@@ -71,18 +71,18 @@
   padding: 1px;
   background: var(--surface-soft, rgba(255, 255, 255, 0.03));
   border: 1px solid var(--line);
-  border-radius: var(--radius-sm, 5px);
+  border-radius: var(--radius-sm);
 }
 
 .sipc-seg button {
   flex: 1 1 0;
   padding: 4px 6px;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   color: var(--text-muted);
   background: none;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
 }
 
@@ -94,7 +94,7 @@
   gap: 1px;
   background: var(--line);
   border: 1px solid var(--line);
-  border-radius: var(--radius-md, 8px);
+  border-radius: var(--radius-md);
   overflow: hidden;
 }
 
@@ -109,27 +109,27 @@
 .sipc-result-key { background: rgba(56, 189, 248, 0.07); }
 
 .sipc-result > span {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-muted);
 }
 
 .sipc-result > strong {
-  font-size: 15px;
+  font-size: var(--fs-body);
   font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
   color: var(--text);
 }
 
 .sipc-result > strong.pos { color: var(--positive); }
 .sipc-result > strong.neg { color: var(--negative); }
-.sipc-result > small { font-size: 9.5px; line-height: 1.4; color: var(--text-muted); }
+.sipc-result > small { font-size: var(--fs-nano); line-height: 1.4; color: var(--text-muted); }
 
 .sipc-scenarios { display: flex; flex-direction: column; gap: 4px; }
 
 .sipc-scenarios h4 {
   margin: 0 0 2px;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -141,7 +141,7 @@
   grid-template-columns: 36px minmax(0, 1fr) 90px 90px;
   align-items: center;
   gap: 9px;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
   color: var(--text-muted);
 }
@@ -149,19 +149,19 @@
 .sipc-bar {
   display: block;
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--radius-xs);
   background: var(--surface-soft, rgba(255, 255, 255, 0.05));
   overflow: hidden;
 }
 
-.sipc-bar > i { display: block; height: 100%; border-radius: 3px; background: var(--accent); }
+.sipc-bar > i { display: block; height: 100%; border-radius: var(--radius-xs); background: var(--accent); }
 
 .sipc-scenario > em { font-style: normal; text-align: right; color: var(--text-soft); }
 .sipc-scenario > b { text-align: right; color: var(--text); }
 
 .sipc-foot {
   margin: 4px 0 0;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   line-height: 1.5;
   color: var(--text-muted);
 }
@@ -169,18 +169,18 @@
 @media (max-width: 640px) {
   .sipc-controls { grid-template-columns: 1fr; }
   .sipc-results { grid-template-columns: repeat(2, 1fr); }
-  .sipc-scenario { grid-template-columns: 32px minmax(0, 1fr) 74px 74px; gap: 6px; font-size: 10px; }
+  .sipc-scenario { grid-template-columns: 32px minmax(0, 1fr) 74px 74px; gap: 6px; font-size: var(--fs-micro); }
 }
 
 .sipc-reset {
   padding: 1px 7px;
-  font-size: 9.5px;
+  font-size: var(--fs-nano);
   font-weight: 600;
   font-family: inherit;
   color: var(--text-muted);
   background: none;
   border: 1px solid var(--line);
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   flex: 0 0 auto;
 }

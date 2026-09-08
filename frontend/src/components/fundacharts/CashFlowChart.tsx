@@ -12,7 +12,7 @@ type Props = { cashFlow: CashFlowItem[] };
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null;
   return (
-    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "0.77rem" }}>
+    <div style={{ background: "var(--surface-strong,#1a1a2e)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, padding: "10px 14px", fontSize: "var(--fs-small)" }}>
       <div style={{ fontWeight: 700, color: "#fff", marginBottom: 6 }}>{label}</div>
       {payload.map((p: any) => (
         <div key={p.dataKey} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 2 }}>
@@ -37,8 +37,8 @@ function MetricCard({ label, value, color }: { label: string; value: number | nu
   const sign = value != null && value >= 0;
   return (
     <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "7px 12px", textAlign: "center", flex: 1, minWidth: 100 }}>
-      <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: "0.9rem", fontWeight: 700, color: value == null ? "rgba(255,255,255,0.3)" : (sign ? color : "var(--negative)"), fontFamily: "monospace" }}>
+      <div style={{ fontSize: "var(--fs-micro)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: "var(--fs-body)", fontWeight: 700, color: value == null ? "rgba(255,255,255,0.3)" : (sign ? color : "var(--negative)"), fontFamily: "monospace" }}>
         {fmt(value)}
       </div>
     </div>
@@ -48,7 +48,7 @@ function MetricCard({ label, value, color }: { label: string; value: number | nu
 export function CashFlowChart({ cashFlow }: Props) {
   if (!cashFlow || cashFlow.length === 0) {
     return (
-      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "0.8rem" }}>
+      <div style={{ textAlign: "center", color: "rgba(255,255,255,0.4)", padding: "30px 0", fontSize: "var(--fs-base)" }}>
         No cash flow data available
       </div>
     );
@@ -66,7 +66,7 @@ export function CashFlowChart({ cashFlow }: Props) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <span style={{ fontSize: "0.78rem", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
+      <span style={{ fontSize: "var(--fs-small)", fontWeight: 700, color: "var(--text,#fff)", letterSpacing: "0.04em", textTransform: "uppercase" }}>
         Cash Flow Quality ({sorted.length}Y)
       </span>
 
@@ -81,10 +81,10 @@ export function CashFlowChart({ cashFlow }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.07)" />
-            <XAxis dataKey="year" tick={{ fontSize: 10, fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 10, fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
+            <XAxis dataKey="year" tick={{ fontSize: "var(--fs-micro)", fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: "var(--fs-micro)", fill: "rgba(255,255,255,0.45)" }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }} />
+            <Legend wrapperStyle={{ fontSize: "var(--fs-tiny)", color: "rgba(255,255,255,0.6)" }} />
             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
             <Bar dataKey="ocf" name="Oper. CF" fill="var(--positive)" opacity={0.8} radius={[2, 2, 0, 0]} />
             <Bar dataKey="capex" name="Capex" fill="#ef444466" radius={[2, 2, 0, 0]} />
@@ -96,7 +96,7 @@ export function CashFlowChart({ cashFlow }: Props) {
 
       {/* FCF quality note */}
       {latest.operating_cash_flow_crore != null && latest.free_cash_flow_crore != null && (
-        <div style={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.45)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
+        <div style={{ fontSize: "var(--fs-small)", color: "rgba(255,255,255,0.45)", borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 8 }}>
           FCF Conversion:{" "}
           <span style={{
             fontWeight: 700,

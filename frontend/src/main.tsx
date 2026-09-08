@@ -31,23 +31,23 @@ class RootErrorBoundary extends React.Component<
           background: "#0c0c1d", color: "#fff", fontFamily: "system-ui",
           padding: "2rem", textAlign: "center",
         }}>
-          <div style={{ fontSize: "2rem", marginBottom: "1rem" }}>⚠️</div>
-          <h2 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "0.5rem" }}>
+          <div style={{ fontSize: "var(--fs-jumbo)", marginBottom: "1rem" }}>⚠️</div>
+          <h2 style={{ fontSize: "var(--fs-title)", fontWeight: 700, marginBottom: "0.5rem" }}>
             Something went wrong
           </h2>
-          <p style={{ fontSize: "0.875rem", color: "rgba(255,255,255,0.6)", marginBottom: "1.5rem", maxWidth: 400 }}>
+          <p style={{ fontSize: "var(--fs-body)", color: "rgba(255,255,255,0.6)", marginBottom: "1.5rem", maxWidth: 400 }}>
             {this.state.error.message}
           </p>
           <button
             onClick={() => window.location.reload()}
             style={{
               background: "var(--accent, #7c6aff)", color: "#fff", border: "none",
-              borderRadius: "8px", padding: "0.6rem 1.4rem", cursor: "pointer", fontSize: "0.875rem",
+              borderRadius: "8px", padding: "0.6rem 1.4rem", cursor: "pointer", fontSize: "var(--fs-body)",
             }}
           >
             Reload
           </button>
-          <details style={{ marginTop: "1rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", maxWidth: 600 }}>
+          <details style={{ marginTop: "1rem", fontSize: "var(--fs-small)", color: "rgba(255,255,255,0.35)", maxWidth: 600 }}>
             <summary style={{ cursor: "pointer" }}>Stack trace</summary>
             <pre style={{ textAlign: "left", marginTop: "0.5rem", overflowX: "auto" }}>
               {this.state.error.stack}

@@ -11,7 +11,7 @@
 }
 
 .pov-x {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: var(--text-muted);
   flex: 0 0 auto;
 }
@@ -34,7 +34,7 @@
   min-width: 46px;
   max-width: 120px;
   height: 8px;
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   background: var(--pfd-panel-hover, rgba(148, 163, 184, 0.12));
   overflow: hidden;
 }
@@ -42,7 +42,7 @@
 .pov-bar-fill {
   display: block;
   height: 100%;
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   transition: width 220ms ease;
 }
 
@@ -63,7 +63,7 @@
 
 .pov-bar-cell em {
   font-style: normal;
-  font-size: 9.5px;
+  font-size: var(--fs-nano);
   color: var(--text-muted);
   white-space: nowrap;
   flex: 0 0 auto;
@@ -85,7 +85,7 @@
   flex-wrap: wrap;
   justify-content: space-between;
   gap: 4px 16px;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   line-height: 1.55;
   color: var(--text-muted);
 }
@@ -95,12 +95,12 @@
 .pov-shared {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
 }
 
 .pov-shared th {
   padding: 4px 8px;
-  font-size: 9.5px;
+  font-size: var(--fs-nano);
   font-weight: 600;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -126,7 +126,7 @@
 
 .pov-more, .pov-detail-foot {
   margin: 0;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -134,7 +134,7 @@
 .pov-empty {
   margin: 0;
   padding: 16px 0 4px;
-  font-size: 11.5px;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
 }
 
@@ -152,11 +152,11 @@
 .pov-more-btn {
   padding: 3px 10px;
   font: inherit;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   color: var(--text-soft);
   background: transparent;
   border: 1px solid var(--pfd-hairline, rgba(148, 163, 184, 0.2));
-  border-radius: 99px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   white-space: nowrap;
 }

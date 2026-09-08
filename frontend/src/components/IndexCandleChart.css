@@ -15,7 +15,7 @@
   align-items: baseline;
   padding: 2px 2px 6px;
   font-family: var(--font-mono);
-  font-size: 0.68rem;
+  font-size: var(--fs-tiny);
   color: var(--text-muted);
   font-variant-numeric: tabular-nums;
 }

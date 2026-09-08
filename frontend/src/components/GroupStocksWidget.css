@@ -5,10 +5,9 @@
   flex-direction: column;
   background: rgba(13, 17, 23, 0.96);
   border: 1px solid rgba(99, 102, 241, 0.45);
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.55),
-    0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+    var(--elev-3);
   color: #c9d1d9;
   font-family: inherit;
   overflow: hidden;
@@ -18,8 +17,7 @@
 
 .group-stocks-widget.is-interacting {
   box-shadow:
-    0 18px 48px rgba(0, 0, 0, 0.7),
-    0 0 0 1px rgba(99, 102, 241, 0.65) inset;
+    var(--elev-3);
 }
 
 .gsw-header {
@@ -39,7 +37,7 @@
 .gsw-drag-handle {
   flex-shrink: 0;
   color: #6e7681;
-  font-size: 12px;
+  font-size: var(--fs-small);
   line-height: 1;
   letter-spacing: -2px;
   padding: 4px 4px 0 4px;
@@ -53,7 +51,7 @@
 
 .gsw-eyebrow {
   display: block;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6e7681;
@@ -62,7 +60,7 @@
 
 .gsw-title {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: var(--fs-body);
   font-weight: 600;
   color: #e6edf3;
   white-space: nowrap;
@@ -73,17 +71,17 @@
 .gsw-meta {
   display: flex;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   color: #8b949e;
 }
 
 .gsw-close {
   background: transparent;
   border: 1px solid rgba(48, 54, 61, 0.9);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   width: 26px;
   height: 26px;
-  font-size: 18px;
+  font-size: var(--fs-title);
   line-height: 1;
   color: #8b949e;
   cursor: pointer;
@@ -109,10 +107,10 @@
   background: var(--accent);
   border: none;
   color: #ffffff;
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-weight: 600;
   padding: 7px 12px;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   cursor: pointer;
   letter-spacing: 0.02em;
   transition: filter var(--dur-fast), transform 0.05s;
@@ -135,7 +133,7 @@
 .gsw-layout-toggle {
   display: inline-flex;
   border: 1px solid rgba(48, 54, 61, 0.9);
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   overflow: hidden;
 }
 
@@ -146,7 +144,7 @@
   width: 32px;
   height: 30px;
   cursor: pointer;
-  font-size: 14px;
+  font-size: var(--fs-body);
   transition: background var(--dur-fast), color var(--dur-fast);
 }
 
@@ -169,9 +167,9 @@
   background: rgba(13, 17, 23, 0.6);
   border: 1px solid rgba(48, 54, 61, 0.9);
   color: #c9d1d9;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   padding: 6px 10px;
-  font-size: 12px;
+  font-size: var(--fs-small);
   outline: none;
   transition: border-color var(--dur-fast);
 }
@@ -186,7 +184,7 @@
 
 .gsw-pane-hint {
   padding: 8px 14px 6px;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   color: #6e7681;
 }
 
@@ -200,7 +198,7 @@
   grid-template-columns: 28px 1fr 60px 60px 42px;
   gap: 8px;
   padding: 6px 14px;
-  font-size: 10px;
+  font-size: var(--fs-micro);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #6e7681;
@@ -221,7 +219,7 @@
 
 .gsw-list::-webkit-scrollbar-thumb {
   background: rgba(99, 102, 241, 0.25);
-  border-radius: 4px;
+  border-radius: var(--radius-xs);
 }
 
 .gsw-list::-webkit-scrollbar-thumb:hover {
@@ -234,7 +232,7 @@
   align-items: center;
   gap: 8px;
   padding: 7px 14px;
-  font-size: 12px;
+  font-size: var(--fs-small);
   cursor: pointer;
   border-left: 2px solid transparent;
   transition: background var(--dur-fast), border-color var(--dur-fast);
@@ -271,7 +269,7 @@
 .gsw-rank {
   color: #6e7681;
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   text-align: right;
 }
 
@@ -282,7 +280,7 @@
 }
 
 .gsw-symbol strong {
-  font-size: 12px;
+  font-size: var(--fs-small);
   font-weight: 600;
   color: #e6edf3;
   white-space: nowrap;
@@ -291,7 +289,7 @@
 }
 
 .gsw-symbol small {
-  font-size: 10px;
+  font-size: var(--fs-micro);
   color: #6e7681;
   white-space: nowrap;
   overflow: hidden;
@@ -301,7 +299,7 @@
 
 .gsw-change {
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   text-align: right;
   font-weight: 500;
 }
@@ -312,10 +310,10 @@
 
 .gsw-rs {
   font-variant-numeric: tabular-nums;
-  font-size: 11px;
+  font-size: var(--fs-tiny);
   text-align: center;
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
   padding: 2px 0;
 }
 
@@ -326,11 +324,11 @@
 
 .gsw-quarter {
   font-variant-numeric: tabular-nums;
-  font-size: 10.5px;
+  font-size: var(--fs-micro);
   font-weight: 700;
   text-align: center;
   padding: 2px 0;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   letter-spacing: 0.2px;
 }
 
@@ -344,7 +342,7 @@
   padding: 24px 14px;
   text-align: center;
   color: #6e7681;
-  font-size: 12px;
+  font-size: var(--fs-small);
 }
 
 .gsw-resize-handle {
@@ -358,7 +356,7 @@
   justify-content: flex-end;
   padding: 0 3px 1px 0;
   color: rgba(139, 148, 158, 0.7);
-  font-size: 10px;
+  font-size: var(--fs-micro);
   line-height: 1;
   cursor: nwse-resize;
   background: transparent;
