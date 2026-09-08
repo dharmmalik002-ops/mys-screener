@@ -23,6 +23,7 @@ import type {
   ChartGridStat,
 } from "./ChartGridModal";
 import { Panel } from "./Panel";
+import { SectorTreemap } from "./SectorTreemap";
 
 import "./GroupsPanel.css";
 
@@ -45,6 +46,12 @@ type GroupSortBy =
   | "rank" | "score" | "momentum" | "breadth"
   | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
+type GroupsView = "table" | "map";
+
+const VIEW_OPTIONS: Array<{ value: GroupsView; label: string }> = [
+  { value: "table", label: "Rankings" },
+  { value: "map", label: "Market Map" },
+];
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
   { value: "rank", label: "Rank" },
@@ -213,6 +220,7 @@ export function GroupsPanel({
   onRequestAddToWatchlist,
   onVisibleSymbolsChange,
 }: GroupsPanelProps) {
+  const [view, setView] = useState<GroupsView>("table");
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<GroupSortBy>("rank");
   // Rank is the only key where "best first" means ascending.
@@ -505,13 +513,30 @@ export function GroupsPanel({
         {/* ===== TOOLBAR ===== */}
         <div className="gp-toolbar">
           <div className="gp-toolbar-left">
-            <input
-              type="search"
-              className="gp-search"
-              placeholder="Search group, sector or symbol…"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+            <div className="gp-tabs" role="group" aria-label="Groups view">
+              {VIEW_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={`gp-tab${view === option.value ? " active" : ""}`}
+                  onClick={() => setView(option.value)}
+                  aria-pressed={view === option.value}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {/* Search, strength filter and sort all act on table rows, so they
+                are hidden rather than left present-but-inert on the map. */}
+            {view === "table" ? (
+              <input
+                type="search"
+                className="gp-search"
+                placeholder="Search group, sector or symbol…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            ) : null}
           </div>
           <div className="gp-toolbar-right">
             <button
@@ -522,6 +547,7 @@ export function GroupsPanel({
             >
               Export Top 20 Stocks
             </button>
+            {view === "table" ? (
             <div className="gp-tabs">
               {(["all", "top40", "top10"] as const).map((s) => (
                 <button
@@ -534,6 +560,8 @@ export function GroupsPanel({
                 </button>
               ))}
             </div>
+            ) : null}
+            {view === "table" ? (
             <select
               className="gp-select"
               value={sortBy}
@@ -548,22 +576,35 @@ export function GroupsPanel({
                 <option key={o.value} value={o.value}>Sort: {o.label}</option>
               ))}
             </select>
+            ) : null}
           </div>
         </div>
 
-        {/* ===== MASTER TABLE ===== */}
+        {/* ===== MASTER TABLE / MARKET MAP ===== */}
         <section className="gp-card gp-card-table">
           <div className="gp-card-head">
             <div>
-              <h3>Group Rankings</h3>
+              <h3>{view === "map" ? "Market Map" : "Group Rankings"}</h3>
               <p className="gp-card-sub">
-                {filteredGroups.length} of {totalGroups} groups
-                {searchQuery.trim() ? ` · matching "${searchQuery.trim()}"` : ""}
+                {view === "map" ? (
+                  "Sectors, then groups, then stocks — click any tile to drill in"
+                ) : (
+                  <>
+                    {filteredGroups.length} of {totalGroups} groups
+                    {searchQuery.trim() ? ` · matching "${searchQuery.trim()}"` : ""}
+                  </>
+                )}
               </p>
             </div>
           </div>
 
-          {!filteredGroups.length ? (
+          {view === "map" ? (
+            <SectorTreemap
+              data={data}
+              loading={loading}
+              onPickSymbolWithContext={onPickSymbolWithContext}
+            />
+          ) : !filteredGroups.length ? (
             loading ? (
               <div className="gp-empty">Loading group ranks…</div>
             ) : searchQuery.trim() ? (
