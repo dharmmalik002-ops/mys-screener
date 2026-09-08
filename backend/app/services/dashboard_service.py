@@ -91,6 +91,7 @@ from app.scanners.definitions import (
     scan_catalog_with_counts,
     build_scan_match,
     scanner_sector_label,
+    sparkline_closes,
 )
 from app.services.industry_groups import build_industry_groups_response, write_industry_group_files
 from app.services.market_environment import (
@@ -272,6 +273,7 @@ def build_leader_match(scan_id: str, snapshot: StockSnapshot, score: float, reas
         stock_return_60d=snapshot.stock_return_60d,
         stock_return_12m=snapshot.stock_return_12m,
         gap_pct=snapshot.gap_pct,
+        spark_closes=sparkline_closes(snapshot),
         reasons=[reason],
     )
 
@@ -350,6 +352,17 @@ class DashboardService:
             Path(getattr(provider, "backend_root", _backend_root)) / "data" / "scan_history.json",
             keep_dates=15,
         )
+
+    @property
+    def scan_history_store(self) -> ScanHistoryStore:
+        """Public accessor for the rolling per-session scan log.
+
+        The Telegram digest reuses this store under its own ``tg-digest:*``
+        keys, so its dedupe window is independent of the website's NEW chips.
+        Exposed rather than reaching into the private attribute from another
+        module.
+        """
+        return self._scan_history_store
 
     def _legacy_data_dir(self) -> Path:
         backend_root = getattr(self.provider, "backend_root", None)
@@ -1349,6 +1362,7 @@ class DashboardService:
                     stock_return_60d=snapshot.stock_return_60d,
                     stock_return_12m=snapshot.stock_return_12m,
                     gap_pct=snapshot.gap_pct,
+                    spark_closes=sparkline_closes(snapshot),
                     reasons=[f"Gap up {snapshot.gap_pct:.2f}%", f"Day change {snapshot.change_pct:.2f}%"],
                 )
             )
@@ -1421,6 +1435,7 @@ class DashboardService:
                     stock_return_60d=snapshot.stock_return_60d,
                     stock_return_12m=snapshot.stock_return_12m,
                     gap_pct=snapshot.gap_pct,
+                    spark_closes=sparkline_closes(snapshot),
                     reasons=[
                         f"RS Rating {snapshot.rs_rating}",
                         f"{consolidation_days}-day range {consolidation_range_pct:.2f}%",
@@ -1553,6 +1568,7 @@ class DashboardService:
                     stock_return_60d=snapshot.stock_return_60d,
                     stock_return_12m=snapshot.stock_return_12m,
                     gap_pct=snapshot.gap_pct,
+                    spark_closes=sparkline_closes(snapshot),
                     reasons=reasons,
                 )
             )

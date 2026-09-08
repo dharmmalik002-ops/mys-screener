@@ -44,6 +44,7 @@ import type {
 import { EmptyState } from "./EmptyState";
 import { Panel } from "./Panel";
 import { SortableHeader } from "./SortableTh";
+import { Sparkline } from "./Sparkline";
 
 import "./ScanTable.css";
 
@@ -202,46 +203,6 @@ function getLogoUrl(symbol: string): string | null {
 
 function initials(symbol: string): string {
   return symbol.slice(0, 2).toUpperCase();
-}
-
-/* ---------- Inline sparkline (synthesized from change/3M/1Y) ---------- */
-function MiniSpark({ item, color }: { item: ScanMatch; color: string }) {
-  // Synthesize a 7-point trajectory using available return windows so each
-  // ticker has a deterministic shape that reflects its momentum.
-  const r12m = item.stock_return_12m ?? 0;
-  const r3m = item.stock_return_60d ?? r12m / 4;
-  const r1m = item.stock_return_20d ?? r3m / 3;
-  const rDay = Number.isFinite(item.change_pct) ? item.change_pct : 0;
-
-  // Build 7 normalized points (0=baseline 100, then weighted blend of windows).
-  const pts: number[] = [
-    100,
-    100 + r12m * 0.15,
-    100 + r12m * 0.4,
-    100 + r12m * 0.65,
-    100 + r12m * 0.85 + r3m * 0.2,
-    100 + r12m * 0.95 + r3m * 0.6 + r1m * 0.4,
-    100 + r12m + r3m * 0.7 + r1m * 0.9 + rDay * 0.5,
-  ];
-
-  const minV = Math.min(...pts);
-  const maxV = Math.max(...pts);
-  const range = Math.max(0.001, maxV - minV);
-  const W = 80;
-  const H = 26;
-  const path = pts
-    .map((v, i) => {
-      const x = (i / (pts.length - 1)) * W;
-      const y = H - ((v - minV) / range) * H;
-      return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
-
-  return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="st-spark-svg" aria-hidden>
-      <path d={path} stroke={color} strokeWidth={1.6} fill="none" strokeLinecap="round" />
-    </svg>
-  );
 }
 
 /* ---------- RS rating badge ---------- */
@@ -971,7 +932,15 @@ export function ScanTable({
     const { item } = entry;
     const logoUrl = getLogoUrl(item.symbol);
     const up = item.change_pct >= 0;
-    const sparkColor = up ? "#10b981" : "#ef4444";
+    // Colour by the series the line actually draws. Using today's change_pct
+    // would paint a 20-session decline green on a green day, which is the
+    // opposite of what the reader takes from the shape.
+    const sparkSeries = item.spark_closes ?? [];
+    const sparkUp =
+      sparkSeries.length >= 2
+        ? sparkSeries[sparkSeries.length - 1] >= sparkSeries[0]
+        : up;
+    const sparkColor = sparkUp ? "var(--positive)" : "var(--negative)";
     const isActive = selectedSymbol === item.symbol;
     const volBadge = scan?.id === "volume" ? volumeTierBadge(item) : null;
 
@@ -1079,7 +1048,19 @@ export function ScanTable({
 
         {visibleCols.has("spark") ? (
           <span className="st-spark">
-            <MiniSpark item={item} color={sparkColor} />
+            <Sparkline
+              values={sparkSeries}
+              minRangePct={10}
+              color={sparkColor}
+              width={52}
+              height={22}
+              className="st-spark-svg"
+              label={
+                sparkSeries.length >= 2
+                  ? `${item.symbol}: ${sparkSeries.length}-session close trend, ${sparkSeries[0].toFixed(2)} to ${sparkSeries[sparkSeries.length - 1].toFixed(2)}`
+                  : `${item.symbol}: no recent close history`
+              }
+            />
           </span>
         ) : null}
 

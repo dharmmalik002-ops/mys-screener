@@ -54,6 +54,8 @@ export type ScanMatch = {
   stock_return_12m?: number | null;
   gap_pct?: number | null;
   reasons: string[];
+  /** Up to 20 recent closes, oldest first, ending on the current session. */
+  spark_closes?: number[];
   momentum_burst?: MomentumBurstPlan | null;
 };
 
@@ -1097,6 +1099,12 @@ function readStringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
+function readNumberArray(value: unknown): number[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is number => typeof item === "number" && Number.isFinite(item))
+    : [];
+}
+
 function mapArray<T>(value: unknown, mapper: (item: unknown) => T): T[] {
   return Array.isArray(value) ? value.map(mapper) : [];
 }
@@ -1165,6 +1173,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     stock_return_12m: readNullableNumber(raw.stock_return_12m),
     gap_pct: readNullableNumber(raw.gap_pct),
     reasons: readStringArray(raw.reasons),
+    spark_closes: readNumberArray(raw.spark_closes),
     momentum_burst: normalizeMomentumBurstPlan(raw.momentum_burst),
   };
 }

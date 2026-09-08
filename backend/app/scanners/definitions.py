@@ -751,6 +751,36 @@ def _recent_close_anchor_offset(snapshot: StockSnapshot) -> int:
     return 1 if current_price_gap <= 0.25 else 0
 
 
+SPARKLINE_MAX_POINTS = 20
+
+
+def sparkline_closes(snapshot: StockSnapshot, limit: int = SPARKLINE_MAX_POINTS) -> list[float]:
+    """Compact close series for a row sparkline, oldest first, ending today.
+
+    `recent_closes` may or may not already include the current session — that
+    depends on whether the bhavcopy patch has been applied to this row yet.
+    Rather than guess, this reuses the same `_recent_close_anchor_offset`
+    heuristic the scanners use, and appends `last_price` only when the stored
+    tail is still yesterday. Getting this wrong is visible: the sparkline would
+    either miss today's move or draw it twice.
+    """
+    closes = [
+        float(value)
+        for value in (getattr(snapshot, "recent_closes", None) or [])
+        if value is not None and float(value) > 0
+    ]
+    if not closes:
+        return []
+
+    # Offset 1 means recent_closes[-1] IS the current session (that is what
+    # _close_n_days_ago's `days + offset` indexing relies on), so there is
+    # nothing to append. Offset 0 means the tail is still yesterday.
+    if _recent_close_anchor_offset(snapshot) == 0 and snapshot.last_price > 0:
+        closes = [*closes, float(snapshot.last_price)]
+
+    return [round(value, 2) for value in closes[-limit:]]
+
+
 def _close_n_days_ago(snapshot: StockSnapshot, days: int) -> float | None:
     closes = [float(value) for value in getattr(snapshot, "recent_closes", []) if value is not None]
     if days <= 0 or not closes:
@@ -1671,6 +1701,7 @@ def build_scan_match(
         stock_return_12m=snapshot.stock_return_12m,
         gap_pct=snapshot.gap_pct,
         reasons=reasons,
+        spark_closes=sparkline_closes(snapshot),
     )
 
 

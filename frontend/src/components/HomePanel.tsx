@@ -606,6 +606,58 @@ function CandlestickChart({ bars, height = 220 }: { bars: ChartBar[]; height?: n
 
 /* ---------- Component ---------- */
 
+/**
+ * One row of a mover list (Gainers / Losers / Most Active).
+ *
+ * The three lists were three copies of the same 18 lines that differed only in
+ * the avatar tint, so the sparkline lands here once instead of three times.
+ * Values are the real closes off `spark_closes`; when the backend has no recent
+ * history for a symbol the shared Sparkline draws its dashed empty state rather
+ * than inventing a shape.
+ */
+function MoverRow({
+  item,
+  avatarClass,
+  onPickSymbol,
+}: {
+  item: ScanMatch;
+  avatarClass: string;
+  onPickSymbol: (symbol: string) => void;
+}) {
+  const logo = getLogoUrl(item.symbol);
+  const series = item.spark_closes ?? [];
+  const trendUp = series.length >= 2 ? series[series.length - 1] >= series[0] : item.change_pct >= 0;
+  return (
+    <button type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
+      {logo ? (
+        <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
+      ) : (
+        <span className={`homepro-avatar ${avatarClass}`}>{initials(item.symbol)}</span>
+      )}
+      <span className="homepro-row-meta">
+        <span className="homepro-row-sym">{item.symbol}</span>
+        <span className="homepro-row-sub">NSE</span>
+      </span>
+      <span className="homepro-row-spark">
+        <Sparkline
+          values={series}
+              minRangePct={10}
+          color={trendUp ? "var(--positive)" : "var(--negative)"}
+          width={46}
+          height={18}
+          label={
+            series.length >= 2
+              ? `${item.symbol}: ${series.length}-session close trend`
+              : `${item.symbol}: no recent close history`
+          }
+        />
+      </span>
+      <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
+      <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
+    </button>
+  );
+}
+
 export function HomePanel({
   activeMarket,
   dashboard,
@@ -1062,24 +1114,14 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("gainers")}>View All</button>
           </div>
           <div className="homepro-list">
-            {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => {
-              const logo = getLogoUrl(item.symbol);
-              return (
-                <button key={`g-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                  {logo ? (
-                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  ) : (
-                    <span className="homepro-avatar homepro-avatar-g">{initials(item.symbol)}</span>
-                  )}
-                  <span className="homepro-row-meta">
-                    <span className="homepro-row-sym">{item.symbol}</span>
-                    <span className="homepro-row-sub">NSE</span>
-                  </span>
-                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-                </button>
-              );
-            })}
+            {topGainers.length === 0 ? renderListSkeleton("g") : topGainers.map((item) => (
+              <MoverRow
+                key={`g-${item.symbol}`}
+                item={item}
+                avatarClass="homepro-avatar-g"
+                onPickSymbol={onPickSymbol}
+              />
+            ))}
           </div>
         </div>
 
@@ -1090,24 +1132,14 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("losers")}>View All</button>
           </div>
           <div className="homepro-list">
-            {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => {
-              const logo = getLogoUrl(item.symbol);
-              return (
-                <button key={`l-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                  {logo ? (
-                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  ) : (
-                    <span className="homepro-avatar homepro-avatar-r">{initials(item.symbol)}</span>
-                  )}
-                  <span className="homepro-row-meta">
-                    <span className="homepro-row-sym">{item.symbol}</span>
-                    <span className="homepro-row-sub">NSE</span>
-                  </span>
-                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-                </button>
-              );
-            })}
+            {topLosers.length === 0 ? renderListSkeleton("l") : topLosers.map((item) => (
+              <MoverRow
+                key={`l-${item.symbol}`}
+                item={item}
+                avatarClass="homepro-avatar-r"
+                onPickSymbol={onPickSymbol}
+              />
+            ))}
           </div>
         </div>
 
@@ -1118,24 +1150,14 @@ export function HomePanel({
             <button className="homepro-link" onClick={() => setViewAllMode("active")}>View All</button>
           </div>
           <div className="homepro-list">
-            {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => {
-              const logo = getLogoUrl(item.symbol);
-              return (
-                <button key={`a-${item.symbol}`} type="button" className="homepro-row" onClick={() => onPickSymbol(item.symbol)}>
-                  {logo ? (
-                    <img src={logo} className="homepro-logo-img" alt="" onError={(e) => (e.currentTarget.style.display = "none")} />
-                  ) : (
-                    <span className={`homepro-avatar ${i % 2 === 0 ? "homepro-avatar-b" : "homepro-avatar-v"}`}>{initials(item.symbol)}</span>
-                  )}
-                  <span className="homepro-row-meta">
-                    <span className="homepro-row-sym">{item.symbol}</span>
-                    <span className="homepro-row-sub">NSE</span>
-                  </span>
-                  <span className="homepro-row-price">{formatPrice(item.last_price)}</span>
-                  <span className={`homepro-chip ${item.change_pct >= 0 ? "pos" : "neg"}`}>{formatReturn(item.change_pct)}</span>
-                </button>
-              );
-            })}
+            {mostActive.length === 0 ? renderListSkeleton("a") : mostActive.map((item, i) => (
+              <MoverRow
+                key={`a-${item.symbol}`}
+                item={item}
+                avatarClass={i % 2 === 0 ? "homepro-avatar-b" : "homepro-avatar-v"}
+                onPickSymbol={onPickSymbol}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -1207,6 +1229,7 @@ function ViewAllModal({
                   <th>#</th>
                   <th>Stock</th>
                   <th>Sector</th>
+                  <th className="homepro-num">Trend</th>
                   <th className="homepro-num">Price</th>
                   <th className="homepro-num">{mode === "active" ? "RVOL" : "Change"}</th>
                   <th className="homepro-num">{mode === "active" ? "Change" : "Score"}</th>
@@ -1226,6 +1249,26 @@ function ViewAllModal({
                       </div>
                     </td>
                     <td style={{ color: "var(--hp-muted)", fontSize: 12 }}>{item.sector || "—"}</td>
+                    <td className="homepro-modal-spark">
+                      {(() => {
+                        const series = item.spark_closes ?? [];
+                        const up = series.length >= 2 ? series[series.length - 1] >= series[0] : item.change_pct >= 0;
+                        return (
+                          <Sparkline
+                            values={series}
+                            color={up ? "var(--positive)" : "var(--negative)"}
+                            width={64}
+                            height={22}
+                            minRangePct={10}
+                            label={
+                              series.length >= 2
+                                ? `${item.symbol}: ${series.length}-session close trend`
+                                : `${item.symbol}: no recent close history`
+                            }
+                          />
+                        );
+                      })()}
+                    </td>
                     <td className="homepro-num">{formatPrice(item.last_price)}</td>
                     <td className="homepro-num">
                       {mode === "active" ? (
