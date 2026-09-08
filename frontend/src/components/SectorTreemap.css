@@ -1,0 +1,375 @@
+/* ==========================================================================
+   SectorTreemap — market map
+   --------------------------------------------------------------------------
+   Colour rule: exactly ONE green (--positive) and ONE red (--negative), each
+   mixed toward the card surface in three steps. No second hue, no per-tile
+   hex. If the app's up/down pair ever changes, this file follows it for free —
+   and the light theme works without a single override, because every colour
+   below is a mix of two tokens that both already flip.
+
+   Type: 12px / 11px / 10px only. Radius: --radius-lg on the frame, 2-4px on
+   tiles. One shadow, from --elevation. Deliberately inside the existing scale.
+   ========================================================================== */
+
+.tm-root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+/* ----------------------------- colour ramp ----------------------------- */
+
+/* Two rules govern this ramp.
+ *
+ * 1. ONE green and ONE red. Every step below is derived from --positive and
+ *    --negative; there is no second hue and no per-tile hex anywhere.
+ * 2. Steps vary LIGHTNESS, not the amount of some other colour blended in.
+ *    Mixing toward --card-flat (navy) was the first attempt and it turned red
+ *    into mauve — a -1.6% banking block read as purple. Setting lightness
+ *    explicitly in oklch keeps the hue exact and the steps evenly spaced to
+ *    the eye, which is the whole job of a heatmap ramp.
+ *
+ * `flat` is a true neutral, one step lighter than the canvas, so "unchanged"
+ * reads as absence of colour rather than as a dark shade of something.
+ */
+.tm-root {
+  --tm-base: var(--card-flat);
+  --tm-tile-ink: var(--text);
+  --tm-tile-ink-strong: var(--accent-contrast);
+
+  /* Fallback ramp for engines without relative colour syntax. */
+  --tm-pos-3: var(--positive);
+  --tm-pos-2: color-mix(in oklab, var(--positive) 76%, black);
+  --tm-pos-1: color-mix(in oklab, var(--positive) 46%, black);
+  --tm-neg-3: var(--negative);
+  --tm-neg-2: color-mix(in oklab, var(--negative) 76%, black);
+  --tm-neg-1: color-mix(in oklab, var(--negative) 46%, black);
+  --tm-flat: color-mix(in oklab, var(--text-muted) 46%, black);
+}
+
+@supports (color: oklch(from red l c h)) {
+  .tm-root {
+    --tm-pos-3: oklch(from var(--positive) 0.68 c h);
+    --tm-pos-2: oklch(from var(--positive) 0.545 calc(c * 0.92) h);
+    --tm-pos-1: oklch(from var(--positive) 0.415 calc(c * 0.6) h);
+    --tm-neg-3: oklch(from var(--negative) 0.635 c h);
+    --tm-neg-2: oklch(from var(--negative) 0.505 calc(c * 0.92) h);
+    --tm-neg-1: oklch(from var(--negative) 0.385 calc(c * 0.6) h);
+    --tm-flat: oklch(from var(--text-muted) 0.345 0.008 h);
+  }
+}
+
+/* Light theme runs the same two hues from the opposite end. */
+:root[data-theme="light"] .tm-root {
+  --tm-tile-ink: #10151f;
+  --tm-tile-ink-strong: #10151f;
+  --tm-pos-3: color-mix(in oklab, var(--positive) 88%, white);
+  --tm-pos-2: color-mix(in oklab, var(--positive) 58%, white);
+  --tm-pos-1: color-mix(in oklab, var(--positive) 28%, white);
+  --tm-neg-3: color-mix(in oklab, var(--negative) 88%, white);
+  --tm-neg-2: color-mix(in oklab, var(--negative) 58%, white);
+  --tm-neg-1: color-mix(in oklab, var(--negative) 28%, white);
+  --tm-flat: color-mix(in oklab, var(--text-muted) 22%, white);
+}
+
+@supports (color: oklch(from red l c h)) {
+  :root[data-theme="light"] .tm-root {
+    --tm-pos-3: oklch(from var(--positive) 0.7 c h);
+    --tm-pos-2: oklch(from var(--positive) 0.82 calc(c * 0.7) h);
+    --tm-pos-1: oklch(from var(--positive) 0.92 calc(c * 0.42) h);
+    --tm-neg-3: oklch(from var(--negative) 0.68 c h);
+    --tm-neg-2: oklch(from var(--negative) 0.8 calc(c * 0.7) h);
+    --tm-neg-1: oklch(from var(--negative) 0.91 calc(c * 0.42) h);
+    --tm-flat: oklch(from var(--text-muted) 0.94 0.004 h);
+  }
+}
+
+/* Band -> fill. One line per step, tiles and legend swatches together, so the
+   legend can never drift out of sync with the map it explains. */
+.tm-tile.pos-1 .tm-tile-rect { fill: var(--tm-pos-1); }
+.tm-tile.pos-2 .tm-tile-rect { fill: var(--tm-pos-2); }
+.tm-tile.pos-3 .tm-tile-rect { fill: var(--tm-pos-3); }
+.tm-tile.neg-1 .tm-tile-rect { fill: var(--tm-neg-1); }
+.tm-tile.neg-2 .tm-tile-rect { fill: var(--tm-neg-2); }
+.tm-tile.neg-3 .tm-tile-rect { fill: var(--tm-neg-3); }
+.tm-tile.flat  .tm-tile-rect { fill: var(--tm-flat); }
+
+.tm-legend-swatch.pos-1 { background: var(--tm-pos-1); }
+.tm-legend-swatch.pos-2 { background: var(--tm-pos-2); }
+.tm-legend-swatch.pos-3 { background: var(--tm-pos-3); }
+.tm-legend-swatch.neg-1 { background: var(--tm-neg-1); }
+.tm-legend-swatch.neg-2 { background: var(--tm-neg-2); }
+.tm-legend-swatch.neg-3 { background: var(--tm-neg-3); }
+.tm-legend-swatch.flat  { background: var(--tm-flat); }
+
+/* Fully saturated green and red are light enough that dark ink is the readable
+   choice; the darker steps keep the app's normal text colour. */
+.tm-tile.pos-3 .tm-tile-label, .tm-tile.pos-3 .tm-tile-value,
+.tm-tile.neg-3 .tm-tile-label, .tm-tile.neg-3 .tm-tile-value {
+  fill: var(--tm-tile-ink-strong);
+}
+
+/* ----------------------------- controls ----------------------------- */
+
+.tm-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tm-crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.tm-crumb {
+  border: 0;
+  background: transparent;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  transition: color var(--transition-fast);
+}
+.tm-crumb:hover:not(:disabled) { color: var(--text); }
+.tm-crumb.active { color: var(--text); cursor: default; }
+.tm-crumb:disabled { cursor: default; }
+.tm-crumb-sep { color: var(--text-muted); font-size: 11px; }
+
+.tm-crumb-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.tm-crumb-back:hover { color: var(--text); border-color: var(--line-strong); }
+
+.tm-control-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.tm-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+}
+
+.tm-seg-btn {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.tm-seg-btn:hover { color: var(--text); }
+.tm-seg-btn.active {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
+
+/* ----------------------------- canvas ----------------------------- */
+
+.tm-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--tm-base);
+  box-shadow: var(--elevation);
+}
+
+.tm-canvas { display: block; }
+
+.tm-parent-rect {
+  fill: color-mix(in oklab, var(--tm-base) 82%, var(--bg));
+  stroke: var(--line);
+  stroke-width: 1;
+}
+
+.tm-parent-label {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--text-soft);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.tm-parent-ret {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.tm-parent-ret.pos-1, .tm-parent-ret.pos-2, .tm-parent-ret.pos-3 { fill: var(--positive); }
+.tm-parent-ret.neg-1, .tm-parent-ret.neg-2, .tm-parent-ret.neg-3 { fill: var(--negative); }
+.tm-parent-ret.flat { fill: var(--text-muted); }
+
+.tm-tile-rect {
+  stroke: color-mix(in oklab, var(--tm-base) 60%, transparent);
+  stroke-width: 1;
+  transition: opacity var(--transition-fast);
+}
+
+.tm-tile-label {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--tm-tile-ink);
+  pointer-events: none;
+}
+
+/* A big tile with an 11px label looks like a mistake — the label has to carry
+   its share of the tile. Two steps is enough; both already exist in the app. */
+.tm-tile-label.lg { font-size: 13px; }
+
+.tm-tile-value {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  fill: var(--tm-tile-ink);
+  opacity: 0.82;
+  pointer-events: none;
+}
+
+.tm-tile-value.lg { font-size: 12px; opacity: 0.9; }
+
+.tm-clickable { cursor: pointer; }
+.tm-clickable:hover .tm-tile-rect {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+/* The app has almost no visible focus styling; this one is deliberate, because
+   the tiles are reachable by keyboard and an SVG rect shows no default ring. */
+.tm-tile:focus, .tm-parent:focus { outline: none; }
+.tm-tile:focus-visible .tm-tile-rect,
+.tm-parent:focus-visible .tm-parent-rect {
+  stroke: var(--accent);
+  stroke-width: 2.5;
+}
+
+.tm-parent.tm-clickable:hover .tm-parent-rect { stroke: var(--line-strong); }
+.tm-parent.tm-clickable:hover .tm-parent-label { fill: var(--text); }
+
+/* ----------------------------- tooltip ----------------------------- */
+
+.tm-tooltip {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 150px;
+  max-width: 206px;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--elevation);
+  pointer-events: none;
+}
+
+.tm-tooltip strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.tm-tt-ret {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.tm-tt-ret.pos-1, .tm-tt-ret.pos-2, .tm-tt-ret.pos-3 { color: var(--positive); }
+.tm-tt-ret.neg-1, .tm-tt-ret.neg-2, .tm-tt-ret.neg-3 { color: var(--negative); }
+.tm-tt-ret.flat { color: var(--text-muted); }
+
+.tm-tt-meta { font-size: 10px; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.tm-tt-hint { margin-top: 2px; font-size: 10px; color: var(--text-muted); }
+
+/* ----------------------------- footer ----------------------------- */
+
+.tm-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.tm-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.tm-legend-swatch {
+  width: 22px;
+  height: 9px;
+  border-radius: 2px;
+}
+
+.tm-legend-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.tm-note {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.tm-empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tm-tile-rect, .tm-seg-btn, .tm-crumb, .tm-crumb-back { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .tm-controls { flex-direction: column; align-items: stretch; }
+  .tm-control-group { justify-content: space-between; }
+  .tm-crumb { max-width: 130px; }
+}
