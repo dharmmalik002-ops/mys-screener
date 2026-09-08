@@ -145,7 +145,7 @@
   min-width: 0;
 }
 
-.ssp-section.is-turning { border-left-color: #fbbf24; }
+.ssp-section.is-turning { border-left-color: var(--amber); }
 .ssp-section.is-advancing { border-left-color: var(--pfd-up, var(--positive)); }
 .ssp-section.is-sideways { border-left-color: #94a3b8; }
 .ssp-section.is-declining { border-left-color: var(--pfd-down, var(--negative)); }
@@ -239,7 +239,7 @@
   white-space: nowrap;
 }
 
-.ssp-stage-chip.stage-1 { color: #fbbf24; background: rgba(251, 191, 36, 0.14); }
+.ssp-stage-chip.stage-1 { color: var(--amber); background: rgba(251, 191, 36, 0.14); }
 .ssp-stage-chip.stage-2 { color: var(--pfd-up); background: rgba(52, 211, 153, 0.14); }
 .ssp-stage-chip.stage-3 { color: #94a3b8; background: rgba(148, 163, 184, 0.16); }
 .ssp-stage-chip.stage-4 { color: var(--pfd-down); background: rgba(251, 113, 133, 0.14); }
@@ -329,7 +329,7 @@
 
 .ssp-card-foot i { font-style: normal; }
 .ssp-open { margin-left: auto; color: var(--pfd-line); white-space: nowrap; }
-.ssp-stale { color: #fbbf24; }
+.ssp-stale { color: var(--amber); }
 
 /* ---------------------------------------------------------------- modal */
 

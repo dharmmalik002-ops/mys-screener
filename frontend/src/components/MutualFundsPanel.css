@@ -266,7 +266,7 @@
 }
 
 .mfp-pill:hover { color: var(--text-soft); }
-.mfp-pill.active { color: var(--accent); border-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
+.mfp-pill.active { color: var(--accent-on-tint); border-color: var(--accent); background: rgba(56, 189, 248, 0.08); }
 
 .mfp-colset-hint {
   flex: 1 1 260px;
@@ -334,7 +334,7 @@
   font-size: var(--fs-nano);
   border-radius: var(--radius-xs);
   background: rgba(56, 189, 248, 0.16);
-  color: var(--accent);
+  color: var(--accent-on-tint);
 }
 
 .mfp-dim { color: var(--text-muted); }
@@ -347,7 +347,7 @@
 .mfp-rank i { font-style: normal; font-size: var(--fs-nano); opacity: 0.55; }
 .mfp-rank.q1 { color: var(--positive); }
 .mfp-rank.q2 { color: #a3e635; }
-.mfp-rank.q3 { color: #fbbf24; }
+.mfp-rank.q3 { color: var(--amber); }
 .mfp-rank.q4 { color: var(--negative); }
 
 .mfp-add {

@@ -364,7 +364,7 @@
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #94a3b8;
+  color: var(--text-muted);
   margin: 0 0 2px;
 }
 
@@ -478,7 +478,7 @@
   text-transform: uppercase;
   letter-spacing: 0.08em;
   font-weight: 700;
-  color: #94a3b8;
+  color: var(--text-muted);
 }
 
 .top-nav .mode-switch {

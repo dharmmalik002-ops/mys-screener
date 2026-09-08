@@ -8,8 +8,8 @@
   --sf-bg: #f9fafb;
   --sf-surface: #ffffff;
   --sf-border: #e5e7eb;
-  --sf-text: #111827;
-  --sf-text-soft: #6b7280;
+  --sf-text: var(--text);
+  --sf-text-soft: var(--text-soft);
   --sf-pos: var(--positive);
   --sf-neg: var(--negative);
 

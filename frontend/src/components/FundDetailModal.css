@@ -135,7 +135,7 @@
 .fdm-rank-q1 strong { color: var(--positive); }
 .fdm-rank-q1 em { background: rgba(34, 197, 94, 0.16); color: var(--positive-tint); }
 .fdm-rank-q2 strong { color: #a3e635; }
-.fdm-rank-q3 strong { color: #fbbf24; }
+.fdm-rank-q3 strong { color: var(--amber); }
 .fdm-rank-q4 strong { color: var(--negative); }
 .fdm-rank-q4 em { background: rgba(239, 68, 68, 0.16); color: var(--negative-tint); }
 .fdm-rank-none { font-size: var(--fs-small); color: var(--text-muted); }

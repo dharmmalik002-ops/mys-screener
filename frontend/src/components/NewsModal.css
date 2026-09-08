@@ -171,7 +171,7 @@
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--news-accent) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--news-accent) 30%, transparent);
-  color: #ffd166;
+  color: var(--amber);
   white-space: nowrap;
 }
 
@@ -212,7 +212,7 @@
 }
 
 .news-section-results {
-  color: #ffd166;
+  color: var(--amber);
 }
 
 .news-section-general {

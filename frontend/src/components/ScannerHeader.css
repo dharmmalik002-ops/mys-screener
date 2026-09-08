@@ -8,9 +8,9 @@
   --sh-bg: #f9fafb;
   --sh-surface: #ffffff;
   --sh-border: #e5e7eb;
-  --sh-text: #111827;
-  --sh-text-soft: #6b7280;
-  --sh-muted: #9ca3af;
+  --sh-text: var(--text);
+  --sh-text-soft: var(--text-soft);
+  --sh-muted: var(--text-muted);
 
   display: flex;
   flex-direction: column;
@@ -121,7 +121,7 @@
 }
 .sh-icon-confirm:hover {
   background: rgba(16, 185, 129, 0.1);
-  color: #059669;
+  color: var(--positive);
   border-color: var(--positive);
 }
 .sh-icon-cancel:hover {

@@ -10,9 +10,9 @@
   --ss-bg: #f9fafb;
   --ss-surface: #ffffff;
   --ss-border: #e5e7eb;
-  --ss-text: #111827;
-  --ss-text-soft: #6b7280;
-  --ss-muted: #9ca3af;
+  --ss-text: var(--text);
+  --ss-text-soft: var(--text-soft);
+  --ss-muted: var(--text-muted);
 
   background: var(--ss-bg) !important;
   border-radius: var(--radius-lg);
@@ -374,7 +374,7 @@
 :root[data-theme="dark"] .ss-stale,
 .theme-dark .ss-stale {
   background: rgba(245, 158, 11, 0.18);
-  color: #fbbf24;
+  color: var(--amber);
 }
 
 .ss-saved-delete {

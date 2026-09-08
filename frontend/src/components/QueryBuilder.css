@@ -8,8 +8,8 @@
   --qb-bg: #f9fafb;
   --qb-surface: #ffffff;
   --qb-border: #e5e7eb;
-  --qb-text: #111827;
-  --qb-text-soft: #6b7280;
+  --qb-text: var(--text);
+  --qb-text-soft: var(--text-soft);
 
   display: flex;
   flex-direction: column;
