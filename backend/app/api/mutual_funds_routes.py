@@ -139,6 +139,26 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         _require_ready(service)
         return service.get_fund_ai_review(scheme_code)
 
+    @router.get("/sectors/stages")
+    def sector_stages_endpoint():
+        """Every Nifty sector index, classified by where it sits in its cycle.
+
+        Weinstein stage analysis on weekly closes — a measurement of what price
+        has done, in the same register as the equity scanners. It groups
+        sectors; it does not tell anyone to buy one.
+        """
+        _require_ready(service)
+        return service.get_sector_stages()
+
+    @router.get("/sectors/{key}/series")
+    def sector_series(key: str, range: str = Query(default="3y", alias="range")):
+        """Daily OHLC and the 30-week average for one sector index."""
+        _require_ready(service)
+        payload = service.get_sector_series(key, range_key=range)
+        if payload is None:
+            raise HTTPException(status_code=404, detail=f"Unknown or unavailable sector: {key}")
+        return payload
+
     @router.get("/portfolio")
     def get_portfolio():
         return service.get_portfolio()
@@ -204,6 +224,34 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
         _require_ready(service)
         return service.get_portfolio_concentration()
 
+    @router.get("/portfolio/overlap")
+    def portfolio_overlap():
+        """How much each pair of held funds holds the same stocks.
+
+        Two funds can each be diversified and still be the same portfolio. This
+        reports the measured duplication per pair; it does not suggest dropping
+        either one, which would be a personalised investment decision.
+        """
+        _require_ready(service)
+        return service.get_portfolio_overlap()
+
+    @router.get("/portfolio/health")
+    def portfolio_health_endpoint():
+        """Measured findings about the whole portfolio, plus the positioning plot.
+
+        Cost against category, duplication, long-window laggards, market cap
+        reach and fund house concentration — all arithmetic over funds the user
+        already holds. Reports; does not advise.
+        """
+        _require_ready(service)
+        return service.get_portfolio_health()
+
+    @router.get("/portfolio/ai-health")
+    def portfolio_ai_health():
+        """The same findings in prose. Describes the evidence, recommends nothing."""
+        _require_ready(service)
+        return service.get_portfolio_ai_health()
+
     @router.get("/portfolio/peer-comparison")
     def portfolio_peer_comparison():
         """For each fund held, which funds in its category measured better.
@@ -234,13 +282,22 @@ def build_mutual_funds_router(service: MutualFundService) -> APIRouter:
             frequency=str(payload.get("frequency") or "monthly"),
             day_of_month=payload.get("day_of_month"),
             weekday=payload.get("weekday"),
+            step_up_pct=payload.get("step_up_pct"),
+            shift_weekends=bool(payload.get("shift_weekends", True)),
         )
         total = sum(t["amount"] or 0 for t in transactions)
+        # Surfaced so the UI can confirm the two things a user cannot verify by
+        # eye: that a step-up actually grew the instalment, and how many dates
+        # were moved off a weekend.
+        shifted = sum(1 for t in transactions if t.get("scheduled_date"))
         return {
             "count": len(transactions),
             "total_amount": round(total, 2),
             "first_date": transactions[0]["date"] if transactions else None,
             "last_date": transactions[-1]["date"] if transactions else None,
+            "first_amount": transactions[0]["amount"] if transactions else None,
+            "last_amount": transactions[-1]["amount"] if transactions else None,
+            "weekend_shifted": shifted,
             "transactions": transactions,
         }
 

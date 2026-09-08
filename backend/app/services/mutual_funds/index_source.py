@@ -36,14 +36,20 @@ def _cache_path(symbol: str) -> Path:
     return paths.NAV_DIR / f"_index_{safe}.json"
 
 
-def _read_cache(path: Path) -> dict[str, Any] | None:
+def _read_cache(path: Path, *, require_ohlc: bool = False) -> dict[str, Any] | None:
     try:
         if (time.time() - path.stat().st_mtime) > CACHE_TTL_SECONDS:
             return None
         payload = json.loads(path.read_text())
     except (OSError, ValueError):
         return None
-    return payload if isinstance(payload, dict) and payload.get("dates") else None
+    if not (isinstance(payload, dict) and payload.get("dates")):
+        return None
+    # Caches written before OHLC was captured hold closes only. A candlestick
+    # caller has to refetch rather than be handed a series it cannot draw.
+    if require_ohlc and not payload.get("highs"):
+        return None
+    return payload
 
 
 def _read_stale_cache(path: Path) -> dict[str, Any] | None:
@@ -54,15 +60,18 @@ def _read_stale_cache(path: Path) -> dict[str, Any] | None:
     return payload if isinstance(payload, dict) and payload.get("dates") else None
 
 
-def fetch_index_series(symbol: str, *, force: bool = False) -> dict[str, Any]:
-    """Full available daily close history for one index symbol.
+def fetch_index_series(symbol: str, *, force: bool = False, want_ohlc: bool = False) -> dict[str, Any]:
+    """Full available daily history for one index symbol.
 
-    Returns the same two-array shape as `nav_source.fetch_nav_history` so the
-    two are interchangeable everywhere downstream.
+    Returns the same `dates`/`navs` shape as `nav_source.fetch_nav_history` so
+    the two stay interchangeable everywhere downstream, plus `opens`/`highs`/
+    `lows` aligned to the same index for callers that draw candles. Unlike a
+    fund NAV, an index really does have an intraday high and low, so these are
+    true daily bars rather than an aggregation.
     """
     path = _cache_path(symbol)
     if not force:
-        cached = _read_cache(path)
+        cached = _read_cache(path, require_ohlc=want_ohlc)
         if cached:
             return cached
 
@@ -81,14 +90,39 @@ def fetch_index_series(symbol: str, *, force: bool = False) -> dict[str, Any]:
 
     dates: list[str] = []
     closes: list[float] = []
+    opens: list[float] = []
+    highs: list[float] = []
+    lows: list[float] = []
     if frame is not None and len(frame):
-        for stamp, close in zip(frame.index, frame["Close"]):
+        has_ohlc = all(column in frame for column in ("Open", "High", "Low"))
+        columns = [frame["Close"]]
+        if has_ohlc:
+            columns += [frame["Open"], frame["High"], frame["Low"]]
+        for row in zip(frame.index, *columns):
+            stamp, close = row[0], row[1]
             try:
                 value = float(close)
             except (TypeError, ValueError):
                 continue
             if value != value or value <= 0:
                 continue
+            if has_ohlc:
+                try:
+                    bar = [float(row[2]), float(row[3]), float(row[4])]
+                except (TypeError, ValueError):
+                    bar = [value, value, value]
+                # A NaN or non-positive leg makes an undrawable candle; fall
+                # back to a flat bar at the close rather than dropping the day
+                # and putting a hole in the close series.
+                if any(x != x or x <= 0 for x in bar):
+                    bar = [value, value, value]
+                # Yahoo occasionally serves a high below the close on thin
+                # index days. Clamp so the wick always contains the body.
+                bar[1] = max(bar[1], bar[0], value)
+                bar[2] = min(bar[2], bar[0], value)
+                opens.append(bar[0])
+                highs.append(bar[1])
+                lows.append(bar[2])
             dates.append(stamp.date().isoformat() if hasattr(stamp, "date") else str(stamp)[:10])
             closes.append(value)
 
@@ -108,6 +142,10 @@ def fetch_index_series(symbol: str, *, force: bool = False) -> dict[str, Any]:
         "navs": closes,
         "is_price_index": True,
     }
+    if len(opens) == len(dates):
+        payload["opens"] = opens
+        payload["highs"] = highs
+        payload["lows"] = lows
     paths.ensure_dirs()
     temp = path.with_suffix(".tmp")
     temp.write_text(json.dumps(payload, separators=(",", ":")))

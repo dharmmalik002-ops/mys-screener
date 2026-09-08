@@ -903,6 +903,77 @@ Return ONLY valid JSON (no markdown fences):
         self._mark_quota_exhausted()
         raise RuntimeError(f"All models exhausted for fund review: {last_exc}")
 
+    def generate_portfolio_health_note(self, evidence_json: str) -> dict[str, Any]:
+        """Prose over the portfolio's measured findings.
+
+        Same contract as `generate_fund_review_note`, widened from one fund to
+        the whole book: every figure is computed upstream in
+        `mutual_funds/portfolio_health.py` and handed in, and the model
+        describes rather than derives.
+
+        The no-advice rule matters more here than anywhere else in the app. A
+        model looking at someone's actual holdings will reach for "consolidate
+        these two" and "add a small cap fund" unless told not to, and that is
+        exactly the personalised advice this app does not give. The prompt
+        forbids it explicitly, and the deterministic findings the prose sits on
+        are themselves constrained the same way.
+        """
+        if not self.available:
+            return {}
+
+        prompt = f"""You are an experienced Indian mutual fund analyst writing to an investor about the portfolio they already hold.
+
+Below are measured findings about their portfolio, computed from AMFI NAV history, disclosed fund holdings, and SEBI category data: what the book costs to run against its categories, which of their funds duplicate each other's stocks, which holdings have trailed their own category over long windows, the market cap spread of the underlying stocks, and fund house concentration.
+
+EVIDENCE:
+{evidence_json}
+
+Rules you must follow:
+- Use ONLY the numbers given. Never compute, estimate or invent a figure. If something is absent, say the findings do not cover it.
+- Do NOT tell the reader to buy, sell, switch, hold, exit, consolidate, redeem, add to or stop anything. Do NOT name a fund they should move to or suggest they need a fund of any category. Do NOT suggest how much to invest, when to invest it, or how to rebalance. Do NOT comment on market levels, valuations or timing.
+- You MAY be candid and evaluative about what the EVIDENCE shows — say plainly that cost is high, that two funds are near-duplicates, or that a record is weak. Describing a finding forcefully is not the same as instructing the reader.
+- Frame everything as what is measurably true of the portfolio, so the reader draws their own conclusion. Where a finding has an obvious implication, state the mechanism (what a cost gap compounds into, what overlap means for diversification) rather than the action.
+- Where findings genuinely conflict, or a finding has an innocent explanation (same-category funds naturally overlap), say so.
+- Note where the evidence is thin — funds too young to rank, holdings that disclose no portfolio.
+- Plain English, no jargon without explanation, no markdown.
+
+Return ONLY valid JSON (no markdown fences):
+{{
+  "headline": "one factual sentence on the portfolio's overall measured state",
+  "assessment": ["paragraph 1: what the portfolio measurably looks like as a whole", "paragraph 2: the findings that most affect a long-horizon outcome, and the mechanism behind each", "paragraph 3: what these measurements do not settle"],
+  "strengths": ["2-4 short bullets: what measures well, each with its figure"],
+  "frictions": ["2-4 short bullets: what measurably works against the portfolio, each with its figure"],
+  "watch": "the single measurable thing that would most change this picture"
+}}"""
+
+        last_exc: Exception | None = None
+        for model_name in self._MODELS:
+            for attempt in range(self._MAX_RETRIES):
+                try:
+                    response = self._client.models.generate_content(
+                        model=model_name,
+                        contents=prompt,
+                        config=genai.types.GenerateContentConfig(temperature=0.3, max_output_tokens=4096),
+                    )
+                    text = (response.text or "").strip()
+                    start, end = text.find("{"), text.rfind("}")
+                    if start == -1 or end <= start:
+                        raise ValueError("no JSON object in portfolio health response")
+                    result = json.loads(text[start:end + 1])
+                    logger.info("Portfolio health note generated with model %s", model_name)
+                    return result
+                except Exception as exc:
+                    last_exc = exc
+                    err_str = str(exc).lower()
+                    if "resource_exhausted" in err_str or "429" in err_str:
+                        if attempt < self._MAX_RETRIES - 1:
+                            time.sleep(self._RETRY_BASE_DELAY * (attempt + 1))
+                            continue
+                        break
+                    raise
+        self._mark_quota_exhausted()
+        raise RuntimeError(f"All models exhausted for portfolio health: {last_exc}")
+
     def answer_company_question(self, fundamentals: CompanyFundamentals, question: str) -> str:
         """Answer a freeform company question using Gemini and existing fundamentals context."""
         cleaned_question = question.strip()

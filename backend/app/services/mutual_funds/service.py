@@ -24,7 +24,11 @@ from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from . import benchmarks, concentration, fund_review, groww_source, index_source, metrics, nav_source, paths, portfolio, statement_import
+from . import (
+    benchmarks, concentration, fund_review, groww_source, index_source, metrics,
+    nav_source, overlap, paths, portfolio, portfolio_health, sector_stages,
+    statement_import,
+)
 from .harvest import detail_blob, universe_row
 
 # Chart ranges, in calendar days. "max" is handled separately.
@@ -1272,6 +1276,235 @@ class MutualFundService:
         payload["as_of"] = valued.get("as_of")
         return payload
 
+    # ------------------------------------------------------------ sectors
+
+    def _sector_definitions(self) -> list[dict[str, Any]]:
+        return [
+            {"key": item.key, "name": item.label, "symbol": item.yahoo_symbol}
+            for item in benchmarks.SECTOR_BENCHMARKS
+            if item.yahoo_symbol
+        ]
+
+    def _sector_artifact(self) -> dict[str, Any]:
+        """The committed sector-index history, loaded once.
+
+        Yahoo refuses most of these symbols from datacenter IPs, so a live
+        fetch on the Space returns three sectors out of sixteen. The artifact
+        is what makes the page whole in production; see
+        `scripts/build_sector_indices.py`.
+        """
+        cached = getattr(self, "_sector_blob", None)
+        if cached is not None:
+            return cached
+        path = paths.DATA_DIR / "sector_indices.json"
+        try:
+            blob = json.loads(path.read_text())
+        except (OSError, ValueError):
+            blob = {}
+        self._sector_blob = blob
+        return blob
+
+    def _sector_index_series(self, symbol: str) -> dict[str, Any]:
+        """Daily OHLC for one index — live if the feed answers, else shipped.
+
+        Live is preferred so a machine that can reach Yahoo shows today's bar,
+        but a refusal falls through to the committed history rather than
+        dropping the sector off the page.
+        """
+        try:
+            live = index_source.fetch_index_series(symbol, want_ohlc=True)
+            if live.get("dates"):
+                return live
+        except Exception:
+            pass
+
+        for entry in (self._sector_artifact().get("sectors") or {}).values():
+            if entry.get("symbol") == symbol:
+                daily = entry["daily"]
+                return {
+                    "symbol": symbol,
+                    "dates": daily["dates"],
+                    "navs": daily["closes"],
+                    "opens": daily["opens"],
+                    "highs": daily["highs"],
+                    "lows": daily["lows"],
+                    "weekly": entry.get("weekly"),
+                    "ma30w": daily.get("ma30w"),
+                    "from_artifact": True,
+                    "is_price_index": True,
+                }
+        market = self._sector_artifact().get("market") or {}
+        if market.get("symbol") == symbol:
+            daily = market["daily"]
+            return {
+                "symbol": symbol,
+                "dates": daily["dates"],
+                "navs": daily["closes"],
+                "opens": daily["opens"],
+                "highs": daily["highs"],
+                "lows": daily["lows"],
+                "from_artifact": True,
+                "is_price_index": True,
+            }
+        raise index_source.IndexUnavailable(f"no live feed or shipped history for {symbol}")
+
+    def _funds_by_sector(self) -> dict[str, list[dict[str, Any]]]:
+        """Which funds in the universe track each sector index.
+
+        Reuses `benchmarks.resolve_theme`, the same mapping the fund pages
+        already benchmark against — so the funds listed under a sector are
+        exactly the ones measured against that sector everywhere else, rather
+        than a second, subtly different classification.
+        """
+        out: dict[str, list[dict[str, Any]]] = {}
+        for fund in (self._load_universe().get("funds") or []):
+            sub_category = str(fund.get("sub_category") or "")
+            if sub_category not in ("Sectoral", "Thematic", "Sectoral / Thematic"):
+                continue
+            resolved = benchmarks.resolve_theme(fund.get("name"))
+            if resolved is None:
+                continue
+            out.setdefault(resolved.key, []).append({
+                "scheme_code": fund.get("scheme_code"),
+                "name": fund.get("name"),
+                "amc": fund.get("amc"),
+                "return_1y": fund.get("return_1y"),
+                "return_3y": fund.get("return_3y"),
+                "expense_ratio": fund.get("expense_ratio"),
+                "aum_crore": fund.get("aum_crore"),
+                "percentile_3y": fund.get("percentile_3y"),
+            })
+        for funds in out.values():
+            # Largest first: AUM is the least opinionated ordering available,
+            # and ranking them by return here would read as a shortlist.
+            funds.sort(key=lambda row: -(row.get("aum_crore") or 0))
+        return out
+
+    def get_sector_stages(self) -> dict[str, Any]:
+        """Every Nifty sector index, classified by where it sits in its cycle.
+
+        Cached for six hours: the classification moves on weekly closes, so
+        recomputing it per request would re-read sixteen index files to produce
+        the same answer.
+        """
+        with self._ai_lock:
+            cached = self._ai_cache.get("sector_stages")
+            if cached and (time.time() - cached[0]) < 6 * 60 * 60:
+                return cached[1]
+
+        try:
+            market = self._sector_index_series("^NSEI")
+        except Exception:
+            market = None
+
+        payload = sector_stages.build(
+            self._sector_definitions(),
+            series_for=self._sector_index_series,
+            market_series=market,
+        )
+        funds_by_sector = self._funds_by_sector()
+        for rows in payload["buckets"].values():
+            for row in rows:
+                tracking = funds_by_sector.get(row["key"], [])
+                row["fund_count"] = len(tracking)
+                row["funds"] = tracking[:8]
+
+        with self._ai_lock:
+            self._ai_cache["sector_stages"] = (time.time(), payload)
+        return payload
+
+    def get_sector_series(self, key: str, *, range_key: str = "3y") -> dict[str, Any] | None:
+        """Daily OHLC for one sector index, plus its 30-week average.
+
+        The average is computed on the full history and then windowed, not
+        computed on the window — otherwise the first 30 weeks of any range
+        would have no average at all.
+        """
+        definition = next((item for item in self._sector_definitions() if item["key"] == key), None)
+        if definition is None:
+            return None
+        try:
+            daily = self._sector_index_series(definition["symbol"])
+        except Exception:
+            return None
+        if not daily.get("dates"):
+            return None
+
+        dates = daily["dates"]
+        closes = daily["navs"]
+        # 30 weeks of trading days, so the daily line carries the same average
+        # the weekly classification used. The artifact ships this precomputed
+        # over the full history — recomputing it on the stored five-year window
+        # would leave the first 150 days of the chart without an average.
+        ma = daily.get("ma30w") or sector_stages._sma(closes, sector_stages.MA_WEEKS * 5)
+
+        days = RANGE_DAYS.get(range_key)
+        start = 0
+        if days:
+            cutoff = (date.fromisoformat(dates[-1]) - timedelta(days=days)).isoformat()
+            start = next((i for i, value in enumerate(dates) if value >= cutoff), 0)
+
+        window = slice(start, len(dates))
+        weekly = sector_stages._to_weekly(dates, closes, daily.get("highs"), daily.get("lows"))
+        stage = sector_stages.classify(weekly)
+
+        return {
+            "key": key,
+            "name": definition["name"],
+            "symbol": definition["symbol"],
+            "range": range_key,
+            "available_ranges": _available_ranges(dates),
+            "dates": dates[window],
+            "closes": closes[window],
+            "opens": (daily.get("opens") or [])[window] if daily.get("opens") else None,
+            "highs": (daily.get("highs") or [])[window] if daily.get("highs") else None,
+            "lows": (daily.get("lows") or [])[window] if daily.get("lows") else None,
+            "ma30w": ma[window],
+            "weekly": {
+                "dates": weekly["dates"][-260:],
+                "opens": [round(v, 2) for v in weekly["opens"][-260:]],
+                "closes": [round(v, 2) for v in weekly["closes"][-260:]],
+                "highs": [round(v, 2) for v in weekly["highs"][-260:]],
+                "lows": [round(v, 2) for v in weekly["lows"][-260:]],
+            },
+            "stage": stage,
+            "is_price_index": True,
+        }
+
+    def get_portfolio_overlap(self) -> dict[str, Any]:
+        """How much each pair of held funds duplicates the other.
+
+        The multi-fund question `get_portfolio_concentration` does not answer:
+        a fund can be perfectly diversified on its own and still be a near-copy
+        of the fund beside it.
+        """
+        valued = self.get_portfolio()
+        payload = overlap.build(
+            valued.get("positions") or [],
+            detail_for=self._detail,
+            total_value=(valued.get("totals") or {}).get("current_value"),
+        )
+        payload["as_of"] = valued.get("as_of")
+        return payload
+
+    def get_portfolio_health(self) -> dict[str, Any]:
+        """Measured findings about the portfolio as a whole, plus the plot.
+
+        Reports; does not advise. See `portfolio_health.py` for why that line
+        is drawn and what it costs to cross it.
+        """
+        valued = self.get_portfolio()
+        universe = self._load_universe()
+        payload = portfolio_health.build(
+            positions=valued.get("positions") or [],
+            allocation=valued.get("allocation") or {},
+            totals=valued.get("totals") or {},
+            all_funds=universe.get("funds") or [],
+            overlap_payload=self.get_portfolio_overlap(),
+        )
+        payload["as_of"] = valued.get("as_of")
+        return payload
+
     def get_portfolio_peer_comparison(self) -> dict[str, Any]:
         """For every fund held: which funds in its category measured better.
 
@@ -1478,6 +1711,69 @@ class MutualFundService:
         payload = {"available": True, "note": note, "generated_for": review["name"]}
         with self._ai_lock:
             self._ai_cache[key] = (time.time(), payload)
+        return payload
+
+    def get_portfolio_ai_health(self) -> dict[str, Any]:
+        """Prose over the measured portfolio findings. Never raises.
+
+        Cached for an hour against a fingerprint of the findings themselves, so
+        editing a holding regenerates it but re-opening the page does not.
+        """
+        health = self.get_portfolio_health()
+        if not health.get("available"):
+            return {"available": False, "reason": health.get("reason") or "nothing to measure yet"}
+
+        service = self._ai_service
+        if service is None or not getattr(service, "available", False):
+            return {
+                "available": False,
+                "reason": "AI is not configured on this deployment — the measured findings above "
+                          "are unaffected.",
+            }
+
+        fingerprint = "health:" + str(hash(json.dumps(
+            [[f["key"], f["tone"], f["metric"]] for f in health["findings"]], sort_keys=True
+        )))
+        with self._ai_lock:
+            cached = self._ai_cache.get(fingerprint)
+            if cached and (time.time() - cached[0]) < 60 * 60:
+                return cached[1]
+
+        # Hand over the findings only. The prompt forbids deriving figures, so
+        # anything not in here cannot legitimately appear in the prose.
+        evidence = {
+            "fund_count": health["fund_count"],
+            "findings": [
+                {
+                    "topic": item["key"],
+                    "tone": item["tone"],
+                    "measured": item["headline"],
+                    "detail": item["detail"],
+                    "metric": item["metric"],
+                }
+                for item in health["findings"]
+            ],
+            "positioning": [
+                {
+                    "fund": point["name"],
+                    "category": point["category"],
+                    "cost_vs_category_median_pct": point["cost_gap"],
+                    "return_3y_vs_category_median_pct": point["return_gap"],
+                    "weight_pct": point["weight_pct"],
+                }
+                for point in (health.get("chart") or {}).get("points") or []
+            ],
+        }
+        try:
+            note = service.generate_portfolio_health_note(
+                json.dumps(evidence, separators=(",", ":"))
+            )
+        except Exception as exc:
+            return {"available": False, "reason": f"AI note unavailable ({type(exc).__name__})."}
+
+        payload = {"available": True, "note": note}
+        with self._ai_lock:
+            self._ai_cache[fingerprint] = (time.time(), payload)
         return payload
 
     def expand_sip(self, **kwargs) -> list[dict[str, Any]]:

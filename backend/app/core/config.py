@@ -40,6 +40,29 @@ class Settings(BaseSettings):
         alias="WATCHLISTS_DATABASE_CONNECT_TIMEOUT_SECONDS",
     )
 
+    # --- Telegram scanner digest -------------------------------------------
+    # Every field is optional and the feature stays fully inert until the token,
+    # an owner chat id and the enable flag are all present. Set these as HF
+    # Space *Secrets* (the Dockerfile declares no ENV for them).
+    telegram_bot_token: str | None = Field(default=None, alias="TELEGRAM_BOT_TOKEN")
+    telegram_owner_chat_ids: str | None = Field(default=None, alias="TELEGRAM_OWNER_CHAT_IDS")
+    # Echoed by Telegram in X-Telegram-Bot-Api-Secret-Token on every webhook
+    # delivery. Deliberately separate from the trigger secret below: one is
+    # known to Telegram, the other to GitHub Actions.
+    telegram_webhook_secret: str | None = Field(default=None, alias="TELEGRAM_WEBHOOK_SECRET")
+    telegram_trigger_secret: str | None = Field(default=None, alias="TELEGRAM_TRIGGER_SECRET")
+    telegram_public_base_url: str | None = Field(default=None, alias="TELEGRAM_PUBLIC_BASE_URL")
+    telegram_digest_enabled: bool = Field(default=False, alias="TELEGRAM_DIGEST_ENABLED")
+    telegram_digest_max_per_scanner: int = Field(
+        default=8, alias="TELEGRAM_DIGEST_MAX_PER_SCANNER"
+    )
+    telegram_digest_max_images: int = Field(default=40, alias="TELEGRAM_DIGEST_MAX_IMAGES")
+    telegram_digest_chart_bars: int = Field(default=130, alias="TELEGRAM_DIGEST_CHART_BARS")
+    telegram_digest_dedupe_sessions: int = Field(
+        default=5, alias="TELEGRAM_DIGEST_DEDUPE_SESSIONS"
+    )
+    chart_png_debug_enabled: bool = Field(default=False, alias="CHART_PNG_DEBUG_ENABLED")
+
     @staticmethod
     def _default_app_state_dir() -> Path:
         if sys.platform == "darwin":
@@ -79,6 +102,39 @@ class Settings(BaseSettings):
                     continue
                 origins.add(normalized)
         return sorted(origins)
+
+    @property
+    def telegram_owner_chat_id_set(self) -> tuple[int, ...]:
+        """Owner chat ids, parsed from a comma-separated string.
+
+        A webhook update is only acted on when its chat id is in here, so a
+        stranger who finds the bot cannot drive it. Bot usernames are
+        enumerable, so someone eventually will send it a /start.
+        """
+        raw = str(self.telegram_owner_chat_ids or "").strip()
+        if not raw:
+            return ()
+        ids: list[int] = []
+        for candidate in raw.replace(";", ",").split(","):
+            token = candidate.strip()
+            if not token:
+                continue
+            try:
+                ids.append(int(token))
+            except ValueError:
+                continue
+        # dict.fromkeys preserves order while dropping duplicates.
+        return tuple(dict.fromkeys(ids))
+
+    @property
+    def telegram_enabled(self) -> bool:
+        """True when the digest may actually send. Mirrors the
+        AIAnalysisService.available shape: one property every caller gates on."""
+        return bool(
+            self.telegram_digest_enabled
+            and str(self.telegram_bot_token or "").strip()
+            and self.telegram_owner_chat_id_set
+        )
 
     @property
     def use_watchlists_database(self) -> bool:
