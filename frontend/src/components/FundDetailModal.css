@@ -58,7 +58,7 @@
   color: var(--text-soft);
 }
 
-.fdm-chip-risk { border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.fdm-chip-risk { border-color: rgba(239, 68, 68, 0.4); color: var(--negative-tint); }
 
 .fdm-head-actions { display: flex; align-items: center; gap: 8px; flex: 0 0 auto; }
 
@@ -133,11 +133,11 @@
 }
 
 .fdm-rank-q1 strong { color: var(--positive); }
-.fdm-rank-q1 em { background: rgba(34, 197, 94, 0.16); color: #4ade80; }
+.fdm-rank-q1 em { background: rgba(34, 197, 94, 0.16); color: var(--positive-tint); }
 .fdm-rank-q2 strong { color: #a3e635; }
 .fdm-rank-q3 strong { color: #fbbf24; }
 .fdm-rank-q4 strong { color: var(--negative); }
-.fdm-rank-q4 em { background: rgba(239, 68, 68, 0.16); color: #fca5a5; }
+.fdm-rank-q4 em { background: rgba(239, 68, 68, 0.16); color: var(--negative-tint); }
 .fdm-rank-none { font-size: 12px; color: var(--text-muted); }
 
 /* ---------------------------------------------------------------- tabs/body */
@@ -217,7 +217,7 @@
   margin: 12px 18px;
   padding: 10px 12px;
   font-size: 12px;
-  color: #fca5a5;
+  color: var(--negative-tint);
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.3);
   border-radius: var(--radius-md, 8px);

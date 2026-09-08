@@ -280,7 +280,7 @@
 }
 
 .news-growth-pct.neg {
-  color: #ff6b6b;
+  color: var(--negative);
 }
 
 .news-growth-pct.neutral {
@@ -355,7 +355,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  background: linear-gradient(135deg, #ff6b6b 0%, #ffd166 50%, #06d6a0 100%);
+  background: linear-gradient(135deg, var(--negative) 0%, #ffd166 50%, #06d6a0 100%);
   background-size: 200% 200%;
   color: #0a0f1f;
   font-weight: 700;

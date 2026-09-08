@@ -94,8 +94,8 @@
   border-radius: 999px;
   border: 1px solid var(--line);
 }
-.sgm-badge.pos { color: #089981; border-color: rgba(8, 153, 129, 0.5); }
-.sgm-badge.neg { color: #f23645; border-color: rgba(242, 54, 69, 0.5); }
+.sgm-badge.pos { color: var(--candle-up); border-color: rgba(8, 153, 129, 0.5); }
+.sgm-badge.neg { color: var(--candle-down); border-color: rgba(242, 54, 69, 0.5); }
 .sgm-badge.muted { color: var(--text-muted); }
 
 .sgm-chart { height: 72px; }

@@ -10,8 +10,8 @@
   --sd-border: #e5e7eb;
   --sd-text: #111827;
   --sd-text-soft: #6b7280;
-  --sd-pos: #10b981;
-  --sd-neg: #ef4444;
+  --sd-pos: var(--positive);
+  --sd-neg: var(--negative);
 
   display: flex;
   flex-direction: column;

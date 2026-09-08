@@ -326,8 +326,8 @@ type OverlayLine = { key: string; color: string; values: Array<number | null> };
 
 // Moving-average overlays (same set the main chart uses).
 const MA_OVERLAYS: Array<{ key: string; label: string; color: string; kind: "ema" | "sma"; length: number }> = [
-  { key: "e10", label: "10 EMA", color: "#ef4444", kind: "ema", length: 10 },
-  { key: "e21", label: "21 EMA", color: "#22c55e", kind: "ema", length: 21 },
+  { key: "e10", label: "10 EMA", color: "var(--negative)", kind: "ema", length: 10 },
+  { key: "e21", label: "21 EMA", color: "var(--positive)", kind: "ema", length: 21 },
   { key: "s50", label: "50 SMA", color: "#3b82f6", kind: "sma", length: 50 },
   { key: "s200", label: "200 SMA", color: "#f4f6fb", kind: "sma", length: 200 },
 ];
@@ -684,7 +684,7 @@ function OhlcChart({
         const top = y(zone.high);
         const bottom = y(zone.low);
         // Demand colored by timeframe: daily = green, weekly = blue. Supply = red.
-        const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#3b82f6" : "#22c55e") : "#ef4444";
+        const color = zone.kind === "demand" ? (zone.timeframe === "W" ? "#3b82f6" : "var(--positive)") : "var(--negative)";
         // Anchor at the origin candle; stop where the band ends (first test / latest bar).
         const sIdx = idxAtOrBefore(zone.startTime);
         const eIdx = idxAtOrBefore(zone.endTime);
@@ -707,7 +707,7 @@ function OhlcChart({
       });
       srLines = levels.srLevels.map((level, index) => {
         const ly = y(level.price);
-        const color = level.kind === "support" ? "#22c55e" : "#ef4444";
+        const color = level.kind === "support" ? "var(--positive)" : "var(--negative)";
         return <line key={`gsr-${index}`} x1={xL} y1={ly} x2={xR} y2={ly} stroke={color} strokeWidth={0.9} strokeDasharray="3 3" opacity={0.75} />;
       });
     }

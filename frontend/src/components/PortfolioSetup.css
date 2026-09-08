@@ -158,7 +158,7 @@
   margin: 0;
   padding: 8px 11px;
   font-size: 11.5px;
-  color: #fca5a5;
+  color: var(--negative-tint);
   background: rgba(239, 68, 68, 0.1);
   border: 1px solid rgba(239, 68, 68, 0.28);
   border-radius: 8px;
@@ -177,8 +177,8 @@
   border-left: 2px solid transparent;
 }
 
-.pfs-recon li.is-ok { color: #6ee7b7; background: rgba(52, 211, 153, 0.08); border-left-color: #34d399; }
-.pfs-recon li.is-off { color: #fca5a5; background: rgba(251, 113, 133, 0.08); border-left-color: #fb7185; }
+.pfs-recon li.is-ok { color: var(--positive-tint); background: rgba(52, 211, 153, 0.08); border-left-color: var(--positive); }
+.pfs-recon li.is-off { color: var(--negative-tint); background: rgba(251, 113, 133, 0.08); border-left-color: var(--negative); }
 
 .pfs-skipped strong { font-size: 11px; color: var(--text-soft); }
 .pfs-skipped ul { margin: 4px 0 0; padding-left: 17px; }

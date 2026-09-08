@@ -117,16 +117,16 @@
 
 .sh-icon-confirm {
   border-color: rgba(16, 185, 129, 0.4);
-  color: #10b981;
+  color: var(--positive);
 }
 .sh-icon-confirm:hover {
   background: rgba(16, 185, 129, 0.1);
   color: #059669;
-  border-color: #10b981;
+  border-color: var(--positive);
 }
 .sh-icon-cancel:hover {
-  border-color: #ef4444;
-  color: #ef4444;
+  border-color: var(--negative);
+  color: var(--negative);
   background: rgba(239, 68, 68, 0.08);
 }
 

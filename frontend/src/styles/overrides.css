@@ -769,8 +769,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #10b981;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #10b981 22%, transparent);
+  background: var(--positive);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--positive) 22%, transparent);
 }
 
 .status-pill .status-dot.is-stale {

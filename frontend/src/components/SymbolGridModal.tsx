@@ -116,7 +116,7 @@ export function SymbolGridModal({ title, subtitle, items, market, onOpenSymbolCh
             const first = data[0]?.c;
             const last = data[data.length - 1]?.c;
             const up = first !== undefined && last !== undefined ? last >= first : true;
-            const color = up ? "#089981" : "#f23645";
+            const color = up ? "var(--candle-up)" : "var(--candle-down)";
             return (
               <button
                 key={item.symbol}

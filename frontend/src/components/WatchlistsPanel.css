@@ -11,8 +11,8 @@
   --st-border: #e5e7eb;
   --st-text: #111827;
   --st-text-soft: #6b7280;
-  --st-pos: #10b981;
-  --st-neg: #ef4444;
+  --st-pos: var(--positive);
+  --st-neg: var(--negative);
   --st-amber: #f59e0b;
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
 }
@@ -303,7 +303,7 @@
 }
 
 .wl-move-item--danger {
-  color: #ef4444;
+  color: var(--negative);
   margin-top: 2px;
   border-top: 1px solid var(--st-border, #e5e7eb);
   padding-top: 8px;
@@ -311,7 +311,7 @@
 
 .wl-move-item--danger:hover {
   background: rgba(239, 68, 68, 0.08);
-  color: #dc2626;
+  color: var(--negative);
 }
 
 /* ----- Bulk toolbar (kept, modernised) ----- */
@@ -655,9 +655,9 @@
 }
 
 .wl-stale-chip.dead {
-  background: color-mix(in srgb, var(--negative, #ef4444) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--negative, #ef4444) 45%, transparent);
-  color: var(--negative, #ef4444);
+  background: color-mix(in srgb, var(--negative, var(--negative)) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--negative, var(--negative)) 45%, transparent);
+  color: var(--negative, var(--negative));
 }
 
 /* ----- Pipeline stage chip ----- */
@@ -686,6 +686,6 @@
 }
 
 .wl-stage-chip.stage-position {
-  border-color: color-mix(in srgb, var(--positive, #10b981) 55%, transparent);
-  color: var(--positive, #10b981);
+  border-color: color-mix(in srgb, var(--positive, var(--positive)) 55%, transparent);
+  color: var(--positive, var(--positive));
 }

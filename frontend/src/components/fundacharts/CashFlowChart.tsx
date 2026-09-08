@@ -38,7 +38,7 @@ function MetricCard({ label, value, color }: { label: string; value: number | nu
   return (
     <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.09)", borderRadius: 8, padding: "7px 12px", textAlign: "center", flex: 1, minWidth: 100 }}>
       <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 2 }}>{label}</div>
-      <div style={{ fontSize: "0.9rem", fontWeight: 700, color: value == null ? "rgba(255,255,255,0.3)" : (sign ? color : "#ef4444"), fontFamily: "monospace" }}>
+      <div style={{ fontSize: "0.9rem", fontWeight: 700, color: value == null ? "rgba(255,255,255,0.3)" : (sign ? color : "var(--negative)"), fontFamily: "monospace" }}>
         {fmt(value)}
       </div>
     </div>
@@ -72,7 +72,7 @@ export function CashFlowChart({ cashFlow }: Props) {
 
       {/* Metric cards */}
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <MetricCard label="Latest OCF" value={latest.operating_cash_flow_crore} color="#22c55e" />
+        <MetricCard label="Latest OCF" value={latest.operating_cash_flow_crore} color="var(--positive)" />
         <MetricCard label="Latest FCF" value={latest.free_cash_flow_crore} color="#00d2ff" />
         <MetricCard label="Capex" value={latest.capital_expenditure_crore != null ? -Math.abs(latest.capital_expenditure_crore) : null} color="#f59e0b" />
       </div>
@@ -86,7 +86,7 @@ export function CashFlowChart({ cashFlow }: Props) {
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ fontSize: 11, color: "rgba(255,255,255,0.6)" }} />
             <ReferenceLine y={0} stroke="rgba(255,255,255,0.2)" />
-            <Bar dataKey="ocf" name="Oper. CF" fill="#22c55e" opacity={0.8} radius={[2, 2, 0, 0]} />
+            <Bar dataKey="ocf" name="Oper. CF" fill="var(--positive)" opacity={0.8} radius={[2, 2, 0, 0]} />
             <Bar dataKey="capex" name="Capex" fill="#ef444466" radius={[2, 2, 0, 0]} />
             <Line type="monotone" dataKey="fcf" name="Free CF" stroke="#00d2ff"
               strokeWidth={2.5} dot={{ r: 3, fill: "#00d2ff" }} connectNulls activeDot={{ r: 5 }} />
@@ -101,7 +101,7 @@ export function CashFlowChart({ cashFlow }: Props) {
           <span style={{
             fontWeight: 700,
             color: latest.operating_cash_flow_crore > 0
-              ? (latest.free_cash_flow_crore / latest.operating_cash_flow_crore >= 0.7 ? "#22c55e" : "#f59e0b")
+              ? (latest.free_cash_flow_crore / latest.operating_cash_flow_crore >= 0.7 ? "var(--positive)" : "#f59e0b")
               : "rgba(255,255,255,0.4)",
           }}>
             {latest.operating_cash_flow_crore > 0

@@ -3,6 +3,7 @@ import { ColorType, LineStyle, createChart, type IChartApi, type ISeriesApi } fr
 import type { MfBenchmarkLine, MfSeriesLine } from "../lib/api";
 
 import "./FundNavChart.css";
+import { NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 /**
  * NAV chart for a fund, with its benchmark and any compared funds overlaid.
@@ -133,7 +134,7 @@ export function FundNavChart({
       out.push({
         key: fund.key,
         label: fund.label ?? "Fund",
-        color: "#22c55e",
+        color: POSITIVE,
         dashed: false,
         width: 2,
         points: fund.dates.map((date, index) => ({ time: date, value: fund.values[index] })),
@@ -153,7 +154,7 @@ export function FundNavChart({
     out.push({
       key: fund.key,
       label: fund.label ?? "Fund",
-      color: "#22c55e",
+      color: POSITIVE,
       dashed: false,
       width: 2,
       points: fundPoints.filter((point) => Number.isFinite(point.value)),
@@ -215,8 +216,8 @@ export function FundNavChart({
     });
 
     if (mode === "candles") {
-      const up = styles.getPropertyValue("--pfd-up").trim() || "#22c55e";
-      const down = styles.getPropertyValue("--pfd-down").trim() || "#ef4444";
+      const up = styles.getPropertyValue("--pfd-up").trim() || POSITIVE;
+      const down = styles.getPropertyValue("--pfd-down").trim() || NEGATIVE;
       const candleSeries = chart.addCandlestickSeries({
         upColor: up,
         downColor: down,
@@ -297,7 +298,7 @@ export function FundNavChart({
       if (fund) {
         const ribbon = chart.addAreaSeries({
           priceScaleId: "drawdown",
-          lineColor: "#ef4444",
+          lineColor: NEGATIVE,
           topColor: "rgba(239,68,68,0.02)",
           bottomColor: "rgba(239,68,68,0.28)",
           lineWidth: 1,

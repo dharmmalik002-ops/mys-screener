@@ -10,8 +10,8 @@
   --st-border: #e5e7eb;
   --st-text: #111827;
   --st-text-soft: #6b7280;
-  --st-pos: #10b981;
-  --st-neg: #ef4444;
+  --st-pos: var(--positive);
+  --st-neg: var(--negative);
   --st-amber: #f59e0b;
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
 }
@@ -368,7 +368,7 @@
 }
 
 .st-rs-hi {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(135deg, var(--positive), #059669);
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.32);
 }
 
@@ -378,7 +378,7 @@
 }
 
 .st-rs-lo {
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+  background: linear-gradient(135deg, var(--negative), var(--negative));
   box-shadow: 0 2px 6px rgba(239, 68, 68, 0.32);
 }
 

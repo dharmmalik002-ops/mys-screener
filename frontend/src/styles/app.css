@@ -26,12 +26,32 @@
   --accent-2: #34d399;
   --accent-3: #22d3ee;
   --positive: #22c55e;
+  /* Chart candles are a SEPARATE semantic from UI up/down, and deliberately
+     so: this is TradingView's exact pair, chosen so the chart reads like a pro
+     terminal. Collapsing it into --positive/--negative would flatten a real
+     distinction. Tokenised only so the hex stops being repeated in ten files.
+     Canvas-drawn series cannot read CSS variables -- lightweight-charts callers
+     import the same values from lib/chartDefaults.ts instead. */
+  /* Tint and shade steps DERIVED from the one green and the one red, for the
+     places that need a lighter or darker variant: text on a colour-tinted
+     chip, a dark-on-light badge. These replaced nine more hand-picked hexes
+     (#6ee7b7, #86efac, #4ade80, #fca5a5, #b91c1c, #991b1b, #065f46, #166534,
+     #7f1d1d). Deriving them is the point: a hand-picked tint is how a palette
+     grows a tenth green. */
+  --positive-tint: color-mix(in oklab, var(--positive) 55%, white);
+  --positive-shade: color-mix(in oklab, var(--positive) 58%, black);
+  --negative-tint: color-mix(in oklab, var(--negative) 45%, white);
+  --negative-shade: color-mix(in oklab, var(--negative) 58%, black);
+  --candle-up: #089981;
+  --candle-down: #f23645;
   --positive-soft: rgba(34, 197, 94, 0.14);
   --negative: #ef4444;
   --negative-soft: rgba(239, 68, 68, 0.14);
   --danger: #f87171;
-  --red: #ef4444;
-  --green: #22c55e;
+  /* Aliases kept for the call sites that use them; they must never hold a
+     second green or a second red, which is how this drifted before. */
+  --red: var(--negative);
+  --green: var(--positive);
   --teal: #14b8a6;
   --teal-soft: rgba(20, 184, 166, 0.14);
   --pink: #ec4899;
@@ -119,8 +139,8 @@
   --negative: #dc2626;
   --negative-soft: rgba(220, 38, 38, 0.12);
   --danger: #ef4444;
-  --red: #dc2626;
-  --green: #16a34a;
+  --red: var(--negative);
+  --green: var(--positive);
   --teal: #0f766e;
   --teal-soft: rgba(15, 118, 110, 0.12);
   --pink: #db2777;
@@ -1652,8 +1672,8 @@ button {
 .mf-error {
   margin: 12px 28px;
   padding: 10px 14px;
-  background: color-mix(in srgb, #ef4444 18%, transparent);
-  border: 1px solid color-mix(in srgb, #ef4444 40%, transparent);
+  background: color-mix(in srgb, var(--negative) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--negative) 40%, transparent);
   border-radius: 10px;
   font-size: 0.82rem;
   color: #fca5a5;
@@ -1820,12 +1840,12 @@ button {
 }
 
 .mf-sector-card--bullish {
-  border-color: color-mix(in srgb, #22c55e 35%, transparent);
+  border-color: color-mix(in srgb, var(--positive) 35%, transparent);
   background: color-mix(in srgb, #14532d 35%, transparent);
 }
 
 .mf-sector-card--bearish {
-  border-color: color-mix(in srgb, #ef4444 35%, transparent);
+  border-color: color-mix(in srgb, var(--negative) 35%, transparent);
   background: color-mix(in srgb, #7f1d1d 35%, transparent);
 }
 
@@ -1863,15 +1883,15 @@ button {
 }
 
 .mf-badge--bull {
-  background: color-mix(in srgb, #22c55e 20%, transparent);
+  background: color-mix(in srgb, var(--positive) 20%, transparent);
   color: #86efac;
-  border: 1px solid color-mix(in srgb, #22c55e 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--positive) 35%, transparent);
 }
 
 .mf-badge--bear {
-  background: color-mix(in srgb, #ef4444 20%, transparent);
+  background: color-mix(in srgb, var(--negative) 20%, transparent);
   color: #fca5a5;
-  border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+  border: 1px solid color-mix(in srgb, var(--negative) 35%, transparent);
 }
 
 .mf-badge--neutral {
@@ -3477,7 +3497,7 @@ button {
 }
 
 .chart-grid-sparkline.negative .chart-grid-sparkline-line {
-  stroke: #f87171;
+  stroke: var(--negative);
 }
 
 .chart-grid-sparkline.neutral .chart-grid-sparkline-area {
@@ -3509,8 +3529,8 @@ button {
 .chart-grid-candle.negative rect,
 .chart-grid-candle.negative line,
 .chart-grid-bar.negative line {
-  fill: #f87171;
-  stroke: #f87171;
+  fill: var(--negative);
+  stroke: var(--negative);
 }
 
 .chart-grid-card-foot {
@@ -4749,7 +4769,7 @@ button {
 }
 
 .group-chip-improving {
-  color: color-mix(in srgb, #22c55e 80%, white);
+  color: color-mix(in srgb, var(--positive) 80%, white);
 }
 
 .group-chip-weakening,
@@ -8547,7 +8567,7 @@ button {
 }
 
 .risk-opportunity-item.risk-geopolitical {
-  border-left-color: #ff6b6b;
+  border-left-color: var(--negative);
 }
 
 .risk-opportunity-item.risk-competition {
@@ -8587,7 +8607,7 @@ button {
 }
 
 .severity-badge.severity-high {
-  background: #ff6b6b;
+  background: var(--negative);
   color: white;
 }
 
@@ -8686,7 +8706,7 @@ button {
 }
 
 .news-impact.impact-market {
-  background: #ff6b6b;
+  background: var(--negative);
   color: white;
 }
 
@@ -9010,8 +9030,8 @@ button {
   transition: color var(--dur-fast) ease, border-color var(--dur-fast) ease, background var(--dur-fast) ease;
 }
 .rvol-close-btn:hover {
-  color: var(--negative, #ef4444);
-  border-color: color-mix(in srgb, var(--negative, #ef4444) 50%, transparent);
+  color: var(--negative, var(--negative));
+  border-color: color-mix(in srgb, var(--negative, var(--negative)) 50%, transparent);
 }
 
 .rvol-widget-row {
@@ -9368,12 +9388,12 @@ button {
 
 .chart-grid-ohlc .chart-grid-candle.negative line,
 .chart-grid-ohlc .chart-grid-bar.negative line {
-  stroke: #f23645 !important;
+  stroke: var(--candle-down) !important;
   stroke-width: 1.4px;
 }
 
 .chart-grid-ohlc .chart-grid-candle.positive rect { fill: #2962ff !important; stroke: none; }
-.chart-grid-ohlc .chart-grid-candle.negative rect { fill: #f23645 !important; stroke: none; }
+.chart-grid-ohlc .chart-grid-candle.negative rect { fill: var(--candle-down) !important; stroke: none; }
 
 /* Volume histogram strip at the bottom of each grid chart. */
 .chart-grid-vol {
@@ -9406,10 +9426,10 @@ button {
 }
 /* Slightly deeper volume + classic green/red candles read better on white. */
 .chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.positive line,
-.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-bar.positive line { stroke: #089981 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-bar.positive line { stroke: var(--candle-up) !important; }
 .chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.negative line,
 .chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-bar.negative line { stroke: #e23645 !important; }
-.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.positive rect { fill: #089981 !important; }
+.chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.positive rect { fill: var(--candle-up) !important; }
 .chart-grid-modal.chart-grid-light .chart-grid-ohlc .chart-grid-candle.negative rect { fill: #e23645 !important; }
 .chart-grid-modal.chart-grid-light .chart-grid-vol.positive { fill: rgba(8, 153, 129, 0.40); }
 .chart-grid-modal.chart-grid-light .chart-grid-vol.negative { fill: rgba(226, 54, 69, 0.40); }
