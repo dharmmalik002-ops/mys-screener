@@ -312,6 +312,11 @@ function useMeasuredSize() {
 const CHART_PAD_TOP = 8;
 const CHART_PAD_BOTTOM = 18;
 const CHART_PAD_LEFT = 4;
+// Widest a single bar's slot may get before the series stops being stretched to
+// fill the card (see chartScales), and the bar count below which that cap is
+// allowed to leave empty space.
+const MAX_BAR_SLOT_PX = 14;
+const MIN_FILLED_SLOTS = 60;
 const CHART_PAD_RIGHT = 56;
 
 type OverlayLine = { key: string; color: string; values: Array<number | null> };
@@ -373,8 +378,18 @@ function chartScales(w: number, h: number, n: number, min: number, max: number, 
   // (when volumeBand > 0); month labels sit below that, inside CHART_PAD_BOTTOM.
   const priceH = Math.max(h - CHART_PAD_TOP - CHART_PAD_BOTTOM - volumeBand, 1);
   const spread = Math.max(max - min, 1e-6);
-  const slot = innerW / Math.max(n, 1);
-  const x = (index: number) => CHART_PAD_LEFT + index * slot + slot / 2;
+  // Bar pitch is capped so a short series draws at a normal candle size instead
+  // of being stretched across the card. A fresh IPO with five sessions used to
+  // put those five candles a third of a card apart, which reads as noise rather
+  // than price action. The cap only binds when the series is short — anything
+  // with ~40+ bars still fills the full width exactly as before — and the
+  // cluster is pinned to the RIGHT edge, where every other grid chart puts the
+  // latest session.
+  const rawSlot = innerW / Math.max(n, 1);
+  const maxSlot = Math.max(MAX_BAR_SLOT_PX, innerW / MIN_FILLED_SLOTS);
+  const slot = Math.min(rawSlot, maxSlot);
+  const originX = CHART_PAD_LEFT + (innerW - slot * Math.max(n, 1));
+  const x = (index: number) => originX + index * slot + slot / 2;
   const y = (value: number) => CHART_PAD_TOP + (1 - (value - min) / spread) * priceH;
   const volTop = CHART_PAD_TOP + priceH;
   return { slot, x, y, innerW, innerH: priceH, volTop, volH: volumeBand };
