@@ -193,6 +193,8 @@ function buildTree(
   stocks: IndustryGroupStockItem[],
   window: ReturnWindow,
   sizing: SizingMode,
+  /** group_id -> the group master's curated parent sector. */
+  sectorByGroupId: Map<string, string>,
 ): Branch[] {
   const sectors = new Map<string, Map<string, { name: string; leaves: Leaf[] }>>();
 
@@ -200,7 +202,15 @@ function buildTree(
     const cap = Number.isFinite(stock.market_cap_cr) ? stock.market_cap_cr : 0;
     if (cap <= 0) continue;
     const ret = returnOf(stock, window);
-    const sectorName = stock.sector?.trim() || "Unclassified";
+    // Group by the group master's `parent_sector`, not the stock's own
+    // `sector`. The two are different taxonomies: `parent_sector` is the
+    // curated 15-sector scheme the Groups page is built on, while `sector`
+    // comes from whichever vendor labelled the stock and carried 29 distinct
+    // values on the live universe -- seven of them GICS leftovers duplicating
+    // a real sector. Grouping on the curated one is why this map reads as 15
+    // coherent blocks instead of 22 blocks plus 7 slivers.
+    const sectorName =
+      sectorByGroupId.get(stock.final_group_id) || stock.sector?.trim() || "Unclassified";
     const groupId = stock.final_group_id || `${sectorName}::ungrouped`;
 
     let groups = sectors.get(sectorName);
@@ -298,9 +308,18 @@ export function SectorTreemap({ data, loading, onPickSymbolWithContext }: Sector
     return () => observer.disconnect();
   }, []);
 
+  const sectorByGroupId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const group of data?.groups ?? []) {
+      const parent = group.parent_sector?.trim();
+      if (parent) map.set(group.group_id, parent);
+    }
+    return map;
+  }, [data]);
+
   const tree = useMemo(
-    () => buildTree(data?.stocks ?? [], window_, sizing),
-    [data, window_, sizing],
+    () => buildTree(data?.stocks ?? [], window_, sizing, sectorByGroupId),
+    [data, window_, sizing, sectorByGroupId],
   );
 
   // A stale drill-down path (sector renamed, filters changed) must not blank
