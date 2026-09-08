@@ -712,7 +712,8 @@
 
 .homepro-row {
   display: grid;
-  grid-template-columns: 28px 1fr auto auto;
+  /* logo | symbol | sparkline | price | change */
+  grid-template-columns: 28px 1fr 46px auto auto;
   align-items: center;
   gap: 10px;
   padding: 10px 8px;
@@ -774,6 +775,16 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* The sparkline is decoration next to the number, so it never competes for
+   width: a fixed track, and it is the first thing dropped on a narrow card. */
+.homepro-row-spark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  opacity: 0.85;
 }
 
 .homepro-row-price {
@@ -1321,4 +1332,18 @@ body.dark .homepro-modal-close:hover {
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+.homepro-modal-spark {
+  width: 64px;
+  padding-right: 6px;
+}
+
+@media (max-width: 520px) {
+  .homepro-row {
+    grid-template-columns: 28px 1fr auto auto;
+  }
+  .homepro-row-spark {
+    display: none;
+  }
 }

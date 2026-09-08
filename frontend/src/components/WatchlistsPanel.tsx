@@ -15,6 +15,7 @@ import { LayoutGrid, Newspaper, Plus, Trash2 } from "lucide-react";
 
 import { EmptyState } from "./EmptyState";
 import { SortableHeader, nextSort, type SortDirection } from "./SortableTh";
+import { Sparkline } from "./Sparkline";
 
 type WatchlistSortKey = "symbol" | "price" | "change" | "rs" | "groupRank" | "rankInGroup";
 
@@ -101,6 +102,8 @@ type WatchlistDisplayItem = {
   stock_return_20d: number | null;
   stock_return_60d: number | null;
   stock_return_12m: number | null;
+  /** Real recent closes for the row sparkline; empty for an unmatched symbol. */
+  spark_closes: number[];
   groupId: string | null;
   groupName: string | null;
   groupRank: number | null;
@@ -428,6 +431,7 @@ export function WatchlistsPanel({
               stock_return_20d: match.stock_return_20d ?? null,
               stock_return_60d: match.stock_return_60d ?? null,
               stock_return_12m: match.stock_return_12m ?? null,
+              spark_closes: match.spark_closes ?? [],
               groupId: rankInfo.groupId,
               groupName: rankInfo.groupName,
               groupRank: rankInfo.groupRank,
@@ -448,6 +452,7 @@ export function WatchlistsPanel({
             stock_return_20d: null,
             stock_return_60d: null,
             stock_return_12m: null,
+            spark_closes: [],
             groupId: rankInfo.groupId,
             groupName: rankInfo.groupName,
             groupRank: rankInfo.groupRank,
@@ -737,7 +742,8 @@ export function WatchlistsPanel({
   // edge when the middle panel is squeezed by the chart panel — "Rank in
   // Group" was rendering as "RANK IN G…" with its values cut off.
   const gridTemplate =
-    "minmax(150px, 1.8fr) minmax(62px, 86px) minmax(70px, 88px) minmax(58px, 76px) minmax(42px, 56px) minmax(62px, 88px) minmax(70px, 96px) 32px";
+    // Symbol | Stage | Price | Change | Trend | RS | Group Rank | Rank in Group | tools
+    "minmax(150px, 1.8fr) minmax(62px, 86px) minmax(70px, 88px) minmax(58px, 76px) 56px minmax(42px, 56px) minmax(62px, 88px) minmax(70px, 96px) 32px";
 
   const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
     const logoUrl = getLogoUrl(item.symbol);
@@ -822,6 +828,27 @@ export function WatchlistsPanel({
 
         <span className={`st-change ${item.isKnown ? metricClass(item.change_pct) : ""}`}>
           {item.isKnown ? formatReturn(item.change_pct) : "--"}
+        </span>
+
+        <span className="st-spark">
+          <Sparkline
+            values={item.spark_closes}
+              minRangePct={10}
+            color={
+              item.spark_closes.length >= 2 &&
+              item.spark_closes[item.spark_closes.length - 1] >= item.spark_closes[0]
+                ? "var(--positive)"
+                : "var(--negative)"
+            }
+            width={52}
+            height={22}
+            className="st-spark-svg"
+            label={
+              item.spark_closes.length >= 2
+                ? `${item.symbol}: ${item.spark_closes.length}-session close trend`
+                : `${item.symbol}: no recent close history`
+            }
+          />
         </span>
 
         <span className="st-cell-center">
@@ -1185,6 +1212,7 @@ export function WatchlistsPanel({
                       <span className="wl-center">Stage</span>
                       {header("price", "Price", "wl-right")}
                       {header("change", "Change", "wl-right")}
+                      <span className="wl-center">Trend</span>
                       {header("rs", "RS", "wl-center")}
                       {header("groupRank", "Group Rank", "wl-center", "Sort by the industry group's rank — #1 first")}
                       {header("rankInGroup", "Rank in Group", "wl-center", "Sort by the stock's rank within its group")}

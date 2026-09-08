@@ -684,6 +684,12 @@ class ScanMatch(BaseModel):
     stock_return_12m: float | None = None
     gap_pct: float | None = None
     reasons: list[str] = Field(default_factory=list)
+    # Up to 20 recent closes, oldest first, ending on the current session — just
+    # enough for a row sparkline. Comes straight off StockSnapshot.recent_closes,
+    # which every scan already has in memory, so it costs no extra fetch; the
+    # only cost is ~140 bytes of payload per row. Deliberately closes only: a
+    # sparkline that small cannot show a range, and OHLC would quadruple it.
+    spark_closes: list[float] = Field(default_factory=list)
     # Scanner-specific trade plan; only populated by the Momentum Burst scanner.
     momentum_burst: MomentumBurstPlan | None = None
 
