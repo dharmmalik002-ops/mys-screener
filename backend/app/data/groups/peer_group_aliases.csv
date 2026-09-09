@@ -149,3 +149,76 @@ Capital Goods,Plastic Products - Industrial,pipes_plastic_bm
 Capital Goods,Trading & Distributors,bearings_industrial_components
 Services,Hotel & Resorts,hotels
 Consumer Services,Hotel & Resorts,hotels
+,Specialty Chemicals,specialty_chemicals
+,Hotels & Resorts,hotels
+,Lodging,hotels
+,Packaging,paper_packaging
+,Stationary,paper_packaging
+,Commodity Chemicals,commodity_chemicals
+,Chemicals,commodity_chemicals
+,Fertilizers,agrochemicals
+,Agricultural Inputs,agrochemicals
+,Industrial Minerals,mining_minerals
+,Gold,mining_minerals
+,Electrodes & Refractories,refractories_electrodes
+,Abrasives & Bearings,bearings_industrial_components
+,Castings & Forgings,auto_anc_forgings_castings
+,Diversified,diversified_holdings
+,Conglomerates,diversified_holdings
+,Diversified FMCG,fmcg_staples
+,Drug Manufacturers - Specialty & Generic,pharma_formulations
+,Luxury Goods,retail_fashion_lifestyle
+,Metal Fabrication,industrial_machinery
+,Specialty Industrial Machinery,industrial_machinery
+,Tools & Accessories,industrial_machinery
+,Auto Parts,auto_anc_powertrain
+,Trading - Auto Components,auto_anc_powertrain
+,Auto Manufacturers,passenger_vehicles
+,Auto Dealer,retail_electronics_omni
+,Information Technology Services,midcap_it_services
+,Software - Application,software_saas
+,Software - Infrastructure,software_saas
+,Electronic Components,ems_electronics_manufacturing
+,Semiconductors,ems_electronics_manufacturing
+,Communication Equipment,telecom_equipment_fiber
+,Other Telecom Services,telecom_services
+,Real Estate - Development,real_estate_developers
+,Real Estate Services,real_estate_developers
+,Medical Care Facilities,hospitals
+,Pharmacy Retail,retail_grocery_value
+,Pharmaceutical Retailers,retail_grocery_value
+,Food Distribution,retail_grocery_value
+,Engineering & Construction,construction_infra_epc
+,Road Assets - Toll Annuity Hybrid-Annuity,construction_infra_epc
+,Building Materials,building_products
+,Building Products & Equipment,building_products
+,Electrical Equipment & Parts,electrical_equipment
+,Steel,steel
+,Sponge Iron,steel
+,Aluminum,non_ferrous_metals
+,Textile Manufacturing,apparel_textiles
+,Trading - Textile Products,apparel_textiles
+,Capital Markets,broking_wealth
+,Asset Management,amc_exchanges_depositories
+,Financial Data & Stock Exchanges,amc_exchanges_depositories
+,Other Capital Market related Services,credit_rating_market_infra
+,Credit Services,diversified_nbfcs
+,Mortgage Finance,housing_finance
+,Railway Wagons,railways_epc_rolling_stock
+,Railroads,railways_epc_rolling_stock
+,Airlines,aviation_airports
+,Airports & Air Services,aviation_airports
+,Transport Related Services,logistics_surface
+,Road Transport,logistics_surface
+,Education & Training Services,education_test_prep
+,Entertainment,media_broadcasting
+,Advertising Agencies,media_broadcasting
+,Consulting Services,erd_engineering_tech
+,"Furnishings, Fixtures & Appliances",home_furnishings
+,Other Beverages,packaged_foods_bev
+,Confectioners,packaged_foods_bev
+,Farm Products,dairy_protein_foods
+,Tobacco,tobacco
+,Trading - Gas,city_gas_distribution
+,Oil & Gas E&P,upstream_oil_gas
+,Solar,renewable_energy

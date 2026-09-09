@@ -396,15 +396,22 @@ def _build_group_payload(
     except Exception as exc:
         logger.warning("Failed to write needs_review.csv: %s", exc)
 
-    # Bucket by primary_group_id; unclassified -> parent bucket "__unclassified__".
+    # Bucket by primary_group_id.
+    #
+    # The classifier's sector-fallback layer means every stock whose sector is
+    # in the app's vocabulary gets a real group, so the unclassified bucket is
+    # now a guard rather than a destination: it can only catch a stock whose
+    # sector itself is unknown (no vendor metadata at all). If one ever lands
+    # there, say so in the log rather than letting it sit on the page unnoticed.
     raw_groups: dict[str, list[StockSnapshot]] = defaultdict(list)
     snap_classification: dict[str, tuple[str, float, str]] = {}
+    unplaced: list[str] = []
     for snap in eligible:
         result = classify_results.get(snap.symbol)
         gid = result.primary_group_id if result and result.primary_group_id else None
         if gid is None or gid not in GROUPS_BY_ID:
-            # No primary group: bucket under unclassified parent.
             bucket = "__parent__unclassified"
+            unplaced.append(f"{snap.symbol} (sector={snap.sector or '?'}, industry={snap.sub_sector or '?'})")
         else:
             bucket = gid
         raw_groups[bucket].append(snap)
@@ -412,6 +419,13 @@ def _build_group_payload(
             gid or "",
             result.confidence if result else 0.0,
             result.source_layer if result else "needs_review",
+        )
+
+    if unplaced:
+        logger.warning(
+            "%d stock(s) could not be classified and fell to the unclassified bucket: %s",
+            len(unplaced),
+            ", ".join(unplaced[:20]),
         )
 
     # Apply parent-bucket merge for under-5 groups.

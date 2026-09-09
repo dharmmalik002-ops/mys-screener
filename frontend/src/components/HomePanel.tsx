@@ -700,7 +700,7 @@ export function HomePanel({
 
   useEffect(() => {
     let active = true;
-    getGroupRankHistory(activeMarket, 40)
+    getGroupRankHistory(activeMarket)
       .then((payload) => {
         if (active) setRankHistory(payload.groups);
       })
