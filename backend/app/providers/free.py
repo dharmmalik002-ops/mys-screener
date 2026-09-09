@@ -136,7 +136,22 @@ SNAPSHOT_HISTORY_PERIOD = "3y"
 # which collapses relative_volume to 0 and breaks every scanner that filters
 # on RVOL or rupee-turnover (custom-scan liquidity, ema-expansion,
 # contraction, day-high, prev-day-high-break, near-day-high, etc.).
-RELIABLE_HISTORY_SOURCES = {"history", "chart_cache", "legacy_chart_cache", "bhavcopy_patch"}
+# "bhavcopy_ipo_seed" belongs here for the same reason as bhavcopy_patch: the
+# seed row (see _build_ipo_seed_row) deliberately sets avg_volume_20d/30d/50d
+# from the listing-day volume, which IS the average daily volume when a stock
+# has traded one session. Leaving the label out meant
+# _normalize_snapshot_volume_baselines zeroed the very baselines the seed had
+# just written, so avg_rupee_volume_30d_crore -- average DAILY turnover -- came
+# back 0 for every freshly listed stock, and any liquidity threshold then
+# removed it. Measured: 159 of 286 listings under 180 days old were on this
+# source with their volumes zeroed on load.
+RELIABLE_HISTORY_SOURCES = {
+    "history",
+    "chart_cache",
+    "legacy_chart_cache",
+    "bhavcopy_patch",
+    "bhavcopy_ipo_seed",
+}
 MACRO_CHART_SYMBOLS = {"CL=F", "BZ=F", "^NSEI", "^CNXSC", "^NSEMDCP50", "^GSPC", "^IXIC", "^DJI", "SPY", "QQQ", "DIA"}
 RS_LOOKBACKS: tuple[tuple[int, float], ...] = ((63, 0.4), (126, 0.2), (189, 0.2), (252, 0.2))
 RETURN_1W_BARS = 5
