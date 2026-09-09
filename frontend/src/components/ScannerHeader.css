@@ -213,12 +213,12 @@
   color: var(--accent-contrast);
   padding-left: 16px;
   padding-right: 18px;
-  box-shadow: 0 8px 18px rgba(99, 102, 241, 0.32);
+  box-shadow: 0 8px 18px color-mix(in srgb, var(--accent) 32%, transparent);
 }
 
 .sh-btn-primary:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px rgba(99, 102, 241, 0.42);
+  box-shadow: 0 12px 22px color-mix(in srgb, var(--accent) 42%, transparent);
   filter: brightness(1.04);
 }
 

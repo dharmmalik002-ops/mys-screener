@@ -1256,7 +1256,7 @@ button {
 
 .screener-saved-item.active {
   border-color: rgba(88, 162, 255, 0.4);
-  box-shadow: 0 0 0 1px rgba(88, 162, 255, 0.12);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .screener-saved-load,
@@ -3826,7 +3826,7 @@ button {
 
 .saved-scanner-chip.active {
   border-color: color-mix(in srgb, #60a5fa 48%, var(--glass-border));
-  box-shadow: 0 0 0 1px rgba(96, 165, 250, 0.16);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent);
 }
 
 .saved-scanner-load,

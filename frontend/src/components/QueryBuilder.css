@@ -133,7 +133,7 @@
   letter-spacing: 0.06em;
   cursor: pointer;
   transition: filter var(--dur-fast) ease, transform var(--dur-fast) ease;
-  box-shadow: 0 4px 8px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 4px 8px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .qb-op-toggle:hover {
@@ -143,7 +143,7 @@
 
 .qb-op-or {
   background: var(--amber);
-  box-shadow: 0 4px 8px rgba(245, 158, 11, 0.28);
+  box-shadow: 0 4px 8px color-mix(in srgb, var(--amber) 28%, transparent);
   color: var(--accent-contrast);
 }
 
@@ -200,7 +200,7 @@
 
 .qb-chip:hover {
   border-color: var(--qb-primary);
-  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.2);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .qb-chip-label {
@@ -291,13 +291,13 @@
   background: linear-gradient(135deg, var(--qb-primary), var(--qb-primary-strong));
   color: var(--accent-contrast);
   border-color: transparent;
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.28);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--accent) 28%, transparent);
 }
 
 .qb-action-primary:hover {
   filter: brightness(1.06);
   transform: translateY(-1px);
-  box-shadow: 0 6px 14px rgba(99, 102, 241, 0.36);
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--accent) 36%, transparent);
 }
 
 :root[data-theme="dark"] .qb-action,
