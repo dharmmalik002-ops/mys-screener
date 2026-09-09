@@ -8,13 +8,13 @@
   --gp-card-bg-soft: #f8fafc;
   --gp-border: rgba(15, 23, 42, 0.08);
   --gp-border-strong: rgba(15, 23, 42, 0.14);
-  --gp-muted: #64748b;
-  --gp-text: #0f172a;
+  --gp-muted: var(--text-muted);
+  --gp-text: var(--text);
   --gp-green: var(--positive);
   --gp-red: var(--negative);
-  --gp-amber: #f59e0b;
+  --gp-amber: var(--amber);
   --gp-violet: var(--accent);
-  --gp-blue: #3b82f6;
+  --gp-blue: var(--accent);
   --gp-indigo: var(--accent);
   --gp-shadow-sm: var(--elev-1);
   --gp-shadow-md: var(--elev-2);
@@ -898,5 +898,5 @@ body.dark .gp-emerging {
 }
 
 .gp-breadth.hi { color: var(--gp-green, var(--positive)); }
-.gp-breadth.mid { color: var(--gp-amber, #f59e0b); }
+.gp-breadth.mid { color: var(--gp-amber); }
 .gp-breadth.lo { color: var(--gp-red, var(--negative)); }

@@ -4713,6 +4713,12 @@ export function ChartPanel({
       ? (activeBars[activeBars.length - 1].close / activeBars[activeBars.length - 2].close - 1) * 100
       : summary?.change_pct ?? null;
   const priceTrendClass = dayChangePct !== null ? (dayChangePct >= 0 ? "positive" : "negative") : "neutral";
+  /** Up/down colour for a stage-label chip, taken from the CHART palette.
+   *  These chips are painted by the chart theme, not the app theme: `editorial`
+   *  is a light chip, the default is near-black. Using the app's --positive
+   *  here is what produced dark-green-on-near-black in light mode. */
+  const stageTrendColor = (trend: string): string | undefined =>
+    trend === "positive" ? palette.upColor : trend === "negative" ? palette.downColor : undefined;
   const rsTrendClass = summary
     ? (summary.rs_rating ?? summary.rs_rating_1w_ago) >= summary.rs_rating_1w_ago
       ? "positive"
@@ -5655,7 +5661,14 @@ export function ChartPanel({
                 );
                 return (
                   <>
-                    <span className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                    <span
+                    className={`chart-stage-label chart-stage-label--ohlc ${hoveredPriceTrendClass}`}
+                    style={{
+                      color: stageTrendColor(hoveredPriceTrendClass) ?? palette.textColor,
+                      background: palette.background,
+                      borderColor: palette.borderColor,
+                    }}
+                  >
                       <span>{priceLine1}</span>
                       {priceLine2 && !chartFullscreen ? <span style={{ opacity: 0.75 }}>{priceLine2}</span> : null}
                     </span>
@@ -5675,7 +5688,14 @@ export function ChartPanel({
                       </span>
                     ) : null}
                     {hover.rsPoint || !chartFullscreen ? (
-                      <span className={`chart-stage-label ${rsTrendClass}`} style={{ color: palette.textColor, background: palette.background, borderColor: palette.borderColor }}>
+                      <span
+                        className={`chart-stage-label ${rsTrendClass}`}
+                        style={{
+                          color: stageTrendColor(rsTrendClass) ?? palette.textColor,
+                          background: palette.background,
+                          borderColor: palette.borderColor,
+                        }}
+                      >
                         {hover.rsPoint ? `RS Rating ${Math.round(hover.rsPoint.value)} on ${formatChartDateFromTimestamp(hover.rsPoint.time)}` : "RS Rating line is plotted below price."}
                       </span>
                     ) : null}

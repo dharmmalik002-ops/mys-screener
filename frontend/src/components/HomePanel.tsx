@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { activatable } from "../lib/activate";
 import { createPortal } from "react-dom";
@@ -301,7 +302,13 @@ function XpGauge({ xp }: { xp: XpBreadthScore }) {
           <path key={i} d={seg.path} fill="none" stroke={seg.color} strokeWidth={9} opacity={0.92} />
         ))}
         <line x1={nx} y1={ny} x2={tx} y2={ty} stroke="var(--text)" strokeWidth={2.6} strokeLinecap="round" />
-        <text x={CX} y={62} textAnchor="middle" className="homepro-xp-gauge-score" fill={xp.regime_color}>
+        <text
+          x={CX}
+          y={62}
+          textAnchor="middle"
+          className="homepro-xp-gauge-score"
+          style={{ "--regime-color": xp.regime_color } as CSSProperties}
+        >
           {xp.xp_score.toFixed(2)}
         </text>
         <text x={CX} y={80} textAnchor="middle" className="homepro-xp-gauge-regime">
@@ -509,8 +516,8 @@ function XpBreadthChart({ xp, height = 240 }: { xp: XpBreadthScore; height?: num
         style={{ left: tipLeft }}
       >
         <span className="homepro-xp-tip-date">{fmtDate(hovered.date)}</span>
-        <span className="homepro-xp-tip-val" style={{ color: hovered.regime_color }}>{hovered.xp_score.toFixed(2)}</span>
-        <span className="homepro-xp-tip-regime" style={{ color: hovered.regime_color }}>{hovered.regime}</span>
+        <span className="homepro-xp-tip-val" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>{hovered.xp_score.toFixed(2)}</span>
+        <span className="homepro-xp-tip-regime" style={{ "--regime-color": hovered.regime_color } as CSSProperties}>{hovered.regime}</span>
       </div>
 
       {/* zoom slider */}
@@ -800,7 +807,12 @@ export function HomePanel({
             {briefing.xp ? (
               <span>
                 Market regime is{" "}
-                <strong style={{ color: briefing.xp.regime_color || undefined }}>{briefing.xp.regime}</strong>
+                <strong
+                  className="homepro-briefing-regime"
+                  style={{ "--regime-color": briefing.xp.regime_color || "var(--text)" } as CSSProperties}
+                >
+                  {briefing.xp.regime}
+                </strong>
                 {" "}(XP {briefing.xp.xp_score.toFixed(1)}).
               </span>
             ) : null}
@@ -901,7 +913,7 @@ export function HomePanel({
                 />
               </div>
               <div style={{ display: "flex", gap: 12, fontSize: "var(--fs-small)", fontWeight: 700 }}>
-                <span style={{ color: "#059669" }}>{Math.round(advPct)}%</span>
+                <span style={{ color: "var(--positive)" }}>{Math.round(advPct)}%</span>
                 <span style={{ color: "#b45309" }}>{100 - Math.round(advPct)}%</span>
               </div>
             </div>

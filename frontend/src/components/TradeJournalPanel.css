@@ -1240,7 +1240,7 @@
 .tj-check-row input { margin-top: 2px; accent-color: var(--accent); }
 .tj-check-row span { color: var(--text-soft); }
 .tj-check-row span.checked { color: var(--positive); text-decoration: line-through; }
-.tj-check-warn { font-size: var(--fs-small); color: #f59e0b; background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); border-radius: var(--radius-sm); padding: 6px 10px; margin-top: 6px; }
+.tj-check-warn { font-size: var(--fs-small); color: var(--amber); background: rgba(245,158,11,.1); border: 1px solid rgba(245,158,11,.3); border-radius: var(--radius-sm); padding: 6px 10px; margin-top: 6px; }
 
 .tj-calc-result {
   text-align: center;
@@ -1782,7 +1782,7 @@
 
 .tj-root {
   --tj-accent: var(--accent, #6366f1);
-  --tj-accent-strong: #4f46e5;
+  --tj-accent-strong: var(--accent-strong);
   --tj-pos: var(--positive);
   --tj-neg: var(--negative);
   --tj-card-shadow: var(--elev-2);
@@ -3007,8 +3007,8 @@
   min-width: 84px;
 }
 
-.tj-mistake-bill-pnl.neg { color: var(--loss, var(--candle-down)); }
-.tj-mistake-bill-pnl.pos { color: var(--gain, var(--candle-up)); }
+.tj-mistake-bill-pnl.neg { color: var(--loss, var(--negative)); }
+.tj-mistake-bill-pnl.pos { color: var(--gain, var(--positive)); }
 
 /* ===== Learnings tab ===== */
 .tj-learnings-page {

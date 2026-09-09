@@ -6,15 +6,15 @@
   --hp-bg: #f6f7fb;
   --hp-card-bg: #ffffff;
   --hp-border: rgba(15, 23, 42, 0.06);
-  --hp-muted: #64748b;
-  --hp-text: #0f172a;
+  --hp-muted: var(--text-muted);
+  --hp-text: var(--text);
   --hp-green: var(--positive);
   --hp-green-soft: #d1fae5;
   --hp-red: var(--negative);
   --hp-red-soft: #fee2e2;
-  --hp-blue: #3b82f6;
+  --hp-blue: var(--accent);
   --hp-violet: #8b5cf6;
-  --hp-amber: #f59e0b;
+  --hp-amber: var(--amber);
   --hp-shadow: var(--elev-2);
 
   display: grid;
@@ -1178,7 +1178,7 @@ body.dark .homepro-modal-close:hover {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--hp-blue, #3b82f6);
+  background: var(--hp-blue);
   border: 2px solid #fff;
   box-shadow: var(--elev-1);
   cursor: pointer;
@@ -1187,7 +1187,7 @@ body.dark .homepro-modal-close:hover {
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background: var(--hp-blue, #3b82f6);
+  background: var(--hp-blue);
   border: 2px solid #fff;
   box-shadow: var(--elev-1);
   cursor: pointer;
@@ -1346,4 +1346,25 @@ body.dark .homepro-modal-close:hover {
   .homepro-row-spark {
     display: none;
   }
+}
+
+/* ---- Backend-supplied regime colour -------------------------------------
+   The XP regime palette is chosen server-side for a dark canvas: the middle
+   band, #94d82d, sits at 1.73:1 on a white card, far below AA. The value
+   arrives as an inline custom property (CSS cannot restyle an inline
+   `color`), so the light theme darkens it here instead of asking the backend
+   to serve two palettes. Chart fills and the hover dot keep the raw colour --
+   they are areas, not text. */
+.homepro-xp-gauge-score { fill: var(--regime-color, var(--text)); }
+.homepro-xp-tip-val,
+.homepro-xp-tip-regime,
+.homepro-briefing-regime { color: var(--regime-color, var(--text)); }
+
+:root[data-theme="light"] .homepro-xp-gauge-score {
+  fill: color-mix(in oklab, var(--regime-color, var(--text)) 52%, black);
+}
+:root[data-theme="light"] .homepro-xp-tip-val,
+:root[data-theme="light"] .homepro-xp-tip-regime,
+:root[data-theme="light"] .homepro-briefing-regime {
+  color: color-mix(in oklab, var(--regime-color, var(--text)) 52%, black);
 }

@@ -8,8 +8,8 @@
   --sd-bg: #f9fafb;
   --sd-surface: #ffffff;
   --sd-border: #e5e7eb;
-  --sd-text: #111827;
-  --sd-text-soft: #6b7280;
+  --sd-text: var(--text);
+  --sd-text-soft: var(--text-soft);
   --sd-pos: var(--positive);
   --sd-neg: var(--negative);
 
@@ -94,7 +94,7 @@
 }
 .sd-icon-amber {
   background: rgba(245, 158, 11, 0.16);
-  color: #f59e0b;
+  color: var(--amber);
 }
 
 .sd-card-label {

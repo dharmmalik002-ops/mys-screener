@@ -23,6 +23,11 @@
   --text-muted: #64748b;
   --accent: #4c9aff;
   --accent-strong: #3b6cef;
+  /* Accent text sitting ON an accent-tinted chip. It has to move the OPPOSITE
+     way in each theme: darker than --accent on a light tint, lighter than it
+     on a dark tint. Using --accent-strong for both put #3b6cef on a dark chip
+     and cost 8 severe contrast failures on the Funds page. */
+  --accent-on-tint: var(--accent);
   --accent-2: #34d399;
   --accent-3: #22d3ee;
   --positive: #22c55e;
@@ -189,16 +194,23 @@
   --text-soft: #475569;
   /* #94a3b8 on #f1f5f9 was ~2.1:1 — labels washed out. Slate-500 keeps the
      muted feel at readable contrast. */
-  --text-muted: #64748b;
+  --text-muted: #556376;
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
-  --accent-2: #10b981;
+  --accent-on-tint: #1d4ed8;
+  /* Light-theme colour values are darker than their dark-theme counterparts
+     because they are read as TEXT on a near-white card, not on near-black.
+     Every value here was measured against --card-flat (#f4f7fb) and clears
+     WCAG AA 4.5:1; the previous set had --positive at 3.07:1, --danger at
+     3.50:1 and --amber at 2.96:1, which is why gains, warnings and delete
+     actions were all hard to read in light mode. */
+  --accent-2: #0e6b4f;
   --accent-3: #0891b2;
-  --positive: #16a34a;
-  --positive-soft: rgba(22, 163, 74, 0.12);
-  --negative: #dc2626;
-  --negative-soft: rgba(220, 38, 38, 0.12);
-  --danger: #ef4444;
+  --positive: #137a37;
+  --positive-soft: rgba(19, 122, 55, 0.12);
+  --negative: #c81e1e;
+  --negative-soft: rgba(200, 30, 30, 0.12);
+  --danger: #b91c1c;
   --red: var(--negative);
   --green: var(--positive);
   --teal: #0f766e;
@@ -208,9 +220,9 @@
   --orange: #ea580c;
   --orange-soft: rgba(234, 88, 12, 0.12);
   --violet: #7c3aed;
-  --amber: #d97706;
-  --amber-soft: rgba(217, 119, 6, 0.12);
-  --warning: #d97706;
+  --amber: #b45309;
+  --amber-soft: rgba(180, 83, 9, 0.12);
+  --warning: #b45309;
   --accent-contrast: #f8fafc;
   --elev-1: 0 1px 2px rgba(15, 23, 42, 0.05);
   --elev-2: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 14px rgba(15, 23, 42, 0.06);
@@ -5952,14 +5964,13 @@ button {
   color: var(--warning);
 }
 
-.chart-stage-label.positive {
-  border-color: color-mix(in srgb, var(--accent-2) 42%, transparent);
-  color: var(--accent-2) !important;
-}
-
+/* Colour comes from the chart palette inline (see stageTrendColor in
+   ChartPanel) — these chips float on the chart's own background, which does
+   not follow the app theme. The border just tints toward whatever that colour
+   turned out to be. */
+.chart-stage-label.positive,
 .chart-stage-label.negative {
-  border-color: color-mix(in srgb, var(--danger) 42%, transparent);
-  color: var(--danger) !important;
+  border-color: color-mix(in srgb, currentColor 42%, transparent);
 }
 
 .chart-stage-hitbox {
@@ -6140,7 +6151,7 @@ button {
   font-size: var(--fs-tiny);
   font-weight: 600;
   letter-spacing: 0.04em;
-  color: rgba(139, 148, 158, 0.95);
+  color: var(--text-muted);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 

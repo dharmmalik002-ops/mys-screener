@@ -4,16 +4,16 @@
    ========================================================================== */
 
 .wl-card {
-  --st-primary: #6366f1;
-  --st-primary-strong: #4f46e5;
+  --st-primary: var(--accent);
+  --st-primary-strong: var(--accent-strong);
   --st-bg: #f9fafb;
   --st-surface: #ffffff;
   --st-border: #e5e7eb;
-  --st-text: #111827;
-  --st-text-soft: #6b7280;
+  --st-text: var(--text);
+  --st-text-soft: var(--text-soft);
   --st-pos: var(--positive);
   --st-neg: var(--negative);
-  --st-amber: #f59e0b;
+  --st-amber: var(--amber);
   font-family: var(--font-display, "Inter", "Outfit", system-ui, sans-serif);
 }
 
@@ -649,9 +649,9 @@
 }
 
 .wl-stale-chip.fading {
-  background: color-mix(in srgb, var(--amber, #f59e0b) 16%, transparent);
-  border: 1px solid color-mix(in srgb, var(--amber, #f59e0b) 45%, transparent);
-  color: var(--amber, #f59e0b);
+  background: color-mix(in srgb, var(--amber) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  color: var(--amber);
 }
 
 .wl-stale-chip.dead {
@@ -676,8 +676,8 @@
 }
 
 .wl-stage-chip.stage-near-pivot {
-  border-color: color-mix(in srgb, var(--amber, #f59e0b) 50%, transparent);
-  color: var(--amber, #f59e0b);
+  border-color: color-mix(in srgb, var(--amber) 50%, transparent);
+  color: var(--amber);
 }
 
 .wl-stage-chip.stage-triggered {
