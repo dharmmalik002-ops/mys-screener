@@ -1,0 +1,86 @@
+/* ==========================================================================
+   ScanDistribution — universe context for a scan's hits
+   ========================================================================== */
+
+.sdist-root { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.sdist-toggle {
+  align-self: flex-start;
+  border: var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface-soft);
+  padding: 5px 12px;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.sdist-toggle:hover { color: var(--text); border-color: var(--line-strong); }
+.sdist-toggle:focus-visible { outline: none; box-shadow: var(--focus-ring); }
+
+.sdist-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: var(--space-3);
+}
+
+.sdist-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--card-flat);
+  box-shadow: var(--elev-1);
+}
+
+.sdist-head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); }
+.sdist-label { font-size: var(--fs-tiny); font-weight: 700; color: var(--text); }
+.sdist-pct {
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-weight: 600;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.sdist-pct.hi { color: var(--positive-on-tint); }
+.sdist-pct.lo { color: var(--negative-on-tint); }
+
+.sdist-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 1px;
+  height: 56px;
+}
+
+.sdist-bin { position: relative; flex: 1 1 0; height: 100%; min-width: 0; }
+
+.sdist-bar-universe,
+.sdist-bar-hits {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  border-radius: 1px;
+}
+/* The universe is the ground the hits are read against, so it stays quiet. */
+.sdist-bar-universe { background: color-mix(in srgb, var(--text-muted) 30%, transparent); }
+.sdist-bar-hits { background: var(--accent); opacity: 0.9; }
+
+.sdist-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--fs-micro);
+  font-variant-numeric: tabular-nums;
+}
+.sdist-median.hits { color: var(--accent-on-tint); font-weight: 600; }
+.sdist-median.uni { color: var(--text-muted); }
+
+.sdist-note { margin: 0; font-size: var(--fs-micro); color: var(--text-muted); max-width: 78ch; }
+
+@media (prefers-reduced-motion: reduce) { .sdist-toggle { transition: none; } }

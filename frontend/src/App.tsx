@@ -121,6 +121,7 @@ const ReturnsScannerPanel = lazy(() => import("./components/ReturnsScannerPanel"
 const ScanTable = lazy(() => import("./components/ScanTable").then((module) => ({ default: module.ScanTable })));
 const ScanDashboard = lazy(() => import("./components/ScanDashboard").then((module) => ({ default: module.ScanDashboard })));
 const ScanFooter = lazy(() => import("./components/ScanFooter").then((module) => ({ default: module.ScanFooter })));
+const ScanDistribution = lazy(() => import("./components/ScanDistribution").then((module) => ({ default: module.ScanDistribution })));
 const ScannerHeader = lazy(() => import("./components/ScannerHeader").then((module) => ({ default: module.ScannerHeader })));
 const QueryBuilder = lazy(() => import("./components/QueryBuilder").then((module) => ({ default: module.QueryBuilder })));
 const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((module) => ({ default: module.ScreenerSidebar })));
@@ -988,7 +989,17 @@ function buildUniverseCatalogFromIndustryGroups(data: IndustryGroupsResponse | n
     market_cap_crore: stock.market_cap_cr,
     last_price: stock.last_price,
     change_pct: stock.change_pct,
+    // No RVOL in the groups payload, so it stays a placeholder -- the screener
+    // distribution strip checks for real values and skips the metric rather
+    // than plotting a column of zeroes.
     relative_volume: 0,
+    // The groups payload carries 1-month and 3-month returns and 50-day
+    // turnover. Mapped onto the nearest ScanMatch fields so the distribution
+    // strip has a universe to compare against; the windows are close but not
+    // identical (1 month vs 20 sessions), which the strip states.
+    stock_return_20d: stock.return_1m,
+    stock_return_60d: stock.return_3m,
+    avg_rupee_volume_30d_crore: stock.avg_traded_value_50d_cr,
     score: stock.rs_rating ?? 0,
     rs_rating: stock.rs_rating,
     reasons: [],
@@ -6108,6 +6119,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                         onExport={handleExportScanResults}
                         onVisibleOrderChange={handleScanVisibleOrderChange}
                       />
+                      {visibleScanItems.length > 0 ? (
+                        <ScanDistribution items={visibleScanItems} universe={universeCatalog} />
+                      ) : null}
                       {visibleScanItems.length > 0 ? (
                         <ScanFooter
                           loading={scanLoading}
