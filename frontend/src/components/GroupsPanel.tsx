@@ -24,6 +24,7 @@ import type {
 } from "./ChartGridModal";
 import { Panel } from "./Panel";
 import { SectorTreemap } from "./SectorTreemap";
+import { RotationGraph } from "./RotationGraph";
 
 import "./GroupsPanel.css";
 
@@ -46,11 +47,12 @@ type GroupSortBy =
   | "rank" | "score" | "momentum" | "breadth"
   | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
-type GroupsView = "table" | "map";
+type GroupsView = "table" | "map" | "rotation";
 
 const VIEW_OPTIONS: Array<{ value: GroupsView; label: string }> = [
   { value: "table", label: "Rankings" },
   { value: "map", label: "Market Map" },
+  { value: "rotation", label: "Rotation" },
 ];
 
 const SORT_OPTIONS: Array<{ value: GroupSortBy; label: string }> = [
@@ -584,10 +586,12 @@ export function GroupsPanel({
         <section className="gp-card gp-card-table">
           <div className="gp-card-head">
             <div>
-              <h3>{view === "map" ? "Market Map" : "Group Rankings"}</h3>
+              <h3>{view === "map" ? "Market Map" : view === "rotation" ? "Rotation" : "Group Rankings"}</h3>
               <p className="gp-card-sub">
                 {view === "map" ? (
                   "Sectors, then groups, then stocks — click any tile to drill in"
+                ) : view === "rotation" ? (
+                  "Where each group sits in the rotation cycle, from its recorded score history"
                 ) : (
                   <>
                     {filteredGroups.length} of {totalGroups} groups
@@ -598,7 +602,17 @@ export function GroupsPanel({
             </div>
           </div>
 
-          {view === "map" ? (
+          {view === "rotation" ? (
+            <RotationGraph
+              market={_market}
+              data={data}
+              onOpenGroup={(groupId) => {
+                setView("table");
+                setFocusedGroupId(groupId);
+                groupRowRefs.current[groupId]?.scrollIntoView({ block: "center" });
+              }}
+            />
+          ) : view === "map" ? (
             <SectorTreemap
               data={data}
               loading={loading}

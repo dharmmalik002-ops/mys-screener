@@ -1,0 +1,181 @@
+/* ==========================================================================
+   RotationGraph — relative rotation graph
+   --------------------------------------------------------------------------
+   Colours come from the semantic tokens, so the four quadrants read the same
+   way in both themes: leading is the positive hue, lagging the negative one,
+   and the two transitional quadrants borrow amber and accent. Type comes from
+   the shared scale; elevation and radii from their tokens.
+   ========================================================================== */
+
+.rrg-root { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.rrg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.rrg-control-group { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.rrg-seg {
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--surface-soft);
+  border-radius: var(--radius-md);
+}
+
+.rrg-seg-btn {
+  border: 0;
+  background: transparent;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.rrg-seg-btn:hover { color: var(--text); }
+.rrg-seg-btn.active { background: var(--accent); color: var(--accent-contrast); }
+
+.rrg-canvas-wrap {
+  position: relative;
+  width: 100%;
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--card-flat);
+  box-shadow: var(--elev-1);
+  overflow: hidden;
+}
+
+.rrg-canvas { display: block; }
+
+/* Quadrant grounds: faint enough that the trails stay the subject. */
+.rrg-q { opacity: 1; }
+.rrg-q.leading   { fill: color-mix(in srgb, var(--positive) 7%, transparent); }
+.rrg-q.improving { fill: color-mix(in srgb, var(--accent) 7%, transparent); }
+.rrg-q.weakening { fill: color-mix(in srgb, var(--amber) 7%, transparent); }
+.rrg-q.lagging   { fill: color-mix(in srgb, var(--negative) 7%, transparent); }
+
+.rrg-q-label {
+  font-family: var(--font-display);
+  font-size: var(--fs-nano);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+
+.rrg-axis { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
+
+.rrg-axis-title {
+  font-size: var(--fs-nano);
+  fill: var(--text-muted);
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+/* ---- trails ---- */
+
+.rrg-trail { cursor: pointer; }
+.rrg-trail:focus { outline: none; }
+
+.rrg-tail { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+.rrg-dot  { stroke: none; }
+.rrg-head { stroke: var(--card-flat); stroke-width: 1.5; }
+
+.rrg-trail.leading   .rrg-tail, .rrg-trail.leading   .rrg-dot, .rrg-trail.leading   .rrg-head { stroke-opacity: 1; }
+.rrg-trail.leading   .rrg-tail { stroke: var(--positive); }
+.rrg-trail.leading   .rrg-dot, .rrg-trail.leading   .rrg-head { fill: var(--positive); }
+.rrg-trail.improving .rrg-tail { stroke: var(--accent); }
+.rrg-trail.improving .rrg-dot, .rrg-trail.improving .rrg-head { fill: var(--accent); }
+.rrg-trail.weakening .rrg-tail { stroke: var(--amber); }
+.rrg-trail.weakening .rrg-dot, .rrg-trail.weakening .rrg-head { fill: var(--amber); }
+.rrg-trail.lagging   .rrg-tail { stroke: var(--negative); }
+.rrg-trail.lagging   .rrg-dot, .rrg-trail.lagging   .rrg-head { fill: var(--negative); }
+
+.rrg-head-label {
+  font-size: var(--fs-nano);
+  font-weight: 600;
+  fill: var(--text-soft);
+  pointer-events: none;
+}
+
+.rrg-trail.is-hot .rrg-tail { opacity: 1; stroke-width: 2.4; }
+.rrg-trail.is-hot .rrg-head { r: 6.5; }
+.rrg-trail.is-hot .rrg-head-label { fill: var(--text); font-weight: 700; }
+.rrg-trail:focus-visible .rrg-head { stroke: var(--accent); stroke-width: 3; }
+
+/* ---- tooltip ---- */
+
+.rrg-tooltip {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 168px;
+  max-width: 216px;
+  padding: var(--space-2) var(--space-3);
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  backdrop-filter: blur(8px);
+  box-shadow: var(--elev-2);
+  pointer-events: none;
+}
+.rrg-tooltip strong { font-size: var(--fs-small); color: var(--text); line-height: 1.25; }
+.rrg-tt-q { font-size: var(--fs-tiny); font-weight: 700; }
+.rrg-tt-q.leading   { color: var(--positive-on-tint); }
+.rrg-tt-q.improving { color: var(--accent-on-tint); }
+.rrg-tt-q.weakening { color: var(--amber); }
+.rrg-tt-q.lagging   { color: var(--negative-on-tint); }
+.rrg-tt-meta { font-size: var(--fs-micro); color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.rrg-tt-hint { margin-top: 2px; font-size: var(--fs-micro); color: var(--text-muted); }
+
+/* ---- footer ---- */
+
+.rrg-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.rrg-legend { display: inline-flex; flex-wrap: wrap; gap: var(--space-3); }
+.rrg-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--fs-tiny);
+  color: var(--text-soft);
+}
+.rrg-legend-item em { font-style: normal; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.rrg-legend-dot { width: 9px; height: 9px; border-radius: 50%; }
+.rrg-legend-dot.leading   { background: var(--positive); }
+.rrg-legend-dot.improving { background: var(--accent); }
+.rrg-legend-dot.weakening { background: var(--amber); }
+.rrg-legend-dot.lagging   { background: var(--negative); }
+
+.rrg-note { margin: 0; font-size: var(--fs-tiny); color: var(--text-muted); max-width: 62ch; }
+
+.rrg-empty {
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  font-size: var(--fs-small);
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rrg-seg-btn, .rrg-tail { transition: none; }
+}
+
+@media (max-width: 720px) {
+  .rrg-controls { flex-direction: column; align-items: stretch; }
+  .rrg-control-group { justify-content: space-between; }
+}
