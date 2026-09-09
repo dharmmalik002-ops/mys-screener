@@ -5,7 +5,15 @@ Priority of layers (first match wins):
   1. manual_group_overrides.csv  (symbol -> group_id)
   2. keyword_group_rules.json    (positive/negative keywords + parent affinity)
   3. peer_group_aliases.csv      (raw_sector + raw_industry -> group_id)
-  4. needs_review                (low confidence, written to needs_review.csv)
+  4. sector_fallback_groups.csv  (macro sector -> its most representative group)
+  5. needs_review                (low confidence, written to needs_review.csv)
+
+Layer 4 is what makes the output total: every macro sector in the app's
+vocabulary names a destination group, so a stock whose industry label we have
+never seen still lands with its own sector's peers instead of in an
+"Unclassified" bucket. It is the least precise layer, so it runs last and the
+row is still written to needs_review.csv for curation -- the stock is placed,
+and the placement is flagged as coarse rather than silently trusted.
 
 Output per stock: ClassificationResult(primary_group_id, confidence, source_layer, secondary_tags).
 """
@@ -20,6 +28,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from app.core.sector_taxonomy import normalize_sector
 from app.data.groups.taxonomy import GROUPS_BY_ID, GroupDef
 
 logger = logging.getLogger(__name__)
@@ -28,6 +37,7 @@ DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "groups"
 OVERRIDES_PATH = DATA_DIR / "manual_group_overrides.csv"
 KEYWORDS_PATH = DATA_DIR / "keyword_rules.json"
 PEER_ALIASES_PATH = DATA_DIR / "peer_group_aliases.csv"
+SECTOR_FALLBACK_PATH = DATA_DIR / "sector_fallback_groups.csv"
 NEEDS_REVIEW_PATH = DATA_DIR / "needs_review.csv"
 BUSINESS_DESC_PATH = DATA_DIR / "business_descriptions.json"
 
@@ -46,7 +56,7 @@ CONFIDENCE_THRESHOLD = 0.25
 class ClassificationResult:
     primary_group_id: str | None
     confidence: float
-    source_layer: str  # "override" | "keyword" | "peer" | "needs_review"
+    source_layer: str  # "override" | "keyword" | "peer" | "sector_fallback" | "needs_review"
     secondary_tags: list[str] = field(default_factory=list)
     review_reason: str | None = None
 
@@ -57,6 +67,7 @@ class IndustryClassifier:
         self._keyword_rules: dict[str, dict] = {}
         self._peer_aliases: dict[tuple[str, str], str] = {}
         self._peer_aliases_by_industry: dict[str, str] = {}
+        self._sector_fallbacks: dict[str, str] = {}
         self._business_descriptions: dict[str, str] = {}
         self._needs_review_rows: list[dict[str, str]] = []
         self._load()
@@ -87,6 +98,17 @@ class IndustryClassifier:
                         self._peer_aliases[(raw_sector, raw_industry)] = group_id
                     if raw_industry:
                         self._peer_aliases_by_industry.setdefault(raw_industry, group_id)
+
+        if SECTOR_FALLBACK_PATH.exists():
+            with SECTOR_FALLBACK_PATH.open(newline="", encoding="utf-8") as fh:
+                for row in csv.DictReader(fh):
+                    # Keyed on the canonical sector name so a Yahoo GICS label
+                    # ("Industrials") and its NSE equivalent ("Capital Goods")
+                    # resolve to the same destination.
+                    sector = normalize_sector(row.get("raw_sector"))
+                    group_id = (row.get("fallback_group_id") or "").strip()
+                    if sector and group_id in GROUPS_BY_ID:
+                        self._sector_fallbacks[sector] = group_id
 
         # Authoritative manually-curated descriptions (highest priority).
         if BUSINESS_DESC_PATH.exists():
@@ -123,10 +145,12 @@ class IndustryClassifier:
                 logger.warning("Failed to merge fundamentals descriptions from %s: %s", FUNDAMENTALS_CACHE_PATH, exc)
 
         logger.info(
-            "industry_classifier loaded: %d overrides, %d keyword rules, %d peer aliases, %d business descriptions",
+            "industry_classifier loaded: %d overrides, %d keyword rules, %d peer aliases, "
+            "%d sector fallbacks, %d business descriptions",
             len(self._overrides),
             len(self._keyword_rules),
             len(self._peer_aliases),
+            len(self._sector_fallbacks),
             len(self._business_descriptions),
         )
 
@@ -182,6 +206,22 @@ class IndustryClassifier:
                 source_layer="needs_review",
                 review_reason="low_keyword_confidence",
             )
+
+        sector_result = self._classify_by_sector(raw_sector)
+        if sector_result:
+            self._needs_review_rows.append(
+                {
+                    "symbol": sym,
+                    "company_name": company_name or "",
+                    "raw_sector": raw_sector or "",
+                    "raw_industry": raw_industry or "",
+                    "business_desc": (business_desc or "")[:200],
+                    "suggested_group_id": sector_result.primary_group_id or "",
+                    "confidence_score": f"{sector_result.confidence:.2f}",
+                    "review_reason": "sector_fallback",
+                }
+            )
+            return sector_result
 
         self._needs_review_rows.append(
             {
@@ -263,7 +303,33 @@ class IndustryClassifier:
             )
         return None
 
+    def _classify_by_sector(self, raw_sector: str) -> ClassificationResult | None:
+        """Last resort: place the stock with its own macro sector's peers.
+
+        Coarse by construction -- it says "this is a Capital Goods stock", not
+        which kind -- but a coarse true group beats no group at all, which is
+        what put 19 live stocks into the Unclassified bucket.
+        """
+        group_id = self._sector_fallbacks.get(normalize_sector(raw_sector))
+        if not group_id:
+            return None
+        return ClassificationResult(
+            primary_group_id=group_id,
+            confidence=0.2,
+            source_layer="sector_fallback",
+            review_reason="sector_fallback",
+        )
+
     def write_needs_review(self) -> int:
+        """Rewrite the curation queue, unless this run classified nothing.
+
+        The queue is a tracked file, and a run with nothing to report is a
+        two-stock unit-test fixture far more often than a genuinely clean
+        universe -- `pytest` used to leave it truncated to its header, ready to
+        be committed. An empty run now leaves the existing queue alone.
+        """
+        if not self._needs_review_rows:
+            return 0
         NEEDS_REVIEW_PATH.parent.mkdir(parents=True, exist_ok=True)
         fieldnames = [
             "symbol",

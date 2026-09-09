@@ -50,7 +50,7 @@ BSE,amc_exchanges_depositories,BSE Limited,2026-04-26
 IEX,amc_exchanges_depositories,Indian Energy Exchange,2026-04-26
 MFSL,life_insurance,Max Financial Services — Max Life parent,2026-04-26
 SBFC,housing_finance,SBFC Finance,2026-04-26
-ABLBL,housing_finance,Aadhar Housing,2026-04-26
+ABLBL,retail_fashion_lifestyle,"Aditya Birla Lifestyle Brands — apparel, was in housing finance",2026-09-09
 REPCOHOME,housing_finance,Repco Home Finance,2026-04-26
 SAMMAANCAP,housing_finance,Sammaan Capital,2026-04-26
 CGCL,housing_finance,Capri Global Capital,2026-04-26
@@ -114,7 +114,7 @@ TIINDIA,bearings_industrial_components,Tube Investments of India,2026-04-26
 NRBBEARING,bearings_industrial_components,NRB Bearings,2026-04-26
 ELGIEQUIP,pumps_valves_flow_control,Elgi Equipments,2026-04-26
 ESABINDIA,electrical_equipment,Esab India,2026-04-26
-GRAPHITE,bearings_industrial_components,Graphite India,2026-04-26
+GRAPHITE,refractories_electrodes,Graphite India — graphite electrodes,2026-09-09
 ISGEC,industrial_automation_drives,Isgec Heavy Engineering,2026-04-26
 KIRLOSENG,industrial_automation_drives,Kirloskar Oil Engines,2026-04-26
 KIRLOSIND,industrial_automation_drives,Kirloskar Industries,2026-04-26
@@ -132,7 +132,7 @@ BBL,transformers_td_equipment,Bharat Bijlee,2026-04-26
 BAJEL,transformers_td_equipment,Bajel Projects,2026-04-26
 GVT&D,transformers_td_equipment,GE Vernova T&D,2026-04-26
 SKIPPER,transformers_td_equipment,Skipper,2026-04-26
-KALPATARU,transformers_td_equipment,Kalpataru Projects International,2026-04-26
+KALPATARU,real_estate_developers,Kalpataru Limited — realty; confused with Kalpataru Projects,2026-09-09
 TRANSRAILL,transformers_td_equipment,Transrail Lighting,2026-04-26
 GENUSPOWER,power_utilities_distribution,Genus Power Infrastructures (smart meters),2026-04-26
 PARACABLES,wires_cables,Paramount Communications,2026-04-26
@@ -216,7 +216,7 @@ WABAG,construction_infra_epc,Va Tech Wabag (water EPC),2026-04-26
 POWERMECH,construction_infra_epc,Power Mech Projects,2026-04-26
 INTERARCH,construction_infra_epc,Interarch Building Products,2026-04-26
 NBCC,construction_infra_epc,NBCC India,2026-04-26
-ADANIENT,diversified_nbfcs,Adani Enterprises (incubator/holdco — best fit),2026-04-26
+ADANIENT,diversified_holdings,Adani Enterprises — incubator conglomerate,2026-09-09
 DLF,real_estate_developers,DLF,2026-04-26
 SOBHA,real_estate_developers,Sobha,2026-04-26
 OMAXE,real_estate_developers,Omaxe,2026-04-26
@@ -279,7 +279,7 @@ EPIGRAL,specialty_chemicals,Epigral Limited,2026-04-26
 BLUEJET,specialty_chemicals,Blue Jet Healthcare,2026-04-26
 ASTRAL,pipes_plastic_bm,Astral Limited,2026-04-26
 HARIOMPIPE,pipes_plastic_bm,Hariom Pipe Industries,2026-04-26
-EPL,pipes_plastic_bm,EPL Limited (laminated tubes),2026-04-26
+EPL,paper_packaging,EPL — laminated tubes,2026-09-09
 CENTURYPLY,building_products,Century Plyboards,2026-04-26
 GREENPLY,building_products,Greenply Industries,2026-04-26
 GREENPANEL,building_products,Greenpanel Industries,2026-04-26
@@ -291,7 +291,7 @@ NUVOCO,cement,Nuvoco Vistas Corp,2026-04-26
 GRASIM,cement,Grasim Industries (UltraTech parent + chemicals),2026-04-26
 JAIBALAJI,steel,Jai Balaji Industries,2026-04-26
 JINDALSAW,steel,Jindal Saw,2026-04-26
-JSLL,stainless_special_alloys,Jindal Stainless,2026-04-26
+JSLL,hospitals,"Jeena Sikho Lifecare — hospitals, was in special alloys",2026-09-09
 SHYAMMETL,steel,Shyam Metalics,2026-04-26
 RAMASTEEL,steel,Rama Steel Tubes,2026-04-26
 MAITHANALL,stainless_special_alloys,Maithan Alloys,2026-04-26
@@ -367,7 +367,7 @@ NYKAA,retail_electronics_omni,FSN E-Commerce (Nykaa),2026-04-26
 SWIGGY,retail_electronics_omni,Swiggy,2026-04-26
 MEESHO,retail_electronics_omni,Meesho,2026-04-26
 LENSKART,retail_electronics_omni,Lenskart Solutions,2026-04-26
-FLAIR,consumer_electronics_appliances,Flair Writing Industries,2026-04-26
+FLAIR,paper_packaging,Flair Writing — stationery,2026-09-09
 AURIONPRO,software_saas,Aurionpro Solutions,2026-04-26
 RATEGAIN,software_saas,RateGain Travel Technologies,2026-04-26
 JUSTDIAL,software_saas,Just Dial,2026-04-26
@@ -394,7 +394,7 @@ STAR,pharma_formulations,Strides Pharma Science,2026-04-26
 TIMETECHNO,pipes_plastic_bm,Time Technoplast — plastic + composite products,2026-04-26
 UDS,midcap_it_services,Updater Services — facility management + IT services,2026-04-26
 TORNTPOWER,power_generation,Torrent Power — generation + distribution,2026-04-26
-AGI,commodity_chemicals,AGI Greenpac — glass packaging containers,2026-04-26
+AGI,paper_packaging,AGI Greenpac — glass containers,2026-09-09
 ZAGGLE,fintech_payments,Zaggle — prepaid + expense management,2026-04-26
 ROUTE,software_saas,Route Mobile — CPaaS / messaging,2026-04-26
 AAYUSHBULL,retail_fashion_lifestyle,Aayush Art & Bullion — bullion/jewellery retail,2026-04-27
@@ -486,10 +486,10 @@ JAINREC,non_ferrous_metals,Jain Resource Recycling — metal recycling,2026-04-2
 JAYKAY,steel,Jaykay Enterprises — steel rolled products,2026-04-27
 JAYNECOIND,steel,Jayaswal Neco — steel / castings,2026-04-27
 JGCHEM,commodity_chemicals,J.G. Chemicals — zinc oxide,2026-04-27
-JINDALPOLY,specialty_chemicals,Jindal Poly Films — BOPET films,2026-04-27
+JINDALPOLY,paper_packaging,Jindal Poly Films — packaging films,2026-09-09
 JINDRILL,upstream_oil_gas,Jindal Drilling — offshore drilling services,2026-04-27
 JINDWORLD,apparel_textiles,Jindal Worldwide — denim textiles,2026-04-27
-JKPAPER,commodity_chemicals,JK Paper — paper / pulp,2026-04-27
+JKPAPER,paper_packaging,JK Paper,2026-09-09
 JTLIND,steel,JTL Industries — steel pipes / tubes,2026-04-27
 JUBLCPL,agrochemicals,Jubilant Agri & Consumer — agri / agrochemicals,2026-04-27
 JYOTICNC,industrial_automation_drives,Jyoti CNC — CNC machine tools,2026-04-27
@@ -505,7 +505,7 @@ KWIL,packaged_foods_bev,Kwality Wall's — ice cream,2026-04-27
 LGBBROSLTD,auto_anc_powertrain,LG Balakrishnan & Bros — automotive chains,2026-04-27
 LGEINDIA,consumer_electronics_appliances,LG Electronics India — consumer electronics,2026-04-27
 LKPFIN,broking_wealth,LKP Finance — broking / capital markets,2026-04-27
-LTM,cdmo_crams,LTM Limited — pharma CRO,2026-04-27
+LTM,tier1_it_services,"LTIMindtree — tier-1 IT, was in CDMO",2026-09-09
 MAHSCOOTER,diversified_nbfcs,Maharashtra Scooters — Bajaj group holding co,2026-04-27
 MANINDS,pumps_valves_flow_control,Man Industries — large-diameter pipes for oil & gas,2026-04-27
 MANORAMA,packaged_foods_bev,Manorama Industries — specialty fats,2026-04-27
@@ -516,7 +516,7 @@ MEDIASSIST,general_insurance,Medi Assist — TPA insurance services,2026-04-27
 MIDWEST,mining_minerals,Midwest Gold — granite mining,2026-04-27
 MMTC,mining_minerals,MMTC — minerals / gold trading PSU,2026-04-27
 MODINSU,electrical_equipment,Modern Insulators — ceramic insulators,2026-04-27
-MOLDTKPAC,specialty_chemicals,Mold-Tek Packaging — plastic packaging,2026-04-27
+MOLDTKPAC,paper_packaging,Mold-Tek Packaging,2026-09-09
 MONARCH,broking_wealth,Monarch Networth Capital — broking,2026-04-27
 MOSCHIP,erd_engineering_tech,Moschip Technologies — semiconductor design,2026-04-27
 MPSLTD,midcap_it_services,MPS Limited — publishing / IT services,2026-04-27
@@ -544,7 +544,7 @@ PGIL,apparel_textiles,Pearl Global Industries — apparel,2026-04-27
 PICCADIL,alcoholic_beverages,Piccadily Agro — alcohol / sugar,2026-04-27
 POCL,non_ferrous_metals,Pondy Oxides & Chemicals — lead recycling,2026-04-27
 POKARNA,ceramics_tiles,Pokarna — quartz / granite surfaces,2026-04-27
-POLYPLEX,specialty_chemicals,Polyplex Corporation — BOPET films,2026-04-27
+POLYPLEX,paper_packaging,Polyplex — packaging films,2026-09-09
 PRABHA,renewable_energy,Prabha Energy — clean / biomass energy,2026-04-27
 PRAKASH,steel,Prakash Industries — steel,2026-04-27
 PREMEXPLN,aerospace_defense,Premier Explosives — defense / explosives,2026-04-27
@@ -561,12 +561,12 @@ RELIGARE,diversified_nbfcs,Religare Enterprises — diversified financial,2026-0
 RELTD,renewable_energy,Ravindra Energy — renewable / agri energy,2026-04-27
 RESPONIND,home_furnishings,Responsive Industries — PVC vinyl flooring,2026-04-27
 RHETAN,steel,Rhetan TMT — TMT steel bars,2026-04-27
-RHIM,ceramics_tiles,RHI Magnesita — refractories,2026-04-27
+RHIM,refractories_electrodes,RHI Magnesita India — refractories,2026-09-09
 RICOAUTO,auto_anc_powertrain,Rico Auto Industries — auto components,2026-04-27
 RISHABH,electrical_equipment,Rishabh Instruments — electrical measuring,2026-04-27
 RML,auto_anc_powertrain,Rane (Madras) — steering / auto components,2026-04-27
 ROSSTECH,aerospace_defense,Rossell Techsys — defense electronics,2026-04-27
-RPEL,ceramics_tiles,Raghav Productivity Enhancers — refractories,2026-04-27
+RPEL,refractories_electrodes,Raghav Productivity Enhancers — refractories,2026-09-09
 RPSGVENT,diversified_nbfcs,RPSG Ventures — diversified holding,2026-04-27
 RPTECH,it_hardware_distribution,Rashi Peripherals — IT distribution,2026-04-27
 RTNPOWER,power_generation,RattanIndia Power — power generation,2026-04-27
@@ -588,7 +588,7 @@ SHRINGARMS,retail_fashion_lifestyle,Shringar House of Mangalsutra — jewellery,
 SHRIPISTON,auto_anc_powertrain,Shriram Pistons & Rings — auto components,2026-04-27
 SILVERTUC,midcap_it_services,Silver Touch Technologies — IT services,2026-04-27
 SINDHUTRAD,logistics_surface,Sindhu Trade Links — coal logistics,2026-04-27
-SIS,midcap_it_services,SIS Limited — security / facility services,2026-04-27
+SIS,erd_engineering_tech,"SIS Limited — security and facility services, was in IT services",2026-09-09
 SIYSIL,apparel_textiles,Siyaram Silk Mills — textiles,2026-04-27
 SJS,auto_anc_wiring_lighting,S.J.S. Enterprises — auto decorative parts,2026-04-27
 SMARTWORKS,reits_commercial_re,Smartworks — coworking,2026-04-27
@@ -616,7 +616,7 @@ TIIL,apparel_textiles,Technocraft Industries — yarn / scaffolding,2026-04-27
 TIRUMALCHM,specialty_chemicals,Thirumalai Chemicals — specialty chemicals,2026-04-27
 TRUALT,sugar,TruAlt Bioenergy — ethanol / sugar,2026-04-27
 TVSHLTD,diversified_nbfcs,TVS Holdings — TVS group holding co,2026-04-27
-UFLEX,specialty_chemicals,UFLEX — flexible packaging films,2026-04-27
+UFLEX,paper_packaging,UFlex — flexible packaging,2026-09-09
 UNICHEMLAB,pharma_formulations,Unichem Laboratories — pharma formulations,2026-04-27
 UNIPARTS,tractors_agri_machinery,Uniparts India — off-highway / tractor parts,2026-04-27
 URBANCO,software_saas,Urban Company — home services platform,2026-04-27
@@ -634,8 +634,8 @@ WAKEFIT,home_furnishings,Wakefit Innovations — mattresses / home furnishings,2
 WELENT,construction_infra_epc,Welspun Enterprises — infra / water EPC,2026-04-27
 WEWORK,reits_commercial_re,WeWork India — coworking,2026-04-27
 WINDMACHIN,industrial_automation_drives,Windsor Machines — plastic injection molding machines,2026-04-27
-WSTCSTPAPR,commodity_chemicals,West Coast Paper Mills — paper / pulp,2026-04-27
-XPROINDIA,specialty_chemicals,Xpro India — polymer films,2026-04-27
+WSTCSTPAPR,paper_packaging,West Coast Paper Mills,2026-09-09
+XPROINDIA,paper_packaging,Xpro India — coextruded films,2026-09-09
 YASHO,specialty_chemicals,Yasho Industries — specialty chemicals,2026-04-27
 COLAB,media_broadcasting,Colab Platforms — entertainment / media,2026-04-27
 RACLGEAR,auto_anc_powertrain,RACL Geartech — auto gear components,2026-04-27
@@ -645,8 +645,39 @@ SEDEMAC,auto_anc_powertrain,Sedemac Mechatronics — engine control systems,2026
 TITANBIO,biotech_vaccines,Titan Bio-Tech — biotech,2026-04-27
 YASHHV,transformers_td_equipment,Yash Highvoltage — high-voltage T&D equipment,2026-04-27
 CIANAGRO,packaged_foods_bev,CIAN Agro — edible oils / agro processing,2026-04-27
-KESAR,sugar,Kesar India — sugar,2026-04-27
+KESAR,real_estate_developers,Kesar India — realty; confused with Kesar Enterprises (sugar),2026-09-09
 CFF,pumps_valves_flow_control,CFF Fluid Control — fluid control / valves,2026-04-27
 MIIL,construction_infra_epc,Meghna Infracon Infrastructure — infra / construction,2026-04-27
 TANFACIND,specialty_chemicals,Tanfac Industries — fluorochemicals,2026-04-27
 AFCOM,aviation_airports,Afcom Holdings — air cargo,2026-04-27
+BENGALASM,diversified_holdings,Bengal & Assam — JK group holding company; vendor labels it Auto Parts,2026-09-09
+BLIL,diversified_holdings,Balmer Lawrie Investments — pure holding company,2026-09-09
+KAMAHOLD,diversified_holdings,Kama Holdings — SRF holding company,2026-09-09
+SPICELOUNG,qsr_restaurants,Spice Lounge Food Works — restaurants; vendor labels it Software,2026-09-09
+KIRLFER,steel,Kirloskar Ferrous — pig iron and castings,2026-09-09
+WELSPLSOL,stainless_special_alloys,Welspun Specialty Solutions — specialty steel tubes,2026-09-09
+KRN,hvac_cooling_refrigeration,KRN Heat Exchanger — 'Exchanger' matched the exchanges group,2026-09-09
+IONEXCHANG,pumps_valves_flow_control,ION Exchange — water treatment; 'Exchange' matched the exchanges group,2026-09-09
+PANAMAPET,oil_marketing_refining,Panama Petrochem — 'transformer oil' matched the transformers group,2026-09-09
+GAEL,packaged_foods_bev,Gujarat Ambuja Exports — maize/soya processing; 'port' matched ports,2026-09-09
+NIITMTS,education_test_prep,"NIIT Learning Systems — training, not electronics manufacturing",2026-09-09
+BOROLTD,home_furnishings,Borosil — consumer glassware; 'solar' matched renewables,2026-09-09
+BCG,midcap_it_services,Brightcom Group — digital advertising tech,2026-09-09
+IRCTC,travel_ota,"IRCTC — ticketing and catering, not railway EPC",2026-09-09
+RAILTEL,telecom_services,"RailTel — telecom operator, not railway EPC",2026-09-09
+GRINDWELL,bearings_industrial_components,Grindwell Norton — abrasives,2026-09-09
+VESUVIUS,refractories_electrodes,Vesuvius India — refractories,2026-09-09
+TCPLPACK,paper_packaging,TCPL Packaging — folding cartons,2026-09-09
+COSMOFIRST,paper_packaging,Cosmo First — BOPP packaging films,2026-09-09
+SESHAPAPER,paper_packaging,Seshasayee Paper & Boards,2026-09-09
+BLUSPRING,erd_engineering_tech,BluSpring Enterprises — business services; 'spring/tea' matched plantations,2026-09-09
+PCBL,commodity_chemicals,PCBL — carbon black producer,2026-09-09
+ELECTCAST,pipes_plastic_bm,Electrosteel Castings — ductile iron pipes,2026-09-09
+TIL,industrial_machinery,TIL Limited — cranes and material handling,2026-09-09
+PFC,diversified_nbfcs,"Power Finance Corporation — lender, not a utility",2026-09-09
+IRFC,diversified_nbfcs,"Indian Railway Finance Corp — lender, not railway EPC",2026-09-09
+IREDA,diversified_nbfcs,"IREDA — lender, not a renewable generator",2026-09-09
+HEG,refractories_electrodes,HEG — graphite electrodes,2026-09-09
+3MINDIA,diversified_holdings,3M India — diversified industrial,2026-09-09
+GODREJIND,diversified_holdings,Godrej Industries — chemicals plus holdings,2026-09-09
+BALMLAWRIE,diversified_holdings,"Balmer Lawrie — lubricants, logistics and travel",2026-09-09

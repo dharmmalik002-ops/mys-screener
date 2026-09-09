@@ -1,5 +1,5 @@
 """
-96-group industry taxonomy for the Indian stock scanner.
+100-group industry taxonomy for the Indian stock scanner.
 
 Each group has:
   id      - stable slug used as primary_group_id in output + rank history
@@ -152,6 +152,17 @@ TAXONOMY: list[GroupDef] = [
     GroupDef(94, "power_generation",                 "Power Generation",                        "energy"),
     GroupDef(95, "power_utilities_distribution",     "Power Utilities / Distribution",          "energy"),
     GroupDef(96, "renewable_energy",                 "Renewable Energy / Solar / Wind",         "energy"),
+
+    # Added after a coverage audit (97-100). Each of these was a real industry
+    # the vendors label and the original 96 had no home for, so its stocks fell
+    # through every layer of the classifier and piled up in the "Unclassified"
+    # parent bucket. They are groups, not catch-alls: paper/packaging converters,
+    # listed holding companies, refractories & graphite electrodes, and general
+    # machinery/fabrication are each a distinct peer set that trades together.
+    GroupDef(97,  "paper_packaging",                "Paper, Packaging & Stationery",           "materials"),
+    GroupDef(98,  "diversified_holdings",           "Diversified & Holding Companies",         "financials"),
+    GroupDef(99,  "refractories_electrodes",        "Refractories & Electrodes",               "materials"),
+    GroupDef(100, "industrial_machinery",           "Industrial Machinery & Fabrication",      "capital_goods"),
 ]
 
 

@@ -2448,12 +2448,20 @@ export type GroupRankHistoryResponse = {
  * short TTL so a later visit is instant but the data still refreshes.
  */
 const RANK_HISTORY_TTL_MS = 5 * 60 * 1000;
+/**
+ * Sessions of rank history to request. The backend caps this at 90 and returns
+ * only what it has recorded, so asking for the maximum costs nothing extra and
+ * is what the weekly rotation graph needs (90 sessions is ~18 weeks). Every
+ * caller must pass the same limit or each gets its own cache entry and its own
+ * request -- which is exactly what made the Rotation tab wait ~30s.
+ */
+export const RANK_HISTORY_LIMIT = 90;
 const rankHistoryCache = new Map<
   string,
   { at: number; promise: Promise<GroupRankHistoryResponse> }
 >();
 
-export function getGroupRankHistory(market: MarketKey, limit = 40) {
+export function getGroupRankHistory(market: MarketKey, limit = RANK_HISTORY_LIMIT) {
   const key = `${market}:${limit}`;
   const hit = rankHistoryCache.get(key);
   if (hit && Date.now() - hit.at < RANK_HISTORY_TTL_MS) return hit.promise;

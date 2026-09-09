@@ -1,0 +1,22 @@
+raw_sector,fallback_group_id
+Automobile and Auto Components,auto_anc_powertrain
+Capital Goods,industrial_machinery
+Chemicals,specialty_chemicals
+Construction,construction_infra_epc
+Construction Materials,cement
+Consumer Durables,consumer_electronics_appliances
+Consumer Services,retail_fashion_lifestyle
+Diversified,diversified_holdings
+Fast Moving Consumer Goods,fmcg_staples
+Financial Services,diversified_nbfcs
+Forest Materials,paper_packaging
+Healthcare,pharma_formulations
+Information Technology,midcap_it_services
+Media Entertainment & Publication,media_broadcasting
+Metals & Mining,mining_minerals
+Oil Gas & Consumable Fuels,oil_marketing_refining
+Power,power_generation
+Realty,real_estate_developers
+Services,erd_engineering_tech
+Telecommunication,telecom_services
+Textiles,apparel_textiles
