@@ -41,13 +41,22 @@ type GroupsPanelProps = {
   onPickSymbolWithContext: (symbol: string, contextSymbols: string[]) => void;
   onRequestAddToWatchlist: (symbol: string) => void;
   onVisibleSymbolsChange: (symbols: string[]) => void;
+  /** Lets the page owner react to the tab — the Rotation view runs full width. */
+  onViewChange?: (view: GroupsView) => void;
+  /**
+   * Open a group (or, prefixed `__sector__`, a sector) in its own dialog.
+   * The rotation graph uses this instead of jumping to the rankings table:
+   * clicking a trail should answer "what is in this group" without throwing
+   * away the chart you were reading.
+   */
+  onOpenGroupStocks?: (groupId: string) => void;
 };
 
 type GroupSortBy =
   | "rank" | "score" | "momentum" | "breadth"
   | "return_1w" | "return_1m" | "return_3m" | "return_6m";
 type GroupStrengthFilter = "all" | "top40" | "top10";
-type GroupsView = "table" | "map" | "rotation";
+export type GroupsView = "table" | "map" | "rotation";
 
 const VIEW_OPTIONS: Array<{ value: GroupsView; label: string }> = [
   { value: "table", label: "Rankings" },
@@ -221,8 +230,11 @@ export function GroupsPanel({
   onPickSymbolWithContext,
   onRequestAddToWatchlist,
   onVisibleSymbolsChange,
+  onViewChange,
+  onOpenGroupStocks,
 }: GroupsPanelProps) {
   const [view, setView] = useState<GroupsView>("table");
+  useEffect(() => { onViewChange?.(view); }, [view, onViewChange]);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<GroupSortBy>("rank");
   // Rank is the only key where "best first" means ascending.
@@ -607,6 +619,11 @@ export function GroupsPanel({
               market={_market}
               data={data}
               onOpenGroup={(groupId) => {
+                if (onOpenGroupStocks) {
+                  onOpenGroupStocks(groupId);
+                  return;
+                }
+                // Fallback for a host that has not wired the dialog.
                 setView("table");
                 setFocusedGroupId(groupId);
                 groupRowRefs.current[groupId]?.scrollIntoView({ block: "center" });

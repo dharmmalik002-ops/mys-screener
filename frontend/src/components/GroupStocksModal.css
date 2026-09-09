@@ -1,0 +1,277 @@
+/* ==========================================================================
+   GroupStocksModal — a group (or sector) and its constituents, with the full
+   chart beside the list.
+   --------------------------------------------------------------------------
+   This is the chart surface for the Rotation tab, which runs full width and
+   has no page-level chart of its own: clicking a trail opens the group here
+   rather than throwing you back to the rankings table.
+   ========================================================================== */
+
+.gsm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(8px, 2vw, 28px);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.gsm-shell {
+  display: flex;
+  flex-direction: column;
+  width: min(1680px, 100%);
+  height: min(94dvh, 1100px);
+  min-height: 0;
+  border: var(--hairline);
+  border-radius: var(--radius-xl, 18px);
+  background: var(--surface);
+  box-shadow: var(--elev-3);
+  overflow: hidden;
+}
+
+/* ---- header ---- */
+
+.gsm-head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  padding: var(--space-4) calc(var(--space-6) + 18px) var(--space-3) var(--space-4);
+  border-bottom: var(--hairline);
+  background: var(--surface-strong);
+}
+
+.gsm-head-text { min-width: 0; }
+.gsm-head-text h3 {
+  margin: 2px 0 0;
+  font-family: var(--font-display);
+  font-size: var(--fs-title);
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.gsm-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.gsm-chip {
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent-on-tint);
+  letter-spacing: 0.04em;
+}
+.gsm-desc {
+  margin: 4px 0 0;
+  max-width: 78ch;
+  font-size: var(--fs-tiny);
+  color: var(--text-soft);
+}
+
+.gsm-head-meta { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.gsm-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 72px;
+  padding: 5px 10px;
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--card-flat);
+}
+.gsm-stat small {
+  font-size: var(--fs-micro);
+  color: var(--text-muted);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.gsm-stat strong { font-size: var(--fs-small); color: var(--text); font-variant-numeric: tabular-nums; }
+
+.gsm-close {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--card-flat);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  cursor: pointer;
+}
+.gsm-close:hover { color: var(--text); background: var(--surface-soft); }
+
+/* ---- body: list + chart ---- */
+
+.gsm-body {
+  display: grid;
+  grid-template-columns: minmax(420px, 540px) minmax(0, 1fr);
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+}
+
+.gsm-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-right: var(--hairline);
+  background: var(--card-flat);
+}
+
+.gsm-list-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--hairline);
+}
+.gsm-search {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 9px;
+  border: var(--hairline);
+  border-radius: var(--radius-sm);
+  background: var(--surface-soft);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-tiny);
+}
+.gsm-search:focus-visible { outline: var(--focus-ring); }
+.gsm-count {
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The constituent table has nine columns; let it scroll sideways in a narrow
+   pane rather than clipping the RS and watchlist columns off the edge. */
+.gsm-table-wrap { flex: 1; min-height: 0; overflow: auto; }
+.gsm-table { min-width: 430px; }
+
+.gsm-table { width: 100%; border-collapse: collapse; font-size: var(--fs-tiny); }
+.gsm-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 7px 8px;
+  background: var(--surface-strong);
+  border-bottom: var(--hairline);
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.gsm-table thead th.num { text-align: right; }
+.gsm-table thead th.sorted { color: var(--text); }
+.gsm-sort { margin-left: 3px; opacity: 0.7; }
+
+.gsm-table tbody tr { cursor: pointer; }
+.gsm-table tbody tr:hover { background: var(--surface-soft); }
+.gsm-table tbody tr.is-active { background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.gsm-table tbody tr.is-active td { color: var(--text); }
+.gsm-table tbody td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+.gsm-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.gsm-table td.num.up { color: var(--positive-on-tint); }
+.gsm-table td.num.down { color: var(--negative-on-tint); }
+.gsm-rank { color: var(--text-muted); }
+.gsm-table td strong { display: block; color: var(--text); font-size: var(--fs-tiny); }
+.gsm-table td small {
+  display: block;
+  max-width: 20ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* --text-soft, not --text-muted: the company name is the row's actual
+     identifier for anyone who does not read tickers, and muted lands at
+     4.05:1 on this card in the dark theme. */
+  color: var(--text-soft);
+  font-size: var(--fs-micro);
+}
+.gsm-actions { text-align: right; }
+.gsm-add {
+  width: 20px;
+  height: 20px;
+  border: var(--hairline);
+  border-radius: var(--radius-xs);
+  background: var(--surface-soft);
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  line-height: 1;
+  cursor: pointer;
+}
+.gsm-add:hover { color: var(--accent-on-tint); }
+.gsm-empty { text-align: center; color: var(--text-muted); padding: var(--space-5) !important; }
+
+/* The chart pane owns the rest of the dialog, so the chart is full height --
+   this is the big chart, not the sidebar-sized one. */
+.gsm-chart { min-width: 0; min-height: 0; display: flex; }
+.gsm-chart > * { flex: 1; min-width: 0; min-height: 0; }
+.gsm-chart .chart-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--surface);
+  max-height: none;
+  height: 100%;
+}
+
+/* The chart panel is built for a ~620px page column, where its controls stack
+   into a tall right-hand rail. This pane is ~1000px wide, so the same controls
+   wrap into rows instead: the header drops from 399px to 214px and the candles
+   get that space back (380px -> 550px on a 1100px dialog). */
+.gsm-chart .chart-panel .panel-header {
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+.gsm-chart .chart-panel .panel-header > div:first-child {
+  flex: 0 0 auto;
+  min-width: 220px;
+}
+.gsm-chart .chart-panel .chart-actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+}
+/* ...and the stage takes whatever is left rather than a fixed 380px. */
+.gsm-chart .chart-panel.expanded .chart-stage,
+.gsm-chart .chart-panel.expanded .chart-canvas {
+  min-height: 0;
+  height: auto;
+}
+.gsm-chart .chart-panel.expanded .chart-stage { flex: 1 1 auto; }
+
+@media (max-width: 1100px) {
+  .gsm-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(180px, 34%) minmax(0, 1fr); }
+  .gsm-list { border-right: 0; border-bottom: var(--hairline); }
+  .gsm-shell { height: 96dvh; }
+}

@@ -24,6 +24,8 @@ import type {
   ChartTimeframe,
   IndicatorKey,
 } from "./components/ChartPanel";
+import type { GroupsView } from "./components/GroupsPanel";
+import type { GroupStocksContext } from "./components/GroupStocksModal";
 import type { ScreenerMode } from "./components/ScreenerSidebar";
 import { ToastProvider, useToast } from "./components/Toast";
 import {
@@ -113,6 +115,7 @@ const MinerviniScannerPanel = lazy(() => import("./components/MinerviniScannerPa
 const IpoScannerPanel = lazy(() => import("./components/IpoScannerPanel").then((module) => ({ default: module.IpoScannerPanel })));
 const PositiveEarningsScannerPanel = lazy(() => import("./components/PositiveEarningsScannerPanel").then((module) => ({ default: module.PositiveEarningsScannerPanel })));
 const GroupsPanel = lazy(() => import("./components/GroupsPanel").then((module) => ({ default: module.GroupsPanel })));
+const GroupStocksModal = lazy(() => import("./components/GroupStocksModal"));
 const NearPivotScannerPanel = lazy(() => import("./components/NearPivotScannerPanel").then((module) => ({ default: module.NearPivotScannerPanel })));
 const MomentumBurstScannerPanel = lazy(() => import("./components/MomentumBurstScannerPanel").then((module) => ({ default: module.MomentumBurstScannerPanel })));
 const MomentumBurstResults = lazy(() => import("./components/MomentumBurstScannerPanel").then((module) => ({ default: module.MomentumBurstResults })));
@@ -819,6 +822,66 @@ function resolveChartGroupContext(
     trendLabel: group.trend_label,
     symbols: Array.from(new Set((group.symbols.length > 0 ? group.symbols : rankedMembers.map((item) => item.symbol)).filter(Boolean))),
     members: rankedMembers,
+  };
+}
+
+const SECTOR_CONTEXT_PREFIX = "__sector__";
+
+/**
+ * Builds the constituent list for a group id, or for `__sector__<Sector>`.
+ *
+ * Unlike `resolveChartGroupContext` this needs no selected symbol: the caller
+ * clicked the group itself, not a stock inside it.
+ */
+function resolveGroupStocksContext(
+  payload: IndustryGroupsResponse | null,
+  id: string,
+): GroupStocksContext | null {
+  if (!payload || !id) return null;
+
+  if (id.startsWith(SECTOR_CONTEXT_PREFIX)) {
+    const sector = id.slice(SECTOR_CONTEXT_PREFIX.length);
+    const groupIds = new Set(
+      payload.groups.filter((g) => g.parent_sector === sector).map((g) => g.group_id),
+    );
+    if (!groupIds.size) return null;
+    const members = sortIndustryGroupMembers(
+      payload.stocks.filter((item) => groupIds.has(item.final_group_id)),
+    ).map((member, index) => ({ ...member, group_member_rank: index + 1 }));
+    if (!members.length) return null;
+    return {
+      id,
+      kind: "sector",
+      title: sector,
+      subtitle: `${groupIds.size} industry group${groupIds.size === 1 ? "" : "s"}`,
+      description: "",
+      rankLabel: null,
+      strengthBucket: null,
+      trendLabel: null,
+      symbols: Array.from(new Set(members.map((m) => m.symbol))),
+      members,
+    };
+  }
+
+  const group = payload.groups.find((item) => item.group_id === id);
+  if (!group) return null;
+  const members = sortIndustryGroupMembers(
+    payload.stocks.filter((item) => item.final_group_id === id),
+  ).map((member, index) => ({ ...member, group_member_rank: index + 1 }));
+  if (!members.length) return null;
+  return {
+    id,
+    kind: "group",
+    title: group.group_name,
+    subtitle: group.parent_sector,
+    description: group.description,
+    rankLabel: group.rank_label,
+    strengthBucket: group.strength_bucket,
+    trendLabel: group.trend_label,
+    symbols: Array.from(
+      new Set((group.symbols.length ? group.symbols : members.map((m) => m.symbol)).filter(Boolean)),
+    ),
+    members,
   };
 }
 
@@ -1851,6 +1914,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [watchlistPickerSymbol, setWatchlistPickerSymbol] = useState<string | null>(null);
   const [journalAddRequest, setJournalAddRequest] = useState<{ symbol: string; suggestedPrice?: number; suggestedStopLoss?: number; setup?: string } | null>(null);
   const [chartGroupModalContext, setChartGroupModalContext] = useState<ChartGroupContext | null>(null);
+  // Which Groups tab is showing. The rotation graph runs full width, so the
+  // page-level chart is not rendered while it is open.
+  const [groupsView, setGroupsView] = useState<GroupsView>("table");
+  const [groupStocksContext, setGroupStocksContext] = useState<GroupStocksContext | null>(null);
   const [tradeReviewContext, setTradeReviewContext] = useState<{ symbol: string; exitDate: string } | null>(null);
   const [savedScanners, setSavedScanners] = useState<SavedScannerPreset[]>(initialSavedScanners);
   const [activeSavedScannerId, setActiveSavedScannerId] = useState<string | null>(null);
@@ -4613,10 +4680,22 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     setTradeReviewContext({ symbol: normalizedSymbol, exitDate });
   };
 
-  const handlePickSymbolWithContext = (symbol: string, contextSymbols: string[]) => {
+  /**
+   * Point the charts at a symbol and scope arrow-key navigation to its list,
+   * WITHOUT opening the floating chart modal.
+   *
+   * The group dialog renders its own chart pane, so it needs the selection
+   * without the popup -- calling the version below stacked the app's chart
+   * modal (z-index 9999) on top of the dialog and buried the constituent list.
+   */
+  const selectSymbolInContext = (symbol: string, contextSymbols: string[]) => {
     const scoped = Array.from(new Set(contextSymbols.filter(Boolean)));
     chartNavigationSymbolsRef.current = scoped.length > 0 ? scoped : null;
     setSelectedSymbol(symbol);
+  };
+
+  const handlePickSymbolWithContext = (symbol: string, contextSymbols: string[]) => {
+    selectSymbolInContext(symbol, contextSymbols);
     setChartOpen(true);
   };
 
@@ -5038,6 +5117,33 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
   };
 
+  /**
+   * Opens a group -- or, with a `__sector__` prefix, a whole sector -- in its
+   * own dialog with the chart beside the list. The rotation graph calls this
+   * instead of navigating: a trail click should answer "what is in here"
+   * without unloading the graph you were reading.
+   */
+  const handleOpenGroupStocks = async (id: string) => {
+    try {
+      const payload = await ensureGroupsDataLoaded();
+      if (!payload) return;
+      const context = resolveGroupStocksContext(payload, id);
+      if (!context) return;
+      // The floating chart modal sits at z-index 9999; leaving it open would
+      // bury the dialog we are about to show.
+      setChartOpen(false);
+      setGroupStocksContext(context);
+      // Seed the chart pane with something to show: the member already on
+      // screen if it belongs here, otherwise the strongest one.
+      const current = selectedSymbol?.trim().toUpperCase() ?? "";
+      const inGroup = context.members.some((m) => m.symbol.toUpperCase() === current);
+      const seed = inGroup ? current : context.members[0]?.symbol ?? null;
+      if (seed) selectSymbolInContext(seed, context.symbols);
+    } catch {
+      // A transient group lookup failure should not break the page.
+    }
+  };
+
   const handleSelectChartGroupSymbol = (symbol: string, context: ChartGroupContext) => {
     handlePickSymbolWithContext(symbol, context.symbols);
     setChartGroupModalContext(null);
@@ -5377,6 +5483,62 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const floorMetricLabel = "Floor";
   const floorMetricValue = `${dashboard?.market_cap_min_crore ?? 800} Cr+`;
 
+  /**
+   * The chart panel's props, in one place: the Groups/Watchlists page renders
+   * it in the right column, and the group dialog renders the same panel in its
+   * own right pane. Two copies of ~45 props drift; one object cannot.
+   */
+  const pageChartPanelProps = {
+    market: activeMarket,
+    symbol: selectedSymbol,
+    bars: displayedChart?.bars ?? [],
+    rsLine: displayedChart?.rs_line ?? [],
+    rsLineMarkers: displayedChart?.rs_line_markers ?? [],
+    earningsMarkers: displayedChart?.earnings_markers ?? [],
+    upcomingEarningsDate: displayedChart?.upcoming_earnings_date ?? null,
+    volumeMarkers: displayedChart?.volume_markers ?? [],
+    bandChangeMarkers: displayedChart?.band_change_markers ?? [],
+    bandHistory: displayedChart?.band_history ?? [],
+    tradeMarkers: activeTradeMarkers,
+    onSellMarkerClick: handleSellMarkerClick,
+    summary: displayedChart?.summary ?? null,
+    panelTab: chartPanelTab,
+    onPanelTabChange: setChartPanelTab,
+    chartError: chartError,
+    chartLoading: chartLoading,
+    chartCacheState: chartCacheState,
+    fundamentals: activeFundamentals,
+    fundamentalsLoading: fundamentalsLoading,
+    fundamentalsError: fundamentalsError,
+    groupSummary: activeChartGroupSummary,
+    timeframe: timeframe,
+    onTimeframeChange: handleTimeframeChange,
+    chartStyle: chartStyle,
+    onChartStyleChange: setChartStyle,
+    chartPalette: chartPalette,
+    onChartPaletteChange: setChartPalette,
+    showBenchmarkOverlay: showBenchmarkOverlay,
+    onShowBenchmarkOverlayChange: setShowBenchmarkOverlay,
+    indicatorKeys: indicatorKeys,
+    onToggleIndicator: handleToggleIndicator,
+    chartColors: chartColors,
+    onChartColorsChange: handleChartColorsChange,
+    drawingColor: chartDrawingColor,
+    onDrawingColorChange: setChartDrawingColor,
+    annotations: activeAnnotations,
+    onAnnotationsChange: handleAnnotationsChange,
+    onAddToWatchlist: setWatchlistPickerSymbol,
+    onRemoveFromWatchlist:
+      activePage === "watchlists" && activeWatchlist
+        ? (symbol: string) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
+        : undefined,
+    onAddToJournal: handleChartAddToJournal,
+    searchOptions: universeCatalog,
+    onSearchSymbol: handleChartSearchSubmit,
+    onOpenGroup: handleOpenChartGroupModal,
+    onRefreshChart: handleChartRefresh,
+    onStepChart: stepChartSymbol,
+  };
   return (
     <div className="app-shell app-shell-simple">
       {/* Liquid-glass refraction filter — referenced by backdrop-filter on the
@@ -5688,7 +5850,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   : activePage === "watchlists"
                     ? "workspace-grid workspace-grid-sector workspace-grid-watchlists"
                     : activePage === "groups"
-                      ? "workspace-grid workspace-grid-sector"
+                      ? groupsView === "rotation"
+                        ? "workspace-grid workspace-grid-solo"
+                        : "workspace-grid workspace-grid-sector"
                       : "workspace-grid"
               }
             >
@@ -6195,6 +6359,8 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   onPickSymbolWithContext={handlePickSymbolWithContext}
                   onRequestAddToWatchlist={setWatchlistPickerSymbol}
                   onVisibleSymbolsChange={setGroupsVisibleSymbols}
+                  onViewChange={setGroupsView}
+                  onOpenGroupStocks={(groupId) => void handleOpenGroupStocks(groupId)}
                 />
               ) : activePage === "watchlists" ? (
                 <WatchlistsPanel
@@ -6223,59 +6389,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                 null
               )}
 
-              {activePage === "groups" || activePage === "watchlists" ? (
+              {(activePage === "groups" && groupsView !== "rotation") || activePage === "watchlists" ? (
                 <ChartPanel
                   key={activeChartKey ?? "empty-chart"}
-                  market={activeMarket}
-                  symbol={selectedSymbol}
-                  bars={displayedChart?.bars ?? []}
-                  rsLine={displayedChart?.rs_line ?? []}
-                  rsLineMarkers={displayedChart?.rs_line_markers ?? []}
-                  earningsMarkers={displayedChart?.earnings_markers ?? []}
-                    upcomingEarningsDate={displayedChart?.upcoming_earnings_date ?? null}
-                  volumeMarkers={displayedChart?.volume_markers ?? []}
-                    bandChangeMarkers={displayedChart?.band_change_markers ?? []}
-                    bandHistory={displayedChart?.band_history ?? []}
-                  tradeMarkers={activeTradeMarkers}
-                  onSellMarkerClick={handleSellMarkerClick}
-                  summary={displayedChart?.summary ?? null}
-                  panelTab={chartPanelTab}
-                  onPanelTabChange={setChartPanelTab}
-                  chartError={chartError}
-                  chartLoading={chartLoading}
-                  chartCacheState={chartCacheState}
-                  fundamentals={activeFundamentals}
-                  fundamentalsLoading={fundamentalsLoading}
-                  fundamentalsError={fundamentalsError}
-                  groupSummary={activeChartGroupSummary}
-                  timeframe={timeframe}
-                  onTimeframeChange={handleTimeframeChange}
-                  chartStyle={chartStyle}
-                  onChartStyleChange={setChartStyle}
-                  chartPalette={chartPalette}
-                  onChartPaletteChange={setChartPalette}
-                  showBenchmarkOverlay={showBenchmarkOverlay}
-                  onShowBenchmarkOverlayChange={setShowBenchmarkOverlay}
-                  indicatorKeys={indicatorKeys}
-                  onToggleIndicator={handleToggleIndicator}
-                  chartColors={chartColors}
-                  onChartColorsChange={handleChartColorsChange}
-                  drawingColor={chartDrawingColor}
-                  onDrawingColorChange={setChartDrawingColor}
-                  annotations={activeAnnotations}
-                  onAnnotationsChange={handleAnnotationsChange}
-                  onAddToWatchlist={setWatchlistPickerSymbol}
-                  onRemoveFromWatchlist={
-                    activePage === "watchlists" && activeWatchlist
-                      ? (symbol) => handleRemoveFromWatchlist(activeWatchlist.id, symbol)
-                      : undefined
-                  }
-                  onAddToJournal={handleChartAddToJournal}
-                  searchOptions={universeCatalog}
-                  onSearchSymbol={handleChartSearchSubmit}
-                  onOpenGroup={handleOpenChartGroupModal}
-                  onRefreshChart={handleChartRefresh}
-                  onStepChart={stepChartSymbol}
+                  {...pageChartPanelProps}
                   {...fullscreenPane("page")}
                   expanded={activePage === "groups"}
                 />
@@ -6284,6 +6401,27 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             </>
           </Suspense>
         ) : null}
+
+      {groupStocksContext ? (
+        <Suspense fallback={null}>
+          <GroupStocksModal
+            market={activeMarket}
+            context={groupStocksContext}
+            selectedSymbol={selectedSymbol}
+            onClose={() => setGroupStocksContext(null)}
+            onSelectSymbol={(symbol: string) => selectSymbolInContext(symbol, groupStocksContext.symbols)}
+            onAddToWatchlist={setWatchlistPickerSymbol}
+            chart={
+              <ChartPanel
+                key={activeChartKey ?? "empty-chart"}
+                {...pageChartPanelProps}
+                {...fullscreenPane("modal-group-stocks")}
+                expanded
+              />
+            }
+          />
+        </Suspense>
+      ) : null}
 
       {chartGroupModalContext ? (
         <Suspense fallback={null}>

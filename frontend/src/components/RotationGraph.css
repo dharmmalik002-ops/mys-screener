@@ -53,11 +53,30 @@
 .rrg-seg-btn:hover { color: var(--text); }
 .rrg-seg-btn.active { background: var(--accent); color: var(--accent-contrast); }
 
+.rrg-toggle {
+  border: var(--hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+  padding: 5px 12px;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.rrg-toggle:hover { color: var(--text); }
+.rrg-toggle.active {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--card-flat));
+  color: var(--accent-on-tint);
+}
+
 .rrg-body {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
   gap: var(--space-3);
-  align-items: start;
+  align-items: stretch;
 }
 
 .rrg-canvas-wrap {
@@ -65,28 +84,58 @@
   width: 100%;
   border: var(--hairline);
   border-radius: var(--radius-lg);
-  background: var(--card-flat);
-  box-shadow: var(--elev-1);
+  background:
+    radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 4%, transparent), transparent 62%),
+    var(--card-flat);
+  box-shadow: var(--elev-2);
   overflow: hidden;
 }
 
 .rrg-canvas { display: block; }
 
+/* The per-trail tail gradients take their hue from their own `color`:
+   `currentColor` in a gradient stop resolves against the gradient element, not
+   the path that references it. */
+.rrg-fade.leading   { color: var(--positive); }
+.rrg-fade.improving { color: var(--accent); }
+.rrg-fade.weakening { color: var(--amber); }
+.rrg-fade.lagging   { color: var(--negative); }
+
 /* Quadrant grounds: faint enough that the trails stay the subject. */
 .rrg-q { opacity: 1; }
-.rrg-q.leading   { fill: color-mix(in srgb, var(--positive) 7%, transparent); }
-.rrg-q.improving { fill: color-mix(in srgb, var(--accent) 7%, transparent); }
-.rrg-q.weakening { fill: color-mix(in srgb, var(--amber) 7%, transparent); }
-.rrg-q.lagging   { fill: color-mix(in srgb, var(--negative) 7%, transparent); }
+.rrg-q.leading   { fill: color-mix(in srgb, var(--positive) 9%, transparent); }
+.rrg-q.improving { fill: color-mix(in srgb, var(--accent) 8%, transparent); }
+.rrg-q.weakening { fill: color-mix(in srgb, var(--amber) 8%, transparent); }
+.rrg-q.lagging   { fill: color-mix(in srgb, var(--negative) 9%, transparent); }
+
+.rrg-grid line { stroke: var(--line); stroke-width: 1; opacity: 0.5; }
+.rrg-grid.major line { opacity: 0.85; }
+.rrg-ring {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 2 5;
+  opacity: 0.45;
+}
+.rrg-tick {
+  font-size: var(--fs-nano);
+  fill: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
 
 .rrg-q-label {
   font-family: var(--font-display);
-  font-size: var(--fs-nano);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  fill: var(--text-muted);
+  font-size: var(--fs-micro);
+  font-weight: 800;
+  letter-spacing: 0.14em;
   pointer-events: none;
+  opacity: 0.75;
 }
+.rrg-q-label.leading   { fill: var(--positive-on-tint); }
+.rrg-q-label.improving { fill: var(--accent-on-tint); }
+.rrg-q-label.weakening { fill: var(--amber); }
+.rrg-q-label.lagging   { fill: var(--negative-on-tint); }
 
 .rrg-axis { stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 3 3; }
 
@@ -102,36 +151,43 @@
 .rrg-trail { cursor: pointer; }
 .rrg-trail:focus { outline: none; }
 
-.rrg-tail { fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; opacity: 0.6; }
-/* A same-coloured wide halo under each tail lifts it off the quadrant ground
-   without introducing a second colour, so 40 crossing trails stay separable. */
-.rrg-tail-halo { fill: none; stroke-width: 5; stroke-linecap: round; stroke-linejoin: round; opacity: 0.1; }
-.rrg-head-ring { fill: none; stroke-width: 1.2; opacity: 0; }
+/* The stroke is a per-trail gradient (see .rrg-fade): faded at the oldest
+   point, solid at the head, which is what keeps 40 crossing trails readable. */
+.rrg-tail { fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+/* A wide transparent path under each tail: a 2px curve is not a hit target. */
+.rrg-tail-hit { fill: none; stroke: transparent; stroke-width: 14; stroke-linecap: round; }
+.rrg-head-ring { fill: none; stroke-width: 1.3; opacity: 0; }
+.rrg-head-glow { stroke: none; opacity: 0.16; }
 .rrg-dot  { stroke: none; }
 .rrg-head { stroke: var(--card-flat); stroke-width: 1.5; }
 
 .rrg-trail.leading   .rrg-tail, .rrg-trail.leading   .rrg-dot, .rrg-trail.leading   .rrg-head { stroke-opacity: 1; }
-.rrg-trail.leading   .rrg-tail, .rrg-trail.leading   .rrg-tail-halo, .rrg-trail.leading   .rrg-head-ring { stroke: var(--positive); }
-.rrg-trail.leading   .rrg-dot, .rrg-trail.leading   .rrg-head { fill: var(--positive); }
-.rrg-trail.improving .rrg-tail, .rrg-trail.improving .rrg-tail-halo, .rrg-trail.improving .rrg-head-ring { stroke: var(--accent); }
-.rrg-trail.improving .rrg-dot, .rrg-trail.improving .rrg-head { fill: var(--accent); }
-.rrg-trail.weakening .rrg-tail, .rrg-trail.weakening .rrg-tail-halo, .rrg-trail.weakening .rrg-head-ring { stroke: var(--amber); }
-.rrg-trail.weakening .rrg-dot, .rrg-trail.weakening .rrg-head { fill: var(--amber); }
-.rrg-trail.lagging   .rrg-tail, .rrg-trail.lagging   .rrg-tail-halo, .rrg-trail.lagging   .rrg-head-ring { stroke: var(--negative); }
-.rrg-trail.lagging   .rrg-dot, .rrg-trail.lagging   .rrg-head { fill: var(--negative); }
+.rrg-trail.leading   .rrg-head-ring { stroke: var(--positive); }
+.rrg-trail.leading   .rrg-dot, .rrg-trail.leading   .rrg-head, .rrg-trail.leading   .rrg-head-glow { fill: var(--positive); }
+.rrg-trail.improving .rrg-head-ring { stroke: var(--accent); }
+.rrg-trail.improving .rrg-dot, .rrg-trail.improving .rrg-head, .rrg-trail.improving .rrg-head-glow { fill: var(--accent); }
+.rrg-trail.weakening .rrg-head-ring { stroke: var(--amber); }
+.rrg-trail.weakening .rrg-dot, .rrg-trail.weakening .rrg-head, .rrg-trail.weakening .rrg-head-glow { fill: var(--amber); }
+.rrg-trail.lagging   .rrg-head-ring { stroke: var(--negative); }
+.rrg-trail.lagging   .rrg-dot, .rrg-trail.lagging   .rrg-head, .rrg-trail.lagging   .rrg-head-glow { fill: var(--negative); }
 
 .rrg-head-label {
-  font-size: var(--fs-nano);
-  font-weight: 600;
-  fill: var(--text-soft);
+  font-size: 10.5px;
+  font-weight: 650;
+  fill: var(--text);
+  /* Painted under the glyphs (paint-order: stroke), so a name stays readable
+     where it crosses a trail or a quadrant edge. */
+  stroke: var(--card-flat);
+  stroke-width: 2.6;
+  stroke-linejoin: round;
   pointer-events: none;
 }
 
-.rrg-trail.is-hot .rrg-tail { opacity: 1; stroke-width: 2.6; }
-.rrg-trail.is-hot .rrg-tail-halo { opacity: 0.22; }
-.rrg-trail.is-hot .rrg-head { r: 6.5; }
-.rrg-trail.is-hot .rrg-head-ring { opacity: 0.5; }
-.rrg-trail.is-hot .rrg-head-label { fill: var(--text); font-weight: 700; }
+.rrg-trail.is-hot .rrg-tail { stroke-width: 3.1; }
+.rrg-trail.is-hot .rrg-head { r: 6.6; }
+.rrg-trail.is-hot .rrg-head-ring { opacity: 0.6; }
+.rrg-trail.is-hot .rrg-head-glow { opacity: 0.3; }
+.rrg-trail.is-hot .rrg-head-label { font-weight: 800; stroke-width: 3.2; }
 /* Hovering one trail fades the rest rather than hiding them: the neighbours
    are the comparison, they just stop competing for attention. */
 .rrg-trail.is-dim { opacity: 0.22; }
@@ -241,7 +297,9 @@
   background: var(--card-flat);
   box-shadow: var(--elev-1);
   overflow: auto;
-  max-height: 420px;
+  flex: 1;
+  min-height: 240px;
+  max-height: 640px;
 }
 
 .rrg-table { width: 100%; border-collapse: collapse; font-size: var(--fs-tiny); }
@@ -419,3 +477,55 @@
 @media (prefers-reduced-motion: reduce) {
   .rrg-legend-btn, .rrg-icon-btn, .rrg-strip-col { transition: none; }
 }
+
+/* ---- crossings: what changed quadrant on the as-of period ---- */
+
+.rrg-crossings {
+  border: var(--hairline);
+  border-radius: var(--radius-lg);
+  background: var(--card-flat);
+  box-shadow: var(--elev-1);
+  padding: var(--space-2) var(--space-3) var(--space-3);
+}
+.rrg-crossings-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-micro);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.rrg-crossings-head em {
+  font-style: normal;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.rrg-crossings ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 2px; }
+.rrg-crossings button {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--fs-tiny);
+  text-align: left;
+  cursor: pointer;
+}
+.rrg-crossings button:hover { background: var(--surface-soft); }
+.rrg-cross-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rrg-cross-move { display: inline-flex; align-items: center; gap: 4px; font-size: var(--fs-micro); }
+.rrg-cross-arrow { color: var(--text-muted); }
+.rrg-cross-q { font-weight: 700; }
+.rrg-cross-q.leading   { color: var(--positive-on-tint); }
+.rrg-cross-q.improving { color: var(--accent-on-tint); }
+.rrg-cross-q.weakening { color: var(--amber); }
+.rrg-cross-q.lagging   { color: var(--negative-on-tint); }
+.rrg-crossings-empty { margin: 0; font-size: var(--fs-tiny); color: var(--text-muted); }

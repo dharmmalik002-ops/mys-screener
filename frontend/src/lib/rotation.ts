@@ -31,6 +31,12 @@ export type RotationTrail = {
   quadrant: Quadrant;
   /** Consecutive periods (including the as-of one) spent in `quadrant`. */
   periodsInQuadrant: number;
+  /**
+   * The quadrant it came from, when the as-of period is the one it crossed in.
+   * Null when it has been sitting in the same quadrant for longer than the
+   * tail, or when the tail is too short to know.
+   */
+  fromQuadrant: Quadrant | null;
   /** Compass heading of the last leg, degrees clockwise from north. */
   heading: number | null;
   /** Length of the last leg in axis units — how fast it is travelling. */
@@ -260,6 +266,10 @@ export function buildRotation(
     // Compass heading, clockwise from north, so "into Leading" reads as ~45deg.
     const heading = prev && speed > 1e-9 ? (((Math.atan2(dx, dy) * 180) / Math.PI) + 360) % 360 : null;
 
+    const previous = points.length > 1
+      ? quadrantOf(points[points.length - 2].x, points[points.length - 2].y)
+      : null;
+
     trails.push({
       groupId: s.groupId,
       label: s.label,
@@ -268,6 +278,7 @@ export function buildRotation(
       points,
       quadrant,
       periodsInQuadrant: countPeriodsInQuadrant(points, quadrant),
+      fromQuadrant: previous && previous !== quadrant ? previous : null,
       heading,
       speed,
     });
