@@ -6,6 +6,19 @@ WORKDIR /code
 COPY backend/requirements.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
 
+# Server-side chart rendering (Telegram digest PNGs). Headless Agg, an explicit
+# writable cache dir, and a build-time warm render so neither uvicorn worker
+# pays matplotlib's font-cache scan on its first chart. /code/.mplcache rather
+# than /tmp: the Space runtime may remount /tmp and discard the baked cache.
+ENV MPLBACKEND=Agg \
+    MPLCONFIGDIR=/code/.mplcache
+RUN mkdir -p /code/.mplcache && python -c "\
+import io; from matplotlib.figure import Figure; \
+from matplotlib.backends.backend_agg import FigureCanvasAgg as Canvas; \
+f=Figure(figsize=(1,1), dpi=72); Canvas(f); ax=f.add_subplot(); \
+ax.plot([0,1],[0,1]); ax.set_title('warm'); \
+f.savefig(io.BytesIO(), format='png'); print('matplotlib font cache warmed')"
+
 # Copy the whole backend directory into the container
 COPY backend /code/backend
 
