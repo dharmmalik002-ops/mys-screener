@@ -78,6 +78,68 @@ function smoothPath(pts: Array<{ x: number; y: number }>): string {
   return d;
 }
 
+type LabelBox = { x: number; y: number; w: number; h: number };
+
+// Measured against the rendered <text>: a 10.5px label box is ~14px tall with
+// its baseline 11px below the top, and the widest glyph runs mean the estimate
+// has to sit slightly above the average character width rather than at it.
+const LABEL_CHAR_PX = 6.05;
+const LABEL_PAD_PX = 7;
+const LABEL_H = 15;
+const LABEL_BASELINE = 11.5;
+
+function overlaps(a: LabelBox, b: LabelBox) {
+  return a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+}
+
+/**
+ * Places a name beside every head it can fit one beside.
+ *
+ * Forty trails means forty names, and stacked text is worse than no text, so
+ * each label tries six offsets around its head (right, left, above, below) and
+ * takes the first that clears the labels already placed and stays inside the
+ * plot. Priority goes to the trails furthest from the origin -- the extremes
+ * are the ones worth naming -- and anything that still cannot fit is left to
+ * the hover tooltip rather than drawn on top of a neighbour.
+ */
+function placeLabels(
+  items: Array<{ id: string; text: string; hx: number; hy: number }>,
+  bounds: { left: number; top: number; right: number; bottom: number },
+): Map<string, { x: number; y: number; anchor: "start" | "end" }> {
+  const offsets: Array<{ dx: number; dy: number; anchor: "start" | "end" }> = [
+    { dx: 10, dy: 4, anchor: "start" },
+    { dx: -10, dy: 4, anchor: "end" },
+    { dx: 10, dy: -11, anchor: "start" },
+    { dx: -10, dy: -11, anchor: "end" },
+    { dx: 10, dy: 19, anchor: "start" },
+    { dx: -10, dy: 19, anchor: "end" },
+    { dx: 4, dy: -14, anchor: "start" },
+    { dx: -4, dy: 24, anchor: "end" },
+  ];
+  const taken: LabelBox[] = [];
+  const out = new Map<string, { x: number; y: number; anchor: "start" | "end" }>();
+  for (const item of items) {
+    const w = item.text.length * LABEL_CHAR_PX + LABEL_PAD_PX;
+    for (const off of offsets) {
+      const x = item.hx + off.dx;
+      const y = item.hy + off.dy;
+      const box: LabelBox = {
+        x: off.anchor === "start" ? x : x - w,
+        y: y - LABEL_BASELINE,
+        w,
+        h: LABEL_H,
+      };
+      if (box.x < bounds.left || box.x + box.w > bounds.right) continue;
+      if (box.y < bounds.top || box.y + box.h > bounds.bottom) continue;
+      if (taken.some((t) => overlaps(t, box))) continue;
+      taken.push(box);
+      out.set(item.id, { x, y, anchor: off.anchor });
+      break;
+    }
+  }
+  return out;
+}
+
 export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const [history, setHistory] = useState<GroupRankHistoryResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -96,6 +158,7 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const [playing, setPlaying] = useState(false);
   const [hover, setHover] = useState<{ trail: RotationTrail; x: number; y: number } | null>(null);
   const [pinned, setPinned] = useState<string | null>(null);
+  const [showLabels, setShowLabels] = useState(true);
 
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const roRef = useRef<ResizeObserver | null>(null);
@@ -117,7 +180,9 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
       if (w <= 0) return;
       // Near-square: the four quadrants must read as equal area, or the eye
       // mis-judges which one a group sits in.
-      setSize({ w, h: Math.round(Math.min(700, Math.max(380, w * 0.82))) });
+      // The rotation tab runs full width, so the plot can be big; keep it
+      // near-square so the four quadrants read as equal area.
+      setSize({ w, h: Math.round(Math.min(860, Math.max(420, w * 0.74))) });
     };
     apply(el.getBoundingClientRect().width);
     const ro = new ResizeObserver((entries) => apply(entries[0]?.contentRect.width ?? 0));
@@ -191,6 +256,11 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const trails = useMemo(
     () => allTrails.filter((t) => !hidden.has(t.quadrant)),
     [allTrails, hidden],
+  );
+
+  const crossings = useMemo(
+    () => allTrails.filter((t) => t.fromQuadrant !== null).slice(0, 8),
+    [allTrails],
   );
 
   const rows = useMemo(() => {
@@ -268,10 +338,9 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   }, []);
 
   const params = TIMEFRAME_PARAMS[timeframe];
-  // Sector trails are rolled up here, not recorded by the backend, so there is
-  // no group page behind them: they read, they do not click through.
-  const canOpen = universe === "groups";
-  const open = useCallback((groupId: string) => { if (canOpen) onOpenGroup(groupId); }, [canOpen, onOpenGroup]);
+  // Both kinds of trail open their constituents. A sector id keeps its
+  // `__sector__` prefix; the host resolves it to every stock in that sector.
+  const open = onOpenGroup;
 
   if (error) return <div className="rrg-empty">{error}</div>;
   if (!data?.groups?.length) return <div className="rrg-empty">No group data yet.</div>;
@@ -305,6 +374,29 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
   const zeroX = sx(0);
   const zeroY = sy(0);
   const activeId = pinned ?? hover?.trail.groupId ?? null;
+
+  const gradientKey = `${universe}-${timeframe}`;
+  const shortLabel = (label: string) => (label.length > 22 ? `${label.slice(0, 21)}…` : label);
+
+  const labelPlacement = showLabels && size.w > 0
+    ? placeLabels(
+        trails
+          .map((t) => {
+            const head = t.points[t.points.length - 1];
+            return {
+              id: t.groupId,
+              text: shortLabel(t.label),
+              hx: sx(head.x),
+              hy: sy(head.y),
+              // Furthest from the origin first: the extremes are the ones
+              // worth naming when space runs out.
+              rank: Math.hypot(head.x / bx, head.y / by),
+            };
+          })
+          .sort((a, b) => b.rank - a.rank),
+        { left: PAD.l + 2, top: PAD.t + 2, right: PAD.l + innerW - 2, bottom: PAD.t + innerH - 2 },
+      )
+    : new Map<string, { x: number; y: number; anchor: "start" | "end" }>();
 
   return (
     <div className="rrg-root">
@@ -351,6 +443,15 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
               ))}
             </div>
           ) : null}
+          <button
+            type="button"
+            className={`rrg-toggle${showLabels ? " active" : ""}`}
+            onClick={() => setShowLabels((v) => !v)}
+            aria-pressed={showLabels}
+            title="Show a name beside every head that has room for one"
+          >
+            Names
+          </button>
           <div className="rrg-seg" role="group" aria-label="Tail length">
             {TAIL_OPTIONS[timeframe].map((t) => (
               <button
@@ -392,24 +493,81 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
               role="img"
               aria-label={`Rotation graph as of ${fmtDate(asOfDate)}: ${allTrails.length} ${universe}. ${counts.leading} leading, ${counts.improving} improving, ${counts.weakening} weakening, ${counts.lagging} lagging.`}
             >
+              <defs>
+                {/* One gradient per trail, running along its own tail: the
+                    oldest point fades out and the head is solid, which is what
+                    makes a crowded rotation graph readable at a glance. */}
+                {allTrails.map((t) => {
+                  const first = t.points[0];
+                  const head = t.points[t.points.length - 1];
+                  return (
+                    <linearGradient
+                      key={t.groupId}
+                      className={`rrg-fade ${t.quadrant}`}
+                      id={`rrg-fade-${gradientKey}-${t.groupId.replace(/[^a-zA-Z0-9_-]/g, "_")}`}
+                      gradientUnits="userSpaceOnUse"
+                      x1={sx(first.x)}
+                      y1={sy(first.y)}
+                      x2={sx(head.x)}
+                      y2={sy(head.y)}
+                    >
+                      <stop offset="0%" stopColor="currentColor" stopOpacity="0.05" />
+                      <stop offset="55%" stopColor="currentColor" stopOpacity="0.45" />
+                      <stop offset="100%" stopColor="currentColor" stopOpacity="0.95" />
+                    </linearGradient>
+                  );
+                })}
+              </defs>
+
               {/* quadrant grounds */}
               <rect className="rrg-q leading" x={zeroX} y={PAD.t} width={Math.max(0, PAD.l + innerW - zeroX)} height={Math.max(0, zeroY - PAD.t)} />
               <rect className="rrg-q weakening" x={zeroX} y={zeroY} width={Math.max(0, PAD.l + innerW - zeroX)} height={Math.max(0, PAD.t + innerH - zeroY)} />
               <rect className="rrg-q lagging" x={PAD.l} y={zeroY} width={Math.max(0, zeroX - PAD.l)} height={Math.max(0, PAD.t + innerH - zeroY)} />
               <rect className="rrg-q improving" x={PAD.l} y={PAD.t} width={Math.max(0, zeroX - PAD.l)} height={Math.max(0, zeroY - PAD.t)} />
 
-              {/* gridlines at half-scale, so distance from the origin is readable */}
-              {[-0.5, 0.5].map((f) => (
-                <g key={f} className="rrg-grid">
+              {/* gridlines at quarter-scale, so distance from the origin is readable */}
+              {[-0.75, -0.5, -0.25, 0.25, 0.5, 0.75].map((f) => (
+                <g key={f} className={`rrg-grid${Math.abs(f) === 0.5 ? " major" : ""}`}>
                   <line x1={sx(bx * f)} x2={sx(bx * f)} y1={PAD.t} y2={PAD.t + innerH} />
                   <line y1={sy(by * f)} y2={sy(by * f)} x1={PAD.l} x2={PAD.l + innerW} />
                 </g>
               ))}
 
-              <text className="rrg-q-label" x={PAD.l + innerW - 10} y={PAD.t + 16} textAnchor="end">LEADING</text>
-              <text className="rrg-q-label" x={PAD.l + innerW - 10} y={PAD.t + innerH - 8} textAnchor="end">WEAKENING</text>
-              <text className="rrg-q-label" x={PAD.l + 10} y={PAD.t + innerH - 8}>LAGGING</text>
-              <text className="rrg-q-label" x={PAD.l + 10} y={PAD.t + 16}>IMPROVING</text>
+              {/* Distance rings from the origin: how far from the pack a group
+                  has travelled, independent of which quadrant it sits in. */}
+              {[0.33, 0.66].map((f) => (
+                <ellipse
+                  key={f}
+                  className="rrg-ring"
+                  cx={zeroX}
+                  cy={zeroY}
+                  rx={(innerW / 2) * f}
+                  ry={(innerH / 2) * f}
+                />
+              ))}
+
+              {/* axis tick values, so the units are not a mystery */}
+              {[-0.5, 0.5].map((f) => (
+                <g key={`tick-${f}`}>
+                  <text className="rrg-tick" x={sx(bx * f)} y={PAD.t + innerH + 14} textAnchor="middle">
+                    {fmtSigned(bx * f, 0)}
+                  </text>
+                  <text className="rrg-tick" x={PAD.l - 8} y={sy(by * f) + 3} textAnchor="end">
+                    {fmtSigned(by * f, 0)}
+                  </text>
+                </g>
+              ))}
+
+              {([
+                ["leading", "LEADING", PAD.l + innerW - 12, PAD.t + 18, "end"],
+                ["weakening", "WEAKENING", PAD.l + innerW - 12, PAD.t + innerH - 10, "end"],
+                ["lagging", "LAGGING", PAD.l + 12, PAD.t + innerH - 10, "start"],
+                ["improving", "IMPROVING", PAD.l + 12, PAD.t + 18, "start"],
+              ] as const).map(([q, text, x, y, anchor]) => (
+                <text key={q} className={`rrg-q-label ${q}`} x={x} y={y} textAnchor={anchor}>
+                  {text}
+                </text>
+              ))}
 
               <line className="rrg-axis" x1={PAD.l} x2={PAD.l + innerW} y1={zeroY} y2={zeroY} />
               <line className="rrg-axis" x1={zeroX} x2={zeroX} y1={PAD.t} y2={PAD.t + innerH} />
@@ -426,11 +584,15 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                 const isHot = activeId === t.groupId;
                 const dim = activeId !== null && !isHot;
                 const off = hidden.has(t.quadrant);
+                // A hovered trail always gets its name, even if the placement
+                // pass had to drop it.
+                const label = labelPlacement.get(t.groupId)
+                  ?? (isHot ? { x: sx(head.x) + 10, y: sy(head.y) + 3.5, anchor: "start" as const } : null);
                 return (
                   <g
                     key={t.groupId}
                     className={`rrg-trail ${t.quadrant}${isHot ? " is-hot" : ""}${dim ? " is-dim" : ""}${off ? " is-hidden" : ""}`}
-                    role={canOpen ? "button" : "img"}
+                    role="button"
                     tabIndex={0}
                     aria-label={`${t.label}, ${QUADRANT_LABEL[t.quadrant]}`}
                     onClick={() => open(t.groupId)}
@@ -440,8 +602,12 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                   >
                     {screen.length > 1 ? (
                       <>
-                        <path className="rrg-tail-halo" d={smoothPath(screen)} />
-                        <path className="rrg-tail" d={smoothPath(screen)} />
+                        <path className="rrg-tail-hit" d={smoothPath(screen)} />
+                        <path
+                          className="rrg-tail"
+                          d={smoothPath(screen)}
+                          stroke={`url(#rrg-fade-${gradientKey}-${t.groupId.replace(/[^a-zA-Z0-9_-]/g, "_")})`}
+                        />
                       </>
                     ) : null}
                     {t.points.slice(0, -1).map((p, i) => (
@@ -450,30 +616,23 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                         className="rrg-dot"
                         cx={screen[i].x}
                         cy={screen[i].y}
-                        r={1.9}
-                        opacity={0.2 + (0.55 * (i + 1)) / t.points.length}
+                        r={i === t.points.length - 2 ? 2.4 : 1.9}
+                        opacity={0.16 + (0.6 * (i + 1)) / t.points.length}
                       />
                     ))}
+                    <circle className="rrg-head-glow" cx={sx(head.x)} cy={sy(head.y)} r={11} />
                     <circle className="rrg-head-ring" cx={sx(head.x)} cy={sy(head.y)} r={8} />
-                    <circle className="rrg-head" cx={sx(head.x)} cy={sy(head.y)} r={5} />
-                    {(isHot || visibleCount <= 12) ? (
-                      (() => {
-                        // Flip the label inside the plot near the right edge --
-                        // the wrap clips overflow, so "Unclassified" lost its
-                        // tail off the side of the chart.
-                        const hx = sx(head.x);
-                        const flip = hx > PAD.l + innerW * 0.78;
-                        return (
-                          <text
-                            className="rrg-head-label"
-                            x={flip ? hx - 9 : hx + 9}
-                            y={sy(head.y) + 3.5}
-                            textAnchor={flip ? "end" : "start"}
-                          >
-                            {t.label.length > 22 ? `${t.label.slice(0, 21)}…` : t.label}
-                          </text>
-                        );
-                      })()
+                    <circle className="rrg-head" cx={sx(head.x)} cy={sy(head.y)} r={5.2} />
+                    {label ? (
+                      <text
+                        className="rrg-head-label"
+                        x={label.x}
+                        y={label.y}
+                        textAnchor={label.anchor}
+                        paintOrder="stroke"
+                      >
+                        {shortLabel(t.label)}
+                      </text>
                     ) : null}
                   </g>
                 );
@@ -505,7 +664,9 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                 {hover.trail.periodsInQuadrant} {params.unit}
                 {hover.trail.periodsInQuadrant === 1 ? "" : "s"} in {QUADRANT_LABEL[hover.trail.quadrant].toLowerCase()}
               </span>
-              {canOpen ? <span className="rrg-tt-hint">Click to open the group</span> : null}
+              <span className="rrg-tt-hint">
+                Click to open {universe === "sectors" ? "the sector" : "the group"}
+              </span>
             </div>
           ) : null}
         </div>
@@ -532,7 +693,7 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
           </div>
 
           <div className="rrg-table-wrap">
-            <table className={`rrg-table${canOpen ? " is-clickable" : ""}`}>
+            <table className="rrg-table is-clickable">
               <thead>
                 <tr>
                   {([
@@ -584,6 +745,37 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
                 ) : null}
               </tbody>
             </table>
+          </div>
+
+          <div className="rrg-crossings">
+            <p className="rrg-crossings-head">
+              Crossed this {params.unit}
+              <em>{crossings.length}</em>
+            </p>
+            {crossings.length ? (
+              <ul>
+                {crossings.map((t) => (
+                  <li key={t.groupId}>
+                    <button type="button" onClick={() => open(t.groupId)}>
+                      <span className="rrg-cross-name">{t.label}</span>
+                      <span className="rrg-cross-move">
+                        <span className={`rrg-cross-q ${t.fromQuadrant}`}>
+                          {QUADRANT_LABEL[t.fromQuadrant!]}
+                        </span>
+                        <span className="rrg-cross-arrow">→</span>
+                        <span className={`rrg-cross-q ${t.quadrant}`}>
+                          {QUADRANT_LABEL[t.quadrant]}
+                        </span>
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="rrg-crossings-empty">
+                Nothing changed quadrant on {fmtDate(asOfDate)}.
+              </p>
+            )}
           </div>
         </div>
       </div>

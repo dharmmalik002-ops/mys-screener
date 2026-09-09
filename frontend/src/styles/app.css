@@ -4465,6 +4465,12 @@ button {
   grid-template-columns: minmax(540px, 1.06fr) minmax(620px, 0.94fr);
 }
 
+/* One full-width column. The rotation graph reads as a map of the market and
+   needs the width; there is no chart column beside it to leave room for. */
+.workspace-grid-solo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .sector-panel .panel-body {
   display: flex;
   flex-direction: column;
