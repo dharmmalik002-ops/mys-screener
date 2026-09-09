@@ -398,6 +398,6 @@
 /* Variant when used inline as a tab button (Trade Journal) */
 .tj-tabbtn.news-tab-btn {
   margin-left: auto;
-  border: 0 !important;
+  border: 0;
 }
 

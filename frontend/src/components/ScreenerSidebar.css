@@ -14,7 +14,7 @@
   --ss-text-soft: var(--text-soft);
   --ss-muted: var(--text-muted);
 
-  background: var(--ss-bg) !important;
+  background: var(--ss-bg);
   border-radius: var(--radius-lg);
 }
 

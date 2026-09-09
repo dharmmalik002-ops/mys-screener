@@ -544,7 +544,7 @@
 }
 
 .mko-flip-title { margin-top: 2px; }
-.mko-flips { color: var(--text-soft); margin-bottom: 0 !important; }
+.mko-flips { color: var(--text-soft); margin-bottom: 0; }
 
 /* ===== Index cards ===== */
 .mko-indexes {

@@ -74,7 +74,7 @@
 }
 
 .mkb-series.off .mkb-swatch {
-  background: var(--text-muted) !important;
+  background: var(--text-muted);
 }
 
 .mkb-series-name {

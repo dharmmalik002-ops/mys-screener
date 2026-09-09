@@ -50,8 +50,8 @@
 .pfc-ramp-8 { stroke: var(--pfd-ramp-8); background: var(--pfd-ramp-8); }
 
 /* A donut arc must not paint a background, and a swatch must not paint a stroke. */
-.pfc-slice { background: none !important; transition: stroke-width 160ms ease, opacity 160ms ease; cursor: pointer; }
-.pfc-swatch { stroke: none !important; width: 9px; height: 9px; border-radius: var(--radius-xs); flex: 0 0 auto; }
+.pfc-slice { background: none; transition: stroke-width 160ms ease, opacity 160ms ease; cursor: pointer; }
+.pfc-swatch { stroke: none; width: 9px; height: 9px; border-radius: var(--radius-xs); flex: 0 0 auto; }
 
 .pfc-donut-row {
   display: grid;

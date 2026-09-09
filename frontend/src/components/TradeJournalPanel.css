@@ -1104,7 +1104,7 @@
 .tj-open-return-cell .neg { color: var(--negative); }
 
 .tj-open-verdict {
-  display: inline-flex !important;
+  display: inline-flex;
   width: fit-content;
   margin-bottom: 4px;
   padding: 2px 8px;
@@ -2519,7 +2519,7 @@
 }
 
 .tj-page-dashboard.tj-lite .tj-eq-svg {
-  height: 260px !important;
+  height: 260px;
 }
 
 .tj-page-dashboard.tj-lite .tj-dist-summary {
