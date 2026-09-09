@@ -3662,6 +3662,12 @@ class FreeMarketDataProvider:
             "sector": "Unclassified",
             "sub_sector": "Unclassified",
             "isin": listing_meta.get("isin"),
+            # Unknown at seed time: the bhavcopy carries no share count. It is
+            # filled by the metadata pass in _build_universe_rows, which this
+            # row qualifies for because its sector is Unclassified, and which
+            # derives issuedSize x price. Left as 0.0 = unknown rather than
+            # guessed; the IPO liquidity filter treats unknown as
+            # non-disqualifying so a 0 here never hides a listing.
             "market_cap_crore": 0.0,
             "last_price": round(close, 2),
             "previous_close": round(prev_close, 2),
@@ -5820,6 +5826,25 @@ class FreeMarketDataProvider:
                     row["sector"] = self._normalize_sector_label(metadata["sector"])
                 if str(metadata.get("sub_sector") or "").strip() and str(metadata.get("sub_sector")) != "Unclassified":
                     row["sub_sector"] = str(metadata["sub_sector"]).strip()
+                # Market cap was fetched and then thrown away. _fetch_company_profile
+                # already derives it as issuedSize x last price, and a freshly
+                # listed stock reaches this block precisely because it is
+                # Unclassified -- so the one value it needs was on hand and
+                # discarded. Measured: 183 bhavcopy_ipo_seed rows sat at
+                # market_cap_crore 0, which is also why they never entered
+                # free_universe.json and so never got enriched by any other
+                # path.
+                #
+                # Only filled when the row has nothing usable. An established
+                # row keeps the cap it already has, which the bhavcopy patch
+                # rescales by the day's price move.
+                fetched_mcap = self._to_float(metadata.get("market_cap_crore"))
+                try:
+                    existing_mcap = float(row.get("market_cap_crore") or 0)
+                except (TypeError, ValueError):
+                    existing_mcap = 0.0
+                if existing_mcap <= 0 and fetched_mcap and fetched_mcap > 0:
+                    row["market_cap_crore"] = round(float(fetched_mcap), 2)
 
         rows.sort(key=lambda item: (-float(item.get("market_cap_crore", 0) or 0), str(item.get("symbol") or "")))
         return rows

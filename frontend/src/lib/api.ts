@@ -2436,7 +2436,37 @@ export type GroupRankHistoryResponse = {
  * Real per-group rank/score series from the stored daily snapshots. Used to
  * draw an actual rank trend — the home page previously showed a sine wave here.
  */
-export function getGroupRankHistory(market: MarketKey, limit = 30) {
+/**
+ * Shared, briefly cached rank history.
+ *
+ * Two callers want this: the Home page's group rank sparklines and the Groups
+ * page's rotation graph. Each used to fetch it independently at a different
+ * limit, so opening Rotation fired a SECOND request that the Space answers in
+ * ~30 seconds -- the tab sat on "Loading rank history" that whole time even
+ * though Home had already loaded the same data, and the first request was
+ * routinely aborted by a re-render. One in-flight promise per market, with a
+ * short TTL so a later visit is instant but the data still refreshes.
+ */
+const RANK_HISTORY_TTL_MS = 5 * 60 * 1000;
+const rankHistoryCache = new Map<
+  string,
+  { at: number; promise: Promise<GroupRankHistoryResponse> }
+>();
+
+export function getGroupRankHistory(market: MarketKey, limit = 40) {
+  const key = `${market}:${limit}`;
+  const hit = rankHistoryCache.get(key);
+  if (hit && Date.now() - hit.at < RANK_HISTORY_TTL_MS) return hit.promise;
+
+  const promise = fetchGroupRankHistory(market, limit);
+  rankHistoryCache.set(key, { at: Date.now(), promise });
+  // A failure must not be cached, or one bad response poisons the tab for
+  // five minutes.
+  promise.catch(() => rankHistoryCache.delete(key));
+  return promise;
+}
+
+function fetchGroupRankHistory(market: MarketKey, limit: number) {
   return request<GroupRankHistoryResponse>(
     `/api/groups/rank-history?limit=${limit}&market=${market}`,
     undefined,

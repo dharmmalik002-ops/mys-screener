@@ -117,7 +117,15 @@ export function RotationGraph({ market, data, onOpenGroup }: Props) {
 
   if (error) return <div className="rrg-empty">{error}</div>;
   if (!data?.groups?.length) return <div className="rrg-empty">No group data yet.</div>;
-  if (loading && !history) return <div className="rrg-empty">Loading rank history…</div>;
+  if (loading && !history) {
+    return (
+      <div className="rrg-empty">
+        Loading rank history…
+        <br />
+        <small>The first load can take a moment; it is shared with the Home page afterwards.</small>
+      </div>
+    );
+  }
   if (!trails.length) {
     return (
       <div className="rrg-empty">
