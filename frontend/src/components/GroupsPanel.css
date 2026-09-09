@@ -819,9 +819,9 @@ body.dark .gp-emerging {
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
 }
 
-.gp-rs-hi { background: linear-gradient(135deg, var(--positive), #047857); box-shadow: 0 2px 8px rgba(16, 185, 129, 0.55); }
-.gp-rs-mid { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px rgba(245, 158, 11, 0.45); }
-.gp-rs-lo { background: linear-gradient(135deg, var(--negative), var(--negative-shade)); box-shadow: 0 2px 8px rgba(239, 68, 68, 0.45); }
+.gp-rs-hi { background: linear-gradient(135deg, var(--positive), #047857); box-shadow: 0 2px 8px color-mix(in srgb, var(--positive) 55%, transparent); }
+.gp-rs-mid { background: linear-gradient(135deg, #d97706, #b45309); box-shadow: 0 2px 8px color-mix(in srgb, var(--amber) 45%, transparent); }
+.gp-rs-lo { background: linear-gradient(135deg, var(--negative), var(--negative-shade)); box-shadow: 0 2px 8px color-mix(in srgb, var(--negative) 45%, transparent); }
 .gp-rs-muted {
   background: var(--gp-card-bg-soft);
   border: 1px solid var(--gp-border);

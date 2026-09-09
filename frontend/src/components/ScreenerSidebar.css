@@ -455,7 +455,7 @@
   border-radius: var(--radius-sm);
   background: linear-gradient(135deg, #fbbf24, #f59e0b);
   color: #fff;
-  box-shadow: 0 4px 10px rgba(245, 158, 11, 0.3);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--amber) 30%, transparent);
 }
 
 .ss-pro-copy {

@@ -107,12 +107,12 @@
   height: 8px;
   border-radius: 50%;
   background: var(--hp-green);
-  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.22);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--positive) 22%, transparent);
 }
 
 .homepro-status-dot.closed {
   background: var(--hp-red);
-  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.22);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--negative) 22%, transparent);
 }
 
 .homepro-kpi-icon {

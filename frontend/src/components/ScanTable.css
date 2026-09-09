@@ -369,17 +369,17 @@
 
 .st-rs-hi {
   background: linear-gradient(135deg, var(--positive), #059669);
-  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.32);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--positive) 32%, transparent);
 }
 
 .st-rs-mid {
   background: linear-gradient(135deg, #f59e0b, #d97706);
-  box-shadow: 0 2px 6px rgba(245, 158, 11, 0.32);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--amber) 32%, transparent);
 }
 
 .st-rs-lo {
   background: linear-gradient(135deg, var(--negative), var(--negative));
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.32);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--negative) 32%, transparent);
 }
 
 .st-rs-muted {
@@ -410,7 +410,7 @@
   background: linear-gradient(135deg, var(--st-primary, var(--accent)), var(--st-primary-strong, var(--accent-strong)));
   color: var(--accent-contrast);
   border-color: transparent;
-  box-shadow: 0 4px 10px rgba(99, 102, 241, 0.32);
+  box-shadow: 0 4px 10px color-mix(in srgb, var(--accent) 32%, transparent);
   transform: translateY(-1px);
 }
 
