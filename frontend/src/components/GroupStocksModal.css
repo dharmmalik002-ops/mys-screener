@@ -262,13 +262,39 @@
   align-items: center;
   justify-content: flex-end;
 }
-/* ...and the stage takes whatever is left rather than a fixed 380px. */
-.gsm-chart .chart-panel.expanded .chart-stage,
-.gsm-chart .chart-panel.expanded .chart-canvas {
+/* ...and the stage takes whatever is left rather than a fixed 380px.
+   `.chart-canvas` needs a DEFINITE height, not `auto`: it is the element
+   lightweight-charts mounts into with `autoSize`, so `auto` collapsed it to
+   0px and the chart drew its axes and no candles at all. */
+.gsm-chart .chart-panel.expanded .chart-stage {
   min-height: 0;
   height: auto;
+  flex: 1 1 auto;
 }
-.gsm-chart .chart-panel.expanded .chart-stage { flex: 1 1 auto; }
+.gsm-chart .chart-panel.expanded .chart-canvas {
+  min-height: 0;
+  height: 100%;
+}
+
+/* Price action is the point of this dialog, so the chart gets the room and the
+   read-outs get out of the way: the summary chips repeat what the dialog
+   header and the constituent list already show (price, 1D, RS, ranks), and
+   they cost 89px of a 1000px pane. The page-column chart keeps them. */
+.gsm-chart .chart-panel .chart-summary-strip { display: none; }
+
+/* Tighter control rows, worth ~35px more chart. */
+.gsm-chart .chart-panel .panel-header { padding-bottom: 6px; }
+.gsm-chart .chart-panel .chart-actions { gap: 5px; }
+.gsm-chart .chart-panel .chart-drawing-toolbar {
+  gap: 5px;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.gsm-chart .chart-panel .chart-drawing-toolbar .tool-pill,
+.gsm-chart .chart-panel .chart-drawing-toolbar .chart-widget-menu > button {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
 
 @media (max-width: 1100px) {
   .gsm-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(180px, 34%) minmax(0, 1fr); }
