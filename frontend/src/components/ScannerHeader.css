@@ -146,7 +146,7 @@
   padding: 3px 10px;
   border-radius: var(--radius-pill);
   background: rgba(99, 102, 241, 0.1);
-  color: var(--sh-primary-strong);
+  color: var(--accent-on-tint);
   font-weight: 600;
   font-size: var(--fs-small);
 }
@@ -159,7 +159,7 @@
 
 .sh-count.is-loading {
   background: rgba(245, 158, 11, 0.1);
-  color: #b45309;
+  color: var(--amber);
 }
 
 .sh-desc {
@@ -210,7 +210,7 @@
 .sh-btn-primary {
   border: 0;
   background: linear-gradient(135deg, var(--sh-primary), var(--sh-primary-strong));
-  color: #fff;
+  color: var(--accent-contrast);
   padding-left: 16px;
   padding-right: 18px;
   box-shadow: 0 8px 18px rgba(99, 102, 241, 0.32);

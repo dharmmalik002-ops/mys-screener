@@ -914,7 +914,7 @@ export function HomePanel({
               </div>
               <div style={{ display: "flex", gap: 12, fontSize: "var(--fs-small)", fontWeight: 700 }}>
                 <span style={{ color: "var(--positive)" }}>{Math.round(advPct)}%</span>
-                <span style={{ color: "#b45309" }}>{100 - Math.round(advPct)}%</span>
+                <span style={{ color: "var(--negative)" }}>{100 - Math.round(advPct)}%</span>
               </div>
             </div>
           </div>

@@ -166,7 +166,7 @@
   position: absolute;
   top: 4px; right: 4px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: var(--fs-micro);
   font-weight: 700;
   padding: 1px 4px;
@@ -1547,7 +1547,7 @@
   white-space: nowrap;
   font-family: inherit;
 }
-.tj-btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.tj-btn.primary { background: var(--accent); color: var(--accent-contrast); border-color: var(--accent); }
 .tj-btn.primary:hover:not(:disabled) { filter: brightness(1.1); }
 .tj-btn.secondary { background: var(--surface-strong); color: var(--text); border-color: var(--line-strong); }
 .tj-btn.secondary:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
@@ -1811,7 +1811,7 @@
   justify-content: center;
   border-radius: var(--radius-md);
   background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: var(--fs-lead);
   box-shadow: 0 4px 14px color-mix(in srgb, var(--tj-accent) 32%, transparent);
 }
@@ -1883,7 +1883,7 @@
 
 .tj-root .tj-tabbtn.active {
   background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
-  color: #fff;
+  color: var(--accent-contrast);
   border-color: transparent;
   box-shadow: 0 6px 16px color-mix(in srgb, var(--tj-accent) 26%, transparent);
 }
@@ -2019,7 +2019,7 @@
 
 .tj-root .tj-toggle-btn.active {
   background: linear-gradient(135deg, var(--tj-accent), var(--tj-accent-strong));
-  color: #fff;
+  color: var(--accent-contrast);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--tj-accent) 28%, transparent);
 }
 

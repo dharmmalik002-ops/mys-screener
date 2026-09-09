@@ -265,7 +265,7 @@
   font-size: var(--fs-tiny);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: var(--st-primary-strong, var(--accent-strong));
+  color: var(--accent-on-tint));
 }
 
 .st-name {
@@ -408,7 +408,7 @@
 
 .st-watch-btn:hover {
   background: linear-gradient(135deg, var(--st-primary, var(--accent)), var(--st-primary-strong, var(--accent-strong)));
-  color: #fff;
+  color: var(--accent-contrast);
   border-color: transparent;
   box-shadow: 0 4px 10px rgba(99, 102, 241, 0.32);
   transform: translateY(-1px);

@@ -106,7 +106,7 @@
   flex: 1;
   background: var(--accent);
   border: none;
-  color: #ffffff;
+  color: var(--accent-contrast);
   font-size: var(--fs-small);
   font-weight: 600;
   padding: 7px 12px;

@@ -9,9 +9,9 @@
   --hp-muted: var(--text-muted);
   --hp-text: var(--text);
   --hp-green: var(--positive);
-  --hp-green-soft: #d1fae5;
+  --hp-green-soft: var(--positive-soft);
   --hp-red: var(--negative);
-  --hp-red-soft: #fee2e2;
+  --hp-red-soft: var(--negative-soft);
   --hp-blue: var(--accent);
   --hp-violet: #8b5cf6;
   --hp-amber: var(--amber);
@@ -803,8 +803,8 @@
   text-align: center;
 }
 
-.homepro-chip.pos { background: var(--hp-green-soft); color: var(--positive-shade); }
-.homepro-chip.neg { background: var(--hp-red-soft); color: var(--negative-shade); }
+.homepro-chip.pos { background: var(--hp-green-soft); color: var(--positive-on-tint); }
+.homepro-chip.neg { background: var(--hp-red-soft); color: var(--negative-on-tint); }
 
 /* =========================================================
    Empty / loading placeholders
@@ -1076,11 +1076,11 @@ body.dark .homepro-modal-close:hover {
   border-radius: var(--radius-pill);
 }
 .homepro-xp-delta.up {
-  color: var(--hp-green);
+  color: var(--positive-on-tint);
   background: var(--hp-green-soft);
 }
 .homepro-xp-delta.down {
-  color: var(--hp-red);
+  color: var(--negative-on-tint);
   background: var(--hp-red-soft);
 }
 .homepro-xp-delta.flat {

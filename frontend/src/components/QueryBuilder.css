@@ -126,7 +126,7 @@
   border-radius: var(--radius-xs);
   border: 0;
   background: var(--qb-primary);
-  color: #fff;
+  color: var(--accent-contrast);
   font-family: inherit;
   font-size: var(--fs-small);
   font-weight: 700;
@@ -142,8 +142,9 @@
 }
 
 .qb-op-or {
-  background: #f59e0b;
+  background: var(--amber);
   box-shadow: 0 4px 8px rgba(245, 158, 11, 0.28);
+  color: var(--accent-contrast);
 }
 
 .qb-group-title {
@@ -208,7 +209,7 @@
 }
 
 .qb-chip-value {
-  color: var(--qb-primary-strong);
+  color: var(--accent-on-tint);
   font-weight: 700;
 }
 
@@ -271,7 +272,7 @@
   border: 1px dashed rgba(99, 102, 241, 0.4);
   border-radius: var(--radius-md);
   background: var(--qb-bg);
-  color: var(--qb-primary-strong);
+  color: var(--accent-on-tint);
   font-family: inherit;
   font-size: var(--fs-small);
   font-weight: 600;
@@ -288,7 +289,7 @@
 .qb-action-primary {
   border-style: solid;
   background: linear-gradient(135deg, var(--qb-primary), var(--qb-primary-strong));
-  color: #fff;
+  color: var(--accent-contrast);
   border-color: transparent;
   box-shadow: 0 4px 10px rgba(99, 102, 241, 0.28);
 }
