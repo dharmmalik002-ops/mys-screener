@@ -425,8 +425,8 @@
   min-width: 36px;
   padding: 2px 8px;
   border-radius: var(--radius-pill);
-  background: rgba(99, 102, 241, 0.1);
-  color: var(--st-primary-strong, #4f46e5);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-on-tint);
   font-size: var(--fs-small);
   font-weight: 700;
   letter-spacing: 0.02em;

@@ -242,7 +242,7 @@
 .sf-mover-fallback {
   font-size: var(--fs-micro);
   font-weight: 700;
-  color: var(--sf-primary-strong);
+  color: var(--accent-on-tint);
 }
 
 .sf-mover-text {

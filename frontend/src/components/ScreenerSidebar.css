@@ -67,7 +67,7 @@
 .ss-new-btn:hover {
   background: var(--ss-primary);
   border-color: var(--ss-primary);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 .ss-new-btn:active {
@@ -165,7 +165,7 @@
 .ss-chip-active {
   background: var(--ss-primary);
   border-color: var(--ss-primary);
-  color: #fff;
+  color: var(--accent-contrast);
   box-shadow: none;
 }
 
@@ -225,7 +225,7 @@
 
 .ss-nav-item.is-active .ss-nav-icon {
   background: var(--ss-primary);
-  color: #fff;
+  color: var(--accent-contrast);
   border-color: var(--ss-primary);
 }
 
@@ -283,7 +283,7 @@
 }
 
 .ss-nav-item.is-active .ss-nav-count {
-  background: #fff;
+  background: var(--surface-strong);
   border-color: var(--ss-primary);
   color: var(--ss-primary);
 }
@@ -363,8 +363,8 @@
   display: inline-block;
   padding: 0 5px;
   border-radius: var(--radius-xs);
-  background: #fef3c7;
-  color: #b45309;
+  background: var(--amber-soft);
+  color: var(--amber);
   font-size: var(--fs-micro);
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -493,7 +493,7 @@
   border: 0;
   border-radius: var(--radius-md);
   background: var(--ss-primary);
-  color: #fff;
+  color: var(--accent-contrast);
   font-weight: 600;
   font-size: var(--fs-base);
   cursor: pointer;

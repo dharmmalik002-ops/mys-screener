@@ -48,7 +48,7 @@
   border: 1px solid transparent;
   border-radius: var(--radius-md);
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--accent-contrast);
   font-size: var(--fs-base);
   font-weight: 600;
   cursor: pointer;
@@ -139,7 +139,7 @@
 
 .ts-op-pill.active {
   background: var(--accent-strong);
-  color: #fff;
+  color: var(--accent-contrast);
 }
 
 .ts-group-caption {

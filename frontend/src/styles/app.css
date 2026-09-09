@@ -18,16 +18,20 @@
   --surface-soft: rgba(22, 34, 58, 0.62);
   --line: rgba(100, 140, 200, 0.15);
   --line-strong: rgba(120, 160, 220, 0.28);
+  /* Dark values are measured against --card-flat (#171f3a), the LIGHTEST dark
+     surface and therefore the tightest test -- a value can clear AA on the
+     canvas and fail on a card, which is where most text actually sits.
+     --text-muted was 3.41:1 and --negative 4.31:1. */
   --text: #e8edf4;
   --text-soft: #94a3b8;
-  --text-muted: #64748b;
+  --text-muted: #8291a9;
   --accent: #4c9aff;
-  --accent-strong: #3b6cef;
+  --accent-strong: #4a78f2;
   /* Accent text sitting ON an accent-tinted chip. It has to move the OPPOSITE
      way in each theme: darker than --accent on a light tint, lighter than it
      on a dark tint. Using --accent-strong for both put #3b6cef on a dark chip
      and cost 8 severe contrast failures on the Funds page. */
-  --accent-on-tint: var(--accent);
+  --accent-on-tint: #68abff;
   --accent-2: #34d399;
   --accent-3: #22d3ee;
   --positive: #22c55e;
@@ -47,11 +51,13 @@
   --positive-shade: color-mix(in oklab, var(--positive) 58%, black);
   --negative-tint: color-mix(in oklab, var(--negative) 45%, white);
   --negative-shade: color-mix(in oklab, var(--negative) 58%, black);
+  --positive-on-tint: var(--positive);
+  --negative-on-tint: var(--negative);
   --candle-up: #089981;
   --candle-down: #f23645;
   --positive-soft: rgba(34, 197, 94, 0.14);
-  --negative: #ef4444;
-  --negative-soft: rgba(239, 68, 68, 0.14);
+  --negative: #f2585a;
+  --negative-soft: rgba(242, 88, 90, 0.14);
   --danger: #f87171;
   /* Aliases kept for the call sites that use them; they must never hold a
      second green or a second red, which is how this drifted before. */
@@ -207,6 +213,8 @@
   --accent-2: #0e6b4f;
   --accent-3: #0891b2;
   --positive: #137a37;
+  --positive-on-tint: var(--positive-shade);
+  --negative-on-tint: var(--negative-shade);
   --positive-soft: rgba(19, 122, 55, 0.12);
   --negative: #c81e1e;
   --negative-soft: rgba(200, 30, 30, 0.12);
