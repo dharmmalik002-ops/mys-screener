@@ -1476,13 +1476,13 @@ html .mobile-tabbar {
 
 @media (max-height: 520px) and (orientation: landscape) and (max-width: 950px) {
   html .group-stocks-widget {
-    top: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    left: auto !important;
-    width: min(320px, 42vw) !important;
-    height: auto !important;
-    max-height: 100dvh !important;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: auto;
+    width: min(320px, 42vw);
+    height: auto;
+    max-height: 100dvh;
     border-radius: var(--radius-xl) 0 0 var(--radius-xl);
   }
 }

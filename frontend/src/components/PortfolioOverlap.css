@@ -71,7 +71,7 @@
 
 /* ----------------------------------------------------------- shared stocks */
 
-.pov-detail-row > td { padding: 0 !important; background: var(--pfd-panel, rgba(148, 163, 184, 0.04)); }
+.pov-detail-row > td { padding: 0; background: var(--pfd-panel, rgba(148, 163, 184, 0.04)); }
 
 .pov-detail {
   display: flex;

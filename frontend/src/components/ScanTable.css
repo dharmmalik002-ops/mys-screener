@@ -234,8 +234,8 @@
 }
 
 .st-row-main {
-  display: inline-flex !important;
-  align-items: center !important;
+  display: inline-flex;
+  align-items: center;
   gap: 10px;
   min-width: 0;
   width: 100%;
@@ -269,13 +269,13 @@
 }
 
 .st-name {
-  display: grid !important;
+  display: grid;
   gap: 2px;
   min-width: 0;
 }
 
 .st-name strong {
-  font-size: var(--fs-body) !important;
+  font-size: var(--fs-body);
   font-weight: 700;
   color: var(--st-text);
   white-space: nowrap;

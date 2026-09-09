@@ -60,7 +60,7 @@
 .ssp-arc-sideways, .ssp-swatch.ssp-arc-sideways { stroke: #94a3b8; background: #94a3b8; }
 .ssp-arc-declining, .ssp-swatch.ssp-arc-declining { stroke: var(--pfd-down, var(--negative)); background: var(--pfd-down, var(--negative)); }
 
-.ssp-arc { background: none !important; }
+.ssp-arc { background: none; }
 .ssp-swatch { stroke: none !important; width: 9px; height: 9px; border-radius: var(--radius-xs); flex: 0 0 auto; }
 
 /* ---------------------------------------------------------------- donut */
