@@ -1810,6 +1810,40 @@ class DashboardService:
         return [item for item in items if float(item.avg_rupee_volume_30d_crore or 0.0) >= min_liquidity_crore]
 
     @staticmethod
+    def _filter_ipo_items_by_liquidity(
+        items: list[ScanMatch], min_liquidity_crore: float | None
+    ) -> list[ScanMatch]:
+        """Liquidity filter for the IPO scan, where 0 means UNKNOWN, not illiquid.
+
+        `avg_rupee_volume_30d_crore` is a 30-session average, and a stock listed
+        last week has not had 30 sessions -- the number does not exist yet.
+        Beyond that, the snapshot pipeline currently populates neither turnover
+        nor market cap for recent listings at all: measured on the live API,
+        242 of 322 IPO hits carry 0, and every listing after 2026-04-02 does.
+
+        The shared `_filter_scan_items_by_liquidity` treats 0 as illiquid, so
+        applying any threshold deleted exactly the listings this scan exists to
+        surface: unfiltered the scan returns 322 rows with the newest a day
+        old; at >= 1 crore it returned 77 rows whose newest was five months
+        stale. A filter that silently removes the subject of the screener is
+        worse than no filter, so an unknown value is kept rather than dropped.
+
+        Genuinely illiquid listings -- ones that DO report turnover, below the
+        threshold -- are still removed.
+        """
+        if min_liquidity_crore is None:
+            return items
+        kept: list[ScanMatch] = []
+        for item in items:
+            turnover = item.avg_rupee_volume_30d_crore
+            if turnover is None or float(turnover) <= 0.0:
+                kept.append(item)          # unknown, not disqualifying
+                continue
+            if float(turnover) >= min_liquidity_crore:
+                kept.append(item)
+        return kept
+
+    @staticmethod
     def _contraction_snapshot_needs_enrichment(snapshot: StockSnapshot) -> bool:
         recent_closes = [float(value) for value in getattr(snapshot, "recent_closes", []) if value is not None]
         if len(recent_closes) >= 4:
@@ -4006,7 +4040,7 @@ class DashboardService:
             # the full snapshot set; the IPO scanner already enforces its own
             # listing-date window (0–365 days), so no other scanners are affected.
             ipo_snapshots = await self._snapshots()
-            items = self._filter_scan_items_by_liquidity(
+            items = self._filter_ipo_items_by_liquidity(
                 run_scan(SCAN_BY_ID["ipo"], ipo_snapshots),
                 min_liquidity_crore,
             )
