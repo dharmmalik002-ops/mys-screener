@@ -5761,6 +5761,28 @@ class DashboardService:
             ai_model=model_name,
         )
 
+    def _study_library_path(self) -> Path:
+        return self._state_data_dir() / "study_library.json"
+
+    def get_study_library(self) -> dict:
+        """Saved Chart Gym studies.
+
+        Stored beside the trade journal in APP_STATE_DIR and, like it, treated as
+        one opaque blob owned by the frontend rather than a modelled schema —
+        a study is a symbol, a window, some drawings and a note, and none of that
+        needs the backend to understand it.
+        """
+        payload = self._read_json_dict(self._study_library_path())
+        return payload or {"studies": []}
+
+    def save_study_library(self, payload: dict) -> dict:
+        studies = payload.get("studies")
+        if not isinstance(studies, list):
+            raise ValueError("study library payload must carry a 'studies' list")
+        document = {"studies": studies, "updated_at": datetime.now(timezone.utc).isoformat()}
+        self._write_json_payload(self._study_library_path(), document)
+        return document
+
     def _journal_data_path(self) -> Path:
         return self._state_data_dir() / "journal_data.json"
 

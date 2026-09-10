@@ -4515,3 +4515,49 @@ export function getStudyReveal(cardId: string) {
     { label: "scanner backend" },
   );
 }
+
+// --- Chart Gym: saved studies and symbol lookup -----------------------------
+
+/** A saved chart: where it was, what was drawn on it, and why it was kept. */
+export type StudyRecord = {
+  id: string;
+  symbol: string;
+  name?: string;
+  note?: string;
+  tags?: string[];
+  savedAt: string;
+  /** Session the replay was anchored to, when it came from a deck card. */
+  cardId?: string | null;
+  triggerDate?: string | null;
+  /** Visible date window (epoch seconds) so it reopens where it was left. */
+  from?: number | null;
+  to?: number | null;
+  style?: string;
+  stop?: number | null;
+  drawings?: unknown[];
+};
+
+export type StudyLibrary = { studies: StudyRecord[]; updated_at?: string };
+
+export function getStudyLibrary() {
+  return whileWaking(() => request<StudyLibrary>("/api/study/library", undefined, { timeoutMs: 30000 }), {
+    label: "scanner backend",
+  });
+}
+
+export function saveStudyLibrary(studies: StudyRecord[]) {
+  return request<StudyLibrary>("/api/study/library", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ studies }),
+  });
+}
+
+export function searchStudySymbols(query: string, limit = 12) {
+  const params = new URLSearchParams({ q: query, limit: String(limit) });
+  return request<{ query: string; results: Array<{ symbol: string; name: string }> }>(
+    `/api/study/search?${params.toString()}`,
+    undefined,
+    { timeoutMs: 20000 },
+  );
+}

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from "react";
 import {
   ColorType,
   CrosshairMode,
@@ -31,7 +31,7 @@ const OVERLAYS = [
 ] as const;
 
 export type StudyChartStyle = "candles" | "bars" | "hlc";
-export type StudyTool = "cursor" | "stop" | "trendline" | "measure";
+export type StudyTool = "cursor" | "stop" | "trendline" | "measure" | "snip";
 
 /** A two-point drawing anchored in (time, price) so it survives pan and zoom. */
 export type StudyDrawing = {
@@ -47,6 +47,8 @@ type Props = {
   revealed: number;
   /** Index into the combined series where the position was opened, or null. */
   entryIndex: number | null;
+  /** Label for the bar the replay starts from, or null to draw no marker. */
+  signalLabel?: string | null;
   entryPrice: number | null;
   stop: number | null;
   style: StudyChartStyle;
@@ -54,9 +56,20 @@ type Props = {
   drawings: StudyDrawing[];
   onDrawingsChange: (drawings: StudyDrawing[]) => void;
   onPickPrice?: (price: number) => void;
-  /** Fired when the newest visible session is clicked in cursor mode. */
-  onPickEntry?: () => void;
+  /** Fired on a click in cursor mode, with the session that was clicked. */
+  onPickEntry?: (time: number) => void;
+  /** Pixel rect of a finished region drag, for cropping a PNG out of the chart. */
+  onSnip?: (rect: { x0: number; y0: number; x1: number; y1: number }) => void;
+  /** Reports the visible window so a study can be reopened where it was left. */
+  onRangeChange?: (range: { from: number; to: number } | null) => void;
+  /** Applied once when a saved study is opened. */
+  initialRange?: { from: number; to: number } | null;
   height?: number;
+};
+
+export type StudyChartHandle = {
+  /** PNG of the chart with drawings composited in. */
+  capture: () => Promise<Blob | null>;
 };
 
 const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -69,11 +82,12 @@ const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2,
  * pan, zoom and data change — anchoring them to screen coordinates would slide
  * them off the bars they were drawn against the moment the chart moved.
  */
-export function StudyChart({
+export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChart({
   contextBars,
   forwardBars,
   revealed,
   entryIndex,
+  signalLabel,
   entryPrice,
   stop,
   style,
@@ -82,8 +96,12 @@ export function StudyChart({
   onDrawingsChange,
   onPickPrice,
   onPickEntry,
+  onSnip,
+  onRangeChange,
+  initialRange,
   height = 460,
-}: Props) {
+}: Props, handleRef) {
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
@@ -94,11 +112,21 @@ export function StudyChart({
   const stopLineRef = useRef<IPriceLine | null>(null);
   const [draft, setDraft] = useState<StudyDrawing["from"] | null>(null);
   const [hover, setHover] = useState<StudyDrawing["from"] | null>(null);
+  // Pixel rect for the region snip, and the live stop drag.
+  const [snip, setSnip] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  // Mirrored for the window-level drag handlers, which are bound once.
+  const draggingStopRef = useRef(false);
+  const snipRef = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
+  const stopRef = useRef<number | null>(stop);
+  stopRef.current = stop;
+  // The auto-fit must run once per chart, not on every new bar — otherwise
+  // stepping the replay yanks the view back and undoes the user's zoom.
+  const fittedForRef = useRef<string | null>(null);
 
   // Handlers change every render; the chart subscribes once. Refs keep the
   // live versions reachable without tearing the chart down on each keystroke.
-  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, draft });
-  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, draft };
+  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, draft });
+  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, draft };
 
   const visible = useMemo(() => {
     const context = contextBars.filter((b) => Number.isFinite(b.close) && b.close > 0);
@@ -203,9 +231,11 @@ export function StudyChart({
         return;
       }
       if (t === "cursor") {
-        onPickEntry?.();
+        onPickEntry?.(anchor.time);
         return;
       }
+      // The snip is a drag, not a two-click drawing — handled on the wrapper.
+      if (t !== "trendline" && t !== "measure") return;
       // Two-click tools: first click sets the anchor, second commits.
       if (!pending) {
         setDraft(anchor);
@@ -272,13 +302,16 @@ export function StudyChart({
 
     const markers = [];
     const trigger = visible.clean[visible.triggerIndex];
-    if (trigger) {
+    // A free study with no replay anchor has no signal bar — its last candle is
+    // just the last candle, and marking it "signal" invented a scan that never
+    // happened.
+    if (trigger && signalLabel) {
       markers.push({
         time: trigger.time as UTCTimestamp,
         position: "belowBar" as const,
         color: "#64748b",
         shape: "arrowUp" as const,
-        text: "signal",
+        text: signalLabel,
       });
     }
     const entryBar = entryIndex != null ? visible.clean[entryIndex] : null;
@@ -296,7 +329,7 @@ export function StudyChart({
     // down and builds a new one — lightweight-charts cannot convert in place.
     // Without it the rebuilt series keeps whatever data it was born with, which
     // is none, and the chart goes blank.
-  }, [visible, entryIndex, style]);
+  }, [visible, entryIndex, style, signalLabel]);
 
   // --- Entry / stop price lines -------------------------------------------
   useEffect(() => {
@@ -409,8 +442,25 @@ export function StudyChart({
     };
 
     for (const d of drawings) drawOne(d, false);
-    if (draft && hover) drawOne({ id: "draft", kind: tool === "measure" ? "measure" : "trendline", from: draft, to: hover }, true);
-  }, [drawings, draft, hover, tool, visible]);
+    if (draft && hover && (tool === "measure" || tool === "trendline")) {
+      drawOne({ id: "draft", kind: tool, from: draft, to: hover }, true);
+    }
+
+    if (snip) {
+      const x = Math.min(snip.x0, snip.x1);
+      const y = Math.min(snip.y0, snip.y1);
+      const w = Math.abs(snip.x1 - snip.x0);
+      const h = Math.abs(snip.y1 - snip.y0);
+      ctx.save();
+      ctx.fillStyle = "rgba(59,130,246,0.12)";
+      ctx.fillRect(x, y, w, h);
+      ctx.strokeStyle = "#3b82f6";
+      ctx.setLineDash([5, 4]);
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x, y, w, h);
+      ctx.restore();
+    }
+  }, [drawings, draft, hover, tool, visible, snip]);
 
   useEffect(() => {
     paint();
@@ -426,23 +476,140 @@ export function StudyChart({
     };
   }, [paint, style]);
 
+  // Grab-and-drag the stop line, and rubber-band a region for the snip tool.
+  // Both live on the wrapper in the capture phase so they can swallow the event
+  // before lightweight-charts starts panning the chart under the cursor.
+  useEffect(() => {
+    const wrap = wrapRef.current;
+    if (!wrap) return;
+
+    const localY = (event: MouseEvent) => event.clientY - wrap.getBoundingClientRect().top;
+    const localX = (event: MouseEvent) => event.clientX - wrap.getBoundingClientRect().left;
+
+    const stopY = () => {
+      const series = priceRef.current;
+      const value = stopRef.current;
+      if (!series || value == null) return null;
+      const y = series.priceToCoordinate(value);
+      return y == null ? null : Number(y);
+    };
+
+    const onDown = (event: MouseEvent) => {
+      if (event.button !== 0) return;
+      if (cb.current.tool === "snip") {
+        const rect = { x0: localX(event), y0: localY(event), x1: localX(event), y1: localY(event) };
+        snipRef.current = rect;
+        setSnip(rect);
+        event.stopPropagation();
+        event.preventDefault();
+        return;
+      }
+      const y = stopY();
+      if (y != null && Math.abs(localY(event) - y) <= 6) {
+        draggingStopRef.current = true;
+        event.stopPropagation();
+        event.preventDefault();
+      }
+    };
+
+    const onMove = (event: MouseEvent) => {
+      if (snipRef.current) {
+        const rect = { ...snipRef.current, x1: localX(event), y1: localY(event) };
+        snipRef.current = rect;
+        setSnip(rect);
+        event.stopPropagation();
+        return;
+      }
+      if (!draggingStopRef.current) return;
+      const series = priceRef.current;
+      const price = series?.coordinateToPrice(localY(event));
+      if (price != null && Number.isFinite(price)) cb.current.onPickPrice?.(Number(price));
+      event.stopPropagation();
+    };
+
+    const onUp = () => {
+      draggingStopRef.current = false;
+      const rect = snipRef.current;
+      if (rect) {
+        snipRef.current = null;
+        setSnip(null);
+        if (Math.abs(rect.x1 - rect.x0) > 8 && Math.abs(rect.y1 - rect.y0) > 8) cb.current.onSnip?.(rect);
+      }
+    };
+
+    wrap.addEventListener("mousedown", onDown, true);
+    window.addEventListener("mousemove", onMove, true);
+    window.addEventListener("mouseup", onUp, true);
+    return () => {
+      wrap.removeEventListener("mousedown", onDown, true);
+      window.removeEventListener("mousemove", onMove, true);
+      window.removeEventListener("mouseup", onUp, true);
+    };
+  }, []);
+
   // Clear a half-finished drawing when the tool changes under the user.
   useEffect(() => setDraft(null), [tool]);
 
-  // Keep the base in view as forward bars extend the series to the right.
+  // Frame the chart once, then leave the viewport alone. Zoom and pan are the
+  // user's; re-fitting on every revealed bar was silently undoing them mid-replay.
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || visible.clean.length < 2) return;
+    const key = `${contextBars[0]?.time ?? 0}:${contextBars.length}:${style}`;
+    if (fittedForRef.current === key) return;
+    fittedForRef.current = key;
+    if (initialRange && initialRange.from < initialRange.to) {
+      chart.timeScale().setVisibleRange({
+        from: initialRange.from as UTCTimestamp,
+        to: initialRange.to as UTCTimestamp,
+      });
+      return;
+    }
     chart.timeScale().setVisibleLogicalRange({
       from: Math.max(0, visible.clean.length - 130),
       to: visible.clean.length + 4,
     });
-  }, [visible.clean.length]);
+  }, [visible.clean.length, contextBars, style, initialRange]);
+
+  // Report the visible window so a saved study can reopen on the same dates.
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart || !onRangeChange) return;
+    const emit = () => {
+      const range = chart.timeScale().getVisibleRange();
+      onRangeChange(range ? { from: Number(range.from), to: Number(range.to) } : null);
+    };
+    emit();
+    chart.timeScale().subscribeVisibleTimeRangeChange(emit);
+    return () => chart.timeScale().unsubscribeVisibleTimeRangeChange(emit);
+  }, [onRangeChange, visible.clean.length]);
+
+  // --- Capture -------------------------------------------------------------
+  useImperativeHandle(handleRef, () => ({
+    async capture() {
+      const chart = chartRef.current;
+      const overlay = overlayRef.current;
+      if (!chart) return null;
+      // takeScreenshot only knows about the chart's own canvases, so the
+      // drawings layer is composited on top by hand.
+      const shot = chart.takeScreenshot();
+      const out = document.createElement("canvas");
+      out.width = shot.width;
+      out.height = shot.height;
+      const ctx = out.getContext("2d");
+      if (!ctx) return null;
+      ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--surface").trim() || "#0f172a";
+      ctx.fillRect(0, 0, out.width, out.height);
+      ctx.drawImage(shot, 0, 0);
+      if (overlay) ctx.drawImage(overlay, 0, 0, out.width, out.height);
+      return await new Promise<Blob | null>((resolve) => out.toBlob(resolve, "image/png"));
+    },
+  }), []);
 
   return (
-    <div className="study-chart-wrap" style={{ height }}>
+    <div ref={wrapRef} className="study-chart-wrap" style={{ height }}>
       <div ref={containerRef} className={`study-chart tool-${tool}`} style={{ height }} />
       <canvas ref={overlayRef} className="study-chart-overlay" />
     </div>
   );
-}
+});
