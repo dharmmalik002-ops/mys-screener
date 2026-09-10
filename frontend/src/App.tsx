@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
+  GraduationCap,
   Globe,
   House,
   Landmark,
@@ -131,6 +132,7 @@ const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((
 const LivePanel = lazy(() => import("./components/LivePanel").then((module) => ({ default: module.LivePanel })));
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
 const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
+const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -195,7 +197,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds";
+type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -216,6 +218,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "funds", label: "Funds", short: "Funds", Icon: Landmark },
   { page: "live", label: "Live", short: "Live", Icon: Zap },
   { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
+  { page: "study", label: "Chart Gym", short: "Gym", Icon: GraduationCap },
 ];
 
 type ResultSortMode = "change" | "rs";
@@ -5790,6 +5793,13 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <MutualFundsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "study" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Deliberately not gated on `loading`: the drill reads its own
+                deck file and needs nothing from the dashboard fetch. */}
+            <StudyPanel />
+          </Suspense>
+        ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
@@ -5802,7 +5812,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" ? (
+        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">

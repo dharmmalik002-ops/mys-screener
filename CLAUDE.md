@@ -31,6 +31,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `services/news_service.py` & `rss_news_service.py`: News fetching, deduplication, and RSS scraping.
 - `services/watchdog_agent.py`: System health watchdog and self-healing task runner.
 - `services/watchlists_store.py` & `journal_store.py`: Persistence handlers for user watchlists and trade journal entries.
+- `services/study_deck.py`: Chart Gym deck server — deals a balanced daily hand of historical setups and splits each symbol's bars at the trigger session so the answer never ships with the question. The deck itself is mined offline by `scripts/generate_study_deck.py`.
 - `services/mutual_funds/`: Mutual fund screener subsystem (India-only, mounted at `/api/mf` via `api/mutual_funds_routes.py`).
   - `nav_source.py`: **Authoritative** leg — daily NAV history per AMFI scheme code, via the mfapi.in mirror. Every return/rank/risk number derives from this.
   - `groww_source.py`: Best-effort reference data (holdings, benchmark name, TER, AUM). Reads the **public HTML** pages and parses `__NEXT_DATA__` — Groww's `robots.txt` disallows `/v1/api/*`, so the JSON API is never touched. Degrades to "no holdings", never takes the page down.
@@ -54,6 +55,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
   their `/api/ai/scan` and knowledge-base endpoints no longer exist.
 - `components/MutualFundsPanel.tsx`: Funds page — screener table (sortable, with category rank as a first-class column), category leaderboard, and manual portfolio with XIRR + stock-level look-through.
 - `components/FundDetailModal.tsx` & `FundNavChart.tsx`: Per-fund deep dive — growth-of-100 NAV chart vs benchmark, rolling returns, drawdown episodes, holdings with links into the equity chart.
+- `components/StudyPanel.tsx` & `StudyChart.tsx`: Chart Gym — the chart-reading drill. Shows a historical VCP / flag setup truncated at its trigger bar, takes a Buy/Pass call and a stop placed on the chart, then steps the next 10 sessions in one bar at a time and grades the trade against the user's own stop. Scores persist in `localStorage`.
 - `lib/api.ts`: Centralized API client wrapper with request error handling and base URL configuration.
 
 ---
@@ -94,6 +96,11 @@ cd backend && pytest
 # metrics from cached data in seconds)
 cd backend && python scripts/build_mf_universe.py
 cd backend && python scripts/build_mf_universe.py --compute-only --refresh-navs
+
+# Rebuild the Chart Gym deck (~1.8 hrs for 52 weeks over the full universe —
+# workstation only, never on the Space)
+cd backend && python3 scripts/generate_study_deck.py --weeks 52
+cd backend && python3 scripts/generate_study_deck.py --weeks 3 --limit-symbols 300   # quick check
 
 # Frontend Type Check
 cd frontend && npx --no-install tsc --noEmit
@@ -138,4 +145,7 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 20. **A Due Close Refresh Must Never Block a Request:** every screener endpoint begins with `provider.get_snapshots(...)`. That call used to rebuild the whole universe inline whenever `_market_close_refresh_due()` was true, and `_get_or_create_snapshot_request_task` then started a *second*, unregistered rebuild for each request that had piggy-backed on the first. The refresh being due is a condition a rebuild cannot clear on its own — the session's bhavcopy has to arrive first — so with the bhavcopy pipeline stuck, every request launched its own crawl of ~1,900 symbols and none finished: all screeners returned 500 for hours while `/api/groups` (a committed artifact) stayed fast. It is stale-while-revalidate now: serve the cached close, schedule one background rebuild, and back off `CLOSE_REFRESH_RETRY_SECONDS` between attempts. Only a completely empty cache blocks. `test_snapshot_refresh_stampede.py` holds it shut.
 21. **The Space Only Gets EOD Data From `daily-bhavcopy.yml`, and Its Push Rejects Binaries:** `deploy.yml` is skipped for the bhavcopy commits (they carry `[skip ci]`, and a `GITHUB_TOKEN` push cannot trigger a workflow anyway), so the bhavcopy job pushes to the Space itself. When that push fails the repo still has the day's patch and the Space silently does not — check `/api/bhavcopy/status` against the newest `data:` commit. This happened for three days from 2026-09-07: the Space's pre-receive hook rejects binary files outright ("Please use Xet to store binary files"), `frontend/public/liquid-glass-bg.jpg` was in the payload, and only `daily-bhavcopy.yml` was missing the exclusion that `deploy.yml` had. **Both workflows now rsync with `--exclude-from '.github/hf-deploy-excludes.txt'`** — add any new binary asset there, or the daily data stops shipping. The manual recovery is the `workflow_dispatch` on **Deploy to HuggingFace**.
 
+15. **The Chart Gym Deck Must Stay Balanced, and Its Answer Must Stay Server-Side:** the deck deals equal numbers of winners and losers (`StudyDeck.deal`) because a deck of winners trains the eye to see a breakout in every base — the opposite of the skill. And the forward bars live behind `/api/study/reveal`, never in `/api/study/deck` or `/api/study/bars`; shipping them with the question puts the answer in the browser before the user has called it. `test_study_deck.py` pins both.
+16. **Chart Gym Bars Need the Provider Fallback:** `_study_bars` in `routes.py` reads `chart_cache` first and falls back to `service.get_chart`. `chart_cache/` is gitignored, so a freshly deployed Space has nothing in it and every card would render as an empty chart — fine locally, silently blank in production, exactly like gotcha 14. Keep the fallback.
+17. **`power-base` Is Excluded From the Deck On Purpose:** it fires ~1,500 times a week (20,323 signals in a 13-week replay, versus 167 for `vcp` and 865 for `high-tight-flag`). It describes a state, not an entry, and adding it to `DEFAULT_SETUPS` would swamp the deck with marginal examples and dull the eye rather than sharpen it. Gate it by score first if you ever want it in.
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
