@@ -1,6 +1,10 @@
 import asyncio
+from datetime import date
+from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, Query
+
+from app.services import study_deck as sd
 
 from app.models.market import (
     BhavcopyStatusResponse,
@@ -31,6 +35,9 @@ from app.models.market import (
 
 def build_router(service):
     router = APIRouter(prefix="/api")
+    # Built on first request and kept for the process — the deck file is a few
+    # MB of JSON and reparsing it per request would show up on every card flip.
+    _study_deck_singleton = None
 
     def default_index_symbols(market: str | None) -> list[str]:
         return ["^NSEI", "^BSESN", "^NSEBANK"]
@@ -77,6 +84,77 @@ def build_router(service):
     @router.get("/scanner-scorecard")
     async def scanner_scorecard(market: str = Query(default="india")):
         return await resolve_service(market).get_scanner_scorecard()
+
+    # --- Chart-reading drill ------------------------------------------------
+    # Deals historical VCP / flag setups for grading before the outcome is shown.
+    # The deck is mined offline by scripts/generate_study_deck.py; these routes
+    # only read it. Bars are split at the trigger date so the question and the
+    # answer travel in separate responses — a card carrying its own forward bars
+    # would leak the answer into the browser before the user has called it.
+
+    def _study_deck():
+        from app.services import study_deck as sd_module
+
+        nonlocal _study_deck_singleton
+        if _study_deck_singleton is None:
+            backend_root = Path(__file__).resolve().parents[2]
+            _study_deck_singleton = sd_module.StudyDeck(backend_root / "data")
+        return _study_deck_singleton
+
+    async def _study_bars(card, market: str):
+        """Context and forward bars for one card, split at the trigger session.
+
+        chart_cache is the fast path but it is gitignored, so a freshly deployed
+        Space has nothing in it and every card would render as an empty chart —
+        the same "fine locally, silently broken in production" failure the sector
+        history guards against. The provider fallback fetches the symbol once and
+        warms the cache for every later card on it.
+        """
+        backend_root = Path(__file__).resolve().parents[2]
+        context, forward = await asyncio.to_thread(
+            sd.split_bars, backend_root / "data", card.symbol, card.trigger_date
+        )
+        if len(context) >= 30:
+            return context, forward
+        try:
+            chart = await resolve_service(market).get_chart(symbol=card.symbol, timeframe="1D")
+        except Exception:
+            return context, forward
+        return sd.split_series(list(getattr(chart, "bars", []) or []), card.trigger_date)
+
+    @router.get("/study/deck")
+    async def study_deck(
+        count: int = Query(default=20, ge=1, le=60),
+        setup: str | None = Query(default=None),
+        day: str | None = Query(default=None),
+    ):
+        # Deliberately no bars: 20 cards of history is ~3,600 candles the user
+        # may never look at. The panel pulls them per card from /study/bars.
+        try:
+            when = date.fromisoformat(day) if day else date.today()
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid day: {day}")
+        deck = _study_deck()
+        cards = await asyncio.to_thread(deck.deal, when, count, setup)
+        meta = await asyncio.to_thread(deck.meta)
+        return {"day": when.isoformat(), "meta": meta, "cards": [card.question() for card in cards]}
+
+    @router.get("/study/bars")
+    async def study_bars(card_id: str = Query(...), market: str = Query(default="india")):
+        card = _study_deck().card(card_id)
+        if card is None:
+            raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
+        context, _ = await _study_bars(card, market)
+        # The forward bars are the answer and stay behind /study/reveal.
+        return {"id": card.id, "bars": context}
+
+    @router.get("/study/reveal")
+    async def study_reveal(card_id: str = Query(...), market: str = Query(default="india")):
+        card = _study_deck().card(card_id)
+        if card is None:
+            raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
+        _, forward = await _study_bars(card, market)
+        return {**card.answer(), "forward_bars": forward}
 
     @router.get("/scans/{scan_id}")
     async def scan_results(
