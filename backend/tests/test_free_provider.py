@@ -618,7 +618,18 @@ class FreeProviderRegressionTests(unittest.TestCase):
         self.assertEqual(snapshots[0].symbol, "TEST")
         schedule_refresh.assert_not_called()
 
-    def test_get_snapshots_refreshes_stale_closed_session_cache_inline(self) -> None:
+    def test_get_snapshots_serves_a_stale_closed_session_cache_and_refreshes_behind_it(self) -> None:
+        """A due close refresh must not be done inline.
+
+        This test used to assert the opposite -- that the request blocks until
+        the universe has been rebuilt. That is what took every screener down
+        on 2026-09-10: the bhavcopy pipeline had been failing for three days,
+        so `_market_close_refresh_due()` was permanently true, and each request
+        launched its own crawl of ~1,900 symbols. None finished, and the app
+        returned "Request failed: 500" on every scan while endpoints reading a
+        committed artifact stayed fast. Yesterday's close, clearly dated in the
+        payload, beats no answer at all.
+        """
         current_session = self.provider._current_or_previous_trading_day_ist()
         stale_session = self.provider._previous_trading_day(current_session).isoformat()
         row = self._snapshot_row(session_date=stale_session)
@@ -652,9 +663,9 @@ class FreeProviderRegressionTests(unittest.TestCase):
             snapshots = asyncio.run(self.provider.get_snapshots(1000.0))
 
         self.assertEqual(len(snapshots), 1)
-        self.assertEqual(snapshots[0].last_price, refreshed_row["last_price"])
-        load_or_refresh.assert_called_once_with(1000.0, True)
-        schedule_refresh.assert_not_called()
+        self.assertEqual(snapshots[0].last_price, row["last_price"], "the cached close is served as-is")
+        load_or_refresh.assert_not_called()
+        schedule_refresh.assert_called_once_with(1000.0, 1000.0, force_refresh=True)
 
     def test_force_refresh_rebuilds_closed_session_history_on_weekend(self) -> None:
         friday = datetime(2026, 4, 3, tzinfo=timezone.utc).date()
