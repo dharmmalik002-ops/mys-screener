@@ -303,6 +303,8 @@ class FreeMarketDataProvider:
         self._snapshots_memory_cache: dict[float, tuple[float, float, list[StockSnapshot]]] = {}
         self._snapshot_request_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._background_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
+        # monotonic deadline per cache key; see _schedule_close_refresh.
+        self._close_refresh_retry_after: dict[float, float] = {}
         self._live_snapshot_refresh_tasks: dict[float, asyncio.Task[list[StockSnapshot]]] = {}
         self._fundamentals_memory_cache: dict[str, CompanyFundamentals] = {}
         self._chart_symbol_scale_cache: tuple[float, dict[str, dict[str, Any]]] | None = None
@@ -438,21 +440,27 @@ class FreeMarketDataProvider:
         cached = self._snapshots_memory_cache.get(cache_key)
         if cached and cached[0] == cache_signature[0] and cached[1] == cache_signature[1]:
             if self.preferred_refresh_strategy() == "historical":
-                return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
+                # Stale-while-revalidate: we already hold a usable snapshot, so
+                # serve it and rebuild behind the request. Blocking here is what
+                # took the whole app down -- see _schedule_close_refresh.
+                self._schedule_close_refresh(cache_key, market_cap_min_crore)
+                return cached[2]
             if self._seed_snapshot_cache_needs_refresh():
                 self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
             return cached[2]
 
         cached_rows = await asyncio.to_thread(self._load_cached_snapshot_rows, market_cap_min_crore)
         if cached_rows:
-            if self.preferred_refresh_strategy() == "historical":
-                return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore, force_refresh=True)
             snapshots = await asyncio.to_thread(self._materialize_snapshot_rows, cached_rows)
             self._snapshots_memory_cache[cache_key] = (*self._snapshot_memory_signature(), snapshots)
-            if self._seed_snapshot_cache_needs_refresh():
+            if self.preferred_refresh_strategy() == "historical":
+                self._schedule_close_refresh(cache_key, market_cap_min_crore)
+            elif self._seed_snapshot_cache_needs_refresh():
                 self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
             return snapshots
 
+        # Nothing cached at all: there is genuinely nothing to serve, so this
+        # is the one path that waits for a build.
         return await self._get_or_create_snapshot_request_task(cache_key, market_cap_min_crore)
 
     async def get_index_quotes(self, symbols: list[str]) -> list[IndexQuoteItem]:
@@ -615,10 +623,12 @@ class FreeMarketDataProvider:
     ) -> list[StockSnapshot]:
         current_task = self._snapshot_request_tasks.get(cache_key)
         if current_task is not None:
-            snapshots = await current_task
-            if force_refresh and self._market_close_refresh_due():
-                return await self._load_snapshots_with_fallback(market_cap_min_crore, True)
-            return snapshots
+            # Join the in-flight build and take its result. This used to start
+            # ANOTHER full rebuild when the close refresh was still due --
+            # unregistered, so every concurrent request ran its own crawl of
+            # the whole universe, and because a due close refresh stays due
+            # until upstream data actually arrives, it never stopped.
+            return await current_task
 
         task = asyncio.create_task(self._load_snapshots_with_fallback(market_cap_min_crore, force_refresh))
         self._snapshot_request_tasks[cache_key] = task
@@ -663,6 +673,20 @@ class FreeMarketDataProvider:
             return snapshots
         except Exception:
             return await self.get_snapshots(market_cap_min_crore)
+
+    # How long to wait before trying a due close refresh again. A refresh that
+    # cannot advance the session date -- because the bhavcopy for that session
+    # has not landed -- leaves _market_close_refresh_due() true, so without a
+    # cooldown every request would queue another full rebuild of the universe.
+    CLOSE_REFRESH_RETRY_SECONDS = 900.0
+
+    def _schedule_close_refresh(self, cache_key: float, market_cap_min_crore: float) -> None:
+        """Kick off (at most) one post-close rebuild in the background."""
+        now = time.monotonic()
+        if now < self._close_refresh_retry_after.get(cache_key, 0.0):
+            return
+        self._close_refresh_retry_after[cache_key] = now + self.CLOSE_REFRESH_RETRY_SECONDS
+        self._schedule_background_snapshot_refresh(cache_key, market_cap_min_crore, force_refresh=True)
 
     def _schedule_background_snapshot_refresh(
         self,
