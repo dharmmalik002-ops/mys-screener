@@ -1,15 +1,26 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
+  getChart,
   getStudyBars,
   getStudyDeck,
   getStudyForward,
+  getStudyLibrary,
   getStudyReveal,
+  saveStudyLibrary,
+  searchStudySymbols,
   type StudyBar,
   type StudyCard,
   type StudyDeckResponse,
+  type StudyRecord,
   type StudyReveal,
 } from "../lib/api";
-import { StudyChart, type StudyChartStyle, type StudyDrawing, type StudyTool } from "./StudyChart";
+import {
+  StudyChart,
+  type StudyChartHandle,
+  type StudyChartStyle,
+  type StudyDrawing,
+  type StudyTool,
+} from "./StudyChart";
 
 import "./StudyPanel.css";
 
@@ -84,6 +95,7 @@ const TOOLS: Array<{ key: StudyTool; label: string; hint: string }> = [
   { key: "stop", label: "Stop", hint: "Click a price to place your stop" },
   { key: "trendline", label: "Trendline", hint: "Click start, then end" },
   { key: "measure", label: "Measure", hint: "Click start, then end — shows % move and bars" },
+  { key: "snip", label: "Snip", hint: "Drag a box to save that part of the chart as an image" },
 ];
 
 const STYLES: Array<{ key: StudyChartStyle; label: string }> = [
@@ -120,6 +132,20 @@ export function StudyPanel() {
   const [log, setLog] = useState<LogEntry[]>(() => readLog());
   const loggedRef = useRef<Set<string>>(new Set());
   const [barsByCard, setBarsByCard] = useState<Record<string, StudyBar[]>>({});
+  const chartHandle = useRef<StudyChartHandle | null>(null);
+  const [range, setRange] = useState<{ from: number; to: number } | null>(null);
+  const [initialRange, setInitialRange] = useState<{ from: number; to: number } | null>(null);
+
+  // Free study: any searched symbol, outside the deck. `null` means the drill.
+  const [freeStudy, setFreeStudy] = useState<{ symbol: string; name: string; bars: StudyBar[] } | null>(null);
+  // Index into freeStudy.bars where replay starts; null = show the whole chart.
+  const [freeAnchor, setFreeAnchor] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [matches, setMatches] = useState<Array<{ symbol: string; name: string }>>([]);
+  const [library, setLibrary] = useState<StudyRecord[]>([]);
+  const [libraryOpen, setLibraryOpen] = useState(false);
+  const [note, setNote] = useState("");
+  const [toast, setToast] = useState<string | null>(null);
   const [fwdByCard, setFwdByCard] = useState<Record<string, StudyBar[]>>({});
   const fetchingRef = useRef<Set<string>>(new Set());
 
@@ -169,8 +195,16 @@ export function StudyPanel() {
     setTool("stop");
   }
 
-  const bars = card ? barsByCard[card.id] ?? [] : [];
-  const forward = card ? fwdByCard[card.id] ?? [] : [];
+  // A free study splits its own bars at the replay anchor; a deck card gets its
+  // halves from the server, which is what keeps the deck's outcome hidden.
+  const deckBars = card ? barsByCard[card.id] ?? [] : [];
+  const deckForward = card ? fwdByCard[card.id] ?? [] : [];
+  const bars = freeStudy
+    ? freeAnchor == null
+      ? freeStudy.bars
+      : freeStudy.bars.slice(0, freeAnchor + 1)
+    : deckBars;
+  const forward = freeStudy ? (freeAnchor == null ? [] : freeStudy.bars.slice(freeAnchor + 1)) : deckForward;
 
   const fetchBars = useCallback((cardId: string) => {
     setBarsByCard((prev) => {
@@ -183,16 +217,17 @@ export function StudyPanel() {
   }, []);
 
   useEffect(() => {
+    if (freeStudy) return;
     if (card) fetchBars(card.id);
     const upcoming = cards[index + 1];
     if (upcoming) fetchBars(upcoming.id);
-  }, [card, cards, index, fetchBars]);
+  }, [freeStudy, card, cards, index, fetchBars]);
 
   // Keep a small lookahead of forward bars loaded. Only a few unseen sessions
   // are ever in the browser, so the outcome still has to be stepped into.
   useEffect(() => {
-    if (!card) return;
-    const have = forward.length;
+    if (!card || freeStudy) return;
+    const have = deckForward.length;
     const want = revealed + CHUNK;
     const key = `${card.id}@${have}`;
     if (have >= want || fetchingRef.current.has(key)) return;
@@ -204,7 +239,7 @@ export function StudyPanel() {
       })
       .catch(() => {})
       .finally(() => fetchingRef.current.delete(key));
-  }, [card, forward.length, revealed]);
+  }, [card, freeStudy, deckForward.length, revealed]);
 
   const entryIndex = entryAt != null && bars.length ? bars.length - 1 + entryAt : null;
   const entryPrice =
@@ -278,6 +313,129 @@ export function StudyPanel() {
     });
   }, [reveal]);
 
+  // --- Library, search, capture ---------------------------------------------
+
+  useEffect(() => {
+    getStudyLibrary()
+      .then((payload) => setLibrary(Array.isArray(payload.studies) ? payload.studies : []))
+      .catch(() => {
+        /* an unreachable library must not take the drill down */
+      });
+  }, []);
+
+  const flash = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2600);
+  }, []);
+
+  const persist = useCallback(
+    (studies: StudyRecord[]) => {
+      setLibrary(studies);
+      saveStudyLibrary(studies).catch(() => flash("Could not save — the backend did not accept it."));
+    },
+    [flash],
+  );
+
+  useEffect(() => {
+    const needle = query.trim();
+    if (needle.length < 2) {
+      setMatches([]);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      searchStudySymbols(needle).then((r) => setMatches(r.results)).catch(() => setMatches([]));
+    }, 200);
+    return () => window.clearTimeout(timer);
+  }, [query]);
+
+  const openSymbol = useCallback(
+    (symbol: string, name: string, restore?: StudyRecord) => {
+      setQuery("");
+      setMatches([]);
+      setLibraryOpen(false);
+      getChart(symbol, "1D", "india")
+        .then((chart) => {
+          const bars = (chart.bars ?? []) as unknown as StudyBar[];
+          if (!bars.length) {
+            flash(`No history for ${symbol}.`);
+            return;
+          }
+          setFreeStudy({ symbol, name, bars });
+          setDrawings((restore?.drawings as StudyDrawing[]) ?? []);
+          setStop(restore?.stop ?? null);
+          setNote(restore?.note ?? "");
+          setInitialRange(restore?.from && restore?.to ? { from: restore.from, to: restore.to } : null);
+          setPhase("watching");
+          setRevealed(0);
+          setEntryAt(null);
+          setReveal(null);
+          setAction(null);
+          if (restore?.style) setStyle(restore.style as StudyChartStyle);
+        })
+        .catch((err) => flash(err instanceof Error ? err.message : String(err)));
+    },
+    [flash],
+  );
+
+  const saveStudy = useCallback(() => {
+    const symbol = freeStudy?.symbol ?? card?.symbol;
+    if (!symbol) return;
+    const record: StudyRecord = {
+      id: `${symbol}-${Date.now()}`,
+      symbol,
+      name: freeStudy?.name ?? card?.name,
+      note: note.trim() || undefined,
+      savedAt: new Date().toISOString(),
+      cardId: freeStudy ? null : card?.id ?? null,
+      triggerDate: freeStudy ? null : card?.trigger_date ?? null,
+      from: range?.from ?? null,
+      to: range?.to ?? null,
+      style,
+      stop,
+      drawings,
+    };
+    persist([record, ...library]);
+    flash(`Saved ${symbol} to your library.`);
+  }, [freeStudy, card, note, range, style, stop, drawings, library, persist, flash]);
+
+  const download = useCallback(
+    async (crop?: { x0: number; y0: number; x1: number; y1: number }) => {
+      const blob = await chartHandle.current?.capture();
+      if (!blob) return;
+      const symbol = freeStudy?.symbol ?? card?.symbol ?? "chart";
+      let out = blob;
+      if (crop) {
+        // The capture is at device-pixel scale while the rect is in CSS pixels,
+        // so the crop is taken as a proportion of the image rather than raw px.
+        const bitmap = await createImageBitmap(blob);
+        const node = document.querySelector(".study-chart-wrap") as HTMLElement | null;
+        const sx = bitmap.width / (node?.clientWidth || bitmap.width);
+        const sy = bitmap.height / (node?.clientHeight || bitmap.height);
+        const x = Math.min(crop.x0, crop.x1) * sx;
+        const y = Math.min(crop.y0, crop.y1) * sy;
+        const w = Math.abs(crop.x1 - crop.x0) * sx;
+        const h = Math.abs(crop.y1 - crop.y0) * sy;
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.max(1, Math.round(w));
+        canvas.height = Math.max(1, Math.round(h));
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(bitmap, x, y, w, h, 0, 0, canvas.width, canvas.height);
+        const cropped = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+        if (!cropped) return;
+        out = cropped;
+      }
+      const url = URL.createObjectURL(out);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${symbol}-${new Date().toISOString().slice(0, 10)}.png`;
+      link.click();
+      URL.revokeObjectURL(url);
+      flash(crop ? "Region saved as PNG." : "Chart saved as PNG.");
+    },
+    [freeStudy, card, flash],
+  );
+
   const step = useCallback(() => {
     if (phase === "done") return;
     setRevealed((n) => (n < stepCeiling ? n + 1 : n));
@@ -317,14 +475,16 @@ export function StudyPanel() {
       else if (key === "n") next();
       else if (event.key === "ArrowLeft") prev();
       else if (key === "u") setDrawings((d) => d.slice(0, -1));
-      else if (key === "1") setTool("cursor");
-      else if (key === "2") setTool("stop");
-      else if (key === "3") setTool("trendline");
-      else if (key === "4") setTool("measure");
+      else if (event.key === "Escape") setTool("cursor");
+      else if (key === "s") saveStudy();
+      else if ("12345".includes(key)) {
+        const picked = TOOLS[Number(key) - 1]?.key;
+        if (picked) setTool((current) => (current === picked ? "cursor" : picked));
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, step, next, prev, enterHere, pass]);
+  }, [phase, step, next, prev, enterHere, pass, saveStudy]);
 
   const stats = useMemo(() => {
     const taken = log.filter((e) => e.action === "entered" && e.r != null);
@@ -373,6 +533,28 @@ export function StudyPanel() {
           </p>
         </div>
         <div className="study-head-right">
+          <div className="study-search">
+            <input
+              type="search"
+              value={query}
+              placeholder="Search any stock…"
+              onChange={(e) => setQuery(e.target.value)}
+            />
+            {matches.length ? (
+              <ul className="study-search-results">
+                {matches.map((m) => (
+                  <li key={m.symbol}>
+                    <button type="button" onClick={() => openSymbol(m.symbol, m.name)}>
+                      <strong>{m.symbol}</strong> <span>{m.name}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+          <button type="button" className={`study-lib-toggle ${libraryOpen ? "active" : ""}`} onClick={() => setLibraryOpen((v) => !v)}>
+            Library {library.length ? `(${library.length})` : ""}
+          </button>
           <div className="study-filters">
             {[null, "vcp", "high-tight-flag"].map((key) => (
               <button key={key ?? "all"} type="button" className={setupFilter === key ? "active" : ""} onClick={() => setSetupFilter(key)}>
@@ -390,7 +572,15 @@ export function StudyPanel() {
             <div className="study-toolbar">
               <div className="study-tools">
                 {TOOLS.map((t, i) => (
-                  <button key={t.key} type="button" title={`${t.hint} (${i + 1})`} className={tool === t.key ? "active" : ""} onClick={() => setTool(t.key)}>
+                  <button
+                    key={t.key}
+                    type="button"
+                    title={`${t.hint} (${i + 1}${tool === t.key ? " — click again or Esc to drop it" : ""})`}
+                    className={tool === t.key ? "active" : ""}
+                    // Clicking the active tool releases it. Being stuck in a
+                    // drawing tool with no way out was the complaint.
+                    onClick={() => setTool((current) => (current === t.key ? "cursor" : t.key))}
+                  >
                     {t.label}
                   </button>
                 ))}
@@ -404,11 +594,21 @@ export function StudyPanel() {
                     {s.label}
                   </button>
                 ))}
+                <button type="button" title="Save this chart to your library (S)" onClick={saveStudy}>Save</button>
+                <button type="button" title="Download the whole chart as PNG" onClick={() => void download()}>PNG</button>
               </div>
             </div>
 
             <div className="study-card-title">
-              {phase === "done" ? (
+              {freeStudy ? (
+                <span>
+                  <strong>{freeStudy.symbol}</strong> · {freeStudy.name}
+                  {freeAnchor != null ? " · replaying" : " · free study"}
+                  <button type="button" className="study-back" onClick={() => { setFreeStudy(null); setFreeAnchor(null); setDrawings([]); setStop(null); setNote(""); setInitialRange(null); }}>
+                    back to deck
+                  </button>
+                </span>
+              ) : phase === "done" ? (
                 <span><strong>{card.symbol}</strong> · {card.name} · {card.label} · signal {card.trigger_date}</span>
               ) : (
                 <span className="study-masked">{card.label} · hidden symbol</span>
@@ -424,6 +624,7 @@ export function StudyPanel() {
                 forwardBars={forward}
                 revealed={revealed}
                 entryIndex={entryIndex}
+                signalLabel={freeStudy ? (freeAnchor == null ? null : "replay start") : "signal"}
                 entryPrice={entryPrice}
                 stop={stop}
                 style={style}
@@ -431,13 +632,33 @@ export function StudyPanel() {
                 drawings={drawings}
                 onDrawingsChange={setDrawings}
                 onPickPrice={(price) => phase === "watching" && setStop(Number(price.toFixed(2)))}
-                onPickEntry={enterHere}
+                onPickEntry={(time) => {
+                  if (freeStudy && freeAnchor == null) {
+                    const idx = freeStudy.bars.findIndex((b) => b.time >= time);
+                    if (idx > 20) {
+                      setFreeAnchor(idx);
+                      setRevealed(0);
+                    }
+                    return;
+                  }
+                  enterHere();
+                }}
+                onSnip={(rect) => void download(rect)}
+                onRangeChange={setRange}
+                initialRange={initialRange}
+                ref={chartHandle}
               />
             ) : (
               <div className="study-chart-loading">Loading {card.symbol} history…</div>
             )}
 
             <div className="study-stepper">
+              {freeStudy && freeAnchor == null ? (
+                <span className="study-running">
+                  Whole chart. Pick the Enter tool and click a session to replay forward from there.
+                </span>
+              ) : (
+              <>
               <button type="button" onClick={step} disabled={phase === "done" || atCeiling}>
                 {phase === "watching" ? `Wait a day (${revealed} / ${waitBars})` : `Hold a day (${entryAt != null ? revealed - entryAt : 0} / ${holdBars})`}
               </button>
@@ -455,11 +676,60 @@ export function StudyPanel() {
                   <>{revealed} session{revealed === 1 ? "" : "s"} since the signal — press → to wait, E to enter here.</>
                 ) : null}
               </span>
+              </>
+              )}
             </div>
           </div>
 
           <aside className="study-side">
-            {phase === "watching" ? (
+            {libraryOpen ? (
+              <div className="study-library">
+                <h3>Saved studies</h3>
+                {library.length ? (
+                  <ul>
+                    {library.map((item) => (
+                      <li key={item.id}>
+                        <button type="button" onClick={() => openSymbol(item.symbol, item.name ?? item.symbol, item)}>
+                          <strong>{item.symbol}</strong>
+                          <span>{item.note || new Date(item.savedAt).toLocaleDateString("en-IN")}</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="study-lib-del"
+                          title="Delete this study"
+                          onClick={() => persist(library.filter((x) => x.id !== item.id))}
+                        >
+                          ×
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="study-note">Nothing saved yet. Open a chart, draw on it, then press Save.</p>
+                )}
+              </div>
+            ) : null}
+
+            {freeStudy ? (
+              <div className="study-call">
+                <h3>Study notes</h3>
+                <textarea
+                  className="study-note-field"
+                  value={note}
+                  placeholder="What are you looking at here?"
+                  onChange={(e) => setNote(e.target.value)}
+                />
+                <div className="study-actions">
+                  <button type="button" className="study-buy" onClick={saveStudy}>Save study</button>
+                  <button type="button" className="study-pass" onClick={() => void download()}>PNG</button>
+                </div>
+                <p className="study-note">
+                  Saved studies keep the symbol, the visible dates, your drawings and this note. Reopen one from
+                  Library and you land exactly where you left it.
+                </p>
+              </div>
+            ) : null}
+            {phase === "watching" && (!freeStudy || freeAnchor != null) ? (
               <div className="study-call">
                 <h3>Your call</h3>
                 <label className="study-stop-field">
@@ -563,6 +833,8 @@ export function StudyPanel() {
           </aside>
         </div>
       ) : null}
+
+      {toast ? <div className="study-toast">{toast}</div> : null}
 
       <footer className="study-foot">
         Deck: {deck.meta.total_cards ?? 0} cards ({deck.meta.wins ?? 0} win / {deck.meta.losses ?? 0} loss) from{" "}

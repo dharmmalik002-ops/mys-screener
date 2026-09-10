@@ -1,4 +1,5 @@
 import asyncio
+import json
 from datetime import date
 from pathlib import Path
 
@@ -38,6 +39,7 @@ def build_router(service):
     # Built on first request and kept for the process — the deck file is a few
     # MB of JSON and reparsing it per request would show up on every card flip.
     _study_deck_singleton = None
+    _study_universe_cache: list[dict] | None = None
 
     def default_index_symbols(market: str | None) -> list[str]:
         return ["^NSEI", "^BSESN", "^NSEBANK"]
@@ -91,6 +93,17 @@ def build_router(service):
     # only read it. Bars are split at the trigger date so the question and the
     # answer travel in separate responses — a card carrying its own forward bars
     # would leak the answer into the browser before the user has called it.
+
+    def _study_universe() -> list[dict]:
+        nonlocal _study_universe_cache
+        if _study_universe_cache is None:
+            path = Path(__file__).resolve().parents[2] / "data" / "free_universe.json"
+            try:
+                rows = json.loads(path.read_text(encoding="utf-8"))
+                _study_universe_cache = [r for r in rows if isinstance(r, dict)]
+            except (OSError, json.JSONDecodeError):
+                _study_universe_cache = []
+        return _study_universe_cache
 
     def _study_deck():
         from app.services import study_deck as sd_module
@@ -174,6 +187,53 @@ def build_router(service):
             "total": len(forward),
             "exhausted": offset + len(window) >= len(forward),
         }
+
+    @router.get("/study/library")
+    async def study_library():
+        return await asyncio.to_thread(resolve_service("india").get_study_library)
+
+    @router.put("/study/library")
+    async def save_study_library(payload: dict):
+        try:
+            return await asyncio.to_thread(resolve_service("india").save_study_library, payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    @router.get("/study/search")
+    async def study_search(q: str = Query(..., min_length=1), limit: int = Query(default=12, ge=1, le=50)):
+        """Symbol lookup for pulling any stock into the gym, not just deck cards.
+
+        Prefix matches on the ticker rank above everything else — someone typing
+        "TAT" wants TATAMOTORS long before a company whose description happens to
+        contain the word.
+        """
+
+        def search():
+            rows = _study_universe()
+            needle = q.strip().upper()
+            if not needle:
+                return {"query": q, "results": []}
+            scored: list[tuple[int, str, dict]] = []
+            for row in rows:
+                symbol = str(row.get("symbol") or "").upper()
+                name = str(row.get("name") or "")
+                if not symbol:
+                    continue
+                if symbol == needle:
+                    rank = 0
+                elif symbol.startswith(needle):
+                    rank = 1
+                elif needle in symbol:
+                    rank = 2
+                elif needle in name.upper():
+                    rank = 3
+                else:
+                    continue
+                scored.append((rank, symbol, {"symbol": symbol, "name": name}))
+            scored.sort(key=lambda item: (item[0], item[1]))
+            return {"query": q, "results": [row for _, _, row in scored[:limit]]}
+
+        return await asyncio.to_thread(search)
 
     @router.get("/study/reveal")
     async def study_reveal(card_id: str = Query(...)):
