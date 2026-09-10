@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ColorType,
   CrosshairMode,
@@ -7,6 +7,8 @@ import {
   type IChartApi,
   type IPriceLine,
   type ISeriesApi,
+  type MouseEventParams,
+  type SeriesType,
   type UTCTimestamp,
 } from "lightweight-charts";
 import type { StudyBar } from "../lib/api";
@@ -28,55 +30,83 @@ const OVERLAYS = [
   { key: "ema50", span: 50, color: "#8b5cf6", width: 2 },
 ] as const;
 
+export type StudyChartStyle = "candles" | "bars" | "hlc";
+export type StudyTool = "cursor" | "stop" | "trendline" | "measure";
+
+/** A two-point drawing anchored in (time, price) so it survives pan and zoom. */
+export type StudyDrawing = {
+  id: string;
+  kind: "trendline" | "measure";
+  from: { time: number; price: number };
+  to: { time: number; price: number };
+};
+
 type Props = {
-  /** Bars up to and including the trigger session. */
   contextBars: StudyBar[];
-  /** Bars after the trigger. Only the first `revealed` of them are drawn. */
   forwardBars: StudyBar[];
   revealed: number;
-  entry: number;
-  /** The stop the user placed, or null while they have not placed one. */
+  /** Index into the combined series where the position was opened, or null. */
+  entryIndex: number | null;
+  entryPrice: number | null;
   stop: number | null;
-  /** Called with the price under the click, so the panel can set the stop. */
+  style: StudyChartStyle;
+  tool: StudyTool;
+  drawings: StudyDrawing[];
+  onDrawingsChange: (drawings: StudyDrawing[]) => void;
   onPickPrice?: (price: number) => void;
+  /** Fired when the newest visible session is clicked in cursor mode. */
+  onPickEntry?: () => void;
   height?: number;
 };
 
+const fmt = (v: number) => v.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
 /**
- * The drill chart. Draws candles truncated at the trigger bar, then extends
- * them one session at a time as the user steps forward.
+ * The drill chart: candles (or bars) truncated at the session the user has
+ * stepped to, plus the two measuring tools that matter for placing a stop.
  *
- * Chart creation and data updates are deliberately split across two effects:
- * placing a stop or revealing a bar must not tear down and rebuild the chart,
- * which would reset the user's zoom on every keypress.
+ * Drawings live in (time, price) space and are re-projected to pixels on every
+ * pan, zoom and data change — anchoring them to screen coordinates would slide
+ * them off the bars they were drawn against the moment the chart moved.
  */
 export function StudyChart({
   contextBars,
   forwardBars,
   revealed,
-  entry,
+  entryIndex,
+  entryPrice,
   stop,
+  style,
+  tool,
+  drawings,
+  onDrawingsChange,
   onPickPrice,
-  height = 420,
+  onPickEntry,
+  height = 460,
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const overlayRef = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const candlesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const priceRef = useRef<ISeriesApi<SeriesType> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-  const overlayRefs = useRef<Record<string, ISeriesApi<"Line">>>({});
+  const maRefs = useRef<Record<string, ISeriesApi<"Line">>>({});
   const entryLineRef = useRef<IPriceLine | null>(null);
   const stopLineRef = useRef<IPriceLine | null>(null);
-  const pickRef = useRef(onPickPrice);
-  pickRef.current = onPickPrice;
+  const [draft, setDraft] = useState<StudyDrawing["from"] | null>(null);
+  const [hover, setHover] = useState<StudyDrawing["from"] | null>(null);
+
+  // Handlers change every render; the chart subscribes once. Refs keep the
+  // live versions reachable without tearing the chart down on each keystroke.
+  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, draft });
+  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, draft };
 
   const visible = useMemo(() => {
     const context = contextBars.filter((b) => Number.isFinite(b.close) && b.close > 0);
     const lastContextTime = context.length ? context[context.length - 1].time : -Infinity;
     // Moving to the next card swaps `contextBars` a render before the panel's
-    // reset effect clears `forwardBars`, so for one frame the two belong to
-    // different symbols. Appending them blindly hands lightweight-charts a
-    // series that jumps backwards in time, which it turns into a hard assertion
-    // and a blank page. Only bars that actually follow the trigger are drawn.
+    // reset clears `forwardBars`, so for one frame the two belong to different
+    // symbols. Appending blindly hands lightweight-charts a series that jumps
+    // backwards in time, which it turns into a hard assertion and a blank page.
     const forward = forwardBars
       .filter((b) => Number.isFinite(b.close) && b.close > 0 && b.time > lastContextTime)
       .slice(0, Math.max(0, revealed));
@@ -84,7 +114,7 @@ export function StudyChart({
     const closes = clean.map((b) => b.close);
     return {
       clean,
-      triggerIndex: contextBars.length - 1,
+      triggerIndex: context.length - 1,
       emas: Object.fromEntries(OVERLAYS.map((o) => [o.key, emaSeries(closes, o.span)])) as Record<
         string,
         (number | null)[]
@@ -92,14 +122,14 @@ export function StudyChart({
     };
   }, [contextBars, forwardBars, revealed]);
 
-  // --- Create once per mount -------------------------------------------------
+  // --- Chart creation. Re-runs on style change: lightweight-charts has no
+  //     "convert this series to bars", so the series is rebuilt instead. ------
   useEffect(() => {
     const node = containerRef.current;
     if (!node) return;
 
     const styles = getComputedStyle(document.documentElement);
     const textColor = styles.getPropertyValue("--text-muted").trim() || "#64748b";
-    const lineColor = styles.getPropertyValue("--line").trim() || "rgba(100,140,200,0.15)";
 
     const chart = createChart(node, {
       height,
@@ -109,7 +139,8 @@ export function StudyChart({
         fontSize: 11,
         fontFamily: "'JetBrains Mono', 'SF Mono', Menlo, monospace",
       },
-      grid: { vertLines: { color: lineColor }, horzLines: { color: lineColor } },
+      // No grid: it competes with the trendlines and measurements drawn on top.
+      grid: { vertLines: { visible: false }, horzLines: { visible: false } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.28 } },
       timeScale: { borderVisible: false, rightOffset: 6 },
       crosshair: { mode: CrosshairMode.Normal },
@@ -117,14 +148,25 @@ export function StudyChart({
     });
     chartRef.current = chart;
 
-    candlesRef.current = chart.addCandlestickSeries({
-      upColor: "#22c55e",
-      downColor: "#ef4444",
-      wickUpColor: "#22c55e",
-      wickDownColor: "#ef4444",
-      borderVisible: false,
-      priceFormat: { type: "price", precision: 2, minMove: 0.05 },
-    });
+    const up = "#22c55e";
+    const down = "#ef4444";
+    priceRef.current =
+      style === "candles"
+        ? chart.addCandlestickSeries({
+            upColor: up,
+            downColor: down,
+            wickUpColor: up,
+            wickDownColor: down,
+            borderVisible: false,
+            priceFormat: { type: "price", precision: 2, minMove: 0.05 },
+          })
+        : chart.addBarSeries({
+            upColor: up,
+            downColor: down,
+            thinBars: style === "hlc",
+            openVisible: style !== "hlc",
+            priceFormat: { type: "price", precision: 2, minMove: 0.05 },
+          });
 
     volumeRef.current = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
@@ -134,46 +176,68 @@ export function StudyChart({
     });
     chart.priceScale("vol").applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
 
-    for (const overlay of OVERLAYS) {
-      overlayRefs.current[overlay.key] = chart.addLineSeries({
-        color: overlay.color,
-        lineWidth: overlay.width,
+    for (const o of OVERLAYS) {
+      maRefs.current[o.key] = chart.addLineSeries({
+        color: o.color,
+        lineWidth: o.width,
         priceLineVisible: false,
         lastValueVisible: false,
         crosshairMarkerVisible: false,
       });
     }
 
-    // Clicking the chart places the stop. Converted through the candle series so
-    // the price matches the axis the user is actually looking at.
-    const unsubscribe = chart.subscribeClick((param) => {
-      const handler = pickRef.current;
-      const series = candlesRef.current;
-      if (!handler || !series || !param.point) return;
+    const anchorFrom = (param: MouseEventParams): StudyDrawing["from"] | null => {
+      const series = priceRef.current;
+      if (!series || !param.point || param.time == null) return null;
       const price = series.coordinateToPrice(param.point.y);
-      if (price != null && Number.isFinite(price)) handler(Number(price));
+      if (price == null || !Number.isFinite(price)) return null;
+      return { time: Number(param.time), price: Number(price) };
+    };
+
+    chart.subscribeClick((param) => {
+      const { tool: t, drawings: d, onDrawingsChange, onPickPrice, onPickEntry, draft: pending } = cb.current;
+      const anchor = anchorFrom(param);
+      if (!anchor) return;
+      if (t === "stop") {
+        onPickPrice?.(anchor.price);
+        return;
+      }
+      if (t === "cursor") {
+        onPickEntry?.();
+        return;
+      }
+      // Two-click tools: first click sets the anchor, second commits.
+      if (!pending) {
+        setDraft(anchor);
+        return;
+      }
+      onDrawingsChange([
+        ...d,
+        { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, kind: t, from: pending, to: anchor },
+      ]);
+      setDraft(null);
     });
 
+    chart.subscribeCrosshairMove((param) => setHover(anchorFrom(param)));
+
     return () => {
-      // subscribeClick returns void in v4; unsubscribing is by handler identity.
-      void unsubscribe;
       chartRef.current = null;
-      candlesRef.current = null;
+      priceRef.current = null;
       volumeRef.current = null;
-      overlayRefs.current = {};
+      maRefs.current = {};
       entryLineRef.current = null;
       stopLineRef.current = null;
       chart.remove();
     };
-  }, [height]);
+  }, [height, style]);
 
-  // --- Data ------------------------------------------------------------------
+  // --- Data --------------------------------------------------------------
   useEffect(() => {
-    const candles = candlesRef.current;
+    const price = priceRef.current;
     const volume = volumeRef.current;
-    if (!candles || !volume || visible.clean.length < 2) return;
+    if (!price || !volume || visible.clean.length < 2) return;
 
-    candles.setData(
+    price.setData(
       visible.clean.map((b) => ({
         time: b.time as UTCTimestamp,
         open: b.open,
@@ -187,62 +251,77 @@ export function StudyChart({
       visible.clean.map((b, i) => ({
         time: b.time as UTCTimestamp,
         value: Number(b.volume ?? 0),
-        // Revealed bars are tinted so the eye can tell the future from the past
-        // at a glance once stepping starts.
         color:
-          i > visible.triggerIndex
+          entryIndex != null && i >= entryIndex
             ? "rgba(59,130,246,0.55)"
-            : b.close >= b.open
-              ? "rgba(34,197,94,0.35)"
-              : "rgba(239,68,68,0.35)",
+            : i > visible.triggerIndex
+              ? "rgba(148,163,184,0.40)"
+              : b.close >= b.open
+                ? "rgba(34,197,94,0.35)"
+                : "rgba(239,68,68,0.35)",
       })),
     );
 
-    for (const overlay of OVERLAYS) {
-      const series = overlayRefs.current[overlay.key];
-      if (!series) continue;
-      series.setData(
+    for (const o of OVERLAYS) {
+      maRefs.current[o.key]?.setData(
         visible.clean
-          .map((b, i) => ({ time: b.time as UTCTimestamp, value: visible.emas[overlay.key][i] }))
+          .map((b, i) => ({ time: b.time as UTCTimestamp, value: visible.emas[o.key][i] }))
           .filter((p): p is { time: UTCTimestamp; value: number } => p.value != null && Number.isFinite(p.value)),
       );
     }
 
+    const markers = [];
     const trigger = visible.clean[visible.triggerIndex];
     if (trigger) {
-      candles.setMarkers([
-        {
-          time: trigger.time as UTCTimestamp,
-          position: "belowBar",
-          color: "#3b82f6",
-          shape: "arrowUp",
-          text: "signal",
-        },
-      ]);
+      markers.push({
+        time: trigger.time as UTCTimestamp,
+        position: "belowBar" as const,
+        color: "#64748b",
+        shape: "arrowUp" as const,
+        text: "signal",
+      });
     }
-  }, [visible]);
+    const entryBar = entryIndex != null ? visible.clean[entryIndex] : null;
+    if (entryBar) {
+      markers.push({
+        time: entryBar.time as UTCTimestamp,
+        position: "belowBar" as const,
+        color: "#3b82f6",
+        shape: "arrowUp" as const,
+        text: "entry",
+      });
+    }
+    price.setMarkers(markers);
+    // `style` is a dependency because switching candles/bars tears the series
+    // down and builds a new one — lightweight-charts cannot convert in place.
+    // Without it the rebuilt series keeps whatever data it was born with, which
+    // is none, and the chart goes blank.
+  }, [visible, entryIndex, style]);
 
-  // --- Entry / stop price lines ---------------------------------------------
+  // --- Entry / stop price lines -------------------------------------------
   useEffect(() => {
-    const candles = candlesRef.current;
-    if (!candles) return;
-
-    if (entryLineRef.current) candles.removePriceLine(entryLineRef.current);
-    entryLineRef.current = candles.createPriceLine({
-      price: entry,
-      color: "#3b82f6",
-      lineWidth: 1,
-      lineStyle: LineStyle.Dashed,
-      axisLabelVisible: true,
-      title: "entry",
-    });
-
+    const price = priceRef.current;
+    if (!price) return;
+    if (entryLineRef.current) {
+      price.removePriceLine(entryLineRef.current);
+      entryLineRef.current = null;
+    }
+    if (entryPrice != null && Number.isFinite(entryPrice)) {
+      entryLineRef.current = price.createPriceLine({
+        price: entryPrice,
+        color: "#3b82f6",
+        lineWidth: 1,
+        lineStyle: LineStyle.Dashed,
+        axisLabelVisible: true,
+        title: "entry",
+      });
+    }
     if (stopLineRef.current) {
-      candles.removePriceLine(stopLineRef.current);
+      price.removePriceLine(stopLineRef.current);
       stopLineRef.current = null;
     }
     if (stop != null && Number.isFinite(stop)) {
-      stopLineRef.current = candles.createPriceLine({
+      stopLineRef.current = price.createPriceLine({
         price: stop,
         color: "#ef4444",
         lineWidth: 2,
@@ -251,17 +330,119 @@ export function StudyChart({
         title: "stop",
       });
     }
-  }, [entry, stop, visible]);
+  }, [entryPrice, stop, visible, style]);
+
+  // --- Drawing overlay ----------------------------------------------------
+  // A separate canvas over the chart. lightweight-charts has no drawing
+  // primitives, and re-projecting on every render keeps the lines welded to the
+  // bars rather than to the viewport.
+  const paint = useCallback(() => {
+    const canvas = overlayRef.current;
+    const chart = chartRef.current;
+    const series = priceRef.current;
+    const node = containerRef.current;
+    if (!canvas || !chart || !series || !node) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const width = node.clientWidth;
+    const heightPx = node.clientHeight;
+    if (canvas.width !== width * dpr || canvas.height !== heightPx * dpr) {
+      canvas.width = width * dpr;
+      canvas.height = heightPx * dpr;
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${heightPx}px`;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, heightPx);
+
+    const project = (a: StudyDrawing["from"]) => {
+      const x = chart.timeScale().timeToCoordinate(a.time as UTCTimestamp);
+      const y = series.priceToCoordinate(a.price);
+      return x == null || y == null ? null : { x, y };
+    };
+
+    const barsBetween = (a: number, b: number) => {
+      const times = visible.clean.map((bar) => bar.time);
+      const ia = times.findIndex((t) => t >= Math.min(a, b));
+      const ib = times.findIndex((t) => t >= Math.max(a, b));
+      return ia < 0 || ib < 0 ? 0 : Math.abs(ib - ia);
+    };
+
+    const drawOne = (d: StudyDrawing, ghost: boolean) => {
+      const p1 = project(d.from);
+      const p2 = project(d.to);
+      if (!p1 || !p2) return;
+      const rising = d.to.price >= d.from.price;
+      const color = d.kind === "measure" ? (rising ? "#22c55e" : "#ef4444") : "#ffd36f";
+      ctx.save();
+      ctx.globalAlpha = ghost ? 0.6 : 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      if (d.kind === "measure") {
+        ctx.fillStyle = rising ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)";
+        ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+        ctx.setLineDash([4, 3]);
+      }
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      if (d.kind === "measure") {
+        const move = ((d.to.price - d.from.price) / d.from.price) * 100;
+        const label = `${move >= 0 ? "+" : ""}${move.toFixed(2)}%  ${fmt(Math.abs(d.to.price - d.from.price))}  ${barsBetween(d.from.time, d.to.time)} bars`;
+        ctx.font = "11px 'JetBrains Mono', Menlo, monospace";
+        const w = ctx.measureText(label).width + 10;
+        const bx = Math.min(p1.x, p2.x) + Math.abs(p2.x - p1.x) / 2 - w / 2;
+        const by = Math.min(p1.y, p2.y) - 20;
+        ctx.fillStyle = "rgba(15,23,42,0.92)";
+        ctx.fillRect(bx, by, w, 17);
+        ctx.strokeStyle = color;
+        ctx.strokeRect(bx, by, w, 17);
+        ctx.fillStyle = color;
+        ctx.fillText(label, bx + 5, by + 12);
+      }
+      ctx.restore();
+    };
+
+    for (const d of drawings) drawOne(d, false);
+    if (draft && hover) drawOne({ id: "draft", kind: tool === "measure" ? "measure" : "trendline", from: draft, to: hover }, true);
+  }, [drawings, draft, hover, tool, visible]);
+
+  useEffect(() => {
+    paint();
+    const chart = chartRef.current;
+    if (!chart) return;
+    void style; // repaint after a series rebuild swaps the price scale under us
+    const handler = () => paint();
+    chart.timeScale().subscribeVisibleLogicalRangeChange(handler);
+    window.addEventListener("resize", handler);
+    return () => {
+      chart.timeScale().unsubscribeVisibleLogicalRangeChange(handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, [paint, style]);
+
+  // Clear a half-finished drawing when the tool changes under the user.
+  useEffect(() => setDraft(null), [tool]);
 
   // Keep the base in view as forward bars extend the series to the right.
   useEffect(() => {
     const chart = chartRef.current;
     if (!chart || visible.clean.length < 2) return;
     chart.timeScale().setVisibleLogicalRange({
-      from: Math.max(0, visible.clean.length - 120),
+      from: Math.max(0, visible.clean.length - 130),
       to: visible.clean.length + 4,
     });
   }, [visible.clean.length]);
 
-  return <div ref={containerRef} className="study-chart" style={{ height }} />;
+  return (
+    <div className="study-chart-wrap" style={{ height }}>
+      <div ref={containerRef} className={`study-chart tool-${tool}`} style={{ height }} />
+      <canvas ref={overlayRef} className="study-chart-overlay" />
+    </div>
+  );
 }

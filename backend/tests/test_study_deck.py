@@ -140,6 +140,26 @@ class SplitBarsTests(unittest.TestCase):
             self.assertEqual(len(forward), 3)
             self.assertLess(context[-1]["time"], forward[0]["time"])
 
+    def test_forward_window_covers_waiting_plus_holding(self):
+        """The drill lets the user wait before entering and then hold, so a card
+        has to carry both halves — a 10-bar window would strand anyone who
+        waited more than a session or two."""
+        self.assertEqual(sd.REVEAL_BARS, sd.WAIT_BARS + sd.HOLD_BARS)
+        with tempfile.TemporaryDirectory() as tmp:
+            directory = Path(tmp)
+            (directory / "chart_cache").mkdir()
+            base = int(datetime(2026, 5, 4, tzinfo=timezone.utc).timestamp())
+            bars = [
+                {"time": base + i * 86400, "open": 10, "high": 11, "low": 9, "close": 10 + i, "volume": 100}
+                for i in range(60)
+            ]
+            (directory / "chart_cache" / "SYM__1D.json").write_text(
+                json.dumps({"symbol": "SYM", "bars": bars}), encoding="utf-8"
+            )
+            trigger = datetime.fromtimestamp(base + 5 * 86400, tz=timezone.utc).date().isoformat()
+            _, forward = sd.split_bars(directory, "SYM", trigger)
+            self.assertEqual(len(forward), sd.REVEAL_BARS)
+
     def test_unknown_symbol_returns_empty_rather_than_raising(self):
         with tempfile.TemporaryDirectory() as tmp:
             self.assertEqual(sd.split_bars(Path(tmp), "NOPE", "2026-05-07"), ([], []))

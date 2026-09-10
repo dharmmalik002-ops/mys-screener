@@ -145,16 +145,47 @@ def build_router(service):
         if card is None:
             raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
         context, _ = await _study_bars(card, market)
-        # The forward bars are the answer and stay behind /study/reveal.
+        # Forward bars are handed out a slice at a time by /study/forward.
         return {"id": card.id, "bars": context}
 
-    @router.get("/study/reveal")
-    async def study_reveal(card_id: str = Query(...), market: str = Query(default="india")):
+    @router.get("/study/forward")
+    async def study_forward(
+        card_id: str = Query(...),
+        offset: int = Query(default=0, ge=0, le=sd.REVEAL_BARS),
+        limit: int = Query(default=sd.FORWARD_CHUNK, ge=1, le=sd.REVEAL_BARS),
+        market: str = Query(default="india"),
+    ):
+        """The next few sessions after the trigger, from `offset`.
+
+        Sliced rather than sent whole because the user steps through these one
+        at a time and decides when to enter partway along. Shipping the full
+        window up front would put the outcome in the browser before any of it
+        had been earned, which is the one thing this page must not do.
+        """
         card = _study_deck().card(card_id)
         if card is None:
             raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
         _, forward = await _study_bars(card, market)
-        return {**card.answer(), "forward_bars": forward}
+        window = forward[offset: offset + limit]
+        return {
+            "id": card.id,
+            "offset": offset,
+            "bars": window,
+            "total": len(forward),
+            "exhausted": offset + len(window) >= len(forward),
+        }
+
+    @router.get("/study/reveal")
+    async def study_reveal(card_id: str = Query(...)):
+        """The scanner's reasoning and the fixed-rule outcome, once the trade is done.
+
+        Carries no bars: by the time this is asked for, the user has already
+        stepped through every session it would contain.
+        """
+        card = _study_deck().card(card_id)
+        if card is None:
+            raise HTTPException(status_code=404, detail=f"Unknown card: {card_id}")
+        return card.answer()
 
     @router.get("/scans/{scan_id}")
     async def scan_results(

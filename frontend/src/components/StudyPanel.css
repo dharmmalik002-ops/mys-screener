@@ -371,3 +371,63 @@
   font-size: 0.82rem;
   cursor: pointer;
 }
+
+
+/* --- Toolbar -------------------------------------------------------------- */
+
+.study-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.study-tools,
+.study-styles {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.study-tools button,
+.study-styles button {
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+  cursor: pointer;
+  transition: background var(--dur-fast, 120ms), color var(--dur-fast, 120ms);
+}
+
+.study-tools button.active,
+.study-styles button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.study-tools button:disabled { opacity: 0.4; cursor: default; }
+
+/* --- Chart + drawing overlay ---------------------------------------------- */
+
+.study-chart-wrap {
+  position: relative;
+  width: 100%;
+}
+
+/* The overlay carries the trendlines and measurements. It must never eat the
+   clicks the chart needs for its own crosshair and click handlers. */
+.study-chart-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.study-chart.tool-stop,
+.study-chart.tool-trendline,
+.study-chart.tool-measure { cursor: crosshair; }
+
+.study-chart.tool-cursor { cursor: pointer; }
