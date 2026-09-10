@@ -203,23 +203,7 @@ jobs:
           rm -rf /tmp/hf-deploy
           mkdir -p /tmp/hf-deploy
           rsync -a ./ /tmp/hf-deploy/ \
-            --exclude '.git' \
-            --exclude '.github' \
-            --exclude '.venv' \
-            --exclude 'backend/.venv' \
-            --exclude 'backend/venv' \
-            --exclude 'frontend/node_modules' \
-            --exclude 'frontend/public/api/free_snapshots.json' \
-            --exclude 'frontend/public/api/free_snapshots_us.json' \
-            --exclude 'test-results' \
-            --exclude 'tmp' \
-            --exclude 'backend/data/chart_cache' \
-            --exclude 'backend/data/chart_cache_us' \
-            --exclude 'backend/data/news_cache' \
-            --exclude 'backend/data/free_snapshots.json' \
-            --exclude 'backend/data/free_snapshots_us.json' \
-            --exclude 'backend/data/free_snapshots.json.gz' \
-            --exclude 'backend/data/free_snapshots_us.json.gz' \
+            --exclude-from '.github/hf-deploy-excludes.txt' \
             --exclude 'backend/data/xp_ma_state.json'
           cd /tmp/hf-deploy
           git init

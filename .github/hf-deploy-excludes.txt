@@ -1,0 +1,41 @@
+# What NOT to send to the Hugging Face Space, shared by every workflow that
+# pushes there (deploy.yml and daily-bhavcopy.yml).
+#
+# It lives in one file because the two lists drifted and it cost three days of
+# stale EOD data: daily-bhavcopy.yml was missing the liquid-glass-bg.jpg line,
+# and the Space's pre-receive hook rejects binary files outright --
+# "Your push was rejected because it contains binary files" -- so every run
+# from 2026-09-07 onwards generated and committed the day's bhavcopy and then
+# failed to deliver it. deploy.yml, which had the line, kept working, which is
+# why the Space only ever updated when a backend change happened to redeploy.
+#
+# rsync --exclude-from syntax: one pattern per line, blank lines and lines
+# starting with '#' or ';' ignored.
+
+# Repository and tooling
+.git
+.github
+.venv
+backend/.venv
+backend/venv
+frontend/node_modules
+test-results
+tmp
+
+# Binary assets. The Space refuses these unless they go through Xet/LFS, and
+# the backend image has no use for them.
+frontend/public/liquid-glass-bg.jpg
+
+# Snapshot caches. Rebuilt on the Space; the 29 MB frontend copy in particular
+# has no business in a backend image.
+backend/data/free_snapshots.json
+backend/data/free_snapshots.json.gz
+backend/data/free_snapshots_us.json
+backend/data/free_snapshots_us.json.gz
+frontend/public/api/free_snapshots.json
+frontend/public/api/free_snapshots_us.json
+
+# Runtime caches
+backend/data/chart_cache
+backend/data/chart_cache_us
+backend/data/news_cache
