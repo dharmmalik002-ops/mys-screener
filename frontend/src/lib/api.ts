@@ -3829,21 +3829,37 @@ function isWakingError(error: unknown): boolean {
   return MF_WAKING_PATTERN.test(error instanceof Error ? error.message : String(error ?? ""));
 }
 
-/** Retry through a cold start, then fail with something a human can act on. */
-async function whileWaking<T>(run: () => Promise<T>): Promise<T> {
+/** Retry through a cold start, then fail with something a human can act on.
+ *
+ * `label` names the thing being waited on. It defaults to the funds service
+ * because that was the original caller, but any page without a cached fallback
+ * can borrow this — and telling a Chart Gym user that "the funds service" is
+ * starting up is worse than saying nothing.
+ *
+ * `attempts` is caller-tunable for the same reason: 4 tries over ~12s is enough
+ * for a Space that is merely slow, but a Space that is fully asleep takes 30-60s
+ * to boot, and a page whose entire content is behind one request should wait
+ * that out rather than dead-end.
+ */
+async function whileWaking<T>(
+  run: () => Promise<T>,
+  options: { label?: string; attempts?: number } = {},
+): Promise<T> {
+  const label = options.label ?? "funds service";
+  const attempts = Math.max(1, options.attempts ?? MF_WAKE_ATTEMPTS);
   let lastError: unknown = null;
-  for (let attempt = 0; attempt < MF_WAKE_ATTEMPTS; attempt += 1) {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
     try {
       return await run();
     } catch (error) {
       lastError = error;
-      if (!isWakingError(error) || attempt === MF_WAKE_ATTEMPTS - 1) break;
+      if (!isWakingError(error) || attempt === attempts - 1) break;
       await new Promise((resolve) => setTimeout(resolve, MF_WAKE_BACKOFF_MS * (attempt + 1)));
     }
   }
   throw isWakingError(lastError)
-    ? new Error("The funds service is still starting up — this usually clears within a few seconds.")
-    : (lastError instanceof Error ? lastError : new Error("Could not reach the funds service."));
+    ? new Error(`The ${label} is still starting up — this usually clears within a minute.`)
+    : (lastError instanceof Error ? lastError : new Error(`Could not reach the ${label}.`));
 }
 
 export function getMfStatus() {
@@ -4454,22 +4470,30 @@ export function getStudyDeck(options: { count?: number; setup?: string | null; d
   if (options.day) params.set("day", options.day);
   // A cold Space parses the deck file on the first call, so this gets the same
   // generous timeout the other file-backed endpoints use.
-  return whileWaking(() =>
-    request<StudyDeckResponse>(`/api/study/deck?${params.toString()}`, undefined, { timeoutMs: 45000 }));
+  // 6 attempts with the escalating backoff spans ~40s, which covers a Space
+  // booting from cold. The whole page is behind this one call.
+  return whileWaking(
+    () => request<StudyDeckResponse>(`/api/study/deck?${params.toString()}`, undefined, { timeoutMs: 45000 }),
+    { label: "scanner backend", attempts: 6 },
+  );
 }
 
 export function getStudyBars(cardId: string) {
   // A cold Space has no chart_cache and fetches this symbol's history from the
   // provider on first ask, so this gets the long timeout.
-  return whileWaking(() =>
-    request<{ id: string; bars: StudyBar[] }>(
+  return whileWaking(
+    () => request<{ id: string; bars: StudyBar[] }>(
       `/api/study/bars?card_id=${encodeURIComponent(cardId)}`,
       undefined,
       { timeoutMs: 45000 },
-    ));
+    ),
+    { label: "scanner backend" },
+  );
 }
 
 export function getStudyReveal(cardId: string) {
-  return whileWaking(() =>
-    request<StudyReveal>(`/api/study/reveal?card_id=${encodeURIComponent(cardId)}`, undefined, { timeoutMs: 45000 }));
+  return whileWaking(
+    () => request<StudyReveal>(`/api/study/reveal?card_id=${encodeURIComponent(cardId)}`, undefined, { timeoutMs: 45000 }),
+    { label: "scanner backend" },
+  );
 }

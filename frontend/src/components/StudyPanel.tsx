@@ -278,7 +278,19 @@ export function StudyPanel() {
   }, [log]);
 
   if (loading) return <div className="study-state">Dealing today's cards…</div>;
-  if (error) return <div className="study-state study-error">Could not load the deck: {error}</div>;
+  if (error) {
+    // A sleeping Space is the overwhelmingly likely cause, and it wakes on the
+    // request that failed — so the useful thing here is a retry, not an
+    // apology the user can only answer by reloading the whole app.
+    return (
+      <div className="study-state study-error">
+        <p>Could not load the deck: {error}</p>
+        <button type="button" className="study-retry" onClick={() => load(setupFilter)}>
+          Try again
+        </button>
+      </div>
+    );
+  }
   if (!deck || !cards.length) {
     return (
       <div className="study-state">
