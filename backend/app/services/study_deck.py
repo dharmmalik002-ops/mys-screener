@@ -31,8 +31,16 @@ DECK_FILENAME = "study_deck.json"
 # How many sessions of context the card shows before the trigger bar. Enough to
 # see the prior advance that a VCP is digesting (a 90-day base plus its run-up).
 CONTEXT_BARS = 180
-# Forward bars handed over at reveal time — matches breakout_stats.HORIZON_SESSIONS.
-REVEAL_BARS = 10
+# How far past the trigger a card can run. The drill lets you wait before
+# committing and then holds the trade, so the window is both halves back to
+# back: WAIT_BARS of "not yet" plus HOLD_BARS of an open position.
+WAIT_BARS = 15
+HOLD_BARS = 15
+REVEAL_BARS = WAIT_BARS + HOLD_BARS
+# Bars are served in small slices as the user steps, never in one lump. The
+# outcome is the thing being tested, so it must not sit in the browser before
+# it has been earned — see the deck gotcha in CLAUDE.md.
+FORWARD_CHUNK = 4
 DEFAULT_DECK_SIZE = 20
 EPOCH = date(2026, 1, 1)
 
@@ -225,6 +233,8 @@ class StudyDeck:
             "by_setup": counts,
             "context_bars": CONTEXT_BARS,
             "reveal_bars": REVEAL_BARS,
+            "wait_bars": WAIT_BARS,
+            "hold_bars": HOLD_BARS,
             "served_at": datetime.now(timezone.utc).isoformat(),
         }
 

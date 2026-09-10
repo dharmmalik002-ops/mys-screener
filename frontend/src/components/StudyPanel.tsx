@@ -2,20 +2,23 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getStudyBars,
   getStudyDeck,
+  getStudyForward,
   getStudyReveal,
   type StudyBar,
   type StudyCard,
   type StudyDeckResponse,
   type StudyReveal,
 } from "../lib/api";
-import { StudyChart } from "./StudyChart";
+import { StudyChart, type StudyChartStyle, type StudyDrawing, type StudyTool } from "./StudyChart";
 
 import "./StudyPanel.css";
 
 const LOG_KEY = "study-drill-log:v1";
+const STYLE_KEY = "study-drill-style:v1";
+const CHUNK = 8;
 
-type Action = "buy" | "pass";
-type Phase = "call" | "stepping" | "done";
+type Action = "entered" | "passed";
+type Phase = "watching" | "holding" | "done";
 
 type LogEntry = {
   cardId: string;
@@ -23,9 +26,11 @@ type LogEntry = {
   symbol: string;
   gradedAt: string;
   action: Action;
+  /** Sessions waited after the signal before buying. */
+  waited: number | null;
+  entry: number | null;
   stop: number | null;
   riskPct: number | null;
-  /** R-multiple against the user's own stop. Null for a pass. */
   r: number | null;
   officialResult: string;
 };
@@ -33,8 +38,7 @@ type LogEntry = {
 function readLog(): LogEntry[] {
   if (typeof window === "undefined") return [];
   try {
-    const raw = window.localStorage.getItem(LOG_KEY);
-    const parsed = raw ? JSON.parse(raw) : [];
+    const parsed = JSON.parse(window.localStorage.getItem(LOG_KEY) ?? "[]");
     return Array.isArray(parsed) ? (parsed as LogEntry[]) : [];
   } catch {
     return [];
@@ -50,52 +54,82 @@ function writeLog(entries: LogEntry[]): void {
 }
 
 /**
- * Grade the trade the user actually placed, against their own stop.
+ * Grade the trade the user actually placed: their entry bar, their stop.
  *
- * Deliberately not the deck's `result`: that is the fixed 3%/5%/10-session rule
- * the regime brief uses, which says nothing about whether *this* stop was well
- * chosen. Walking the same bars against the user's line is the whole point of
- * making them place one.
+ * Deliberately not the deck's `result`, which is the fixed 3%/5%/10-session
+ * rule measured from the signal close. That says nothing about whether waiting
+ * three days and stopping under the last contraction was the better trade —
+ * which is the entire thing being practised here.
  */
-function gradeBuy(
+function grade(
   entry: number,
   stop: number,
-  forward: StudyBar[],
-): { r: number; exit: number; exitIndex: number; stoppedOut: boolean } | null {
+  held: StudyBar[],
+): { r: number; exitIndex: number; stoppedOut: boolean } | null {
   const risk = entry - stop;
-  if (!(risk > 0) || !forward.length) return null;
-  for (let i = 0; i < forward.length; i += 1) {
-    if (forward[i].low <= stop) {
-      return { r: -1, exit: stop, exitIndex: i, stoppedOut: true };
-    }
+  if (!(risk > 0) || !held.length) return null;
+  for (let i = 0; i < held.length; i += 1) {
+    if (held[i].low <= stop) return { r: -1, exitIndex: i, stoppedOut: true };
   }
-  const last = forward[forward.length - 1];
-  return { r: (last.close - entry) / risk, exit: last.close, exitIndex: forward.length - 1, stoppedOut: false };
+  const last = held[held.length - 1];
+  return { r: (last.close - entry) / risk, exitIndex: held.length - 1, stoppedOut: false };
 }
 
 const fmt = (v: number | null | undefined, digits = 2) =>
   v == null || !Number.isFinite(v) ? "—" : v.toLocaleString("en-IN", { minimumFractionDigits: digits, maximumFractionDigits: digits });
-
 const signed = (v: number, digits = 2) => `${v >= 0 ? "+" : ""}${v.toFixed(digits)}`;
+
+const TOOLS: Array<{ key: StudyTool; label: string; hint: string }> = [
+  { key: "cursor", label: "Enter", hint: "Click the chart to buy the newest session" },
+  { key: "stop", label: "Stop", hint: "Click a price to place your stop" },
+  { key: "trendline", label: "Trendline", hint: "Click start, then end" },
+  { key: "measure", label: "Measure", hint: "Click start, then end — shows % move and bars" },
+];
+
+const STYLES: Array<{ key: StudyChartStyle; label: string }> = [
+  { key: "candles", label: "Candles" },
+  { key: "bars", label: "Bars" },
+  { key: "hlc", label: "HLC" },
+];
 
 export function StudyPanel() {
   const [deck, setDeck] = useState<StudyDeckResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [setupFilter, setSetupFilter] = useState<string | null>(null);
-
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("call");
-  const [stop, setStop] = useState<number | null>(null);
+
+  const [phase, setPhase] = useState<Phase>("watching");
   const [revealed, setRevealed] = useState(0);
+  const [entryAt, setEntryAt] = useState<number | null>(null);
+  const [stop, setStop] = useState<number | null>(null);
   const [reveal, setReveal] = useState<StudyReveal | null>(null);
   const [action, setAction] = useState<Action | null>(null);
+
+  const [tool, setTool] = useState<StudyTool>("stop");
+  const [drawings, setDrawings] = useState<StudyDrawing[]>([]);
+  const [style, setStyle] = useState<StudyChartStyle>(() => {
+    try {
+      const saved = window.localStorage.getItem(STYLE_KEY);
+      return saved === "bars" || saved === "hlc" ? saved : "candles";
+    } catch {
+      return "candles";
+    }
+  });
+
   const [log, setLog] = useState<LogEntry[]>(() => readLog());
   const loggedRef = useRef<Set<string>>(new Set());
-  // Bars are fetched per card rather than with the deal. Keyed by card id so
-  // stepping back to an already-seen card does not refetch, and so a slow
-  // response for card 3 can never paint itself onto card 4.
   const [barsByCard, setBarsByCard] = useState<Record<string, StudyBar[]>>({});
+  const [fwdByCard, setFwdByCard] = useState<Record<string, StudyBar[]>>({});
+  const fetchingRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(STYLE_KEY, style);
+    } catch {
+      /* ignore */
+    }
+  }, [style]);
 
   const load = useCallback((setup: string | null) => {
     setLoading(true);
@@ -115,190 +149,218 @@ export function StudyPanel() {
 
   const cards: StudyCard[] = deck?.cards ?? [];
   const card = cards[index] ?? null;
+  const waitBars = deck?.meta.wait_bars ?? 15;
+  const holdBars = deck?.meta.hold_bars ?? 15;
 
-  // Reset the per-card state during render rather than in an effect. An effect
-  // runs after paint, which leaves one frame where the new card's context bars
-  // are drawn against the previous card's forward bars — different symbols,
-  // timestamps that jump backwards, and a chart library assertion that blanks
-  // the page. Adjusting state during render means that frame never exists.
+  // Reset per-card state during render, not in an effect: an effect runs after
+  // paint, leaving one frame where the new card's context bars are drawn
+  // against the previous card's forward bars — timestamps that jump backwards,
+  // and a chart-library assertion that blanks the page.
   const [shownCardId, setShownCardId] = useState<string | null>(card?.id ?? null);
   if ((card?.id ?? null) !== shownCardId) {
     setShownCardId(card?.id ?? null);
-    setPhase("call");
-    setStop(null);
+    setPhase("watching");
     setRevealed(0);
+    setEntryAt(null);
+    setStop(null);
     setReveal(null);
     setAction(null);
+    setDrawings([]);
+    setTool("stop");
   }
+
+  const bars = card ? barsByCard[card.id] ?? [] : [];
+  const forward = card ? fwdByCard[card.id] ?? [] : [];
 
   const fetchBars = useCallback((cardId: string) => {
     setBarsByCard((prev) => {
       if (prev[cardId]) return prev;
       getStudyBars(cardId)
-        .then((payload) => setBarsByCard((current) => ({ ...current, [cardId]: payload.bars })))
-        .catch(() => {
-          /* one unreadable card should not take the drill down */
-        });
+        .then((p) => setBarsByCard((cur) => ({ ...cur, [cardId]: p.bars })))
+        .catch(() => {});
       return prev;
     });
   }, []);
 
   useEffect(() => {
     if (card) fetchBars(card.id);
-    // Warm the next card while this one is being read, so the drill does not
-    // stall for a network round trip on every "next".
     const upcoming = cards[index + 1];
     if (upcoming) fetchBars(upcoming.id);
   }, [card, cards, index, fetchBars]);
 
-  const bars = card ? barsByCard[card.id] ?? [] : [];
-  const forward = reveal?.forward_bars ?? [];
-  const grade = useMemo(
-    () => (card && stop != null && forward.length ? gradeBuy(card.entry, stop, forward) : null),
-    [card, stop, forward],
-  );
+  // Keep a small lookahead of forward bars loaded. Only a few unseen sessions
+  // are ever in the browser, so the outcome still has to be stepped into.
+  useEffect(() => {
+    if (!card) return;
+    const have = forward.length;
+    const want = revealed + CHUNK;
+    const key = `${card.id}@${have}`;
+    if (have >= want || fetchingRef.current.has(key)) return;
+    fetchingRef.current.add(key);
+    getStudyForward(card.id, have, CHUNK)
+      .then((p) => {
+        if (!p.bars.length) return;
+        setFwdByCard((cur) => ({ ...cur, [card.id]: [...(cur[card.id] ?? []), ...p.bars] }));
+      })
+      .catch(() => {})
+      .finally(() => fetchingRef.current.delete(key));
+  }, [card, forward.length, revealed]);
 
-  // Once stepping passes the bar that broke the stop, the trade is over.
-  const stoppedAt = grade?.stoppedOut ? grade.exitIndex : null;
-  const finished =
-    phase === "stepping" && (revealed >= forward.length || (stoppedAt != null && revealed > stoppedAt));
+  const entryIndex = entryAt != null && bars.length ? bars.length - 1 + entryAt : null;
+  const entryPrice =
+    entryAt == null ? null : entryAt === 0 ? (bars.length ? bars[bars.length - 1].close : null) : forward[entryAt - 1]?.close ?? null;
+
+  const held = entryAt != null ? forward.slice(entryAt, revealed) : [];
+  const result = entryPrice != null && stop != null ? grade(entryPrice, stop, held) : null;
+  const riskPct = entryPrice != null && stop != null && stop < entryPrice ? ((entryPrice - stop) / entryPrice) * 100 : null;
+
+  // Two different ceilings, and conflating them is what made the page claim the
+  // waiting room was full before a single bar had loaded. `windowCeiling` is the
+  // rule — how long you are allowed to wait, or to hold. `stepCeiling` also
+  // respects how much data has actually arrived, which is a loading state, not
+  // a decision point.
+  const windowCeiling = entryAt == null ? waitBars : entryAt + holdBars;
+  const stepCeiling = Math.min(windowCeiling, forward.length);
+  const atCeiling = revealed >= stepCeiling;
+  const outOfRoom = forward.length > 0 && revealed >= windowCeiling;
 
   useEffect(() => {
-    if (finished) setPhase("done");
-  }, [finished]);
+    if (phase !== "holding" || entryAt == null) return;
+    const doneStepping = revealed >= Math.min(entryAt + holdBars, forward.length) && forward.length > 0;
+    const stoppedOut = result?.stoppedOut && revealed > entryAt + result.exitIndex;
+    if (doneStepping || stoppedOut) setPhase("done");
+  }, [phase, entryAt, revealed, holdBars, forward.length, result]);
 
-  const riskPct = card && stop != null && stop < card.entry ? ((card.entry - stop) / card.entry) * 100 : null;
-
-  const commit = useCallback(
-    (chosen: Action) => {
-      if (!card || phase !== "call") return;
-      if (chosen === "buy" && (stop == null || stop >= card.entry)) return;
-      setAction(chosen);
-      getStudyReveal(card.id)
-        .then((payload) => {
-          setReveal(payload);
-          // A pass has nothing to step through — show the whole outcome at once.
-          if (chosen === "pass") {
-            setRevealed(payload.forward_bars.length);
-            setPhase("done");
-          } else {
-            setRevealed(0);
-            setPhase("stepping");
-          }
-        })
-        .catch((err) => setError(err instanceof Error ? err.message : String(err)));
-    },
-    [card, phase, stop],
-  );
-
-  // Record the grade exactly once per card, when the answer is fully known.
   useEffect(() => {
-    if (phase !== "done" || !card || !reveal || !action) return;
+    if (phase !== "done" || !card || reveal) return;
+    getStudyReveal(card.id)
+      .then(setReveal)
+      .catch((err) => setError(err instanceof Error ? err.message : String(err)));
+  }, [phase, card, reveal]);
+
+  useEffect(() => {
+    if (phase !== "done" || !card || !action) return;
     if (loggedRef.current.has(card.id)) return;
     loggedRef.current.add(card.id);
-    const entry: LogEntry = {
+    const entryLog: LogEntry = {
       cardId: card.id,
       setup: card.setup,
       symbol: card.symbol,
       gradedAt: new Date().toISOString(),
       action,
-      stop: action === "buy" ? stop : null,
-      riskPct: action === "buy" ? riskPct : null,
-      r: action === "buy" && grade ? Number(grade.r.toFixed(3)) : null,
-      officialResult: reveal.result,
+      waited: action === "entered" ? entryAt : null,
+      entry: action === "entered" ? entryPrice : null,
+      stop: action === "entered" ? stop : null,
+      riskPct: action === "entered" ? riskPct : null,
+      r: action === "entered" && result ? Number(result.r.toFixed(3)) : null,
+      // Filled in below once the reveal lands. Everything above is already
+      // known from the user's own trade, so the record is written now rather
+      // than waiting on a request the user can outrun by pressing Next.
+      officialResult: "pending",
     };
     setLog((prev) => {
-      const next = [...prev.filter((e) => e.cardId !== entry.cardId), entry];
+      const next = [...prev.filter((e) => e.cardId !== entryLog.cardId), entryLog];
       writeLog(next);
       return next;
     });
-  }, [phase, card, reveal, action, stop, riskPct, grade]);
+  }, [phase, card, action, entryAt, entryPrice, stop, riskPct, result]);
+
+  // The deck's own verdict arrives separately; fold it into the record when it does.
+  useEffect(() => {
+    if (!reveal) return;
+    setLog((prev) => {
+      const idx = prev.findIndex((e) => e.cardId === reveal.id && e.officialResult === "pending");
+      if (idx < 0) return prev;
+      const next = [...prev];
+      next[idx] = { ...next[idx], officialResult: reveal.result };
+      writeLog(next);
+      return next;
+    });
+  }, [reveal]);
 
   const step = useCallback(() => {
-    if (phase !== "stepping") return;
-    setRevealed((n) => Math.min(n + 1, forward.length));
-  }, [phase, forward.length]);
+    if (phase === "done") return;
+    setRevealed((n) => (n < stepCeiling ? n + 1 : n));
+  }, [phase, stepCeiling]);
 
-  const next = useCallback(() => {
-    setIndex((i) => Math.min(i + 1, Math.max(0, cards.length - 1)));
-  }, [cards.length]);
+  const enterHere = useCallback(() => {
+    if (phase !== "watching" || stop == null) return;
+    const price = revealed === 0 ? bars[bars.length - 1]?.close : forward[revealed - 1]?.close;
+    if (price == null || stop >= price) return;
+    setEntryAt(revealed);
+    setAction("entered");
+    setPhase("holding");
+  }, [phase, stop, revealed, bars, forward]);
 
+  const pass = useCallback(() => {
+    if (phase !== "watching") return;
+    setAction("passed");
+    setPhase("done");
+  }, [phase]);
+
+  const next = useCallback(() => setIndex((i) => Math.min(i + 1, Math.max(0, cards.length - 1))), [cards.length]);
   const prev = useCallback(() => setIndex((i) => Math.max(0, i - 1)), []);
 
-  // Keyboard: the drill is meant to run at 20 cards in ten minutes, which does
-  // not happen if every action needs the mouse.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
       if (target && ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName)) return;
+      const key = event.key.toLowerCase();
       if (event.key === "ArrowRight" || event.key === " ") {
         event.preventDefault();
-        if (phase === "stepping") step();
-        else if (phase === "done") next();
-      } else if (event.key.toLowerCase() === "b" && phase === "call") {
-        commit("buy");
-      } else if (event.key.toLowerCase() === "p" && phase === "call") {
-        commit("pass");
-      } else if (event.key.toLowerCase() === "n") {
-        next();
-      } else if (event.key === "ArrowLeft") {
-        prev();
-      }
+        // Deliberately does NOT advance the card when the trade is over: the
+        // step key held down through the last session would otherwise blow
+        // straight past the result. Moving on is N, or the button.
+        step();
+      } else if (key === "e" && phase === "watching") enterHere();
+      else if (key === "p" && phase === "watching") pass();
+      else if (key === "n") next();
+      else if (event.key === "ArrowLeft") prev();
+      else if (key === "u") setDrawings((d) => d.slice(0, -1));
+      else if (key === "1") setTool("cursor");
+      else if (key === "2") setTool("stop");
+      else if (key === "3") setTool("trendline");
+      else if (key === "4") setTool("measure");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, step, next, prev, commit]);
+  }, [phase, step, next, prev, enterHere, pass]);
 
   const stats = useMemo(() => {
-    const buys = log.filter((e) => e.action === "buy" && e.r != null);
-    const passes = log.filter((e) => e.action === "pass");
-    const totalR = buys.reduce((sum, e) => sum + (e.r ?? 0), 0);
-    const wins = buys.filter((e) => (e.r ?? 0) > 0).length;
+    const taken = log.filter((e) => e.action === "entered" && e.r != null);
+    const passes = log.filter((e) => e.action === "passed");
+    const total = taken.reduce((sum, e) => sum + (e.r ?? 0), 0);
+    const waits = taken.filter((e) => e.waited != null).map((e) => e.waited as number);
     return {
       graded: log.length,
-      buys: buys.length,
-      avgR: buys.length ? totalR / buys.length : null,
-      hitRate: buys.length ? (wins / buys.length) * 100 : null,
+      taken: taken.length,
+      avgR: taken.length ? total / taken.length : null,
+      hitRate: taken.length ? (taken.filter((e) => (e.r ?? 0) > 0).length / taken.length) * 100 : null,
       passes: passes.length,
-      // A pass is "right" when the card would not have paid under the deck rules.
-      passesRight: passes.filter((e) => e.officialResult !== "win").length,
+      passesRight: passes.filter((e) => e.officialResult === "loss" || e.officialResult === "timeout").length,
+      avgWait: waits.length ? waits.reduce((a, b) => a + b, 0) / waits.length : null,
     };
-  }, [log]);
-
-  const perSetup = useMemo(() => {
-    const rows = new Map<string, { setup: string; n: number; totalR: number }>();
-    for (const entry of log) {
-      if (entry.action !== "buy" || entry.r == null) continue;
-      const row = rows.get(entry.setup) ?? { setup: entry.setup, n: 0, totalR: 0 };
-      row.n += 1;
-      row.totalR += entry.r;
-      rows.set(entry.setup, row);
-    }
-    return [...rows.values()].map((r) => ({ ...r, avgR: r.totalR / r.n }));
   }, [log]);
 
   if (loading) return <div className="study-state">Dealing today's cards…</div>;
   if (error) {
-    // A sleeping Space is the overwhelmingly likely cause, and it wakes on the
-    // request that failed — so the useful thing here is a retry, not an
-    // apology the user can only answer by reloading the whole app.
     return (
       <div className="study-state study-error">
         <p>Could not load the deck: {error}</p>
-        <button type="button" className="study-retry" onClick={() => load(setupFilter)}>
-          Try again
-        </button>
+        <button type="button" className="study-retry" onClick={() => load(setupFilter)}>Try again</button>
       </div>
     );
   }
   if (!deck || !cards.length) {
     return (
       <div className="study-state">
-        No cards in the deck yet. Build one with{" "}
-        <code>python3 scripts/generate_study_deck.py --weeks 52</code>.
+        No cards in the deck yet. Build one with <code>python3 scripts/generate_study_deck.py --weeks 52</code>.
       </div>
     );
   }
+
+  const latestClose = revealed === 0 ? bars[bars.length - 1]?.close : forward[revealed - 1]?.close;
+  const canEnter = phase === "watching" && stop != null && latestClose != null && stop < latestClose;
 
   return (
     <div className="study-panel">
@@ -306,82 +368,98 @@ export function StudyPanel() {
         <div className="study-head-left">
           <h2>Chart Gym</h2>
           <p>
-            Read the chart, place a stop, call it. The outcome is hidden until you do.
-            <span className="study-hint"> B buy · P pass · → step · N next</span>
+            Step the tape, pick your own entry, place your own stop.
+            <span className="study-hint"> → step · E enter · P pass · U undo · 1-4 tools · N next</span>
           </p>
         </div>
         <div className="study-head-right">
           <div className="study-filters">
             {[null, "vcp", "high-tight-flag"].map((key) => (
-              <button
-                key={key ?? "all"}
-                type="button"
-                className={setupFilter === key ? "active" : ""}
-                onClick={() => setSetupFilter(key)}
-              >
+              <button key={key ?? "all"} type="button" className={setupFilter === key ? "active" : ""} onClick={() => setSetupFilter(key)}>
                 {key === null ? "Both" : key === "vcp" ? "VCP" : "Flags"}
               </button>
             ))}
           </div>
-          <div className="study-progress">
-            Card {index + 1} / {cards.length}
-          </div>
+          <div className="study-progress">Card {index + 1} / {cards.length}</div>
         </div>
       </header>
 
       {card ? (
         <div className="study-body">
           <div className="study-chart-col">
+            <div className="study-toolbar">
+              <div className="study-tools">
+                {TOOLS.map((t, i) => (
+                  <button key={t.key} type="button" title={`${t.hint} (${i + 1})`} className={tool === t.key ? "active" : ""} onClick={() => setTool(t.key)}>
+                    {t.label}
+                  </button>
+                ))}
+                <button type="button" className="study-undo" onClick={() => setDrawings((d) => d.slice(0, -1))} disabled={!drawings.length}>
+                  Undo
+                </button>
+              </div>
+              <div className="study-styles">
+                {STYLES.map((s) => (
+                  <button key={s.key} type="button" className={style === s.key ? "active" : ""} onClick={() => setStyle(s.key)}>
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="study-card-title">
-              {phase === "call" ? (
-                <span className="study-masked" title="Revealed once you have called it">
-                  {card.label} · hidden symbol
-                </span>
+              {phase === "done" ? (
+                <span><strong>{card.symbol}</strong> · {card.name} · {card.label} · signal {card.trigger_date}</span>
               ) : (
-                <span>
-                  <strong>{card.symbol}</strong> · {card.name} · {card.label} · {card.trigger_date}
-                </span>
+                <span className="study-masked">{card.label} · hidden symbol</span>
               )}
-              <span className="study-entry">Entry (signal close) {fmt(card.entry)}</span>
+              <span className="study-entry">
+                {entryPrice != null ? `Entry ${fmt(entryPrice)}` : latestClose != null ? `Last close ${fmt(latestClose)}` : "—"}
+              </span>
             </div>
 
             {bars.length ? (
-            <StudyChart
-              contextBars={bars}
-              forwardBars={forward}
-              revealed={revealed}
-              entry={card.entry}
-              stop={stop}
-              onPickPrice={phase === "call" ? (price) => setStop(Number(price.toFixed(2))) : undefined}
-            />
+              <StudyChart
+                contextBars={bars}
+                forwardBars={forward}
+                revealed={revealed}
+                entryIndex={entryIndex}
+                entryPrice={entryPrice}
+                stop={stop}
+                style={style}
+                tool={tool}
+                drawings={drawings}
+                onDrawingsChange={setDrawings}
+                onPickPrice={(price) => phase === "watching" && setStop(Number(price.toFixed(2)))}
+                onPickEntry={enterHere}
+              />
             ) : (
               <div className="study-chart-loading">Loading {card.symbol} history…</div>
             )}
 
-            {phase === "stepping" ? (
-              <div className="study-stepper">
-                <button type="button" onClick={step} disabled={revealed >= forward.length}>
-                  Step forward ({revealed} / {forward.length})
-                </button>
-                <span className="study-running">
-                  {revealed > 0 && forward[revealed - 1] ? (
-                    <>
-                      Close {fmt(forward[revealed - 1].close)} ·{" "}
-                      <em className={forward[revealed - 1].close >= card.entry ? "pos" : "neg"}>
-                        {signed(((forward[revealed - 1].close - card.entry) / card.entry) * 100)}%
-                      </em>
-                      {stoppedAt != null && revealed > stoppedAt ? <strong className="neg"> · stopped out</strong> : null}
-                    </>
-                  ) : (
-                    "Press → to advance one session at a time"
-                  )}
-                </span>
-              </div>
-            ) : null}
+            <div className="study-stepper">
+              <button type="button" onClick={step} disabled={phase === "done" || atCeiling}>
+                {phase === "watching" ? `Wait a day (${revealed} / ${waitBars})` : `Hold a day (${entryAt != null ? revealed - entryAt : 0} / ${holdBars})`}
+              </button>
+              <span className="study-running">
+                {phase === "watching" && outOfRoom ? (
+                  <>Out of waiting room — enter or pass.</>
+                ) : phase === "watching" && atCeiling && !forward.length ? (
+                  <>Loading the next sessions…</>
+                ) : phase === "holding" && result ? (
+                  <>
+                    Open: <em className={result.r >= 0 ? "pos" : "neg"}>{signed(result.r)}R</em>
+                    {result.stoppedOut && revealed > (entryAt ?? 0) + result.exitIndex ? <strong className="neg"> · stopped out</strong> : null}
+                  </>
+                ) : phase === "watching" ? (
+                  <>{revealed} session{revealed === 1 ? "" : "s"} since the signal — press → to wait, E to enter here.</>
+                ) : null}
+              </span>
+            </div>
           </div>
 
           <aside className="study-side">
-            {phase === "call" ? (
+            {phase === "watching" ? (
               <div className="study-call">
                 <h3>Your call</h3>
                 <label className="study-stop-field">
@@ -391,106 +469,80 @@ export function StudyPanel() {
                     step="0.05"
                     value={stop ?? ""}
                     placeholder="click the chart"
-                    onChange={(event) => {
-                      const value = Number(event.target.value);
-                      setStop(event.target.value === "" ? null : Number.isFinite(value) ? value : null);
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setStop(e.target.value === "" ? null : Number.isFinite(v) ? v : null);
                     }}
                   />
                 </label>
                 <p className="study-risk">
                   {stop == null
-                    ? "Click the chart where your stop belongs."
-                    : stop >= card.entry
-                      ? "Stop must sit below the entry."
-                      : `Risk ${riskPct?.toFixed(2)}% — a 1% account risk sizes this at ${(100 / (riskPct ?? 1)).toFixed(0)}% of the account`}
+                    ? "Pick the Stop tool and click where your stop belongs."
+                    : latestClose != null && stop >= latestClose
+                      ? "Stop must sit below the last close."
+                      : `Risk ${riskPct?.toFixed(2) ?? (latestClose ? (((latestClose - stop) / latestClose) * 100).toFixed(2) : "—")}% at today's close`}
                 </p>
                 <div className="study-actions">
-                  <button
-                    type="button"
-                    className="study-buy"
-                    disabled={stop == null || stop >= card.entry || !bars.length}
-                    onClick={() => commit("buy")}
-                  >
-                    Buy
-                  </button>
-                  <button type="button" className="study-pass" onClick={() => commit("pass")}>
-                    Pass
-                  </button>
+                  <button type="button" className="study-buy" disabled={!canEnter} onClick={enterHere}>Enter here</button>
+                  <button type="button" className="study-pass" onClick={pass}>Pass</button>
                 </div>
                 <p className="study-note">
-                  A pass is a real answer. Most setups should be passed — that is the skill.
+                  You can only buy the newest session — entering on a day you have already seen the future of
+                  would grade hindsight, not judgement.
                 </p>
               </div>
             ) : null}
 
-            {phase !== "call" && reveal ? (
+            {phase !== "watching" ? (
               <div className="study-reveal">
                 <h3>
-                  {action === "pass" ? (
-                    <>You passed</>
-                  ) : phase === "done" && grade ? (
-                    <>
-                      Your trade: <em className={grade.r >= 0 ? "pos" : "neg"}>{signed(grade.r)}R</em>
-                    </>
-                  ) : (
-                    // The R is known the moment the reveal lands, but showing it
-                    // here would hand over the answer before the user has walked
-                    // a single bar — which is the whole exercise.
-                    <>Your trade is running</>
-                  )}
+                  {action === "passed" ? <>You passed</> : phase === "done" && result ? (
+                    <>Your trade: <em className={result.r >= 0 ? "pos" : "neg"}>{signed(result.r)}R</em></>
+                  ) : <>Position open</>}
                 </h3>
 
-                {phase === "done" ? (
+                {phase === "done" && reveal ? (
                   <>
                     <dl className="study-facts">
+                      {action === "entered" ? (
+                        <div>
+                          <dt>Your trade</dt>
+                          <dd>
+                            Waited {entryAt} session{entryAt === 1 ? "" : "s"}, entered {fmt(entryPrice)}, stop {fmt(stop)} (risk {riskPct?.toFixed(1)}%)
+                          </dd>
+                        </div>
+                      ) : null}
                       <div>
-                        <dt>Under the deck rules</dt>
+                        <dt>Deck rules, from the signal close</dt>
                         <dd className={reveal.result === "win" ? "pos" : reveal.result === "loss" ? "neg" : ""}>
-                          {reveal.result} · best {signed(reveal.max_favourable_pct)}% · closed{" "}
-                          {signed(reveal.final_pct)}% after {reveal.sessions_held} sessions
+                          {reveal.result} · best {signed(reveal.max_favourable_pct)}% · closed {signed(reveal.final_pct)}% after {reveal.sessions_held} sessions
                         </dd>
                       </div>
                       {reveal.scanner_stop != null ? (
                         <div>
-                          <dt>Scanner's stop</dt>
+                          <dt>Scanner's plan</dt>
                           <dd>
-                            {fmt(reveal.scanner_stop)} (risk {reveal.scanner_risk_pct?.toFixed(1)}%)
-                            {stop != null ? (
-                              <span className="study-compare">
-                                {" "}
-                                — yours {stop < reveal.scanner_stop ? "wider" : "tighter"}
-                              </span>
-                            ) : null}
+                            stop {fmt(reveal.scanner_stop)} (risk {reveal.scanner_risk_pct?.toFixed(1)}%)
+                            {stop != null ? <span className="study-compare"> — yours {stop < reveal.scanner_stop ? "wider" : "tighter"}</span> : null}
                           </dd>
                         </div>
                       ) : null}
                       <div>
                         <dt>RS rating</dt>
-                        <dd>
-                          {reveal.rs_rating || "—"}
-                          {reveal.group_top_decile ? " · top-decile industry group" : ""}
-                        </dd>
+                        <dd>{reveal.rs_rating || "—"}{reveal.group_top_decile ? " · top-decile group" : ""}</dd>
                       </div>
                     </dl>
-
                     <h4>What the scanner saw</h4>
                     <ul className="study-reasons">
-                      {reveal.reasons.map((reason) => (
-                        <li key={reason}>{reason}</li>
-                      ))}
+                      {reveal.reasons.map((r) => <li key={r}>{r}</li>)}
                     </ul>
-
                     <div className="study-nav">
-                      <button type="button" onClick={prev} disabled={index === 0}>
-                        Previous
-                      </button>
-                      <button type="button" className="study-next" onClick={next} disabled={index >= cards.length - 1}>
-                        Next card →
-                      </button>
+                      <button type="button" onClick={prev} disabled={index === 0}>Previous</button>
+                      <button type="button" className="study-next" onClick={next} disabled={index >= cards.length - 1}>Next card →</button>
                     </div>
                   </>
                 ) : (
-                  <p className="study-note">Step through the sessions to see how it resolved.</p>
+                  <p className="study-note">Step the sessions to see how it resolves.</p>
                 )}
               </div>
             ) : null}
@@ -498,32 +550,15 @@ export function StudyPanel() {
             <div className="study-score">
               <h4>Your record</h4>
               <div className="study-score-grid">
-                <span>Graded</span>
-                <strong>{stats.graded}</strong>
-                <span>Bought</span>
-                <strong>{stats.buys}</strong>
+                <span>Graded</span><strong>{stats.graded}</strong>
+                <span>Taken</span><strong>{stats.taken}</strong>
                 <span>Avg R</span>
-                <strong className={stats.avgR != null && stats.avgR >= 0 ? "pos" : "neg"}>
-                  {stats.avgR != null ? signed(stats.avgR) : "—"}
-                </strong>
-                <span>Hit rate</span>
-                <strong>{stats.hitRate != null ? `${stats.hitRate.toFixed(0)}%` : "—"}</strong>
+                <strong className={stats.avgR != null && stats.avgR >= 0 ? "pos" : "neg"}>{stats.avgR != null ? signed(stats.avgR) : "—"}</strong>
+                <span>Hit rate</span><strong>{stats.hitRate != null ? `${stats.hitRate.toFixed(0)}%` : "—"}</strong>
+                <span>Avg wait</span><strong>{stats.avgWait != null ? `${stats.avgWait.toFixed(1)}d` : "—"}</strong>
                 <span>Passed</span>
-                <strong>
-                  {stats.passes}
-                  {stats.passes ? ` (${Math.round((stats.passesRight / stats.passes) * 100)}% right)` : ""}
-                </strong>
+                <strong>{stats.passes}{stats.passes ? ` (${Math.round((stats.passesRight / stats.passes) * 100)}% right)` : ""}</strong>
               </div>
-              {perSetup.length > 1 ? (
-                <ul className="study-per-setup">
-                  {perSetup.map((row) => (
-                    <li key={row.setup}>
-                      {row.setup} <em className={row.avgR >= 0 ? "pos" : "neg"}>{signed(row.avgR)}R</em>{" "}
-                      <span>({row.n})</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
             </div>
           </aside>
         </div>

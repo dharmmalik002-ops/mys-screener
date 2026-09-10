@@ -4438,6 +4438,8 @@ export type StudyDeckResponse = {
     setups?: string[];
     rules?: Record<string, unknown>;
     reveal_bars?: number;
+    wait_bars?: number;
+    hold_bars?: number;
   };
   cards: StudyCard[];
 };
@@ -4460,7 +4462,15 @@ export type StudyReveal = {
   max_favourable_pct: number;
   final_pct: number;
   sessions_held: number;
-  forward_bars: StudyBar[];
+};
+
+/** One slice of the sessions after the trigger, handed out as the user steps. */
+export type StudyForward = {
+  id: string;
+  offset: number;
+  bars: StudyBar[];
+  total: number;
+  exhausted: boolean;
 };
 
 export function getStudyDeck(options: { count?: number; setup?: string | null; day?: string } = {}) {
@@ -4487,6 +4497,14 @@ export function getStudyBars(cardId: string) {
       undefined,
       { timeoutMs: 45000 },
     ),
+    { label: "scanner backend" },
+  );
+}
+
+export function getStudyForward(cardId: string, offset: number, limit = 4) {
+  const params = new URLSearchParams({ card_id: cardId, offset: String(offset), limit: String(limit) });
+  return whileWaking(
+    () => request<StudyForward>(`/api/study/forward?${params.toString()}`, undefined, { timeoutMs: 45000 }),
     { label: "scanner backend" },
   );
 }
