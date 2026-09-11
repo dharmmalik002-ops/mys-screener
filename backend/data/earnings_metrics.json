@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-10T16:43:36.293026+00:00",
+  "generated_at": "2026-09-11T11:11:19.963616+00:00",
   "entries": {
     "JINDALSAW": {
       "symbol": "JINDALSAW",
@@ -587,14 +587,14 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-09-10",
-      "close_in_range_pct": 0.185,
+      "earnings_date": "2026-09-11",
+      "close_in_range_pct": 0.8552,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 416.333,
+      "day_rvol_50d": 334.133,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": -5.113,
-      "best_pop_rvol": 416.333
+      "best_pop_pct": -4.572,
+      "best_pop_rvol": 334.133
     },
     "IFBAGRO": {
       "symbol": "IFBAGRO",
@@ -3722,14 +3722,14 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-09-10",
-      "close_in_range_pct": 0.0806,
+      "earnings_date": "2026-09-11",
+      "close_in_range_pct": 0.665,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 1.201,
+      "day_rvol_50d": 0.282,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 3.462,
-      "best_pop_rvol": 1.201
+      "best_pop_pct": 2.443,
+      "best_pop_rvol": 0.282
     },
     "SAGCEM": {
       "symbol": "SAGCEM",
