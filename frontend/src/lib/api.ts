@@ -4561,3 +4561,100 @@ export function searchStudySymbols(query: string, limit = 12) {
     { timeoutMs: 20000 },
   );
 }
+
+// --- Chart Gym coach --------------------------------------------------------
+
+export type StudyLogEntry = {
+  cardId: string;
+  setup: string;
+  symbol: string;
+  gradedAt: string;
+  action: string;
+  waited: number | null;
+  entry: number | null;
+  stop: number | null;
+  riskPct: number | null;
+  r: number | null;
+  officialResult: string;
+};
+
+export type StudySlice = {
+  label: string;
+  trades: number;
+  avg_r: number;
+  total_r: number;
+  hit_rate_pct: number;
+};
+
+export type StudyCoachStats = {
+  ready: boolean;
+  min_sample: number;
+  graded?: number;
+  overall?: {
+    graded: number;
+    taken: number;
+    passed: number;
+    take_rate_pct: number;
+    avg_r: number | null;
+    total_r: number | null;
+    hit_rate_pct: number | null;
+    best_r: number | null;
+    worst_r: number | null;
+  };
+  selection?: {
+    trades: number;
+    your_hit_rate_pct: number | null;
+    cards_that_were_winners_pct: number;
+    deck_base_rate_pct: number;
+    edge_pts: number;
+  } | null;
+  pass_quality?: { passes: number; correct_pct: number; winners_missed: number } | null;
+  trend?: {
+    earlier: StudySlice;
+    recent: StudySlice;
+    avg_r_change: number;
+    direction: string;
+  } | null;
+  slices?: Record<string, StudySlice[]>;
+  strongest?: StudySlice | null;
+  weakest?: StudySlice | null;
+};
+
+export type StudyCoachReview = {
+  headline?: string;
+  overall?: string;
+  doing_right?: Array<{ what: string; evidence: string }>;
+  doing_wrong?: Array<{ what: string; evidence: string; cost?: string }>;
+  biggest_leak?: { leak: string; evidence: string; rule: string };
+  reading_the_chart?: string[];
+  trajectory?: string;
+  confidence?: string;
+  next_focus?: string;
+};
+
+export type StudyReviewResponse = {
+  stats: StudyCoachStats;
+  review: StudyCoachReview | null;
+  review_error: string | null;
+};
+
+export function getStudyLog() {
+  return whileWaking(() => request<{ entries: StudyLogEntry[] }>("/api/study/log", undefined, { timeoutMs: 30000 }), {
+    label: "scanner backend",
+  });
+}
+
+export function saveStudyLog(entries: StudyLogEntry[]) {
+  return request<{ entries: StudyLogEntry[] }>("/api/study/log", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ entries }),
+  });
+}
+
+export function getStudyReview() {
+  // The model call runs server-side and can take a while on a cold Space.
+  return whileWaking(() => request<StudyReviewResponse>("/api/study/review", undefined, { timeoutMs: 90000 }), {
+    label: "scanner backend",
+  });
+}
