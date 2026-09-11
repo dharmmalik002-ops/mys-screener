@@ -1349,6 +1349,62 @@ IMPORTANT:
         )
         return await self._generate_json(prompt)
 
+    async def study_review(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Coach the user on their Chart Gym drill record.
+
+        Every number reaching this method was computed in `study_coach.py` from
+        the user's own graded cards. The model's job is to explain them, not to
+        derive them — it is told so explicitly, because a fabricated statistic
+        here would be indistinguishable from a real one to the reader.
+        """
+        prompt = (
+            "You are a world-class swing-trading coach in the Minervini / O'Neil tradition (VCP bases, high "
+            "tight flags, Indian markets). Your student practises on a chart-reading drill: they are shown a "
+            "historical setup truncated at the day it triggered, they may step the tape forward up to 15 "
+            "sessions before deciding, they pick their own entry day and their own stop, and the trade is then "
+            "graded in R-multiples against THEIR stop. Passing is a valid answer and most setups should be "
+            "passed.\n\n"
+            "The deck deals winners and losers in equal measure on purpose, so a coin flip scores 50%.\n\n"
+            "CRITICAL RULES:\n"
+            "- Every number below was computed from the student's own record. Use those numbers. Do NOT "
+            "calculate new statistics, estimate averages, or infer figures that are not present.\n"
+            "- Each slice carries a `trades` count. Never build an argument on a slice with few trades without "
+            "saying out loud how thin it is.\n"
+            "- If a slice is absent it means there were too few trades to report. Say nothing about it.\n"
+            "- Describe what HAS happened. Do not predict, and do not tell them what to buy.\n"
+            "- Be specific and honest. Praise what the record actually supports; name what is costing them.\n\n"
+            f"MINIMUM SAMPLE FOR A REPORTED SLICE: {payload.get('min_sample')}\n\n"
+            f"OVERALL RECORD:\n{json.dumps(payload.get('overall') or {}, ensure_ascii=False)}\n\n"
+            f"SELECTION EDGE (did they pick the cards that were going to work?):\n"
+            f"{json.dumps(payload.get('selection') or {}, ensure_ascii=False)}\n\n"
+            f"PASS QUALITY (were the ones they skipped worth skipping?):\n"
+            f"{json.dumps(payload.get('pass_quality') or {}, ensure_ascii=False)}\n\n"
+            f"TRAJECTORY (earlier half vs recent half):\n{json.dumps(payload.get('trend') or {}, ensure_ascii=False)}\n\n"
+            f"PERFORMANCE SLICED BY BEHAVIOUR AND BY SETUP FEATURES:\n"
+            f"{json.dumps(payload.get('slices') or {}, ensure_ascii=False)}\n\n"
+            f"STRONGEST BUCKET: {json.dumps(payload.get('strongest') or {}, ensure_ascii=False)}\n"
+            f"WEAKEST BUCKET: {json.dumps(payload.get('weakest') or {}, ensure_ascii=False)}\n\n"
+            f"MOST RECENT CARDS (newest first):\n{json.dumps(payload.get('recent_cards') or [], ensure_ascii=False)}\n\n"
+            "Respond with ONLY a JSON object:\n"
+            "{\n"
+            '  "headline": "one sentence naming the single most important thing this record shows",\n'
+            '  "overall": "3-4 sentences: an honest read of where this student is right now, with their numbers",\n'
+            '  "doing_right": [{"what": "specific strength", "evidence": "the numbers that show it"}],\n'
+            '  "doing_wrong": [{"what": "specific leak", "evidence": "the numbers that show it", "cost": "what it '
+            'is costing in R"}],\n'
+            '  "biggest_leak": {"leak": "...", "evidence": "...", "rule": "one checkable rule for their next 20 '
+            'cards"},\n'
+            '  "reading_the_chart": ["what their record suggests they are misreading on the chart itself, tied to '
+            'a feature slice (base depth, volume dry-up, RS, contraction count)", "..."],\n'
+            '  "trajectory": "2 sentences on whether they are improving, with the earlier-vs-recent numbers, or '
+            'the string \'not enough history yet\' if the trajectory block is empty",\n'
+            '  "confidence": "how much weight this review deserves given the sample sizes above — be blunt if it '
+            'is thin",\n'
+            '  "next_focus": "the one thing to concentrate on for the next 20 cards"\n'
+            "}"
+        )
+        return await self._generate_json(prompt)
+
     async def learnings_review(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Longitudinal mistake/improvement analysis across the user's own
         chart notes and trade outcomes: what keeps going wrong, whether the

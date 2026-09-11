@@ -6,7 +6,9 @@ import {
   getStudyForward,
   getStudyLibrary,
   getStudyReveal,
+  getStudyLog,
   saveStudyLibrary,
+  saveStudyLog,
   searchStudySymbols,
   type StudyBar,
   type StudyCard,
@@ -14,6 +16,7 @@ import {
   type StudyRecord,
   type StudyReveal,
 } from "../lib/api";
+import { StudyCoach } from "./StudyCoach";
 import {
   StudyChart,
   type StudyChartHandle,
@@ -146,6 +149,10 @@ export function StudyPanel() {
   const [libraryOpen, setLibraryOpen] = useState(false);
   const [note, setNote] = useState("");
   const [toast, setToast] = useState<string | null>(null);
+  const [coachOpen, setCoachOpen] = useState(false);
+  // Bumped whenever a card is graded, so the coach knows its review is stale.
+  const [coachVersion, setCoachVersion] = useState(0);
+  const logSyncedRef = useRef(false);
   const [fwdByCard, setFwdByCard] = useState<Record<string, StudyBar[]>>({});
   const fetchingRef = useRef<Set<string>>(new Set());
 
@@ -296,8 +303,12 @@ export function StudyPanel() {
     setLog((prev) => {
       const next = [...prev.filter((e) => e.cardId !== entryLog.cardId), entryLog];
       writeLog(next);
+      // Only push once the server's copy has been merged in, or a fresh browser
+      // would overwrite the whole history with its single new card.
+      if (logSyncedRef.current) saveStudyLog(next as never).catch(() => {});
       return next;
     });
+    setCoachVersion((v) => v + 1);
   }, [phase, card, action, entryAt, entryPrice, stop, riskPct, result]);
 
   // The deck's own verdict arrives separately; fold it into the record when it does.
@@ -314,6 +325,32 @@ export function StudyPanel() {
   }, [reveal]);
 
   // --- Library, search, capture ---------------------------------------------
+
+  // The server holds the real record; localStorage is only a fast first paint.
+  // Merging rather than replacing means a card graded offline is not lost.
+  useEffect(() => {
+    getStudyLog()
+      .then((payload) => {
+        const remote = Array.isArray(payload.entries) ? payload.entries : [];
+        setLog((local) => {
+          const byId = new Map<string, LogEntry>();
+          for (const row of remote as unknown as LogEntry[]) byId.set(row.cardId, row);
+          for (const row of local) byId.set(row.cardId, row);
+          const merged = [...byId.values()].sort((a, b) => a.gradedAt.localeCompare(b.gradedAt));
+          for (const row of merged) loggedRef.current.add(row.cardId);
+          writeLog(merged);
+          logSyncedRef.current = true;
+          if (merged.length !== remote.length) {
+            saveStudyLog(merged as never).catch(() => {});
+          }
+          return merged;
+        });
+      })
+      .catch(() => {
+        // Offline or backend down: keep drilling against localStorage.
+        logSyncedRef.current = true;
+      });
+  }, []);
 
   useEffect(() => {
     getStudyLibrary()
@@ -555,6 +592,9 @@ export function StudyPanel() {
           <button type="button" className={`study-lib-toggle ${libraryOpen ? "active" : ""}`} onClick={() => setLibraryOpen((v) => !v)}>
             Library {library.length ? `(${library.length})` : ""}
           </button>
+          <button type="button" className={`study-lib-toggle ${coachOpen ? "active" : ""}`} onClick={() => setCoachOpen((v) => !v)}>
+            Coach
+          </button>
           <div className="study-filters">
             {[null, "vcp", "high-tight-flag"].map((key) => (
               <button key={key ?? "all"} type="button" className={setupFilter === key ? "active" : ""} onClick={() => setSetupFilter(key)}>
@@ -682,6 +722,7 @@ export function StudyPanel() {
           </div>
 
           <aside className="study-side">
+            {coachOpen ? <StudyCoach version={coachVersion} /> : null}
             {libraryOpen ? (
               <div className="study-library">
                 <h3>Saved studies</h3>

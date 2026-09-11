@@ -199,6 +199,26 @@ def build_router(service):
         except ValueError as exc:
             raise HTTPException(status_code=400, detail=str(exc))
 
+    @router.get("/study/log")
+    async def study_log():
+        return await asyncio.to_thread(resolve_service("india").get_study_log)
+
+    @router.put("/study/log")
+    async def save_study_log(payload: dict):
+        try:
+            return await asyncio.to_thread(resolve_service("india").save_study_log, payload)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc))
+
+    @router.get("/study/review")
+    async def study_review(refresh: bool = Query(default=False)):
+        """Measured stats from the drill record, plus a written coach review.
+
+        The stats always come back even when the model is unavailable — they are
+        the part that has to be right.
+        """
+        return await resolve_service("india").get_study_review(refresh=refresh)
+
     @router.get("/study/search")
     async def study_search(q: str = Query(..., min_length=1), limit: int = Query(default=12, ge=1, le=50)):
         """Symbol lookup for pulling any stock into the gym, not just deck cards.

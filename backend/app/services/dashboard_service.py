@@ -5761,6 +5761,70 @@ class DashboardService:
             ai_model=model_name,
         )
 
+    def _study_log_path(self) -> Path:
+        return self._state_data_dir() / "study_log.json"
+
+    def get_study_log(self) -> dict:
+        """The Chart Gym drill record: one entry per graded card.
+
+        Lives on the server rather than in the browser so the coach's history
+        survives a cleared cache and follows the user between devices — the
+        whole point is that the review deepens as the record grows.
+        """
+        payload = self._read_json_dict(self._study_log_path())
+        return payload or {"entries": []}
+
+    def save_study_log(self, payload: dict) -> dict:
+        entries = payload.get("entries")
+        if not isinstance(entries, list):
+            raise ValueError("study log payload must carry an 'entries' list")
+        # Newest wins on a re-grade, and the card id is the identity: replaying a
+        # card you have already seen should correct the record, not double-count it.
+        merged: dict[str, dict] = {}
+        for entry in entries:
+            if isinstance(entry, dict) and entry.get("cardId"):
+                merged[str(entry["cardId"])] = entry
+        rows = sorted(merged.values(), key=lambda e: str(e.get("gradedAt") or ""))
+        document = {"entries": rows, "updated_at": datetime.now(timezone.utc).isoformat()}
+        self._write_json_payload(self._study_log_path(), document)
+        return document
+
+    def get_study_coach_stats(self) -> dict:
+        """The measured half of the coach — no model involved."""
+        from app.services import study_coach
+        from app.services.study_deck import StudyDeck
+
+        deck = StudyDeck(self._legacy_data_dir())
+        cards = {}
+        for entry in self.get_study_log().get("entries") or []:
+            card_id = str(entry.get("cardId") or "")
+            card = deck.card(card_id) if card_id else None
+            if card is not None:
+                cards[card_id] = card
+        return study_coach.build(self.get_study_log().get("entries") or [], cards)
+
+    async def get_study_review(self, refresh: bool = False) -> dict:
+        """Measured stats, plus a written review of them when a key is configured."""
+        stats = await asyncio.to_thread(self.get_study_coach_stats)
+        result: dict = {"stats": stats, "review": None, "review_error": None}
+        if not stats.get("ready"):
+            result["review_error"] = (
+                f"Grade at least {stats.get('min_sample', 6)} cards you actually traded "
+                "before the review can say anything honest."
+            )
+            return result
+
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is None or not ai.available:
+            result["review_error"] = "AI is not configured (GEMINI_API_KEY missing) — the measured numbers below still stand."
+            return result
+        try:
+            result["review"] = await ai.study_review(stats)
+        except Exception as exc:
+            logger.warning("study review failed: %s", exc)
+            result["review_error"] = f"The written review could not be generated: {exc}"
+        return result
+
     def _study_library_path(self) -> Path:
         return self._state_data_dir() / "study_library.json"
 
