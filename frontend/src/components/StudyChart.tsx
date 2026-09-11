@@ -60,6 +60,11 @@ type Props = {
   onPickEntry?: (time: number) => void;
   /** Pixel rect of a finished region drag, for cropping a PNG out of the chart. */
   onSnip?: (rect: { x0: number; y0: number; x1: number; y1: number }) => void;
+  /** Fired once a two-click drawing lands, so the caller can release the tool. */
+  onDrawingDone?: () => void;
+  /** Id of the drawing to highlight, and a way to pick one by clicking it. */
+  selectedDrawingId?: string | null;
+  onSelectDrawing?: (id: string | null) => void;
   /** Reports the visible window so a study can be reopened where it was left. */
   onRangeChange?: (range: { from: number; to: number } | null) => void;
   /** Applied once when a saved study is opened. */
@@ -97,6 +102,9 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
   onPickPrice,
   onPickEntry,
   onSnip,
+  onDrawingDone,
+  selectedDrawingId,
+  onSelectDrawing,
   onRangeChange,
   initialRange,
   height = 460,
@@ -125,8 +133,8 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
 
   // Handlers change every render; the chart subscribes once. Refs keep the
   // live versions reachable without tearing the chart down on each keystroke.
-  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, draft });
-  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, draft };
+  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft });
+  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft };
 
   const visible = useMemo(() => {
     const context = contextBars.filter((b) => Number.isFinite(b.close) && b.close > 0);
@@ -246,6 +254,9 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         { id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, kind: t, from: pending, to: anchor },
       ]);
       setDraft(null);
+      // Hand the tool back. Staying in Measure after a measurement is what made
+      // every later click miss the stop the user was trying to place.
+      cb.current.onDrawingDone?.();
     });
 
     chart.subscribeCrosshairMove((param) => setHover(anchorFrom(param)));
@@ -409,10 +420,15 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       if (!p1 || !p2) return;
       const rising = d.to.price >= d.from.price;
       const color = d.kind === "measure" ? (rising ? "#22c55e" : "#ef4444") : "#ffd36f";
+      const selected = d.id === selectedDrawingId;
       ctx.save();
       ctx.globalAlpha = ghost ? 0.6 : 1;
       ctx.strokeStyle = color;
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = selected ? 3 : 1.5;
+      if (selected) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+      }
       if (d.kind === "measure") {
         ctx.fillStyle = rising ? "rgba(34,197,94,0.12)" : "rgba(239,68,68,0.12)";
         ctx.fillRect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
@@ -460,7 +476,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       ctx.strokeRect(x, y, w, h);
       ctx.restore();
     }
-  }, [drawings, draft, hover, tool, visible, snip]);
+  }, [drawings, draft, hover, tool, visible, snip, selectedDrawingId]);
 
   useEffect(() => {
     paint();
@@ -486,6 +502,34 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     const localY = (event: MouseEvent) => event.clientY - wrap.getBoundingClientRect().top;
     const localX = (event: MouseEvent) => event.clientX - wrap.getBoundingClientRect().left;
 
+    /** Id of the drawing within a few pixels of (x, y), nearest first. */
+    const hitTest = (x: number, y: number): string | null => {
+      const chart = chartRef.current;
+      const series = priceRef.current;
+      if (!chart || !series) return null;
+      const project = (a: { time: number; price: number }) => {
+        const px = chart.timeScale().timeToCoordinate(a.time as UTCTimestamp);
+        const py = series.priceToCoordinate(a.price);
+        return px == null || py == null ? null : { x: Number(px), y: Number(py) };
+      };
+      let best: { id: string; d: number } | null = null;
+      for (const drawing of cb.current.drawings) {
+        const p1 = project(drawing.from);
+        const p2 = project(drawing.to);
+        if (!p1 || !p2) continue;
+        // Distance from the click to the drawing's line segment.
+        const vx = p2.x - p1.x;
+        const vy = p2.y - p1.y;
+        const len2 = vx * vx + vy * vy;
+        const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((x - p1.x) * vx + (y - p1.y) * vy) / len2));
+        const dx = x - (p1.x + t * vx);
+        const dy = y - (p1.y + t * vy);
+        const dist = Math.hypot(dx, dy);
+        if (dist <= 8 && (!best || dist < best.d)) best = { id: drawing.id, d: dist };
+      }
+      return best?.id ?? null;
+    };
+
     const stopY = () => {
       const series = priceRef.current;
       const value = stopRef.current;
@@ -496,6 +540,21 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
 
     const onDown = (event: MouseEvent) => {
       if (event.button !== 0) return;
+
+      // Clicking a drawing selects it, so it can be deleted individually rather
+      // than only by undoing back through everything drawn after it. Checked
+      // before the tools so a stray stop click cannot land on top of one.
+      if (cb.current.tool !== "trendline" && cb.current.tool !== "measure" && cb.current.tool !== "snip") {
+        const hit = hitTest(localX(event), localY(event));
+        if (hit) {
+          cb.current.onSelectDrawing?.(hit);
+          event.stopPropagation();
+          event.preventDefault();
+          return;
+        }
+        cb.current.onSelectDrawing?.(null);
+      }
+
       if (cb.current.tool === "snip") {
         const rect = { x0: localX(event), y0: localY(event), x1: localX(event), y1: localY(event) };
         snipRef.current = rect;

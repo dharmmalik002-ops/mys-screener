@@ -123,6 +123,7 @@ export function StudyPanel() {
 
   const [tool, setTool] = useState<StudyTool>("stop");
   const [drawings, setDrawings] = useState<StudyDrawing[]>([]);
+  const [selectedDrawing, setSelectedDrawing] = useState<string | null>(null);
   const [style, setStyle] = useState<StudyChartStyle>(() => {
     try {
       const saved = window.localStorage.getItem(STYLE_KEY);
@@ -164,6 +165,11 @@ export function StudyPanel() {
     }
   }, [style]);
 
+  const flash = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => setToast(null), 3200);
+  }, []);
+
   const load = useCallback((setup: string | null) => {
     setLoading(true);
     setError(null);
@@ -199,6 +205,7 @@ export function StudyPanel() {
     setReveal(null);
     setAction(null);
     setDrawings([]);
+    setSelectedDrawing(null);
     setTool("stop");
   }
 
@@ -360,11 +367,6 @@ export function StudyPanel() {
       });
   }, []);
 
-  const flash = useCallback((message: string) => {
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2600);
-  }, []);
-
   const persist = useCallback(
     (studies: StudyRecord[]) => {
       setLibrary(studies);
@@ -479,13 +481,26 @@ export function StudyPanel() {
   }, [phase, stepCeiling]);
 
   const enterHere = useCallback(() => {
-    if (phase !== "watching" || stop == null) return;
+    if (phase !== "watching") return;
     const price = revealed === 0 ? bars[bars.length - 1]?.close : forward[revealed - 1]?.close;
-    if (price == null || stop >= price) return;
+    // Every refusal below used to be a silent no-op, which is indistinguishable
+    // from the page being broken. Say what is wrong, where the user is looking.
+    if (stop == null) {
+      flash("Place a stop first — pick the Stop tool and click the chart, or type a price.");
+      return;
+    }
+    if (price == null) {
+      flash("Still loading this chart.");
+      return;
+    }
+    if (stop >= price) {
+      flash(`Your stop (${fmt(stop)}) is above the last close (${fmt(price)}). Move it below.`);
+      return;
+    }
     setEntryAt(revealed);
     setAction("entered");
     setPhase("holding");
-  }, [phase, stop, revealed, bars, forward]);
+  }, [phase, stop, revealed, bars, forward, flash]);
 
   const pass = useCallback(() => {
     if (phase !== "watching") return;
@@ -512,7 +527,15 @@ export function StudyPanel() {
       else if (key === "n") next();
       else if (event.key === "ArrowLeft") prev();
       else if (key === "u") setDrawings((d) => d.slice(0, -1));
-      else if (event.key === "Escape") setTool("cursor");
+      else if (event.key === "Delete" || event.key === "Backspace") {
+        if (!selectedDrawing) return;
+        event.preventDefault();
+        setDrawings((d) => d.filter((x) => x.id !== selectedDrawing));
+        setSelectedDrawing(null);
+      } else if (event.key === "Escape") {
+        setTool("stop");
+        setSelectedDrawing(null);
+      }
       else if (key === "s") saveStudy();
       else if ("12345".includes(key)) {
         const picked = TOOLS[Number(key) - 1]?.key;
@@ -521,7 +544,7 @@ export function StudyPanel() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, step, next, prev, enterHere, pass, saveStudy]);
+  }, [phase, step, next, prev, enterHere, pass, saveStudy, selectedDrawing]);
 
   const stats = useMemo(() => {
     const taken = log.filter((e) => e.action === "entered" && e.r != null);
@@ -566,7 +589,7 @@ export function StudyPanel() {
           <h2>Chart Gym</h2>
           <p>
             Step the tape, pick your own entry, place your own stop.
-            <span className="study-hint"> → step · E enter · P pass · U undo · 1-4 tools · N next</span>
+            <span className="study-hint"> → step · E enter · P pass · U undo · Del delete · Esc drop tool · 1-5 tools · N next</span>
           </p>
         </div>
         <div className="study-head-right">
@@ -624,8 +647,30 @@ export function StudyPanel() {
                     {t.label}
                   </button>
                 ))}
-                <button type="button" className="study-undo" onClick={() => setDrawings((d) => d.slice(0, -1))} disabled={!drawings.length}>
+                <button
+                  type="button"
+                  className="study-undo"
+                  title="Remove the last drawing (U)"
+                  onClick={() => setDrawings((d) => d.slice(0, -1))}
+                  disabled={!drawings.length}
+                >
                   Undo
+                </button>
+                <button
+                  type="button"
+                  className="study-undo"
+                  title={selectedDrawing ? "Delete the selected drawing (Del)" : "Remove every drawing"}
+                  onClick={() => {
+                    if (selectedDrawing) {
+                      setDrawings((d) => d.filter((x) => x.id !== selectedDrawing));
+                      setSelectedDrawing(null);
+                    } else {
+                      setDrawings([]);
+                    }
+                  }}
+                  disabled={!drawings.length}
+                >
+                  {selectedDrawing ? "Delete" : "Clear"}
                 </button>
               </div>
               <div className="study-styles">
@@ -684,6 +729,9 @@ export function StudyPanel() {
                   enterHere();
                 }}
                 onSnip={(rect) => void download(rect)}
+                onDrawingDone={() => setTool("stop")}
+                selectedDrawingId={selectedDrawing}
+                onSelectDrawing={setSelectedDrawing}
                 onRangeChange={setRange}
                 initialRange={initialRange}
                 ref={chartHandle}
@@ -691,6 +739,17 @@ export function StudyPanel() {
             ) : (
               <div className="study-chart-loading">Loading {card.symbol} history…</div>
             )}
+
+            {tool === "trendline" || tool === "measure" || tool === "snip" ? (
+              <div className="study-tool-banner">
+                <strong>{TOOLS.find((t) => t.key === tool)?.label}</strong> tool is on — clicks draw instead of
+                placing your stop. Press <kbd>Esc</kbd> or click the tool again when you're done.
+              </div>
+            ) : selectedDrawing ? (
+              <div className="study-tool-banner">
+                Drawing selected — press <kbd>Del</kbd> or the Delete button to remove it.
+              </div>
+            ) : null}
 
             <div className="study-stepper">
               {freeStudy && freeAnchor == null ? (

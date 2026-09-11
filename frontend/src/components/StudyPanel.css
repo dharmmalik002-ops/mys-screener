@@ -579,3 +579,24 @@
 
 /* The stop line is grabbable, so say so near it. */
 .study-chart.tool-snip { cursor: crosshair; }
+
+/* Says which tool is armed. Without it, a live drawing tool is invisible and
+   every click quietly misses the stop the user was trying to place. */
+.study-tool-banner {
+  margin-top: 8px;
+  padding: 7px 11px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  font-size: 0.75rem;
+  color: var(--text);
+}
+
+.study-tool-banner kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line-strong, var(--line));
+  border-radius: 3px;
+  background: var(--surface-strong);
+  font-family: 'JetBrains Mono', Menlo, monospace;
+  font-size: 0.7rem;
+}
