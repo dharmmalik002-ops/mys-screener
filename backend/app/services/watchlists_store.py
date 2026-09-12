@@ -169,18 +169,26 @@ class PostgresWatchlistsStore:
         if not self.is_enabled():
             return None
 
-        cached = self._get_cached_state(market)
-        if cached is not None:
-            return cached
-
+        # The database is the ONLY state the two Uvicorn workers share. This
+        # used to answer from a per-process cache whenever one was populated,
+        # which meant a save handled by worker A left worker B serving its
+        # pre-save copy forever — a deleted watchlist reappeared as soon as a
+        # later read happened to land on the worker that missed the write.
+        # The cache is now strictly an outage fallback, below.
         normalized_market = self._normalize_market(market)
-        with self._connect() as connection, connection.cursor() as cursor:
-            self._ensure_schema(cursor)
-            cursor.execute(
-                "SELECT payload FROM watchlists_state WHERE market = %s",
-                (normalized_market,),
-            )
-            row = cursor.fetchone()
+        try:
+            with self._connect() as connection, connection.cursor() as cursor:
+                self._ensure_schema(cursor)
+                cursor.execute(
+                    "SELECT payload FROM watchlists_state WHERE market = %s",
+                    (normalized_market,),
+                )
+                row = cursor.fetchone()
+        except Exception:
+            cached = self._get_cached_state(market)
+            if cached is not None:
+                return cached
+            raise
 
         if row is None:
             return None
