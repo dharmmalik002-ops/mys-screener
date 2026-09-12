@@ -1131,6 +1131,18 @@ button {
   min-width: 0;
 }
 
+/* Sizing the TRACK was only half of it. Every panel in this column is itself a
+   flex or grid container, and a grid item's `min-width` defaults to `auto` —
+   its min-content, which it will happily exceed the track to reach. The Total
+   Scanner builder's formula line ("Expansion OR Positive Earnings OR …", one
+   nowrap string) measured 742px inside a 653px column, so the whole settings
+   card rendered 869px wide and its Save / Run Scanner buttons sat under the
+   chart panel. Clamp the children; anything that genuinely cannot fit scrolls
+   inside its own box instead (see `.ts-formula`). */
+.screener-main-stack > * {
+  min-width: 0;
+}
+
 .screener-page-grid > .chart-panel {
   min-width: 0;
   overflow: hidden;
