@@ -94,3 +94,90 @@ class WatchlistsStoreTests(unittest.TestCase):
         merged = watchlists_store.merge_watchlists_state(existing, incoming)
         self.assertEqual(merged.watchlists, [])
         self.assertIsNone(merged.active_watchlist_id)
+
+    def test_load_state_rereads_the_database_after_another_worker_writes(self) -> None:
+        """Production runs two Uvicorn workers against one database.
+
+        A worker that answers reads from its own cache keeps serving the
+        state it saw first, so a watchlist deleted through the other worker
+        comes back on the next read that lands here. Reads must go to the
+        shared database while it is reachable.
+        """
+        before = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id="wl-1",
+            watchlists=[
+                WatchlistItem(id="wl-1", name="Core", color="#4f8cff", symbols=["INFY"]),
+                WatchlistItem(id="wl-2", name="Doomed", color="#00a389", symbols=["TCS"]),
+            ],
+        )
+        after = before.model_copy(
+            deep=True,
+            update={"watchlists": [before.watchlists[0]]},  # wl-2 deleted elsewhere
+        )
+
+        rows = [[before.model_dump(mode="json")], [after.model_dump(mode="json")]]
+        store = watchlists_store.PostgresWatchlistsStore("postgres://example")
+
+        with patch.object(store, "is_enabled", return_value=True), \
+                patch.object(store, "_ensure_schema"), \
+                patch.object(store, "_connect", side_effect=lambda: _FakeConnection(rows)):
+            first = store.load_state("india")
+            second = store.load_state("india")
+
+        assert first is not None and second is not None
+        self.assertEqual([item.id for item in first.watchlists], ["wl-1", "wl-2"])
+        self.assertEqual([item.id for item in second.watchlists], ["wl-1"])
+
+    def test_load_state_falls_back_to_its_cache_when_the_database_is_down(self) -> None:
+        state = WatchlistsStateResponse(
+            market="india",
+            updated_at=datetime(2026, 4, 18, 9, 0, tzinfo=timezone.utc),
+            active_watchlist_id="wl-1",
+            watchlists=[WatchlistItem(id="wl-1", name="Core", color="#4f8cff", symbols=["INFY"])],
+        )
+        store = watchlists_store.PostgresWatchlistsStore("postgres://example")
+
+        with patch.object(store, "is_enabled", return_value=True), \
+                patch.object(store, "_ensure_schema"), \
+                patch.object(store, "_connect", side_effect=lambda: _FakeConnection([[state.model_dump(mode="json")]])):
+            self.assertIsNotNone(store.load_state("india"))
+
+        with patch.object(store, "is_enabled", return_value=True), \
+                patch.object(store, "_connect", side_effect=RuntimeError("database unreachable")):
+            cached = store.load_state("india")
+
+        assert cached is not None
+        self.assertEqual([item.id for item in cached.watchlists], ["wl-1"])
+
+
+class _FakeCursor:
+    def __init__(self, rows: list) -> None:
+        self._rows = rows
+
+    def execute(self, *_args, **_kwargs) -> None:
+        return None
+
+    def fetchone(self):
+        return self._rows.pop(0) if self._rows else None
+
+    def __enter__(self) -> "_FakeCursor":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        return None
+
+
+class _FakeConnection:
+    def __init__(self, rows: list) -> None:
+        self._rows = rows
+
+    def cursor(self) -> _FakeCursor:
+        return _FakeCursor(self._rows)
+
+    def __enter__(self) -> "_FakeConnection":
+        return self
+
+    def __exit__(self, *_exc) -> None:
+        return None
