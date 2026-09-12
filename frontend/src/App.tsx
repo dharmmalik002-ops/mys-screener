@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
+  GraduationCap,
   Globe,
   House,
   Landmark,
@@ -127,6 +128,7 @@ const ScreenerSidebar = lazy(() => import("./components/ScreenerSidebar").then((
 const LivePanel = lazy(() => import("./components/LivePanel").then((module) => ({ default: module.LivePanel })));
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
 const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
+const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -182,6 +184,12 @@ const WATCHLISTS_KEY = "mr-malik-watchlists:v1";
 const WATCHLISTS_BACKUP_KEY = "mr-malik-watchlists:backup:v1";
 const LEGACY_WATCHLISTS_KEYS = ["mr-malik-watchlists", "stock-scanner-watchlists:v1", "stock-scanner-watchlists"];
 const ACTIVE_WATCHLIST_KEY = "mr-malik-active-watchlist:v1";
+// Marks watchlist edits this browser made but the server never confirmed. It
+// holds the last server-confirmed state, so the next load can tell "our save
+// never landed" (the server still holds exactly that) from "someone else has
+// since changed things" (it does not) without trusting either clock.
+const WATCHLISTS_PENDING_KEY = "mr-malik-watchlists:pending:v1";
+const SYNC_RETRY_DELAYS_MS = [1_500, 5_000, 15_000];
 const SCANNER_SETTINGS_KEY = "mr-malik-scanner-settings:v1";
 const SAVED_SCANNERS_KEY = "mr-malik-saved-scanners:v1";
 const ACTIVE_MARKET_KEY = "mr-malik-active-market:v1";
@@ -191,7 +199,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds";
+type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -212,6 +220,7 @@ const NAV_PAGES: NavPage[] = [
   { page: "funds", label: "Funds", short: "Funds", Icon: Landmark },
   { page: "live", label: "Live", short: "Live", Icon: Zap },
   { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
+  { page: "study", label: "Chart Gym", short: "Gym", Icon: GraduationCap },
 ];
 
 type ResultSortMode = "change" | "rs";
@@ -1444,6 +1453,39 @@ function watchlistsStateSignature(watchlists: LocalWatchlist[], activeWatchlistI
   return JSON.stringify({ watchlists, active_watchlist_id: activeWatchlistId });
 }
 
+/** The server state a still-unsaved local edit was made against, if any. */
+function readWatchlistsPendingBase(market: MarketKey): string | null | undefined {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+  try {
+    const raw = window.localStorage.getItem(marketScopedKey(WATCHLISTS_PENDING_KEY, market));
+    if (!raw) {
+      return undefined;
+    }
+    const parsed = JSON.parse(raw) as { base?: string | null };
+    return typeof parsed?.base === "string" ? parsed.base : null;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeWatchlistsPendingBase(market: MarketKey, base: string | null | undefined) {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    const key = marketScopedKey(WATCHLISTS_PENDING_KEY, market);
+    if (base === undefined) {
+      window.localStorage.removeItem(key);
+      return;
+    }
+    window.localStorage.setItem(key, JSON.stringify({ base }));
+  } catch {
+    // A full or unavailable localStorage costs the safety net, not the edit.
+  }
+}
+
 function mergeWithDefaults<T extends Record<string, unknown>>(defaults: T, value: unknown): T {
   if (!value || typeof value !== "object") {
     return { ...defaults };
@@ -1735,6 +1777,15 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   // Held in a ref and consumed on that first pass so it wins exactly once — a
   // later market switch still resets the selection normally.
   const pendingDeepLinkSymbolRef = useRef<string | null>(bootstrapChartSymbol);
+  // Consuming the ref above only wins the FIRST pass. Every list loader below
+  // (groups, scan results, improving RS) re-seeds the selection from whatever
+  // it just fetched, and a symbol missing from that list is replaced by the
+  // list's first row — so a tab opened on one grid chart could silently swap
+  // to the same fallback stock for every link. This keeps the deep-linked
+  // symbol pinned: a list may not overwrite it, only the user can.
+  const deepLinkSymbolRef = useRef<string | null>(bootstrapChartSymbol);
+  const keepsDeepLink = (current: string | null) =>
+    Boolean(deepLinkSymbolRef.current) && current === deepLinkSymbolRef.current;
   const [chartPanelTab, setChartPanelTab] = useState<ChartPanelTab>(initialPreferences.chartPanelTab);
   const [timeframe, setTimeframe] = useState(initialPreferences.timeframe);
   const [chartStyle, setChartStyle] = useState<ChartStyle>(initialPreferences.chartStyle);
@@ -2319,41 +2370,50 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         }
 
         const normalizedRemote = normalizeWatchlistsStatePayload(remoteState);
-        const nextWatchlists = normalizedRemote.watchlists.length > 0 ? normalizedRemote.watchlists : localWatchlists;
-        const nextActiveWatchlistId = normalizedRemote.watchlists.length > 0
-          ? normalizedRemote.activeWatchlistId
-          : localActiveWatchlistId;
-
-        setWatchlists(nextWatchlists);
-        setActiveWatchlistId(nextActiveWatchlistId);
-        watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(
+        const remoteSignature = watchlistsStateSignature(
           normalizedRemote.watchlists,
           normalizedRemote.activeWatchlistId,
         );
-        watchlistsSyncReadyRef.current[activeMarket] = true;
+        // Re-read rather than trusting the snapshot taken before the fetch: a
+        // cold Space can take a minute to answer, and an edit made in that
+        // window has already been written to localStorage but cannot have been
+        // saved (the sync effect below is gated until hydration finishes). The
+        // snapshot would hand the server an uncontested win and undo it.
+        const currentWatchlists = readWatchlists(activeMarket);
+        const currentActiveWatchlistId = readActiveWatchlistId(currentWatchlists, activeMarket);
+        const localSignature = watchlistsStateSignature(currentWatchlists, currentActiveWatchlistId);
+        const editedDuringHydration =
+          localSignature !== watchlistsStateSignature(localWatchlists, localActiveWatchlistId);
+        const pendingBase = readWatchlistsPendingBase(activeMarket);
+        // A delete (or any edit) whose save never reached the server — the tab
+        // was closed mid-flight, the Space was cold, the network dropped — used
+        // to be silently undone here, because the server copy still held the
+        // watchlist and always won. It only wins now when it has actually moved
+        // on from the state our unsaved edit was made against; otherwise the
+        // local state is the newer one and gets pushed instead of overwritten.
+        const serverMissedLocalEdit =
+          pendingBase !== undefined && pendingBase === remoteSignature && localSignature !== remoteSignature;
+        const localWins =
+          normalizedRemote.watchlists.length === 0 || serverMissedLocalEdit || editedDuringHydration;
 
-        if (normalizedRemote.watchlists.length === 0 && localWatchlists.length > 0) {
-          const localPayload = {
-            watchlists: localWatchlists,
-            active_watchlist_id: localActiveWatchlistId,
-          };
-          const savedState = await saveWatchlistsState(localPayload, activeMarket);
-          if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
-            return;
-          }
-          const normalizedSaved = normalizeWatchlistsStatePayload(savedState);
-          watchlistsServerSignatureRef.current[activeMarket] = watchlistsStateSignature(
-            normalizedSaved.watchlists,
-            normalizedSaved.activeWatchlistId,
-          );
+        setWatchlists(localWins ? currentWatchlists : normalizedRemote.watchlists);
+        setActiveWatchlistId(localWins ? currentActiveWatchlistId : normalizedRemote.activeWatchlistId);
+        // Always the server's own state: when local wins, leaving this as what
+        // the server actually holds is what makes the sync effect below notice
+        // the difference and push the local copy up.
+        watchlistsServerSignatureRef.current[activeMarket] = remoteSignature;
+        watchlistsSyncReadyRef.current[activeMarket] = true;
+        if (!localWins) {
+          writeWatchlistsPendingBase(activeMarket, undefined);
         }
       } catch {
         if (!active || watchlistsHydrationRequestIdRef.current !== requestId) {
           return;
         }
 
-        setWatchlists(localWatchlists);
-        setActiveWatchlistId(localActiveWatchlistId);
+        const currentWatchlists = readWatchlists(activeMarket);
+        setWatchlists(currentWatchlists);
+        setActiveWatchlistId(readActiveWatchlistId(currentWatchlists, activeMarket));
         watchlistsServerSignatureRef.current[activeMarket] = null;
         watchlistsSyncReadyRef.current[activeMarket] = true;
       }
@@ -2409,7 +2469,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             setUniverseCatalog(nextUniverseCatalog);
             setSelectedSymbol((current) => {
               const universeSymbols = new Set(nextUniverseCatalog.map((item) => item.symbol));
-              if (current && universeSymbols.has(current)) {
+              if (current && (universeSymbols.has(current) || keepsDeepLink(current))) {
                 updateMarketViewCache(activeMarket, {
                   groupsData: groupsPayload,
                   universeCatalog: nextUniverseCatalog,
@@ -2537,7 +2597,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           }
           setGroupsData(payload);
           setSelectedSymbol((current) => (
-            current && payload.stocks.some((item) => item.symbol === current)
+            current && (keepsDeepLink(current) || payload.stocks.some((item) => item.symbol === current))
               ? current
               : firstSymbolFromIndustryGroups(payload)
           ));
@@ -2561,7 +2621,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           setImprovingRsData(payload);
           setError(null);
           setSelectedSymbol((current) =>
-            current && payload.items.some((item) => item.symbol === current) ? current : payload.items[0]?.symbol ?? null,
+            current && (keepsDeepLink(current) || payload.items.some((item) => item.symbol === current))
+              ? current
+              : payload.items[0]?.symbol ?? null,
           );
           return;
         }
@@ -2578,7 +2640,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         }
         setScanResults(payload);
         setScanSectorSummaries(payload.sector_summaries ?? []);
-        setSelectedSymbol((current) => (current && payload.items.some((item) => item.symbol === current) ? current : payload.items[0]?.symbol ?? null));
+        setSelectedSymbol((current) => (
+          current && (keepsDeepLink(current) || payload.items.some((item) => item.symbol === current))
+            ? current
+            : payload.items[0]?.symbol ?? null
+        ));
         setError(null);
       } catch (loadError) {
         if (active && scanRequestIdRef.current === requestId) {
@@ -2969,31 +3035,50 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     }
 
     let cancelled = false;
+    // Record what the server last confirmed BEFORE attempting the save. If this
+    // save never lands, that marker is what tells the next page load the server
+    // copy is stale rather than authoritative.
+    writeWatchlistsPendingBase(activeMarket, watchlistsServerSignatureRef.current[activeMarket]);
 
     async function syncWatchlists() {
-      try {
-        const savedState = await saveWatchlistsState(
-          {
-            watchlists,
-            active_watchlist_id: normalizedActiveWatchlistId,
-          },
-          activeMarket,
-        );
-        if (cancelled) {
+      // A cold Space answers the first write slowly enough to time out. One
+      // attempt meant the edit lived only in this tab until the marker above
+      // rescued it on the next load; retrying lands it inside the session.
+      for (let attempt = 0; attempt < SYNC_RETRY_DELAYS_MS.length + 1; attempt += 1) {
+        try {
+          const savedState = await saveWatchlistsState(
+            {
+              watchlists,
+              active_watchlist_id: normalizedActiveWatchlistId,
+            },
+            activeMarket,
+          );
+          if (cancelled) {
+            return;
+          }
+
+          const normalizedSaved = normalizeWatchlistsStatePayload(savedState);
+          const savedSignature = watchlistsStateSignature(normalizedSaved.watchlists, normalizedSaved.activeWatchlistId);
+          watchlistsServerSignatureRef.current[activeMarket] = savedSignature;
+          writeWatchlistsPendingBase(activeMarket, undefined);
+
+          if (savedSignature !== signature) {
+            setWatchlists(normalizedSaved.watchlists);
+            setActiveWatchlistId(normalizedSaved.activeWatchlistId);
+          }
           return;
+        } catch {
+          if (cancelled || attempt >= SYNC_RETRY_DELAYS_MS.length) {
+            break;
+          }
+          await new Promise((resolve) => window.setTimeout(resolve, SYNC_RETRY_DELAYS_MS[attempt]));
+          if (cancelled) {
+            return;
+          }
         }
-
-        const normalizedSaved = normalizeWatchlistsStatePayload(savedState);
-        const savedSignature = watchlistsStateSignature(normalizedSaved.watchlists, normalizedSaved.activeWatchlistId);
-        watchlistsServerSignatureRef.current[activeMarket] = savedSignature;
-
-        if (savedSignature !== signature) {
-          setWatchlists(normalizedSaved.watchlists);
-          setActiveWatchlistId(normalizedSaved.activeWatchlistId);
-        }
-      } catch {
-        // Keep localStorage as a fallback when the backend sync is temporarily unavailable.
       }
+      // Out of attempts. localStorage still holds the edit and the pending
+      // marker stays, so the next load re-applies it instead of reverting.
     }
 
     void syncWatchlists();
@@ -3564,7 +3649,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
   const syncSelectedSymbolFromScan = (payload: ScanResultsResponse, preferredSymbol?: string | null) => {
     const nextSelectedSymbol =
-      preferredSymbol && payload.items.some((item) => item.symbol === preferredSymbol)
+      preferredSymbol && (keepsDeepLink(preferredSymbol) || payload.items.some((item) => item.symbol === preferredSymbol))
         ? preferredSymbol
         : payload.items[0]?.symbol ?? null;
     setScanResults(payload);
@@ -4730,7 +4815,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       ];
     });
     setActiveWatchlistId(nextWatchlist.id);
-    setActivePage("watchlists");
+    if (!symbol) {
+      // Bare create — that only happens from the Watchlists page itself, where
+      // landing on the list is the point. A create carrying a symbol comes from
+      // the picker modal, which can be open over the chart grid or a scan
+      // table: yanking the user to another page there loses the grid they were
+      // reading, so the new list is made active and they stay put.
+      setActivePage("watchlists");
+      return;
+    }
+    showToast(`Added ${symbol} to "${trimmed}".`);
   };
 
   const handleRenameWatchlist = (watchlistId: string, name: string) => {
@@ -5617,6 +5711,13 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <MutualFundsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "study" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Deliberately not gated on `loading`: the drill reads its own
+                deck file and needs nothing from the dashboard fetch. */}
+            <StudyPanel />
+          </Suspense>
+        ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
@@ -5629,7 +5730,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" ? (
+        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">
@@ -5684,7 +5785,6 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               {activePage === "screener" ? (
                 <>
                   <ScreenerSidebar
-                    market={activeMarket}
                     activeMode={activeScanner}
                     onModeChange={handleScannerModeChange}
                     counts={{

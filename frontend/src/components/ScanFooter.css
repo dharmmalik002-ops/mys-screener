@@ -38,6 +38,20 @@
   }
 }
 
+/* The breakpoints above read the VIEWPORT, but on the screener page this strip
+   sits in a ~576px column next to the chart. Three cards there leave 137px each
+   — less than one `.sf-mover` row needs (28 + 60 + 60 + gaps) — so the change %
+   spilled out of the column and under the chart panel. Two cards fit. */
+@media (min-width: 1321px) {
+  .screener-page-grid .sf-root {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .screener-page-grid .sf-card-perf {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Dark surfaces alias the global tokens — see the note in ScanTable.css. */
 :root[data-theme="dark"] .sf-root,
 .theme-dark .sf-root {
