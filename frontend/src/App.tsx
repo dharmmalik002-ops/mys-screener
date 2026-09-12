@@ -5960,7 +5960,6 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
               {activePage === "screener" ? (
                 <>
                   <ScreenerSidebar
-                    market={activeMarket}
                     activeMode={activeScanner}
                     onModeChange={handleScannerModeChange}
                     counts={{
