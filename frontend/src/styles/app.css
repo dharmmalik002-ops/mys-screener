@@ -1106,7 +1106,12 @@ button {
 
 .screener-page-grid {
   display: grid;
-  grid-template-columns: 288px minmax(400px, 0.9fr) minmax(0, 1.1fr);
+  /* The middle column carries the scanner settings form and the results table,
+     and the table's row template is fixed-pixel (`--st-grid`, ~524px for the
+     default column set). At the old 0.9fr it resolved to 508px on a 1512px
+     screen, so the table header ran out under the chart. Floor it at 560px and
+     take the 24px back off the rail rather than off the chart. */
+  grid-template-columns: 264px minmax(560px, 1fr) minmax(0, 1fr);
   gap: 20px;
   align-items: start;
   min-height: calc(100dvh - 172px);
@@ -1114,6 +1119,14 @@ button {
 
 .screener-main-stack {
   display: grid;
+  /* Explicit `minmax(0, 1fr)`, not the implicit `auto` column. An auto track
+     takes a min-content floor, and the scanner settings form's min-content is
+     602px — wider than the 508px the middle grid track gets at 1512px. The
+     panels spilled ~94px to the right and the chart panel, being later in DOM
+     order with an opaque background, painted straight over the filter controls.
+     `min-width: 0` on the stack alone does not help: it frees the OUTER track,
+     not this grid's own column. */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   min-width: 0;
 }
