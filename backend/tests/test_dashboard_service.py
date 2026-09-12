@@ -261,6 +261,72 @@ class DashboardServiceIndexHeatmapTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(state.watchlists[0].symbols, ["INFY", "TCS"])
             self.assertTrue((settings.app_state_dir / "data" / "watchlists_state.json").exists())
 
+    def test_file_backup_never_overwrites_a_database_that_did_not_answer(self) -> None:
+        """A failed database read must not promote the on-disk backup.
+
+        A restart that raced the database connection used to serve the file
+        copy AND save it over the live row, replacing the user's real
+        watchlists with a months-old snapshot. The backup may seed the
+        database only when the database answered and held nothing.
+        """
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            temp_root = Path(tmp_dir)
+            backend_root = temp_root / "backend"
+            (backend_root / "data").mkdir(parents=True, exist_ok=True)
+            settings = Settings(app_state_dir=temp_root / "state")
+            state_dir = settings.app_state_dir / "data"
+            state_dir.mkdir(parents=True, exist_ok=True)
+            (state_dir / "watchlists_state.json").write_text(
+                json.dumps(
+                    {
+                        "market": "india",
+                        "updated_at": "2026-04-18T03:00:00Z",
+                        "active_watchlist_id": "wl-1",
+                        "watchlists": [{"id": "wl-1", "name": "Stale", "color": "#4f8cff", "symbols": ["INFY"]}],
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            class StubProvider:
+                def __init__(self, backend_root: Path) -> None:
+                    self.backend_root = backend_root
+
+                @staticmethod
+                def _default_exchange() -> str:
+                    return "NSE"
+
+            class UnreachableStore:
+                def __init__(self) -> None:
+                    self.saved: list = []
+
+                def is_enabled(self) -> bool:
+                    return True
+
+                def load_state(self, _market: str):
+                    raise RuntimeError("database unreachable")
+
+                def save_state(self, state):
+                    self.saved.append(state)
+                    return state
+
+            class EmptyStore(UnreachableStore):
+                def load_state(self, _market: str):
+                    return None
+
+            service = DashboardService(provider=StubProvider(backend_root), settings=settings)
+
+            unreachable = UnreachableStore()
+            service._watchlists_store = unreachable
+            state = service.get_watchlists_state()
+            self.assertEqual(state.watchlists[0].symbols, ["INFY"])  # served read-only
+            self.assertEqual(unreachable.saved, [])  # and NOT written back
+
+            empty = EmptyStore()
+            service._watchlists_store = empty
+            service.get_watchlists_state()
+            self.assertEqual(len(empty.saved), 1)  # a database with no row is seeded
+
     def test_save_watchlists_state_writes_outside_repo_tree(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             temp_root = Path(tmp_dir)

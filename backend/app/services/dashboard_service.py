@@ -6915,19 +6915,31 @@ class DashboardService:
         )
 
     def get_watchlists_state(self) -> WatchlistsStateResponse:
+        # Did the database ANSWER, or did the read fail? The difference decides
+        # whether the on-disk backup may be written back. A failed read used to
+        # be treated exactly like "no row yet", so a restart that raced the
+        # database connection served the file copy AND saved it over the live
+        # row — a months-old backup replacing 168 symbols with 5. The backup is
+        # a read-only liferaft whenever the database might still hold newer
+        # data; it seeds the database only when the database answered and had
+        # nothing.
+        database_answered = False
         if self._watchlists_store.is_enabled():
             try:
                 state = self._watchlists_store.load_state(self._market_key())
+                database_answered = True
                 if state is not None:
                     normalized = self._sanitize_watchlists_state(state)
                     self._persist_watchlists_file_backup(normalized)
                     return normalized
             except Exception:
-                pass
+                database_answered = False
+
+        may_seed_database = self._watchlists_store.is_enabled() and database_answered
 
         state = self._load_watchlists_state_from_file(self._watchlists_state_path())
         if state is not None:
-            if self._watchlists_store.is_enabled():
+            if may_seed_database:
                 try:
                     self._watchlists_store.save_state(state)
                 except Exception:
@@ -6937,7 +6949,7 @@ class DashboardService:
         legacy_state = self._load_watchlists_state_from_file(self._legacy_watchlists_state_path())
         if legacy_state is not None:
             self._persist_watchlists_file_backup(legacy_state)
-            if self._watchlists_store.is_enabled():
+            if may_seed_database:
                 try:
                     self._watchlists_store.save_state(legacy_state)
                 except Exception:
