@@ -7510,6 +7510,13 @@ button {
   align-items: flex-start;
 }
 
+/* Close (72px) and, when the stock has a group, Show Group are absolutely
+   positioned over the header. Reserve their strip so the toolbar cannot run
+   underneath them. */
+.chart-modal:has(> .chart-modal-widget-toggle) .chart-panel .panel-header {
+  padding-right: 200px;
+}
+
 .chart-modal .chart-panel .panel-body {
   padding: 8px 12px 14px;
   gap: 8px;
@@ -7548,12 +7555,16 @@ button {
   min-width: 0;
 }
 
+/* Wrap the toolbar rather than scrolling it sideways. A hidden horizontal
+   scroll parked the last pills — RVOL, Auto Levels — outside the strip and
+   under the Close / Show Group overlays, so clicking RVOL hit the overlay and
+   the widget never toggled off. A second row costs ~47px of chart. */
 .chart-modal .chart-actions {
   flex-direction: row;
   align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
-  overflow-x: auto;
   padding-bottom: 2px;
 }
 
@@ -9000,6 +9011,10 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
+  /* As a flex/grid item the panel would otherwise take its header's min-content
+     floor (~1542px at 1440px wide) and overflow its container, pushing the end
+     of the toolbar past the modal's hidden overflow. */
+  min-width: 0;
 }
 
 /* Make panel body flex container */
