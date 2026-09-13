@@ -6236,19 +6236,23 @@ button {
   gap: 8px;
 }
 
+/* Wrap, never scroll sideways. At ~475px the strip held ~1,490px of controls,
+   so everything from EMA10 on — RVOL and Auto Levels included — sat in the
+   hidden overflow with no scrollbar to hint at it: the pills were rendered but
+   could not be reached. Wrapping plus the tighter pills below keeps the whole
+   indicator row visible for ~90px of header. */
 .screener-page-grid > .chart-panel .chart-actions {
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
   align-items: center;
-  overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .screener-page-grid > .chart-panel .chart-tab-switcher,
 .screener-page-grid > .chart-panel .timeframe-switcher,
 .screener-page-grid > .chart-panel .chart-style-switcher,
-.screener-page-grid > .chart-panel .indicator-switcher,
 .screener-page-grid > .chart-panel .drawing-switcher,
 .screener-page-grid > .chart-panel .fundamentals-toolbar,
 .screener-page-grid > .chart-panel .chart-search-form {
@@ -6256,8 +6260,19 @@ button {
   justify-content: flex-start;
 }
 
+.screener-page-grid > .chart-panel .indicator-switcher {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.screener-page-grid > .chart-panel .chart-search-form {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
 .screener-page-grid > .chart-panel .chart-search-form input {
-  min-width: 190px;
+  min-width: 0;
   padding: 8px 10px;
   border-radius: var(--radius-lg);
 }
@@ -6266,9 +6281,9 @@ button {
 .screener-page-grid > .chart-panel .timeframe-pill,
 .screener-page-grid > .chart-panel .indicator-pill,
 .screener-page-grid > .chart-panel .tool-pill {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: var(--radius-lg);
-  font-size: var(--fs-base);
+  font-size: var(--fs-small);
   white-space: nowrap;
 }
 
@@ -6388,19 +6403,23 @@ button {
   gap: 8px;
 }
 
+/* Wrap, never scroll sideways. At ~475px the strip held ~1,490px of controls,
+   so everything from EMA10 on — RVOL and Auto Levels included — sat in the
+   hidden overflow with no scrollbar to hint at it: the pills were rendered but
+   could not be reached. Wrapping plus the tighter pills below keeps the whole
+   indicator row visible for ~90px of header. */
 .workspace-grid-sector > .chart-panel .chart-actions {
   flex-direction: row;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 6px;
   align-items: center;
-  overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .workspace-grid-sector > .chart-panel .chart-tab-switcher,
 .workspace-grid-sector > .chart-panel .timeframe-switcher,
 .workspace-grid-sector > .chart-panel .chart-style-switcher,
-.workspace-grid-sector > .chart-panel .indicator-switcher,
 .workspace-grid-sector > .chart-panel .drawing-switcher,
 .workspace-grid-sector > .chart-panel .fundamentals-toolbar,
 .workspace-grid-sector > .chart-panel .chart-search-form {
@@ -6408,8 +6427,19 @@ button {
   justify-content: flex-start;
 }
 
+.workspace-grid-sector > .chart-panel .indicator-switcher {
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 6px;
+}
+
+.workspace-grid-sector > .chart-panel .chart-search-form {
+  flex: 1 1 150px;
+  min-width: 0;
+}
+
 .workspace-grid-sector > .chart-panel .chart-search-form input {
-  min-width: 190px;
+  min-width: 0;
   padding: 8px 10px;
   border-radius: var(--radius-lg);
 }
@@ -6418,9 +6448,9 @@ button {
 .workspace-grid-sector > .chart-panel .timeframe-pill,
 .workspace-grid-sector > .chart-panel .indicator-pill,
 .workspace-grid-sector > .chart-panel .tool-pill {
-  padding: 8px 10px;
+  padding: 6px 8px;
   border-radius: var(--radius-lg);
-  font-size: var(--fs-base);
+  font-size: var(--fs-small);
   white-space: nowrap;
 }
 
