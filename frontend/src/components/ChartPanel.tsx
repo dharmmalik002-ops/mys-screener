@@ -10,6 +10,7 @@ import { DEFAULT_CHART_COLORS } from "../lib/chartDefaults";
 import { computeCandleWeights, WeightedCandleSeries } from "../lib/weightedCandleSeries";
 import { buildSymbolSuggestions } from "../lib/searchSuggestions";
 import { Panel } from "./Panel";
+import { StageBadge } from "./StageBadge";
 import { CANDLE_DOWN, CANDLE_UP, NEGATIVE, POSITIVE } from "../lib/marketColors";
 
 export type IndicatorKey = "ema10" | "ema20" | "ema50" | "ema200" | "vwap";
@@ -4775,6 +4776,11 @@ export function ChartPanel({
       subtitle={chartSubtitleText}
       actions={
         <div className="chart-actions">
+          {/* Where this stock is in its own cycle. First thing in the toolbar
+              because it frames everything else on the chart: a textbook base
+              in Stage 4 is a different proposition from the same base in
+              Stage 2. */}
+          <StageBadge symbol={symbol} />
           {onSearchSymbol ? (
             <form
               className="chart-search-form"

@@ -4337,6 +4337,32 @@ class DashboardService:
         self._chart_response_cache[cache_key] = (now, snapshot_updated_at, response)
         return response
 
+    async def get_stock_stage(self, symbol: str) -> dict:
+        """Where one stock sits in its own multi-year cycle.
+
+        Deliberately a separate call rather than a field on the scan rows: the
+        30-week average needs ~300 daily bars per symbol, so decorating a
+        hundred-row scan with it would mean a hundred chart fetches. Per-symbol
+        and cached is the only shape that stays fast.
+        """
+        from app.services import stock_stages
+
+        try:
+            bars = await self.provider.get_chart(
+                symbol, "1D", bars=stock_stages.PREFERRED_DAILY_BARS,
+            )
+        except Exception as exc:
+            logger.warning("stock-stage: bars unavailable for %s: %s", symbol, exc)
+            return {
+                "available": False,
+                "symbol": symbol,
+                "reason": "Price history could not be loaded for this symbol.",
+            }
+
+        result = await asyncio.to_thread(stock_stages.stage_for_bars, bars)
+        result["symbol"] = symbol
+        return result
+
     async def get_chart_history(self, symbol: str, timeframe: str):
         snapshots: list[StockSnapshot] = []
         if not symbol.startswith("^"):

@@ -2879,6 +2879,73 @@ export type MacroContext = {
   } | null;
 };
 
+/* ── Stock stage (Weinstein) ──────────────────────────────────────────────
+   Same classifier as the sector stages page, applied to one stock. Separate
+   from the chart call because it needs ~600 daily bars and is cached apart
+   from the timeframe the user is looking at. ─────────────────────────────── */
+
+export type StockStage = {
+  available: boolean;
+  symbol?: string;
+  reason?: string;
+  stage?: 1 | 2 | 3 | 4;
+  stage_label?: string;
+  blurb?: string;
+  note?: string;
+  early_advance?: boolean;
+  ma30_week?: number | null;
+  price?: number | null;
+  distance_from_ma_pct?: number | null;
+  ma_slope_pct_per_week?: number | null;
+  position_in_2y_range_pct?: number | null;
+  weeks_of_history?: number | null;
+  base?: {
+    tight: boolean | null;
+    range_pct: number | null;
+    position_in_range_pct: number | null;
+    off_52w_high_pct: number | null;
+  } | null;
+};
+
+export function getStockStage(symbol: string, market: MarketKey = "india") {
+  return request<StockStage>(
+    `/api/chart/${encodeURIComponent(symbol)}/stage?market=${market}`,
+    undefined,
+    undefined,
+    (raw): StockStage => {
+      const value = isRecord(raw) ? raw : {};
+      if (!value.available) {
+        return { available: false, reason: readString(value.reason, "Stage is not available.") };
+      }
+      const stageNo = readNumber(value.stage, 0);
+      const baseRaw = isRecord(value.base) ? value.base : null;
+      return {
+        available: true,
+        symbol: readString(value.symbol),
+        stage: (stageNo >= 1 && stageNo <= 4 ? stageNo : 1) as 1 | 2 | 3 | 4,
+        stage_label: readString(value.stage_label),
+        blurb: readString(value.blurb),
+        note: readString(value.note),
+        early_advance: value.early_advance === true,
+        ma30_week: readNullableNumber(value.ma30_week),
+        price: readNullableNumber(value.price),
+        distance_from_ma_pct: readNullableNumber(value.distance_from_ma_pct),
+        ma_slope_pct_per_week: readNullableNumber(value.ma_slope_pct_per_week),
+        position_in_2y_range_pct: readNullableNumber(value.position_in_2y_range_pct),
+        weeks_of_history: readNullableNumber(value.weeks_of_history),
+        base: baseRaw
+          ? {
+              tight: typeof baseRaw.tight === "boolean" ? baseRaw.tight : null,
+              range_pct: readNullableNumber(baseRaw.range_pct),
+              position_in_range_pct: readNullableNumber(baseRaw.position_in_range_pct),
+              off_52w_high_pct: readNullableNumber(baseRaw.off_52w_high_pct),
+            }
+          : null,
+      };
+    },
+  );
+}
+
 export function getMacroContext(market: MarketKey, refresh = false) {
   return request<MacroContext>(
     `/api/markets/macro-context?market=${market}${refresh ? "&refresh=true" : ""}`,

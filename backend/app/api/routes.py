@@ -538,6 +538,12 @@ def build_router(service):
     ):
         return await resolve_service(market).get_chart(symbol=symbol.upper(), timeframe=timeframe)
 
+    @router.get("/chart/{symbol}/stage")
+    async def chart_stage(symbol: str, market: str = Query(default="india")):
+        # Weinstein stage of one stock, from the same classifier the sector
+        # stages page uses — one definition of Stage 2 across the app.
+        return await resolve_service(market).get_stock_stage(symbol.upper())
+
     @router.get("/chart/{symbol}/history", response_model=ChartResponse)
     async def chart_history(
         symbol: str,
@@ -854,6 +860,10 @@ def build_router(service):
         timeframe: str = Query(default="1D"),
     ):
         return await resolve_service(market_name).get_chart(symbol=symbol.upper(), timeframe=timeframe)
+
+    @router.get("/{market_name}/chart/{symbol}/stage")
+    async def namespaced_chart_stage(market_name: str, symbol: str):
+        return await resolve_service(market_name).get_stock_stage(symbol.upper())
 
     @router.get("/{market_name}/chart/{symbol}/history", response_model=ChartResponse)
     async def namespaced_chart_history(
