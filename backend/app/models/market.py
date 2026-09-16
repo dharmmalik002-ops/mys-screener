@@ -1509,11 +1509,35 @@ class CompanyQuestionResponse(BaseModel):
     ai_model: str | None = None
 
 
+class WatchlistNote(BaseModel):
+    """Why a symbol is on the list, and the price that would make it actionable.
+
+    The `why` exists to interrupt impulse: a symbol you cannot state a reason
+    for is one you are watching out of interest rather than intent, and those
+    are the ones that get bought on a green candle. The `trigger` turns the
+    list from a pile of tickers into a set of conditions — nothing needs
+    checking until price reaches the level that was decided in advance.
+    """
+
+    why: str = ""
+    # The level that makes the idea live. Above it for a breakout, below it for
+    # a pullback — direction is the reader's, so no assumption is baked in.
+    trigger: float | None = None
+    # Where the stop would go if the trigger fired. Recorded at the calm moment
+    # rather than the excited one.
+    stop: float | None = None
+    added_at: str | None = None
+
+
 class WatchlistItem(BaseModel):
     id: str
     name: str
     color: str
     symbols: list[str] = Field(default_factory=list)
+    # Keyed by symbol, and separate from `symbols` on purpose: every watchlist
+    # saved before this field existed decodes with an empty dict rather than
+    # failing, and a symbol with no note behaves exactly as it did before.
+    notes: dict[str, WatchlistNote] = Field(default_factory=dict)
 
 
 class WatchlistsStateResponse(BaseModel):

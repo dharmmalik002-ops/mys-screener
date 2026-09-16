@@ -41,6 +41,7 @@ import type {
   ChartGridSortBy,
   ChartGridStat,
 } from "./ChartGridModal";
+import type { WatchlistNote } from "../lib/api";
 import { Panel } from "./Panel";
 import { NewsModal } from "./NewsModal";
 
@@ -56,6 +57,8 @@ export type LocalWatchlist = {
   name: string;
   color: string;
   symbols: string[];
+  /** Keyed by symbol; empty for lists saved before notes existed. */
+  notes: Record<string, WatchlistNote>;
 };
 
 type WatchlistsPanelProps = {
@@ -745,8 +748,26 @@ export function WatchlistsPanel({
     // Symbol | Stage | Price | Change | Trend | RS | Group Rank | Rank in Group | tools
     "minmax(150px, 1.8fr) minmax(62px, 86px) minmax(70px, 88px) minmax(58px, 76px) 56px minmax(42px, 56px) minmax(62px, 88px) minmax(70px, 96px) 32px";
 
+  /** Has price reached the level that was decided in advance?
+   *
+   *  Direction is inferred from where price sat when the note was written is
+   *  NOT knowable here, so the test is deliberately symmetrical: the trigger
+   *  is "reached" once price touches it from either side. Guessing breakout vs
+   *  pullback would be wrong half the time and silently so. */
+  const triggerStateFor = (item: WatchlistDisplayItem): "hit" | "near" | null => {
+    const note = activeWatchlist?.notes?.[item.symbol];
+    const trigger = note?.trigger ?? null;
+    if (trigger === null || !(item.last_price > 0)) return null;
+    const distancePct = Math.abs(item.last_price / trigger - 1) * 100;
+    if (distancePct <= 0.5) return "hit";
+    if (distancePct <= 3) return "near";
+    return null;
+  };
+
   const renderWatchlistRow = (item: WatchlistDisplayItem, virtualHeight?: number) => {
     const logoUrl = getLogoUrl(item.symbol);
+    const note = activeWatchlist?.notes?.[item.symbol] ?? null;
+    const triggerState = triggerStateFor(item);
     const isActive = selectedSymbol === item.symbol;
     const checkboxOn = selectedSymbols.includes(item.symbol);
     const popOpen = movePopoverFor === item.symbol;
@@ -807,8 +828,24 @@ export function WatchlistsPanel({
                   {stalenessFor(item) === "dead" ? "DEAD" : "FADING"}
                 </span>
               ) : null}
+              {triggerState ? (
+                <span
+                  className={`wl-trigger-chip wl-trigger-${triggerState}`}
+                  title={
+                    triggerState === "hit"
+                      ? `Price has reached your trigger of ${note?.trigger}.`
+                      : `Within 3% of your trigger of ${note?.trigger}.`
+                  }
+                >
+                  {triggerState === "hit" ? "AT TRIGGER" : "NEAR"}
+                </span>
+              ) : null}
             </strong>
-            <small>{item.name}</small>
+            {/* The reason replaces the company name when there is one: the name
+                you already know, the reason is what you will have forgotten. */}
+            <small className={note?.why ? "wl-why" : undefined} title={note?.why || item.name}>
+              {note?.why || item.name}
+            </small>
           </span>
         </button>
 

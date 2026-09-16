@@ -9800,3 +9800,39 @@ button {
   align-items: center;
   gap: 5px;
 }
+
+/* Picker modal: the reason is asked for at the one moment it is actually
+   known — before the symbol is on the list. */
+.watchlist-picker-why {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.watchlist-picker-why label { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+
+.watchlist-picker-why label > span {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.watchlist-picker-why input {
+  width: 100%;
+  padding: 7px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+
+.watchlist-picker-why input:focus { outline: 2px solid var(--accent, #3b82f6); outline-offset: -1px; }
+
+.watchlist-picker-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+
+.watchlist-picker-why p { margin: 0; font-size: 11px; line-height: 1.55; color: var(--text-muted); }

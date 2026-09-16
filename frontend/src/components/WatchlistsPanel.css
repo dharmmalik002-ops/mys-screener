@@ -689,3 +689,25 @@
   border-color: color-mix(in srgb, var(--positive, var(--positive)) 55%, transparent);
   color: var(--positive, var(--positive));
 }
+
+/* ── Why-notes and price triggers ────────────────────────────────────────────
+   The reason takes the place of the company name in the row: the name is
+   already known, the reason is the part that gets forgotten. ──────────────── */
+
+.wl-why { color: var(--accent, #3b82f6) !important; font-style: italic; }
+
+.wl-trigger-chip {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  vertical-align: middle;
+}
+
+.wl-trigger-hit  { color: var(--positive); background: color-mix(in srgb, var(--positive) 16%, transparent); }
+.wl-trigger-near { color: var(--warning, #d97706); background: color-mix(in srgb, var(--warning, #d97706) 14%, transparent); }

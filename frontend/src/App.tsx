@@ -92,6 +92,8 @@ import {
   normalizeDashboardResponse,
   normalizeIndustryGroupsResponse,
   normalizeSectorTabResponse,
+  normalizeWatchlistNote,
+  type WatchlistNote,
 } from "./lib/api";
 import { DEFAULT_CHART_COLORS } from "./lib/chartDefaults";
 import { readChartDeepLink } from "./lib/chartLink";
@@ -1449,12 +1451,28 @@ function sanitizeWatchlists(value: unknown): LocalWatchlist[] {
     }
     const color = normalizeWatchlistColor(candidate.color, DEFAULT_WATCHLIST_COLORS[output.length % DEFAULT_WATCHLIST_COLORS.length]);
 
+    // Notes are kept only for symbols that survived the exclusivity pass above.
+    // Carrying a note for a stripped symbol would quietly resurrect it the next
+    // time anything iterated the notes map instead of the symbol list.
+    const notes: Record<string, WatchlistNote> = {};
+    const rawNotes = (candidate as { notes?: unknown }).notes;
+    if (rawNotes && typeof rawNotes === "object") {
+      for (const [rawSymbol, rawNote] of Object.entries(rawNotes as Record<string, unknown>)) {
+        const symbol = normalizeStoredSymbol(rawSymbol);
+        if (!symbol || !symbols.includes(symbol)) continue;
+        const note = normalizeWatchlistNote(rawNote);
+        if (!note.why && note.trigger === null && note.stop === null) continue;
+        notes[symbol] = note;
+      }
+    }
+
     seenIds.add(id);
     output.push({
       id,
       name: rawName,
       color,
       symbols,
+      notes,
     });
   }
 
@@ -4891,6 +4909,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       name: trimmed,
       color: DEFAULT_WATCHLIST_COLORS[watchlists.length % DEFAULT_WATCHLIST_COLORS.length],
       symbols: symbol ? [symbol] : [],
+      notes: {},
     };
     setWatchlists((current) => {
       if (!symbol) {
@@ -4972,11 +4991,12 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     );
   };
 
-  const handleAddToWatchlist = (watchlistId: string, symbol: string) => {
+  const handleAddToWatchlist = (watchlistId: string, symbol: string, note?: WatchlistNote) => {
     const normalizedSymbol = symbol.trim().toUpperCase();
     if (!normalizedSymbol) {
       return;
     }
+    const hasNote = Boolean(note && (note.why.trim() || note.trigger !== null || note.stop !== null));
     setWatchlists((current) => {
       if (!current.some((watchlist) => watchlist.id === watchlistId)) {
         return current;
@@ -4986,15 +5006,27 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
       // "Move here" actually moves instead of duplicating.
       return current.map((watchlist) => {
         if (watchlist.id === watchlistId) {
+          const notes = hasNote
+            ? { ...watchlist.notes, [normalizedSymbol]: { ...(note as WatchlistNote), added_at: new Date().toISOString() } }
+            : watchlist.notes;
           if (watchlist.symbols.includes(normalizedSymbol)) {
-            return watchlist;
+            // Already here: a re-add is how an existing idea gets its reason
+            // updated, so the note still applies.
+            return hasNote ? { ...watchlist, notes } : watchlist;
           }
-          return { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol] };
+          return { ...watchlist, symbols: [...watchlist.symbols, normalizedSymbol], notes };
         }
         if (!watchlist.symbols.includes(normalizedSymbol)) {
           return watchlist;
         }
-        return { ...watchlist, symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol) };
+        // Moving out of this list takes the old note with it — the reason
+        // belonged to the idea as filed there, not to the symbol forever.
+        const { [normalizedSymbol]: _removed, ...remaining } = watchlist.notes;
+        return {
+          ...watchlist,
+          symbols: watchlist.symbols.filter((item) => item !== normalizedSymbol),
+          notes: remaining,
+        };
       });
     });
   };

@@ -200,11 +200,21 @@ export type HistoricalBreadthResponse = {
   universes: HistoricalUniverseBreadth[];
 };
 
+/** Why a symbol is on the list, and the price that makes it actionable. */
+export type WatchlistNote = {
+  why: string;
+  trigger: number | null;
+  stop: number | null;
+  added_at: string | null;
+};
+
 export type WatchlistItem = {
   id: string;
   name: string;
   color: string;
   symbols: string[];
+  /** Keyed by symbol. Absent for every watchlist saved before notes existed. */
+  notes: Record<string, WatchlistNote>;
 };
 
 export type WatchlistsStateResponse = {
@@ -1994,13 +2004,29 @@ function normalizeCompanyEarningsSummary(value: unknown): CompanyEarningsSummary
   };
 }
 
+export function normalizeWatchlistNote(value: unknown): WatchlistNote {
+  const raw = isRecord(value) ? value : {};
+  return {
+    why: readString(raw.why),
+    trigger: readNullableNumber(raw.trigger),
+    stop: readNullableNumber(raw.stop),
+    added_at: readNullableString(raw.added_at),
+  };
+}
+
 function normalizeWatchlistItem(value: unknown): WatchlistItem {
   const raw = isRecord(value) ? value : {};
+  const notesRaw = isRecord(raw.notes) ? raw.notes : {};
+  const notes: Record<string, WatchlistNote> = {};
+  for (const [symbol, note] of Object.entries(notesRaw)) {
+    notes[symbol.toUpperCase()] = normalizeWatchlistNote(note);
+  }
   return {
     id: readString(raw.id),
     name: readString(raw.name),
     color: readString(raw.color),
     symbols: readStringArray(raw.symbols),
+    notes,
   };
 }
 

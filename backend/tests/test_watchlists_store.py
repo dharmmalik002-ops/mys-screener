@@ -11,8 +11,9 @@ BACKEND_ROOT = REPO_ROOT / "backend"
 if str(BACKEND_ROOT) not in sys.path:
     sys.path.insert(0, str(BACKEND_ROOT))
 
-from app.models.market import WatchlistItem, WatchlistsStateResponse
+from app.models.market import WatchlistItem, WatchlistNote, WatchlistsStateResponse
 from app.services import watchlists_store
+from app.services.watchlists_store import merge_watchlists_state
 
 
 class WatchlistsStoreTests(unittest.TestCase):
@@ -181,3 +182,62 @@ class _FakeConnection:
 
     def __exit__(self, *_exc) -> None:
         return None
+
+
+# ── Why-notes and price triggers ─────────────────────────────────────────────
+
+
+class WatchlistNotesTests(unittest.TestCase):
+    """Notes live on the user's only copy of their watchlists, so the two
+    things that matter are that old data still loads and that new data is not
+    dropped on the way through the merge."""
+
+    @staticmethod
+    def _state(watchlists):
+        return WatchlistsStateResponse(
+            market="india", active_watchlist_id="w1", watchlists=watchlists,
+        )
+
+    def test_a_watchlist_saved_before_notes_existed_still_loads(self):
+        item = WatchlistItem(id="w1", name="Core", color="#fff", symbols=["TITAN"])
+        self.assertEqual(item.notes, {})
+
+    def test_notes_survive_the_merge(self):
+        incoming = self._state([
+            WatchlistItem(
+                id="w1", name="Core", color="#fff", symbols=["TITAN"],
+                notes={"TITAN": WatchlistNote(why="pivot 4,900 on volume", trigger=4900.0, stop=4700.0)},
+            )
+        ])
+        merged = merge_watchlists_state(None, incoming)
+        note = merged.watchlists[0].notes["TITAN"]
+        self.assertEqual(note.why, "pivot 4,900 on volume")
+        self.assertEqual(note.trigger, 4900.0)
+        self.assertEqual(note.stop, 4700.0)
+
+    def test_the_client_payload_stays_authoritative_for_notes_too(self):
+        """Same PUT semantics as the symbol list. Preserving a note the client
+        did not send would resurrect notes for removed symbols — the exact bug
+        that `a deleted watchlist no longer comes back` fixed for watchlists."""
+        existing = self._state([
+            WatchlistItem(
+                id="w1", name="Core", color="#fff", symbols=["TITAN", "INFY"],
+                notes={"INFY": WatchlistNote(why="old idea", trigger=1500.0)},
+            )
+        ])
+        incoming = self._state([
+            WatchlistItem(id="w1", name="Core", color="#fff", symbols=["TITAN"])
+        ])
+        merged = merge_watchlists_state(existing, incoming)
+        self.assertEqual(merged.watchlists[0].symbols, ["TITAN"])
+        self.assertNotIn("INFY", merged.watchlists[0].notes)
+
+    def test_a_note_with_no_trigger_is_allowed(self):
+        """A reason without a level is still worth recording — it is the reason
+        that interrupts the impulse, and not every idea has a price yet."""
+        item = WatchlistItem(
+            id="w1", name="Core", color="#fff", symbols=["TITAN"],
+            notes={"TITAN": WatchlistNote(why="watching the base build")},
+        )
+        self.assertIsNone(item.notes["TITAN"].trigger)
+        self.assertEqual(item.notes["TITAN"].why, "watching the base build")
