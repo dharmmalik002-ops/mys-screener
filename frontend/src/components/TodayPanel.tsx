@@ -199,7 +199,7 @@ export function TodayPanel({ market = "india", xpBreadth, groupsData, onOpenSymb
       </header>
 
       <ol className="today-steps">
-        <li className="today-step">
+        <li className="today-step today-step--prose">
           <h3><span>1</span> What the world did</h3>
           {macro?.available && macro.note ? (
             <>
@@ -215,7 +215,7 @@ export function TodayPanel({ market = "india", xpBreadth, groupsData, onOpenSymb
           )}
         </li>
 
-        <li className="today-step">
+        <li className="today-step today-step--prose">
           <h3><span>2</span> What the tape is paying</h3>
           {exposure?.available && exposure.verdict?.available ? (
             <>

@@ -7,7 +7,12 @@
    this page exists to interrupt.
    ========================================================================== */
 
-.today { max-width: 920px; margin: 0 auto; padding-bottom: 24px; }
+/* Widened from 920px, which left big empty margins on a desktop monitor. Still
+   capped and centred rather than fluid: the steps are meant to be read in
+   order, and an unbounded column on an ultrawide screen becomes a scan rather
+   than a sequence. The extra width is spent INSIDE each step (see the wide
+   breakpoint at the bottom), not on longer lines. */
+.today { max-width: 1280px; margin: 0 auto; padding-bottom: 24px; }
 
 .today-head {
   display: flex;
@@ -209,6 +214,28 @@
 
 .today-tick--on > span { background: var(--positive); border-color: var(--positive); }
 .today-tick--on { color: var(--text-muted); text-decoration: line-through; }
+
+/* Above this the steps stay stacked — the sequence is the product and a
+   two-column grid of steps would invite the eye to jump straight to step 4 —
+   but each step's own content spreads out instead of running in a narrow
+   ribbon down the left. */
+@media (min-width: 1040px) {
+  .today-step--prose { columns: 2; column-gap: 36px; }
+  /* A paragraph split across the gutter mid-sentence is unreadable. */
+  .today-step--prose .today-stance,
+  .today-step--prose .today-prose { break-inside: avoid; }
+  /* The heading must not sit alone at the top of the second column. */
+  .today-step--prose h3 { column-span: all; }
+
+  .today-leaders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
+  .today-leaders > .today-prose { grid-column: 1 / -1; }
+
+  .today-check { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
+}
+
+@media (min-width: 1360px) {
+  .today-leaders { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 
 @media (max-width: 680px) {
   .today-pos { grid-template-columns: 1fr auto; row-gap: 4px; }
