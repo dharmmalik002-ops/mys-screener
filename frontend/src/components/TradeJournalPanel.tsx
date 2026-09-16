@@ -50,20 +50,20 @@ import "./TradeJournalPanel.css";
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 type OpenPosCat = "full" | "half" | "quarter";
-interface VCP { t?: string; depth?: string; vol?: string; }
-interface Trade {
+export interface VCP { t?: string; depth?: string; vol?: string; }
+export interface Trade {
   symbol: string; type: string; qty: number; price: number; date: string;
   setupType: string; stoploss: number; target: number; tags: string[];
   remarks: string; img?: string; vcp?: VCP; product?: Product;
 }
-interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; prev_close?: number; }
-interface OpenLot {
+export interface PosMeta { cmp?: number; sl?: number; fetchTicker?: string; prev_close?: number; }
+export interface OpenLot {
   qty: number;
   price: number;
   date: string;
   buyIndex: number;
 }
-interface ClosedTrade {
+export interface ClosedTrade {
   symbol: string; qty: number; entryPx: number; exitPx: number;
   entryDate: string; exitDate: string; pnl: number; perc: number;
   setupType: string; tags: string[]; remarks: string; img?: string; vcp?: VCP;
@@ -71,12 +71,12 @@ interface ClosedTrade {
   equitySnapshot: number; posSizePct: number; sellIndex: number; buyIndices: number[];
   product: Product; grossPnl: number; charges: number; breakdown: ChargesBreakdown;
 }
-interface OpenPosition {
+export interface OpenPosition {
   symbol: string; qty: number; avgPx: number; totalInvested: number;
   buyIndices: number[]; tags: string[]; remarks: string; img?: string; setupType?: string;
   lots: OpenLot[];
 }
-interface FIFOResult {
+export interface FIFOResult {
   closedTrades: ClosedTrade[]; openPositions: OpenPosition[];
   currentEquity: number; openLotsDict: Record<string, Trade[]>;
 }
@@ -121,12 +121,12 @@ interface TradeJournalPanelProps {
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
-const LS_DATA = "tradingJournalData";
-const LS_EQUITY = "tradingJournalEquity";
+export const LS_DATA = "tradingJournalData";
+export const LS_EQUITY = "tradingJournalEquity";
 const LS_SETUPS = "tradingJournalSetups";
 const LS_POSITIONS = "tradingJournalPositions";
-const LS_META = "tradingJournalPosMeta";
-const LS_CHARGES = "tradingJournalChargesConfig";
+export const LS_META = "tradingJournalPosMeta";
+export const LS_CHARGES = "tradingJournalChargesConfig";
 
 const PREDEFINED_TAGS = [
   "FOMO", "Early Entry", "Late Entry", "Perfect Entry", "Chased",
@@ -263,7 +263,7 @@ function formatAiReviewText(value: unknown): string {
 }
 
 // ─── localStorage helpers ──────────────────────────────────────────────────────
-function lsGet<T>(key: string, fallback: T): T {
+export function lsGet<T>(key: string, fallback: T): T {
   try { const s = localStorage.getItem(key); return s ? JSON.parse(s) as T : fallback; } catch { return fallback; }
 }
 function lsSet(key: string, val: unknown) {
@@ -490,7 +490,7 @@ function gradeFromScore(score: number) {
   return "D";
 }
 
-function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: ChargesConfig): FIFOResult {
+export function calculateFIFO(trades: Trade[], startEquity: number, chargesConfig: ChargesConfig): FIFOResult {
   const sorted = [...trades].sort((a, b) => {
     const ta = getSafeTime(a.date), tb = getSafeTime(b.date);
     if (ta !== tb) return ta - tb;

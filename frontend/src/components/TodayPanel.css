@@ -1,0 +1,216 @@
+/* ==========================================================================
+   The five-minute routine.
+
+   Laid out as a numbered sequence rather than a dashboard grid on purpose:
+   the order is the product. A grid invites the eye to jump to whatever is
+   brightest, which is usually the list of things to buy — the exact habit
+   this page exists to interrupt.
+   ========================================================================== */
+
+.today { max-width: 920px; margin: 0 auto; padding-bottom: 24px; }
+
+.today-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.today-eyebrow {
+  margin: 0 0 3px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.today-head h2 { margin: 0; font-size: 22px; font-weight: 680; color: var(--text); }
+
+.today-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.today-spin { animation: today-rotate 0.9s linear infinite; }
+@keyframes today-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .today-spin { animation: none; } }
+
+.today-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 14px; }
+
+.today-step {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-flat);
+}
+
+.today-step h3 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.today-step h3 > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--text) 10%, transparent);
+  color: var(--text);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.today-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-style: normal;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--negative);
+}
+
+.today-stance { margin: 0 0 8px; font-size: 15px; line-height: 1.55; color: var(--text); font-weight: 600; }
+.today-stance--supportive { color: var(--positive); }
+.today-stance--hostile { color: var(--negative); }
+.today-stance strong { font-variant-numeric: tabular-nums; }
+
+.today-prose { max-width: 70ch; margin: 0 0 8px; font-size: 13px; line-height: 1.65; color: var(--text); }
+.today-prose:last-child { margin-bottom: 0; }
+.today-muted { color: var(--text-muted); }
+
+/* ── the book ────────────────────────────────────────────────────────────── */
+
+.today-book { display: flex; flex-direction: column; gap: 5px; }
+
+.today-pos {
+  display: grid;
+  grid-template-columns: minmax(130px, 1.4fr) minmax(120px, 1fr) 76px 110px;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 9px 11px;
+  border: 1px solid var(--line);
+  border-left-width: 3px;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.today-pos:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+
+.today-pos--bad   { border-left-color: var(--negative); }
+.today-pos--warn  { border-left-color: var(--warning, #d97706); }
+.today-pos--good  { border-left-color: var(--positive); }
+.today-pos--muted { border-left-color: var(--line); }
+
+.today-pos-sym strong { display: block; color: var(--text); font-weight: 650; }
+.today-pos-sym em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); }
+
+.today-pos--bad .today-pos-stop  { color: var(--negative); font-weight: 600; }
+.today-pos--warn .today-pos-stop { color: var(--warning, #d97706); font-weight: 600; }
+.today-pos--good .today-pos-stop { color: var(--text-muted); }
+.today-pos--muted .today-pos-stop { color: var(--text-muted); }
+
+.today-pos-num { text-align: right; font-variant-numeric: tabular-nums; color: var(--text); }
+.today-pos-risk { color: var(--text-muted); }
+
+/* ── leaders ─────────────────────────────────────────────────────────────── */
+
+.today-leaders { display: flex; flex-direction: column; gap: 10px; }
+
+.today-group h4 {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 0 0 5px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text);
+}
+
+.today-group h4 em { font-style: normal; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.today-group h4 small { font-weight: 500; font-size: 11px; color: var(--text-muted); }
+
+.today-picks { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.today-picks button {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.today-picks button:hover { border-color: var(--text-muted); }
+.today-picks em { font-style: normal; font-size: 11px; font-variant-numeric: tabular-nums; }
+.today-picks .pos { color: var(--positive); }
+.today-picks .neg { color: var(--negative); }
+
+/* ── sign off ────────────────────────────────────────────────────────────── */
+
+.today-check { list-style: none; margin: 0 0 10px; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+
+.today-tick {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.today-tick:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+
+.today-tick > span {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--bg, #fff);
+}
+
+.today-tick--on > span { background: var(--positive); border-color: var(--positive); }
+.today-tick--on { color: var(--text-muted); text-decoration: line-through; }
+
+@media (max-width: 680px) {
+  .today-pos { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .today-pos-num { text-align: left; }
+}

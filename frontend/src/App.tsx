@@ -3,6 +3,7 @@ import {
   GraduationCap,
   Globe,
   House,
+  ListChecks,
   Landmark,
   Layers,
   Moon,
@@ -102,6 +103,7 @@ import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
 import { AppStatusBanners } from "./components/AppStatusBanners";
 
+const TodayPanel = lazy(() => import("./components/TodayPanel").then((module) => ({ default: module.TodayPanel })));
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
 const ChartGroupModal = lazy(() => import("./components/ChartGroupModal"));
 const TradeReviewModal = lazy(() => import("./components/TradeReviewModal").then((module) => ({ default: module.TradeReviewModal })));
@@ -205,7 +207,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study";
+type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -218,6 +220,9 @@ type NavPage = {
 };
 
 const NAV_PAGES: NavPage[] = [
+  // First in the bar on purpose: the routine only works if it is what you
+  // open before the screener, not something you find afterwards.
+  { page: "today", label: "Today", short: "Today", Icon: ListChecks },
   { page: "home", label: "Home", short: "Home", Icon: House },
   { page: "screener", label: "Screener", short: "Screen", Icon: Radar },
   { page: "groups", label: "Groups", short: "Groups", Icon: Layers },
@@ -5833,6 +5838,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           { mode: "improving-rs", label: "52 Week High RS" },
         ]}
         pages={[
+          { page: "today", label: "Today" },
           { page: "home", label: "Home" },
           { page: "screener", label: "Screener" },
           { page: "groups", label: "Groups" },
@@ -5916,6 +5922,18 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <MutualFundsPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "today" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Not gated on `loading`: every section degrades on its own, and a
+                routine that waits for the full dashboard is not a routine. */}
+            <TodayPanel
+              market={activeMarket}
+              xpBreadth={dashboard?.xp_breadth ?? null}
+              groupsData={groupsData}
+              onOpenSymbolChart={handleJournalOpenSymbolChart}
+            />
+          </Suspense>
+        ) : null}
         {activePage === "study" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             {/* Deliberately not gated on `loading`: the drill reads its own
@@ -5935,7 +5953,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" ? (
+        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">
