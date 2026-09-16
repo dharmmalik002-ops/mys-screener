@@ -70,3 +70,6 @@ backend/data/mf_details/
 backend/data/mf_nav/
 backend/data/mf_reference.json
 backend/data/mf_portfolio.json
+
+# Vercel CLI project linkage — Vercel advises against committing this.
+frontend/.vercel/
