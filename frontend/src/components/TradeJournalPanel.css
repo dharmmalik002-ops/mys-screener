@@ -1435,7 +1435,10 @@
 }
 
 /* ─── Position Sizer ─────────────────────────────────────────────────────── */
-.tj-sizer-page { max-width: 560px; margin: 0 auto; }
+/* Widened from 560px: the sizer now carries a verdict, eight supporting
+   figures and its rule inputs, which wrapped to one cramped column at the
+   old width. */
+.tj-sizer-page { max-width: 880px; margin: 0 auto; }
 .tj-sizer-card { }
 
 .tj-sizer-results {

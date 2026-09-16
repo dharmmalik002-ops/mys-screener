@@ -43,6 +43,7 @@ import {
   type ChargesConfig, type ChargesBreakdown, type Product,
 } from "../lib/chargesCalculator";
 import { NewsModal } from "./NewsModal";
+import { PositionSizer } from "./PositionSizer";
 import "./TradeJournalPanel.css";
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -1621,16 +1622,6 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const [calcStop, setCalcStop] = useState("");
   const [calcQtyRes, setCalcQtyRes] = useState("");
 
-  // Position sizer
-  const [sizerEquity, setSizerEquity] = useState(String(startEquity));
-  const [sizerRiskPct, setSizerRiskPct] = useState("1");
-  const [sizerEntry, setSizerEntry] = useState("");
-  const [sizerSLPct, setSizerSLPct] = useState("2");
-  const [sizerResultQty, setSizerResultQty] = useState(0);
-  const [sizerResultSL, setSizerResultSL] = useState(0);
-  const [sizerResultRisk, setSizerResultRisk] = useState(0);
-  const [sizerResultPos, setSizerResultPos] = useState(0);
-  const [sizerProduct, setSizerProduct] = useState<Product>("delivery");
 
   // Filters
   const [filterMonth, setFilterMonth] = useState("all");
@@ -1713,7 +1704,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       }
       if (!localTrades.length && typeof r.startEquity === "number" && r.startEquity > 0) {
         setStartEquity(r.startEquity); setEquityInput(String(r.startEquity));
-        setSizerEquity(String(r.startEquity)); setCalcCap(String(r.startEquity));
+        setCalcCap(String(r.startEquity));
         lsSet(LS_EQUITY, r.startEquity);
       }
       if (!localTrades.length && Array.isArray(r.setups) && (r.setups as string[]).length > 0) {
@@ -1744,20 +1735,6 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
     );
     setModal({ type: "add-from-screener", symbol: addRequest.symbol, suggestedPrice: addRequest.suggestedPrice });
   }, [addRequest, setups]);
-
-  // ── Position sizer reactive calc ─────────────────────────────────────────
-  useEffect(() => {
-    const eq = parseFloat(sizerEquity) || 0, rp = parseFloat(sizerRiskPct) || 0;
-    const en = parseFloat(sizerEntry) || 0, sp = parseFloat(sizerSLPct) || 0;
-    if (eq > 0 && rp > 0 && en > 0 && sp > 0) {
-      const riskAmt = eq * (rp / 100), slPx = en - en * (sp / 100), rps = en - slPx;
-      if (rps > 0) {
-        const qty = Math.floor(riskAmt / rps);
-        setSizerResultQty(qty); setSizerResultSL(slPx); setSizerResultRisk(riskAmt); setSizerResultPos(qty * en); return;
-      }
-    }
-    setSizerResultQty(0); setSizerResultSL(0); setSizerResultRisk(0); setSizerResultPos(0);
-  }, [sizerEquity, sizerRiskPct, sizerEntry, sizerSLPct]);
 
   // ── Auto price sync: on mount + when open-positions tab is active ─────────
   const autoSyncRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -2481,7 +2458,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
           importedMeta = unwrap<Record<string, PosMeta>>(data.posMeta, {});
         }
         if (Array.isArray(importedTrades) && importedTrades.length > 0) { saveTrades(importedTrades); }
-        if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setSizerEquity(String(importedEquity)); setCalcCap(String(importedEquity)); }
+        if (importedEquity > 0) { setStartEquity(importedEquity); lsSet(LS_EQUITY, importedEquity); setEquityInput(String(importedEquity)); setCalcCap(String(importedEquity)); }
         const mergedSetups = withDefaultSetups(importedSetups);
         if (Array.isArray(importedSetups) && importedSetups.length > 0) { setSetups(mergedSetups); lsSet(LS_SETUPS, mergedSetups); }
         if (Object.keys(importedPositions).length > 0) { setOpenPosCats(importedPositions); lsSet(LS_POSITIONS, importedPositions); }
@@ -3172,7 +3149,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                 const val = parseFloat(equityInput);
                 if (val > 0) {
                   setStartEquity(val); lsSet(LS_EQUITY, val);
-                  setSizerEquity(String(val)); setCalcCap(String(val));
+                  setCalcCap(String(val));
                   syncToBackend(trades, val, setups, openPosCats, posMeta);
                 }
               }}
@@ -4302,39 +4279,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         <div className="tj-page tj-sizer-page">
           <div className="tj-card tj-sizer-card">
             <div className="tj-card-hdr">Position Sizer</div>
-            <div className="tj-form-grid-2">
-              <div className="tj-form-field"><label>Account Equity (₹)</label><input className="tj-input" type="number" value={sizerEquity} onChange={e => setSizerEquity(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Account Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerRiskPct} onChange={e => setSizerRiskPct(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Entry Price (₹)</label><input className="tj-input" type="number" step="any" value={sizerEntry} onChange={e => setSizerEntry(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Stop Loss / Position Risk (%)</label><input className="tj-input" type="number" step="0.1" value={sizerSLPct} onChange={e => setSizerSLPct(e.target.value)} /></div>
-              <div className="tj-form-field"><label>Product</label>
-                <select className="tj-select" value={sizerProduct} onChange={e => setSizerProduct(e.target.value as Product)}>
-                  <option value="delivery">Delivery (CNC)</option>
-                  <option value="intraday">Intraday (MIS)</option>
-                </select>
-              </div>
-            </div>
-            <div className="tj-sizer-results">
-              <div className="tj-sizer-box"><div className="tj-sizer-label">Qty to Buy</div><div className="tj-sizer-val accent">{sizerResultQty}</div></div>
-              <div className="tj-sizer-box"><div className="tj-sizer-label">SL Price</div><div className="tj-sizer-val neg">₹{fmt(sizerResultSL)}</div></div>
-              <div className="tj-sizer-box"><div className="tj-sizer-label">Capital at Risk</div><div className="tj-sizer-val neg">₹{fmt(sizerResultRisk)}</div></div>
-              <div className="tj-sizer-box"><div className="tj-sizer-label">Position Size</div><div className="tj-sizer-val">₹{fmt(sizerResultPos)}</div></div>
-            </div>
-            {sizerResultQty > 0 && sizerResultPos > 0 && (() => {
-              const est = computeCharges({ buyValue: sizerResultPos, sellValue: sizerResultPos, product: sizerProduct, config: chargesConfig });
-              const bePct = breakevenPct(sizerResultPos, est);
-              return (
-                <div className="tj-sizer-charges">
-                  <div className="tj-sizer-charges-hdr">Estimated round-trip charges <span className="tj-prod-pill">{sizerProduct === "intraday" ? "Intraday" : "Delivery"}</span></div>
-                  <div className="tj-sizer-results">
-                    <div className="tj-sizer-box"><div className="tj-sizer-label">Round-trip charges</div><div className="tj-sizer-val neg">₹{fmt(est.total)}</div></div>
-                    <div className="tj-sizer-box"><div className="tj-sizer-label">Breakeven move</div><div className="tj-sizer-val">{bePct.toFixed(2)}%</div></div>
-                    <div className="tj-sizer-box"><div className="tj-sizer-label">Net at SL hit</div><div className="tj-sizer-val neg">{fmtPnl(-(sizerResultRisk + est.total))}</div></div>
-                  </div>
-                  <div className="tj-sizer-charges-note">Price must rise ~{bePct.toFixed(2)}% just to cover charges. Estimate assumes exit ≈ entry; edit rates under ⚙ Charges.</div>
-                </div>
-              );
-            })()}
+            <PositionSizer equity={startEquity} chargesConfig={chargesConfig} />
           </div>
         </div>
       )}

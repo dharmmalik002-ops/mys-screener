@@ -1,0 +1,176 @@
+/* ==========================================================================
+   Position sizer.
+
+   The layout puts the ANSWER — how many shares — above the supporting
+   numbers, because that is the only output the trader acts on. The verdict
+   sits above even that: a trade that breaks the account's own rules should be
+   refused before the share count is read, not after.
+   ========================================================================== */
+
+.psz { display: flex; flex-direction: column; gap: 16px; }
+
+.psz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.psz-grid--trade { padding-top: 14px; border-top: 1px solid var(--line); }
+
+.psz-field { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+
+.psz-field > span {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+  /* Two lines' worth of room reserved: the derived hints ("3.00% below entry")
+     appear only once a price is typed, and without this the field grows and
+     knocks its neighbours out of alignment as you fill the form. */
+  min-height: 2.6em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.psz-field > span em {
+  font-style: normal;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+  font-size: 11px;
+  color: var(--accent, #3b82f6);
+}
+
+.psz-field input,
+.psz-field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  background: var(--card-flat, transparent);
+  color: var(--text);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.psz-field input:focus,
+.psz-field select:focus { outline: 2px solid var(--accent, #3b82f6); outline-offset: -1px; }
+
+/* ── verdict ─────────────────────────────────────────────────────────────── */
+
+.psz-verdict {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.psz-verdict strong { display: block; margin-bottom: 4px; }
+.psz-verdict p { margin: 0; color: var(--text-muted); }
+.psz-verdict ul { margin: 0; padding-left: 18px; color: var(--text-muted); }
+.psz-verdict li + li { margin-top: 5px; }
+
+.psz-verdict--ok {
+  border-color: color-mix(in srgb, var(--positive) 45%, var(--line));
+  background: color-mix(in srgb, var(--positive) 9%, transparent);
+  color: var(--positive);
+}
+
+.psz-verdict--reduced {
+  border-color: color-mix(in srgb, var(--warning, #d97706) 45%, var(--line));
+  background: color-mix(in srgb, var(--warning, #d97706) 9%, transparent);
+  color: var(--warning, #d97706);
+}
+
+.psz-verdict--blocked {
+  border-color: color-mix(in srgb, var(--negative) 45%, var(--line));
+  background: color-mix(in srgb, var(--negative) 9%, transparent);
+  color: var(--negative);
+}
+
+/* ── the answer ──────────────────────────────────────────────────────────── */
+
+.psz-answer {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg, 12px);
+  background: var(--card-flat);
+}
+
+.psz-answer-main { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; }
+
+.psz-answer-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.psz-answer-main strong {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.psz-answer-unit { font-size: 14px; color: var(--text-muted); }
+
+.psz-answer-sub {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+/* ── supporting numbers ──────────────────────────────────────────────────── */
+
+.psz-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background: var(--line);
+}
+
+.psz-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--card-flat);
+}
+
+.psz-stats span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.psz-stats strong {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.psz-stats .psz-pos strong { color: var(--positive); }
+.psz-stats .psz-neg strong { color: var(--negative); }
+
+.psz-note { margin: 0; font-size: 11px; line-height: 1.6; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .psz-answer-main strong { font-size: 28px; }
+}
