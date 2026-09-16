@@ -47,6 +47,12 @@ export type SizingInputs = {
   charges?: ChargesConfig;
   /** Below this, the trade is flagged as not worth its own risk. */
   minRewardRisk?: number;
+  /** 0-1 haircut applied to the final share count — the regime gate's lever.
+   *  Kept as an input rather than computed here so the sizing maths stays
+   *  independent of where the judgement came from. */
+  sizeMultiplier?: number;
+  /** Why the haircut applies, in the trader's own evidence. Surfaced verbatim. */
+  sizeMultiplierReason?: string;
 };
 
 export type SizingVerdict = "take" | "reduced" | "blocked";
@@ -64,8 +70,10 @@ export type SizingResult = {
 
   sharesByRisk: number;
   sharesByWeight: number;
+  /** What the caps alone would allow, before any haircut. */
+  sharesBeforeMultiplier: number;
   shares: number;
-  limitedBy: "risk" | "weight" | null;
+  limitedBy: "risk" | "weight" | "gate" | null;
 
   positionValue: number;
   positionPctOfEquity: number;
@@ -92,6 +100,7 @@ const EMPTY: SizingResult = {
   riskBudget: 0,
   sharesByRisk: 0,
   sharesByWeight: 0,
+  sharesBeforeMultiplier: 0,
   shares: 0,
   limitedBy: null,
   positionValue: 0,
@@ -124,6 +133,8 @@ export function computeSizing(inputs: SizingInputs): SizingResult {
     riskPctOfEquity, maxPositionPct, product,
     charges = DEFAULT_CHARGES,
     minRewardRisk = 2,
+    sizeMultiplier = 1,
+    sizeMultiplierReason,
   } = inputs;
 
   const blockers: string[] = [];
@@ -146,11 +157,24 @@ export function computeSizing(inputs: SizingInputs): SizingResult {
   const sharesByRisk = Math.floor(riskBudget / riskPerShare);
   const weightCapValue = equity * (maxPositionPct > 0 ? maxPositionPct / 100 : 1);
   const sharesByWeight = Math.floor(weightCapValue / entry);
-  const shares = Math.max(0, Math.min(sharesByRisk, sharesByWeight));
+  const sharesBeforeMultiplier = Math.max(0, Math.min(sharesByRisk, sharesByWeight));
+
+  // The gate is applied last and also floors: a haircut that rounded up would
+  // not be a haircut.
+  const multiplier = Math.max(0, Math.min(1, sizeMultiplier));
+  const shares = Math.floor(sharesBeforeMultiplier * multiplier);
 
   const warnings: string[] = [];
-  let limitedBy: "risk" | "weight" | null = null;
-  if (shares > 0) {
+  let limitedBy: "risk" | "weight" | "gate" | null = null;
+  if (multiplier < 1 && sharesBeforeMultiplier > 0) {
+    limitedBy = "gate";
+    warnings.push(
+      (sizeMultiplierReason ? `${sizeMultiplierReason} ` : "") +
+      `Suggested size cut to ${Math.round(multiplier * 100)}% — ` +
+      `${shares.toLocaleString()} shares instead of ${sharesBeforeMultiplier.toLocaleString()}.`,
+    );
+  }
+  if (shares > 0 && limitedBy === null) {
     if (sharesByWeight < sharesByRisk) {
       limitedBy = "weight";
       warnings.push(
@@ -235,6 +259,7 @@ export function computeSizing(inputs: SizingInputs): SizingResult {
     riskBudget,
     sharesByRisk,
     sharesByWeight,
+    sharesBeforeMultiplier,
     shares,
     limitedBy,
     positionValue,

@@ -3240,3 +3240,78 @@
 @media (max-width: 860px) {
   .tj-learn-two-col { grid-template-columns: 1fr; }
 }
+
+/* ── Trade grade breakdown ───────────────────────────────────────────────────
+   A letter grade with no argument behind it cannot change behaviour, so each
+   row opens into the rules that actually fired. ───────────────────────────── */
+
+.tj-grade-list { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+
+.tj-grade-row { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.tj-grade-row--open { border-color: var(--text-muted); }
+
+.tj-grade-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 11px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.tj-grade-head:hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+.tj-grade-head strong { color: var(--text); font-weight: 650; }
+.tj-grade-head span { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.tj-grade-score { color: var(--text-muted); font-weight: 500; }
+
+.tj-grade-why { padding: 4px 11px 11px; border-top: 1px solid var(--line); }
+.tj-grade-why ul { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+
+.tj-grade-why li { display: flex; gap: 10px; align-items: baseline; font-size: 12px; line-height: 1.55; }
+.tj-grade-why li > span:last-child { min-width: 0; }
+.tj-grade-why li strong { display: block; color: var(--text); font-weight: 600; }
+.tj-grade-why li em { display: block; font-style: normal; color: var(--text-muted); font-size: 11px; }
+
+.tj-grade-delta {
+  flex: none;
+  width: 34px;
+  text-align: right;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+.tj-grade-why li.pos .tj-grade-delta { color: var(--positive); }
+.tj-grade-why li.neg .tj-grade-delta { color: var(--negative); }
+
+.tj-grade-foot {
+  margin: 12px 0 0;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.tj-grade-foot strong { color: var(--text); }
+
+.tj-grade-chart {
+  margin-top: 9px;
+  padding: 5px 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.tj-grade-chart:hover { color: var(--text); border-color: var(--text-muted); }
+
+.tj-grade-hint { margin: 9px 0 0; font-size: 11px; color: var(--text-muted); }

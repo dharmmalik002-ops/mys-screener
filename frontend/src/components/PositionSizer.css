@@ -174,3 +174,24 @@
 @media (max-width: 640px) {
   .psz-answer-main strong { font-size: 28px; }
 }
+
+/* The regime gate reports even when it does not bite: a silent gate is
+   indistinguishable from no gate at all, and the trader needs to know which. */
+.psz-gate {
+  margin: 0;
+  padding: 9px 12px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md, 8px);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
+}
+
+.psz-gate strong { color: var(--text); }
+
+.psz-gate--on {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--warning, #d97706) 45%, var(--line));
+  background: color-mix(in srgb, var(--warning, #d97706) 8%, transparent);
+  color: var(--text);
+}

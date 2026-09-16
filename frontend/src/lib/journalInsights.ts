@@ -101,6 +101,99 @@ export function computeRegimeEdge(closed: ClosedTradeLike[], history: XpBreadthP
   return { rows: finished, joined, unjoined, againstDialPnl, againstDialTrades };
 }
 
+// ── Regime gate: turn the measured edge into a size decision ─────────────────
+
+export type RegimeGate = {
+  /** 0-1 multiplier for the suggested position size. */
+  multiplier: number;
+  /** Stated in the trader's own numbers, never as generic advice. */
+  reason: string;
+  /** False when there is not enough history to judge — the gate then does nothing. */
+  active: boolean;
+  regime: string;
+  sampleTrades: number;
+};
+
+/** Below this the per-regime record is noise and the gate must stay out of the way. */
+const MIN_REGIME_SAMPLE = 5;
+
+/**
+ * How much of a normal position this regime has earned.
+ *
+ * The regime edge was already measured and shown; it changed nothing, because
+ * a table does not stop anyone from placing an order. This turns the same
+ * numbers into the one output that does — a smaller suggested size — and
+ * justifies it with the trader's own record rather than a rule of thumb.
+ *
+ * It only ever reduces. A regime the trader happens to have done well in is
+ * not evidence they should size UP: the sample is small, and the downside of
+ * being wrong about that is far worse than the upside.
+ */
+export function computeRegimeGate(
+  edge: RegimeEdge,
+  currentRegime: string | null | undefined,
+): RegimeGate {
+  const regime = (currentRegime ?? "").trim();
+  const inactive = (reason: string): RegimeGate => ({
+    multiplier: 1, reason, active: false, regime, sampleTrades: 0,
+  });
+
+  if (!regime) return inactive("No market regime reading available, so the size is not adjusted.");
+
+  const row = edge.rows.find((candidate) => candidate.regime === regime) ?? null;
+
+  // "Avoid Longs" is the dial's own verdict and applies before any personal
+  // record exists — a new trader gets the haircut too.
+  if (regime === "Avoid Longs") {
+    const own =
+      edge.againstDialTrades > 0
+        ? ` Your ${edge.againstDialTrades} trade${edge.againstDialTrades === 1 ? "" : "s"} entered in this regime have made ` +
+          `${edge.againstDialPnl < 0 ? "a loss of " : ""}₹${Math.abs(Math.round(edge.againstDialPnl)).toLocaleString("en-IN")}.`
+        : "";
+    return {
+      multiplier: 0.5,
+      reason: `The breadth dial reads Avoid Longs.${own}`,
+      active: true,
+      regime,
+      sampleTrades: edge.againstDialTrades,
+    };
+  }
+
+  if (!row || row.trades < MIN_REGIME_SAMPLE) {
+    return inactive(
+      `Only ${row?.trades ?? 0} of your closed trades were entered in a "${regime}" market — too few to size against.`,
+    );
+  }
+
+  if (row.pnl < 0 && row.winRate < 40) {
+    return {
+      multiplier: 0.5,
+      reason:
+        `Your own record in a "${regime}" market is ${row.trades} trades, ${row.winRate.toFixed(0)}% winners, ` +
+        `${row.avgPerc.toFixed(1)}% average.`,
+      active: true,
+      regime,
+      sampleTrades: row.trades,
+    };
+  }
+  if (row.pnl < 0) {
+    return {
+      multiplier: 0.75,
+      reason:
+        `You are net negative in a "${regime}" market across ${row.trades} trades ` +
+        `(${row.winRate.toFixed(0)}% winners, ${row.avgPerc.toFixed(1)}% average).`,
+      active: true,
+      regime,
+      sampleTrades: row.trades,
+    };
+  }
+
+  return inactive(
+    `Your record in a "${regime}" market is ${row.trades} trades at ${row.winRate.toFixed(0)}% ` +
+    `winners, so the size is not cut. A good record is not a reason to size up.`,
+  );
+}
+
 // ── 2. MAE / MFE: what did the trade do while you held it? ───────────────────
 
 export type TradeExcursion = {

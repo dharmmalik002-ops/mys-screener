@@ -32,6 +32,7 @@ import {
   buildMentorContext,
   computeExcursion,
   computeRegimeEdge,
+  computeRegimeGate,
   computeTiltStats,
   excursionKey,
   pickMentorLesson,
@@ -328,28 +329,157 @@ function avgNumber(values: number[]) {
   return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
 }
 
-function qualityScoreForTrade(t: ClosedTrade) {
+/** One scoring rule that fired, with the reason in the trader's own terms.
+ *  The breakdown is the point: a bare "B" tells you nothing you can act on. */
+type QualityFactor = { label: string; delta: number; detail: string };
+
+/**
+ * How well the trade was TAKEN, not how it turned out.
+ *
+ * The distinction is the whole value of the score. A winner bought extended
+ * with no stop is a bad trade that got lucky, and it has to grade worse than a
+ * loser that was entered correctly and stopped out where it was supposed to
+ * be. Scoring outcome here would just re-rank the P&L column, which the P&L
+ * column already does.
+ */
+function assessTradeQuality(t: ClosedTrade): { score: number; factors: QualityFactor[] } {
   const tags = t.tags || [];
+  const factors: QualityFactor[] = [];
   let score = 45;
+
   const setupText = `${t.setupType || ""} ${tags.join(" ")} ${t.remarks || ""}`.toLowerCase();
-  if (MODEL_SETUP_WORDS.some((word) => setupText.includes(word))) score += 10;
-  for (const tag of QUALITY_GOOD_TAGS) if (tags.includes(tag)) score += 7;
-  for (const tag of QUALITY_BAD_TAGS) if (tags.includes(tag)) score -= 10;
+  if (MODEL_SETUP_WORDS.some((word) => setupText.includes(word))) {
+    score += 10;
+    factors.push({ label: "Traded a model setup", delta: 10, detail: t.setupType || "Recognised setup language" });
+  } else {
+    factors.push({ label: "No model setup named", delta: 0, detail: "Nothing in the setup, tags or notes identifies a repeatable pattern." });
+  }
+
+  for (const tag of QUALITY_GOOD_TAGS) {
+    if (tags.includes(tag)) { score += 7; factors.push({ label: tag, delta: 7, detail: "Execution tag you logged yourself." }); }
+  }
+  for (const tag of QUALITY_BAD_TAGS) {
+    if (tags.includes(tag)) { score -= 10; factors.push({ label: tag, delta: -10, detail: "Execution tag you logged yourself." }); }
+  }
+
   const stop = Number(t.stoploss);
-  if (Number.isFinite(stop) && stop > 0 && t.entryPx > stop) {
+  const hasStop = Number.isFinite(stop) && stop > 0 && t.entryPx > stop;
+  if (hasStop) {
     const posRiskPct = ((t.entryPx - stop) / t.entryPx) * 100;
     const accountRiskPct = t.equitySnapshot > 0 ? ((t.entryPx - stop) * t.qty / t.equitySnapshot) * 100 : 0;
-    if (posRiskPct >= 2 && posRiskPct <= 4.5) score += 12;
-    else if (posRiskPct <= 6) score += 6;
-    else score -= 12;
-    if (accountRiskPct <= 1) score += 10;
-    else score -= 15;
+
+    if (posRiskPct >= 2 && posRiskPct <= 4.5) {
+      score += 12;
+      factors.push({ label: "Stop at a sensible distance", delta: 12, detail: `${posRiskPct.toFixed(1)}% below entry — close enough to be meaningful, far enough to survive noise.` });
+    } else if (posRiskPct <= 6) {
+      score += 6;
+      factors.push({ label: "Stop a little wide", delta: 6, detail: `${posRiskPct.toFixed(1)}% below entry.` });
+    } else {
+      score -= 12;
+      factors.push({ label: "Stop too far from entry", delta: -12, detail: `${posRiskPct.toFixed(1)}% below entry gives the trade too much room to go wrong.` });
+    }
+
+    if (accountRiskPct <= 1) {
+      score += 10;
+      factors.push({ label: "Account risk inside 1%", delta: 10, detail: `${accountRiskPct.toFixed(2)}% of equity was on the line.` });
+    } else {
+      score -= 15;
+      factors.push({ label: "Account risk above 1%", delta: -15, detail: `${accountRiskPct.toFixed(2)}% of equity on one trade.` });
+    }
+
+    // Did the plan survive contact? Comparing the realised loss to the stop
+    // that was PLANNED is a process test; comparing it to a fixed -6% (which
+    // this used to do) is an outcome test wearing a process costume — it
+    // punished a correctly-honoured stop on a stock that gapped.
+    if (t.perc < 0) {
+      const overshoot = Math.abs(t.perc) - posRiskPct;
+      if (overshoot > Math.max(1.5, posRiskPct * 0.5)) {
+        score -= 12;
+        factors.push({
+          label: "Loss ran past the planned stop",
+          delta: -12,
+          detail: `Planned to lose ${posRiskPct.toFixed(1)}%, actually lost ${Math.abs(t.perc).toFixed(1)}%. Either the stop was not honoured, or the stock gapped through it — only you know which.`,
+        });
+      } else {
+        score += 6;
+        factors.push({
+          label: "Loss contained at the planned stop",
+          delta: 6,
+          detail: `Planned ${posRiskPct.toFixed(1)}%, lost ${Math.abs(t.perc).toFixed(1)}%. The plan held, which is the only thing you control.`,
+        });
+      }
+    }
   } else {
     score -= 18;
+    factors.push({ label: "No stop recorded", delta: -18, detail: "Without a stop there was no defined risk, so nothing about the size can be judged." });
   }
-  if (t.posSizePct > 0 && t.posSizePct <= 25) score += 4;
-  if (t.perc < -6) score -= 10;
-  return clampNumber(Math.round(score), 0, 100);
+
+  if (t.posSizePct > 0 && t.posSizePct <= 25) {
+    score += 4;
+    factors.push({ label: "Position size within 25%", delta: 4, detail: `${t.posSizePct.toFixed(1)}% of equity deployed.` });
+  } else if (t.posSizePct > 25) {
+    factors.push({ label: "Concentrated position", delta: 0, detail: `${t.posSizePct.toFixed(1)}% of equity in one name.` });
+  }
+
+  return { score: clampNumber(Math.round(score), 0, 100), factors };
+}
+
+/**
+ * One graded trade, expandable into the reasons behind the grade.
+ *
+ * A letter on its own is a verdict without an argument — you cannot repeat
+ * what earned an A or stop doing what earned a D unless the card names the
+ * rules that fired. Holds its own open state so the list stays a plain map.
+ */
+function GradeBreakdown({
+  symbol, grade, score, factors, subtitle, onOpenChart,
+}: {
+  symbol: string;
+  grade: string;
+  score: number;
+  factors: QualityFactor[];
+  subtitle: string;
+  onOpenChart?: (symbol: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={open ? "tj-grade-row tj-grade-row--open" : "tj-grade-row"}>
+      <button type="button" className="tj-grade-head" aria-expanded={open} onClick={() => setOpen((v) => !v)}>
+        <strong>
+          {symbol} · {grade} <span className="tj-grade-score">({score})</span>
+        </strong>
+        <span>{subtitle}</span>
+      </button>
+      {open ? (
+        <div className="tj-grade-why">
+          <ul>
+            {factors.map((factor, index) => (
+              <li key={`${factor.label}-${index}`} className={factor.delta > 0 ? "pos" : factor.delta < 0 ? "neg" : ""}>
+                <span className="tj-grade-delta">{factor.delta > 0 ? `+${factor.delta}` : factor.delta || "·"}</span>
+                <span>
+                  <strong>{factor.label}</strong>
+                  <em>{factor.detail}</em>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <p className="tj-grade-foot">
+            This grades how the trade was <strong>taken</strong>, not how it turned out. A winner bought with no
+            stop still grades badly, because the process that produced it will not survive being repeated.
+          </p>
+          {onOpenChart ? (
+            <button type="button" className="tj-grade-chart" onClick={() => onOpenChart(symbol)}>
+              Open {symbol} chart
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function qualityScoreForTrade(t: ClosedTrade) {
+  return assessTradeQuality(t).score;
 }
 
 function gradeFromScore(score: number) {
@@ -1952,7 +2082,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const insightLab = useMemo(() => {
     const sortedClosed = [...closedTrades].sort((a, b) => getSafeTime(a.exitDate) - getSafeTime(b.exitDate));
     const qualityRows = sortedClosed.map((trade) => {
-      const score = qualityScoreForTrade(trade);
+      const { score, factors } = assessTradeQuality(trade);
       const stop = Number(trade.stoploss);
       const hasStop = Number.isFinite(stop) && stop > 0 && trade.entryPx > stop;
       const posRiskPct = hasStop ? ((trade.entryPx - stop) / trade.entryPx) * 100 : null;
@@ -1961,6 +2091,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
       return {
         trade,
         score,
+        factors,
         grade: gradeFromScore(score),
         posRiskPct,
         accountRiskPct,
@@ -2223,6 +2354,12 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
   const regimeEdge = useMemo(
     () => computeRegimeEdge(closedTrades, xpBreadth?.history ?? null),
     [closedTrades, xpBreadth],
+  );
+  // The measured edge becomes a size decision. Shown in the sizer, because
+  // that is the one screen where it can still change what gets ordered.
+  const regimeGate = useMemo(
+    () => computeRegimeGate(regimeEdge, xpBreadth?.regime ?? null),
+    [regimeEdge, xpBreadth],
   );
   const exitQuality = useMemo(() => summarizeExitQuality(closedTrades, excursions), [closedTrades, excursions]);
   const tiltStats = useMemo(() => computeTiltStats(closedTrades), [closedTrades]);
@@ -4117,14 +4254,20 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
                   return <div key={grade}><strong>{count}</strong><span>{grade}</span></div>;
                 })}
               </div>
-              <div className="tj-rule-list">
+              <div className="tj-grade-list">
                 {insightLab.qualityRows.slice().sort((a, b) => a.score - b.score).slice(0, 4).map((row) => (
-                  <div key={`${row.trade.symbol}-${row.trade.exitDate}-${row.score}`} className="tj-rule-row">
-                    <strong>{row.trade.symbol} · {row.grade} ({row.score})</strong>
-                    <span>{row.posRiskPct !== null ? `${row.posRiskPct.toFixed(1)}% pos risk` : "no stop"} · {fmtPnl(row.trade.pnl)}</span>
-                  </div>
+                  <GradeBreakdown
+                    key={`${row.trade.symbol}-${row.trade.exitDate}-${row.score}`}
+                    symbol={row.trade.symbol}
+                    grade={row.grade}
+                    score={row.score}
+                    factors={row.factors}
+                    subtitle={`${row.posRiskPct !== null ? `${row.posRiskPct.toFixed(1)}% pos risk` : "no stop"} · ${fmtPnl(row.trade.pnl)}`}
+                    onOpenChart={onOpenSymbolChart}
+                  />
                 ))}
               </div>
+              <p className="tj-grade-hint">Your four weakest-process trades. Tap one to see which rules cost it.</p>
             </div>
           </div>
 
@@ -4279,7 +4422,7 @@ export function TradeJournalPanel({ market, addRequest, onAddRequestHandled, onO
         <div className="tj-page tj-sizer-page">
           <div className="tj-card tj-sizer-card">
             <div className="tj-card-hdr">Position Sizer</div>
-            <PositionSizer equity={startEquity} chargesConfig={chargesConfig} />
+            <PositionSizer equity={startEquity} chargesConfig={chargesConfig} regimeGate={regimeGate} />
           </div>
         </div>
       )}

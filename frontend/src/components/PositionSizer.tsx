@@ -7,6 +7,7 @@ import {
   type SizingResult,
 } from "../lib/positionSizing";
 import { type ChargesConfig, type Product } from "../lib/chargesCalculator";
+import { type RegimeGate } from "../lib/journalInsights";
 import "./PositionSizer.css";
 
 /** Preferences are the trader's own rules, so they persist across sessions —
@@ -46,6 +47,9 @@ type Props = {
    *  the user's own 3% stop and 5% target. */
   defaultStopPct?: number;
   defaultTargetPct?: number;
+  /** The market-regime haircut, derived from the trader's own record. Only
+   *  ever reduces the suggested size. */
+  regimeGate?: RegimeGate | null;
 };
 
 function money(value: number): string {
@@ -113,6 +117,7 @@ export function PositionSizer({
   seed,
   defaultStopPct = 3,
   defaultTargetPct = 5,
+  regimeGate = null,
 }: Props) {
   const [prefs, setPrefs] = useState<Prefs>(() => {
     try {
@@ -179,8 +184,10 @@ export function PositionSizer({
         minRewardRisk: prefs.minRewardRisk,
         product: prefs.product,
         charges: chargesConfig,
+        sizeMultiplier: regimeGate?.active ? regimeGate.multiplier : 1,
+        sizeMultiplierReason: regimeGate?.active ? regimeGate.reason : undefined,
       }),
-    [equityText, entry, stop, targetText, prefs, chargesConfig],
+    [equityText, entry, stop, targetText, prefs, chargesConfig, regimeGate],
   );
 
   const stopPct = stopPctFromPrice(entry, stop);
@@ -251,6 +258,12 @@ export function PositionSizer({
         </label>
       </div>
 
+      {regimeGate ? (
+        <p className={regimeGate.active ? "psz-gate psz-gate--on" : "psz-gate"}>
+          <strong>Market regime{regimeGate.regime ? `: ${regimeGate.regime}` : ""}</strong> — {regimeGate.reason}
+        </p>
+      ) : null}
+
       <Verdict result={result} />
 
       {ready ? (
@@ -265,6 +278,9 @@ export function PositionSizer({
               ₹{money(result.positionValue)} deployed · {result.positionPctOfEquity.toFixed(1)}% of the account ·
               risking ₹{money(result.riskAmount)} ({result.riskPctActual.toFixed(2)}%) if the stop is hit
               {result.limitedBy === "weight" ? " · held back by your position cap" : ""}
+              {result.limitedBy === "gate"
+                ? ` · cut from ${result.sharesBeforeMultiplier.toLocaleString("en-IN")} by the regime gate`
+                : ""}
             </p>
           </div>
 
