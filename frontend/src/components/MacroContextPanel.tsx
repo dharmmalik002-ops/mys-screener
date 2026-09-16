@@ -288,7 +288,13 @@ export function MacroContextPanel({ market }: Props) {
           const hasEvidence = rows.length > 0 || hasFlows || hasEvents;
           const open = Boolean(openEvidence[section.id]);
           return (
-            <article className="mcx-section" key={section.id}>
+            <article
+              // An open evidence table needs the full row; the tables carry
+              // their own minimum column widths and would scroll sideways
+              // inside a half-width grid cell.
+              className={open ? "mcx-section mcx-section--wide" : "mcx-section"}
+              key={section.id}
+            >
               <h4>{section.title}</h4>
               {section.paragraphs.map((paragraph, index) => (
                 <p key={index}>{paragraph}</p>

@@ -142,8 +142,12 @@
 
 /* ── the prose ──────────────────────────────────────────────────────────── */
 
+/* The card is full width, so a single 70ch column left more than half the row
+   empty next to the full-width KPI strip above it. The measure still has to
+   stay near 70ch to be readable — stretching a line to 1,400px is worse, not
+   better — so the width is used by adding COLUMNS rather than by lengthening
+   the line. */
 .mcx-summary {
-  max-width: 70ch;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 1px solid var(--line);
@@ -159,8 +163,8 @@
 .mcx-summary p:last-child { margin-bottom: 0; }
 
 .mcx-sections {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr;
   gap: 22px;
 }
 
@@ -174,12 +178,20 @@
 }
 
 .mcx-section p {
+  /* Retained for the single-column case; inside a two-column grid the column
+     itself already supplies the measure. */
   max-width: 70ch;
   margin: 0 0 10px;
   font-size: 14px;
   line-height: 1.7;
   color: var(--text);
 }
+
+/* A section whose evidence drawer is open needs the full row: the tables are
+   grids with their own minimum widths and would otherwise scroll horizontally
+   inside a half-width column. */
+.mcx-section--wide { grid-column: 1 / -1; }
+.mcx-section--wide p { max-width: 86ch; }
 
 .mcx-evidence-toggle { margin-top: 2px; }
 
@@ -315,6 +327,15 @@
   font-size: 11px;
   line-height: 1.6;
   color: var(--text-muted);
+}
+
+@media (min-width: 1040px) {
+  .mcx-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 34px; }
+  .mcx-summary { columns: 2; column-gap: 34px; }
+  /* Paragraphs must not split across the column break — half a sentence at the
+     bottom of one column and half at the top of the next is unreadable. */
+  .mcx-summary p { break-inside: avoid; }
+  .mcx-checklist ul { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 24px; }
 }
 
 @media (max-width: 720px) {
