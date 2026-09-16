@@ -116,9 +116,16 @@ export function TodayPanel({ market = "india", xpBreadth, groupsData, onOpenSymb
       // taken at entry is ancient history, while the amount that would
       // actually be lost from here is the thing to decide about. The two
       // figures legitimately differ and are labelled differently on each page.
+      // Only meaningful while price is still ABOVE the stop. Once it is
+      // through, `(cmp - stop)` goes negative and the row read "-0.10% still
+      // at risk", which is nonsense — the loss is no longer bounded by the
+      // stop at all. The state label already says "Below your stop"; the
+      // number is withheld rather than printed backwards.
+      // `ok` and `close` both imply cmp and effectiveStop are set, but equity
+      // is read from storage and can legitimately be 0 on a fresh install.
       const openRiskPct =
-        cmp && effectiveStop && equity > 0
-          ? ((cmp - effectiveStop) * position.qty / equity) * 100
+        (state === "ok" || state === "close") && equity > 0
+          ? ((cmp as number) - (effectiveStop as number)) * position.qty / equity * 100
           : null;
 
       return {

@@ -230,6 +230,12 @@
   .today-leaders { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 32px; }
   .today-leaders > .today-prose { grid-column: 1 / -1; }
 
+  /* Position rows are a fixed-shape grid, so a full-width row just stretched
+     a canyon between the symbol and its stop label. Two per row keeps each one
+     near its natural size and uses the space. */
+  .today-book { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 16px; align-content: start; }
+  .today-book > .today-prose { grid-column: 1 / -1; }
+
   .today-check { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px; }
 }
 
