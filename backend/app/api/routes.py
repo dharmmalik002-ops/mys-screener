@@ -444,6 +444,17 @@ def build_router(service):
         # scripts/generate_breakout_stats.py; this only reads and narrates.
         return await resolve_service(market).get_market_regime_analysis(refresh=refresh)
 
+    @router.get("/markets/macro-context")
+    async def markets_macro_context(
+        market: str = Query(default="india"),
+        refresh: bool = Query(default=False),
+    ):
+        # The external environment written as prose: global cues, the macro
+        # prices that move India, institutional flows, the event calendar and
+        # the day's headlines. Reaches four upstream services, so it is cached
+        # per session inside the handler rather than re-fetched per open.
+        return await resolve_service(market).get_macro_context(refresh=refresh)
+
     @router.get("/markets/exposure")
     async def markets_exposure(market: str = Query(default="india")):
         # The page's headline verdict. Deliberately not part of
@@ -799,6 +810,10 @@ def build_router(service):
     @router.get("/{market_name}/markets/regime-analysis")
     async def namespaced_markets_regime_analysis(market_name: str, refresh: bool = Query(default=False)):
         return await resolve_service(market_name).get_market_regime_analysis(refresh=refresh)
+
+    @router.get("/{market_name}/markets/macro-context")
+    async def namespaced_markets_macro_context(market_name: str, refresh: bool = Query(default=False)):
+        return await resolve_service(market_name).get_macro_context(refresh=refresh)
 
     @router.get("/{market_name}/markets/exposure")
     async def namespaced_markets_exposure(market_name: str):

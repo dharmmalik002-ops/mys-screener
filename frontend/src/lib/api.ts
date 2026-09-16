@@ -2817,6 +2817,185 @@ export function getMarketsBreadthHistory(market: MarketKey = "india", days = 750
   );
 }
 
+/* ── Macro context ────────────────────────────────────────────────────────
+   The outside world explained in paragraphs: global cues, the macro prices
+   that move India, institutional flows, the event calendar and the day's
+   headlines. Prose is the payload; `facts` exists so the UI can show the
+   evidence behind any sentence. ─────────────────────────────────────────── */
+
+export type MacroStance = "supportive" | "mixed" | "hostile";
+
+export type MacroSeriesRow = {
+  key: string;
+  symbol: string;
+  label: string;
+  group: string;
+  unit: string;
+  blurb: string;
+  /** Which direction helps Indian equities: the table colours by this, not by sign. */
+  effect: "up_helps" | "up_hurts" | "neutral";
+  last: number | null;
+  change_1d_pct: number | null;
+  change_5d_pct: number | null;
+  change_20d_pct: number | null;
+  vs_50dma_pct: number | null;
+  above_50dma: boolean | null;
+  as_of: string | null;
+};
+
+export type MacroSection = { id: string; title: string; paragraphs: string[] };
+
+export type MacroChecklistItem = { id: string; label: string; answer: string };
+
+export type MacroEvent = { date: string; label: string; kind: string; days_away: number };
+
+export type MacroContext = {
+  available: boolean;
+  reason?: string;
+  generated_at?: string | null;
+  as_of?: string | null;
+  stale?: boolean;
+  stale_reason?: string | null;
+  note?: {
+    source: "ai" | "computed";
+    headline: string;
+    stance: MacroStance;
+    summary: string[];
+    sections: MacroSection[];
+    checklist: MacroChecklistItem[];
+  } | null;
+  facts?: {
+    series: Record<string, MacroSeriesRow>;
+    events: MacroEvent[];
+    missing_series: string[];
+    flows: {
+      days: { date: string; fii_net_crore: number | null; dii_net_crore: number | null }[];
+      fii_net_10d_crore: number | null;
+      dii_net_10d_crore: number | null;
+      sessions_in_10d: number | null;
+    } | null;
+    pressure: { score: number; stance: MacroStance; verdict: string; tailwinds: string[]; headwinds: string[] };
+    linkage: Record<string, unknown> & { coupling: string | null; note: string };
+  } | null;
+};
+
+export function getMacroContext(market: MarketKey, refresh = false) {
+  return request<MacroContext>(
+    `/api/markets/macro-context?market=${market}${refresh ? "&refresh=true" : ""}`,
+    undefined,
+    undefined,
+    (raw): MacroContext => {
+      const value = isRecord(raw) ? raw : {};
+      if (!value.available) {
+        return { available: false, reason: readString(value.reason, "Not available yet.") };
+      }
+      const noteRaw = isRecord(value.note) ? value.note : {};
+      const factsRaw = isRecord(value.facts) ? value.facts : {};
+
+      const readSection = (input: unknown): MacroSection => {
+        const sec = isRecord(input) ? input : {};
+        return {
+          id: readString(sec.id),
+          title: readString(sec.title),
+          paragraphs: readStringArray(sec.paragraphs),
+        };
+      };
+
+      const seriesRaw = isRecord(factsRaw.series) ? factsRaw.series : {};
+      const series: Record<string, MacroSeriesRow> = {};
+      for (const [key, val] of Object.entries(seriesRaw)) {
+        const row = isRecord(val) ? val : {};
+        series[key] = {
+          key: readString(row.key, key),
+          symbol: readString(row.symbol),
+          label: readString(row.label, key),
+          group: readString(row.group, "macro"),
+          unit: readString(row.unit, "index"),
+          blurb: readString(row.blurb),
+          effect:
+            row.effect === "up_hurts" || row.effect === "neutral" ? row.effect : "up_helps",
+          last: readNullableNumber(row.last),
+          change_1d_pct: readNullableNumber(row.change_1d_pct),
+          change_5d_pct: readNullableNumber(row.change_5d_pct),
+          change_20d_pct: readNullableNumber(row.change_20d_pct),
+          vs_50dma_pct: readNullableNumber(row.vs_50dma_pct),
+          above_50dma: typeof row.above_50dma === "boolean" ? row.above_50dma : null,
+          as_of: readNullableString(row.as_of),
+        };
+      }
+
+      const flowsRaw = isRecord(factsRaw.flows) ? factsRaw.flows : null;
+      const pressureRaw = isRecord(factsRaw.pressure) ? factsRaw.pressure : {};
+      const linkageRaw = isRecord(factsRaw.linkage) ? factsRaw.linkage : {};
+      const stance = (s: unknown): MacroStance =>
+        s === "supportive" || s === "hostile" ? s : "mixed";
+
+      return {
+        available: true,
+        generated_at: readNullableString(value.generated_at),
+        as_of: readNullableString(value.as_of),
+        stale: value.stale === true,
+        stale_reason: readNullableString(value.stale_reason),
+        note: {
+          source: noteRaw.source === "ai" ? "ai" : "computed",
+          headline: readString(noteRaw.headline),
+          stance: stance(noteRaw.stance),
+          summary: readStringArray(noteRaw.summary),
+          sections: mapArray(noteRaw.sections, readSection).filter((s) => s.paragraphs.length > 0),
+          checklist: mapArray(noteRaw.checklist, (item) => {
+            const row = isRecord(item) ? item : {};
+            return {
+              id: readString(row.id),
+              label: readString(row.label),
+              answer: readString(row.answer),
+            };
+          }).filter((item) => item.id !== ""),
+        },
+        facts: {
+          series,
+          missing_series: readStringArray(factsRaw.missing_series),
+          events: mapArray(factsRaw.events, (item) => {
+            const row = isRecord(item) ? item : {};
+            return {
+              date: readString(row.date),
+              label: readString(row.label),
+              kind: readString(row.kind, "data"),
+              days_away: readNumber(row.days_away, 0),
+            };
+          }).filter((e) => e.date !== ""),
+          flows: flowsRaw
+            ? {
+                days: mapArray(flowsRaw.days, (item) => {
+                  const row = isRecord(item) ? item : {};
+                  return {
+                    date: readString(row.date),
+                    fii_net_crore: readNullableNumber(row.fii_net_crore),
+                    dii_net_crore: readNullableNumber(row.dii_net_crore),
+                  };
+                }),
+                fii_net_10d_crore: readNullableNumber(flowsRaw.fii_net_10d_crore),
+                dii_net_10d_crore: readNullableNumber(flowsRaw.dii_net_10d_crore),
+                sessions_in_10d: readNullableNumber(flowsRaw.sessions_in_10d),
+              }
+            : null,
+          pressure: {
+            score: readNumber(pressureRaw.score, 0),
+            stance: stance(pressureRaw.stance),
+            verdict: readString(pressureRaw.verdict),
+            tailwinds: readStringArray(pressureRaw.tailwinds),
+            headwinds: readStringArray(pressureRaw.headwinds),
+          },
+          linkage: {
+            ...linkageRaw,
+            coupling: readNullableString(linkageRaw.coupling),
+            note: readString(linkageRaw.note),
+          },
+        },
+      };
+    },
+  );
+}
+
 export function getMarketRegimeAnalysis(market: MarketKey, refresh = false) {
   return request<RegimeAnalysis>(
     `/api/markets/regime-analysis?market=${market}${refresh ? "&refresh=true" : ""}`,

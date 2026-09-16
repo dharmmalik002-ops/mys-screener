@@ -3022,6 +3022,92 @@ class DashboardService:
             self._regime_cache = {cache_key: result}
         return result
 
+    async def get_macro_context(self, *, refresh: bool = False) -> dict:
+        """The outside world, explained in paragraphs — global cues, macro
+        prices, institutional flows, the event calendar and the day's headlines.
+
+        Everything the prose may mention is computed first in
+        `app/services/macro_context.py`; the AI only writes over those numbers,
+        and the deterministic writer produces the same note without it. Cached
+        per session because the underlying inputs move once a day, and because
+        the fetch reaches four upstream services that should not be hit on every
+        page open.
+
+        Network failures do not fail the request. Yahoo and NSE both refuse
+        datacenter ranges intermittently (CLAUDE.md gotcha 14), so a failed
+        fetch falls back to the saved context marked stale rather than
+        rendering an empty page.
+        """
+        from app.services import macro_context
+
+        data_dir = self._state_data_dir()
+        cached_doc = await asyncio.to_thread(macro_context.load_cache, data_dir)
+
+        if not refresh and cached_doc:
+            # Same session already fetched: serve it, AI narrative and all.
+            session_today = datetime.now(timezone.utc).date().isoformat()
+            if cached_doc.get("fetched_on") == session_today and cached_doc.get("note"):
+                return macro_context.envelope(cached_doc.get("facts") or {}, cached_doc["note"])
+
+        symbols = [s.symbol for s in macro_context.ALL_SERIES]
+        raw_closes = await asyncio.to_thread(macro_context.fetch_closes, symbols)
+        fresh_flows = await asyncio.to_thread(macro_context.fetch_fii_dii)
+        flows = macro_context.merge_flow_history((cached_doc or {}).get("flows_raw"), fresh_flows)
+
+        headlines: list[dict] = []
+        try:
+            from app.services.rss_news_service import get_rss_service
+
+            headlines = await get_rss_service(self._market_key()).get_all_news(limit=12)
+        except Exception as exc:
+            logger.info("macro-context: headlines unavailable (%s)", exc)
+
+        if not raw_closes:
+            # Nothing came back from upstream. Serve the last good context with
+            # its real age rather than a page of "unavailable".
+            if cached_doc and cached_doc.get("facts"):
+                facts = macro_context.mark_stale(cached_doc["facts"], cached_doc.get("generated_at"))
+                note = cached_doc.get("note") or macro_context.deterministic_sections(facts)
+                return macro_context.envelope(facts, note)
+            return {
+                "available": False,
+                "reason": (
+                    "Global market data could not be fetched and no saved context exists yet. "
+                    "This usually clears on the next refresh."
+                ),
+            }
+
+        facts = macro_context.build_facts(raw_closes, flows, headlines)
+        note = macro_context.deterministic_sections(facts)
+
+        ai = getattr(self.provider, "ai_service", None)
+        if ai is not None and getattr(ai, "available", False):
+            try:
+                raw = await ai._generate_json(macro_context.build_prompt(facts))
+                validated = macro_context.validate_narrative(raw, facts)
+                if validated:
+                    note = validated
+                else:
+                    logger.warning("macro-context: AI note failed validation; using the computed note")
+            except Exception as exc:
+                logger.warning("macro-context: AI note unavailable (%s); using the computed note", exc)
+
+        await asyncio.to_thread(
+            macro_context.save_cache,
+            data_dir,
+            {
+                "generated_at": datetime.now(timezone.utc).isoformat(),
+                "fetched_on": datetime.now(timezone.utc).date().isoformat(),
+                "facts": facts,
+                # Only the AI note is persisted. Caching the computed fallback
+                # would pin one transient Gemini failure in place for the rest
+                # of the day; recomputing it is free.
+                "note": note if note.get("source") == "ai" else None,
+                "flows_raw": {"days": (flows or {}).get("days") or []},
+            },
+        )
+        return macro_context.envelope(facts, note)
+
     async def get_ai_swing_analysis(self, symbol: str, as_of: str | None = None) -> dict:
         """Gather full context (bars, snapshot, group, regime, band, headlines)
         and ask the AI for an elite pullback/breakout read. Cached per

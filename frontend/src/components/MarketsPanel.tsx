@@ -16,6 +16,7 @@ import {
   type XpBreadthScore,
 } from "../lib/api";
 import { IndexCandleChart } from "./IndexCandleChart";
+import { MacroContextPanel } from "./MacroContextPanel";
 import { RegimeBrief } from "./RegimeBrief";
 import { Panel } from "./Panel";
 import { BreadthTimeline } from "./markets/BreadthTimeline";
@@ -748,6 +749,7 @@ export function MarketsPanel({
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
         <ExposureVerdict data={exposure} />
         <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+        <MacroContextPanel market="india" />
         <Disclosure
           id="breadth"
           summary="Breadth, 3 years"
@@ -769,6 +771,10 @@ export function MarketsPanel({
       <Panel title="Markets" subtitle="Daily follow-through health of the tape" className="markets-panel">
         <ExposureVerdict data={exposure} />
         <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+        {/* The external read does not depend on the domestic payload, so it
+            still renders when that fetch has failed — losing breadth should
+            not also cost the user the global picture. */}
+        <MacroContextPanel market="india" />
         <Disclosure id="breadth" summary="Breadth, 3 years" hint={`${breadth?.points.length ?? 0} sessions`}>
           <BreadthTimeline points={breadth?.points ?? []} universeLabel={breadth?.universe} />
         </Disclosure>
@@ -806,6 +812,11 @@ export function MarketsPanel({
           used different vocabularies and could disagree on screen. */}
       <ExposureVerdict data={exposure} />
       <ContextStrip data={exposure} breadthSeries={breadthSeries} />
+
+      {/* The outside world, in prose. Loads on its own clock: it reaches Yahoo,
+          NSE and the RSS feeds, none of which the domestic panel waits on, so
+          coupling them would put a slow external fetch in front of breadth. */}
+      <MacroContextPanel market="india" />
 
       <Disclosure
         id="breadth"
