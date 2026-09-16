@@ -600,3 +600,20 @@
   font-family: 'JetBrains Mono', Menlo, monospace;
   font-size: 0.7rem;
 }
+
+/* Drill / Archive switch — two halves of the same idea, one page. */
+.study-view-toggle { display: inline-flex; gap: 2px; padding: 2px; border: 1px solid var(--line); border-radius: 999px; }
+
+.study-view-toggle button {
+  padding: 4px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.study-view-toggle button.on { background: var(--accent, #3b82f6); color: #fff; }
+.study-view-toggle button:not(.on):hover { color: var(--text); }

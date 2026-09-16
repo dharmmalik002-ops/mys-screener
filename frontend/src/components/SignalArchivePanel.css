@@ -1,0 +1,211 @@
+/* ==========================================================================
+   Signal archive.
+
+   The statistics sit ABOVE the rows on purpose. The list is evidence; the
+   comparison against the baseline is the lesson, and burying it under fifty
+   rows would make this just another table.
+   ========================================================================== */
+
+.sar { display: flex; flex-direction: column; gap: 14px; }
+
+.sar-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sar-eyebrow {
+  margin: 0 0 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sar-head h3 { margin: 0; font-size: 17px; font-weight: 650; color: var(--text); }
+
+.sar-count { font-size: 12px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ── filters ─────────────────────────────────────────────────────────────── */
+
+.sar-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+.sar-filters--fine { padding-top: 10px; border-top: 1px solid var(--line); }
+
+.sar-sep { width: 1px; height: 18px; background: var(--line); margin: 0 3px; }
+
+.sar-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sar-chip:hover { color: var(--text); border-color: var(--text-muted); }
+
+.sar-chip--on {
+  color: var(--accent, #3b82f6);
+  border-color: currentColor;
+  background: color-mix(in srgb, var(--accent, #3b82f6) 13%, transparent);
+  font-weight: 600;
+}
+
+.sar-field { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+
+.sar-field input,
+.sar-field select,
+.sar-search input {
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.sar-field input { width: 76px; }
+
+.sar-search {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--text-muted);
+}
+
+.sar-search input { border: 0; width: 104px; }
+.sar-search input:focus { outline: none; }
+
+/* ── statistics ──────────────────────────────────────────────────────────── */
+
+.sar-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
+  gap: 1px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md, 8px);
+  overflow: hidden;
+  background: var(--line);
+}
+
+.sar-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 12px;
+  background: var(--card-flat);
+}
+
+.sar-stats span {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.sar-stats strong { font-size: 17px; font-weight: 680; color: var(--text); font-variant-numeric: tabular-nums; }
+
+.sar-delta { font-size: 10px; font-weight: 700; letter-spacing: 0; text-transform: none; }
+.sar-delta--up { color: var(--positive); }
+.sar-delta--down { color: var(--negative); }
+.sar-delta--flat { color: var(--text-muted); }
+
+.sar-baseline { margin: 0; max-width: 78ch; font-size: 11px; line-height: 1.65; color: var(--text-muted); }
+
+/* ── rows ────────────────────────────────────────────────────────────────── */
+
+.sar-table { border: 1px solid var(--line); border-radius: var(--radius-md, 8px); overflow: hidden; }
+
+.sar-row {
+  display: grid;
+  grid-template-columns: minmax(200px, 2.4fr) minmax(90px, 1fr) 48px 60px 72px minmax(96px, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  align-items: center;
+  border: 0;
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sar-row + .sar-row { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.sar-row:not(.sar-row--head):hover { background: color-mix(in srgb, var(--text) 5%, transparent); }
+
+.sar-row--head {
+  cursor: default;
+  color: var(--text-muted);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+.sar-row--win     { border-left-color: var(--positive); }
+.sar-row--loss    { border-left-color: var(--negative); }
+.sar-row--timeout { border-left-color: var(--text-muted); }
+
+.sar-row span:not(.sar-sig):not(.sar-outcome) { font-variant-numeric: tabular-nums; color: var(--text-muted); }
+
+.sar-sig { min-width: 0; }
+.sar-sig strong { display: block; color: var(--text); font-weight: 650; }
+.sar-sig em { display: block; font-style: normal; font-size: 11px; color: var(--text-muted); }
+.sar-sig small {
+  display: block;
+  font-size: 10px;
+  color: var(--text-muted);
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sar-outcome { display: flex; flex-direction: column; gap: 1px; text-align: right; }
+.sar-outcome strong { font-variant-numeric: tabular-nums; font-weight: 680; }
+.sar-outcome em { font-style: normal; font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+.sar-row--win .sar-outcome strong { color: var(--positive); }
+.sar-row--loss .sar-outcome strong { color: var(--negative); }
+
+.sar-empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 16px 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sar-pager { display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 12px; color: var(--text-muted); }
+
+.sar-pager button {
+  padding: 5px 13px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.sar-pager button:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
+.sar-pager button:disabled { opacity: 0.4; cursor: default; }
+
+@media (max-width: 760px) {
+  .sar-row { grid-template-columns: 1fr auto; row-gap: 4px; }
+  .sar-row--head { display: none; }
+  .sar-outcome { text-align: left; }
+}

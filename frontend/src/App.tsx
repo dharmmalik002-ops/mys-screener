@@ -5938,7 +5938,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             {/* Deliberately not gated on `loading`: the drill reads its own
                 deck file and needs nothing from the dashboard fetch. */}
-            <StudyPanel />
+            <StudyPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
         {!loading && activePage === "journal" ? (

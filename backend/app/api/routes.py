@@ -135,6 +135,60 @@ def build_router(service):
             return context, forward
         return sd.split_series(list(getattr(chart, "bars", []) or []), card.trigger_date)
 
+    # Named "archive", not "library": /study/library is already the user's own
+    # saved study records (GET and PUT below). A second route on that path would
+    # shadow theirs — FastAPI matches the first registration — and silently
+    # break saved studies.
+    @router.get("/study/archive")
+    async def study_archive(
+        setup: str | None = Query(default=None),
+        result: str | None = Query(default=None, pattern="^(win|loss|timeout)$"),
+        symbol: str | None = Query(default=None),
+        rs_min: int | None = Query(default=None, ge=0, le=99),
+        score_min: float | None = Query(default=None),
+        risk_max: float | None = Query(default=None, gt=0),
+        group_top_decile: bool | None = Query(default=None),
+        date_from: str | None = Query(default=None),
+        date_to: str | None = Query(default=None),
+        sort: str = Query(default="recent"),
+        limit: int = Query(default=50, ge=1, le=200),
+        offset: int = Query(default=0, ge=0),
+        day: str | None = Query(default=None),
+    ):
+        """Searchable archive of resolved signals, failures included.
+
+        Reads the same mined deck the drill deals from, so the two cannot
+        disagree about what a signal did. Today's dealt hand is excluded — see
+        study_archive.dealt_today.
+        """
+        from app.services import study_archive
+
+        try:
+            when = date.fromisoformat(day) if day else date.today()
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid day: {day}")
+
+        filters = {
+            "setup": setup,
+            "result": result,
+            "symbol": symbol.strip().upper() if symbol else None,
+            "rs_min": rs_min,
+            "score_min": score_min,
+            "risk_max": risk_max,
+            "group_top_decile": group_top_decile,
+            "date_from": date_from,
+            "date_to": date_to,
+        }
+        return await asyncio.to_thread(
+            study_archive.query,
+            _study_deck(),
+            today=when,
+            filters=filters,
+            sort=sort,
+            limit=limit,
+            offset=offset,
+        )
+
     @router.get("/study/deck")
     async def study_deck(
         count: int = Query(default=20, ge=1, le=60),

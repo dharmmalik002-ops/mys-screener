@@ -1101,6 +1101,12 @@ function readNumber(value: unknown, fallback = 0): number {
 }
 
 function readNullableNumber(value: unknown): number | null {
+  // `Number(null)` is 0 and `Number("")` is 0, so without these guards every
+  // absent measurement arrived as a real zero: a null risk percentage rendered
+  // as "0.0%", a missing daily change as "flat". The backend is careful to send
+  // null rather than 0 precisely so the UI can tell "we did not measure this"
+  // from "this was zero"; decoding it back to 0 here threw that away.
+  if (value === null || value === undefined || value === "") return null;
   const parsed = typeof value === "number" ? value : Number(value);
   return Number.isFinite(parsed) ? parsed : null;
 }
@@ -4810,6 +4816,151 @@ export type StudyRecord = {
 };
 
 export type StudyLibrary = { studies: StudyRecord[]; updated_at?: string };
+
+/* ── Signal archive ───────────────────────────────────────────────────────
+   Every resolved scanner signal in the mined study deck, failures included.
+   Distinct from `getStudyLibrary`, which is the user's own saved studies. ── */
+
+export type ArchiveRow = {
+  id: string;
+  setup: string;
+  label: string;
+  symbol: string;
+  name: string;
+  trigger_date: string;
+  entry: number;
+  scanner_stop: number | null;
+  scanner_risk_pct: number | null;
+  score: number;
+  rs_rating: number;
+  group_top_decile: boolean;
+  reasons: string[];
+  result: "win" | "loss" | "timeout";
+  max_favourable_pct: number;
+  final_pct: number;
+  sessions_held: number;
+};
+
+export type ArchiveStats = {
+  count: number;
+  wins: number;
+  losses: number;
+  timeouts: number;
+  win_rate: number | null;
+  avg_final_pct: number | null;
+  median_final_pct: number | null;
+  avg_max_favourable_pct: number | null;
+  avg_sessions_held: number | null;
+};
+
+export type SignalArchive = {
+  available: boolean;
+  reason?: string;
+  total: number;
+  offset: number;
+  limit: number;
+  sort: string;
+  rows: ArchiveRow[];
+  stats: ArchiveStats;
+  baseline: ArchiveStats;
+  baseline_label: string;
+  hidden_from_todays_drill: number;
+  meta: Record<string, unknown>;
+};
+
+export type ArchiveQuery = {
+  setup?: string | null;
+  result?: string | null;
+  symbol?: string | null;
+  rsMin?: number | null;
+  riskMax?: number | null;
+  groupTopDecile?: boolean | null;
+  sort?: string;
+  limit?: number;
+  offset?: number;
+};
+
+function readArchiveStats(value: unknown): ArchiveStats {
+  const raw = isRecord(value) ? value : {};
+  return {
+    count: readNumber(raw.count, 0),
+    wins: readNumber(raw.wins, 0),
+    losses: readNumber(raw.losses, 0),
+    timeouts: readNumber(raw.timeouts, 0),
+    win_rate: readNullableNumber(raw.win_rate),
+    avg_final_pct: readNullableNumber(raw.avg_final_pct),
+    median_final_pct: readNullableNumber(raw.median_final_pct),
+    avg_max_favourable_pct: readNullableNumber(raw.avg_max_favourable_pct),
+    avg_sessions_held: readNullableNumber(raw.avg_sessions_held),
+  };
+}
+
+export function getSignalArchive(query: ArchiveQuery = {}) {
+  const params = new URLSearchParams();
+  if (query.setup) params.set("setup", query.setup);
+  if (query.result) params.set("result", query.result);
+  if (query.symbol) params.set("symbol", query.symbol);
+  if (query.rsMin !== null && query.rsMin !== undefined) params.set("rs_min", String(query.rsMin));
+  if (query.riskMax !== null && query.riskMax !== undefined) params.set("risk_max", String(query.riskMax));
+  if (query.groupTopDecile) params.set("group_top_decile", "true");
+  params.set("sort", query.sort ?? "recent");
+  params.set("limit", String(query.limit ?? 50));
+  params.set("offset", String(query.offset ?? 0));
+
+  return request<SignalArchive>(
+    `/api/study/archive?${params.toString()}`,
+    undefined,
+    { timeoutMs: 30000 },
+    (raw): SignalArchive => {
+      const value = isRecord(raw) ? raw : {};
+      const empty = readArchiveStats(null);
+      if (!value.available) {
+        return {
+          available: false,
+          reason: readString(value.reason, "The signal archive is not available yet."),
+          total: 0, offset: 0, limit: 0, sort: "recent", rows: [],
+          stats: empty, baseline: empty, baseline_label: "",
+          hidden_from_todays_drill: 0, meta: {},
+        };
+      }
+      return {
+        available: true,
+        total: readNumber(value.total, 0),
+        offset: readNumber(value.offset, 0),
+        limit: readNumber(value.limit, 0),
+        sort: readString(value.sort, "recent"),
+        rows: mapArray(value.rows, (item): ArchiveRow => {
+          const row = isRecord(item) ? item : {};
+          const result = row.result === "win" || row.result === "loss" ? row.result : "timeout";
+          return {
+            id: readString(row.id),
+            setup: readString(row.setup),
+            label: readString(row.label),
+            symbol: readString(row.symbol),
+            name: readString(row.name),
+            trigger_date: readString(row.trigger_date),
+            entry: readNumber(row.entry, 0),
+            scanner_stop: readNullableNumber(row.scanner_stop),
+            scanner_risk_pct: readNullableNumber(row.scanner_risk_pct),
+            score: readNumber(row.score, 0),
+            rs_rating: readNumber(row.rs_rating, 0),
+            group_top_decile: row.group_top_decile === true,
+            reasons: readStringArray(row.reasons),
+            result,
+            max_favourable_pct: readNumber(row.max_favourable_pct, 0),
+            final_pct: readNumber(row.final_pct, 0),
+            sessions_held: readNumber(row.sessions_held, 0),
+          };
+        }).filter((row) => row.id !== ""),
+        stats: readArchiveStats(value.stats),
+        baseline: readArchiveStats(value.baseline),
+        baseline_label: readString(value.baseline_label),
+        hidden_from_todays_drill: readNumber(value.hidden_from_todays_drill, 0),
+        meta: isRecord(value.meta) ? value.meta : {},
+      };
+    },
+  );
+}
 
 export function getStudyLibrary() {
   return whileWaking(() => request<StudyLibrary>("/api/study/library", undefined, { timeoutMs: 30000 }), {

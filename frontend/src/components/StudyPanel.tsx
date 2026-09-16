@@ -25,6 +25,7 @@ import {
   type StudyTool,
 } from "./StudyChart";
 
+import { SignalArchivePanel } from "./SignalArchivePanel";
 import "./StudyPanel.css";
 
 const LOG_KEY = "study-drill-log:v1";
@@ -107,7 +108,13 @@ const STYLES: Array<{ key: StudyChartStyle; label: string }> = [
   { key: "hlc", label: "HLC" },
 ];
 
-export function StudyPanel() {
+type StudyPanelProps = { onOpenSymbolChart?: (symbol: string) => void };
+
+export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
+  // The drill and the archive are two halves of the same idea — grade a setup
+  // blind, then go and read a hundred that already resolved — so they share a
+  // page rather than competing for a nav slot.
+  const [view, setView] = useState<"drill" | "archive">("drill");
   const [deck, setDeck] = useState<StudyDeckResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -562,6 +569,42 @@ export function StudyPanel() {
     };
   }, [log]);
 
+  const viewToggle = (
+    <div className="study-view-toggle" role="tablist" aria-label="Chart Gym view">
+      <button
+        type="button" role="tab" aria-selected={view === "drill"}
+        className={view === "drill" ? "on" : undefined}
+        onClick={() => setView("drill")}
+      >
+        Drill
+      </button>
+      <button
+        type="button" role="tab" aria-selected={view === "archive"}
+        className={view === "archive" ? "on" : undefined}
+        onClick={() => setView("archive")}
+      >
+        Archive
+      </button>
+    </div>
+  );
+
+  // Rendered before the deck's own loading and error states: the archive reads
+  // a different endpoint and should not be gated behind a deal that failed.
+  if (view === "archive") {
+    return (
+      <div className="study-panel">
+        <header className="study-head">
+          <div className="study-head-left">
+            <h2>Chart Gym</h2>
+            <p>Grade a card blind, or study the signals that already resolved.</p>
+          </div>
+          <div className="study-head-right">{viewToggle}</div>
+        </header>
+        <SignalArchivePanel onOpenSymbolChart={onOpenSymbolChart} />
+      </div>
+    );
+  }
+
   if (loading) return <div className="study-state">Dealing today's cards…</div>;
   if (error) {
     return (
@@ -593,6 +636,7 @@ export function StudyPanel() {
           </p>
         </div>
         <div className="study-head-right">
+          {viewToggle}
           <div className="study-search">
             <input
               type="search"
