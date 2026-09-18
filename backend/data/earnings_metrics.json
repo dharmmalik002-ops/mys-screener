@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-18T12:12:08.775768+00:00",
+  "generated_at": "2026-09-18T13:11:10.713865+00:00",
   "entries": {
     "NTPC": {
       "symbol": "NTPC",
@@ -2512,14 +2512,14 @@
     },
     "TTKPRESTIG": {
       "symbol": "TTKPRESTIG",
-      "earnings_date": "2026-07-24",
-      "close_in_range_pct": 0.65,
-      "next_day_gap_pct": -0.505,
-      "day_rvol_50d": 0.224,
-      "return_5d_pct": -0.272,
+      "earnings_date": "2026-07-28",
+      "close_in_range_pct": 0.5881,
+      "next_day_gap_pct": -1.21,
+      "day_rvol_50d": 89.675,
+      "return_5d_pct": -10.174,
       "source": "bse",
       "best_pop_pct": 7.156,
-      "best_pop_rvol": 88.002
+      "best_pop_rvol": 89.675
     },
     "COALINDIA": {
       "symbol": "COALINDIA",
