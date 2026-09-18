@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-17T17:30:52.223691+00:00",
+  "generated_at": "2026-09-18T11:15:07.743021+00:00",
   "entries": {
     "NTPC": {
       "symbol": "NTPC",
@@ -334,8 +334,8 @@
     },
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-09-17",
-      "close_in_range_pct": 0.0,
+      "earnings_date": "2026-09-18",
+      "close_in_range_pct": 0.5942,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -356,8 +356,8 @@
     },
     "NAHARSPING": {
       "symbol": "NAHARSPING",
-      "earnings_date": "2026-09-17",
-      "close_in_range_pct": 0.5935,
+      "earnings_date": "2026-09-18",
+      "close_in_range_pct": 0.2058,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -2413,14 +2413,14 @@
     },
     "ORISSAMINE": {
       "symbol": "ORISSAMINE",
-      "earnings_date": "2026-09-17",
-      "close_in_range_pct": 0.7479,
+      "earnings_date": "2026-09-18",
+      "close_in_range_pct": 0.0841,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.201,
+      "day_rvol_50d": 0.972,
       "return_5d_pct": null,
       "source": "bse",
-      "best_pop_pct": 1.75,
-      "best_pop_rvol": 0.201
+      "best_pop_pct": -0.214,
+      "best_pop_rvol": 0.972
     },
     "RAJRATAN": {
       "symbol": "RAJRATAN",
@@ -2930,8 +2930,8 @@
     },
     "HMT": {
       "symbol": "HMT",
-      "earnings_date": "2026-09-17",
-      "close_in_range_pct": 0.0922,
+      "earnings_date": "2026-09-18",
+      "close_in_range_pct": 1.0,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
