@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-18T11:15:07.743021+00:00",
+  "generated_at": "2026-09-18T12:12:08.775768+00:00",
   "entries": {
     "NTPC": {
       "symbol": "NTPC",
@@ -2416,11 +2416,11 @@
       "earnings_date": "2026-09-18",
       "close_in_range_pct": 0.0841,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.972,
+      "day_rvol_50d": 0.97,
       "return_5d_pct": null,
       "source": "bse",
       "best_pop_pct": -0.214,
-      "best_pop_rvol": 0.972
+      "best_pop_rvol": 0.97
     },
     "RAJRATAN": {
       "symbol": "RAJRATAN",
@@ -2512,14 +2512,14 @@
     },
     "TTKPRESTIG": {
       "symbol": "TTKPRESTIG",
-      "earnings_date": "2026-07-28",
-      "close_in_range_pct": 0.5881,
-      "next_day_gap_pct": -1.21,
-      "day_rvol_50d": 89.675,
-      "return_5d_pct": -10.174,
+      "earnings_date": "2026-07-24",
+      "close_in_range_pct": 0.65,
+      "next_day_gap_pct": -0.505,
+      "day_rvol_50d": 0.224,
+      "return_5d_pct": -0.272,
       "source": "bse",
       "best_pop_pct": 7.156,
-      "best_pop_rvol": 89.675
+      "best_pop_rvol": 88.002
     },
     "COALINDIA": {
       "symbol": "COALINDIA",
@@ -15903,7 +15903,7 @@
       "close_in_range_pct": 0.4369,
       "next_day_gap_pct": 0.337,
       "day_rvol_50d": 0.907,
-      "return_5d_pct": -7.091,
+      "return_5d_pct": -6.971,
       "source": "bse",
       "best_pop_pct": -0.574,
       "best_pop_rvol": 0.907
