@@ -9111,6 +9111,15 @@ button {
 .rvol-widget--md { min-width: 190px; padding: 8px 10px; font-size: var(--fs-tiny); }
 .rvol-widget--lg { min-width: 240px; padding: 12px 14px; font-size: var(--fs-small); }
 
+/* Shown when the widget is on but the chart is too short for a 50-session
+   average — an explanation beats an empty box. */
+.rvol-widget-empty {
+  color: var(--text-muted);
+  font-size: var(--fs-micro);
+  line-height: 1.45;
+  max-width: 200px;
+}
+
 .rvol-widget-header {
   display: flex;
   align-items: center;

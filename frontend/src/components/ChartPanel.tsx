@@ -2074,6 +2074,10 @@ export function ChartPanel({
   // widgets clamp their position against the stage box. It is rare, unlike
   // panning, so a real re-render costs nothing here.
   const [, setStageResizeTick] = useState(0);
+  // The stage's own box. `stageResizeTick` forces a render on resize but
+  // carries no size, so a widget that positions itself absolutely inside the
+  // stage has nothing to clamp against. This does.
+  const [stageSize, setStageSize] = useState<{ width: number; height: number } | null>(null);
 
   // One delayed overlay bump after bars land: timeToCoordinate() returns null
   // until the chart engine finishes its first layout, so overlays computed
@@ -2451,6 +2455,25 @@ export function ChartPanel({
     [activeBars, safeBenchmarkBars, showBenchmarkOverlay],
   );
   const rvolData = useMemo(() => (showRvol ? computeRvolBars(activeBars, 50) : []), [activeBars, showRvol]);
+  /** The RVOL widget's saved position is absolute pixels inside the stage, and
+   *  the stage is a very different size in the fullscreen chart modal than in
+   *  the screener's narrow right-hand column. A position saved in the wide one
+   *  lands outside the narrow one, where `.chart-stage { overflow: hidden }`
+   *  clips it away completely: the RVOL pill reads "active", nothing is on
+   *  screen, and there is no way to drag back something you cannot grab.
+   *
+   *  The drag itself clamps, but only against the stage as it was AT DRAG TIME.
+   *  Clamping again here — on every render, and the stage's ResizeObserver
+   *  forces one — is what makes it recover instead of staying lost. */
+  const clampedRvolPos = useMemo(() => {
+    if (!rvolPos || !stageSize) return rvolPos;
+    const widgetWidth = rvolScale === "sm" ? 150 : rvolScale === "lg" ? 240 : 190;
+    const widgetHeight = rvolScale === "sm" ? 110 : rvolScale === "lg" ? 170 : 145;
+    return {
+      x: Math.max(0, Math.min(rvolPos.x, Math.max(0, stageSize.width - widgetWidth))),
+      y: Math.max(0, Math.min(rvolPos.y, Math.max(0, stageSize.height - widgetHeight))),
+    };
+  }, [rvolPos, rvolScale, stageSize]);
   // Resolved per hover inside the RVOL widget's own subscriber, so moving the
   // crosshair never re-renders the panel around it.
   const pickRvolEntry = (hoveredTime: number | null): RvolEntry | null => {
@@ -3843,7 +3866,13 @@ export function ChartPanel({
       // Floating widgets clamp against the stage box, which only the panel's
       // own render reads — so resize (unlike panning) still needs one.
       setStageResizeTick((tick) => tick + 1);
+      const stage = stageRef.current;
+      if (stage) {
+        const rect = stage.getBoundingClientRect();
+        setStageSize({ width: rect.width, height: rect.height });
+      }
     };
+    handleResize();
 
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -3857,6 +3886,11 @@ export function ChartPanel({
     const observer = new ResizeObserver(() => {
       scheduleOverlayUpdate();
       setStageResizeTick((tick) => tick + 1);
+      const stage = stageRef.current;
+      if (stage) {
+        const rect = stage.getBoundingClientRect();
+        setStageSize({ width: rect.width, height: rect.height });
+      }
     });
     observer.observe(containerNode);
     return () => observer.disconnect();
@@ -5662,12 +5696,12 @@ export function ChartPanel({
               <div className="favorites-widget-resize" onPointerDown={(event) => beginFavoritesWidgetDrag(event, "resize")} />
             </div>
           ) : null}
-          {showRvol && rvolData.length ? (
+          {showRvol ? (
             <div
               ref={rvolWidgetRef}
               className={`rvol-widget rvol-widget--${rvolScale}`}
               style={{
-                ...(rvolPos ? { left: rvolPos.x, top: rvolPos.y, bottom: "auto", right: "auto" } : {}),
+                ...(clampedRvolPos ? { left: clampedRvolPos.x, top: clampedRvolPos.y, bottom: "auto", right: "auto" } : {}),
                 borderColor: `color-mix(in srgb, ${rvolAccentColor} 45%, transparent)`,
               }}
             >
@@ -5709,7 +5743,15 @@ export function ChartPanel({
               <ChartHoverSubscriber store={hoverStore}>
                 {(hover) => {
                   const currentRvol = pickRvolEntry(hover.bar?.time ?? null);
-                  if (!currentRvol) return null;
+                  if (!currentRvol) {
+                    // Say so rather than rendering an empty shell: the average
+                    // needs more than 50 sessions before it means anything.
+                    return (
+                      <div className="rvol-widget-empty">
+                        Needs more than 50 sessions of history — this chart has {activeBars.length}.
+                      </div>
+                    );
+                  }
                   return (
                     <>
                       <div className="rvol-widget-row">
