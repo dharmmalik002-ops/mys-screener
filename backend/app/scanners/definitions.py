@@ -1698,6 +1698,7 @@ def build_scan_match(
         change_pct=snapshot.change_pct,
         relative_volume=snapshot.relative_volume,
         avg_rupee_volume_30d_crore=snapshot.avg_rupee_volume_30d_crore,
+        adr_pct_20=snapshot.adr_pct_20,
         score=score,
         pattern=pattern,
         volume_push_date=volume_push_date,

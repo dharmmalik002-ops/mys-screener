@@ -9836,3 +9836,13 @@ button {
 .watchlist-picker-levels { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
 
 .watchlist-picker-why p { margin: 0; font-size: 11px; line-height: 1.55; color: var(--text-muted); }
+
+/* Moving-average stop chip: the risk figure rides alongside the level so the
+   chip answers "where" and "how much" in one line. */
+.chart-ma-stop-risk {
+  margin-left: 6px;
+  color: var(--negative);
+  font-size: var(--fs-base);
+  font-style: normal;
+  font-variant-numeric: tabular-nums;
+}

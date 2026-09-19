@@ -102,6 +102,13 @@ import { tradeMarkersForSymbol, useJournalTrades } from "./lib/journal";
 import { buildSymbolSuggestions } from "./lib/searchSuggestions";
 import { applyScannerDisplayAlias, applyScannerDisplayAliases, DEFAULT_SCANNERS } from "./lib/scannerCatalog";
 import { AppStatusBanners } from "./components/AppStatusBanners";
+import { UniverseFilterCard } from "./components/UniverseFilterCard";
+import {
+  applyUniverseFilter,
+  EMPTY_UNIVERSE_FILTER,
+  normalizeUniverseFilter,
+  type UniverseFilter,
+} from "./lib/universeFilter";
 
 const TodayPanel = lazy(() => import("./components/TodayPanel").then((module) => ({ default: module.TodayPanel })));
 const ChartPanel = lazy(() => import("./components/ChartPanel").then((module) => ({ default: module.ChartPanel })));
@@ -142,6 +149,7 @@ const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModa
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
 
 const CHART_PREFERENCES_KEY = "mr-malik-chart-preferences:v2";
+const UNIVERSE_FILTER_KEY = "mr-malik-universe-filter:v1";
 const CHART_DRAWINGS_KEY = "mr-malik-chart-drawings:v1";
 const CHART_RESPONSE_CACHE_KEY = "mr-malik-chart-response-cache:v3";
 const GROUP_WIDGET_RECT_KEY = "mr-malik-group-widget-rect:v1";
@@ -1194,6 +1202,21 @@ function normalizeChartPanelTab(value: string | undefined): ChartPanelTab {
   return value === "fundamentals" ? "fundamentals" : "technical";
 }
 
+/** The universe gate's floors for this market. Its own key rather than a
+ *  field inside the scanner-settings blob: the gate outlives any one scanner's
+ *  form state, and a parse failure there must not be able to clear it. */
+function readUniverseFilter(market: MarketKey): UniverseFilter {
+  if (typeof window === "undefined") {
+    return EMPTY_UNIVERSE_FILTER;
+  }
+  try {
+    const raw = readMarketScopedValue(UNIVERSE_FILTER_KEY, market);
+    return raw ? normalizeUniverseFilter(JSON.parse(raw)) : EMPTY_UNIVERSE_FILTER;
+  } catch {
+    return EMPTY_UNIVERSE_FILTER;
+  }
+}
+
 function readChartPreferences(market: MarketKey): {
   chartPanelTab: ChartPanelTab;
   timeframe: ChartTimeframe;
@@ -1889,6 +1912,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
   const [chartPalette, setChartPalette] = useState<ChartPaletteKey>(readChartPalette(bootstrapMarket));
   const [showBenchmarkOverlay, setShowBenchmarkOverlay] = useState(initialPreferences.showBenchmarkOverlay);
   const [indicatorKeys, setIndicatorKeys] = useState<IndicatorKey[]>(initialPreferences.indicatorKeys);
+  const [universeFilter, setUniverseFilter] = useState<UniverseFilter>(() => readUniverseFilter(bootstrapMarket));
   const [chartColors, setChartColors] = useState<ChartColorSettings>(initialPreferences.chartColors);
   const [chartDrawingColor, setChartDrawingColor] = useState(initialPreferences.drawingColor);
   const [savedDrawings, setSavedDrawings] = useState<Record<string, ChartAnnotation[]>>(initialSavedDrawings);
@@ -2351,8 +2375,10 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     const nextSavedScanners = readSavedScanners(nextMarket);
     const nextSavedDrawings = readSavedDrawings(nextMarket);
     const nextChartPalette = readChartPalette(nextMarket);
+    const nextUniverseFilter = readUniverseFilter(nextMarket);
 
     applyChartPreferences(nextPreferences);
+    setUniverseFilter(nextUniverseFilter);
     applyScannerSettings(nextScannerSettings);
     setWatchlists(nextWatchlists);
     setActiveWatchlistId(readActiveWatchlistId(nextWatchlists, nextMarket));
@@ -3233,6 +3259,16 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     if (typeof window === "undefined") {
       return;
     }
+    window.localStorage.setItem(
+      marketScopedKey(UNIVERSE_FILTER_KEY, activeMarket),
+      JSON.stringify(universeFilter),
+    );
+  }, [activeMarket, universeFilter]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
 
     window.localStorage.setItem(
       marketScopedKey(SCANNER_SETTINGS_KEY, activeMarket),
@@ -3335,7 +3371,6 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
           : activeScanner === "improving-rs"
             ? improvingRsData?.total_hits ?? 0
             : scanResults?.total_hits ?? 0;
-  const activeViewMetric = activePage === "screener" && activeScanner !== "improving-rs" && scanLoading ? "..." : activeViewCount;
   const activeViewLabel =
     activePage === "home"
       ? "Universe"
@@ -3346,7 +3381,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             : activeScanner === "improving-rs"
               ? "52W High RS"
               : "Matches";
-  const visibleScanItems =
+  const orderedScanItems =
     activePage !== "screener" || activeScanner === "improving-rs"
       ? []
       : scanResults?.scan.id === "custom-scan"
@@ -3357,6 +3392,19 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             }
             return (right.rs_rating ?? Number.NEGATIVE_INFINITY) - (left.rs_rating ?? Number.NEGATIVE_INFINITY);
           });
+  // The universe gate is applied HERE and nowhere else. Every screener surface
+  // reads `visibleScanItems`, so filtering once keeps the strip's count, the
+  // table, the distribution charts, the chart grid, the CSV export and the
+  // arrow-key order from disagreeing about what the universe is.
+  const universeGate = applyUniverseFilter(orderedScanItems, universeFilter);
+  const visibleScanItems = universeGate.items;
+  const screenerGateActive = activePage === "screener" && activeScanner !== "improving-rs" && universeGate.removed > 0;
+  const activeViewMetric =
+    activePage === "screener" && activeScanner !== "improving-rs" && scanLoading
+      ? "..."
+      : screenerGateActive
+        ? visibleScanItems.length
+        : activeViewCount;
   const watchlistVisibleSymbols = activeWatchlist?.symbols ?? [];
   // On the screener, the ScanTable can regroup/re-sort rows internally (sector
   // or group arrangement, in-table search), so the displayed order differs from
@@ -5980,6 +6028,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                   </div>
                 </>
               )}
+              {activePage === "screener" ? (
+                <UniverseFilterCard
+                  filter={universeFilter}
+                  onChange={setUniverseFilter}
+                  removed={universeGate.removed}
+                  removedForMissingData={universeGate.removedForMissingData}
+                />
+              ) : null}
               <div className="metric-card">
                 <span>{floorMetricLabel}</span>
                 <strong>{floorMetricValue}</strong>

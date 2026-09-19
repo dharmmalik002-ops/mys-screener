@@ -1,0 +1,189 @@
+/* The universe gate lives inside .metric-card, so it inherits the strip's
+   label/value typography and only adds the trigger, the hint and the popover. */
+
+.universe-filter-card {
+  position: relative;
+  align-items: center;
+  gap: 8px;
+}
+
+.universe-filter-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.universe-filter-trigger:hover {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  color: var(--text);
+}
+
+.universe-filter-trigger strong {
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.universe-filter-trigger.is-active {
+  border-color: color-mix(in srgb, var(--accent) 70%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--text);
+}
+
+.universe-filter-removed {
+  color: var(--negative);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+/* ----- Popover -----
+   Anchored to the card. The metrics strip is not transformed, so a plain
+   absolute position is correct here (unlike the full-screen overlays, which
+   have to portal out to <body> — see the GroupStocksModal note). */
+.universe-filter-pop {
+  position: absolute;
+  z-index: 60;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 280px;
+  padding: 12px 14px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  /* --surface-strong is itself translucent (alpha .84) and the strip behind it
+     already carries a backdrop-filter, so using it alone left the scanner form
+     legible straight through these inputs. Paint it OVER the opaque page
+     background instead, so the popover reads as a panel and not a watermark. */
+  background: linear-gradient(var(--surface-strong), var(--surface-strong)), var(--bg);
+  box-shadow: 0 18px 44px rgb(0 0 0 / 34%);
+}
+
+.universe-filter-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.universe-filter-pop-head strong {
+  font-size: var(--fs-base);
+  letter-spacing: 0.02em;
+  text-transform: none;
+}
+
+.universe-filter-pop-head button {
+  display: inline-flex;
+  padding: 2px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.universe-filter-pop-head button:hover {
+  color: var(--text);
+}
+
+.universe-filter-pop-intro {
+  margin: 0 0 10px;
+  color: var(--text-muted);
+  font-size: var(--fs-tiny);
+  line-height: 1.45;
+}
+
+.universe-filter-field {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.universe-filter-field-label {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin-bottom: 4px;
+  color: var(--text-soft);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.universe-filter-field-label em {
+  color: var(--text-muted);
+  font-style: normal;
+  font-weight: 500;
+}
+
+.universe-filter-field input {
+  width: 100%;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--surface-soft) 70%, transparent);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: var(--fs-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.universe-filter-field input:focus {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--line));
+  outline: none;
+}
+
+.universe-filter-field small {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: var(--fs-nano);
+  line-height: 1.4;
+}
+
+.universe-filter-pop-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+
+.universe-filter-clear {
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--text-soft);
+  font-size: var(--fs-tiny);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.universe-filter-clear:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--negative) 55%, var(--line));
+  color: var(--text);
+}
+
+.universe-filter-clear:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Phones render the strip as a wrapping row; the popover would overflow the
+   viewport if it stayed pinned to the card's left edge on the far right. */
+@media (max-width: 640px) {
+  html .universe-filter-pop {
+    left: auto;
+    right: 0;
+    width: min(280px, calc(100vw - 32px));
+  }
+}

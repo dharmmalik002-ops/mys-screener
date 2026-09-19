@@ -84,6 +84,9 @@ type SortBy =
   | "rs_desc"
   | "rs_asc"
   | "rvol_desc"
+  | "adr_desc"
+  | "adr_asc"
+  | "turnover_desc"
   | "price_desc"
   | "price_asc"
   | "mcap_desc"
@@ -93,7 +96,7 @@ type SortBy =
   | "expansion_date_desc"
   | "earnings_date_desc";
 
-type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "vdate" | "sdate" | "edate" | "gap";
+type ColumnKey = "spark" | "rs" | "rs1m" | "rvol" | "adr" | "turnover" | "vdate" | "sdate" | "edate" | "gap";
 
 /**
  * Which SortBy modes each header column maps to. Direction is encoded in the
@@ -105,6 +108,8 @@ const COLUMN_SORTS = {
   change: { desc: "change_desc", asc: "change_asc" },
   rs: { desc: "rs_desc", asc: "rs_asc" },
   rvol: { desc: "rvol_desc" },
+  adr: { desc: "adr_desc", asc: "adr_asc" },
+  turnover: { desc: "turnover_desc" },
   vdate: { desc: "volume_date_desc" },
   edate: { desc: "earnings_date_desc" },
 } as const satisfies Record<string, { desc: SortBy; asc?: SortBy }>;
@@ -128,6 +133,9 @@ const SORT_OPTIONS: Array<{ value: SortBy; label: string }> = [
   { value: "rs_desc", label: "RS Rating (high → low)" },
   { value: "rs_asc", label: "RS Rating (low → high)" },
   { value: "rvol_desc", label: "Relative Volume" },
+  { value: "adr_desc", label: "ADR % (high → low)" },
+  { value: "adr_asc", label: "ADR % (low → high)" },
+  { value: "turnover_desc", label: "Traded Value (30D)" },
   { value: "price_desc", label: "Price (high → low)" },
   { value: "price_asc", label: "Price (low → high)" },
   { value: "mcap_desc", label: "Market Cap" },
@@ -140,6 +148,8 @@ const COLUMN_DEFS: Array<{ key: ColumnKey; label: string }> = [
   { key: "rs", label: "RS Rating" },
   { key: "rs1m", label: "RS 1M Ago" },
   { key: "rvol", label: "Rel Volume" },
+  { key: "adr", label: "ADR %" },
+  { key: "turnover", label: "Traded Value" },
   { key: "gap", label: "Gap %" },
 ];
 
@@ -248,6 +258,35 @@ function sectorAccentColor(label: string): string {
   return palette[hash % palette.length];
 }
 
+/** Average daily range for a row, or null when there is none on record.
+ *  The backend defaults the field to 0.0 rather than leaving it unset, and a
+ *  stock whose daily range is genuinely zero does not exist — so a zero here is
+ *  always absence, and reading it as "extremely tight" would put the most
+ *  illiquid names at the top of the very sort meant to surface calm leaders. */
+function adrOf(item: ScanMatch): number | null {
+  const adr = item.adr_pct_20;
+  return adr == null || adr <= 0 ? null : adr;
+}
+
+/** Average daily range, banded for the eye rather than the decimal point.
+ *  Under ~2.5% a name rarely travels far enough in a session to pay for a
+ *  sensible stop; past ~7% the same position size is a different amount of
+ *  risk than it was on the row above. Both ends are worth colouring. */
+function adrClass(adr: number | null | undefined): string {
+  if (adr == null) return "";
+  if (adr < 2.5) return "is-tight";
+  if (adr >= 7) return "is-wide";
+  return "is-live";
+}
+
+/** Traded value in crore, shortened so the column stays narrow. */
+function formatTurnoverCrore(value: number | null | undefined): string {
+  if (value == null) return "—";
+  if (value >= 1000) return `${Math.round(value).toLocaleString("en-IN")}`;
+  if (value >= 100) return value.toFixed(0);
+  return value.toFixed(1);
+}
+
 function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
   const sorted = [...items];
   sorted.sort((left, right) => {
@@ -262,6 +301,14 @@ function applySort(items: ScanMatch[], sortBy: SortBy): ScanMatch[] {
         return (left.rs_rating ?? Infinity) - (right.rs_rating ?? Infinity);
       case "rvol_desc":
         return (right.relative_volume ?? 0) - (left.relative_volume ?? 0);
+      // ADR sorts both ways on purpose: descending finds the movers worth a
+      // momentum trade, ascending finds the tight ones worth a base entry.
+      case "adr_desc":
+        return (adrOf(right) ?? -Infinity) - (adrOf(left) ?? -Infinity);
+      case "adr_asc":
+        return (adrOf(left) ?? Infinity) - (adrOf(right) ?? Infinity);
+      case "turnover_desc":
+        return (right.avg_rupee_volume_30d_crore ?? 0) - (left.avg_rupee_volume_30d_crore ?? 0);
       case "price_desc":
         return right.last_price - left.last_price;
       case "price_asc":
@@ -885,6 +932,8 @@ export function ScanTable({
     if (visibleCols.has("rs")) cols.push("44px");
     if (visibleCols.has("rs1m")) cols.push("44px");
     if (visibleCols.has("rvol")) cols.push("48px");
+    if (visibleCols.has("adr")) cols.push("52px");
+    if (visibleCols.has("turnover")) cols.push("72px");
     if (visibleCols.has("vdate")) cols.push("82px");
     if (visibleCols.has("sdate")) cols.push("82px");
     if (visibleCols.has("edate")) cols.push("82px");
@@ -1096,6 +1145,32 @@ export function ScanTable({
               </span>
             ) : null}
             <span>{item.relative_volume.toFixed(2)}×</span>
+          </span>
+        ) : null}
+
+        {visibleCols.has("adr") ? (
+          <span
+            className={`st-cell-center st-adr ${adrClass(adrOf(item))}`}
+            title={
+              adrOf(item) === null
+                ? "No average daily range on record"
+                : `Average daily range ${adrOf(item)!.toFixed(2)}% over 20 sessions — a stop tighter than this sits inside one ordinary day's noise`
+            }
+          >
+            {adrOf(item) === null ? "—" : `${adrOf(item)!.toFixed(1)}%`}
+          </span>
+        ) : null}
+
+        {visibleCols.has("turnover") ? (
+          <span
+            className="st-cell-center st-turnover"
+            title={
+              item.avg_rupee_volume_30d_crore == null
+                ? "No traded value on record"
+                : `${item.avg_rupee_volume_30d_crore.toFixed(2)} Cr traded per day over 30 sessions`
+            }
+          >
+            {formatTurnoverCrore(item.avg_rupee_volume_30d_crore)}
           </span>
         ) : null}
 
@@ -1464,6 +1539,8 @@ export function ScanTable({
                 {visibleCols.has("rs") ? header("rs", "RS") : null}
                 {visibleCols.has("rs1m") ? <span className="st-num">RS 1M</span> : null}
                 {visibleCols.has("rvol") ? header("rvol", "RVOL") : null}
+                {visibleCols.has("adr") ? header("adr", "ADR") : null}
+                {visibleCols.has("turnover") ? header("turnover", "Traded") : null}
                 {visibleCols.has("vdate") ? header("vdate", "Vol Date") : null}
                 {visibleCols.has("sdate") ? <span className="st-num">Day</span> : null}
                 {visibleCols.has("edate") ? header("edate", "Earnings") : null}

@@ -37,6 +37,7 @@ export type ScanMatch = {
   change_pct: number;
   relative_volume: number;
   avg_rupee_volume_30d_crore?: number | null;
+  adr_pct_20?: number | null;
   score: number;
   pattern?: string | null;
   volume_push_date?: string | null;
@@ -1172,6 +1173,7 @@ function normalizeScanMatch(value: unknown): ScanMatch {
     change_pct: readNumber(raw.change_pct),
     relative_volume: readNumber(raw.relative_volume),
     avg_rupee_volume_30d_crore: readNullableNumber(raw.avg_rupee_volume_30d_crore),
+    adr_pct_20: readNullableNumber(raw.adr_pct_20),
     score: readNumber(raw.score),
     pattern: readNullableString(raw.pattern),
     volume_push_date: readNullableString(raw.volume_push_date),

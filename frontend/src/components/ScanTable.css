@@ -335,6 +335,31 @@
   font-weight: 600;
 }
 
+/* ----- ADR % and traded value -----
+   The volatility/liquidity pair. ADR is banded rather than plain so a list can
+   be read for "which of these can actually move" without reading every digit;
+   traded value stays neutral because there is no good or bad end to it, only a
+   floor the user sets for themselves. */
+.st-adr {
+  color: var(--st-text);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-adr.is-tight {
+  color: var(--st-text-soft);
+}
+
+.st-adr.is-wide {
+  color: var(--negative);
+}
+
+.st-turnover {
+  color: var(--st-text-soft);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ----- Sparkline ----- */
 .st-spark {
   display: flex;

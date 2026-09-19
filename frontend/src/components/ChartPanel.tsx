@@ -2275,6 +2275,53 @@ export function ChartPanel({
   const monoVolume = volumeMode === "mono" || (volumeMode === "auto" && chartPalette === "mono");
   const availableTimeframes = useMemo(() => supportedTimeframes(market), [market]);
   const activeBars = useMemo(() => sanitizeChartBars(extendedHistory?.bars ?? bars), [bars, extendedHistory]);
+  /** How extended price is from its moving averages, measured in the stock's
+   *  OWN average daily range rather than in rupees or raw percent. "3 ADR above
+   *  the 10 EMA" is a sizing decision; "34 rupees above" is not, because the
+   *  same 34 rupees is a shrug in one name and a week's range in another.
+   *
+   *  Daily bars only. The 10/20 EMA of a 15-minute series is a different
+   *  animal that would render into the same chip and read as if it were the
+   *  daily one, so the chips are simply absent on intraday timeframes. */
+  const positionRead = useMemo(() => {
+    if (timeframe !== "1D" || activeBars.length < 20) {
+      return null;
+    }
+    const close = activeBars[activeBars.length - 1]?.close ?? 0;
+    if (close <= 0) {
+      return null;
+    }
+    // ADR% recomputed from the bars on screen rather than taken from `summary`:
+    // the snapshot and an extended-history fetch can sit a session apart, and a
+    // chip that disagrees with its own chart is worse than no chip.
+    const window = activeBars.slice(-20);
+    const adrPct =
+      (window.reduce((sum, bar) => sum + (bar.low > 0 ? bar.high / bar.low - 1 : 0), 0) / window.length) * 100;
+    const lastValue = (points: Array<{ value: number }>) => (points.length ? points[points.length - 1].value : null);
+    const levels = (
+      [
+        { key: "ema10", label: "10 EMA", value: lastValue(computeEma(activeBars, 10)) },
+        { key: "ema20", label: "20 EMA", value: lastValue(computeEma(activeBars, 20)) },
+        { key: "sma50", label: "50 SMA", value: lastValue(computeSma(activeBars, 50)) },
+      ] as Array<{ key: string; label: string; value: number | null }>
+    ).map((level) => {
+      const distancePct = level.value && level.value > 0 ? (close / level.value - 1) * 100 : null;
+      return {
+        ...level,
+        distancePct,
+        adr: distancePct !== null && adrPct > 0 ? distancePct / adrPct : null,
+      };
+    });
+    // The trailing stop actually in use: the highest of those averages that is
+    // still below price. When none of them is, the trend is broken and there is
+    // no moving-average stop to quote — the chip drops out rather than pointing
+    // at a level price has already lost.
+    const below = levels.filter((level) => level.value !== null && level.value < close);
+    const support = below.length
+      ? below.reduce((best, level) => ((best.value ?? 0) >= (level.value ?? 0) ? best : level))
+      : null;
+    return { adrPct, levels, support };
+  }, [activeBars, timeframe]);
   // Shared per-bar stats, computed ONCE per dataset: change vs previous close,
   // trailing 20-bar average volume, and the derived candle/volume signals
   // (expansion candidate, volume dry-up, inside day, NR7). Consumers apply
@@ -2441,6 +2488,19 @@ export function ChartPanel({
   // RS ratings live on a 1-99 scale; 0/null means "not rated yet" (e.g. thin
   // history). Show an em dash instead of a fake zero.
   const formatRsValue = (value: number | null | undefined) => (value != null && value >= 1 ? String(value) : "—");
+  const formatAdrValue = (value: number | null | undefined) =>
+    value == null ? "—" : `${value >= 0 ? "+" : ""}${value.toFixed(1)} ADR`;
+  /** Colour for a "how far above the average" chip. At or under the average the
+   *  name is at support and can be bought against it; past roughly three of its
+   *  own daily ranges the move has already been paid for and the chip warns
+   *  rather than flatters. Below the average is its own problem, not a bargain. */
+  const extensionClass = (adr: number | null | undefined) => {
+    if (adr == null) return "neutral";
+    if (adr < 0) return "negative";
+    if (adr <= 1.5) return "positive";
+    if (adr <= 3) return "neutral";
+    return "negative";
+  };
   const formatCountValue = (value: number | null | undefined) => formatCount(value, market);
   const ownershipLabels = market === "india"
     ? {
@@ -5182,6 +5242,42 @@ export function ChartPanel({
           <div className={`chart-summary-chip strong ${rsTrendClass}`}>
             <span>RS Rating</span>
             <strong>{formatRsValue(summary.rs_rating)}</strong>
+          </div>
+          <div className="chart-summary-chip">
+            <span>RVOL</span>
+            <strong>{summary.relative_volume > 0 ? `${summary.relative_volume.toFixed(2)}x` : "—"}</strong>
+          </div>
+          {positionRead
+            ? positionRead.levels.map((level) => (
+                <div
+                  key={level.key}
+                  className={`chart-summary-chip ${extensionClass(level.adr)}`}
+                  title={
+                    level.value === null
+                      ? `Not enough daily history for the ${level.label}`
+                      : `${level.label} ${formatPriceValue(level.value, 2)} · ${formatSignedPercentValue(level.distancePct)} away · this stock's ADR is ${positionRead.adrPct.toFixed(2)}%`
+                  }
+                >
+                  <span>vs {level.label}</span>
+                  <strong>{formatAdrValue(level.adr)}</strong>
+                </div>
+              ))
+            : null}
+          {positionRead?.support ? (
+            <div
+              className="chart-summary-chip"
+              title={`Nearest moving average still below price — a ${positionRead.support.label} trailing stop risks ${formatPercentValue(positionRead.support.distancePct)} from here`}
+            >
+              <span>MA Stop · {positionRead.support.label}</span>
+              <strong>
+                {formatPriceValue(positionRead.support.value, 2)}
+                <em className="chart-ma-stop-risk">−{formatPercentValue(positionRead.support.distancePct)}</em>
+              </strong>
+            </div>
+          ) : null}
+          <div className="chart-summary-chip">
+            <span>Below 52W High</span>
+            <strong>{formatPercentValue(summary.pct_from_52w_high)}</strong>
           </div>
           {groupSummary ? (
             onOpenGroup ? (

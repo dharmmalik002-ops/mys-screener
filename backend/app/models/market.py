@@ -670,6 +670,11 @@ class ScanMatch(BaseModel):
     change_pct: float
     relative_volume: float
     avg_rupee_volume_30d_crore: float | None = None
+    # Average daily range over 20 sessions, as a percent of price. The
+    # volatility half of the liquidity/volatility pair a momentum trader
+    # filters on — a name whose daily range is smaller than the intended
+    # stop cannot pay for the risk, however good the pattern looks.
+    adr_pct_20: float | None = None
     score: float
     pattern: str | None = None
     volume_push_date: str | None = None  # date (YYYY-MM-DD) of the latest HQV/HHV/HYV volume push
