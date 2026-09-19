@@ -76,6 +76,10 @@ DIGEST_SCANS: tuple[DigestScan, ...] = (
     DigestScan("bread-butter", "Bread & Butter", 3),
     DigestScan("volume", "Volume", 3),
     DigestScan("fresh-stage2", "Fresh Stage 2", 3),
+    # Appended, not slotted into page 0 where it reads: callback_data encodes
+    # the INDEX into this tuple, so inserting mid-list renumbers every scan
+    # after it. New scans go on the end; page 0 is where it renders.
+    DigestScan("qullamaggie", "Qullamaggie", 0),
 )
 
 DIGEST_SCAN_IDS: tuple[str, ...] = tuple(scan.scan_id for scan in DIGEST_SCANS)

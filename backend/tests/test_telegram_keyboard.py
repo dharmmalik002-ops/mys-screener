@@ -37,6 +37,7 @@ class RegistryPinTests(unittest.TestCase):
                 "six-month-high", "month-high", "week-high", "day-high",
                 "near-day-high", "prev-day-high-break",
                 "bread-butter", "volume", "fresh-stage2",
+                "qullamaggie",
             ),
         )
 

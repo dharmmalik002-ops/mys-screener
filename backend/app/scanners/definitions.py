@@ -1172,6 +1172,149 @@ def _high_tight_flag(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
 
 
 # ---------------------------------------------------------------------------
+# Qullamaggie — momentum continuation
+# ---------------------------------------------------------------------------
+# Kristjan Kullamagi's core setup: the stock has ALREADY made a big move, is
+# now resting in a shallow consolidation, still holds its short MAs, and moves
+# enough day to day (ADR) to pay for the risk. The breakout itself is the
+# trigger, so names are listed while they are still inside the base or right at
+# the pivot — never after they have run away from it.
+#
+# The episodic-pivot leg of his playbook is a separate scan (`episodic-pivot`);
+# this one is the continuation/flag leg.
+
+QM_MIN_ADR_PCT = 3.0
+QM_MIN_TURNOVER_CRORE = 1.0
+# (return field days, minimum gain %, label) — ANY one of the three qualifies.
+QM_MOVE_GATES: tuple[tuple[int, float, str], ...] = (
+    (20, 30.0, "1M"),
+    (60, 50.0, "3M"),
+    (126, 100.0, "6M"),
+)
+QM_MIN_BASE_SESSIONS = 3
+QM_MAX_BASE_SESSIONS = 45
+QM_MAX_BASE_DEPTH_PCT = 30.0
+QM_MAX_DIST_BELOW_PIVOT_PCT = 10.0
+QM_MAX_PIVOT_OVERSHOOT_PCT = 2.0
+QM_MAX_DIST_FROM_52W_HIGH_PCT = 25.0
+
+
+def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
+    avg_vol_20 = snapshot.avg_volume_20d or 0
+    if avg_vol_20 < 25000 or snapshot.last_price <= 30:
+        return None
+    if snapshot.avg_rupee_turnover_20d_crore < QM_MIN_TURNOVER_CRORE:
+        return None
+
+    # --- Movement. A 2%-ADR name cannot pay for a 1R stop in a few days. ---
+    adr = snapshot.adr_pct_20 or 0.0
+    if adr < QM_MIN_ADR_PCT:
+        return None
+
+    # --- 1. The prior move: this must already be a leader, not a hopeful. ---
+    returns_by_days = {
+        20: snapshot.stock_return_20d,
+        60: snapshot.stock_return_60d,
+        126: snapshot.stock_return_126d,
+    }
+    qualified = [
+        (label, returns_by_days[days], threshold)
+        for days, threshold, label in QM_MOVE_GATES
+        if returns_by_days[days] >= threshold
+    ]
+    if not qualified:
+        return None
+    # Rank the lookbacks by how far each cleared its own bar, not by raw %,
+    # so a +140% 6M run does not always outrank a +45% 1M explosion.
+    best_label, best_move, _ = max(qualified, key=lambda item: item[1] / item[2])
+
+    # --- 2. Trend: holding the short MAs, still near the highs. ---
+    ema10 = snapshot.ema10 or snapshot.ema20
+    ema20 = snapshot.ema20
+    if ema10 is None or ema20 is None:
+        return None
+    if snapshot.last_price < ema10 or snapshot.last_price < ema20:
+        return None
+    sma50 = snapshot.sma50
+    if sma50 is not None and sma50 > 0 and ema20 < sma50:
+        return None  # MA order inverted — the rest has become a breakdown
+    if snapshot.pct_from_52w_high > QM_MAX_DIST_FROM_52W_HIGH_PCT:
+        return None
+
+    # --- 3. The consolidation. ---
+    closes = _mb_closes(snapshot)
+    n = len(closes)
+    if n < QM_MIN_BASE_SESSIONS + 10:
+        return None
+    last_close = closes[-1]
+    if last_close <= 0:
+        return None
+    search_start = max(0, n - 1 - QM_MAX_BASE_SESSIONS)
+    search_end = n - QM_MIN_BASE_SESSIONS  # exclusive: a 2-day rest is not a base
+    if search_end <= search_start:
+        return None
+    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
+    peak = closes[peak_idx]
+    if peak <= 0:
+        return None
+    if max(closes[peak_idx:]) > peak * (1 + QM_MAX_PIVOT_OVERSHOOT_PCT / 100):
+        return None  # already through the pivot and extended — the entry is gone
+    base_len = n - 1 - peak_idx
+    base_low = min(closes[peak_idx:])
+    depth = (peak - base_low) / peak * 100
+    if depth > QM_MAX_BASE_DEPTH_PCT:
+        return None
+    dist_below_pivot = (peak - last_close) / peak * 100
+    if dist_below_pivot > QM_MAX_DIST_BELOW_PIVOT_PCT:
+        return None
+
+    # --- 4. Volume dry-up: a bonus, not a gate (he trades loose flags too). ---
+    avg50 = float(snapshot.avg_volume_50d or 0)
+    recent_vols = [int(v) for v in (snapshot.recent_volumes or []) if v is not None]
+    dryup = (sum(recent_vols[-5:]) / 5) / avg50 if avg50 > 0 and len(recent_vols) >= 5 else None
+
+    # --- 5. Trade plan: buy the base high, stop under the prior session low.
+    # His stop is the low of the entry day (or the day before) — NOT the base
+    # low. On a 5% ADR name the 5-day low is 15%+ away, which is a different
+    # trade from the one he takes.
+    entry_window = min(max(base_len, 5), 20)
+    highs = [float(v) for v in (snapshot.recent_highs or [])[-entry_window:] if v]
+    lows = [float(v) for v in (snapshot.recent_lows or [])[-2:] if v]
+    entry = max(highs) if highs else peak
+    stop = min(lows) if lows else None
+    risk_pct = (entry - stop) / entry * 100 if stop is not None and entry > 0 and stop < entry else None
+
+    score = (
+        75
+        + min(best_move, 150.0) * 0.08
+        + max(0.0, QM_MAX_BASE_DEPTH_PCT - depth) * 0.5
+        + max(0.0, QM_MAX_DIST_BELOW_PIVOT_PCT - dist_below_pivot) * 0.6
+        + min(adr, 10.0)
+        + (max(0.0, 1.0 - dryup) * 8 if dryup is not None else 0.0)
+        + (snapshot.rs_rating * 0.06 if snapshot.rs_eligible else 0.0)
+    )
+    pivot_note = (
+        f"{dist_below_pivot:.1f}% below pivot {peak:.2f}"
+        if dist_below_pivot >= 0
+        else f"{abs(dist_below_pivot):.1f}% through pivot {peak:.2f}"
+    )
+    reasons = [
+        f"Prior move +{best_move:.0f}% over {best_label}",
+        f"Base {base_len}d, depth {depth:.1f}%, {pivot_note}",
+        f"ADR {adr:.1f}%, holding the 10/20 EMA",
+    ]
+    if dryup is not None:
+        reasons.append(f"5D volume {dryup:.2f}x of 50D avg" + (" - drying up" if dryup < 1 else ""))
+    if risk_pct is not None:
+        # Risk in ADRs is the number he actually sizes off: a stop inside ~1 ADR
+        # is noise, beyond ~2 ADR the position gets too small to matter.
+        reasons.append(
+            f"Entry {entry:.2f} | Stop {stop:.2f} | Risk {risk_pct:.1f}% ({risk_pct / adr:.1f} ADR)"
+        )
+    return round(score, 2), reasons
+
+
+# ---------------------------------------------------------------------------
 # VCP — Volatility Contraction Pattern (Minervini)
 # ---------------------------------------------------------------------------
 # Detects the full pattern, not just one tight window: a prior 30%+ run-up, a
@@ -1644,6 +1787,13 @@ SCANS: list[ScanDefinition] = [
         "Setups",
         "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume while holding Stage-2 MAs within 15% of the 52W high — the pre-breakout coil.",
         _tight_closes,
+    ),
+    ScanDefinition(
+        "qullamaggie",
+        "Qullamaggie",
+        "Setups",
+        "Kullamagi continuation: a prior move of +30% (1M), +50% (3M) or +100% (6M), now resting in a base up to 45 sessions and 30% deep, holding the 10/20 EMA within 25% of the 52W high, ADR >= 3% and within 10% of the pivot - entry/stop/risk included.",
+        _qullamaggie,
     ),
     ScanDefinition(
         "power-base",

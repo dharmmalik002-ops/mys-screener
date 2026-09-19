@@ -3701,6 +3701,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
     if (mode === "power-base") {
       return getScanResults("power-base", activeMarket, options);
     }
+    if (mode === "qullamaggie") {
+      return getScanResults("qullamaggie", activeMarket, options);
+    }
     if (mode === "positive-earnings") {
       return getScanResults("positive-earnings", activeMarket, {
         ...options,
@@ -5870,6 +5873,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
         scanners={[
           { mode: "vcp", label: "VCP" },
           { mode: "power-base", label: "Power Base" },
+          { mode: "qullamaggie", label: "Qullamaggie" },
           { mode: "tight-closes", label: "3 Tight Closes" },
           { mode: "bread-butter", label: "Bread & Butter" },
           { mode: "custom-scan", label: "Custom Scanner" },
@@ -6090,6 +6094,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                       "vcp": activeScanner === "vcp" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "vcp" ? scanResults.total_hits : 0,
                       "tight-closes": activeScanner === "tight-closes" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "tight-closes" ? scanResults.total_hits : 0,
                       "power-base": activeScanner === "power-base" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "power-base" ? scanResults.total_hits : 0,
+                      "qullamaggie": activeScanner === "qullamaggie" ? scanResults?.total_hits ?? 0 : scanResults?.scan.id === "qullamaggie" ? scanResults.total_hits : 0,
                       "improving-rs": improvingRsData?.total_hits ?? 0,
                     }}
                     savedScanners={savedScanners.map((preset) => ({
@@ -6150,7 +6155,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                                                                 ? "3 Tight Closes"
                                                                 : activeScanner === "power-base"
                                                                   ? "Power Base"
-                                                                  : "Pull Backs";
+                                                                  : activeScanner === "qullamaggie"
+                                                                    ? "Qullamaggie"
+                                                                    : "Pull Backs";
                           const scannerDesc =
                             activeScanner === "total-scanner"
                               ? `Scanners combined with AND / OR — ${describeTotalScanner(totalScannerTree)}.`
@@ -6194,7 +6201,9 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
                                                                 ? "3 closes within 1.5% (or 5 within 2.5%) on quiet, drying volume near the highs — the pre-breakout coil before the expansion day."
                                                                 : activeScanner === "power-base"
                                                                   ? "A 30%+ first leg (up to ~3 months in the making), now consolidating for 1–8 weeks while keeping most of the move — leaders digesting a completed leg, with entry, stop, and risk %."
-                                                                  : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
+                                                                  : activeScanner === "qullamaggie"
+                                                                    ? "Qullamaggie continuation: +30% in 1M, +50% in 3M or +100% in 6M already made, now resting in a base up to 45 sessions and 30% deep, holding the 10/20 EMA with ADR ≥ 3% and within 10% of the pivot — with entry, stop, and risk %."
+                                                                    : "Find strong leaders pulling into the 10- or 20-day EMA on contraction.";
                           const activeSavedPreset =
                             activeSavedScannerId
                               ? savedScanners.find(

@@ -1,5 +1,6 @@
 import {
   Flag,
+  Rabbit,
   Plus,
   Settings2,
   Rocket,
@@ -53,7 +54,8 @@ export type ScreenerMode =
   | "high-tight-flag"
   | "vcp"
   | "tight-closes"
-  | "power-base";
+  | "power-base"
+  | "qullamaggie";
 
 export type SavedSidebarScanner = {
   id: string;
@@ -105,6 +107,7 @@ const ALL_ITEMS: SidebarItem[] = [
   { mode: "rs-line-leads", title: "RS Line Leads", hint: "RS high before the pivot", Icon: Activity },
   { mode: "fresh-stage2", title: "Fresh Stage 2", hint: "New trend-template entrants", Icon: Flag },
   { mode: "high-tight-flag", title: "High Tight Flag", hint: "Steep pole, shallow flag", Icon: Flag },
+  { mode: "qullamaggie", title: "Qullamaggie", hint: "Big move, now resting at the pivot", Icon: Rabbit },
   { mode: "consolidating", title: "Consolidating", hint: "Long base / multi-year high", Icon: Layers },
   { mode: "near-pivot", title: "Near Pivot", hint: "High-RS names tightening", Icon: Crosshair },
   { mode: "pull-backs", title: "Pull Backs", hint: "Leaders at the 10/20 EMA", Icon: LineChart },

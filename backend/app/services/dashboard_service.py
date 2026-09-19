@@ -2554,6 +2554,7 @@ class DashboardService:
         "rs-line-leads",
         "fresh-stage2",
         "high-tight-flag",
+        "qullamaggie",
     )
 
     def _current_session_iso(self) -> str | None:
@@ -3872,6 +3873,7 @@ class DashboardService:
         "rs-line-leads": "RS Line Leads",
         "fresh-stage2": "Fresh Stage 2",
         "high-tight-flag": "High Tight Flag",
+        "qullamaggie": "Qullamaggie",
     }
 
     def _build_scanner_scorecard(self, snapshots: list[StockSnapshot]) -> ScannerScorecardResponse:
