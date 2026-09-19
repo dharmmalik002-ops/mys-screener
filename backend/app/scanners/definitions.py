@@ -1199,6 +1199,27 @@ QM_MAX_PIVOT_OVERSHOOT_PCT = 2.0
 QM_MAX_DIST_FROM_52W_HIGH_PCT = 25.0
 
 
+def _qm_closes(snapshot: StockSnapshot) -> tuple[list[float], bool]:
+    """(closes, short_history). Prefers the ~240-bar grid, falls back to the 20
+    trailing closes carried on every snapshot.
+
+    chart_grid_points is built from `chart_cache/`, which is gitignored — a
+    freshly deployed Space has almost none of it, so the long series arrives as
+    a 2-point stub and this scan returns NOTHING in production while looking
+    perfect locally (the same trap as gotchas 14 and 16). His flags are short
+    enough to survive on 20 bars: on live data the fallback recovers 30 of 31
+    hits. A base older than the window reads shallower than it is, so those rows
+    say so rather than passing themselves off as verified.
+    """
+    grid = _mb_closes(snapshot)
+    if len(grid) >= QM_MAX_BASE_SESSIONS - 5:
+        return grid, False
+    recent = [float(c) for c in (snapshot.recent_closes or []) if c]
+    if len(recent) > len(grid):
+        return recent, True
+    return grid, False
+
+
 def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     avg_vol_20 = snapshot.avg_volume_20d or 0
     if avg_vol_20 < 25000 or snapshot.last_price <= 30:
@@ -1242,7 +1263,7 @@ def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
 
     # --- 3. The consolidation. ---
-    closes = _mb_closes(snapshot)
+    closes, short_history = _qm_closes(snapshot)
     n = len(closes)
     if n < QM_MIN_BASE_SESSIONS + 10:
         return None
@@ -1311,6 +1332,8 @@ def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         reasons.append(
             f"Entry {entry:.2f} | Stop {stop:.2f} | Risk {risk_pct:.1f}% ({risk_pct / adr:.1f} ADR)"
         )
+    if short_history:
+        reasons.append(f"Short history: base measured over {n} sessions, may run deeper")
     return round(score, 2), reasons
 
 

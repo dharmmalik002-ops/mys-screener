@@ -120,6 +120,24 @@ class QullamaggieScannerTests(unittest.TestCase):
         closes = _flag_closes()[:-4] + [166.0, 160.0, 158.0, 158.4]
         self.assertIsNone(_qullamaggie(_make_snapshot(closes=closes, last_price=158.4)))
 
+    def test_matches_on_short_history_and_says_so(self) -> None:
+        """A freshly deployed Space has no chart_cache, so chart_grid_points
+        arrives as a 2-point stub. The scan must fall back to recent_closes
+        instead of going silent, and must label the row."""
+        closes = _flag_closes()
+        snapshot = _make_snapshot(
+            chart_grid_points=[{"time": i, "value": float(c)} for i, c in enumerate(closes[-2:])],
+            recent_closes=[float(c) for c in closes[-20:]],
+        )
+        result = _qullamaggie(snapshot)
+        self.assertIsNotNone(result)
+        _, reasons = result
+        self.assertTrue(any("Short history" in reason for reason in reasons))
+
+    def test_full_history_carries_no_short_history_note(self) -> None:
+        _, reasons = _qullamaggie(_make_snapshot())
+        self.assertFalse(any("Short history" in reason for reason in reasons))
+
     def test_illiquid_rejected(self) -> None:
         self.assertIsNone(_qullamaggie(_make_snapshot(avg_volume_20d=20_000)))
 
