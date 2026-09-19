@@ -1199,44 +1199,62 @@ QM_MAX_PIVOT_OVERSHOOT_PCT = 2.0
 QM_MAX_DIST_FROM_52W_HIGH_PCT = 25.0
 
 
-def _qm_series(snapshot: StockSnapshot) -> tuple[list[tuple[int, float]], bool]:
+def _session_closes(
+    snapshot: StockSnapshot,
+    max_sessions: int,
+    *,
+    min_sessions: int,
+    allow_short_history: bool = True,
+) -> tuple[list[tuple[int, float]], bool]:
     """[(sessions_ago, close), ...] oldest→newest, plus a short-history flag.
 
     `chart_grid_points` is NOT a daily series. `_build_chart_grid_points`
     downsamples 520 bars into 240 points, so consecutive points sit ~2.17
-    sessions apart — dashboard_service says as much where it refuses to compute
-    breadth from it. Counting those points as sessions stretches every window by
-    the sampling step, and the step is not even constant: a stock with two years
-    of history gets ~2.17 sessions per point while a recent listing whose series
-    is under 240 bars gets 1.0, so the SAME window means different things for
-    different symbols.
+    sessions apart — `dashboard_service` says as much where it refuses to
+    compute breadth from it. Counting those points as sessions stretches every
+    window by the sampling step, and the step is not even constant: two years of
+    history gives ~2.17 sessions per point while a listing with under 240 bars
+    gives 1.0, so one window means different things for different symbols.
 
-    So positions come from the point timestamps, not from list indices. When the
-    grid is too short to cover the window, the 20 true daily closes every
-    snapshot carries are used instead and the caller labels the row.
+    So positions come from the point timestamps. `min_sessions` is how far back
+    the caller genuinely needs to see — a blanket fraction of `max_sessions`
+    would reject a good symbol that simply has less history than the widest
+    window the scan accepts. `allow_short_history` is for
+    scans whose window fits inside the 20 true daily closes every snapshot
+    carries; the ones that need months of history pass False and get an empty
+    series rather than a base measured over three weeks.
     """
     points = [
-        (int(getattr(p, "time", 0) or 0), float(getattr(p, "value", 0) or 0))
-        for p in (getattr(snapshot, "chart_grid_points", None) or [])
+        (int(getattr(point, "time", 0) or 0), float(getattr(point, "value", 0) or 0))
+        for point in (getattr(snapshot, "chart_grid_points", None) or [])
     ]
-    points = [(t, v) for t, v in points if t > 0 and v > 0]
+    points = [(time, value) for time, value in points if time > 0 and value > 0]
     if points:
         last_time = points[-1][0]
         # Calendar days → sessions at 5 trading days a week. Exact enough for a
         # window measured in weeks, and it degrades gracefully over holidays.
         series = [
-            (round((last_time - t) / 86400 * 5 / 7), v)
-            for t, v in points
+            (round((last_time - time) / 86400 * 5 / 7), value)
+            for time, value in points
         ]
-        series = [(ago, v) for ago, v in series if ago <= QM_MAX_BASE_SESSIONS]
-        if len(series) >= 8 and series[0][0] >= QM_MAX_BASE_SESSIONS * 0.6:
-            return list(reversed([(ago, v) for ago, v in reversed(series)])), False
+        series = [(ago, value) for ago, value in series if ago <= max_sessions]
+        if len(series) >= 8 and series[0][0] >= min_sessions:
+            return series, False
 
-    recent = [float(c) for c in (snapshot.recent_closes or []) if c]
-    if len(recent) >= QM_MIN_BASE_SESSIONS + 10:
-        n = len(recent)
-        return [(n - 1 - i, v) for i, v in enumerate(recent)], True
+    if allow_short_history:
+        recent = [float(value) for value in (snapshot.recent_closes or []) if value]
+        if len(recent) >= QM_MIN_BASE_SESSIONS + 10:
+            count = len(recent)
+            return [(count - 1 - index, value) for index, value in enumerate(recent)], True
     return [], False
+
+
+def _qm_series(snapshot: StockSnapshot) -> tuple[list[tuple[int, float]], bool]:
+    return _session_closes(
+        snapshot,
+        QM_MAX_BASE_SESSIONS,
+        min_sessions=QM_MIN_BASE_SESSIONS + 10,
+    )
 
 
 def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
@@ -1371,6 +1389,7 @@ VCP_MAX_BASE_SESSIONS = 90
 VCP_MAX_BASE_DEPTH_PCT = 30.0
 VCP_MIN_BASE_DEPTH_PCT = 3.0
 VCP_MIN_PRIOR_RUN_UP_PCT = 30.0
+VCP_PRIOR_RUN_UP_SESSIONS = 63   # ~3 months of leg feeding the base
 VCP_MIN_CONTRACTIONS = 2
 VCP_MAX_FINAL_CONTRACTION_PCT = 10.0
 # Progression is judged against the DEEPEST contraction rather than pairwise —
@@ -1474,10 +1493,18 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if snapshot.pct_from_52w_high > 25 or snapshot.pct_from_52w_low < 30:
         return None
 
-    closes = _mb_closes(snapshot)
-    if len(closes) < 60:
+    # Sessions, not list slots — see _session_closes. An 18-week base plus the
+    # run-up that built it needs months of history, which 20 daily closes cannot
+    # supply, so there is no short-history fallback here.
+    series, _ = _session_closes(
+        snapshot,
+        VCP_MAX_BASE_SESSIONS + VCP_PRIOR_RUN_UP_SESSIONS,
+        min_sessions=VCP_MIN_BASE_SESSIONS + 20,
+        allow_short_history=False,
+    )
+    if len(series) < 12:
         return None
-    last_close = closes[-1]
+    last_close = series[-1][1]
     if last_close <= 0:
         return None
 
@@ -1486,17 +1513,18 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     # during the final tight zone (a routine pivot retest) doesn't reset the
     # base to a few days; genuinely extended names are rejected by the
     # pivot-overshoot bound below instead. ---
-    search_end = len(closes) - VCP_MIN_BASE_SESSIONS
-    search_start = max(0, len(closes) - (VCP_MAX_BASE_SESSIONS + 1))
-    if search_end <= search_start:
+    base_window = [
+        (ago, value)
+        for ago, value in series
+        if VCP_MIN_BASE_SESSIONS <= ago <= VCP_MAX_BASE_SESSIONS
+    ]
+    if not base_window:
         return None
-    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
-    peak = closes[peak_idx]
+    base_len, peak = max(base_window, key=lambda item: item[1])
     if peak <= 0:
         return None
-    base = closes[peak_idx:]
-    base_len = len(base) - 1
-    if base_len < VCP_MIN_BASE_SESSIONS:
+    base = [value for ago, value in series if ago <= base_len]
+    if len(base) < 6:
         return None
     base_depth = (peak - min(base)) / peak * 100
     if base_depth > VCP_MAX_BASE_DEPTH_PCT or base_depth < VCP_MIN_BASE_DEPTH_PCT:
@@ -1506,7 +1534,14 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
 
     # --- Prior run-up into the base (the pattern needs something to digest). ---
-    pre_base = closes[max(0, peak_idx - 63): peak_idx + 1]
+    pre_base = [
+        value
+        for ago, value in series
+        if base_len <= ago <= base_len + VCP_PRIOR_RUN_UP_SESSIONS
+    ]
+    # A run-up that sits outside the series is unmeasured, not absent.
+    if len(pre_base) < 4 or series[0][0] < base_len + VCP_PRIOR_RUN_UP_SESSIONS * 0.5:
+        return None
     launch = min(pre_base)
     if launch <= 0 or (peak / launch - 1) * 100 < VCP_MIN_PRIOR_RUN_UP_PCT:
         return None
@@ -1582,7 +1617,11 @@ def _vcp(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     sequence = " → ".join(f"{d:.1f}%" for d in depths[-4:])
     reasons = [
         f"{len(depths)} contractions: {sequence}",
-        f"Base {base_len}d, depth {base_depth:.1f}%, {dist_below_pivot:.1f}% below pivot",
+        f"Base {base_len}d, depth {base_depth:.1f}%, " + (
+            f"{dist_below_pivot:.1f}% below pivot"
+            if dist_below_pivot >= 0
+            else f"{abs(dist_below_pivot):.1f}% through pivot"
+        ),
         f"5D volume {dryup:.2f}x of 50D avg" + (" — drying up" if dryup < 0.8 else " — quiet"),
     ]
     if risk_pct is not None:
@@ -1618,11 +1657,18 @@ def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if avg_vol_20 < 25000 or snapshot.last_price <= 30:
         return None
 
-    closes = _mb_closes(snapshot)
-    n = len(closes)
-    if n < 60:
+    # Sessions, not list slots — see _session_closes. The window has to cover the
+    # hold plus the leg that built it, and 20 daily closes cannot express a
+    # three-month leg, so this scan does not accept the short-history fallback.
+    series, _ = _session_closes(
+        snapshot,
+        POWER_BASE_MAX_HOLD_SESSIONS + POWER_BASE_MAX_MOVE_SESSIONS + POWER_BASE_MIN_PRE_PEAK_SESSIONS,
+        min_sessions=POWER_BASE_MIN_HOLD_SESSIONS + POWER_BASE_MIN_PRE_PEAK_SESSIONS,
+        allow_short_history=False,
+    )
+    if len(series) < 12:
         return None
-    last_close = closes[-1]
+    last_close = series[-1][1]
     if last_close <= 0:
         return None
 
@@ -1633,30 +1679,39 @@ def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
         return None
 
     # --- Move peak: highest close in the hold window. ---
-    search_start = max(POWER_BASE_MIN_PRE_PEAK_SESSIONS, n - 1 - POWER_BASE_MAX_HOLD_SESSIONS)
-    search_end = n - POWER_BASE_MIN_HOLD_SESSIONS  # exclusive
-    if search_end <= search_start:
+    hold_window = [
+        (ago, value)
+        for ago, value in series
+        if POWER_BASE_MIN_HOLD_SESSIONS <= ago <= POWER_BASE_MAX_HOLD_SESSIONS
+    ]
+    if not hold_window:
         return None
-    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
-    peak = closes[peak_idx]
-    if peak <= 0 or max(closes[peak_idx:]) > peak * (1 + POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT / 100):
+    base_len, peak = max(hold_window, key=lambda item: item[1])
+    after_peak = [value for ago, value in series if ago <= base_len]
+    if peak <= 0 or max(after_peak) > peak * (1 + POWER_BASE_MAX_PIVOT_OVERSHOOT_PCT / 100):
         return None  # already broke out well past the base high — the hold is over
 
-    # --- The first leg into that peak (window clamped to available history). ---
-    launch_window = closes[max(0, peak_idx - POWER_BASE_MAX_MOVE_SESSIONS): peak_idx + 1]
-    launch = min(launch_window)
+    # --- The first leg into that peak. ---
+    launch_window = [
+        (ago, value)
+        for ago, value in series
+        if base_len <= ago <= base_len + POWER_BASE_MAX_MOVE_SESSIONS
+    ]
+    if len(launch_window) < 4:
+        return None
+    # The leg must be visible, not clipped by where the series happens to start.
+    if series[0][0] < base_len + POWER_BASE_MIN_PRE_PEAK_SESSIONS:
+        return None
+    launch_ago, launch = min(launch_window, key=lambda item: item[1])
     if launch <= 0:
         return None
     move_pct = (peak / launch - 1) * 100
     if move_pct < POWER_BASE_MIN_MOVE_PCT:
         return None
-    launch_idx = peak_idx - (len(launch_window) - 1 - launch_window.index(launch))
-    move_days = peak_idx - launch_idx
+    move_days = launch_ago - base_len
 
     # --- The hold: keeps most of the move, doesn't get wild. ---
-    base = closes[peak_idx:]
-    base_len = len(base) - 1
-    base_low = min(base)
+    base_low = min(after_peak)
     move_size = peak - launch
     giveback = (peak - base_low) / move_size if move_size > 0 else 1.0
     if giveback > POWER_BASE_MAX_GIVEBACK:
@@ -1688,7 +1743,11 @@ def _power_base(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     )
     reasons = [
         f"+{move_pct:.0f}% in {move_days} sessions, holding {100 - giveback * 100:.0f}% of the move",
-        f"Base {base_len}d, depth {base_depth:.1f}%, {dist_below_pivot:.1f}% below pivot",
+        f"Base {base_len}d, depth {base_depth:.1f}%, " + (
+            f"{dist_below_pivot:.1f}% below pivot"
+            if dist_below_pivot >= 0
+            else f"{abs(dist_below_pivot):.1f}% through pivot"
+        ),
     ]
     if dryup is not None:
         reasons.append(f"5D volume {dryup:.2f}x of 50D avg")

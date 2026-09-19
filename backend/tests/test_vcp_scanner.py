@@ -41,10 +41,24 @@ def _textbook_vcp_closes() -> list[float]:
     return closes
 
 
+# The scanners read chart_grid_points TIMESTAMPS to place a bar in time, so a
+# fixture numbering its points 0, 1, 2... describes a base a few seconds wide.
+BASE_EPOCH = 1_750_000_000  # a Tuesday
+
+
+def _daily_grid(closes: list[float]) -> list[dict[str, float]]:
+    """One point per trading day, oldest first, ending 'today'."""
+    count = len(closes)
+    return [
+        {"time": BASE_EPOCH - (count - 1 - index) * 86400 * 7 // 5, "value": float(value)}
+        for index, value in enumerate(closes)
+    ]
+
+
 def _make_snapshot(**overrides) -> StockSnapshot:
     closes = overrides.pop("closes", _textbook_vcp_closes())
     last_price = overrides.pop("last_price", closes[-1])
-    grid = [{"time": i, "value": float(c)} for i, c in enumerate(closes)]
+    grid = _daily_grid(closes)
     quiet_vols = [1_000_000] * 15 + [500_000] * 5  # last week dried up vs 1M avg
     base_len = 36
     declining_hist = [1_200_000] * (len(closes) - base_len) + (
