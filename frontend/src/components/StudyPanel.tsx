@@ -96,6 +96,7 @@ const signed = (v: number, digits = 2) => `${v >= 0 ? "+" : ""}${v.toFixed(digit
 
 const TOOLS: Array<{ key: StudyTool; label: string; hint: string }> = [
   { key: "cursor", label: "Enter", hint: "Click the chart to buy the newest session" },
+  { key: "entry", label: "Entry", hint: "Click or drag to set your fill inside the session's range" },
   { key: "stop", label: "Stop", hint: "Click a price to place your stop" },
   { key: "trendline", label: "Trendline", hint: "Click start, then end" },
   { key: "measure", label: "Measure", hint: "Click start, then end — shows % move and bars" },
@@ -125,6 +126,9 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
   const [revealed, setRevealed] = useState(0);
   const [entryAt, setEntryAt] = useState<number | null>(null);
   const [stop, setStop] = useState<number | null>(null);
+  // Null means "fill at the session's close", which is the old behaviour and
+  // still the default. A number is the price the user put the line on.
+  const [entryOverride, setEntryOverride] = useState<number | null>(null);
   const [reveal, setReveal] = useState<StudyReveal | null>(null);
   const [action, setAction] = useState<Action | null>(null);
 
@@ -209,6 +213,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
     setRevealed(0);
     setEntryAt(null);
     setStop(null);
+    setEntryOverride(null);
     setReveal(null);
     setAction(null);
     setDrawings([]);
@@ -263,8 +268,24 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
   }, [card, freeStudy, deckForward.length, revealed]);
 
   const entryIndex = entryAt != null && bars.length ? bars.length - 1 + entryAt : null;
-  const entryPrice =
-    entryAt == null ? null : entryAt === 0 ? (bars.length ? bars[bars.length - 1].close : null) : forward[entryAt - 1]?.close ?? null;
+  /** The session a fill happens on: the one being watched, or — once the trade
+   *  is open — the one it was opened on. */
+  const barAt = (offset: number): StudyBar | null =>
+    offset === 0 ? (bars.length ? bars[bars.length - 1] : null) : forward[offset - 1] ?? null;
+  const entryBar = barAt(entryAt ?? revealed);
+  /** Your fill. Defaults to that session's close — the old behaviour — and can
+   *  be put anywhere the session actually traded, but NOT outside its range: a
+   *  fill at a price the stock never printed grades a trade that could not have
+   *  happened, and the drill is only worth anything while its numbers are real.
+   *  Clamping (rather than refusing) also means a line dragged past the high,
+   *  or carried onto a later session with a narrower range, still lands
+   *  somewhere legitimate instead of silently voiding the trade. */
+  const entryPrice = entryBar
+    ? Math.min(entryBar.high, Math.max(entryBar.low, entryOverride ?? entryBar.close))
+    : null;
+  /** True when the typed/dragged price had to be pulled back into the range. */
+  const entryClamped =
+    entryOverride != null && entryBar != null && Math.abs(entryOverride - entryPrice!) > 0.005;
 
   const held = entryAt != null ? forward.slice(entryAt, revealed) : [];
   const result = entryPrice != null && stop != null ? grade(entryPrice, stop, held) : null;
@@ -409,6 +430,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
           setFreeStudy({ symbol, name, bars });
           setDrawings((restore?.drawings as StudyDrawing[]) ?? []);
           setStop(restore?.stop ?? null);
+          setEntryOverride(null);
           setNote(restore?.note ?? "");
           setInitialRange(restore?.from && restore?.to ? { from: restore.from, to: restore.to } : null);
           setPhase("watching");
@@ -489,7 +511,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
 
   const enterHere = useCallback(() => {
     if (phase !== "watching") return;
-    const price = revealed === 0 ? bars[bars.length - 1]?.close : forward[revealed - 1]?.close;
+    const price = entryPrice;
     // Every refusal below used to be a silent no-op, which is indistinguishable
     // from the page being broken. Say what is wrong, where the user is looking.
     if (stop == null) {
@@ -501,13 +523,13 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
       return;
     }
     if (stop >= price) {
-      flash(`Your stop (${fmt(stop)}) is above the last close (${fmt(price)}). Move it below.`);
+      flash(`Your stop (${fmt(stop)}) is at or above your entry (${fmt(price)}). Move it below.`);
       return;
     }
     setEntryAt(revealed);
     setAction("entered");
     setPhase("holding");
-  }, [phase, stop, revealed, bars, forward, flash]);
+  }, [phase, stop, revealed, entryPrice, flash]);
 
   const pass = useCallback(() => {
     if (phase !== "watching") return;
@@ -544,7 +566,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
         setSelectedDrawing(null);
       }
       else if (key === "s") saveStudy();
-      else if ("12345".includes(key)) {
+      else if ("123456".includes(key)) {
         const picked = TOOLS[Number(key) - 1]?.key;
         if (picked) setTool((current) => (current === picked ? "cursor" : picked));
       }
@@ -623,7 +645,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
   }
 
   const latestClose = revealed === 0 ? bars[bars.length - 1]?.close : forward[revealed - 1]?.close;
-  const canEnter = phase === "watching" && stop != null && latestClose != null && stop < latestClose;
+  const canEnter = phase === "watching" && stop != null && entryPrice != null && stop < entryPrice;
 
   return (
     <div className="study-panel">
@@ -632,7 +654,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
           <h2>Chart Gym</h2>
           <p>
             Step the tape, pick your own entry, place your own stop.
-            <span className="study-hint"> → step · E enter · P pass · U undo · Del delete · Esc drop tool · 1-5 tools · N next</span>
+            <span className="study-hint"> → step · E enter · P pass · U undo · Del delete · Esc drop tool · 1-6 tools · N next</span>
           </p>
         </div>
         <div className="study-head-right">
@@ -761,6 +783,7 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
                 drawings={drawings}
                 onDrawingsChange={setDrawings}
                 onPickPrice={(price) => phase === "watching" && setStop(Number(price.toFixed(2)))}
+                onPickEntryPrice={(price) => phase === "watching" && setEntryOverride(Number(price.toFixed(2)))}
                 onPickEntry={(time) => {
                   if (freeStudy && freeAnchor == null) {
                     const idx = freeStudy.bars.findIndex((b) => b.time >= time);
@@ -877,6 +900,28 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
               <div className="study-call">
                 <h3>Your call</h3>
                 <label className="study-stop-field">
+                  Entry
+                  <input
+                    type="number"
+                    step="0.05"
+                    value={entryOverride ?? ""}
+                    placeholder={entryBar ? fmt(entryBar.close) : "close"}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setEntryOverride(e.target.value === "" ? null : Number.isFinite(v) ? v : null);
+                    }}
+                  />
+                </label>
+                <p className="study-risk">
+                  {entryBar == null
+                    ? "Waiting for this session."
+                    : entryOverride == null
+                      ? `Filling at the close, ${fmt(entryBar.close)}. Drag the entry line, or type a price, to fill anywhere in ${fmt(entryBar.low)}–${fmt(entryBar.high)}.`
+                      : entryClamped
+                        ? `This session only traded ${fmt(entryBar.low)}–${fmt(entryBar.high)}, so your fill is ${fmt(entryPrice)}.`
+                        : `Filling at ${fmt(entryPrice)} (session range ${fmt(entryBar.low)}–${fmt(entryBar.high)}).`}
+                </p>
+                <label className="study-stop-field">
                   Stop
                   <input
                     type="number"
@@ -892,9 +937,9 @@ export function StudyPanel({ onOpenSymbolChart }: StudyPanelProps = {}) {
                 <p className="study-risk">
                   {stop == null
                     ? "Pick the Stop tool and click where your stop belongs."
-                    : latestClose != null && stop >= latestClose
-                      ? "Stop must sit below the last close."
-                      : `Risk ${riskPct?.toFixed(2) ?? (latestClose ? (((latestClose - stop) / latestClose) * 100).toFixed(2) : "—")}% at today's close`}
+                    : entryPrice != null && stop >= entryPrice
+                      ? "Stop must sit below your entry."
+                      : `Risk ${riskPct?.toFixed(2) ?? "—"}% from your entry`}
                 </p>
                 <div className="study-actions">
                   <button type="button" className="study-buy" disabled={!canEnter} onClick={enterHere}>Enter here</button>

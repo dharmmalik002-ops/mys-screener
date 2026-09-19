@@ -31,7 +31,7 @@ const OVERLAYS = [
 ] as const;
 
 export type StudyChartStyle = "candles" | "bars" | "hlc";
-export type StudyTool = "cursor" | "stop" | "trendline" | "measure" | "snip";
+export type StudyTool = "cursor" | "entry" | "stop" | "trendline" | "measure" | "snip";
 
 /** A two-point drawing anchored in (time, price) so it survives pan and zoom. */
 export type StudyDrawing = {
@@ -55,7 +55,10 @@ type Props = {
   tool: StudyTool;
   drawings: StudyDrawing[];
   onDrawingsChange: (drawings: StudyDrawing[]) => void;
+  /** A price picked for the STOP — by the stop tool, or by dragging its line. */
   onPickPrice?: (price: number) => void;
+  /** A price picked for the ENTRY fill, same two ways. */
+  onPickEntryPrice?: (price: number) => void;
   /** Fired on a click in cursor mode, with the session that was clicked. */
   onPickEntry?: (time: number) => void;
   /** Pixel rect of a finished region drag, for cropping a PNG out of the chart. */
@@ -100,6 +103,7 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
   drawings,
   onDrawingsChange,
   onPickPrice,
+  onPickEntryPrice,
   onPickEntry,
   onSnip,
   onDrawingDone,
@@ -124,17 +128,20 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
   const [snip, setSnip] = useState<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   // Mirrored for the window-level drag handlers, which are bound once.
   const draggingStopRef = useRef(false);
+  const draggingEntryRef = useRef(false);
   const snipRef = useRef<{ x0: number; y0: number; x1: number; y1: number } | null>(null);
   const stopRef = useRef<number | null>(stop);
   stopRef.current = stop;
+  const entryRef = useRef<number | null>(entryPrice);
+  entryRef.current = entryPrice;
   // The auto-fit must run once per chart, not on every new bar — otherwise
   // stepping the replay yanks the view back and undoes the user's zoom.
   const fittedForRef = useRef<string | null>(null);
 
   // Handlers change every render; the chart subscribes once. Refs keep the
   // live versions reachable without tearing the chart down on each keystroke.
-  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft });
-  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft };
+  const cb = useRef({ tool, drawings, onDrawingsChange, onPickPrice, onPickEntryPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft });
+  cb.current = { tool, drawings, onDrawingsChange, onPickPrice, onPickEntryPrice, onPickEntry, onSnip, onDrawingDone, onSelectDrawing, draft };
 
   const visible = useMemo(() => {
     const context = contextBars.filter((b) => Number.isFinite(b.close) && b.close > 0);
@@ -231,11 +238,15 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
     };
 
     chart.subscribeClick((param) => {
-      const { tool: t, drawings: d, onDrawingsChange, onPickPrice, onPickEntry, draft: pending } = cb.current;
+      const { tool: t, drawings: d, onDrawingsChange, onPickPrice, onPickEntryPrice, onPickEntry, draft: pending } = cb.current;
       const anchor = anchorFrom(param);
       if (!anchor) return;
       if (t === "stop") {
         onPickPrice?.(anchor.price);
+        return;
+      }
+      if (t === "entry") {
+        onPickEntryPrice?.(anchor.price);
         return;
       }
       if (t === "cursor") {
@@ -530,9 +541,9 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
       return best?.id ?? null;
     };
 
-    const stopY = () => {
+    /** Screen y of a price line, or null when it has none / is off-scale. */
+    const lineY = (value: number | null) => {
       const series = priceRef.current;
-      const value = stopRef.current;
       if (!series || value == null) return null;
       const y = series.priceToCoordinate(value);
       return y == null ? null : Number(y);
@@ -563,9 +574,16 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         event.preventDefault();
         return;
       }
-      const y = stopY();
-      if (y != null && Math.abs(localY(event) - y) <= 6) {
-        draggingStopRef.current = true;
+      // Both lines grab on the same 6px band. When they overlap, the nearer
+      // one wins rather than the stop always shadowing the entry.
+      const py = localY(event);
+      const dStop = lineY(stopRef.current);
+      const dEntry = lineY(entryRef.current);
+      const offStop = dStop == null ? Infinity : Math.abs(py - dStop);
+      const offEntry = dEntry == null ? Infinity : Math.abs(py - dEntry);
+      if (Math.min(offStop, offEntry) <= 6) {
+        if (offEntry < offStop) draggingEntryRef.current = true;
+        else draggingStopRef.current = true;
         event.stopPropagation();
         event.preventDefault();
       }
@@ -579,15 +597,19 @@ export const StudyChart = forwardRef<StudyChartHandle, Props>(function StudyChar
         event.stopPropagation();
         return;
       }
-      if (!draggingStopRef.current) return;
+      if (!draggingStopRef.current && !draggingEntryRef.current) return;
       const series = priceRef.current;
       const price = series?.coordinateToPrice(localY(event));
-      if (price != null && Number.isFinite(price)) cb.current.onPickPrice?.(Number(price));
+      if (price != null && Number.isFinite(price)) {
+        if (draggingEntryRef.current) cb.current.onPickEntryPrice?.(Number(price));
+        else cb.current.onPickPrice?.(Number(price));
+      }
       event.stopPropagation();
     };
 
     const onUp = () => {
       draggingStopRef.current = false;
+      draggingEntryRef.current = false;
       const rect = snipRef.current;
       if (rect) {
         snipRef.current = null;
