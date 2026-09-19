@@ -3,6 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import date, timedelta
 
+from app.services import close_history
 from app.models.market import (
     ConsolidatingScanRequest,
     CustomScanRequest,
@@ -1224,6 +1225,20 @@ def _session_closes(
     carries; the ones that need months of history pass False and get an empty
     series rather than a base measured over three weeks.
     """
+    # Preferred source: true daily closes from the committed artifact. The
+    # Space's snapshot grids are stubs, so without this Power Base and VCP have
+    # nothing to measure up there at all.
+    daily = close_history.closes_for(snapshot)
+    if len(daily) > min_sessions:
+        count = len(daily)
+        series = [
+            (count - 1 - index, value)
+            for index, value in enumerate(daily)
+            if count - 1 - index <= max_sessions
+        ]
+        if len(series) >= 8:
+            return series, False
+
     points = [
         (int(getattr(point, "time", 0) or 0), float(getattr(point, "value", 0) or 0))
         for point in (getattr(snapshot, "chart_grid_points", None) or [])
