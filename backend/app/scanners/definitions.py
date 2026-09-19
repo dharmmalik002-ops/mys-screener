@@ -1199,25 +1199,44 @@ QM_MAX_PIVOT_OVERSHOOT_PCT = 2.0
 QM_MAX_DIST_FROM_52W_HIGH_PCT = 25.0
 
 
-def _qm_closes(snapshot: StockSnapshot) -> tuple[list[float], bool]:
-    """(closes, short_history). Prefers the ~240-bar grid, falls back to the 20
-    trailing closes carried on every snapshot.
+def _qm_series(snapshot: StockSnapshot) -> tuple[list[tuple[int, float]], bool]:
+    """[(sessions_ago, close), ...] oldest→newest, plus a short-history flag.
 
-    chart_grid_points is built from `chart_cache/`, which is gitignored — a
-    freshly deployed Space has almost none of it, so the long series arrives as
-    a 2-point stub and this scan returns NOTHING in production while looking
-    perfect locally (the same trap as gotchas 14 and 16). His flags are short
-    enough to survive on 20 bars: on live data the fallback recovers 30 of 31
-    hits. A base older than the window reads shallower than it is, so those rows
-    say so rather than passing themselves off as verified.
+    `chart_grid_points` is NOT a daily series. `_build_chart_grid_points`
+    downsamples 520 bars into 240 points, so consecutive points sit ~2.17
+    sessions apart — dashboard_service says as much where it refuses to compute
+    breadth from it. Counting those points as sessions stretches every window by
+    the sampling step, and the step is not even constant: a stock with two years
+    of history gets ~2.17 sessions per point while a recent listing whose series
+    is under 240 bars gets 1.0, so the SAME window means different things for
+    different symbols.
+
+    So positions come from the point timestamps, not from list indices. When the
+    grid is too short to cover the window, the 20 true daily closes every
+    snapshot carries are used instead and the caller labels the row.
     """
-    grid = _mb_closes(snapshot)
-    if len(grid) >= QM_MAX_BASE_SESSIONS - 5:
-        return grid, False
+    points = [
+        (int(getattr(p, "time", 0) or 0), float(getattr(p, "value", 0) or 0))
+        for p in (getattr(snapshot, "chart_grid_points", None) or [])
+    ]
+    points = [(t, v) for t, v in points if t > 0 and v > 0]
+    if points:
+        last_time = points[-1][0]
+        # Calendar days → sessions at 5 trading days a week. Exact enough for a
+        # window measured in weeks, and it degrades gracefully over holidays.
+        series = [
+            (round((last_time - t) / 86400 * 5 / 7), v)
+            for t, v in points
+        ]
+        series = [(ago, v) for ago, v in series if ago <= QM_MAX_BASE_SESSIONS]
+        if len(series) >= 8 and series[0][0] >= QM_MAX_BASE_SESSIONS * 0.6:
+            return list(reversed([(ago, v) for ago, v in reversed(series)])), False
+
     recent = [float(c) for c in (snapshot.recent_closes or []) if c]
-    if len(recent) > len(grid):
-        return recent, True
-    return grid, False
+    if len(recent) >= QM_MIN_BASE_SESSIONS + 10:
+        n = len(recent)
+        return [(n - 1 - i, v) for i, v in enumerate(recent)], True
+    return [], False
 
 
 def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
@@ -1262,27 +1281,25 @@ def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
     if snapshot.pct_from_52w_high > QM_MAX_DIST_FROM_52W_HIGH_PCT:
         return None
 
-    # --- 3. The consolidation. ---
-    closes, short_history = _qm_closes(snapshot)
-    n = len(closes)
-    if n < QM_MIN_BASE_SESSIONS + 10:
+    # --- 3. The consolidation, measured in SESSIONS rather than list slots. ---
+    series, short_history = _qm_series(snapshot)
+    if len(series) < 8:
         return None
-    last_close = closes[-1]
+    last_close = series[-1][1]
     if last_close <= 0:
         return None
-    search_start = max(0, n - 1 - QM_MAX_BASE_SESSIONS)
-    search_end = n - QM_MIN_BASE_SESSIONS  # exclusive: a 2-day rest is not a base
-    if search_end <= search_start:
+    # The base high is the highest close at least QM_MIN_BASE_SESSIONS back — a
+    # two-day rest is not a base, and a high set today is not one either.
+    candidates = [(ago, value) for ago, value in series if ago >= QM_MIN_BASE_SESSIONS]
+    if not candidates:
         return None
-    peak_idx = max(range(search_start, search_end), key=lambda i: closes[i])
-    peak = closes[peak_idx]
+    base_len, peak = max(candidates, key=lambda item: item[1])
     if peak <= 0:
         return None
-    if max(closes[peak_idx:]) > peak * (1 + QM_MAX_PIVOT_OVERSHOOT_PCT / 100):
+    after_peak = [value for ago, value in series if ago <= base_len]
+    if max(after_peak) > peak * (1 + QM_MAX_PIVOT_OVERSHOOT_PCT / 100):
         return None  # already through the pivot and extended — the entry is gone
-    base_len = n - 1 - peak_idx
-    base_low = min(closes[peak_idx:])
-    depth = (peak - base_low) / peak * 100
+    depth = (peak - min(after_peak)) / peak * 100
     if depth > QM_MAX_BASE_DEPTH_PCT:
         return None
     dist_below_pivot = (peak - last_close) / peak * 100
@@ -1333,7 +1350,9 @@ def _qullamaggie(snapshot: StockSnapshot) -> tuple[float, list[str]] | None:
             f"Entry {entry:.2f} | Stop {stop:.2f} | Risk {risk_pct:.1f}% ({risk_pct / adr:.1f} ADR)"
         )
     if short_history:
-        reasons.append(f"Short history: base measured over {n} sessions, may run deeper")
+        reasons.append(
+            f"Short history: base measured over {series[0][0]} sessions, may run deeper"
+        )
     return round(score, 2), reasons
 
 

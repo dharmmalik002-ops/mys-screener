@@ -23,10 +23,25 @@ def _flag_closes() -> list[float]:
     return closes
 
 
+# chart_grid_points carry real epoch timestamps and the scanner measures the
+# base from them, so a fixture numbering points 0, 1, 2... would describe a base
+# a few SECONDS wide and silently exercise the short-history fallback instead.
+BASE_EPOCH = 1_750_000_000  # a Tuesday
+
+
+def _daily_grid(closes: list[float]) -> list[dict[str, float]]:
+    """One point per trading day, oldest first, ending 'today'."""
+    n = len(closes)
+    return [
+        {"time": BASE_EPOCH - (n - 1 - i) * 86400 * 7 // 5, "value": float(c)}
+        for i, c in enumerate(closes)
+    ]
+
+
 def _make_snapshot(**overrides) -> StockSnapshot:
     closes = overrides.pop("closes", _flag_closes())
     last_price = overrides.pop("last_price", closes[-1])
-    grid = [{"time": i, "value": float(c)} for i, c in enumerate(closes)]
+    grid = _daily_grid(closes)
     payload = {
         "symbol": "QMTEST",
         "name": "Qullamaggie Test Ltd",
@@ -126,7 +141,7 @@ class QullamaggieScannerTests(unittest.TestCase):
         instead of going silent, and must label the row."""
         closes = _flag_closes()
         snapshot = _make_snapshot(
-            chart_grid_points=[{"time": i, "value": float(c)} for i, c in enumerate(closes[-2:])],
+            chart_grid_points=_daily_grid(closes[-2:]),
             recent_closes=[float(c) for c in closes[-20:]],
         )
         result = _qullamaggie(snapshot)
