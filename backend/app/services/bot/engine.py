@@ -1,0 +1,238 @@
+"""Turn signals into completed trades, one symbol at a time.
+
+Four modelling choices here do most of the work of keeping the results honest,
+and each one costs the equity curve something:
+
+*Fill at the next open, not the signal close.* A scan that runs on today's
+close can only act tomorrow. Filling at the close of the bar that produced the
+signal is the most common way a backtest books a return that was never
+available, and it flatters momentum strategies worst of all, because the
+signal bar is by construction a strong one.
+
+*Gaps through the stop fill at the open.* If a stock opens 6% below a stop set
+2% away, the loss is 6%, not 2%. Assuming stops fill at their level turns every
+tail loss into a controlled one, which is precisely backwards: the tail is
+where the damage lives. This single detail is the difference between a smooth
+equity curve and a truthful one.
+
+*When a bar touches both stop and target, the stop wins.* A daily bar cannot
+say which came first. Resolving the ambiguity against the trade biases every
+win rate down, which is the safe direction for a number whose job is to decide
+whether to risk money.
+
+*Costs on every trade, never netted at the end.* See `costs.py`.
+
+Results are reported in **R** — profit divided by the risk taken at entry. A 3%
+gain on a tight stop and a 3% gain on a wide one are not the same trade, and R
+is the unit that says so. It is also the unit position sizing is expressed in,
+so the backtest and the live sizing speak the same language.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, asdict
+from datetime import date
+
+import numpy as np
+
+from .costs import CostModel, DEFAULT_COSTS
+from .features import Features
+from .strategies import StrategySpec
+
+
+@dataclass(frozen=True)
+class ExitModel:
+    """How a position is managed once it is on.
+
+    The defaults are the rule `scripts/sweep_exit_models.py` selected: no profit
+    target, a trail that engages at 1.5R and runs 4 ATR behind, and a 90-session
+    ceiling. It was chosen on the in-sample period alone and then scored on the
+    held-out period without adjustment, where it returned +0.25R per trade
+    against +0.28R in-sample over ~9,000 held-out trades. The full ranking of
+    the five candidate rules was *identical* in both periods, which is the part
+    worth trusting: it says the finding is the structural one — losers cut,
+    winners left alone — rather than a parameter that happened to fit.
+
+    The rule it replaced (a 2.5R target with a 15-session stop) scored -0.005R.
+    Only 11% of trades ever reached 2.5R while 46% were closed alive by the time
+    stop, so the target was mostly decorative and the time stop did the real
+    work, in the wrong direction. That is worth keeping in mind before anyone
+    shortens the horizon again.
+
+    Exits are deliberately NOT tuned per strategy: a per-strategy exit fitted on
+    the same data used to measure the strategy is how a backtest launders
+    overfitting into a headline.
+    """
+
+    target_r: float | None = None
+    max_hold_sessions: int = 90
+    trail_after_r: float | None = 1.5
+    trail_atr_mult: float = 4.0
+    # Off by default. Intuition says pulling to breakeven at 1R is cheap
+    # insurance; the sweep disagreed — every candidate carrying it scored below
+    # every candidate without it, because a stop at breakeven gets tagged by
+    # ordinary noise and forfeits the few large winners the whole profile
+    # depends on. Kept as an option, defaulted off, with the reason recorded.
+    breakeven_after_r: float | None = None
+
+
+@dataclass
+class Trade:
+    """One completed (or still-open) simulated position."""
+
+    strategy: str
+    symbol: str
+    signal_day: date
+    entry_day: date
+    exit_day: date | None
+    entry: float
+    stop: float
+    exit_price: float | None
+    exit_reason: str          # stop | target | trail | time | open
+    sessions_held: int
+    r_multiple: float         # net of costs
+    gross_pct: float
+    net_pct: float
+    mae_r: float              # worst excursion against, in R
+    mfe_r: float              # best excursion for, in R
+    risk_pct: float           # (entry - stop) / entry * 100
+    atr_pct_at_entry: float
+    regime: str = ""          # stamped by the runner from the regime table
+    volatility_band: str = ""
+
+    @property
+    def resolved(self) -> bool:
+        return self.exit_reason != "open"
+
+    def to_dict(self) -> dict:
+        out = asdict(self)
+        out["signal_day"] = self.signal_day.isoformat()
+        out["entry_day"] = self.entry_day.isoformat()
+        out["exit_day"] = self.exit_day.isoformat() if self.exit_day else None
+        return out
+
+
+def simulate_symbol(
+    spec: StrategySpec,
+    features: Features,
+    signals: np.ndarray,
+    exits: ExitModel,
+    costs: CostModel = DEFAULT_COSTS,
+    position_value: float = 100_000.0,
+) -> list[Trade]:
+    """Every trade this strategy would have taken in this symbol.
+
+    Overlapping signals are skipped while a position is open: the same setup
+    firing three days running is one trade, not three, and counting it three
+    times triples the apparent sample from a single decision.
+    """
+    bars = features.bars
+    n = len(bars)
+    o, h, l, c = bars.open, bars.high, bars.low, bars.close
+    atr = features.atr14
+
+    trades: list[Trade] = []
+    blocked_until = -1
+
+    for i in np.flatnonzero(signals):
+        i = int(i)
+        if i <= blocked_until or i + 1 >= n:
+            continue
+        if not np.isfinite(atr[i]) or atr[i] <= 0:
+            continue
+
+        entry_idx = i + 1
+        entry = costs.fill_price(float(o[entry_idx]), "buy")
+        stop = entry - spec.stop_atr_mult * float(atr[i])
+        if stop <= 0 or entry <= 0:
+            continue
+        risk = entry - stop
+        if risk <= 0:
+            continue
+
+        quantity = max(1.0, position_value / entry)
+        target = entry + exits.target_r * risk if exits.target_r else None
+
+        current_stop = stop
+        exit_idx: int | None = None
+        exit_price: float | None = None
+        reason = "open"
+        mfe = 0.0
+        mae = 0.0
+
+        last_idx = min(entry_idx + exits.max_hold_sessions - 1, n - 1)
+        for j in range(entry_idx, last_idx + 1):
+            bar_open, bar_high, bar_low = float(o[j]), float(h[j]), float(l[j])
+
+            # A gap straight through the stop fills at the open. Checked before
+            # anything else, because on that bar nothing else happened first.
+            if bar_open <= current_stop:
+                exit_idx, exit_price, reason = j, bar_open, "gap_stop"
+                mae = min(mae, (bar_open - entry) / risk)
+                break
+
+            mfe = max(mfe, (bar_high - entry) / risk)
+            mae = min(mae, (bar_low - entry) / risk)
+
+            # Stop before target on the same bar — the ambiguity resolves
+            # against the trade. See the module docstring.
+            if bar_low <= current_stop:
+                exit_idx, exit_price, reason = j, current_stop, "stop"
+                break
+            if target is not None and bar_high >= target:
+                # A gap above the target fills at the open, in our favour; that
+                # is symmetric with the gap-down case and equally real.
+                exit_price = max(target, bar_open) if bar_open > target else target
+                exit_idx, reason = j, "target"
+                break
+
+            # Stop management, applied on the *close* of the bar so it can only
+            # affect subsequent bars — moving a stop using the same bar's high
+            # would be acting on information the day had not finished giving.
+            run_r = (float(c[j]) - entry) / risk
+            if exits.breakeven_after_r is not None and run_r >= exits.breakeven_after_r:
+                current_stop = max(current_stop, entry)
+            if exits.trail_after_r is not None and run_r >= exits.trail_after_r:
+                if np.isfinite(atr[j]):
+                    current_stop = max(current_stop, float(c[j]) - exits.trail_atr_mult * float(atr[j]))
+
+        if exit_idx is None:
+            # Ran out of horizon (time stop) or out of data (still open).
+            if last_idx >= entry_idx and last_idx - entry_idx + 1 >= exits.max_hold_sessions:
+                exit_idx, exit_price, reason = last_idx, float(c[last_idx]), "time"
+            elif last_idx == n - 1:
+                exit_idx, exit_price, reason = last_idx, float(c[last_idx]), "open"
+
+        if exit_idx is None or exit_price is None:
+            continue
+
+        realised = costs.fill_price(float(exit_price), "sell")
+        buy_value = entry * quantity
+        sell_value = realised * quantity
+        charges = costs.charges(buy_value, sell_value)
+        net_pnl = sell_value - buy_value - charges
+
+        trades.append(
+            Trade(
+                strategy=spec.id,
+                symbol=bars.symbol,
+                signal_day=bars.dates[i],
+                entry_day=bars.dates[entry_idx],
+                exit_day=bars.dates[exit_idx],
+                entry=round(entry, 2),
+                stop=round(stop, 2),
+                exit_price=round(realised, 2),
+                exit_reason=reason,
+                sessions_held=exit_idx - entry_idx + 1,
+                r_multiple=round(net_pnl / (risk * quantity), 3),
+                gross_pct=round((realised - entry) / entry * 100.0, 2),
+                net_pct=round(net_pnl / buy_value * 100.0, 2),
+                mae_r=round(mae, 2),
+                mfe_r=round(mfe, 2),
+                risk_pct=round(risk / entry * 100.0, 2),
+                atr_pct_at_entry=round(float(features.atr_pct[i]), 2) if np.isfinite(features.atr_pct[i]) else 0.0,
+            )
+        )
+        blocked_until = exit_idx
+
+    return trades

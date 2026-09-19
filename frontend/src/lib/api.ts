@@ -5083,3 +5083,231 @@ export function getStudyReview() {
     label: "scanner backend",
   });
 }
+
+/* --- Trading bot -----------------------------------------------------------
+   The bot's numbers all come from a committed backtest artifact rather than a
+   live computation, so these fetchers are plain reads. `whileWaking` still
+   wraps them because a cold Space answers the first request slowly whatever
+   the endpoint does. */
+
+export type BotCellStats = {
+  strategy: string;
+  regime: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  median_r: number;
+  total_r: number;
+  profit_factor: number;
+  avg_win_r: number;
+  avg_loss_r: number;
+  avg_hold: number;
+  expectancy_pct: number;
+  r_ci_low: number;
+  r_ci_high: number;
+  p_value: number;
+  significant: boolean;
+  reportable: boolean;
+};
+
+export type BotValidatedCell = {
+  strategy: string;
+  regime: string;
+  in_sample: BotCellStats | null;
+  out_sample: BotCellStats | null;
+  verdict: "confirmed" | "confirmed_weak" | "decayed" | "negative" | "insufficient";
+  note: string;
+};
+
+export type BotPlaybookEntry = {
+  strategy: string;
+  label: string;
+  family: string;
+  verdict: string;
+  in_sample_r: number;
+  out_sample_r: number;
+  out_sample_trades: number;
+  win_rate: number;
+  risk_per_trade_pct: number;
+  note: string;
+};
+
+export type BotPlaybook = {
+  regime: string;
+  label: string;
+  note: string;
+  stance: "engaged" | "selective" | "stand_down";
+  entries: BotPlaybookEntry[];
+  max_concurrent: number;
+  max_portfolio_risk_pct: number;
+  rationale: string;
+};
+
+export type BotRegimeRow = {
+  day: string;
+  regime: string;
+  regime_label?: string;
+  volatility_band: string;
+  regime_age: number;
+  index_close: number;
+  pct_from_200dma: number;
+  pct_from_52w_high: number;
+  ma200_slope: number;
+  breadth_above_200dma: number;
+  breadth_net_new_highs: number;
+  vix_percentile: number;
+  constituents: number;
+};
+
+export type BotMacroFinding = {
+  series: string;
+  label: string;
+  note: string;
+  headwind_direction: string;
+  trades_headwind: number;
+  trades_tailwind: number;
+  avg_r_headwind: number;
+  avg_r_tailwind: number;
+  difference: number;
+  p_value: number;
+  material: boolean;
+  verdict: string;
+};
+
+export type BotSurvivorship = {
+  eras: Array<{
+    era: string;
+    start: string;
+    end: string;
+    symbols_existing: number;
+    coverage_pct: number;
+    trades: number;
+    avg_r: number;
+    win_rate: number;
+    note: string;
+  }>;
+  coverage_performance_correlation: number | null;
+  verdict: string;
+  limitation: string;
+};
+
+export type BotBacktest = {
+  artifact_version: number;
+  generated_at: string;
+  config: Record<string, unknown>;
+  coverage: {
+    sessions: number;
+    first_session: string | null;
+    last_session: string | null;
+    symbols_with_trades: number;
+    trades_total: number;
+    trades_resolved: number;
+    validation_split: string | null;
+  };
+  regime_distribution: Array<{
+    regime: string;
+    label: string;
+    sessions: number;
+    pct_of_history: number;
+    note: string;
+  }>;
+  regime_timeline: Array<{
+    regime: string;
+    label: string;
+    start: string;
+    end: string;
+    sessions: number;
+    index_return_pct: number;
+  }>;
+  current_regime: BotRegimeRow | null;
+  strategy_totals: BotCellStats[];
+  matrix: BotCellStats[];
+  validated: BotValidatedCell[];
+  playbooks: BotPlaybook[];
+  survivorship: BotSurvivorship;
+  macro: BotMacroFinding[];
+  strategy_catalogue: Array<{
+    id: string;
+    label: string;
+    family: string;
+    thesis: string;
+    expects: string[];
+    stop_atr_mult: number;
+  }>;
+  regime_catalogue: Array<{ id: string; label: string; note: string }>;
+};
+
+export type BotCandidate = {
+  symbol: string;
+  strategy: string;
+  strategy_label: string;
+  signal_day: string;
+  close: number;
+  entry_hint: number;
+  stop: number;
+  risk_pct: number;
+  atr_pct: number;
+  turnover_crore: number;
+  expected_r: number;
+  verdict: string;
+  sizing: {
+    shares: number;
+    position_value?: number;
+    risk_budget?: number;
+    risk_per_share?: number;
+    actual_risk?: number;
+    pct_of_equity?: number;
+    capped_by_capital?: boolean;
+    reason?: string;
+  };
+};
+
+export type BotSignals = {
+  as_of?: string;
+  regime?: BotRegimeRow;
+  playbook?: BotPlaybook | null;
+  macro?: {
+    headwinds: string[];
+    tailwinds: string[];
+    size_multiplier: number;
+    stance: string;
+    note: string;
+  };
+  stance?: string;
+  equity?: number;
+  candidates: BotCandidate[];
+  candidates_found?: number;
+  message?: string;
+  source?: "live" | "offline";
+  age_days?: number | null;
+  stale?: boolean;
+  error?: string;
+};
+
+export type BotStatus = {
+  backtest_present: boolean;
+  backtest_generated_at: string | null;
+  coverage: BotBacktest["coverage"] | null;
+  signals_present: boolean;
+  signals_as_of: string | null;
+  signals_age_days: number | null;
+  history_store: { present: boolean; symbols?: number; megabytes?: number; path?: string };
+  live_scan_available: boolean;
+};
+
+export function getBotStatus() {
+  return whileWaking(() => request<BotStatus>("/api/bot/status", undefined, { timeoutMs: 30000 }));
+}
+
+export function getBotBacktest() {
+  // ~900 KB. Fetched once and held in the panel rather than per-tab, because
+  // every view in the Bot page is a different slice of this same artifact.
+  return whileWaking(() => request<BotBacktest>("/api/bot/backtest", undefined, { timeoutMs: 60000 }));
+}
+
+export function getBotSignals(equity: number) {
+  // A live scan walks the whole bar store on a workstation; the Space serves
+  // the committed copy instantly. The timeout covers the slow path.
+  return whileWaking(() =>
+    request<BotSignals>(`/api/bot/signals?equity=${encodeURIComponent(equity)}`, undefined, { timeoutMs: 90000 }));
+}

@@ -33,6 +33,18 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `services/watchlists_store.py` & `journal_store.py`: Persistence handlers for user watchlists and trade journal entries.
 - `services/study_coach.py`: Chart Gym coach — turns the drill log into measured facts (avg R sliced by wait, stop width, RS, base depth, volume dry-up, industry group; selection edge against the deck's 50/50 base rate; earlier-vs-recent trajectory). Every slice carries its sample size and anything under `MIN_SAMPLE` is dropped rather than reported.
 - `services/study_deck.py`: Chart Gym deck server — deals a balanced daily hand of historical setups and splits each symbol's bars at the trigger session so the answer never ships with the question. The deck itself is mined offline by `scripts/generate_study_deck.py`.
+- `services/bot/`: Regime-aware trading bot — the answer to "which strategy works in which market condition", measured rather than asserted. Mounted at `/api/bot` via `api/bot_routes.py`.
+  - `history.py`: Deep daily-bar store (~1,575 symbols back to 2007-1996, 5.2M bars, gzipped columnar JSON). **Gitignored** — it is raw material, rebuilt by `scripts/build_deep_history.py` in ~10 min.
+  - `indicators.py`: Causal indicators. Element `i` uses only `0..i`; warm-up is nan, never zero. `test_bot_engine.py` recomputes each on truncated input to pin the contract.
+  - `regime.py`: Six regimes (`bull_strong`, `bull_narrow`, `choppy`, `correction`, `bear`, `recovery`) from index trend, breadth and volatility. Thresholds declared before measurement, not fitted.
+  - `breadth.py`: Market breadth counted across the universe's own bars, carrying `constituents` so thin early years are visible.
+  - `strategies.py`: Ten setups, each declaring `expects` (the regimes it is *predicted* to work in) before anything is measured.
+  - `engine.py` / `costs.py`: Trade simulation. Fills at the next open, gaps through stops fill at the open, same-bar stop+target resolves as a loss, and full Indian delivery costs (~0.53% round trip) are charged on every trade.
+  - `attribution.py`: Strategy x regime cells with bootstrap intervals, Benjamini-Hochberg across all 60 cells, and a chronological walk-forward split.
+  - `policy.py`: Playbook per regime, built only from cells that survived the held-out period. "Stand down" is a first-class output.
+  - `macro.py` / `context_series.py`: 10 external series, each with its headwind direction declared in advance, split within a fixed regime so the test can come back "no".
+  - `survivorship.py`: Measures the bias rather than hiding it — era coverage against era performance.
+  - `live.py`: Today's regime, playbook, macro gate and ranked candidates with position sizing.
 - `services/mutual_funds/`: Mutual fund screener subsystem (India-only, mounted at `/api/mf` via `api/mutual_funds_routes.py`).
   - `nav_source.py`: **Authoritative** leg — daily NAV history per AMFI scheme code, via the mfapi.in mirror. Every return/rank/risk number derives from this.
   - `groww_source.py`: Best-effort reference data (holdings, benchmark name, TER, AUM). Reads the **public HTML** pages and parses `__NEXT_DATA__` — Groww's `robots.txt` disallows `/v1/api/*`, so the JSON API is never touched. Degrades to "no holdings", never takes the page down.
@@ -58,6 +70,7 @@ Indian stocks scanner SaaS web app for NSE/BSE stocks with technical scanners (M
 - `components/FundDetailModal.tsx` & `FundNavChart.tsx`: Per-fund deep dive — growth-of-100 NAV chart vs benchmark, rolling returns, drawdown episodes, holdings with links into the equity chart.
 - `components/StudyCoach.tsx`: the Coach panel — measured numbers and slice tables on top, the written review below, shown separately so it is always clear which is which. The numbers still render when Gemini is unavailable.
 - `components/StudyPanel.tsx` & `StudyChart.tsx`: Chart Gym — the chart-reading drill. Shows a historical VCP / flag setup truncated at its trigger bar, lets you step forward up to 15 sessions before choosing your own entry day, then holds for up to 15 more and grades the trade against your own entry and stop. Carries its own trendline / measure / region-snip tools (click an active tool or press Esc to drop it), a draggable stop line, a candles / bars / HLC toggle, PNG export, and a symbol search that opens any stock as a free study. Scores persist in `localStorage`.
+- `components/BotPanel.tsx`: the Bot tab — four views in the order a decision gets made: **Today** (regime, stance, macro gate, sized candidates), **Playbook** (regime -> cleared setups), **Evidence** (the strategy x regime matrix, what survived validation, what decayed), and **What this can't tell you** (survivorship, macro, caveats). The last view is not an appendix and gets equal billing on purpose.
 - `lib/api.ts`: Centralized API client wrapper with request error handling and base URL configuration.
 
 ---
@@ -103,6 +116,12 @@ cd backend && python scripts/build_mf_universe.py --compute-only --refresh-navs
 # workstation only, never on the Space)
 cd backend && python3 scripts/generate_study_deck.py --weeks 52
 cd backend && python3 scripts/generate_study_deck.py --weeks 3 --limit-symbols 300   # quick check
+
+# Trading bot: build history (~10 min), backtest (~1.5 min), then today's signals
+cd backend && python3 scripts/build_deep_history.py
+cd backend && python3 scripts/run_bot_backtest.py
+cd backend && python3 scripts/generate_bot_signals.py
+cd backend && python3 scripts/sweep_exit_models.py --limit-symbols 350   # exit-rule protocol
 
 # Frontend Type Check
 cd frontend && npx --no-install tsc --noEmit
@@ -159,4 +178,16 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 15. **The Chart Gym Deck Must Stay Balanced, and Its Answer Must Stay Server-Side:** the deck deals equal numbers of winners and losers (`StudyDeck.deal`) because a deck of winners trains the eye to see a breakout in every base — the opposite of the skill. And the forward bars live behind `/api/study/reveal`, never in `/api/study/deck` or `/api/study/bars`; shipping them with the question puts the answer in the browser before the user has called it. `test_study_deck.py` pins both.
 16. **Chart Gym Bars Need the Provider Fallback:** `_study_bars` in `routes.py` reads `chart_cache` first and falls back to `service.get_chart`. `chart_cache/` is gitignored, so a freshly deployed Space has nothing in it and every card would render as an empty chart — fine locally, silently blank in production, exactly like gotcha 14. Keep the fallback.
 17. **`power-base` Is Excluded From the Deck On Purpose:** it fires ~1,500 times a week (20,323 signals in a 13-week replay, versus 167 for `vcp` and 865 for `high-tight-flag`). It describes a state, not an entry, and adding it to `DEFAULT_SETUPS` would swamp the deck with marginal examples and dull the eye rather than sharpen it. Gate it by score first if you ever want it in.
+27. **The Bot's Exit Rule Was Selected By Protocol — Don't Quietly Retune It:** `ExitModel`'s defaults (no target, trail 1.5R at 4xATR, 90-session ceiling) are what `scripts/sweep_exit_models.py` chose from five rules declared in advance, scored on the in-sample period alone, with the held-out period reported unchanged. It returned +0.28R in-sample and +0.25R held-out, and the full ranking of all five rules was *identical* in both periods. The rule it replaced (2.5R target, 15-session stop) scored -0.005R — only 11% of trades ever reached 2.5R while 46% were closed alive by the time stop. Two traps here: (a) `run_bot_backtest.py` must not duplicate the numbers in its CLI defaults — it did once, and silently ran the rejected rule; it now defaults to `None` and defers to `ExitModel`. (b) A per-strategy exit fitted on the same data used to measure the strategy is overfitting with extra steps. Keep exits global.
+
+28. **"Stand Down" Is a Feature, and the Bot Must Be Allowed to Say It:** `recovery` and `bear` currently clear *no* strategies — every recovery cell was strongly positive in-sample and negative out-of-sample, and no bear cell had enough held-out trades to judge. `policy.build_playbooks` returns an empty playbook for those regimes and `live.scan_today` returns zero candidates. That is the correct output, not a bug to be fixed by loosening `TRADEABLE_VERDICTS`. A bot that always finds something to buy is the one that empties the account in a bear market.
+
+29. **The Backtest Is Committed, the History Behind It Is Not:** `bot_backtest.json` (~900 KB) and `bot_signals.json` (~6 KB) ship in git; `deep_history/` (~100 MB) is gitignored. The Space therefore cannot recompute anything, which is why `/api/bot/signals` prefers a live scan and falls back to the committed copy, and why `bot-refresh.yml` caches the store and commits only the artifacts. Removing the fallback does not fail a single test and renders the Bot tab empty in production — exactly the shape of gotchas 14 and 15.
+
+30. **Every Bot Number Is After Costs, and That Is Load-Bearing:** `costs.py` charges STT, stamp duty, exchange, SEBI, GST, DP and 15 bps slippage each way — ~0.53% a round trip. Against the original 5% target that is roughly a tenth of the gross edge, and it is the difference between several strategies reading positive and reading flat. `test_bot_engine.py::test_round_trip_is_material` fails if the schedule is ever gutted; `test_costs_reduce_the_result` fails if costs stop being applied at all.
+
+31. **Survivorship Is Measured, Not Corrected — and It Currently Points the Other Way:** the universe is today's list, so companies that delisted are absent and pre-2018 results are filtered by survival (only 35% of today's symbols existed in 2007). `survivorship.py` reports coverage against performance per era; the correlation is **+0.65**, meaning the best-covered recent era carries the result rather than the heavily-filtered old one. Do not delete this measurement because it currently reads reassuring — it is the thing that would catch the opposite.
+
+32. **Macro Is Tested Within a Fixed Regime, or It Only Rediscovers the Regime:** `measure_macro_edge` holds `regime_filter` constant (default `bull_strong`) before splitting on each external series, and each series' headwind direction is declared in `context_series.py` *before* measurement. Drop the regime filter and every series will look material, because they all correlate with bull markets. Choose the direction after seeing returns and every series "works" by construction. 7 of 10 currently carry real information; global VIX is worth ~0.58R per trade between tailwind and headwind.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

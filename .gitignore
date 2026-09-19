@@ -18,6 +18,12 @@ frontend/tsconfig.tsbuildinfo
 
 # Data and Cache
 backend/data/chart_cache/
+# The bot's deep bar store: ~100 MB, rebuildable in ~10 min with
+# scripts/build_deep_history.py. The derived artifacts it produces
+# (bot_backtest.json, bot_signals.json) ARE committed, because the
+# Space has no way to rebuild them.
+backend/data/deep_history/
+backend/data/bot_exit_sweep.json
 backend/data/chart_cache_us/
 backend/data/scan_history.json
 backend/app/data/scan_history.json

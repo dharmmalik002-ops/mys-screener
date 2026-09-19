@@ -15,6 +15,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.api.bot_routes import build_bot_router
 from app.api.mutual_funds_routes import build_mutual_funds_router
 from app.api.routes import build_router
 from app.core.config import get_settings
@@ -841,6 +842,10 @@ app.add_middleware(
 app.include_router(build_router(services))
 # Mutual funds are India-only and share none of the equity router's
 # market-scoping, so they mount as their own router under /api/mf.
+# The trading bot mounts separately for the same reason mutual funds do: it is
+# India-only, shares none of the equity router's `/api/{market}` scoping, and
+# reads its own committed artifacts rather than the snapshot provider.
+app.include_router(build_bot_router(Path(__file__).resolve().parents[1] / "data"))
 app.include_router(
     build_mutual_funds_router(
         MutualFundService(
