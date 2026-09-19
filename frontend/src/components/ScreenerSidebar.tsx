@@ -121,12 +121,43 @@ const DEFAULT_VISIBLE_MODES: ScreenerMode[] = [
   "vcp",
   "power-base",
   "tight-closes",
+  "qullamaggie",
   "bread-butter",
   "custom-scan",
   "total-scanner",
 ];
 
 const VISIBLE_SCANNERS_KEY = "sidebar-visible-scanners-v1";
+
+// Scanners added to the default set AFTER a selection was already saved.
+// Editing DEFAULT_VISIBLE_MODES alone never reaches those users — their stored
+// list wins on every load. Each id here is seeded into that list once and then
+// remembered, so hiding it again sticks instead of coming back next reload.
+const SEEDED_SCANNERS_KEY = "sidebar-seeded-scanners-v1";
+const SEEDED_MODES: ScreenerMode[] = ["qullamaggie"];
+
+function applySeededModes(modes: ScreenerMode[]): ScreenerMode[] {
+  let seeded: string[] = [];
+  try {
+    const raw = window.localStorage.getItem(SEEDED_SCANNERS_KEY);
+    const parsed = raw ? (JSON.parse(raw) as unknown) : null;
+    if (Array.isArray(parsed)) {
+      seeded = parsed.filter((m): m is string => typeof m === "string");
+    }
+  } catch {
+    // unreadable marker — treat it as nothing seeded yet
+  }
+  const pending = SEEDED_MODES.filter((mode) => !seeded.includes(mode) && !modes.includes(mode));
+  if (pending.length === 0) return modes;
+  const next = [...modes, ...pending];
+  try {
+    window.localStorage.setItem(SEEDED_SCANNERS_KEY, JSON.stringify([...new Set([...seeded, ...SEEDED_MODES])]));
+    window.localStorage.setItem(VISIBLE_SCANNERS_KEY, JSON.stringify(next));
+  } catch {
+    // storage full/blocked — the seed still applies for this session
+  }
+  return next;
+}
 
 function loadVisibleModes(): ScreenerMode[] {
   try {
@@ -136,7 +167,7 @@ function loadVisibleModes(): ScreenerMode[] {
     if (!Array.isArray(parsed)) return DEFAULT_VISIBLE_MODES;
     const known = new Set(ALL_ITEMS.map((item) => item.mode as string));
     const modes = parsed.filter((m): m is ScreenerMode => typeof m === "string" && known.has(m));
-    return modes.length > 0 ? modes : DEFAULT_VISIBLE_MODES;
+    return modes.length > 0 ? applySeededModes(modes) : DEFAULT_VISIBLE_MODES;
   } catch {
     return DEFAULT_VISIBLE_MODES;
   }
