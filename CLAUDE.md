@@ -528,4 +528,17 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     That completes the list: **partial profit-taking, sizing up in strong markets, loosening the rules in rallies, a dedicated recovery setup, and a thesis-break exit — five ideas, all built, all measured on their own and again in combination, all net-negative.** The only one that improved both return and drawdown was parking idle capital in the index (gotcha 83), and it only did so after three accounting bugs in the same feature were fixed. **In a book whose result lives in the tail, every rule that sells earlier costs more than it saves**, and the win rate it buys is the clearest symptom rather than a benefit.
 
+85. **WIN RATE IS A PROPERTY OF THE EXIT, NOT THE ENTRY — NO ENTRY CONDITION PREDICTS IT.** Every attempt to reach a 35-40% win rate in this book has gone through the exit (partial profits, thesis-break, tighter trails) and every one costs return, because selling earlier truncates the tail the result is made of. The untested alternative was to buy the win rate at the **entry**, which would be free — all the mining in `rules.py` targeted average R and none of it targeted hit rate.
+
+    Measured across every recorded entry feature, quintiles on the training half against the same cuts on the held-out half (base rate 23.6%):
+
+        risk_pct        train  24.0 29.6 27.1 23.6 24.7  |  test  19.3 18.7 25.1 26.8 20.1
+        ret_63          train  23.6 19.7 28.8 28.8 28.0  |  test  22.4 20.4 19.9 23.1 26.2
+        rel_volume      train  31.7 26.5 26.4 21.8 22.6  |  test  21.8 21.9 21.6 18.8 24.7
+        turnover        train  24.6 28.5 25.2 25.9 24.8  |  test  26.4 19.4 22.0 22.7 21.5
+
+    **Nothing replicates.** Stop width peaks in the first training band and the fourth test band; relative volume points one way in training and the other way out of sample; every spread is inside the noise of a 23.6% base rate. The same held per setup.
+
+    So the win rate cannot be bought at the entry in this data, and buying it at the exit costs 7-8 points of CAGR every way it has been tried (gotchas 77, 84). **A 27% win rate at a 9.8 payoff is not a defect to be engineered away — it is what this book is**, and the two numbers are the same fact stated twice. Any future change that raises the win rate should be assumed to have sold a winner early until its payoff ratio proves otherwise.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
