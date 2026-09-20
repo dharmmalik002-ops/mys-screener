@@ -5421,6 +5421,7 @@ export type BotLearning = {
   condition_studies: BotConditionStudy[];
   condition_split: string;
   portfolio_runs: BotPortfolioRun[];
+  config_sensitivity: BotSensitivity | null;
   benchmark: BotBenchmark | null;
   evolution_timeline: Array<{ as_of: string; counts: Record<string, number>; tradeable: number }>;
   evolution_changes: BotEvolutionChange[];
@@ -5586,3 +5587,31 @@ export function recordBotTrade(trade: BotLiveTradeInput) {
     { timeoutMs: 30000 },
   );
 }
+
+/* --- Bot: configuration sensitivity ---------------------------------------
+   One configuration's CAGR implies that configuration was chosen well. It was
+   not — pre-split ranking correlates -0.70 with held-out return — so the
+   distribution across defensible book structures is the honest answer. */
+
+export type BotConfigResult = {
+  positions: number;
+  total_risk_pct: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  trades: number;
+};
+
+export type BotSensitivity = {
+  configs: BotConfigResult[];
+  median_cagr: number;
+  p25_cagr: number;
+  p75_cagr: number;
+  min_cagr: number;
+  max_cagr: number;
+  median_drawdown: number;
+  share_beating_index: number;
+  share_beating_fund_median: number;
+  selection_rank_correlation: number | null;
+  note: string;
+};

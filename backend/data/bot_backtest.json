@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-20T03:40:03.755065+00:00",
+  "generated_at": "2026-09-20T03:56:46.848683+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -15790,6 +15790,260 @@
         ]
       }
     ],
+    "config_sensitivity": {
+      "configs": [
+        {
+          "positions": 70,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 14.85,
+          "max_drawdown_pct": -15.14,
+          "sharpe": 1.11,
+          "trades": 1568
+        },
+        {
+          "positions": 40,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 14.66,
+          "max_drawdown_pct": -14.75,
+          "sharpe": 1.11,
+          "trades": 988
+        },
+        {
+          "positions": 40,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 14.44,
+          "max_drawdown_pct": -14.3,
+          "sharpe": 1.09,
+          "trades": 952
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 13.73,
+          "max_drawdown_pct": -15.02,
+          "sharpe": 1.07,
+          "trades": 1771
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 13.69,
+          "max_drawdown_pct": -15.33,
+          "sharpe": 1.03,
+          "trades": 1440
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 13.63,
+          "max_drawdown_pct": -16.19,
+          "sharpe": 1.04,
+          "trades": 1393
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 13.54,
+          "max_drawdown_pct": -15.74,
+          "sharpe": 1.02,
+          "trades": 1189
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 13.13,
+          "max_drawdown_pct": -15.38,
+          "sharpe": 1.04,
+          "trades": 1234
+        },
+        {
+          "positions": 70,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 13.06,
+          "max_drawdown_pct": -14.9,
+          "sharpe": 1.04,
+          "trades": 1634
+        },
+        {
+          "positions": 40,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 13.01,
+          "max_drawdown_pct": -15.18,
+          "sharpe": 1.05,
+          "trades": 1026
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 12.62,
+          "max_drawdown_pct": -15.68,
+          "sharpe": 0.98,
+          "trades": 1282
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 9.0,
+          "cagr_pct": 12.17,
+          "max_drawdown_pct": -14.71,
+          "sharpe": 0.99,
+          "trades": 2134
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 12.14,
+          "max_drawdown_pct": -14.96,
+          "sharpe": 0.99,
+          "trades": 1861
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 8.0,
+          "cagr_pct": 11.5,
+          "max_drawdown_pct": -15.06,
+          "sharpe": 0.93,
+          "trades": 2267
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 11.47,
+          "max_drawdown_pct": -14.66,
+          "sharpe": 0.94,
+          "trades": 1496
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 11.3,
+          "max_drawdown_pct": -14.02,
+          "sharpe": 1.0,
+          "trades": 1282
+        },
+        {
+          "positions": 70,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 11.22,
+          "max_drawdown_pct": -15.07,
+          "sharpe": 0.93,
+          "trades": 1706
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 10.8,
+          "max_drawdown_pct": -14.88,
+          "sharpe": 0.89,
+          "trades": 1945
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 10.57,
+          "max_drawdown_pct": -13.71,
+          "sharpe": 0.94,
+          "trades": 1516
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 7.0,
+          "cagr_pct": 10.55,
+          "max_drawdown_pct": -14.36,
+          "sharpe": 0.9,
+          "trades": 2342
+        },
+        {
+          "positions": 40,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 10.04,
+          "max_drawdown_pct": -11.62,
+          "sharpe": 1.03,
+          "trades": 1037
+        },
+        {
+          "positions": 70,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 9.88,
+          "max_drawdown_pct": -13.43,
+          "sharpe": 0.89,
+          "trades": 1730
+        },
+        {
+          "positions": 40,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 9.79,
+          "max_drawdown_pct": -14.24,
+          "sharpe": 0.9,
+          "trades": 1043
+        },
+        {
+          "positions": 70,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 9.41,
+          "max_drawdown_pct": -11.29,
+          "sharpe": 0.91,
+          "trades": 1736
+        },
+        {
+          "positions": 50,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 9.35,
+          "max_drawdown_pct": -11.93,
+          "sharpe": 0.98,
+          "trades": 1291
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 9.3,
+          "max_drawdown_pct": -13.66,
+          "sharpe": 0.82,
+          "trades": 1973
+        },
+        {
+          "positions": 60,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 8.92,
+          "max_drawdown_pct": -11.43,
+          "sharpe": 0.99,
+          "trades": 1510
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 6.0,
+          "cagr_pct": 8.89,
+          "max_drawdown_pct": -12.96,
+          "sharpe": 0.85,
+          "trades": 2383
+        },
+        {
+          "positions": 100,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 8.28,
+          "max_drawdown_pct": -10.97,
+          "sharpe": 0.89,
+          "trades": 2388
+        },
+        {
+          "positions": 80,
+          "total_risk_pct": 5.0,
+          "cagr_pct": 7.85,
+          "max_drawdown_pct": -11.3,
+          "sharpe": 0.8,
+          "trades": 1989
+        }
+      ],
+      "median_cagr": 11.39,
+      "p25_cagr": 9.81,
+      "p75_cagr": 13.11,
+      "min_cagr": 7.85,
+      "max_cagr": 14.85,
+      "median_drawdown": -14.69,
+      "share_beating_index": 100.0,
+      "share_beating_fund_median": 50.0,
+      "selection_rank_correlation": -0.7,
+      "note": "30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 11.39% a year, 9.8% to 13.1% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.70 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
+    },
     "benchmark": {
       "comparisons": [
         {

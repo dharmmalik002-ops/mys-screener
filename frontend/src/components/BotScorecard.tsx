@@ -1,6 +1,6 @@
 import { AlertTriangle, Check, Info, Minus, X } from "lucide-react";
 
-import type { BotBenchmark, BotLearning, BotPortfolioRun } from "../lib/api";
+import type { BotBenchmark, BotLearning, BotPortfolioRun, BotSensitivity } from "../lib/api";
 
 /* The scorecard: the bot as an account, ranked against real fund managers.
 
@@ -69,6 +69,7 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
   const headline = benchmark?.headline ?? null;
   const answer = benchmark?.answer ?? null;
   const headlineRun = runs.find((r) => r.label === "playbook_held_out") ?? runs[0];
+  const sensitivity: BotSensitivity | null = learning.config_sensitivity ?? null;
 
   const RUN_LABELS: Record<string, string> = {
     playbook_held_out: "The system, on data it never saw",
@@ -175,6 +176,48 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
             <div><span>Payoff</span><strong>{headlineRun.payoff.toFixed(2)}</strong></div>
             <div><span>Win rate</span><strong>{headlineRun.win_rate.toFixed(0)}%</strong></div>
           </div>
+        </section>
+      ) : null}
+
+      {sensitivity ? (
+        <section>
+          <h4>Across every defensible book structure, not just this one</h4>
+          <p className="bot-section-note">{sensitivity.note}</p>
+          <div className="bot-hero-stats bot-run-stats">
+            <div>
+              <span>Median CAGR</span>
+              <strong>{formatPct(sensitivity.median_cagr)}</strong>
+            </div>
+            <div>
+              <span>Middle half</span>
+              <strong>
+                {formatPct(sensitivity.p25_cagr, 1)}–{formatPct(sensitivity.p75_cagr, 1)}
+              </strong>
+            </div>
+            <div>
+              <span>Median drawdown</span>
+              <strong>{formatPct(sensitivity.median_drawdown, 1)}</strong>
+            </div>
+            <div>
+              <span>Beat Nifty</span>
+              <strong>{sensitivity.share_beating_index.toFixed(0)}%</strong>
+            </div>
+            <div>
+              <span>Beat the median fund</span>
+              <strong>{sensitivity.share_beating_fund_median.toFixed(0)}%</strong>
+            </div>
+            <div>
+              <span>Configurations</span>
+              <strong>{sensitivity.configs.length}</strong>
+            </div>
+          </div>
+          <p className="bot-footnote">
+            Held-out return ranges from {formatPct(sensitivity.min_cagr, 1)} to{" "}
+            {formatPct(sensitivity.max_cagr, 1)} across structures that are all defensible, so
+            any figure quoted to a tenth of a point is describing one draw and calling it a
+            measurement. Every structure beat the index; {sensitivity.share_beating_fund_median.toFixed(0)}%
+            beat the median fund.
+          </p>
         </section>
       ) : null}
 

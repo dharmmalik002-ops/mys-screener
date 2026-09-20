@@ -25,6 +25,7 @@ from . import conditions as cond
 from . import evolution as evo
 from . import portfolio as pf
 from . import review as rv
+from . import sensitivity as sens
 from .engine import Trade
 from .regime import REGIME_LABELS
 from .strategies import BY_ID
@@ -244,6 +245,11 @@ def build_learning(
         for book in (playbooks or [])
         for entry in (book.get("entries") or [])
     }
+    expectancy_map = {
+        (str(entry["strategy"]), str(book["regime"])): float(entry.get("out_sample_r") or 0.0)
+        for book in (playbooks or [])
+        for entry in (book.get("entries") or [])
+    }
     # The eligible pool for the uncertainty estimate is every held-out trade in
     # a playbook cell — what the account could have taken, against what it did.
     eligible_r: list[float] = []
@@ -258,6 +264,20 @@ def build_learning(
     # default while the book runs at 0.10% produced a "90% range" of +86% to
     # +276% a year — a number so wrong it was obvious, which is the only reason
     # it was caught. Read it off the config instead of restating it.
+    # Across every defensible book structure, not the one that happened to be
+    # chosen — see sensitivity.py on why the choice cannot be made reliably.
+    config_sensitivity = None
+    if validation_split and cells:
+        index_cagr = None
+        fund_median = None
+        if data_dir:
+            probe = bm.compare(runs[0], data_dir) if runs else None
+            if probe:
+                index_cagr, fund_median = probe.index_cagr_pct, probe.fund_median_cagr
+        config_sensitivity = sens.measure(
+            rows, cells, expectancy_map, validation_split, index_cagr, fund_median,
+        )
+
     benchmark = (
         bm.build_benchmark(
             runs, data_dir, eligible_r,
@@ -276,6 +296,7 @@ def build_learning(
         "review_summary": summary,
         "review_by_regime": per_regime,
         "portfolio_runs": [r.to_dict() for r in runs],
+        "config_sensitivity": config_sensitivity.to_dict() if config_sensitivity else None,
         "benchmark": benchmark,
         "condition_studies": [c.to_dict() for c in condition_studies],
         "condition_split": split.isoformat(),
