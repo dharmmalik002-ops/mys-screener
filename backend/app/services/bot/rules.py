@@ -133,6 +133,17 @@ def accepted_with_rolling_risk(rows: "Sequence[Mapping]") -> list:
 
     import numpy as np
 
+    # The percentile is taken over EVERY signal the registered library
+    # produces, not just the tradeable setups, because that is the pool the
+    # 40th percentile was mined from — on the eligible setups alone the same
+    # 7.58% threshold sits at their 52nd percentile, and passing 0.40 there
+    # silently tightens the rule to 6.82%.
+    #
+    # The cost is a real coupling: registering a new strategy shifts the cap
+    # for every existing one. Measured, by registering a reversal setup and
+    # changing nothing else — the book moved from +18.69% to +17.23%.
+    # `test_the_cap_is_coupled_to_the_registered_library` exists so that can
+    # never happen unnoticed; anyone adding a strategy must re-run the book.
     ordered = sorted(rows, key=lambda t: str(t["entry_day"]))
     days = [str(t["entry_day"]) for t in ordered]
     risks = [float(t.get("risk_pct") or 0.0) for t in ordered]

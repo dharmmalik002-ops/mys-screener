@@ -84,6 +84,28 @@ class RollingRiskTests(unittest.TestCase):
         rows = self._rows(5, 20.0, day="2008-01-01")
         self.assertEqual(R.accepted_with_rolling_risk(rows), [])
 
+    def test_the_cap_is_coupled_to_the_registered_library(self):
+        """Adding a strategy moves the cap for every other one.
+
+        Not a bug being hidden — a documented cost of mining the percentile
+        over the whole signal pool. Registering a wider-stopped setup shifted
+        the book from +18.69% to +17.23% with no rule changed, so this test
+        states the dependency out loud: anyone who registers a strategy has to
+        re-run the backtest rather than assume the rules are unaffected.
+        """
+        # Enough foreign signals to actually move the 40th percentile: with
+        # 300 against 300 the percentile still lands inside the tight block.
+        eligible = self._rows(300, 4.0, day="2020-01-01")
+        foreign = self._rows(700, 30.0, day="2020-01-01", strategy="some_new_setup")
+        probe = self._rows(1, 8.0, day="2020-09-01")
+        without = R.accepted_with_rolling_risk(eligible + probe)
+        with_new = R.accepted_with_rolling_risk(eligible + foreign + probe)
+        self.assertNotEqual(
+            len(without), len(with_new),
+            "a newly registered strategy left the cap untouched — if this rule "
+            "was decoupled on purpose, update this test and re-run the book",
+        )
+
     def test_the_other_rules_still_apply(self):
         rows = self._rows(400, 3.0, day="2020-01-01", strategy="oversold_bounce")
         self.assertEqual(R.accepted_with_rolling_risk(rows), [])

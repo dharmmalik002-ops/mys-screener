@@ -359,6 +359,38 @@ def _earnings_gap_continuation(f: Features) -> np.ndarray:
     )
 
 
+def _recovery_reversal(f: Features) -> np.ndarray:
+    """The turn off a crash low — the one shape this library could not see.
+
+    Every other setup here needs price already rising: a breakout above a
+    base, a pullback inside an uptrend, a gap out of consolidation. After a
+    market-wide crash none of them fire for months, because nothing has a base
+    to break out of yet. That is measured, not assumed: in 2009 the book took
+    68 trades while the Smallcap 250 returned +113.9%, and unlocking every
+    existing setup and liquidity band moved it from +20.7% to +24.8% — the
+    entry filter was never the binding constraint, the library was.
+
+    So this one deliberately requires the opposite of momentum. The stock is
+    still far below its 52-week high and near its own low, its three-month
+    return is still negative, and the *turn* is the evidence: price reclaims
+    the 50-day average it has been under, on volume, having held above the
+    20-day low. Buying weakness is how gotcha 67's reversal test failed, so
+    the confirmation is doing the work here — this is not a falling-knife
+    rule, it is a rule that waits for the knife to land and bounce.
+
+    Stop is wide (3 ATR) on purpose: post-crash volatility is enormous and a
+    2 ATR stop in that tape is noise, not invalidation.
+    """
+    close = f.bars.close
+    reclaim = _safe(close > f.sma50) & _prior_flag(_safe(close <= f.sma50))
+    broken = _safe(f.dist_52w_high < -35.0)
+    near_low = _safe(close < f.low_52w * 1.60)
+    still_weak = _safe(f.ret_63 < 0.0)
+    held = _safe(close > f.low_20)
+    volume = _safe(f.rel_volume > 1.2)
+    return reclaim & broken & near_low & still_weak & held & volume & _safe(f.liquid)
+
+
 STRATEGIES: tuple[StrategySpec, ...] = (
     StrategySpec(
         "minervini_breakout", "Minervini Breakout", "breakout",
@@ -436,7 +468,19 @@ STRATEGIES: tuple[StrategySpec, ...] = (
 
 # Defined but not registered. Kept so the measurement is reproducible and the
 # experiment is not repeated; `test_bot_engine.py` still exercises them.
+# `recovery_reversal` is defined above and NOT registered. It was built to
+# answer the one gap no entry-rule change could reach — the V-shaped recovery
+# off a crash bottom, where no breakout setup fires. It works as designed
+# (2,218 signals, +0.647R, firing 51 times in 2009 and 54 in 2012 when the
+# rest of the library was silent) and the book is worse with it: CAGR +17.23%
+# -> +16.71%, years beating the index 12 -> 11. Its +0.65R is real and still
+# below the book's own average, so in a capital-constrained account it crowds
+# out better candidates — the same capacity effect as the second cohort.
+#
+# And it did not close the gap it was built for: 2009 stayed at +26.5%, 2012
+# at +17.0%. Keep it defined; the experiment does not need repeating.
 SECOND_COHORT = (
+    ("recovery_reversal", _recovery_reversal),
     ("episodic_pivot", _episodic_pivot),
     ("long_base_breakout", _long_base_breakout),
     ("rs_leader_pullback", _rs_leader_pullback),
