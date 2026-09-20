@@ -541,4 +541,16 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     So the win rate cannot be bought at the entry in this data, and buying it at the exit costs 7-8 points of CAGR every way it has been tried (gotchas 77, 84). **A 27% win rate at a 9.8 payoff is not a defect to be engineered away — it is what this book is**, and the two numbers are the same fact stated twice. Any future change that raises the win rate should be assumed to have sold a winner early until its payoff ratio proves otherwise.
 
+86. **PARK IN THE BROAD INDEX, NOT THE BENCHMARK — THE BOOK IS ALREADY 80% SMALL CAP.** The idle sleeve (gotcha 83) first parked in the Smallcap 250 because that is what the book is benchmarked against. That is the wrong reason: the book is **80.5% small cap already**, so parking the remainder there doubles down on exactly the exposure it is meant to diversify.
+
+        park in         CAGR      maxDD    Sharpe   ret/DD   beats benchmark
+        smallcap250   +23.21%   -29.89%     1.28     0.78        13 of 18
+        nifty500      +22.89%   -27.98%     1.32     0.82        15 of 18
+        nifty50       +21.80%   -26.91%     1.30     0.81        14 of 18
+        midcap150     +19.95%   -27.39%     1.27     0.73        14 of 18
+
+    The Nifty 500 wins on drawdown, Sharpe, return-per-drawdown and — the measure that matters most here — **years beating the benchmark, 15 against 13**, for 0.3pp of CAGR. It also ships in the local deep-history store, so the account no longer depends on an external fetch to run.
+
+    **Final shipped book:** `CAGR +23.81%, maxDD -27.98%, Sharpe 1.32, payoff 10.63, win 26.8%, 717 trades`, **+22.9%/yr against the Nifty Smallcap 250's +16.3% (alpha +6.6pp), behind it in 3 years of 18.** 80.5% small cap, 21-582 trades a year. The three remaining misses are 2009 (-73.4pp, the index did +113.9% off a crash bottom), 2012 (-13.3pp) and 2025 (-5.9pp), and all three are `starved` or `under_deployed` rather than bad selection — the entry rules were never the binding constraint in any of them.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
