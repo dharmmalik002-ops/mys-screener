@@ -116,6 +116,59 @@ class PositionCapTests(unittest.TestCase):
         self.assertGreater(gain, 0.001)
 
 
+class ParkedCashTests(unittest.TestCase):
+    """Idle capital riding an index. Two attempts at this created money."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self._tmp.name)
+        self.days = [date(2020, 1, 1) + timedelta(days=i) for i in range(200)]
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _trade(self):
+        return {"symbol": "HHH", "entry_day": "2020-02-01", "exit_day": "2020-04-01",
+                "r_multiple": 1.0, "risk_pct": 5.0, "entry": 100.0}
+
+    def test_a_flat_index_leaves_the_result_unchanged(self):
+        """Parking in something that never moves must add exactly nothing.
+
+        The first version restored cash from parked units *after* a purchase
+        had spent it, so a flat index printed money. This is that bug's test.
+        """
+        write_bars(self.dir, "HHH", self.days, [100.0] * 200)
+        flat = {d: 50.0 for d in self.days}
+        plain = mtm.simulate([self._trade()], self.dir, PortfolioConfig())
+        parked = mtm.simulate([self._trade()], self.dir, PortfolioConfig(),
+                              park_idle_in=flat)
+        self.assertAlmostEqual(plain.equity_curve[-1]["equity"],
+                               parked.equity_curve[-1]["equity"], delta=1.0)
+
+    def test_a_rising_index_lifts_idle_capital(self):
+        write_bars(self.dir, "HHH", self.days, [100.0] * 200)
+        rising = {d: 50.0 + i for i, d in enumerate(self.days)}
+        plain = mtm.simulate([self._trade()], self.dir, PortfolioConfig())
+        parked = mtm.simulate([self._trade()], self.dir, PortfolioConfig(),
+                              park_idle_in=rising)
+        self.assertGreater(parked.equity_curve[-1]["equity"],
+                           plain.equity_curve[-1]["equity"])
+
+    def test_units_held_on_a_non_parking_day_are_still_valued(self):
+        """Gating must not mark held units at zero.
+
+        Gating by removing days from the price map did exactly that, and
+        produced a -95.7% drawdown made entirely of arithmetic.
+        """
+        write_bars(self.dir, "HHH", self.days, [100.0] * 200)
+        prices = {d: 50.0 for d in self.days}
+        allowed = {d for d in self.days if d < date(2020, 3, 1)}
+        r = mtm.simulate([self._trade()], self.dir, PortfolioConfig(),
+                         park_idle_in=prices, park_only_on=allowed)
+        self.assertGreater(r.max_drawdown_pct, -5.0,
+                           "held index units were marked at zero on a gated day")
+
+
 class DeriskTests(unittest.TestCase):
 
     def setUp(self):

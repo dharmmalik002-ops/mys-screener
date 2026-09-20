@@ -75,6 +75,8 @@ def simulate(
     healthy_regimes: frozenset[str] | None = None,
     derisk_losers_only: bool = True,
     risk_scale_by_day: Mapping[date, float] | None = None,
+    park_idle_in: Mapping[date, float] | None = None,
+    park_only_on: "set[date] | None" = None,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -87,6 +89,21 @@ def simulate(
 
     A forced exit is priced from the symbol's own close, not from the trade's
     stored R, because that R belongs to an exit that no longer happens.
+
+    `park_idle_in` is a price series — the index — that uncommitted cash
+    tracks instead of sitting flat. Every diagnosis run returned the same
+    verdict, `under_deployed`: the filter is selective, so in a year like 2009
+    the book holds a fraction of its capital and the rest earns nothing while
+    the index compounds. Parking that remainder is the direct answer, and it
+    changes what the account IS — a selective book plus an index sleeve, not a
+    pure stock picker. Both readings are reported rather than one being
+    presented as the bot.
+
+    `park_only_on` restricts *new* parking to those sessions while leaving
+    `park_idle_in` as the full price series used for valuation. The two must
+    stay separate: an earlier version gated by dropping days out of the price
+    map, so on an ungated day the lookup returned None and units already held
+    were marked at **zero** — a -95.7% drawdown that was pure arithmetic.
 
     `derisk_losers_only` (the default) sells only the positions that are under
     water when the market turns and leaves the winners running. Liquidating
@@ -119,6 +136,7 @@ def simulate(
 
     cash = cfg.starting_equity
     equity = cfg.starting_equity
+    park_units = 0.0          # units of the parked index held against cash
     open_pos: list[dict] = []
     taken: list[dict] = []
     declined = 0
@@ -129,6 +147,17 @@ def simulate(
 
     forced = 0
     for day in sessions:
+        # Sell the parked index first, so `cash` is the whole uncommitted
+        # balance before trades touch it. Parking at the end of the day and
+        # restoring from units at the start of the next is the only ordering
+        # that conserves money — reading cash back from units *after* a
+        # purchase re-creates what the purchase just spent.
+        park_px = None if park_idle_in is None else park_idle_in.get(day)
+        may_park = park_px is not None and (park_only_on is None or day in park_only_on)
+        if park_units and park_px:
+            cash += park_units * park_px
+            park_units = 0.0
+
         risk_off = (
             regime_by_day is not None and healthy_regimes is not None
             and regime_by_day.get(day) not in healthy_regimes
@@ -204,7 +233,10 @@ def simulate(
                 held += p["cost"] * (px / p["entry_price"])
             else:
                 held += p["cost"]      # no print today: carry at cost
-        equity = cash + held
+        if may_park and cash > 0:
+            park_units = cash / park_px
+            cash = 0.0
+        equity = cash + park_units * (park_px or 0.0) + held
         if open_pos:
             invested_days += 1
         peak = max(peak, equity)
@@ -212,6 +244,15 @@ def simulate(
         curve.append({"day": day.isoformat(), "equity": round(equity, 2),
                       "open": len(open_pos)})
 
+    if park_units:                      # liquidate the index sleeve
+        last_px = None
+        for day in reversed(sessions):
+            if park_idle_in and park_idle_in.get(day):
+                last_px = park_idle_in[day]
+                break
+        if last_px:
+            cash += park_units * last_px
+            park_units = 0.0
     for p in open_pos:                  # settle whatever is still open
         cash += p["cost"] + p["risk_amount"] * p["r"]
         taken.append(p)

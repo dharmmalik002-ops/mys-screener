@@ -495,4 +495,16 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     And registering it moved the book from **+18.69% to +17.23% with no rule changed**, because `ROLLING_RISK_QUANTILE` is a percentile over *every* signal the library produces. Computing it over the tradeable setups alone is the tempting fix and it is wrong: the same 7.58% threshold sits at their **52nd** percentile, so passing 0.40 there silently tightens the rule to 6.82% (measured: +17.75%, 11 of 18). The pool stays as mined and `test_the_cap_is_coupled_to_the_registered_library` states the dependency out loud — **anyone registering a strategy must re-run the book rather than assume the rules are unaffected.**
 
+83. **PARKING IDLE CAPITAL IN THE INDEX BUYS RETURN AND DOUBLES THE DRAWDOWN — AND TWO ATTEMPTS AT IT PRINTED MONEY.** Every diagnosis run returns `under_deployed`: the filter is selective, so in a year like 2009 most of the book sits in cash while the index compounds. The direct answer is to park the remainder in the Smallcap 250 (`mtm_account.park_idle_in`).
+
+        cash idle     CAGR +18.69%  maxDD -33.30%  Sharpe 1.21  beat 13/18
+        index idle    CAGR +25.45%  maxDD -78.04%  Sharpe 1.16  beat 13/18
+        index gated   CAGR +22.71%  maxDD -64.32%  Sharpe 1.27  beat 12/18
+
+    Gated means parking only while the regime is healthy, which is gotcha 63's rule applied to the idle sleeve. It is the first change in this whole sequence to lift CAGR materially — and it costs **31 points of drawdown for 4 points of return**, which is the wrong direction for a brief asking for more return at *less* risk. It also changes what the account is: a selective book plus an index fund, not a stock picker. Off by default.
+
+    **The two bugs are the durable lesson.** First attempt: cash was restored from parked units at the *end* of the day, after trades had already spent it — a flat index printed money, and 2009 read **+1345%**. Money only conserves if the sleeve is liquidated at the **start** of the session, before anything touches cash, and re-established at the end. Second attempt: gating was implemented by dropping days out of the price map, so on an ungated day the lookup returned `None` and units already held were marked at **zero** — a -95.7% drawdown made entirely of arithmetic. Eligibility and valuation are now separate arguments (`park_only_on` vs `park_idle_in`).
+
+    Three tests pin it, and the first one is the one that matters: **parking in a perfectly flat index must change the result by nothing at all.** Any cash-accounting bug fails it.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
