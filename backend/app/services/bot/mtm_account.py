@@ -137,6 +137,7 @@ def simulate(
     cash = cfg.starting_equity
     equity = cfg.starting_equity
     park_units = 0.0          # units of the parked index held against cash
+    last_park_px: float | None = None   # carried across sessions the index misses
     open_pos: list[dict] = []
     taken: list[dict] = []
     declined = 0
@@ -152,8 +153,16 @@ def simulate(
         # restoring from units at the start of the next is the only ordering
         # that conserves money — reading cash back from units *after* a
         # purchase re-creates what the purchase just spent.
-        park_px = None if park_idle_in is None else park_idle_in.get(day)
-        may_park = park_px is not None and (park_only_on is None or day in park_only_on)
+        # The index has its own calendar. On a session it does not print,
+        # carry the last price forward — looking it up and getting None marked
+        # held units at ZERO, which is where a -64% drawdown came from in a
+        # book whose worst year was -12%. Same failure as the gating bug, one
+        # layer down.
+        today_px = None if park_idle_in is None else park_idle_in.get(day)
+        if today_px is not None:
+            last_park_px = today_px
+        park_px = today_px if today_px is not None else last_park_px
+        may_park = today_px is not None and (park_only_on is None or day in park_only_on)
         if park_units and park_px:
             cash += park_units * park_px
             park_units = 0.0

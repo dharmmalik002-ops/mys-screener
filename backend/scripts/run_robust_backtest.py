@@ -104,6 +104,14 @@ def main() -> int:
     kept = R.accepted_with_rolling_risk(rows)
     print(f"signals {len(rows):,}  accepted {len(kept):,} ({100*len(kept)/len(rows):.1f}%)")
 
+    index_yearly_prices: dict = {}
+    try:
+        import yfinance as yf
+        _h = yf.Ticker("NIFTYSMLCAP250.NS").history(period="max")
+        index_yearly_prices = {x.date(): float(c) for x, c in zip(_h.index, _h["Close"])}
+    except Exception as exc:
+        print(f"(no index series: {exc})")
+
     # Bet more when the market is paying. Built only from that morning's tape:
     # index trend, breadth, regime — never from the bot's own recent P&L.
     bars = read_bars(data_dir, INDEX_KEY)
@@ -122,7 +130,24 @@ def main() -> int:
     # 1.4pp of CAGR and 0.11 of Sharpe (see adaptive_sizing's docstring); the
     # gain it appeared to give was the position-cap bug, not the rule.
     _ = schedule
-    result = mtm.simulate(kept, data_dir, BOOK, label="rules")
+
+    # Uncommitted capital tracks the Smallcap 250 while the regime is healthy,
+    # and sits in cash otherwise. The diagnosis returned `under_deployed` on
+    # every run; this is the answer to it, and unlike the other four ideas
+    # tested it improves return AND drawdown together.
+    park_prices: dict = {}
+    park_days: set = set()
+    if index_yearly_prices:
+        park_prices = index_yearly_prices
+        healthy = {"bull_strong", "bull_narrow", "recovery"}
+        park_days = {
+            d for d in park_prices
+            if (context.regime_by_day.get(d).regime if context.regime_by_day.get(d) else None)
+            in healthy
+        }
+    result = mtm.simulate(kept, data_dir, BOOK, label="rules",
+                          park_idle_in=park_prices or None,
+                          park_only_on=park_days or None)
     if result is None:
         print("no account")
         return 1
@@ -143,10 +168,8 @@ def main() -> int:
     # Benchmark: the Smallcap 250, because the book is ~80% small cap.
     index_yearly: dict[int, float] = {}
     try:
-        import yfinance as yf
         from datetime import date as _d
-        h = yf.Ticker("NIFTYSMLCAP250.NS").history(period="max")
-        px = {x.date(): float(c) for x, c in zip(h.index, h["Close"])}
+        px = index_yearly_prices
         ds = sorted(px)
         for y in range(2009, 2027):
             inside = [x for x in ds if x.year == y]

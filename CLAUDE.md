@@ -505,6 +505,14 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **The two bugs are the durable lesson.** First attempt: cash was restored from parked units at the *end* of the day, after trades had already spent it — a flat index printed money, and 2009 read **+1345%**. Money only conserves if the sleeve is liquidated at the **start** of the session, before anything touches cash, and re-established at the end. Second attempt: gating was implemented by dropping days out of the price map, so on an ungated day the lookup returned `None` and units already held were marked at **zero** — a -95.7% drawdown made entirely of arithmetic. Eligibility and valuation are now separate arguments (`park_only_on` vs `park_idle_in`).
 
-    Three tests pin it, and the first one is the one that matters: **parking in a perfectly flat index must change the result by nothing at all.** Any cash-accounting bug fails it.
+    **There was a third bug, and fixing it reversed the verdict.** The index keeps its own calendar, so on a session it does not print, `park_idle_in.get(day)` returned `None` and the held units were marked at zero *again* — one layer below the gating bug and with the same signature. That single missing price was the entire -64% drawdown, in a book whose worst year is -12%. Carrying the last known price forward:
+
+        cash idle     CAGR +18.69%  maxDD -33.30%  Sharpe 1.21  beat 13/18
+        index gated   CAGR +23.21%  maxDD -29.89%  Sharpe 1.28  beat 13/18
+        index always  CAGR +24.93%  maxDD -37.17%  Sharpe 1.14  beat 14/18
+
+    Regime-gated parking is **better on return, drawdown and Sharpe at once** — +4.5pp of CAGR at 3.4pp *less* drawdown — which is the first thing in this entire sequence to improve both sides. It is now **on by default**. 2009 goes from +20.7% to +55.9%, and the alpha over the Smallcap 250 from +2.4pp/yr to **+7.0pp/yr**.
+
+    The lesson is the one that repeated three times in a single feature: **a missing price is not a zero price.** Every lookup against a series with its own calendar needs a carry-forward, and the symptom is always an impossible drawdown rather than an error. Four tests pin this now, and the first is the one that matters: **parking in a perfectly flat index must change the result by nothing at all.**
 
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

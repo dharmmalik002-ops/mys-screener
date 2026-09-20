@@ -154,6 +154,19 @@ class ParkedCashTests(unittest.TestCase):
         self.assertGreater(parked.equity_curve[-1]["equity"],
                            plain.equity_curve[-1]["equity"])
 
+    def test_a_session_the_index_misses_does_not_zero_the_sleeve(self):
+        """The index has its own calendar; a gap is not a price of zero.
+
+        Looking up a missing session returned None and marked held units at
+        zero, producing a -64% drawdown in a book whose worst year was -12%.
+        """
+        write_bars(self.dir, "HHH", self.days, [100.0] * 200)
+        holey = {d: 50.0 for i, d in enumerate(self.days) if i % 3 != 0}
+        r = mtm.simulate([self._trade()], self.dir, PortfolioConfig(),
+                         park_idle_in=holey)
+        self.assertGreater(r.max_drawdown_pct, -5.0,
+                           "a missing index print was treated as a zero price")
+
     def test_units_held_on_a_non_parking_day_are_still_valued(self):
         """Gating must not mark held units at zero.
 
