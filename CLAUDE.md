@@ -308,4 +308,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     The conclusion is not that the machinery is broken — it is mechanically correct and 69 tests say so. It is that **recent trade outcomes carry no information about future trade outcomes in this data.** That is the same mean-reversion measured in gotchas 40, 53 and 59, stated in its most general form. Do not point the loop at a fourth target expecting a different answer.
 
+66. **HELD WITHOUT STOPS, THE SIGNALS ARE WORSE THAN RANDOM DATES IN THE SAME STOCKS.** Every exit tested here uses a stop, including `trail_only`. The untested horizon was simple buy-and-hold, which is how most professionals actually earn their returns. Excess over the Nifty 500, against a matched random-date control in the same names:
+
+        hold        picks      random control    difference
+        6 months    +5.53%         +11.09%          -5.6pp
+        1 year      +8.97%         +26.94%         -18.0pp   CI [-20.4, -15.8]
+        2 years    +19.02%         +62.64%         -43.6pp   CI [-47.2, -40.3]
+
+    Not merely absent — **negative**, and significantly so. The mechanism is plain: these are breakout and momentum signals, so they fire *after* a move, and holding from there means buying near local peaks while random dates also sample the run-up. One caveat on the size of the gap: random dates are spread uniformly over each symbol's history while signal dates cluster later, so part of the difference is that the control samples earlier, faster-growing periods. The direction is not in doubt at this magnitude.
+
+    This also explains why the swing system works at all: short holds and stops are what keep the negative entry selection from expressing itself. Remove them and it does. **The search across holding periods is now complete — days through three years, no positive selection edge anywhere.**
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
