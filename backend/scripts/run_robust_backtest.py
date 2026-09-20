@@ -102,7 +102,9 @@ def main() -> int:
                 row[key] = str(row[key])
         rows.append(row)
 
-    kept = [r for r in rows if R.accepts(r)]
+    # The stop-width cap is re-derived from the trailing year of signals, so
+    # it breathes with volatility instead of starving the book after a crash.
+    kept = R.accepted_with_rolling_risk(rows)
     print(f"signals {len(rows):,}  accepted {len(kept):,} ({100*len(kept)/len(rows):.1f}%)")
 
     # Bet more when the market is paying. Built only from that morning's tape:

@@ -47,6 +47,48 @@ class FilterTests(unittest.TestCase):
         self.assertFalse(R.accepts(signal(risk_pct=R.MAX_RISK_PCT + 0.01)))
 
 
+class RollingRiskTests(unittest.TestCase):
+    """The cap breathes with volatility. It must not breathe with hindsight."""
+
+    def _rows(self, n, risk, day="2020-06-01", **kw):
+        base = {"turnover_crore_at_entry": 4.0, "ret_63_at_entry": 10.0,
+                "strategy": "squeeze_release", "regime": "bull_strong"}
+        base.update(kw)
+        return [dict(base, entry_day=day, risk_pct=risk) for _ in range(n)]
+
+    def test_a_calm_history_keeps_the_cap_tight(self):
+        history = self._rows(400, 3.0, day="2020-01-01")
+        wide = self._rows(1, 9.0, day="2020-12-01")   # inside the 365d window
+        kept = R.accepted_with_rolling_risk(history + wide)
+        self.assertNotIn(9.0, [t["risk_pct"] for t in kept],
+                         "a wide stop passed in a calm market")
+
+    def test_a_volatile_history_lets_a_wider_stop_through(self):
+        """The 2009 case: after a crash every stop is wide."""
+        history = self._rows(400, 14.0, day="2020-01-01")
+        wide = self._rows(1, 9.0, day="2020-12-01")   # inside the 365d window
+        kept = R.accepted_with_rolling_risk(history + wide)
+        self.assertIn(9.0, [t["risk_pct"] for t in kept],
+                      "the cap did not widen with conditions")
+
+    def test_only_earlier_signals_set_the_cap(self):
+        """A calm future must not tighten the cap on a trade taken today."""
+        today = self._rows(1, 9.0, day="2020-06-01")
+        history = self._rows(400, 14.0, day="2019-09-01")   # inside the window
+        future = self._rows(400, 1.0, day="2020-07-01")
+        kept = R.accepted_with_rolling_risk(history + today + future)
+        taken = [t for t in kept if t["entry_day"] == "2020-06-01"]
+        self.assertEqual(len(taken), 1, "a later, calmer period changed an earlier decision")
+
+    def test_thin_early_history_falls_back_to_the_fixed_cap(self):
+        rows = self._rows(5, 20.0, day="2008-01-01")
+        self.assertEqual(R.accepted_with_rolling_risk(rows), [])
+
+    def test_the_other_rules_still_apply(self):
+        rows = self._rows(400, 3.0, day="2020-01-01", strategy="oversold_bounce")
+        self.assertEqual(R.accepted_with_rolling_risk(rows), [])
+
+
 class FrozenThresholdTests(unittest.TestCase):
     """Thresholds came from training-half quantiles, not from judgement."""
 

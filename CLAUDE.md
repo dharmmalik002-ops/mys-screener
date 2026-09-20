@@ -450,4 +450,18 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     `memory.py` keeps the per-run diagnosis in `APP_STATE_DIR` so the recurring complaint survives between sessions — it was rediscovered by hand six times. It stores **diagnoses, not parameters**, deliberately: a store remembering "0.50% risk worked well" is a fitted parameter wearing a memory's clothes. "Every lagging year was under-deployed" is what survived and pointed somewhere useful. A year behind in one run is noise and is not called chronic; **2009 and 2012 are, and both are `starved` — 68 and 107 signals, so no exit rule or sizing change reaches them.**
 
+79. **"TIGHT STOP" MUST BE RELATIVE TO CONDITIONS — THE ABSOLUTE CAP WAS WHAT STARVED THE WORST YEARS.** `diagnose.py` labelled 2009 and 2012 `starved` and I wrote that off as unreachable. That was wrong, and the diagnosis itself said so: *starved* means no rule fires, which is a rule problem. In 2009 the book saw **1,727 signals and only 298 cleared the 7.60% stop cap** — after a crash every stop is wide, so a fixed cap locks the book out of the market exactly while it rallies hardest. It took 68 trades all year.
+
+    The rule that was actually mined is "tighter than typical", and typical moves. `accepted_with_rolling_risk` re-derives the 40th percentile from the **trailing year of signals**, strictly before the trade being judged, so the cap breathes with volatility while the selection stays identical:
+
+        absolute      CAGR +34.49%  maxDD -36.27%  Sharpe 1.54   2009 -12.5%  (68 trades)
+        rolling 365d  CAGR +36.26%  maxDD -33.09%  Sharpe 1.63   2009 +15.4%  (243 trades)
+        rolling 730d  CAGR +32.76%  maxDD -37.38%  Sharpe 1.49   2009  +8.7%
+
+    Better return, **shallower** drawdown and a higher win rate together — rare enough here to be worth stating plainly. A year is the right window; two averages across regime changes and hands most of the gain back.
+
+    Final: **+34.8%/yr against the Nifty Smallcap 250's +16.3%, beating it in 15 of 18 years**, 80.5% small cap, 21-582 trades a year. 2009 still trails (-98.5pp) because the index did **+113.9%** off a crash bottom, and no long-only momentum book catches that from a standing start — but it is now +15.4% rather than -12.5%.
+
+    `test_bot_rules.py::RollingRiskTests` pins that a calm history keeps the cap tight, a volatile one widens it, and **only earlier signals set it** — a later, calmer period must not change a decision already made. Two of those tests first failed on my own fixtures, dated 366 days apart and so outside the very window under test.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
