@@ -118,6 +118,21 @@ class ExitModel:
     scale_out_fraction: float = 0.0
     breakeven_after_scale: bool = True
 
+    # --- exit on the thesis breaking, not just on the stop ----------------
+    # Every exit above is a price rule: a stop, a trail, a clock. None of them
+    # asks whether the reason for owning the stock still holds. `exit_on_break`
+    # closes the position when the trend that justified it is gone — the close
+    # falls below the moving average the setup was built on, confirmed for
+    # `break_confirm_sessions` in a row so a single bad session does not eject
+    # a position that is merely breathing.
+    #
+    # Sold at the next open, like every other decision here: the condition is
+    # read on the close, so acting on that same close would be trading on a
+    # price that had already printed.
+    exit_on_break: bool = False
+    break_ma: str = "sma50"           # "sma50" or "ema21"
+    break_confirm_sessions: int = 2
+
 
 @dataclass
 class Trade:
@@ -237,6 +252,8 @@ def simulate_symbol(
         )
         scaled_qty = 0.0
         scaled_proceeds = 0.0
+        break_run = 0
+        break_ma = features.sma50 if exits.break_ma == "sma50" else features.ema21
 
         last_idx = min(entry_idx + exits.max_hold_sessions - 1, n - 1)
         for j in range(entry_idx, last_idx + 1):
@@ -273,6 +290,18 @@ def simulate_symbol(
                 exit_price = max(target, bar_open) if bar_open > target else target
                 exit_idx, reason = j, "target"
                 break
+
+            # Thesis check, on the close. Arms an exit for the NEXT open.
+            if exits.exit_on_break:
+                ma = float(break_ma[j]) if j < len(break_ma) else float("nan")
+                if np.isfinite(ma) and float(c[j]) < ma:
+                    break_run += 1
+                else:
+                    break_run = 0
+                if break_run >= exits.break_confirm_sessions and j + 1 <= last_idx:
+                    exit_idx, exit_price = j + 1, float(o[j + 1])
+                    reason = "rule_break"
+                    break
 
             # Stop management, applied on the *close* of the bar so it can only
             # affect subsequent bars — moving a stop using the same bar's high

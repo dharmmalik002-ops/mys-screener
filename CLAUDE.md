@@ -515,4 +515,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     The lesson is the one that repeated three times in a single feature: **a missing price is not a zero price.** Every lookup against a series with its own calendar needs a carry-forward, and the symptom is always an impossible drawdown rather than an error. Four tests pin this now, and the first is the one that matters: **parking in a perfectly flat index must change the result by nothing at all.**
 
+84. **EXITING WHEN THE THESIS BREAKS RAISES THE WIN RATE AND DESTROYS THE PAYOFF.** Every exit in `ExitModel` is a price rule — a stop, a trail, a clock — and none asks whether the reason for owning the stock still holds. `exit_on_break` closes at the next open once the close has sat below its moving average for two consecutive sessions (read on the close, acted on the next open, like every other decision here).
+
+        none             CAGR +23.21%  maxDD -29.89%  Sharpe 1.28  win 26.9%  payoff 9.76  13/18
+        break sma50 x2   CAGR +16.43%  maxDD -28.43%  Sharpe 0.95  win 27.2%  payoff 4.25   7/18
+        break sma50 x5   CAGR +17.95%  maxDD -28.94%  Sharpe 0.98  win 29.0%  payoff 4.35   9/18
+        break ema21 x3   CAGR +14.10%  maxDD -29.74%  Sharpe 0.84  win 31.8%  payoff 2.91   7/18
+
+    The same shape as every sell-earlier idea tested in this project: win rate up, drawdown marginally better, **payoff destroyed** (9.76 -> 2.91) and years-beaten halved. The mechanism is always the same — a position that runs to 50R spends weeks below its 50-day average on the way, and an exit that cannot tolerate that cannot hold the trades this book is made of. Off by default.
+
+    That completes the list: **partial profit-taking, sizing up in strong markets, loosening the rules in rallies, a dedicated recovery setup, and now a thesis-break exit — five ideas, all built, all measured, all net-negative.** The only one that improved both return and drawdown was parking idle capital in the index (gotcha 83), and it only did so after three accounting bugs in the same feature were fixed. **In a book whose result lives in the tail, every rule that sells earlier costs more than it saves**, and the win rate it buys is the clearest symptom rather than a benefit.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

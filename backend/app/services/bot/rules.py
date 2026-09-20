@@ -212,6 +212,30 @@ MEASURED_SCALED_WIN_RATE = 39.9
 MEASURED_SCALED_CAGR = 10.33
 
 
+# --- exit when the thesis breaks: built, measured, off ---------------------
+# "Close the trade when it is violating the rules" — every other exit here is
+# a price rule (stop, trail, clock) and none asks whether the reason for
+# owning the stock still holds. `ExitModel.exit_on_break` closes the position
+# at the next open once the close has sat below its moving average for two
+# consecutive sessions.
+#
+#     none             CAGR +23.21%  maxDD -29.89%  Sharpe 1.28  win 26.9%  payoff 9.76
+#     break sma50 x2   CAGR +16.43%  maxDD -28.43%  Sharpe 0.95  win 27.2%  payoff 4.25
+#     break sma50 x5   CAGR +17.95%  maxDD -28.94%  Sharpe 0.98  win 29.0%  payoff 4.35
+#     break ema21 x3   CAGR +14.10%  maxDD -29.74%  Sharpe 0.84  win 31.8%  payoff 2.91
+#
+# The same shape as every other sell-earlier idea tested here: win rate up,
+# drawdown marginally better, payoff destroyed. A position that runs to 50R
+# spends weeks below its 50-day average on the way, and an exit that cannot
+# tolerate that cannot hold the trades this book is built on.
+EXIT_ON_BREAK = False
+MEASURED_BREAK_CAGR = 16.43
+
+
+def exit_on_break_costs_return() -> bool:
+    return MEASURED_BREAK_CAGR < MEASURED_CAGR
+
+
 def scaling_out_costs_return() -> bool:
     """True. Kept as an assertion so the trade-off cannot be forgotten."""
     return MEASURED_SCALED_CAGR < MEASURED_CAGR

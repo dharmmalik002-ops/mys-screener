@@ -307,6 +307,17 @@ class RegimeTests(unittest.TestCase):
         )
 
 
+
+class RuleBreakExitTests(unittest.TestCase):
+    """Exiting when the thesis breaks, not just when the stop is hit."""
+
+    def test_it_is_off_by_default(self):
+        """It raises the win rate and costs 7pp of CAGR. See rules.py."""
+        self.assertFalse(ExitModel().exit_on_break)
+
+    def test_a_single_bad_close_does_not_eject_the_position(self):
+        self.assertGreaterEqual(ExitModel(exit_on_break=True).break_confirm_sessions, 2)
+
 if __name__ == "__main__":
     unittest.main()
 
