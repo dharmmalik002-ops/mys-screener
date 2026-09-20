@@ -250,6 +250,6 @@
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "message": "7 candidate(s) from 1 cleared setup(s) in Correction. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-09-20T03:29:09.746259+00:00",
+  "generated_at": "2026-09-20T03:40:46.701602+00:00",
   "source": "offline"
 }

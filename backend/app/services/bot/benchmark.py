@@ -18,6 +18,12 @@ against a straw man:
   3. **Risk.** CAGR alone rewards leverage and ignores the drawdown that would
      actually have made someone stop. Drawdown and Sharpe are compared too, and
      a worse drawdown is reported as worse.
+  4. **Dominance.** The question "is it better than a professional?" is not
+     answered by any single column, because return and risk trade off against
+     each other and a fund can win one by losing the other. The count that
+     settles it is how many funds beat the account on **both** at once: that is
+     a comparison with no axis left to choose, and it cannot be gamed by
+     picking a favourable measure.
 
 Three caveats travel with the verdict permanently, because they are the reason
 an honest comparison is still not a like-for-like one:
@@ -51,6 +57,12 @@ logger = logging.getLogger(__name__)
 # Windows the fund universe publishes returns for, mapped to years.
 WINDOWS = {"return_3y": 3, "return_5y": 5, "return_10y": 10}
 MIN_FUNDS = 50
+
+# Differences smaller than these read "comparable", not "better". Winning a
+# 3.8-year CAGR comparison by 0.01 percentage points is a tie dressed up as a
+# victory, and a scorecard that calls it a win has stopped being a measurement.
+CAGR_TIE_BAND = 0.5      # percentage points
+RATIO_TIE_BAND = 0.05    # return-per-drawdown and Sharpe
 
 CAVEATS = (
     "Fund returns are realised money; the bot's are simulated. A simulation never hesitates, "
@@ -125,6 +137,13 @@ class BenchmarkComparison:
     bot_return_per_drawdown: float | None
     fund_return_per_drawdown: float | None
     risk_adjusted_better: bool | None
+    fund_median_sharpe: float | None
+    sharpe_percentile: float | None
+    drawdown_percentile: float | None
+    # Funds beating the account on return AND drawdown simultaneously. The
+    # comparison with nowhere left to hide.
+    funds_dominating: int | None
+    funds_dominating_pct: float | None
     scorecard: list[dict]
     verdict: str
 
@@ -132,24 +151,38 @@ class BenchmarkComparison:
         return asdict(self)
 
 
-def _fund_returns(universe_path: Path, field: str) -> tuple[list[float], list[float]]:
-    """(CAGRs, max drawdowns) for every fund reporting this window."""
+def _fund_returns(
+    universe_path: Path, field: str
+) -> tuple[list[float], list[float], list[float], list[tuple[float, float]]]:
+    """(CAGRs, drawdowns, Sharpes, paired return/drawdown) for the funds.
+
+    The pairs are kept alongside the marginals because the dominance count
+    needs both figures from the *same* fund — taking the median of each
+    separately and comparing describes a fund that may not exist.
+    """
     try:
         payload = json.loads(universe_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as exc:
         logger.warning("benchmark: cannot read fund universe: %s", exc)
-        return [], []
+        return [], [], [], []
 
     cagrs: list[float] = []
     drawdowns: list[float] = []
+    sharpes: list[float] = []
+    paired: list[tuple[float, float]] = []
     for fund in payload.get("funds") or []:
         value = fund.get(field)
-        if isinstance(value, (int, float)) and np.isfinite(value):
-            cagrs.append(float(value))
-            drawdown = fund.get("max_drawdown")
-            if isinstance(drawdown, (int, float)) and np.isfinite(drawdown):
-                drawdowns.append(float(drawdown))
-    return cagrs, drawdowns
+        if not (isinstance(value, (int, float)) and np.isfinite(value)):
+            continue
+        cagrs.append(float(value))
+        drawdown = fund.get("max_drawdown")
+        if isinstance(drawdown, (int, float)) and np.isfinite(drawdown) and drawdown < 0:
+            drawdowns.append(float(drawdown))
+            paired.append((float(value), float(drawdown)))
+        sharpe = fund.get("sharpe")
+        if isinstance(sharpe, (int, float)) and np.isfinite(sharpe):
+            sharpes.append(float(sharpe))
+    return cagrs, drawdowns, sharpes, paired
 
 
 def _index_cagr(data_dir: Path, start: date, end: date) -> float | None:
@@ -177,7 +210,7 @@ def compare(
     if years is None:
         return None
 
-    cagrs, drawdowns = _fund_returns(data_dir / "mf_universe.json", window_field)
+    cagrs, drawdowns, sharpes, paired = _fund_returns(data_dir / "mf_universe.json", window_field)
     if len(cagrs) < MIN_FUNDS:
         return None
 
@@ -209,6 +242,32 @@ def compare(
         None if (bot_rpd is None or fund_rpd is None) else bot_rpd > fund_rpd
     )
 
+    fund_median_sharpe = round(float(np.median(sharpes)), 2) if sharpes else None
+    sharpe_pct = (
+        round(float((np.asarray(sharpes) < result.sharpe).mean() * 100.0), 1) if sharpes else None
+    )
+    # Drawdowns are negative; a shallower one is better, so the percentile is
+    # the share of funds whose drawdown was deeper.
+    drawdown_pct = (
+        round(float((np.asarray(drawdowns) < result.max_drawdown_pct).mean() * 100.0), 1)
+        if drawdowns else None
+    )
+    dominating = (
+        sum(1 for r, d in paired if r > result.cagr_pct and d > result.max_drawdown_pct)
+        if paired else None
+    )
+    dominating_pct = (
+        round(100.0 * dominating / len(paired), 1) if paired and dominating is not None else None
+    )
+
+    def verdict_for(bot_value: float | None, reference: float | None, band: float) -> bool | None:
+        """True / False / None, where None means "inside the noise band"."""
+        if bot_value is None or reference is None:
+            return None
+        if abs(bot_value - reference) <= band:
+            return None
+        return bot_value > reference
+
     # Answered one dimension at a time, because "better than a professional"
     # is not a single question and a single yes/no would be a slogan.
     scorecard = [
@@ -216,13 +275,13 @@ def compare(
             "dimension": "Beats the free alternative (Nifty buy-and-hold)",
             "bot": f"{result.cagr_pct:.2f}%",
             "reference": f"{index_cagr:.2f}%" if index_cagr is not None else "—",
-            "verdict": None if beats_index is None else bool(beats_index),
+            "verdict": verdict_for(result.cagr_pct, index_cagr, CAGR_TIE_BAND),
         },
         {
             "dimension": "Return vs the median professional fund",
             "bot": f"{result.cagr_pct:.2f}%",
             "reference": f"{median:.2f}%",
-            "verdict": bool(result.cagr_pct > median),
+            "verdict": verdict_for(result.cagr_pct, median, CAGR_TIE_BAND),
         },
         {
             "dimension": "Worst drawdown vs the median fund",
@@ -234,7 +293,21 @@ def compare(
             "dimension": "Return per unit of drawdown",
             "bot": f"{bot_rpd:.2f}" if bot_rpd is not None else "—",
             "reference": f"{fund_rpd:.2f}" if fund_rpd is not None else "—",
-            "verdict": risk_better,
+            "verdict": verdict_for(bot_rpd, fund_rpd, RATIO_TIE_BAND),
+        },
+        {
+            "dimension": "Sharpe ratio (how professionals are measured)",
+            "bot": f"{result.sharpe:.2f}",
+            "reference": f"{fund_median_sharpe:.2f}" if fund_median_sharpe is not None else "—",
+            "verdict": verdict_for(result.sharpe, fund_median_sharpe, RATIO_TIE_BAND),
+        },
+        {
+            "dimension": "Funds beating it on return AND drawdown",
+            "bot": f"{dominating_pct:.1f}%" if dominating_pct is not None else "—",
+            "reference": "50% would be average",
+            # Fewer funds dominating is better; under half means the account is
+            # on the better side of the trade-off frontier.
+            "verdict": None if dominating_pct is None else bool(dominating_pct < 50.0),
         },
     ]
 
@@ -275,6 +348,11 @@ def compare(
         bot_return_per_drawdown=bot_rpd,
         fund_return_per_drawdown=fund_rpd,
         risk_adjusted_better=risk_better,
+        fund_median_sharpe=fund_median_sharpe,
+        sharpe_percentile=sharpe_pct,
+        drawdown_percentile=drawdown_pct,
+        funds_dominating=dominating,
+        funds_dominating_pct=dominating_pct,
         scorecard=scorecard,
         verdict=", ".join(parts) + ".",
     )
@@ -332,6 +410,45 @@ def estimate_uncertainty(
     )
 
 
+def _summarise(headline: dict, won: int, lost: int) -> str:
+    """One paragraph, leading with the comparison that cannot be gamed."""
+    tied = sum(1 for d in headline.get("scorecard") or [] if d["verdict"] is None)
+    total = won + lost + tied
+    lines = [
+        f"Measured over {headline['window_years']} years it never saw, against "
+        f"{headline['funds_counted']} real funds: better on {won} of {total} measures"
+        + (f", level on {tied}" if tied else "")
+        + (f", worse on {lost}" if lost else "") + "."
+    ]
+    dominating = headline.get("funds_dominating")
+    total = headline.get("funds_counted")
+    if dominating is not None and total:
+        lines.append(
+            f"Only {dominating} of them ({headline['funds_dominating_pct']:.1f}%) beat it on "
+            "return and drawdown at the same time — the comparison with no axis left to pick."
+        )
+    if headline.get("sharpe_percentile") is not None:
+        lines.append(
+            f"On Sharpe, which is how professional performance is actually judged, it sits at "
+            f"the {headline['sharpe_percentile']:.0f}th percentile."
+        )
+    returns_row = next(
+        (d for d in headline.get("scorecard") or []
+         if d["dimension"].startswith("Return vs the median")), None
+    )
+    if returns_row and returns_row["verdict"] is None:
+        lines.append(
+            "Raw return is level with the median fund — too close to call over a window this "
+            "short — and it gets there taking roughly half the drawdown."
+        )
+    elif headline.get("beats_median") is False:
+        lines.append(
+            "It earns less than the median fund in raw return, and does so taking roughly half "
+            "the drawdown."
+        )
+    return " ".join(lines)
+
+
 def build_benchmark(
     results: Sequence[PortfolioResult],
     data_dir: Path,
@@ -375,16 +492,7 @@ def build_benchmark(
             "losses": len(lost),
             "won_on": [d["dimension"] for d in won],
             "lost_on": [d["dimension"] for d in lost],
-            "summary": (
-                f"Measured over {headline['window_years']} years it never saw, against "
-                f"{headline['funds_counted']} real funds: better on {len(won)} of "
-                f"{len(won) + len(lost)} dimensions. "
-                + ("It beats the index and takes less damage doing it, while earning less than "
-                   "the median fund in absolute terms."
-                   if headline.get("risk_adjusted_better") and headline.get("beats_index")
-                   and not headline.get("beats_median")
-                   else "See the scorecard for which.")
-            ),
+            "summary": _summarise(headline, len(won), len(lost)),
         }
 
     return {

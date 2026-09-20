@@ -95,6 +95,13 @@ class PortfolioConfig:
     watch_risk_pct: float = 0.06
     max_concurrent: int = 60
     max_portfolio_risk_pct: float = 6.0
+    # Capital, not just risk. `max_portfolio_risk_pct` caps what a full set of
+    # stop-outs would cost, which is a different quantity entirely: sixty
+    # positions risking 0.10% each behind 2% stops is 6% of risk and 300% of
+    # capital. Without this cap the book quietly ran up to 128% deployed —
+    # margin, on a strategy that is cash delivery and has no margin. 100% means
+    # fully invested and not a rupee more.
+    max_deployed_pct: float = 100.0
     # A single position may not exceed this share of equity however tight the
     # stop is. Without it a 1%-stop trade asks for 75% of the book on a 0.75%
     # risk budget, and one gap takes the account apart.
@@ -340,6 +347,7 @@ def simulate(
 
         for trade in candidates:
             open_risk = sum(p["risk_amount"] for p in open_positions)
+            open_value = sum(p["position_value"] for p in open_positions)
             risk_pct = config.risk_per_trade_pct
             risk_amount = equity * risk_pct / 100.0
 
@@ -360,16 +368,28 @@ def simulate(
             position_value = risk_amount / (stop_distance_pct / 100.0)
             if position_value > equity * config.max_position_pct / 100.0:
                 position_value = equity * config.max_position_pct / 100.0
-                risk_amount = position_value * stop_distance_pct / 100.0
+
+            # Then capped again by the capital actually left. A trade that no
+            # longer fits is declined rather than part-filled: a fraction of a
+            # position is a different trade from the one the study measured.
+            headroom = equity * config.max_deployed_pct / 100.0 - open_value
+            if headroom <= 0:
+                declined += 1
+                continue
+            if position_value > headroom:
+                position_value = headroom
+            risk_amount = position_value * stop_distance_pct / 100.0
 
             open_positions.append(
                 {
                     **trade,
                     "risk_amount": risk_amount,
+                    "position_value": position_value,
                     "exit_day": date.fromisoformat(str(trade["exit_day"])),
                     "r_multiple": float(trade["r_multiple"]),
                 }
             )
+            open_value += position_value
 
         curve.append({"day": day_iso, "equity": round(equity, 2), "open": len(open_positions)})
 

@@ -21,8 +21,11 @@ function formatPct(value: number | null | undefined, digits = 2): string {
 }
 
 function VerdictMark({ verdict }: { verdict: boolean | null }) {
+  // null is "inside the noise band", not "unknown" — a 0.01-point win over a
+  // 3.8-year window is a tie, and calling it a win is how a measurement turns
+  // into marketing.
   if (verdict === null) {
-    return <span className="bot-mark bot-mark-flat"><Minus size={13} aria-hidden /> n/a</span>;
+    return <span className="bot-mark bot-mark-flat"><Minus size={13} aria-hidden /> Level</span>;
   }
   return verdict ? (
     <span className="bot-mark bot-mark-good"><Check size={13} aria-hidden /> Better</span>
