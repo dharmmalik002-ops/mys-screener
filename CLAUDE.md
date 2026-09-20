@@ -404,4 +404,17 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     `test_letting_the_timing_rule_evolve_does_not_improve_it` pins the verdict, including that the adaptive set is the *deeper* drawdown and the *higher* exposure — if it ever fails, learning has started improving the earning rule on risk-adjusted terms and the playbook should change.
 
+75. **THE MINED RULES — SELECTIVITY PLUS A VERY WIDE TRAIL IS THE ONLY THING THAT BEAT THE SMALLCAP INDEX.** Earlier work asked whether the bot could *learn* which cells or symbols do better (gotchas 59/65/69/70/74) and all of it came back empty. `rules.py` asks the simpler question instead: across 100,871 trades, **what kind of trade paid** — measured on pre-2018 data, thresholds then frozen and applied to 2018-2026 untouched. Five conditions survived: **tight stop** (bottom-40% risk: +1.12R vs +0.40R in training, +1.59R vs +1.19R in test), **low turnover** (still true under the liquidity-scaled slippage that killed it the first time, gotcha 43), **positive 3-month momentum**, **six of twelve setups**, and a **healthy regime** (gotcha 63).
+
+    **The exit carries most of the result and is deliberately extreme:** no target, trail 8 ATR, 500-session ceiling. The identical filtered trades return **+5.25%/yr** under the shipped 90-session/4-ATR rule and **+18.84%/yr** under this one. Widening the trail improved return, drawdown, Sharpe *and* payoff simultaneously — almost nothing else in this project does that. The trade record shows why: the biggest winner runs to **142R** and 4,003 trades exceed 10R, every one of which a 3R or 4R target would have cut off.
+
+        full period, after full costs:  CAGR +18.84%  maxDD -18.41%  Sharpe 1.04  payoff 11.12  win 24.8%
+        Nifty Smallcap 250, same span:  CAGR +16.26%  worst year -69%
+
+    Two things make it work and both must survive any edit. **It declines 99% of what it sees** — 964 trades from 100,871 signals; a book that must be this picky cannot afford the six weaker setups. And **the 24.8% win rate is the price of the payoff, not a defect** — three trades in four lose, and the brief asked for 3-4:1 while the trail delivers 11:1.
+
+    The returns are also **counter-cyclical**, which is where the alpha actually is: +18.1% in 2011 (smallcap -36.0%), +48.6% in 2018 (-26.8%), +53.7% in 2022 (-3.6%), +18.4% in 2025 (-6.0%). Gotcha 57 said removing the time ceiling was the obvious wrong move, and that remains true *for the unfiltered book* — a wide trail hands everything back when applied to marginal signals. It only pays once the entry filter has already thrown almost everything away. **Do not lift the exit out of `rules.py` and apply it to the general book.**
+
+    `test_bot_rules.py` pins the filter (every rule rejects on its own; a **missing field rejects rather than waving through** — turnover defaulting to 0.0 sailed straight through the low-turnover test and let unknown names in), pins that the thresholds are not round numbers, and asserts the win rate stays reported beside the payoff.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
