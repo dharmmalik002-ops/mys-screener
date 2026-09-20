@@ -49,6 +49,7 @@ from app.services.bot import portfolio as pf, timing as tm
 from app.services.bot.backtest import BacktestConfig, build_context, run_strategies
 from app.services.bot.circuit_breaker import suspended_mask
 from app.services.bot.combined import blend, curve_to_series, stats
+from app.services.bot.benchmark import INDEX_KEY
 from app.services.bot.history import available_symbols, read_bars
 
 data_dir = BACKEND_ROOT / "data"
@@ -69,7 +70,10 @@ for b in art.get("playbooks") or []:
 adj = pf.derive_atr_adjustment(rows, split)
 kept = [r for r, off in zip(rows, suspended_mask(rows)) if not off]
 
-bars = read_bars(data_dir, "NIFTY")
+# The timing rule holds the broad index, not the Nifty 50 — this is the
+# same INDEX_KEY the benchmark and the shipped timing study use, and
+# using a different one here would compare two different rules.
+bars = read_bars(data_dir, INDEX_KEY)
 closes = dict(zip(bars.dates, bars.close))
 regime_by_day = {d: row.regime for d, row in context.regime_by_day.items()}
 

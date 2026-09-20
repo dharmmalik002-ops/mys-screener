@@ -5684,12 +5684,20 @@ export type BotCombinedBenchmark = {
   percentile: number;
 };
 
+export type BotCombinedAlternative = {
+  stats: BotCombinedStats;
+  benchmark: BotCombinedBenchmark;
+};
+
 export type BotCombinedWindow = {
   book: BotCombinedStats;
   timing: BotCombinedStats;
   blends: Record<string, BotCombinedStats>;
   blend_breaker_off?: BotCombinedStats;
   benchmark?: BotCombinedBenchmark;
+  /* Every configuration carries its own fund comparison. Reporting only the
+     blend's would let the weighting be chosen after seeing the fund result. */
+  alternatives?: Record<string, BotCombinedAlternative>;
 };
 
 export type BotCombined = Record<string, BotCombinedWindow>;

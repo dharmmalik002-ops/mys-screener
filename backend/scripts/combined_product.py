@@ -55,6 +55,7 @@ from app.services.bot import timing as tm  # noqa: E402
 from app.services.bot.backtest import BacktestConfig, build_context, run_strategies  # noqa: E402
 from app.services.bot.circuit_breaker import suspended_mask  # noqa: E402
 from app.services.bot.combined import blend, curve_to_series, stats  # noqa: E402
+from app.services.bot.benchmark import INDEX_KEY  # noqa: E402
 from app.services.bot.history import available_symbols, read_bars  # noqa: E402
 from app.services.bot.portfolio import PortfolioResult  # noqa: E402
 
@@ -117,7 +118,10 @@ def main() -> int:
     kept = [r for r, off in zip(rows, mask) if not off]
     logger.info("breaker suspended %d of %d signals", sum(mask), len(rows))
 
-    bars = read_bars(data_dir, "NIFTY")
+    # The timing rule holds the broad index, not the Nifty 50 — this is the
+    # same INDEX_KEY the benchmark and the shipped timing study use, and
+    # using a different one here would compare two different rules.
+    bars = read_bars(data_dir, INDEX_KEY)
     closes = dict(zip(bars.dates, bars.close))
     regime_by_day = {d: row.regime for d, row in context.regime_by_day.items()}
 
@@ -181,6 +185,29 @@ def main() -> int:
                     results[window_label]["blend_breaker_off"] = s_off
 
             if window_label.startswith("exact 3y") and weight == PRIMARY_WEIGHT:
+                # Every configuration gets the same fund comparison, not just
+                # the blend. Reporting it for one weighting only would let the
+                # choice of weighting be made after seeing the fund result,
+                # which is the same error as choosing an exit rule from a grid.
+                for name, (d, v) in {
+                    "timing sleeve alone": (timed_days, timed_val),
+                    "stock book alone": (book_days, book_val),
+                }.items():
+                    other = bm.compare(as_result(name, d, v, book.trades_taken), data_dir)
+                    if other:
+                        st = stats(d, v)
+                        print(f"\n  --- {name} vs the same 691 funds ---")
+                        print(f"    CAGR {st['cagr_pct']:+.2f}% vs fund median "
+                              f"{other.fund_median_cagr:+.2f}%   "
+                              f"maxDD {st['max_drawdown_pct']:.2f}% vs "
+                              f"{other.fund_median_drawdown}%")
+                        print(f"    percentile {other.percentile}   "
+                              f"funds beating it on BOTH: {other.funds_dominating}"
+                              f"  ({other.funds_dominating_pct}%)")
+                        results[window_label].setdefault("alternatives", {})[name] = {
+                            "stats": st, "benchmark": asdict(other),
+                        }
+
                 comparison = bm.compare(
                     as_result("blend", days, values, book.trades_taken), data_dir
                 )

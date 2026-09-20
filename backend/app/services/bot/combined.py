@@ -11,19 +11,29 @@ alone — 1.20 against the book's 0.90 and timing's 0.97 — and its drawdown is
 shallower than either. Two rules that are wrong at different times cover for
 each other; that is diversification doing its ordinary job, not a new edge.
 
-**Against 691 real Indian equity funds over the exact same three years:**
+**Against 691 real Indian equity funds over the exact same three years**, each
+configuration measured separately — because reporting the comparison for one
+weighting only would let the weighting be chosen after seeing the fund result:
 
-    fund median CAGR      +11.36%      blend  +7.69%
-    fund median drawdown  -27.53%      blend  -7.28%
-    fund median Sharpe       0.40      blend   1.15
-    funds beating the blend on return AND drawdown: 5 of 691 (0.7%)
+                        CAGR      maxDD    percentile   funds beating it on BOTH
+    timing alone      +12.63%    -12.12%      59.3        6 of 691  (0.9%)
+    blend 50/50        +9.05%     -7.54%      29.5        5 of 691  (0.7%)
+    stock book alone   +5.26%     -9.18%       3.2       46 of 691  (6.7%)
+    median fund       +11.36%    -27.53%      50.0
 
-Read that honestly, both halves. The blend **earns less than the median fund**
-and sits in the 18.5th percentile on return alone; anyone who cares only about
-return should prefer most of these funds. What it does is earn near-median
-money at a quarter of the drawdown, which is why only five funds dominate it
-on the two measures at once. `funds_dominating` is the measure that settles it
-precisely because a fund can win either axis by losing the other.
+**The timing sleeve beats the median fund on return AND drawdown at once**, by
++1.27pp and by 15.4 points respectively, and only six funds of 691 beat it on
+both. That is the claim this project supports, and it belongs to the component
+that decides *when to be exposed* — not to stock selection, which sits in the
+3.2nd percentile and is beaten on both axes by 46 funds.
+
+The 50/50 blend is **not** the return-maximising choice and is not presented as
+one: it trades 3.6pp of return for 4.6 points of drawdown and a slightly better
+Sharpe. Which of the two is the better product depends on the reader's
+tolerance, so both are reported rather than one being declared the winner.
+
+`funds_dominating` is the measure that settles any of these, precisely because
+a fund can win either axis by losing the other.
 
 **Two caveats are load-bearing and must travel with the number.** The bot may
 sit in cash and a fund may not — a large structural advantage in a falling
@@ -55,16 +65,28 @@ PRIMARY_WEIGHT = 0.50
 # Measured by scripts/combined_product.py, exact 3-year fund-matched window.
 MEASURED_FUNDS_COUNTED = 691
 MEASURED_FUNDS_DOMINATING = 5
-MEASURED_BLEND_CAGR = 7.69
-MEASURED_BLEND_DRAWDOWN = -7.28
-MEASURED_BLEND_SHARPE = 1.15
+MEASURED_BLEND_CAGR = 9.05
+MEASURED_BLEND_DRAWDOWN = -7.54
+MEASURED_BLEND_SHARPE = 1.22
 MEASURED_FUND_MEDIAN_CAGR = 11.36
 MEASURED_FUND_MEDIAN_DRAWDOWN = -27.53
 MEASURED_FUND_MEDIAN_SHARPE = 0.40
-MEASURED_RETURN_PERCENTILE = 18.5
+MEASURED_RETURN_PERCENTILE = 29.5
+
+# The timing sleeve, measured on the same fund-matched window. This is the
+# configuration that beats the median fund on BOTH axes.
+MEASURED_TIMING_CAGR = 12.63
+MEASURED_TIMING_DRAWDOWN = -12.12
+MEASURED_TIMING_FUNDS_DOMINATING = 6
+MEASURED_TIMING_RETURN_PERCENTILE = 59.3
+
+# Stock selection on the same window, for contrast: beaten on both axes by 46
+# funds, and in the 3.2nd percentile on return.
+MEASURED_BOOK_CAGR = 5.26
+MEASURED_BOOK_FUNDS_DOMINATING = 46
 
 # Contribution of the learned breaker inside the blend.
-MEASURED_LEARNING_DRAWDOWN_GAIN_HELD_OUT = 2.03
+MEASURED_LEARNING_DRAWDOWN_GAIN_HELD_OUT = 2.31
 MEASURED_LEARNING_CAGR_GAIN_HELD_OUT = 0.22
 MEASURED_LEARNING_CAGR_GAIN_3Y = -0.11
 
@@ -154,6 +176,28 @@ def funds_dominating_pct() -> float:
     return round(100.0 * MEASURED_FUNDS_DOMINATING / MEASURED_FUNDS_COUNTED, 1)
 
 
-def earns_less_than_median_fund() -> bool:
-    """True, and it stays in every summary of this result."""
+def blend_earns_less_than_median_fund() -> bool:
+    """True for the 50/50 blend, and it stays in every summary of it.
+
+    The blend buys drawdown with return. That is a legitimate trade and it is
+    not a free lunch, so the losing half travels with the winning one.
+    """
     return MEASURED_BLEND_CAGR < MEASURED_FUND_MEDIAN_CAGR
+
+
+def timing_beats_median_fund_on_both() -> bool:
+    """True — the claim this project actually supports.
+
+    Return above the median fund by more than `benchmark.CAGR_TIE_BAND`, and a
+    drawdown less than half as deep. It belongs to the component that decides
+    when to be exposed, not to stock selection.
+    """
+    return (
+        MEASURED_TIMING_CAGR - MEASURED_FUND_MEDIAN_CAGR > 0.5
+        and MEASURED_TIMING_DRAWDOWN > MEASURED_FUND_MEDIAN_DRAWDOWN
+    )
+
+
+def selection_is_beaten_by_many_funds() -> bool:
+    """Also true, and reported beside the win rather than beneath it."""
+    return MEASURED_BOOK_FUNDS_DOMINATING > MEASURED_TIMING_FUNDS_DOMINATING

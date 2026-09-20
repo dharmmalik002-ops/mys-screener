@@ -110,6 +110,8 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
     : undefined;
   const blend = matched?.blends?.["50/50"];
   const fundStats = matched?.benchmark;
+  const timingAlt = matched?.alternatives?.["timing sleeve alone"];
+  const bookAlt = matched?.alternatives?.["stock book alone"];
 
   const RUN_LABELS: Record<string, string> = {
     playbook_held_out: "The system, on data it never saw",
@@ -130,83 +132,90 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
         </span>
       </div>
 
-      {matched && blend && fundStats ? (
+      {matched && blend && fundStats && timingAlt ? (
         <section className="bot-headline-good">
-          <h4>The finished product, against 691 real fund managers</h4>
+          <h4>Against 691 real fund managers, over the same three years</h4>
           <p className="bot-section-note">
-            Only two parts of this system survived testing: deciding <em>when</em> to be
-            exposed, and learning <em>what to stand down</em>. Held together as two equal
-            sleeves — no rebalancing — over a window cut to exactly the funds' own three
-            years.
+            Every configuration is measured separately against the same funds. Reporting
+            only one of them would let the choice be made after seeing which came out
+            best — the same error as picking an exit rule off a grid.
           </p>
-          <div className="bot-hero-stats bot-run-stats">
-            <div>
-              <span>Funds beating it on return <em>and</em> drawdown</span>
-              <strong>{fundStats.funds_dominating} of {fundStats.funds_counted}</strong>
-            </div>
-            <div><span>Blend return</span><strong>{formatPct(blend.cagr_pct)}</strong></div>
-            <div>
-              <span>Blend worst drawdown</span>
-              <strong>{formatPct(blend.max_drawdown_pct)}</strong>
-            </div>
-            <div><span>Blend Sharpe</span><strong>{blend.sharpe.toFixed(2)}</strong></div>
-          </div>
 
-          {/* The losing half, rendered at the same size as the winning half.
-              This result is quotable and it will be quoted; a reader who takes
-              away "beats 99% of funds" without "earns less than the median
-              one" has been misled by the layout, not by the number. */}
-          <table className="bot-table bot-table-compact">
+          <table className="bot-table">
             <thead>
-              <tr><th>Over the same three years</th><th>Median fund</th><th>This bot</th><th /></tr>
+              <tr>
+                <th>Configuration</th>
+                <th>Return</th>
+                <th>Worst drawdown</th>
+                <th>Funds beating it on <em>both</em></th>
+              </tr>
             </thead>
             <tbody>
+              <tr className="bot-row-highlight">
+                <td>Regime timing — <em>when</em> to be exposed</td>
+                <td>{formatPct(timingAlt.stats.cagr_pct)}</td>
+                <td>{formatPct(timingAlt.stats.max_drawdown_pct)}</td>
+                <td>{timingAlt.benchmark.funds_dominating} of {timingAlt.benchmark.funds_counted}</td>
+              </tr>
               <tr>
-                <td>Annual return</td>
-                <td>{formatPct(fundStats.fund_median_cagr)}</td>
+                <td>Both sleeves, 50/50</td>
                 <td>{formatPct(blend.cagr_pct)}</td>
-                <td><VerdictMark verdict={false} /></td>
-              </tr>
-              <tr>
-                <td>Worst drawdown</td>
-                <td>{formatPct(fundStats.fund_median_drawdown)}</td>
                 <td>{formatPct(blend.max_drawdown_pct)}</td>
-                <td><VerdictMark verdict /></td>
+                <td>{fundStats.funds_dominating} of {fundStats.funds_counted}</td>
               </tr>
+              {bookAlt ? (
+                <tr>
+                  <td>Stock selection alone</td>
+                  <td>{formatPct(bookAlt.stats.cagr_pct)}</td>
+                  <td>{formatPct(bookAlt.stats.max_drawdown_pct)}</td>
+                  <td>{bookAlt.benchmark.funds_dominating} of {bookAlt.benchmark.funds_counted}</td>
+                </tr>
+              ) : null}
               <tr>
-                <td>Sharpe</td>
-                <td>{fundStats.fund_median_sharpe?.toFixed(2) ?? "—"}</td>
-                <td>{blend.sharpe.toFixed(2)}</td>
-                <td><VerdictMark verdict /></td>
+                <td>Median professional fund</td>
+                <td>{formatPct(fundStats.fund_median_cagr)}</td>
+                <td>{formatPct(fundStats.fund_median_drawdown)}</td>
+                <td>—</td>
               </tr>
             </tbody>
           </table>
-          {/* The class is a flex row (it carries an icon slot), so a bare
-              <strong> here becomes its own flex item and the sentence breaks
-              into columns. One child element, emphasis inside it. */}
-          <p className="bot-verdict bot-verdict-warn">
+
+          <p className="bot-verdict bot-verdict-good">
             <span>
-              It earns <strong>less</strong> than the median fund and sits in the{" "}
-              {fundStats.percentile}th percentile on return alone. If return is all you care
-              about, most of these funds beat it. What it does is earn below-median money at
-              roughly a quarter of the drawdown — which is why only {fundStats.funds_dominating}{" "}
-              of {fundStats.funds_counted} beat it on both at once.
+              Regime timing beats the median fund on <strong>both</strong> return and
+              drawdown, and {timingAlt.benchmark.funds_dominating} funds of{" "}
+              {timingAlt.benchmark.funds_counted} beat it on both. That is the claim this
+              system supports — and it belongs to deciding <em>when</em> to be exposed.
             </span>
           </p>
+
+          {/* Selection is the weak half and gets stated at the same size as the
+              strong one. A reader who leaves thinking the stock picking works
+              has been misled by the layout rather than the number. */}
+          <p className="bot-verdict bot-verdict-warn">
+            <span>
+              Stock selection does not. On its own it returns{" "}
+              {bookAlt ? formatPct(bookAlt.stats.cagr_pct) : "—"} and{" "}
+              {bookAlt ? bookAlt.benchmark.funds_dominating : "many"} funds beat it on both
+              axes. The 50/50 blend is not the return-maximising choice either: it gives up{" "}
+              {formatPct(timingAlt.stats.cagr_pct - blend.cagr_pct, 2)} of return to buy a
+              shallower drawdown. Which you want depends on what you can sit through.
+            </span>
+          </p>
+
           {matched.blend_breaker_off ? (
             <p className="bot-footnote">
-              The learning's share of this: running the identical blend with the breaker
-              switched off gives{" "}
+              The learning's share: the identical blend with the breaker switched off gives{" "}
               {formatPct(matched.blend_breaker_off.max_drawdown_pct)} drawdown against{" "}
               {formatPct(blend.max_drawdown_pct)}, on return within a rounding error. The
               self-improving part makes the holes shallower. It does not make more money.
             </p>
           ) : null}
           <p className="bot-footnote">
-            Two things this comparison cannot control for: the bot may sit in cash and a
-            fund may not, which is a large structural advantage in a falling market and is
-            not skill; and the bot's returns are simulated while the funds' are realised
-            money, net of fees actually charged.
+            Two things this cannot control for: the bot may sit in cash and a fund may not,
+            which is a large structural advantage in a falling market and is not skill; and
+            the bot's returns are simulated while the funds' are realised money, net of fees
+            actually charged.
           </p>
         </section>
       ) : null}

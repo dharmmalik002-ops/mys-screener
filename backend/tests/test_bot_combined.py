@@ -100,8 +100,23 @@ class RecordedVerdictTests(unittest.TestCase):
 
     def test_the_blend_earns_less_than_the_median_fund(self):
         """The half a headline would drop. It does not get to be dropped."""
-        self.assertTrue(cb.earns_less_than_median_fund())
+        self.assertTrue(cb.blend_earns_less_than_median_fund())
         self.assertLess(cb.MEASURED_RETURN_PERCENTILE, 50.0)
+
+    def test_timing_beats_the_median_fund_on_both_axes(self):
+        """The claim this project supports, pinned so it cannot drift.
+
+        Return must clear benchmark.CAGR_TIE_BAND, not merely exceed by a
+        rounding error — a 0.01-point win over three years is a tie.
+        """
+        self.assertTrue(cb.timing_beats_median_fund_on_both())
+        self.assertLess(cb.MEASURED_TIMING_FUNDS_DOMINATING, 10)
+        self.assertGreater(cb.MEASURED_TIMING_RETURN_PERCENTILE, 50.0)
+
+    def test_stock_selection_is_reported_beside_the_win_not_beneath_it(self):
+        """46 funds beat selection on both axes against timing's 6."""
+        self.assertTrue(cb.selection_is_beaten_by_many_funds())
+        self.assertLess(cb.MEASURED_BOOK_CAGR, cb.MEASURED_FUND_MEDIAN_CAGR)
 
     def test_it_wins_on_drawdown_and_on_sharpe(self):
         self.assertGreater(cb.MEASURED_BLEND_DRAWDOWN, cb.MEASURED_FUND_MEDIAN_DRAWDOWN)
