@@ -36,8 +36,25 @@ STORE = "earnings_history"
 # A surprise smaller than this is inside the noise of analyst estimates and
 # rounding; treating it as news would flood the signal with non-events.
 STRONG_SURPRISE_PCT = 10.0
-# Drift is measured in weeks, not days. The signal is live for this many
-# sessions after the announcement.
+# How long the signal stays live after an announcement. Five sessions, and the
+# short window is deliberate despite the literature describing drift over
+# sixty-plus days.
+#
+# Raw forward returns after a >=10% positive surprise look like textbook PEAD:
+# +0.45% at five sessions rising monotonically to +5.76% at sixty, holding
+# out-of-sample. Measured against a *matched random-date control in the same
+# stocks*, almost all of it disappears:
+#
+#     horizon   after surprise   random control   genuine drift
+#        5d          +0.54%          +0.26%          +0.28pp
+#       20d          +1.34%          +1.31%          +0.03pp
+#       60d          +3.94%          +3.30%          +0.64pp  (CI -0.54 to +1.64)
+#
+# The long-horizon "drift" is market beta plus the fact that companies with
+# analyst coverage and positive surprises are simply good companies that
+# outperform anyway. Only the first week carries anything the announcement
+# itself explains, and even that is ~0.3pp. Widening this window captures beta
+# and calls it edge — which is exactly the mistake the control exists to catch.
 DRIFT_WINDOW_SESSIONS = 5
 
 
