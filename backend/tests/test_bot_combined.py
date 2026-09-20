@@ -122,6 +122,24 @@ class RecordedVerdictTests(unittest.TestCase):
         self.assertGreater(cb.MEASURED_BLEND_DRAWDOWN, cb.MEASURED_FUND_MEDIAN_DRAWDOWN)
         self.assertGreater(cb.MEASURED_BLEND_SHARPE, cb.MEASURED_FUND_MEDIAN_SHARPE)
 
+    def test_letting_the_timing_rule_evolve_does_not_improve_it(self):
+        """The last learning test, aimed at the component that earns.
+
+        A learner that re-derives the invested-regime set each year lifts raw
+        return and pays for it twice over in drawdown, at higher exposure. If
+        this ever fails, learning has started improving the earning rule on
+        risk-adjusted terms and the playbook should change.
+        """
+        self.assertFalse(cb.adaptive_timing_beats_frozen_risk_adjusted())
+        self.assertGreater(cb.MEASURED_ADAPTIVE_TIMING_CAGR, cb.MEASURED_FROZEN_TIMING_CAGR)
+        self.assertLess(
+            cb.MEASURED_ADAPTIVE_TIMING_DRAWDOWN, cb.MEASURED_FROZEN_TIMING_DRAWDOWN,
+            "the adaptive set should be the deeper drawdown",
+        )
+        self.assertGreater(
+            cb.MEASURED_ADAPTIVE_TIMING_EXPOSURE, cb.MEASURED_FROZEN_TIMING_EXPOSURE
+        )
+
     def test_more_risk_does_not_buy_more_return(self):
         """The answer to "you are only winning because you take less risk".
 

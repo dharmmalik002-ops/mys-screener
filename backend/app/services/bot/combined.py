@@ -91,6 +91,28 @@ MEASURED_LEARNING_CAGR_GAIN_HELD_OUT = 0.22
 MEASURED_LEARNING_CAGR_GAIN_3Y = -0.11
 
 
+# --- Can the EARNING rule evolve? scripts/adaptive_timing.py ---------------
+# The sharpest form of "the strategy should evolve with market conditions":
+# the timing rule re-deriving its own invested-regime set each year from the
+# tape it has already seen, instead of the a-priori set chosen once. It lifts
+# raw return by +0.86pp and pays +3.25pp of drawdown for it, which is a worse
+# trade than the frozen rule already offers. Risk-adjusted, learning makes the
+# one component that earns slightly worse.
+MEASURED_ADAPTIVE_TIMING_CAGR = 11.37
+MEASURED_ADAPTIVE_TIMING_DRAWDOWN = -19.28
+MEASURED_ADAPTIVE_TIMING_RET_PER_DD = 0.59
+MEASURED_FROZEN_TIMING_CAGR = 10.51
+MEASURED_FROZEN_TIMING_DRAWDOWN = -16.03
+MEASURED_FROZEN_TIMING_RET_PER_DD = 0.66
+MEASURED_ADAPTIVE_TIMING_EXPOSURE = 79.6
+MEASURED_FROZEN_TIMING_EXPOSURE = 69.4
+
+
+def adaptive_timing_beats_frozen_risk_adjusted() -> bool:
+    """False. Extra return, more than paid for in drawdown."""
+    return MEASURED_ADAPTIVE_TIMING_RET_PER_DD > MEASURED_FROZEN_TIMING_RET_PER_DD
+
+
 # --- The risk-frontier limit, measured by scripts/risk_frontier.py ----------
 # The obvious objection to "earns less than the median fund" is that the blend
 # runs at a quarter of the funds' risk. Turning the risk up does not fix it:

@@ -388,4 +388,20 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     Two caveats from `benchmark.CAVEATS` ride with every number above: the bot may sit in cash and a fund may not (a large structural advantage in a falling market, and not skill), and the bot's returns are simulated while the funds' are realised money net of fees actually charged.
 
+74. **LETTING THE *EARNING* RULE EVOLVE MAKES IT WORSE — AND THE FIRST MEASUREMENT OF IT UNDERSTATED DRAWDOWN THREEFOLD.** Every learning test before this aimed at stock selection, the exit, or which cells to stand down. The component that actually beats a professional is regime timing, and its one parameter — `INVESTED_REGIMES` — was chosen **once** from five sets declared in advance. `scripts/adaptive_timing.py` asks the sharpest remaining version of "the strategy should evolve with market conditions": let the rule re-derive its own invested set each January from index sessions and regime labels strictly before that date.
+
+    Run continuously, with the set changing at year boundaries and positions carried across them:
+
+                          CAGR      maxDD    ret/DD   exposure
+        adaptive        +11.37%    -19.28%    0.59      79.6%
+        frozen (ships)  +10.51%    -16.03%    0.66      69.4%
+        hindsight       +12.91%    -18.91%    0.68      66.2%
+        buy and hold    +10.41%    -38.30%    0.27     100.0%
+
+    The learner lifts raw return by **+0.86pp** and pays **+3.25pp of drawdown** for it at ten points more exposure — a worse trade than the frozen rule already offers (0.59 against 0.66). It is mostly buying more market in a market that rose. **Risk-adjusted, learning makes the one component that earns slightly worse**, which is the same verdict as every other offensive learning test here.
+
+    **The measurement trap is the more useful half of this entry.** The first version chained the years — simulate each year, multiply the growth factors — and reported `maxDD -6.23%`, beating the frozen rule on *both* axes. That number was garbage: chaining samples equity **once a year**, so it cannot see an intra-year drawdown at all, and it understated the real figure (-19.28%) roughly **threefold**. A yearly-chained equity curve is fine for return and worthless for risk. Restarting the simulation each January also forces a flat-and-re-enter at every boundary and charges a switch the rule never asked for. `continuous()` exists to avoid both; the chained table is still printed, under a header telling the reader not to use it.
+
+    `test_letting_the_timing_rule_evolve_does_not_improve_it` pins the verdict, including that the adaptive set is the *deeper* drawdown and the *higher* exposure — if it ever fails, learning has started improving the earning rule on risk-adjusted terms and the playbook should change.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
