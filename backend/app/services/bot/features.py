@@ -58,14 +58,30 @@ class Features:
     dist_52w_high: np.ndarray      # % below the 52-week high
     liquid: np.ndarray             # bool: tradeable at this bar
     ma200_slope: np.ndarray
+    # Relative strength against the benchmark, as a ratio line. The *slope* of
+    # this line is what matters: a stock can be far above the index and rolling
+    # over, or below it and taking the lead, and only the slope distinguishes
+    # them. Absolute RS level is a backward-looking fact; its direction is the
+    # tradeable one.
+    rs_line: np.ndarray
+    rs_slope_63: np.ndarray
+    rs_at_high_63: np.ndarray      # bool: RS line at a 63-bar high
+    range_pct_5: np.ndarray        # 5-bar range — compression at the entry bar
+    low_10: np.ndarray
 
     @property
     def n(self) -> int:
         return len(self.bars)
 
 
-def build_features(bars: Bars) -> Features | None:
-    """Compute the bundle, or None when the symbol is too short to be useful."""
+def build_features(bars: Bars, benchmark_close: np.ndarray | None = None) -> Features | None:
+    """Compute the bundle, or None when the symbol is too short to be useful.
+
+    `benchmark_close` must already be aligned to `bars.dates` by the caller —
+    aligning here would mean re-doing the same date join for every symbol, and
+    a mis-aligned benchmark silently turns relative strength into noise rather
+    than failing.
+    """
     n = len(bars)
     if n < 260:
         return None
@@ -102,6 +118,22 @@ def build_features(bars: Bars) -> Features | None:
 
     sma200 = ind.sma(close, 200)
 
+    if benchmark_close is not None and len(benchmark_close) == n:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rs_line = np.where(benchmark_close > 0, close / benchmark_close, np.nan)
+        rs_slope_63 = ind.slope_pct_per_bar(np.nan_to_num(rs_line, nan=0.0), 63)
+        rs_high = ind.rolling_max(np.nan_to_num(rs_line, nan=0.0), 63)
+        rs_at_high = np.isfinite(rs_line) & np.isfinite(rs_high) & (rs_line >= rs_high * 0.999)
+    else:
+        rs_line = np.full(n, np.nan)
+        rs_slope_63 = np.full(n, np.nan)
+        rs_at_high = np.zeros(n, dtype=bool)
+
+    high_5 = ind.rolling_max(high, 5)
+    low_5 = ind.rolling_min(low, 5)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        range_pct_5 = np.where(low_5 > 0, (high_5 - low_5) / low_5 * 100.0, np.nan)
+
     liquid = (
         np.nan_to_num(turnover_med, nan=0.0) >= MIN_TURNOVER_CRORE
     ) & (close >= MIN_PRICE)
@@ -134,4 +166,9 @@ def build_features(bars: Bars) -> Features | None:
         dist_52w_high=dist_52w_high,
         liquid=liquid,
         ma200_slope=ind.slope_pct_per_bar(sma200, 40),
+        rs_line=rs_line,
+        rs_slope_63=rs_slope_63,
+        rs_at_high_63=rs_at_high,
+        range_pct_5=range_pct_5,
+        low_10=low_10,
     )

@@ -309,3 +309,70 @@ class RegimeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SecondCohortTests(unittest.TestCase):
+    """The five strategies that were measured and left unregistered.
+
+    They are individually sound — +0.15R to +0.36R, all significant — and
+    enabling them still cost 4.3 points of median CAGR, because the book is
+    capital-constrained and they crowded better candidates out of it. These
+    tests keep them working so the measurement stays reproducible, and pin
+    that they are structurally distinct rather than relabelled duplicates.
+    """
+
+    def _features(self, n: int = 400, benchmark: bool = True):
+        rng = np.random.default_rng(3)
+        closes = np.cumsum(rng.normal(0.3, 2.0, n)) + 300.0
+        closes = np.maximum(closes, 10.0)
+        bars = make_bars(closes, highs=closes * 1.02, lows=closes * 0.98, opens=closes)
+        index = np.cumsum(rng.normal(0.1, 1.0, n)) + 1000.0 if benchmark else None
+        return build_features(bars, index)
+
+    def test_all_second_cohort_strategies_run_without_error(self) -> None:
+        from app.services.bot.strategies import SECOND_COHORT
+
+        features = self._features()
+        self.assertIsNotNone(features)
+        for name, generate in SECOND_COHORT:
+            with self.subTest(strategy=name):
+                signals = generate(features)
+                self.assertEqual(len(signals), len(features.bars))
+                self.assertEqual(signals.dtype, bool)
+
+    def test_relative_strength_setups_go_quiet_without_a_benchmark(self) -> None:
+        """No benchmark must mean no opinion, not a fabricated ratio."""
+        from app.services.bot.strategies import SECOND_COHORT
+
+        features = self._features(benchmark=False)
+        self.assertIsNotNone(features)
+        generate = dict(SECOND_COHORT)["rs_leader_pullback"]
+        signals = generate(features)
+        # RS is nan throughout, so the leading gate can never pass.
+        self.assertEqual(int(signals.sum()), 0)
+
+    def test_the_library_is_not_all_one_trade(self) -> None:
+        """Two setups firing on identical bars are one setup with two names.
+
+        Checked across the registered library *and* the unregistered cohort,
+        because the claim being tested is that these describe different market
+        events — which is true or false regardless of whether a given setup is
+        currently switched on.
+        """
+        from app.services.bot.strategies import SECOND_COHORT, STRATEGIES
+
+        features = self._features()
+        fired = {s.id: s.generate(features) for s in STRATEGIES}
+        fired.update({name: generate(features) for name, generate in SECOND_COHORT})
+        active = {k: v for k, v in fired.items() if v.any()}
+        self.assertGreaterEqual(len(active), 3, "fixture should trigger several setups")
+
+        # No two setups may fire on an identical set of bars.
+        seen: dict[bytes, str] = {}
+        for name, signals in active.items():
+            key = signals.tobytes()
+            self.assertNotIn(
+                key, seen,
+                f"{name} fires identically to {seen.get(key)} — it is not a distinct setup",
+            )
+            seen[key] = name

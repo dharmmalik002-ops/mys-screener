@@ -136,9 +136,10 @@ def run_strategies(
     """Replay every strategy over every symbol and stamp the regime on each trade."""
     trades: list[Trade] = []
     processed = skipped = 0
+    align = _benchmark_aligner(data_dir)
 
     for bars in iter_bars(data_dir, symbols):
-        features = build_features(bars)
+        features = build_features(bars, align(bars))
         if features is None:
             skipped += 1
             continue
@@ -173,6 +174,28 @@ def run_strategies(
     return trades
 
 
+def _benchmark_aligner(data_dir: Path):
+    """A function mapping a symbol's dates onto benchmark closes.
+
+    Built once and reused across every symbol: the join is a dict lookup per
+    bar, and re-deriving the benchmark series 1,500 times would dominate the
+    replay. Dates the benchmark did not trade come back nan, which
+    `build_features` turns into "no relative-strength opinion" rather than a
+    fabricated ratio.
+    """
+    benchmark = read_bars(data_dir, BENCHMARK_KEY)
+    if benchmark is None:
+        logger.warning("no benchmark bars — relative-strength setups will not fire")
+        return lambda bars: None
+
+    closes = {day: close for day, close in zip(benchmark.dates, benchmark.close)}
+
+    def align(bars: Bars) -> np.ndarray:
+        return np.array([closes.get(day, np.nan) for day in bars.dates], dtype=np.float64)
+
+    return align
+
+
 def run_strategies_multi(
     data_dir: Path,
     context: MarketContext,
@@ -190,9 +213,10 @@ def run_strategies_multi(
     """
     out: dict[str, list[Trade]] = {name: [] for name in exit_models}
     processed = 0
+    align = _benchmark_aligner(data_dir)
 
     for bars in iter_bars(data_dir, symbols):
-        features = build_features(bars)
+        features = build_features(bars, align(bars))
         if features is None:
             continue
         processed += 1

@@ -33,6 +33,7 @@ from . import macro as mc
 from . import policy as pol
 from . import quality as ql
 from .context_series import external
+from .context_series import BENCHMARK_KEY
 from .features import build_features
 from .history import iter_bars, read_bars
 from .strategies import BY_ID, STRATEGIES
@@ -166,6 +167,13 @@ def scan_today(
     cutoff_index = as_of
     candidates: list[Candidate] = []
 
+    # Same benchmark join the replay uses, so relative-strength setups see the
+    # identical series live and in the study.
+    benchmark = read_bars(data_dir, BENCHMARK_KEY)
+    benchmark_closes = (
+        {day: close for day, close in zip(benchmark.dates, benchmark.close)} if benchmark else {}
+    )
+
     for bars in iter_bars(data_dir, symbols):
         if bars.last_date is None:
             continue
@@ -173,7 +181,11 @@ def scan_today(
         # safe way: a symbol that missed a week is excluded rather than traded.
         if (cutoff_index - bars.last_date).days > MAX_STALENESS_SESSIONS * 2:
             continue
-        features = build_features(bars)
+        aligned = (
+            np.array([benchmark_closes.get(day, np.nan) for day in bars.dates], dtype=np.float64)
+            if benchmark_closes else None
+        )
+        features = build_features(bars, aligned)
         if features is None:
             continue
 

@@ -31,6 +31,7 @@ from typing import Callable
 
 import numpy as np
 
+from . import indicators as ind
 from .features import Features
 
 # Families group strategies that share a failure mode — when a whole family
@@ -206,6 +207,111 @@ def _gap_continuation(f: Features) -> np.ndarray:
     return _safe(gap & held & (c > f.sma50) & (c > f.sma200) & f.liquid)
 
 
+# --- Second cohort: measured, and NOT enabled ------------------------------
+# These five were added on a reasonable hypothesis — that the account's return
+# is capped by the edge per trade, which is capped by what the library can
+# recognise, so five structurally different setups (a news gap, a multi-quarter
+# base, a relative-strength leader, a tight coil, a failed breakdown) should
+# widen the opportunity set.
+#
+# The hypothesis was wrong, and expensively so. Every one of them looked good
+# in isolation: +0.15R to +0.36R, payoffs of 2.2 to 3.9, all statistically
+# significant over 133,036 trades. But at the *account* level, with the same
+# capital and the same sixty positions, they made things markedly worse:
+#
+#     10 strategies   median CAGR 11.39% across 30 book structures, 50% beat
+#                     the median fund
+#     15 strategies   median CAGR  7.07% across the same 30, 0% beat it
+#
+# The reason is capacity, not quality. The book is capital-constrained, so it
+# is always choosing a small slice of available signals; adding a high-volume
+# setup at a middling edge (rs_leader_pullback alone fires thousands of times)
+# crowds the slice with mediocre candidates and displaces better ones. A larger
+# library only helps a book that is short of ideas, and this one is not — it
+# already declines ~95% of what it sees.
+#
+# They are kept here, unregistered, so the experiment is not repeated. Re-add
+# any of them to STRATEGIES only alongside a ranking that can actually keep
+# them out of the book when something better is available.
+
+
+def _episodic_pivot(f: Features) -> np.ndarray:
+    """A violent gap out of a quiet stretch — the signature of new information.
+
+    Qullamaggie's "episodic pivot": something changed (earnings, an order book,
+    a regulatory decision) and the gap is the market repricing it. The quiet
+    period before matters as much as the gap; a jump in an already-volatile
+    name is noise, the same jump out of a dormant one is news.
+    """
+    o, c = f.bars.open, f.bars.close
+    gap = o > _prior(c) * 1.06
+    dormant = _prior(f.range_pct_20, 2) < 20.0
+    held = (c > o * 0.98) & (f.rel_volume > 3.0)
+    return _safe(gap & dormant & held & (c > f.sma50) & f.liquid)
+
+
+def _long_base_breakout(f: Features) -> np.ndarray:
+    """A breakout from a multi-quarter base, not a three-week one.
+
+    Every other breakout in this library works off a 20-day high. This one
+    needs the stock to have gone nowhere for roughly half a year first, which
+    is a different animal: a long base means a long accumulation, and the
+    supply overhead that has to clear is correspondingly larger.
+    """
+    c = f.bars.close
+    high_126 = ind.rolling_max(f.bars.high, 126)
+    low_126 = ind.rolling_min(f.bars.low, 126)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        base_depth = np.where(low_126 > 0, (high_126 - low_126) / low_126 * 100.0, np.nan)
+    flat_base = base_depth < 35.0
+    trigger = (c > _prior(high_126)) & (f.rel_volume > 1.5)
+    return _safe(_prior_flag(flat_base) & trigger & (c > f.sma200) & f.liquid)
+
+
+def _rs_leader_pullback(f: Features) -> np.ndarray:
+    """A stock outperforming the index, pulling back to its own rising 10 EMA.
+
+    The distinction from `pullback_ema21` is the relative-strength condition:
+    this asks that the stock be *beating the market* on the way in, not merely
+    rising. In a market where everything rises, those are the same trade; in a
+    choppy one they are not, which is the whole reason to separate them.
+    """
+    c, low = f.bars.close, f.bars.low
+    leading = _safe(f.rs_at_high_63) | (np.nan_to_num(f.rs_slope_63, nan=-1.0) > 0.02)
+    touched = low <= f.ema10 * 1.015
+    turning = (c > _prior(c)) & (c > f.ema10)
+    return _safe(leading & _prior_flag(touched) & turning & (c > f.sma50) & (f.sma50 > f.sma200) & f.liquid)
+
+
+def _coiled_spring(f: Features) -> np.ndarray:
+    """Range compresses to a five-bar knot inside an uptrend, then expands.
+
+    `squeeze_release` measures compression with ATR over sixty bars; this
+    measures it as a five-bar range inside a twenty-bar one, which catches a
+    much tighter and shorter coil. Different clock, different setup.
+    """
+    c = f.bars.close
+    knot = (f.range_pct_5 < 4.0) & (f.range_pct_5 < f.range_pct_20 * 0.35)
+    expansion = (c > _prior(f.high_10)) & (f.rel_volume > 1.5)
+    return _safe(_prior_flag(knot) & expansion & _trend_template(f) & f.liquid)
+
+
+def _failed_breakdown(f: Features) -> np.ndarray:
+    """Undercuts a prior low, then reclaims it — a spring, in Wyckoff's sense.
+
+    The only setup here that buys weakness rather than strength. It is included
+    precisely because everything else in the library is long-strength: if the
+    whole library shares one failure mode, a study across it cannot find that
+    out. Predicted to work in corrections and chop, and to be a falling-knife
+    trade in a real bear.
+    """
+    c, low = f.bars.close, f.bars.low
+    undercut = _prior(low) < _prior(f.low_20, 2)
+    reclaim = (c > _prior(f.low_20, 2)) & (c > _prior(c))
+    still_in_trend = (c > f.sma200) & (f.ma200_slope > -0.01)
+    return _safe(_prior_flag(undercut) & reclaim & still_in_trend & (f.rel_volume > 1.2) & f.liquid)
+
+
 STRATEGIES: tuple[StrategySpec, ...] = (
     StrategySpec(
         "minervini_breakout", "Minervini Breakout", "breakout",
@@ -259,6 +365,19 @@ STRATEGIES: tuple[StrategySpec, ...] = (
         "Gaps out of a base on heavy volume and holds the gap into the close.",
         ("bull_strong", "recovery"), _gap_continuation, stop_atr_mult=2.5,
     ),
+
+    # The second cohort is deliberately absent — see the note above its
+    # definitions. Enabling it cost 4.3 points of median CAGR.
+)
+
+# Defined but not registered. Kept so the measurement is reproducible and the
+# experiment is not repeated; `test_bot_engine.py` still exercises them.
+SECOND_COHORT = (
+    ("episodic_pivot", _episodic_pivot),
+    ("long_base_breakout", _long_base_breakout),
+    ("rs_leader_pullback", _rs_leader_pullback),
+    ("coiled_spring", _coiled_spring),
+    ("failed_breakdown", _failed_breakdown),
 )
 
 BY_ID = {s.id: s for s in STRATEGIES}
