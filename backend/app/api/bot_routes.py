@@ -33,6 +33,7 @@ logger = logging.getLogger(__name__)
 BACKTEST_FILE = "bot_backtest.json"
 SIGNALS_FILE = "bot_signals.json"
 ROLLING_FILE = "bot_rolling_walkforward.json"
+COMBINED_FILE = "bot_combined_product.json"
 # Beyond this the committed signal list is describing a market that has moved
 # on. Better to say so than to present a stale list as today's.
 SIGNAL_STALE_DAYS = 6
@@ -219,6 +220,29 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
             raise HTTPException(
                 status_code=503,
                 detail="No rolling evaluation yet. Run scripts/rolling_walkforward.py.",
+            )
+        return payload
+
+    @router.get("/combined")
+    def combined() -> dict[str, Any]:
+        """The finished product: the two components that survived, held together.
+
+        Everything else in this tab is one component at a time. Only two of
+        them survived scrutiny — regime timing and the defensive breaker — and
+        this is the two of them run as sleeves and placed against real fund
+        managers over a window cut to match the funds' own exactly.
+
+        The payload carries the losing half as prominently as the winning one.
+        The blend earns less than the median fund and sits in the 18.5th
+        percentile on return alone; what it does is earn below-median money at
+        a quarter of the drawdown. A client that renders only `funds_dominating`
+        is quoting half a measurement.
+        """
+        payload = _load(data_dir, COMBINED_FILE)
+        if not payload:
+            raise HTTPException(
+                status_code=503,
+                detail="No combined run yet. Run scripts/combined_product.py.",
             )
         return payload
 

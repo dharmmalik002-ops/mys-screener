@@ -5660,6 +5660,44 @@ export function getBotWalkforward() {
   return whileWaking(() => request<BotWalkforward>("/api/bot/walkforward", undefined, { timeoutMs: 30000 }));
 }
 
+/* --- Bot: the combined product --------------------------------------------
+   The two components that survived, held as sleeves and measured against real
+   fund managers. Both halves of the result are typed, deliberately: a client
+   that renders `funds_dominating` without `return_percentile` and
+   `fund_median_cagr` is quoting half a measurement. */
+
+export type BotCombinedStats = {
+  years: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  return_per_drawdown: number | null;
+};
+
+export type BotCombinedBenchmark = {
+  funds_counted: number;
+  funds_dominating: number | null;
+  funds_dominating_pct: number | null;
+  fund_median_cagr: number;
+  fund_median_drawdown: number | null;
+  fund_median_sharpe: number | null;
+  percentile: number;
+};
+
+export type BotCombinedWindow = {
+  book: BotCombinedStats;
+  timing: BotCombinedStats;
+  blends: Record<string, BotCombinedStats>;
+  blend_breaker_off?: BotCombinedStats;
+  benchmark?: BotCombinedBenchmark;
+};
+
+export type BotCombined = Record<string, BotCombinedWindow>;
+
+export function getBotCombined() {
+  return whileWaking(() => request<BotCombined>("/api/bot/combined", undefined, { timeoutMs: 30000 }));
+}
+
 /* --- Bot: regime timing ---------------------------------------------------
    The one result here that beats a professional. It works because it asks
    *when to be exposed* rather than *which stock to buy* — the question the

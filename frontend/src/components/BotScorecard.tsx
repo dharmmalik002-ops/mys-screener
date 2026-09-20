@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Info, Minus, X } from "lucide-react";
 
 import {
+  getBotCombined,
   getBotWalkforward,
+  type BotCombined,
   type BotBenchmark,
   type BotLearning,
   type BotPortfolioRun,
@@ -82,6 +84,7 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
   const timing: BotRegimeTiming | null =
     learning.regime_timing?.available ? learning.regime_timing : null;
   const [walkforward, setWalkforward] = useState<BotWalkforward | null>(null);
+  const [combined, setCombined] = useState<BotCombined | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,8 +93,23 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
       // Absent on a host that has not run the evaluation. The rest of the page
       // still renders; it just loses the number that matters most.
       .catch(() => undefined);
+    getBotCombined()
+      .then((result) => { if (!cancelled) setCombined(result); })
+      // Absent until scripts/combined_product.py has run. The page still
+      // renders without it, minus the headline.
+      .catch(() => undefined);
     return () => { cancelled = true; };
   }, []);
+
+  // The fund comparison is only computed on the window cut to match the funds'
+  // own, so read that one and nothing else. Any other window would be
+  // comparing a different span against the same fund returns, which is the
+  // mistake that produced this project's second false positive.
+  const matched = combined
+    ? Object.entries(combined).find(([name]) => name.startsWith("exact 3y"))?.[1]
+    : undefined;
+  const blend = matched?.blends?.["50/50"];
+  const fundStats = matched?.benchmark;
 
   const RUN_LABELS: Record<string, string> = {
     playbook_held_out: "The system, on data it never saw",
@@ -111,6 +129,87 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
           with what the money could have done elsewhere.
         </span>
       </div>
+
+      {matched && blend && fundStats ? (
+        <section className="bot-headline-good">
+          <h4>The finished product, against 691 real fund managers</h4>
+          <p className="bot-section-note">
+            Only two parts of this system survived testing: deciding <em>when</em> to be
+            exposed, and learning <em>what to stand down</em>. Held together as two equal
+            sleeves — no rebalancing — over a window cut to exactly the funds' own three
+            years.
+          </p>
+          <div className="bot-hero-stats bot-run-stats">
+            <div>
+              <span>Funds beating it on return <em>and</em> drawdown</span>
+              <strong>{fundStats.funds_dominating} of {fundStats.funds_counted}</strong>
+            </div>
+            <div><span>Blend return</span><strong>{formatPct(blend.cagr_pct)}</strong></div>
+            <div>
+              <span>Blend worst drawdown</span>
+              <strong>{formatPct(blend.max_drawdown_pct)}</strong>
+            </div>
+            <div><span>Blend Sharpe</span><strong>{blend.sharpe.toFixed(2)}</strong></div>
+          </div>
+
+          {/* The losing half, rendered at the same size as the winning half.
+              This result is quotable and it will be quoted; a reader who takes
+              away "beats 99% of funds" without "earns less than the median
+              one" has been misled by the layout, not by the number. */}
+          <table className="bot-table bot-table-compact">
+            <thead>
+              <tr><th>Over the same three years</th><th>Median fund</th><th>This bot</th><th /></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Annual return</td>
+                <td>{formatPct(fundStats.fund_median_cagr)}</td>
+                <td>{formatPct(blend.cagr_pct)}</td>
+                <td><VerdictMark verdict={false} /></td>
+              </tr>
+              <tr>
+                <td>Worst drawdown</td>
+                <td>{formatPct(fundStats.fund_median_drawdown)}</td>
+                <td>{formatPct(blend.max_drawdown_pct)}</td>
+                <td><VerdictMark verdict /></td>
+              </tr>
+              <tr>
+                <td>Sharpe</td>
+                <td>{fundStats.fund_median_sharpe?.toFixed(2) ?? "—"}</td>
+                <td>{blend.sharpe.toFixed(2)}</td>
+                <td><VerdictMark verdict /></td>
+              </tr>
+            </tbody>
+          </table>
+          {/* The class is a flex row (it carries an icon slot), so a bare
+              <strong> here becomes its own flex item and the sentence breaks
+              into columns. One child element, emphasis inside it. */}
+          <p className="bot-verdict bot-verdict-warn">
+            <span>
+              It earns <strong>less</strong> than the median fund and sits in the{" "}
+              {fundStats.percentile}th percentile on return alone. If return is all you care
+              about, most of these funds beat it. What it does is earn below-median money at
+              roughly a quarter of the drawdown — which is why only {fundStats.funds_dominating}{" "}
+              of {fundStats.funds_counted} beat it on both at once.
+            </span>
+          </p>
+          {matched.blend_breaker_off ? (
+            <p className="bot-footnote">
+              The learning's share of this: running the identical blend with the breaker
+              switched off gives{" "}
+              {formatPct(matched.blend_breaker_off.max_drawdown_pct)} drawdown against{" "}
+              {formatPct(blend.max_drawdown_pct)}, on return within a rounding error. The
+              self-improving part makes the holes shallower. It does not make more money.
+            </p>
+          ) : null}
+          <p className="bot-footnote">
+            Two things this comparison cannot control for: the bot may sit in cash and a
+            fund may not, which is a large structural advantage in a falling market and is
+            not skill; and the bot's returns are simulated while the funds' are realised
+            money, net of fees actually charged.
+          </p>
+        </section>
+      ) : null}
 
       {timing ? (
         <section className="bot-headline-good">
