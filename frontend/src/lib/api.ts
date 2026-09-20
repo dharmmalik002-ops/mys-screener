@@ -5415,6 +5415,8 @@ export type BotLearning = {
   review_by_regime: Array<{ regime: string; label: string } & BotReviewSummary>;
   condition_studies: BotConditionStudy[];
   condition_split: string;
+  portfolio_runs: BotPortfolioRun[];
+  benchmark: BotBenchmark | null;
   evolution_timeline: Array<{ as_of: string; counts: Record<string, number>; tradeable: number }>;
   evolution_changes: BotEvolutionChange[];
   evolution_changes_total: number;
@@ -5428,3 +5430,75 @@ export type BotLearning = {
 export function getBotLearning() {
   return whileWaking(() => request<BotLearning>("/api/bot/learning", undefined, { timeoutMs: 60000 }));
 }
+
+/* --- Bot: portfolio and the professional benchmark ------------------------
+   The account-level view. Trade-level R says what a population of signals was
+   worth; these say what an account that had to choose between them, with
+   finite capital, actually ended up with — and where that lands among real
+   fund managers. */
+
+export type BotPortfolioRun = {
+  label: string;
+  start: string;
+  end: string;
+  years: number;
+  starting_equity: number;
+  ending_equity: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  total_return_pct: number;
+  trades_taken: number;
+  signals_declined: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  exposure_pct: number;
+  equity_curve: Array<{ day: string; equity: number; open: number }>;
+};
+
+export type BotScorecardRow = {
+  dimension: string;
+  bot: string;
+  reference: string;
+  verdict: boolean | null;
+};
+
+export type BotComparison = {
+  run: string;
+  window_years: number;
+  bot_cagr_pct: number;
+  bot_max_drawdown_pct: number;
+  bot_sharpe: number;
+  index_cagr_pct: number | null;
+  funds_counted: number;
+  fund_median_cagr: number;
+  fund_p75_cagr: number;
+  fund_p90_cagr: number;
+  fund_best_cagr: number;
+  percentile: number;
+  beats_median: boolean;
+  beats_index: boolean | null;
+  fund_median_drawdown: number | null;
+  drawdown_better_than_median: boolean | null;
+  bot_return_per_drawdown: number | null;
+  fund_return_per_drawdown: number | null;
+  risk_adjusted_better: boolean | null;
+  scorecard: BotScorecardRow[];
+  verdict: string;
+};
+
+export type BotBenchmark = {
+  comparisons: BotComparison[];
+  headline: BotComparison | null;
+  answer: {
+    run: string;
+    wins: number;
+    losses: number;
+    won_on: string[];
+    lost_on: string[];
+    summary: string;
+  } | null;
+  caveats: string[];
+  method: string;
+};

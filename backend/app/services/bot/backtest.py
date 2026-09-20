@@ -317,7 +317,10 @@ def build_artifact(
     # Built from the same resolved trades and the same split date as the
     # attribution above, so the lessons and the matrix can never describe
     # different populations or disagree about what "held out" means.
-    learning = learn.build_learning(resolved, context.regimes, boundary)
+    learning = learn.build_learning(
+        resolved, context.regimes, boundary, data_dir,
+        playbooks=[p.to_dict() for p in playbooks], matrix=[c.to_dict() for c in matrix],
+    )
 
     return {
         "artifact_version": ARTIFACT_VERSION,

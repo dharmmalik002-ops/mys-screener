@@ -17,10 +17,13 @@ from __future__ import annotations
 import logging
 from dataclasses import asdict
 from datetime import date
+from pathlib import Path
 from typing import Mapping, Sequence
 
+from . import benchmark as bm
 from . import conditions as cond
 from . import evolution as evo
+from . import portfolio as pf
 from . import review as rv
 from .engine import Trade
 from .regime import REGIME_LABELS
@@ -132,10 +135,76 @@ def review_by_regime(reviewed: Sequence[Mapping]) -> list[dict]:
     return sorted(out, key=lambda r: -r["trades"])
 
 
+def build_portfolio_runs(
+    rows: Sequence[Mapping],
+    snapshots: Sequence[Mapping],
+    validation_split: date | None,
+    playbooks: Sequence[Mapping] | None = None,
+    matrix: Sequence[Mapping] | None = None,
+) -> list[pf.PortfolioResult]:
+    """The account, run three ways, with the honest one named as such.
+
+    `playbook_held_out` is the number that means something: the cells were
+    chosen by a walk-forward split on data before `validation_split`, then held
+    fixed while the account trades everything after it. Nothing in that window
+    was used to pick a strategy, a threshold or an exit rule. This is also what
+    the live scan does, so it is the only run that describes the actual system.
+
+    `reactive_held_out` re-decides eligibility every quarter from recent
+    performance. It is reported because it loses money and the reason is worth
+    knowing — see the module docstring — not because it is an alternative.
+
+    `no_gating` trades every cell, as the upper bound on what the raw trade
+    population is worth before any selection at all.
+    """
+    runs: list[pf.PortfolioResult] = []
+
+    cells: set[tuple[str, str]] = set()
+    expectancy: dict[tuple[str, str], float] = {}
+    for book in playbooks or []:
+        for entry in book.get("entries") or []:
+            key = (str(entry["strategy"]), str(book["regime"]))
+            cells.add(key)
+            expectancy[key] = float(entry.get("out_sample_r") or 0.0)
+
+    if cells and validation_split:
+        # Derived from pre-split trades only, so the held-out window's own
+        # results never reach the ranking that selects inside it.
+        adjustment = pf.derive_atr_adjustment(rows, validation_split)
+        playbook_run = pf.simulate(
+            rows, snapshots, start=validation_split, label="playbook_held_out",
+            playbook_cells=cells, cell_expectancy=expectancy,
+            atr_adjustment=adjustment,
+        )
+        if playbook_run:
+            runs.append(playbook_run)
+        # The same account without the volatility adjustment, as the control
+        # that shows what the adjustment is actually worth.
+        plain = pf.simulate(
+            rows, snapshots, start=validation_split, label="playbook_no_vol_adjust",
+            playbook_cells=cells, cell_expectancy=expectancy,
+        )
+        if plain:
+            runs.append(plain)
+
+    if validation_split:
+        reactive = pf.simulate(rows, snapshots, start=validation_split, label="reactive_held_out")
+        if reactive:
+            runs.append(reactive)
+
+    ungated = pf.simulate(rows, snapshots, label="no_gating", point_in_time=False)
+    if ungated:
+        runs.append(ungated)
+    return runs
+
+
 def build_learning(
     trades: Sequence[Trade],
     regime_rows: Sequence,
     validation_split: date | None = None,
+    data_dir: Path | None = None,
+    playbooks: Sequence[Mapping] | None = None,
+    matrix: Sequence[Mapping] | None = None,
 ) -> dict:
     """Everything the Learning views read, computed from the trade population."""
     rows = build_rows(trades, regime_rows)
@@ -163,6 +232,11 @@ def build_learning(
         for s in snapshots
     ]
 
+    runs = build_portfolio_runs(rows, snapshots, validation_split, playbooks, matrix)
+    benchmark = (
+        bm.build_benchmark(runs, data_dir) if data_dir and runs else None
+    )
+
     return {
         "available": True,
         "population": {
@@ -172,6 +246,8 @@ def build_learning(
         },
         "review_summary": summary,
         "review_by_regime": per_regime,
+        "portfolio_runs": [r.to_dict() for r in runs],
+        "benchmark": benchmark,
         "condition_studies": [c.to_dict() for c in condition_studies],
         "condition_split": split.isoformat(),
         "evolution_timeline": timeline,

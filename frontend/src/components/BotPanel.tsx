@@ -22,6 +22,7 @@ import {
   type BotSignals,
 } from "../lib/api";
 import { EvolutionView, LearningView } from "./BotLearning";
+import { ScorecardView } from "./BotScorecard";
 import { Panel } from "./Panel";
 
 import "./BotPanel.css";
@@ -37,13 +38,16 @@ import "./BotPanel.css";
    The limitations view is what keeps the costume visible, so it gets equal
    billing with the numbers rather than a footnote nobody scrolls to. */
 
-type BotView = "today" | "playbook" | "learning" | "evolution" | "evidence" | "limits";
+type BotView = "today" | "scorecard" | "playbook" | "learning" | "evolution" | "evidence" | "limits";
 
 // Ordered the way a decision gets made: what to do now, the rules behind it,
 // what the trade record taught, how that view has shifted, the underlying
 // study, and finally what none of it can tell you.
 const VIEWS: Array<{ id: BotView; label: string; hint: string }> = [
   { id: "today", label: "Today", hint: "Current regime, stance and candidates" },
+  // Second on purpose: "is this any good?" is the question everything else
+  // only supports, and it is answered against real fund managers.
+  { id: "scorecard", label: "Scorecard", hint: "The account, measured against real fund managers" },
   { id: "playbook", label: "Playbook", hint: "Which setups are cleared in which regime" },
   { id: "learning", label: "Learning", hint: "What the trade record says works, and what it cost" },
   { id: "evolution", label: "Evolution", hint: "How the bot's view of each strategy has changed" },
@@ -700,6 +704,11 @@ export function BotPanel() {
               />
             ) : null}
             {view === "playbook" ? <PlaybookView backtest={backtest} /> : null}
+            {view === "scorecard" ? (
+              learning
+                ? <ScorecardView learning={learning} />
+                : <p className="bot-empty">No account simulation in this artifact yet.</p>
+            ) : null}
             {view === "learning" ? (
               learning
                 ? <LearningView learning={learning} />

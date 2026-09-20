@@ -362,3 +362,32 @@
   .bot-condition header { flex-direction: column; }
   .bot-bar-cell { display: none; }
 }
+
+/* --- Scorecard ------------------------------------------------------------ */
+
+.bot-scorecard section { margin-bottom: 26px; }
+.bot-scorecard h4 { margin: 0 0 6px; font-size: var(--fs-title); color: var(--text); }
+.bot-mono-cell { font-family: var(--font-mono); }
+
+.bot-mark {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 9px; border-radius: var(--radius-pill);
+  font-size: var(--fs-tiny); font-weight: 600; white-space: nowrap;
+}
+.bot-mark-good { background: var(--positive-soft); color: var(--positive); }
+.bot-mark-bad  { background: var(--negative-soft); color: var(--negative); }
+.bot-mark-flat { background: var(--surface-strong); color: var(--text-soft); }
+
+.bot-equity {
+  width: 100%; height: 150px; display: block;
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface-soft); padding: 8px 10px; box-sizing: border-box;
+  margin-bottom: 14px;
+}
+.bot-equity path { fill: none; stroke-width: 2; }
+.bot-equity-up { stroke: var(--positive); }
+.bot-equity-down { stroke: var(--negative); }
+
+.bot-run-stats { margin-top: 4px; }
+.bot-row-highlight { background: color-mix(in srgb, var(--accent) 9%, transparent); }
+.bot-row-highlight td { color: var(--text); }
