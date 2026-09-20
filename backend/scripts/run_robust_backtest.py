@@ -1,0 +1,132 @@
+#!/usr/bin/env python3
+"""The rules run through a mark-to-market account, with the yearly table.
+
+    python3 scripts/run_robust_backtest.py
+
+Two things here matter more than the numbers they produce.
+
+**Equity is marked to market every session.** `portfolio.simulate` books a
+trade's whole profit on its exit day, which is harmless at a 90-session
+ceiling and ruinous at the 500-session trail these rules need: a position
+opened in 2023 and closed in 2024 puts every rupee into 2024. The first
+version of this report was read as "the bot loses money in 2009, 2019 and
+2023" when in fact those years' gains were simply being booked late. Several
+apparently strong years were the previous year's profit arriving. The fix
+inverted which years look weak, so any conclusion about *when* this struggles
+has to come from a marked book.
+
+**Drawdown gets worse under this accounting, and that is correct.** A
+realised-only curve cannot see a position hand back 40% of its gain, because
+it never sees the gain until the trade is closed.
+
+Size classification uses `free_universe.json` market caps on the SEBI
+convention (top 100 large, next 150 mid, the rest small), so the report can
+say plainly what the book actually traded rather than inferring it from
+turnover.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from dataclasses import asdict
+from pathlib import Path
+
+import numpy as np
+
+BACKEND_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(BACKEND_ROOT))
+
+from app.services.bot import mtm_account as mtm  # noqa: E402
+from app.services.bot import rules as R  # noqa: E402
+from app.services.bot.backtest import BacktestConfig, build_context, run_strategies  # noqa: E402
+from app.services.bot.engine import ExitModel  # noqa: E402
+from app.services.bot.history import available_symbols  # noqa: E402
+from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
+
+# Chosen on return-per-drawdown. Small positions, many of them: the book sees
+# few enough signals that a 10% cap made it concentrated, and concentration was
+# most of the drawdown.
+BOOK = PortfolioConfig(
+    risk_per_trade_pct=0.35, watch_risk_pct=0.35, max_concurrent=60,
+    max_portfolio_risk_pct=15.0, max_deployed_pct=100.0, max_position_pct=4.0,
+)
+
+
+def size_bands(data_dir: Path) -> dict[str, str]:
+    """SEBI convention: top 100 large, next 150 mid, everything else small."""
+    rows = json.loads((data_dir / "free_universe.json").read_text())
+    ranked = sorted(
+        (r for r in rows if r.get("market_cap_crore")),
+        key=lambda r: float(r["market_cap_crore"]), reverse=True,
+    )
+    band = {}
+    for i, row in enumerate(ranked):
+        band[str(row["symbol"])] = "large" if i < 100 else ("mid" if i < 250 else "small")
+    return band
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--limit-symbols", type=int, default=0)
+    ap.add_argument("--out", default="")
+    args = ap.parse_args()
+
+    data_dir = BACKEND_ROOT / "data"
+    symbols = available_symbols(data_dir)
+    if args.limit_symbols:
+        symbols = symbols[: args.limit_symbols]
+
+    context = build_context(data_dir, symbols)
+    exits = ExitModel(
+        target_r=R.EXIT_TARGET_R, max_hold_sessions=R.EXIT_MAX_HOLD_SESSIONS,
+        trail_after_r=R.EXIT_TRAIL_AFTER_R, trail_atr_mult=R.EXIT_TRAIL_ATR_MULT,
+    )
+    trades = run_strategies(data_dir, context, BacktestConfig(exits=exits), symbols)
+    rows = []
+    for t in trades:
+        row = asdict(t)
+        for key in ("signal_day", "entry_day", "exit_day"):
+            if row.get(key) is not None:
+                row[key] = str(row[key])
+        rows.append(row)
+
+    kept = [r for r in rows if R.accepts(r)]
+    print(f"signals {len(rows):,}  accepted {len(kept):,} ({100*len(kept)/len(rows):.1f}%)")
+
+    result = mtm.simulate(kept, data_dir, BOOK, label="rules")
+    if result is None:
+        print("no account")
+        return 1
+    print(f"CAGR {result.cagr_pct:+.2f}%  maxDD {result.max_drawdown_pct:.2f}%  "
+          f"Sharpe {result.sharpe:.2f}  trades {result.trades_taken}  "
+          f"win {result.win_rate}%  payoff {result.payoff}")
+
+    band = size_bands(data_dir)
+    counts: dict[int, int] = {}
+    caps: dict[str, int] = {"small": 0, "mid": 0, "large": 0, "unknown": 0}
+    for t in kept:
+        y = int(str(t["entry_day"])[:4])
+        counts[y] = counts.get(y, 0) + 1
+        caps[band.get(str(t["symbol"]), "unknown")] += 1
+    total = sum(caps.values()) or 1
+    print("size mix: " + "  ".join(f"{k} {100*v/total:.1f}%" for k, v in caps.items()))
+
+    print("\nyear   return   trades")
+    for y in sorted(result.yearly):
+        print(f"{y}  {result.yearly[y]:+8.2f}%   {counts.get(y, 0):4}")
+
+    if args.out:
+        Path(args.out).write_text(json.dumps({
+            "yearly": result.yearly, "trades_per_year": counts, "size_mix": caps,
+            "cagr": result.cagr_pct, "max_drawdown": result.max_drawdown_pct,
+            "sharpe": result.sharpe, "win_rate": result.win_rate,
+            "payoff": result.payoff, "trades": result.trades_taken,
+        }, indent=2, default=str))
+        print(f"\nwrote {args.out}")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

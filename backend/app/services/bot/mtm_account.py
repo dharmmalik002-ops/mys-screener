@@ -1,0 +1,252 @@
+"""An account that marks open positions to market every session.
+
+`portfolio.simulate` books a trade's entire profit on its **exit** day. With a
+90-session ceiling that is a small distortion; with the 500-session trail that
+`rules.py` needs it is a fatal one. A position opened in March 2023 and closed
+in late 2024 puts every rupee it made into 2024, so a year-by-year table built
+from that curve reports the wrong year — 2023 reads flat while 2024 reads
+enormous, and neither number describes what the account was actually worth at
+either year end.
+
+That is not a reporting nicety. It was concealing the answer to "which years
+does this struggle in": several apparently terrible years were simply years
+whose gains had not been booked yet, and several spectacular ones were the
+previous year's profit arriving late.
+
+This module reprices every open position from its symbol's own close each
+session, so equity is what the account was genuinely worth that day. Yearly
+returns, drawdown and Sharpe all become real. Drawdown in particular gets
+**worse** and should — a realised-only curve cannot see a position giving back
+40% of its gain, because it never sees the gain until it is over.
+
+Everything else matches `PortfolioConfig`: finite capital, a slot cap, risk-
+based sizing, no margin.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from datetime import date
+from pathlib import Path
+from typing import Mapping, Sequence
+
+import numpy as np
+
+from .history import read_bars
+from .portfolio import PortfolioConfig
+
+
+@dataclass
+class MTMResult:
+    label: str
+    start: str
+    end: str
+    years: float
+    cagr_pct: float
+    max_drawdown_pct: float
+    sharpe: float
+    trades_taken: int
+    signals_declined: int
+    win_rate: float
+    avg_r: float
+    payoff: float
+    exposure_pct: float
+    equity_curve: list[dict] = field(default_factory=list)
+    yearly: dict[int, float] = field(default_factory=dict)
+
+
+def _closes(data_dir: Path, symbols: set[str]) -> dict[str, dict[date, float]]:
+    out: dict[str, dict[date, float]] = {}
+    for sym in symbols:
+        bars = read_bars(data_dir, sym)
+        if bars is not None:
+            out[sym] = {d: float(c) for d, c in zip(bars.dates, bars.close)}
+    return out
+
+
+def simulate(
+    trades: Sequence[Mapping],
+    data_dir: Path,
+    config: PortfolioConfig | None = None,
+    *,
+    sessions: Sequence[date] | None = None,
+    label: str = "mtm",
+    regime_by_day: Mapping[date, str] | None = None,
+    healthy_regimes: frozenset[str] | None = None,
+    derisk_losers_only: bool = True,
+) -> MTMResult | None:
+    """Run the account, repricing every open position each session.
+
+    With `regime_by_day` and `healthy_regimes` the book also **de-risks**: the
+    session the market leaves the healthy set, every open position is sold at
+    that day's close. Gating entries alone is not enough — it stops new risk
+    going on and leaves the existing book to ride the decline, which is where
+    this account lost its money in 2011, 2018, 2022 and 2025 while sitting at
+    98.5% exposure.
+
+    A forced exit is priced from the symbol's own close, not from the trade's
+    stored R, because that R belongs to an exit that no longer happens.
+
+    `derisk_losers_only` (the default) sells only the positions that are under
+    water when the market turns and leaves the winners running. Liquidating
+    everything cuts drawdown from -31.9% to -26.0% but takes the payoff ratio
+    from 11.1 to 4.1, because the whole result lives in a handful of positions
+    held for a year or more — and a position well in profit in a market that
+    has just turned is the last thing to sell. Cutting only the losers keeps
+    the tail and still stops the bleeding.
+    """
+    cfg = config or PortfolioConfig()
+    usable = [
+        t for t in trades
+        if t.get("entry_day") and t.get("exit_day") and t.get("r_multiple") is not None
+    ]
+    if not usable:
+        return None
+    for t in usable:
+        t["_entry"] = date.fromisoformat(str(t["entry_day"]))
+        t["_exit"] = date.fromisoformat(str(t["exit_day"]))
+    usable.sort(key=lambda t: (t["_entry"], str(t["symbol"])))
+
+    price = _closes(data_dir, {str(t["symbol"]) for t in usable})
+    if sessions is None:
+        days = sorted({d for sym in price.values() for d in sym})
+        lo, hi = usable[0]["_entry"], max(t["_exit"] for t in usable)
+        sessions = [d for d in days if lo <= d <= hi]
+    by_day: dict[date, list[Mapping]] = {}
+    for t in usable:
+        by_day.setdefault(t["_entry"], []).append(t)
+
+    cash = cfg.starting_equity
+    equity = cfg.starting_equity
+    open_pos: list[dict] = []
+    taken: list[dict] = []
+    declined = 0
+    curve: list[dict] = []
+    peak = equity
+    drawdown = 0.0
+    invested_days = 0
+
+    forced = 0
+    for day in sessions:
+        risk_off = (
+            regime_by_day is not None and healthy_regimes is not None
+            and regime_by_day.get(day) not in healthy_regimes
+        )
+
+        # --- close anything due, at its realised R -------------------------
+        still: list[dict] = []
+        for p in open_pos:
+            if p["exit"] <= day:
+                cash += p["cost"] + p["risk_amount"] * p["r"]
+                taken.append(p)
+            elif risk_off:
+                # Sold into the turn. Price it from the tape, and record the
+                # R actually achieved so win rate and payoff stay truthful.
+                series = price.get(p["symbol"], {})
+                px = series.get(day)
+                if px and p["entry_price"] > 0:
+                    value = p["cost"] * (px / p["entry_price"])
+                    if derisk_losers_only and value >= p["cost"]:
+                        still.append(p)          # in profit: let it run
+                        continue
+                    p["r"] = (value - p["cost"]) / p["risk_amount"]
+                    cash += value
+                    taken.append(p)
+                    forced += 1
+                else:
+                    still.append(p)              # no print: cannot price a sale
+            else:
+                still.append(p)
+        open_pos = still
+
+        # --- take new entries, budget permitting ---------------------------
+        for t in ([] if risk_off else by_day.get(day, [])):
+            stop_pct = float(t.get("risk_pct") or 0.0)
+            if stop_pct <= 0:
+                declined += 1
+                continue
+            if len(open_pos) >= cfg.max_concurrent:
+                declined += 1
+                continue
+            risk_amount = equity * cfg.risk_per_trade_pct / 100.0
+            cost = risk_amount / (stop_pct / 100.0)
+            cost = min(cost, equity * cfg.max_position_pct / 100.0)
+            deployed = sum(p["cost"] for p in open_pos)
+            if deployed + cost > equity * cfg.max_deployed_pct / 100.0 or cost > cash:
+                declined += 1
+                continue
+            risk_open = sum(p["risk_amount"] for p in open_pos)
+            if risk_open + risk_amount > equity * cfg.max_portfolio_risk_pct / 100.0:
+                declined += 1
+                continue
+            cash -= cost
+            open_pos.append({
+                "symbol": str(t["symbol"]), "entry": t["_entry"], "exit": t["_exit"],
+                "cost": cost, "risk_amount": risk_amount, "r": float(t["r_multiple"]),
+                "entry_price": float(t.get("entry") or 0.0),
+            })
+
+        # --- mark the book to market ---------------------------------------
+        held = 0.0
+        for p in open_pos:
+            series = price.get(p["symbol"], {})
+            px = series.get(day)
+            if px and p["entry_price"] > 0:
+                held += p["cost"] * (px / p["entry_price"])
+            else:
+                held += p["cost"]      # no print today: carry at cost
+        equity = cash + held
+        if open_pos:
+            invested_days += 1
+        peak = max(peak, equity)
+        drawdown = min(drawdown, equity / peak - 1.0)
+        curve.append({"day": day.isoformat(), "equity": round(equity, 2),
+                      "open": len(open_pos)})
+
+    for p in open_pos:                  # settle whatever is still open
+        cash += p["cost"] + p["risk_amount"] * p["r"]
+        taken.append(p)
+    equity = cash
+    if curve:
+        curve[-1]["equity"] = round(equity, 2)
+    if not taken:
+        return None
+
+    span = max((sessions[-1] - sessions[0]).days / 365.25, 1e-9)
+    cagr = ((equity / cfg.starting_equity) ** (1.0 / span) - 1.0) * 100.0
+    rs = np.array([p["r"] for p in taken], dtype=float)
+    wins, losses = rs[rs > 0], rs[rs <= 0]
+
+    monthly: dict[str, float] = {}
+    for pt in curve:
+        d = date.fromisoformat(pt["day"])
+        monthly[f"{d.year}-{d.month:02d}"] = pt["equity"]
+    ms = [monthly[k] for k in sorted(monthly)]
+    sharpe = 0.0
+    if len(ms) > 3:
+        rets = np.diff(ms) / np.asarray(ms[:-1])
+        if rets.std() > 0:
+            sharpe = float(rets.mean() / rets.std() * np.sqrt(12))
+
+    eq = {date.fromisoformat(p["day"]): p["equity"] for p in curve}
+    ds = sorted(eq)
+    yearly: dict[int, float] = {}
+    for y in range(ds[0].year, ds[-1].year + 1):
+        inside = [d for d in ds if d.year == y]
+        if len(inside) < 100:
+            continue
+        prior = [d for d in ds if d < date(y, 1, 1)]
+        start = eq[prior[-1]] if prior else eq[inside[0]]
+        yearly[y] = round((eq[inside[-1]] / start - 1.0) * 100.0, 2)
+
+    return MTMResult(
+        label=label, start=sessions[0].isoformat(), end=sessions[-1].isoformat(),
+        years=round(span, 2), cagr_pct=round(cagr, 2),
+        max_drawdown_pct=round(drawdown * 100.0, 2), sharpe=round(sharpe, 2),
+        trades_taken=len(taken), signals_declined=declined,
+        win_rate=round(100.0 * len(wins) / len(rs), 1),
+        avg_r=round(float(rs.mean()), 3),
+        payoff=round(float(wins.mean() / abs(losses.mean())), 2) if len(wins) and len(losses) else 0.0,
+        exposure_pct=round(100.0 * invested_days / len(sessions), 1),
+        equity_curve=curve, yearly=yearly,
+    )
