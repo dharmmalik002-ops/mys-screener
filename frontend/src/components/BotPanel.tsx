@@ -13,12 +13,15 @@ import {
 
 import {
   getBotBacktest,
+  getBotLearning,
   getBotSignals,
   type BotBacktest,
   type BotCandidate,
+  type BotLearning,
   type BotPlaybook,
   type BotSignals,
 } from "../lib/api";
+import { EvolutionView, LearningView } from "./BotLearning";
 import { Panel } from "./Panel";
 
 import "./BotPanel.css";
@@ -34,11 +37,16 @@ import "./BotPanel.css";
    The limitations view is what keeps the costume visible, so it gets equal
    billing with the numbers rather than a footnote nobody scrolls to. */
 
-type BotView = "today" | "playbook" | "evidence" | "limits";
+type BotView = "today" | "playbook" | "learning" | "evolution" | "evidence" | "limits";
 
+// Ordered the way a decision gets made: what to do now, the rules behind it,
+// what the trade record taught, how that view has shifted, the underlying
+// study, and finally what none of it can tell you.
 const VIEWS: Array<{ id: BotView; label: string; hint: string }> = [
   { id: "today", label: "Today", hint: "Current regime, stance and candidates" },
   { id: "playbook", label: "Playbook", hint: "Which setups are cleared in which regime" },
+  { id: "learning", label: "Learning", hint: "What the trade record says works, and what it cost" },
+  { id: "evolution", label: "Evolution", hint: "How the bot's view of each strategy has changed" },
   { id: "evidence", label: "Evidence", hint: "The strategy × regime study behind the playbook" },
   { id: "limits", label: "What this can't tell you", hint: "Survivorship, macro and the honest caveats" },
 ];
@@ -236,7 +244,8 @@ function TodayView({
                 <th className="num">Risk</th>
                 <th className="num">Qty</th>
                 <th className="num">Position</th>
-                <th className="num">Expected</th>
+                <th className="num">Vol adj</th>
+                <th className="num">Edge</th>
               </tr>
             </thead>
             <tbody>
@@ -249,15 +258,24 @@ function TodayView({
                   <td className="num">{candidate.risk_pct.toFixed(1)}%</td>
                   <td className="num">{candidate.sizing.shares.toLocaleString("en-IN")}</td>
                   <td className="num">{formatMoney(candidate.sizing.position_value)}</td>
-                  <td className="num bot-expected">{formatR(candidate.expected_r)}</td>
+                  <td className="num" title={candidate.volatility_bucket ? `ATR bucket: ${candidate.volatility_bucket}` : undefined}>
+                    {candidate.volatility_adjustment_r === undefined
+                      ? "—"
+                      : formatR(candidate.volatility_adjustment_r)}
+                  </td>
+                  <td className="num bot-expected">
+                    {formatR(candidate.edge_score_r ?? candidate.expected_r)}
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p className="bot-footnote">
-            "Expected" is the held-out average for that setup in this regime — not a forecast
-            for this trade. Individual outcomes scatter enormously around it; the number only
-            means anything across many trades.
+            "Edge" is the held-out average for that setup in this regime, plus the volatility
+            adjustment — the one entry-time condition that survived validation. Both parts are
+            shown so the order can be checked. None of it forecasts <em>this</em> trade:
+            outcomes scatter enormously around the average, which only means something across
+            many trades.
           </p>
         </div>
       )}
@@ -588,6 +606,7 @@ function LimitsView({ backtest }: { backtest: BotBacktest }) {
 export function BotPanel() {
   const [view, setView] = useState<BotView>("today");
   const [backtest, setBacktest] = useState<BotBacktest | null>(null);
+  const [learning, setLearning] = useState<BotLearning | null>(null);
   const [signals, setSignals] = useState<BotSignals | null>(null);
   const [equity, setEquity] = useState(DEFAULT_EQUITY);
   const [loading, setLoading] = useState(true);
@@ -617,6 +636,10 @@ export function BotPanel() {
         const study = await getBotBacktest();
         if (cancelled) return;
         setBacktest(study);
+        // The learning payload is a slice of the same artifact. Fetched
+        // separately so an older artifact without it still renders the rest
+        // of the page rather than failing the whole load.
+        setLearning(study.learning?.available ? study.learning : null);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Could not load the backtest.");
@@ -677,6 +700,16 @@ export function BotPanel() {
               />
             ) : null}
             {view === "playbook" ? <PlaybookView backtest={backtest} /> : null}
+            {view === "learning" ? (
+              learning
+                ? <LearningView learning={learning} />
+                : <p className="bot-empty">This backtest predates the learning layer. Rerun the backtest to populate it.</p>
+            ) : null}
+            {view === "evolution" ? (
+              learning
+                ? <EvolutionView learning={learning} />
+                : <p className="bot-empty">No evolution history in this artifact yet.</p>
+            ) : null}
             {view === "evidence" ? <EvidenceView backtest={backtest} /> : null}
             {view === "limits" ? <LimitsView backtest={backtest} /> : null}
           </>

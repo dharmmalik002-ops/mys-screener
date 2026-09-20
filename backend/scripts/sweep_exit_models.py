@@ -54,7 +54,28 @@ CANDIDATES: dict[str, ExitModel] = {
                                  trail_atr_mult=4.0, breakeven_after_r=None),
     "quick_2R_25d": ExitModel(target_r=2.0, max_hold_sessions=25, trail_after_r=None,
                               trail_atr_mult=2.5, breakeven_after_r=None),
+
+    # --- Second experiment: the round-trip leak ---------------------------
+    # The trade review found 21% of trades went over 1R in profit and finished
+    # negative, averaging -0.68R. These three lock a floor in once the move is
+    # real, at thresholds high enough to sit outside ordinary noise.
+    #
+    # This is a SECOND look at exits, run after seeing the first set's results,
+    # and that costs something: the more rules tried, the likelier one wins by
+    # chance. So a lock rule replaces the incumbent only if it beats it on the
+    # HELD-OUT period as well as in-sample — a stricter bar than the first
+    # sweep applied, and the honest price of a second look.
+    "lock_0.5R_after_2R": ExitModel(target_r=None, max_hold_sessions=90, trail_after_r=1.5,
+                                    trail_atr_mult=4.0, lock_trigger_r=2.0, lock_floor_r=0.5),
+    "lock_1R_after_2.5R": ExitModel(target_r=None, max_hold_sessions=90, trail_after_r=1.5,
+                                    trail_atr_mult=4.0, lock_trigger_r=2.5, lock_floor_r=1.0),
+    "lock_1.5R_after_3R": ExitModel(target_r=None, max_hold_sessions=90, trail_after_r=1.5,
+                                    trail_atr_mult=4.0, lock_trigger_r=3.0, lock_floor_r=1.5),
 }
+
+# The rule currently in force. A challenger must beat it out-of-sample, not
+# merely in-sample, before `ExitModel`'s defaults are touched.
+INCUMBENT = "trend_loose_90d"
 
 
 def score(trades, boundary):
@@ -115,9 +136,26 @@ def main() -> int:
             f"{r['model']:22s} | {i['trades']:7d} {i['win_rate']:6.1f} {i['avg_r']:+7.3f} {i['profit_factor']:5.2f} "
             f"| {o['trades']:7d} {o['win_rate']:6.1f} {o['avg_r']:+7.3f} {o['profit_factor']:5.2f}"
         )
-    print(f"\nselected on in-sample: {winner['model']}")
-    print(f"  its held-out result:  {winner['out_sample']['avg_r']:+.3f}R on {winner['out_sample']['trades']} trades")
-    print(f"  validation split:     {boundary}")
+    print(f"\nbest in-sample: {winner['model']}")
+    print(f"  its held-out result: {winner['out_sample']['avg_r']:+.3f}R on {winner['out_sample']['trades']} trades")
+    print(f"  validation split:    {boundary}")
+
+    incumbent = next((r for r in results if r["model"] == INCUMBENT), None)
+    if incumbent is not None:
+        print(f"\nincumbent ({INCUMBENT}): in-sample {incumbent['in_sample']['avg_r']:+.3f}R, "
+              f"held-out {incumbent['out_sample']['avg_r']:+.3f}R")
+        beats_both = (
+            winner["model"] != INCUMBENT
+            and winner["in_sample"]["avg_r"] > incumbent["in_sample"]["avg_r"]
+            and winner["out_sample"]["avg_r"] > incumbent["out_sample"]["avg_r"]
+        )
+        if winner["model"] == INCUMBENT:
+            print("VERDICT: incumbent still best. No change.")
+        elif beats_both:
+            print(f"VERDICT: {winner['model']} beats the incumbent in BOTH periods — a real challenger.")
+        else:
+            print(f"VERDICT: {winner['model']} leads in-sample but does NOT beat the incumbent "
+                  "out-of-sample. Keeping the incumbent; this is what a second look costs.")
 
     payload = {
         "protocol": "candidates declared in advance; selected on in-sample; out-of-sample reported unchanged",

@@ -75,6 +75,15 @@ class ExitModel:
     # depends on. Kept as an option, defaulted off, with the reason recorded.
     breakeven_after_r: float | None = None
 
+    # Profit lock: once the trade has run `lock_trigger_r` in our favour, the
+    # stop never again sits below entry + `lock_floor_r`. Distinct from
+    # `breakeven_after_r`, which arms at 1R where ordinary noise reaches; this
+    # arms only after a move large enough that giving all of it back is a
+    # different kind of mistake. Added to test the round-trip leak the trade
+    # review surfaced — 21% of trades were over 1R up and finished negative.
+    lock_trigger_r: float | None = None
+    lock_floor_r: float = 0.0
+
 
 @dataclass
 class Trade:
@@ -192,6 +201,11 @@ def simulate_symbol(
             run_r = (float(c[j]) - entry) / risk
             if exits.breakeven_after_r is not None and run_r >= exits.breakeven_after_r:
                 current_stop = max(current_stop, entry)
+            # Armed off the running high rather than the close: the point is to
+            # protect a move that actually happened. The stop it sets still
+            # only affects later bars, so this stays causal.
+            if exits.lock_trigger_r is not None and mfe >= exits.lock_trigger_r:
+                current_stop = max(current_stop, entry + exits.lock_floor_r * risk)
             if exits.trail_after_r is not None and run_r >= exits.trail_after_r:
                 if np.isfinite(atr[j]):
                     current_stop = max(current_stop, float(c[j]) - exits.trail_atr_mult * float(atr[j]))

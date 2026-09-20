@@ -1,0 +1,196 @@
+"""Bridge: turn the raw trade population into the learning the UI reads.
+
+Two consumers, one source, and the split is forced by a deployment constraint
+worth stating plainly. The Space's pre-receive hook rejects binary files
+outright (CLAUDE.md gotcha 21), so the SQLite ledger can never be committed —
+it lives in `APP_STATE_DIR` on whatever machine is running, holds individual
+trades, and is where live results accumulate. What ships in git is this
+module's output: the aggregates, the lessons and the evolution timeline, as
+JSON inside `bot_backtest.json`.
+
+So the ledger is the memory and this is the summary of it. Both are built from
+the same trades and neither invents anything the other cannot show.
+"""
+
+from __future__ import annotations
+
+import logging
+from dataclasses import asdict
+from datetime import date
+from typing import Mapping, Sequence
+
+from . import conditions as cond
+from . import evolution as evo
+from . import review as rv
+from .engine import Trade
+from .regime import REGIME_LABELS
+from .strategies import BY_ID
+
+logger = logging.getLogger(__name__)
+
+# The evolution replay is quarterly; more often than that and consecutive
+# snapshots share almost every trade, so the "changes" list fills with the same
+# cell flickering across a threshold rather than with real reversals.
+EVOLUTION_CADENCE_DAYS = 91
+MAX_CHANGES_REPORTED = 120
+
+
+def trade_to_row(trade: Trade, index: int, context_by_day: Mapping[date, Mapping]) -> dict:
+    """One trade as a ledger-shaped mapping, with the entry context attached.
+
+    The context is looked up by *entry* day, never exit day: the question the
+    record has to answer later is "what was true when the bot committed", and
+    the exit-day state is information it did not have.
+    """
+    context = context_by_day.get(trade.entry_day) or {}
+    spec = BY_ID.get(trade.strategy)
+    return {
+        "id": index,
+        "source": "backtest",
+        "strategy": trade.strategy,
+        "symbol": trade.symbol,
+        "signal_day": trade.signal_day.isoformat(),
+        "entry_day": trade.entry_day.isoformat(),
+        "exit_day": trade.exit_day.isoformat() if trade.exit_day else None,
+        "entry": trade.entry,
+        "stop": trade.stop,
+        "exit_price": trade.exit_price,
+        "exit_reason": trade.exit_reason,
+        "sessions_held": trade.sessions_held,
+        "r_multiple": trade.r_multiple,
+        "net_pct": trade.net_pct,
+        "mae_r": trade.mae_r,
+        "mfe_r": trade.mfe_r,
+        "risk_pct": trade.risk_pct,
+        "atr_pct_at_entry": trade.atr_pct_at_entry,
+        "regime": trade.regime,
+        "volatility_band": trade.volatility_band,
+        "breadth_above_200dma": context.get("breadth_above_200dma"),
+        "pct_from_52w_high": context.get("pct_from_52w_high"),
+        "vix_percentile": context.get("vix_percentile"),
+        "macro_headwinds": context.get("macro_headwinds"),
+        "expected_r": None,
+        "thesis": spec.thesis if spec else "",
+    }
+
+
+def build_rows(trades: Sequence[Trade], regime_rows: Sequence) -> list[dict]:
+    """Ledger-shaped rows for every resolved trade."""
+    context_by_day = {
+        row.day: {
+            "breadth_above_200dma": row.breadth_above_200dma,
+            "pct_from_52w_high": row.pct_from_52w_high,
+            "vix_percentile": row.vix_percentile,
+            # Macro headwind count is not stored per session in the regime
+            # table; it is left None rather than back-filled from today's
+            # reading, which would be a fabricated entry-time fact.
+            "macro_headwinds": None,
+        }
+        for row in regime_rows
+    }
+    return [
+        trade_to_row(trade, index, context_by_day)
+        for index, trade in enumerate(trades)
+        if trade.resolved
+    ]
+
+
+def review_population(rows: Sequence[Mapping]) -> tuple[list[dict], dict]:
+    """Review every trade, then reduce the reviews to lessons."""
+    reviewed: list[dict] = []
+    for row in rows:
+        verdict = rv.review_trade(row)
+        reviewed.append({**dict(row), **verdict.to_dict()})
+    return reviewed, rv.summarise_reviews(reviewed)
+
+
+def review_by_regime(reviewed: Sequence[Mapping]) -> list[dict]:
+    """The same reduction, held separately per regime.
+
+    This is the answer to "what kind of trade works in what condition" stated
+    in process terms rather than P&L terms — the round-trip rate in a choppy
+    tape is a different fact from the average R, and more actionable.
+    """
+    grouped: dict[str, list[Mapping]] = {}
+    for row in reviewed:
+        grouped.setdefault(str(row.get("regime") or ""), []).append(row)
+
+    out: list[dict] = []
+    for regime, rows in grouped.items():
+        if not regime:
+            continue
+        summary = rv.summarise_reviews(rows)
+        if summary["trades"] < rv.MIN_PATTERN_SAMPLE:
+            continue
+        out.append(
+            {
+                "regime": regime,
+                "label": REGIME_LABELS.get(regime, regime),
+                **summary,
+            }
+        )
+    return sorted(out, key=lambda r: -r["trades"])
+
+
+def build_learning(
+    trades: Sequence[Trade],
+    regime_rows: Sequence,
+    validation_split: date | None = None,
+) -> dict:
+    """Everything the Learning views read, computed from the trade population."""
+    rows = build_rows(trades, regime_rows)
+    if not rows:
+        return {"available": False, "reason": "no resolved trades"}
+
+    reviewed, summary = review_population(rows)
+    per_regime = review_by_regime(reviewed)
+
+    # Condition studies share the attribution's split date so "held out" means
+    # the same period everywhere in the artifact.
+    split = validation_split or date.fromisoformat(
+        sorted(r["entry_day"] for r in rows)[int(len(rows) * 0.6)]
+    )
+    condition_studies = cond.study_all(rows, split)
+
+    snapshots = evo.replay_evolution(rows, cadence_days=EVOLUTION_CADENCE_DAYS)
+    changes = evo.summarise_changes(snapshots)
+    latest = snapshots[-1] if snapshots else None
+
+    # The full per-snapshot cell list is ~60 cells x ~60 quarters; the timeline
+    # only needs the counts, and the latest snapshot carries the detail.
+    timeline = [
+        {"as_of": s["as_of"], "counts": s["counts"], "tradeable": s["tradeable"]}
+        for s in snapshots
+    ]
+
+    return {
+        "available": True,
+        "population": {
+            "trades": len(rows),
+            "first_entry": min(r["entry_day"] for r in rows),
+            "last_entry": max(r["entry_day"] for r in rows),
+        },
+        "review_summary": summary,
+        "review_by_regime": per_regime,
+        "condition_studies": [c.to_dict() for c in condition_studies],
+        "condition_split": split.isoformat(),
+        "evolution_timeline": timeline,
+        "evolution_changes": changes[:MAX_CHANGES_REPORTED],
+        "evolution_changes_total": len(changes),
+        "cell_status": latest["cells"] if latest else [],
+        "cell_status_as_of": latest["as_of"] if latest else None,
+        "status_catalogue": [
+            {"id": s, "label": evo.STATUS_LABELS[s], "note": evo.STATUS_NOTES[s]}
+            for s in evo.STATUSES
+        ],
+        "verdict_catalogue": [
+            {"id": v, "label": rv.VERDICT_LABELS[v], "note": rv.VERDICT_NOTES[v]}
+            for v in rv.VERDICTS
+        ],
+        "method_note": (
+            "Cell standing is re-scored quarterly using only trades that had closed by that "
+            "date, so the timeline shows what the system actually believed at each point — "
+            "including where it was wrong and later stood a strategy down. Nothing is refitted: "
+            "a cell that stops paying is retired, not repaired."
+        ),
+    }

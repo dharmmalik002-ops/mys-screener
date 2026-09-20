@@ -30,6 +30,7 @@ import numpy as np
 
 from . import macro as mc
 from . import policy as pol
+from . import quality as ql
 from .context_series import external
 from .features import build_features
 from .history import iter_bars, read_bars
@@ -209,8 +210,11 @@ def scan_today(
                 )
             )
 
-    candidates.sort(key=lambda c: (-c.expected_r, -c.turnover_crore))
-    trimmed = candidates[:MAX_CANDIDATES]
+    # Ranked by cell expectancy plus the one validated entry-time adjustment,
+    # with both parts carried on every row so the order can be checked.
+    model = ql.load_quality_model(artifact)
+    ranked = ql.rank(model, [c.to_dict() for c in candidates])
+    trimmed = ranked[:MAX_CANDIDATES]
 
     return {
         "as_of": as_of.isoformat(),
@@ -219,8 +223,9 @@ def scan_today(
         "macro": macro_gate.to_dict(),
         "stance": book.get("stance"),
         "equity": equity,
-        "candidates": [c.to_dict() for c in trimmed],
+        "candidates": trimmed,
         "candidates_found": len(candidates),
+        "ranking": {"active": model.active, "note": model.note},
         "message": (
             f"{len(candidates)} candidate(s) from {len(specs)} cleared setup(s) in "
             f"{book['label']}. Sizing at {macro_gate.size_multiplier:.0%} of book risk "

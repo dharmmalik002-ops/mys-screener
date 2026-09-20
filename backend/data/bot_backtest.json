@@ -1,6 +1,6 @@
 {
-  "artifact_version": 3,
-  "generated_at": "2026-09-19T17:48:30.385893+00:00",
+  "artifact_version": 4,
+  "generated_at": "2026-09-20T02:26:44.745345+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -4976,6 +4976,5071 @@
     "coverage_performance_correlation": 0.65,
     "verdict": "Performance rises with coverage (correlation 0.65) \u2014 the opposite of the survivorship signature, so the recent, better-covered era is carrying the result on its own merits.",
     "limitation": "Delisted and bankrupt companies are absent from the universe entirely. This cannot be corrected without point-in-time constituent lists, which the free data sources do not publish. The mitigation is structural, not statistical: the playbook is built only from the held-out recent period, where coverage is highest."
+  },
+  "learning": {
+    "available": true,
+    "population": {
+      "trades": 95286,
+      "first_entry": "2007-09-17",
+      "last_entry": "2026-09-16"
+    },
+    "review_summary": {
+      "trades": 95286,
+      "book_avg_r": 0.242,
+      "verdicts": [
+        {
+          "verdict": "clean_loss",
+          "label": "Clean loss \u2014 wrong fast, cheap",
+          "trades": 42811,
+          "pct_of_trades": 44.9,
+          "avg_r": -1.049,
+          "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+        },
+        {
+          "verdict": "round_trip_loss",
+          "label": "Was well in profit, lost it all",
+          "trades": 19885,
+          "pct_of_trades": 20.9,
+          "avg_r": -0.682,
+          "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+        },
+        {
+          "verdict": "clean_win",
+          "label": "Clean win",
+          "trades": 11395,
+          "pct_of_trades": 12.0,
+          "avg_r": 5.271,
+          "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+        },
+        {
+          "verdict": "gave_back_win",
+          "label": "Won, gave back most of it",
+          "trades": 10516,
+          "pct_of_trades": 11.0,
+          "avg_r": 1.248,
+          "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+        },
+        {
+          "verdict": "gap_loss",
+          "label": "Gapped through the stop",
+          "trades": 5424,
+          "pct_of_trades": 5.7,
+          "avg_r": -1.205,
+          "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+        },
+        {
+          "verdict": "lucky_win",
+          "label": "Won after nearly stopping out",
+          "trades": 5171,
+          "pct_of_trades": 5.4,
+          "avg_r": 2.874,
+          "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+        },
+        {
+          "verdict": "slow_bleed",
+          "label": "Went nowhere, timed out",
+          "trades": 84,
+          "pct_of_trades": 0.1,
+          "avg_r": -0.006,
+          "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+        }
+      ],
+      "tags": [
+        {
+          "tag": "weak_breadth_entry",
+          "trades": 12460,
+          "avg_r": 0.129,
+          "kind": "entry"
+        },
+        {
+          "tag": "wide_atr_entry",
+          "trades": 18479,
+          "avg_r": 0.143,
+          "kind": "entry"
+        },
+        {
+          "tag": "high_volatility_entry",
+          "trades": 12972,
+          "avg_r": 0.317,
+          "kind": "entry"
+        },
+        {
+          "tag": "tight_atr_entry",
+          "trades": 3133,
+          "avg_r": 0.477,
+          "kind": "entry"
+        },
+        {
+          "tag": "no_favourable_excursion",
+          "trades": 11608,
+          "avg_r": -1.067,
+          "kind": "outcome"
+        },
+        {
+          "tag": "stop_hit",
+          "trades": 54819,
+          "avg_r": -1.039,
+          "kind": "outcome"
+        },
+        {
+          "tag": "profit_handed_back",
+          "trades": 19161,
+          "avg_r": -0.83,
+          "kind": "outcome"
+        },
+        {
+          "tag": "stop_gapped",
+          "trades": 6910,
+          "avg_r": -0.251,
+          "kind": "outcome"
+        },
+        {
+          "tag": "left_over_1.5R_on_table",
+          "trades": 57786,
+          "avg_r": 0.422,
+          "kind": "outcome"
+        },
+        {
+          "tag": "gave_back_most_of_move",
+          "trades": 15539,
+          "avg_r": 1.035,
+          "kind": "outcome"
+        },
+        {
+          "tag": "survived_near_stop",
+          "trades": 7524,
+          "avg_r": 1.881,
+          "kind": "outcome"
+        },
+        {
+          "tag": "never_in_trouble",
+          "trades": 11868,
+          "avg_r": 2.941,
+          "kind": "outcome"
+        },
+        {
+          "tag": "closed_by_time_stop",
+          "trades": 11213,
+          "avg_r": 4.436,
+          "kind": "outcome"
+        }
+      ],
+      "entry_tags": [
+        {
+          "tag": "weak_breadth_entry",
+          "trades": 12460,
+          "avg_r": 0.129,
+          "kind": "entry"
+        },
+        {
+          "tag": "wide_atr_entry",
+          "trades": 18479,
+          "avg_r": 0.143,
+          "kind": "entry"
+        },
+        {
+          "tag": "high_volatility_entry",
+          "trades": 12972,
+          "avg_r": 0.317,
+          "kind": "entry"
+        },
+        {
+          "tag": "tight_atr_entry",
+          "trades": 3133,
+          "avg_r": 0.477,
+          "kind": "entry"
+        }
+      ],
+      "outcome_tags": [
+        {
+          "tag": "no_favourable_excursion",
+          "trades": 11608,
+          "avg_r": -1.067,
+          "kind": "outcome"
+        },
+        {
+          "tag": "stop_hit",
+          "trades": 54819,
+          "avg_r": -1.039,
+          "kind": "outcome"
+        },
+        {
+          "tag": "profit_handed_back",
+          "trades": 19161,
+          "avg_r": -0.83,
+          "kind": "outcome"
+        },
+        {
+          "tag": "stop_gapped",
+          "trades": 6910,
+          "avg_r": -0.251,
+          "kind": "outcome"
+        },
+        {
+          "tag": "left_over_1.5R_on_table",
+          "trades": 57786,
+          "avg_r": 0.422,
+          "kind": "outcome"
+        },
+        {
+          "tag": "gave_back_most_of_move",
+          "trades": 15539,
+          "avg_r": 1.035,
+          "kind": "outcome"
+        },
+        {
+          "tag": "survived_near_stop",
+          "trades": 7524,
+          "avg_r": 1.881,
+          "kind": "outcome"
+        },
+        {
+          "tag": "never_in_trouble",
+          "trades": 11868,
+          "avg_r": 2.941,
+          "kind": "outcome"
+        },
+        {
+          "tag": "closed_by_time_stop",
+          "trades": 11213,
+          "avg_r": 4.436,
+          "kind": "outcome"
+        }
+      ],
+      "lessons": [
+        {
+          "tag": "tight_atr_entry",
+          "trades": 3133,
+          "avg_r": 0.477,
+          "delta_vs_book": 0.235,
+          "direction": "better",
+          "text": "On 3133 trades, trades in names with ATR under 2% of price averaged +0.48R \u2014 0.24R above the book average."
+        }
+      ],
+      "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+      "structural_note": "32% of trades either handed back a real profit or kept less than half their best excursion (19885 round-trip losses, 10516 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+    },
+    "review_by_regime": [
+      {
+        "regime": "bull_strong",
+        "label": "Strong Bull",
+        "trades": 66636,
+        "book_avg_r": 0.295,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 29746,
+            "pct_of_trades": 44.6,
+            "avg_r": -1.051,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 14329,
+            "pct_of_trades": 21.5,
+            "avg_r": -0.687,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 7898,
+            "pct_of_trades": 11.9,
+            "avg_r": 5.613,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 7639,
+            "pct_of_trades": 11.5,
+            "avg_r": 1.3,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 3513,
+            "pct_of_trades": 5.3,
+            "avg_r": 3.021,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 3475,
+            "pct_of_trades": 5.2,
+            "avg_r": -1.18,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 36,
+            "pct_of_trades": 0.1,
+            "avg_r": -0.004,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1189,
+            "avg_r": -0.35,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 11044,
+            "avg_r": 0.194,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 4041,
+            "avg_r": 0.36,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 2475,
+            "avg_r": 0.583,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 8038,
+            "avg_r": -1.067,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 38454,
+            "avg_r": -1.04,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 13772,
+            "avg_r": -0.823,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 4541,
+            "avg_r": -0.133,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 41445,
+            "avg_r": 0.508,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 11111,
+            "avg_r": 1.09,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 5195,
+            "avg_r": 1.943,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 8385,
+            "avg_r": 3.093,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 7388,
+            "avg_r": 4.852,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1189,
+            "avg_r": -0.35,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 11044,
+            "avg_r": 0.194,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 4041,
+            "avg_r": 0.36,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 2475,
+            "avg_r": 0.583,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 8038,
+            "avg_r": -1.067,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 38454,
+            "avg_r": -1.04,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 13772,
+            "avg_r": -0.823,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 4541,
+            "avg_r": -0.133,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 41445,
+            "avg_r": 0.508,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 11111,
+            "avg_r": 1.09,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 5195,
+            "avg_r": 1.943,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 8385,
+            "avg_r": 3.093,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 7388,
+            "avg_r": 4.852,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1189,
+            "avg_r": -0.35,
+            "delta_vs_book": -0.645,
+            "direction": "worse",
+            "text": "On 1189 trades, trades entered with breadth under 40% averaged -0.35R \u2014 0.65R below the book average."
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 2475,
+            "avg_r": 0.583,
+            "delta_vs_book": 0.288,
+            "direction": "better",
+            "text": "On 2475 trades, trades in names with ATR under 2% of price averaged +0.58R \u2014 0.29R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "33% of trades either handed back a real profit or kept less than half their best excursion (14329 round-trip losses, 7639 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      },
+      {
+        "regime": "correction",
+        "label": "Correction",
+        "trades": 12018,
+        "book_avg_r": 0.071,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 5646,
+            "pct_of_trades": 47.0,
+            "avg_r": -1.044,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 2321,
+            "pct_of_trades": 19.3,
+            "avg_r": -0.667,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 1439,
+            "pct_of_trades": 12.0,
+            "avg_r": 4.356,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 1146,
+            "pct_of_trades": 9.5,
+            "avg_r": 1.055,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 748,
+            "pct_of_trades": 6.2,
+            "avg_r": -1.192,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 699,
+            "pct_of_trades": 5.8,
+            "avg_r": 2.437,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 19,
+            "pct_of_trades": 0.2,
+            "avg_r": 0.008,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "wide_atr_entry",
+            "trades": 3405,
+            "avg_r": -0.011,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 5162,
+            "avg_r": 0.126,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 4266,
+            "avg_r": 0.296,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 233,
+            "avg_r": 0.391,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 1554,
+            "avg_r": -1.064,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 7020,
+            "avg_r": -1.037,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 2275,
+            "avg_r": -0.838,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 906,
+            "avg_r": -0.509,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 6559,
+            "avg_r": 0.107,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 1797,
+            "avg_r": 0.835,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 980,
+            "avg_r": 1.658,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 1429,
+            "avg_r": 2.604,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 1639,
+            "avg_r": 3.454,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "wide_atr_entry",
+            "trades": 3405,
+            "avg_r": -0.011,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 5162,
+            "avg_r": 0.126,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 4266,
+            "avg_r": 0.296,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 233,
+            "avg_r": 0.391,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 1554,
+            "avg_r": -1.064,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 7020,
+            "avg_r": -1.037,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 2275,
+            "avg_r": -0.838,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 906,
+            "avg_r": -0.509,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 6559,
+            "avg_r": 0.107,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 1797,
+            "avg_r": 0.835,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 980,
+            "avg_r": 1.658,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 1429,
+            "avg_r": 2.604,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 1639,
+            "avg_r": 3.454,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 4266,
+            "avg_r": 0.296,
+            "delta_vs_book": 0.225,
+            "direction": "better",
+            "text": "On 4266 trades, trades entered with breadth under 40% averaged +0.30R \u2014 0.23R above the book average."
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 233,
+            "avg_r": 0.391,
+            "delta_vs_book": 0.32,
+            "direction": "better",
+            "text": "On 233 trades, trades in names with ATR under 2% of price averaged +0.39R \u2014 0.32R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "29% of trades either handed back a real profit or kept less than half their best excursion (2321 round-trip losses, 1146 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      },
+      {
+        "regime": "choppy",
+        "label": "Choppy / Rangebound",
+        "trades": 5547,
+        "book_avg_r": 0.302,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 2224,
+            "pct_of_trades": 40.1,
+            "avg_r": -1.041,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 1194,
+            "pct_of_trades": 21.5,
+            "avg_r": -0.643,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 713,
+            "pct_of_trades": 12.9,
+            "avg_r": 1.166,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 694,
+            "pct_of_trades": 12.5,
+            "avg_r": 5.034,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 387,
+            "pct_of_trades": 7.0,
+            "avg_r": -1.114,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 328,
+            "pct_of_trades": 5.9,
+            "avg_r": 2.629,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 7,
+            "pct_of_trades": 0.1,
+            "avg_r": 0.025,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "wide_atr_entry",
+            "trades": 1618,
+            "avg_r": -0.124,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 626,
+            "avg_r": 0.049,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 711,
+            "avg_r": 0.739,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 114,
+            "avg_r": 0.985,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 637,
+            "avg_r": -1.058,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2911,
+            "avg_r": -1.025,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 1125,
+            "avg_r": -0.79,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 509,
+            "avg_r": -0.118,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 3580,
+            "avg_r": 0.516,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 1077,
+            "avg_r": 0.973,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 487,
+            "avg_r": 1.669,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 760,
+            "avg_r": 2.533,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 634,
+            "avg_r": 4.086,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "wide_atr_entry",
+            "trades": 1618,
+            "avg_r": -0.124,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 626,
+            "avg_r": 0.049,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 711,
+            "avg_r": 0.739,
+            "kind": "entry"
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 114,
+            "avg_r": 0.985,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 637,
+            "avg_r": -1.058,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2911,
+            "avg_r": -1.025,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 1125,
+            "avg_r": -0.79,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 509,
+            "avg_r": -0.118,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 3580,
+            "avg_r": 0.516,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 1077,
+            "avg_r": 0.973,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 487,
+            "avg_r": 1.669,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 760,
+            "avg_r": 2.533,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 634,
+            "avg_r": 4.086,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "wide_atr_entry",
+            "trades": 1618,
+            "avg_r": -0.124,
+            "delta_vs_book": -0.426,
+            "direction": "worse",
+            "text": "On 1618 trades, trades in names with ATR above 5% of price averaged -0.12R \u2014 0.43R below the book average."
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 626,
+            "avg_r": 0.049,
+            "delta_vs_book": -0.253,
+            "direction": "worse",
+            "text": "On 626 trades, trades entered with breadth under 40% averaged +0.05R \u2014 0.25R below the book average."
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 711,
+            "avg_r": 0.739,
+            "delta_vs_book": 0.437,
+            "direction": "better",
+            "text": "On 711 trades, trades entered in the stressed volatility band averaged +0.74R \u2014 0.44R above the book average."
+          },
+          {
+            "tag": "tight_atr_entry",
+            "trades": 114,
+            "avg_r": 0.985,
+            "delta_vs_book": 0.683,
+            "direction": "better",
+            "text": "On 114 trades, trades in names with ATR under 2% of price averaged +0.98R \u2014 0.68R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "34% of trades either handed back a real profit or kept less than half their best excursion (1194 round-trip losses, 713 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      },
+      {
+        "regime": "recovery",
+        "label": "Recovery",
+        "trades": 5198,
+        "book_avg_r": 0.08,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 2405,
+            "pct_of_trades": 46.3,
+            "avg_r": -1.047,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 944,
+            "pct_of_trades": 18.2,
+            "avg_r": -0.704,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 654,
+            "pct_of_trades": 12.6,
+            "avg_r": 4.318,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 486,
+            "pct_of_trades": 9.3,
+            "avg_r": 1.102,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 378,
+            "pct_of_trades": 7.3,
+            "avg_r": -1.592,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 325,
+            "pct_of_trades": 6.3,
+            "avg_r": 2.587,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 6,
+            "pct_of_trades": 0.1,
+            "avg_r": -0.041,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 92,
+            "avg_r": -0.372,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 1025,
+            "avg_r": -0.014,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1467,
+            "avg_r": 0.178,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 1328,
+            "avg_r": 0.598,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 678,
+            "avg_r": -1.08,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2987,
+            "avg_r": -1.039,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 937,
+            "avg_r": -0.945,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 424,
+            "avg_r": -0.883,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 2862,
+            "avg_r": 0.114,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 715,
+            "avg_r": 0.936,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 425,
+            "avg_r": 1.899,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 606,
+            "avg_r": 2.473,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 755,
+            "avg_r": 3.578,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 92,
+            "avg_r": -0.372,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 1025,
+            "avg_r": -0.014,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1467,
+            "avg_r": 0.178,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 1328,
+            "avg_r": 0.598,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 678,
+            "avg_r": -1.08,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2987,
+            "avg_r": -1.039,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 937,
+            "avg_r": -0.945,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 424,
+            "avg_r": -0.883,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 2862,
+            "avg_r": 0.114,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 715,
+            "avg_r": 0.936,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 425,
+            "avg_r": 1.899,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 606,
+            "avg_r": 2.473,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 755,
+            "avg_r": 3.578,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 92,
+            "avg_r": -0.372,
+            "delta_vs_book": -0.452,
+            "direction": "worse",
+            "text": "On 92 trades, trades in names with ATR under 2% of price averaged -0.37R \u2014 0.45R below the book average."
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 1328,
+            "avg_r": 0.598,
+            "delta_vs_book": 0.518,
+            "direction": "better",
+            "text": "On 1328 trades, trades entered in the stressed volatility band averaged +0.60R \u2014 0.52R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "28% of trades either handed back a real profit or kept less than half their best excursion (944 round-trip losses, 486 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      },
+      {
+        "regime": "bull_narrow",
+        "label": "Narrow Bull",
+        "trades": 3820,
+        "book_avg_r": -0.252,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 1943,
+            "pct_of_trades": 50.9,
+            "avg_r": -1.056,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 810,
+            "pct_of_trades": 21.2,
+            "avg_r": -0.711,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 323,
+            "pct_of_trades": 8.5,
+            "avg_r": 1.136,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 322,
+            "pct_of_trades": 8.4,
+            "avg_r": -1.194,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 270,
+            "pct_of_trades": 7.1,
+            "avg_r": 4.596,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 151,
+            "pct_of_trades": 4.0,
+            "avg_r": 2.939,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 1,
+            "pct_of_trades": 0.0,
+            "avg_r": -0.234,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 198,
+            "avg_r": -0.675,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 514,
+            "avg_r": -0.315,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 3217,
+            "avg_r": -0.308,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 515,
+            "avg_r": -0.025,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 488,
+            "avg_r": -1.071,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2468,
+            "avg_r": -1.048,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 802,
+            "avg_r": -0.877,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 373,
+            "avg_r": -0.657,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 2272,
+            "avg_r": -0.143,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 500,
+            "avg_r": 0.916,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 223,
+            "avg_r": 1.921,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 341,
+            "avg_r": 2.135,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 289,
+            "avg_r": 4.281,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 198,
+            "avg_r": -0.675,
+            "kind": "entry"
+          },
+          {
+            "tag": "high_volatility_entry",
+            "trades": 514,
+            "avg_r": -0.315,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 3217,
+            "avg_r": -0.308,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 515,
+            "avg_r": -0.025,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 488,
+            "avg_r": -1.071,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 2468,
+            "avg_r": -1.048,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 802,
+            "avg_r": -0.877,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 373,
+            "avg_r": -0.657,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 2272,
+            "avg_r": -0.143,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 500,
+            "avg_r": 0.916,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 223,
+            "avg_r": 1.921,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 341,
+            "avg_r": 2.135,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 289,
+            "avg_r": 4.281,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "tight_atr_entry",
+            "trades": 198,
+            "avg_r": -0.675,
+            "delta_vs_book": -0.423,
+            "direction": "worse",
+            "text": "On 198 trades, trades in names with ATR under 2% of price averaged -0.68R \u2014 0.42R below the book average."
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 515,
+            "avg_r": -0.025,
+            "delta_vs_book": 0.227,
+            "direction": "better",
+            "text": "On 515 trades, trades in names with ATR above 5% of price averaged -0.03R \u2014 0.23R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "30% of trades either handed back a real profit or kept less than half their best excursion (810 round-trip losses, 323 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      },
+      {
+        "regime": "bear",
+        "label": "Bear",
+        "trades": 2067,
+        "book_avg_r": 0.671,
+        "verdicts": [
+          {
+            "verdict": "clean_loss",
+            "label": "Clean loss \u2014 wrong fast, cheap",
+            "trades": 847,
+            "pct_of_trades": 41.0,
+            "avg_r": -1.039,
+            "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+          },
+          {
+            "verdict": "clean_win",
+            "label": "Clean win",
+            "trades": 440,
+            "pct_of_trades": 21.3,
+            "avg_r": 4.322,
+            "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+          },
+          {
+            "verdict": "round_trip_loss",
+            "label": "Was well in profit, lost it all",
+            "trades": 287,
+            "pct_of_trades": 13.9,
+            "avg_r": -0.537,
+            "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+          },
+          {
+            "verdict": "gave_back_win",
+            "label": "Won, gave back most of it",
+            "trades": 209,
+            "pct_of_trades": 10.1,
+            "avg_r": 1.184,
+            "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+          },
+          {
+            "verdict": "lucky_win",
+            "label": "Won after nearly stopping out",
+            "trades": 155,
+            "pct_of_trades": 7.5,
+            "avg_r": 2.57,
+            "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+          },
+          {
+            "verdict": "gap_loss",
+            "label": "Gapped through the stop",
+            "trades": 114,
+            "pct_of_trades": 5.5,
+            "avg_r": -1.108,
+            "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+          },
+          {
+            "verdict": "slow_bleed",
+            "label": "Went nowhere, timed out",
+            "trades": 15,
+            "pct_of_trades": 0.7,
+            "avg_r": -0.016,
+            "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+          }
+        ],
+        "tags": [
+          {
+            "tag": "high_volatility_entry",
+            "trades": 1216,
+            "avg_r": 0.699,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1695,
+            "avg_r": 0.859,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 872,
+            "avg_r": 0.879,
+            "kind": "entry"
+          },
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 213,
+            "avg_r": -1.062,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 979,
+            "avg_r": -1.031,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 250,
+            "avg_r": -0.737,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 157,
+            "avg_r": 0.046,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 1068,
+            "avg_r": 0.735,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 339,
+            "avg_r": 0.9,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 214,
+            "avg_r": 1.796,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 347,
+            "avg_r": 3.171,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 508,
+            "avg_r": 3.342,
+            "kind": "outcome"
+          }
+        ],
+        "entry_tags": [
+          {
+            "tag": "high_volatility_entry",
+            "trades": 1216,
+            "avg_r": 0.699,
+            "kind": "entry"
+          },
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1695,
+            "avg_r": 0.859,
+            "kind": "entry"
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 872,
+            "avg_r": 0.879,
+            "kind": "entry"
+          }
+        ],
+        "outcome_tags": [
+          {
+            "tag": "no_favourable_excursion",
+            "trades": 213,
+            "avg_r": -1.062,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_hit",
+            "trades": 979,
+            "avg_r": -1.031,
+            "kind": "outcome"
+          },
+          {
+            "tag": "profit_handed_back",
+            "trades": 250,
+            "avg_r": -0.737,
+            "kind": "outcome"
+          },
+          {
+            "tag": "stop_gapped",
+            "trades": 157,
+            "avg_r": 0.046,
+            "kind": "outcome"
+          },
+          {
+            "tag": "left_over_1.5R_on_table",
+            "trades": 1068,
+            "avg_r": 0.735,
+            "kind": "outcome"
+          },
+          {
+            "tag": "gave_back_most_of_move",
+            "trades": 339,
+            "avg_r": 0.9,
+            "kind": "outcome"
+          },
+          {
+            "tag": "survived_near_stop",
+            "trades": 214,
+            "avg_r": 1.796,
+            "kind": "outcome"
+          },
+          {
+            "tag": "never_in_trouble",
+            "trades": 347,
+            "avg_r": 3.171,
+            "kind": "outcome"
+          },
+          {
+            "tag": "closed_by_time_stop",
+            "trades": 508,
+            "avg_r": 3.342,
+            "kind": "outcome"
+          }
+        ],
+        "lessons": [
+          {
+            "tag": "weak_breadth_entry",
+            "trades": 1695,
+            "avg_r": 0.859,
+            "delta_vs_book": 0.188,
+            "direction": "better",
+            "text": "On 1695 trades, trades entered with breadth under 40% averaged +0.86R \u2014 0.19R above the book average."
+          },
+          {
+            "tag": "wide_atr_entry",
+            "trades": 872,
+            "avg_r": 0.879,
+            "delta_vs_book": 0.208,
+            "direction": "better",
+            "text": "On 872 trades, trades in names with ATR above 5% of price averaged +0.88R \u2014 0.21R above the book average."
+          }
+        ],
+        "lesson_basis": "Lessons are drawn only from conditions knowable before entry. Tags describing what the trade did afterwards are shown separately and deliberately excluded: averaging R over them restates the outcome and reads as a discovery.",
+        "structural_note": "24% of trades either handed back a real profit or kept less than half their best excursion (287 round-trip losses, 209 give-back wins). That is an exit problem, not a selection problem \u2014 the entries were right often enough."
+      }
+    ],
+    "condition_studies": [
+      {
+        "condition": "atr_pct_at_entry",
+        "label": "Volatility of the name (ATR as % of price)",
+        "question": "Does buying quieter stocks pay better than buying jumpy ones?",
+        "buckets": [
+          {
+            "label": "under 2%",
+            "trades": 3079,
+            "win_rate": 35.4,
+            "avg_r": 0.483,
+            "payoff": 3.08,
+            "oos_trades": 1471,
+            "oos_avg_r": 0.661
+          },
+          {
+            "label": "2-3%",
+            "trades": 17411,
+            "win_rate": 30.6,
+            "avg_r": 0.294,
+            "payoff": 3.21,
+            "oos_trades": 7272,
+            "oos_avg_r": 0.399
+          },
+          {
+            "label": "3-4.5%",
+            "trades": 45220,
+            "win_rate": 30.5,
+            "avg_r": 0.249,
+            "payoff": 3.09,
+            "oos_trades": 18827,
+            "oos_avg_r": 0.24
+          },
+          {
+            "label": "4.5-6%",
+            "trades": 23260,
+            "win_rate": 32.1,
+            "avg_r": 0.198,
+            "payoff": 2.74,
+            "oos_trades": 8947,
+            "oos_avg_r": 0.258
+          },
+          {
+            "label": "over 6%",
+            "trades": 6316,
+            "win_rate": 33.0,
+            "avg_r": 0.089,
+            "payoff": 2.31,
+            "oos_trades": 1632,
+            "oos_avg_r": 0.039
+          }
+        ],
+        "monotone": true,
+        "spread_r": 0.394,
+        "oos_spread_r": 0.622,
+        "verdict": "Monotone in-sample (spread 0.39R) and the direction holds out-of-sample (spread 0.62R). This is a real entry-time effect.",
+        "duplicates": null
+      },
+      {
+        "condition": "risk_pct",
+        "label": "Stop width at entry (% below entry)",
+        "question": "Do tight stops or wide stops produce more R?",
+        "buckets": [
+          {
+            "label": "under 3%",
+            "trades": 1056,
+            "win_rate": 35.9,
+            "avg_r": 0.492,
+            "payoff": 3.01,
+            "oos_trades": 434,
+            "oos_avg_r": 0.666
+          },
+          {
+            "label": "3-5%",
+            "trades": 8909,
+            "win_rate": 30.9,
+            "avg_r": 0.343,
+            "payoff": 3.31,
+            "oos_trades": 3976,
+            "oos_avg_r": 0.517
+          },
+          {
+            "label": "5-8%",
+            "trades": 37716,
+            "win_rate": 30.1,
+            "avg_r": 0.269,
+            "payoff": 3.21,
+            "oos_trades": 15430,
+            "oos_avg_r": 0.272
+          },
+          {
+            "label": "over 8%",
+            "trades": 47605,
+            "win_rate": 32.1,
+            "avg_r": 0.195,
+            "payoff": 2.73,
+            "oos_trades": 18309,
+            "oos_avg_r": 0.23
+          }
+        ],
+        "monotone": true,
+        "spread_r": 0.297,
+        "oos_spread_r": 0.436,
+        "verdict": "Monotone in-sample (spread 0.30R) and the direction holds out-of-sample (spread 0.44R). This is a real entry-time effect. Stop width is set as a multiple of ATR, so this is the same effect as the volatility study above, rescaled. Treat the two as one finding.",
+        "duplicates": "atr_pct_at_entry"
+      },
+      {
+        "condition": "pct_from_52w_high",
+        "label": "Where the index sat at entry (% below its 52-week high)",
+        "question": "Is it better to buy when the index is at highs or off them?",
+        "buckets": [
+          {
+            "label": "over 15% off high",
+            "trades": 2102,
+            "win_rate": 41.9,
+            "avg_r": 0.652,
+            "payoff": 2.97,
+            "oos_trades": 42,
+            "oos_avg_r": null
+          },
+          {
+            "label": "8-15% off",
+            "trades": 13444,
+            "win_rate": 31.6,
+            "avg_r": 0.118,
+            "payoff": 2.53,
+            "oos_trades": 5100,
+            "oos_avg_r": -0.137
+          },
+          {
+            "label": "3-8% off",
+            "trades": 29225,
+            "win_rate": 30.8,
+            "avg_r": 0.24,
+            "payoff": 3.03,
+            "oos_trades": 12245,
+            "oos_avg_r": 0.372
+          },
+          {
+            "label": "within 3% of high",
+            "trades": 50515,
+            "win_rate": 31.0,
+            "avg_r": 0.259,
+            "payoff": 3.07,
+            "oos_trades": 20762,
+            "oos_avg_r": 0.33
+          }
+        ],
+        "monotone": false,
+        "spread_r": 0.534,
+        "oos_spread_r": 0.509,
+        "verdict": "No consistent gradient across buckets (spread 0.53R). Any single cutoff here would be a cherry-pick.",
+        "duplicates": null
+      },
+      {
+        "condition": "breadth_above_200dma",
+        "label": "Market breadth at entry (% of universe above its 200 DMA)",
+        "question": "How much does broad participation matter to a single trade?",
+        "buckets": [
+          {
+            "label": "under 30%",
+            "trades": 6080,
+            "win_rate": 34.8,
+            "avg_r": 0.228,
+            "payoff": 2.52,
+            "oos_trades": 2148,
+            "oos_avg_r": 0.263
+          },
+          {
+            "label": "30-45%",
+            "trades": 10503,
+            "win_rate": 29.8,
+            "avg_r": 0.082,
+            "payoff": 2.63,
+            "oos_trades": 4281,
+            "oos_avg_r": 0.129
+          },
+          {
+            "label": "45-60%",
+            "trades": 19631,
+            "win_rate": 26.5,
+            "avg_r": 0.013,
+            "payoff": 2.83,
+            "oos_trades": 9700,
+            "oos_avg_r": 0.028
+          },
+          {
+            "label": "60-75%",
+            "trades": 24101,
+            "win_rate": 31.1,
+            "avg_r": 0.221,
+            "payoff": 2.93,
+            "oos_trades": 8554,
+            "oos_avg_r": 0.365
+          },
+          {
+            "label": "over 75%",
+            "trades": 34971,
+            "win_rate": 33.9,
+            "avg_r": 0.435,
+            "payoff": 3.26,
+            "oos_trades": 13466,
+            "oos_avg_r": 0.464
+          }
+        ],
+        "monotone": false,
+        "spread_r": 0.422,
+        "oos_spread_r": 0.436,
+        "verdict": "No consistent gradient across buckets (spread 0.42R). Any single cutoff here would be a cherry-pick.",
+        "duplicates": null
+      },
+      {
+        "condition": "volatility_band",
+        "label": "Index volatility band at entry",
+        "question": "Do calm tapes pay better than stressed ones?",
+        "buckets": [
+          {
+            "label": "calm",
+            "trades": 40359,
+            "win_rate": 31.5,
+            "avg_r": 0.317,
+            "payoff": 3.18,
+            "oos_trades": 17512,
+            "oos_avg_r": 0.601
+          },
+          {
+            "label": "normal",
+            "trades": 41955,
+            "win_rate": 29.8,
+            "avg_r": 0.146,
+            "payoff": 2.85,
+            "oos_trades": 14703,
+            "oos_avg_r": -0.055
+          },
+          {
+            "label": "stressed",
+            "trades": 12972,
+            "win_rate": 35.2,
+            "avg_r": 0.317,
+            "payoff": 2.75,
+            "oos_trades": 5934,
+            "oos_avg_r": 0.177
+          }
+        ],
+        "monotone": false,
+        "spread_r": 0.171,
+        "oos_spread_r": 0.656,
+        "verdict": "No consistent gradient across buckets (spread 0.17R). Any single cutoff here would be a cherry-pick.",
+        "duplicates": null
+      }
+    ],
+    "condition_split": "2022-11-28",
+    "evolution_timeline": [
+      {
+        "as_of": "2008-01-11",
+        "counts": {
+          "rejected": 6
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2008-04-11",
+        "counts": {
+          "rejected": 7
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2008-07-11",
+        "counts": {
+          "rejected": 8
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2008-10-10",
+        "counts": {
+          "rejected": 8
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2009-01-09",
+        "counts": {
+          "rejected": 8
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2009-04-10",
+        "counts": {
+          "rejected": 8
+        },
+        "tradeable": 0
+      },
+      {
+        "as_of": "2009-07-10",
+        "counts": {
+          "confirmed": 1,
+          "rejected": 9
+        },
+        "tradeable": 1
+      },
+      {
+        "as_of": "2009-10-09",
+        "counts": {
+          "confirmed": 3,
+          "rejected": 10
+        },
+        "tradeable": 3
+      },
+      {
+        "as_of": "2010-01-08",
+        "counts": {
+          "confirmed": 6,
+          "rejected": 15
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2010-04-09",
+        "counts": {
+          "confirmed": 7,
+          "rejected": 15
+        },
+        "tradeable": 7
+      },
+      {
+        "as_of": "2010-07-09",
+        "counts": {
+          "confirmed": 8,
+          "rejected": 15
+        },
+        "tradeable": 8
+      },
+      {
+        "as_of": "2010-10-08",
+        "counts": {
+          "confirmed": 9,
+          "rejected": 16
+        },
+        "tradeable": 9
+      },
+      {
+        "as_of": "2011-01-07",
+        "counts": {
+          "confirmed": 8,
+          "rejected": 17
+        },
+        "tradeable": 8
+      },
+      {
+        "as_of": "2011-04-08",
+        "counts": {
+          "confirmed": 9,
+          "rejected": 17
+        },
+        "tradeable": 9
+      },
+      {
+        "as_of": "2011-07-08",
+        "counts": {
+          "confirmed": 7,
+          "candidate": 1,
+          "rejected": 19
+        },
+        "tradeable": 7
+      },
+      {
+        "as_of": "2011-10-07",
+        "counts": {
+          "candidate": 2,
+          "confirmed": 5,
+          "retired": 1,
+          "rejected": 23
+        },
+        "tradeable": 5
+      },
+      {
+        "as_of": "2012-01-06",
+        "counts": {
+          "retired": 2,
+          "confirmed": 4,
+          "candidate": 2,
+          "rejected": 24
+        },
+        "tradeable": 4
+      },
+      {
+        "as_of": "2012-04-06",
+        "counts": {
+          "retired": 1,
+          "confirmed": 4,
+          "candidate": 1,
+          "rejected": 27
+        },
+        "tradeable": 4
+      },
+      {
+        "as_of": "2012-07-06",
+        "counts": {
+          "retired": 2,
+          "confirmed": 1,
+          "watch": 1,
+          "candidate": 1,
+          "rejected": 29
+        },
+        "tradeable": 2
+      },
+      {
+        "as_of": "2012-10-05",
+        "counts": {
+          "retired": 5,
+          "confirmed": 1,
+          "candidate": 1,
+          "rejected": 28
+        },
+        "tradeable": 1
+      },
+      {
+        "as_of": "2013-01-04",
+        "counts": {
+          "retired": 6,
+          "confirmed": 1,
+          "candidate": 1,
+          "rejected": 27
+        },
+        "tradeable": 1
+      },
+      {
+        "as_of": "2013-04-05",
+        "counts": {
+          "retired": 5,
+          "confirmed": 1,
+          "candidate": 2,
+          "rejected": 30
+        },
+        "tradeable": 1
+      },
+      {
+        "as_of": "2013-07-05",
+        "counts": {
+          "retired": 3,
+          "confirmed": 2,
+          "watch": 1,
+          "candidate": 2,
+          "rejected": 31
+        },
+        "tradeable": 3
+      },
+      {
+        "as_of": "2013-10-04",
+        "counts": {
+          "retired": 3,
+          "confirmed": 3,
+          "candidate": 2,
+          "rejected": 32
+        },
+        "tradeable": 3
+      },
+      {
+        "as_of": "2014-01-03",
+        "counts": {
+          "watch": 1,
+          "retired": 2,
+          "candidate": 2,
+          "confirmed": 3,
+          "rejected": 32
+        },
+        "tradeable": 4
+      },
+      {
+        "as_of": "2014-04-04",
+        "counts": {
+          "candidate": 3,
+          "retired": 2,
+          "confirmed": 4,
+          "rejected": 31
+        },
+        "tradeable": 4
+      },
+      {
+        "as_of": "2014-07-04",
+        "counts": {
+          "candidate": 4,
+          "confirmed": 8,
+          "rejected": 28
+        },
+        "tradeable": 8
+      },
+      {
+        "as_of": "2014-10-03",
+        "counts": {
+          "candidate": 6,
+          "confirmed": 10,
+          "rejected": 25
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2015-01-02",
+        "counts": {
+          "candidate": 7,
+          "confirmed": 8,
+          "watch": 2,
+          "rejected": 24
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2015-04-03",
+        "counts": {
+          "candidate": 7,
+          "confirmed": 10,
+          "watch": 2,
+          "rejected": 22
+        },
+        "tradeable": 12
+      },
+      {
+        "as_of": "2015-07-03",
+        "counts": {
+          "candidate": 6,
+          "confirmed": 9,
+          "retired": 2,
+          "rejected": 24
+        },
+        "tradeable": 9
+      },
+      {
+        "as_of": "2015-10-02",
+        "counts": {
+          "candidate": 6,
+          "confirmed": 9,
+          "retired": 2,
+          "rejected": 25
+        },
+        "tradeable": 9
+      },
+      {
+        "as_of": "2016-01-01",
+        "counts": {
+          "candidate": 5,
+          "confirmed": 6,
+          "retired": 3,
+          "rejected": 29
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2016-04-01",
+        "counts": {
+          "retired": 5,
+          "confirmed": 6,
+          "candidate": 3,
+          "rejected": 30
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2016-07-01",
+        "counts": {
+          "retired": 5,
+          "confirmed": 6,
+          "candidate": 3,
+          "rejected": 32
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2016-09-30",
+        "counts": {
+          "retired": 5,
+          "confirmed": 10,
+          "candidate": 3,
+          "watch": 1,
+          "rejected": 27
+        },
+        "tradeable": 11
+      },
+      {
+        "as_of": "2016-12-30",
+        "counts": {
+          "retired": 8,
+          "confirmed": 10,
+          "candidate": 5,
+          "rejected": 24
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2017-03-31",
+        "counts": {
+          "retired": 7,
+          "confirmed": 11,
+          "candidate": 5,
+          "rejected": 24
+        },
+        "tradeable": 11
+      },
+      {
+        "as_of": "2017-06-30",
+        "counts": {
+          "retired": 8,
+          "confirmed": 15,
+          "candidate": 5,
+          "rejected": 19
+        },
+        "tradeable": 15
+      },
+      {
+        "as_of": "2017-09-29",
+        "counts": {
+          "retired": 7,
+          "confirmed": 16,
+          "candidate": 4,
+          "rejected": 20
+        },
+        "tradeable": 16
+      },
+      {
+        "as_of": "2017-12-29",
+        "counts": {
+          "retired": 3,
+          "confirmed": 20,
+          "candidate": 4,
+          "watch": 1,
+          "rejected": 19
+        },
+        "tradeable": 21
+      },
+      {
+        "as_of": "2018-03-30",
+        "counts": {
+          "candidate": 5,
+          "confirmed": 20,
+          "watch": 1,
+          "retired": 2,
+          "rejected": 19
+        },
+        "tradeable": 21
+      },
+      {
+        "as_of": "2018-06-29",
+        "counts": {
+          "candidate": 5,
+          "confirmed": 20,
+          "watch": 1,
+          "retired": 2,
+          "rejected": 20
+        },
+        "tradeable": 21
+      },
+      {
+        "as_of": "2018-09-28",
+        "counts": {
+          "candidate": 9,
+          "confirmed": 18,
+          "retired": 1,
+          "rejected": 20
+        },
+        "tradeable": 18
+      },
+      {
+        "as_of": "2018-12-28",
+        "counts": {
+          "candidate": 14,
+          "confirmed": 11,
+          "rejected": 23
+        },
+        "tradeable": 11
+      },
+      {
+        "as_of": "2019-03-29",
+        "counts": {
+          "candidate": 12,
+          "confirmed": 12,
+          "retired": 2,
+          "rejected": 24
+        },
+        "tradeable": 12
+      },
+      {
+        "as_of": "2019-06-28",
+        "counts": {
+          "candidate": 11,
+          "watch": 1,
+          "confirmed": 9,
+          "retired": 8,
+          "rejected": 22
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2019-09-27",
+        "counts": {
+          "candidate": 11,
+          "watch": 1,
+          "retired": 8,
+          "confirmed": 7,
+          "rejected": 24
+        },
+        "tradeable": 8
+      },
+      {
+        "as_of": "2019-12-27",
+        "counts": {
+          "candidate": 11,
+          "watch": 2,
+          "retired": 13,
+          "confirmed": 2,
+          "rejected": 23
+        },
+        "tradeable": 4
+      },
+      {
+        "as_of": "2020-03-27",
+        "counts": {
+          "candidate": 11,
+          "watch": 1,
+          "confirmed": 5,
+          "retired": 13,
+          "rejected": 21
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2020-06-26",
+        "counts": {
+          "retired": 14,
+          "watch": 1,
+          "candidate": 10,
+          "confirmed": 5,
+          "rejected": 21
+        },
+        "tradeable": 6
+      },
+      {
+        "as_of": "2020-09-25",
+        "counts": {
+          "confirmed": 10,
+          "watch": 2,
+          "retired": 11,
+          "candidate": 8,
+          "rejected": 22
+        },
+        "tradeable": 12
+      },
+      {
+        "as_of": "2020-12-25",
+        "counts": {
+          "confirmed": 21,
+          "watch": 1,
+          "retired": 10,
+          "candidate": 1,
+          "rejected": 20
+        },
+        "tradeable": 22
+      },
+      {
+        "as_of": "2021-03-26",
+        "counts": {
+          "confirmed": 28,
+          "watch": 1,
+          "candidate": 2,
+          "retired": 6,
+          "rejected": 16
+        },
+        "tradeable": 29
+      },
+      {
+        "as_of": "2021-06-25",
+        "counts": {
+          "confirmed": 30,
+          "candidate": 1,
+          "watch": 1,
+          "retired": 6,
+          "rejected": 15
+        },
+        "tradeable": 31
+      },
+      {
+        "as_of": "2021-09-24",
+        "counts": {
+          "confirmed": 35,
+          "candidate": 2,
+          "watch": 1,
+          "retired": 2,
+          "rejected": 13
+        },
+        "tradeable": 36
+      },
+      {
+        "as_of": "2021-12-24",
+        "counts": {
+          "confirmed": 35,
+          "candidate": 3,
+          "retired": 1,
+          "watch": 1,
+          "rejected": 13
+        },
+        "tradeable": 36
+      },
+      {
+        "as_of": "2022-03-25",
+        "counts": {
+          "confirmed": 33,
+          "candidate": 3,
+          "retired": 3,
+          "rejected": 14
+        },
+        "tradeable": 33
+      },
+      {
+        "as_of": "2022-06-24",
+        "counts": {
+          "confirmed": 32,
+          "candidate": 2,
+          "retired": 3,
+          "rejected": 16
+        },
+        "tradeable": 32
+      },
+      {
+        "as_of": "2022-09-23",
+        "counts": {
+          "confirmed": 30,
+          "candidate": 5,
+          "watch": 2,
+          "retired": 1,
+          "rejected": 15
+        },
+        "tradeable": 32
+      },
+      {
+        "as_of": "2022-12-23",
+        "counts": {
+          "candidate": 8,
+          "confirmed": 29,
+          "watch": 1,
+          "retired": 1,
+          "rejected": 14
+        },
+        "tradeable": 30
+      },
+      {
+        "as_of": "2023-03-24",
+        "counts": {
+          "candidate": 8,
+          "confirmed": 28,
+          "watch": 1,
+          "retired": 2,
+          "rejected": 14
+        },
+        "tradeable": 29
+      },
+      {
+        "as_of": "2023-06-23",
+        "counts": {
+          "candidate": 8,
+          "confirmed": 22,
+          "watch": 4,
+          "retired": 5,
+          "rejected": 14
+        },
+        "tradeable": 26
+      },
+      {
+        "as_of": "2023-09-22",
+        "counts": {
+          "candidate": 9,
+          "confirmed": 27,
+          "watch": 3,
+          "retired": 3,
+          "rejected": 11
+        },
+        "tradeable": 30
+      },
+      {
+        "as_of": "2023-12-22",
+        "counts": {
+          "candidate": 9,
+          "confirmed": 27,
+          "watch": 3,
+          "retired": 3,
+          "rejected": 11
+        },
+        "tradeable": 30
+      },
+      {
+        "as_of": "2024-03-22",
+        "counts": {
+          "candidate": 9,
+          "confirmed": 27,
+          "watch": 3,
+          "retired": 3,
+          "rejected": 11
+        },
+        "tradeable": 30
+      },
+      {
+        "as_of": "2024-06-21",
+        "counts": {
+          "candidate": 10,
+          "confirmed": 26,
+          "watch": 3,
+          "retired": 3,
+          "rejected": 11
+        },
+        "tradeable": 29
+      },
+      {
+        "as_of": "2024-09-20",
+        "counts": {
+          "candidate": 15,
+          "confirmed": 24,
+          "retired": 3,
+          "rejected": 11
+        },
+        "tradeable": 24
+      },
+      {
+        "as_of": "2024-12-20",
+        "counts": {
+          "candidate": 24,
+          "confirmed": 16,
+          "rejected": 13
+        },
+        "tradeable": 16
+      },
+      {
+        "as_of": "2025-03-21",
+        "counts": {
+          "candidate": 25,
+          "confirmed": 10,
+          "retired": 2,
+          "rejected": 16
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2025-06-20",
+        "counts": {
+          "candidate": 17,
+          "retired": 9,
+          "confirmed": 10,
+          "rejected": 17
+        },
+        "tradeable": 10
+      },
+      {
+        "as_of": "2025-09-19",
+        "counts": {
+          "candidate": 12,
+          "watch": 4,
+          "confirmed": 11,
+          "retired": 9,
+          "rejected": 17
+        },
+        "tradeable": 15
+      },
+      {
+        "as_of": "2025-12-19",
+        "counts": {
+          "candidate": 11,
+          "watch": 6,
+          "confirmed": 13,
+          "retired": 6,
+          "rejected": 17
+        },
+        "tradeable": 19
+      },
+      {
+        "as_of": "2026-03-20",
+        "counts": {
+          "candidate": 10,
+          "watch": 9,
+          "confirmed": 12,
+          "retired": 5,
+          "rejected": 17
+        },
+        "tradeable": 21
+      },
+      {
+        "as_of": "2026-06-19",
+        "counts": {
+          "candidate": 10,
+          "watch": 10,
+          "confirmed": 12,
+          "retired": 4,
+          "rejected": 17
+        },
+        "tradeable": 22
+      },
+      {
+        "as_of": "2026-09-18",
+        "counts": {
+          "candidate": 9,
+          "retired": 11,
+          "watch": 7,
+          "confirmed": 10,
+          "rejected": 17
+        },
+        "tradeable": 17
+      }
+    ],
+    "evolution_changes": [
+      {
+        "as_of": "2026-09-18",
+        "strategy": "squeeze_release",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 291,
+        "avg_r": 0.722,
+        "recent_avg_r": -0.734,
+        "note": "+0.72R across 291 trades overall, but -0.73R on the 51 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "high_tight_flag",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 181,
+        "avg_r": 0.482,
+        "recent_avg_r": null,
+        "note": "181 trades at +0.48R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "oversold_bounce",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 1972,
+        "avg_r": 0.336,
+        "recent_avg_r": -0.334,
+        "note": "+0.34R across 1972 trades overall, but -0.33R on the 354 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "pullback_sma50",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 14874,
+        "avg_r": 0.326,
+        "recent_avg_r": 0.108,
+        "note": "+0.33R long-run against +0.11R on the last 2139 trades \u2014 a 0.22R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 380,
+        "avg_r": 0.216,
+        "recent_avg_r": 0.291,
+        "note": "+0.22R across 380 trades, +0.29R on the last 213. Holding up."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "gap_continuation",
+        "regime": "recovery",
+        "from_status": "watch",
+        "to_status": "retired",
+        "from_label": "On watch",
+        "to_label": "Retired",
+        "trades": 262,
+        "avg_r": 0.154,
+        "recent_avg_r": -0.373,
+        "note": "+0.15R across 262 trades overall, but -0.37R on the 105 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "pullback_ema21",
+        "regime": "recovery",
+        "from_status": "watch",
+        "to_status": "retired",
+        "from_label": "On watch",
+        "to_label": "Retired",
+        "trades": 856,
+        "avg_r": 0.095,
+        "recent_avg_r": -0.569,
+        "note": "+0.09R across 856 trades overall, but -0.57R on the 384 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "vcp_breakout",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 131,
+        "avg_r": 0.089,
+        "recent_avg_r": -0.822,
+        "note": "+0.09R across 131 trades overall, but -0.82R on the 44 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "momentum_burst",
+        "regime": "recovery",
+        "from_status": "watch",
+        "to_status": "retired",
+        "from_label": "On watch",
+        "to_label": "Retired",
+        "trades": 1508,
+        "avg_r": 0.084,
+        "recent_avg_r": -0.31,
+        "note": "+0.08R across 1508 trades overall, but -0.31R on the 602 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "momentum_burst",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 1792,
+        "avg_r": 0.079,
+        "recent_avg_r": 0.145,
+        "note": "+0.08R across 1792 trades, +0.15R on the last 990. Holding up."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "pullback_ema21",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "retired",
+        "from_label": "Rejected",
+        "to_label": "Retired",
+        "trades": 3052,
+        "avg_r": 0.072,
+        "recent_avg_r": -0.244,
+        "note": "+0.07R across 3052 trades overall, but -0.24R on the 1027 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "week52_breakout",
+        "regime": "recovery",
+        "from_status": "watch",
+        "to_status": "retired",
+        "from_label": "On watch",
+        "to_label": "Retired",
+        "trades": 534,
+        "avg_r": 0.053,
+        "recent_avg_r": -0.664,
+        "note": "+0.05R across 534 trades overall, but -0.66R on the 221 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "pullback_sma50",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "rejected",
+        "from_label": "Confirmed",
+        "to_label": "Rejected",
+        "trades": 994,
+        "avg_r": -0.031,
+        "recent_avg_r": -0.468,
+        "note": "-0.03R across 994 trades, -0.47R on the last 481. Holding up."
+      },
+      {
+        "as_of": "2026-09-18",
+        "strategy": "minervini_breakout",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "rejected",
+        "from_label": "Retired",
+        "to_label": "Rejected",
+        "trades": 559,
+        "avg_r": -0.039,
+        "recent_avg_r": -0.703,
+        "note": "-0.04R across 559 trades, -0.70R on the last 238. Holding up."
+      },
+      {
+        "as_of": "2026-06-19",
+        "strategy": "oversold_bounce",
+        "regime": "bull_strong",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 1972,
+        "avg_r": 0.336,
+        "recent_avg_r": 0.192,
+        "note": "+0.34R across 1972 trades, +0.19R on the last 435. Holding up."
+      },
+      {
+        "as_of": "2026-06-19",
+        "strategy": "gap_continuation",
+        "regime": "bull_narrow",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 152,
+        "avg_r": 0.32,
+        "recent_avg_r": 0.003,
+        "note": "+0.32R long-run against +0.00R on the last 65 trades \u2014 a 0.32R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-06-19",
+        "strategy": "vcp_breakout",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 2319,
+        "avg_r": 0.285,
+        "recent_avg_r": 0.056,
+        "note": "+0.28R long-run against +0.06R on the last 308 trades \u2014 a 0.23R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-03-20",
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 1399,
+        "avg_r": 0.337,
+        "recent_avg_r": 0.013,
+        "note": "+0.34R long-run against +0.01R on the last 371 trades \u2014 a 0.32R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-03-20",
+        "strategy": "oversold_bounce",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 1970,
+        "avg_r": 0.336,
+        "recent_avg_r": 0.165,
+        "note": "+0.34R long-run against +0.17R on the last 581 trades \u2014 a 0.17R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-03-20",
+        "strategy": "momentum_burst",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 11116,
+        "avg_r": 0.249,
+        "recent_avg_r": 0.01,
+        "note": "+0.25R long-run against +0.01R on the last 2522 trades \u2014 a 0.24R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2026-03-20",
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 1014,
+        "avg_r": 0.186,
+        "recent_avg_r": 0.11,
+        "note": "+0.19R across 1014 trades, +0.11R on the last 283. Holding up."
+      },
+      {
+        "as_of": "2026-03-20",
+        "strategy": "gap_continuation",
+        "regime": "bull_narrow",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 136,
+        "avg_r": 0.016,
+        "recent_avg_r": -0.942,
+        "note": "+0.02R across 136 trades overall, but -0.94R on the 49 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "vcp_breakout",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "watch",
+        "from_label": "Candidate",
+        "to_label": "On watch",
+        "trades": 94,
+        "avg_r": 0.683,
+        "recent_avg_r": 0.092,
+        "note": "+0.68R long-run against +0.09R on the last 25 trades \u2014 a 0.59R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 965,
+        "avg_r": 0.408,
+        "recent_avg_r": 0.045,
+        "note": "+0.41R long-run against +0.04R on the last 190 trades \u2014 a 0.36R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 681,
+        "avg_r": 0.398,
+        "recent_avg_r": 0.258,
+        "note": "+0.40R across 681 trades, +0.26R on the last 103. Holding up."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "gap_continuation",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 298,
+        "avg_r": 0.307,
+        "recent_avg_r": 0.188,
+        "note": "+0.31R across 298 trades, +0.19R on the last 113. Holding up."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "squeeze_release",
+        "regime": "bull_strong",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 805,
+        "avg_r": 0.287,
+        "recent_avg_r": -0.23,
+        "note": "+0.29R across 805 trades overall, but -0.23R on the 235 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-12-19",
+        "strategy": "week52_breakout",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 635,
+        "avg_r": 0.255,
+        "recent_avg_r": 0.142,
+        "note": "+0.25R across 635 trades, +0.14R on the last 116. Holding up."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "pullback_ema21",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 565,
+        "avg_r": 0.558,
+        "recent_avg_r": 0.164,
+        "note": "+0.56R long-run against +0.16R on the last 93 trades \u2014 a 0.39R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "week52_breakout",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 356,
+        "avg_r": 0.494,
+        "recent_avg_r": 0.009,
+        "note": "+0.49R long-run against +0.01R on the last 43 trades \u2014 a 0.48R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "gap_continuation",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 201,
+        "avg_r": 0.434,
+        "recent_avg_r": 0.178,
+        "note": "+0.43R long-run against +0.18R on the last 44 trades \u2014 a 0.26R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 893,
+        "avg_r": 0.379,
+        "recent_avg_r": -0.393,
+        "note": "+0.38R across 893 trades overall, but -0.39R on the 118 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 643,
+        "avg_r": 0.369,
+        "recent_avg_r": -0.106,
+        "note": "+0.37R across 643 trades overall, but -0.11R on the 65 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "pullback_sma50",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 680,
+        "avg_r": 0.333,
+        "recent_avg_r": 0.195,
+        "note": "+0.33R across 680 trades, +0.20R on the last 167. Holding up."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "momentum_burst",
+        "regime": "recovery",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 1236,
+        "avg_r": 0.273,
+        "recent_avg_r": 0.075,
+        "note": "+0.27R long-run against +0.07R on the last 330 trades \u2014 a 0.20R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "gap_continuation",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 249,
+        "avg_r": 0.248,
+        "recent_avg_r": -0.132,
+        "note": "+0.25R across 249 trades overall, but -0.13R on the 64 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "week52_breakout",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 590,
+        "avg_r": 0.234,
+        "recent_avg_r": -0.103,
+        "note": "+0.23R across 590 trades overall, but -0.10R on the 71 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-09-19",
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 879,
+        "avg_r": 0.066,
+        "recent_avg_r": -0.669,
+        "note": "+0.07R across 879 trades overall, but -0.67R on the 148 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "week52_breakout",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 341,
+        "avg_r": 0.442,
+        "recent_avg_r": -0.874,
+        "note": "+0.44R across 341 trades overall, but -0.87R on the 28 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "pullback_ema21",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 532,
+        "avg_r": 0.434,
+        "recent_avg_r": -1.147,
+        "note": "+0.43R across 532 trades overall, but -1.15R on the 60 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 1091,
+        "avg_r": 0.363,
+        "recent_avg_r": -1.113,
+        "note": "+0.36R across 1091 trades overall, but -1.11R on the 63 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "gap_continuation",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 179,
+        "avg_r": 0.342,
+        "recent_avg_r": -0.832,
+        "note": "+0.34R across 179 trades overall, but -0.83R on the 22 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "minervini_breakout",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 369,
+        "avg_r": 0.246,
+        "recent_avg_r": -1.141,
+        "note": "+0.25R across 369 trades overall, but -1.14R on the 48 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "pullback_sma50",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 612,
+        "avg_r": 0.144,
+        "recent_avg_r": -1.071,
+        "note": "+0.14R across 612 trades overall, but -1.07R on the 99 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "momentum_burst",
+        "regime": "recovery",
+        "from_status": "candidate",
+        "to_status": "retired",
+        "from_label": "Candidate",
+        "to_label": "Retired",
+        "trades": 1078,
+        "avg_r": 0.114,
+        "recent_avg_r": -1.104,
+        "note": "+0.11R across 1078 trades overall, but -1.10R on the 172 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-06-20",
+        "strategy": "squeeze_release",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "rejected",
+        "from_label": "Candidate",
+        "to_label": "Rejected",
+        "trades": 202,
+        "avg_r": -0.032,
+        "recent_avg_r": null,
+        "note": "202 trades at -0.03R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 1028,
+        "avg_r": 0.453,
+        "recent_avg_r": null,
+        "note": "1028 trades at +0.45R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 731,
+        "avg_r": 0.215,
+        "recent_avg_r": null,
+        "note": "731 trades at +0.21R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "oversold_bounce",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 797,
+        "avg_r": 0.199,
+        "recent_avg_r": -0.256,
+        "note": "+0.20R across 797 trades overall, but -0.26R on the 230 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 3158,
+        "avg_r": 0.051,
+        "recent_avg_r": -0.368,
+        "note": "+0.05R across 3158 trades overall, but -0.37R on the 818 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "pullback_ema21",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "rejected",
+        "from_label": "Confirmed",
+        "to_label": "Rejected",
+        "trades": 2651,
+        "avg_r": -0.015,
+        "recent_avg_r": -0.457,
+        "note": "-0.02R across 2651 trades, -0.46R on the last 712. Holding up."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "rejected",
+        "from_label": "Confirmed",
+        "to_label": "Rejected",
+        "trades": 242,
+        "avg_r": -0.064,
+        "recent_avg_r": -0.359,
+        "note": "-0.06R across 242 trades, -0.36R on the last 82. Holding up."
+      },
+      {
+        "as_of": "2025-03-21",
+        "strategy": "squeeze_release",
+        "regime": "correction",
+        "from_status": "candidate",
+        "to_status": "rejected",
+        "from_label": "Candidate",
+        "to_label": "Rejected",
+        "trades": 45,
+        "avg_r": -0.082,
+        "recent_avg_r": null,
+        "note": "45 trades at -0.08R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "momentum_burst",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 562,
+        "avg_r": 0.979,
+        "recent_avg_r": null,
+        "note": "562 trades at +0.98R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "minervini_breakout",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 169,
+        "avg_r": 0.805,
+        "recent_avg_r": null,
+        "note": "169 trades at +0.80R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 775,
+        "avg_r": 0.497,
+        "recent_avg_r": null,
+        "note": "775 trades at +0.50R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "pullback_ema21",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 383,
+        "avg_r": 0.469,
+        "recent_avg_r": null,
+        "note": "383 trades at +0.47R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 578,
+        "avg_r": 0.423,
+        "recent_avg_r": null,
+        "note": "578 trades at +0.42R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "gap_continuation",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "candidate",
+        "from_label": "Retired",
+        "to_label": "Candidate",
+        "trades": 185,
+        "avg_r": 0.379,
+        "recent_avg_r": null,
+        "note": "185 trades at +0.38R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "pullback_sma50",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 495,
+        "avg_r": 0.372,
+        "recent_avg_r": null,
+        "note": "495 trades at +0.37R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "momentum_burst",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 906,
+        "avg_r": 0.345,
+        "recent_avg_r": null,
+        "note": "906 trades at +0.35R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "week52_breakout",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "candidate",
+        "from_label": "Retired",
+        "to_label": "Candidate",
+        "trades": 519,
+        "avg_r": 0.28,
+        "recent_avg_r": null,
+        "note": "519 trades at +0.28R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 731,
+        "avg_r": 0.215,
+        "recent_avg_r": 1.152,
+        "note": "+0.21R across 731 trades, +1.15R on the last 23. Holding up."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "squeeze_release",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 184,
+        "avg_r": 0.052,
+        "recent_avg_r": null,
+        "note": "184 trades at +0.05R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "minervini_breakout",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "rejected",
+        "from_label": "Confirmed",
+        "to_label": "Rejected",
+        "trades": 811,
+        "avg_r": -0.017,
+        "recent_avg_r": -0.018,
+        "note": "-0.02R across 811 trades, -0.02R on the last 149. Holding up."
+      },
+      {
+        "as_of": "2024-12-20",
+        "strategy": "vcp_breakout",
+        "regime": "correction",
+        "from_status": "candidate",
+        "to_status": "rejected",
+        "from_label": "Candidate",
+        "to_label": "Rejected",
+        "trades": 107,
+        "avg_r": -0.079,
+        "recent_avg_r": -0.005,
+        "note": "-0.08R across 107 trades, -0.01R on the last 21. Holding up."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "vcp_breakout",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 69,
+        "avg_r": 0.897,
+        "recent_avg_r": null,
+        "note": "69 trades at +0.90R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "pullback_ema21",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 472,
+        "avg_r": 0.635,
+        "recent_avg_r": null,
+        "note": "472 trades at +0.64R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "week52_breakout",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 313,
+        "avg_r": 0.56,
+        "recent_avg_r": null,
+        "note": "313 trades at +0.56R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 775,
+        "avg_r": 0.497,
+        "recent_avg_r": 0.365,
+        "note": "+0.50R across 775 trades, +0.37R on the last 91. Holding up."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 1028,
+        "avg_r": 0.453,
+        "recent_avg_r": 0.417,
+        "note": "+0.45R across 1028 trades, +0.42R on the last 304. Holding up."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "minervini_breakout",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 321,
+        "avg_r": 0.453,
+        "recent_avg_r": null,
+        "note": "321 trades at +0.45R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 578,
+        "avg_r": 0.423,
+        "recent_avg_r": 0.513,
+        "note": "+0.42R across 578 trades, +0.51R on the last 94. Holding up."
+      },
+      {
+        "as_of": "2024-09-20",
+        "strategy": "pullback_sma50",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 513,
+        "avg_r": 0.378,
+        "recent_avg_r": null,
+        "note": "513 trades at +0.38R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2024-06-21",
+        "strategy": "vcp_breakout",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 99,
+        "avg_r": 0.001,
+        "recent_avg_r": null,
+        "note": "99 trades at +0.00R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "oversold_bounce",
+        "regime": "correction",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 603,
+        "avg_r": 0.534,
+        "recent_avg_r": 0.678,
+        "note": "+0.53R across 603 trades, +0.68R on the last 163. Holding up."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 2453,
+        "avg_r": 0.295,
+        "recent_avg_r": 0.288,
+        "note": "+0.30R across 2453 trades, +0.29R on the last 757. Holding up."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "pullback_ema21",
+        "regime": "correction",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 2025,
+        "avg_r": 0.232,
+        "recent_avg_r": 0.204,
+        "note": "+0.23R across 2025 trades, +0.20R on the last 635. Holding up."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "minervini_breakout",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 737,
+        "avg_r": 0.089,
+        "recent_avg_r": 0.023,
+        "note": "+0.09R across 737 trades, +0.02R on the last 284. Holding up."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "squeeze_release",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "candidate",
+        "from_label": "Rejected",
+        "to_label": "Candidate",
+        "trades": 39,
+        "avg_r": 0.081,
+        "recent_avg_r": null,
+        "note": "39 trades at +0.08R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2023-09-22",
+        "strategy": "vcp_breakout",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 99,
+        "avg_r": 0.001,
+        "recent_avg_r": 0.218,
+        "note": "+0.00R across 99 trades, +0.22R on the last 29. Holding up."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 775,
+        "avg_r": 0.497,
+        "recent_avg_r": 0.075,
+        "note": "+0.50R long-run against +0.08R on the last 121 trades \u2014 a 0.42R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 1028,
+        "avg_r": 0.453,
+        "recent_avg_r": 0.101,
+        "note": "+0.45R long-run against +0.10R on the last 405 trades \u2014 a 0.35R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "watch",
+        "from_label": "Confirmed",
+        "to_label": "On watch",
+        "trades": 578,
+        "avg_r": 0.423,
+        "recent_avg_r": 0.128,
+        "note": "+0.42R long-run against +0.13R on the last 136 trades \u2014 a 0.29R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "gap_continuation",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 185,
+        "avg_r": 0.379,
+        "recent_avg_r": -0.023,
+        "note": "+0.38R across 185 trades overall, but -0.02R on the 39 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "week52_breakout",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 519,
+        "avg_r": 0.28,
+        "recent_avg_r": -0.221,
+        "note": "+0.28R across 519 trades overall, but -0.22R on the 153 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2023-06-23",
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 731,
+        "avg_r": 0.215,
+        "recent_avg_r": -0.186,
+        "note": "+0.21R across 731 trades overall, but -0.19R on the 98 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2023-03-24",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 2348,
+        "avg_r": 0.192,
+        "recent_avg_r": -0.084,
+        "note": "+0.19R across 2348 trades overall, but -0.08R on the 652 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2022-12-23",
+        "strategy": "squeeze_release",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 98,
+        "avg_r": 1.321,
+        "recent_avg_r": null,
+        "note": "98 trades at +1.32R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-12-23",
+        "strategy": "squeeze_release",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 240,
+        "avg_r": 1.031,
+        "recent_avg_r": null,
+        "note": "240 trades at +1.03R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-12-23",
+        "strategy": "gap_continuation",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 157,
+        "avg_r": 0.506,
+        "recent_avg_r": null,
+        "note": "157 trades at +0.51R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-12-23",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 2267,
+        "avg_r": 0.195,
+        "recent_avg_r": 0.08,
+        "note": "+0.20R across 2267 trades, +0.08R on the last 603. Holding up."
+      },
+      {
+        "as_of": "2022-12-23",
+        "strategy": "squeeze_release",
+        "regime": "choppy",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 184,
+        "avg_r": 0.052,
+        "recent_avg_r": 0.278,
+        "note": "+0.05R across 184 trades, +0.28R on the last 119. Holding up."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "gap_continuation",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 73,
+        "avg_r": 0.827,
+        "recent_avg_r": null,
+        "note": "73 trades at +0.83R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "vcp_breakout",
+        "regime": "choppy",
+        "from_status": "candidate",
+        "to_status": "confirmed",
+        "from_label": "Candidate",
+        "to_label": "Confirmed",
+        "trades": 59,
+        "avg_r": 0.559,
+        "recent_avg_r": 0.915,
+        "note": "+0.56R across 59 trades, +0.91R on the last 29. Holding up."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "vcp_breakout",
+        "regime": "recovery",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 80,
+        "avg_r": 0.442,
+        "recent_avg_r": null,
+        "note": "80 trades at +0.44R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "week52_breakout",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 100,
+        "avg_r": 0.4,
+        "recent_avg_r": null,
+        "note": "100 trades at +0.40R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "oversold_bounce",
+        "regime": "correction",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 544,
+        "avg_r": 0.386,
+        "recent_avg_r": 0.114,
+        "note": "+0.39R long-run against +0.11R on the last 115 trades \u2014 a 0.27R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "oversold_bounce",
+        "regime": "bear",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 134,
+        "avg_r": 0.376,
+        "recent_avg_r": null,
+        "note": "134 trades at +0.38R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 2151,
+        "avg_r": 0.19,
+        "recent_avg_r": 0.021,
+        "note": "+0.19R long-run against +0.02R on the last 524 trades \u2014 a 0.17R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2022-09-23",
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 145,
+        "avg_r": 0.045,
+        "recent_avg_r": 0.116,
+        "note": "+0.05R across 145 trades, +0.12R on the last 49. Holding up."
+      },
+      {
+        "as_of": "2022-06-24",
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 2119,
+        "avg_r": 0.148,
+        "recent_avg_r": -0.172,
+        "note": "+0.15R across 2119 trades overall, but -0.17R on the 492 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2022-06-24",
+        "strategy": "minervini_breakout",
+        "regime": "correction",
+        "from_status": "retired",
+        "to_status": "rejected",
+        "from_label": "Retired",
+        "to_label": "Rejected",
+        "trades": 618,
+        "avg_r": -0.074,
+        "recent_avg_r": -0.663,
+        "note": "-0.07R across 618 trades, -0.66R on the last 178. Holding up."
+      },
+      {
+        "as_of": "2022-06-24",
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "from_status": "candidate",
+        "to_status": "rejected",
+        "from_label": "Candidate",
+        "to_label": "Rejected",
+        "trades": 139,
+        "avg_r": -0.079,
+        "recent_avg_r": -0.274,
+        "note": "-0.08R across 139 trades, -0.27R on the last 43. Holding up."
+      },
+      {
+        "as_of": "2022-03-25",
+        "strategy": "pullback_ema21",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 1508,
+        "avg_r": 0.185,
+        "recent_avg_r": -0.246,
+        "note": "+0.19R across 1508 trades overall, but -0.25R on the 145 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2022-03-25",
+        "strategy": "squeeze_release",
+        "regime": "bull_strong",
+        "from_status": "watch",
+        "to_status": "confirmed",
+        "from_label": "On watch",
+        "to_label": "Confirmed",
+        "trades": 475,
+        "avg_r": 0.184,
+        "recent_avg_r": 0.067,
+        "note": "+0.18R across 475 trades, +0.07R on the last 135. Holding up."
+      },
+      {
+        "as_of": "2022-03-25",
+        "strategy": "minervini_breakout",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "retired",
+        "from_label": "Confirmed",
+        "to_label": "Retired",
+        "trades": 509,
+        "avg_r": 0.028,
+        "recent_avg_r": -0.841,
+        "note": "+0.03R across 509 trades overall, but -0.84R on the 69 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2022-03-25",
+        "strategy": "week52_breakout",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "rejected",
+        "from_label": "Confirmed",
+        "to_label": "Rejected",
+        "trades": 337,
+        "avg_r": -0.016,
+        "recent_avg_r": -0.552,
+        "note": "-0.02R across 337 trades, -0.55R on the last 50. Holding up."
+      },
+      {
+        "as_of": "2021-12-24",
+        "strategy": "oversold_bounce",
+        "regime": "correction",
+        "from_status": "watch",
+        "to_status": "retired",
+        "from_label": "On watch",
+        "to_label": "Retired",
+        "trades": 444,
+        "avg_r": 0.466,
+        "recent_avg_r": -0.339,
+        "note": "+0.47R across 444 trades overall, but -0.34R on the 37 most recent. The edge is not currently there."
+      },
+      {
+        "as_of": "2021-12-24",
+        "strategy": "high_tight_flag",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 110,
+        "avg_r": 0.266,
+        "recent_avg_r": 0.38,
+        "note": "+0.27R across 110 trades, +0.38R on the last 46. Holding up."
+      },
+      {
+        "as_of": "2021-12-24",
+        "strategy": "squeeze_release",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "watch",
+        "from_label": "Retired",
+        "to_label": "On watch",
+        "trades": 463,
+        "avg_r": 0.198,
+        "recent_avg_r": 0.0,
+        "note": "+0.20R long-run against +0.00R on the last 155 trades \u2014 a 0.20R deterioration. Still positive; watch it."
+      },
+      {
+        "as_of": "2021-12-24",
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 103,
+        "avg_r": 0.061,
+        "recent_avg_r": null,
+        "note": "103 trades at +0.06R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "gap_continuation",
+        "regime": "bull_narrow",
+        "from_status": "confirmed",
+        "to_status": "candidate",
+        "from_label": "Confirmed",
+        "to_label": "Candidate",
+        "trades": 68,
+        "avg_r": 0.325,
+        "recent_avg_r": null,
+        "note": "68 trades at +0.32R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "oversold_bounce",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 764,
+        "avg_r": 0.277,
+        "recent_avg_r": 0.64,
+        "note": "+0.28R across 764 trades, +0.64R on the last 183. Holding up."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "minervini_breakout",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 4927,
+        "avg_r": 0.196,
+        "recent_avg_r": 0.39,
+        "note": "+0.20R across 4927 trades, +0.39R on the last 1498. Holding up."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "week52_breakout",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 3980,
+        "avg_r": 0.162,
+        "recent_avg_r": 0.355,
+        "note": "+0.16R across 3980 trades, +0.35R on the last 1143. Holding up."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "momentum_burst",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 5196,
+        "avg_r": 0.162,
+        "recent_avg_r": 0.341,
+        "note": "+0.16R across 5196 trades, +0.34R on the last 1381. Holding up."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "vcp_breakout",
+        "regime": "bull_strong",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 1181,
+        "avg_r": 0.042,
+        "recent_avg_r": 0.02,
+        "note": "+0.04R across 1181 trades, +0.02R on the last 340. Holding up."
+      },
+      {
+        "as_of": "2021-09-24",
+        "strategy": "gap_continuation",
+        "regime": "bull_strong",
+        "from_status": "rejected",
+        "to_status": "confirmed",
+        "from_label": "Rejected",
+        "to_label": "Confirmed",
+        "trades": 812,
+        "avg_r": 0.042,
+        "recent_avg_r": 0.266,
+        "note": "+0.04R across 812 trades, +0.27R on the last 322. Holding up."
+      },
+      {
+        "as_of": "2021-06-25",
+        "strategy": "pullback_sma50",
+        "regime": "bull_strong",
+        "from_status": "retired",
+        "to_status": "confirmed",
+        "from_label": "Retired",
+        "to_label": "Confirmed",
+        "trades": 6026,
+        "avg_r": 0.217,
+        "recent_avg_r": 0.402,
+        "note": "+0.22R across 6026 trades, +0.40R on the last 1123. Holding up."
+      }
+    ],
+    "evolution_changes_total": 317,
+    "cell_status": [
+      {
+        "strategy": "squeeze_release",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 98,
+        "win_rate": 44.9,
+        "avg_r": 1.321,
+        "payoff": 4.26,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "98 trades at +1.32R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 562,
+        "win_rate": 53.7,
+        "avg_r": 0.979,
+        "payoff": 2.77,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "562 trades at +0.98R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 78,
+        "win_rate": 50.0,
+        "avg_r": 0.82,
+        "payoff": 2.75,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "78 trades at +0.82R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 169,
+        "win_rate": 41.4,
+        "avg_r": 0.805,
+        "payoff": 3.36,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "169 trades at +0.80R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "squeeze_release",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 291,
+        "win_rate": 32.0,
+        "avg_r": 0.722,
+        "payoff": 4.45,
+        "recent_trades": 51,
+        "recent_avg_r": -0.734,
+        "note": "+0.72R across 291 trades overall, but -0.73R on the 51 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "vcp_breakout",
+        "regime": "choppy",
+        "status": "watch",
+        "trades": 94,
+        "win_rate": 30.9,
+        "avg_r": 0.683,
+        "payoff": 4.45,
+        "recent_trades": 25,
+        "recent_avg_r": 0.092,
+        "note": "+0.68R long-run against +0.09R on the last 25 trades \u2014 a 0.59R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 114,
+        "win_rate": 41.2,
+        "avg_r": 0.596,
+        "payoff": 2.86,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "114 trades at +0.60R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "high_tight_flag",
+        "regime": "bull_strong",
+        "status": "candidate",
+        "trades": 181,
+        "win_rate": 36.5,
+        "avg_r": 0.482,
+        "payoff": 3.05,
+        "recent_trades": 18,
+        "recent_avg_r": null,
+        "note": "181 trades at +0.48R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 383,
+        "win_rate": 34.7,
+        "avg_r": 0.469,
+        "payoff": 3.25,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "383 trades at +0.47R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "choppy",
+        "status": "watch",
+        "trades": 974,
+        "win_rate": 35.5,
+        "avg_r": 0.445,
+        "payoff": 3.08,
+        "recent_trades": 199,
+        "recent_avg_r": 0.243,
+        "note": "+0.44R long-run against +0.24R on the last 199 trades \u2014 a 0.20R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "choppy",
+        "status": "confirmed",
+        "trades": 685,
+        "win_rate": 32.7,
+        "avg_r": 0.421,
+        "payoff": 3.38,
+        "recent_trades": 107,
+        "recent_avg_r": 0.411,
+        "note": "+0.42R across 685 trades, +0.41R on the last 107. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "bull_narrow",
+        "status": "watch",
+        "trades": 155,
+        "win_rate": 38.7,
+        "avg_r": 0.413,
+        "payoff": 2.63,
+        "recent_trades": 68,
+        "recent_avg_r": 0.231,
+        "note": "+0.41R long-run against +0.23R on the last 68 trades \u2014 a 0.18R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 138,
+        "win_rate": 37.0,
+        "avg_r": 0.393,
+        "payoff": 2.82,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "138 trades at +0.39R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "bear",
+        "status": "candidate",
+        "trades": 495,
+        "win_rate": 36.0,
+        "avg_r": 0.372,
+        "payoff": 2.83,
+        "recent_trades": 0,
+        "recent_avg_r": null,
+        "note": "495 trades at +0.37R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Candidate"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "bull_strong",
+        "status": "confirmed",
+        "trades": 15088,
+        "win_rate": 30.2,
+        "avg_r": 0.347,
+        "payoff": 3.46,
+        "recent_trades": 1849,
+        "recent_avg_r": 0.261,
+        "note": "+0.35R across 15088 trades, +0.26R on the last 1849. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "choppy",
+        "status": "watch",
+        "trades": 1399,
+        "win_rate": 39.2,
+        "avg_r": 0.337,
+        "payoff": 2.45,
+        "recent_trades": 371,
+        "recent_avg_r": 0.013,
+        "note": "+0.34R long-run against +0.01R on the last 371 trades \u2014 a 0.32R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "bull_strong",
+        "status": "retired",
+        "trades": 1972,
+        "win_rate": 34.8,
+        "avg_r": 0.336,
+        "payoff": 2.85,
+        "recent_trades": 354,
+        "recent_avg_r": -0.334,
+        "note": "+0.34R across 1972 trades overall, but -0.33R on the 354 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "bull_strong",
+        "status": "watch",
+        "trades": 14874,
+        "win_rate": 32.5,
+        "avg_r": 0.326,
+        "payoff": 3.08,
+        "recent_trades": 2139,
+        "recent_avg_r": 0.108,
+        "note": "+0.33R long-run against +0.11R on the last 2139 trades \u2014 a 0.22R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "choppy",
+        "status": "confirmed",
+        "trades": 300,
+        "win_rate": 40.7,
+        "avg_r": 0.315,
+        "payoff": 2.26,
+        "recent_trades": 115,
+        "recent_avg_r": 0.212,
+        "note": "+0.32R across 300 trades, +0.21R on the last 115. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "squeeze_release",
+        "regime": "bull_strong",
+        "status": "retired",
+        "trades": 815,
+        "win_rate": 27.1,
+        "avg_r": 0.286,
+        "payoff": 3.72,
+        "recent_trades": 176,
+        "recent_avg_r": -0.091,
+        "note": "+0.29R across 815 trades overall, but -0.09R on the 176 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "vcp_breakout",
+        "regime": "bull_strong",
+        "status": "watch",
+        "trades": 2319,
+        "win_rate": 25.7,
+        "avg_r": 0.285,
+        "payoff": 3.99,
+        "recent_trades": 211,
+        "recent_avg_r": 0.135,
+        "note": "+0.28R long-run against +0.13R on the last 211 trades \u2014 a 0.15R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "choppy",
+        "status": "confirmed",
+        "trades": 640,
+        "win_rate": 32.8,
+        "avg_r": 0.278,
+        "payoff": 2.91,
+        "recent_trades": 121,
+        "recent_avg_r": 0.273,
+        "note": "+0.28R across 640 trades, +0.27R on the last 121. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "bull_strong",
+        "status": "confirmed",
+        "trades": 10040,
+        "win_rate": 29.0,
+        "avg_r": 0.265,
+        "payoff": 3.36,
+        "recent_trades": 1075,
+        "recent_avg_r": 0.325,
+        "note": "+0.27R across 10040 trades, +0.33R on the last 1075. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "bull_strong",
+        "status": "confirmed",
+        "trades": 8114,
+        "win_rate": 31.7,
+        "avg_r": 0.262,
+        "payoff": 2.99,
+        "recent_trades": 871,
+        "recent_avg_r": 0.305,
+        "note": "+0.26R across 8114 trades, +0.31R on the last 871. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "bull_strong",
+        "status": "watch",
+        "trades": 11123,
+        "win_rate": 33.7,
+        "avg_r": 0.25,
+        "payoff": 2.72,
+        "recent_trades": 1610,
+        "recent_avg_r": 0.006,
+        "note": "+0.25R long-run against +0.01R on the last 1610 trades \u2014 a 0.24R deterioration. Still positive; watch it.",
+        "status_label": "On watch"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "correction",
+        "status": "confirmed",
+        "trades": 380,
+        "win_rate": 38.9,
+        "avg_r": 0.216,
+        "payoff": 2.12,
+        "recent_trades": 213,
+        "recent_avg_r": 0.291,
+        "note": "+0.22R across 380 trades, +0.29R on the last 213. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "correction",
+        "status": "retired",
+        "trades": 848,
+        "win_rate": 36.8,
+        "avg_r": 0.213,
+        "payoff": 2.3,
+        "recent_trades": 245,
+        "recent_avg_r": -0.577,
+        "note": "+0.21R across 848 trades overall, but -0.58R on the 245 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "choppy",
+        "status": "confirmed",
+        "trades": 1014,
+        "win_rate": 34.1,
+        "avg_r": 0.186,
+        "payoff": 2.47,
+        "recent_trades": 283,
+        "recent_avg_r": 0.11,
+        "note": "+0.19R across 1014 trades, +0.11R on the last 283. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "bull_strong",
+        "status": "confirmed",
+        "trades": 2110,
+        "win_rate": 33.9,
+        "avg_r": 0.18,
+        "payoff": 2.49,
+        "recent_trades": 332,
+        "recent_avg_r": 0.145,
+        "note": "+0.18R across 2110 trades, +0.15R on the last 332. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "gap_continuation",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 262,
+        "win_rate": 35.1,
+        "avg_r": 0.154,
+        "payoff": 2.29,
+        "recent_trades": 105,
+        "recent_avg_r": -0.373,
+        "note": "+0.15R across 262 trades overall, but -0.37R on the 105 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "correction",
+        "status": "retired",
+        "trades": 3607,
+        "win_rate": 32.1,
+        "avg_r": 0.103,
+        "payoff": 2.43,
+        "recent_trades": 1154,
+        "recent_avg_r": -0.305,
+        "note": "+0.10R across 3607 trades overall, but -0.30R on the 1154 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 856,
+        "win_rate": 27.5,
+        "avg_r": 0.095,
+        "payoff": 2.97,
+        "recent_trades": 384,
+        "recent_avg_r": -0.569,
+        "note": "+0.09R across 856 trades overall, but -0.57R on the 384 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "vcp_breakout",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 131,
+        "win_rate": 26.7,
+        "avg_r": 0.089,
+        "payoff": 3.02,
+        "recent_trades": 44,
+        "recent_avg_r": -0.822,
+        "note": "+0.09R across 131 trades overall, but -0.82R on the 44 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 1508,
+        "win_rate": 34.2,
+        "avg_r": 0.084,
+        "payoff": 2.16,
+        "recent_trades": 602,
+        "recent_avg_r": -0.31,
+        "note": "+0.08R across 1508 trades overall, but -0.31R on the 602 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "correction",
+        "status": "confirmed",
+        "trades": 1792,
+        "win_rate": 33.0,
+        "avg_r": 0.079,
+        "payoff": 2.27,
+        "recent_trades": 990,
+        "recent_avg_r": 0.145,
+        "note": "+0.08R across 1792 trades, +0.15R on the last 990. Holding up.",
+        "status_label": "Confirmed"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "correction",
+        "status": "retired",
+        "trades": 3052,
+        "win_rate": 27.9,
+        "avg_r": 0.072,
+        "payoff": 2.84,
+        "recent_trades": 1027,
+        "recent_avg_r": -0.244,
+        "note": "+0.07R across 3052 trades overall, but -0.24R on the 1027 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "recovery",
+        "status": "retired",
+        "trades": 534,
+        "win_rate": 28.1,
+        "avg_r": 0.053,
+        "payoff": 2.75,
+        "recent_trades": 221,
+        "recent_avg_r": -0.664,
+        "note": "+0.05R across 534 trades overall, but -0.66R on the 221 most recent. The edge is not currently there.",
+        "status_label": "Retired"
+      },
+      {
+        "strategy": "squeeze_release",
+        "regime": "choppy",
+        "status": "rejected",
+        "trades": 235,
+        "win_rate": 23.8,
+        "avg_r": -0.017,
+        "payoff": 3.12,
+        "recent_trades": 51,
+        "recent_avg_r": -0.264,
+        "note": "-0.02R across 235 trades, -0.26R on the last 51. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "correction",
+        "status": "rejected",
+        "trades": 847,
+        "win_rate": 27.6,
+        "avg_r": -0.023,
+        "payoff": 2.54,
+        "recent_trades": 365,
+        "recent_avg_r": -0.048,
+        "note": "-0.02R across 847 trades, -0.05R on the last 365. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "recovery",
+        "status": "rejected",
+        "trades": 994,
+        "win_rate": 28.9,
+        "avg_r": -0.031,
+        "payoff": 2.36,
+        "recent_trades": 481,
+        "recent_avg_r": -0.468,
+        "note": "-0.03R across 994 trades, -0.47R on the last 481. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "recovery",
+        "status": "rejected",
+        "trades": 559,
+        "win_rate": 25.6,
+        "avg_r": -0.039,
+        "payoff": 2.77,
+        "recent_trades": 238,
+        "recent_avg_r": -0.703,
+        "note": "-0.04R across 559 trades, -0.70R on the last 238. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "week52_breakout",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 316,
+        "win_rate": 26.6,
+        "avg_r": -0.055,
+        "payoff": 2.56,
+        "recent_trades": 83,
+        "recent_avg_r": -0.049,
+        "note": "-0.06R across 316 trades, -0.05R on the last 83. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "correction",
+        "status": "rejected",
+        "trades": 1235,
+        "win_rate": 24.7,
+        "avg_r": -0.06,
+        "payoff": 2.81,
+        "recent_trades": 498,
+        "recent_avg_r": -0.281,
+        "note": "-0.06R across 1235 trades, -0.28R on the last 498. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "minervini_breakout",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 380,
+        "win_rate": 24.7,
+        "avg_r": -0.088,
+        "payoff": 2.7,
+        "recent_trades": 111,
+        "recent_avg_r": -0.046,
+        "note": "-0.09R across 380 trades, -0.05R on the last 111. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 207,
+        "win_rate": 25.1,
+        "avg_r": -0.112,
+        "payoff": 2.54,
+        "recent_trades": 51,
+        "recent_avg_r": -0.32,
+        "note": "-0.11R across 207 trades, -0.32R on the last 51. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "squeeze_release",
+        "regime": "correction",
+        "status": "rejected",
+        "trades": 66,
+        "win_rate": 13.6,
+        "avg_r": -0.171,
+        "payoff": 5.12,
+        "recent_trades": 27,
+        "recent_avg_r": -0.535,
+        "note": "-0.17R across 66 trades, -0.53R on the last 27. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "vcp_breakout",
+        "regime": "correction",
+        "status": "rejected",
+        "trades": 181,
+        "win_rate": 19.9,
+        "avg_r": -0.27,
+        "payoff": 2.66,
+        "recent_trades": 82,
+        "recent_avg_r": -0.597,
+        "note": "-0.27R across 181 trades, -0.60R on the last 82. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "momentum_burst",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 701,
+        "win_rate": 22.1,
+        "avg_r": -0.277,
+        "payoff": 2.28,
+        "recent_trades": 222,
+        "recent_avg_r": -0.198,
+        "note": "-0.28R across 701 trades, -0.20R on the last 222. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "pullback_sma50",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 1096,
+        "win_rate": 21.2,
+        "avg_r": -0.342,
+        "payoff": 2.13,
+        "recent_trades": 333,
+        "recent_avg_r": -0.364,
+        "note": "-0.34R across 1096 trades, -0.36R on the last 333. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "pullback_ema21",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 858,
+        "win_rate": 19.0,
+        "avg_r": -0.372,
+        "payoff": 2.38,
+        "recent_trades": 257,
+        "recent_avg_r": -0.477,
+        "note": "-0.37R across 858 trades, -0.48R on the last 257. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "choppy",
+        "status": "rejected",
+        "trades": 184,
+        "win_rate": 22.8,
+        "avg_r": -0.412,
+        "payoff": 1.54,
+        "recent_trades": 67,
+        "recent_avg_r": -0.101,
+        "note": "-0.41R across 184 trades, -0.10R on the last 67. Holding up.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "squeeze_release",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 38,
+        "win_rate": 18.4,
+        "avg_r": -0.435,
+        "payoff": 2.24,
+        "recent_trades": 2,
+        "recent_avg_r": null,
+        "note": "38 trades at -0.44R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "vcp_breakout",
+        "regime": "bull_narrow",
+        "status": "rejected",
+        "trades": 69,
+        "win_rate": 15.9,
+        "avg_r": -0.67,
+        "payoff": 1.34,
+        "recent_trades": 17,
+        "recent_avg_r": null,
+        "note": "69 trades at -0.67R overall, but fewer than 20 in the last 2 years \u2014 nothing recent to confirm it.",
+        "status_label": "Rejected"
+      },
+      {
+        "strategy": "oversold_bounce",
+        "regime": "recovery",
+        "status": "rejected",
+        "trades": 40,
+        "win_rate": 20.0,
+        "avg_r": -0.682,
+        "payoff": 0.81,
+        "recent_trades": 28,
+        "recent_avg_r": -0.533,
+        "note": "-0.68R across 40 trades, -0.53R on the last 28. Holding up.",
+        "status_label": "Rejected"
+      }
+    ],
+    "cell_status_as_of": "2026-09-18",
+    "status_catalogue": [
+      {
+        "id": "confirmed",
+        "label": "Confirmed",
+        "note": "Positive over the long run and still positive lately. Cleared to trade."
+      },
+      {
+        "id": "watch",
+        "label": "On watch",
+        "note": "Still positive overall, but recent trades are materially worse. Size down and keep measuring."
+      },
+      {
+        "id": "retired",
+        "label": "Retired",
+        "note": "Was positive once and is not any more. Stood down until the evidence returns."
+      },
+      {
+        "id": "candidate",
+        "label": "Candidate",
+        "note": "Looks positive but has not traded enough to be trusted yet."
+      },
+      {
+        "id": "rejected",
+        "label": "Rejected",
+        "note": "No edge over the sample available."
+      }
+    ],
+    "verdict_catalogue": [
+      {
+        "id": "clean_win",
+        "label": "Clean win",
+        "note": "Never in serious trouble and kept most of the move. This is the shape the system is built to produce."
+      },
+      {
+        "id": "gave_back_win",
+        "label": "Won, gave back most of it",
+        "note": "Profitable, but most of the best excursion was surrendered on the way out. A structural leak if it is common."
+      },
+      {
+        "id": "lucky_win",
+        "label": "Won after nearly stopping out",
+        "note": "Came within a fraction of the stop before working. Won, but the decision was closer to wrong than the result suggests."
+      },
+      {
+        "id": "round_trip_loss",
+        "label": "Was well in profit, lost it all",
+        "note": "The worst shape in the book: a real profit handed back in full. Not a market problem \u2014 an exit problem."
+      },
+      {
+        "id": "clean_loss",
+        "label": "Clean loss \u2014 wrong fast, cheap",
+        "note": "Wrong quickly and cheaply. Nothing to fix; this is what the stop is for."
+      },
+      {
+        "id": "slow_bleed",
+        "label": "Went nowhere, timed out",
+        "note": "Never moved either way and died of old age. Costs little but occupies capital and attention."
+      },
+      {
+        "id": "gap_loss",
+        "label": "Gapped through the stop",
+        "note": "Opened through the stop. Unavoidable and the reason position size, not the stop, is the real risk control."
+      }
+    ],
+    "method_note": "Cell standing is re-scored quarterly using only trades that had closed by that date, so the timeline shows what the system actually believed at each point \u2014 including where it was wrong and later stood a strategy down. Nothing is refitted: a cell that stops paying is retired, not repaired."
   },
   "macro": [
     {

@@ -845,7 +845,14 @@ app.include_router(build_router(services))
 # The trading bot mounts separately for the same reason mutual funds do: it is
 # India-only, shares none of the equity router's `/api/{market}` scoping, and
 # reads its own committed artifacts rather than the snapshot provider.
-app.include_router(build_bot_router(Path(__file__).resolve().parents[1] / "data"))
+app.include_router(
+    build_bot_router(
+        Path(__file__).resolve().parents[1] / "data",
+        # The SQLite ledger sits beside the trade journal — same directory,
+        # same reason: its live rows are the user's own and never regenerable.
+        state_dir=settings.app_state_dir,
+    )
+)
 app.include_router(
     build_mutual_funds_router(
         MutualFundService(

@@ -5235,6 +5235,7 @@ export type BotBacktest = {
     stop_atr_mult: number;
   }>;
   regime_catalogue: Array<{ id: string; label: string; note: string }>;
+  learning?: BotLearning;
 };
 
 export type BotCandidate = {
@@ -5250,6 +5251,12 @@ export type BotCandidate = {
   turnover_crore: number;
   expected_r: number;
   verdict: string;
+  // Ranking breakdown, attached by the quality model. Optional because an
+  // older signals artifact predates it and must still render.
+  cell_expectancy_r?: number;
+  volatility_adjustment_r?: number;
+  volatility_bucket?: string;
+  edge_score_r?: number;
   sizing: {
     shares: number;
     position_value?: number;
@@ -5277,6 +5284,7 @@ export type BotSignals = {
   equity?: number;
   candidates: BotCandidate[];
   candidates_found?: number;
+  ranking?: { active: boolean; note: string };
   message?: string;
   source?: "live" | "offline";
   age_days?: number | null;
@@ -5310,4 +5318,113 @@ export function getBotSignals(equity: number) {
   // the committed copy instantly. The timeout covers the slow path.
   return whileWaking(() =>
     request<BotSignals>(`/api/bot/signals?equity=${encodeURIComponent(equity)}`, undefined, { timeoutMs: 90000 }));
+}
+
+/* --- Bot: the learning layer ---------------------------------------------
+   Trade-by-trade review, entry-condition studies and the evolution timeline.
+   All of it travels inside the committed backtest artifact, so these are plain
+   reads; the SQLite ledger behind them is local-only and its endpoints degrade
+   to 503 on the Space by design. */
+
+export type BotVerdictRow = {
+  verdict: string;
+  label: string;
+  trades: number;
+  pct_of_trades: number;
+  avg_r: number;
+  note: string;
+};
+
+export type BotLesson = {
+  tag: string;
+  trades: number;
+  avg_r: number;
+  delta_vs_book: number;
+  direction: "better" | "worse";
+  text: string;
+};
+
+export type BotTagRow = { tag: string; trades: number; avg_r: number; kind: "entry" | "outcome" };
+
+export type BotReviewSummary = {
+  trades: number;
+  book_avg_r: number;
+  verdicts: BotVerdictRow[];
+  tags: BotTagRow[];
+  entry_tags: BotTagRow[];
+  outcome_tags: BotTagRow[];
+  lessons: BotLesson[];
+  lesson_basis: string;
+  structural_note: string | null;
+};
+
+export type BotConditionBucket = {
+  label: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  oos_trades: number;
+  oos_avg_r: number | null;
+};
+
+export type BotConditionStudy = {
+  condition: string;
+  label: string;
+  question: string;
+  buckets: BotConditionBucket[];
+  monotone: boolean;
+  spread_r: number;
+  oos_spread_r: number | null;
+  verdict: string;
+  duplicates: string | null;
+};
+
+export type BotCellStatus = {
+  strategy: string;
+  regime: string;
+  status: string;
+  status_label: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  recent_trades: number;
+  recent_avg_r: number | null;
+  note: string;
+};
+
+export type BotEvolutionChange = {
+  as_of: string;
+  strategy: string;
+  regime: string;
+  from_status: string;
+  to_status: string;
+  from_label: string;
+  to_label: string;
+  trades: number;
+  avg_r: number;
+  recent_avg_r: number | null;
+  note: string;
+};
+
+export type BotLearning = {
+  available: boolean;
+  population: { trades: number; first_entry: string; last_entry: string };
+  review_summary: BotReviewSummary;
+  review_by_regime: Array<{ regime: string; label: string } & BotReviewSummary>;
+  condition_studies: BotConditionStudy[];
+  condition_split: string;
+  evolution_timeline: Array<{ as_of: string; counts: Record<string, number>; tradeable: number }>;
+  evolution_changes: BotEvolutionChange[];
+  evolution_changes_total: number;
+  cell_status: BotCellStatus[];
+  cell_status_as_of: string | null;
+  status_catalogue: Array<{ id: string; label: string; note: string }>;
+  verdict_catalogue: Array<{ id: string; label: string; note: string }>;
+  method_note: string;
+};
+
+export function getBotLearning() {
+  return whileWaking(() => request<BotLearning>("/api/bot/learning", undefined, { timeoutMs: 60000 }));
 }

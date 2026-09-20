@@ -22,6 +22,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services.bot import ledger as lg
 from app.services.bot import policy as pol
 from app.services.bot.history import store_summary
 
@@ -61,7 +62,15 @@ def _age_days(iso: str | None) -> int | None:
         return None
 
 
-def build_bot_router(data_dir: Path) -> APIRouter:
+def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter:
+    """`state_dir` is where the SQLite ledger lives (APP_STATE_DIR).
+
+    Optional because the ledger is a local research convenience: the Space has
+    no way to build one (no bar store, and a .db could not be committed even if
+    it did — gotcha 21), so every ledger endpoint degrades to a clear 503 there
+    rather than 500ing. The learning aggregates the UI actually needs travel in
+    the committed artifact and are served whether or not a ledger exists.
+    """
     router = APIRouter(prefix="/api/bot", tags=["bot"])
 
     def _require_backtest() -> dict[str, Any]:
@@ -90,6 +99,8 @@ def build_bot_router(data_dir: Path) -> APIRouter:
             "signals_age_days": _age_days((signals or {}).get("as_of")),
             "history_store": store,
             "live_scan_available": store.get("present", False),
+            "ledger_present": bool(state_dir and lg.ledger_path(state_dir).exists()),
+            "learning_present": bool((artifact or {}).get("learning", {}).get("available")),
         }
 
     @router.get("/backtest")
@@ -170,6 +181,63 @@ def build_bot_router(data_dir: Path) -> APIRouter:
                 "Rebuild them before trading."
             ) + (" " + str(committed.get("message") or ""))
         return committed
+
+    @router.get("/learning")
+    def learning() -> dict[str, Any]:
+        """Trade verdicts, entry-condition studies and the evolution timeline."""
+        artifact = _require_backtest()
+        payload = artifact.get("learning")
+        if not payload or not payload.get("available"):
+            raise HTTPException(
+                status_code=503,
+                detail="This backtest predates the learning layer. Rerun scripts/run_bot_backtest.py.",
+            )
+        return payload
+
+    def _require_ledger() -> Path:
+        if state_dir is None or not lg.ledger_path(state_dir).exists():
+            raise HTTPException(
+                status_code=503,
+                detail=(
+                    "No trade ledger on this host. Build one where the bar store lives with "
+                    "scripts/build_bot_ledger.py. The Learning tab works without it."
+                ),
+            )
+        return state_dir
+
+    @router.get("/ledger/status")
+    def ledger_status() -> dict[str, Any]:
+        directory = _require_ledger()
+        with lg.connect(directory) as conn:
+            summary = lg.counts(conn)
+            summary["cell_status"] = lg.latest_cell_status(conn)
+        summary["path"] = str(lg.ledger_path(directory))
+        return summary
+
+    @router.get("/ledger/trades")
+    def ledger_trades(
+        source: str | None = Query(None, description="backtest | paper | live"),
+        strategy: str | None = Query(None),
+        regime: str | None = Query(None),
+        verdict: str | None = Query(None),
+        since: str | None = Query(None, description="ISO date"),
+        limit: int = Query(100, ge=1, le=500),
+    ) -> dict[str, Any]:
+        """Individual trades with their review — the drill-down the aggregates cannot answer."""
+        directory = _require_ledger()
+        with lg.connect(directory) as conn:
+            rows = lg.query_trades(
+                conn, source=source, strategy=strategy, regime=regime,
+                verdict=verdict, since=since, limit=limit,
+            )
+        return {"trades": rows, "count": len(rows)}
+
+    @router.get("/ledger/transitions")
+    def ledger_transitions() -> dict[str, Any]:
+        """Every recorded point where a cell's status changed on this host."""
+        directory = _require_ledger()
+        with lg.connect(directory) as conn:
+            return {"transitions": lg.status_transitions(conn)}
 
     @router.get("/size")
     def size(

@@ -22,6 +22,7 @@ import numpy as np
 
 from . import attribution as attr
 from . import breadth as bre
+from . import learning as learn
 from . import macro as mc
 from . import policy as pol
 from . import regime as rg
@@ -35,7 +36,7 @@ from .strategies import STRATEGIES, StrategySpec
 
 logger = logging.getLogger(__name__)
 
-ARTIFACT_VERSION = 3
+ARTIFACT_VERSION = 4
 TRADE_SAMPLE_PER_CELL = 25
 
 
@@ -313,6 +314,10 @@ def build_artifact(
     playbooks = pol.build_playbooks(validated)
     survivorship = sv.analyse(data_dir, resolved)
     macro_findings = mc.measure_macro_edge(data_dir, resolved, context.sessions)
+    # Built from the same resolved trades and the same split date as the
+    # attribution above, so the lessons and the matrix can never describe
+    # different populations or disagree about what "held out" means.
+    learning = learn.build_learning(resolved, context.regimes, boundary)
 
     return {
         "artifact_version": ARTIFACT_VERSION,
@@ -335,6 +340,7 @@ def build_artifact(
         "validated": [v.to_dict() for v in validated],
         "playbooks": [p.to_dict() for p in playbooks],
         "survivorship": survivorship,
+        "learning": learning,
         "macro": [f.to_dict() for f in macro_findings],
         "strategy_catalogue": [
             {
