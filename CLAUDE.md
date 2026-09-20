@@ -327,4 +327,18 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     The asymmetry from `calibration.py` carries over and matters: health can stand the rule **down** and can never promote it. There is no state above `tracking`, because a good stretch across a few decisions is the most seductive noise in the system. `test_bot_timing.py::HealthMonitorTests` pins both directions — a rule whose invested days stop beating its out days is flagged `diverging`, and fewer than `MIN_SWITCHES_TO_JUDGE` reads `insufficient` rather than guessing.
 
+69. **PER-SYMBOL LEARNING IS EXACTLY ZERO — THE LAST LEVEL, AND THE CLEANEST NULL IN THE PROJECT.** All learning here operates at the strategy x regime level; the untested granularity was the individual stock. Across five independent cut dates, ranking symbols by their prior average R under these strategies and measuring the next period's average R:
+
+        cut      symbols   rank correlation
+        2016         373        +0.053
+        2018         471        +0.038
+        2020         543        +0.016
+        2022         718        -0.122
+        2024         797        +0.021
+        mean                    +0.001
+
+    Quintiles by prior record, pooled: **+0.104 / +0.071 / +0.106 / +0.082 / +0.090** — flat. Best minus worst quintile **-0.014R, CI [-0.093, +0.065]**.
+
+    That completes the search across every level of granularity this system supports: strategy x regime cells mean-revert (gotcha 59), book configuration is anti-predictive (gotcha 53), exposure driven by trade outcomes loses to the a-priori regime rule (gotcha 65), and individual symbols carry nothing at all. **The learning machinery is correct and there is nothing in this data for it to learn.** A stock that traded well under these setups is no more likely than any other to trade well next period.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
