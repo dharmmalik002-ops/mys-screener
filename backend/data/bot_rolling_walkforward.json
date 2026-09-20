@@ -1,0 +1,107 @@
+{
+  "years": [
+    {
+      "year": 2012,
+      "cells": 2,
+      "trades": 131,
+      "bot_return_pct": -5.8,
+      "index_return_pct": 31.67,
+      "excess_pct": -37.47,
+      "max_drawdown_pct": -10.3
+    },
+    {
+      "year": 2015,
+      "cells": 2,
+      "trades": 214,
+      "bot_return_pct": 0.21,
+      "index_return_pct": -0.9,
+      "excess_pct": 1.11,
+      "max_drawdown_pct": -5.5
+    },
+    {
+      "year": 2018,
+      "cells": 4,
+      "trades": 259,
+      "bot_return_pct": -10.07,
+      "index_return_pct": -2.8,
+      "excess_pct": -7.27,
+      "max_drawdown_pct": -12.56
+    },
+    {
+      "year": 2019,
+      "cells": 3,
+      "trades": 227,
+      "bot_return_pct": -5.51,
+      "index_return_pct": 7.33,
+      "excess_pct": -12.84,
+      "max_drawdown_pct": -8.75
+    },
+    {
+      "year": 2020,
+      "cells": 3,
+      "trades": 51,
+      "bot_return_pct": -2.5,
+      "index_return_pct": 16.48,
+      "excess_pct": -18.98,
+      "max_drawdown_pct": -4.05
+    },
+    {
+      "year": 2021,
+      "cells": 10,
+      "trades": 361,
+      "bot_return_pct": 16.38,
+      "index_return_pct": 28.26,
+      "excess_pct": -11.88,
+      "max_drawdown_pct": -5.58
+    },
+    {
+      "year": 2022,
+      "cells": 22,
+      "trades": 551,
+      "bot_return_pct": -10.42,
+      "index_return_pct": 1.61,
+      "excess_pct": -12.03,
+      "max_drawdown_pct": -15.11
+    },
+    {
+      "year": 2023,
+      "cells": 18,
+      "trades": 384,
+      "bot_return_pct": 43.33,
+      "index_return_pct": 25.16,
+      "excess_pct": 18.17,
+      "max_drawdown_pct": -9.36
+    },
+    {
+      "year": 2024,
+      "cells": 27,
+      "trades": 498,
+      "bot_return_pct": -6.45,
+      "index_return_pct": 15.23,
+      "excess_pct": -21.68,
+      "max_drawdown_pct": -8.69
+    },
+    {
+      "year": 2025,
+      "cells": 28,
+      "trades": 592,
+      "bot_return_pct": -16.7,
+      "index_return_pct": 4.61,
+      "excess_pct": -21.31,
+      "max_drawdown_pct": -24.19
+    },
+    {
+      "year": 2026,
+      "cells": 26,
+      "trades": 317,
+      "bot_return_pct": -17.84,
+      "index_return_pct": -5.22,
+      "excess_pct": -12.62,
+      "max_drawdown_pct": -18.01
+    }
+  ],
+  "bot_cagr": -2.6,
+  "index_cagr": 10.35,
+  "years_beating_index": 2,
+  "years_evaluated": 11
+}

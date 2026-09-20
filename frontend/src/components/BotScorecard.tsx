@@ -1,6 +1,14 @@
+import { useEffect, useState } from "react";
 import { AlertTriangle, Check, Info, Minus, X } from "lucide-react";
 
-import type { BotBenchmark, BotLearning, BotPortfolioRun, BotSensitivity } from "../lib/api";
+import {
+  getBotWalkforward,
+  type BotBenchmark,
+  type BotLearning,
+  type BotPortfolioRun,
+  type BotSensitivity,
+  type BotWalkforward,
+} from "../lib/api";
 
 /* The scorecard: the bot as an account, ranked against real fund managers.
 
@@ -70,6 +78,17 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
   const answer = benchmark?.answer ?? null;
   const headlineRun = runs.find((r) => r.label === "playbook_held_out") ?? runs[0];
   const sensitivity: BotSensitivity | null = learning.config_sensitivity ?? null;
+  const [walkforward, setWalkforward] = useState<BotWalkforward | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    getBotWalkforward()
+      .then((result) => { if (!cancelled) setWalkforward(result); })
+      // Absent on a host that has not run the evaluation. The rest of the page
+      // still renders; it just loses the number that matters most.
+      .catch(() => undefined);
+    return () => { cancelled = true; };
+  }, []);
 
   const RUN_LABELS: Record<string, string> = {
     playbook_held_out: "The system, on data it never saw",
@@ -90,9 +109,68 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
         </span>
       </div>
 
+      {walkforward ? (
+        <section className="bot-headline-warning">
+          <h4>The number that matters: rebuilt every year, traded the next</h4>
+          <p className="bot-section-note">
+            Everything below this rests on a single train/test split, and its 3.8-year test
+            window happens to contain 2023 — the one year this system worked. That year
+            dominates every figure on the page. This is the honest alternative: the playbook
+            rebuilt each January from prior data only, then used to trade that year, repeated{" "}
+            {walkforward.years_evaluated} times.
+          </p>
+          <div className="bot-hero-stats bot-run-stats">
+            <div><span>Bot, compounded</span><strong className="bot-negative">{formatPct(walkforward.bot_cagr)}</strong></div>
+            <div><span>Index, compounded</span><strong>{walkforward.index_cagr === null ? "—" : formatPct(walkforward.index_cagr)}</strong></div>
+            <div>
+              <span>Years beating the index</span>
+              <strong className="bot-negative">
+                {walkforward.years_beating_index} of {walkforward.years_evaluated}
+              </strong>
+            </div>
+          </div>
+          <table className="bot-table bot-table-compact">
+            <thead>
+              <tr>
+                <th>Year</th><th className="num">Playbook cells</th><th className="num">Trades</th>
+                <th className="num">Bot</th><th className="num">Index</th><th className="num">Excess</th>
+              </tr>
+            </thead>
+            <tbody>
+              {walkforward.years.map((row) => (
+                <tr key={row.year}>
+                  <td className="bot-mono">{row.year}</td>
+                  <td className="num">{row.cells}</td>
+                  <td className="num">{row.trades.toLocaleString("en-IN")}</td>
+                  <td className={`num ${row.bot_return_pct >= 0 ? "bot-expected" : "bot-negative"}`}>
+                    {formatPct(row.bot_return_pct)}
+                  </td>
+                  <td className="num">{row.index_return_pct === null ? "—" : formatPct(row.index_return_pct)}</td>
+                  <td className={`num ${(row.excess_pct ?? 0) >= 0 ? "bot-expected" : "bot-negative"}`}>
+                    {row.excess_pct === null ? "—" : `${row.excess_pct >= 0 ? "+" : ""}${row.excess_pct.toFixed(1)}`}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="bot-verdict bot-verdict-warn">
+            <AlertTriangle size={15} aria-hidden />
+            <span>
+              Under this evaluation the system does not have a durable edge: it compounds at{" "}
+              {formatPct(walkforward.bot_cagr)} a year against the market's{" "}
+              {walkforward.index_cagr === null ? "—" : formatPct(walkforward.index_cagr)}, and
+              beats the index in {walkforward.years_beating_index} of{" "}
+              {walkforward.years_evaluated} years. The playbook's own signals averaged +1.20R in
+              2023 and −0.26R in 2025 — the selection itself stops working, not just the
+              execution. Read everything below with that in front of it.
+            </span>
+          </p>
+        </section>
+      ) : null}
+
       {answer && headline ? (
         <section>
-          <h4>Is it better than a professional?</h4>
+          <h4>The single-split view, for contrast</h4>
           <p className="bot-section-note">
             Measured over {headline.window_years} years the system never saw, against{" "}
             <strong>{headline.funds_counted.toLocaleString("en-IN")}</strong> real Indian equity

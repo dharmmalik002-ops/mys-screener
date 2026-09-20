@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 
 BACKTEST_FILE = "bot_backtest.json"
 SIGNALS_FILE = "bot_signals.json"
+ROLLING_FILE = "bot_rolling_walkforward.json"
 # Beyond this the committed signal list is describing a market that has moved
 # on. Better to say so than to present a stale list as today's.
 SIGNAL_STALE_DAYS = 6
@@ -107,6 +108,7 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
             "history_store": store,
             "live_scan_available": store.get("present", False),
             "ledger_present": bool(state_dir and lg.ledger_path(state_dir).exists()),
+            "walkforward_present": (data_dir / ROLLING_FILE).exists(),
             "learning_present": bool((artifact or {}).get("learning", {}).get("available")),
         }
 
@@ -199,6 +201,26 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
                 "Rebuild them before trading."
             ) + (" " + str(committed.get("message") or ""))
         return committed
+
+    @router.get("/walkforward")
+    def walkforward() -> dict[str, Any]:
+        """The rolling evaluation — the number that actually matters.
+
+        Every other figure this API serves rests on one train/test split, which
+        gives a 3.8-year test window. That window happens to contain 2023, the
+        single year the system worked, and it dominates the result. This
+        endpoint serves the rolling version: the playbook rebuilt each January
+        from prior data only, then used to trade that year, eleven times over.
+        It is the honest measure of whether the edge persists, and it says it
+        does not.
+        """
+        payload = _load(data_dir, ROLLING_FILE)
+        if not payload:
+            raise HTTPException(
+                status_code=503,
+                detail="No rolling evaluation yet. Run scripts/rolling_walkforward.py.",
+            )
+        return payload
 
     @router.get("/learning")
     def learning() -> dict[str, Any]:

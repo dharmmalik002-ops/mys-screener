@@ -5623,3 +5623,31 @@ export type BotSensitivity = {
   }>;
   note: string;
 };
+
+/* --- Bot: the rolling walk-forward ----------------------------------------
+   The evaluation that matters. Every other figure rests on one train/test
+   split whose 3.8-year test window happens to contain the single year the
+   system worked. This rebuilds the playbook each January from prior data only
+   and trades the year that follows, eleven times over. */
+
+export type BotWalkforwardYear = {
+  year: number;
+  cells: number;
+  trades: number;
+  bot_return_pct: number;
+  index_return_pct: number | null;
+  excess_pct: number | null;
+  max_drawdown_pct: number;
+};
+
+export type BotWalkforward = {
+  years: BotWalkforwardYear[];
+  bot_cagr: number;
+  index_cagr: number | null;
+  years_beating_index: number;
+  years_evaluated: number;
+};
+
+export function getBotWalkforward() {
+  return whileWaking(() => request<BotWalkforward>("/api/bot/walkforward", undefined, { timeoutMs: 30000 }));
+}

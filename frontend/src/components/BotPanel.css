@@ -425,3 +425,10 @@
 .bot-subhead {
   margin: 20px 0 6px; font-size: var(--fs-body); color: var(--text);
 }
+
+.bot-headline-warning {
+  border: 1px solid color-mix(in srgb, var(--amber) 45%, transparent);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--amber) 6%, var(--surface-soft));
+}
