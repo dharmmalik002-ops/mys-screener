@@ -590,4 +590,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **The sleeve must be built as a compounded level, never by switching between two price maps.** It holds *units*, so swapping a ~1,000-level index series for a ~10-level gold series would reprice those units 100x overnight; `mtm_account.composite_sleeve` chains daily returns instead and carries the last price through either calendar's gaps — the fourth appearance of "a missing price is not a zero price" in this one feature. `CompositeSleeveTests` pins both, and the first test is a flat pair producing no jump at the handover.
 
+90. **CONFIRM THE TURN WITH THE TREND BEFORE DE-RISKING — THE REGIME LABEL ALONE SELLS INTO STRENGTH.** The regime flips on breadth and volatility, so it can read unhealthy while the market is still rising, and de-risking on that alone sold the book into two live uptrends: 2024 and 2026. Requiring the index to be **below its own 200-day average as well** before going risk-off:
+
+        regime only          CAGR +26.05%  maxDD -29.80%  Sharpe 1.45  win 36.8%  2024  +9.0%  2026 -13.6%
+        regime AND <200dma   CAGR +29.88%  maxDD -26.87%  Sharpe 1.58  win 35.0%  2024 +17.7%  2026 -10.2%
+
+    Better on return, drawdown and Sharpe together, with the win rate still inside the brief's band, and 2021 lifts from +58.8% to **+76.8%**. The condition is an OR on the risk-on side — healthy regime *or* intact trend — so a single flickering input cannot take the book out of a market that is still working.
+
+    **Final: `CAGR +31.12%, maxDD -26.87%, Sharpe 1.58, payoff 5.07, win 35.0%, 1,002 trades` — +29.9%/yr against the Nifty Smallcap 250's +16.3%, alpha +13.6pp a year, ahead in 13 of 18.** 80.5% small cap, 21-582 trades a year. 2011 returns **+5.8% against an index that fell 36%**, 2018 is flat against -26.8%, 2025 is +16.6% against -6.0%.
+
+    The four remaining misses are 2009 (-59.6pp, an index that doubled off a crash bottom), 2012, 2015 and 2024/2026. The trade-off taken here is explicit: the sleeve buys return and risk protection at the cost of a couple of years where the market rose and the bot was partly out of it.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

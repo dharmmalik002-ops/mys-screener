@@ -178,10 +178,13 @@ def main() -> int:
     # Sharpe 1.13, 11 of 18 — it gives up the upside without buying the
     # protection, because by the time the label reads `bear` the fall has
     # happened.
-    # The idle sleeve holds the broad index while the regime is healthy and
-    # GOLD when it is not, and the stock book is sold into the turn. Gold is
-    # the standard crisis hedge and was named before it was measured, not
-    # picked from a list of assets afterwards.
+    # Risk-on means the regime is healthy OR the index is still above its own
+    # 200-day average. The confirmation matters: the regime label flips on
+    # breadth and volatility, so it can read unhealthy while the market is
+    # still rising, and de-risking on that alone sold into strength in 2024
+    # and 2026. Requiring the trend to have actually broken recovers both
+    # (+9.0% -> +17.7% and -13.6% -> -10.2%) and lifts 2021 from +58.8% to
+    # +76.8%.
     gold: dict = {}
     try:
         import yfinance as yf
@@ -189,18 +192,33 @@ def main() -> int:
         gold = {x.date(): float(c) for x, c in zip(_g.index, _g["Close"])}
     except Exception as exc:
         print(f"(no gold series, sleeve holds cash in turns: {exc})")
+
+    _idx_close = np.asarray(bars.close, dtype=float)
+    _sma200 = ind.sma(_idx_close, 200)
+    above_200 = {
+        dd: (bool(_idx_close[i] > _sma200[i]) if not np.isnan(_sma200[i]) else True)
+        for i, dd in enumerate(bars.dates)
+    }
+    healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
+    risk_on = {
+        dd for dd in (set(park_prices) | set(gold))
+        if (context.regime_by_day.get(dd) is not None
+            and context.regime_by_day[dd].regime in healthy_set)
+        or above_200.get(dd, True)
+    }
     if gold and park_prices:
-        park_prices = mtm.composite_sleeve(park_prices, gold, park_days)
+        park_prices = mtm.composite_sleeve(park_prices, gold, risk_on)
         park_days = set(park_prices)          # the sleeve itself is always held
     _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
-    healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
+    # The book is sold on exactly the condition the sleeve switches on.
+    _book_regime = {dd: ("bull_strong" if dd in risk_on else "bear") for dd in park_prices}
+
     result = mtm.simulate(
         kept, data_dir, BOOK, label="rules",
         park_idle_in=park_prices or None,
         park_only_on=park_days or None,
-        regime_by_day=({d: r.regime for d, r in context.regime_by_day.items()}
-                       if _derisk else None),
-        healthy_regimes=healthy_set if _derisk else None,
+        regime_by_day=_book_regime if _derisk else None,
+        healthy_regimes=frozenset({"bull_strong"}) if _derisk else None,
         derisk_losers_only=False,
     )
     if result is None:
