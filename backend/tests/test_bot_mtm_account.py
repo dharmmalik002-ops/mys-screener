@@ -182,6 +182,45 @@ class ParkedCashTests(unittest.TestCase):
                            "held index units were marked at zero on a gated day")
 
 
+class CompositeSleeveTests(unittest.TestCase):
+    """Index when risk-on, gold when not — as one continuous price series."""
+
+    def setUp(self):
+        self.days = [date(2020, 1, 1) + timedelta(days=i) for i in range(10)]
+
+    def test_it_chains_returns_rather_than_swapping_price_levels(self):
+        """The sleeve holds units; swapping series would reprice them.
+
+        Risk asset near 1000, safe asset near 10. A switch that changed the
+        quoted level would move the sleeve by 100x overnight.
+        """
+        risk = {d: 1000.0 for d in self.days}
+        safe = {d: 10.0 for d in self.days}
+        on = set(self.days[:5])
+        out = mtm.composite_sleeve(risk, safe, on)
+        levels = [out[d] for d in self.days]
+        self.assertAlmostEqual(min(levels), max(levels), places=6,
+                               msg="a flat pair produced a jump at the handover")
+
+    def test_it_tracks_the_risk_asset_on_risk_on_days(self):
+        risk = {d: 100.0 * (1.10 ** i) for i, d in enumerate(self.days)}
+        safe = {d: 50.0 for d in self.days}
+        out = mtm.composite_sleeve(risk, safe, set(self.days))
+        self.assertGreater(out[self.days[-1]], out[self.days[0]] * 2)
+
+    def test_it_tracks_the_safe_asset_when_risk_off(self):
+        risk = {d: 100.0 * (0.9 ** i) for i, d in enumerate(self.days)}
+        safe = {d: 50.0 * (1.05 ** i) for i, d in enumerate(self.days)}
+        out = mtm.composite_sleeve(risk, safe, set())
+        self.assertGreater(out[self.days[-1]], out[self.days[0]])
+
+    def test_a_gap_in_one_calendar_does_not_zero_the_sleeve(self):
+        risk = {d: 100.0 for i, d in enumerate(self.days) if i % 2 == 0}
+        safe = {d: 50.0 for d in self.days}
+        out = mtm.composite_sleeve(risk, safe, set(self.days))
+        self.assertTrue(all(v > 0 for v in out.values()))
+
+
 class DeriskTests(unittest.TestCase):
 
     def setUp(self):

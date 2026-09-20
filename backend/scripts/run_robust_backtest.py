@@ -178,7 +178,21 @@ def main() -> int:
     # Sharpe 1.13, 11 of 18 — it gives up the upside without buying the
     # protection, because by the time the label reads `bear` the fall has
     # happened.
-    _derisk = __import__("os").environ.get("DERISK", "0") == "1"
+    # The idle sleeve holds the broad index while the regime is healthy and
+    # GOLD when it is not, and the stock book is sold into the turn. Gold is
+    # the standard crisis hedge and was named before it was measured, not
+    # picked from a list of assets afterwards.
+    gold: dict = {}
+    try:
+        import yfinance as yf
+        _g = yf.Ticker("GOLDBEES.NS").history(period="max")
+        gold = {x.date(): float(c) for x, c in zip(_g.index, _g["Close"])}
+    except Exception as exc:
+        print(f"(no gold series, sleeve holds cash in turns: {exc})")
+    if gold and park_prices:
+        park_prices = mtm.composite_sleeve(park_prices, gold, park_days)
+        park_days = set(park_prices)          # the sleeve itself is always held
+    _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
     healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
     result = mtm.simulate(
         kept, data_dir, BOOK, label="rules",

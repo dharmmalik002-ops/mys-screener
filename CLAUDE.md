@@ -580,4 +580,14 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **There is no middle setting.** Cutting only in a genuine `bear` and leaving `choppy` and `correction` alone gives `+19.77% / -31.30% / Sharpe 1.13 / 11 of 18` — worse than *both* options on drawdown and years beaten. By the time the label reads `bear` the fall has already happened, so it gives up the upside without buying the protection. `cut losers` is not a middle option either: `+21.24% / -33.48% / 21.9% win / 13 of 18`, because the losers it cuts are the ones that would have recovered.
 
+89. **DE-RISKED CAPITAL BELONGS IN GOLD, NOT CASH — THAT ONE CHANGE MADE THE WIN-RATE TARGET FREE.** Gotcha 88 hit the brief's 35-40% win rate by selling the stock book into a regime turn, and it cost 3.8pp of CAGR and two years of outperformance because the proceeds then sat in cash earning nothing. Holding them in **gold** instead — the standard crisis hedge, named before it was measured rather than picked from a list afterwards:
+
+        default (cash sleeve)   CAGR +22.89%  maxDD -27.98%  Sharpe 1.32  win 26.8%  14/18*
+        de-risk into cash       CAGR +19.05%  maxDD -17.58%  Sharpe 1.23  win 36.8%  13/18
+        **de-risk into gold**   **CAGR +26.05%  maxDD -29.80%  Sharpe 1.45  win 36.8%  14/18**
+
+    **+3.2pp of CAGR over the old default, the best Sharpe measured anywhere in this work, and the win rate arrives free.** Several chronic losing years turn: 2011 `-8.6% -> +9.3%` against an index that fell 36%, 2022 `-3.5% -> +9.5%`, 2025 `-11.9% -> +33.5%`, and 2012 `+24.9% -> +45.6%`, past the index for the first time. It costs one year (15 of 18 -> 14) and 1.8pp of drawdown. Alpha over the Smallcap 250 goes from +6.6pp to **+9.8pp a year**.
+
+    **The sleeve must be built as a compounded level, never by switching between two price maps.** It holds *units*, so swapping a ~1,000-level index series for a ~10-level gold series would reprice those units 100x overnight; `mtm_account.composite_sleeve` chains daily returns instead and carries the last price through either calendar's gaps — the fourth appearance of "a missing price is not a zero price" in this one feature. `CompositeSleeveTests` pins both, and the first test is a flat pair producing no jump at the handover.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

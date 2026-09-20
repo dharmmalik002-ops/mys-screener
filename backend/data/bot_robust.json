@@ -1,23 +1,23 @@
 {
   "yearly": {
-    "2009": 40.53,
-    "2010": 27.88,
-    "2011": -8.57,
-    "2012": 24.92,
-    "2013": 8.29,
-    "2014": 70.26,
-    "2015": 10.95,
-    "2016": 17.6,
-    "2017": 73.59,
-    "2018": -10.52,
-    "2019": 5.08,
-    "2020": 29.33,
-    "2021": 74.94,
-    "2022": -3.52,
-    "2023": 62.4,
-    "2024": 35.55,
-    "2025": -11.89,
-    "2026": 19.75
+    "2009": 44.55,
+    "2010": 31.22,
+    "2011": 9.31,
+    "2012": 45.57,
+    "2013": -3.46,
+    "2014": 74.36,
+    "2015": 11.81,
+    "2016": 22.7,
+    "2017": 85.27,
+    "2018": -7.46,
+    "2019": 15.94,
+    "2020": 34.65,
+    "2021": 58.84,
+    "2022": 9.54,
+    "2023": 58.25,
+    "2024": 8.98,
+    "2025": 33.46,
+    "2026": -13.62
   },
   "trades_per_year": {
     "2009": 243,
@@ -76,11 +76,11 @@
       "accepted": 243,
       "acceptance_pct": 14.1,
       "avg_r": 1.185,
-      "bot_return": 40.53,
+      "bot_return": 44.55,
       "index_return": 113.92,
-      "alpha": -73.39,
+      "alpha": -69.37,
       "verdict": "under_deployed",
-      "note": "243 trades at a healthy +1.18R but still -73.4pp behind \u2014 capital, not selection"
+      "note": "243 trades at a healthy +1.18R but still -69.4pp behind \u2014 capital, not selection"
     },
     {
       "year": 2010,
@@ -88,11 +88,11 @@
       "accepted": 219,
       "acceptance_pct": 12.2,
       "avg_r": -0.422,
-      "bot_return": 27.88,
+      "bot_return": 31.22,
       "index_return": 16.25,
-      "alpha": 11.63,
+      "alpha": 14.97,
       "verdict": "ok",
-      "note": "beat the index by +11.6pp on 219 trades"
+      "note": "beat the index by +15.0pp on 219 trades"
     },
     {
       "year": 2011,
@@ -100,9 +100,9 @@
       "accepted": 21,
       "acceptance_pct": 2.9,
       "avg_r": -0.345,
-      "bot_return": -8.57,
+      "bot_return": 9.31,
       "index_return": -36.03,
-      "alpha": 27.46,
+      "alpha": 45.34,
       "verdict": "starved",
       "note": "only 21 trades from 713 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
     },
@@ -112,11 +112,11 @@
       "accepted": 91,
       "acceptance_pct": 6.1,
       "avg_r": 1.871,
-      "bot_return": 24.92,
+      "bot_return": 45.57,
       "index_return": 38.19,
-      "alpha": -13.27,
-      "verdict": "under_deployed",
-      "note": "91 trades at a healthy +1.87R but still -13.3pp behind \u2014 capital, not selection"
+      "alpha": 7.38,
+      "verdict": "ok",
+      "note": "beat the index by +7.4pp on 91 trades"
     },
     {
       "year": 2013,
@@ -124,11 +124,11 @@
       "accepted": 61,
       "acceptance_pct": 5.7,
       "avg_r": 5.944,
-      "bot_return": 8.29,
+      "bot_return": -3.46,
       "index_return": -8.14,
-      "alpha": 16.43,
+      "alpha": 4.68,
       "verdict": "ok",
-      "note": "beat the index by +16.4pp on 61 trades"
+      "note": "beat the index by +4.7pp on 61 trades"
     },
     {
       "year": 2014,
@@ -136,11 +136,11 @@
       "accepted": 196,
       "acceptance_pct": 6.5,
       "avg_r": 2.893,
-      "bot_return": 70.26,
+      "bot_return": 74.36,
       "index_return": 69.57,
-      "alpha": 0.69,
+      "alpha": 4.79,
       "verdict": "ok",
-      "note": "beat the index by +0.7pp on 196 trades"
+      "note": "beat the index by +4.8pp on 196 trades"
     },
     {
       "year": 2015,
@@ -148,11 +148,11 @@
       "accepted": 79,
       "acceptance_pct": 4.4,
       "avg_r": 0.172,
-      "bot_return": 10.95,
+      "bot_return": 11.81,
       "index_return": 10.2,
-      "alpha": 0.75,
+      "alpha": 1.61,
       "verdict": "ok",
-      "note": "beat the index by +0.7pp on 79 trades"
+      "note": "beat the index by +1.6pp on 79 trades"
     },
     {
       "year": 2016,
@@ -160,11 +160,11 @@
       "accepted": 171,
       "acceptance_pct": 6.1,
       "avg_r": 2.169,
-      "bot_return": 17.6,
+      "bot_return": 22.7,
       "index_return": 0.36,
-      "alpha": 17.24,
+      "alpha": 22.34,
       "verdict": "ok",
-      "note": "beat the index by +17.2pp on 171 trades"
+      "note": "beat the index by +22.3pp on 171 trades"
     },
     {
       "year": 2017,
@@ -172,11 +172,11 @@
       "accepted": 291,
       "acceptance_pct": 7.0,
       "avg_r": 1.271,
-      "bot_return": 73.59,
+      "bot_return": 85.27,
       "index_return": 57.28,
-      "alpha": 16.31,
+      "alpha": 27.99,
       "verdict": "ok",
-      "note": "beat the index by +16.3pp on 291 trades"
+      "note": "beat the index by +28.0pp on 291 trades"
     },
     {
       "year": 2018,
@@ -184,11 +184,11 @@
       "accepted": 94,
       "acceptance_pct": 4.4,
       "avg_r": -0.271,
-      "bot_return": -10.52,
+      "bot_return": -7.46,
       "index_return": -26.8,
-      "alpha": 16.28,
+      "alpha": 19.34,
       "verdict": "ok",
-      "note": "beat the index by +16.3pp on 94 trades"
+      "note": "beat the index by +19.3pp on 94 trades"
     },
     {
       "year": 2019,
@@ -196,11 +196,11 @@
       "accepted": 102,
       "acceptance_pct": 4.9,
       "avg_r": -0.839,
-      "bot_return": 5.08,
+      "bot_return": 15.94,
       "index_return": -8.27,
-      "alpha": 13.35,
+      "alpha": 24.21,
       "verdict": "ok",
-      "note": "beat the index by +13.4pp on 102 trades"
+      "note": "beat the index by +24.2pp on 102 trades"
     },
     {
       "year": 2020,
@@ -208,11 +208,11 @@
       "accepted": 216,
       "acceptance_pct": 5.1,
       "avg_r": 3.291,
-      "bot_return": 29.33,
+      "bot_return": 34.65,
       "index_return": 25.09,
-      "alpha": 4.24,
+      "alpha": 9.56,
       "verdict": "ok",
-      "note": "beat the index by +4.2pp on 216 trades"
+      "note": "beat the index by +9.6pp on 216 trades"
     },
     {
       "year": 2021,
@@ -220,11 +220,11 @@
       "accepted": 532,
       "acceptance_pct": 8.5,
       "avg_r": 2.023,
-      "bot_return": 74.94,
+      "bot_return": 58.84,
       "index_return": 61.94,
-      "alpha": 13.0,
-      "verdict": "ok",
-      "note": "beat the index by +13.0pp on 532 trades"
+      "alpha": -3.1,
+      "verdict": "under_deployed",
+      "note": "532 trades at a healthy +2.02R but still -3.1pp behind \u2014 capital, not selection"
     },
     {
       "year": 2022,
@@ -232,11 +232,11 @@
       "accepted": 138,
       "acceptance_pct": 3.4,
       "avg_r": 2.644,
-      "bot_return": -3.52,
+      "bot_return": 9.54,
       "index_return": -3.65,
-      "alpha": 0.13,
+      "alpha": 13.19,
       "verdict": "ok",
-      "note": "beat the index by +0.1pp on 138 trades"
+      "note": "beat the index by +13.2pp on 138 trades"
     },
     {
       "year": 2023,
@@ -244,11 +244,11 @@
       "accepted": 582,
       "acceptance_pct": 7.6,
       "avg_r": 3.118,
-      "bot_return": 62.4,
+      "bot_return": 58.25,
       "index_return": 48.1,
-      "alpha": 14.3,
+      "alpha": 10.15,
       "verdict": "ok",
-      "note": "beat the index by +14.3pp on 582 trades"
+      "note": "beat the index by +10.2pp on 582 trades"
     },
     {
       "year": 2024,
@@ -256,11 +256,11 @@
       "accepted": 201,
       "acceptance_pct": 2.8,
       "avg_r": -0.552,
-      "bot_return": 35.55,
+      "bot_return": 8.98,
       "index_return": 26.43,
-      "alpha": 9.12,
-      "verdict": "ok",
-      "note": "beat the index by +9.1pp on 201 trades"
+      "alpha": -17.45,
+      "verdict": "bad_shots",
+      "note": "201 trades at -0.55R \u2014 enough shots, wrong names; this is an entry-rule problem"
     },
     {
       "year": 2025,
@@ -268,11 +268,11 @@
       "accepted": 182,
       "acceptance_pct": 3.3,
       "avg_r": 0.155,
-      "bot_return": -11.89,
+      "bot_return": 33.46,
       "index_return": -6.01,
-      "alpha": -5.88,
-      "verdict": "under_deployed",
-      "note": "182 trades at a healthy +0.16R but still -5.9pp behind \u2014 capital, not selection"
+      "alpha": 39.47,
+      "verdict": "ok",
+      "note": "beat the index by +39.5pp on 182 trades"
     },
     {
       "year": 2026,
@@ -280,20 +280,21 @@
       "accepted": 109,
       "acceptance_pct": 2.2,
       "avg_r": -0.048,
-      "bot_return": 19.75,
+      "bot_return": -13.62,
       "index_return": 9.61,
-      "alpha": 10.14,
-      "verdict": "ok",
-      "note": "beat the index by +10.1pp on 109 trades"
+      "alpha": -23.23,
+      "verdict": "bad_shots",
+      "note": "109 trades at -0.05R \u2014 enough shots, wrong names; this is an entry-rule problem"
     }
   ],
   "summary": {
     "verdict_counts": {
       "starved": 3,
-      "under_deployed": 3,
-      "ok": 14
+      "under_deployed": 2,
+      "ok": 13,
+      "bad_shots": 2
     },
-    "years_behind": 3,
+    "years_behind": 4,
     "years_total": 18,
     "worst": [
       {
@@ -302,35 +303,35 @@
         "accepted": 243,
         "acceptance_pct": 14.1,
         "avg_r": 1.185,
-        "bot_return": 40.53,
+        "bot_return": 44.55,
         "index_return": 113.92,
-        "alpha": -73.39,
+        "alpha": -69.37,
         "verdict": "under_deployed",
-        "note": "243 trades at a healthy +1.18R but still -73.4pp behind \u2014 capital, not selection"
+        "note": "243 trades at a healthy +1.18R but still -69.4pp behind \u2014 capital, not selection"
       },
       {
-        "year": 2012,
-        "signals": 1491,
-        "accepted": 91,
-        "acceptance_pct": 6.1,
-        "avg_r": 1.871,
-        "bot_return": 24.92,
-        "index_return": 38.19,
-        "alpha": -13.27,
-        "verdict": "under_deployed",
-        "note": "91 trades at a healthy +1.87R but still -13.3pp behind \u2014 capital, not selection"
+        "year": 2026,
+        "signals": 4960,
+        "accepted": 109,
+        "acceptance_pct": 2.2,
+        "avg_r": -0.048,
+        "bot_return": -13.62,
+        "index_return": 9.61,
+        "alpha": -23.23,
+        "verdict": "bad_shots",
+        "note": "109 trades at -0.05R \u2014 enough shots, wrong names; this is an entry-rule problem"
       },
       {
-        "year": 2025,
-        "signals": 5581,
-        "accepted": 182,
-        "acceptance_pct": 3.3,
-        "avg_r": 0.155,
-        "bot_return": -11.89,
-        "index_return": -6.01,
-        "alpha": -5.88,
-        "verdict": "under_deployed",
-        "note": "182 trades at a healthy +0.16R but still -5.9pp behind \u2014 capital, not selection"
+        "year": 2024,
+        "signals": 7178,
+        "accepted": 201,
+        "acceptance_pct": 2.8,
+        "avg_r": -0.552,
+        "bot_return": 8.98,
+        "index_return": 26.43,
+        "alpha": -17.45,
+        "verdict": "bad_shots",
+        "note": "201 trades at -0.55R \u2014 enough shots, wrong names; this is an entry-rule problem"
       }
     ],
     "starved_years": [
@@ -338,12 +339,15 @@
       2008,
       2011
     ],
-    "bad_shot_years": []
+    "bad_shot_years": [
+      2024,
+      2026
+    ]
   },
-  "cagr": 23.81,
-  "max_drawdown": -27.98,
-  "sharpe": 1.32,
-  "win_rate": 26.8,
-  "payoff": 10.63,
-  "trades": 717
+  "cagr": 27.11,
+  "max_drawdown": -29.8,
+  "sharpe": 1.45,
+  "win_rate": 36.8,
+  "payoff": 3.74,
+  "trades": 1411
 }

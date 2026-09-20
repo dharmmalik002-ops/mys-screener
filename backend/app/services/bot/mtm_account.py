@@ -55,6 +55,43 @@ class MTMResult:
     yearly: dict[int, float] = field(default_factory=dict)
 
 
+def composite_sleeve(
+    risk_asset: Mapping[date, float],
+    safe_asset: Mapping[date, float],
+    risk_on_days: "set[date]",
+) -> dict[date, float]:
+    """One price series that tracks the risk asset on risk-on days and the
+    safe asset otherwise.
+
+    Built as a compounded level rather than by switching between two price
+    maps, because the sleeve holds *units* and swapping the series underneath
+    it would reprice those units at an unrelated number overnight. Chaining
+    daily returns is the only form that survives the handover.
+
+    A day either asset does not print carries its own last price, so a gap in
+    one calendar cannot mark the sleeve to zero — the failure this module has
+    now had three times.
+    """
+    level = 100.0
+    prev_risk: float | None = None
+    prev_safe: float | None = None
+    out: dict[date, float] = {}
+    for day in sorted(set(risk_asset) | set(safe_asset)):
+        risk_px = risk_asset.get(day)
+        safe_px = safe_asset.get(day)
+        if day in risk_on_days:
+            if risk_px and prev_risk:
+                level *= risk_px / prev_risk
+        elif safe_px and prev_safe:
+            level *= safe_px / prev_safe
+        if risk_px:
+            prev_risk = risk_px
+        if safe_px:
+            prev_safe = safe_px
+        out[day] = level
+    return out
+
+
 def _closes(data_dir: Path, symbols: set[str]) -> dict[str, dict[date, float]]:
     out: dict[str, dict[date, float]] = {}
     for sym in symbols:
