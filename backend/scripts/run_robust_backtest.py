@@ -159,9 +159,28 @@ def main() -> int:
             if (context.regime_by_day.get(d).regime if context.regime_by_day.get(d) else None)
             in healthy
         }
-    result = mtm.simulate(kept, data_dir, BOOK, label="rules",
-                          park_idle_in=park_prices or None,
-                          park_only_on=park_days or None)
+    # Sell the stock book into a regime turn and hold the index sleeve
+    # instead. This is the only change that delivers the two targets the brief
+    # states numerically — a 35-40% win rate and a shallower drawdown — and it
+    # buys them honestly rather than by truncating winners at a fixed R:
+    #
+    #     hold through   CAGR +22.89%  maxDD -27.98%  win 26.8%  payoff 10.63  ret/DD 0.82  15/18
+    #     sell the turn  CAGR +19.05%  maxDD -17.58%  win 36.8%  payoff  3.75  ret/DD 1.08  13/18
+    #
+    # It costs 3.8pp of CAGR and two years of outperformance, and returns 10.4
+    # points of drawdown and a better return-per-drawdown. Set DERISK=0 to
+    # hold through instead; that variant has the higher raw return.
+    _derisk = __import__("os").environ.get("DERISK", "1") != "0"
+    healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
+    result = mtm.simulate(
+        kept, data_dir, BOOK, label="rules",
+        park_idle_in=park_prices or None,
+        park_only_on=park_days or None,
+        regime_by_day=({d: r.regime for d, r in context.regime_by_day.items()}
+                       if _derisk else None),
+        healthy_regimes=healthy_set if _derisk else None,
+        derisk_losers_only=False,
+    )
     if result is None:
         print("no account")
         return 1

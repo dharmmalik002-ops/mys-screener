@@ -567,4 +567,13 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     That is nine ideas built and measured across this work — partial profits, adaptive sizing, rally relaxation, a recovery setup, a thesis-break exit, win-rate mining at the entry, sleeve choice, sleeve rotation, and capacity-triggered relaxation. **Two improved the book** (a volatility-relative stop cap, gotcha 79; parking idle capital in the broad index, gotchas 83/86). The rest are defined, tested and off, each with its number recorded so none of them needs re-deriving.
 
+88. **THE 35-40% WIN RATE, BOUGHT WITHOUT TRUNCATING A SINGLE WINNER.** Every attempt at the brief's win-rate target went through the *trade* — a profit target, a scale-out, a thesis-break exit — and every one capped the positions that carry the result and **deepened** the drawdown doing it (gotchas 77, 84). The version that works goes through the *market* instead: when the regime turns, sell the stock book and hold the index sleeve, which `mtm_account` already supported and the shipped runner had never switched on.
+
+        hold through   CAGR +22.89%  maxDD -27.98%  win 26.8%  payoff 10.63  ret/DD 0.82  15 of 18
+        sell the turn  CAGR +19.05%  maxDD -17.58%  win 36.8%  payoff  3.75  ret/DD 1.08  13 of 18
+
+    **36.8% win rate at a 3.75 payoff — both inside the brief's stated bands — with the drawdown nearly halved** and return-per-drawdown improving from 0.82 to 1.08. It costs 3.8pp of CAGR and two years of outperformance. No profit target is involved; `EXIT_TARGET_R` is still `None` and a winner still runs as far as the trail allows. `test_the_win_rate_now_clears_the_brief` asserts that, because a future change that hits the same win rate with a target would be the thing this whole sequence measured as harmful.
+
+    Which configuration is better is genuinely a question about the reader rather than the data — higher raw return and more years beaten against half the drawdown and a far smoother ride — so **both ship**, selected by `DERISK=0`. Note `cut losers` is not a middle option: it keeps the winners and gives `+21.24% / -33.48% / 21.9% / 13 of 18`, worse than either on drawdown and win rate, because the losers it cuts are the ones that would have recovered.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

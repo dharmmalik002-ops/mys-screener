@@ -130,11 +130,28 @@ class VerdictTests(unittest.TestCase):
     def test_it_beats_the_smallcap_index(self):
         self.assertTrue(R.beats_smallcap())
 
+    def test_the_win_rate_now_clears_the_brief(self):
+        """35-40% asked for, 36.8% delivered — and not by a profit target.
+
+        Every scale-out variant hit the same band by capping the trades that
+        carry the result. This one comes from selling the book into a regime
+        turn, which raises the win rate AND halves the drawdown.
+        """
+        self.assertTrue(R.win_rate_clears_the_brief())
+        self.assertTrue(R.DERISK_ON_REGIME_TURN)
+        self.assertIsNone(R.EXIT_TARGET_R, "the win rate must not come from a target")
+
+    def test_the_derisk_trade_off_is_recorded_in_both_directions(self):
+        """It costs return and buys drawdown. Both halves stay visible."""
+        self.assertTrue(R.derisk_trades_return_for_drawdown())
+
     def test_the_payoff_clears_the_brief_and_the_win_rate_is_low(self):
         """Both halves. A 10:1 payoff is bought with a 1-in-4 win rate."""
+        # Payoff falls from 10.6 to 3.75 when the book sells into a turn —
+        # still inside the 3-4 the brief asked for, and the win rate is what
+        # was bought with it.
         self.assertTrue(R.payoff_clears_the_brief())
-        self.assertGreater(R.MEASURED_PAYOFF, 8.0)
-        self.assertLess(R.MEASURED_WIN_RATE, 30.0)
+        self.assertGreater(R.MEASURED_PAYOFF, 3.0)
 
     def test_the_book_is_highly_selective(self):
         self.assertLess(R.MEASURED_TRADES, 2000)
