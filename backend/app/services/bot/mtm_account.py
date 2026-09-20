@@ -77,6 +77,7 @@ def simulate(
     risk_scale_by_day: Mapping[date, float] | None = None,
     park_idle_in: Mapping[date, float] | None = None,
     park_only_on: "set[date] | None" = None,
+    reserve: Sequence[Mapping] | None = None,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -98,6 +99,16 @@ def simulate(
     changes what the account IS — a selective book plus an index sleeve, not a
     pure stock picker. Both readings are reported rather than one being
     presented as the bot.
+
+    `reserve` is a second, looser pool taken **only after every core signal
+    for the day has been placed and capacity remains**. Every previous attempt
+    at loosening the rules triggered on market state — a broad rally, a strong
+    regime — and all of them lost, because they admitted weaker trades while
+    the book was already full and simply displaced better ones. The diagnosis
+    says the losing years are `starved`, which is a statement about *capacity*
+    rather than about the market, so this triggers on capacity instead: the
+    reserve is reached for only when the book has room it cannot otherwise
+    fill.
 
     `park_only_on` restricts *new* parking to those sessions while leaving
     `park_idle_in` as the full price series used for valuation. The two must
@@ -133,6 +144,20 @@ def simulate(
     by_day: dict[date, list[Mapping]] = {}
     for t in usable:
         by_day.setdefault(t["_entry"], []).append(t)
+
+    reserve_by_day: dict[date, list[Mapping]] = {}
+    for t in (reserve or []):
+        if not (t.get("entry_day") and t.get("exit_day") and t.get("r_multiple") is not None):
+            continue
+        t["_entry"] = date.fromisoformat(str(t["entry_day"]))
+        t["_exit"] = date.fromisoformat(str(t["exit_day"]))
+        reserve_by_day.setdefault(t["_entry"], []).append(t)
+    for day_rows in reserve_by_day.values():
+        day_rows.sort(key=lambda t: str(t["symbol"]))
+    if reserve_by_day:
+        price.update(_closes(data_dir, {
+            str(t["symbol"]) for rows_ in reserve_by_day.values() for t in rows_
+        }))
 
     cash = cfg.starting_equity
     equity = cfg.starting_equity
@@ -199,7 +224,12 @@ def simulate(
         open_pos = still
 
         # --- take new entries, budget permitting ---------------------------
-        for t in ([] if risk_off else by_day.get(day, [])):
+        todays = list(by_day.get(day, []))
+        if reserve_by_day and not risk_off:
+            # Core first, always. The reserve is what is left when the core
+            # could not use the capacity.
+            todays = todays + list(reserve_by_day.get(day, []))
+        for t in ([] if risk_off else todays):
             stop_pct = float(t.get("risk_pct") or 0.0)
             if stop_pct <= 0:
                 declined += 1

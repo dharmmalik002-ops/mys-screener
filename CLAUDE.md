@@ -555,4 +555,16 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **Final shipped book:** `CAGR +23.81%, maxDD -27.98%, Sharpe 1.32, payoff 10.63, win 26.8%, 717 trades`, **+22.9%/yr against the Nifty Smallcap 250's +16.3% (alpha +6.6pp), behind it in 3 years of 18.** 80.5% small cap, 21-582 trades a year. The three remaining misses are 2009 (-73.4pp, the index did +113.9% off a crash bottom), 2012 (-13.3pp) and 2025 (-5.9pp), and all three are `starved` or `under_deployed` rather than bad selection — the entry rules were never the binding constraint in any of them.
 
+87. **WITH 500-SESSION HOLDS THERE IS NO SPARE CAPACITY — A WEAK TRADE TAKEN TODAY BLOCKS A STRONG ONE FOR TWO YEARS.** Every earlier attempt at loosening the rules triggered on *market state* (a broad rally, a strong regime) and lost. The obvious objection was that the trigger was wrong: the diagnosis says the bad years are `starved`, which is a statement about capacity, not about the market. So `mtm_account.reserve` takes a looser pool **only after every core signal for the day is placed and capacity still remains** — it can never displace a core trade.
+
+        reserve          n      CAGR      maxDD   Sharpe   beat    2009     2012     2025
+        none             0   +22.89%   -27.98%     1.32   15/18   +40.5%   +24.9%   -11.9%
+        wider turnover 3988   +15.96%   -31.29%     1.01    8/18   +53.3%   +21.7%    +1.2%
+        more setups    2909   +19.58%   -30.46%     1.14   11/18   +53.9%   +21.5%   -10.2%
+        both          10891   +15.96%   -33.31%     0.96    8/18   +59.5%   +14.3%    -8.5%
+
+    It does exactly what it was built for — **2009 goes from +40.5% to +59.5%** — and costs 3 to 7 points of CAGR and up to seven years of outperformance. The mechanism is the one thing this experiment was designed to rule out and could not: a position held up to 500 sessions **borrows capacity from the future**. Filling a free slot today with a marginal trade blocks a better one for the next two years, so "only when there is room" is not the safe condition it sounds like. This is gotcha 54's capacity effect again, and the reason it survives a trigger built specifically to avoid it.
+
+    That is nine ideas built and measured across this work — partial profits, adaptive sizing, rally relaxation, a recovery setup, a thesis-break exit, win-rate mining at the entry, sleeve choice, sleeve rotation, and capacity-triggered relaxation. **Two improved the book** (a volatility-relative stop cap, gotcha 79; parking idle capital in the broad index, gotchas 83/86). The rest are defined, tested and off, each with its number recorded so none of them needs re-deriving.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
