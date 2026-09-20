@@ -36,7 +36,7 @@ from .features import Features
 
 # Families group strategies that share a failure mode — when a whole family
 # stops working at once that is a market fact, not ten independent findings.
-FAMILIES = ("breakout", "momentum", "pullback", "mean_reversion", "volatility")
+FAMILIES = ("breakout", "momentum", "pullback", "mean_reversion", "volatility", "fundamental")
 
 
 @dataclass(frozen=True)
@@ -312,6 +312,53 @@ def _failed_breakdown(f: Features) -> np.ndarray:
     return _safe(_prior_flag(undercut) & reclaim & still_in_trend & (f.rel_volume > 1.2) & f.liquid)
 
 
+# --- Earnings: a different kind of information -----------------------------
+# Every setup above reads price and volume. That whole family has been measured
+# and does not hold up out of sample, so these two test whether a genuinely
+# different input does. The hypothesis is post-earnings-announcement drift:
+# prices under-react to large surprises and keep moving for weeks.
+#
+# `features.earnings_positive` is already lagged by one session — a result
+# released after the close cannot be traded that day — so nothing here needs to
+# shift it again. See `earnings.surprise_flags`.
+
+
+def _earnings_drift(f: Features) -> np.ndarray:
+    """Inside the drift window after a big positive surprise, with price agreeing.
+
+    The confirmation matters. A surprise the market shrugs off is not news it
+    under-reacted to; it is news it disagreed with. Requiring price above the
+    50 DMA and above the prior close keeps the signal to surprises the tape has
+    at least acknowledged.
+    """
+    c = f.bars.close
+    return _safe(
+        f.earnings_positive
+        & (c > f.sma50)
+        & (c > _prior(c))
+        & f.liquid
+    )
+
+
+def _earnings_gap_continuation(f: Features) -> np.ndarray:
+    """A positive surprise that gapped, held the gap, and is still in its window.
+
+    The stricter cousin: it wants the market to have repriced visibly on the
+    news rather than merely drifted. Distinct from `gap_continuation`, which
+    knows nothing about why a stock gapped and fires on any of them.
+    """
+    o, c = f.bars.open, f.bars.close
+    gapped = o > _prior(c) * 1.02
+    held = c >= o
+    return _safe(
+        f.earnings_positive
+        & _prior_flag(gapped & held)
+        & (c > f.sma200)
+        & (f.rel_volume > 1.5)
+        & f.liquid
+    )
+
+
 STRATEGIES: tuple[StrategySpec, ...] = (
     StrategySpec(
         "minervini_breakout", "Minervini Breakout", "breakout",
@@ -368,6 +415,23 @@ STRATEGIES: tuple[StrategySpec, ...] = (
 
     # The second cohort is deliberately absent — see the note above its
     # definitions. Enabling it cost 4.3 points of median CAGR.
+
+    # --- earnings cohort: a different information source -----------------
+    # Low frequency by nature (four announcements a year per name), so unlike
+    # the second cohort these cannot flood a capital-constrained book.
+    StrategySpec(
+        "earnings_drift", "Earnings Drift", "fundamental",
+        "Inside the drift window after a large positive earnings surprise, with price "
+        "confirming. Tests whether a different kind of information carries an edge the "
+        "price patterns do not.",
+        ("bull_strong", "bull_narrow", "choppy", "correction"), _earnings_drift, stop_atr_mult=2.5,
+    ),
+    StrategySpec(
+        "earnings_gap_hold", "Earnings Gap Hold", "fundamental",
+        "A positive surprise that gapped, held the gap, and is still inside its drift window. "
+        "Unlike the plain gap setup, this one knows why the stock gapped.",
+        ("bull_strong", "bull_narrow", "recovery"), _earnings_gap_continuation, stop_atr_mult=2.5,
+    ),
 )
 
 # Defined but not registered. Kept so the measurement is reproducible and the

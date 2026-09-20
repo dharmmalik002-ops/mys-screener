@@ -22,6 +22,7 @@ import numpy as np
 
 from . import attribution as attr
 from . import breadth as bre
+from . import earnings as earn
 from . import learning as learn
 from . import macro as mc
 from . import policy as pol
@@ -137,9 +138,10 @@ def run_strategies(
     trades: list[Trade] = []
     processed = skipped = 0
     align = _benchmark_aligner(data_dir)
+    join_earnings = _earnings_joiner(data_dir)
 
     for bars in iter_bars(data_dir, symbols):
-        features = build_features(bars, align(bars))
+        features = build_features(bars, align(bars), join_earnings(bars))
         if features is None:
             skipped += 1
             continue
@@ -172,6 +174,27 @@ def run_strategies(
 
     logger.info("replay done: %d symbols (%d too short), %s trades", processed, skipped, f"{len(trades):,}")
     return trades
+
+
+def _earnings_joiner(data_dir: Path):
+    """A function giving a symbol's (positive, negative) surprise windows.
+
+    Returns None-windows when the store is absent, which makes the earnings
+    strategies silently never fire rather than crash — the same degradation the
+    relative-strength setups use when there is no benchmark. A missing optional
+    data source must cost signals, not the whole run.
+    """
+    if not earn.store_dir(data_dir).exists():
+        logger.warning("no earnings history — the earnings setups will not fire")
+        return lambda bars: None
+
+    def join(bars: Bars):
+        announcements = earn.read_announcements(data_dir, bars.symbol)
+        if not announcements:
+            return None
+        return earn.surprise_flags(bars.dates, announcements)
+
+    return join
 
 
 def _benchmark_aligner(data_dir: Path):
@@ -214,9 +237,10 @@ def run_strategies_multi(
     out: dict[str, list[Trade]] = {name: [] for name in exit_models}
     processed = 0
     align = _benchmark_aligner(data_dir)
+    join_earnings = _earnings_joiner(data_dir)
 
     for bars in iter_bars(data_dir, symbols):
-        features = build_features(bars, align(bars))
+        features = build_features(bars, align(bars), join_earnings(bars))
         if features is None:
             continue
         processed += 1

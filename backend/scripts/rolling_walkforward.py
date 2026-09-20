@@ -48,6 +48,9 @@ logger = logging.getLogger("rolling-wf")
 TRADEABLE = {"confirmed", "confirmed_weak"}
 # Below this the playbook is built on too little history to mean anything.
 MIN_PRIOR_TRADES = 3000
+# A single-family run has far fewer trades to build a playbook from, so the
+# floor scales with what is actually available rather than blocking the test.
+MIN_PRIOR_TRADES_FAMILY = 400
 
 
 def as_trade(row: dict) -> Trade:
@@ -68,10 +71,10 @@ def as_trade(row: dict) -> Trade:
     )
 
 
-def playbook_as_of(rows: list[dict], cutoff: date) -> tuple[set, dict]:
+def playbook_as_of(rows: list[dict], cutoff: date, min_prior: int = MIN_PRIOR_TRADES) -> tuple[set, dict]:
     """Cells that validated using only trades closed before `cutoff`."""
     prior = [r for r in rows if date.fromisoformat(r["exit_day"]) < cutoff]
-    if len(prior) < MIN_PRIOR_TRADES:
+    if len(prior) < min_prior:
         return set(), {}
     validated = attr.validate([as_trade(r) for r in prior], REGIMES, train_fraction=0.6)
     cells, expectancy = set(), {}
@@ -86,6 +89,11 @@ def playbook_as_of(rows: list[dict], cutoff: date) -> tuple[set, dict]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--from-year", type=int, default=2012)
+    parser.add_argument(
+        "--only-family", default=None,
+        help="restrict the playbook to one strategy family (e.g. 'fundamental'), "
+             "to ask whether one information source carries an edge the others do not",
+    )
     parser.add_argument("--out", default=None)
     args = parser.parse_args()
 
@@ -107,11 +115,28 @@ def main() -> int:
             return None
         return (closes[days[-1]] / closes[days[0]] - 1.0) * 100.0
 
+    if args.only_family:
+        from app.services.bot.strategies import BY_ID
+
+        keep = {s.id for s in BY_ID.values() if s.family == args.only_family}
+        if not keep:
+            logger.error("no strategies in family %r", args.only_family)
+            return 1
+        before = len(rows)
+        rows = [r for r in rows if r["strategy"] in keep]
+        logger.info(
+            "restricted to family %r (%s): %s of %s trades",
+            args.only_family, ", ".join(sorted(keep)), f"{len(rows):,}", f"{before:,}",
+        )
+
     last_year = max(date.fromisoformat(r["exit_day"]) for r in rows).year
     results = []
     for year in range(args.from_year, last_year + 1):
         start, end = date(year, 1, 1), date(year, 12, 31)
-        cells, expectancy = playbook_as_of(rows, start)
+        cells, expectancy = playbook_as_of(
+            rows, start,
+            MIN_PRIOR_TRADES_FAMILY if args.only_family else MIN_PRIOR_TRADES,
+        )
         if not cells:
             logger.info("%d: no validated playbook from prior data — skipped", year)
             continue
@@ -201,7 +226,11 @@ def main() -> int:
                "index_cagr": round(idx_cagr, 2) if idx_cagr is not None else None,
                "years_beating_index": int((excess > 0).sum()) if len(excess) else 0,
                "years_evaluated": len(results)}
-    out = Path(args.out) if args.out else data_dir / "bot_rolling_walkforward.json"
+    default_name = (
+        f"bot_rolling_walkforward_{args.only_family}.json"
+        if args.only_family else "bot_rolling_walkforward.json"
+    )
+    out = Path(args.out) if args.out else data_dir / default_name
     out.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     logger.info("wrote %s", out)
     return 0

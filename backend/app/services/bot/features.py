@@ -68,13 +68,22 @@ class Features:
     rs_at_high_63: np.ndarray      # bool: RS line at a 63-bar high
     range_pct_5: np.ndarray        # 5-bar range — compression at the entry bar
     low_10: np.ndarray
+    # Sessions falling inside the drift window after a large earnings surprise.
+    # Supplied by the caller (see `earnings.surprise_flags`) because the join
+    # needs the announcement store, which features has no business loading.
+    earnings_positive: np.ndarray
+    earnings_negative: np.ndarray
 
     @property
     def n(self) -> int:
         return len(self.bars)
 
 
-def build_features(bars: Bars, benchmark_close: np.ndarray | None = None) -> Features | None:
+def build_features(
+    bars: Bars,
+    benchmark_close: np.ndarray | None = None,
+    earnings_windows: tuple[np.ndarray, np.ndarray] | None = None,
+) -> Features | None:
     """Compute the bundle, or None when the symbol is too short to be useful.
 
     `benchmark_close` must already be aligned to `bars.dates` by the caller —
@@ -108,6 +117,12 @@ def build_features(bars: Bars, benchmark_close: np.ndarray | None = None) -> Fea
     low_20 = ind.rolling_min(low, 20)
     high_52w = ind.rolling_max(high, 252)
     low_52w = ind.rolling_min(low, 252)
+
+    if earnings_windows is not None and len(earnings_windows[0]) == n:
+        earnings_positive, earnings_negative = earnings_windows
+    else:
+        earnings_positive = np.zeros(n, dtype=bool)
+        earnings_negative = np.zeros(n, dtype=bool)
 
     high_10 = ind.rolling_max(high, 10)
     low_10 = ind.rolling_min(low, 10)
@@ -171,4 +186,6 @@ def build_features(bars: Bars, benchmark_close: np.ndarray | None = None) -> Fea
         rs_at_high_63=rs_at_high,
         range_pct_5=range_pct_5,
         low_10=low_10,
+        earnings_positive=earnings_positive,
+        earnings_negative=earnings_negative,
     )

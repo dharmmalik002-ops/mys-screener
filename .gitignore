@@ -23,6 +23,10 @@ backend/data/chart_cache/
 # (bot_backtest.json, bot_signals.json) ARE committed, because the
 # Space has no way to rebuild them.
 backend/data/deep_history/
+# Earnings announcement history: rebuildable in ~4 min with
+# scripts/build_earnings_history.py, and only 484 of 1,581 symbols have
+# analyst estimates at all, so it is raw material rather than a product.
+backend/data/earnings_history/
 backend/data/bot_exit_sweep.json
 backend/data/chart_cache_us/
 backend/data/scan_history.json

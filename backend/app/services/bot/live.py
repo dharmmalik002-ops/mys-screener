@@ -29,6 +29,7 @@ from pathlib import Path
 import numpy as np
 
 from . import calibration as cal
+from . import earnings as earn
 from . import macro as mc
 from . import policy as pol
 from . import quality as ql
@@ -185,7 +186,9 @@ def scan_today(
             np.array([benchmark_closes.get(day, np.nan) for day in bars.dates], dtype=np.float64)
             if benchmark_closes else None
         )
-        features = build_features(bars, aligned)
+        announcements = earn.read_announcements(data_dir, bars.symbol)
+        windows = earn.surprise_flags(bars.dates, announcements) if announcements else None
+        features = build_features(bars, aligned, windows)
         if features is None:
             continue
 

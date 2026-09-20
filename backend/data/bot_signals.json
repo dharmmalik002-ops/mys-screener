@@ -78,9 +78,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": 0.058,
+      "volatility_adjustment_r": 0.057,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.32
+      "edge_score_r": 0.319
     },
     {
       "symbol": "SCHAEFFLER",
@@ -106,9 +106,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": 0.058,
+      "volatility_adjustment_r": 0.057,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.32
+      "edge_score_r": 0.319
     },
     {
       "symbol": "MEDANTA",
@@ -134,9 +134,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": 0.0,
+      "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.262
+      "edge_score_r": 0.263
     },
     {
       "symbol": "PFOCUS",
@@ -162,9 +162,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": 0.0,
+      "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.262
+      "edge_score_r": 0.263
     },
     {
       "symbol": "CARBORUNIV",
@@ -190,9 +190,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": 0.0,
+      "volatility_adjustment_r": 0.001,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.262
+      "edge_score_r": 0.263
     },
     {
       "symbol": "AHCL",
@@ -218,9 +218,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": -0.046,
+      "volatility_adjustment_r": -0.05,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.216
+      "edge_score_r": 0.212
     },
     {
       "symbol": "SPICELOUNG",
@@ -246,9 +246,9 @@
         "capped_by_capital": false
       },
       "cell_expectancy_r": 0.262,
-      "volatility_adjustment_r": -0.046,
+      "volatility_adjustment_r": -0.05,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.216
+      "edge_score_r": 0.212
     }
   ],
   "candidates_found": 7,
@@ -258,6 +258,6 @@
   },
   "calibration": null,
   "message": "7 candidate(s) from 1 cleared setup(s) in Correction. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-09-20T04:42:08.387035+00:00",
+  "generated_at": "2026-09-20T07:25:05.538017+00:00",
   "source": "offline"
 }
