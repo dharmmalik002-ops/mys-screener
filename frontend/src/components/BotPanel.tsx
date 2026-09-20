@@ -22,6 +22,7 @@ import {
   type BotSignals,
 } from "../lib/api";
 import { EvolutionView, LearningView } from "./BotLearning";
+import { FeedbackLoopView } from "./BotFeedbackLoop";
 import { ScorecardView } from "./BotScorecard";
 import { Panel } from "./Panel";
 
@@ -38,7 +39,7 @@ import "./BotPanel.css";
    The limitations view is what keeps the costume visible, so it gets equal
    billing with the numbers rather than a footnote nobody scrolls to. */
 
-type BotView = "today" | "scorecard" | "playbook" | "learning" | "evolution" | "evidence" | "limits";
+type BotView = "today" | "scorecard" | "playbook" | "learning" | "loop" | "evolution" | "evidence" | "limits";
 
 // Ordered the way a decision gets made: what to do now, the rules behind it,
 // what the trade record taught, how that view has shifted, the underlying
@@ -50,6 +51,7 @@ const VIEWS: Array<{ id: BotView; label: string; hint: string }> = [
   { id: "scorecard", label: "Scorecard", hint: "The account, measured against real fund managers" },
   { id: "playbook", label: "Playbook", hint: "Which setups are cleared in which regime" },
   { id: "learning", label: "Learning", hint: "What the trade record says works, and what it cost" },
+  { id: "loop", label: "Live loop", hint: "Whether the live book still behaves as the study predicted" },
   { id: "evolution", label: "Evolution", hint: "How the bot's view of each strategy has changed" },
   { id: "evidence", label: "Evidence", hint: "The strategy × regime study behind the playbook" },
   { id: "limits", label: "What this can't tell you", hint: "Survivorship, macro and the honest caveats" },
@@ -714,6 +716,7 @@ export function BotPanel() {
                 ? <LearningView learning={learning} />
                 : <p className="bot-empty">This backtest predates the learning layer. Rerun the backtest to populate it.</p>
             ) : null}
+            {view === "loop" ? <FeedbackLoopView /> : null}
             {view === "evolution" ? (
               learning
                 ? <EvolutionView learning={learning} />

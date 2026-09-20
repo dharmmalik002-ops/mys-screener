@@ -5285,6 +5285,11 @@ export type BotSignals = {
   candidates: BotCandidate[];
   candidates_found?: number;
   ranking?: { active: boolean; note: string };
+  calibration?: {
+    book: BotCalibration["book"] | null;
+    suspended: string[];
+    diverging: string[];
+  } | null;
   message?: string;
   source?: "live" | "offline";
   age_days?: number | null;
@@ -5516,3 +5521,68 @@ export type BotBenchmark = {
   caveats: string[];
   method: string;
 };
+
+/* --- Bot: the live feedback loop ------------------------------------------
+   Closed live and paper trades audit the study rather than retrain it. The
+   loop can only ever reduce a cell's size or stand it down; a cell beating
+   its expectation is never promoted. */
+
+export type BotCellCalibration = {
+  strategy: string;
+  regime: string;
+  expected_r: number;
+  live_trades: number;
+  live_avg_r: number;
+  shortfall_r: number;
+  p_value: number;
+  status: "tracking" | "diverging" | "suspended" | "insufficient";
+  size_multiplier: number;
+  note: string;
+  status_note: string;
+};
+
+export type BotCalibration = {
+  cells: BotCellCalibration[];
+  suspended: string[];
+  diverging: string[];
+  book: {
+    status: string;
+    live_trades: number;
+    live_avg_r: number;
+    expected_r: number;
+    note: string;
+  };
+  method: string;
+};
+
+export function getBotCalibration() {
+  return whileWaking(() => request<BotCalibration>("/api/bot/calibration", undefined, { timeoutMs: 30000 }));
+}
+
+export type BotLiveTradeInput = {
+  source?: "live" | "paper";
+  strategy: string;
+  symbol: string;
+  regime: string;
+  entry_day: string;
+  exit_day: string;
+  r_multiple: number;
+  entry?: number;
+  stop?: number;
+  exit_price?: number;
+  exit_reason?: string;
+  sessions_held?: number;
+  mae_r?: number;
+  mfe_r?: number;
+  risk_pct?: number;
+  atr_pct_at_entry?: number;
+  net_pct?: number;
+};
+
+export function recordBotTrade(trade: BotLiveTradeInput) {
+  return request<{ recorded: boolean; review: Record<string, unknown> | null; ledger: Record<string, unknown> }>(
+    "/api/bot/ledger/trade",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(trade) },
+    { timeoutMs: 30000 },
+  );
+}

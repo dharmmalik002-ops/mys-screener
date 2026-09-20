@@ -20,10 +20,12 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Body, HTTPException, Query
 
+from app.services.bot import calibration as cal
 from app.services.bot import ledger as lg
 from app.services.bot import policy as pol
+from app.services.bot import review as rv
 from app.services.bot.history import store_summary
 
 logger = logging.getLogger(__name__)
@@ -36,9 +38,14 @@ SIGNAL_STALE_DAYS = 6
 
 # A live scan walks ~1,600 gzipped bar files and rebuilds every indicator, which
 # measured at 21 s. The result only changes when a new session closes, so it is
-# cached on (session, book size) — without this every tab switch pays the full
-# scan and the page feels broken.
-_SCAN_CACHE: dict[tuple[str, float], dict[str, Any]] = {}
+# cached — without this every tab switch pays the full scan and the page feels
+# broken.
+#
+# The key includes the live-trade count as well as (session, book size),
+# because calibration can suspend a cell and that changes the candidate list.
+# Keyed on session alone, recording a trade left the old list served from cache
+# and the loop looked broken from the outside.
+_SCAN_CACHE: dict[tuple[str, float, int], dict[str, Any]] = {}
 _SCAN_CACHE_MAX = 8
 
 
@@ -145,14 +152,25 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
 
         if store.get("present") and not force_offline:
             session = str((artifact.get("current_regime") or {}).get("day") or "")
-            cache_key = (session, round(equity, 2))
+            live_count = 0
+            if state_dir and lg.ledger_path(state_dir).exists():
+                with lg.connect(state_dir) as conn:
+                    by_source = lg.counts(conn)["by_source"]
+                    live_count = int(by_source.get("live", 0)) + int(by_source.get("paper", 0))
+            cache_key = (session, round(equity, 2), live_count)
             cached = _SCAN_CACHE.get(cache_key)
             if cached is not None:
                 return cached
             try:
                 from app.services.bot.live import scan_today
 
-                payload = scan_today(data_dir, artifact, equity=equity)
+                live_record: list[dict[str, Any]] = []
+                if state_dir and lg.ledger_path(state_dir).exists():
+                    with lg.connect(state_dir) as conn:
+                        for source in ("live", "paper"):
+                            live_record.extend(lg.query_trades(conn, source=source, limit=5000))
+                audit = cal.calibrate(live_record, artifact.get("playbooks") or [])
+                payload = scan_today(data_dir, artifact, equity=equity, calibration=audit)
                 payload["source"] = "live"
                 payload["generated_at"] = datetime.now(timezone.utc).isoformat()
                 if session:
@@ -238,6 +256,100 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
         directory = _require_ledger()
         with lg.connect(directory) as conn:
             return {"transitions": lg.status_transitions(conn)}
+
+    @router.post("/ledger/trade")
+    def record_live_trade(payload: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        """Record a closed paper or live trade, and review it immediately.
+
+        This is the loop's inlet. A trade recorded here joins the same table as
+        the 96,401 simulated ones, under the same schema, so every existing
+        query works across it — and `calibration` can then ask whether the live
+        record still matches what the study predicted.
+
+        `r_multiple` is required rather than derived: the caller knows what it
+        actually paid and what its stop actually was, and recomputing it here
+        from a nominal entry and stop would quietly discard the slippage that
+        makes live results differ from simulated ones in the first place.
+        """
+        directory = _require_ledger()
+        required = ("strategy", "symbol", "entry_day", "exit_day", "r_multiple", "regime")
+        missing = [field for field in required if payload.get(field) in (None, "")]
+        if missing:
+            raise HTTPException(status_code=400, detail=f"missing required fields: {', '.join(missing)}")
+
+        source = str(payload.get("source") or "live")
+        if source not in {"live", "paper"}:
+            # `backtest` is written by the replay only. Letting a caller insert
+            # into it would contaminate the statistical base with hand-entered
+            # rows that no study protocol ever saw.
+            raise HTTPException(status_code=400, detail="source must be 'live' or 'paper'")
+
+        def number(field: str, default: float = 0.0) -> float:
+            try:
+                return float(payload.get(field, default))
+            except (TypeError, ValueError):
+                return default
+
+        trade = lg.LedgerTrade(
+            source=source,
+            strategy=str(payload["strategy"]),
+            symbol=str(payload["symbol"]).upper(),
+            signal_day=str(payload.get("signal_day") or payload["entry_day"]),
+            entry_day=str(payload["entry_day"]),
+            exit_day=str(payload["exit_day"]),
+            entry=number("entry"),
+            stop=number("stop"),
+            exit_price=number("exit_price") or None,
+            exit_reason=str(payload.get("exit_reason") or "manual"),
+            sessions_held=int(number("sessions_held")),
+            r_multiple=number("r_multiple"),
+            net_pct=number("net_pct"),
+            mae_r=number("mae_r"),
+            mfe_r=number("mfe_r"),
+            risk_pct=number("risk_pct"),
+            atr_pct_at_entry=number("atr_pct_at_entry"),
+            regime=str(payload["regime"]),
+            volatility_band=str(payload.get("volatility_band") or "normal"),
+            breadth_above_200dma=payload.get("breadth_above_200dma"),
+            pct_from_52w_high=payload.get("pct_from_52w_high"),
+            vix_percentile=payload.get("vix_percentile"),
+            macro_headwinds=payload.get("macro_headwinds"),
+            expected_r=payload.get("expected_r"),
+            thesis=str(payload.get("thesis") or ""),
+        )
+
+        with lg.connect(directory) as conn:
+            lg.record_trades(conn, [trade])
+            pending = lg.unreviewed(conn)
+            reviewed = None
+            for row in pending:
+                verdict = rv.review_trade(row)
+                lg.record_review(
+                    conn, verdict.trade_id, verdict.verdict, verdict.tags,
+                    verdict.stop_quality, verdict.exit_quality,
+                    verdict.r_left_on_table, verdict.note,
+                )
+                if (
+                    row["symbol"] == trade.symbol
+                    and row["entry_day"] == trade.entry_day
+                    and row["strategy"] == trade.strategy
+                ):
+                    reviewed = verdict.to_dict()
+            counts = lg.counts(conn)
+
+        return {"recorded": True, "review": reviewed, "ledger": counts}
+
+    @router.get("/calibration")
+    def calibration() -> dict[str, Any]:
+        """Whether the live record still matches what the study predicted."""
+        artifact = _require_backtest()
+        directory = state_dir
+        live: list[dict[str, Any]] = []
+        if directory and lg.ledger_path(directory).exists():
+            with lg.connect(directory) as conn:
+                for source in ("live", "paper"):
+                    live.extend(lg.query_trades(conn, source=source, limit=5000))
+        return cal.calibrate(live, artifact.get("playbooks") or [])
 
     @router.get("/size")
     def size(

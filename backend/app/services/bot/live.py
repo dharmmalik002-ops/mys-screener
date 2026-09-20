@@ -28,6 +28,7 @@ from pathlib import Path
 
 import numpy as np
 
+from . import calibration as cal
 from . import macro as mc
 from . import policy as pol
 from . import quality as ql
@@ -63,6 +64,7 @@ class Candidate:
     turnover_crore: float
     expected_r: float          # the cell's out-of-sample average
     verdict: str
+    live_size_multiplier: float   # what the live record says about this cell
     sizing: dict
 
     def to_dict(self) -> dict:
@@ -124,8 +126,15 @@ def scan_today(
     artifact: dict,
     equity: float = 1_000_000.0,
     symbols: list[str] | None = None,
+    calibration: dict | None = None,
 ) -> dict:
-    """The live read: regime, playbook, macro gate, and ranked candidates."""
+    """The live read: regime, playbook, macro gate, and ranked candidates.
+
+    `calibration` is the live record's audit of the study (see
+    `calibration.py`). It can only ever reduce a cell's size or stop it
+    trading — a cell beating its expectation is never promoted, because upside
+    surprise on a small sample is the most seductive noise there is.
+    """
     current = artifact.get("current_regime") or {}
     regime = str(current.get("regime") or "")
     as_of = date.fromisoformat(current["day"]) if current.get("day") else None
@@ -189,7 +198,16 @@ def scan_today(
                 continue
 
             entry_cell = cleared[spec.id]
-            risk_pct = entry_cell["risk_per_trade_pct"] * macro_gate.size_multiplier
+            live_multiplier = cal.size_multiplier_for(calibration, spec.id, regime)
+            if live_multiplier <= 0:
+                # Suspended by its own live record. Skipped rather than shown
+                # at zero size, which would read as an idea worth having.
+                continue
+            risk_pct = (
+                entry_cell["risk_per_trade_pct"]
+                * macro_gate.size_multiplier
+                * live_multiplier
+            )
             sizing = pol.position_size(equity, close, stop, risk_pct)
 
             candidates.append(
@@ -206,6 +224,7 @@ def scan_today(
                     turnover_crore=round(float(features.turnover_crore[last]), 1),
                     expected_r=entry_cell["out_sample_r"],
                     verdict=entry_cell["verdict"],
+                    live_size_multiplier=live_multiplier,
                     sizing=sizing,
                 )
             )
@@ -226,6 +245,14 @@ def scan_today(
         "candidates": trimmed,
         "candidates_found": len(candidates),
         "ranking": {"active": model.active, "note": model.note},
+        "calibration": (
+            {
+                "book": (calibration or {}).get("book"),
+                "suspended": (calibration or {}).get("suspended") or [],
+                "diverging": (calibration or {}).get("diverging") or [],
+            }
+            if calibration else None
+        ),
         "message": (
             f"{len(candidates)} candidate(s) from {len(specs)} cleared setup(s) in "
             f"{book['label']}. Sizing at {macro_gate.size_multiplier:.0%} of book risk "
