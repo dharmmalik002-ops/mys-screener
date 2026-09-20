@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-20T07:20:09.599821+00:00",
+  "generated_at": "2026-09-20T07:37:02.106504+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -16939,6 +16939,4843 @@
         }
       ],
       "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -19 to +17 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 9.57% a year, 7.3% to 10.6% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.31 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
+    },
+    "regime_timing": {
+      "available": true,
+      "rule": [
+        "bull_narrow",
+        "bull_strong",
+        "recovery"
+      ],
+      "timed": {
+        "label": "regime_timing",
+        "start": "2022-11-17",
+        "end": "2026-09-18",
+        "cagr_pct": 12.62,
+        "max_drawdown_pct": -13.56,
+        "return_per_drawdown": 0.93,
+        "exposure_pct": 74.3,
+        "switches": 14,
+        "mean_hold_days": 147.0,
+        "cash_rate_pct": 6.0,
+        "tax_pct": 20.0,
+        "equity_curve": [
+          {
+            "day": "2022-11-18",
+            "equity": 0.99653,
+            "invested": true
+          },
+          {
+            "day": "2022-11-22",
+            "equity": 0.99386,
+            "invested": true
+          },
+          {
+            "day": "2022-11-24",
+            "equity": 1.00485,
+            "invested": true
+          },
+          {
+            "day": "2022-11-28",
+            "equity": 1.0115,
+            "invested": true
+          },
+          {
+            "day": "2022-11-30",
+            "equity": 1.02186,
+            "invested": true
+          },
+          {
+            "day": "2022-12-02",
+            "equity": 1.02297,
+            "invested": true
+          },
+          {
+            "day": "2022-12-06",
+            "equity": 1.02037,
+            "invested": true
+          },
+          {
+            "day": "2022-12-08",
+            "equity": 1.01961,
+            "invested": true
+          },
+          {
+            "day": "2022-12-12",
+            "equity": 1.01429,
+            "invested": true
+          },
+          {
+            "day": "2022-12-14",
+            "equity": 1.02299,
+            "invested": true
+          },
+          {
+            "day": "2022-12-16",
+            "equity": 1.00201,
+            "invested": true
+          },
+          {
+            "day": "2022-12-20",
+            "equity": 1.00776,
+            "invested": true
+          },
+          {
+            "day": "2022-12-22",
+            "equity": 0.98888,
+            "invested": true
+          },
+          {
+            "day": "2022-12-27",
+            "equity": 0.98804,
+            "invested": true
+          },
+          {
+            "day": "2022-12-29",
+            "equity": 0.99232,
+            "invested": true
+          },
+          {
+            "day": "2023-01-02",
+            "equity": 0.99478,
+            "invested": true
+          },
+          {
+            "day": "2023-01-04",
+            "equity": 0.98641,
+            "invested": true
+          },
+          {
+            "day": "2023-01-06",
+            "equity": 0.97866,
+            "invested": true
+          },
+          {
+            "day": "2023-01-10",
+            "equity": 0.98207,
+            "invested": true
+          },
+          {
+            "day": "2023-01-12",
+            "equity": 0.97915,
+            "invested": true
+          },
+          {
+            "day": "2023-01-16",
+            "equity": 0.9808,
+            "invested": true
+          },
+          {
+            "day": "2023-01-18",
+            "equity": 0.99111,
+            "invested": true
+          },
+          {
+            "day": "2023-01-20",
+            "equity": 0.98352,
+            "invested": true
+          },
+          {
+            "day": "2023-01-24",
+            "equity": 0.98613,
+            "invested": true
+          },
+          {
+            "day": "2023-01-27",
+            "equity": 0.9532,
+            "invested": true
+          },
+          {
+            "day": "2023-01-31",
+            "equity": 0.9571,
+            "invested": true
+          },
+          {
+            "day": "2023-02-02",
+            "equity": 0.95094,
+            "invested": true
+          },
+          {
+            "day": "2023-02-06",
+            "equity": 0.95701,
+            "invested": true
+          },
+          {
+            "day": "2023-02-08",
+            "equity": 0.96304,
+            "invested": true
+          },
+          {
+            "day": "2023-02-10",
+            "equity": 0.96224,
+            "invested": true
+          },
+          {
+            "day": "2023-02-14",
+            "equity": 0.95924,
+            "invested": true
+          },
+          {
+            "day": "2023-02-16",
+            "equity": 0.9666,
+            "invested": true
+          },
+          {
+            "day": "2023-02-20",
+            "equity": 0.9573,
+            "invested": true
+          },
+          {
+            "day": "2023-02-22",
+            "equity": 0.94213,
+            "invested": true
+          },
+          {
+            "day": "2023-02-24",
+            "equity": 0.94209,
+            "invested": false
+          },
+          {
+            "day": "2023-02-28",
+            "equity": 0.94253,
+            "invested": false
+          },
+          {
+            "day": "2023-03-02",
+            "equity": 0.94296,
+            "invested": false
+          },
+          {
+            "day": "2023-03-06",
+            "equity": 0.9434,
+            "invested": false
+          },
+          {
+            "day": "2023-03-09",
+            "equity": 0.94383,
+            "invested": false
+          },
+          {
+            "day": "2023-03-13",
+            "equity": 0.94427,
+            "invested": false
+          },
+          {
+            "day": "2023-03-15",
+            "equity": 0.94471,
+            "invested": false
+          },
+          {
+            "day": "2023-03-17",
+            "equity": 0.94514,
+            "invested": false
+          },
+          {
+            "day": "2023-03-21",
+            "equity": 0.94558,
+            "invested": false
+          },
+          {
+            "day": "2023-03-23",
+            "equity": 0.94602,
+            "invested": false
+          },
+          {
+            "day": "2023-03-27",
+            "equity": 0.94646,
+            "invested": false
+          },
+          {
+            "day": "2023-03-29",
+            "equity": 0.94689,
+            "invested": false
+          },
+          {
+            "day": "2023-04-03",
+            "equity": 0.94733,
+            "invested": false
+          },
+          {
+            "day": "2023-04-06",
+            "equity": 0.95028,
+            "invested": true
+          },
+          {
+            "day": "2023-04-11",
+            "equity": 0.95724,
+            "invested": true
+          },
+          {
+            "day": "2023-04-13",
+            "equity": 0.96284,
+            "invested": true
+          },
+          {
+            "day": "2023-04-18",
+            "equity": 0.95916,
+            "invested": true
+          },
+          {
+            "day": "2023-04-20",
+            "equity": 0.95689,
+            "invested": true
+          },
+          {
+            "day": "2023-04-24",
+            "equity": 0.96129,
+            "invested": true
+          },
+          {
+            "day": "2023-04-26",
+            "equity": 0.96543,
+            "invested": true
+          },
+          {
+            "day": "2023-04-28",
+            "equity": 0.97992,
+            "invested": true
+          },
+          {
+            "day": "2023-05-03",
+            "equity": 0.98358,
+            "invested": true
+          },
+          {
+            "day": "2023-05-05",
+            "equity": 0.98373,
+            "invested": true
+          },
+          {
+            "day": "2023-05-09",
+            "equity": 0.99287,
+            "invested": true
+          },
+          {
+            "day": "2023-05-11",
+            "equity": 0.99695,
+            "invested": true
+          },
+          {
+            "day": "2023-05-15",
+            "equity": 1.00118,
+            "invested": true
+          },
+          {
+            "day": "2023-05-17",
+            "equity": 0.99324,
+            "invested": true
+          },
+          {
+            "day": "2023-05-19",
+            "equity": 0.99203,
+            "invested": true
+          },
+          {
+            "day": "2023-05-23",
+            "equity": 1.00086,
+            "invested": true
+          },
+          {
+            "day": "2023-05-25",
+            "equity": 1.00154,
+            "invested": true
+          },
+          {
+            "day": "2023-05-29",
+            "equity": 1.01552,
+            "invested": true
+          },
+          {
+            "day": "2023-05-31",
+            "equity": 1.01513,
+            "invested": true
+          },
+          {
+            "day": "2023-06-02",
+            "equity": 1.01802,
+            "invested": true
+          },
+          {
+            "day": "2023-06-06",
+            "equity": 1.02235,
+            "invested": true
+          },
+          {
+            "day": "2023-06-08",
+            "equity": 1.02509,
+            "invested": true
+          },
+          {
+            "day": "2023-06-12",
+            "equity": 1.02561,
+            "invested": true
+          },
+          {
+            "day": "2023-06-14",
+            "equity": 1.03559,
+            "invested": true
+          },
+          {
+            "day": "2023-06-16",
+            "equity": 1.04186,
+            "invested": true
+          },
+          {
+            "day": "2023-06-20",
+            "equity": 1.04305,
+            "invested": true
+          },
+          {
+            "day": "2023-06-22",
+            "equity": 1.03924,
+            "invested": true
+          },
+          {
+            "day": "2023-06-26",
+            "equity": 1.03443,
+            "invested": true
+          },
+          {
+            "day": "2023-06-28",
+            "equity": 1.04802,
+            "invested": true
+          },
+          {
+            "day": "2023-07-03",
+            "equity": 1.06417,
+            "invested": true
+          },
+          {
+            "day": "2023-07-05",
+            "equity": 1.06863,
+            "invested": true
+          },
+          {
+            "day": "2023-07-07",
+            "equity": 1.06655,
+            "invested": true
+          },
+          {
+            "day": "2023-07-11",
+            "equity": 1.0719,
+            "invested": true
+          },
+          {
+            "day": "2023-07-13",
+            "equity": 1.07034,
+            "invested": true
+          },
+          {
+            "day": "2023-07-17",
+            "equity": 1.08632,
+            "invested": true
+          },
+          {
+            "day": "2023-07-19",
+            "equity": 1.09157,
+            "invested": true
+          },
+          {
+            "day": "2023-07-21",
+            "equity": 1.0884,
+            "invested": true
+          },
+          {
+            "day": "2023-07-25",
+            "equity": 1.08792,
+            "invested": true
+          },
+          {
+            "day": "2023-07-27",
+            "equity": 1.08936,
+            "invested": true
+          },
+          {
+            "day": "2023-07-31",
+            "equity": 1.09836,
+            "invested": true
+          },
+          {
+            "day": "2023-08-02",
+            "equity": 1.08548,
+            "invested": true
+          },
+          {
+            "day": "2023-08-04",
+            "equity": 1.08752,
+            "invested": true
+          },
+          {
+            "day": "2023-08-08",
+            "equity": 1.09129,
+            "invested": true
+          },
+          {
+            "day": "2023-08-10",
+            "equity": 1.09069,
+            "invested": true
+          },
+          {
+            "day": "2023-08-14",
+            "equity": 1.08333,
+            "invested": true
+          },
+          {
+            "day": "2023-08-17",
+            "equity": 1.08183,
+            "invested": true
+          },
+          {
+            "day": "2023-08-21",
+            "equity": 1.08503,
+            "invested": true
+          },
+          {
+            "day": "2023-08-23",
+            "equity": 1.09136,
+            "invested": true
+          },
+          {
+            "day": "2023-08-25",
+            "equity": 1.08303,
+            "invested": true
+          },
+          {
+            "day": "2023-08-29",
+            "equity": 1.08988,
+            "invested": true
+          },
+          {
+            "day": "2023-08-31",
+            "equity": 1.08969,
+            "invested": true
+          },
+          {
+            "day": "2023-09-04",
+            "equity": 1.10621,
+            "invested": true
+          },
+          {
+            "day": "2023-09-06",
+            "equity": 1.11288,
+            "invested": true
+          },
+          {
+            "day": "2023-09-08",
+            "equity": 1.12595,
+            "invested": true
+          },
+          {
+            "day": "2023-09-12",
+            "equity": 1.12421,
+            "invested": true
+          },
+          {
+            "day": "2023-09-14",
+            "equity": 1.13342,
+            "invested": true
+          },
+          {
+            "day": "2023-09-18",
+            "equity": 1.13407,
+            "invested": true
+          },
+          {
+            "day": "2023-09-21",
+            "equity": 1.1141,
+            "invested": true
+          },
+          {
+            "day": "2023-09-25",
+            "equity": 1.11211,
+            "invested": true
+          },
+          {
+            "day": "2023-09-27",
+            "equity": 1.11655,
+            "invested": true
+          },
+          {
+            "day": "2023-09-29",
+            "equity": 1.1134,
+            "invested": true
+          },
+          {
+            "day": "2023-10-04",
+            "equity": 1.10249,
+            "invested": true
+          },
+          {
+            "day": "2023-10-06",
+            "equity": 1.11346,
+            "invested": true
+          },
+          {
+            "day": "2023-10-10",
+            "equity": 1.11409,
+            "invested": true
+          },
+          {
+            "day": "2023-10-12",
+            "equity": 1.12158,
+            "invested": true
+          },
+          {
+            "day": "2023-10-16",
+            "equity": 1.11986,
+            "invested": true
+          },
+          {
+            "day": "2023-10-18",
+            "equity": 1.11671,
+            "invested": true
+          },
+          {
+            "day": "2023-10-20",
+            "equity": 1.108,
+            "invested": true
+          },
+          {
+            "day": "2023-10-25",
+            "equity": 1.07916,
+            "invested": true
+          },
+          {
+            "day": "2023-10-27",
+            "equity": 1.07946,
+            "invested": true
+          },
+          {
+            "day": "2023-10-31",
+            "equity": 1.08175,
+            "invested": true
+          },
+          {
+            "day": "2023-11-02",
+            "equity": 1.08753,
+            "invested": true
+          },
+          {
+            "day": "2023-11-06",
+            "equity": 1.10482,
+            "invested": true
+          },
+          {
+            "day": "2023-11-08",
+            "equity": 1.11128,
+            "invested": true
+          },
+          {
+            "day": "2023-11-10",
+            "equity": 1.11108,
+            "invested": true
+          },
+          {
+            "day": "2023-11-15",
+            "equity": 1.12727,
+            "invested": true
+          },
+          {
+            "day": "2023-11-17",
+            "equity": 1.13322,
+            "invested": true
+          },
+          {
+            "day": "2023-11-21",
+            "equity": 1.13497,
+            "invested": true
+          },
+          {
+            "day": "2023-11-23",
+            "equity": 1.13573,
+            "invested": true
+          },
+          {
+            "day": "2023-11-28",
+            "equity": 1.14232,
+            "invested": true
+          },
+          {
+            "day": "2023-11-30",
+            "equity": 1.15817,
+            "invested": true
+          },
+          {
+            "day": "2023-12-04",
+            "equity": 1.18782,
+            "invested": true
+          },
+          {
+            "day": "2023-12-06",
+            "equity": 1.20273,
+            "invested": true
+          },
+          {
+            "day": "2023-12-08",
+            "equity": 1.20424,
+            "invested": true
+          },
+          {
+            "day": "2023-12-12",
+            "equity": 1.20317,
+            "invested": true
+          },
+          {
+            "day": "2023-12-14",
+            "equity": 1.22165,
+            "invested": true
+          },
+          {
+            "day": "2023-12-18",
+            "equity": 1.23335,
+            "invested": true
+          },
+          {
+            "day": "2023-12-20",
+            "equity": 1.20913,
+            "invested": true
+          },
+          {
+            "day": "2023-12-22",
+            "equity": 1.22685,
+            "invested": true
+          },
+          {
+            "day": "2023-12-27",
+            "equity": 1.24245,
+            "invested": true
+          },
+          {
+            "day": "2023-12-29",
+            "equity": 1.25096,
+            "invested": true
+          },
+          {
+            "day": "2024-01-03",
+            "equity": 1.24697,
+            "invested": true
+          },
+          {
+            "day": "2024-01-05",
+            "equity": 1.26136,
+            "invested": true
+          },
+          {
+            "day": "2024-01-09",
+            "equity": 1.25292,
+            "invested": true
+          },
+          {
+            "day": "2024-01-11",
+            "equity": 1.26096,
+            "invested": true
+          },
+          {
+            "day": "2024-01-15",
+            "equity": 1.28035,
+            "invested": true
+          },
+          {
+            "day": "2024-01-17",
+            "equity": 1.25473,
+            "invested": true
+          },
+          {
+            "day": "2024-01-19",
+            "equity": 1.26238,
+            "invested": true
+          },
+          {
+            "day": "2024-01-24",
+            "equity": 1.25237,
+            "invested": true
+          },
+          {
+            "day": "2024-01-29",
+            "equity": 1.26915,
+            "invested": true
+          },
+          {
+            "day": "2024-01-31",
+            "equity": 1.27498,
+            "invested": true
+          },
+          {
+            "day": "2024-02-02",
+            "equity": 1.28197,
+            "invested": true
+          },
+          {
+            "day": "2024-02-06",
+            "equity": 1.28989,
+            "invested": true
+          },
+          {
+            "day": "2024-02-08",
+            "equity": 1.28692,
+            "invested": true
+          },
+          {
+            "day": "2024-02-12",
+            "equity": 1.26681,
+            "invested": true
+          },
+          {
+            "day": "2024-02-14",
+            "equity": 1.28272,
+            "invested": true
+          },
+          {
+            "day": "2024-02-16",
+            "equity": 1.29834,
+            "invested": true
+          },
+          {
+            "day": "2024-02-21",
+            "equity": 1.29598,
+            "invested": true
+          },
+          {
+            "day": "2024-02-23",
+            "equity": 1.3079,
+            "invested": true
+          },
+          {
+            "day": "2024-02-27",
+            "equity": 1.30657,
+            "invested": true
+          },
+          {
+            "day": "2024-02-29",
+            "equity": 1.29352,
+            "invested": true
+          },
+          {
+            "day": "2024-03-04",
+            "equity": 1.31554,
+            "invested": true
+          },
+          {
+            "day": "2024-03-06",
+            "equity": 1.31216,
+            "invested": true
+          },
+          {
+            "day": "2024-03-11",
+            "equity": 1.30631,
+            "invested": true
+          },
+          {
+            "day": "2024-03-13",
+            "equity": 1.26494,
+            "invested": true
+          },
+          {
+            "day": "2024-03-15",
+            "equity": 1.27646,
+            "invested": true
+          },
+          {
+            "day": "2024-03-19",
+            "equity": 1.26264,
+            "invested": true
+          },
+          {
+            "day": "2024-03-21",
+            "equity": 1.28111,
+            "invested": true
+          },
+          {
+            "day": "2024-03-26",
+            "equity": 1.28806,
+            "invested": true
+          },
+          {
+            "day": "2024-03-28",
+            "equity": 1.30415,
+            "invested": true
+          },
+          {
+            "day": "2024-04-02",
+            "equity": 1.3244,
+            "invested": true
+          },
+          {
+            "day": "2024-04-04",
+            "equity": 1.33051,
+            "invested": true
+          },
+          {
+            "day": "2024-04-08",
+            "equity": 1.34046,
+            "invested": true
+          },
+          {
+            "day": "2024-04-10",
+            "equity": 1.34664,
+            "invested": true
+          },
+          {
+            "day": "2024-04-15",
+            "equity": 1.31854,
+            "invested": true
+          },
+          {
+            "day": "2024-04-18",
+            "equity": 1.30862,
+            "invested": true
+          },
+          {
+            "day": "2024-04-22",
+            "equity": 1.32473,
+            "invested": true
+          },
+          {
+            "day": "2024-04-24",
+            "equity": 1.33476,
+            "invested": true
+          },
+          {
+            "day": "2024-04-26",
+            "equity": 1.34176,
+            "invested": true
+          },
+          {
+            "day": "2024-04-30",
+            "equity": 1.35192,
+            "invested": true
+          },
+          {
+            "day": "2024-05-03",
+            "equity": 1.3495,
+            "invested": true
+          },
+          {
+            "day": "2024-05-07",
+            "equity": 1.32867,
+            "invested": true
+          },
+          {
+            "day": "2024-05-09",
+            "equity": 1.30992,
+            "invested": true
+          },
+          {
+            "day": "2024-05-13",
+            "equity": 1.32062,
+            "invested": true
+          },
+          {
+            "day": "2024-05-15",
+            "equity": 1.33548,
+            "invested": true
+          },
+          {
+            "day": "2024-05-17",
+            "equity": 1.35626,
+            "invested": true
+          },
+          {
+            "day": "2024-05-22",
+            "equity": 1.36741,
+            "invested": true
+          },
+          {
+            "day": "2024-05-24",
+            "equity": 1.38325,
+            "invested": true
+          },
+          {
+            "day": "2024-05-28",
+            "equity": 1.37704,
+            "invested": true
+          },
+          {
+            "day": "2024-05-30",
+            "equity": 1.35459,
+            "invested": true
+          },
+          {
+            "day": "2024-06-03",
+            "equity": 1.40345,
+            "invested": true
+          },
+          {
+            "day": "2024-06-05",
+            "equity": 1.35561,
+            "invested": true
+          },
+          {
+            "day": "2024-06-07",
+            "equity": 1.4013,
+            "invested": true
+          },
+          {
+            "day": "2024-06-11",
+            "equity": 1.40696,
+            "invested": true
+          },
+          {
+            "day": "2024-06-13",
+            "equity": 1.42127,
+            "invested": true
+          },
+          {
+            "day": "2024-06-18",
+            "equity": 1.43771,
+            "invested": true
+          },
+          {
+            "day": "2024-06-20",
+            "equity": 1.43613,
+            "invested": true
+          },
+          {
+            "day": "2024-06-24",
+            "equity": 1.4351,
+            "invested": true
+          },
+          {
+            "day": "2024-06-26",
+            "equity": 1.44461,
+            "invested": true
+          },
+          {
+            "day": "2024-06-28",
+            "equity": 1.45253,
+            "invested": true
+          },
+          {
+            "day": "2024-07-02",
+            "equity": 1.46013,
+            "invested": true
+          },
+          {
+            "day": "2024-07-04",
+            "equity": 1.47535,
+            "invested": true
+          },
+          {
+            "day": "2024-07-08",
+            "equity": 1.47902,
+            "invested": true
+          },
+          {
+            "day": "2024-07-10",
+            "equity": 1.47944,
+            "invested": true
+          },
+          {
+            "day": "2024-07-12",
+            "equity": 1.48702,
+            "invested": true
+          },
+          {
+            "day": "2024-07-16",
+            "equity": 1.49403,
+            "invested": true
+          },
+          {
+            "day": "2024-07-19",
+            "equity": 1.47145,
+            "invested": true
+          },
+          {
+            "day": "2024-07-23",
+            "equity": 1.4722,
+            "invested": true
+          },
+          {
+            "day": "2024-07-25",
+            "equity": 1.47555,
+            "invested": true
+          },
+          {
+            "day": "2024-07-29",
+            "equity": 1.50626,
+            "invested": true
+          },
+          {
+            "day": "2024-07-31",
+            "equity": 1.51505,
+            "invested": true
+          },
+          {
+            "day": "2024-08-02",
+            "equity": 1.49758,
+            "invested": true
+          },
+          {
+            "day": "2024-08-06",
+            "equity": 1.44503,
+            "invested": true
+          },
+          {
+            "day": "2024-08-08",
+            "equity": 1.46193,
+            "invested": true
+          },
+          {
+            "day": "2024-08-12",
+            "equity": 1.47546,
+            "invested": true
+          },
+          {
+            "day": "2024-08-14",
+            "equity": 1.4598,
+            "invested": true
+          },
+          {
+            "day": "2024-08-19",
+            "equity": 1.48987,
+            "invested": true
+          },
+          {
+            "day": "2024-08-21",
+            "equity": 1.50461,
+            "invested": true
+          },
+          {
+            "day": "2024-08-23",
+            "equity": 1.50783,
+            "invested": true
+          },
+          {
+            "day": "2024-08-27",
+            "equity": 1.51982,
+            "invested": true
+          },
+          {
+            "day": "2024-08-29",
+            "equity": 1.52153,
+            "invested": true
+          },
+          {
+            "day": "2024-09-02",
+            "equity": 1.52985,
+            "invested": true
+          },
+          {
+            "day": "2024-09-04",
+            "equity": 1.52909,
+            "invested": true
+          },
+          {
+            "day": "2024-09-06",
+            "equity": 1.51163,
+            "invested": true
+          },
+          {
+            "day": "2024-09-10",
+            "equity": 1.52232,
+            "invested": true
+          },
+          {
+            "day": "2024-09-12",
+            "equity": 1.5393,
+            "invested": true
+          },
+          {
+            "day": "2024-09-16",
+            "equity": 1.54321,
+            "invested": true
+          },
+          {
+            "day": "2024-09-18",
+            "equity": 1.53874,
+            "invested": true
+          },
+          {
+            "day": "2024-09-20",
+            "equity": 1.55774,
+            "invested": true
+          },
+          {
+            "day": "2024-09-24",
+            "equity": 1.57035,
+            "invested": true
+          },
+          {
+            "day": "2024-09-26",
+            "equity": 1.57726,
+            "invested": true
+          },
+          {
+            "day": "2024-09-30",
+            "equity": 1.56105,
+            "invested": true
+          },
+          {
+            "day": "2024-10-03",
+            "equity": 1.52952,
+            "invested": true
+          },
+          {
+            "day": "2024-10-07",
+            "equity": 1.49259,
+            "invested": true
+          },
+          {
+            "day": "2024-10-09",
+            "equity": 1.51948,
+            "invested": true
+          },
+          {
+            "day": "2024-10-11",
+            "equity": 1.52023,
+            "invested": true
+          },
+          {
+            "day": "2024-10-15",
+            "equity": 1.52824,
+            "invested": true
+          },
+          {
+            "day": "2024-10-17",
+            "equity": 1.50515,
+            "invested": true
+          },
+          {
+            "day": "2024-10-21",
+            "equity": 1.49783,
+            "invested": true
+          },
+          {
+            "day": "2024-10-23",
+            "equity": 1.47064,
+            "invested": true
+          },
+          {
+            "day": "2024-10-25",
+            "equity": 1.44862,
+            "invested": true
+          },
+          {
+            "day": "2024-10-29",
+            "equity": 1.46768,
+            "invested": true
+          },
+          {
+            "day": "2024-10-31",
+            "equity": 1.39968,
+            "invested": false
+          },
+          {
+            "day": "2024-11-04",
+            "equity": 1.40033,
+            "invested": false
+          },
+          {
+            "day": "2024-11-06",
+            "equity": 1.40097,
+            "invested": false
+          },
+          {
+            "day": "2024-11-08",
+            "equity": 1.40162,
+            "invested": false
+          },
+          {
+            "day": "2024-11-12",
+            "equity": 1.40227,
+            "invested": false
+          },
+          {
+            "day": "2024-11-14",
+            "equity": 1.40292,
+            "invested": false
+          },
+          {
+            "day": "2024-11-19",
+            "equity": 1.40357,
+            "invested": false
+          },
+          {
+            "day": "2024-11-22",
+            "equity": 1.40422,
+            "invested": false
+          },
+          {
+            "day": "2024-11-26",
+            "equity": 1.40487,
+            "invested": false
+          },
+          {
+            "day": "2024-11-28",
+            "equity": 1.40552,
+            "invested": false
+          },
+          {
+            "day": "2024-12-02",
+            "equity": 1.40617,
+            "invested": false
+          },
+          {
+            "day": "2024-12-04",
+            "equity": 1.41059,
+            "invested": true
+          },
+          {
+            "day": "2024-12-06",
+            "equity": 1.42357,
+            "invested": true
+          },
+          {
+            "day": "2024-12-10",
+            "equity": 1.42375,
+            "invested": true
+          },
+          {
+            "day": "2024-12-12",
+            "equity": 1.42017,
+            "invested": true
+          },
+          {
+            "day": "2024-12-16",
+            "equity": 1.42604,
+            "invested": true
+          },
+          {
+            "day": "2024-12-18",
+            "equity": 1.40907,
+            "invested": false
+          },
+          {
+            "day": "2024-12-20",
+            "equity": 1.40972,
+            "invested": false
+          },
+          {
+            "day": "2024-12-24",
+            "equity": 1.41037,
+            "invested": false
+          },
+          {
+            "day": "2024-12-27",
+            "equity": 1.41103,
+            "invested": false
+          },
+          {
+            "day": "2024-12-31",
+            "equity": 1.41168,
+            "invested": false
+          },
+          {
+            "day": "2025-01-03",
+            "equity": 1.41233,
+            "invested": false
+          },
+          {
+            "day": "2025-01-07",
+            "equity": 1.41298,
+            "invested": false
+          },
+          {
+            "day": "2025-01-09",
+            "equity": 1.41364,
+            "invested": false
+          },
+          {
+            "day": "2025-01-13",
+            "equity": 1.41429,
+            "invested": false
+          },
+          {
+            "day": "2025-01-15",
+            "equity": 1.41495,
+            "invested": false
+          },
+          {
+            "day": "2025-01-17",
+            "equity": 1.4156,
+            "invested": false
+          },
+          {
+            "day": "2025-01-21",
+            "equity": 1.41626,
+            "invested": false
+          },
+          {
+            "day": "2025-01-23",
+            "equity": 1.41691,
+            "invested": false
+          },
+          {
+            "day": "2025-01-27",
+            "equity": 1.41757,
+            "invested": false
+          },
+          {
+            "day": "2025-01-29",
+            "equity": 1.41822,
+            "invested": false
+          },
+          {
+            "day": "2025-01-31",
+            "equity": 1.41888,
+            "invested": false
+          },
+          {
+            "day": "2025-02-04",
+            "equity": 1.41953,
+            "invested": false
+          },
+          {
+            "day": "2025-02-06",
+            "equity": 1.42019,
+            "invested": false
+          },
+          {
+            "day": "2025-02-10",
+            "equity": 1.42085,
+            "invested": false
+          },
+          {
+            "day": "2025-02-12",
+            "equity": 1.4215,
+            "invested": false
+          },
+          {
+            "day": "2025-02-14",
+            "equity": 1.42216,
+            "invested": false
+          },
+          {
+            "day": "2025-02-18",
+            "equity": 1.42282,
+            "invested": false
+          },
+          {
+            "day": "2025-02-20",
+            "equity": 1.42348,
+            "invested": false
+          },
+          {
+            "day": "2025-02-24",
+            "equity": 1.42414,
+            "invested": false
+          },
+          {
+            "day": "2025-02-27",
+            "equity": 1.4248,
+            "invested": false
+          },
+          {
+            "day": "2025-03-03",
+            "equity": 1.42545,
+            "invested": false
+          },
+          {
+            "day": "2025-03-05",
+            "equity": 1.42611,
+            "invested": false
+          },
+          {
+            "day": "2025-03-07",
+            "equity": 1.42677,
+            "invested": false
+          },
+          {
+            "day": "2025-03-11",
+            "equity": 1.42743,
+            "invested": false
+          },
+          {
+            "day": "2025-03-13",
+            "equity": 1.42809,
+            "invested": false
+          },
+          {
+            "day": "2025-03-18",
+            "equity": 1.42875,
+            "invested": false
+          },
+          {
+            "day": "2025-03-20",
+            "equity": 1.42941,
+            "invested": false
+          },
+          {
+            "day": "2025-03-24",
+            "equity": 1.46044,
+            "invested": true
+          },
+          {
+            "day": "2025-03-26",
+            "equity": 1.44263,
+            "invested": true
+          },
+          {
+            "day": "2025-03-28",
+            "equity": 1.44697,
+            "invested": true
+          },
+          {
+            "day": "2025-04-02",
+            "equity": 1.44196,
+            "invested": true
+          },
+          {
+            "day": "2025-04-04",
+            "equity": 1.41075,
+            "invested": true
+          },
+          {
+            "day": "2025-04-08",
+            "equity": 1.38874,
+            "invested": true
+          },
+          {
+            "day": "2025-04-11",
+            "equity": 1.40719,
+            "invested": true
+          },
+          {
+            "day": "2025-04-16",
+            "equity": 1.45137,
+            "invested": true
+          },
+          {
+            "day": "2025-04-21",
+            "equity": 1.49215,
+            "invested": true
+          },
+          {
+            "day": "2025-04-23",
+            "equity": 1.50787,
+            "invested": true
+          },
+          {
+            "day": "2025-04-25",
+            "equity": 1.48146,
+            "invested": true
+          },
+          {
+            "day": "2025-04-29",
+            "equity": 1.49938,
+            "invested": true
+          },
+          {
+            "day": "2025-05-02",
+            "equity": 1.49216,
+            "invested": true
+          },
+          {
+            "day": "2025-05-06",
+            "equity": 1.48881,
+            "invested": true
+          },
+          {
+            "day": "2025-05-08",
+            "equity": 1.48111,
+            "invested": true
+          },
+          {
+            "day": "2025-05-12",
+            "equity": 1.52643,
+            "invested": true
+          },
+          {
+            "day": "2025-05-14",
+            "equity": 1.50683,
+            "invested": false
+          },
+          {
+            "day": "2025-05-16",
+            "equity": 1.50753,
+            "invested": false
+          },
+          {
+            "day": "2025-05-20",
+            "equity": 1.50822,
+            "invested": false
+          },
+          {
+            "day": "2025-05-22",
+            "equity": 1.50892,
+            "invested": false
+          },
+          {
+            "day": "2025-05-26",
+            "equity": 1.50962,
+            "invested": false
+          },
+          {
+            "day": "2025-05-28",
+            "equity": 1.51032,
+            "invested": false
+          },
+          {
+            "day": "2025-05-30",
+            "equity": 1.51102,
+            "invested": false
+          },
+          {
+            "day": "2025-06-03",
+            "equity": 1.51172,
+            "invested": false
+          },
+          {
+            "day": "2025-06-05",
+            "equity": 1.5197,
+            "invested": true
+          },
+          {
+            "day": "2025-06-09",
+            "equity": 1.54595,
+            "invested": true
+          },
+          {
+            "day": "2025-06-11",
+            "equity": 1.54643,
+            "invested": true
+          },
+          {
+            "day": "2025-06-13",
+            "equity": 1.51783,
+            "invested": true
+          },
+          {
+            "day": "2025-06-17",
+            "equity": 1.52282,
+            "invested": true
+          },
+          {
+            "day": "2025-06-19",
+            "equity": 1.50837,
+            "invested": true
+          },
+          {
+            "day": "2025-06-23",
+            "equity": 1.52414,
+            "invested": true
+          },
+          {
+            "day": "2025-06-25",
+            "equity": 1.54371,
+            "invested": true
+          },
+          {
+            "day": "2025-06-27",
+            "equity": 1.56513,
+            "invested": true
+          },
+          {
+            "day": "2025-07-01",
+            "equity": 1.56482,
+            "invested": true
+          },
+          {
+            "day": "2025-07-03",
+            "equity": 1.55862,
+            "invested": true
+          },
+          {
+            "day": "2025-07-07",
+            "equity": 1.56057,
+            "invested": true
+          },
+          {
+            "day": "2025-07-09",
+            "equity": 1.56098,
+            "invested": true
+          },
+          {
+            "day": "2025-07-11",
+            "equity": 1.54277,
+            "invested": true
+          },
+          {
+            "day": "2025-07-15",
+            "equity": 1.5538,
+            "invested": true
+          },
+          {
+            "day": "2025-07-17",
+            "equity": 1.55185,
+            "invested": true
+          },
+          {
+            "day": "2025-07-21",
+            "equity": 1.54912,
+            "invested": true
+          },
+          {
+            "day": "2025-07-23",
+            "equity": 1.55243,
+            "invested": true
+          },
+          {
+            "day": "2025-07-25",
+            "equity": 1.53704,
+            "invested": false
+          },
+          {
+            "day": "2025-07-29",
+            "equity": 1.53775,
+            "invested": false
+          },
+          {
+            "day": "2025-07-31",
+            "equity": 1.53847,
+            "invested": false
+          },
+          {
+            "day": "2025-08-04",
+            "equity": 1.53918,
+            "invested": false
+          },
+          {
+            "day": "2025-08-06",
+            "equity": 1.53989,
+            "invested": false
+          },
+          {
+            "day": "2025-08-08",
+            "equity": 1.5406,
+            "invested": false
+          },
+          {
+            "day": "2025-08-12",
+            "equity": 1.54131,
+            "invested": false
+          },
+          {
+            "day": "2025-08-14",
+            "equity": 1.54203,
+            "invested": false
+          },
+          {
+            "day": "2025-08-19",
+            "equity": 1.54274,
+            "invested": false
+          },
+          {
+            "day": "2025-08-21",
+            "equity": 1.54345,
+            "invested": false
+          },
+          {
+            "day": "2025-08-25",
+            "equity": 1.54417,
+            "invested": false
+          },
+          {
+            "day": "2025-08-28",
+            "equity": 1.54488,
+            "invested": false
+          },
+          {
+            "day": "2025-09-01",
+            "equity": 1.5456,
+            "invested": false
+          },
+          {
+            "day": "2025-09-03",
+            "equity": 1.54631,
+            "invested": false
+          },
+          {
+            "day": "2025-09-05",
+            "equity": 1.54703,
+            "invested": false
+          },
+          {
+            "day": "2025-09-09",
+            "equity": 1.54774,
+            "invested": false
+          },
+          {
+            "day": "2025-09-11",
+            "equity": 1.55732,
+            "invested": true
+          },
+          {
+            "day": "2025-09-15",
+            "equity": 1.56495,
+            "invested": true
+          },
+          {
+            "day": "2025-09-17",
+            "equity": 1.58041,
+            "invested": true
+          },
+          {
+            "day": "2025-09-19",
+            "equity": 1.5832,
+            "invested": true
+          },
+          {
+            "day": "2025-09-23",
+            "equity": 1.57232,
+            "invested": true
+          },
+          {
+            "day": "2025-09-25",
+            "equity": 1.55191,
+            "invested": true
+          },
+          {
+            "day": "2025-09-29",
+            "equity": 1.53281,
+            "invested": true
+          },
+          {
+            "day": "2025-10-01",
+            "equity": 1.54557,
+            "invested": true
+          },
+          {
+            "day": "2025-10-06",
+            "equity": 1.56184,
+            "invested": true
+          },
+          {
+            "day": "2025-10-08",
+            "equity": 1.55777,
+            "invested": true
+          },
+          {
+            "day": "2025-10-10",
+            "equity": 1.57315,
+            "invested": true
+          },
+          {
+            "day": "2025-10-14",
+            "equity": 1.56281,
+            "invested": true
+          },
+          {
+            "day": "2025-10-16",
+            "equity": 1.58841,
+            "invested": true
+          },
+          {
+            "day": "2025-10-20",
+            "equity": 1.59867,
+            "invested": true
+          },
+          {
+            "day": "2025-10-23",
+            "equity": 1.60135,
+            "invested": true
+          },
+          {
+            "day": "2025-10-27",
+            "equity": 1.60708,
+            "invested": true
+          },
+          {
+            "day": "2025-10-29",
+            "equity": 1.6146,
+            "invested": true
+          },
+          {
+            "day": "2025-10-31",
+            "equity": 1.59829,
+            "invested": true
+          },
+          {
+            "day": "2025-11-04",
+            "equity": 1.59593,
+            "invested": true
+          },
+          {
+            "day": "2025-11-07",
+            "equity": 1.58555,
+            "invested": true
+          },
+          {
+            "day": "2025-11-11",
+            "equity": 1.59642,
+            "invested": true
+          },
+          {
+            "day": "2025-11-13",
+            "equity": 1.60541,
+            "invested": true
+          },
+          {
+            "day": "2025-11-17",
+            "equity": 1.61475,
+            "invested": true
+          },
+          {
+            "day": "2025-11-19",
+            "equity": 1.61149,
+            "invested": true
+          },
+          {
+            "day": "2025-11-21",
+            "equity": 1.60367,
+            "invested": true
+          },
+          {
+            "day": "2025-11-25",
+            "equity": 1.59456,
+            "invested": true
+          },
+          {
+            "day": "2025-11-27",
+            "equity": 1.61429,
+            "invested": true
+          },
+          {
+            "day": "2025-12-01",
+            "equity": 1.61258,
+            "invested": true
+          },
+          {
+            "day": "2025-12-03",
+            "equity": 1.59868,
+            "invested": true
+          },
+          {
+            "day": "2025-12-05",
+            "equity": 1.6067,
+            "invested": true
+          },
+          {
+            "day": "2025-12-09",
+            "equity": 1.5852,
+            "invested": true
+          },
+          {
+            "day": "2025-12-11",
+            "equity": 1.58753,
+            "invested": true
+          },
+          {
+            "day": "2025-12-15",
+            "equity": 1.59928,
+            "invested": true
+          },
+          {
+            "day": "2025-12-17",
+            "equity": 1.58384,
+            "invested": true
+          },
+          {
+            "day": "2025-12-19",
+            "equity": 1.59607,
+            "invested": true
+          },
+          {
+            "day": "2025-12-23",
+            "equity": 1.61074,
+            "invested": true
+          },
+          {
+            "day": "2025-12-26",
+            "equity": 1.603,
+            "invested": true
+          },
+          {
+            "day": "2025-12-30",
+            "equity": 1.59548,
+            "invested": true
+          },
+          {
+            "day": "2026-01-02",
+            "equity": 1.62448,
+            "invested": true
+          },
+          {
+            "day": "2026-01-06",
+            "equity": 1.61852,
+            "invested": true
+          },
+          {
+            "day": "2026-01-08",
+            "equity": 1.59624,
+            "invested": true
+          },
+          {
+            "day": "2026-01-12",
+            "equity": 1.58481,
+            "invested": true
+          },
+          {
+            "day": "2026-01-14",
+            "equity": 1.58248,
+            "invested": true
+          },
+          {
+            "day": "2026-01-19",
+            "equity": 1.57559,
+            "invested": true
+          },
+          {
+            "day": "2026-01-21",
+            "equity": 1.53929,
+            "invested": true
+          },
+          {
+            "day": "2026-01-23",
+            "equity": 1.5306,
+            "invested": true
+          },
+          {
+            "day": "2026-01-28",
+            "equity": 1.55593,
+            "invested": true
+          },
+          {
+            "day": "2026-01-30",
+            "equity": 1.55576,
+            "invested": true
+          },
+          {
+            "day": "2026-02-03",
+            "equity": 1.58048,
+            "invested": true
+          },
+          {
+            "day": "2026-02-05",
+            "equity": 1.57815,
+            "invested": true
+          },
+          {
+            "day": "2026-02-09",
+            "equity": 1.59647,
+            "invested": true
+          },
+          {
+            "day": "2026-02-11",
+            "equity": 1.60318,
+            "invested": true
+          },
+          {
+            "day": "2026-02-13",
+            "equity": 1.57151,
+            "invested": true
+          },
+          {
+            "day": "2026-02-17",
+            "equity": 1.5868,
+            "invested": true
+          },
+          {
+            "day": "2026-02-19",
+            "equity": 1.57045,
+            "invested": true
+          },
+          {
+            "day": "2026-02-23",
+            "equity": 1.58309,
+            "invested": true
+          },
+          {
+            "day": "2026-02-25",
+            "equity": 1.57762,
+            "invested": true
+          },
+          {
+            "day": "2026-02-27",
+            "equity": 1.56165,
+            "invested": true
+          },
+          {
+            "day": "2026-03-04",
+            "equity": 1.51062,
+            "invested": true
+          },
+          {
+            "day": "2026-03-06",
+            "equity": 1.51544,
+            "invested": true
+          },
+          {
+            "day": "2026-03-10",
+            "equity": 1.51538,
+            "invested": false
+          },
+          {
+            "day": "2026-03-12",
+            "equity": 1.51608,
+            "invested": false
+          },
+          {
+            "day": "2026-03-16",
+            "equity": 1.51678,
+            "invested": false
+          },
+          {
+            "day": "2026-03-18",
+            "equity": 1.51748,
+            "invested": false
+          },
+          {
+            "day": "2026-03-20",
+            "equity": 1.51818,
+            "invested": false
+          },
+          {
+            "day": "2026-03-24",
+            "equity": 1.51889,
+            "invested": false
+          },
+          {
+            "day": "2026-03-27",
+            "equity": 1.51959,
+            "invested": false
+          },
+          {
+            "day": "2026-04-01",
+            "equity": 1.52029,
+            "invested": false
+          },
+          {
+            "day": "2026-04-06",
+            "equity": 1.52099,
+            "invested": false
+          },
+          {
+            "day": "2026-04-08",
+            "equity": 1.5217,
+            "invested": false
+          },
+          {
+            "day": "2026-04-10",
+            "equity": 1.5224,
+            "invested": false
+          },
+          {
+            "day": "2026-04-15",
+            "equity": 1.52311,
+            "invested": false
+          },
+          {
+            "day": "2026-04-17",
+            "equity": 1.52381,
+            "invested": false
+          },
+          {
+            "day": "2026-04-21",
+            "equity": 1.52452,
+            "invested": false
+          },
+          {
+            "day": "2026-04-23",
+            "equity": 1.52522,
+            "invested": false
+          },
+          {
+            "day": "2026-04-27",
+            "equity": 1.52593,
+            "invested": false
+          },
+          {
+            "day": "2026-04-29",
+            "equity": 1.52663,
+            "invested": false
+          },
+          {
+            "day": "2026-05-04",
+            "equity": 1.52734,
+            "invested": false
+          },
+          {
+            "day": "2026-05-06",
+            "equity": 1.52804,
+            "invested": false
+          },
+          {
+            "day": "2026-05-08",
+            "equity": 1.52875,
+            "invested": false
+          },
+          {
+            "day": "2026-05-12",
+            "equity": 1.52946,
+            "invested": false
+          },
+          {
+            "day": "2026-05-14",
+            "equity": 1.53017,
+            "invested": false
+          },
+          {
+            "day": "2026-05-18",
+            "equity": 1.53087,
+            "invested": false
+          },
+          {
+            "day": "2026-05-20",
+            "equity": 1.53158,
+            "invested": false
+          },
+          {
+            "day": "2026-05-22",
+            "equity": 1.53229,
+            "invested": false
+          },
+          {
+            "day": "2026-05-26",
+            "equity": 1.533,
+            "invested": false
+          },
+          {
+            "day": "2026-05-29",
+            "equity": 1.53371,
+            "invested": false
+          },
+          {
+            "day": "2026-06-02",
+            "equity": 1.53442,
+            "invested": false
+          },
+          {
+            "day": "2026-06-04",
+            "equity": 1.53513,
+            "invested": false
+          },
+          {
+            "day": "2026-06-08",
+            "equity": 1.53584,
+            "invested": false
+          },
+          {
+            "day": "2026-06-10",
+            "equity": 1.53655,
+            "invested": false
+          },
+          {
+            "day": "2026-06-12",
+            "equity": 1.53726,
+            "invested": false
+          },
+          {
+            "day": "2026-06-16",
+            "equity": 1.54396,
+            "invested": true
+          },
+          {
+            "day": "2026-06-18",
+            "equity": 1.558,
+            "invested": true
+          },
+          {
+            "day": "2026-06-22",
+            "equity": 1.56172,
+            "invested": true
+          },
+          {
+            "day": "2026-06-24",
+            "equity": 1.55262,
+            "invested": true
+          },
+          {
+            "day": "2026-06-29",
+            "equity": 1.54414,
+            "invested": true
+          },
+          {
+            "day": "2026-07-01",
+            "equity": 1.55164,
+            "invested": true
+          },
+          {
+            "day": "2026-07-03",
+            "equity": 1.56436,
+            "invested": true
+          },
+          {
+            "day": "2026-07-07",
+            "equity": 1.56891,
+            "invested": true
+          },
+          {
+            "day": "2026-07-09",
+            "equity": 1.54959,
+            "invested": true
+          },
+          {
+            "day": "2026-07-13",
+            "equity": 1.56744,
+            "invested": true
+          },
+          {
+            "day": "2026-07-15",
+            "equity": 1.56186,
+            "invested": true
+          },
+          {
+            "day": "2026-07-17",
+            "equity": 1.56672,
+            "invested": true
+          },
+          {
+            "day": "2026-07-21",
+            "equity": 1.56779,
+            "invested": true
+          },
+          {
+            "day": "2026-07-23",
+            "equity": 1.54296,
+            "invested": true
+          },
+          {
+            "day": "2026-07-27",
+            "equity": 1.55442,
+            "invested": true
+          },
+          {
+            "day": "2026-07-29",
+            "equity": 1.56782,
+            "invested": true
+          },
+          {
+            "day": "2026-07-31",
+            "equity": 1.57507,
+            "invested": true
+          },
+          {
+            "day": "2026-08-04",
+            "equity": 1.59048,
+            "invested": true
+          },
+          {
+            "day": "2026-08-06",
+            "equity": 1.59312,
+            "invested": true
+          },
+          {
+            "day": "2026-08-10",
+            "equity": 1.59404,
+            "invested": true
+          },
+          {
+            "day": "2026-08-12",
+            "equity": 1.58929,
+            "invested": true
+          },
+          {
+            "day": "2026-08-14",
+            "equity": 1.58408,
+            "invested": true
+          },
+          {
+            "day": "2026-08-18",
+            "equity": 1.57586,
+            "invested": true
+          },
+          {
+            "day": "2026-08-20",
+            "equity": 1.57858,
+            "invested": true
+          },
+          {
+            "day": "2026-08-24",
+            "equity": 1.5785,
+            "invested": true
+          },
+          {
+            "day": "2026-08-26",
+            "equity": 1.58169,
+            "invested": true
+          },
+          {
+            "day": "2026-08-28",
+            "equity": 1.57266,
+            "invested": false
+          },
+          {
+            "day": "2026-09-01",
+            "equity": 1.57339,
+            "invested": false
+          },
+          {
+            "day": "2026-09-03",
+            "equity": 1.57411,
+            "invested": false
+          },
+          {
+            "day": "2026-09-07",
+            "equity": 1.57484,
+            "invested": false
+          },
+          {
+            "day": "2026-09-09",
+            "equity": 1.57557,
+            "invested": false
+          },
+          {
+            "day": "2026-09-11",
+            "equity": 1.5763,
+            "invested": false
+          },
+          {
+            "day": "2026-09-16",
+            "equity": 1.57703,
+            "invested": false
+          },
+          {
+            "day": "2026-09-18",
+            "equity": 1.57776,
+            "invested": false
+          }
+        ]
+      },
+      "buy_and_hold": {
+        "label": "buy_and_hold",
+        "start": "2022-11-17",
+        "end": "2026-09-18",
+        "cagr_pct": 10.46,
+        "max_drawdown_pct": -18.84,
+        "return_per_drawdown": 0.55,
+        "exposure_pct": 100.0,
+        "switches": 0,
+        "mean_hold_days": 0.0,
+        "cash_rate_pct": 0.0,
+        "tax_pct": 0.0,
+        "equity_curve": [
+          {
+            "day": "2022-11-18",
+            "equity": 0.99703,
+            "invested": true
+          },
+          {
+            "day": "2022-11-22",
+            "equity": 0.99435,
+            "invested": true
+          },
+          {
+            "day": "2022-11-24",
+            "equity": 1.00536,
+            "invested": true
+          },
+          {
+            "day": "2022-11-28",
+            "equity": 1.012,
+            "invested": true
+          },
+          {
+            "day": "2022-11-30",
+            "equity": 1.02237,
+            "invested": true
+          },
+          {
+            "day": "2022-12-02",
+            "equity": 1.02348,
+            "invested": true
+          },
+          {
+            "day": "2022-12-06",
+            "equity": 1.02088,
+            "invested": true
+          },
+          {
+            "day": "2022-12-08",
+            "equity": 1.02012,
+            "invested": true
+          },
+          {
+            "day": "2022-12-12",
+            "equity": 1.01479,
+            "invested": true
+          },
+          {
+            "day": "2022-12-14",
+            "equity": 1.0235,
+            "invested": true
+          },
+          {
+            "day": "2022-12-16",
+            "equity": 1.00251,
+            "invested": true
+          },
+          {
+            "day": "2022-12-20",
+            "equity": 1.00827,
+            "invested": true
+          },
+          {
+            "day": "2022-12-22",
+            "equity": 0.98937,
+            "invested": true
+          },
+          {
+            "day": "2022-12-27",
+            "equity": 0.98853,
+            "invested": true
+          },
+          {
+            "day": "2022-12-29",
+            "equity": 0.99282,
+            "invested": true
+          },
+          {
+            "day": "2023-01-02",
+            "equity": 0.99528,
+            "invested": true
+          },
+          {
+            "day": "2023-01-04",
+            "equity": 0.98691,
+            "invested": true
+          },
+          {
+            "day": "2023-01-06",
+            "equity": 0.97915,
+            "invested": true
+          },
+          {
+            "day": "2023-01-10",
+            "equity": 0.98256,
+            "invested": true
+          },
+          {
+            "day": "2023-01-12",
+            "equity": 0.97964,
+            "invested": true
+          },
+          {
+            "day": "2023-01-16",
+            "equity": 0.98129,
+            "invested": true
+          },
+          {
+            "day": "2023-01-18",
+            "equity": 0.99161,
+            "invested": true
+          },
+          {
+            "day": "2023-01-20",
+            "equity": 0.98401,
+            "invested": true
+          },
+          {
+            "day": "2023-01-24",
+            "equity": 0.98662,
+            "invested": true
+          },
+          {
+            "day": "2023-01-27",
+            "equity": 0.95368,
+            "invested": true
+          },
+          {
+            "day": "2023-01-31",
+            "equity": 0.95757,
+            "invested": true
+          },
+          {
+            "day": "2023-02-02",
+            "equity": 0.95141,
+            "invested": true
+          },
+          {
+            "day": "2023-02-06",
+            "equity": 0.95749,
+            "invested": true
+          },
+          {
+            "day": "2023-02-08",
+            "equity": 0.96352,
+            "invested": true
+          },
+          {
+            "day": "2023-02-10",
+            "equity": 0.96273,
+            "invested": true
+          },
+          {
+            "day": "2023-02-14",
+            "equity": 0.95972,
+            "invested": true
+          },
+          {
+            "day": "2023-02-16",
+            "equity": 0.96708,
+            "invested": true
+          },
+          {
+            "day": "2023-02-20",
+            "equity": 0.95778,
+            "invested": true
+          },
+          {
+            "day": "2023-02-22",
+            "equity": 0.9426,
+            "invested": true
+          },
+          {
+            "day": "2023-02-24",
+            "equity": 0.93802,
+            "invested": true
+          },
+          {
+            "day": "2023-02-28",
+            "equity": 0.93085,
+            "invested": true
+          },
+          {
+            "day": "2023-03-02",
+            "equity": 0.93525,
+            "invested": true
+          },
+          {
+            "day": "2023-03-06",
+            "equity": 0.95408,
+            "invested": true
+          },
+          {
+            "day": "2023-03-09",
+            "equity": 0.94914,
+            "invested": true
+          },
+          {
+            "day": "2023-03-13",
+            "equity": 0.92673,
+            "invested": true
+          },
+          {
+            "day": "2023-03-15",
+            "equity": 0.91813,
+            "invested": true
+          },
+          {
+            "day": "2023-03-17",
+            "equity": 0.92458,
+            "invested": true
+          },
+          {
+            "day": "2023-03-21",
+            "equity": 0.92397,
+            "invested": true
+          },
+          {
+            "day": "2023-03-23",
+            "equity": 0.92347,
+            "invested": true
+          },
+          {
+            "day": "2023-03-27",
+            "equity": 0.91444,
+            "invested": true
+          },
+          {
+            "day": "2023-03-29",
+            "equity": 0.91975,
+            "invested": true
+          },
+          {
+            "day": "2023-04-03",
+            "equity": 0.93619,
+            "invested": true
+          },
+          {
+            "day": "2023-04-06",
+            "equity": 0.94627,
+            "invested": true
+          },
+          {
+            "day": "2023-04-11",
+            "equity": 0.9532,
+            "invested": true
+          },
+          {
+            "day": "2023-04-13",
+            "equity": 0.95878,
+            "invested": true
+          },
+          {
+            "day": "2023-04-18",
+            "equity": 0.95511,
+            "invested": true
+          },
+          {
+            "day": "2023-04-20",
+            "equity": 0.95285,
+            "invested": true
+          },
+          {
+            "day": "2023-04-24",
+            "equity": 0.95723,
+            "invested": true
+          },
+          {
+            "day": "2023-04-26",
+            "equity": 0.96135,
+            "invested": true
+          },
+          {
+            "day": "2023-04-28",
+            "equity": 0.97579,
+            "invested": true
+          },
+          {
+            "day": "2023-05-03",
+            "equity": 0.97943,
+            "invested": true
+          },
+          {
+            "day": "2023-05-05",
+            "equity": 0.97957,
+            "invested": true
+          },
+          {
+            "day": "2023-05-09",
+            "equity": 0.98868,
+            "invested": true
+          },
+          {
+            "day": "2023-05-11",
+            "equity": 0.99274,
+            "invested": true
+          },
+          {
+            "day": "2023-05-15",
+            "equity": 0.99695,
+            "invested": true
+          },
+          {
+            "day": "2023-05-17",
+            "equity": 0.98904,
+            "invested": true
+          },
+          {
+            "day": "2023-05-19",
+            "equity": 0.98784,
+            "invested": true
+          },
+          {
+            "day": "2023-05-23",
+            "equity": 0.99664,
+            "invested": true
+          },
+          {
+            "day": "2023-05-25",
+            "equity": 0.99731,
+            "invested": true
+          },
+          {
+            "day": "2023-05-29",
+            "equity": 1.01123,
+            "invested": true
+          },
+          {
+            "day": "2023-05-31",
+            "equity": 1.01085,
+            "invested": true
+          },
+          {
+            "day": "2023-06-02",
+            "equity": 1.01372,
+            "invested": true
+          },
+          {
+            "day": "2023-06-06",
+            "equity": 1.01803,
+            "invested": true
+          },
+          {
+            "day": "2023-06-08",
+            "equity": 1.02076,
+            "invested": true
+          },
+          {
+            "day": "2023-06-12",
+            "equity": 1.02128,
+            "invested": true
+          },
+          {
+            "day": "2023-06-14",
+            "equity": 1.03121,
+            "invested": true
+          },
+          {
+            "day": "2023-06-16",
+            "equity": 1.03746,
+            "invested": true
+          },
+          {
+            "day": "2023-06-20",
+            "equity": 1.03864,
+            "invested": true
+          },
+          {
+            "day": "2023-06-22",
+            "equity": 1.03485,
+            "invested": true
+          },
+          {
+            "day": "2023-06-26",
+            "equity": 1.03006,
+            "invested": true
+          },
+          {
+            "day": "2023-06-28",
+            "equity": 1.0436,
+            "invested": true
+          },
+          {
+            "day": "2023-07-03",
+            "equity": 1.05967,
+            "invested": true
+          },
+          {
+            "day": "2023-07-05",
+            "equity": 1.06411,
+            "invested": true
+          },
+          {
+            "day": "2023-07-07",
+            "equity": 1.06204,
+            "invested": true
+          },
+          {
+            "day": "2023-07-11",
+            "equity": 1.06737,
+            "invested": true
+          },
+          {
+            "day": "2023-07-13",
+            "equity": 1.06582,
+            "invested": true
+          },
+          {
+            "day": "2023-07-17",
+            "equity": 1.08173,
+            "invested": true
+          },
+          {
+            "day": "2023-07-19",
+            "equity": 1.08696,
+            "invested": true
+          },
+          {
+            "day": "2023-07-21",
+            "equity": 1.0838,
+            "invested": true
+          },
+          {
+            "day": "2023-07-25",
+            "equity": 1.08333,
+            "invested": true
+          },
+          {
+            "day": "2023-07-27",
+            "equity": 1.08476,
+            "invested": true
+          },
+          {
+            "day": "2023-07-31",
+            "equity": 1.09372,
+            "invested": true
+          },
+          {
+            "day": "2023-08-02",
+            "equity": 1.08089,
+            "invested": true
+          },
+          {
+            "day": "2023-08-04",
+            "equity": 1.08292,
+            "invested": true
+          },
+          {
+            "day": "2023-08-08",
+            "equity": 1.08668,
+            "invested": true
+          },
+          {
+            "day": "2023-08-10",
+            "equity": 1.08608,
+            "invested": true
+          },
+          {
+            "day": "2023-08-14",
+            "equity": 1.07875,
+            "invested": true
+          },
+          {
+            "day": "2023-08-17",
+            "equity": 1.07726,
+            "invested": true
+          },
+          {
+            "day": "2023-08-21",
+            "equity": 1.08045,
+            "invested": true
+          },
+          {
+            "day": "2023-08-23",
+            "equity": 1.08675,
+            "invested": true
+          },
+          {
+            "day": "2023-08-25",
+            "equity": 1.07845,
+            "invested": true
+          },
+          {
+            "day": "2023-08-29",
+            "equity": 1.08528,
+            "invested": true
+          },
+          {
+            "day": "2023-08-31",
+            "equity": 1.08508,
+            "invested": true
+          },
+          {
+            "day": "2023-09-04",
+            "equity": 1.10154,
+            "invested": true
+          },
+          {
+            "day": "2023-09-06",
+            "equity": 1.10818,
+            "invested": true
+          },
+          {
+            "day": "2023-09-08",
+            "equity": 1.12119,
+            "invested": true
+          },
+          {
+            "day": "2023-09-12",
+            "equity": 1.11946,
+            "invested": true
+          },
+          {
+            "day": "2023-09-14",
+            "equity": 1.12863,
+            "invested": true
+          },
+          {
+            "day": "2023-09-18",
+            "equity": 1.12928,
+            "invested": true
+          },
+          {
+            "day": "2023-09-21",
+            "equity": 1.1094,
+            "invested": true
+          },
+          {
+            "day": "2023-09-25",
+            "equity": 1.10741,
+            "invested": true
+          },
+          {
+            "day": "2023-09-27",
+            "equity": 1.11184,
+            "invested": true
+          },
+          {
+            "day": "2023-09-29",
+            "equity": 1.1087,
+            "invested": true
+          },
+          {
+            "day": "2023-10-04",
+            "equity": 1.09783,
+            "invested": true
+          },
+          {
+            "day": "2023-10-06",
+            "equity": 1.10876,
+            "invested": true
+          },
+          {
+            "day": "2023-10-10",
+            "equity": 1.10939,
+            "invested": true
+          },
+          {
+            "day": "2023-10-12",
+            "equity": 1.11685,
+            "invested": true
+          },
+          {
+            "day": "2023-10-16",
+            "equity": 1.11513,
+            "invested": true
+          },
+          {
+            "day": "2023-10-18",
+            "equity": 1.11199,
+            "invested": true
+          },
+          {
+            "day": "2023-10-20",
+            "equity": 1.10332,
+            "invested": true
+          },
+          {
+            "day": "2023-10-25",
+            "equity": 1.0746,
+            "invested": true
+          },
+          {
+            "day": "2023-10-27",
+            "equity": 1.0749,
+            "invested": true
+          },
+          {
+            "day": "2023-10-31",
+            "equity": 1.07718,
+            "invested": true
+          },
+          {
+            "day": "2023-11-02",
+            "equity": 1.08294,
+            "invested": true
+          },
+          {
+            "day": "2023-11-06",
+            "equity": 1.10016,
+            "invested": true
+          },
+          {
+            "day": "2023-11-08",
+            "equity": 1.10659,
+            "invested": true
+          },
+          {
+            "day": "2023-11-10",
+            "equity": 1.10639,
+            "invested": true
+          },
+          {
+            "day": "2023-11-15",
+            "equity": 1.12251,
+            "invested": true
+          },
+          {
+            "day": "2023-11-17",
+            "equity": 1.12844,
+            "invested": true
+          },
+          {
+            "day": "2023-11-21",
+            "equity": 1.13018,
+            "invested": true
+          },
+          {
+            "day": "2023-11-23",
+            "equity": 1.13093,
+            "invested": true
+          },
+          {
+            "day": "2023-11-28",
+            "equity": 1.1375,
+            "invested": true
+          },
+          {
+            "day": "2023-11-30",
+            "equity": 1.15328,
+            "invested": true
+          },
+          {
+            "day": "2023-12-04",
+            "equity": 1.18281,
+            "invested": true
+          },
+          {
+            "day": "2023-12-06",
+            "equity": 1.19765,
+            "invested": true
+          },
+          {
+            "day": "2023-12-08",
+            "equity": 1.19916,
+            "invested": true
+          },
+          {
+            "day": "2023-12-12",
+            "equity": 1.19808,
+            "invested": true
+          },
+          {
+            "day": "2023-12-14",
+            "equity": 1.21649,
+            "invested": true
+          },
+          {
+            "day": "2023-12-18",
+            "equity": 1.22814,
+            "invested": true
+          },
+          {
+            "day": "2023-12-20",
+            "equity": 1.20402,
+            "invested": true
+          },
+          {
+            "day": "2023-12-22",
+            "equity": 1.22167,
+            "invested": true
+          },
+          {
+            "day": "2023-12-27",
+            "equity": 1.2372,
+            "invested": true
+          },
+          {
+            "day": "2023-12-29",
+            "equity": 1.24568,
+            "invested": true
+          },
+          {
+            "day": "2024-01-03",
+            "equity": 1.2417,
+            "invested": true
+          },
+          {
+            "day": "2024-01-05",
+            "equity": 1.25603,
+            "invested": true
+          },
+          {
+            "day": "2024-01-09",
+            "equity": 1.24763,
+            "invested": true
+          },
+          {
+            "day": "2024-01-11",
+            "equity": 1.25563,
+            "invested": true
+          },
+          {
+            "day": "2024-01-15",
+            "equity": 1.27494,
+            "invested": true
+          },
+          {
+            "day": "2024-01-17",
+            "equity": 1.24943,
+            "invested": true
+          },
+          {
+            "day": "2024-01-19",
+            "equity": 1.25704,
+            "invested": true
+          },
+          {
+            "day": "2024-01-24",
+            "equity": 1.24708,
+            "invested": true
+          },
+          {
+            "day": "2024-01-29",
+            "equity": 1.26379,
+            "invested": true
+          },
+          {
+            "day": "2024-01-31",
+            "equity": 1.26959,
+            "invested": true
+          },
+          {
+            "day": "2024-02-02",
+            "equity": 1.27656,
+            "invested": true
+          },
+          {
+            "day": "2024-02-06",
+            "equity": 1.28444,
+            "invested": true
+          },
+          {
+            "day": "2024-02-08",
+            "equity": 1.28148,
+            "invested": true
+          },
+          {
+            "day": "2024-02-12",
+            "equity": 1.26145,
+            "invested": true
+          },
+          {
+            "day": "2024-02-14",
+            "equity": 1.2773,
+            "invested": true
+          },
+          {
+            "day": "2024-02-16",
+            "equity": 1.29285,
+            "invested": true
+          },
+          {
+            "day": "2024-02-21",
+            "equity": 1.2905,
+            "invested": true
+          },
+          {
+            "day": "2024-02-23",
+            "equity": 1.30238,
+            "invested": true
+          },
+          {
+            "day": "2024-02-27",
+            "equity": 1.30105,
+            "invested": true
+          },
+          {
+            "day": "2024-02-29",
+            "equity": 1.28805,
+            "invested": true
+          },
+          {
+            "day": "2024-03-04",
+            "equity": 1.30998,
+            "invested": true
+          },
+          {
+            "day": "2024-03-06",
+            "equity": 1.30661,
+            "invested": true
+          },
+          {
+            "day": "2024-03-11",
+            "equity": 1.30079,
+            "invested": true
+          },
+          {
+            "day": "2024-03-13",
+            "equity": 1.2596,
+            "invested": true
+          },
+          {
+            "day": "2024-03-15",
+            "equity": 1.27107,
+            "invested": true
+          },
+          {
+            "day": "2024-03-19",
+            "equity": 1.25731,
+            "invested": true
+          },
+          {
+            "day": "2024-03-21",
+            "equity": 1.2757,
+            "invested": true
+          },
+          {
+            "day": "2024-03-26",
+            "equity": 1.28262,
+            "invested": true
+          },
+          {
+            "day": "2024-03-28",
+            "equity": 1.29864,
+            "invested": true
+          },
+          {
+            "day": "2024-04-02",
+            "equity": 1.31881,
+            "invested": true
+          },
+          {
+            "day": "2024-04-04",
+            "equity": 1.32489,
+            "invested": true
+          },
+          {
+            "day": "2024-04-08",
+            "equity": 1.33479,
+            "invested": true
+          },
+          {
+            "day": "2024-04-10",
+            "equity": 1.34096,
+            "invested": true
+          },
+          {
+            "day": "2024-04-15",
+            "equity": 1.31297,
+            "invested": true
+          },
+          {
+            "day": "2024-04-18",
+            "equity": 1.3031,
+            "invested": true
+          },
+          {
+            "day": "2024-04-22",
+            "equity": 1.31913,
+            "invested": true
+          },
+          {
+            "day": "2024-04-24",
+            "equity": 1.32912,
+            "invested": true
+          },
+          {
+            "day": "2024-04-26",
+            "equity": 1.33609,
+            "invested": true
+          },
+          {
+            "day": "2024-04-30",
+            "equity": 1.34621,
+            "invested": true
+          },
+          {
+            "day": "2024-05-03",
+            "equity": 1.3438,
+            "invested": true
+          },
+          {
+            "day": "2024-05-07",
+            "equity": 1.32306,
+            "invested": true
+          },
+          {
+            "day": "2024-05-09",
+            "equity": 1.30439,
+            "invested": true
+          },
+          {
+            "day": "2024-05-13",
+            "equity": 1.31504,
+            "invested": true
+          },
+          {
+            "day": "2024-05-15",
+            "equity": 1.32984,
+            "invested": true
+          },
+          {
+            "day": "2024-05-17",
+            "equity": 1.35053,
+            "invested": true
+          },
+          {
+            "day": "2024-05-22",
+            "equity": 1.36164,
+            "invested": true
+          },
+          {
+            "day": "2024-05-24",
+            "equity": 1.37741,
+            "invested": true
+          },
+          {
+            "day": "2024-05-28",
+            "equity": 1.37123,
+            "invested": true
+          },
+          {
+            "day": "2024-05-30",
+            "equity": 1.34886,
+            "invested": true
+          },
+          {
+            "day": "2024-06-03",
+            "equity": 1.39752,
+            "invested": true
+          },
+          {
+            "day": "2024-06-05",
+            "equity": 1.34988,
+            "invested": true
+          },
+          {
+            "day": "2024-06-07",
+            "equity": 1.39539,
+            "invested": true
+          },
+          {
+            "day": "2024-06-11",
+            "equity": 1.40102,
+            "invested": true
+          },
+          {
+            "day": "2024-06-13",
+            "equity": 1.41527,
+            "invested": true
+          },
+          {
+            "day": "2024-06-18",
+            "equity": 1.43164,
+            "invested": true
+          },
+          {
+            "day": "2024-06-20",
+            "equity": 1.43007,
+            "invested": true
+          },
+          {
+            "day": "2024-06-24",
+            "equity": 1.42904,
+            "invested": true
+          },
+          {
+            "day": "2024-06-26",
+            "equity": 1.43851,
+            "invested": true
+          },
+          {
+            "day": "2024-06-28",
+            "equity": 1.44639,
+            "invested": true
+          },
+          {
+            "day": "2024-07-02",
+            "equity": 1.45396,
+            "invested": true
+          },
+          {
+            "day": "2024-07-04",
+            "equity": 1.46912,
+            "invested": true
+          },
+          {
+            "day": "2024-07-08",
+            "equity": 1.47277,
+            "invested": true
+          },
+          {
+            "day": "2024-07-10",
+            "equity": 1.47319,
+            "invested": true
+          },
+          {
+            "day": "2024-07-12",
+            "equity": 1.48074,
+            "invested": true
+          },
+          {
+            "day": "2024-07-16",
+            "equity": 1.48772,
+            "invested": true
+          },
+          {
+            "day": "2024-07-19",
+            "equity": 1.46523,
+            "invested": true
+          },
+          {
+            "day": "2024-07-23",
+            "equity": 1.46598,
+            "invested": true
+          },
+          {
+            "day": "2024-07-25",
+            "equity": 1.46932,
+            "invested": true
+          },
+          {
+            "day": "2024-07-29",
+            "equity": 1.49989,
+            "invested": true
+          },
+          {
+            "day": "2024-07-31",
+            "equity": 1.50865,
+            "invested": true
+          },
+          {
+            "day": "2024-08-02",
+            "equity": 1.49126,
+            "invested": true
+          },
+          {
+            "day": "2024-08-06",
+            "equity": 1.43893,
+            "invested": true
+          },
+          {
+            "day": "2024-08-08",
+            "equity": 1.45575,
+            "invested": true
+          },
+          {
+            "day": "2024-08-12",
+            "equity": 1.46923,
+            "invested": true
+          },
+          {
+            "day": "2024-08-14",
+            "equity": 1.45363,
+            "invested": true
+          },
+          {
+            "day": "2024-08-19",
+            "equity": 1.48358,
+            "invested": true
+          },
+          {
+            "day": "2024-08-21",
+            "equity": 1.49826,
+            "invested": true
+          },
+          {
+            "day": "2024-08-23",
+            "equity": 1.50146,
+            "invested": true
+          },
+          {
+            "day": "2024-08-27",
+            "equity": 1.5134,
+            "invested": true
+          },
+          {
+            "day": "2024-08-29",
+            "equity": 1.5151,
+            "invested": true
+          },
+          {
+            "day": "2024-09-02",
+            "equity": 1.52339,
+            "invested": true
+          },
+          {
+            "day": "2024-09-04",
+            "equity": 1.52264,
+            "invested": true
+          },
+          {
+            "day": "2024-09-06",
+            "equity": 1.50525,
+            "invested": true
+          },
+          {
+            "day": "2024-09-10",
+            "equity": 1.51589,
+            "invested": true
+          },
+          {
+            "day": "2024-09-12",
+            "equity": 1.53279,
+            "invested": true
+          },
+          {
+            "day": "2024-09-16",
+            "equity": 1.5367,
+            "invested": true
+          },
+          {
+            "day": "2024-09-18",
+            "equity": 1.53224,
+            "invested": true
+          },
+          {
+            "day": "2024-09-20",
+            "equity": 1.55116,
+            "invested": true
+          },
+          {
+            "day": "2024-09-24",
+            "equity": 1.56372,
+            "invested": true
+          },
+          {
+            "day": "2024-09-26",
+            "equity": 1.57059,
+            "invested": true
+          },
+          {
+            "day": "2024-09-30",
+            "equity": 1.55446,
+            "invested": true
+          },
+          {
+            "day": "2024-10-03",
+            "equity": 1.52306,
+            "invested": true
+          },
+          {
+            "day": "2024-10-07",
+            "equity": 1.48629,
+            "invested": true
+          },
+          {
+            "day": "2024-10-09",
+            "equity": 1.51306,
+            "invested": true
+          },
+          {
+            "day": "2024-10-11",
+            "equity": 1.51381,
+            "invested": true
+          },
+          {
+            "day": "2024-10-15",
+            "equity": 1.52179,
+            "invested": true
+          },
+          {
+            "day": "2024-10-17",
+            "equity": 1.49879,
+            "invested": true
+          },
+          {
+            "day": "2024-10-21",
+            "equity": 1.4915,
+            "invested": true
+          },
+          {
+            "day": "2024-10-23",
+            "equity": 1.46443,
+            "invested": true
+          },
+          {
+            "day": "2024-10-25",
+            "equity": 1.4425,
+            "invested": true
+          },
+          {
+            "day": "2024-10-29",
+            "equity": 1.46148,
+            "invested": true
+          },
+          {
+            "day": "2024-10-31",
+            "equity": 1.4547,
+            "invested": true
+          },
+          {
+            "day": "2024-11-04",
+            "equity": 1.44374,
+            "invested": true
+          },
+          {
+            "day": "2024-11-06",
+            "equity": 1.47662,
+            "invested": true
+          },
+          {
+            "day": "2024-11-08",
+            "equity": 1.4519,
+            "invested": true
+          },
+          {
+            "day": "2024-11-12",
+            "equity": 1.43173,
+            "invested": true
+          },
+          {
+            "day": "2024-11-14",
+            "equity": 1.40814,
+            "invested": true
+          },
+          {
+            "day": "2024-11-19",
+            "equity": 1.41079,
+            "invested": true
+          },
+          {
+            "day": "2024-11-22",
+            "equity": 1.42497,
+            "invested": true
+          },
+          {
+            "day": "2024-11-26",
+            "equity": 1.44657,
+            "invested": true
+          },
+          {
+            "day": "2024-11-28",
+            "equity": 1.44348,
+            "invested": true
+          },
+          {
+            "day": "2024-12-02",
+            "equity": 1.4641,
+            "invested": true
+          },
+          {
+            "day": "2024-12-04",
+            "equity": 1.481,
+            "invested": true
+          },
+          {
+            "day": "2024-12-06",
+            "equity": 1.49463,
+            "invested": true
+          },
+          {
+            "day": "2024-12-10",
+            "equity": 1.49481,
+            "invested": true
+          },
+          {
+            "day": "2024-12-12",
+            "equity": 1.49106,
+            "invested": true
+          },
+          {
+            "day": "2024-12-16",
+            "equity": 1.49722,
+            "invested": true
+          },
+          {
+            "day": "2024-12-18",
+            "equity": 1.47042,
+            "invested": true
+          },
+          {
+            "day": "2024-12-20",
+            "equity": 1.43098,
+            "invested": true
+          },
+          {
+            "day": "2024-12-24",
+            "equity": 1.43633,
+            "invested": true
+          },
+          {
+            "day": "2024-12-27",
+            "equity": 1.43905,
+            "invested": true
+          },
+          {
+            "day": "2024-12-31",
+            "equity": 1.43458,
+            "invested": true
+          },
+          {
+            "day": "2025-01-03",
+            "equity": 1.45591,
+            "invested": true
+          },
+          {
+            "day": "2025-01-07",
+            "equity": 1.43241,
+            "invested": true
+          },
+          {
+            "day": "2025-01-09",
+            "equity": 1.41349,
+            "invested": true
+          },
+          {
+            "day": "2025-01-13",
+            "equity": 1.362,
+            "invested": true
+          },
+          {
+            "day": "2025-01-15",
+            "equity": 1.38173,
+            "invested": true
+          },
+          {
+            "day": "2025-01-17",
+            "equity": 1.39001,
+            "invested": true
+          },
+          {
+            "day": "2025-01-21",
+            "equity": 1.37417,
+            "invested": true
+          },
+          {
+            "day": "2025-01-23",
+            "equity": 1.38089,
+            "invested": true
+          },
+          {
+            "day": "2025-01-27",
+            "equity": 1.34068,
+            "invested": true
+          },
+          {
+            "day": "2025-01-29",
+            "equity": 1.36213,
+            "invested": true
+          },
+          {
+            "day": "2025-01-31",
+            "equity": 1.38364,
+            "invested": true
+          },
+          {
+            "day": "2025-02-04",
+            "equity": 1.39303,
+            "invested": true
+          },
+          {
+            "day": "2025-02-06",
+            "equity": 1.38951,
+            "invested": true
+          },
+          {
+            "day": "2025-02-10",
+            "equity": 1.3702,
+            "invested": true
+          },
+          {
+            "day": "2025-02-12",
+            "equity": 1.34048,
+            "invested": true
+          },
+          {
+            "day": "2025-02-14",
+            "equity": 1.32287,
+            "invested": true
+          },
+          {
+            "day": "2025-02-18",
+            "equity": 1.32148,
+            "invested": true
+          },
+          {
+            "day": "2025-02-20",
+            "equity": 1.33556,
+            "invested": true
+          },
+          {
+            "day": "2025-02-24",
+            "equity": 1.31231,
+            "invested": true
+          },
+          {
+            "day": "2025-02-27",
+            "equity": 1.30251,
+            "invested": true
+          },
+          {
+            "day": "2025-03-03",
+            "equity": 1.27567,
+            "invested": true
+          },
+          {
+            "day": "2025-03-05",
+            "equity": 1.29872,
+            "invested": true
+          },
+          {
+            "day": "2025-03-07",
+            "equity": 1.31071,
+            "invested": true
+          },
+          {
+            "day": "2025-03-11",
+            "equity": 1.30167,
+            "invested": true
+          },
+          {
+            "day": "2025-03-13",
+            "equity": 1.29357,
+            "invested": true
+          },
+          {
+            "day": "2025-03-18",
+            "equity": 1.32441,
+            "invested": true
+          },
+          {
+            "day": "2025-03-20",
+            "equity": 1.35088,
+            "invested": true
+          },
+          {
+            "day": "2025-03-24",
+            "equity": 1.38089,
+            "invested": true
+          },
+          {
+            "day": "2025-03-26",
+            "equity": 1.36405,
+            "invested": true
+          },
+          {
+            "day": "2025-03-28",
+            "equity": 1.36816,
+            "invested": true
+          },
+          {
+            "day": "2025-04-02",
+            "equity": 1.36342,
+            "invested": true
+          },
+          {
+            "day": "2025-04-04",
+            "equity": 1.33391,
+            "invested": true
+          },
+          {
+            "day": "2025-04-08",
+            "equity": 1.31311,
+            "invested": true
+          },
+          {
+            "day": "2025-04-11",
+            "equity": 1.33055,
+            "invested": true
+          },
+          {
+            "day": "2025-04-16",
+            "equity": 1.37232,
+            "invested": true
+          },
+          {
+            "day": "2025-04-21",
+            "equity": 1.41088,
+            "invested": true
+          },
+          {
+            "day": "2025-04-23",
+            "equity": 1.42574,
+            "invested": true
+          },
+          {
+            "day": "2025-04-25",
+            "equity": 1.40077,
+            "invested": true
+          },
+          {
+            "day": "2025-04-29",
+            "equity": 1.41771,
+            "invested": true
+          },
+          {
+            "day": "2025-05-02",
+            "equity": 1.41089,
+            "invested": true
+          },
+          {
+            "day": "2025-05-06",
+            "equity": 1.40772,
+            "invested": true
+          },
+          {
+            "day": "2025-05-08",
+            "equity": 1.40044,
+            "invested": true
+          },
+          {
+            "day": "2025-05-12",
+            "equity": 1.44329,
+            "invested": true
+          },
+          {
+            "day": "2025-05-14",
+            "equity": 1.44253,
+            "invested": true
+          },
+          {
+            "day": "2025-05-16",
+            "equity": 1.46634,
+            "invested": true
+          },
+          {
+            "day": "2025-05-20",
+            "equity": 1.44805,
+            "invested": true
+          },
+          {
+            "day": "2025-05-22",
+            "equity": 1.44865,
+            "invested": true
+          },
+          {
+            "day": "2025-05-26",
+            "equity": 1.46874,
+            "invested": true
+          },
+          {
+            "day": "2025-05-28",
+            "equity": 1.46048,
+            "invested": true
+          },
+          {
+            "day": "2025-05-30",
+            "equity": 1.46192,
+            "invested": true
+          },
+          {
+            "day": "2025-06-03",
+            "equity": 1.45611,
+            "invested": true
+          },
+          {
+            "day": "2025-06-05",
+            "equity": 1.47042,
+            "invested": true
+          },
+          {
+            "day": "2025-06-09",
+            "equity": 1.49581,
+            "invested": true
+          },
+          {
+            "day": "2025-06-11",
+            "equity": 1.49628,
+            "invested": true
+          },
+          {
+            "day": "2025-06-13",
+            "equity": 1.46861,
+            "invested": true
+          },
+          {
+            "day": "2025-06-17",
+            "equity": 1.47343,
+            "invested": true
+          },
+          {
+            "day": "2025-06-19",
+            "equity": 1.45946,
+            "invested": true
+          },
+          {
+            "day": "2025-06-23",
+            "equity": 1.47472,
+            "invested": true
+          },
+          {
+            "day": "2025-06-25",
+            "equity": 1.49365,
+            "invested": true
+          },
+          {
+            "day": "2025-06-27",
+            "equity": 1.51438,
+            "invested": true
+          },
+          {
+            "day": "2025-07-01",
+            "equity": 1.51408,
+            "invested": true
+          },
+          {
+            "day": "2025-07-03",
+            "equity": 1.50808,
+            "invested": true
+          },
+          {
+            "day": "2025-07-07",
+            "equity": 1.50996,
+            "invested": true
+          },
+          {
+            "day": "2025-07-09",
+            "equity": 1.51036,
+            "invested": true
+          },
+          {
+            "day": "2025-07-11",
+            "equity": 1.49275,
+            "invested": true
+          },
+          {
+            "day": "2025-07-15",
+            "equity": 1.50342,
+            "invested": true
+          },
+          {
+            "day": "2025-07-17",
+            "equity": 1.50153,
+            "invested": true
+          },
+          {
+            "day": "2025-07-21",
+            "equity": 1.49888,
+            "invested": true
+          },
+          {
+            "day": "2025-07-23",
+            "equity": 1.50209,
+            "invested": true
+          },
+          {
+            "day": "2025-07-25",
+            "equity": 1.47557,
+            "invested": true
+          },
+          {
+            "day": "2025-07-29",
+            "equity": 1.47509,
+            "invested": true
+          },
+          {
+            "day": "2025-07-31",
+            "equity": 1.46917,
+            "invested": true
+          },
+          {
+            "day": "2025-08-04",
+            "equity": 1.46567,
+            "invested": true
+          },
+          {
+            "day": "2025-08-06",
+            "equity": 1.45326,
+            "invested": true
+          },
+          {
+            "day": "2025-08-08",
+            "equity": 1.43892,
+            "invested": true
+          },
+          {
+            "day": "2025-08-12",
+            "equity": 1.44696,
+            "invested": true
+          },
+          {
+            "day": "2025-08-14",
+            "equity": 1.45412,
+            "invested": true
+          },
+          {
+            "day": "2025-08-19",
+            "equity": 1.47889,
+            "invested": true
+          },
+          {
+            "day": "2025-08-21",
+            "equity": 1.48341,
+            "invested": true
+          },
+          {
+            "day": "2025-08-25",
+            "equity": 1.47795,
+            "invested": true
+          },
+          {
+            "day": "2025-08-28",
+            "equity": 1.44523,
+            "invested": true
+          },
+          {
+            "day": "2025-09-01",
+            "equity": 1.45626,
+            "invested": true
+          },
+          {
+            "day": "2025-09-03",
+            "equity": 1.46594,
+            "invested": true
+          },
+          {
+            "day": "2025-09-05",
+            "equity": 1.46367,
+            "invested": true
+          },
+          {
+            "day": "2025-09-09",
+            "equity": 1.47136,
+            "invested": true
+          },
+          {
+            "day": "2025-09-11",
+            "equity": 1.4812,
+            "invested": true
+          },
+          {
+            "day": "2025-09-15",
+            "equity": 1.48846,
+            "invested": true
+          },
+          {
+            "day": "2025-09-17",
+            "equity": 1.50316,
+            "invested": true
+          },
+          {
+            "day": "2025-09-19",
+            "equity": 1.50582,
+            "invested": true
+          },
+          {
+            "day": "2025-09-23",
+            "equity": 1.49547,
+            "invested": true
+          },
+          {
+            "day": "2025-09-25",
+            "equity": 1.47606,
+            "invested": true
+          },
+          {
+            "day": "2025-09-29",
+            "equity": 1.45789,
+            "invested": true
+          },
+          {
+            "day": "2025-10-01",
+            "equity": 1.47002,
+            "invested": true
+          },
+          {
+            "day": "2025-10-06",
+            "equity": 1.4855,
+            "invested": true
+          },
+          {
+            "day": "2025-10-08",
+            "equity": 1.48163,
+            "invested": true
+          },
+          {
+            "day": "2025-10-10",
+            "equity": 1.49626,
+            "invested": true
+          },
+          {
+            "day": "2025-10-14",
+            "equity": 1.48642,
+            "invested": true
+          },
+          {
+            "day": "2025-10-16",
+            "equity": 1.51077,
+            "invested": true
+          },
+          {
+            "day": "2025-10-20",
+            "equity": 1.52053,
+            "invested": true
+          },
+          {
+            "day": "2025-10-23",
+            "equity": 1.52308,
+            "invested": true
+          },
+          {
+            "day": "2025-10-27",
+            "equity": 1.52853,
+            "invested": true
+          },
+          {
+            "day": "2025-10-29",
+            "equity": 1.53568,
+            "invested": true
+          },
+          {
+            "day": "2025-10-31",
+            "equity": 1.52017,
+            "invested": true
+          },
+          {
+            "day": "2025-11-04",
+            "equity": 1.51793,
+            "invested": true
+          },
+          {
+            "day": "2025-11-07",
+            "equity": 1.50806,
+            "invested": true
+          },
+          {
+            "day": "2025-11-11",
+            "equity": 1.51839,
+            "invested": true
+          },
+          {
+            "day": "2025-11-13",
+            "equity": 1.52694,
+            "invested": true
+          },
+          {
+            "day": "2025-11-17",
+            "equity": 1.53582,
+            "invested": true
+          },
+          {
+            "day": "2025-11-19",
+            "equity": 1.53273,
+            "invested": true
+          },
+          {
+            "day": "2025-11-21",
+            "equity": 1.52529,
+            "invested": true
+          },
+          {
+            "day": "2025-11-25",
+            "equity": 1.51662,
+            "invested": true
+          },
+          {
+            "day": "2025-11-27",
+            "equity": 1.53538,
+            "invested": true
+          },
+          {
+            "day": "2025-12-01",
+            "equity": 1.53376,
+            "invested": true
+          },
+          {
+            "day": "2025-12-03",
+            "equity": 1.52055,
+            "invested": true
+          },
+          {
+            "day": "2025-12-05",
+            "equity": 1.52817,
+            "invested": true
+          },
+          {
+            "day": "2025-12-09",
+            "equity": 1.50772,
+            "invested": true
+          },
+          {
+            "day": "2025-12-11",
+            "equity": 1.50994,
+            "invested": true
+          },
+          {
+            "day": "2025-12-15",
+            "equity": 1.52112,
+            "invested": true
+          },
+          {
+            "day": "2025-12-17",
+            "equity": 1.50642,
+            "invested": true
+          },
+          {
+            "day": "2025-12-19",
+            "equity": 1.51806,
+            "invested": true
+          },
+          {
+            "day": "2025-12-23",
+            "equity": 1.53201,
+            "invested": true
+          },
+          {
+            "day": "2025-12-26",
+            "equity": 1.52465,
+            "invested": true
+          },
+          {
+            "day": "2025-12-30",
+            "equity": 1.5175,
+            "invested": true
+          },
+          {
+            "day": "2026-01-02",
+            "equity": 1.54508,
+            "invested": true
+          },
+          {
+            "day": "2026-01-06",
+            "equity": 1.53941,
+            "invested": true
+          },
+          {
+            "day": "2026-01-08",
+            "equity": 1.51822,
+            "invested": true
+          },
+          {
+            "day": "2026-01-12",
+            "equity": 1.50735,
+            "invested": true
+          },
+          {
+            "day": "2026-01-14",
+            "equity": 1.50513,
+            "invested": true
+          },
+          {
+            "day": "2026-01-19",
+            "equity": 1.49858,
+            "invested": true
+          },
+          {
+            "day": "2026-01-21",
+            "equity": 1.46405,
+            "invested": true
+          },
+          {
+            "day": "2026-01-23",
+            "equity": 1.45578,
+            "invested": true
+          },
+          {
+            "day": "2026-01-28",
+            "equity": 1.47988,
+            "invested": true
+          },
+          {
+            "day": "2026-01-30",
+            "equity": 1.47972,
+            "invested": true
+          },
+          {
+            "day": "2026-02-03",
+            "equity": 1.50323,
+            "invested": true
+          },
+          {
+            "day": "2026-02-05",
+            "equity": 1.50102,
+            "invested": true
+          },
+          {
+            "day": "2026-02-09",
+            "equity": 1.51844,
+            "invested": true
+          },
+          {
+            "day": "2026-02-11",
+            "equity": 1.52483,
+            "invested": true
+          },
+          {
+            "day": "2026-02-13",
+            "equity": 1.4947,
+            "invested": true
+          },
+          {
+            "day": "2026-02-17",
+            "equity": 1.50925,
+            "invested": true
+          },
+          {
+            "day": "2026-02-19",
+            "equity": 1.49369,
+            "invested": true
+          },
+          {
+            "day": "2026-02-23",
+            "equity": 1.50571,
+            "invested": true
+          },
+          {
+            "day": "2026-02-25",
+            "equity": 1.50051,
+            "invested": true
+          },
+          {
+            "day": "2026-02-27",
+            "equity": 1.48532,
+            "invested": true
+          },
+          {
+            "day": "2026-03-04",
+            "equity": 1.43678,
+            "invested": true
+          },
+          {
+            "day": "2026-03-06",
+            "equity": 1.44137,
+            "invested": true
+          },
+          {
+            "day": "2026-03-10",
+            "equity": 1.43249,
+            "invested": true
+          },
+          {
+            "day": "2026-03-12",
+            "equity": 1.40394,
+            "invested": true
+          },
+          {
+            "day": "2026-03-16",
+            "equity": 1.37837,
+            "invested": true
+          },
+          {
+            "day": "2026-03-18",
+            "equity": 1.40521,
+            "invested": true
+          },
+          {
+            "day": "2026-03-20",
+            "equity": 1.36742,
+            "invested": true
+          },
+          {
+            "day": "2026-03-24",
+            "equity": 1.35069,
+            "invested": true
+          },
+          {
+            "day": "2026-03-27",
+            "equity": 1.34768,
+            "invested": true
+          },
+          {
+            "day": "2026-04-01",
+            "equity": 1.34224,
+            "invested": true
+          },
+          {
+            "day": "2026-04-06",
+            "equity": 1.35883,
+            "invested": true
+          },
+          {
+            "day": "2026-04-08",
+            "equity": 1.4193,
+            "invested": true
+          },
+          {
+            "day": "2026-04-10",
+            "equity": 1.43274,
+            "invested": true
+          },
+          {
+            "day": "2026-04-15",
+            "equity": 1.44869,
+            "invested": true
+          },
+          {
+            "day": "2026-04-17",
+            "equity": 1.46625,
+            "invested": true
+          },
+          {
+            "day": "2026-04-21",
+            "equity": 1.47734,
+            "invested": true
+          },
+          {
+            "day": "2026-04-23",
+            "equity": 1.46249,
+            "invested": true
+          },
+          {
+            "day": "2026-04-27",
+            "equity": 1.46317,
+            "invested": true
+          },
+          {
+            "day": "2026-04-29",
+            "equity": 1.46635,
+            "invested": true
+          },
+          {
+            "day": "2026-05-04",
+            "equity": 1.46377,
+            "invested": true
+          },
+          {
+            "day": "2026-05-06",
+            "equity": 1.48317,
+            "invested": true
+          },
+          {
+            "day": "2026-05-08",
+            "equity": 1.48204,
+            "invested": true
+          },
+          {
+            "day": "2026-05-12",
+            "equity": 1.42973,
+            "invested": true
+          },
+          {
+            "day": "2026-05-14",
+            "equity": 1.44982,
+            "invested": true
+          },
+          {
+            "day": "2026-05-18",
+            "equity": 1.44007,
+            "invested": true
+          },
+          {
+            "day": "2026-05-20",
+            "equity": 1.44757,
+            "invested": true
+          },
+          {
+            "day": "2026-05-22",
+            "equity": 1.45226,
+            "invested": true
+          },
+          {
+            "day": "2026-05-26",
+            "equity": 1.46803,
+            "invested": true
+          },
+          {
+            "day": "2026-05-29",
+            "equity": 1.45263,
+            "invested": true
+          },
+          {
+            "day": "2026-06-02",
+            "equity": 1.44392,
+            "invested": true
+          },
+          {
+            "day": "2026-06-04",
+            "equity": 1.44242,
+            "invested": true
+          },
+          {
+            "day": "2026-06-08",
+            "equity": 1.42164,
+            "invested": true
+          },
+          {
+            "day": "2026-06-10",
+            "equity": 1.4255,
+            "invested": true
+          },
+          {
+            "day": "2026-06-12",
+            "equity": 1.44896,
+            "invested": true
+          },
+          {
+            "day": "2026-06-16",
+            "equity": 1.47444,
+            "invested": true
+          },
+          {
+            "day": "2026-06-18",
+            "equity": 1.48786,
+            "invested": true
+          },
+          {
+            "day": "2026-06-22",
+            "equity": 1.49141,
+            "invested": true
+          },
+          {
+            "day": "2026-06-24",
+            "equity": 1.48272,
+            "invested": true
+          },
+          {
+            "day": "2026-06-29",
+            "equity": 1.47462,
+            "invested": true
+          },
+          {
+            "day": "2026-07-01",
+            "equity": 1.48178,
+            "invested": true
+          },
+          {
+            "day": "2026-07-03",
+            "equity": 1.49393,
+            "invested": true
+          },
+          {
+            "day": "2026-07-07",
+            "equity": 1.49827,
+            "invested": true
+          },
+          {
+            "day": "2026-07-09",
+            "equity": 1.47982,
+            "invested": true
+          },
+          {
+            "day": "2026-07-13",
+            "equity": 1.49687,
+            "invested": true
+          },
+          {
+            "day": "2026-07-15",
+            "equity": 1.49154,
+            "invested": true
+          },
+          {
+            "day": "2026-07-17",
+            "equity": 1.49618,
+            "invested": true
+          },
+          {
+            "day": "2026-07-21",
+            "equity": 1.4972,
+            "invested": true
+          },
+          {
+            "day": "2026-07-23",
+            "equity": 1.47349,
+            "invested": true
+          },
+          {
+            "day": "2026-07-27",
+            "equity": 1.48444,
+            "invested": true
+          },
+          {
+            "day": "2026-07-29",
+            "equity": 1.49723,
+            "invested": true
+          },
+          {
+            "day": "2026-07-31",
+            "equity": 1.50416,
+            "invested": true
+          },
+          {
+            "day": "2026-08-04",
+            "equity": 1.51887,
+            "invested": true
+          },
+          {
+            "day": "2026-08-06",
+            "equity": 1.52139,
+            "invested": true
+          },
+          {
+            "day": "2026-08-10",
+            "equity": 1.52227,
+            "invested": true
+          },
+          {
+            "day": "2026-08-12",
+            "equity": 1.51773,
+            "invested": true
+          },
+          {
+            "day": "2026-08-14",
+            "equity": 1.51276,
+            "invested": true
+          },
+          {
+            "day": "2026-08-18",
+            "equity": 1.50491,
+            "invested": true
+          },
+          {
+            "day": "2026-08-20",
+            "equity": 1.50751,
+            "invested": true
+          },
+          {
+            "day": "2026-08-24",
+            "equity": 1.50743,
+            "invested": true
+          },
+          {
+            "day": "2026-08-26",
+            "equity": 1.51047,
+            "invested": true
+          },
+          {
+            "day": "2026-08-28",
+            "equity": 1.50851,
+            "invested": true
+          },
+          {
+            "day": "2026-09-01",
+            "equity": 1.49641,
+            "invested": true
+          },
+          {
+            "day": "2026-09-03",
+            "equity": 1.49091,
+            "invested": true
+          },
+          {
+            "day": "2026-09-07",
+            "equity": 1.48464,
+            "invested": true
+          },
+          {
+            "day": "2026-09-09",
+            "equity": 1.47198,
+            "invested": true
+          },
+          {
+            "day": "2026-09-11",
+            "equity": 1.46606,
+            "invested": true
+          },
+          {
+            "day": "2026-09-16",
+            "equity": 1.44462,
+            "invested": true
+          },
+          {
+            "day": "2026-09-18",
+            "equity": 1.4644,
+            "invested": true
+          }
+        ]
+      },
+      "fund_median_cagr": 11.36,
+      "fund_median_drawdown": -27.53,
+      "beats_buy_and_hold": true,
+      "beats_fund_median": true,
+      "shallower_than_fund": true,
+      "sensitivity": [
+        {
+          "cash_rate_pct": 3.0,
+          "tax_pct": 0.0,
+          "cagr_pct": 13.84,
+          "max_drawdown_pct": -10.38,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 3.0,
+          "tax_pct": 20.0,
+          "cagr_pct": 11.82,
+          "max_drawdown_pct": -14.4,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 4.0,
+          "tax_pct": 0.0,
+          "cagr_pct": 14.11,
+          "max_drawdown_pct": -10.09,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 4.0,
+          "tax_pct": 20.0,
+          "cagr_pct": 12.09,
+          "max_drawdown_pct": -14.12,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 5.0,
+          "tax_pct": 0.0,
+          "cagr_pct": 14.39,
+          "max_drawdown_pct": -9.8,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 5.0,
+          "tax_pct": 20.0,
+          "cagr_pct": 12.36,
+          "max_drawdown_pct": -13.84,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 6.0,
+          "tax_pct": 0.0,
+          "cagr_pct": 14.66,
+          "max_drawdown_pct": -9.51,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 6.0,
+          "tax_pct": 20.0,
+          "cagr_pct": 12.62,
+          "max_drawdown_pct": -13.56,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 7.0,
+          "tax_pct": 0.0,
+          "cagr_pct": 14.93,
+          "max_drawdown_pct": -9.22,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        },
+        {
+          "cash_rate_pct": 7.0,
+          "tax_pct": 20.0,
+          "cagr_pct": 12.89,
+          "max_drawdown_pct": -13.29,
+          "beats_buy_and_hold": true,
+          "beats_fund_median": true
+        }
+      ],
+      "method": "Hold the Nifty 500 while the regime is bull_strong, bull_narrow or recovery; park cash otherwise. The regime set was chosen on 2007-2017 from five candidates declared in advance, scored on return per unit of drawdown, and the second half was run once. Cash earns a real rate, switches cost 5 bps, and tax is charged on every realised gain at the short-term rate where the holding lasted under a year.",
+      "caveat": "This is index timing, not stock selection \u2014 the selection side of this system has no edge at all. The drawdown advantage comes from being out of the market for roughly 40% of the time, including stretches when it is rising, which is the part a person finds hardest to actually do."
     },
     "benchmark": {
       "comparisons": [

@@ -26,6 +26,7 @@ from . import evolution as evo
 from . import portfolio as pf
 from . import review as rv
 from . import sensitivity as sens
+from . import timing as tm
 from .engine import Trade
 from .regime import REGIME_LABELS
 from .strategies import BY_ID
@@ -300,6 +301,26 @@ def build_learning(
         if data_dir and runs else None
     )
 
+    # Regime timing on the index — the one place this system beats a
+    # professional, because it asks *when* rather than *which*.
+    timing_study = None
+    if data_dir and validation_split:
+        from .benchmark import INDEX_KEY
+        from .history import read_bars
+
+        index_bars = read_bars(data_dir, INDEX_KEY)
+        if index_bars is not None:
+            closes = {d: float(c) for d, c in zip(index_bars.dates, index_bars.close)}
+            by_day = {r.day: r.regime for r in regime_rows}
+            fund_cagr = fund_drawdown = None
+            if benchmark and benchmark.get("headline"):
+                fund_cagr = benchmark["headline"].get("fund_median_cagr")
+                fund_drawdown = benchmark["headline"].get("fund_median_drawdown")
+            timing_study = tm.build_timing_study(
+                list(index_bars.dates), closes, by_day, validation_split,
+                fund_cagr, fund_drawdown,
+            )
+
     return {
         "available": True,
         "population": {
@@ -311,6 +332,7 @@ def build_learning(
         "review_by_regime": per_regime,
         "portfolio_runs": [r.to_dict() for r in runs],
         "config_sensitivity": config_sensitivity.to_dict() if config_sensitivity else None,
+        "regime_timing": timing_study,
         "benchmark": benchmark,
         "condition_studies": [c.to_dict() for c in condition_studies],
         "condition_split": split.isoformat(),

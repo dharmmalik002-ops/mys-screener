@@ -5422,6 +5422,7 @@ export type BotLearning = {
   condition_split: string;
   portfolio_runs: BotPortfolioRun[];
   config_sensitivity: BotSensitivity | null;
+  regime_timing: BotRegimeTiming | null;
   benchmark: BotBenchmark | null;
   evolution_timeline: Array<{ as_of: string; counts: Record<string, number>; tradeable: number }>;
   evolution_changes: BotEvolutionChange[];
@@ -5658,3 +5659,45 @@ export type BotWalkforward = {
 export function getBotWalkforward() {
   return whileWaking(() => request<BotWalkforward>("/api/bot/walkforward", undefined, { timeoutMs: 30000 }));
 }
+
+/* --- Bot: regime timing ---------------------------------------------------
+   The one result here that beats a professional. It works because it asks
+   *when to be exposed* rather than *which stock to buy* — the question the
+   regime classifier can actually answer. */
+
+export type BotTimingRun = {
+  label: string;
+  start: string;
+  end: string;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  return_per_drawdown: number;
+  exposure_pct: number;
+  switches: number;
+  mean_hold_days: number;
+  cash_rate_pct: number;
+  tax_pct: number;
+  equity_curve: Array<{ day: string; equity: number; invested: boolean }>;
+};
+
+export type BotRegimeTiming = {
+  available: boolean;
+  rule: string[];
+  timed: BotTimingRun;
+  buy_and_hold: BotTimingRun;
+  fund_median_cagr: number | null;
+  fund_median_drawdown: number | null;
+  beats_buy_and_hold: boolean;
+  beats_fund_median: boolean | null;
+  shallower_than_fund: boolean | null;
+  sensitivity: Array<{
+    cash_rate_pct: number;
+    tax_pct: number;
+    cagr_pct: number;
+    max_drawdown_pct: number;
+    beats_buy_and_hold: boolean;
+    beats_fund_median: boolean | null;
+  }>;
+  method: string;
+  caveat: string;
+};

@@ -6,6 +6,7 @@ import {
   type BotBenchmark,
   type BotLearning,
   type BotPortfolioRun,
+  type BotRegimeTiming,
   type BotSensitivity,
   type BotWalkforward,
 } from "../lib/api";
@@ -78,6 +79,8 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
   const answer = benchmark?.answer ?? null;
   const headlineRun = runs.find((r) => r.label === "playbook_held_out") ?? runs[0];
   const sensitivity: BotSensitivity | null = learning.config_sensitivity ?? null;
+  const timing: BotRegimeTiming | null =
+    learning.regime_timing?.available ? learning.regime_timing : null;
   const [walkforward, setWalkforward] = useState<BotWalkforward | null>(null);
 
   useEffect(() => {
@@ -109,9 +112,98 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
         </span>
       </div>
 
+      {timing ? (
+        <section className="bot-headline-good">
+          <h4>The one thing here that beats a professional</h4>
+          <p className="bot-section-note">
+            Not by picking stocks — that side of this system has no edge at all. By deciding{" "}
+            <em>when to be exposed</em>: hold the Nifty 500 while the regime is{" "}
+            {timing.rule.map((r) => r.replace(/_/g, " ")).join(", ")}, and park cash otherwise.
+            The regime set was chosen on the first half of history from five candidates declared
+            in advance; the held-out half was run once.
+          </p>
+          <table className="bot-table">
+            <thead>
+              <tr>
+                <th>Strategy</th><th className="num">CAGR</th><th className="num">Worst drawdown</th>
+                <th className="num">Return per drawdown</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="bot-row-highlight">
+                <td><strong>Regime timing</strong></td>
+                <td className="num bot-expected">{formatPct(timing.timed.cagr_pct)}</td>
+                <td className="num bot-expected">{formatPct(timing.timed.max_drawdown_pct, 1)}</td>
+                <td className="num bot-expected">{timing.timed.return_per_drawdown.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>Buy and hold Nifty 500</td>
+                <td className="num">{formatPct(timing.buy_and_hold.cagr_pct)}</td>
+                <td className="num">{formatPct(timing.buy_and_hold.max_drawdown_pct, 1)}</td>
+                <td className="num">{timing.buy_and_hold.return_per_drawdown.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>Median professional fund</td>
+                <td className="num">
+                  {timing.fund_median_cagr === null ? "—" : formatPct(timing.fund_median_cagr)}
+                </td>
+                <td className="num">
+                  {timing.fund_median_drawdown === null ? "—" : formatPct(timing.fund_median_drawdown, 1)}
+                </td>
+                <td className="num">
+                  {timing.fund_median_cagr && timing.fund_median_drawdown
+                    ? (timing.fund_median_cagr / Math.abs(timing.fund_median_drawdown)).toFixed(2)
+                    : "—"}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <div className="bot-hero-stats bot-run-stats">
+            <div><span>Time invested</span><strong>{timing.timed.exposure_pct.toFixed(0)}%</strong></div>
+            <div><span>Switches</span><strong>{timing.timed.switches}</strong></div>
+            <div><span>Average hold</span><strong>{timing.timed.mean_hold_days.toFixed(0)} days</strong></div>
+            <div><span>Cash earns</span><strong>{timing.timed.cash_rate_pct.toFixed(0)}%</strong></div>
+            <div><span>Tax charged</span><strong>{timing.timed.tax_pct.toFixed(0)}%</strong></div>
+          </div>
+          <details className="bot-details">
+            <summary>Does it survive the assumptions? ({timing.sensitivity.length} combinations)</summary>
+            <p className="bot-section-note">
+              The cash rate is the number most open to argument, so it is varied alongside tax.
+              An advantage that exists at only one assumption is not an advantage.
+            </p>
+            <table className="bot-table bot-table-compact">
+              <thead>
+                <tr>
+                  <th className="num">Cash</th><th className="num">Tax</th><th className="num">CAGR</th>
+                  <th className="num">Max DD</th><th>Beats fund</th><th>Beats index</th>
+                </tr>
+              </thead>
+              <tbody>
+                {timing.sensitivity.map((row) => (
+                  <tr key={`${row.cash_rate_pct}-${row.tax_pct}`}>
+                    <td className="num">{row.cash_rate_pct.toFixed(0)}%</td>
+                    <td className="num">{row.tax_pct.toFixed(0)}%</td>
+                    <td className={`num ${row.cagr_pct >= 0 ? "bot-expected" : "bot-negative"}`}>
+                      {formatPct(row.cagr_pct)}
+                    </td>
+                    <td className="num">{formatPct(row.max_drawdown_pct, 1)}</td>
+                    <td><VerdictMark verdict={row.beats_fund_median} /></td>
+                    <td><VerdictMark verdict={row.beats_buy_and_hold} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </details>
+          <p className="bot-verdict bot-verdict-warn">
+            <AlertTriangle size={15} aria-hidden />
+            <span>{timing.caveat}</span>
+          </p>
+        </section>
+      ) : null}
+
       {walkforward ? (
         <section className="bot-headline-warning">
-          <h4>The number that matters: rebuilt every year, traded the next</h4>
+          <h4>Where stock selection stands: rebuilt every year, traded the next</h4>
           <p className="bot-section-note">
             Everything below this rests on a single train/test split, and its 3.8-year test
             window happens to contain 2023 — the one year this system worked. That year

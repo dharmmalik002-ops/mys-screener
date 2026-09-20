@@ -432,3 +432,11 @@
   padding: 16px 18px;
   background: color-mix(in srgb, var(--amber) 6%, var(--surface-soft));
 }
+
+.bot-headline-good {
+  border: 1px solid color-mix(in srgb, var(--positive) 45%, transparent);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  background: color-mix(in srgb, var(--positive) 6%, var(--surface-soft));
+  margin-bottom: 20px;
+}
