@@ -296,4 +296,16 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     Every rupee the stock book takes from the index leg earns less and carries more risk. This is the cleanest available statement of what this project found: **the regime classifier carries real information about *when* to be exposed; the trade-level learning machinery — the ledger, the reviews, the attribution, the calibration loop — is mechanically sound and produces negative value.** Both facts are true and neither cancels the other. The Bot tab reports both, in that order.
 
+65. **THE LEARNING LOOP CANNOT DRIVE EXPOSURE EITHER — ALL THREE USES TESTED AND ALL THREE FAIL.** The last idea worth trying was to point the learning machinery at the decision that *does* work: instead of picking stocks, let the rolling average R of the bot's own recently-closed trades decide index exposure. It is a worse signal than the regime classifier, and mixing the two degrades the regime signal:
+
+        always invested (buy & hold)          +10.18%   -18.8%
+        regime classifier only                +12.38%   -13.6%
+        learned edge only, no regime input     +4.34%   -16.7%
+        regime AND learned edge                +8.48%    -9.1%
+        regime OR learned edge                 +8.50%   -22.2%
+
+    That completes the search. The learning machinery has now been tested as a **stock selector** (-2.6%/yr, gotcha 59), as an **additive overlay on timing** (costs 5 points, gotcha 64), and as the **primary exposure signal** (+4.34% against the regime rule's +12.38%). Every configuration underperforms a causal regime classifier whose thresholds were written down before anything was measured.
+
+    The conclusion is not that the machinery is broken — it is mechanically correct and 69 tests say so. It is that **recent trade outcomes carry no information about future trade outcomes in this data.** That is the same mean-reversion measured in gotchas 40, 53 and 59, stated in its most general form. Do not point the loop at a fourth target expecting a different answer.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
