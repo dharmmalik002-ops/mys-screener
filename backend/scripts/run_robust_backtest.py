@@ -50,10 +50,11 @@ from app.services.bot.benchmark import INDEX_KEY  # noqa: E402
 from app.services.bot.history import available_symbols, read_bars  # noqa: E402
 from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 
-# Chosen on return-per-drawdown, after the position-cap bug was fixed. The
-# earlier 4% cap bound on 100% of trades, so the risk budget and the adaptive
-# multiplier had no effect on size at all — 12% lets them actually express
-# themselves.
+# Chosen on years-beaten and CAGR jointly, after the position-cap bug was
+# fixed. The earlier 4% cap bound on 100% of trades, so the risk budget had no
+# effect on position size at all; 8% lets it express itself. Selecting instead
+# on return-per-drawdown picked a book that beat the index in only 8 years of
+# 18, which is the wrong thing to optimise here.
 BOOK = PortfolioConfig(
     risk_per_trade_pct=0.25, watch_risk_pct=0.25, max_concurrent=60,
     max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=8.0,
@@ -117,8 +118,11 @@ def main() -> int:
         {r.day: r.pct_above_200dma for r in context.breadth},
         index_above,
     )
-    result = mtm.simulate(kept, data_dir, BOOK, label="rules",
-                          risk_scale_by_day=schedule)
+    # Adaptive sizing is built and OFF. Under correct accounting it costs
+    # 1.4pp of CAGR and 0.11 of Sharpe (see adaptive_sizing's docstring); the
+    # gain it appeared to give was the position-cap bug, not the rule.
+    _ = schedule
+    result = mtm.simulate(kept, data_dir, BOOK, label="rules")
     if result is None:
         print("no account")
         return 1

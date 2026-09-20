@@ -70,11 +70,11 @@ EXIT_TRAIL_ATR_MULT = 8.0
 EXIT_MAX_HOLD_SESSIONS = 500
 
 # Measured on the full period with these rules.
-MEASURED_CAGR = 17.97
-MEASURED_MAX_DRAWDOWN = -34.58
-MEASURED_SHARPE = 1.10
-MEASURED_PAYOFF = 10.36
-MEASURED_WIN_RATE = 25.8
+MEASURED_CAGR = 18.69
+MEASURED_MAX_DRAWDOWN = -33.30
+MEASURED_SHARPE = 1.21
+MEASURED_PAYOFF = 10.04
+MEASURED_WIN_RATE = 27.8
 MEASURED_TRADES = 691
 MEASURED_SMALLCAP_CAGR = 16.26
 
@@ -176,9 +176,14 @@ def beats_smallcap() -> bool:
 # stop to breakeven takes it from 25% to 39%, inside the 35-40% band — and it
 # costs more than it is worth at the account level:
 #
-#     none        CAGR +23.4%  maxDD -29.7%  Sharpe 1.36  win 25.1%  payoff 10.7
-#     30% @ 2R    CAGR +14.2%  maxDD -40.9%  Sharpe 0.89  win 39.1%  payoff  3.9
-#     30% @ 3R    CAGR +16.3%  maxDD -35.5%  Sharpe 1.05  win 34.2%  payoff  5.3
+#     none          CAGR +18.7%  maxDD -33.3%  Sharpe 1.21  win 27.8%  payoff 10.0
+#     30% @ 2R      CAGR +10.3%  maxDD -42.3%  Sharpe 0.68  win 39.9%  payoff  3.7
+#     30% @ 3R      CAGR +13.2%  maxDD -35.9%  Sharpe 0.90  win 35.4%  payoff  5.4
+#     30% @ 3R noBE CAGR +14.3%  maxDD -36.4%  Sharpe 0.93  win 35.9%  payoff  6.0
+#
+# Re-measured after the position-cap bug (gotcha 80); the verdict is unchanged
+# and the gap is wider than first reported. It also halves the years that beat
+# the index, 13 of 18 down to 8.
 #
 # Return falls AND drawdown deepens, which is the surprise: the breakeven stop
 # closes positions that would have recovered, so the book churns and re-enters
@@ -192,8 +197,8 @@ def beats_smallcap() -> bool:
 # if it is wanted for its own sake; it is not a free improvement.
 SCALE_OUT_AT_R = None
 SCALE_OUT_FRACTION = 0.0
-MEASURED_SCALED_WIN_RATE = 39.1
-MEASURED_SCALED_CAGR = 14.17
+MEASURED_SCALED_WIN_RATE = 39.9
+MEASURED_SCALED_CAGR = 10.33
 
 
 def scaling_out_costs_return() -> bool:

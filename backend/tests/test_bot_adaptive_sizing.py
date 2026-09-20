@@ -56,6 +56,23 @@ class ScaleTests(unittest.TestCase):
         self.assertEqual(set(sched), set(days))
 
 
+class MeasuredVerdictTests(unittest.TestCase):
+    """It ships off, and the reason is recorded so it is not re-enabled."""
+
+    def test_the_multipliers_are_still_the_declared_ones(self):
+        self.assertEqual((ad.WEAK_SCALE, ad.NORMAL_SCALE, ad.STRONG_SCALE),
+                         (0.5, 1.0, 2.0))
+
+    def test_it_is_not_wired_into_the_shipped_backtest(self):
+        """Under correct accounting it costs return, drawdown and Sharpe."""
+        runner = (Path(__file__).resolve().parents[1]
+                  / "scripts" / "run_robust_backtest.py").read_text()
+        self.assertIn("build_schedule", runner,
+                      "the schedule should still be built so it stays testable")
+        self.assertNotIn("risk_scale_by_day=schedule", runner,
+                         "adaptive sizing was re-enabled; it measured worse")
+
+
 class MemoryTests(unittest.TestCase):
 
     def setUp(self):

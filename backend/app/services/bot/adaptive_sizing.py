@@ -24,6 +24,18 @@ it worse. This reads the *market*, which is the one axis shown to carry
 information (gotcha 63), and it applies a multiplier declared in advance
 rather than one fitted to results.
 
+**Measured, and it does not work — this ships OFF.** With the position-cap
+bug fixed (gotcha 80), the same book scores:
+
+    fixed     CAGR +18.69%  maxDD -33.30%  Sharpe 1.21  win 27.8%  beat 13/18
+    adaptive  CAGR +17.30%  maxDD -34.58%  Sharpe 1.10  win 25.8%  beat 13/18
+
+Worse on return, drawdown, Sharpe and win rate together. The +4.8pp gain it
+appeared to deliver when first measured was the accounting bug: pressing size
+in strong markets looked free because the extra size was booking P&L it was
+never allowed to take. Kept, tested and unused, for the reason gotcha 31 keeps
+the survivorship measurement — it is what would detect the opposite.
+
 The ceiling matters as much as the multiplier. Risk is capped at `MAX_SCALE`
 times base, and the account still cannot exceed 100% deployed — there is no
 margin here, so pressing hard in a strong market means filling the book

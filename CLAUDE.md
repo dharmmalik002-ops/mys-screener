@@ -474,4 +474,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     `test_a_capped_position_books_pnl_on_what_it_was_allowed_to_take` pins it. Two assertions in `test_bot_rules.py` had to be relaxed afterwards because they encoded the inflated numbers — a test written against a wrong measurement will defend that measurement.
 
+81. **RE-MEASURE EVERY CONCLUSION THAT WAS REACHED ON BROKEN ACCOUNTING — ONE OF THEM REVERSED.** Gotcha 80 fixed a ~2x P&L inflation in `mtm_account`. Two design decisions had been taken while it was live, and both had to be run again:
+
+    * **Adaptive sizing reverses.** It ships **off**. `fixed +18.69% / -33.30% / Sharpe 1.21 / win 27.8%` against `adaptive +17.30% / -34.58% / Sharpe 1.10 / win 25.8%` — worse on all four. The +4.8pp it first appeared to deliver *was* the bug: pressing size in strong markets looked free precisely because the extra size booked P&L it was never allowed to take. A bug that inflates in proportion to position size will make any "bet bigger" rule look good, which is the general trap.
+    * **Partial exits do not reverse.** The verdict holds and the gap is wider: `30% at 2R` gives the asked-for **39.9% win rate** and takes CAGR from +18.7% to **+10.3%** with drawdown deepening to -42.3%, and it halves the years that beat the index (13 of 18 down to 8). `30% at 3R` without the breakeven move is the least-bad version at +14.3% and 35.9% wins, still well behind.
+
+    **Final shipped book:** rolling stop-width cap, no scale-out, fixed sizing, 8% position cap at 0.25% risk — `CAGR +18.69%, maxDD -33.30%, Sharpe 1.21, payoff 10.04, win 27.8%, 691 trades`, **beating the Nifty Smallcap 250 in 13 of 18 years at +18.7%/yr against +16.3%** (alpha +2.4pp). 80.5% small cap, 21-582 trades a year.
+
+    The book is chosen on **years-beaten and CAGR jointly**, not on return-per-drawdown — that criterion picked a config beating the index in 8 years of 18. Choosing the metric is itself a modelling decision and gets stated rather than defaulted.
+
+    `test_it_is_not_wired_into_the_shipped_backtest` fails if adaptive sizing is re-enabled. It first failed on its own string check after I removed the call it was looking for — a test asserting on source text has to be updated with the source.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
