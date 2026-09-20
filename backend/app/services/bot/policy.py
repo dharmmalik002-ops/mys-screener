@@ -31,13 +31,18 @@ from .strategies import BY_ID
 TRADEABLE_VERDICTS = {"confirmed", "confirmed_weak"}
 
 # Risk per trade as a percentage of equity, by how strong the evidence is.
-RISK_CONFIRMED = 0.75
-RISK_CONFIRMED_WEAK = 0.40
+# Small, because the book is wide — see `PortfolioConfig`. A few large
+# positions sample a right-skewed return distribution badly, and a hard slot
+# cap makes the account queue for entries behind its own stop-outs. Spreading
+# the same 6% total risk across sixty positions instead of eight was worth
+# more than every ranking refinement put together, on the identical trades.
+RISK_CONFIRMED = 0.10
+RISK_CONFIRMED_WEAK = 0.06
 # Total risk the book may carry at once. A trend profile takes many small
 # losses in a row when a regime turns; this is the cap that makes that
 # survivable rather than terminal.
 MAX_PORTFOLIO_RISK = 6.0
-MAX_CONCURRENT_POSITIONS = 8
+MAX_CONCURRENT_POSITIONS = 60
 
 
 @dataclass

@@ -5486,6 +5486,20 @@ export type BotComparison = {
   risk_adjusted_better: boolean | null;
   scorecard: BotScorecardRow[];
   verdict: string;
+  // Only attached to the held-out run: what range of outcomes the same edge
+  // could plausibly have produced over a window this short.
+  uncertainty?: {
+    trades: number;
+    eligible_pool: number;
+    point_estimate_cagr: number;
+    ci_low_cagr: number;
+    ci_high_cagr: number;
+    median_resample_cagr: number;
+    share_positive: number;
+    share_beating_index: number;
+    share_beating_fund_median: number;
+    note: string;
+  } | null;
 };
 
 export type BotBenchmark = {

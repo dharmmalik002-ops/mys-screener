@@ -66,6 +66,12 @@ def trade_to_row(trade: Trade, index: int, context_by_day: Mapping[date, Mapping
         "mfe_r": trade.mfe_r,
         "risk_pct": trade.risk_pct,
         "atr_pct_at_entry": trade.atr_pct_at_entry,
+        "ret_63_at_entry": trade.ret_63_at_entry,
+        "ret_252_at_entry": trade.ret_252_at_entry,
+        "dist_52w_high_at_entry": trade.dist_52w_high_at_entry,
+        "rel_volume_at_entry": trade.rel_volume_at_entry,
+        "turnover_crore_at_entry": trade.turnover_crore_at_entry,
+        "above_200dma_pct_at_entry": trade.above_200dma_pct_at_entry,
         "regime": trade.regime,
         "volatility_band": trade.volatility_band,
         "breadth_above_200dma": context.get("breadth_above_200dma"),
@@ -233,8 +239,31 @@ def build_learning(
     ]
 
     runs = build_portfolio_runs(rows, snapshots, validation_split, playbooks, matrix)
+    cells = {
+        (str(entry["strategy"]), str(book["regime"]))
+        for book in (playbooks or [])
+        for entry in (book.get("entries") or [])
+    }
+    # The eligible pool for the uncertainty estimate is every held-out trade in
+    # a playbook cell — what the account could have taken, against what it did.
+    eligible_r: list[float] = []
+    if validation_split and cells:
+        eligible_r = [
+            float(r["r_multiple"]) for r in rows
+            if r.get("entry_day")
+            and date.fromisoformat(str(r["entry_day"])) >= validation_split
+            and (str(r["strategy"]), str(r["regime"])) in cells
+        ]
+    # The risk figure must be the one the run actually used. Passing the old
+    # default while the book runs at 0.10% produced a "90% range" of +86% to
+    # +276% a year — a number so wrong it was obvious, which is the only reason
+    # it was caught. Read it off the config instead of restating it.
     benchmark = (
-        bm.build_benchmark(runs, data_dir) if data_dir and runs else None
+        bm.build_benchmark(
+            runs, data_dir, eligible_r,
+            risk_per_trade_pct=pf.PortfolioConfig().risk_per_trade_pct,
+        )
+        if data_dir and runs else None
     )
 
     return {

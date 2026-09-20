@@ -17,9 +17,20 @@ Figures are the retail delivery schedule as of 2025-26 (discount broker):
     DP charge        ~₹15 flat on sell, per scrip
 
 Slippage is separate and larger than all of it: signals fill at the next open,
-and the next open is not the price on the screen when the scan ran. 15 bps each
-way is the default — optimistic for a small cap, roughly right for the liquid
-names the turnover filter leaves in.
+and the next open is not the price on the screen when the scan ran.
+
+**Slippage scales with the stock's liquidity**, and that turned out to matter
+more than a realism nicety. With a flat 15 bps charged to every trade, a
+bucket study found that *less* liquid names produced materially more R — a
+finding significant at p<0.0001 that would have gone straight into the
+candidate ranking. But a flat rate under-costs exactly those names: crossing
+the spread in a stock turning over ₹3 crore a day is nothing like doing it in
+one turning over ₹300 crore. An apparent edge in thin names is the first thing
+a flat cost model manufactures, so the schedule below charges thin names what
+they actually cost and the study can then say something.
+
+The bands are the retail reality for delivery-sized orders on NSE, and they are
+deliberately conservative at the thin end.
 """
 
 from __future__ import annotations
@@ -37,15 +48,43 @@ DP_CHARGE_RUPEES = 15.0
 DEFAULT_SLIPPAGE_BPS = 15.0  # each way
 
 
+# (turnover floor in ₹ crore, slippage in bps each way). Read top-down; the
+# first band whose floor the stock clears is the one it pays.
+SLIPPAGE_BY_TURNOVER: tuple[tuple[float, float], ...] = (
+    (100.0, 10.0),   # heavily traded large caps
+    (50.0, 15.0),
+    (15.0, 25.0),
+    (5.0, 40.0),
+    (0.0, 65.0),     # at the ₹2 cr liquidity floor, crossing costs real money
+)
+
+
 @dataclass(frozen=True)
 class CostModel:
     slippage_bps: float = DEFAULT_SLIPPAGE_BPS
     brokerage_pct: float = BROKERAGE_PCT
     dp_charge: float = DP_CHARGE_RUPEES
+    # When False, every trade pays `slippage_bps` regardless of liquidity.
+    # Kept only so the effect of the flat assumption can be measured.
+    liquidity_aware: bool = True
 
-    def fill_price(self, quoted: float, side: str) -> float:
+    def slippage_for(self, turnover_crore: float | None) -> float:
+        """Slippage in bps for a stock with this daily turnover."""
+        if not self.liquidity_aware or turnover_crore is None:
+            return self.slippage_bps
+        try:
+            turnover = float(turnover_crore)
+        except (TypeError, ValueError):
+            return self.slippage_bps
+        for floor, bps in SLIPPAGE_BY_TURNOVER:
+            if turnover >= floor:
+                return bps
+        return SLIPPAGE_BY_TURNOVER[-1][1]
+
+    def fill_price(self, quoted: float, side: str, turnover_crore: float | None = None) -> float:
         """Slippage applied against you on both sides, always."""
-        drift = quoted * self.slippage_bps / 10_000.0
+        bps = self.slippage_for(turnover_crore)
+        drift = quoted * bps / 10_000.0
         return quoted + drift if side == "buy" else quoted - drift
 
     def charges(self, buy_value: float, sell_value: float) -> float:

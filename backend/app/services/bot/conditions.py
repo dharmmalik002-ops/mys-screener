@@ -199,6 +199,28 @@ def _band(value, edges: Sequence[float], names: Sequence[str]) -> str | None:
     return names[-1]
 
 
+def _band_nonzero(value, edges: Sequence[float], names: Sequence[str]) -> str | None:
+    """`_band`, but treating an exact 0.0 as "not measured".
+
+    `engine._at` writes 0.0 where an indicator had no value at the signal bar
+    (warm-up, or a gap in the series). For momentum and distance fields an
+    exact zero is otherwise vanishingly rare in real data, so excluding it is
+    far safer than silently bucketing every unmeasured trade into whichever
+    band happens to contain zero — which for the momentum studies is the
+    boundary between "falling" and "rising" and would be the one place a
+    spurious result is most likely to appear.
+    """
+    if value is None:
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number == 0.0:
+        return None
+    return _band(number, edges, names)
+
+
 ATR_EDGES = (2.0, 3.0, 4.5, 6.0)
 ATR_NAMES = ("under 2%", "2-3%", "3-4.5%", "4.5-6%", "over 6%")
 
@@ -212,6 +234,28 @@ RISK_EDGES = (3.0, 5.0, 8.0)
 RISK_NAMES = ("under 3%", "3-5%", "5-8%", "over 8%")
 
 VOL_ORDER = ("calm", "normal", "stressed")
+
+# --- stock-level bands ------------------------------------------------------
+# The setup's own character, as opposed to the market's. Market context alone
+# cannot separate a leader from a laggard inside the same regime, and that is
+# the distinction a trader actually makes when choosing between two signals.
+MOM63_EDGES = (0.0, 10.0, 25.0, 50.0)
+MOM63_NAMES = ("falling", "0-10%", "10-25%", "25-50%", "over 50%")
+
+MOM252_EDGES = (0.0, 25.0, 60.0, 120.0)
+MOM252_NAMES = ("falling", "0-25%", "25-60%", "60-120%", "over 120%")
+
+EXTENSION_EDGES = (-25.0, -12.0, -5.0, -1.0)
+EXTENSION_NAMES = ("over 25% off high", "12-25% off", "5-12% off", "1-5% off", "at the high")
+
+RELVOL_EDGES = (1.0, 1.5, 2.5, 4.0)
+RELVOL_NAMES = ("below average", "1-1.5x", "1.5-2.5x", "2.5-4x", "over 4x")
+
+TURNOVER_EDGES = (5.0, 15.0, 50.0, 150.0)
+TURNOVER_NAMES = ("under Rs5cr", "Rs5-15cr", "Rs15-50cr", "Rs50-150cr", "over Rs150cr")
+
+TREND_EDGES = (0.0, 10.0, 25.0, 50.0)
+TREND_NAMES = ("below 200 DMA", "0-10% above", "10-25% above", "25-50% above", "over 50% above")
 
 
 # Conditions that are not independent measurements of each other. The engine
@@ -276,6 +320,70 @@ def study_all(rows: Sequence[Mapping], split: date) -> list[ConditionStudy]:
             question="Do calm tapes pay better than stressed ones?",
             bucket_of=lambda r: str(r.get("volatility_band") or "") or None,
             order=VOL_ORDER,
+            split=split,
+        ),
+
+        # --- the setup's own character ---------------------------------
+        study_condition(
+            rows,
+            condition="ret_63_at_entry",
+            label="The stock's own 3-month momentum at entry",
+            question="Is it better to buy what has already been moving, or what has not?",
+            bucket_of=lambda r: _band_nonzero(r.get("ret_63_at_entry"), MOM63_EDGES, MOM63_NAMES),
+            order=MOM63_NAMES,
+            split=split,
+        ),
+        study_condition(
+            rows,
+            condition="ret_252_at_entry",
+            label="The stock's 12-month momentum at entry",
+            question="Does a year of strength predict the next few weeks?",
+            bucket_of=lambda r: _band_nonzero(r.get("ret_252_at_entry"), MOM252_EDGES, MOM252_NAMES),
+            order=MOM252_NAMES,
+            split=split,
+        ),
+        study_condition(
+            rows,
+            condition="dist_52w_high_at_entry",
+            label="How far the stock sat below its own 52-week high",
+            question="Buy near the highs, or buy the pullback?",
+            bucket_of=lambda r: _band_nonzero(
+                r.get("dist_52w_high_at_entry"), EXTENSION_EDGES, EXTENSION_NAMES
+            ),
+            order=EXTENSION_NAMES,
+            split=split,
+        ),
+        study_condition(
+            rows,
+            condition="rel_volume_at_entry",
+            label="Volume on the signal bar, against the stock's own average",
+            question="Does a heavier signal bar mean a better trade?",
+            bucket_of=lambda r: _band_nonzero(
+                r.get("rel_volume_at_entry"), RELVOL_EDGES, RELVOL_NAMES
+            ),
+            order=RELVOL_NAMES,
+            split=split,
+        ),
+        study_condition(
+            rows,
+            condition="turnover_crore_at_entry",
+            label="The stock's daily turnover at entry",
+            question="Do the bigger, more liquid names pay better or worse?",
+            bucket_of=lambda r: _band_nonzero(
+                r.get("turnover_crore_at_entry"), TURNOVER_EDGES, TURNOVER_NAMES
+            ),
+            order=TURNOVER_NAMES,
+            split=split,
+        ),
+        study_condition(
+            rows,
+            condition="above_200dma_pct_at_entry",
+            label="How far above its own 200 DMA the stock was",
+            question="Is an extended stock a strong one or a stretched one?",
+            bucket_of=lambda r: _band_nonzero(
+                r.get("above_200dma_pct_at_entry"), TREND_EDGES, TREND_NAMES
+            ),
+            order=TREND_NAMES,
             split=split,
         ),
     ]

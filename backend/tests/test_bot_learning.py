@@ -257,16 +257,33 @@ class LedgerTests(unittest.TestCase):
         )
 
     def test_reseeding_does_not_duplicate_the_statistical_base(self) -> None:
+        """A re-seed refreshes the row; it must never add a second copy."""
         with tempfile.TemporaryDirectory() as tmp:
             state = Path(tmp)
             with lg.connect(state) as conn:
-                first = lg.record_trades(conn, [self._trade()])
+                lg.record_trades(conn, [self._trade()])
             with lg.connect(state) as conn:
-                second = lg.record_trades(conn, [self._trade()])
+                lg.record_trades(conn, [self._trade()])
                 total = lg.counts(conn)["total"]
-            self.assertEqual(first, 1)
-            self.assertEqual(second, 0)
             self.assertEqual(total, 1)
+
+    def test_reseeding_fills_in_columns_added_later(self) -> None:
+        """The upsert exists for this: an ignoring insert left new columns NULL.
+
+        A schema migration adds the column; only a write that *updates* the
+        existing row can populate it, and every row is by definition already
+        present. This silently produced six empty columns across 95,286 rows.
+        """
+        with tempfile.TemporaryDirectory() as tmp:
+            state = Path(tmp)
+            with lg.connect(state) as conn:
+                lg.record_trades(conn, [self._trade()])
+            enriched = self._trade()
+            enriched.ret_63_at_entry = 42.0
+            with lg.connect(state) as conn:
+                lg.record_trades(conn, [enriched])
+                row = lg.query_trades(conn, limit=1)[0]
+            self.assertEqual(row["ret_63_at_entry"], 42.0)
 
     def test_reviews_attach_and_survive_a_reopen(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

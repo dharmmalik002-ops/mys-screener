@@ -80,9 +80,9 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
         <Info size={15} aria-hidden />
         <span>
           Everything else on this page is trade-level. An account is different: capital is
-          finite, only eight positions run at once, and the trades it can take are not a random
-          sample of the ones it wanted. This is the same trade record run as an account, then
-          compared with what the money could have done elsewhere.
+          finite, positions compete for it, and the trades it can take are not a random sample
+          of the ones it wanted. This is the same trade record run as an account, then compared
+          with what the money could have done elsewhere.
         </span>
       </div>
 
@@ -141,6 +141,29 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
             slot — which is the honest reason trade-level returns and account returns differ.
           </p>
           <EquityCurve run={headlineRun} />
+          {headline?.uncertainty ? (
+            <div className="bot-uncertainty">
+              <p className="bot-kicker">How much of this is the edge, and how much is the draw</p>
+              <p>{headline.uncertainty.note}</p>
+              <div className="bot-uncertainty-stats">
+                <div>
+                  <span>90% range</span>
+                  <strong>
+                    {formatPct(headline.uncertainty.ci_low_cagr, 1)} to{" "}
+                    {formatPct(headline.uncertainty.ci_high_cagr, 1)}
+                  </strong>
+                </div>
+                <div>
+                  <span>Resamples beating Nifty</span>
+                  <strong>{headline.uncertainty.share_beating_index.toFixed(0)}%</strong>
+                </div>
+                <div>
+                  <span>Resamples beating the fund median</span>
+                  <strong>{headline.uncertainty.share_beating_fund_median.toFixed(0)}%</strong>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="bot-hero-stats bot-run-stats">
             <div><span>CAGR</span><strong>{formatPct(headlineRun.cagr_pct)}</strong></div>
             <div><span>Worst drawdown</span><strong>{formatPct(headlineRun.max_drawdown_pct, 1)}</strong></div>

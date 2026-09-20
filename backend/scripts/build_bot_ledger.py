@@ -82,6 +82,12 @@ def main() -> int:
             pct_from_52w_high=r["pct_from_52w_high"],
             vix_percentile=r["vix_percentile"],
             macro_headwinds=r["macro_headwinds"],
+            ret_63_at_entry=r.get("ret_63_at_entry"),
+            ret_252_at_entry=r.get("ret_252_at_entry"),
+            dist_52w_high_at_entry=r.get("dist_52w_high_at_entry"),
+            rel_volume_at_entry=r.get("rel_volume_at_entry"),
+            turnover_crore_at_entry=r.get("turnover_crore_at_entry"),
+            above_200dma_pct_at_entry=r.get("above_200dma_pct_at_entry"),
             expected_r=r["expected_r"], thesis=r["thesis"],
         )
         for r in rows

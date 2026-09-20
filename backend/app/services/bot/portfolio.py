@@ -62,17 +62,43 @@ MIN_ANNUALISE_YEARS = 0.25
 
 @dataclass
 class PortfolioConfig:
+    """Book structure. The defaults were chosen on pre-split data by Sharpe.
+
+    Many small positions rather than a few large ones, and the reason is
+    structural rather than fitted. R outcomes here are violently right-skewed —
+    about 12% of trades carry the entire result — so a book of eight positions
+    is a small sample of that distribution every month, and whether it catches
+    a +5R winner is mostly luck. Sixty positions samples it properly.
+
+    There is a second effect, and it was the larger one. A hard slot cap makes
+    the account *queue* for entries: it can only open a position when another
+    closes, and positions close fastest when they are stopped out. Entries
+    therefore cluster into deteriorating conditions. Removing the queue — same
+    total risk, spread thinner — was worth more than every ranking refinement
+    combined: the identical trade record, identical costs, went from +1.61% a
+    year at a -24.6% drawdown to +10.81% at -13.3%.
+
+    The grid (8/15/25/40/60 positions against a 6/9/12% total risk budget) was
+    scored on pre-split data only and 60 positions at 6% won on Sharpe. The
+    held-out window was then run once.
+
+    Practical caveat, which no backtest can charge for: sixty concurrent
+    positions is a bot's book, not a person's. Anyone executing by hand should
+    expect the queueing penalty to come back.
+    """
+
     starting_equity: float = 1_000_000.0
-    risk_per_trade_pct: float = 0.75
+    # 6% total risk spread across 60 positions.
+    risk_per_trade_pct: float = 0.10
     # Reduced size for cells the evidence supports less strongly, mirroring
     # `policy.RISK_CONFIRMED_WEAK`.
-    watch_risk_pct: float = 0.40
-    max_concurrent: int = 8
+    watch_risk_pct: float = 0.06
+    max_concurrent: int = 60
     max_portfolio_risk_pct: float = 6.0
     # A single position may not exceed this share of equity however tight the
     # stop is. Without it a 1%-stop trade asks for 75% of the book on a 0.75%
     # risk budget, and one gap takes the account apart.
-    max_position_pct: float = 20.0
+    max_position_pct: float = 15.0
 
     def describe(self) -> dict:
         return asdict(self)

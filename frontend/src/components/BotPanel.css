@@ -391,3 +391,16 @@
 .bot-run-stats { margin-top: 4px; }
 .bot-row-highlight { background: color-mix(in srgb, var(--accent) 9%, transparent); }
 .bot-row-highlight td { color: var(--text); }
+
+.bot-uncertainty {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--surface-soft);
+}
+.bot-uncertainty > p { margin: 0 0 10px; font-size: var(--fs-small); color: var(--text-muted); line-height: 1.55; max-width: 84ch; }
+.bot-uncertainty-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.bot-uncertainty-stats > div { display: flex; flex-direction: column; gap: 2px; }
+.bot-uncertainty-stats span { font-size: var(--fs-tiny); color: var(--text-soft); }
+.bot-uncertainty-stats strong { font-family: var(--font-mono); font-size: var(--fs-body); color: var(--text); }

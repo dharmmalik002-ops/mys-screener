@@ -43,7 +43,7 @@ from typing import Any, Iterator, Sequence
 
 logger = logging.getLogger(__name__)
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 LEDGER_FILENAME = "bot_ledger.db"
 
 SOURCES = ("backtest", "paper", "live")
@@ -81,8 +81,20 @@ class LedgerTrade:
     pct_from_52w_high: float | None
     vix_percentile: float | None
     macro_headwinds: int | None
-    expected_r: float | None
-    thesis: str
+    # What the stock itself looked like. Market context alone cannot tell a
+    # leader from a laggard inside the same regime, and that is the comparison
+    # a trader actually makes when choosing between two signals.
+    # Defaulted, not required: these arrived after the first release and a
+    # caller that predates them (or a source that cannot supply them, like a
+    # manually entered live fill) must still be able to record a trade.
+    ret_63_at_entry: float | None = None
+    ret_252_at_entry: float | None = None
+    dist_52w_high_at_entry: float | None = None
+    rel_volume_at_entry: float | None = None
+    turnover_crore_at_entry: float | None = None
+    above_200dma_pct_at_entry: float | None = None
+    expected_r: float | None = None
+    thesis: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -119,6 +131,12 @@ CREATE TABLE IF NOT EXISTS trades (
     pct_from_52w_high    REAL,
     vix_percentile       REAL,
     macro_headwinds      INTEGER,
+    ret_63_at_entry           REAL,
+    ret_252_at_entry          REAL,
+    dist_52w_high_at_entry    REAL,
+    rel_volume_at_entry       REAL,
+    turnover_crore_at_entry   REAL,
+    above_200dma_pct_at_entry REAL,
     expected_r           REAL,
     thesis               TEXT NOT NULL DEFAULT '',
     -- A trade is identified by what produced it. The unique index below turns
@@ -168,8 +186,32 @@ INSERT_COLUMNS = (
     "entry", "stop", "exit_price", "exit_reason", "sessions_held", "r_multiple",
     "net_pct", "mae_r", "mfe_r", "risk_pct", "atr_pct_at_entry", "regime",
     "volatility_band", "breadth_above_200dma", "pct_from_52w_high",
-    "vix_percentile", "macro_headwinds", "expected_r", "thesis",
+    "vix_percentile", "macro_headwinds",
+    "ret_63_at_entry", "ret_252_at_entry", "dist_52w_high_at_entry",
+    "rel_volume_at_entry", "turnover_crore_at_entry", "above_200dma_pct_at_entry",
+    "expected_r", "thesis",
 )
+
+# Columns added after the first release. SQLite can add a column to a
+# populated table, so an existing ledger is migrated in place rather than
+# rebuilt — the live rows in it are the user's own and are not regenerable.
+MIGRATIONS: tuple[tuple[str, str], ...] = (
+    ("ret_63_at_entry", "REAL"),
+    ("ret_252_at_entry", "REAL"),
+    ("dist_52w_high_at_entry", "REAL"),
+    ("rel_volume_at_entry", "REAL"),
+    ("turnover_crore_at_entry", "REAL"),
+    ("above_200dma_pct_at_entry", "REAL"),
+)
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Add any column the running code expects and the file does not have."""
+    existing = {row["name"] for row in conn.execute("PRAGMA table_info(trades)")}
+    for column, column_type in MIGRATIONS:
+        if column not in existing:
+            conn.execute(f"ALTER TABLE trades ADD COLUMN {column} {column_type}")
+            logger.info("ledger: added column %s", column)
 
 
 def ledger_path(state_dir: Path) -> Path:
@@ -189,6 +231,7 @@ def connect(state_dir: Path) -> Iterator[sqlite3.Connection]:
         conn.execute("PRAGMA journal_mode=WAL")
         conn.execute("PRAGMA foreign_keys=ON")
         conn.executescript(DDL)
+        _migrate(conn)
         conn.execute(
             "INSERT OR REPLACE INTO meta (key, value) VALUES ('schema_version', ?)",
             (str(SCHEMA_VERSION),),
@@ -200,13 +243,29 @@ def connect(state_dir: Path) -> Iterator[sqlite3.Connection]:
 
 
 def record_trades(conn: sqlite3.Connection, trades: Sequence[LedgerTrade]) -> int:
-    """Insert trades, ignoring ones already present. Returns rows added."""
+    """Insert trades, refreshing any that already exist. Returns rows written.
+
+    An upsert rather than `INSERT OR IGNORE`, and the difference is not
+    cosmetic: when the schema gains a column, every existing row keeps the
+    identity that makes it a duplicate, so an ignoring insert leaves the new
+    column NULL forever and the migration silently accomplishes nothing. That
+    is exactly what happened when the stock-level entry context was added —
+    six new columns, 95,286 rows, all empty, and the condition studies built on
+    them found no usable buckets rather than failing loudly.
+
+    Identity columns are excluded from the update so a re-seed can never move a
+    trade to a different symbol or date; it only enriches what is recorded
+    about the trade already there.
+    """
     if not trades:
         return 0
+    identity = {"source", "strategy", "symbol", "entry_day"}
+    updatable = [c for c in INSERT_COLUMNS if c not in identity]
     placeholders = ", ".join("?" for _ in INSERT_COLUMNS)
+    assignments = ", ".join(f"{c}=excluded.{c}" for c in updatable)
     sql = (
-        f"INSERT OR IGNORE INTO trades ({', '.join(INSERT_COLUMNS)}) "
-        f"VALUES ({placeholders})"
+        f"INSERT INTO trades ({', '.join(INSERT_COLUMNS)}) VALUES ({placeholders}) "
+        f"ON CONFLICT (source, strategy, symbol, entry_day) DO UPDATE SET {assignments}"
     )
     rows = [tuple(getattr(t, column) for column in INSERT_COLUMNS) for t in trades]
     before = conn.total_changes

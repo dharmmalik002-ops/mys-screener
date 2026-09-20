@@ -26,12 +26,12 @@
         "label": "Gap Continuation",
         "family": "momentum",
         "verdict": "confirmed_weak",
-        "in_sample_r": 0.087,
-        "out_sample_r": 0.309,
-        "out_sample_trades": 220,
-        "win_rate": 41.4,
-        "risk_per_trade_pct": 0.4,
-        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.09R then +0.31R)."
+        "in_sample_r": 0.062,
+        "out_sample_r": 0.262,
+        "out_sample_trades": 221,
+        "win_rate": 38.9,
+        "risk_per_trade_pct": 0.06,
+        "note": "Not predicted for this regime \u2014 held up anyway, treat with care. Positive in both periods but the in-sample edge did not survive multiple-testing correction (+0.06R then +0.26R)."
       }
     ],
     "max_concurrent": 3,
@@ -65,21 +65,21 @@
       "risk_pct": 7.3,
       "atr_pct": 2.92,
       "turnover_crore": 24.5,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 12,
-        "position_value": 13200.0,
-        "risk_budget": 1000.0,
+        "shares": 1,
+        "position_value": 1100.0,
+        "risk_budget": 150.0,
         "risk_per_share": 80.32,
-        "actual_risk": 963.85,
-        "pct_of_equity": 1.3,
+        "actual_risk": 80.32,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": 0.052,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": 0.058,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.361
+      "edge_score_r": 0.32
     },
     {
       "symbol": "SCHAEFFLER",
@@ -92,21 +92,21 @@
       "risk_pct": 5.99,
       "atr_pct": 2.4,
       "turnover_crore": 19.6,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 3,
-        "position_value": 12652.8,
-        "risk_budget": 1000.0,
+        "shares": 0,
+        "position_value": 0.0,
+        "risk_budget": 150.0,
         "risk_per_share": 252.81,
-        "actual_risk": 758.44,
-        "pct_of_equity": 1.3,
+        "actual_risk": 0.0,
+        "pct_of_equity": 0.0,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": 0.052,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": 0.058,
       "volatility_bucket": "2-3%",
-      "edge_score_r": 0.361
+      "edge_score_r": 0.32
     },
     {
       "symbol": "MEDANTA",
@@ -119,21 +119,21 @@
       "risk_pct": 8.56,
       "atr_pct": 3.43,
       "turnover_crore": 34.4,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 7,
-        "position_value": 10495.8,
-        "risk_budget": 1000.0,
+        "shares": 1,
+        "position_value": 1499.4,
+        "risk_budget": 150.0,
         "risk_per_share": 128.39,
-        "actual_risk": 898.75,
-        "pct_of_equity": 1.0,
+        "actual_risk": 128.39,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": 0.007,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": 0.0,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.316
+      "edge_score_r": 0.262
     },
     {
       "symbol": "PFOCUS",
@@ -146,21 +146,21 @@
       "risk_pct": 9.99,
       "atr_pct": 4.0,
       "turnover_crore": 22.2,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 29,
-        "position_value": 9986.15,
-        "risk_budget": 1000.0,
+        "shares": 4,
+        "position_value": 1377.4,
+        "risk_budget": 150.0,
         "risk_per_share": 34.42,
-        "actual_risk": 998.11,
-        "pct_of_equity": 1.0,
+        "actual_risk": 137.67,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": 0.007,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": 0.0,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.316
+      "edge_score_r": 0.262
     },
     {
       "symbol": "CARBORUNIV",
@@ -173,21 +173,21 @@
       "risk_pct": 10.16,
       "atr_pct": 4.07,
       "turnover_crore": 19.1,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 8,
-        "position_value": 8995.2,
-        "risk_budget": 1000.0,
+        "shares": 1,
+        "position_value": 1124.4,
+        "risk_budget": 150.0,
         "risk_per_share": 114.28,
-        "actual_risk": 914.25,
-        "pct_of_equity": 0.9,
+        "actual_risk": 114.28,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": 0.007,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": 0.0,
       "volatility_bucket": "3-4.5%",
-      "edge_score_r": 0.316
+      "edge_score_r": 0.262
     },
     {
       "symbol": "AHCL",
@@ -200,21 +200,21 @@
       "risk_pct": 13.24,
       "atr_pct": 5.3,
       "turnover_crore": 7.4,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 329,
-        "position_value": 7534.1,
-        "risk_budget": 1000.0,
+        "shares": 49,
+        "position_value": 1122.1,
+        "risk_budget": 150.0,
         "risk_per_share": 3.03,
-        "actual_risk": 997.38,
-        "pct_of_equity": 0.8,
+        "actual_risk": 148.55,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": -0.044,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": -0.046,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.265
+      "edge_score_r": 0.216
     },
     {
       "symbol": "SPICELOUNG",
@@ -227,21 +227,21 @@
       "risk_pct": 13.24,
       "atr_pct": 5.3,
       "turnover_crore": 2.4,
-      "expected_r": 0.309,
+      "expected_r": 0.262,
       "verdict": "confirmed_weak",
       "sizing": {
-        "shares": 188,
-        "position_value": 7521.88,
-        "risk_budget": 1000.0,
+        "shares": 28,
+        "position_value": 1120.28,
+        "risk_budget": 150.0,
         "risk_per_share": 5.3,
-        "actual_risk": 995.75,
-        "pct_of_equity": 0.8,
+        "actual_risk": 148.3,
+        "pct_of_equity": 0.1,
         "capped_by_capital": false
       },
-      "cell_expectancy_r": 0.309,
-      "volatility_adjustment_r": -0.044,
+      "cell_expectancy_r": 0.262,
+      "volatility_adjustment_r": -0.046,
       "volatility_bucket": "4.5-6%",
-      "edge_score_r": 0.265
+      "edge_score_r": 0.216
     }
   ],
   "candidates_found": 7,
@@ -250,6 +250,6 @@
     "note": "Ranking adds a volatility adjustment to each candidate's cell expectancy. The adjustment is that ATR bucket's average R minus the book average, measured over the full trade population and confirmed out-of-sample."
   },
   "message": "7 candidate(s) from 1 cleared setup(s) in Correction. Sizing at 25% of book risk (defensive external tape).",
-  "generated_at": "2026-09-20T02:55:27.073132+00:00",
+  "generated_at": "2026-09-20T03:29:09.746259+00:00",
   "source": "offline"
 }

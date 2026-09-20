@@ -106,6 +106,17 @@ class Trade:
     mfe_r: float              # best excursion for, in R
     risk_pct: float           # (entry - stop) / entry * 100
     atr_pct_at_entry: float
+    # --- what the stock itself looked like at the signal bar ---------------
+    # Recorded because market context alone cannot answer "what kind of setup
+    # works": two trades in the same regime, from the same strategy, in a
+    # leader and a laggard are different decisions, and without these fields
+    # the difference is unrecoverable once the bar has passed.
+    ret_63_at_entry: float = 0.0      # the stock's own 3-month momentum, %
+    ret_252_at_entry: float = 0.0     # 12-month momentum, %
+    dist_52w_high_at_entry: float = 0.0   # % below its own 52-week high
+    rel_volume_at_entry: float = 0.0  # volume vs its 50-day average
+    turnover_crore_at_entry: float = 0.0
+    above_200dma_pct_at_entry: float = 0.0  # % above its own 200 DMA
     regime: str = ""          # stamped by the runner from the regime table
     volatility_band: str = ""
 
@@ -119,6 +130,20 @@ class Trade:
         out["entry_day"] = self.entry_day.isoformat()
         out["exit_day"] = self.exit_day.isoformat() if self.exit_day else None
         return out
+
+
+def _at(series: np.ndarray, index: int) -> float:
+    """One indicator's value at the signal bar, or 0.0 when it has no opinion.
+
+    Zero rather than nan because these land in JSON and a nan serialises to a
+    literal the JSON parsers in the chain disagree about. Downstream bucketing
+    treats 0.0 in these fields as "not measured" — every one of them is a
+    percentage or a ratio where exact zero is vanishingly rare in real data.
+    """
+    if index < 0 or index >= len(series):
+        return 0.0
+    value = series[index]
+    return round(float(value), 2) if np.isfinite(value) else 0.0
 
 
 def simulate_symbol(
@@ -151,7 +176,10 @@ def simulate_symbol(
             continue
 
         entry_idx = i + 1
-        entry = costs.fill_price(float(o[entry_idx]), "buy")
+        # Slippage scales with the name's liquidity — see costs.py. Measured at
+        # the signal bar, which is what was knowable when the order was placed.
+        turnover = float(features.turnover_crore[i]) if np.isfinite(features.turnover_crore[i]) else None
+        entry = costs.fill_price(float(o[entry_idx]), "buy", turnover)
         stop = entry - spec.stop_atr_mult * float(atr[i])
         if stop <= 0 or entry <= 0:
             continue
@@ -220,7 +248,7 @@ def simulate_symbol(
         if exit_idx is None or exit_price is None:
             continue
 
-        realised = costs.fill_price(float(exit_price), "sell")
+        realised = costs.fill_price(float(exit_price), "sell", turnover)
         buy_value = entry * quantity
         sell_value = realised * quantity
         charges = costs.charges(buy_value, sell_value)
@@ -244,7 +272,20 @@ def simulate_symbol(
                 mae_r=round(mae, 2),
                 mfe_r=round(mfe, 2),
                 risk_pct=round(risk / entry * 100.0, 2),
-                atr_pct_at_entry=round(float(features.atr_pct[i]), 2) if np.isfinite(features.atr_pct[i]) else 0.0,
+                atr_pct_at_entry=_at(features.atr_pct, i),
+                ret_63_at_entry=_at(features.ret_63, i),
+                ret_252_at_entry=_at(features.ret_252, i),
+                dist_52w_high_at_entry=_at(features.dist_52w_high, i),
+                rel_volume_at_entry=_at(features.rel_volume, i),
+                turnover_crore_at_entry=_at(features.turnover_crore, i),
+                above_200dma_pct_at_entry=_at(
+                    np.where(
+                        np.isfinite(features.sma200) & (features.sma200 > 0),
+                        (c - features.sma200) / np.where(features.sma200 > 0, features.sma200, np.nan) * 100.0,
+                        np.nan,
+                    ),
+                    i,
+                ),
             )
         )
         blocked_until = exit_idx

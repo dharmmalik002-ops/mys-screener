@@ -61,7 +61,44 @@ CAVEATS = (
     "modelled (STT, stamp duty, exchange, GST, 15 bps slippage), not incurred.",
     "The bot's universe is today's listed companies, so it never traded anything that went to "
     "zero. The funds did.",
+    "The held-out window is under four years and R outcomes are heavily right-skewed, so the "
+    "CAGR for it is one draw from a wide distribution rather than a measurement — see the "
+    "uncertainty block for the range the same edge could have produced.",
 )
+
+
+@dataclass
+class ResultUncertainty:
+    """How much of the account's result is the edge and how much is the draw.
+
+    A 3.8-year window gives an eight-slot book about 220 trades, and R-multiple
+    outcomes are violently right-skewed — a handful of large winners carry the
+    whole curve. So the CAGR reported for that window is one sample from a very
+    wide distribution, and quoting it as a point estimate implies a precision
+    that does not exist. This resamples the eligible trade pool to the same
+    count to show what range of outcomes the same edge could plausibly have
+    produced.
+
+    It also exposes the capacity penalty: the resample ignores *when* a slot
+    frees up, so the gap between the median resample and the realised result is
+    the cost of only being able to enter when a position closes — which happens
+    fastest after losses, and therefore clusters entries into deteriorating
+    conditions.
+    """
+
+    trades: int
+    eligible_pool: int
+    point_estimate_cagr: float
+    ci_low_cagr: float
+    ci_high_cagr: float
+    median_resample_cagr: float
+    share_positive: float
+    share_beating_index: float
+    share_beating_fund_median: float
+    note: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass
@@ -243,9 +280,63 @@ def compare(
     )
 
 
+def estimate_uncertainty(
+    eligible_r: Sequence[float],
+    trades_taken: int,
+    years: float,
+    realised_cagr: float,
+    risk_per_trade_pct: float,
+    index_cagr: float | None,
+    fund_median_cagr: float,
+    iterations: int = 4000,
+) -> ResultUncertainty | None:
+    """Resample the eligible pool to the account's own trade count."""
+    pool = np.asarray([r for r in eligible_r if np.isfinite(r)], dtype=np.float64)
+    if len(pool) < 100 or trades_taken < 20 or years <= 0:
+        return None
+
+    rng = np.random.default_rng(20260920)
+    risk = risk_per_trade_pct / 100.0
+    outcomes = np.empty(iterations, dtype=np.float64)
+    for i in range(iterations):
+        sample = rng.choice(pool, trades_taken)
+        # Compound the same way the account does: each trade risks a fixed
+        # fraction of the equity it has at the time.
+        growth = float(np.prod(1.0 + risk * sample))
+        outcomes[i] = ((growth ** (1.0 / years)) - 1.0) * 100.0 if growth > 0 else -100.0
+
+    low, high = np.percentile(outcomes, [5.0, 95.0])
+    median = float(np.median(outcomes))
+    beats_index = (
+        float((outcomes > index_cagr).mean() * 100.0) if index_cagr is not None else 0.0
+    )
+
+    return ResultUncertainty(
+        trades=trades_taken,
+        eligible_pool=int(len(pool)),
+        point_estimate_cagr=round(realised_cagr, 2),
+        ci_low_cagr=round(float(low), 2),
+        ci_high_cagr=round(float(high), 2),
+        median_resample_cagr=round(median, 2),
+        share_positive=round(float((outcomes > 0).mean() * 100.0), 1),
+        share_beating_index=round(beats_index, 1),
+        share_beating_fund_median=round(float((outcomes > fund_median_cagr).mean() * 100.0), 1),
+        note=(
+            f"{trades_taken:,} trades drawn from {len(pool):,} eligible signals. Resampling "
+            f"that pool to the same count puts 90% of outcomes between {low:.1f}% and "
+            f"{high:.1f}% a year, with a median of {median:.1f}% — against a realised "
+            f"{realised_cagr:.1f}%. The width is what {trades_taken:,} draws from a "
+            "right-skewed distribution buys you, and any gap below the median is the cost of "
+            "only being able to enter when capacity frees up, which happens fastest after a loss."
+        ),
+    )
+
+
 def build_benchmark(
     results: Sequence[PortfolioResult],
     data_dir: Path,
+    eligible_r: Sequence[float] | None = None,
+    risk_per_trade_pct: float = 0.75,
 ) -> dict:
     """Every run compared against the professional distribution."""
     comparisons: list[dict] = []
@@ -259,7 +350,14 @@ def build_benchmark(
             field = "return_5y"
         comparison = compare(result, data_dir, window_field=field)
         if comparison:
-            comparisons.append({"run": result.label, **comparison.to_dict()})
+            row = {"run": result.label, **comparison.to_dict()}
+            if eligible_r and result.label == "playbook_held_out":
+                uncertainty = estimate_uncertainty(
+                    eligible_r, result.trades_taken, result.years, result.cagr_pct,
+                    risk_per_trade_pct, comparison.index_cagr_pct, comparison.fund_median_cagr,
+                )
+                row["uncertainty"] = uncertainty.to_dict() if uncertainty else None
+            comparisons.append(row)
 
     # The held-out playbook run is the only one that describes the live system
     # on data it never saw. If it exists it is the headline; nothing else is.
