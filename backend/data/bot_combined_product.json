@@ -1,0 +1,158 @@
+{
+  "held-out": {
+    "book": {
+      "years": 3.83,
+      "cagr_pct": 9.3,
+      "max_drawdown_pct": -7.63,
+      "sharpe": 0.9,
+      "return_per_drawdown": 1.22
+    },
+    "timing": {
+      "years": 3.83,
+      "cagr_pct": 9.88,
+      "max_drawdown_pct": -13.11,
+      "sharpe": 0.97,
+      "return_per_drawdown": 0.75
+    },
+    "blends": {
+      "50/50": {
+        "years": 3.84,
+        "cagr_pct": 9.58,
+        "max_drawdown_pct": -7.23,
+        "sharpe": 1.2,
+        "return_per_drawdown": 1.33
+      },
+      "70/30": {
+        "years": 3.84,
+        "cagr_pct": 9.47,
+        "max_drawdown_pct": -6.87,
+        "sharpe": 1.12,
+        "return_per_drawdown": 1.38
+      },
+      "30/70": {
+        "years": 3.84,
+        "cagr_pct": 9.7,
+        "max_drawdown_pct": -9.61,
+        "sharpe": 1.16,
+        "return_per_drawdown": 1.01
+      }
+    },
+    "blend_breaker_off": {
+      "years": 3.84,
+      "cagr_pct": 9.36,
+      "max_drawdown_pct": -9.26,
+      "sharpe": 1.16,
+      "return_per_drawdown": 1.01
+    }
+  },
+  "exact 3y (fund-matched)": {
+    "book": {
+      "years": 3.0,
+      "cagr_pct": 5.26,
+      "max_drawdown_pct": -9.18,
+      "sharpe": 0.72,
+      "return_per_drawdown": 0.57
+    },
+    "timing": {
+      "years": 3.0,
+      "cagr_pct": 10.03,
+      "max_drawdown_pct": -12.04,
+      "sharpe": 1.07,
+      "return_per_drawdown": 0.83
+    },
+    "blends": {
+      "50/50": {
+        "years": 3.0,
+        "cagr_pct": 7.69,
+        "max_drawdown_pct": -7.28,
+        "sharpe": 1.15,
+        "return_per_drawdown": 1.06
+      },
+      "70/30": {
+        "years": 3.0,
+        "cagr_pct": 6.73,
+        "max_drawdown_pct": -7.7,
+        "sharpe": 1.03,
+        "return_per_drawdown": 0.87
+      },
+      "30/70": {
+        "years": 3.0,
+        "cagr_pct": 8.63,
+        "max_drawdown_pct": -9.28,
+        "sharpe": 1.15,
+        "return_per_drawdown": 0.93
+      }
+    },
+    "blend_breaker_off": {
+      "years": 3.0,
+      "cagr_pct": 7.8,
+      "max_drawdown_pct": -8.57,
+      "sharpe": 1.16,
+      "return_per_drawdown": 0.91
+    },
+    "benchmark": {
+      "window_years": 3,
+      "bot_cagr_pct": 7.69,
+      "bot_max_drawdown_pct": -7.28,
+      "bot_sharpe": 1.15,
+      "index_cagr_pct": 9.05,
+      "funds_counted": 691,
+      "fund_median_cagr": 11.36,
+      "fund_p75_cagr": 14.93,
+      "fund_p90_cagr": 18.18,
+      "fund_best_cagr": 37.04,
+      "percentile": 18.5,
+      "beats_median": false,
+      "beats_index": false,
+      "fund_median_drawdown": -27.53,
+      "drawdown_better_than_median": true,
+      "bot_return_per_drawdown": 1.056,
+      "fund_return_per_drawdown": 0.413,
+      "risk_adjusted_better": true,
+      "fund_median_sharpe": 0.4,
+      "sharpe_percentile": 99.4,
+      "drawdown_percentile": 94.9,
+      "funds_dominating": 5,
+      "funds_dominating_pct": 0.7,
+      "scorecard": [
+        {
+          "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
+          "bot": "7.69%",
+          "reference": "9.05%",
+          "verdict": false
+        },
+        {
+          "dimension": "Return vs the median professional fund",
+          "bot": "7.69%",
+          "reference": "11.36%",
+          "verdict": false
+        },
+        {
+          "dimension": "Worst drawdown vs the median fund",
+          "bot": "-7.3%",
+          "reference": "-27.5%",
+          "verdict": true
+        },
+        {
+          "dimension": "Return per unit of drawdown",
+          "bot": "1.06",
+          "reference": "0.41",
+          "verdict": true
+        },
+        {
+          "dimension": "Sharpe ratio (how professionals are measured)",
+          "bot": "1.15",
+          "reference": "0.40",
+          "verdict": true
+        },
+        {
+          "dimension": "Funds beating it on return AND drawdown",
+          "bot": "0.7%",
+          "reference": "50% would be average",
+          "verdict": true
+        }
+      ],
+      "verdict": "The account's 7.7% CAGR is below 82% of 691 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.1%), which needed no work at all, with a shallower worst drawdown (-7% against a fund median of -28%)."
+    }
+  }
+}
