@@ -167,10 +167,18 @@ def main() -> int:
     #     hold through   CAGR +22.89%  maxDD -27.98%  win 26.8%  payoff 10.63  ret/DD 0.82  15/18
     #     sell the turn  CAGR +19.05%  maxDD -17.58%  win 36.8%  payoff  3.75  ret/DD 1.08  13/18
     #
-    # It costs 3.8pp of CAGR and two years of outperformance, and returns 10.4
-    # points of drawdown and a better return-per-drawdown. Set DERISK=0 to
-    # hold through instead; that variant has the higher raw return.
-    _derisk = __import__("os").environ.get("DERISK", "1") != "0"
+    # It costs 3.8pp of CAGR and two years of outperformance and returns 10.4
+    # points of drawdown. OFF by default: the brief's first and most repeated
+    # complaint is years that trail the index, and holding through wins 15 of
+    # 18 against de-risking's 13 while also returning more. Set DERISK=1 for
+    # the win-rate/drawdown profile instead.
+    #
+    # No middle setting exists. Cutting only in a genuine bear (leaving
+    # choppy and correction alone) is worse than both: +19.77% at -31.30%,
+    # Sharpe 1.13, 11 of 18 — it gives up the upside without buying the
+    # protection, because by the time the label reads `bear` the fall has
+    # happened.
+    _derisk = __import__("os").environ.get("DERISK", "0") == "1"
     healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
     result = mtm.simulate(
         kept, data_dir, BOOK, label="rules",
