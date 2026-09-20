@@ -44,20 +44,32 @@ from .strategies import StrategySpec
 class ExitModel:
     """How a position is managed once it is on.
 
-    The defaults are the rule `scripts/sweep_exit_models.py` selected: no profit
-    target, a trail that engages at 1.5R and runs 4 ATR behind, and a 90-session
-    ceiling. It was chosen on the in-sample period alone and then scored on the
-    held-out period without adjustment, where it returned +0.25R per trade
-    against +0.28R in-sample over ~9,000 held-out trades. The full ranking of
-    the five candidate rules was *identical* in both periods, which is the part
-    worth trusting: it says the finding is the structural one — losers cut,
-    winners left alone — rather than a parameter that happened to fit.
+    No profit target, a trail that engages at 1.5R and runs 4 ATR behind, and a
+    90-session ceiling. Chosen on the in-sample period and scored on the
+    held-out period unchanged: +0.25R per trade against +0.28R in-sample, with
+    the full ranking of five candidate rules *identical* in both periods.
 
-    The rule it replaced (a 2.5R target with a 15-session stop) scored -0.005R.
-    Only 11% of trades ever reached 2.5R while 46% were closed alive by the time
-    stop, so the target was mostly decorative and the time stop did the real
-    work, in the wrong direction. That is worth keeping in mind before anyone
-    shortens the horizon again.
+    The 90-session ceiling is load-bearing and was nearly removed. The account
+    lags in strong rising markets — 16.6% in a year the index made 26.0% —
+    because a time stop sells out of live trends that a fully-invested fund
+    rides, so removing it looked like the obvious fix. Trail-only with a 6 ATR
+    leash duly scored best on pre-split data and +15.09% on a held-out sweep.
+    A full rebuild under that rule returned **5.20%** across book structures
+    against the 90-session rule's 11.39%, with -19% and -23% in the last two
+    twelve-month periods. A wide trail with no time stop rides a trend
+    magnificently (+56 points against the index in 2022-23) and hands it all
+    back in a market that stops trending. The ceiling is what caps the
+    give-back.
+
+    The sweep was misleading for a specific and now-documented reason: it holds
+    the playbook fixed while varying the exit, and the playbook is derived by
+    walk-forward validation *on the trades*, which the exit changes. See the
+    warning at the top of `scripts/sweep_account_exits.py`.
+
+    Two earlier findings also survive. A profit target scored -0.005R because
+    only 11% of trades ever reached 2.5R. Locking in gains after a big move
+    lost money too: the round-trip losses are the price of the +5R winners.
+    Both remain off.
 
     Exits are deliberately NOT tuned per strategy: a per-strategy exit fitted on
     the same data used to measure the strategy is how a backtest launders

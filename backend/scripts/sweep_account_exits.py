@@ -14,6 +14,19 @@ Same protocol as every other choice here: candidates declared in advance,
 scored on the pre-split window alone, and the held-out window run once against
 whichever the pre-split data picked. The selection statistic is the account's
 Sharpe, so a rule cannot win simply by holding more risk for longer.
+
+**READ THIS BEFORE TRUSTING THE OUTPUT.** This script holds the playbook fixed
+while varying the exit, and that is not sound. The playbook is produced by
+walk-forward validation *on the trades*, and changing the exit rule changes
+every trade — so a candidate is scored against a set of cells that were
+validated under a different rule. The error is not small: `trail_only_wide`
+scored +15.09% here and returned **5.20%** on a full rebuild that re-derived
+the playbook under its own trades, because the cells that validate with a
+90-session ceiling are not the cells that validate without one.
+
+Treat the ranking as a screen for candidates worth rebuilding properly, never
+as a result. Any rule that wins here must be confirmed by a full
+`run_bot_backtest.py` before it goes anywhere near `ExitModel`'s defaults.
 """
 
 from __future__ import annotations
@@ -50,6 +63,22 @@ CANDIDATES: dict[str, ExitModel] = {
     # A tighter trail shortens holds indirectly rather than by decree; included
     # so the comparison is not purely about the ceiling.
     "hold_90_tight_trail": ExitModel(target_r=None, max_hold_sessions=90, trail_after_r=1.0, trail_atr_mult=2.5),
+
+    # --- Longer than the incumbent ---------------------------------------
+    # The first sweep only ever looked *down* from 90 sessions, which left the
+    # obvious question unasked. The account's measured weakness is strong
+    # rising markets — it made 16.6% in a year the index made 26.0% — and the
+    # mechanism is visible: a fund rides a trend indefinitely while a time stop
+    # sells out of one. If that is the cause, letting the trail alone decide
+    # when to leave should close part of the gap. If the gap is instead the
+    # stops themselves, these will change nothing.
+    "hold_120": ExitModel(target_r=None, max_hold_sessions=120, trail_after_r=1.5, trail_atr_mult=4.0),
+    "hold_180": ExitModel(target_r=None, max_hold_sessions=180, trail_after_r=1.5, trail_atr_mult=4.0),
+    "hold_250": ExitModel(target_r=None, max_hold_sessions=250, trail_after_r=1.5, trail_atr_mult=4.0),
+    # No time stop worth the name: the trail is the only way out.
+    "trail_only": ExitModel(target_r=None, max_hold_sessions=500, trail_after_r=1.5, trail_atr_mult=4.0),
+    # Trail-only with a wider leash, so a trend has room to breathe.
+    "trail_only_wide": ExitModel(target_r=None, max_hold_sessions=500, trail_after_r=2.0, trail_atr_mult=6.0),
 }
 
 
