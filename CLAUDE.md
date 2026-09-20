@@ -341,4 +341,19 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     That completes the search across every level of granularity this system supports: strategy x regime cells mean-revert (gotcha 59), book configuration is anti-predictive (gotcha 53), exposure driven by trade outcomes loses to the a-priori regime rule (gotcha 65), and individual symbols carry nothing at all. **The learning machinery is correct and there is nothing in this data for it to learn.** A stock that traded well under these setups is no more likely than any other to trade well next period.
 
+70. **THE ADAPTIVE EXIT LOSES — AND SO DOES PERFECT FORESIGHT, WHICH IS WHAT CLOSES THE QUESTION.** Gotchas 53/59/65/69 all test the same thing in different places: does past performance of X predict future performance of X — and all four ask it about *stock selection*, the axis already known to be empty. `scripts/adaptive_exit_walkforward.py` asks it about the **exit** instead, which is the better-motivated question on both counts: the exit is the highest-leverage parameter in the system (choosing it moved the result from -0.005R to +0.28R, larger than any selection effect here), and the axis it keys off — market state — is the one axis proven to carry information, since regime timing beats the professional benchmark.
+
+    Each year boundary, the chooser sees only trades that had already **closed**, ranks the five exit rules declared in `sweep_exit_models.py` by realised avg R, and the pick is scored unchanged on the year ahead. Full universe, 106,110 trades, 19 years:
+
+        adaptive (global)      avgR +0.1638   CI [+0.1489, +0.1785]
+        adaptive (per regime)  avgR +0.1416   CI [+0.1275, +0.1559]
+        frozen incumbent       avgR +0.2084   CI [+0.1919, +0.2241]
+        hindsight best/year    avgR +0.1741   CI [+0.1613, +0.1867]
+
+    Adaptive loses by **-0.045R** globally and **-0.067R** per regime, and beat the frozen rule in **2 years of 19**. **The fourth line is the one that matters:** a chooser granted perfect foresight — told in advance which rule would win each coming year — *still finishes below the single rule left alone*. That is an upper bound on what any exit-learning scheme can achieve here, and it is negative. No smarter chooser, no better features, no longer training window recovers a prize that does not exist.
+
+    The mechanism is visible in the yearly table: the years another rule "wins" are losing years, where it wins by losing less while taking far more trades at a much worse payoff (swing 1.39, quick 1.43, against the incumbent's **2.86**). The money is in 2020, 2021 and 2023 and the frozen rule already takes those in full; switching away to cushion a bad year forfeits the good one. This is also why gotcha 27's "keep exits global" holds along the *time* axis and not just the per-strategy one.
+
+    `exit_learning.py` keeps the chooser rather than deleting it, for gotcha 31's reason — it is the component that would detect the opposite. `test_bot_exit_learning.py` pins the information set from four directions (a trade closing *on* the boundary is still the future; open trades are excluded rather than scored at zero) and asserts the recorded verdict, including `test_perfect_foresight_also_lost` — if that test ever fails there is a prize after all and a cleverer chooser becomes worth building.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
