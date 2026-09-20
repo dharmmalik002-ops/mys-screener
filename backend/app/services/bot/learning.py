@@ -277,10 +277,13 @@ def build_learning(
         index_series = None
         last_session = None
         if data_dir:
-            from .context_series import BENCHMARK_KEY
+            from .benchmark import INDEX_KEY
             from .history import read_bars
 
-            benchmark = read_bars(data_dir, BENCHMARK_KEY)
+            # The same broad index the benchmark compares against, so the
+            # period table and the scorecard cannot disagree about what "the
+            # market" did.
+            benchmark = read_bars(data_dir, INDEX_KEY)
             if benchmark is not None:
                 index_series = {d: float(c) for d, c in zip(benchmark.dates, benchmark.close)}
                 last_session = benchmark.last_date

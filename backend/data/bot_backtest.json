@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-20T04:35:20.958477+00:00",
+  "generated_at": "2026-09-20T04:40:40.245245+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -16039,7 +16039,7 @@
       "min_cagr": 7.85,
       "max_cagr": 14.85,
       "median_drawdown": -14.69,
-      "share_beating_index": 100.0,
+      "share_beating_index": 73.3,
       "share_beating_fund_median": 50.0,
       "selection_rank_correlation": -0.7,
       "by_period": [
@@ -16048,35 +16048,35 @@
           "bot_median_cagr": 39.81,
           "bot_p25_cagr": 35.35,
           "bot_p75_cagr": 41.55,
-          "index_cagr": 10.62,
-          "excess_vs_index": 29.2
+          "index_cagr": 14.59,
+          "excess_vs_index": 25.22
         },
         {
           "period": "2023-09 to 2024-09",
           "bot_median_cagr": 16.6,
           "bot_p25_cagr": 13.73,
           "bot_p75_cagr": 21.66,
-          "index_cagr": 25.99,
-          "excess_vs_index": -9.39
+          "index_cagr": 35.6,
+          "excess_vs_index": -19.0
         },
         {
           "period": "2024-09 to 2025-09",
           "bot_median_cagr": -4.85,
           "bot_p25_cagr": -6.37,
           "bot_p75_cagr": -3.82,
-          "index_cagr": 0.18,
-          "excess_vs_index": -5.03
+          "index_cagr": -1.59,
+          "excess_vs_index": -3.26
         },
         {
           "period": "2025-09 to 2026-09",
           "bot_median_cagr": 4.0,
           "bot_p25_cagr": 3.25,
           "bot_p75_cagr": 7.15,
-          "index_cagr": -8.18,
-          "excess_vs_index": 12.18
+          "index_cagr": -2.89,
+          "excess_vs_index": 6.89
         }
       ],
-      "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -9 to +29 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 11.39% a year, 9.8% to 13.1% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.70 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
+      "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -19 to +25 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 11.39% a year, 9.8% to 13.1% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.70 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
     },
     "benchmark": {
       "comparisons": [
@@ -16086,7 +16086,7 @@
           "bot_cagr_pct": 11.37,
           "bot_max_drawdown_pct": -12.55,
           "bot_sharpe": 1.08,
-          "index_cagr_pct": 6.06,
+          "index_cagr_pct": 9.82,
           "funds_counted": 691,
           "fund_median_cagr": 11.36,
           "fund_p75_cagr": 14.93,
@@ -16107,9 +16107,9 @@
           "funds_dominating_pct": 1.3,
           "scorecard": [
             {
-              "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+              "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
               "bot": "11.37%",
-              "reference": "6.06%",
+              "reference": "9.82%",
               "verdict": true
             },
             {
@@ -16143,7 +16143,7 @@
               "verdict": true
             }
           ],
-          "verdict": "The account's 11.4% CAGR beats 50% of 691 professionally managed funds, and beats Nifty buy-and-hold (6.1%), with a shallower worst drawdown (-13% against a fund median of -28%).",
+          "verdict": "The account's 11.4% CAGR beats 50% of 691 professionally managed funds, and beats Nifty 500 buy-and-hold (9.8%), with a shallower worst drawdown (-13% against a fund median of -28%).",
           "uncertainty": {
             "trades": 1453,
             "eligible_pool": 28392,
@@ -16152,7 +16152,7 @@
             "ci_high_cagr": 20.14,
             "median_resample_cagr": 14.42,
             "share_positive": 100.0,
-            "share_beating_index": 99.7,
+            "share_beating_index": 93.2,
             "share_beating_fund_median": 84.2,
             "note": "1,453 trades drawn from 28,392 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 9.2% and 20.1% a year, with a median of 14.4% \u2014 against a realised 11.4%. The width is what 1,453 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
           }
@@ -16163,7 +16163,7 @@
           "bot_cagr_pct": 10.57,
           "bot_max_drawdown_pct": -13.71,
           "bot_sharpe": 0.94,
-          "index_cagr_pct": 6.06,
+          "index_cagr_pct": 9.82,
           "funds_counted": 691,
           "fund_median_cagr": 11.36,
           "fund_p75_cagr": 14.93,
@@ -16184,9 +16184,9 @@
           "funds_dominating_pct": 2.0,
           "scorecard": [
             {
-              "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+              "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
               "bot": "10.57%",
-              "reference": "6.06%",
+              "reference": "9.82%",
               "verdict": true
             },
             {
@@ -16220,7 +16220,7 @@
               "verdict": true
             }
           ],
-          "verdict": "The account's 10.6% CAGR is below 56% of 691 professionally managed funds, and beats Nifty buy-and-hold (6.1%), with a shallower worst drawdown (-14% against a fund median of -28%)."
+          "verdict": "The account's 10.6% CAGR is below 56% of 691 professionally managed funds, and beats Nifty 500 buy-and-hold (9.8%), with a shallower worst drawdown (-14% against a fund median of -28%)."
         },
         {
           "run": "reactive_held_out",
@@ -16228,7 +16228,7 @@
           "bot_cagr_pct": -5.09,
           "bot_max_drawdown_pct": -33.18,
           "bot_sharpe": -0.4,
-          "index_cagr_pct": 6.06,
+          "index_cagr_pct": 9.82,
           "funds_counted": 691,
           "fund_median_cagr": 11.36,
           "fund_p75_cagr": 14.93,
@@ -16249,9 +16249,9 @@
           "funds_dominating_pct": 60.9,
           "scorecard": [
             {
-              "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+              "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
               "bot": "-5.09%",
-              "reference": "6.06%",
+              "reference": "9.82%",
               "verdict": false
             },
             {
@@ -16285,7 +16285,7 @@
               "verdict": false
             }
           ],
-          "verdict": "The account's -5.1% CAGR is below 100% of 691 professionally managed funds, but loses to Nifty buy-and-hold (6.1%), which needed no work at all, but with a deeper worst drawdown (-33% against a fund median of -28%)."
+          "verdict": "The account's -5.1% CAGR is below 100% of 691 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-33% against a fund median of -28%)."
         },
         {
           "run": "no_gating",
@@ -16293,7 +16293,7 @@
           "bot_cagr_pct": 1.15,
           "bot_max_drawdown_pct": -39.33,
           "bot_sharpe": 0.16,
-          "index_cagr_pct": 9.03,
+          "index_cagr_pct": 9.83,
           "funds_counted": 328,
           "fund_median_cagr": 12.86,
           "fund_p75_cagr": 15.1,
@@ -16314,9 +16314,9 @@
           "funds_dominating_pct": 75.3,
           "scorecard": [
             {
-              "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+              "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
               "bot": "1.15%",
-              "reference": "9.03%",
+              "reference": "9.83%",
               "verdict": false
             },
             {
@@ -16350,7 +16350,7 @@
               "verdict": false
             }
           ],
-          "verdict": "The account's 1.1% CAGR is below 100% of 328 professionally managed funds, but loses to Nifty buy-and-hold (9.0%), which needed no work at all, but with a deeper worst drawdown (-39% against a fund median of -36%)."
+          "verdict": "The account's 1.1% CAGR is below 100% of 328 professionally managed funds, but loses to Nifty 500 buy-and-hold (9.8%), which needed no work at all, but with a deeper worst drawdown (-39% against a fund median of -36%)."
         }
       ],
       "headline": {
@@ -16359,7 +16359,7 @@
         "bot_cagr_pct": 11.37,
         "bot_max_drawdown_pct": -12.55,
         "bot_sharpe": 1.08,
-        "index_cagr_pct": 6.06,
+        "index_cagr_pct": 9.82,
         "funds_counted": 691,
         "fund_median_cagr": 11.36,
         "fund_p75_cagr": 14.93,
@@ -16380,9 +16380,9 @@
         "funds_dominating_pct": 1.3,
         "scorecard": [
           {
-            "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+            "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
             "bot": "11.37%",
-            "reference": "6.06%",
+            "reference": "9.82%",
             "verdict": true
           },
           {
@@ -16416,7 +16416,7 @@
             "verdict": true
           }
         ],
-        "verdict": "The account's 11.4% CAGR beats 50% of 691 professionally managed funds, and beats Nifty buy-and-hold (6.1%), with a shallower worst drawdown (-13% against a fund median of -28%).",
+        "verdict": "The account's 11.4% CAGR beats 50% of 691 professionally managed funds, and beats Nifty 500 buy-and-hold (9.8%), with a shallower worst drawdown (-13% against a fund median of -28%).",
         "uncertainty": {
           "trades": 1453,
           "eligible_pool": 28392,
@@ -16425,7 +16425,7 @@
           "ci_high_cagr": 20.14,
           "median_resample_cagr": 14.42,
           "share_positive": 100.0,
-          "share_beating_index": 99.7,
+          "share_beating_index": 93.2,
           "share_beating_fund_median": 84.2,
           "note": "1,453 trades drawn from 28,392 eligible signals. Resampling that pool to the same count puts 90% of outcomes between 9.2% and 20.1% a year, with a median of 14.4% \u2014 against a realised 11.4%. The width is what 1,453 draws from a right-skewed distribution buys you, and any gap below the median is the cost of only being able to enter when capacity frees up, which happens fastest after a loss."
         }
@@ -16435,7 +16435,7 @@
         "wins": 5,
         "losses": 0,
         "won_on": [
-          "Beats the free alternative (Nifty buy-and-hold)",
+          "Beats the free alternative (Nifty 500 buy-and-hold)",
           "Worst drawdown vs the median fund",
           "Return per unit of drawdown",
           "Sharpe ratio (how professionals are measured)",

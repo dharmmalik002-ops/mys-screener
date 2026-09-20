@@ -11,8 +11,21 @@ So the comparison is against three things a person could actually have done
 with the money, and the bot is ranked inside the real distribution rather than
 against a straw man:
 
-  1. **Nifty buy-and-hold.** The free alternative. Beating professionals while
-     losing to an index fund is not a victory.
+  1. **Broad-market buy-and-hold.** The free alternative, and it must be the
+     *right* free alternative. This was originally the Nifty 50, which is the
+     wrong comparator for a book that trades 1,575 names across every size
+     band: over 2023-09 to 2026-09 the Nifty 50 returned 5.47% a year while the
+     Nifty 500 returned 9.41% and the Midcap index 15.57%. Measuring a
+     broad-universe strategy against a large-cap index credits it with a size
+     premium it did not earn. `INDEX_KEY` is the Nifty 500.
+
+     The same correction applies to the funds. The median fund returned 11.36%
+     against the Nifty 50's 5.47%, which reads as five points of annual alpha
+     and is nothing of the kind — the universe is mid-cap tilted, and 11.36%
+     sits between the Nifty 500 and the Midcap index. Most of what looks like
+     manager skill here is asset-class exposure. That does not make the
+     comparison invalid, but it does mean "beats the median fund" and "beats
+     the market" are different claims and neither substitutes for the other.
   2. **The fund distribution.** Every fund with a return over the same window,
      as a percentile. "Top-quartile" is a claim with a denominator.
   3. **Risk.** CAGR alone rewards leverage and ignores the drawdown that would
@@ -51,6 +64,10 @@ import numpy as np
 
 from .history import read_bars
 from .portfolio import PortfolioResult
+
+# The passive alternative a broad-universe book should be measured against.
+# Not the Nifty 50 — see the note at the top of this module.
+INDEX_KEY = "NIFTY500"
 
 logger = logging.getLogger(__name__)
 
@@ -186,8 +203,8 @@ def _fund_returns(
 
 
 def _index_cagr(data_dir: Path, start: date, end: date) -> float | None:
-    """Nifty buy-and-hold over the same window, in CAGR terms."""
-    bars = read_bars(data_dir, "NIFTY")
+    """Broad-market buy-and-hold over the same window, in CAGR terms."""
+    bars = read_bars(data_dir, INDEX_KEY)
     if bars is None or not len(bars):
         return None
     mask = [(start <= d <= end) for d in bars.dates]
@@ -272,7 +289,7 @@ def compare(
     # is not a single question and a single yes/no would be a slogan.
     scorecard = [
         {
-            "dimension": "Beats the free alternative (Nifty buy-and-hold)",
+            "dimension": "Beats the free alternative (Nifty 500 buy-and-hold)",
             "bot": f"{result.cagr_pct:.2f}%",
             "reference": f"{index_cagr:.2f}%" if index_cagr is not None else "—",
             "verdict": verdict_for(result.cagr_pct, index_cagr, CAGR_TIE_BAND),
@@ -320,9 +337,9 @@ def compare(
         parts.append(f"The account's {result.cagr_pct:.1f}% CAGR is below {100 - percentile:.0f}% of {len(cagrs)} professionally managed funds")
 
     if beats_index is True:
-        parts.append(f"and beats Nifty buy-and-hold ({index_cagr:.1f}%)")
+        parts.append(f"and beats Nifty 500 buy-and-hold ({index_cagr:.1f}%)")
     elif beats_index is False:
-        parts.append(f"but loses to Nifty buy-and-hold ({index_cagr:.1f}%), which needed no work at all")
+        parts.append(f"but loses to Nifty 500 buy-and-hold ({index_cagr:.1f}%), which needed no work at all")
 
     if dd_better is True:
         parts.append(f"with a shallower worst drawdown ({result.max_drawdown_pct:.0f}% against a fund median of {fund_median_dd:.0f}%)")
