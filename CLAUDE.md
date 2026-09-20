@@ -383,4 +383,19 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **What the learning is worth inside the finished product**, measured by running the identical blend with the breaker off: held-out `CAGR +0.22pp, maxDD +2.03pp, Sharpe +0.04`; exact 3y `CAGR -0.11pp, maxDD +1.29pp, Sharpe -0.01`. Drawdown in both windows and nothing else — the same answer the breaker gave on its own bench (gotcha 71), which is the entire point of running the control. A learned component that grows a return contribution on its way into the product has not been measured, it has been marketed. `test_bot_combined.py` pins the blend arithmetic (no rebalancing bonus from the alignment; a sleeve that stops printing is held flat rather than dropped, since its idle stretches are exactly what the other sleeve covers) and asserts both `earns_less_than_median_fund()` and the drawdown-only attribution.
 
+73. **THE RETURN CEILING IS STRUCTURAL — MORE RISK BUYS LESS RETURN, NOT MORE.** The standing objection to gotcha 72 is that "earns less than the median fund" is an unfair reading, because the blend runs at **-7.28% drawdown against the funds' -27.53%** — a quarter of their risk. That objection deserves a measurement, not an argument, so `scripts/risk_frontier.py` turns the risk up and reports what the return does. **`max_deployed_pct` stays 100 throughout: no margin, ever**, because this is cash delivery and a frontier built on borrowed money measures a different instrument.
+
+    It gets worse on both axes:
+
+        risk/trade   book CAGR   book maxDD   deployed
+           0.10         +5.26%      -9.18%      96.7%   <- shipped
+           0.30         +5.04%     -12.17%      95.0%
+           0.60         +1.61%     -14.62%      93.6%
+
+    The reason is structural. The account is **already ~97% deployed**, so a bigger risk budget adds no capital — it concentrates the same capital into fewer, larger positions, which destroys exactly what the 60-position book exists for (R outcomes are violently right-skewed, ~12% of trades carry the whole result, and a concentrated book samples that tail badly — see `PortfolioConfig`'s own docstring). **The bot's low drawdown is not idle capital waiting to be put to work.** Its advantage lives on the risk axis and does not convert into return at any setting.
+
+    **The 0.15 row reads better than the shipped 0.10 on both axes and is deliberately not adopted.** Book structure was chosen on pre-split data by Sharpe; re-picking it on the held-out window is the error this project has caught eight times. The grid's non-monotonic shape (better at 0.15-0.20, worse at 0.30-0.60, better again at 0.80) is what noise looks like, and promoting one bump in it to a setting is how a backtest becomes a story. `test_more_risk_does_not_buy_more_return` pins the limit; if it ever fails the frontier has changed shape and the ceiling is no longer structural.
+
+    A caveat that strengthens rather than weakens this: `costs.py` charges turnover-scaled slippage but cannot charge market impact, so the higher-risk rows are if anything optimistic.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

@@ -107,6 +107,23 @@ class RecordedVerdictTests(unittest.TestCase):
         self.assertGreater(cb.MEASURED_BLEND_DRAWDOWN, cb.MEASURED_FUND_MEDIAN_DRAWDOWN)
         self.assertGreater(cb.MEASURED_BLEND_SHARPE, cb.MEASURED_FUND_MEDIAN_SHARPE)
 
+    def test_more_risk_does_not_buy_more_return(self):
+        """The answer to "you are only winning because you take less risk".
+
+        Turning the risk up is the obvious remedy and it makes things worse on
+        both axes, because the book is already ~97% deployed — a bigger risk
+        budget concentrates the same capital instead of adding any. If this
+        ever fails, the frontier has changed shape and the return ceiling is
+        no longer structural.
+        """
+        self.assertFalse(cb.return_can_be_bought_with_risk())
+        self.assertGreater(cb.MEASURED_DEPLOYED_PCT_AT_SHIPPED_RISK, 90.0)
+        self.assertLess(
+            cb.MEASURED_BOOK_DRAWDOWN_AT_RISK_060,
+            cb.MEASURED_BOOK_DRAWDOWN_AT_RISK_010,
+            "more risk should deepen the drawdown",
+        )
+
     def test_learning_contributes_drawdown_and_not_return(self):
         """Its contribution must not grow on the way into the product."""
         self.assertGreater(cb.MEASURED_LEARNING_DRAWDOWN_GAIN_HELD_OUT, 1.0)

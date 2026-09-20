@@ -69,6 +69,25 @@ MEASURED_LEARNING_CAGR_GAIN_HELD_OUT = 0.22
 MEASURED_LEARNING_CAGR_GAIN_3Y = -0.11
 
 
+# --- The risk-frontier limit, measured by scripts/risk_frontier.py ----------
+# The obvious objection to "earns less than the median fund" is that the blend
+# runs at a quarter of the funds' risk. Turning the risk up does not fix it:
+# the account is already ~97% deployed, so a larger risk budget concentrates
+# the same capital rather than adding any, and the right-skewed R distribution
+# is sampled worse. Return falls, drawdown rises. No margin is ever used.
+MEASURED_DEPLOYED_PCT_AT_SHIPPED_RISK = 96.7
+MEASURED_BOOK_CAGR_AT_RISK_010 = 5.26
+MEASURED_BOOK_CAGR_AT_RISK_030 = 5.04
+MEASURED_BOOK_CAGR_AT_RISK_060 = 1.61
+MEASURED_BOOK_DRAWDOWN_AT_RISK_010 = -9.18
+MEASURED_BOOK_DRAWDOWN_AT_RISK_060 = -14.62
+
+
+def return_can_be_bought_with_risk() -> bool:
+    """False. The advantage is on the risk axis and does not convert."""
+    return MEASURED_BOOK_CAGR_AT_RISK_060 > MEASURED_BOOK_CAGR_AT_RISK_010
+
+
 def curve_to_series(curve: Sequence[dict]) -> tuple[list[date], np.ndarray]:
     days = [date.fromisoformat(str(p["day"])) for p in curve]
     return days, np.asarray([float(p["equity"]) for p in curve], dtype=np.float64)
