@@ -288,4 +288,12 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     The caveat travels with it: the drawdown advantage comes from being out of the market ~26% of the time including stretches when it is rising, which is the part a person finds hardest to do. And it is index timing — the stock-selection side of this system has no edge at all.
 
+64. **THE LEARNED STOCK SELECTION SUBTRACTS FROM THE TIMING RESULT — DO NOT COMBINE THEM.** The obvious synthesis is to run both: deploy into validated stock signals when they fire, hold the index with the remainder while the regime is healthy, cash otherwise. It is worse than timing alone, measured on the held-out window with identical frictions:
+
+        index only when regime healthy   +13.52%   (-9.8% drawdown)
+        stock signals first, index fills  +8.37%  (-15.9% drawdown)
+        stock signals only, cash else     +6.21%  (-14.6% drawdown)
+
+    Every rupee the stock book takes from the index leg earns less and carries more risk. This is the cleanest available statement of what this project found: **the regime classifier carries real information about *when* to be exposed; the trade-level learning machinery — the ledger, the reviews, the attribution, the calibration loop — is mechanically sound and produces negative value.** Both facts are true and neither cancels the other. The Bot tab reports both, in that order.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
