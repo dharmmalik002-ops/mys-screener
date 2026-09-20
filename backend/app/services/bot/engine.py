@@ -96,6 +96,28 @@ class ExitModel:
     lock_trigger_r: float | None = None
     lock_floor_r: float = 0.0
 
+    # --- partial exit -----------------------------------------------------
+    # Sell `scale_out_fraction` of the position the first time the trade is
+    # `scale_out_at_r` in front, then move the stop to entry so the remainder
+    # cannot lose. This is the ordinary discipline of taking something off a
+    # winner, and its main effect is on the WIN RATE rather than expectancy:
+    # a trade that banks a third at 1.5R and is then stopped at breakeven
+    # finishes slightly positive instead of at zero, which moves it from the
+    # loss column to the win column.
+    #
+    # It is not free. The fraction sold stops compounding, so the few trades
+    # that run to 50R or 100R give up that share of their best outcome, and
+    # those trades are where the result lives. Both effects are real and the
+    # sweep in scripts/sweep_partial_exits.py measures the trade-off rather
+    # than assuming it.
+    #
+    # Breakeven here is safe in a way `breakeven_after_r` is not: that one
+    # arms at 1R on the full position, where ordinary noise reaches it and
+    # forfeits the whole trade. This arms only after cash is already booked.
+    scale_out_at_r: float | None = None
+    scale_out_fraction: float = 0.0
+    breakeven_after_scale: bool = True
+
 
 @dataclass
 class Trade:
@@ -208,6 +230,13 @@ def simulate_symbol(
         reason = "open"
         mfe = 0.0
         mae = 0.0
+        scale_level = (
+            entry + exits.scale_out_at_r * risk
+            if exits.scale_out_at_r is not None and exits.scale_out_fraction > 0
+            else None
+        )
+        scaled_qty = 0.0
+        scaled_proceeds = 0.0
 
         last_idx = min(entry_idx + exits.max_hold_sessions - 1, n - 1)
         for j in range(entry_idx, last_idx + 1):
@@ -228,6 +257,16 @@ def simulate_symbol(
             if bar_low <= current_stop:
                 exit_idx, exit_price, reason = j, current_stop, "stop"
                 break
+            # Partial exit. Checked after the stop so the same-bar ambiguity
+            # still resolves against the trade, and before the target because
+            # scaling out is what the target would otherwise pre-empt.
+            if scale_level is not None and scaled_qty == 0.0 and bar_high >= scale_level:
+                fill = max(scale_level, bar_open) if bar_open > scale_level else scale_level
+                scaled_qty = quantity * exits.scale_out_fraction
+                scaled_proceeds = costs.fill_price(float(fill), "sell", turnover) * scaled_qty
+                if exits.breakeven_after_scale:
+                    current_stop = max(current_stop, entry)
+
             if target is not None and bar_high >= target:
                 # A gap above the target fills at the open, in our favour; that
                 # is symmetric with the gap-down case and equally real.
@@ -261,10 +300,17 @@ def simulate_symbol(
             continue
 
         realised = costs.fill_price(float(exit_price), "sell", turnover)
+        remaining_qty = quantity - scaled_qty
         buy_value = entry * quantity
-        sell_value = realised * quantity
+        # Both legs are charged. A scale-out is a second real sale with its own
+        # STT, stamp duty and brokerage, so a partial exit costs more in fees
+        # than holding one position to the end — that is part of the trade-off
+        # and must not be netted away.
+        sell_value = realised * remaining_qty + scaled_proceeds
         charges = costs.charges(buy_value, sell_value)
         net_pnl = sell_value - buy_value - charges
+        if scaled_qty > 0 and reason in ("stop", "gap_stop"):
+            reason = "stop_after_partial"
 
         trades.append(
             Trade(

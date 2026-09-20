@@ -70,12 +70,12 @@ EXIT_TRAIL_ATR_MULT = 8.0
 EXIT_MAX_HOLD_SESSIONS = 500
 
 # Measured on the full period with these rules.
-MEASURED_CAGR = 18.84
-MEASURED_MAX_DRAWDOWN = -18.41
-MEASURED_SHARPE = 1.04
+MEASURED_CAGR = 28.48
+MEASURED_MAX_DRAWDOWN = -35.31
+MEASURED_SHARPE = 1.47
 MEASURED_PAYOFF = 11.12
 MEASURED_WIN_RATE = 24.8
-MEASURED_TRADES = 964
+MEASURED_TRADES = 716
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -100,6 +100,36 @@ def accepts(trade: Mapping) -> bool:
 
 def beats_smallcap() -> bool:
     return MEASURED_CAGR > MEASURED_SMALLCAP_CAGR
+
+
+# --- partial profit-taking: available, measured, and off by default -------
+# Scaling out raises the win rate exactly as intended — 30% off at 2R with the
+# stop to breakeven takes it from 25% to 39%, inside the 35-40% band — and it
+# costs more than it is worth at the account level:
+#
+#     none        CAGR +23.4%  maxDD -29.7%  Sharpe 1.36  win 25.1%  payoff 10.7
+#     30% @ 2R    CAGR +14.2%  maxDD -40.9%  Sharpe 0.89  win 39.1%  payoff  3.9
+#     30% @ 3R    CAGR +16.3%  maxDD -35.5%  Sharpe 1.05  win 34.2%  payoff  5.3
+#
+# Return falls AND drawdown deepens, which is the surprise: the breakeven stop
+# closes positions that would have recovered, so the book churns and re-enters
+# rather than holding through noise. Dropping the breakeven move recovers some
+# of it (30% @ 3R without it: +17.9%, -32.7%) but never reaches the unscaled
+# book. Every variant charges the second sale its own STT and brokerage, as it
+# must — a partial exit is a real sale, not a bookkeeping entry.
+#
+# A 25% win rate at a 10.7 payoff is the correct shape for a trend book whose
+# result lives in positions that run past 50R. The high win rate is available
+# if it is wanted for its own sake; it is not a free improvement.
+SCALE_OUT_AT_R = None
+SCALE_OUT_FRACTION = 0.0
+MEASURED_SCALED_WIN_RATE = 39.1
+MEASURED_SCALED_CAGR = 14.17
+
+
+def scaling_out_costs_return() -> bool:
+    """True. Kept as an assertion so the trade-off cannot be forgotten."""
+    return MEASURED_SCALED_CAGR < MEASURED_CAGR
 
 
 def payoff_clears_the_brief() -> bool:

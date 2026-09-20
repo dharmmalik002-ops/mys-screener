@@ -38,6 +38,7 @@ import numpy as np
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from app.services.bot import diagnose as dg  # noqa: E402
 from app.services.bot import mtm_account as mtm  # noqa: E402
 from app.services.bot import rules as R  # noqa: E402
 from app.services.bot.backtest import BacktestConfig, build_context, run_strategies  # noqa: E402
@@ -48,9 +49,14 @@ from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 # Chosen on return-per-drawdown. Small positions, many of them: the book sees
 # few enough signals that a 10% cap made it concentrated, and concentration was
 # most of the drawdown.
+# Chosen on return-per-drawdown. More slots buy more return and cost far more
+# drawdown than they are worth: 150 slots at 1.5% returns +34.0% at -60.4%
+# (Sharpe 1.16) against this book's +29.7% at -35.3% (Sharpe 1.47). The
+# diagnosis said the lagging years were under-deployed, and the honest fix was
+# a bigger risk budget per trade rather than a wider, thinner book.
 BOOK = PortfolioConfig(
-    risk_per_trade_pct=0.35, watch_risk_pct=0.35, max_concurrent=60,
-    max_portfolio_risk_pct=15.0, max_deployed_pct=100.0, max_position_pct=4.0,
+    risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=60,
+    max_portfolio_risk_pct=30.0, max_deployed_pct=100.0, max_position_pct=4.0,
 )
 
 
@@ -113,13 +119,45 @@ def main() -> int:
     total = sum(caps.values()) or 1
     print("size mix: " + "  ".join(f"{k} {100*v/total:.1f}%" for k, v in caps.items()))
 
-    print("\nyear   return   trades")
-    for y in sorted(result.yearly):
-        print(f"{y}  {result.yearly[y]:+8.2f}%   {counts.get(y, 0):4}")
+    # Benchmark: the Smallcap 250, because the book is ~80% small cap.
+    index_yearly: dict[int, float] = {}
+    try:
+        import yfinance as yf
+        from datetime import date as _d
+        h = yf.Ticker("NIFTYSMLCAP250.NS").history(period="max")
+        px = {x.date(): float(c) for x, c in zip(h.index, h["Close"])}
+        ds = sorted(px)
+        for y in range(2009, 2027):
+            inside = [x for x in ds if x.year == y]
+            if len(inside) < 150:
+                continue
+            prior = [x for x in ds if x < _d(y, 1, 1)]
+            start = px[prior[-1]] if prior else px[inside[0]]
+            index_yearly[y] = (px[inside[-1]] / start - 1.0) * 100.0
+    except Exception as exc:                       # offline: report without it
+        print(f"(no index comparison: {exc})")
+
+    rows_d = dg.diagnose(rows, kept, result.yearly, index_yearly)
+    summary = dg.summarise(rows_d)
+
+    print("\nyear   return    index    alpha  trades  verdict")
+    for d in rows_d:
+        if d.year not in result.yearly:
+            continue
+        print(f"{d.year}  {d.bot_return:+7.1f}%  "
+              f"{('%+.1f%%' % d.index_return) if d.index_return is not None else '   n/a':>7}  "
+              f"{('%+.1fpp' % d.alpha) if d.alpha is not None else '  n/a':>8}  "
+              f"{d.accepted:5}  {d.verdict}")
+
+    print(f"\nbehind the index in {summary['years_behind']} of {summary['years_total']} years")
+    print(f"verdicts: {summary['verdict_counts']}")
+    for w in summary["worst"]:
+        print(f"  worst {w['year']}: {w['note']}")
 
     if args.out:
         Path(args.out).write_text(json.dumps({
             "yearly": result.yearly, "trades_per_year": counts, "size_mix": caps,
+            "diagnosis": [d.to_dict() for d in rows_d], "summary": summary,
             "cagr": result.cagr_pct, "max_drawdown": result.max_drawdown_pct,
             "sharpe": result.sharpe, "win_rate": result.win_rate,
             "payoff": result.payoff, "trades": result.trades_taken,
