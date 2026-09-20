@@ -132,7 +132,8 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
           <table className="bot-table bot-table-compact">
             <thead>
               <tr>
-                <th>Year</th><th className="num">Playbook cells</th><th className="num">Trades</th>
+                <th>Year</th><th className="num">Cells</th><th className="num">Signals</th>
+                <th className="num">Signal edge</th>
                 <th className="num">Bot</th><th className="num">Index</th><th className="num">Excess</th>
               </tr>
             </thead>
@@ -141,7 +142,12 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
                 <tr key={row.year}>
                   <td className="bot-mono">{row.year}</td>
                   <td className="num">{row.cells}</td>
-                  <td className="num">{row.trades.toLocaleString("en-IN")}</td>
+                  <td className="num">{row.signals.toLocaleString("en-IN")}</td>
+                  <td className={`num ${(row.signal_avg_r ?? 0) >= 0 ? "bot-expected" : "bot-negative"}`}>
+                    {row.signal_avg_r === null
+                      ? "—"
+                      : `${row.signal_avg_r >= 0 ? "+" : ""}${row.signal_avg_r.toFixed(2)}R`}
+                  </td>
                   <td className={`num ${row.bot_return_pct >= 0 ? "bot-expected" : "bot-negative"}`}>
                     {formatPct(row.bot_return_pct)}
                   </td>
@@ -160,9 +166,16 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
               {formatPct(walkforward.bot_cagr)} a year against the market's{" "}
               {walkforward.index_cagr === null ? "—" : formatPct(walkforward.index_cagr)}, and
               beats the index in {walkforward.years_beating_index} of{" "}
-              {walkforward.years_evaluated} years. The playbook's own signals averaged +1.20R in
-              2023 and −0.26R in 2025 — the selection itself stops working, not just the
-              execution. Read everything below with that in front of it.
+              {walkforward.years_evaluated} years. The <strong>signal edge</strong> column is the
+              clinching one: it ignores slots, sizing and capital entirely, so it cannot be blamed
+              on how the book is run — and it is negative in{" "}
+              {walkforward.years_evaluated - walkforward.positive_signal_years} of{" "}
+              {walkforward.years_evaluated} years, averaging{" "}
+              {walkforward.mean_signal_edge === null
+                ? "—"
+                : `${walkforward.mean_signal_edge >= 0 ? "+" : ""}${walkforward.mean_signal_edge.toFixed(2)}R`}
+              . The cells the playbook selects go on to lose money. Read everything below with
+              that in front of it.
             </span>
           </p>
         </section>

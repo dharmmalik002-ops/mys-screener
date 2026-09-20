@@ -122,6 +122,19 @@ def main() -> int:
         )
         if run is None:
             continue
+
+        # Every trade the playbook allowed that year, independent of slots,
+        # sizing and capital. This is what separates "the selection was wrong"
+        # from "the book could not deploy" — and it is the former: deployment
+        # runs at 100% from 2022 on, and the signal edge is negative anyway.
+        eligible = [
+            r for r in rows
+            if start <= date.fromisoformat(r["entry_day"]) <= end
+            and (r["strategy"], r["regime"]) in cells
+        ]
+        signal_r = (
+            float(np.mean([r["r_multiple"] for r in eligible])) if eligible else None
+        )
         benchmark = index_return(start, end)
         # Short windows are reported as total return, not annualised.
         bot_return = run.total_return_pct
@@ -130,6 +143,8 @@ def main() -> int:
                 "year": year,
                 "cells": len(cells),
                 "trades": run.trades_taken,
+                "signals": len(eligible),
+                "signal_avg_r": round(signal_r, 3) if signal_r is not None else None,
                 "bot_return_pct": round(bot_return, 2),
                 "index_return_pct": round(benchmark, 2) if benchmark is not None else None,
                 "excess_pct": round(bot_return - benchmark, 2) if benchmark is not None else None,
@@ -154,12 +169,13 @@ def main() -> int:
     idx_cagr = (np.prod(1 + idx / 100.0) ** (1 / len(idx)) - 1) * 100 if len(idx) else None
 
     print("\n=== ROLLING WALK-FORWARD: playbook rebuilt each year from prior data only ===")
-    print(f"{'year':>6s} {'cells':>6s} {'trades':>7s} {'bot':>9s} {'index':>9s} {'excess':>9s} {'maxDD':>8s}")
+    print(f"{'year':>6s} {'cells':>6s} {'signals':>8s} {'sig avgR':>9s} {'bot':>9s} {'index':>9s} {'excess':>9s}")
     for r in results:
         idx_s = f"{r['index_return_pct']:+.2f}%" if r["index_return_pct"] is not None else "n/a"
         ex_s = f"{r['excess_pct']:+.2f}" if r["excess_pct"] is not None else "n/a"
-        print(f"{r['year']:6d} {r['cells']:6d} {r['trades']:7,d} {r['bot_return_pct']:+8.2f}% "
-              f"{idx_s:>9s} {ex_s:>9s} {r['max_drawdown_pct']:7.1f}%")
+        sig_s = f"{r['signal_avg_r']:+.3f}" if r["signal_avg_r"] is not None else "n/a"
+        print(f"{r['year']:6d} {r['cells']:6d} {r['signals']:8,d} {sig_s:>9s} "
+              f"{r['bot_return_pct']:+8.2f}% {idx_s:>9s} {ex_s:>9s}")
     print()
     print(f"  years evaluated:        {len(results)}")
     print(f"  bot compound return:    {bot_cagr:+.2f}% a year")
@@ -169,7 +185,19 @@ def main() -> int:
         print(f"  years beating the index: {int((excess > 0).sum())} of {len(excess)}")
     print(f"  median annual drawdown: {np.median([r['max_drawdown_pct'] for r in results]):.1f}%")
 
+    signal_edges = [r["signal_avg_r"] for r in results if r["signal_avg_r"] is not None]
+    if signal_edges:
+        edges = np.asarray(signal_edges, dtype=np.float64)
+        print()
+        print(f"  years with a POSITIVE signal edge: {int((edges > 0).sum())} of {len(edges)}")
+        print(f"  mean signal edge across years:     {edges.mean():+.3f}R")
+        print("  (signal edge ignores slots, sizing and capital entirely, so a")
+        print("   negative figure is the selection failing, not the book.)")
+
+    edges = [r["signal_avg_r"] for r in results if r["signal_avg_r"] is not None]
     payload = {"years": results, "bot_cagr": round(bot_cagr, 2),
+               "positive_signal_years": int(sum(1 for e in edges if e > 0)),
+               "mean_signal_edge": round(float(np.mean(edges)), 3) if edges else None,
                "index_cagr": round(idx_cagr, 2) if idx_cagr is not None else None,
                "years_beating_index": int((excess > 0).sum()) if len(excess) else 0,
                "years_evaluated": len(results)}

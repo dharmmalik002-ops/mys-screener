@@ -5633,6 +5633,11 @@ export type BotSensitivity = {
 export type BotWalkforwardYear = {
   year: number;
   cells: number;
+  signals: number;
+  // Average R of every trade the playbook allowed that year, ignoring slots,
+  // sizing and capital. A negative figure is the selection failing, not the
+  // book — which is what separates "badly run" from "no edge".
+  signal_avg_r: number | null;
   trades: number;
   bot_return_pct: number;
   index_return_pct: number | null;
@@ -5646,6 +5651,8 @@ export type BotWalkforward = {
   index_cagr: number | null;
   years_beating_index: number;
   years_evaluated: number;
+  positive_signal_years: number;
+  mean_signal_edge: number | null;
 };
 
 export function getBotWalkforward() {
