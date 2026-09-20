@@ -74,6 +74,7 @@ def simulate(
     regime_by_day: Mapping[date, str] | None = None,
     healthy_regimes: frozenset[str] | None = None,
     derisk_losers_only: bool = True,
+    risk_scale_by_day: Mapping[date, float] | None = None,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -168,7 +169,8 @@ def simulate(
             if len(open_pos) >= cfg.max_concurrent:
                 declined += 1
                 continue
-            risk_amount = equity * cfg.risk_per_trade_pct / 100.0
+            scale = 1.0 if risk_scale_by_day is None else risk_scale_by_day.get(day, 1.0)
+            risk_amount = equity * cfg.risk_per_trade_pct * scale / 100.0
             cost = risk_amount / (stop_pct / 100.0)
             cost = min(cost, equity * cfg.max_position_pct / 100.0)
             deployed = sum(p["cost"] for p in open_pos)

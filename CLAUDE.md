@@ -439,4 +439,15 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     Two tests failed on my own premises rather than on the code while building this: `diagnose` crashed formatting `alpha` for a year with no index return (now `no_benchmark` rather than a guessed verdict), and `test_drawdown_is_shallower_than_the_return` encoded the old 0.35% sizing — it now asserts the return/drawdown **ratio**, which is the quantity that actually has to stay defensible.
 
+78. **BET SIZE FOLLOWS THE MARKET — THE ONE ADAPTATION THAT MEASURED POSITIVE, AND ONLY BECAUSE IT NEVER LOOKS AT ITS OWN P&L.** `diagnose.py` said every lagging year was **under-deployed**, which a fixed risk budget guarantees: it puts the same money to work in a year the market doubles as in one that falls apart. `adaptive_sizing.py` scales risk **2.0x / 1.0x / 0.5x** from three inputs known that morning — regime, breadth above the 200 DMA, and whether the index is above its own 200 DMA (the one condition that held direction in both halves: +1.16R vs +0.23R training, +1.85R vs +1.47R out of sample).
+
+        fixed 0.50%    CAGR +29.69%  maxDD -35.31%  Sharpe 1.47
+        adaptive       CAGR +34.49%  maxDD -36.27%  Sharpe 1.54
+
+    **Behind the index in 2 years of 18, down from 5**, at **+33.1%/yr against the Nifty Smallcap 250's +16.3%** and beating it in **16 of 18**. It fixes the years pressing was supposed to fix: 2023 +37.6 -> +51.4 (past the index), 2025 -11.4 -> +0.7, 2018 +6.7 -> +38.9, 2011 +11.4 -> +57.2.
+
+    **Why this one works when gotchas 40/65/69/74 all failed:** it reads the *market*, which carries information (gotcha 63), and never the bot's own recent trade outcomes, which do not. The multipliers were declared before measurement and there are three of them rather than a continuous function of breadth — a curve would be fitted, and there is not enough independent market history to fit one honestly. **A later edit that feeds recent P&L into this turns it into the loop that failed everywhere else**; `test_bot_adaptive_sizing.py` pins the boundary, including that a missing input sizes **down** rather than up.
+
+    `memory.py` keeps the per-run diagnosis in `APP_STATE_DIR` so the recurring complaint survives between sessions — it was rediscovered by hand six times. It stores **diagnoses, not parameters**, deliberately: a store remembering "0.50% risk worked well" is a fitted parameter wearing a memory's clothes. "Every lagging year was under-deployed" is what survived and pointed somewhere useful. A year behind in one run is noise and is not called chronic; **2009 and 2012 are, and both are `starved` — 68 and 107 signals, so no exit rule or sizing change reaches them.**
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

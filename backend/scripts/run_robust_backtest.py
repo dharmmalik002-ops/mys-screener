@@ -38,12 +38,16 @@ import numpy as np
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
+from app.services.bot import adaptive_sizing as ad  # noqa: E402
 from app.services.bot import diagnose as dg  # noqa: E402
+from app.services.bot import indicators as ind  # noqa: E402
+from app.services.bot import memory as mem  # noqa: E402
 from app.services.bot import mtm_account as mtm  # noqa: E402
 from app.services.bot import rules as R  # noqa: E402
 from app.services.bot.backtest import BacktestConfig, build_context, run_strategies  # noqa: E402
 from app.services.bot.engine import ExitModel  # noqa: E402
-from app.services.bot.history import available_symbols  # noqa: E402
+from app.services.bot.benchmark import INDEX_KEY  # noqa: E402
+from app.services.bot.history import available_symbols, read_bars  # noqa: E402
 from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 
 # Chosen on return-per-drawdown. Small positions, many of them: the book sees
@@ -101,7 +105,22 @@ def main() -> int:
     kept = [r for r in rows if R.accepts(r)]
     print(f"signals {len(rows):,}  accepted {len(kept):,} ({100*len(kept)/len(rows):.1f}%)")
 
-    result = mtm.simulate(kept, data_dir, BOOK, label="rules")
+    # Bet more when the market is paying. Built only from that morning's tape:
+    # index trend, breadth, regime — never from the bot's own recent P&L.
+    bars = read_bars(data_dir, INDEX_KEY)
+    closes = np.asarray(bars.close, dtype=float)
+    sma200 = ind.sma(closes, 200)
+    index_above = {
+        d: (bool(closes[i] > sma200[i]) if not np.isnan(sma200[i]) else None)
+        for i, d in enumerate(bars.dates)
+    }
+    schedule = ad.build_schedule(
+        {d: r.regime for d, r in context.regime_by_day.items()},
+        {r.day: r.pct_above_200dma for r in context.breadth},
+        index_above,
+    )
+    result = mtm.simulate(kept, data_dir, BOOK, label="rules",
+                          risk_scale_by_day=schedule)
     if result is None:
         print("no account")
         return 1
@@ -153,6 +172,13 @@ def main() -> int:
     print(f"verdicts: {summary['verdict_counts']}")
     for w in summary["worst"]:
         print(f"  worst {w['year']}: {w['note']}")
+
+    state_dir = Path(__import__("os").environ.get("APP_STATE_DIR", str(data_dir)))
+    mem.record(state_dir, [d.to_dict() for d in rows_d], {
+        "cagr": result.cagr_pct, "max_drawdown": result.max_drawdown_pct,
+        "sharpe": result.sharpe, "win_rate": result.win_rate, "payoff": result.payoff,
+    })
+    print(f"\nmemory: {mem.recall(state_dir).note}")
 
     if args.out:
         Path(args.out).write_text(json.dumps({
