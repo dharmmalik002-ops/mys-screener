@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-20T04:14:43.294172+00:00",
+  "generated_at": "2026-09-20T04:23:33.854144+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -16042,7 +16042,41 @@
       "share_beating_index": 100.0,
       "share_beating_fund_median": 50.0,
       "selection_rank_correlation": -0.7,
-      "note": "30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 11.39% a year, 9.8% to 13.1% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.70 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
+      "by_period": [
+        {
+          "period": "2022-11 to 2023-09",
+          "bot_median_cagr": 39.81,
+          "bot_p25_cagr": 35.35,
+          "bot_p75_cagr": 41.55,
+          "index_cagr": 10.62,
+          "excess_vs_index": 29.2
+        },
+        {
+          "period": "2023-09 to 2024-09",
+          "bot_median_cagr": 16.6,
+          "bot_p25_cagr": 13.73,
+          "bot_p75_cagr": 21.66,
+          "index_cagr": 25.99,
+          "excess_vs_index": -9.39
+        },
+        {
+          "period": "2024-09 to 2025-09",
+          "bot_median_cagr": -4.85,
+          "bot_p25_cagr": -6.37,
+          "bot_p75_cagr": -3.82,
+          "index_cagr": 0.18,
+          "excess_vs_index": -5.03
+        },
+        {
+          "period": "2025-09 to 2026-09",
+          "bot_median_cagr": 4.0,
+          "bot_p25_cagr": 3.25,
+          "bot_p75_cagr": 7.15,
+          "index_cagr": -8.18,
+          "excess_vs_index": 12.18
+        }
+      ],
+      "note": "Returns are extremely lumpy: across 4 twelve-month periods the account ran from -9 to +29 points against the index. Any single window's CAGR is mostly a statement about which years it contains, so the period table below matters more than the headline. 30 defensible book structures (40-100 positions, 5-9% total risk) run over the held-out window. Median 11.39% a year, 9.8% to 13.1% across the middle half. Choosing the structure on pre-split data would have pointed the wrong way (rank correlation -0.70 against held-out return), so no single configuration's figure is quoted as the result \u2014 the distribution is."
     },
     "benchmark": {
       "comparisons": [

@@ -218,6 +218,48 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
             measurement. Every structure beat the index; {sensitivity.share_beating_fund_median.toFixed(0)}%
             beat the median fund.
           </p>
+
+          {sensitivity.by_period?.length ? (
+            <>
+              <h5 className="bot-subhead">Year by year, which matters more than the headline</h5>
+              <p className="bot-section-note">
+                The account is lumpy. A single CAGR is mostly a statement about which years the
+                window contains — the figure above covers 3.8 years, and over the three years
+                the fund comparison actually uses it is closer to 5.6%. Both are shown because
+                neither is "the" number.
+              </p>
+              <table className="bot-table bot-table-compact">
+                <thead>
+                  <tr>
+                    <th>Twelve months to</th>
+                    <th className="num">Bot (median)</th>
+                    <th className="num">Middle half</th>
+                    <th className="num">Nifty</th>
+                    <th className="num">Difference</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sensitivity.by_period.map((row) => (
+                    <tr key={row.period}>
+                      <td>{row.period}</td>
+                      <td className={`num ${row.bot_median_cagr >= 0 ? "bot-expected" : "bot-negative"}`}>
+                        {formatPct(row.bot_median_cagr)}
+                      </td>
+                      <td className="num bot-cell-thin">
+                        {formatPct(row.bot_p25_cagr, 1)} – {formatPct(row.bot_p75_cagr, 1)}
+                      </td>
+                      <td className="num">{row.index_cagr === null ? "—" : formatPct(row.index_cagr)}</td>
+                      <td className={`num ${(row.excess_vs_index ?? 0) >= 0 ? "bot-expected" : "bot-negative"}`}>
+                        {row.excess_vs_index === null
+                          ? "—"
+                          : `${row.excess_vs_index >= 0 ? "+" : ""}${row.excess_vs_index.toFixed(1)}`}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </>
+          ) : null}
         </section>
       ) : null}
 

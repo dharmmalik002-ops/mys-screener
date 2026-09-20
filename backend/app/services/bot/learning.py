@@ -274,8 +274,19 @@ def build_learning(
             probe = bm.compare(runs[0], data_dir) if runs else None
             if probe:
                 index_cagr, fund_median = probe.index_cagr_pct, probe.fund_median_cagr
+        index_series = None
+        last_session = None
+        if data_dir:
+            from .context_series import BENCHMARK_KEY
+            from .history import read_bars
+
+            benchmark = read_bars(data_dir, BENCHMARK_KEY)
+            if benchmark is not None:
+                index_series = {d: float(c) for d, c in zip(benchmark.dates, benchmark.close)}
+                last_session = benchmark.last_date
         config_sensitivity = sens.measure(
             rows, cells, expectancy_map, validation_split, index_cagr, fund_median,
+            index_series=index_series, end=last_session,
         )
 
     benchmark = (

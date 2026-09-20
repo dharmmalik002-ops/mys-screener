@@ -421,3 +421,7 @@
   font-family: var(--font-mono); font-size: var(--fs-tiny);
   background: var(--surface-strong); padding: 1px 6px; border-radius: 4px;
 }
+
+.bot-subhead {
+  margin: 20px 0 6px; font-size: var(--fs-body); color: var(--text);
+}

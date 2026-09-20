@@ -5613,5 +5613,13 @@ export type BotSensitivity = {
   share_beating_index: number;
   share_beating_fund_median: number;
   selection_rank_correlation: number | null;
+  by_period: Array<{
+    period: string;
+    bot_median_cagr: number;
+    bot_p25_cagr: number;
+    bot_p75_cagr: number;
+    index_cagr: number | null;
+    excess_vs_index: number | null;
+  }>;
   note: string;
 };
