@@ -464,4 +464,14 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     `test_bot_rules.py::RollingRiskTests` pins that a calm history keeps the cap tight, a volatile one widens it, and **only earlier signals set it** — a later, calmer period must not change a decision already made. Two of those tests first failed on my own fixtures, dated 366 days apart and so outside the very window under test.
 
+80. **A CAPPED POSITION MUST RE-DERIVE ITS RISK — THIS BUG INFLATED EVERY MTM RESULT BY ~2x.** `mtm_account.simulate` sized a position as `risk_amount / stop_pct`, clipped the *capital* at `max_position_pct`, and then booked P&L as `risk_amount * r` on the **unclipped** risk. `portfolio.py` had always recomputed `risk_amount = position_value * stop_distance_pct / 100` after clipping; the module I wrote to replace it did not.
+
+    It was invisible because it never fails — it just pays too much. And it bit on **100% of trades**: a 0.25% budget behind a typical 5% stop asks for 7.9% of equity against a 4% cap, so every single position clipped and every single one over-booked. Four reported figures were wrong before it was caught (+23.4%, +28.5%, +34.5%, +36.3%); the true number is **+18.0%**.
+
+    It surfaced from a different question — checking whether the adaptive multiplier was doing anything, since doubling risk cannot change a position that is already clipped. The answer was that it was not, and the cap check is what exposed the P&L path. **When a parameter appears to have an effect it structurally cannot have, the accounting is the first suspect.**
+
+    Corrected and re-tuned (8% cap, 0.25% risk): **CAGR +17.97%, maxDD -34.58%, Sharpe 1.10, payoff 10.36, win 25.8%, 691 trades — beating the Nifty Smallcap 250 in 13 of 18 years, +17.3%/yr against +16.3%.** The alpha is **+1.0pp/yr**, not the +18.5pp reported before the fix. Selecting the book on return-per-drawdown gave a config that beat the index in only 8 of 18 years, so the config is chosen on years-beaten and CAGR jointly.
+
+    `test_a_capped_position_books_pnl_on_what_it_was_allowed_to_take` pins it. Two assertions in `test_bot_rules.py` had to be relaxed afterwards because they encoded the inflated numbers — a test written against a wrong measurement will defend that measurement.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

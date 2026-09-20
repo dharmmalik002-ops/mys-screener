@@ -172,7 +172,14 @@ def simulate(
             scale = 1.0 if risk_scale_by_day is None else risk_scale_by_day.get(day, 1.0)
             risk_amount = equity * cfg.risk_per_trade_pct * scale / 100.0
             cost = risk_amount / (stop_pct / 100.0)
-            cost = min(cost, equity * cfg.max_position_pct / 100.0)
+            capped = min(cost, equity * cfg.max_position_pct / 100.0)
+            if capped < cost:
+                # The position cap binds, so the money actually at risk is
+                # smaller than the budget asked for. Re-derive it, or the trade
+                # books P&L on a position it was never allowed to take —
+                # measured at ~2x inflation, because every trade here clips.
+                risk_amount = capped * stop_pct / 100.0
+            cost = capped
             deployed = sum(p["cost"] for p in open_pos)
             if deployed + cost > equity * cfg.max_deployed_pct / 100.0 or cost > cash:
                 declined += 1

@@ -83,6 +83,39 @@ class MarkToMarketTests(unittest.TestCase):
         self.assertLess(abs(r.yearly[2020]), 1.0, "flat year should read flat")
 
 
+class PositionCapTests(unittest.TestCase):
+    """The cap must shrink the RISK too, not just the capital deployed."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self._tmp.name)
+        self.days = [date(2020, 1, 1) + timedelta(days=i) for i in range(120)]
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def test_a_capped_position_books_pnl_on_what_it_was_allowed_to_take(self):
+        """The bug this test exists for inflated every result by ~2x.
+
+        A 0.25% risk budget behind a 1% stop asks for 25% of equity. Capped at
+        5%, the money actually at risk is a fifth of the budget — but the trade
+        was still booking `risk_amount * r` on the uncapped figure. Every trade
+        in the real book clipped, so every number was wrong.
+        """
+        write_bars(self.dir, "GGG", self.days, [100.0] * 120)
+        trade = {"symbol": "GGG", "entry_day": "2020-01-02", "exit_day": "2020-03-01",
+                 "r_multiple": 10.0, "risk_pct": 1.0, "entry": 100.0}
+        cfg = PortfolioConfig(risk_per_trade_pct=0.25, watch_risk_pct=0.25,
+                              max_concurrent=10, max_portfolio_risk_pct=50.0,
+                              max_deployed_pct=100.0, max_position_pct=5.0)
+        r = mtm.simulate([trade], self.dir, cfg)
+        # 5% of equity behind a 1% stop risks 0.05% of equity; at +10R that is
+        # a 0.5% gain, not the 2.5% the uncapped budget would have booked.
+        gain = r.equity_curve[-1]["equity"] / cfg.starting_equity - 1.0
+        self.assertLess(gain, 0.01, "P&L was booked on an uncapped position")
+        self.assertGreater(gain, 0.001)
+
+
 class DeriskTests(unittest.TestCase):
 
     def setUp(self):

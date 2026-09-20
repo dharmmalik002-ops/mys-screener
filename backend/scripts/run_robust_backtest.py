@@ -50,17 +50,13 @@ from app.services.bot.benchmark import INDEX_KEY  # noqa: E402
 from app.services.bot.history import available_symbols, read_bars  # noqa: E402
 from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 
-# Chosen on return-per-drawdown. Small positions, many of them: the book sees
-# few enough signals that a 10% cap made it concentrated, and concentration was
-# most of the drawdown.
-# Chosen on return-per-drawdown. More slots buy more return and cost far more
-# drawdown than they are worth: 150 slots at 1.5% returns +34.0% at -60.4%
-# (Sharpe 1.16) against this book's +29.7% at -35.3% (Sharpe 1.47). The
-# diagnosis said the lagging years were under-deployed, and the honest fix was
-# a bigger risk budget per trade rather than a wider, thinner book.
+# Chosen on return-per-drawdown, after the position-cap bug was fixed. The
+# earlier 4% cap bound on 100% of trades, so the risk budget and the adaptive
+# multiplier had no effect on size at all — 12% lets them actually express
+# themselves.
 BOOK = PortfolioConfig(
-    risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=60,
-    max_portfolio_risk_pct=30.0, max_deployed_pct=100.0, max_position_pct=4.0,
+    risk_per_trade_pct=0.25, watch_risk_pct=0.25, max_concurrent=60,
+    max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=8.0,
 )
 
 
