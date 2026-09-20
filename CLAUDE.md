@@ -483,6 +483,8 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     The book is chosen on **years-beaten and CAGR jointly**, not on return-per-drawdown — that criterion picked a config beating the index in 8 years of 18. Choosing the metric is itself a modelling decision and gets stated rather than defaulted.
 
+    **Loosening the rules in broad rallies was re-tested too, and also fails.** Allowing all twelve setups when the regime is `bull_strong` with breadth above 70 gives `+17.40% / -31.58% / 12 of 18`; adding a wide turnover cap on top gives `+16.80% / -53.76% / 11 of 18`. Base stays best on return, Sharpe and years-beaten. The informative part is what it does **not** move: with every setup and every liquidity band available, 2012 is still +18.0% against the index's +38.2% and 2009 still +24.8% against +113.9%. **Those two gaps are not the filter — the setups simply do not fire in a V-shaped recovery off a crash bottom**, and no relaxation of the entry rules reaches them. That is a property of a breakout/momentum library, not a bug to be tuned out.
+
     `test_it_is_not_wired_into_the_shipped_backtest` fails if adaptive sizing is re-enabled. It first failed on its own string check after I removed the call it was looking for — a test asserting on source text has to be updated with the source.
 
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
