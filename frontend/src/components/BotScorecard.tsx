@@ -194,6 +194,41 @@ export function ScorecardView({ learning }: { learning: BotLearning }) {
               </tbody>
             </table>
           </details>
+          {timing.health ? (
+            <div className={`bot-health bot-health-${timing.health.status}`}>
+              <p className="bot-kicker">
+                Is the rule still working? — the learning loop, pointed at the part that earns
+              </p>
+              <p>{timing.health.note}</p>
+              <div className="bot-hero-stats bot-run-stats">
+                <div>
+                  <span>Days invested</span>
+                  <strong>{timing.health.invested_avg_daily_pct.toFixed(3)}%</strong>
+                </div>
+                <div>
+                  <span>Days out</span>
+                  <strong>{timing.health.cash_avg_daily_pct.toFixed(3)}%</strong>
+                </div>
+                <div>
+                  <span>Gap per day</span>
+                  <strong className={timing.health.discrimination_pp > 0 ? "bot-expected" : "bot-negative"}>
+                    {timing.health.discrimination_pp >= 0 ? "+" : ""}
+                    {timing.health.discrimination_pp.toFixed(3)}pp
+                  </strong>
+                </div>
+                <div>
+                  <span>Switches judged</span>
+                  <strong>{timing.health.completed_switches}</strong>
+                </div>
+              </div>
+              <p className="bot-footnote">
+                It watches whether the classifier still separates good tape from bad — not
+                recent P&amp;L, which over a handful of switches says nothing. It can stand the
+                rule down; it can never promote it for a good run, because a good stretch on a
+                few decisions is the most seductive noise there is.
+              </p>
+            </div>
+          ) : null}
           <p className="bot-verdict bot-verdict-warn">
             <AlertTriangle size={15} aria-hidden />
             <span>{timing.caveat}</span>

@@ -184,6 +184,125 @@ def buy_and_hold(sessions: Sequence[date], closes: Mapping[date, float]) -> Timi
     )
 
 
+@dataclass
+class TimingHealth:
+    """Whether the timing rule is still doing what the study said it would.
+
+    The rest of this project's learning machinery audits stock cells, which is
+    exactly the wrong place to point it: the cells have no edge, so monitoring
+    them monitors noise. This points the same discipline at the component that
+    actually earns — and the asymmetry from `calibration.py` carries over. A
+    rule running *better* than its study is never promoted, because a good
+    stretch on a handful of switches is the most seductive noise there is.
+
+    What it checks is not the return, which is too noisy over a few switches to
+    say anything. It is whether the rule is still *behaving* as measured: the
+    share of time invested, and whether being invested has been better than
+    being out. A regime rule that stops distinguishing good tape from bad has
+    broken, whatever its recent P&L happens to be.
+    """
+
+    completed_switches: int
+    exposure_pct: float
+    expected_exposure_pct: float
+    invested_avg_daily_pct: float
+    cash_avg_daily_pct: float
+    discrimination_pp: float      # invested minus out-of-market, per day
+    status: str                   # tracking | diverging | insufficient
+    note: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
+# Below this a live record says nothing: a timing rule makes a handful of
+# decisions a year, so judging it on a couple of switches is judging noise.
+MIN_SWITCHES_TO_JUDGE = 6
+# The rule's whole claim is that invested days beat out-of-market days. If that
+# gap closes, the classifier has stopped discriminating.
+MIN_DISCRIMINATION_PP = 0.0
+
+
+def assess_health(
+    sessions: Sequence[date],
+    closes: Mapping[date, float],
+    regime_by_day: Mapping[date, str],
+    expected_exposure_pct: float,
+    *,
+    invested_regimes: frozenset[str] = INVESTED_REGIMES,
+) -> TimingHealth:
+    """Is the rule still separating good tape from bad, on recent sessions?"""
+    window = [d for d in sessions if d in closes]
+    invested_moves: list[float] = []
+    cash_moves: list[float] = []
+    switches = 0
+    previous_state: bool | None = None
+
+    for i in range(1, len(window)):
+        a, b = window[i - 1], window[i]
+        state = regime_by_day.get(a) in invested_regimes
+        if previous_state is not None and state != previous_state:
+            switches += 1
+        previous_state = state
+        if closes[a] <= 0:
+            continue
+        move = (closes[b] / closes[a] - 1.0) * 100.0
+        (invested_moves if state else cash_moves).append(move)
+
+    exposure = (
+        100.0 * len(invested_moves) / max(len(invested_moves) + len(cash_moves), 1)
+    )
+    invested_avg = float(np.mean(invested_moves)) if invested_moves else 0.0
+    cash_avg = float(np.mean(cash_moves)) if cash_moves else 0.0
+    discrimination = invested_avg - cash_avg
+
+    if switches < MIN_SWITCHES_TO_JUDGE or not cash_moves:
+        return TimingHealth(
+            completed_switches=switches, exposure_pct=round(exposure, 1),
+            expected_exposure_pct=round(expected_exposure_pct, 1),
+            invested_avg_daily_pct=round(invested_avg, 4),
+            cash_avg_daily_pct=round(cash_avg, 4),
+            discrimination_pp=round(discrimination, 4),
+            status="insufficient",
+            note=(
+                f"{switches} completed switches against a floor of {MIN_SWITCHES_TO_JUDGE}. "
+                "A timing rule makes a handful of decisions a year; judging it on fewer is "
+                "judging noise. Running unchanged."
+            ),
+        )
+
+    if discrimination <= MIN_DISCRIMINATION_PP:
+        return TimingHealth(
+            completed_switches=switches, exposure_pct=round(exposure, 1),
+            expected_exposure_pct=round(expected_exposure_pct, 1),
+            invested_avg_daily_pct=round(invested_avg, 4),
+            cash_avg_daily_pct=round(cash_avg, 4),
+            discrimination_pp=round(discrimination, 4),
+            status="diverging",
+            note=(
+                f"Over {switches} switches, days the rule was invested returned "
+                f"{invested_avg:+.3f}% against {cash_avg:+.3f}% for days it sat out — a gap of "
+                f"{discrimination:+.3f}pp. The classifier has stopped separating good tape from "
+                "bad, which is its entire claim. Reduce size and rebuild before relying on it."
+            ),
+        )
+
+    return TimingHealth(
+        completed_switches=switches, exposure_pct=round(exposure, 1),
+        expected_exposure_pct=round(expected_exposure_pct, 1),
+        invested_avg_daily_pct=round(invested_avg, 4),
+        cash_avg_daily_pct=round(cash_avg, 4),
+        discrimination_pp=round(discrimination, 4),
+        status="tracking",
+        note=(
+            f"Over {switches} switches, invested days returned {invested_avg:+.3f}% against "
+            f"{cash_avg:+.3f}% out — a gap of {discrimination:+.3f}pp. The rule is still "
+            f"discriminating, at {exposure:.0f}% exposure against {expected_exposure_pct:.0f}% "
+            "in the study."
+        ),
+    )
+
+
 def build_timing_study(
     sessions: Sequence[date],
     closes: Mapping[date, float],
@@ -228,9 +347,16 @@ def build_timing_study(
         if fund_median_drawdown is not None else None
     )
 
+    # The learning discipline pointed at the component that actually earns.
+    # Measured over the trailing two years, which is enough sessions to see
+    # whether the classifier still separates good tape from bad.
+    recent = [d for d in held_out if (held_out[-1] - d).days <= 730]
+    health = assess_health(recent, closes, regime_by_day, timed.exposure_pct)
+
     return {
         "available": True,
         "rule": sorted(INVESTED_REGIMES),
+        "health": health.to_dict(),
         "timed": timed.to_dict(),
         "buy_and_hold": passive.to_dict(),
         "fund_median_cagr": fund_median_cagr,

@@ -146,3 +146,64 @@ class StudyTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class HealthMonitorTests(unittest.TestCase):
+    """The learning discipline pointed at the component that actually earns.
+
+    The rest of the project audits stock cells, which have no edge — so it was
+    monitoring noise. These pin the same asymmetry `calibration.py` uses: a
+    rule can be flagged for breaking, and is never promoted for a good run.
+    """
+
+    def _labelled(self, n: int, good_up: bool, switches: int = 12):
+        """A series where the regime alternates, optionally predicting direction."""
+        days = [date(2015, 1, 1) + timedelta(days=i) for i in range(n)]
+        block = max(1, n // switches)
+        closes, level = {}, 100.0
+        regime = {}
+        for i, d in enumerate(days):
+            invested = (i // block) % 2 == 0
+            regime[d] = "bull_strong" if invested else "bear"
+            closes[d] = level
+            # When `good_up`, invested stretches rise and out stretches fall —
+            # the classifier is doing its job.
+            drift = 0.002 if (invested == good_up) else -0.002
+            level *= 1.0 + drift
+        return days, closes, regime
+
+    def test_a_working_rule_reads_as_tracking(self) -> None:
+        days, closes, regime = self._labelled(600, good_up=True)
+        health = tm.assess_health(days, closes, regime, expected_exposure_pct=50.0)
+        self.assertEqual(health.status, "tracking")
+        self.assertGreater(health.discrimination_pp, 0.0)
+
+    def test_a_rule_that_stops_discriminating_is_flagged(self) -> None:
+        """Invested days no better than days out means the claim has failed."""
+        days, closes, regime = self._labelled(600, good_up=False)
+        health = tm.assess_health(days, closes, regime, expected_exposure_pct=50.0)
+        self.assertEqual(health.status, "diverging")
+        self.assertLess(health.discrimination_pp, 0.0)
+        self.assertIn("stopped separating", health.note)
+
+    def test_too_few_switches_is_reported_as_unknown(self) -> None:
+        """A timing rule makes a handful of decisions a year; two say nothing."""
+        days, closes, regime = self._labelled(200, good_up=False, switches=2)
+        health = tm.assess_health(days, closes, regime, expected_exposure_pct=50.0)
+        self.assertEqual(health.status, "insufficient")
+        self.assertIn("judging noise", health.note)
+
+    def test_a_good_run_never_promotes(self) -> None:
+        """Health has no state above 'tracking' — upside is not actionable."""
+        days, closes, regime = self._labelled(600, good_up=True)
+        health = tm.assess_health(days, closes, regime, expected_exposure_pct=50.0)
+        self.assertIn(health.status, {"tracking", "insufficient", "diverging"})
+        self.assertNotIn("promot", health.note.lower())
+
+    def test_the_study_carries_its_own_health(self) -> None:
+        days, closes, regime = self._labelled(900, good_up=True)
+        study = tm.build_timing_study(days, closes, regime, days[300],
+                                      fund_median_cagr=11.36, fund_median_drawdown=-27.53)
+        self.assertTrue(study["available"])
+        self.assertIn("health", study)
+        self.assertIn(study["health"]["status"], {"tracking", "diverging", "insufficient"})

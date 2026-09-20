@@ -1,6 +1,6 @@
 {
   "artifact_version": 4,
-  "generated_at": "2026-09-20T07:37:02.106504+00:00",
+  "generated_at": "2026-09-20T07:53:09.829762+00:00",
   "config": {
     "start": null,
     "end": null,
@@ -16947,6 +16947,16 @@
         "bull_strong",
         "recovery"
       ],
+      "health": {
+        "completed_switches": 11,
+        "exposure_pct": 56.5,
+        "expected_exposure_pct": 74.3,
+        "invested_avg_daily_pct": 0.021,
+        "cash_avg_daily_pct": -0.0392,
+        "discrimination_pp": 0.0602,
+        "status": "tracking",
+        "note": "Over 11 switches, invested days returned +0.021% against -0.039% out \u2014 a gap of +0.060pp. The rule is still discriminating, at 57% exposure against 74% in the study."
+      },
       "timed": {
         "label": "regime_timing",
         "start": "2022-11-17",

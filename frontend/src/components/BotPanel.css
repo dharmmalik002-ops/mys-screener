@@ -440,3 +440,13 @@
   background: color-mix(in srgb, var(--positive) 6%, var(--surface-soft));
   margin-bottom: 20px;
 }
+
+.bot-health {
+  margin: 14px 0 0; padding: 12px 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  background: var(--surface-strong);
+}
+.bot-health > p { margin: 0 0 10px; font-size: var(--fs-small); color: var(--text-muted); line-height: 1.55; max-width: 84ch; }
+.bot-health-tracking { border-color: color-mix(in srgb, var(--positive) 35%, transparent); }
+.bot-health-diverging { border-color: color-mix(in srgb, var(--negative) 45%, transparent); }
+.bot-health-insufficient { border-color: var(--line); }

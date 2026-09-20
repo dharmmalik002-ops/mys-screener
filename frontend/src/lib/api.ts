@@ -5680,9 +5680,23 @@ export type BotTimingRun = {
   equity_curve: Array<{ day: string; equity: number; invested: boolean }>;
 };
 
+export type BotTimingHealth = {
+  completed_switches: number;
+  exposure_pct: number;
+  expected_exposure_pct: number;
+  invested_avg_daily_pct: number;
+  cash_avg_daily_pct: number;
+  discrimination_pp: number;
+  status: "tracking" | "diverging" | "insufficient";
+  note: string;
+};
+
 export type BotRegimeTiming = {
   available: boolean;
   rule: string[];
+  // The learning discipline pointed at the component that actually earns.
+  // It can flag the rule for breaking; it never promotes it for a good run.
+  health: BotTimingHealth;
   timed: BotTimingRun;
   buy_and_hold: BotTimingRun;
   fund_median_cagr: number | null;
