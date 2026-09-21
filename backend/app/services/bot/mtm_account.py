@@ -51,6 +51,7 @@ class MTMResult:
     avg_r: float
     payoff: float
     exposure_pct: float
+    worst_trade_equity_pct: float = 0.0   # biggest single-trade hit to equity
     equity_curve: list[dict] = field(default_factory=list)
     yearly: dict[int, float] = field(default_factory=dict)
 
@@ -329,6 +330,11 @@ def simulate(
                 held_syms.add(sym)
             open_pos.append({
                 "symbol": sym, "entry": t["_entry"], "exit": t["_exit"], "is_add": adding,
+                # Equity at the moment the position was opened. The hit a trade
+                # takes must be measured against the book it was sized from —
+                # against STARTING equity a late loss in a compounding run
+                # reads as -313%, which is arithmetic, not a risk breach.
+                "equity_at_entry": equity,
                 "cost": cost, "risk_amount": risk_amount, "r": float(t["r_multiple"]),
                 "entry_price": float(t.get("entry") or 0.0),
             })
@@ -365,6 +371,14 @@ def simulate(
     for p in open_pos:                  # settle whatever is still open
         cash += p["cost"] + p["risk_amount"] * p["r"]
         taken.append(p)
+    # What the worst trade actually cost the ACCOUNT. A -78% trade on an 8%
+    # position is a -6% equity event; quoting the trade number alone makes a
+    # gap look like a risk-control failure when it is a sizing question.
+    worst_equity = min(
+        (p["risk_amount"] * p["r"]) / max(p.get("equity_at_entry") or cfg.starting_equity, 1.0)
+        * 100.0
+        for p in taken
+    ) if taken else 0.0
     equity = cash
     if curve:
         curve[-1]["equity"] = round(equity, 2)
@@ -407,5 +421,6 @@ def simulate(
         avg_r=round(float(rs.mean()), 3),
         payoff=round(float(wins.mean() / abs(losses.mean())), 2) if len(wins) and len(losses) else 0.0,
         exposure_pct=round(100.0 * invested_days / len(sessions), 1),
+        worst_trade_equity_pct=round(worst_equity, 2),
         equity_curve=curve, yearly=yearly,
     )

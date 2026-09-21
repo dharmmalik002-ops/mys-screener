@@ -89,6 +89,7 @@ def main() -> int:
     exits = ExitModel(
         target_r=R.EXIT_TARGET_R, max_hold_sessions=R.EXIT_MAX_HOLD_SESSIONS,
         trail_after_r=R.EXIT_TRAIL_AFTER_R, trail_atr_mult=R.EXIT_TRAIL_ATR_MULT,
+        max_stop_pct=R.EXIT_MAX_STOP_PCT,
     )
     trades = run_strategies(data_dir, context, BacktestConfig(exits=exits), symbols)
     rows = []
@@ -274,6 +275,11 @@ def main() -> int:
           f"({max(float(t['r_multiple']) for t in taken):+.1f}R)")
     print(f"worst trade             {min(float(t['net_pct']) for t in taken):+7.1f}%  "
           f"({min(float(t['r_multiple']) for t in taken):+.1f}R)")
+    # The number that answers "how much can one trade cost me": a -87% trade
+    # on a sized position is a small equity event. The trade-level figure is a
+    # gap, which no stop prevents; the equity figure is the risk rule.
+    print(f"worst hit to equity     {result.worst_trade_equity_pct:+7.2f}%  "
+          f"(limit 8%)")
 
     print("\nyear   return    index    alpha  trades  verdict")
     for d in rows_d:
@@ -293,6 +299,11 @@ def main() -> int:
     mem.record(state_dir, [d.to_dict() for d in rows_d], {
         "cagr": result.cagr_pct, "max_drawdown": result.max_drawdown_pct,
         "sharpe": result.sharpe, "win_rate": result.win_rate, "payoff": result.payoff,
+        "worst_trade_equity_pct": result.worst_trade_equity_pct,
+    }, config={
+        "max_stop_pct": R.EXIT_MAX_STOP_PCT, "trail_atr_mult": R.EXIT_TRAIL_ATR_MULT,
+        "max_hold": R.EXIT_MAX_HOLD_SESSIONS, "risk_per_trade": BOOK.risk_per_trade_pct,
+        "max_position_pct": BOOK.max_position_pct, "derisk": _derisk, "pyramid": True,
     })
     print(f"\nmemory: {mem.recall(state_dir).note}")
 

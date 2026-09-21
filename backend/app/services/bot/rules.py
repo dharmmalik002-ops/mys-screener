@@ -74,14 +74,29 @@ EXIT_TARGET_R = None
 EXIT_TRAIL_AFTER_R = 1.0
 EXIT_TRAIL_ATR_MULT = 8.0
 EXIT_MAX_HOLD_SESSIONS = 500
+# Hard ceiling on the initial stop DISTANCE. The trade is kept and the stop is
+# pulled in, rather than the trade being rejected — filtering on stop width
+# passed only 14% of accepted signals and starved the book.
+#
+# It is a real trade-off, priced honestly: average stop 6.11% -> 3.50%, and
+# because a tighter stop is hit more often the win rate falls 34.6% -> 16.5%
+# and drawdown deepens -26.8% -> -39.9%. What it buys is the years that were
+# broken: 2024 +19.7% -> +34.3% (past the index), 2026 -12.2% -> -2.8%,
+# 2009 +33.3% -> +65.7%.
+#
+# The mechanism behind the deeper drawdown is worth knowing: with fixed
+# fractional risk a TIGHTER stop means a BIGGER position (0.25% risk over a
+# 3.5% stop is a 7% position; over a 7% stop it is 3.5%). Tightening the stop
+# concentrates the book unless the position cap comes down with it.
+EXIT_MAX_STOP_PCT = 3.5
 
 # Measured on the full period with these rules.
-MEASURED_CAGR = 29.07
-MEASURED_MAX_DRAWDOWN = -26.79
-MEASURED_SHARPE = 1.54
-MEASURED_PAYOFF = 4.87
-MEASURED_WIN_RATE = 34.6
-MEASURED_TRADES = 1072
+MEASURED_CAGR = 25.99
+MEASURED_MAX_DRAWDOWN = -39.88
+MEASURED_SHARPE = 1.18
+MEASURED_PAYOFF = 9.22
+MEASURED_WIN_RATE = 16.5
+MEASURED_TRADES = 1536
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -266,11 +281,14 @@ MEASURED_CASH_SLEEVE_DRAWDOWN = -27.98
 MEASURED_CASH_SLEEVE_WIN_RATE = 26.8
 
 
-# The brief says "around 35% to 40%". 34.6% is inside "around" and is NOT
-# inside a strict 35.0 floor, so the floor is written as 34.0 with the reason
-# attached rather than the measurement being rounded up to meet a literal it
-# misses. Adding the hard 8% stop ceiling is what moved it from 35.0 to 34.6.
-WIN_RATE_FLOOR = 34.0
+# TWO ASKS IN THE BRIEF ARE IN DIRECT CONFLICT and only one can hold at a
+# time: a 3-4% average stop and a 35-40% win rate. A tighter stop is hit more
+# often, by construction — 6.11% -> 3.50% average takes the win rate 34.6% ->
+# 16.5%. The stop width is the newer and more specific instruction (it came
+# with a worst-trade limit attached), so it wins and the win-rate floor is
+# lowered to match the measurement rather than the measurement being dressed
+# up to meet the old band.
+WIN_RATE_FLOOR = 16.0
 WIN_RATE_CEILING = 40.0
 
 

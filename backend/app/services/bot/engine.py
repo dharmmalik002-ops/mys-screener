@@ -129,6 +129,18 @@ class ExitModel:
     # Sold at the next open, like every other decision here: the condition is
     # read on the close, so acting on that same close would be trading on a
     # price that had already printed.
+    # Hard ceiling on the initial stop DISTANCE, as a percent of entry. The
+    # per-strategy `stop_atr_mult` sets a natural invalidation point, and in a
+    # volatile name that can land 10% or more away — a trade whose thesis is
+    # only wrong after a 10% fall is not a trade with a 3% risk profile.
+    #
+    # The trade is NOT rejected when its ATR stop is too wide; the stop is
+    # pulled in instead. Rejecting starves the book (a 5% filter passed only
+    # 14% of accepted signals), while tightening keeps the entry and changes
+    # the risk. It costs win rate — a tighter stop is hit more often — and
+    # caps what any single position can lose.
+    max_stop_pct: float | None = None
+
     exit_on_break: bool = False
     break_ma: str = "sma50"           # "sma50" or "ema21"
     break_confirm_sessions: int = 2
@@ -230,6 +242,8 @@ def simulate_symbol(
         turnover = float(features.turnover_crore[i]) if np.isfinite(features.turnover_crore[i]) else None
         entry = costs.fill_price(float(o[entry_idx]), "buy", turnover)
         stop = entry - spec.stop_atr_mult * float(atr[i])
+        if exits.max_stop_pct is not None:
+            stop = max(stop, entry * (1.0 - exits.max_stop_pct / 100.0))
         if stop <= 0 or entry <= 0:
             continue
         risk = entry - stop

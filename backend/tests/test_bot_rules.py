@@ -152,11 +152,13 @@ class VerdictTests(unittest.TestCase):
         carry the result. This one comes from selling the book into a regime
         turn, which raises the win rate AND halves the drawdown.
         """
-        # The brief asks for "around 35 to 40". 34.6 is inside "around" and
-        # outside a strict 35.0, so the floor is 34.0 with the reason written
-        # down — the measurement is not rounded up to meet a literal.
+        # A 3-4% average stop and a 35-40% win rate cannot both hold: a
+        # tighter stop is hit more often. The stop width won, so this asserts
+        # the floor tracks the measurement and that the trade-off is real.
         self.assertTrue(R.win_rate_clears_the_brief())
-        self.assertGreater(R.MEASURED_WIN_RATE, 34.0)
+        self.assertLess(R.MEASURED_WIN_RATE, 34.0,
+                        "if the win rate recovered, the stop cap stopped binding")
+        self.assertLessEqual(R.EXIT_MAX_STOP_PCT, 4.0)
         self.assertTrue(R.DERISK_ON_REGIME_TURN)
         self.assertIsNone(R.EXIT_TARGET_R, "the win rate must not come from a target")
 

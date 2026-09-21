@@ -33,6 +33,8 @@ class Recollection:
     dominant_verdict: str | None
     chronic_years: list[int]
     note: str
+    best_run: dict | None = None
+    regressed: bool = False
 
 
 def memory_path(state_dir: Path) -> Path:
@@ -50,12 +52,24 @@ def load(state_dir: Path) -> list[dict]:
     return data if isinstance(data, list) else []
 
 
-def record(state_dir: Path, diagnosis: Sequence[dict], headline: dict) -> None:
-    """Append one run. Oldest entries fall off past `MAX_RUNS`."""
+def record(
+    state_dir: Path,
+    diagnosis: Sequence[dict],
+    headline: dict,
+    config: dict | None = None,
+) -> None:
+    """Append one run. Oldest entries fall off past `MAX_RUNS`.
+
+    `config` is stored beside the result so runs are comparable to each other
+    rather than only to the benchmark — without it the store records that
+    something got worse but not what was changed, which is the half that
+    makes a record worth keeping.
+    """
     runs = load(state_dir)
     runs.append({
         "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "headline": dict(headline),
+        "config": dict(config or {}),
         "diagnosis": [dict(d) for d in diagnosis],
     })
     state_dir.mkdir(parents=True, exist_ok=True)
@@ -68,7 +82,7 @@ def recall(state_dir: Path) -> Recollection:
     """The complaint that keeps coming back, across every run on record."""
     runs = load(state_dir)
     if not runs:
-        return Recollection(0, None, [], "nothing recorded yet")
+        return Recollection(0, None, [], "nothing recorded yet", None, False)
 
     counts: dict[str, int] = {}
     behind: dict[int, int] = {}
@@ -82,6 +96,16 @@ def recall(state_dir: Path) -> Recollection:
                 year = int(row["year"])
                 behind[year] = behind.get(year, 0) + 1
 
+    # Which iteration was best, and whether the latest one went backwards.
+    # This is what makes the store a record of *iterations* rather than of
+    # one run repeated: the bot can see that a change cost it something.
+    scored = [r for r in runs if (r.get("headline") or {}).get("cagr") is not None]
+    best = max(scored, key=lambda r: r["headline"]["cagr"]) if scored else None
+    regressed = bool(
+        best and scored and scored[-1] is not best
+        and scored[-1]["headline"]["cagr"] < best["headline"]["cagr"]
+    )
+
     dominant = max(counts, key=counts.get) if counts else None
     # A year that has been behind in every run on record is chronic; one that
     # slipped once is noise, and chasing it is how the last six rounds went.
@@ -91,4 +115,7 @@ def recall(state_dir: Path) -> Recollection:
     else:
         note = (f"the recurring complaint across {len(runs)} run(s) is '{dominant}'"
                 + (f"; chronically behind in {chronic}" if chronic else ""))
-    return Recollection(len(runs), dominant, chronic, note)
+    if regressed and best:
+        note += (f"; best run was {best['headline']['cagr']:+.2f}% CAGR"
+                 f" against the latest {scored[-1]['headline']['cagr']:+.2f}%")
+    return Recollection(len(runs), dominant, chronic, note, best, regressed)
