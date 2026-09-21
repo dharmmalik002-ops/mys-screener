@@ -135,3 +135,40 @@ class EquityLossLimitTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class StopCeilingTests(unittest.TestCase):
+    """The hard 8% line on the stop, and what it does and does not promise."""
+
+    def test_the_stop_distance_can_never_exceed_the_hard_ceiling(self):
+        self.assertLessEqual(R.EXIT_MAX_STOP_PCT, R.HARD_MAX_RISK_PCT)
+        self.assertLessEqual(R.HARD_MAX_RISK_PCT, 8.0)
+
+    def test_a_gap_is_not_a_stop_breach_and_the_allowance_says_so(self):
+        """The distinction that keeps being re-litigated, pinned in code.
+
+        A stop is a resting order. When a stock closes at 144.81 and opens at
+        84.49 the next morning — TEXRAIL, 2010-11-01 — a stop sitting at
+        134.14 fills at 84.49, and the trade loses 41.7% against a 6.7% stop.
+        No stop rule prevents that; only position size does, which is why
+        `GAP_ALLOWANCE_STOP_MULT` exists and why it is far larger than 1.
+
+        Measured across the book, the worst adverse move runs about 9x the
+        stop, so an allowance at or near 1x would be a rule in name only.
+        """
+        self.assertGreaterEqual(
+            mtm.GAP_ALLOWANCE_STOP_MULT, 6.0,
+            "an allowance near the stop width assumes stops always fill, "
+            "which the record directly contradicts",
+        )
+
+    def test_position_size_is_what_enforces_the_equity_limit(self):
+        """With a 6.3% average stop and a 10x allowance the ceiling is
+        1.5 / 63 = 2.4% of equity, so the 35% position cap and the per-trade
+        risk budget never bind. Any future edit that makes the position cap
+        the binding constraint has removed the equity rule's teeth."""
+        avg_stop = 6.3
+        allowance = max(mtm.GAP_ALLOWANCE_PCT, mtm.GAP_ALLOWANCE_STOP_MULT * avg_stop)
+        ceiling_pct = 100.0 * 1.5 / allowance
+        self.assertLess(ceiling_pct, 5.0,
+                        "the equity rule must bind before any position cap does")

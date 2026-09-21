@@ -792,4 +792,37 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      **Final shipped book:** `CAGR +40.25%, maxDD -21.16%, Sharpe 2.01, payoff 6.25, win 35.1%, 975 trades` — **+38.5%/yr against the Nifty Smallcap 250's +16.3%, alpha +22.2pp, ahead in 15 of 18**, worst single-trade hit to equity **-0.91%** against the 1% rule. Average stop 6.15%, winners +81.3% held 319 sessions, losers -7.1% held 24. 85.1% small cap, 14-233 trades a year.
 
 
+106. **THE -41.7% TRADE DID NOT BREACH THE 8% STOP — IT WAS GAPPED THROUGH, AND HERE IS THE TAPE.** This gets re-litigated every few rounds, so the evidence lives here now. TEXRAIL, entered 2010-09-03 at 143.77 with the stop at **6.70%** (= 134.14):
+
+         2010-10-29   close   144.81
+         2010-11-01   OPEN     84.49    high 84.49   low 55.76   close 58.17
+
+     The stop was a resting order at 134.14 and the first trade of the day was at 84.49, so that is where it filled: **-41.2% from entry against a 6.7% stop.** Four of the five worst trades in the book are the same shape (GOODYEAR -37.2% overnight, KECL -15.6%, PILANIINVS -16.7%). Across the whole book the worst adverse move runs about **9x the stop**, and a liquidity carve-out does not rescue it — the 2-5 crore band, which is 93% of the book, gaps -8.9x in training and -9.1x out of sample.
+
+     **A stop bounds the loss on a stock that keeps trading. Only position size bounds the loss on a stock that does not.** `MTMResult.fills` now carries `risk_pct` and `equity_pct` per filled position so both can be audited directly: currently **max stop 7.0% with 0 breaches of the 8% ceiling, worst equity hit -0.93% with 0 breaches of the 1.5% limit**, across 1,200 positions.
+
+     Related reporting bug, fixed here: the runner's headline trade-shape block computed over every *signal that cleared* rather than over positions the account *filled*, and duly reported a **-62.4% worst trade the account never took** while the worst position actually held lost 41.6%. Both blocks now read `result.fills`.
+
+107. **A 35% POSITION CAP AND A 1.5%-OF-EQUITY LIMIT ARE MATHEMATICALLY INCOMPATIBLE IN THIS UNIVERSE.** Raising the per-trade equity limit 1.0% -> 1.5% and the position cap 12% -> 35% changes the position size by nothing at all, and the arithmetic says why: with a 6.3% average stop the gap allowance is `10 x 6.3 = 63%`, so a position may be at most `1.5 / 63 = 2.4%` of equity. **The equity rule binds first and the position cap never binds.** For a 35% position to be legal, a 40% gap would have to cost 14% of equity — nine times the stated limit.
+
+     The same arithmetic kills "go maximum when the market is good and the score is high" for the fifth time (gotchas 78, 81, 95, 105). Sizing 3x on a high score in a healthy market, measured:
+
+         gap allowance   sizing    CAGR      maxDD    Sharpe   worst equity hit
+         10x stop        flat    +41.54%   -21.21%    1.98     -0.93%   OK
+         10x stop        go max  +41.54%   -21.21%    1.98     -0.93%   OK   <- identical
+          6x stop        flat    +41.04%   -22.36%    1.87     -1.55%   BREACH
+          6x stop        go max  +42.59%   -22.02%    1.92     -1.55%   BREACH
+
+     Sizing only starts to bite at an allowance loose enough to breach the very rule it is sizing under. **It is not that conviction sizing is a bad idea — it is that there is no room for it underneath an honest gap allowance.** Anyone wanting bigger positions has to raise the equity limit, and should be told what it buys: at 6x the book gains 1.05pp of CAGR and the worst trade costs 1.55% of equity instead of 0.93%.
+
+108. **THE CONVICTION BAR MOVES TO 8 — THE BOOK IS CONSTRAINED BY SIZING, NOT BY SIGNAL QUALITY.** Trading the 8-10 band rather than 9-10 takes 2,023 signals instead of 1,319 and 1,200 fills instead of 975:
+
+         bar 9   CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  payoff 6.25   15/18
+         bar 8   CAGR +41.54%  maxDD -21.21%  Sharpe 1.98  win 32.0%  payoff 5.92   16/18
+
+     Better return and an extra year beaten for 0.03 of Sharpe. This is the opposite of the capacity effect that has killed every library expansion here (gotchas 54, 82, 87, 101), and the reason is the equity rule: at 2.4% per position a 40-slot book can only deploy ~96%, so extra volume fills slots that were empty rather than displacing better trades. **When sizing is the binding constraint, more signals help; when slots are the binding constraint, they hurt.**
+
+     **Final shipped book:** `CAGR +41.54%, maxDD -21.21%, Sharpe 1.98, payoff 5.92, win 32.0%, 1,200 trades` — **+39.7%/yr against the Nifty Smallcap 250's +16.3%, alpha +23.5pp, behind it in only 2 of 18 years.** Average stop 6.27% (widest 7.00%, ceiling 8%), winners +41.9% held 239 sessions, losers -7.1% held 17. 87.9% small cap, 15-413 trades a year.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

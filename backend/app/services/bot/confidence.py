@@ -79,8 +79,15 @@ HIGH_CONVICTION = 8.0      # the bar on the RAW scale (see DECILE_CUTS below)
 #     >= 10            +2.208       +2.767
 DECILE_CUTS = (4.983, 5.320, 5.560, 5.770, 5.970, 6.140, 6.280, 6.410, 6.650)
 
-# The band to trade. 9 is the top fifth of what the rules cleared.
-CONVICTION_BAR = 9.0
+# The band to trade: 8 to 10, i.e. the top 30% of what the rules cleared.
+# Measured against the narrower 9-10 band, widening to 8 is better on return
+# AND on the count that matters most here — 16 years beating the index
+# against 15 — because the book is capital-constrained by the equity rule
+# rather than by signal quality, so it can afford the extra volume.
+#
+#     bar 9   CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  15/18
+#     bar 8   CAGR +41.54%  maxDD -21.21%  Sharpe 1.98  win 32.0%  16/18
+CONVICTION_BAR = 8.0
 
 
 def decile(raw: float) -> float:

@@ -103,12 +103,12 @@ EXIT_MAX_STOP_PCT = 7.0
 # +0.088R in training and +0.069R held out, while the full cleared set is
 # negative in both (-0.068R / -0.035R). It declines 82% of what the rules
 # already cleared, which is why the trade count falls by two thirds.
-MEASURED_CAGR = 40.25
-MEASURED_MAX_DRAWDOWN = -21.16
-MEASURED_SHARPE = 2.01
-MEASURED_PAYOFF = 6.25
-MEASURED_WIN_RATE = 35.1
-MEASURED_TRADES = 975
+MEASURED_CAGR = 41.54
+MEASURED_MAX_DRAWDOWN = -21.21
+MEASURED_SHARPE = 1.98
+MEASURED_PAYOFF = 5.92
+MEASURED_WIN_RATE = 32.0
+MEASURED_TRADES = 1200
 MEASURED_SMALLCAP_CAGR = 16.26
 
 

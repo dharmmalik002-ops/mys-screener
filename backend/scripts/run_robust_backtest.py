@@ -64,11 +64,11 @@ from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 # equity. See `mtm_account.GAP_ALLOWANCE_PCT` for why the stop alone does not
 # enforce it. Measured cost: the worst single-trade hit to equity falls from
 # -1.65% to -0.91%, and the account's own drawdown from -40.92% to -31.81%.
-MAX_EQUITY_LOSS_PCT = 1.0
+MAX_EQUITY_LOSS_PCT = 1.5
 
 BOOK = PortfolioConfig(
     risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=40,
-    max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=12.0,
+    max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=35.0,
 )
 
 
@@ -346,27 +346,37 @@ def main() -> int:
     rows_d = dg.diagnose(rows, kept, result.yearly, index_yearly)
     summary = dg.summarise(rows_d)
 
-    # The trade-shape numbers a trader actually asks for.
-    taken = [t for t in kept]
-    wins = [t for t in taken if float(t["r_multiple"]) > 0]
-    losses = [t for t in taken if float(t["r_multiple"]) <= 0]
+    # The trade-shape numbers a trader actually asks for — over the positions
+    # the account FILLED, not over every signal that cleared. Computed over
+    # signals this block once reported a -62.4% worst trade that the account
+    # never took, while the worst position it actually held lost 41.6%.
+    taken = result.fills
+    wins = [t for t in taken if float(t["r"]) > 0]
+    losses = [t for t in taken if float(t["r"]) <= 0]
     def avg(xs):
         return sum(xs) / len(xs) if xs else float("nan")
-    print("\n--- trade shape ---")
-    print(f"average stop            {avg([float(t['risk_pct']) for t in taken]):6.2f}%")
+    print("\n--- trade shape (positions actually filled) ---")
+    print(f"average stop            {avg([float(t['risk_pct']) for t in taken]):6.2f}%   "
+          f"widest {max(float(t['risk_pct']) for t in taken):.2f}%  "
+          f"(hard ceiling {R.HARD_MAX_RISK_PCT:.0f}%)")
     print(f"average gain, winners   {avg([float(t['net_pct']) for t in wins]):+6.2f}%   "
-          f"hold {avg([float(t['sessions_held']) for t in wins]):5.1f} sessions")
+          f"hold {avg([float(t['sessions_held']) for t in wins if t['sessions_held'] is not None]):5.1f} sessions")
     print(f"average loss, losers    {avg([float(t['net_pct']) for t in losses]):+6.2f}%   "
-          f"hold {avg([float(t['sessions_held']) for t in losses]):5.1f} sessions")
+          f"hold {avg([float(t['sessions_held']) for t in losses if t['sessions_held'] is not None]):5.1f} sessions")
     print(f"best trade              {max(float(t['net_pct']) for t in taken):+7.1f}%  "
-          f"({max(float(t['r_multiple']) for t in taken):+.1f}R)")
+          f"({max(float(t['r']) for t in taken):+.1f}R)")
     print(f"worst trade             {min(float(t['net_pct']) for t in taken):+7.1f}%  "
-          f"({min(float(t['r_multiple']) for t in taken):+.1f}R)")
-    # The number that answers "how much can one trade cost me": a -87% trade
-    # on a sized position is a small equity event. The trade-level figure is a
-    # gap, which no stop prevents; the equity figure is the risk rule.
+          f"({min(float(t['r']) for t in taken):+.1f}R)")
+    # The number that answers "how much can one trade cost me". A trade can
+    # lose far more than its stop when the market GAPS through it overnight —
+    # TEXRAIL's stop sat at -6.7% and the stock opened -41.7% the next
+    # morning. No stop prevents that; only position size does.
     print(f"worst hit to equity     {result.worst_trade_equity_pct:+7.2f}%  "
-          f"(limit {MAX_EQUITY_LOSS_PCT:.0f}%)")
+          f"(limit {MAX_EQUITY_LOSS_PCT:.1f}%)")
+    print(f"stops above the {R.HARD_MAX_RISK_PCT:.0f}% ceiling: "
+          f"{sum(1 for t in taken if float(t['risk_pct']) > R.HARD_MAX_RISK_PCT)}    "
+          f"trades costing more than {MAX_EQUITY_LOSS_PCT:.1f}% of equity: "
+          f"{sum(1 for t in taken if float(t['equity_pct']) < -MAX_EQUITY_LOSS_PCT)}")
 
     # Per-strategy and per-year shape, over the positions the account actually
     # FILLED rather than over every signal that cleared. Those are different
