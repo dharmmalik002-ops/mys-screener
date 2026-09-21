@@ -625,4 +625,19 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     **`v_recovery` was re-tested under the 3.5% stop, because the config it first failed under no longer exists.** It is better than before — 587 signals at **+0.934R** — and it genuinely fixes the year it was built for: **2009 +65.7% -> +81.4%**. The book is still worse with it overall: `CAGR +24.98% -> +21.74%`, years beaten `13 -> 10`. That is now the third independent measurement of the same thing across two different configurations: a crash setup that works on its own and that a capital-constrained book does not want. It stays in `SECOND_COHORT`, and the option is real — **+81.4% in 2009 for three years of outperformance elsewhere.**
 
+94. **THE BOT TUNES ITSELF, AND ITS FIRST ACT WAS TO REJECT ITS OWN BEST IDEA.** `memory.recommend()` can only demote, which is right for anything learned from trade outcomes and is not improvement. `autotune.py` is the other half: the bot proposes changes to its own configuration, scores each on a **training** window and a **held-out** window, and adopts one only if it beats the incumbent on **both**.
+
+    The second window is the entire point. Gotcha 53 measured the rank correlation between a configuration's pre-split score and its held-out return at **-0.70** — selecting on the training window alone points the *wrong way*. The first live run demonstrated it exactly:
+
+        candidate         train   held-out   verdict
+        baseline         +23.51    +24.82
+        stop_looser      +26.29    +20.09   better in training (+2.78pp), WORSE held out (-4.73pp) -> rejected
+        stop_tighter     +24.70    +24.04   better in training (+1.19pp), worse held out -> rejected
+        trail_wider      +21.57    +26.23   no edge in training -> never qualified
+        ADOPT: nothing
+
+    **A tuner that always finds an improvement is fitting noise**, so "adopt nothing" is the expected output rather than a failure, and `trail_wider` is the mirror case — best held-out score in the table and correctly never considered, because a held-out window that also selects is just a second training window.
+
+    Two further guards: the candidate set is **bounded and declared in advance** (an unbounded search over twenty years finds a winner by chance), and the survivor is ranked on the **held-out** score, never the training one — training has done its job by qualifying a candidate and letting it pick the winner as well reintroduces the bias the split exists to remove. `test_bot_autotune.py` pins all of it, including that a tie inside `MIN_EDGE` is not a win.
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
