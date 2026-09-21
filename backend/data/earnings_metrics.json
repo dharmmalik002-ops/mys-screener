@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-21T11:20:25.732353+00:00",
+  "generated_at": "2026-09-21T12:10:54.580120+00:00",
   "entries": {
     "NTPC": {
       "symbol": "NTPC",
@@ -236,7 +236,7 @@
     "NAHARSPING": {
       "symbol": "NAHARSPING",
       "earnings_date": "2026-09-21",
-      "close_in_range_pct": 0.9792,
+      "close_in_range_pct": 0.8958,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -1130,7 +1130,7 @@
       "close_in_range_pct": 0.7479,
       "next_day_gap_pct": 3.172,
       "day_rvol_50d": 0.201,
-      "return_5d_pct": -1.968,
+      "return_5d_pct": -1.94,
       "source": "bse",
       "best_pop_pct": 1.75,
       "best_pop_rvol": 0.201
@@ -1644,7 +1644,7 @@
     "HMT": {
       "symbol": "HMT",
       "earnings_date": "2026-09-21",
-      "close_in_range_pct": 0.9509,
+      "close_in_range_pct": 0.973,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
@@ -14624,13 +14624,13 @@
     "ELITECON": {
       "symbol": "ELITECON",
       "earnings_date": "2026-09-21",
-      "close_in_range_pct": 0.9,
+      "close_in_range_pct": 0.9589,
       "next_day_gap_pct": null,
-      "day_rvol_50d": 0.828,
+      "day_rvol_50d": 1.017,
       "return_5d_pct": null,
       "source": "bse-calendar",
-      "best_pop_pct": 3.63,
-      "best_pop_rvol": 0.828
+      "best_pop_pct": 4.506,
+      "best_pop_rvol": 1.017
     }
   }
 }
