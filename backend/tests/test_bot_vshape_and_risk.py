@@ -172,3 +172,34 @@ class StopCeilingTests(unittest.TestCase):
         ceiling_pct = 100.0 * 1.5 / allowance
         self.assertLess(ceiling_pct, 5.0,
                         "the equity rule must bind before any position cap does")
+
+
+class TextbookSizingIsNotTheDefaultTests(unittest.TestCase):
+    """`position = loss limit / stop` is available, measured, and off.
+
+    It is the rule every trading book teaches, and it is wrong here for one
+    reason: it assumes the stop fills at the stop. Measured on the identical
+    trade record it is worse on every axis (CAGR +33.62% against +41.54%,
+    drawdown -39.01% against -21.21%, 11 of 18 years against 16) and it
+    breaches the limit it is derived from on 184 of 304 trades.
+    """
+
+    def test_the_defaults_keep_the_gap_leg_on(self):
+        import inspect
+        sig = inspect.signature(mtm.simulate)
+        self.assertEqual(sig.parameters["gap_allowance_pct"].default,
+                         mtm.GAP_ALLOWANCE_PCT)
+        self.assertEqual(sig.parameters["gap_allowance_mult"].default,
+                         mtm.GAP_ALLOWANCE_STOP_MULT)
+        self.assertGreater(mtm.GAP_ALLOWANCE_PCT, 0.0,
+                           "a zero allowance silently selects textbook sizing")
+
+    def test_textbook_sizing_takes_a_bigger_position_than_gap_aware(self):
+        """The whole difference in one assertion: for the same 1.5% limit and
+        a 6% stop, textbook sizing asks for 25% of equity and gap-aware
+        sizing asks for 2.4%."""
+        limit, stop = 1.5, 6.0
+        textbook = limit / stop
+        gap_aware = limit / max(mtm.GAP_ALLOWANCE_PCT,
+                                mtm.GAP_ALLOWANCE_STOP_MULT * stop)
+        self.assertGreater(textbook, gap_aware * 5)

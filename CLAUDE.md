@@ -825,4 +825,17 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      **Final shipped book:** `CAGR +41.54%, maxDD -21.21%, Sharpe 1.98, payoff 5.92, win 32.0%, 1,200 trades` — **+39.7%/yr against the Nifty Smallcap 250's +16.3%, alpha +23.5pp, behind it in only 2 of 18 years.** Average stop 6.27% (widest 7.00%, ceiling 8%), winners +41.9% held 239 sessions, losers -7.1% held 17. 87.9% small cap, 15-413 trades a year.
 
 
+109. **TEXTBOOK POSITION SIZING — `limit / stop` — IS BUILT, MEASURED AND OFF. IT LOSES ON EVERY AXIS AND BREACHES ITS OWN LIMIT ON 60% OF TRADES.** The rule every trading book teaches is `position = equity loss limit / stop`: 1.5% behind a 6% stop is a 25% position, behind a 4% stop 37.5%. It is correct arithmetic resting on one assumption this data contradicts — that the stop fills at the stop (gotcha 106). Measured on the identical trade record:
+
+         sizing          CAGR      maxDD   Sharpe   beat    worst equity hit
+         gap-aware    +41.54%   -21.21%    1.98    16/18        -0.93%
+         textbook     +33.62%   -39.01%    1.42    11/18        -3.80%
+
+     Worse on return, drawdown, Sharpe and years beaten simultaneously — and it **breaks the very limit it is derived from: 184 of 304 trades cost more than 1.5% of equity**, because a 25% position turns an ordinary overnight gap into a 3-4% equity hit. 2022 goes to **-22.6%**.
+
+     The second effect is subtler and worth naming: big positions consume capital, so the book falls from **1,200 trades to 304** and **2021 takes two positions all year**. Concentration is not only a risk-per-trade question — it decides how many independent bets the account gets, and at 304 trades single names decide whole years.
+
+     It ships as an option (`gap_allowance_pct=0.0, gap_allowance_mult=None`) rather than being deleted, for gotcha 31's reason: it is the control that would detect the opposite if the gap behaviour of this universe ever changed. `TextbookSizingIsNotTheDefaultTests` pins that the defaults keep the gap leg on and that a zero allowance cannot select it silently.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
