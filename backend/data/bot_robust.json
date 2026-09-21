@@ -1,18 +1,18 @@
 {
   "yearly": {
-    "2009": 19.26,
-    "2010": 4.64,
-    "2011": 30.79,
-    "2012": 39.54,
-    "2013": 18.44,
+    "2009": 32.0,
+    "2010": 8.75,
+    "2011": 31.51,
+    "2012": 42.1,
+    "2013": 19.47,
     "2014": 78.09,
     "2015": 32.67,
-    "2016": 50.39,
-    "2017": 102.26,
-    "2018": 2.81,
+    "2016": 61.92,
+    "2017": 106.75,
+    "2018": 2.93,
     "2019": 18.32,
-    "2020": 101.36,
-    "2021": 68.99,
+    "2020": 109.83,
+    "2021": 63.4,
     "2022": 19.39,
     "2023": 87.64,
     "2024": 64.89,
@@ -75,9 +75,9 @@
       "accepted": 133,
       "acceptance_pct": 4.3,
       "avg_r": -0.104,
-      "bot_return": 19.26,
+      "bot_return": 32.0,
       "index_return": 113.92,
-      "alpha": -94.66,
+      "alpha": -81.92,
       "verdict": "bad_shots",
       "note": "133 trades at -0.10R \u2014 enough shots, wrong names; this is an entry-rule problem"
     },
@@ -87,9 +87,9 @@
       "accepted": 119,
       "acceptance_pct": 3.6,
       "avg_r": -0.719,
-      "bot_return": 4.64,
+      "bot_return": 8.75,
       "index_return": 16.25,
-      "alpha": -11.61,
+      "alpha": -7.5,
       "verdict": "bad_shots",
       "note": "119 trades at -0.72R \u2014 enough shots, wrong names; this is an entry-rule problem"
     },
@@ -99,9 +99,9 @@
       "accepted": 0,
       "acceptance_pct": 0.0,
       "avg_r": 0.0,
-      "bot_return": 30.79,
+      "bot_return": 31.51,
       "index_return": -36.03,
-      "alpha": 66.82,
+      "alpha": 67.54,
       "verdict": "starved",
       "note": "only 0 trades from 1100 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
     },
@@ -111,11 +111,11 @@
       "accepted": 63,
       "acceptance_pct": 3.0,
       "avg_r": -0.9,
-      "bot_return": 39.54,
+      "bot_return": 42.1,
       "index_return": 38.19,
-      "alpha": 1.35,
+      "alpha": 3.91,
       "verdict": "ok",
-      "note": "beat the index by +1.4pp on 63 trades"
+      "note": "beat the index by +3.9pp on 63 trades"
     },
     {
       "year": 2013,
@@ -123,11 +123,11 @@
       "accepted": 41,
       "acceptance_pct": 2.6,
       "avg_r": 4.097,
-      "bot_return": 18.44,
+      "bot_return": 19.47,
       "index_return": -8.14,
-      "alpha": 26.58,
+      "alpha": 27.61,
       "verdict": "ok",
-      "note": "beat the index by +26.6pp on 41 trades"
+      "note": "beat the index by +27.6pp on 41 trades"
     },
     {
       "year": 2014,
@@ -159,11 +159,11 @@
       "accepted": 85,
       "acceptance_pct": 2.0,
       "avg_r": 1.474,
-      "bot_return": 50.39,
+      "bot_return": 61.92,
       "index_return": 0.36,
-      "alpha": 50.03,
+      "alpha": 61.56,
       "verdict": "ok",
-      "note": "beat the index by +50.0pp on 85 trades"
+      "note": "beat the index by +61.6pp on 85 trades"
     },
     {
       "year": 2017,
@@ -171,11 +171,11 @@
       "accepted": 297,
       "acceptance_pct": 4.4,
       "avg_r": 1.543,
-      "bot_return": 102.26,
+      "bot_return": 106.75,
       "index_return": 57.28,
-      "alpha": 44.98,
+      "alpha": 49.47,
       "verdict": "ok",
-      "note": "beat the index by +45.0pp on 297 trades"
+      "note": "beat the index by +49.5pp on 297 trades"
     },
     {
       "year": 2018,
@@ -183,11 +183,11 @@
       "accepted": 62,
       "acceptance_pct": 1.9,
       "avg_r": -1.196,
-      "bot_return": 2.81,
+      "bot_return": 2.93,
       "index_return": -26.8,
-      "alpha": 29.61,
+      "alpha": 29.73,
       "verdict": "ok",
-      "note": "beat the index by +29.6pp on 62 trades"
+      "note": "beat the index by +29.7pp on 62 trades"
     },
     {
       "year": 2019,
@@ -207,11 +207,11 @@
       "accepted": 103,
       "acceptance_pct": 1.6,
       "avg_r": 3.572,
-      "bot_return": 101.36,
+      "bot_return": 109.83,
       "index_return": 25.09,
-      "alpha": 76.27,
+      "alpha": 84.74,
       "verdict": "ok",
-      "note": "beat the index by +76.3pp on 103 trades"
+      "note": "beat the index by +84.7pp on 103 trades"
     },
     {
       "year": 2021,
@@ -219,11 +219,11 @@
       "accepted": 621,
       "acceptance_pct": 5.0,
       "avg_r": 1.527,
-      "bot_return": 68.99,
+      "bot_return": 63.4,
       "index_return": 61.94,
-      "alpha": 7.05,
+      "alpha": 1.46,
       "verdict": "ok",
-      "note": "beat the index by +7.0pp on 621 trades"
+      "note": "beat the index by +1.5pp on 621 trades"
     },
     {
       "year": 2022,
@@ -280,8 +280,8 @@
       "acceptance_pct": 0.1,
       "avg_r": -1.278,
       "bot_return": -6.7,
-      "index_return": 9.64,
-      "alpha": -16.34,
+      "index_return": 9.69,
+      "alpha": -16.39,
       "verdict": "starved",
       "note": "only 9 trades from 7542 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
     }
@@ -301,9 +301,9 @@
         "accepted": 133,
         "acceptance_pct": 4.3,
         "avg_r": -0.104,
-        "bot_return": 19.26,
+        "bot_return": 32.0,
         "index_return": 113.92,
-        "alpha": -94.66,
+        "alpha": -81.92,
         "verdict": "bad_shots",
         "note": "133 trades at -0.10R \u2014 enough shots, wrong names; this is an entry-rule problem"
       },
@@ -314,8 +314,8 @@
         "acceptance_pct": 0.1,
         "avg_r": -1.278,
         "bot_return": -6.7,
-        "index_return": 9.64,
-        "alpha": -16.34,
+        "index_return": 9.69,
+        "alpha": -16.39,
         "verdict": "starved",
         "note": "only 9 trades from 7542 signals \u2014 the book was mostly in cash, so nothing about entries or exits explains this year"
       },
@@ -325,9 +325,9 @@
         "accepted": 119,
         "acceptance_pct": 3.6,
         "avg_r": -0.719,
-        "bot_return": 4.64,
+        "bot_return": 8.75,
         "index_return": 16.25,
-        "alpha": -11.61,
+        "alpha": -7.5,
         "verdict": "bad_shots",
         "note": "119 trades at -0.72R \u2014 enough shots, wrong names; this is an entry-rule problem"
       }
@@ -344,10 +344,10 @@
       2010
     ]
   },
-  "cagr": 41.6,
+  "cagr": 43.88,
   "max_drawdown": -22.72,
-  "sharpe": 1.79,
-  "win_rate": 15.3,
-  "payoff": 12.36,
-  "trades": 1181
+  "sharpe": 1.87,
+  "win_rate": 15.0,
+  "payoff": 12.35,
+  "trades": 1199
 }

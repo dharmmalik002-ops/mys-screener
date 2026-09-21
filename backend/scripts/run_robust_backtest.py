@@ -154,6 +154,34 @@ def main() -> int:
         if _park_bars is not None else {}
     )
 
+    # ...except while recovering from a crash, when it holds SMALL caps.
+    # Small caps are a leveraged version of the market in both directions
+    # (+11.3pp a year over the broad index in a recovery, -40.3pp in a
+    # crash), so the question is never whether they run harder but when the
+    # leverage is safe to hold. The recovery window is the answer because it
+    # reliably ENDS before the next crash: tilting instead on "the market is
+    # rising" earns nearly the same and costs ten points of drawdown, because
+    # that condition is still true on the way down.
+    _recovering = (
+        R.recovery_days(list(_park_bars.dates), [float(c) for c in _park_bars.close])
+        if _park_bars is not None else set()
+    )
+    if park_series and index_yearly_prices and _recovering:
+        _small = index_yearly_prices          # Smallcap 250, already fetched
+        _days = sorted(set(park_series) | set(_small))
+        _lvl, _tilted, _pb, _ps = 100.0, {}, None, None
+        for _d in _days:
+            _b, _sm = park_series.get(_d, _pb), _small.get(_d, _ps)
+            if _pb and _ps and _b and _sm:
+                # A missing price is not a zero price: carry the last one.
+                _lvl *= (_sm / _ps) if _d in _recovering else (_b / _pb)
+            _pb, _ps = _b or _pb, _sm or _ps
+            _tilted[_d] = _lvl
+        park_series = _tilted
+        print(f"sleeve tilts to small caps on {len(_recovering):,} recovery sessions")
+    elif park_series:
+        print("(no smallcap series: sleeve holds the broad index throughout)")
+
     # Bet more when the market is paying. Built only from that morning's tape:
     # index trend, breadth, regime — never from the bot's own recent P&L.
     bars = read_bars(data_dir, INDEX_KEY)

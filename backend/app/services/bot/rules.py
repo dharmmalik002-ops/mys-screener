@@ -97,12 +97,12 @@ EXIT_MAX_STOP_PCT = 3.5
 # +0.088R in training and +0.069R held out, while the full cleared set is
 # negative in both (-0.068R / -0.035R). It declines 82% of what the rules
 # already cleared, which is why the trade count falls by two thirds.
-MEASURED_CAGR = 41.60
+MEASURED_CAGR = 43.88
 MEASURED_MAX_DRAWDOWN = -22.72
-MEASURED_SHARPE = 1.79
-MEASURED_PAYOFF = 12.36
-MEASURED_WIN_RATE = 15.3
-MEASURED_TRADES = 1181
+MEASURED_SHARPE = 1.87
+MEASURED_PAYOFF = 12.35
+MEASURED_WIN_RATE = 15.0
+MEASURED_TRADES = 1199
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -376,4 +376,62 @@ def thrust_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
         low = min(window)
         if low > 0 and (closes[i] / low - 1.0) * 100.0 >= THRUST_PCT:
             out.add(dates[i])
+    return out
+
+
+# --- after a crash, the small caps run hardest -----------------------------
+# The premise was checked before the rule was built, because a rule on top of
+# a false premise cannot be fixed by tuning it. Daily returns of the Smallcap
+# 250 against the Nifty 500, annualised, split by the index's own drawdown:
+#
+#     at/near highs  (dd > -5%)      small +53.1%   broad +41.4%   +11.7pp
+#     mild pullback  (-5 to -15%)          -23.1%         -17.6%    -5.4pp
+#     correction     (-15 to -25%)         -16.7%          -8.0%    -8.7pp
+#     crash          (dd <= -25%)          -95.8%         -55.5%   -40.3pp
+#     RECOVERING after -20%, 12m     small +51.1%   broad +39.8%   +11.3pp
+#
+# So small caps do run harder off a crash — but note they run just as hard at
+# the highs (+11.7pp). The effect is not special to recoveries; it is that
+# small caps are a leveraged version of the market in BOTH directions, and
+# -40.3pp in a crash is the price. What makes the recovery window the right
+# place to take that leverage is not a bigger edge, it is that the window
+# reliably ENDS before the next crash:
+#
+#     sleeve holds                      CAGR      maxDD   Sharpe
+#     broad index always              +41.60%   -22.72%     1.79
+#     small caps whenever above 200dma +42.47%  -33.09%     1.75
+#     small caps in recovery only      +43.88%   -22.72%     1.87
+#
+# The middle row is the control that matters: tilting on "the market is
+# rising" captures most of the same return and costs ten points of drawdown,
+# because that condition is still true on the way into a crash. Against 40
+# matched random controls tilting on the same NUMBER of sessions, the
+# recovery rule beats the 95th percentile on CAGR, drawdown and Sharpe.
+#
+# Chosen on the 2009-2017 half from four windows declared in advance
+# (-15%/9m, -20%/12m, -20%/18m, -25%/12m); all four beat the baseline on
+# return and Sharpe in both halves, and -20%/12m won the training half.
+RECOVERY_DRAWDOWN_PCT = -20.0
+RECOVERY_WINDOW_DAYS = 360
+
+
+def recovery_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
+    """Sessions inside a post-crash recovery, decided causally.
+
+    A session qualifies when the index has been at least
+    `RECOVERY_DRAWDOWN_PCT` below its own trailing 52-week high within the
+    last `RECOVERY_WINDOW_DAYS`, and has since climbed back above that level.
+    Only bars up to and including the session are read, so the answer for a
+    given day never changes when later data arrives.
+    """
+    out: set = set()
+    last_deep = None
+    for i, day in enumerate(dates):
+        window = closes[max(0, i - 251): i + 1]
+        peak = max(window) if window else 0.0
+        drawdown = (closes[i] / peak - 1.0) * 100.0 if peak > 0 else 0.0
+        if drawdown <= RECOVERY_DRAWDOWN_PCT:
+            last_deep = day
+        elif last_deep is not None and 0 <= (day - last_deep).days <= RECOVERY_WINDOW_DAYS:
+            out.add(day)
     return out

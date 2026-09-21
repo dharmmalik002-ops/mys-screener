@@ -700,4 +700,28 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
     **2026's residual gap is a benchmark-composition fact, not a strategy failure.** The sleeve holds the Nifty 500 and is scored against the Smallcap 250; in 2026 smallcap beat broad by **14.8pp** (+9.6% against -5.2%). Parking in the smallcap index instead fixes 2026 (+2.9%) and 2009 (+33.7%) and costs **12.5 points of drawdown** (-22.72% -> -35.23%) for the same 15 of 18 years — so gotcha 86's choice survives the re-measurement under the new configuration, and the 2026 gap is reported rather than tuned away.
 
 
+100. **SMALL CAPS DO RUN HARDEST OFF A CRASH — BUT THE EDGE IS NOT THE RECOVERY, IT IS THAT THE RECOVERY WINDOW ENDS.** The premise was measured before the rule was built. Daily returns of the Smallcap 250 against the Nifty 500, annualised, split by the broad index's own drawdown:
+
+         at/near highs  (dd > -5%)      small +53.1%   broad +41.4%   +11.7pp
+         mild pullback  (-5 to -15%)          -23.1%         -17.6%    -5.4pp
+         correction     (-15 to -25%)         -16.7%          -8.0%    -8.7pp
+         crash          (dd <= -25%)          -95.8%         -55.5%   -40.3pp
+         RECOVERING after -20%, 12m     small +51.1%   broad +39.8%   +11.3pp
+
+     Small caps beat the broad index by +11.3pp a year in a recovery — **and by +11.7pp at the highs**. There is nothing special about recoveries: small caps are a leveraged version of the market in both directions, and -40.3pp in a crash is what the leverage costs. So the question was never whether they run harder, it is **when the leverage is safe to hold**.
+
+     The control settles it. Tilting the sleeve on "the market is rising" (above its 200 DMA) captures almost the same return and costs **ten points of drawdown**, because that condition is still true on the way into a crash:
+
+         sleeve holds                       CAGR      maxDD   Sharpe
+         broad index always               +41.60%   -22.72%     1.79
+         small caps whenever above 200dma  +42.47%   -33.09%     1.75
+         small caps in recovery only       +43.88%   -22.72%     1.87
+
+     The recovery window works because it **expires**. It is the only tilt tested here that raises return with the drawdown completely unchanged, and `test_the_window_expires` pins that property rather than the return. Against 40 matched random controls tilting on the same *number* of sessions, it beats the 95th percentile on CAGR, drawdown and Sharpe (years-beaten ties). Chosen on the 2009-2017 half from four windows declared in advance; all four beat the baseline on return and Sharpe in both halves. **2009 +19.3% -> +32.0%, 2020 +101.4% -> +109.8%, 2016 +50.4% -> +61.9%.**
+
+     **Two ideas were tested alongside it and both failed, and they are worth not re-deriving.** *Holding back when high-conviction signals are scarce* does nothing at any setting — the premise was wrong, because 2009 and 2010 were not short of signals (133 and 119 trades, near the 160 average); they had plenty of signals that lost. And *cutting stock risk for months after a crash* helped in exactly one of four settings, which is what fitting looks like: a -30% drawdown occurs **3 times in 20 years**, so the rule is a story about 2008 and 2020 rather than a rule.
+
+     **2026 is untouched by all of this (-6.7%)** because its drawdown never reached -20%, so no recovery window opens. Its gap stays what gotcha 99 measured: the sleeve holds the broad index while being scored against small caps, which beat it by 14.8pp that year.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

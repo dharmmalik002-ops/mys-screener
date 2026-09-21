@@ -60,6 +60,58 @@ class ThrustTests(unittest.TestCase):
         self.assertGreaterEqual(R.THRUST_LOOKBACK, 5)
 
 
+class RecoveryTiltTests(unittest.TestCase):
+    """Holding small caps while recovering from a crash."""
+
+    @staticmethod
+    def _series(closes):
+        start = date(2020, 1, 1)
+        return [start + timedelta(days=i) for i in range(len(closes))], list(closes)
+
+    def _crash_then_recover(self):
+        # 260 flat sessions, a 30% fall, then a climb back through the level.
+        return self._series([100.0] * 260
+                            + [100 - 0.5 * i for i in range(60)]
+                            + [70 + 0.6 * i for i in range(90)])
+
+    def test_a_market_at_its_highs_is_never_in_recovery(self):
+        dates, closes = self._series([100.0 + i for i in range(400)])
+        self.assertEqual(R.recovery_days(dates, closes), set())
+
+    def test_the_crash_itself_is_not_the_recovery(self):
+        """The tilt must not be on during the fall — small caps lose 40pp a
+        year more than the broad index in a crash, which is the whole risk."""
+        dates, closes = self._crash_then_recover()
+        flagged = R.recovery_days(dates, closes)
+        trough = dates[closes.index(min(closes))]
+        self.assertNotIn(trough, flagged)
+        self.assertTrue(flagged, "the rebound after a crash must flag")
+
+    def test_the_window_expires(self):
+        """The reason this beats tilting on 'the market is rising': the
+        window ENDS, so the tilt is off before the next crash arrives."""
+        dates, closes = self._series([100.0] * 260
+                                     + [100 - 0.5 * i for i in range(60)]
+                                     + [70 + 0.6 * i for i in range(90)]
+                                     + [124.0] * 700)
+        flagged = R.recovery_days(dates, closes)
+        self.assertTrue(flagged)
+        self.assertLess(
+            (max(flagged) - dates[320]).days, R.RECOVERY_WINDOW_DAYS + 30,
+            "the tilt outlived its window",
+        )
+
+    def test_it_is_causal(self):
+        dates, closes = self._crash_then_recover()
+        full = R.recovery_days(dates, closes)
+        for cut in range(261, len(closes), 25):
+            self.assertEqual(
+                R.recovery_days(dates[:cut], closes[:cut]),
+                {d for d in full if d in set(dates[:cut])},
+                "a later bar changed an earlier decision",
+            )
+
+
 class EquityLossLimitTests(unittest.TestCase):
     """No single trade may cost more than 1% of total equity."""
 
