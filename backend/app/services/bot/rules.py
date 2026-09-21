@@ -50,6 +50,12 @@ from typing import Mapping, Sequence
 
 # Frozen from pre-2018 quantiles. Do not re-fit these on later data.
 MAX_RISK_PCT = 7.60          # 40th percentile of training-half stop width
+# Hard ceiling on the initial stop, independent of the rolling percentile.
+# The rolling cap adapts to volatility (gotcha 79) and after a crash it can
+# widen past what any sane position risk allows; this is the floor under that.
+# 93% of otherwise-accepted trades already clear it, so it binds rarely and
+# only on the trades that deserve it.
+HARD_MAX_RISK_PCT = 8.0
 MAX_TURNOVER_CRORE = 10.1    # 60th percentile of training-half turnover
 MIN_RET_63 = 0.0
 
@@ -70,12 +76,12 @@ EXIT_TRAIL_ATR_MULT = 8.0
 EXIT_MAX_HOLD_SESSIONS = 500
 
 # Measured on the full period with these rules.
-MEASURED_CAGR = 30.99
-MEASURED_MAX_DRAWDOWN = -26.87
-MEASURED_SHARPE = 1.58
-MEASURED_PAYOFF = 3.74
-MEASURED_WIN_RATE = 35.0
-MEASURED_TRADES = 1411
+MEASURED_CAGR = 29.07
+MEASURED_MAX_DRAWDOWN = -26.79
+MEASURED_SHARPE = 1.54
+MEASURED_PAYOFF = 4.87
+MEASURED_WIN_RATE = 34.6
+MEASURED_TRADES = 1072
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -160,7 +166,7 @@ def accepted_with_rolling_risk(rows: "Sequence[Mapping]") -> list:
             float(np.quantile(risks[lo:hi], ROLLING_RISK_QUANTILE))
             if hi - lo >= MIN_SIGNALS_FOR_ROLLING else MAX_RISK_PCT
         )
-        if float(trade.get("risk_pct") or 1e9) <= cap:
+        if float(trade.get("risk_pct") or 1e9) <= min(cap, HARD_MAX_RISK_PCT):
             out.append(trade)
     return out
 

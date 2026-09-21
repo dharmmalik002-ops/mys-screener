@@ -220,6 +220,7 @@ def main() -> int:
         regime_by_day=_book_regime if _derisk else None,
         healthy_regimes=frozenset({"bull_strong"}) if _derisk else None,
         derisk_losers_only=False,
+        pyramid=True, pyramid_scale=0.30,
     )
     if result is None:
         print("no account")
@@ -256,6 +257,23 @@ def main() -> int:
 
     rows_d = dg.diagnose(rows, kept, result.yearly, index_yearly)
     summary = dg.summarise(rows_d)
+
+    # The trade-shape numbers a trader actually asks for.
+    taken = [t for t in kept]
+    wins = [t for t in taken if float(t["r_multiple"]) > 0]
+    losses = [t for t in taken if float(t["r_multiple"]) <= 0]
+    def avg(xs):
+        return sum(xs) / len(xs) if xs else float("nan")
+    print("\n--- trade shape ---")
+    print(f"average stop            {avg([float(t['risk_pct']) for t in taken]):6.2f}%")
+    print(f"average gain, winners   {avg([float(t['net_pct']) for t in wins]):+6.2f}%   "
+          f"hold {avg([float(t['sessions_held']) for t in wins]):5.1f} sessions")
+    print(f"average loss, losers    {avg([float(t['net_pct']) for t in losses]):+6.2f}%   "
+          f"hold {avg([float(t['sessions_held']) for t in losses]):5.1f} sessions")
+    print(f"best trade              {max(float(t['net_pct']) for t in taken):+7.1f}%  "
+          f"({max(float(t['r_multiple']) for t in taken):+.1f}R)")
+    print(f"worst trade             {min(float(t['net_pct']) for t in taken):+7.1f}%  "
+          f"({min(float(t['r_multiple']) for t in taken):+.1f}R)")
 
     print("\nyear   return    index    alpha  trades  verdict")
     for d in rows_d:

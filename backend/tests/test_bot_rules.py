@@ -66,14 +66,16 @@ class RollingRiskTests(unittest.TestCase):
     def test_a_volatile_history_lets_a_wider_stop_through(self):
         """The 2009 case: after a crash every stop is wide."""
         history = self._rows(400, 14.0, day="2020-01-01")
-        wide = self._rows(1, 9.0, day="2020-12-01")   # inside the 365d window
+        # 7.5%, not 9%: the rolling cap widens, but never past
+        # HARD_MAX_RISK_PCT, so the probe has to sit under the ceiling.
+        wide = self._rows(1, 7.5, day="2020-12-01")   # inside the 365d window
         kept = R.accepted_with_rolling_risk(history + wide)
-        self.assertIn(9.0, [t["risk_pct"] for t in kept],
+        self.assertIn(7.5, [t["risk_pct"] for t in kept],
                       "the cap did not widen with conditions")
 
     def test_only_earlier_signals_set_the_cap(self):
         """A calm future must not tighten the cap on a trade taken today."""
-        today = self._rows(1, 9.0, day="2020-06-01")
+        today = self._rows(1, 7.5, day="2020-06-01")
         history = self._rows(400, 14.0, day="2019-09-01")   # inside the window
         future = self._rows(400, 1.0, day="2020-07-01")
         kept = R.accepted_with_rolling_risk(history + today + future)
@@ -105,6 +107,19 @@ class RollingRiskTests(unittest.TestCase):
             "a newly registered strategy left the cap untouched — if this rule "
             "was decoupled on purpose, update this test and re-run the book",
         )
+
+    def test_the_hard_ceiling_blocks_a_stop_no_percentile_should_allow(self):
+        """The rolling cap adapts; this is the floor under it.
+
+        After a crash the trailing percentile can widen past anything a sane
+        position risk allows, and a 1%-of-equity risk behind a 14% stop is a
+        7% position taken on a name that moves 14% against you.
+        """
+        history = self._rows(400, 20.0, day="2020-01-01")
+        absurd = self._rows(1, 14.0, day="2020-12-01")
+        kept = R.accepted_with_rolling_risk(history + absurd)
+        self.assertNotIn(14.0, [t["risk_pct"] for t in kept])
+        self.assertEqual(R.HARD_MAX_RISK_PCT, 8.0)
 
     def test_the_other_rules_still_apply(self):
         rows = self._rows(400, 3.0, day="2020-01-01", strategy="oversold_bounce")

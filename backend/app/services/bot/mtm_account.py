@@ -115,6 +115,8 @@ def simulate(
     park_idle_in: Mapping[date, float] | None = None,
     park_only_on: "set[date] | None" = None,
     reserve: Sequence[Mapping] | None = None,
+    pyramid: bool = False,
+    pyramid_scale: float = 0.30,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -136,6 +138,16 @@ def simulate(
     changes what the account IS — a selective book plus an index sleeve, not a
     pure stock picker. Both readings are reported rather than one being
     presented as the bot.
+
+    `pyramid` lets a symbol already held take a second, smaller entry when it
+    signals again — adding to a position that is working, at
+    `pyramid_scale` of the original size. Without it a re-signal in a name the
+    book already owns is simply dropped, which throws away the one piece of
+    evidence the book has that its own thesis is playing out.
+
+    The add is only allowed while the existing position is **in profit**;
+    averaging down is the opposite trade and is what turns a stop into a
+    portfolio.
 
     `reserve` is a second, looser pool taken **only after every core signal
     for the day has been placed and capacity remains**. Every previous attempt
@@ -266,16 +278,35 @@ def simulate(
             # Core first, always. The reserve is what is left when the core
             # could not use the capacity.
             todays = todays + list(reserve_by_day.get(day, []))
+        held_syms = {p["symbol"] for p in open_pos}
         for t in ([] if risk_off else todays):
             stop_pct = float(t.get("risk_pct") or 0.0)
             if stop_pct <= 0:
                 declined += 1
                 continue
-            if len(open_pos) >= cfg.max_concurrent:
+            sym = str(t["symbol"])
+            adding = False
+            if sym in held_syms:
+                if not pyramid:
+                    declined += 1
+                    continue
+                # Add only to a winner, and only once.
+                existing = [p for p in open_pos if p["symbol"] == sym]
+                px_now = price.get(sym, {}).get(day)
+                winning = bool(px_now) and all(
+                    px_now > p["entry_price"] for p in existing if p["entry_price"] > 0
+                )
+                if not winning or any(p.get("is_add") for p in existing):
+                    declined += 1
+                    continue
+                adding = True
+            if len(open_pos) >= cfg.max_concurrent and not adding:
                 declined += 1
                 continue
             scale = 1.0 if risk_scale_by_day is None else risk_scale_by_day.get(day, 1.0)
             risk_amount = equity * cfg.risk_per_trade_pct * scale / 100.0
+            if adding:
+                risk_amount *= pyramid_scale
             cost = risk_amount / (stop_pct / 100.0)
             capped = min(cost, equity * cfg.max_position_pct / 100.0)
             if capped < cost:
@@ -294,8 +325,10 @@ def simulate(
                 declined += 1
                 continue
             cash -= cost
+            if adding:
+                held_syms.add(sym)
             open_pos.append({
-                "symbol": str(t["symbol"]), "entry": t["_entry"], "exit": t["_exit"],
+                "symbol": sym, "entry": t["_entry"], "exit": t["_exit"], "is_add": adding,
                 "cost": cost, "risk_amount": risk_amount, "r": float(t["r_multiple"]),
                 "entry_price": float(t.get("entry") or 0.0),
             })

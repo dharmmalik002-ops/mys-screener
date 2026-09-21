@@ -359,6 +359,38 @@ def _earnings_gap_continuation(f: Features) -> np.ndarray:
     )
 
 
+def _v_recovery(f: Features) -> np.ndarray:
+    """The turn off a crash low, tightened until it earns its slot.
+
+    `_recovery_reversal` (below) was the first attempt and it fired 2,218
+    times at +0.647R — genuinely positive, and still below the book's own
+    average, so it spent slots that better candidates wanted (gotcha 82). The
+    fix is not a different idea but a much higher bar for the same one:
+
+      * the stock must have **stopped making new lows** — its 20-day low is
+        above its 52-week low, so the decline has actually ended rather than
+        paused;
+      * the thrust must clear the 50-day average by a real margin on **heavy**
+        volume (1.5x), not drift across it;
+      * it must be **well off its own low** (25%+), which is what separates a
+        recovery from a dead-cat bounce;
+      * and the market must be in `recovery`/`correction`/`bear` — this is a
+        crash setup and has no business firing in a healthy trend, where the
+        breakout library already covers the ground.
+
+    Deliberately requires a NEGATIVE 3-month return: every other setup here
+    needs momentum, which is exactly why none of them fire in 2009.
+    """
+    close = f.bars.close
+    thrust = _safe(close > f.sma50 * 1.02) & _prior_flag(_safe(close <= f.sma50))
+    stopped_falling = _safe(f.low_20 > f.low_52w * 1.05)
+    off_the_low = _safe(close > f.low_52w * 1.25)
+    broken = _safe(f.dist_52w_high < -30.0)
+    still_weak = _safe(f.ret_63 < 0.0)
+    heavy = _safe(f.rel_volume > 1.5)
+    return thrust & stopped_falling & off_the_low & broken & still_weak & heavy & _safe(f.liquid)
+
+
 def _recovery_reversal(f: Features) -> np.ndarray:
     """The turn off a crash low — the one shape this library could not see.
 
@@ -479,7 +511,20 @@ STRATEGIES: tuple[StrategySpec, ...] = (
 #
 # And it did not close the gap it was built for: 2009 stayed at +26.5%, 2012
 # at +17.0%. Keep it defined; the experiment does not need repeating.
+# `v_recovery` is the tightened second attempt at the crash-bottom setup and
+# is also NOT registered. It is a much better rule than `recovery_reversal` —
+# 544 signals at +0.857R against 2,218 at +0.647R, concentrated exactly where
+# intended (40 signals in 2008, 17 in 2009, 16 in 2011) — and the book still
+# does not want it: +27.34% -> +27.54% alone, and *worse* combined with
+# pyramiding (+27.89% -> +27.54%, 13 of 18 -> 12). 2009 does not move at all
+# (+31.9%), because the year's gap is the index doubling off the bottom, not
+# the absence of a setup.
+#
+# That is now two independently-designed crash setups, both individually
+# sound, both unwanted by a capital-constrained book. The constraint is
+# capacity, not the library (gotchas 54, 82).
 SECOND_COHORT = (
+    ("v_recovery", _v_recovery),
     ("recovery_reversal", _recovery_reversal),
     ("episodic_pivot", _episodic_pivot),
     ("long_base_breakout", _long_base_breakout),
