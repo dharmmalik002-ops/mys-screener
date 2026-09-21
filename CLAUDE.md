@@ -654,4 +654,50 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
     **Two things measured negative under the filter and are NOT shipped.** Sizing by conviction adds nothing (`+28.35% -> +28.18%`) — the filter has already removed everything the sizing would have shrunk, so it has nothing left to do. And **short swing holds are expensive**: at the same filter, a 500-session ceiling returns +28.35%, 90 gives +16.90% and 25 gives **-7.91%**. The brief asked for shorter holds and the measurement says no, for a reason visible in the trade shape: losers are already closed in **9.4 sessions** against winners' 288, so a short ceiling cuts winners only. "Cut losses early" is satisfied by the stop, not by a clock.
 
 
+96. **THE SLEEVE'S RISK-ON SWITCH IS A LAGGING INDICATOR, AND IN A V-SHAPED RECOVERY THAT IS THE WORST POSSIBLE TIMING.** Both inputs to `risk_on` — a healthy regime label and the index above its own 200 DMA — need the fall to have already happened before they turn off, and the rebound to have already happened before they turn back on. 2026 shows the whole failure in two rows:
+
+        2026-03   N500 -10.1%   gold -12.4%   sleeve -8.9%   switched into gold as gold fell
+        2026-04   N500  +8.4%   gold   0.0%   sleeve  0.0%   still in gold for the entire rebound
+
+    The sleeve returned **-10.3% in a year when the index fell 5.2% and gold rose 13.6%** — worse than *both* of its own legs, which is only possible if the switching is actively wrong. **Debouncing made it worse** (3-session confirmation +24.50%, 5-session +21.56%, against +32.75% unchanged), and that is the diagnostic that matters: waiting longer to act cannot fix being late, so the problem was lag and not noise.
+
+    `rules.thrust_days` is the answer — a follow-through day, the index closing **3% above its lowest close of the trailing 10 sessions**, which puts the sleeve back into equities immediately whatever the regime label and the 200 DMA still say. Causal by construction (session `i` reads bars `0..i`) and it reads the *market*, never the bot's own P&L, which is the line every failed learning experiment here crossed (gotchas 40, 65, 69, 70, 74).
+
+    Chosen on the **2009-2017 half alone** from a family declared in advance (3/4/5/6/8% x 10/15/20 sessions), held-out half then run once. **Every member of that family beat the baseline in both halves**, so the specific parameter is not load-bearing:
+
+        baseline (no thrust)   h1 6/9 +27.8%   h2 8/9 +31.5%
+        thrust 3% / 10d        h1 7/9 +37.2%   h2 8/9 +40.5%   <- chosen
+        thrust 8% / 20d        h1 6/9 +29.1%   h2 8/9 +33.5%
+
+    Against **40 matched random controls** turning on the same number of extra risk-on days, it beats the 95th percentile on CAGR (+38.98 vs +29.96), Sharpe (1.74 vs 1.40), drawdown (-22.72 vs -22.74) and years-beaten (15 vs 14) — so it is not the effect of simply being invested more often. **2012 goes +26.4% -> +39.5%, past the index for the first time; 2020 +50.2% -> +101.4%; 2022 -2.1% -> +19.4%.**
+
+97. **GOTCHA 90 REVERSES ONCE THE SLEEVE EXISTS — DE-RISKING IS NO LONGER A MOVE OUT OF THE MARKET.** Gotcha 90 added the 200-DMA leg to the *book's* de-risk condition so it would stop selling into live uptrends, and it was right under the configuration of the time. It is wrong now, and the reason is structural rather than a re-tune: capital leaving the stock book no longer goes to cash, it goes into the index sleeve. De-risking has become a move from **idiosyncratic risk to market risk**, not a move out of the market, so it can be done sooner and more often. Measured in both halves rather than on the full period:
+
+        book on regime OR trend    h1 7/9 +35.4%   h2 7/9 +37.7%   CAGR +38.16%  maxDD -31.81%
+        book on regime OR thrust   h1 7/9 +39.0%   h2 8/9 +40.5%   CAGR +41.60%  maxDD -22.72%
+
+    The sleeve and the book now switch on **different** conditions, and that asymmetry is the point: the sleeve re-enters on regime **or** trend **or** thrust (it should be in the market whenever the market is worth being in), the book on regime **or** thrust only (individual stocks need more than an intact index trend). Any future edit that re-couples them should re-measure both halves — this is the second time coupling them cost real money.
+
+98. **"1% OF EQUITY PER TRADE" IS NOT DELIVERED BY AN 8% STOP — A STOP IS A RESTING ORDER AND A GAP JUMPS IT.** The arithmetic that looks right (1% equity / 8% stop = a 12.5% position) assumes the stop fills at the stop. The worst trade in this record lost **14.1% against a 3.5% stop**, so sizing on the stop alone understates the true exposure roughly fourfold, and the account's worst single-trade hit to equity was **-1.65%** while nominally obeying a "1%" rule.
+
+    `mtm_account.max_equity_loss_pct` sizes against **both** legs — the stop *and* a declared adverse move, `GAP_ALLOWANCE_PCT = 15.0`:
+
+        position <= equity * limit / GAP_ALLOWANCE_PCT     and     equity * limit / stop_pct
+
+    The allowance is a **declared constant, not the sample's own worst trade** (14.1%). Sizing against the observed extreme is fitting to it; the next gap is free to be larger. `test_the_allowance_is_not_read_from_the_sample_worst_trade` pins that.
+
+    It costs return and buys a great deal of risk: worst single-trade hit **-1.65% -> -0.91%**, and the account's own drawdown **-40.92% -> -31.81%** before the thrust rule, because the binding constraint (1%/15% = a 6.7% position) also forces the book wider — 541 trades become ~1,180. **Report the cost, not just the protection**: on its own the rule takes CAGR from +32.75% to +28.61%.
+
+99. **IN THE YEARS THE BOOK LAGS, THE SLEEVE IS BEATING IT — THE DIAGNOSIS INVERTED AGAIN.** `diagnose.py` labels 2009 and 2010 `bad_shots` (133 trades at -0.10R, 119 at -0.72R) and the instinct is to fix the entry rules. Running the sleeve *alone*, with the stock book sized to nothing, says something else:
+
+        year   sleeve only   full book   index
+        2009      +30.1%       +19.3%   +113.9%
+        2010      +22.8%        +4.6%    +16.3%
+        2026       -6.2%        -6.7%     +9.6%
+
+    In all three the stock book **subtracts**. Over the full period it adds a great deal (+41.60% against the sleeve's +31.12%, 15 years beaten against 10), so it is not a case for deleting it — but the lagging years are not entry-rule failures, they are years when a selective breakout book had nothing to do and the index was compounding. Standing the book down in crash-recovery states was tested across five drawdown thresholds and changes nothing (2,720 signals become 2,717), because the hi-conviction filter already declines almost everything in those states.
+
+    **2026's residual gap is a benchmark-composition fact, not a strategy failure.** The sleeve holds the Nifty 500 and is scored against the Smallcap 250; in 2026 smallcap beat broad by **14.8pp** (+9.6% against -5.2%). Parking in the smallcap index instead fixes 2026 (+2.9%) and 2009 (+33.7%) and costs **12.5 points of drawdown** (-22.72% -> -35.23%) for the same 15 of 18 years — so gotcha 86's choice survives the re-measurement under the new configuration, and the 2026 gap is reported rather than tuned away.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

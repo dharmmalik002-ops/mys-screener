@@ -102,6 +102,17 @@ def _closes(data_dir: Path, symbols: set[str]) -> dict[str, dict[date, float]]:
     return out
 
 
+# The worst adverse move a single position is assumed to be able to make
+# against us in one go, as a percentage of the entry price. It is NOT the stop
+# — a stop is a resting order and a gap jumps straight through it. 14.1% is
+# the worst single-trade loss in this record against a 3.5% stop, so a rule
+# that sizes on the stop alone understates the true exposure by about four
+# times. Declared here as a constant rather than re-read from each run's own
+# worst trade, because sizing against the sample's own extreme is fitting to
+# it: the next gap is free to be larger.
+GAP_ALLOWANCE_PCT = 15.0
+
+
 def simulate(
     trades: Sequence[Mapping],
     data_dir: Path,
@@ -119,6 +130,8 @@ def simulate(
     pyramid: bool = False,
     pyramid_scale: float = 0.30,
     size_by: "Callable[[Mapping], float] | None" = None,
+    max_equity_loss_pct: float | None = None,
+    gap_allowance_pct: float = GAP_ALLOWANCE_PCT,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -317,7 +330,21 @@ def simulate(
             if adding:
                 risk_amount *= pyramid_scale
             cost = risk_amount / (stop_pct / 100.0)
-            capped = min(cost, equity * cfg.max_position_pct / 100.0)
+            ceiling = equity * cfg.max_position_pct / 100.0
+            if max_equity_loss_pct is not None:
+                # The brief's rule: no single trade may cost more than
+                # `max_equity_loss_pct` of total equity. A stop does not
+                # deliver that on its own, because a stop is a resting order
+                # and a gap jumps it — the worst trade in this record lost
+                # 14.1% against a 3.5% stop. So the position is sized against
+                # an assumed adverse move of `gap_allowance_pct`, not against
+                # the stop, and the stop-based size is applied as well.
+                ceiling = min(
+                    ceiling,
+                    equity * max_equity_loss_pct / gap_allowance_pct,
+                    equity * max_equity_loss_pct / max(stop_pct, 0.01),
+                )
+            capped = min(cost, ceiling)
             if capped < cost:
                 # The position cap binds, so the money actually at risk is
                 # smaller than the budget asked for. Re-derive it, or the trade

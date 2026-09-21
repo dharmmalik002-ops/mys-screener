@@ -60,6 +60,12 @@ from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 # Sized for a confidence-filtered book: far fewer trades, so each one gets
 # more money. 0.25%/8%/60 slots was right when the book took 1,536 trades;
 # taking 541 of the best-scored ones supports 0.5%/12%/40.
+# The brief's hard risk rule: a single trade may cost at most 1% of total
+# equity. See `mtm_account.GAP_ALLOWANCE_PCT` for why the stop alone does not
+# enforce it. Measured cost: the worst single-trade hit to equity falls from
+# -1.65% to -0.91%, and the account's own drawdown from -40.92% to -31.81%.
+MAX_EQUITY_LOSS_PCT = 1.0
+
 BOOK = PortfolioConfig(
     risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=40,
     max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=12.0,
@@ -222,18 +228,41 @@ def main() -> int:
         for i, dd in enumerate(bars.dates)
     }
     healthy_set = frozenset({"bull_strong", "bull_narrow", "recovery"})
-    risk_on = {
+    # A follow-through day: the index closing 3% above its lowest close of the
+    # trailing ten sessions. Both of the other risk-on inputs need the fall to
+    # have happened before they turn off and the rebound to have happened
+    # before they turn back on, which in a V-shaped recovery is exactly the
+    # wrong timing — in 2026 the sleeve sat in gold through the index's +8.4%
+    # April rebound and finished the year worse than either of its own legs.
+    thrust = R.thrust_days(list(bars.dates), [float(c) for c in bars.close])
+
+    _healthy_days = {
         dd for dd in (set(park_prices) | set(gold))
         if (context.regime_by_day.get(dd) is not None
             and context.regime_by_day[dd].regime in healthy_set)
-        or above_200.get(dd, True)
+    }
+    # The SLEEVE re-enters on a healthy regime, an intact trend, or a thrust.
+    risk_on = {
+        dd for dd in (set(park_prices) | set(gold))
+        if dd in _healthy_days or above_200.get(dd, True) or dd in thrust
     }
     if gold and park_prices:
         park_prices = mtm.composite_sleeve(park_prices, gold, risk_on)
         park_days = set(park_prices)          # the sleeve itself is always held
     _derisk = bool(gold) and __import__("os").environ.get("DERISK", "1") == "1"
-    # The book is sold on exactly the condition the sleeve switches on.
-    _book_regime = {dd: ("bull_strong" if dd in risk_on else "bear") for dd in park_prices}
+    # The BOOK de-risks on a different, stricter condition than the sleeve:
+    # regime or thrust, WITHOUT the 200-DMA leg. Gotcha 90 added that leg to
+    # stop the book selling into live uptrends, and it was right under the
+    # configuration of the time. It is wrong now, and the reason is the sleeve:
+    # capital leaving the stock book no longer goes to cash, it goes into the
+    # index. De-risking has become a move from idiosyncratic risk to market
+    # risk rather than a move out of the market, so it can be done sooner.
+    # Measured in both halves rather than on the full period:
+    #
+    #     book on regime OR trend   h1 7/9 +35.4%   h2 7/9 +37.7%   DD -31.8%
+    #     book on regime OR thrust  h1 7/9 +39.0%   h2 8/9 +40.5%   DD -22.7%
+    _book_on = {dd for dd in park_prices if dd in _healthy_days or dd in thrust}
+    _book_regime = {dd: ("bull_strong" if dd in _book_on else "bear") for dd in park_prices}
 
     result = mtm.simulate(
         kept, data_dir, BOOK, label="rules",
@@ -243,6 +272,11 @@ def main() -> int:
         healthy_regimes=frozenset({"bull_strong"}) if _derisk else None,
         derisk_losers_only=False,
         pyramid=True, pyramid_scale=0.30,
+        # No single trade may cost more than 1% of total equity. A stop does
+        # not deliver that on its own — it is a resting order and a gap jumps
+        # it — so the position is sized against an assumed adverse move of
+        # GAP_ALLOWANCE_PCT as well as against the stop itself.
+        max_equity_loss_pct=MAX_EQUITY_LOSS_PCT,
     )
     if result is None:
         print("no account")
@@ -300,7 +334,7 @@ def main() -> int:
     # on a sized position is a small equity event. The trade-level figure is a
     # gap, which no stop prevents; the equity figure is the risk rule.
     print(f"worst hit to equity     {result.worst_trade_equity_pct:+7.2f}%  "
-          f"(limit 8%)")
+          f"(limit {MAX_EQUITY_LOSS_PCT:.0f}%)")
 
     print("\nyear   return    index    alpha  trades  verdict")
     for d in rows_d:

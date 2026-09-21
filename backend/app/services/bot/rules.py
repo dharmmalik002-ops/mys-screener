@@ -46,6 +46,7 @@ came from a quantile of the training half rather than from someone's judgement.
 
 from __future__ import annotations
 
+from datetime import date
 from typing import Mapping, Sequence
 
 # Frozen from pre-2018 quantiles. Do not re-fit these on later data.
@@ -96,12 +97,12 @@ EXIT_MAX_STOP_PCT = 3.5
 # +0.088R in training and +0.069R held out, while the full cleared set is
 # negative in both (-0.068R / -0.035R). It declines 82% of what the rules
 # already cleared, which is why the trade count falls by two thirds.
-MEASURED_CAGR = 32.75
-MEASURED_MAX_DRAWDOWN = -40.92
-MEASURED_SHARPE = 1.38
-MEASURED_PAYOFF = 15.19
-MEASURED_WIN_RATE = 15.9
-MEASURED_TRADES = 541
+MEASURED_CAGR = 41.60
+MEASURED_MAX_DRAWDOWN = -22.72
+MEASURED_SHARPE = 1.79
+MEASURED_PAYOFF = 12.36
+MEASURED_WIN_RATE = 15.3
+MEASURED_TRADES = 1181
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -319,3 +320,60 @@ def payoff_clears_the_brief() -> bool:
     rate. The bar is the brief's own floor, not the higher number a previous
     configuration happened to reach."""
     return MEASURED_PAYOFF >= 3.0
+
+
+# --- the V-shaped recovery: come back fast, or the sleeve buys the top ------
+# The sleeve's risk-on switch (healthy regime, or the index above its own 200
+# DMA) is a LAGGING condition by construction: both inputs need the fall to
+# have already happened before they turn off, and the rebound to have already
+# happened before they turn back on. In a V-shaped recovery that is the worst
+# possible timing, and 2026 shows it in one line:
+#
+#     2026-03   N500 -10.1%   gold -12.4%   sleeve -8.9%   (switched to gold
+#                                                           as gold fell)
+#     2026-04   N500  +8.4%   gold   0.0%   sleeve  0.0%   (still in gold for
+#                                                           the whole rebound)
+#
+# The sleeve returned -10.3% in a year when the index fell 5.2% and gold rose
+# 13.6% — worse than BOTH of its own legs. Debouncing makes it worse still
+# (3-session confirmation: +24.50%, 5-session: +21.56%, against +32.75%),
+# which is the tell that the problem is lag rather than noise: waiting longer
+# to act cannot fix being late.
+#
+# A follow-through day is the standard answer and it is declared here as the
+# rule it is: the index closing `THRUST_PCT` above its own lowest close of the
+# trailing `THRUST_LOOKBACK` sessions puts the sleeve back into equities
+# immediately, whatever the regime label and the 200 DMA still say. It is
+# purely causal — session `i` reads bars `0..i` — and it reads the market,
+# never the bot's own P&L, which is the line every failed learning experiment
+# in this project crossed.
+#
+# Chosen on the 2009-2017 half alone from a family declared in advance
+# (3/4/5/6/8% x 10/15/20 sessions), then the held-out half was run once.
+# EVERY member of that family beat the baseline in BOTH halves, so the
+# specific parameter is not load-bearing:
+#
+#     baseline (no thrust)   h1 6/9 +27.8%   h2 8/9 +31.5%
+#     thrust 3% / 10d        h1 7/9 +37.2%   h2 8/9 +40.5%   <- chosen
+#     thrust 8% / 20d        h1 6/9 +29.1%   h2 8/9 +33.5%
+#
+# Against 40 matched random controls turning on the SAME NUMBER of extra
+# risk-on days, it beats the 95th percentile on CAGR, Sharpe, drawdown and
+# years-beaten — so it is not simply the effect of being invested more often.
+THRUST_PCT = 3.0
+THRUST_LOOKBACK = 10
+
+
+def thrust_days(dates: "Sequence[date]", closes: "Sequence[float]") -> "set":
+    """Sessions where the index has thrust `THRUST_PCT` off its recent low.
+
+    Causal by construction: the window for session `i` is `i-THRUST_LOOKBACK`
+    through `i` inclusive, so no future bar can put a day in this set.
+    """
+    out = set()
+    for i in range(THRUST_LOOKBACK, len(closes)):
+        window = closes[i - THRUST_LOOKBACK: i + 1]
+        low = min(window)
+        if low > 0 and (closes[i] / low - 1.0) * 100.0 >= THRUST_PCT:
+            out.add(dates[i])
+    return out

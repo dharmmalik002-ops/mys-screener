@@ -279,3 +279,61 @@ class DeriskTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EquityLossLimitTests(unittest.TestCase):
+    """`max_equity_loss_pct` — the brief's hard 1%-of-equity rule.
+
+    The rule it replaces was "1% of equity, enforced by an 8% stop", which is
+    only true if the stop fills at the stop. It does not: the worst trade in
+    this record lost 14.1% against a 3.5% stop, a gap straight through it.
+    So the position is sized against a declared adverse move as well.
+    """
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self._tmp.name)
+        self.days = [date(2020, 1, 1) + timedelta(days=i) for i in range(120)]
+        write_bars(self.dir, "AAA", self.days, [100.0] * 120)
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def _cfg(self):
+        # A deliberately reckless book: 5% risk behind a 2% stop asks for a
+        # 250%-of-equity position, and the position cap alone would allow 50%.
+        return PortfolioConfig(risk_per_trade_pct=5.0, watch_risk_pct=5.0,
+                               max_concurrent=10, max_portfolio_risk_pct=500.0,
+                               max_deployed_pct=100.0, max_position_pct=50.0)
+
+    def _trade(self, r):
+        return {"symbol": "AAA", "entry_day": "2020-01-02", "exit_day": "2020-03-01",
+                "r_multiple": r, "risk_pct": 2.0, "entry": 100.0}
+
+    def test_a_gap_through_the_stop_still_costs_at_most_the_limit(self):
+        """The test that matters. -8R on a 2% stop is a 16% adverse move —
+        past the 15% allowance — and it must still not cost more than ~1%."""
+        r = mtm.simulate([self._trade(-8.0)], self.dir, self._cfg(),
+                         max_equity_loss_pct=1.0)
+        self.assertIsNotNone(r)
+        self.assertGreaterEqual(
+            r.worst_trade_equity_pct, -1.25,
+            "a gap through the stop breached the equity limit by more than "
+            "the allowance permits",
+        )
+
+    def test_without_the_rule_the_same_trade_is_far_worse(self):
+        """The control: the limit is doing the work, not the position cap."""
+        loose = mtm.simulate([self._trade(-8.0)], self.dir, self._cfg())
+        tight = mtm.simulate([self._trade(-8.0)], self.dir, self._cfg(),
+                             max_equity_loss_pct=1.0)
+        self.assertLess(loose.worst_trade_equity_pct, tight.worst_trade_equity_pct)
+
+    def test_the_limit_binds_through_the_stop_as_well_as_the_gap(self):
+        """A trade with a very wide stop is sized down by the stop leg of the
+        rule, not only by the gap allowance."""
+        wide = {"symbol": "AAA", "entry_day": "2020-01-02", "exit_day": "2020-03-01",
+                "r_multiple": -1.0, "risk_pct": 40.0, "entry": 100.0}
+        r = mtm.simulate([wide], self.dir, self._cfg(), max_equity_loss_pct=1.0)
+        self.assertIsNotNone(r)
+        self.assertGreaterEqual(r.worst_trade_equity_pct, -1.05)
