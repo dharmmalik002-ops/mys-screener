@@ -54,6 +54,13 @@ class MTMResult:
     worst_trade_equity_pct: float = 0.0   # biggest single-trade hit to equity
     equity_curve: list[dict] = field(default_factory=list)
     yearly: dict[int, float] = field(default_factory=dict)
+    # Every position the account actually FILLED. The signal list is not the
+    # same thing: the book declines most of what clears its rules, for want of
+    # a slot or of cash, so trade-shape statistics computed over signals
+    # describe a book that was never run. Reported per fill so a breakdown by
+    # strategy or by year can be built from what happened rather than from
+    # what was offered.
+    fills: list[dict] = field(default_factory=list)
 
 
 def composite_sleeve(
@@ -372,6 +379,13 @@ def simulate(
                 "equity_at_entry": equity,
                 "cost": cost, "risk_amount": risk_amount, "r": float(t["r_multiple"]),
                 "entry_price": float(t.get("entry") or 0.0),
+                # Carried only so `fills` can describe what the account did.
+                # `stop_pct` is the stop the position was actually sized on,
+                # which is not always the signal's own risk_pct once the
+                # engine's max_stop_pct has pulled it in.
+                "strategy": t.get("strategy"),
+                "stop_pct": stop_pct,
+                "sessions_held": t.get("sessions_held"),
             })
 
         # --- mark the book to market ---------------------------------------
@@ -458,4 +472,16 @@ def simulate(
         exposure_pct=round(100.0 * invested_days / len(sessions), 1),
         worst_trade_equity_pct=round(worst_equity, 2),
         equity_curve=curve, yearly=yearly,
+        fills=[{
+            "symbol": p_["symbol"], "strategy": p_.get("strategy"),
+            "entry_day": p_["entry"].isoformat() if hasattr(p_["entry"], "isoformat") else str(p_["entry"]),
+            "exit_day": p_["exit"].isoformat() if hasattr(p_["exit"], "isoformat") else str(p_["exit"]),
+            "r": round(float(p_["r"]), 3),
+            "risk_pct": round(float(p_.get("stop_pct") or 0.0), 3),
+            "net_pct": round(float(p_["r"]) * float(p_.get("stop_pct") or 0.0), 3),
+            "sessions_held": p_.get("sessions_held"),
+            "equity_pct": round(100.0 * (p_["risk_amount"] * p_["r"])
+                                / max(p_.get("equity_at_entry") or cfg.starting_equity, 1.0), 3),
+            "is_add": bool(p_.get("is_add")),
+        } for p_ in taken],
     )

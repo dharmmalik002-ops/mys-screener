@@ -364,6 +364,47 @@ def main() -> int:
     print(f"worst hit to equity     {result.worst_trade_equity_pct:+7.2f}%  "
           f"(limit {MAX_EQUITY_LOSS_PCT:.0f}%)")
 
+    # Per-strategy and per-year shape, over the positions the account actually
+    # FILLED rather than over every signal that cleared. Those are different
+    # books: 2,720 signals clear and ~1,200 get a slot, so shape computed over
+    # signals describes a portfolio that was never run.
+    def _shape(rows):
+        w = [r for r in rows if r["r"] > 0]
+        l = [r for r in rows if r["r"] <= 0]
+        hw = [r["sessions_held"] for r in w if r["sessions_held"] is not None]
+        hl = [r["sessions_held"] for r in l if r["sessions_held"] is not None]
+        m = lambda xs: (sum(xs) / len(xs)) if xs else float("nan")
+        return (len(rows), 100.0 * len(w) / max(len(rows), 1),
+                m([r["risk_pct"] for r in rows]), m([r["net_pct"] for r in w]),
+                m([r["net_pct"] for r in l]),
+                max([r["net_pct"] for r in rows], default=float("nan")),
+                min([r["net_pct"] for r in rows], default=float("nan")),
+                m(hw), m(hl), m([r["r"] for r in rows]),
+                min([r["equity_pct"] for r in rows], default=float("nan")))
+
+    _hdr = (f"{'':21}{'n':>5}{'win%':>6}{'stop':>7}{'avg gain':>10}{'avg loss':>9}"
+            f"{'max gain':>10}{'max loss':>9}{'holdW':>7}{'holdL':>6}{'avgR':>7}{'worstEq':>9}")
+
+    def _row(label, rows):
+        n, win, stop, gain, loss, mx, mn, hw, hl, r, eq = _shape(rows)
+        print(f"{label:21}{n:5}{win:6.1f}{stop:6.2f}%{gain:+9.1f}%{loss:+8.1f}%"
+              f"{mx:+9.1f}%{mn:+8.1f}%{hw:7.0f}{hl:6.0f}{r:+7.2f}{eq:+8.2f}%")
+
+    fills = result.fills
+    for title, keyfn in (("BY STRATEGY", lambda r: r["strategy"] or "?"),
+                         ("BY YEAR", lambda r: r["entry_day"][:4])):
+        groups: dict = {}
+        for f in fills:
+            groups.setdefault(keyfn(f), []).append(f)
+        order = (sorted(groups, key=lambda g: -len(groups[g]))
+                 if title == "BY STRATEGY" else sorted(groups))
+        print(f"\n--- {title} (positions actually filled: {len(fills)}) ---")
+        print(_hdr)
+        for g in order:
+            _row(str(g), groups[g])
+        if title == "BY STRATEGY":
+            _row("ALL", fills)
+
     print("\nyear   return    index    alpha  trades  verdict")
     for d in rows_d:
         if d.year not in result.yearly:
@@ -401,6 +442,7 @@ def main() -> int:
             "cagr": result.cagr_pct, "max_drawdown": result.max_drawdown_pct,
             "sharpe": result.sharpe, "win_rate": result.win_rate,
             "payoff": result.payoff, "trades": result.trades_taken,
+            "fills": result.fills,
         }, indent=2, default=str))
         print(f"\nwrote {args.out}")
     return 0
