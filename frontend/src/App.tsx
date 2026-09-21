@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Bot,
   GraduationCap,
   Globe,
   House,
@@ -144,6 +145,7 @@ const LivePanel = lazy(() => import("./components/LivePanel").then((module) => (
 const MarketsPanel = lazy(() => import("./components/MarketsPanel").then((module) => ({ default: module.MarketsPanel })));
 const MutualFundsPanel = lazy(() => import("./components/MutualFundsPanel").then((module) => ({ default: module.MutualFundsPanel })));
 const StudyPanel = lazy(() => import("./components/StudyPanel").then((module) => ({ default: module.StudyPanel })));
+const BotPanel = lazy(() => import("./components/BotPanel").then((module) => ({ default: module.BotPanel })));
 const TradeJournalPanel = lazy(() => import("./components/TradeJournalPanel").then((module) => ({ default: module.TradeJournalPanel })));
 const WatchlistPickerModal = lazy(() => import("./components/WatchlistPickerModal").then((module) => ({ default: module.WatchlistPickerModal })));
 const WatchlistsPanel = lazy(() => import("./components/WatchlistsPanel").then((module) => ({ default: module.WatchlistsPanel })));
@@ -215,7 +217,7 @@ const MARKET_VIEW_CACHE_KEY = "mr-malik-market-view-cache:v2";
 const MARKET_VIEW_CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 type ThemeKey = "dark" | "light";
-type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study";
+type AppPage = "today" | "home" | "screener" | "groups" | "watchlists" | "journal" | "live" | "markets" | "funds" | "study" | "bot";
 /* Primary navigation, declared once. The desktop header renders these as text
    pills; phones render the same list as a fixed bottom tab bar (see
    .mobile-tabbar in styles/mobile.css), which is why the labels carry a short
@@ -240,6 +242,9 @@ const NAV_PAGES: NavPage[] = [
   { page: "live", label: "Live", short: "Live", Icon: Zap },
   { page: "journal", label: "Journal", short: "Journal", Icon: NotebookPen },
   { page: "study", label: "Chart Gym", short: "Gym", Icon: GraduationCap },
+  // Last in the bar deliberately: the bot is a research surface built on a
+  // backtest, not the daily routine. It should be reached on purpose.
+  { page: "bot", label: "Bot", short: "Bot", Icon: Bot },
 ];
 
 type ResultSortMode = "change" | "rs";
@@ -2130,6 +2135,11 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
 
     if (page === "journal") {
       void import("./components/TradeJournalPanel");
+      return;
+    }
+
+    if (page === "bot") {
+      void import("./components/BotPanel");
       return;
     }
   };
@@ -5993,6 +6003,14 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             <StudyPanel onOpenSymbolChart={handleJournalOpenSymbolChart} />
           </Suspense>
         ) : null}
+        {activePage === "bot" ? (
+          <Suspense fallback={<DeferredPanelPlaceholder />}>
+            {/* Ungated on `loading` for the same reason as Chart Gym: the bot
+                reads its own committed backtest artifact and needs nothing
+                from the dashboard fetch. */}
+            <BotPanel />
+          </Suspense>
+        ) : null}
         {!loading && activePage === "journal" ? (
           <Suspense fallback={<DeferredPanelPlaceholder />}>
             <TradeJournalPanel
@@ -6005,7 +6023,7 @@ function AppShell({ initialMarket, useMarketRoutes = false }: AppProps) {
             />
           </Suspense>
         ) : null}
-        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" ? (
+        {!loading && activePage !== "today" && activePage !== "home" && activePage !== "journal" && activePage !== "live" && activePage !== "markets" && activePage !== "funds" && activePage !== "study" && activePage !== "bot" ? (
           <Suspense fallback={<DeferredPanelPlaceholder compact />}>
             <>
             <section className="page-metrics-strip">

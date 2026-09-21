@@ -1,0 +1,51 @@
+{
+  "baseline": {
+    "train": 23.51,
+    "holdout": 24.82
+  },
+  "trials": [
+    {
+      "name": "trail_wider",
+      "train_score": 21.57,
+      "holdout_score": 26.23,
+      "adopted": false,
+      "note": "no edge in training (-1.94pp)"
+    },
+    {
+      "name": "trail_tighter",
+      "train_score": 22.02,
+      "holdout_score": 20.76,
+      "adopted": false,
+      "note": "no edge in training (-1.49pp)"
+    },
+    {
+      "name": "hold_longer",
+      "train_score": 22.21,
+      "holdout_score": 25.31,
+      "adopted": false,
+      "note": "no edge in training (-1.30pp)"
+    },
+    {
+      "name": "stop_looser",
+      "train_score": 26.29,
+      "holdout_score": 20.09,
+      "adopted": false,
+      "note": "better in training (+2.78pp) and NOT held out (-4.73pp) \u2014 the -0.70 trap, rejected"
+    },
+    {
+      "name": "stop_tighter",
+      "train_score": 24.7,
+      "holdout_score": 24.04,
+      "adopted": false,
+      "note": "better in training (+1.19pp) and NOT held out (-0.78pp) \u2014 the -0.70 trap, rejected"
+    },
+    {
+      "name": "pyramid_bigger",
+      "train_score": 23.64,
+      "holdout_score": 23.79,
+      "adopted": false,
+      "note": "no edge in training (+0.13pp)"
+    }
+  ],
+  "adopted": null
+}

@@ -5083,3 +5083,681 @@ export function getStudyReview() {
     label: "scanner backend",
   });
 }
+
+/* --- Trading bot -----------------------------------------------------------
+   The bot's numbers all come from a committed backtest artifact rather than a
+   live computation, so these fetchers are plain reads. `whileWaking` still
+   wraps them because a cold Space answers the first request slowly whatever
+   the endpoint does. */
+
+export type BotCellStats = {
+  strategy: string;
+  regime: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  median_r: number;
+  total_r: number;
+  profit_factor: number;
+  avg_win_r: number;
+  avg_loss_r: number;
+  avg_hold: number;
+  expectancy_pct: number;
+  r_ci_low: number;
+  r_ci_high: number;
+  p_value: number;
+  significant: boolean;
+  reportable: boolean;
+};
+
+export type BotValidatedCell = {
+  strategy: string;
+  regime: string;
+  in_sample: BotCellStats | null;
+  out_sample: BotCellStats | null;
+  verdict: "confirmed" | "confirmed_weak" | "decayed" | "negative" | "insufficient";
+  note: string;
+};
+
+export type BotPlaybookEntry = {
+  strategy: string;
+  label: string;
+  family: string;
+  verdict: string;
+  in_sample_r: number;
+  out_sample_r: number;
+  out_sample_trades: number;
+  win_rate: number;
+  risk_per_trade_pct: number;
+  note: string;
+};
+
+export type BotPlaybook = {
+  regime: string;
+  label: string;
+  note: string;
+  stance: "engaged" | "selective" | "stand_down";
+  entries: BotPlaybookEntry[];
+  max_concurrent: number;
+  max_portfolio_risk_pct: number;
+  rationale: string;
+};
+
+export type BotRegimeRow = {
+  day: string;
+  regime: string;
+  regime_label?: string;
+  volatility_band: string;
+  regime_age: number;
+  index_close: number;
+  pct_from_200dma: number;
+  pct_from_52w_high: number;
+  ma200_slope: number;
+  breadth_above_200dma: number;
+  breadth_net_new_highs: number;
+  vix_percentile: number;
+  constituents: number;
+};
+
+export type BotMacroFinding = {
+  series: string;
+  label: string;
+  note: string;
+  headwind_direction: string;
+  trades_headwind: number;
+  trades_tailwind: number;
+  avg_r_headwind: number;
+  avg_r_tailwind: number;
+  difference: number;
+  p_value: number;
+  material: boolean;
+  verdict: string;
+};
+
+export type BotSurvivorship = {
+  eras: Array<{
+    era: string;
+    start: string;
+    end: string;
+    symbols_existing: number;
+    coverage_pct: number;
+    trades: number;
+    avg_r: number;
+    win_rate: number;
+    note: string;
+  }>;
+  coverage_performance_correlation: number | null;
+  verdict: string;
+  limitation: string;
+};
+
+export type BotBacktest = {
+  artifact_version: number;
+  generated_at: string;
+  config: Record<string, unknown>;
+  coverage: {
+    sessions: number;
+    first_session: string | null;
+    last_session: string | null;
+    symbols_with_trades: number;
+    trades_total: number;
+    trades_resolved: number;
+    validation_split: string | null;
+  };
+  regime_distribution: Array<{
+    regime: string;
+    label: string;
+    sessions: number;
+    pct_of_history: number;
+    note: string;
+  }>;
+  regime_timeline: Array<{
+    regime: string;
+    label: string;
+    start: string;
+    end: string;
+    sessions: number;
+    index_return_pct: number;
+  }>;
+  current_regime: BotRegimeRow | null;
+  strategy_totals: BotCellStats[];
+  matrix: BotCellStats[];
+  validated: BotValidatedCell[];
+  playbooks: BotPlaybook[];
+  survivorship: BotSurvivorship;
+  macro: BotMacroFinding[];
+  strategy_catalogue: Array<{
+    id: string;
+    label: string;
+    family: string;
+    thesis: string;
+    expects: string[];
+    stop_atr_mult: number;
+  }>;
+  regime_catalogue: Array<{ id: string; label: string; note: string }>;
+  learning?: BotLearning;
+};
+
+export type BotCandidate = {
+  symbol: string;
+  strategy: string;
+  strategy_label: string;
+  signal_day: string;
+  close: number;
+  entry_hint: number;
+  stop: number;
+  risk_pct: number;
+  atr_pct: number;
+  turnover_crore: number;
+  expected_r: number;
+  verdict: string;
+  // Ranking breakdown, attached by the quality model. Optional because an
+  // older signals artifact predates it and must still render.
+  cell_expectancy_r?: number;
+  volatility_adjustment_r?: number;
+  volatility_bucket?: string;
+  edge_score_r?: number;
+  sizing: {
+    shares: number;
+    position_value?: number;
+    risk_budget?: number;
+    risk_per_share?: number;
+    actual_risk?: number;
+    pct_of_equity?: number;
+    capped_by_capital?: boolean;
+    reason?: string;
+  };
+};
+
+export type BotSignals = {
+  as_of?: string;
+  regime?: BotRegimeRow;
+  playbook?: BotPlaybook | null;
+  macro?: {
+    headwinds: string[];
+    tailwinds: string[];
+    size_multiplier: number;
+    stance: string;
+    note: string;
+  };
+  stance?: string;
+  equity?: number;
+  candidates: BotCandidate[];
+  candidates_found?: number;
+  ranking?: { active: boolean; note: string };
+  calibration?: {
+    book: BotCalibration["book"] | null;
+    suspended: string[];
+    diverging: string[];
+  } | null;
+  message?: string;
+  source?: "live" | "offline";
+  age_days?: number | null;
+  stale?: boolean;
+  error?: string;
+};
+
+export type BotStatus = {
+  backtest_present: boolean;
+  backtest_generated_at: string | null;
+  coverage: BotBacktest["coverage"] | null;
+  signals_present: boolean;
+  signals_as_of: string | null;
+  signals_age_days: number | null;
+  history_store: { present: boolean; symbols?: number; megabytes?: number; path?: string };
+  live_scan_available: boolean;
+};
+
+export function getBotStatus() {
+  return whileWaking(() => request<BotStatus>("/api/bot/status", undefined, { timeoutMs: 30000 }));
+}
+
+export function getBotBacktest() {
+  // ~900 KB. Fetched once and held in the panel rather than per-tab, because
+  // every view in the Bot page is a different slice of this same artifact.
+  return whileWaking(() => request<BotBacktest>("/api/bot/backtest", undefined, { timeoutMs: 60000 }));
+}
+
+export function getBotSignals(equity: number) {
+  // A live scan walks the whole bar store on a workstation; the Space serves
+  // the committed copy instantly. The timeout covers the slow path.
+  return whileWaking(() =>
+    request<BotSignals>(`/api/bot/signals?equity=${encodeURIComponent(equity)}`, undefined, { timeoutMs: 90000 }));
+}
+
+/* --- Bot: the learning layer ---------------------------------------------
+   Trade-by-trade review, entry-condition studies and the evolution timeline.
+   All of it travels inside the committed backtest artifact, so these are plain
+   reads; the SQLite ledger behind them is local-only and its endpoints degrade
+   to 503 on the Space by design. */
+
+export type BotVerdictRow = {
+  verdict: string;
+  label: string;
+  trades: number;
+  pct_of_trades: number;
+  avg_r: number;
+  note: string;
+};
+
+export type BotLesson = {
+  tag: string;
+  trades: number;
+  avg_r: number;
+  delta_vs_book: number;
+  direction: "better" | "worse";
+  text: string;
+};
+
+export type BotTagRow = { tag: string; trades: number; avg_r: number; kind: "entry" | "outcome" };
+
+export type BotReviewSummary = {
+  trades: number;
+  book_avg_r: number;
+  verdicts: BotVerdictRow[];
+  tags: BotTagRow[];
+  entry_tags: BotTagRow[];
+  outcome_tags: BotTagRow[];
+  lessons: BotLesson[];
+  lesson_basis: string;
+  structural_note: string | null;
+};
+
+export type BotConditionBucket = {
+  label: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  oos_trades: number;
+  oos_avg_r: number | null;
+};
+
+export type BotConditionStudy = {
+  condition: string;
+  label: string;
+  question: string;
+  buckets: BotConditionBucket[];
+  monotone: boolean;
+  spread_r: number;
+  oos_spread_r: number | null;
+  verdict: string;
+  duplicates: string | null;
+};
+
+export type BotCellStatus = {
+  strategy: string;
+  regime: string;
+  status: string;
+  status_label: string;
+  trades: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  recent_trades: number;
+  recent_avg_r: number | null;
+  note: string;
+};
+
+export type BotEvolutionChange = {
+  as_of: string;
+  strategy: string;
+  regime: string;
+  from_status: string;
+  to_status: string;
+  from_label: string;
+  to_label: string;
+  trades: number;
+  avg_r: number;
+  recent_avg_r: number | null;
+  note: string;
+};
+
+export type BotLearning = {
+  available: boolean;
+  population: { trades: number; first_entry: string; last_entry: string };
+  review_summary: BotReviewSummary;
+  review_by_regime: Array<{ regime: string; label: string } & BotReviewSummary>;
+  condition_studies: BotConditionStudy[];
+  condition_split: string;
+  portfolio_runs: BotPortfolioRun[];
+  config_sensitivity: BotSensitivity | null;
+  regime_timing: BotRegimeTiming | null;
+  benchmark: BotBenchmark | null;
+  evolution_timeline: Array<{ as_of: string; counts: Record<string, number>; tradeable: number }>;
+  evolution_changes: BotEvolutionChange[];
+  evolution_changes_total: number;
+  cell_status: BotCellStatus[];
+  cell_status_as_of: string | null;
+  status_catalogue: Array<{ id: string; label: string; note: string }>;
+  verdict_catalogue: Array<{ id: string; label: string; note: string }>;
+  method_note: string;
+};
+
+export function getBotLearning() {
+  return whileWaking(() => request<BotLearning>("/api/bot/learning", undefined, { timeoutMs: 60000 }));
+}
+
+/* --- Bot: portfolio and the professional benchmark ------------------------
+   The account-level view. Trade-level R says what a population of signals was
+   worth; these say what an account that had to choose between them, with
+   finite capital, actually ended up with — and where that lands among real
+   fund managers. */
+
+export type BotPortfolioRun = {
+  label: string;
+  start: string;
+  end: string;
+  years: number;
+  starting_equity: number;
+  ending_equity: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  total_return_pct: number;
+  trades_taken: number;
+  signals_declined: number;
+  win_rate: number;
+  avg_r: number;
+  payoff: number;
+  exposure_pct: number;
+  equity_curve: Array<{ day: string; equity: number; open: number }>;
+};
+
+export type BotScorecardRow = {
+  dimension: string;
+  bot: string;
+  reference: string;
+  verdict: boolean | null;
+};
+
+export type BotComparison = {
+  run: string;
+  window_years: number;
+  bot_cagr_pct: number;
+  bot_max_drawdown_pct: number;
+  bot_sharpe: number;
+  index_cagr_pct: number | null;
+  funds_counted: number;
+  fund_median_cagr: number;
+  fund_p75_cagr: number;
+  fund_p90_cagr: number;
+  fund_best_cagr: number;
+  percentile: number;
+  beats_median: boolean;
+  beats_index: boolean | null;
+  fund_median_drawdown: number | null;
+  drawdown_better_than_median: boolean | null;
+  bot_return_per_drawdown: number | null;
+  fund_return_per_drawdown: number | null;
+  risk_adjusted_better: boolean | null;
+  scorecard: BotScorecardRow[];
+  verdict: string;
+  // Only attached to the held-out run: what range of outcomes the same edge
+  // could plausibly have produced over a window this short.
+  uncertainty?: {
+    trades: number;
+    eligible_pool: number;
+    point_estimate_cagr: number;
+    ci_low_cagr: number;
+    ci_high_cagr: number;
+    median_resample_cagr: number;
+    share_positive: number;
+    share_beating_index: number;
+    share_beating_fund_median: number;
+    note: string;
+  } | null;
+};
+
+export type BotBenchmark = {
+  comparisons: BotComparison[];
+  headline: BotComparison | null;
+  answer: {
+    run: string;
+    wins: number;
+    losses: number;
+    won_on: string[];
+    lost_on: string[];
+    summary: string;
+  } | null;
+  caveats: string[];
+  method: string;
+};
+
+/* --- Bot: the live feedback loop ------------------------------------------
+   Closed live and paper trades audit the study rather than retrain it. The
+   loop can only ever reduce a cell's size or stand it down; a cell beating
+   its expectation is never promoted. */
+
+export type BotCellCalibration = {
+  strategy: string;
+  regime: string;
+  expected_r: number;
+  live_trades: number;
+  live_avg_r: number;
+  shortfall_r: number;
+  p_value: number;
+  status: "tracking" | "diverging" | "suspended" | "insufficient";
+  size_multiplier: number;
+  note: string;
+  status_note: string;
+};
+
+export type BotCalibration = {
+  cells: BotCellCalibration[];
+  suspended: string[];
+  diverging: string[];
+  book: {
+    status: string;
+    live_trades: number;
+    live_avg_r: number;
+    expected_r: number;
+    note: string;
+  };
+  method: string;
+};
+
+export function getBotCalibration() {
+  return whileWaking(() => request<BotCalibration>("/api/bot/calibration", undefined, { timeoutMs: 30000 }));
+}
+
+export type BotLiveTradeInput = {
+  source?: "live" | "paper";
+  strategy: string;
+  symbol: string;
+  regime: string;
+  entry_day: string;
+  exit_day: string;
+  r_multiple: number;
+  entry?: number;
+  stop?: number;
+  exit_price?: number;
+  exit_reason?: string;
+  sessions_held?: number;
+  mae_r?: number;
+  mfe_r?: number;
+  risk_pct?: number;
+  atr_pct_at_entry?: number;
+  net_pct?: number;
+};
+
+export function recordBotTrade(trade: BotLiveTradeInput) {
+  return request<{ recorded: boolean; review: Record<string, unknown> | null; ledger: Record<string, unknown> }>(
+    "/api/bot/ledger/trade",
+    { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(trade) },
+    { timeoutMs: 30000 },
+  );
+}
+
+/* --- Bot: configuration sensitivity ---------------------------------------
+   One configuration's CAGR implies that configuration was chosen well. It was
+   not — pre-split ranking correlates -0.70 with held-out return — so the
+   distribution across defensible book structures is the honest answer. */
+
+export type BotConfigResult = {
+  positions: number;
+  total_risk_pct: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  trades: number;
+};
+
+export type BotSensitivity = {
+  configs: BotConfigResult[];
+  median_cagr: number;
+  p25_cagr: number;
+  p75_cagr: number;
+  min_cagr: number;
+  max_cagr: number;
+  median_drawdown: number;
+  share_beating_index: number;
+  share_beating_fund_median: number;
+  selection_rank_correlation: number | null;
+  by_period: Array<{
+    period: string;
+    bot_median_cagr: number;
+    bot_p25_cagr: number;
+    bot_p75_cagr: number;
+    index_cagr: number | null;
+    excess_vs_index: number | null;
+  }>;
+  note: string;
+};
+
+/* --- Bot: the rolling walk-forward ----------------------------------------
+   The evaluation that matters. Every other figure rests on one train/test
+   split whose 3.8-year test window happens to contain the single year the
+   system worked. This rebuilds the playbook each January from prior data only
+   and trades the year that follows, eleven times over. */
+
+export type BotWalkforwardYear = {
+  year: number;
+  cells: number;
+  signals: number;
+  // Average R of every trade the playbook allowed that year, ignoring slots,
+  // sizing and capital. A negative figure is the selection failing, not the
+  // book — which is what separates "badly run" from "no edge".
+  signal_avg_r: number | null;
+  trades: number;
+  bot_return_pct: number;
+  index_return_pct: number | null;
+  excess_pct: number | null;
+  max_drawdown_pct: number;
+};
+
+export type BotWalkforward = {
+  years: BotWalkforwardYear[];
+  bot_cagr: number;
+  index_cagr: number | null;
+  years_beating_index: number;
+  years_evaluated: number;
+  positive_signal_years: number;
+  mean_signal_edge: number | null;
+};
+
+export function getBotWalkforward() {
+  return whileWaking(() => request<BotWalkforward>("/api/bot/walkforward", undefined, { timeoutMs: 30000 }));
+}
+
+/* --- Bot: the combined product --------------------------------------------
+   The two components that survived, held as sleeves and measured against real
+   fund managers. Both halves of the result are typed, deliberately: a client
+   that renders `funds_dominating` without `return_percentile` and
+   `fund_median_cagr` is quoting half a measurement. */
+
+export type BotCombinedStats = {
+  years: number;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  sharpe: number;
+  return_per_drawdown: number | null;
+};
+
+export type BotCombinedBenchmark = {
+  funds_counted: number;
+  funds_dominating: number | null;
+  funds_dominating_pct: number | null;
+  fund_median_cagr: number;
+  fund_median_drawdown: number | null;
+  fund_median_sharpe: number | null;
+  percentile: number;
+};
+
+export type BotCombinedAlternative = {
+  stats: BotCombinedStats;
+  benchmark: BotCombinedBenchmark;
+};
+
+export type BotCombinedWindow = {
+  book: BotCombinedStats;
+  timing: BotCombinedStats;
+  blends: Record<string, BotCombinedStats>;
+  blend_breaker_off?: BotCombinedStats;
+  benchmark?: BotCombinedBenchmark;
+  /* Every configuration carries its own fund comparison. Reporting only the
+     blend's would let the weighting be chosen after seeing the fund result. */
+  alternatives?: Record<string, BotCombinedAlternative>;
+};
+
+export type BotCombined = Record<string, BotCombinedWindow>;
+
+export function getBotCombined() {
+  return whileWaking(() => request<BotCombined>("/api/bot/combined", undefined, { timeoutMs: 30000 }));
+}
+
+/* --- Bot: regime timing ---------------------------------------------------
+   The one result here that beats a professional. It works because it asks
+   *when to be exposed* rather than *which stock to buy* — the question the
+   regime classifier can actually answer. */
+
+export type BotTimingRun = {
+  label: string;
+  start: string;
+  end: string;
+  cagr_pct: number;
+  max_drawdown_pct: number;
+  return_per_drawdown: number;
+  exposure_pct: number;
+  switches: number;
+  mean_hold_days: number;
+  cash_rate_pct: number;
+  tax_pct: number;
+  equity_curve: Array<{ day: string; equity: number; invested: boolean }>;
+};
+
+export type BotTimingHealth = {
+  completed_switches: number;
+  exposure_pct: number;
+  expected_exposure_pct: number;
+  invested_avg_daily_pct: number;
+  cash_avg_daily_pct: number;
+  discrimination_pp: number;
+  status: "tracking" | "diverging" | "insufficient";
+  note: string;
+};
+
+export type BotRegimeTiming = {
+  available: boolean;
+  rule: string[];
+  // The learning discipline pointed at the component that actually earns.
+  // It can flag the rule for breaking; it never promotes it for a good run.
+  health: BotTimingHealth;
+  timed: BotTimingRun;
+  buy_and_hold: BotTimingRun;
+  fund_median_cagr: number | null;
+  fund_median_drawdown: number | null;
+  beats_buy_and_hold: boolean;
+  beats_fund_median: boolean | null;
+  shallower_than_fund: boolean | null;
+  sensitivity: Array<{
+    cash_rate_pct: number;
+    tax_pct: number;
+    cagr_pct: number;
+    max_drawdown_pct: number;
+    beats_buy_and_hold: boolean;
+    beats_fund_median: boolean | null;
+  }>;
+  method: string;
+  caveat: string;
+};
