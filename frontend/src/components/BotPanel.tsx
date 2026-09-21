@@ -11,6 +11,8 @@ import {
   TrendingUp,
 } from "lucide-react";
 
+import BotRulesBook from "./BotRulesBook";
+
 import {
   getBotBacktest,
   getBotLearning,
@@ -39,22 +41,27 @@ import "./BotPanel.css";
    The limitations view is what keeps the costume visible, so it gets equal
    billing with the numbers rather than a footnote nobody scrolls to. */
 
-type BotView = "today" | "scorecard" | "playbook" | "learning" | "loop" | "evolution" | "evidence" | "limits";
+type BotView = "today" | "rules" | "scorecard" | "playbook" | "learning" | "loop" | "evolution" | "evidence" | "limits";
 
 // Ordered the way a decision gets made: what to do now, the rules behind it,
 // what the trade record taught, how that view has shifted, the underlying
 // study, and finally what none of it can tell you.
-const VIEWS: Array<{ id: BotView; label: string; hint: string }> = [
-  { id: "today", label: "Today", hint: "Current regime, stance and candidates" },
+// `primary` views are always shown. The rest are the research surfaces — real
+// and kept, but folded behind "Show research views" because eight tabs of
+// study output buries the two questions an account actually asks: what do I
+// buy today, and has this ever made money.
+const VIEWS: Array<{ id: BotView; label: string; hint: string; primary?: boolean }> = [
+  { id: "today", label: "Today", hint: "Current regime, stance and candidates", primary: true },
+  { id: "rules", label: "Rules book", hint: "Year by year against the Smallcap 250", primary: true },
   // Second on purpose: "is this any good?" is the question everything else
   // only supports, and it is answered against real fund managers.
-  { id: "scorecard", label: "Scorecard", hint: "The account, measured against real fund managers" },
+  { id: "scorecard", label: "Scorecard", hint: "The account, measured against real fund managers", primary: true },
   { id: "playbook", label: "Playbook", hint: "Which setups are cleared in which regime" },
   { id: "learning", label: "Learning", hint: "What the trade record says works, and what it cost" },
   { id: "loop", label: "Live loop", hint: "Whether the live book still behaves as the study predicted" },
   { id: "evolution", label: "Evolution", hint: "How the bot's view of each strategy has changed" },
   { id: "evidence", label: "Evidence", hint: "The strategy × regime study behind the playbook" },
-  { id: "limits", label: "What this can't tell you", hint: "Survivorship, macro and the honest caveats" },
+  { id: "limits", label: "What this can't tell you", hint: "Survivorship, macro and the honest caveats", primary: true },
 ];
 
 const DEFAULT_EQUITY = 1_000_000;
@@ -611,6 +618,7 @@ function LimitsView({ backtest }: { backtest: BotBacktest }) {
 
 export function BotPanel() {
   const [view, setView] = useState<BotView>("today");
+  const [showResearch, setShowResearch] = useState(false);
   const [backtest, setBacktest] = useState<BotBacktest | null>(null);
   const [learning, setLearning] = useState<BotLearning | null>(null);
   const [signals, setSignals] = useState<BotSignals | null>(null);
@@ -668,7 +676,7 @@ export function BotPanel() {
     <div className="workspace-grid-solo">
       <Panel title="Trading Bot" subtitle={subtitle}>
         <nav className="bot-views" role="tablist">
-          {VIEWS.map((item) => (
+          {VIEWS.filter((item) => item.primary || showResearch).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -681,6 +689,22 @@ export function BotPanel() {
               {item.label}
             </button>
           ))}
+          {/* The research surfaces are kept, not deleted — they are where the
+              caveats live. They are folded away by default because eight tabs
+              of study output buries the two questions an account asks: what do
+              I buy today, and has this ever made money. */}
+          <button
+            type="button"
+            className="bot-view-tab bot-view-more"
+            onClick={() => {
+              const next = !showResearch;
+              setShowResearch(next);
+              if (!next && !VIEWS.find((v) => v.id === view)?.primary) setView("today");
+            }}
+            title="The strategy x regime study, the learning record and the evolution timeline"
+          >
+            {showResearch ? "Hide research views" : "Show research views"}
+          </button>
         </nav>
 
         {loading ? <p className="bot-empty">Loading the study…</p> : null}
@@ -705,6 +729,7 @@ export function BotPanel() {
                 refreshing={refreshing}
               />
             ) : null}
+            {view === "rules" ? <BotRulesBook equity={equity} /> : null}
             {view === "playbook" ? <PlaybookView backtest={backtest} /> : null}
             {view === "scorecard" ? (
               learning

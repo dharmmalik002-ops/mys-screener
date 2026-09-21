@@ -5308,6 +5308,38 @@ export type BotStatus = {
   live_scan_available: boolean;
 };
 
+export type BotRobust = {
+  cagr: number;
+  max_drawdown: number;
+  sharpe: number;
+  win_rate: number;
+  payoff: number;
+  trades: number;
+  yearly: Record<string, number>;
+  trades_per_year: Record<string, number>;
+  size_mix: Record<string, number>;
+  diagnosis: Array<{
+    year: number;
+    bot_return: number;
+    index_return: number | null;
+    alpha: number | null;
+    accepted: number;
+    verdict: string;
+    note?: string;
+  }>;
+  summary?: { years_behind?: number; years_total?: number };
+  evaluation?: string;
+  caveats?: string[];
+};
+
+/** The rules-based book. NOT the same measurement as `getBotWalkforward()` —
+ *  that one rebuilds the playbook yearly and returns -1.87%/yr, this one is a
+ *  single train/test split. The panel shows both figures side by side for
+ *  exactly that reason; never render this one alone. */
+export function getBotRobust() {
+  return whileWaking(() => request<BotRobust>("/api/bot/robust", undefined, { timeoutMs: 60000 }));
+}
+
 export function getBotStatus() {
   return whileWaking(() => request<BotStatus>("/api/bot/status", undefined, { timeoutMs: 30000 }));
 }

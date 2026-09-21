@@ -450,3 +450,59 @@
 .bot-health-tracking { border-color: color-mix(in srgb, var(--positive) 35%, transparent); }
 .bot-health-diverging { border-color: color-mix(in srgb, var(--negative) 45%, transparent); }
 .bot-health-insufficient { border-color: var(--line); }
+
+/* --- Rules book view ----------------------------------------------------- */
+.bot-callout-warn {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  border: 1px solid var(--warn-border, #b45309);
+  background: var(--warn-bg, rgba(180, 83, 9, 0.08));
+  line-height: 1.5;
+}
+.bot-stat-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.bot-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(127, 127, 127, 0.25));
+  min-width: 120px;
+}
+.bot-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.7;
+}
+.bot-stat-value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.bot-view-more {
+  margin-left: auto;
+  opacity: 0.75;
+  font-style: italic;
+}
+.bot-caveats {
+  margin: 8px 0 0;
+  padding-left: 20px;
+  line-height: 1.55;
+}
+.bot-caveats li { margin-bottom: 6px; }
+.bot-note { font-size: 0.82rem; opacity: 0.7; margin-top: 6px; }
+.bot-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.bot-table th, .bot-table td { padding: 6px 10px; border-bottom: 1px solid var(--border, rgba(127,127,127,0.18)); }
+.bot-table th.num, .bot-table td.num { text-align: right; }
+.bot-table td.pos { color: var(--up, #16a34a); }
+.bot-table td.neg { color: var(--down, #dc2626); }

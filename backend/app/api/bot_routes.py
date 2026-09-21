@@ -32,6 +32,12 @@ logger = logging.getLogger(__name__)
 
 BACKTEST_FILE = "bot_backtest.json"
 SIGNALS_FILE = "bot_signals.json"
+# The rules-based book: mined entry rules, the 1-10 confidence rating, the
+# index/gold sleeve and the 1%-of-equity position rule. Built by
+# `scripts/run_robust_backtest.py`. It is a DIFFERENT measurement from
+# `bot_backtest.json` and must never be shown as if it were the same one —
+# see the docstring on /robust.
+ROBUST_FILE = "bot_robust.json"
 ROLLING_FILE = "bot_rolling_walkforward.json"
 COMBINED_FILE = "bot_combined_product.json"
 # Beyond this the committed signal list is describing a market that has moved
@@ -92,6 +98,47 @@ def build_bot_router(data_dir: Path, state_dir: Path | None = None) -> APIRouter
                 detail="The backtest has not been built yet. Run scripts/run_bot_backtest.py.",
             )
         return artifact
+
+    @router.get("/robust")
+    def robust() -> dict[str, Any]:
+        """The rules-based book — the one the recent work actually built.
+
+        **This is not comparable to `/walkforward` and the difference is the
+        whole point.** `/walkforward` rebuilds the playbook every January from
+        prior data only and trades the year that follows: eleven independent
+        out-of-sample years, and it returns -1.87%/yr. This book is measured
+        on a single train/test split, which is a weaker test, and returns
+        +41.5%/yr. A single split cannot be read as the same evidence, so the
+        payload carries `evaluation` and `caveats` and the UI shows them.
+
+        The two also differ in what they are. The walk-forward number is pure
+        stock selection. This book is a stock book PLUS an index/gold sleeve
+        that holds whatever capital the stock side is not using, and the
+        sleeve does a large part of the work — in 2009, 2010 and 2026 the
+        stock side actually subtracts (CLAUDE.md gotcha 99).
+        """
+        artifact = _load(data_dir, ROBUST_FILE)
+        if not artifact:
+            raise HTTPException(
+                status_code=503,
+                detail="The rules book has not been built. Run scripts/run_robust_backtest.py.",
+            )
+        payload = dict(artifact)
+        payload["evaluation"] = "single train/test split (2009-2017 / 2018-2026)"
+        payload["caveats"] = [
+            "Measured on ONE train/test split. The same system has never been "
+            "run through the yearly-rebuild test that returned -1.87%/yr for "
+            "the strategy playbook, so these two numbers are not evidence of "
+            "the same strength.",
+            "Roughly half the work is done by the index/gold sleeve holding "
+            "idle capital, not by stock selection. In 2009, 2010 and 2026 the "
+            "stock book subtracted from the sleeve's return.",
+            "Simulated fills and modelled slippage. The universe is today's "
+            "listed companies, so delisted names are missing and pre-2018 "
+            "results are filtered by survival.",
+            "No trade here has ever been placed with real money.",
+        ]
+        return payload
 
     @router.get("/status")
     def status() -> dict[str, Any]:
