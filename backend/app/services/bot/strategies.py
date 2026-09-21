@@ -207,6 +207,87 @@ def _gap_continuation(f: Features) -> np.ndarray:
     return _safe(gap & held & (c > f.sma50) & (c > f.sma200) & f.liquid)
 
 
+# --- Third cohort: taken from the published literature, not invented here --
+# The existing library is entirely "buy strength": breakouts, momentum bursts,
+# shallow pullbacks. Three documented setups were added to test whether the
+# gap is in what the library can RECOGNISE, each chosen because it is
+# structurally unlike everything already registered and each implemented to
+# its published rule rather than to a version tuned here.
+
+
+def _pocket_pivot(f: Features) -> np.ndarray:
+    """Gil Morales / Chris Kacher, *Trade Like an O'Neil Disciple* (2010).
+
+    An up day inside a constructive base whose volume exceeds the LARGEST
+    DOWN-DAY volume of the prior ten sessions. The thesis is a volume
+    footprint: institutional accumulation shows up as buying that stands
+    taller than any recent selling, which lets the trade be taken inside the
+    base rather than paid up for at the eventual breakout.
+
+    Structurally different from everything registered because the signal is
+    the *relationship between up and down volume*, not price making a new
+    high. It is therefore the only setup here that can fire while price is
+    still below its recent highs.
+    """
+    c, v = f.bars.close, f.bars.volume
+    n = len(c)
+    down = np.where(c < _prior(c), v, 0.0)          # volume on down days only
+    worst_down = np.full(n, np.nan)
+    for i in range(10, n):
+        worst_down[i] = down[i - 10:i].max()
+    up_day = c > _prior(c)
+    footprint = v > np.nan_to_num(worst_down, nan=np.inf)
+    # Constructive: in an uptrend, holding the 50-day, and NOT extended —
+    # the whole point is buying inside the base.
+    constructive = (
+        (c > f.sma50) & (c > f.sma200) & (f.ma200_slope > 0)
+        # `dist_52w_high` is SIGNED and negative below the high, so "not
+        # extended" is < -2.0, not > 2.0. Written the wrong way round first,
+        # which fired zero times — a new setup that never fires is a bug
+        # (gotcha 82), and this is the second instance of exactly that.
+        & (c >= f.ema10 * 0.97) & (f.dist_52w_high < -2.0)
+    )
+    return _safe(up_day & footprint & constructive & f.liquid)
+
+
+def _nr7_release(f: Features) -> np.ndarray:
+    """Toby Crabel's narrow-range-7, traded as a breakout.
+
+    Yesterday's bar had the narrowest high-low range of its last seven, and
+    today price takes out that bar's high. Range contraction is a measured
+    precursor to expansion; the NR7 bar dates the contraction precisely,
+    which is what separates it from `squeeze_release` (a 60-day ATR
+    percentile, i.e. a much slower and broader measure of the same idea).
+    """
+    h, l, c = f.bars.high, f.bars.low, f.bars.close
+    n = len(c)
+    rng = h - l
+    is_nr7 = np.zeros(n, dtype=bool)
+    for i in range(7, n):
+        is_nr7[i] = rng[i] <= rng[i - 6:i + 1].min()
+    take_out = c > _prior(h)
+    return _safe(_prior_flag(is_nr7) & take_out & (c > f.sma50)
+                 & (c > f.sma200) & f.liquid)
+
+
+def _rsi2_reversion(f: Features) -> np.ndarray:
+    """Larry Connors' RSI(2), to its original rule.
+
+    Price above its 200-day average and a 2-period RSI below 5 — a violent
+    short-term washout inside an intact long-term uptrend. This is the
+    library's only genuine *mean reversion* entry: every other registered
+    setup buys after strength, and this one buys after two days of panic.
+
+    `_oversold_bounce` is the nearest existing relative and is a much blunter
+    instrument (RSI-14 under 30, which fires on ordinary weakness). Connors'
+    published finding is that the edge sharpens as the threshold drops, so
+    the rule is implemented at his number rather than at a rounder one.
+    """
+    c = f.bars.close
+    rsi2 = ind.rsi(c, 2)
+    return _safe((rsi2 < 5.0) & (c > f.sma200) & (f.ma200_slope > -0.02) & f.liquid)
+
+
 # --- Second cohort: measured, and NOT enabled ------------------------------
 # These five were added on a reasonable hypothesis — that the account's return
 # is capped by the edge per trade, which is capped by what the library can
@@ -531,6 +612,9 @@ SECOND_COHORT = (
     ("rs_leader_pullback", _rs_leader_pullback),
     ("coiled_spring", _coiled_spring),
     ("failed_breakdown", _failed_breakdown),
+    ("pocket_pivot", _pocket_pivot),
+    ("nr7_release", _nr7_release),
+    ("rsi2_reversion", _rsi2_reversion),
 )
 
 BY_ID = {s.id: s for s in STRATEGIES}

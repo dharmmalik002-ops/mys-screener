@@ -724,4 +724,33 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      **2026 is untouched by all of this (-6.7%)** because its drawdown never reached -20%, so no recovery window opens. Its gap stays what gotcha 99 measured: the sleeve holds the broad index while being scored against small caps, which beat it by 14.8pp that year.
 
 
+101. **THREE SETUPS FROM THE PUBLISHED LITERATURE — ALL INDIVIDUALLY PROFITABLE, ALL NET-NEGATIVE IN THE BOOK.** The registered library is entirely "buy strength" (breakouts, momentum bursts, shallow pullbacks), so the standing question was whether the ceiling is what the library can *recognise*. Three documented setups were implemented to their published rules rather than to versions tuned here:
+
+     * **`pocket_pivot`** (Morales & Kacher, *Trade Like an O'Neil Disciple*, 2010) — an up day inside a base whose volume exceeds the largest **down-day** volume of the prior ten sessions. The only setup here whose signal is the relation between up and down volume rather than price making a high, so it can fire while price is still inside the base.
+     * **`nr7_release`** (Crabel) — yesterday had the narrowest high-low range of its last seven; today takes out its high. Dates the volatility contraction precisely, where `squeeze_release` uses a 60-day ATR percentile.
+     * **`rsi2_reversion`** (Connors) — RSI(2) below 5 with price above its 200 DMA. The library's only genuine **mean-reversion** entry: everything else buys after an up move, this buys after two days of panic.
+
+     On raw signal quality they are respectable and **two of the three beat the weakest incumbent**, positive in both halves:
+
+         setup                train      test        (minervini_breakout: +0.329 / +0.965)
+         nr7_release         +0.444    +1.200
+         rsi2_reversion      +0.432    +1.348
+         pocket_pivot        +0.318    +1.112
+
+     In the book every one of them **loses money**:
+
+         variant              signals   fills     CAGR     maxDD   Sharpe   beat
+         shipped (6 setups)      2720    1199   +43.88%   -22.72%    1.87   15/18
+         + pocket_pivot          2721    1199   +43.88%   -22.72%    1.87   15/18   (1 signal clears; no effect)
+         + nr7_release           4008    1444   +39.38%   -24.72%    1.68   15/18
+         + rsi2_reversion        2844    1215   +43.42%   -22.99%    1.86   14/18
+         + all three             4133    1448   +40.75%   -24.17%    1.69   15/18
+
+     **The capacity explanation is only half right, and the control says so.** Re-run in a book with room — 120 slots at 4% positions instead of 40 at 12% — the damage shrinks from -4.5pp to -1.1pp but **does not turn positive** (`+40.99%` baseline against `+39.85%` with nr7). So capacity *amplifies* the harm, and the setups add nothing even when nothing is being crowded out. The mechanism is the confidence filter: it already selects the best 18% of what the existing library offers, and a new setup's signals that clear an 8 are no better than the marginal incumbent they displace. **A larger library only helps a book short of ideas, and after the conviction filter this one never is.**
+
+     **Two implementation traps, both of which cost a full run.** `BacktestConfig.strategies` defaults to the tuple captured by `from .strategies import STRATEGIES` at import, so monkey-patching `strategies.STRATEGIES` does nothing — the new setups must be passed explicitly. And `dist_52w_high` is **signed and negative below the high**, so "not extended" is `< -2.0`, not `> 2.0`; written the wrong way round, `pocket_pivot` fired **zero times** across the whole universe and reported as a strategy that found nothing. That is the second instance of gotcha 82's failure mode. `test_bot_third_cohort.py::test_each_setup_fires_at_least_once` now fails on it directly.
+
+     **Do not read this as "the literature does not work".** All three are profitable signals; `rsi2_reversion` has the best held-out R of the three and is genuinely orthogonal to everything registered. They lose here because of what they are competing against, which is a filter that has already thrown away 82% of a library that was itself mined from 100,000 trades. They stay in `SECOND_COHORT`, defined and tested, so the measurement is reproducible.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
