@@ -306,6 +306,10 @@ def main() -> int:
         "max_position_pct": BOOK.max_position_pct, "derisk": _derisk, "pyramid": True,
     })
     print(f"\nmemory: {mem.recall(state_dir).note}")
+    # The record is consulted for an action, not just printed. It can only
+    # stand something down, never promote it, and it refuses on thin evidence.
+    rec = mem.recommend(state_dir)
+    print(f"memory says: {rec.action} — {rec.reason}")
 
     if args.out:
         Path(args.out).write_text(json.dumps({

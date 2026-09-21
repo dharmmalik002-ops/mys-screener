@@ -37,6 +37,21 @@ class Recollection:
     regressed: bool = False
 
 
+@dataclass
+class Recommendation:
+    """A bounded change the record supports, or none."""
+    action: str                 # "hold" | "stand_down_setups" | "widen_capacity"
+    setups: list[str]
+    reason: str
+    evidence_runs: int
+
+
+# A setup must fail across this many runs before the record is allowed to act
+# on it. One bad run is noise; this project has measured that repeatedly.
+MIN_RUNS_TO_ACT = 3
+CHRONIC_YEARS_TO_ACT = 3
+
+
 def memory_path(state_dir: Path) -> Path:
     return state_dir / MEMORY_FILENAME
 
@@ -76,6 +91,44 @@ def record(
     memory_path(state_dir).write_text(
         json.dumps(runs[-MAX_RUNS:], indent=2, default=str), encoding="utf-8"
     )
+
+
+def recommend(state_dir: Path) -> Recommendation:
+    """Turn the record into an action, or refuse to.
+
+    The asymmetry from `calibration.py` carries over and is the whole design:
+    this can **stand something down and can never promote it**. Every
+    offensive use of learning measured in this project lost money (gotchas 59,
+    65, 69, 70, 74); the one defensive use that held up was the circuit
+    breaker. So the only action available here is to stop doing something that
+    has failed across several independent runs.
+
+    It also refuses to act on thin evidence. `MIN_RUNS_TO_ACT` exists because
+    a single bad run is noise, and acting on noise is how the reactive
+    eligibility experiment lost 3.51% a year.
+    """
+    runs = load(state_dir)
+    if len(runs) < MIN_RUNS_TO_ACT:
+        return Recommendation(
+            "hold", [], f"only {len(runs)} run(s) on record; {MIN_RUNS_TO_ACT} needed "
+                        f"before the record may change anything", len(runs))
+
+    bad_years: dict[int, int] = {}
+    for run in runs:
+        for row in run.get("diagnosis") or []:
+            if str(row.get("verdict")) == "bad_shots":
+                bad_years[int(row["year"])] = bad_years.get(int(row["year"]), 0) + 1
+
+    chronic = sorted(y for y, n in bad_years.items() if n >= len(runs))
+    if len(chronic) >= CHRONIC_YEARS_TO_ACT:
+        return Recommendation(
+            "stand_down_setups", [],
+            f"years {chronic} were bad_shots in every one of {len(runs)} runs — "
+            f"the entry rules, not capacity, and the same years each time",
+            len(runs))
+    return Recommendation(
+        "hold", [], "nothing has failed consistently enough across runs to act on",
+        len(runs))
 
 
 def recall(state_dir: Path) -> Recollection:

@@ -103,6 +103,44 @@ class MemoryTests(unittest.TestCase):
         mem.record(self.dir, [{"year": 2019, "verdict": "ok", "alpha": +5.0}], {})
         self.assertEqual(mem.recall(self.dir).chronic_years, [])
 
+    def test_it_refuses_to_act_on_thin_evidence(self):
+        """One bad run is noise. Acting on noise cost 3.51%/yr once already."""
+        mem.record(self.dir, [{"year": 2015, "verdict": "bad_shots", "alpha": -5.0}], {})
+        self.assertEqual(mem.recommend(self.dir).action, "hold")
+
+    def test_it_acts_only_when_the_same_years_fail_every_run(self):
+        for _ in range(mem.MIN_RUNS_TO_ACT):
+            mem.record(self.dir, [
+                {"year": 2015, "verdict": "bad_shots", "alpha": -5.0},
+                {"year": 2024, "verdict": "bad_shots", "alpha": -3.0},
+                {"year": 2026, "verdict": "bad_shots", "alpha": -9.0},
+            ], {"cagr": 20.0})
+        self.assertEqual(mem.recommend(self.dir).action, "stand_down_setups")
+
+    def test_a_year_that_recovers_does_not_trigger_an_action(self):
+        """Only failure in EVERY run counts — one recovery clears it."""
+        for verdict in ("bad_shots", "bad_shots", "ok"):
+            mem.record(self.dir, [
+                {"year": 2015, "verdict": verdict, "alpha": -5.0},
+                {"year": 2024, "verdict": verdict, "alpha": -3.0},
+                {"year": 2026, "verdict": verdict, "alpha": -9.0},
+            ], {"cagr": 20.0})
+        self.assertEqual(mem.recommend(self.dir).action, "hold")
+
+    def test_the_record_can_never_promote_only_demote(self):
+        """The calibration asymmetry, carried over deliberately."""
+        for _ in range(5):
+            mem.record(self.dir, [{"year": 2020, "verdict": "ok", "alpha": +40.0}],
+                       {"cagr": 40.0})
+        self.assertEqual(mem.recommend(self.dir).action, "hold")
+
+    def test_it_reports_when_an_iteration_regressed(self):
+        mem.record(self.dir, [{"year": 2020, "verdict": "ok", "alpha": 1.0}], {"cagr": 30.0})
+        mem.record(self.dir, [{"year": 2020, "verdict": "ok", "alpha": 1.0}], {"cagr": 22.0})
+        r = mem.recall(self.dir)
+        self.assertTrue(r.regressed)
+        self.assertIn("best run", r.note)
+
     def test_a_corrupt_store_degrades_instead_of_raising(self):
         mem.memory_path(self.dir).write_text("{not json", encoding="utf-8")
         self.assertEqual(mem.load(self.dir), [])
