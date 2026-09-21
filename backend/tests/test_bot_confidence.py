@@ -100,3 +100,75 @@ class SizingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class DecileScaleTests(unittest.TestCase):
+    """The raw score is not a 1-10 scale, and reading it as one empties the book."""
+
+    def test_reaching_nine_raw_needs_nearly_every_component_maxed(self):
+        """The fact that forced the decile scale: across 18 years exactly 12
+        of 15,125 cleared signals scored 9 on the raw sum. The structural
+        reason is that the score is a sum of five bounded parts, so degrading
+        any ONE of them drops a near-perfect signal under 9.
+
+        (My first version of this test asserted the opposite and failed: a
+        maximal signal on `pullback_ema21` scores 9.4, not under 9. The test
+        was wrong, not the code.)
+        """
+        best = {
+            "risk_pct": 2.0, "turnover_crore_at_entry": 1.0,
+            "ret_63_at_entry": 40.0, "strategy": "squeeze_release",
+            "regime": "bull_strong",
+        }
+        self.assertGreaterEqual(cf.score(best, True), 9.0, "a maximal signal should")
+        # Now spoil one component at a time; each on its own must cost the 9.
+        for field, spoiled in (
+            ("risk_pct", 5.0),
+            ("turnover_crore_at_entry", 8.0),
+            ("ret_63_at_entry", 5.0),
+            ("strategy", "minervini_breakout"),
+            ("regime", "recovery"),
+        ):
+            degraded = dict(best, **{field: spoiled})
+            self.assertLess(
+                cf.score(degraded, True), 9.0,
+                f"degrading {field} alone still reached 9 raw — the score has "
+                f"stopped requiring all five components and the decile "
+                f"cut-points need re-deriving",
+            )
+
+    def test_deciles_span_one_to_ten(self):
+        self.assertEqual(cf.decile(-100.0), 1.0)
+        self.assertEqual(cf.decile(1000.0), 10.0)
+        for cut in cf.DECILE_CUTS:
+            self.assertGreaterEqual(cf.decile(cut), 2.0)
+
+    def test_the_cuts_are_ordered_and_not_round_numbers(self):
+        """Deciles of the training half, frozen. Round numbers would mean
+        someone picked them rather than measured them."""
+        self.assertEqual(list(cf.DECILE_CUTS), sorted(cf.DECILE_CUTS))
+        self.assertEqual(len(cf.DECILE_CUTS), 9)
+        self.assertTrue(any(abs(c - round(c)) > 0.01 for c in cf.DECILE_CUTS))
+
+    def test_rated_is_monotone_in_the_raw_score(self):
+        prev = 0.0
+        for raw in [x / 10.0 for x in range(0, 110)]:
+            now = cf.decile(raw)
+            self.assertGreaterEqual(now, prev)
+            prev = now
+
+    def test_the_bar_is_the_top_band(self):
+        """`CONVICTION_BAR` is what the brief asked for — only 9s and 10s."""
+        self.assertGreaterEqual(cf.CONVICTION_BAR, 9.0)
+
+
+class SizingIsAlreadyMaximalTests(unittest.TestCase):
+
+    def test_the_multiplier_is_bounded_and_cannot_rescue_a_capped_book(self):
+        """Measured: with the 1%-of-equity rule binding at ~1.6% of equity per
+        position, conviction multipliers of 1.5x, 2x and 3x produced results
+        identical to the last decimal. Every trade is already sized at the
+        ceiling the risk rule allows, so "bet more on a 10" is arithmetically
+        unavailable without breaking that rule. The multiplier stays bounded
+        so a future edit cannot quietly reintroduce it as leverage."""
+        self.assertLessEqual(cf.size_multiplier(10.0), 2.0)

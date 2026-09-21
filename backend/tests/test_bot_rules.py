@@ -146,19 +146,24 @@ class VerdictTests(unittest.TestCase):
         self.assertTrue(R.beats_smallcap())
 
     def test_the_win_rate_now_clears_the_brief(self):
-        """35-40% asked for, 36.8% delivered — and not by a profit target.
+        """30%+ asked for, 35.1% delivered — and not by a profit target.
 
-        Every scale-out variant hit the same band by capping the trades that
-        carry the result. This one comes from selling the book into a regime
-        turn, which raises the win rate AND halves the drawdown.
+        This assertion has been inverted once, deliberately. It used to read
+        `MEASURED_WIN_RATE < 34.0`, because a 3.5% stop cap had crushed the
+        win rate to 15% and the brief of the day asked for a 3-4% stop. Those
+        two asks collide by construction (gotcha 92) and the priority changed:
+        the stop cap is now 7%, the average stop 6.15%, and the win rate 35.1%.
+
+        A test written against a measurement will defend that measurement, so
+        this one asserts the BRIEF's band rather than the number of the day.
         """
-        # A 3-4% average stop and a 35-40% win rate cannot both hold: a
-        # tighter stop is hit more often. The stop width won, so this asserts
-        # the floor tracks the measurement and that the trade-off is real.
         self.assertTrue(R.win_rate_clears_the_brief())
-        self.assertLess(R.MEASURED_WIN_RATE, 34.0,
-                        "if the win rate recovered, the stop cap stopped binding")
-        self.assertLessEqual(R.EXIT_MAX_STOP_PCT, 4.0)
+        self.assertGreaterEqual(R.MEASURED_WIN_RATE, 30.0,
+                                "the brief's floor; below it the stop is too tight")
+        self.assertLessEqual(R.MEASURED_WIN_RATE, 45.0,
+                             "far above the band means a winner is being cut short")
+        self.assertGreaterEqual(R.MEASURED_PAYOFF, 2.0,
+                                "the brief asks for at least 1:2, whatever the win rate")
         self.assertTrue(R.DERISK_ON_REGIME_TURN)
         self.assertIsNone(R.EXIT_TARGET_R, "the win rate must not come from a target")
 

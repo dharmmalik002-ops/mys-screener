@@ -753,4 +753,43 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
      **Do not read this as "the literature does not work".** All three are profitable signals; `rsi2_reversion` has the best held-out R of the three and is genuinely orthogonal to everything registered. They lose here because of what they are competing against, which is a filter that has already thrown away 82% of a library that was itself mined from 100,000 trades. They stay in `SECOND_COHORT`, defined and tested, so the measurement is reproducible.
 
 
+102. **"TAKE ONLY THE 9s AND 10s" IS AN EMPTY BOOK ON THE RAW SCALE — THE SCORE HAD TO BECOME DECILES.** `confidence.score` sums five bounded parts, so reaching 9 needs near-perfection on all five at once. Across 18 years **exactly 12 signals of 15,125** ever did, and the highest score ever recorded is 9.33. A rating that almost never issues its top grade is not a rating.
+
+     `DECILE_CUTS` fixes it: the deciles of the **training half alone** (2,964 signals before 2018), frozen and applied unchanged to the held-out half, so the scale is never re-fitted to the period it scores. A 9 now means "top fifth of everything the rules cleared", which is what asking for a 9-out-of-10 trade actually means. The ranking is monotone in **both** halves, which is the reason to keep it:
+
+         band          train avgR    test avgR
+         all cleared      +1.198       +1.592
+         >= 8             +1.618       +2.108
+         >= 9             +1.773       +2.568
+         >= 10            +2.208       +2.767
+
+103. **A 30% WIN RATE COSTS EXACTLY WHAT GOTCHA 92 SAID IT WOULD — AND THE STOP CAP IS THE ONLY LEVER THAT REACHES IT.** Gotcha 92 recorded that a 3-4% stop and a 35-40% win rate cannot both hold. The brief's priority has now changed to the win rate, so the collision resolves the other way: `EXIT_MAX_STOP_PCT` goes **3.5% -> 7.0%**, the average stop lands at 6.15% and the win rate at **35.1%**. Measured across the whole grid, the win rate is a pure function of the stop cap and nothing else:
+
+         stop cap   3.5%   5.0%   6.0%   7.0%   8.0%   none
+         win rate   15.0   22.2   28.0   35.4   34.7   38.6
+
+     Payoff moves the opposite way (12.35 -> 6.25), exactly as every other win-rate experiment here predicted. Both still clear the brief, which asked for 1:2.
+
+104. **A FIXED GAP ALLOWANCE IS ONLY RIGHT FOR ONE STOP WIDTH — IT MUST SCALE, OR THE 1% RULE SILENTLY BREAKS.** Gotcha 98 sized positions against a declared 15% adverse move. That was calibrated at a 3.5% stop, where the worst trade lost 14.1%. Widen the stop and the gap widens with it, because a name that needs a 7% stop is a name that can fall 40% overnight:
+
+         stop cap   worst single trade   as a multiple of the stop
+           3.5%          -14.1%                   4.0x
+           5.0%          -33.0%                   6.6x
+           7.0%          -41.7%                   6.8x
+           8.0%          -41.7%                   7.7x
+
+     With the allowance left at a flat 15%, the 7% book's worst hit to equity was **-2.78%** against a rule that says 1%. `GAP_ALLOWANCE_STOP_MULT` makes the allowance `max(15%, mult x stop)`. At 6x — which merely matches the worst observed gap — the worst hit is still **-1.04%**, outside the rule: *a limit that the sample's own extreme already breaches is not a limit.* **10x** holds it at **-0.91%** and costs 2.75pp of CAGR.
+
+105. **"BET BIGGER ON A 10" IS ARITHMETICALLY UNAVAILABLE ONCE THE 1% RULE BINDS — THE MULTIPLIERS CHANGED NOTHING TO THE LAST DECIMAL.** The brief asked for maximum position size on the highest-conviction trades. Measured at conviction bar 9, with 1.5x, 2x and 3x on the top decile:
+
+         flat (every trade maxed)   CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  15/18
+         decile 10 at 1.5x          CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  15/18
+         decile 10 at 2.0x          CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  15/18
+         decile 10 at 3.0x          CAGR +40.25%  maxDD -21.16%  Sharpe 2.01  win 35.1%  15/18
+
+     Identical, because the binding constraint is the 1%-of-equity rule, not the risk budget: at a 6.15% average stop the allowance is `10 x 6.15 = 61.5%`, so a position may be at most `1.0 / 61.5 = 1.64%` of equity. The 12% position cap never binds and neither does `risk_per_trade_pct`. **Every trade is already sized at the maximum the risk rule permits**, so conviction sizing has nothing left to scale — the fourth independent time sizing-by-conviction has measured as doing nothing here (gotchas 78, 81, 95).
+
+     **Final shipped book:** `CAGR +40.25%, maxDD -21.16%, Sharpe 2.01, payoff 6.25, win 35.1%, 975 trades` — **+38.5%/yr against the Nifty Smallcap 250's +16.3%, alpha +22.2pp, ahead in 15 of 18**, worst single-trade hit to equity **-0.91%** against the 1% rule. Average stop 6.15%, winners +81.3% held 319 sessions, losers -7.1% held 24. 85.1% small cap, 14-233 trades a year.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).

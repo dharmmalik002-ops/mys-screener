@@ -89,7 +89,13 @@ EXIT_MAX_HOLD_SESSIONS = 500
 # fractional risk a TIGHTER stop means a BIGGER position (0.25% risk over a
 # 3.5% stop is a 7% position; over a 7% stop it is 3.5%). Tightening the stop
 # concentrates the book unless the position cap comes down with it.
-EXIT_MAX_STOP_PCT = 3.5
+# Raised from 3.5% to 7.0%. A 3.5% cap is hit far more often, which is why
+# it drove the win rate down to 15%; the brief now asks for 30%+ and a stop
+# this tight cannot deliver it (gotcha 92 measured the collision). At 7% the
+# average stop lands at 6.10% and the win rate at 35.1%. The cost is real and
+# is priced: a wider stop means a wider gap behind it, so the 1%-of-equity
+# rule shrinks the position to compensate.
+EXIT_MAX_STOP_PCT = 7.0
 
 # Measured on the full period with these rules, taking only signals the
 # confidence score (confidence.py) rates 8 or above. That filter is the first
@@ -97,12 +103,12 @@ EXIT_MAX_STOP_PCT = 3.5
 # +0.088R in training and +0.069R held out, while the full cleared set is
 # negative in both (-0.068R / -0.035R). It declines 82% of what the rules
 # already cleared, which is why the trade count falls by two thirds.
-MEASURED_CAGR = 43.88
-MEASURED_MAX_DRAWDOWN = -22.72
-MEASURED_SHARPE = 1.87
-MEASURED_PAYOFF = 12.35
-MEASURED_WIN_RATE = 15.0
-MEASURED_TRADES = 1199
+MEASURED_CAGR = 40.25
+MEASURED_MAX_DRAWDOWN = -21.16
+MEASURED_SHARPE = 2.01
+MEASURED_PAYOFF = 6.25
+MEASURED_WIN_RATE = 35.1
+MEASURED_TRADES = 975
 MEASURED_SMALLCAP_CAGR = 16.26
 
 
@@ -294,7 +300,7 @@ MEASURED_CASH_SLEEVE_WIN_RATE = 26.8
 # with a worst-trade limit attached), so it wins and the win-rate floor is
 # lowered to match the measurement rather than the measurement being dressed
 # up to meet the old band.
-WIN_RATE_FLOOR = 15.0
+WIN_RATE_FLOOR = 30.0
 WIN_RATE_CEILING = 40.0
 
 

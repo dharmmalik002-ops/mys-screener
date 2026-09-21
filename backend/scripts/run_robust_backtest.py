@@ -126,11 +126,15 @@ def main() -> int:
     _above = {dd: (bool(_ic[i] > _is200[i]) if not np.isnan(_is200[i]) else True)
               for i, dd in enumerate(_idx_bars.dates)}
     for t in kept:
-        t["conf"] = cf.score(t, _above.get(date.fromisoformat(str(t["entry_day"]))))
+        # The DECILE rating, not the raw sum. On the raw scale only 12 signals
+        # in 18 years ever reached 9, so "take the 9s and 10s" is an empty
+        # book; on deciles it is the top fifth of what the rules cleared.
+        t["conf"] = cf.rated(t, _above.get(date.fromisoformat(str(t["entry_day"]))))
     scored = len(kept)
-    kept = [t for t in kept if t["conf"] >= cf.HIGH_CONVICTION]
+    kept = [t for t in kept if t["conf"] >= cf.CONVICTION_BAR]
     print(f"signals {len(rows):,}  cleared rules {scored:,}  "
-          f"high conviction {len(kept):,} ({100*len(kept)/max(scored,1):.1f}%)")
+          f"conviction {cf.CONVICTION_BAR:.0f}-10 {len(kept):,} "
+          f"({100*len(kept)/max(scored,1):.1f}%)")
 
     # Benchmark prices (Smallcap 250) for the comparison table.
     index_yearly_prices: dict = {}

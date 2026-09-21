@@ -56,7 +56,41 @@ SETUP_QUALITY: dict[str, float] = {
 STRONG_REGIMES = frozenset({"bull_strong"})
 OK_REGIMES = frozenset({"bull_narrow", "recovery"})
 
-HIGH_CONVICTION = 8.0      # the bar for taking a trade at all
+HIGH_CONVICTION = 8.0      # the bar on the RAW scale (see DECILE_CUTS below)
+
+# --- the raw score is not a 1-10 scale, and pretending it is cost a year ----
+# `score()` sums five bounded parts, so reaching 9 needs near-perfection on
+# all five at once. Across 18 years exactly **12 signals of 15,125** ever did,
+# and the highest score ever recorded is 9.33. "Take only the 9s and 10s" is
+# therefore not a strategy on the raw scale, it is an empty book.
+#
+# These cut-points turn the raw score into genuine deciles, so a 9 means "top
+# 20% of everything the rules cleared" — which is what anyone asking for a
+# 9-out-of-10 trade actually means. They are the deciles of the **training
+# half alone** (2,964 signals before 2018), frozen and applied unchanged to
+# the held-out half, so the scale is not re-fitted to the period it scores.
+#
+# The ranking is monotone in both halves, which is what makes it worth having:
+#
+#     band          train avgR    test avgR
+#     all cleared      +1.198       +1.592
+#     >= 8             +1.618       +2.108
+#     >= 9             +1.773       +2.568
+#     >= 10            +2.208       +2.767
+DECILE_CUTS = (4.983, 5.320, 5.560, 5.770, 5.970, 6.140, 6.280, 6.410, 6.650)
+
+# The band to trade. 9 is the top fifth of what the rules cleared.
+CONVICTION_BAR = 9.0
+
+
+def decile(raw: float) -> float:
+    """Map a raw score onto 1-10 using the frozen training-half deciles."""
+    return 1.0 + float(sum(1 for cut in DECILE_CUTS if raw >= cut))
+
+
+def rated(trade: "Mapping", index_above_200: bool | None = None) -> float:
+    """The number a trader should read: 1-10, deciles, not the raw sum."""
+    return decile(score(trade, index_above_200))
 
 
 def _band(value: float, best: float, worst: float) -> float:

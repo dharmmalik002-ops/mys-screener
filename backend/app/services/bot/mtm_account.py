@@ -119,6 +119,18 @@ def _closes(data_dir: Path, symbols: set[str]) -> dict[str, dict[date, float]]:
 # it: the next gap is free to be larger.
 GAP_ALLOWANCE_PCT = 15.0
 
+# ...and the same quantity as a MULTIPLE of the trade's own stop, because a
+# fixed percentage is only right for one stop width. Measured on the worst
+# trade in each configuration, the adverse move runs 4x the stop at a 3.5%
+# stop and 6.8x at a 7% stop — a name that needs a wide stop is a name that
+# can gap a long way. The binding constraint is whichever of the two is
+# larger, so widening the stop automatically shrinks the position.
+# 10x, not 6x. 6x matched the worst observed gap and therefore let the worst
+# trade land at -1.04% of equity, just outside the 1% rule; a limit that the
+# sample's own extreme already breaches is not a limit. 10x holds it at
+# -0.91% and costs 2.75pp of CAGR.
+GAP_ALLOWANCE_STOP_MULT = 10.0
+
 
 def simulate(
     trades: Sequence[Mapping],
@@ -139,6 +151,7 @@ def simulate(
     size_by: "Callable[[Mapping], float] | None" = None,
     max_equity_loss_pct: float | None = None,
     gap_allowance_pct: float = GAP_ALLOWANCE_PCT,
+    gap_allowance_mult: float | None = GAP_ALLOWANCE_STOP_MULT,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -346,9 +359,15 @@ def simulate(
                 # 14.1% against a 3.5% stop. So the position is sized against
                 # an assumed adverse move of `gap_allowance_pct`, not against
                 # the stop, and the stop-based size is applied as well.
+                allowance = gap_allowance_pct
+                if gap_allowance_mult is not None:
+                    # The gap is proportional to the stop, not a fixed number
+                    # of percent: a name that needs a 7% stop is a name that
+                    # can fall 40% overnight, and one that needs 3.5% is not.
+                    allowance = max(allowance, gap_allowance_mult * stop_pct)
                 ceiling = min(
                     ceiling,
-                    equity * max_equity_loss_pct / gap_allowance_pct,
+                    equity * max_equity_loss_pct / allowance,
                     equity * max_equity_loss_pct / max(stop_pct, 0.01),
                 )
             capped = min(cost, ceiling)
