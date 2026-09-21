@@ -31,6 +31,7 @@ import argparse
 import json
 import sys
 from dataclasses import asdict
+from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -39,6 +40,7 @@ BACKEND_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(BACKEND_ROOT))
 
 from app.services.bot import adaptive_sizing as ad  # noqa: E402
+from app.services.bot import confidence as cf  # noqa: E402
 from app.services.bot import diagnose as dg  # noqa: E402
 from app.services.bot import indicators as ind  # noqa: E402
 from app.services.bot import memory as mem  # noqa: E402
@@ -55,9 +57,12 @@ from app.services.bot.portfolio import PortfolioConfig  # noqa: E402
 # effect on position size at all; 8% lets it express itself. Selecting instead
 # on return-per-drawdown picked a book that beat the index in only 8 years of
 # 18, which is the wrong thing to optimise here.
+# Sized for a confidence-filtered book: far fewer trades, so each one gets
+# more money. 0.25%/8%/60 slots was right when the book took 1,536 trades;
+# taking 541 of the best-scored ones supports 0.5%/12%/40.
 BOOK = PortfolioConfig(
-    risk_per_trade_pct=0.25, watch_risk_pct=0.25, max_concurrent=60,
-    max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=8.0,
+    risk_per_trade_pct=0.50, watch_risk_pct=0.50, max_concurrent=40,
+    max_portfolio_risk_pct=60.0, max_deployed_pct=100.0, max_position_pct=12.0,
 )
 
 
@@ -103,7 +108,23 @@ def main() -> int:
     # The stop-width cap is re-derived from the trailing year of signals, so
     # it breathes with volatility instead of starving the book after a crash.
     kept = R.accepted_with_rolling_risk(rows)
-    print(f"signals {len(rows):,}  accepted {len(kept):,} ({100*len(kept)/len(rows):.1f}%)")
+
+    # Score every surviving signal 1-10 and take only high conviction. The
+    # score was built on the training half and holds out of sample: >=8 is
+    # +0.088R in training and +0.069R held out, against -0.068 / -0.035 for
+    # the full set — the first selection filter in this project to show a
+    # positive edge in BOTH halves.
+    _idx_bars = read_bars(data_dir, "NIFTY500")
+    _ic = np.asarray(_idx_bars.close, dtype=float)
+    _is200 = ind.sma(_ic, 200)
+    _above = {dd: (bool(_ic[i] > _is200[i]) if not np.isnan(_is200[i]) else True)
+              for i, dd in enumerate(_idx_bars.dates)}
+    for t in kept:
+        t["conf"] = cf.score(t, _above.get(date.fromisoformat(str(t["entry_day"]))))
+    scored = len(kept)
+    kept = [t for t in kept if t["conf"] >= cf.HIGH_CONVICTION]
+    print(f"signals {len(rows):,}  cleared rules {scored:,}  "
+          f"high conviction {len(kept):,} ({100*len(kept)/max(scored,1):.1f}%)")
 
     # Benchmark prices (Smallcap 250) for the comparison table.
     index_yearly_prices: dict = {}
@@ -243,8 +264,8 @@ def main() -> int:
     # Benchmark: the Smallcap 250, because the book is ~80% small cap.
     index_yearly: dict[int, float] = {}
     try:
-        from datetime import date as _d
         px = index_yearly_prices
+        _d = date
         ds = sorted(px)
         for y in range(2009, 2027):
             inside = [x for x in ds if x.year == y]

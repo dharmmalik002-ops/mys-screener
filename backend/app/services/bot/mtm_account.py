@@ -28,7 +28,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Mapping, Sequence
+from typing import Callable, Mapping, Sequence
 
 import numpy as np
 
@@ -118,6 +118,7 @@ def simulate(
     reserve: Sequence[Mapping] | None = None,
     pyramid: bool = False,
     pyramid_scale: float = 0.30,
+    size_by: "Callable[[Mapping], float] | None" = None,
 ) -> MTMResult | None:
     """Run the account, repricing every open position each session.
 
@@ -139,6 +140,11 @@ def simulate(
     changes what the account IS — a selective book plus an index sleeve, not a
     pure stock picker. Both readings are reported rather than one being
     presented as the bot.
+
+    `size_by` returns a per-trade multiplier on the risk budget — conviction
+    sizing. Betting more on a better-scored setup only makes sense if the
+    score ranks outcomes, so the score has to be validated before this is
+    switched on, not after.
 
     `pyramid` lets a symbol already held take a second, smaller entry when it
     signals again — adding to a position that is working, at
@@ -306,6 +312,8 @@ def simulate(
                 continue
             scale = 1.0 if risk_scale_by_day is None else risk_scale_by_day.get(day, 1.0)
             risk_amount = equity * cfg.risk_per_trade_pct * scale / 100.0
+            if size_by is not None:
+                risk_amount *= float(size_by(t))
             if adding:
                 risk_amount *= pyramid_scale
             cost = risk_amount / (stop_pct / 100.0)

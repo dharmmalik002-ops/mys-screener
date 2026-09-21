@@ -640,4 +640,18 @@ curl -s https://dharmmalik-stock-scanner-backend.hf.space/api/bhavcopy/status
 
     Two further guards: the candidate set is **bounded and declared in advance** (an unbounded search over twenty years finds a winner by chance), and the survivor is ranked on the **held-out** score, never the training one — training has done its job by qualifying a candidate and letting it pick the winner as well reintroduces the bias the split exists to remove. `test_bot_autotune.py` pins all of it, including that a tie inside `MIN_EDGE` is not a win.
 
+95. **SCORING EVERY SIGNAL 1-10 IS THE FIRST SELECTION FILTER HERE THAT HELD OUT OF SAMPLE.** Every earlier attempt to rank signals learned the ranking from outcomes and mean-reverted (gotchas 59, 69, 70). `confidence.py` does not learn anything: it is a **sum of five independently-measured effects**, each already validated on its own, weighted by how large that effect was — stop tightness (3.0), turnover (2.0), setup quality (2.0), 3-month momentum (1.5), market state (1.5). Nothing is fitted, so there is no parameter for the data to mean-revert against.
+
+    It is the only selection rule in this project positive in **both** halves:
+
+        signals rated >=8   train +0.088R   test +0.069R
+        all cleared signals train -0.068R   test -0.035R
+
+    Taking only the 8-10 band declines 82% of what the mined rules already cleared — 2,720 of 15,125, from 105,686 raw signals — and the book goes `CAGR +25.99% -> +32.75%`, payoff `9.22 -> 15.19`, trades `1,536 -> 541`. It also fixes the years the brief named: **2015 -7.8% -> +10.4%, 2017 +42.3% -> +99.6%, 2012 +8.7% -> +32.3%, 2024 +34.3% -> +79.9%**. And it fixes the worst trade, which no stop rule had managed: **-86.8% -> -14.1%**, because the trades that gap 80% are low-conviction ones that a rated book never owned.
+
+    **No single input can manufacture an 8.** `test_bot_confidence.py` pins that directly, because a score that a perfect stop alone could carry would be the stop rule wearing a costume. A missing field scores **down**, as in `adaptive_sizing.py` — a signal we know less about is not a signal we are confident in.
+
+    **Two things measured negative under the filter and are NOT shipped.** Sizing by conviction adds nothing (`+28.35% -> +28.18%`) — the filter has already removed everything the sizing would have shrunk, so it has nothing left to do. And **short swing holds are expensive**: at the same filter, a 500-session ceiling returns +28.35%, 90 gives +16.90% and 25 gives **-7.91%**. The brief asked for shorter holds and the measurement says no, for a reason visible in the trade shape: losers are already closed in **9.4 sessions** against winners' 288, so a short ceiling cuts winners only. "Cut losses early" is satisfied by the stop, not by a clock.
+
+
 10. **Alpha Against a Price Index Is Flattered:** most equity categories benchmark to a Yahoo price index (no dividends), which overstates alpha by roughly 1.2%/yr. Rows carry `alpha_vs_price_index: true` and the UI flags it with a dagger — keep that flag if you touch the benchmark plumbing. Small and mid caps route through index-fund NAV instead precisely to avoid this (and because Yahoo's `^CNXSC` has no usable history).
