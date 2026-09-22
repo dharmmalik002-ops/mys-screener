@@ -1,6 +1,6 @@
 {
   "cache_version": 1,
-  "generated_at": "2026-09-22T12:06:00.461425+00:00",
+  "generated_at": "2026-09-22T13:09:36.260072+00:00",
   "entries": {
     "NTPC": {
       "symbol": "NTPC",
@@ -191,8 +191,8 @@
     },
     "HITECHGEAR": {
       "symbol": "HITECHGEAR",
-      "earnings_date": "2026-09-21",
-      "close_in_range_pct": 1.0,
+      "earnings_date": "2026-09-22",
+      "close_in_range_pct": 0.5,
       "next_day_gap_pct": null,
       "day_rvol_50d": null,
       "return_5d_pct": null,
